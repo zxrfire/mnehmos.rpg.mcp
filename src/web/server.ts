@@ -29,6 +29,7 @@ import {
     type ResolvedRuntimeProviderConfig
 } from '../agent/provider/config.js';
 import { GameError, GameService } from './game.js';
+import { createWorldSession, setWorldSession, type WorldSession } from './world.js';
 import { DeterministicNarrator, ProviderNarrator, type Narrator } from './narrator.js';
 import { ladderView, spiritRootsView } from './view.js';
 
@@ -290,6 +291,9 @@ export function createApp(options: AppOptions): (req: IncomingMessage, res: Serv
                 case '/api/admin/roster':
                     sendJson(res, 200, game.roster());
                     return;
+                case '/api/admin/ladder-odds':
+                    sendJson(res, 200, game.ladderOdds());
+                    return;
                 default:
                     sendError(res, 404, 'No such endpoint.');
                     return;
@@ -354,12 +358,27 @@ function serveStatic(res: ServerResponse, root: string, path: string, headOnly: 
 // ENTRY POINT
 // ─────────────────────────────────────────────────────────────────────────
 
-export function startServer(): ReturnType<typeof createServer> {
+export async function startServer(): Promise<ReturnType<typeof createServer>> {
     const db = useSingleUserDatabase(process.env.RPG_MCP_DB_PATH);
     const config = resolveRuntimeProviderConfig();
     const { narrator, status } = buildNarrator(config);
 
-    const game = new GameService({ db, narrator, adminMode: readAdminMode() });
+    // The world is built once, here, because seeding loads the content
+    // catalogs asynchronously and every path downstream of it is synchronous.
+    // It is installed as the process world so the MCP tool surface reaches the
+    // same one: two front doors onto one save must not be two worlds.
+    let world: WorldSession | null = null;
+    try {
+        world = await createWorldSession();
+        setWorldSession(world);
+    } catch (err) {
+        // A world that failed to seed is a degraded deployment, not a dead one:
+        // the cultivation engine, the narrator and every endpoint still work,
+        // and the only thing missing is that the world does not move.
+        console.error('[web] world seeding failed; the world will not advance:', err);
+    }
+
+    const game = new GameService({ db, narrator, world, adminMode: readAdminMode() });
     const app = createApp({ game, provider: status, version: readVersion() });
 
     const port = Number(process.env.PORT) || DEFAULT_PORT;
@@ -370,6 +389,10 @@ export function startServer(): ReturnType<typeof createServer> {
         console.error(`[web] cultivation engine listening on http://${host}:${port}`);
         console.error(`[web] narrator: ${narrator.kind}` + (status.configured ? ` (${status.name} / ${status.model})` : ' - no provider configured, the engine narrates itself'));
         console.error(`[web] admin mode: ${game.adminMode ? 'on' : 'off'}`);
+        console.error(world
+            ? `[web] world: ${world.stats.npcs} people, ${world.stats.factions} factions, ` +
+              `${world.stats.locations} places, day ${world.day}. In memory only until world.repo lands.`
+            : '[web] world: none. Time passes for the cultivator and for nobody else.');
     });
 
     const shutdown = (signal: string) => {
@@ -388,4 +411,9 @@ export function startServer(): ReturnType<typeof createServer> {
 // bind a port.
 const invokedDirectly = process.argv[1] !== undefined
     && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (invokedDirectly) startServer();
+if (invokedDirectly) {
+    startServer().catch(err => {
+        console.error('[web] failed to start:', err);
+        process.exit(1);
+    });
+}

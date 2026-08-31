@@ -11,8 +11,8 @@ import {
     InjurySchema,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
-    STAGNATION_YEARS,
     STARVATION_TURNS,
+    stagnationYearsForOrdinal,
     type Cultivator
 } from '../../../src/schema/cultivation.js';
 import {
@@ -59,6 +59,12 @@ function sealed(overrides: Partial<TimeSkipContext> = {}): TimeSkipContext {
 function secluded(overrides: Partial<Cultivator> = {}): Cultivator {
     return makeCultivator({ spiritRoot: 'single_fire', realmOrdinal: 20, ...overrides });
 }
+
+/**
+ * Plateau allowance at ordinal 20. Scaled off Core Formation's own 500-year
+ * lifespan rather than the mortal-scale floor, so this is not STAGNATION_YEARS.
+ */
+const SECLUDED_STAGNATION = stagnationYearsForOrdinal(20);
 
 describe('determinism', () => {
     it('produces a byte-identical result for the same seed and input', () => {
@@ -275,7 +281,7 @@ describe('survival during a skip', () => {
         // cultivator by advancing them - which is precisely the situation
         // STAGNATION_YEARS exists to end.
         const result = simulateTimeSkip(
-            secluded({ age: 60, yearsAtCurrentRealm: STAGNATION_YEARS - 10 }),
+            secluded({ age: 60, yearsAtCurrentRealm: SECLUDED_STAGNATION - 10 }),
             100 * DAYS_PER_YEAR,
             sealed()
         );
@@ -626,12 +632,12 @@ describe('endState', () => {
 
     it('matches the stagnation threshold exactly when stagnation kills', () => {
         const result = simulateTimeSkip(
-            secluded({ age: 60, yearsAtCurrentRealm: STAGNATION_YEARS - 10 }),
+            secluded({ age: 60, yearsAtCurrentRealm: SECLUDED_STAGNATION - 10 }),
             100 * DAYS_PER_YEAR,
             sealed()
         );
         expect(result.deathCause).toBe('stagnation_aging');
-        expect(result.endState.yearsAtCurrentRealm).toBeCloseTo(STAGNATION_YEARS, 4);
+        expect(result.endState.yearsAtCurrentRealm).toBeCloseTo(SECLUDED_STAGNATION, 4);
     });
 });
 

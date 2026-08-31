@@ -24,6 +24,23 @@
  * restart cannot silently produce a DIFFERENT world, because the same two
  * numbers cannot produce one.
  *
+ * ── OVERLAP TO RESOLVE: `src/web/world.ts` ────────────────────────────────
+ *
+ * The narrator layer grew a `WorldSession` doing the same join for the web
+ * surface while this was being written, and the two should become one. They are
+ * not interchangeable as they stand, and the difference is worth keeping on the
+ * way in:
+ *
+ *   `web/world.ts`  one session for the process, seeded from a default seed.
+ *                   Right for a single narrator serving one player.
+ *   this module      one world per RUN, seeded from `runs.seed`, rebuilt from
+ *                   `(seed, elapsed_days)` on a cold start. Right for a tool
+ *                   surface, where two runs must not share a world and the
+ *                   process may restart between calls.
+ *
+ * Whichever survives has to keep the run-seeding and the rebuild. Merging the
+ * other way silently gives every run the same world.
+ *
  * ── THE AUTHORITY BOUNDARY ────────────────────────────────────────────────
  *
  * Nothing here accepts an outcome. Callers pass a span in days and the identity

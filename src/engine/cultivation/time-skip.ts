@@ -58,7 +58,7 @@ import {
     LETHAL_UNTREATED_INJURIES,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
-    STAGNATION_YEARS,
+    stagnationYearsForOrdinal,
     type AmbientQi,
     type Cultivator,
     type DeathCause,
@@ -617,7 +617,7 @@ export function simulateTimeSkip(
                   )
                 : Infinity,
             lifespanDays: daysUntilYear(lifespanForOrdinal(ordinal), rawAge()),
-            stagnationDays: daysUntilYear(STAGNATION_YEARS, rawYearsAtRealm()),
+            stagnationDays: daysUntilYear(stagnationYearsForOrdinal(ordinal), rawYearsAtRealm()),
             starvationDays:
                 grainAbstinence || rations > 0
                     ? Infinity

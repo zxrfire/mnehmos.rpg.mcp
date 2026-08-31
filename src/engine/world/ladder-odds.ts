@@ -51,7 +51,7 @@ import {
 } from '../cultivation/realms.js';
 import { attemptBreakthrough, canAttemptBreakthrough } from '../cultivation/breakthrough.js';
 import { rollAttributes, rollSpiritRoot } from '../cultivation/spirit-roots.js';
-import { STAGNATION_YEARS, type AmbientQi, type Injury } from '../../schema/cultivation.js';
+import { stagnationYearsForOrdinal, type AmbientQi, type Injury } from '../../schema/cultivation.js';
 import type { WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -318,7 +318,7 @@ export function measureLadderReach(seed: string, opts: SweepOptions = {}): Sweep
 
             // Settling and lifespan are the two clocks that end most lives, and
             // they end them before the ladder does.
-            if (yearsAtRealm + yearsNeeded >= STAGNATION_YEARS) {
+            if (yearsAtRealm + yearsNeeded >= stagnationYearsForOrdinal(ordinal)) {
                 outcome = 'settling';
                 break;
             }

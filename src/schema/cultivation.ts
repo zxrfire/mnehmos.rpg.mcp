@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { MAX_ORDINAL } from '../engine/cultivation/realms.js';
+import { MAX_ORDINAL, lifespanForOrdinal } from '../engine/cultivation/realms.js';
 import { TraditionIdSchema } from '../engine/cultivation/tradition.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -27,8 +27,73 @@ export const SATIETY_COST_PER_ACTION = 2;
 export const STARVATION_TURNS = 5;
 /** Untreated meridian injuries at which forcing another fight becomes fatal. */
 export const LETHAL_UNTREATED_INJURIES = 3;
-/** Years at the same realm before death by aging. */
+/**
+ * Floor on the years a cultivator may plateau before settling kills them.
+ *
+ * The mortal-scale figure, and the only one that applies through Qi
+ * Condensation and Foundation Establishment - where 84% of runs end, and where
+ * this cruelty is correct and load-bearing.
+ */
 export const STAGNATION_YEARS = 50;
+
+/**
+ * Fraction of a realm's own lifespan that plateau is permitted to consume.
+ *
+ * 0.20 - a fifth of the span the realm grants, and bounded above by a hard
+ * constraint: Foundation Establishment must stay at exactly the STAGNATION_YEARS
+ * floor, which caps the fraction at 50/200 = 0.25. Going higher would relax the
+ * early game, where 84% of runs end and the cruelty is load-bearing.
+ *
+ * Within that ceiling, 0.20 was measured rather than guessed. At 0.15 the
+ * Void Refinement boundary (ordinal 32) missed by 6% - a razor edge that any
+ * later tuning would flip - while 0.20 clears it with margin and still leaves
+ * headroom below the 0.25 cap. The allowance stays a real pressure throughout:
+ * a Nascent Soul cultivator must still cross within 200 of their 1000 years.
+ */
+export const STAGNATION_LIFESPAN_FRACTION = 0.2;
+
+/**
+ * Years at the same rank before death by aging, for a cultivator at `ordinal`.
+ *
+ * ── Why this scales ──────────────────────────────────────────────────────
+ *
+ * Settling was written as a mortal-scale pressure, and as a flat 50 years it
+ * was exactly right at Qi Condensation, where a cultivator has 100 years to
+ * spend. It was incoherent everywhere above that: the realm grants 500 years,
+ * or 1000, and then a constant with no relationship to that lifespan kills
+ * them long before they have used it.
+ *
+ * Worse, it was not a difficulty curve but a WALL. Rank cost grows at
+ * 1.35^ordinal while the allowance stayed flat, so past roughly ordinal 17 a
+ * single rank cost more years of accumulation than settling permitted - and
+ * nothing whatsoever could rescue it. Not insights, not pills, not dense qi,
+ * not sect backing, not an inheritance. A seeded sweep through the real
+ * `attemptBreakthrough` measured the chance of ever reaching Nascent Soul at
+ * 0.00% in thin, normal AND dense qi, with 84-92% of all runs ending in
+ * settling. The upper two thirds of the ladder were decorative, which quietly
+ * contradicted a setting whose ancient sects and dormant ancestors have to
+ * have come from somewhere.
+ *
+ * So the allowance is now proportional to the timescale the realm itself
+ * grants, with STAGNATION_YEARS as a floor that leaves the early game exactly
+ * as it was:
+ *
+ *   Qi Condensation    100y lifespan  ->   50y   (floor; unchanged)
+ *   Foundation         200y           ->   50y   (floor; unchanged)
+ *   Core Formation     500y           ->  100y
+ *   Nascent Soul      1000y           ->  200y
+ *   Deity             2000y           ->  400y
+ *   Void Refinement   5000y           -> 1000y
+ *
+ * This is deliberately NOT a relaxation of the early game, which is where the
+ * overwhelming majority of runs end and should keep ending.
+ */
+export function stagnationYearsForOrdinal(ordinal: number): number {
+    return Math.max(
+        STAGNATION_YEARS,
+        lifespanForOrdinal(ordinal) * STAGNATION_LIFESPAN_FRACTION
+    );
+}
 /** Spirit stones every cultivator starts with. */
 export const STARTING_SPIRIT_STONES = 30;
 /** HP fraction below which continuing to fight without medicine is flagged suicidal. */

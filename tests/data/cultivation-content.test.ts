@@ -639,6 +639,14 @@ describe('sects', () => {
                 expect(s.signatureTechniqueId, `${s.id} needs no signature art`).toBeNull();
                 continue;
             }
+            if (s.id === 'sect-hollow-court') {
+                // The one recruiter with no curriculum. It admits at Void
+                // Refinement, so everyone arriving is already formed, and what
+                // it offers is the vein and the company rather than a manual.
+                expect(s.teaches.length, 'the Court has no curriculum').toBe(0);
+                expect(s.signatureTechniqueId).toBeNull();
+                continue;
+            }
             expect(s.teaches.length, `${s.id} teaches nothing`).toBeGreaterThan(0);
             for (const id of s.teaches) {
                 const technique = getTechnique(id);
@@ -943,9 +951,14 @@ describe('the Late Age: provenance and the exploration loop', () => {
             expect(sect!.alignment, `${id} alignment`).toBe(alignment);
             expect(sect!.description.length).toBeGreaterThan(120);
         }
-        // The two that famously do not take applicants.
-        expect(getSect('sect-hollow-court')!.recruits).toBe(false);
+        // The one that famously takes no applicants at all.
         expect(getSect('sect-kiln-wardens')!.recruits).toBe(false);
+        // The Court does recruit, and the bar is the point: Void Refinement,
+        // with evidence the last realm is reachable. Nothing below that door
+        // exists, which is why it reads to the province as not recruiting.
+        const court = getSect('sect-hollow-court')!;
+        expect(court.recruits).toBe(true);
+        expect(court.admissionOrdinal).toBe(29);
         // And they are excluded from anything a player could join.
         const joinable = findAdmissibleSects(44);
         expect(joinable.neutral).not.toContain('sect-kiln-wardens');

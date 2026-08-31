@@ -800,8 +800,36 @@ function addWorldColumns(db: Database.Database): void {
     const columnsOf = (table: string): string[] =>
         (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map(c => c.name);
 
-    // No post-release columns yet. The helper stays because the first one
-    // always arrives at an inconvenient moment, and adding the scaffolding then
-    // is how a migration gets written in a hurry and gets it wrong.
-    void columnsOf;
+    // Found by auditing WorldState against these tables rather than trusting
+    // that the migration matched. All three are fields the engine already
+    // writes and reads that had no column behind them, so every load would
+    // have quietly rebuilt them empty and the loss would have surfaced as a
+    // gameplay bug - an NPC with no history, a world whose population target
+    // resets to zero - a long way from here.
+
+    // How many living NPCs the world drifts back toward. Without it a reloaded
+    // world stops replacing its dead, the roster empties over a few centuries,
+    // and the simulation reports a collapse that is an artefact of the save.
+    const runtimeColumns = columnsOf('world_runtime');
+    if (!runtimeColumns.includes('population_target')) {
+        console.error('[Migration] Adding population_target column to world_runtime table');
+        db.exec('ALTER TABLE world_runtime ADD COLUMN population_target INTEGER NOT NULL DEFAULT 0;');
+    }
+
+    // The trajectory and what the person carries. Both are id lists into
+    // world_chronicle and world_memories, and both are on NpcRecord and on
+    // ActorWorldState. JSON arrays rather than join tables: they are read
+    // whole, with the record, and never queried from the far end - the far-end
+    // queries already have world_chronicle_actors and world_memory_actors.
+    for (const table of ['world_npcs', 'world_actors']) {
+        const columns = columnsOf(table);
+        if (!columns.includes('history_fact_ids')) {
+            console.error(`[Migration] Adding history_fact_ids column to ${table} table`);
+            db.exec(`ALTER TABLE ${table} ADD COLUMN history_fact_ids TEXT NOT NULL DEFAULT '[]';`);
+        }
+        if (!columns.includes('memory_ids')) {
+            console.error(`[Migration] Adding memory_ids column to ${table} table`);
+            db.exec(`ALTER TABLE ${table} ADD COLUMN memory_ids TEXT NOT NULL DEFAULT '[]';`);
+        }
+    }
 }

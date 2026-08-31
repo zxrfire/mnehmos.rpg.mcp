@@ -314,7 +314,7 @@ describe('interact', () => {
         expect(planned(result).action).toBe('interact');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/nobody this cultivator has heard of/i);
+        expect(refusal.summary).toMatch(/Unresolved party/);  // inspector, not prose
     });
 
     it('reports real facts about a real party, and refuses to resolve the outcome', async () => {
@@ -368,7 +368,7 @@ describe('investigate', () => {
         const result = await game.act('I examine the Sword of Infinite Nonsense.');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/will not describe what the player has no knowledge of/i);
+        expect(refusal.summary).toMatch(/Unresolved subject/);  // inspector, not prose
     });
 
     it('costs a turn and nothing else', async () => {
@@ -429,7 +429,7 @@ describe('gather and refine', () => {
         expect(planned(result).action).toBe('refine');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/In the pouch: nothing/);
+        expect(refusal.summary).toMatch(/Pouch: empty/);  // inspector, not prose
     });
 
     it('routes a real formula through alchemy_manage rather than reimplementing it', async () => {
@@ -455,7 +455,7 @@ describe('train_technique', () => {
         expect(planned(result).action).toBe('train_technique');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/never been taught|Name an art/);
+        expect(refusal.summary).toMatch(/Unresolved or unlearned technique/);  // inspector, not prose
     });
 
     it('routes a known art through technique_manage.practise', async () => {

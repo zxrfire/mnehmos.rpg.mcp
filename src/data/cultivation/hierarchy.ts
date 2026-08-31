@@ -22,10 +22,21 @@
  *                 claim is worth exactly as much as the last time it was
  *                 tested, and beliefs decay. This is the Standing Grove.
  *
+ *   unassailable  holds the ground outright, answers to nobody, and pays
+ *                 nothing to anyone. Not a lease, not a claim, and not a
+ *                 belief that could decay: the occupants are individually
+ *                 stronger than anything that could be sent, everyone has
+ *                 done the arithmetic, and nobody raises it. This is the
+ *                 Hollow Court, and it is the only faction in the world that
+ *                 sits on the vein it sits on because nothing can move it.
+ *
  *   unbacked      holds no vein from anyone, answers to nobody, and pays for
- *                 it continuously. Each survivor has ONE specific reason it
- *                 has not been absorbed, and for most of them the reason is
- *                 that it has not been worth the trouble yet.
+ *                 it continuously - which is the whole difference from the
+ *                 model above. Each survivor has ONE specific reason it has
+ *                 not been absorbed, and for most of them the reason is that
+ *                 it has not been worth the trouble yet. An unbacked sect is
+ *                 tolerated. An unassailable one is not being tolerated by
+ *                 anybody; the question does not arise.
  *
  * The felt difference is the deliverable. Under a federated power there is a
  * local sect to belong to and somebody nearby to petition. Under direct rule
@@ -106,6 +117,7 @@ export const GovernanceModelSchema = z.enum([
     'federated',
     'administered',
     'deference',
+    'unassailable',
     'unbacked',
     'outside'
 ]);
@@ -771,18 +783,18 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     },
     'sect-hollow-court': {
         factionId: 'sect-hollow-court',
-        governance: 'unbacked',
+        governance: 'unassailable',
         relation: 'unaffiliated',
         parentFactionId: null,
-        holds: 'Four mountains, held by the simple fact that removing them from them is not worth what it would cost.',
+        holds: 'The richest vein anyone has ever surveyed, and the four mountains standing on it. Not granted, not leased, not claimed - occupied, by people nothing in the world can make leave.',
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
         costOfIndependence:
-            'None that they can be made to feel. They produce nobody, want nothing, and cannot be leveraged, which is precisely why the arrangement holds.',
-        unbackedReason: 'holding_something',
+            'Nothing. This is the entry that makes the column mean something: every other independent faction in the catalog pays for its independence continuously, and the Court pays nothing, because there is no instrument by which a bill could be presented.',
+        unbackedReason: null,
         independenceStance: 'indifferent',
-        note: 'The only faction in the province the Deep Survey has ever written to. The letter was answered, once, and the Court has not discussed it.'
+        note: 'The Deep Survey has written to the Court once. The letter was answered and the Court has not discussed it, and the province has spent two hundred years deciding what that means. Both institutions know the thing nobody says aloud: the Survey administers the vein system, and the one vein it does not administer is the best one.'
     },
 
     // ── outside the vein stack entirely: the Dao houses ───────────────

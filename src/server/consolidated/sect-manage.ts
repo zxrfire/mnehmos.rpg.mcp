@@ -631,15 +631,37 @@ export const SectManageTool = {
             twice in a row pays nothing the second time.
 - standing  rank, contribution, exactly what the next rank costs
 
+POLITICS - the half of a sect that is not a stipend:
+- prospect  would joining put anything NEW within reach. Access is a hard filter on comprehension:
+            a road with nothing behind it is absent rather than difficult, and effort does not
+            widen the set. This is what a house is mechanically selling.
+- patronage who backs this house, on what terms, and what independence costs the ones nobody
+            backs. seekGuestElder seats a cultivator STRONGER than the house as a guest: no rank,
+            no contribution, and they may walk out during a siege with nothing to point at.
+- verify_claim  buy a certification of a faction's claimed living ancestor. Sold to the claimant
+            or to a rival and PUBLISHED EITHER WAY, so the house learns somebody paid to check.
+- denounce  say it in public. It lands if and only if a certification is already in hand; without
+            one the house does not have to answer and will not, and it remembers the name.
+- petition  send a request upward. It travels as far as somebody is willing AND ABLE to pass it,
+            which is usually not far - most houses do not know what is above their own patron.
+            Reaching a tier is one of the few legitimate ways a new name enters a run.
+- wake      the thing under the mountain: where it lies, what would wake it, what waking costs.
+            Hidden ones stay hidden from outsiders. No caller may assert the condition is met.
+- above     what stands above this house, AS FAR AS THIS CULTIVATOR CAN NAME IT. Beyond that
+            you get what is noticed with nobody's name on it. Do not narrate past the last name.
+
 Actions: ${ACTIONS.join(', ')}
-Aliases: enrol/apply->join, quit/defect->leave, pay/draw->stipend, membership->standing`,
+Aliases: enrol/apply->join, quit/defect->leave, pay/draw->stipend, membership->standing,
+certify->verify_claim, accuse->denounce, hierarchy->above, backing->patronage`,
     actionSchemas: router.actionSchemas,
     inputSchema: z.object({
         action: z.string().describe(`Action: ${ACTIONS.join(', ')}`),
         cultivatorId: z.string().optional(),
         sectId: z.string().optional(),
         alignment: z.enum(['righteous', 'neutral', 'demonic']).optional(),
-        admissibleOnly: z.boolean().optional()
+        admissibleOnly: z.boolean().optional(),
+        seekGuestElder: z.boolean().optional(),
+        matter: z.string().optional()
     })
 };
 
