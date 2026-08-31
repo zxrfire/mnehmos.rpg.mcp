@@ -208,8 +208,10 @@ describe('the whole path, through act', () => {
             expect(overheard.length).toBeGreaterThan(0);
             expect(learnCall.summary).toMatch(/overheard/i);
             // The facts say a word was said and withhold everything else.
+            // Either channel's wording is fine; what is asserted is that the
+            // player is left unable to place it and is told nothing more.
             const facts = result.narration;
-            expect(facts).toMatch(/does not know what that is/i);
+            expect(facts).toMatch(/no idea what (?:either of those was|that was)|do not know what that is/i);
             return;
         }
         throw new Error('no seed produced an overheard fragment in 25 attempts');

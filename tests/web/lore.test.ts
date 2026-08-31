@@ -44,7 +44,9 @@ import {
     type Mentionable
 } from '../../src/web/lore';
 import {
+    REACH_NAME_CHANCE,
     SPOKEN_NAME_CHANCE,
+    hearingProse,
     offerHearing,
     recordHearing,
     speakableFor,
@@ -551,12 +553,23 @@ describe('asking is a real act with a real payoff', () => {
         }
     });
 
-    it('makes the confident guesser the most productive person to ask', async () => {
+    it('makes the confident guesser the most productive person to ask', () => {
         // asking.md: "He may guess, confidently and wrongly." Somebody filling
         // a gap fills it with proper nouns, which makes the least reliable
         // person in the room the best source of names in the game.
-        expect(await rateFor('guesses')).toBeGreaterThan(await rateFor('answers'));
-        expect(await rateFor('answers')).toBeGreaterThan(await rateFor('deflects'));
+        //
+        // Asserted on the table rather than on sampled rates: 0.9 and 0.85 are
+        // deliberately close, so a 200-draw sample orders them wrongly about as
+        // often as not, and a ranking that is a coin flip is not a test.
+        expect(REACH_NAME_CHANCE.guesses).toBeGreaterThan(REACH_NAME_CHANCE.answers);
+        expect(REACH_NAME_CHANCE.answers).toBeGreaterThan(REACH_NAME_CHANCE.partial);
+        expect(REACH_NAME_CHANCE.partial).toBeGreaterThan(REACH_NAME_CHANCE.deflects);
+        expect(REACH_NAME_CHANCE.deflects).toBeGreaterThan(REACH_NAME_CHANCE.blank);
+    });
+
+    it('orders the two extremes apart far enough to sample', async () => {
+        // The ranking that is not close, and therefore is worth measuring.
+        expect(await rateFor('guesses')).toBeGreaterThan(await rateFor('deflects') + 0.2);
     });
 
     it('still lets a refusal mention one thing on the way out', async () => {
@@ -703,5 +716,73 @@ describe('listening on purpose', () => {
                 repos, gate, cultivator, run, occasion: `la-${i}`, intent: 'listening'
             })).toBeNull();
         }
+    });
+});
+
+
+/**
+ * The deterministic path has to deliver the fragment as something heard.
+ *
+ * The version this replaces described the device instead of performing it:
+ * "A fragment came over the wall from two people who did not know they were
+ * heard, and it contained: X, Y. This cultivator does not know what that is,
+ * cannot ask without revealing where they were standing." Three failures at
+ * once - it narrates the mechanism rather than the moment, it calls the player
+ * "this cultivator", and it explains the epistemics the player is supposed to
+ * feel.
+ */
+describe('what the player actually reads', () => {
+    const overheard = {
+        mode: 'overheard' as const,
+        speaker: null,
+        names: [
+            { kind: 'sect' as const, id: 'a', name: 'The Third Sill' },
+            { kind: 'place' as const, id: 'b', name: 'Kettle' }
+        ],
+        note: 'n',
+        confidence: 0.2,
+        sourceKind: 'overheard' as const
+    };
+
+    it('performs the exchange instead of describing it', () => {
+        const prose = hearingProse(overheard);
+        expect(prose).toContain('The Third Sill');
+        expect(prose).toContain('Kettle');
+        expect(prose).not.toMatch(/a fragment|it contained/i);
+    });
+
+    it('never calls the player "this cultivator"', () => {
+        expect(hearingProse(overheard)).not.toMatch(/this cultivator/i);
+        expect(hearingProse({ ...overheard, mode: 'told', speaker: 'The Carter' }))
+            .not.toMatch(/this cultivator/i);
+    });
+
+    it('does not explain the epistemics it wants the player to feel', () => {
+        const prose = hearingProse(overheard);
+        expect(prose).not.toMatch(/where (?:they|you) (?:were|had been) standing/i);
+        expect(prose).not.toMatch(/cannot ask|no way to place/i);
+        // What it does say is the honest state: they have a word and nothing else.
+        expect(prose).toMatch(/no idea what/i);
+    });
+
+    it('asserts no relationship the engine has not established', () => {
+        // discovery.md's example implies an event between the two names. The
+        // engine has established none, so inventing one here would be the
+        // deterministic narrator making up a fact.
+        const prose = hearingProse(overheard);
+        expect(prose).not.toMatch(/already been|sent another|because of|owes|answered to/i);
+    });
+
+    it('says a told name in the register the doc asks for', () => {
+        const prose = hearingProse({ ...overheard, mode: 'told', speaker: 'The Carter', names: [overheard.names[0]] });
+        expect(prose).toContain('The Carter');
+        expect(prose).toMatch(/the way you would say a weekday/i);
+        expect(prose).toMatch(/does not occur to them/i);
+    });
+
+    it('handles a single overheard name as well as a pair', () => {
+        const one = hearingProse({ ...overheard, names: [overheard.names[0]] });
+        expect(one).toContain('The Third Sill');
+        expect(one).toMatch(/no idea what that was/i);
     });
 });

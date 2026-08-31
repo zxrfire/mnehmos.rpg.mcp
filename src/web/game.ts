@@ -99,6 +99,7 @@ import {
 import { KnowledgeGate, placeKey, type AwarenessRow } from './knowledge.js';
 import { askedAbout } from './asked.js';
 import {
+    hearingProse,
     offerHearing,
     othersPresent,
     recordHearing,
@@ -106,6 +107,7 @@ import {
     type Hearing,
     type HearingIntent
 } from './hearsay.js';
+import { observableHere, observedLine } from './practices.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { advanceWorldForCultivator, worldForRun } from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
@@ -911,6 +913,13 @@ export class GameService {
 
             case 'wait': {
                 const waiting = await this.shortSkip(run, cultivator, ambient, WAITING_FOCUS, 'Waiting');
+                const noticedWaiting = this.notice(cultivator, run, 'wait');
+                if (noticedWaiting) {
+                    waiting.facts.lines.push(noticedWaiting);
+                    waiting.facts.prose = `${waiting.facts.prose}
+
+${noticedWaiting}`;
+                }
                 const heard = this.hear(cultivator, run, 'wait', null, { intent: 'listening' });
                 if (heard) {
                     waiting.hearing = heard;
@@ -985,6 +994,13 @@ export class GameService {
                 // Two people talking on the far side of a wall, who were having
                 // the conversation anyway. Nothing here is staged for the
                 // player, which is exactly why it is worth anything.
+                const noticed = this.notice(cultivator, run, 'look');
+                if (noticed) {
+                    looking.facts.lines.push(noticed);
+                    looking.facts.prose = `${looking.facts.prose}
+
+${noticed}`;
+                }
                 const heard = this.hear(cultivator, run, 'look', null);
                 if (heard) {
                     looking.hearing = heard;
@@ -2665,6 +2681,24 @@ export class GameService {
         return learned.length > 0 ? { ...offered, names: learned } : null;
     }
 
+    /**
+     * One thing worth noticing about the people here.
+     *
+     * A practice names nothing, so unlike a name it is safe in the narrator's
+     * own voice - it is the "show the world, never explain it" half of the
+     * doctrine rather than the discovery half. `practices.ts` holds the one
+     * narrow gate that does apply.
+     */
+    private notice(cultivator: Cultivator, run: Run, occasion: string): string | null {
+        const seen = observableHere({
+            present: this.present(cultivator),
+            gate: this.knowledge,
+            holderId: cultivator.id,
+            rng: forStream(run.seed, 'web_practice', Math.floor(run.elapsedDays), occasion, cultivator.id)
+        });
+        return seen ? observedLine(seen) : null;
+    }
+
     /** Everything this cultivator has heard of. The narrator's whitelist. */
     private awarenessOf(cultivator: Cultivator): AwarenessRow[] {
         return this.knowledge.awareness(cultivator.id);
@@ -3153,13 +3187,7 @@ ${fact}`;
  * sentence after the design took it out.
  */
 function hearingFact(hearing: Hearing): string {
-    const names = hearing.names.map(n => n.name).join(', ');
-    return hearing.mode === 'overheard'
-        ? `A fragment came over the wall from two people who did not know they were heard, ` +
-          `and it contained: ${names}. This cultivator does not know what that is, cannot ask ` +
-          'without revealing where they were standing, and has no way to place it.'
-        : `${hearing.speaker ?? 'Somebody'} said ${names} in passing, as though it needed no ` +
-          'explaining. This cultivator does not know what that is and was not told.';
+    return hearingProse(hearing);
 }
 
 export interface WorldReport {
