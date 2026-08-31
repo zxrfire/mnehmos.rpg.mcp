@@ -82,6 +82,7 @@ import {
     type KnowledgeScope
 } from './entities.js';
 import { KnowledgeGate, type AwarenessRow } from './knowledge.js';
+import { offerHearing, othersPresent, recordHearing, type Hearing } from './hearsay.js';
 import {
     factsForBreakthrough,
     factsForEat,
@@ -241,6 +242,14 @@ interface Execution {
     outcome: 'executed' | 'refused';
     /** Every engine call this action made, in the order it made them. */
     calls: ToolCallRecord[];
+    /**
+     * A name somebody said in this scene, decided and recorded by the engine.
+     *
+     * Carried on the execution rather than fetched during narration so that the
+     * knowledge record is written in phase 2, where writes belong, and phase 3
+     * only ever receives a licence to mention what is already true.
+     */
+    hearing?: Hearing | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -426,7 +435,12 @@ export class GameService {
         const scene = {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
-            awareness: this.awarenessOf(after.cultivator)
+            awareness: this.awarenessOf(after.cultivator),
+            hearing: execution.hearing ?? null,
+            // Asking turns on what was said, so the words reach phase 3. They
+            // are shown to the narrator and never read back: no key matching,
+            // no phrase table, no engine surface. The judgement is narration.
+            playerSaid: trimmed
         };
 
         // ── phase 3 ──
@@ -609,8 +623,27 @@ export class GameService {
                 ));
             }
 
-            case 'look':
-                return this.freeAction(run, 'look', factsForLook(cultivator, ambient));
+            case 'look': {
+                const looking = this.freeAction(run, 'look', factsForLook(cultivator, ambient));
+                // Two people talking on the far side of a wall, who were having
+                // the conversation anyway. Nothing here is staged for the
+                // player, which is exactly why it is worth anything.
+                const heard = this.hear(cultivator, run, 'look', null);
+                if (heard) {
+                    looking.hearing = heard;
+                    addHearing(looking.facts, heard);
+                    looking.calls.push({
+                        name: 'knowledge.learn',
+                        action: 'name_overheard',
+                        summary:
+                            `"${heard.names[0].name}" was overheard from people who did not know they ` +
+                            'were heard. Recorded at the lowest stance, source overheard: acting on it ' +
+                            'would reveal where this cultivator was standing.',
+                        ok: true
+                    });
+                }
+                return looking;
+            }
         }
     }
 
@@ -813,16 +846,24 @@ export class GameService {
             cultivator, run, party, 'witnessed', `Approached at ${placeName(cultivator)}.`
         );
 
+        // They may say something they assume the player already knows. The
+        // engine picks it and writes it down; the narrator only gets a licence
+        // to have them say it.
+        const spoken = party.kind === 'cultivator'
+            ? this.hear(cultivator, run, `interact:${party.id}`, party.id)
+            : null;
+
         const unresolved =
             'The engine can say who they are and what stands between you; it cannot yet say what ' +
             'came of the approach. Resolving that needs the social layer (relationships, grudges, ' +
             'obligations, what each side knows) and the capability predicates. Until those land, ' +
             'nothing was agreed and no state changed.';
 
-        const execution = this.freeAction(
-            run, 'interact',
-            factsForInteraction(cultivator, party.name, intent, party.facts, unresolved)
-        );
+        const facts = factsForInteraction(cultivator, party.name, intent, party.facts, unresolved);
+        if (spoken) addHearing(facts, spoken);
+
+        const execution = this.freeAction(run, 'interact', facts);
+        execution.hearing = spoken;
         execution.outcome = 'refused';
         execution.calls = [
             {
@@ -832,6 +873,14 @@ export class GameService {
                 ok: true
             },
             ...structureCalls(party.structure),
+            ...(spoken ? [{
+                name: 'knowledge.learn',
+                action: 'name_spoken',
+                summary:
+                    `${spoken.speaker ?? 'Somebody'} said "${spoken.names[0].name}" in passing. ` +
+                    'Recorded at the lowest stance, source told. The player has the word and nothing else.',
+                ok: true
+            }] : []),
             {
                 name: 'engine.resolveInteraction',
                 action: intent,
@@ -1400,6 +1449,38 @@ export class GameService {
         };
     }
 
+    /**
+     * Whether a name gets said in this scene, and the record for it if so.
+     *
+     * The write happens here, in phase 2. Phase 3 receives only a licence to
+     * mention something the database already holds, which keeps the dependency
+     * pointing the right way: prose can fail to use a name without the name
+     * failing to exist.
+     */
+    private hear(
+        cultivator: Cultivator,
+        run: Run,
+        occasion: string,
+        addressingId: string | null
+    ): Hearing | null {
+        const addressing = addressingId
+            ? othersPresent(this.repos, cultivator).find(row => row.id === addressingId) ?? null
+            : null;
+
+        const offered = offerHearing({
+            repos: this.repos,
+            gate: this.knowledge,
+            cultivator,
+            run,
+            addressing,
+            occasion
+        });
+        if (!offered) return null;
+
+        const learned = recordHearing(this.knowledge, cultivator, run, offered);
+        return learned.length > 0 ? { ...offered, names: learned } : null;
+    }
+
     /** Everything this cultivator has heard of. The narrator's whitelist. */
     private awarenessOf(cultivator: Cultivator): AwarenessRow[] {
         return this.knowledge.awareness(cultivator.id);
@@ -1680,6 +1761,40 @@ function localSect(): { id: string; name: string } | null {
             : best);
 
     return { id: chosen.id, name: chosen.name };
+}
+
+/**
+ * Put a hearing into both channels a player can reach it through.
+ *
+ * `lines` is the narrator's licence to have somebody say it. `prose` is the
+ * zero-provider rendering, and a name that only existed in the prompt would
+ * simply not happen for an operator running without a model - which would make
+ * the whole mechanism a paid feature.
+ */
+function addHearing(facts: EngineFacts, hearing: Hearing): void {
+    const fact = hearingFact(hearing);
+    facts.lines.push(fact);
+    facts.prose = `${facts.prose}
+
+${fact}`;
+}
+
+/**
+ * The fact of having heard a name, for the narrator's fact list.
+ *
+ * Says that a word was said and withholds everything else, because that is
+ * genuinely all the player has. What the thing is does not travel with the
+ * name, and stating it here would put the meaning in the narrator's hands one
+ * sentence after the design took it out.
+ */
+function hearingFact(hearing: Hearing): string {
+    const names = hearing.names.map(n => n.name).join(', ');
+    return hearing.mode === 'overheard'
+        ? `A fragment came over the wall from two people who did not know they were heard, ` +
+          `and it contained: ${names}. This cultivator does not know what that is, cannot ask ` +
+          'without revealing where they were standing, and has no way to place it.'
+        : `${hearing.speaker ?? 'Somebody'} said ${names} in passing, as though it needed no ` +
+          'explaining. This cultivator does not know what that is and was not told.';
 }
 
 /**

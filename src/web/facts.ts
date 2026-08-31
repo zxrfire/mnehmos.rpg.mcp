@@ -466,7 +466,7 @@ export function factsForLook(cultivator: Cultivator, ambient: AmbientQi): Engine
     const untreated = untreatedInjuryCount(cultivator.injuries);
 
     const prose = [
-        `${where}. ${describeAmbientInWorld(ambient)}`,
+        `${where}. ${describeAmbientPerceived(ambient)}`,
         `${cultivator.name}, ${rankName(cultivator.realmOrdinal)}, ${Math.floor(cultivator.age)} years old, ${cultivator.spiritStones} spirit stones to their name.` +
         (untreated > 0 ? ` ${untreated} meridian injur${untreated === 1 ? 'y' : 'ies'} still open.` : '')
     ].join('\n\n');

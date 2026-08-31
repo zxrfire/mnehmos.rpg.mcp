@@ -39,7 +39,7 @@ import { rankName, lifespanForOrdinal, progressRequiredForOrdinal } from '../eng
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { ACTION_NAMES, MAX_CULTIVATION_DAYS } from './actions.js';
-import { describeAmbientInWorld, placeName, type EngineFacts } from './facts.js';
+import { describeAmbientPerceived, placeName, type EngineFacts } from './facts.js';
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing, SpeakableName } from './hearsay.js';
 
@@ -460,6 +460,43 @@ there is no such job.
   exposition even when the player infers wrongly - a wrong model held confidently and then
   broken is worth more than a correct one handed over.
 
+ASKING. When the player goes looking for something, who they asked decides what they get,
+and you are the one reading it. This is judgement, not a mechanic: there is no roll, no
+stat, no unlock and no phrase the world is checking for.
+
+- Most people genuinely do not know. A carter asked about something above his stratum is
+  not being cagey - he has never needed the word. He may guess, confidently and wrongly,
+  because being asked is uncomfortable and having an answer is not.
+- Someone better placed usually knows and does not say. A shrug, a change of subject, an
+  answer general enough to contain nothing.
+- Someone with reason to talk - a master, a debtor, someone who wants something - gives a
+  real answer, bounded by what they know, what they are allowed to say, and what it costs
+  them to say it. Three different limits, and all three apply. A refusal on the second is
+  not unwillingness and must not read as one.
+
+Ignorance and evasion should be hard to tell apart at first and easy later. Do not signpost
+which one you have just written, and do not write them identically either. The player
+learning to tell them apart over many scenes is the whole texture.
+
+What the player SAYS matters more than what they are. The exact words are given above.
+Naming someone, using a term correctly, making it clear they have business rather than
+curiosity, mentioning an obligation, or simply knowing enough to ask the narrower question
+- any of those can change what a person is willing to say, and the person reassesses what
+they are talking to BEFORE they answer. A Qi Condensation cultivator who asks well gets
+further than a Core Formation one who does not. Getting it wrong cuts the other way: a term
+used by somebody who does not understand it, to somebody who does, tells them exactly what
+they are dealing with - usually a person repeating what they overheard, which is worse than
+knowing nothing.
+
+Two things you must never do here:
+- A DEFLECTION MUST NOT LEAK THE ANSWER. Nothing in how somebody declines may reveal what
+  they declined to say. No hint dressed as a refusal, no "you would not want to know what
+  they do to people who ask", no detail smuggled into the change of subject. That is the
+  same failure as narrating a fact you were not given.
+- YOU DO NOT DECIDE THAT ANYTHING WAS AGREED. Somebody talking more freely is not a deal,
+  a debt, a membership, an item, or a change of standing. Those are state, and state comes
+  from the engine. Write the conversation; do not write its consequences.
+
 OPERATIONAL - this is not negotiable.
 
 The split is fixed. The DATABASE owns hard state: the date, where the cultivator is, their
@@ -594,6 +631,8 @@ export function composeNarrationUser(
         awareness?: readonly AwarenessRow[];
         /** Names the engine has decided a present character says this scene. */
         hearing?: Hearing | null;
+        /** The player's literal words. Shown, never parsed for an outcome. */
+        playerSaid?: string | null;
     }
 ): string {
     const nameable = nameableNames(scene.awareness ?? []);
@@ -603,6 +642,7 @@ export function composeNarrationUser(
         'SCENE',
         `Place: ${scene.place}`,
         describeAmbientPerceived(scene.ambient),
+        ...(scene.playerSaid ? ['', `THE PLAYER SAID, WORD FOR WORD: ${scene.playerSaid}`] : []),
         '',
         ...spokenBlock(hearing),
         // The whitelist, stated positively. A model follows "these are the only
