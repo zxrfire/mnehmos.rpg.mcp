@@ -155,7 +155,7 @@ describe('the wiring', () => {
 
             // End the life; the world keeps going.
             const repos = ensureCultivationDb();
-            repos.runs.endRun(first.run.id, 'old_age', 'Lived it out.');
+            repos.runs.endRun(first.run.id, 'lifespan_exhausted', 'Lived it out.');
 
             const second = await newRun(null, 'Wen Shu');
             const worlds = listWorlds();
