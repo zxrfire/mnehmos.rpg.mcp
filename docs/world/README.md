@@ -97,3 +97,4 @@ ladder", "the catalog". `MAX_ORDINAL` in `src/engine/cultivation/realms.ts` is t
 authority on the ladder's bounds; the catalogs are the authority on their own size.
 
 - [discovery.md](discovery.md) - how the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of.
+- [asking.md](asking.md) - who you ask and what you say; genuine ignorance versus deflection, the right words, and why the player rather than the character is what improves across runs.
