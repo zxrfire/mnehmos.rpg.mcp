@@ -1,11 +1,20 @@
+/**
+ * The character record.
+ *
+ * What this is now: the identity row for NPCs the agent runtime drives, the
+ * social layer overhears and the perception subsystem meters. It is NOT the
+ * player's sheet - a cultivator lives in `schema/cultivation.ts` and is the
+ * only thing the game proper advances, injures or kills.
+ *
+ * The spellcasting block (slots, prepared spells, save DC, attack bonus,
+ * concentration) and the legendary-action block were removed with the D&D magic
+ * and combat engines they existed to feed. Nothing reads them any more, and
+ * leaving them in the schema kept putting spell slots in front of a narrator
+ * whose world has techniques and a qi pool instead.
+ */
+
 import { z } from 'zod';
 import { CharacterTypeSchema } from './party.js';
-import {
-    SubclassSchema,
-    SpellSlotsSchema,
-    PactMagicSlotsSchema,
-    SpellcastingAbilitySchema
-} from './spell.js';
 
 export const SkillProficiencySchema = z.enum([
     'acrobatics', 'animal_handling', 'arcana', 'athletics', 'deception',
@@ -69,23 +78,10 @@ export const CharacterSchema = z.object({
     stealthBonus: z.number().int().optional().default(0)
         .describe('Proficiency bonus for Stealth checks (DEX-based)'),
 
-    // Spellcasting fields (CRIT-002/006)
-    // Flexible character class - allows any string (standard D&D classes or custom like "Chronomancer")
-    characterClass: z.string().optional().default('fighter'),
+    // Free-form descriptive labels. No mechanics hang off either of them.
+    characterClass: z.string().optional().default('commoner'),
     race: z.string().optional().default('Human')
-        .describe('Character race - any string allowed (Human, Elf, Dragonborn, Mousefolk...)'),
-    subclass: SubclassSchema.optional(),
-    spellSlots: SpellSlotsSchema.optional(),
-    pactMagicSlots: PactMagicSlotsSchema.optional(), // Warlock only
-    knownSpells: z.array(z.string()).optional().default([]),
-    preparedSpells: z.array(z.string()).optional().default([]),
-    cantripsKnown: z.array(z.string()).optional().default([]),
-    maxSpellLevel: z.number().int().min(0).max(9).optional().default(0),
-    spellcastingAbility: SpellcastingAbilitySchema.optional(),
-    spellSaveDC: z.number().int().optional(),
-    spellAttackBonus: z.number().int().optional(),
-    concentratingOn: z.string().nullable().optional().default(null),
-    activeSpells: z.array(z.string()).optional().default([]),
+        .describe('Descriptive kind - any string allowed'),
     conditions: z.array(z.object({
         name: z.string().describe('Condition name (e.g., Poisoned, Frightened)'),
         duration: z.number().int().optional().describe('Duration in rounds'),
@@ -100,19 +96,9 @@ export const CharacterSchema = z.object({
     currentRoomId: z.string().uuid().optional()
         .describe('ID of the room the character is currently in'),
 
-    // HIGH-007: Legendary creature fields
-    legendaryActions: z.number().int().min(0).optional()
-        .describe('Total legendary actions per round (usually 3)'),
-    legendaryActionsRemaining: z.number().int().min(0).optional()
-        .describe('Remaining legendary actions this round'),
-    legendaryResistances: z.number().int().min(0).optional()
-        .describe('Total legendary resistances per day (usually 3)'),
-    legendaryResistancesRemaining: z.number().int().min(0).optional()
-        .describe('Remaining legendary resistances'),
-    hasLairActions: z.boolean().optional().default(false)
-        .describe('Whether this creature can use lair actions on initiative 20'),
-
-    // HIGH-002: Damage modifiers
+    // Damage modifiers, kept as plain labels. Nothing in this repository
+    // resolves damage against a character row any more; cultivation combat
+    // resolves against a cultivator.
     resistances: z.array(z.string()).optional().default([])
         .describe('Damage types that deal half damage (e.g., ["fire", "cold"])'),
     vulnerabilities: z.array(z.string()).optional().default([])

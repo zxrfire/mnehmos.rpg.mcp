@@ -17,6 +17,7 @@
  *   foundation.ts    why two cultivators at the same ordinal diverge
  *   existence.ts     what happens when "body destroyed = dead" stops holding
  *   understanding.ts the third quantity: what a cultivator comprehends
+ *   dao.ts           what a cultivator turns out to have been doing
  *   deviation.ts     cultivation going wrong inside the body
  *   toll.ts          the price of advancement, charged at every realm boundary
  *   breakthrough.ts  the centrepiece; the only routine way a run ends well
@@ -31,6 +32,7 @@ export * from './ambient.js';
 export * from './foundation.js';
 export * from './existence.js';
 export * from './understanding.js';
+export * from './dao.js';
 export * from './cultivation.js';
 export * from './injuries.js';
 export * from './deviation.js';

@@ -93,6 +93,7 @@ import {
     VISION_CHECK_DAYS,
     VISION_KINDS,
     discoverableInsights,
+    formInsight,
     formVision,
     integrateInsight,
     meditativeStateChance,
@@ -100,6 +101,13 @@ import {
     visionChance,
     type DiscoveryContext
 } from './understanding.js';
+import {
+    AFFINITY_INITIAL_DEGREE,
+    affinityFor,
+    daoOf,
+    isRecognition,
+    pickNarrowed
+} from './dao.js';
 import { resolveDeviation, rollDeviation } from './deviation.js';
 import { createInjury, untreatedInjuryCount } from './injuries.js';
 import { burnSatiety, eat, evaluateDeathConditions, turnsUntilStarvation } from './survival.js';
@@ -408,7 +416,14 @@ export function simulateTimeSkip(
         push('achievement', summary, false, { kind, achievementId: achievement.id });
 
         if (candidates.length === 0) return;
-        const candidate = rng.pick(candidates);
+        // A road already walked bends which of these arrives, and a latent
+        // affinity bends it further - but only among candidates ACCESS has
+        // already put in reach. Consumes exactly one sample, same as a uniform
+        // pick, so nothing downstream shifts.
+        const candidate = pickNarrowed(rng, candidates, daoOf(insights), {
+            runSeed: ctx.seed,
+            cultivatorId: cultivator.id
+        });
         const integrated = integrateInsight(insights, candidate, achievement);
         insights = integrated.insights;
         insightsGained.push(integrated.insight);
@@ -422,7 +437,9 @@ export function simulateTimeSkip(
                 domain: integrated.insight.domain,
                 subject: integrated.insight.subject,
                 degree: integrated.insight.degree,
-                deepened: integrated.deepened
+                deepened: integrated.deepened,
+                accessKind: candidate.access.kind,
+                accessLabel: candidate.access.label
             }
         );
     };
@@ -804,6 +821,73 @@ export function simulateTimeSkip(
         // particular, which is most of them. This grid can never award
         // anything for time served: every term in the chance is a fact about
         // where they are, what they are practising, or how well they read.
+        // ── Recognition. Not a roll: a fact arriving. ──
+        //
+        // The first time something a cultivator was ALWAYS going to be
+        // extraordinary at comes within reach, it is simply obvious to them.
+        // Nothing warned them, because nothing knew - the affinity was rolled
+        // at creation and has never been readable by anything. Access was the
+        // only missing piece, and most cultivators die never having stood in a
+        // room where their own Dao was being practised.
+        if (!interrupted && onGrid(newAbsDay, INSIGHT_CHECK_DAYS)) {
+            const reachable = discoverableInsights(cultivator, {
+                ...(ctx.understanding ?? {}),
+                survived: null
+            });
+            for (const candidate of reachable) {
+                const held = insights.some(
+                    i => i.domain === candidate.domain && i.subject === candidate.subject
+                );
+                if (held) continue;
+                if (!isRecognition(affinityFor(ctx.seed, cultivator.id, candidate))) continue;
+
+                const rng = forStream(
+                    ctx.seed, 'understanding', newAbsDay, `recognition:${candidate.subject}`
+                );
+                const achievement = recordAchievement(
+                    {
+                        kind: 'recognition',
+                        onDay: newAbsDay,
+                        turn: turn + Math.floor(elapsed),
+                        summary:
+                            `Saw ${candidate.subject} at close range for the first time, and it was ` +
+                            'obvious. Comprehension arrived at a speed nothing in their experience ' +
+                            'prepared them for. To anyone watching, they simply went quiet.',
+                        detail: { subject: candidate.subject, access: candidate.access.kind }
+                    },
+                    rng
+                );
+                achievements.push(achievement);
+                push('achievement', achievement.summary, false, {
+                    kind: 'recognition',
+                    achievementId: achievement.id
+                });
+
+                const insight = formInsight(
+                    candidate,
+                    AFFINITY_INITIAL_DEGREE.extraordinary,
+                    achievement
+                );
+                insights = [...insights, insight];
+                insightsGained.push(insight);
+                push(
+                    'insight_gained',
+                    `Understanding: ${insight.subject} comprehended - ${candidate.opening}.`,
+                    false,
+                    {
+                        insightId: insight.id,
+                        domain: insight.domain,
+                        subject: insight.subject,
+                        degree: insight.degree,
+                        deepened: false,
+                        recognition: true,
+                        accessKind: candidate.access.kind,
+                        accessLabel: candidate.access.label
+                    }
+                );
+            }
+        }
+
         if (!interrupted && onGrid(newAbsDay, INSIGHT_CHECK_DAYS)) {
             const rng = forStream(ctx.seed, 'understanding', newAbsDay, 'meditation');
             const rootElements = getSpiritRoot(cultivator.spiritRoot).elements;

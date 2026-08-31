@@ -27,6 +27,8 @@ import type { Technique } from '../../schema/cultivation.js';
 import {
     DAYS_PER_YEAR,
     conflictsWithRoot,
+    daoGate,
+    daoOf,
     deriveSeed,
     deviationRisk,
     evaluateDeathConditions,
@@ -56,6 +58,15 @@ import {
 import { describeDeath } from '../../engine/cultivation/survival.js';
 
 const ACTIONS = ['list_available', 'learn', 'practise', 'use', 'forget'] as const;
+
+/**
+ * What an art is about, for the Dao gate. Content carries `subject` on some
+ * arts and not others, so this stays defensive rather than assuming a column.
+ */
+function techniqueSubject(technique: object): string | null {
+    const subject = (technique as { subject?: unknown }).subject;
+    return typeof subject === 'string' && subject.length > 0 ? subject : null;
+}
 type TechniqueAction = typeof ACTIONS[number];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -294,6 +305,27 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
                 currentOrdinal: cultivator.realmOrdinal
             }
         );
+    }
+
+    // The top grades are not gated by power. They are written for someone who
+    // has walked a road, which is why such manuals sit in ruins unread: the
+    // ordinal is met, the qi is there, and the meaning does not arrive.
+    const dao = daoOf(cultivator.insights ?? []);
+    const gate = daoGate(dao, {
+        grade: technique.grade,
+        element: technique.element,
+        subject: techniqueSubject(technique),
+        category: technique.category
+    });
+    if (!gate.permitted) {
+        return guidingError('dao_required', `${technique.name}: ${gate.detail}`, {
+            requiredStanding: gate.requiredStanding,
+            heldStanding: gate.heldStanding,
+            grade: technique.grade,
+            // What they hold, not what they lack. There is no advisory here
+            // about which road WOULD open it - that is theirs to find out.
+            dao: dao.name
+        });
     }
 
     const root = getSpiritRoot(cultivator.spiritRoot);

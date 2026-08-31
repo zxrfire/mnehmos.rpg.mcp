@@ -357,44 +357,122 @@ function relevanceFor(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// DISCOVERY
+// DISCOVERY, AND THE ACCESS THAT GATES IT
 //
-// What a given cultivator is even capable of comprehending. Computed from the
-// individual, never from a global list - this function IS the answer to "is
-// this a skill tree", and the answer is that two cultivators can walk out of
-// here with candidate sets that do not intersect at all.
+// You cannot comprehend what you have never been near.
+//
+// A Dao is not latent in a person waiting to be unlocked by effort. It needs
+// something to comprehend FROM: a teacher who holds it and is willing, a
+// manual the cultivator can actually read, a site or phenomenon or vein or
+// scar, an artifact that carries it, a tradition that practises it at all, or
+// an inheritance left by someone who had it.
+//
+// WITHOUT ACCESS, A DAO IS NOT HARDER. IT IS ABSENT. It never enters the
+// candidate set, so it can never be rolled, and the cultivator never learns it
+// was missing. This is a hard filter, not a modifier on the odds - which is
+// the difference between a road not taken and a road that was never there.
+//
+// The structural enforcement mirrors insight provenance one level down: an
+// InsightCandidate REQUIRES an AccessSource, so a candidate with nothing
+// behind it cannot be constructed. Every source is built from real state the
+// caller supplies - a sect membership, a manual on the shelf that this person
+// can actually read, a tag on the ground they are standing on. The engine
+// holds no map and no library.
+//
+// This is where most lives are actually decided. A cultivator in a thin
+// province with no sect, no library and no living teacher has a genuinely
+// narrow set, and EFFORT DOES NOT WIDEN IT: there is no term below that time
+// or diligence can move. They can work two hundred years and remain unable to
+// reach what a mediocre inner disciple got by walking into a room. It is also
+// why the Late Age bites - every lost manual and every dead teacher is a Dao
+// that has left the world, not merely a technique nobody can cast.
 // ─────────────────────────────────────────────────────────────────────────
 
-export interface DiscoveryContext {
-    /** Subjects the cultivator's practised arts are about, e.g. ['sword']. */
-    techniqueSubjects?: readonly string[];
-    /** Element of the art being practised. */
-    techniqueElement?: Element | null;
-    /**
-     * Tags on where the cultivator is standing. A forbidden river, an ancient
-     * battlefield, a formation nobody alive can read. Supplied by the caller
-     * from real world state; the engine holds no map.
-     */
-    locationTags?: readonly string[];
-    /** Something extraordinary happened, opening domains ordinary life does not. */
-    survived?: 'tribulation' | 'deviation' | 'near_death' | null;
-    /** An extraordinary teacher is present. */
-    instruction?: boolean;
+/** How a cultivator came to be near enough to comprehend something. */
+export type AccessKind =
+    | 'own_root'      // the shape of your own aperture. The one thing everyone has.
+    | 'teacher'       // someone who holds it, and is willing
+    | 'manual'        // a text this person can actually READ, not merely own
+    | 'site'          // a place, a vein, a scar, a phenomenon standing still
+    | 'phenomenon'    // a thing that happened in front of them
+    | 'artifact'      // an object that carries it
+    | 'tradition'     // a house that practises it, entered
+    | 'inheritance';  // left behind by someone who had it
+
+export interface AccessSource {
+    kind: AccessKind;
+    /** Id of the real row behind it, when there is one. */
+    id?: string | null;
+    /** Human-facing: "the Pavilion's inner library", "Elder Shu", "a forbidden river". */
+    label: string;
 }
 
 export interface InsightCandidate {
     domain: InsightDomain;
     subject: string;
-    /** Why this is even on the table for this cultivator. */
+    /**
+     * REQUIRED. What put this within reach. A candidate cannot be built
+     * without one, which is what makes "absent, not harder" structural rather
+     * than a rule someone has to remember.
+     */
+    access: AccessSource;
+    /** Why this is on the table, composed from the access source. */
     opening: string;
 }
 
+/** An art this cultivator can actually read, or a teacher's specialism. */
+export interface ExposureInput {
+    /** What it is about, e.g. 'sword', 'formation'. */
+    subject?: string | null;
+    /** Element it is about, if any. */
+    element?: Element | null;
+    /** Named in provenance: "the Ninefold Pavilion library". */
+    label: string;
+    id?: string | null;
+}
+
+export interface DiscoveryContext {
+    /**
+     * Manuals this person can ACTUALLY READ - a much smaller set than the
+     * manuals they own. An unreadable text grants nothing and is simply not
+     * listed here.
+     */
+    readableManuals?: readonly ExposureInput[];
+    /** Teachers who hold something and are willing to pass it on. */
+    teachers?: readonly ExposureInput[];
+    /** Artifacts carrying a comprehension. */
+    artifacts?: readonly ExposureInput[];
+    /** Inheritances opened. A sealed site can hold the last access to something. */
+    inheritances?: readonly ExposureInput[];
+    /**
+     * The principle of a Dao house the cultivator is INSIDE. Not secret
+     * because the words are hidden; inaccessible because standing where it can
+     * be comprehended requires being let in, and they decide who comes in.
+     */
+    tradition?: ExposureInput | null;
+    /**
+     * Tags on where the cultivator is standing. Supplied by the caller from
+     * real world state; the engine holds no map.
+     */
+    locationTags?: readonly string[];
+    /** Something extraordinary happened in front of them. */
+    survived?: 'tribulation' | 'deviation' | 'near_death' | null;
+
+    /**
+     * Convenience for the common case of an art being practised, which is
+     * access by way of a manual the cultivator can evidently read.
+     */
+    techniqueSubjects?: readonly string[];
+    techniqueElement?: Element | null;
+}
+
 /**
- * Candidate comprehensions, derived entirely from this cultivator's situation.
+ * Everything this cultivator is near enough to comprehend.
  *
- * Returns an empty list for a cultivator to whom nothing has happened and who
- * is doing nothing in particular, which is the ordinary case and the reason
- * most runs end with no insights at all.
+ * Every entry names the source that put it within reach. An empty-ish result
+ * is the ordinary case and the honest one: a hermit with no library, no
+ * teacher and nothing remarkable underfoot can reach their own root and
+ * nothing else, however long they sit.
  */
 export function discoverableInsights(
     cultivator: Pick<Cultivator, 'spiritRoot'>,
@@ -403,80 +481,109 @@ export function discoverableInsights(
     const root = getSpiritRoot(cultivator.spiritRoot);
     const candidates: InsightCandidate[] = [];
 
-    // Your own elements are always comprehensible to you, given the chance.
+    const add = (
+        domain: InsightDomain,
+        subject: string,
+        access: AccessSource,
+        opening: string
+    ): void => {
+        candidates.push({ domain, subject, access, opening });
+    };
+
+    // The one access everyone is born with: the shape of their own aperture.
+    // It is also the whole of what an isolated cultivator can reach.
     for (const element of root.elements) {
-        candidates.push({
-            domain: 'element',
-            subject: element,
-            opening: `${root.name} channels ${element}`
-        });
+        add('element', element, { kind: 'own_root', label: root.name },
+            `${root.name} channels ${element}`);
     }
 
-    // The element of an art actually being practised, even a foreign one.
-    if (ctx.techniqueElement && !root.elements.includes(ctx.techniqueElement)) {
-        candidates.push({
-            domain: 'element',
-            subject: ctx.techniqueElement,
-            opening: `practising a ${ctx.techniqueElement} art`
-        });
+    // Manuals that can actually be read, including whatever is being practised.
+    for (const manual of ctx.readableManuals ?? []) {
+        exposureCandidates(manual, 'manual', add);
     }
-
-    // Crafts follow from what is actually being practised, never from a menu.
     for (const subject of ctx.techniqueSubjects ?? []) {
-        candidates.push({
-            domain: domainForSubject(subject),
-            subject,
-            opening: `years of practice at ${subject}`
-        });
+        add(domainForSubject(subject), subject,
+            { kind: 'manual', label: `a text on ${subject}` },
+            `years of practice at ${subject}`);
+    }
+    if (ctx.techniqueElement && !root.elements.includes(ctx.techniqueElement)) {
+        add('element', ctx.techniqueElement,
+            { kind: 'manual', label: `a ${ctx.techniqueElement} art` },
+            `practising a ${ctx.techniqueElement} art`);
     }
 
-    // Places open things. A forbidden river teaches water; a battlefield where
-    // the craters are too regular teaches formations.
+    // A teacher who holds it and is willing. The scarcest source in the Late Age.
+    for (const teacher of ctx.teachers ?? []) {
+        exposureCandidates(teacher, 'teacher', add);
+    }
+    for (const artifact of ctx.artifacts ?? []) {
+        exposureCandidates(artifact, 'artifact', add);
+    }
+    for (const inheritance of ctx.inheritances ?? []) {
+        exposureCandidates(inheritance, 'inheritance', add);
+    }
+
+    // A house's principle, reachable only from inside the house.
+    if (ctx.tradition) {
+        exposureCandidates(ctx.tradition, 'tradition', add);
+    }
+
+    // Places. A forbidden river teaches water; a battlefield where the craters
+    // are too regular teaches formations.
     for (const tag of ctx.locationTags ?? []) {
         const opened = LOCATION_OPENINGS[tag];
         if (opened) {
-            candidates.push({ ...opened, opening: `the nature of this place (${tag})` });
+            add(opened.domain, opened.subject,
+                { kind: 'site', id: tag, label: describeSite(tag) },
+                `the nature of this place (${tag})`);
         }
     }
 
-    // Surviving something extraordinary opens what ordinary life does not.
+    // Something that happened in front of them. Access by having been there.
     if (ctx.survived === 'tribulation') {
-        candidates.push({
-            domain: 'life_death',
-            subject: 'mortality',
-            opening: 'stood under heavenly lightning and was still standing after'
-        });
-        candidates.push({
-            domain: 'void',
-            subject: 'the seam',
-            opening: 'saw the Lid discharge at close range'
-        });
+        const access: AccessSource = { kind: 'phenomenon', label: 'heavenly tribulation' };
+        add('life_death', 'mortality', access,
+            'stood under heavenly lightning and was still standing after');
+        add('void', 'the seam', access, 'saw the Lid discharge at close range');
     }
     if (ctx.survived === 'deviation') {
-        candidates.push({
-            domain: 'body',
-            subject: 'the meridians',
-            opening: 'felt the qi turn and came back from it'
-        });
+        add('body', 'the meridians', { kind: 'phenomenon', label: 'qi deviation' },
+            'felt the qi turn and came back from it');
     }
     if (ctx.survived === 'near_death') {
-        candidates.push({
-            domain: 'life_death',
-            subject: 'mortality',
-            opening: 'came close enough to see it'
-        });
-    }
-
-    if (ctx.instruction) {
-        candidates.push({
-            domain: 'karma',
-            subject: 'debt',
-            opening: 'was taught by someone who did not have to'
-        });
+        add('life_death', 'mortality', { kind: 'phenomenon', label: 'a near death' },
+            'came close enough to see it');
     }
 
     return dedupe(candidates);
 }
+
+/** Turn one exposure into whatever it puts within reach. */
+function exposureCandidates(
+    exposure: ExposureInput,
+    kind: AccessKind,
+    add: (domain: InsightDomain, subject: string, access: AccessSource, opening: string) => void
+): void {
+    const access: AccessSource = { kind, id: exposure.id ?? null, label: exposure.label };
+    const opening = ACCESS_PHRASES[kind](exposure.label);
+    if (exposure.subject) {
+        add(domainForSubject(exposure.subject), exposure.subject, access, opening);
+    }
+    if (exposure.element) {
+        add('element', exposure.element, access, opening);
+    }
+}
+
+const ACCESS_PHRASES: Record<AccessKind, (label: string) => string> = {
+    own_root: label => `${label} is what they were born with`,
+    teacher: label => `taught by ${label}`,
+    manual: label => `read in ${label}`,
+    site: label => `comprehended at ${label}`,
+    phenomenon: label => `witnessed ${label} at close range`,
+    artifact: label => `carried in ${label}`,
+    tradition: label => `standing inside ${label}`,
+    inheritance: label => `left behind in ${label}`
+};
 
 /** Location tags that open a comprehension. Extended by content, not by rank. */
 const LOCATION_OPENINGS: Record<string, { domain: InsightDomain; subject: string }> = {
@@ -491,6 +598,10 @@ const LOCATION_OPENINGS: Record<string, { domain: InsightDomain; subject: string
     sword_tomb: { domain: 'weapon', subject: 'sword' }
 };
 
+function describeSite(tag: string): string {
+    return tag.replace(/_/g, ' ');
+}
+
 const SUBJECT_DOMAINS: Record<string, InsightDomain> = {
     sword: 'weapon',
     spear: 'weapon',
@@ -499,7 +610,9 @@ const SUBJECT_DOMAINS: Record<string, InsightDomain> = {
     body: 'body',
     formation: 'formation',
     refinement: 'alchemy',
-    alchemy: 'alchemy'
+    alchemy: 'alchemy',
+    mortality: 'life_death',
+    debt: 'karma'
 };
 
 function domainForSubject(subject: string): InsightDomain {
@@ -516,6 +629,25 @@ function dedupe(candidates: InsightCandidate[]): InsightCandidate[] {
         out.push(candidate);
     }
     return out;
+}
+
+/**
+ * Whether a cultivator can reach a given comprehension at all.
+ *
+ * The predicate behind "absent, not harder". Exported so the sect, ruin and
+ * tool layers can answer "would joining this house put anything new within
+ * reach" without duplicating the derivation - which is, mechanically, the
+ * thing a sect is actually selling.
+ */
+export function hasAccessTo(
+    cultivator: Pick<Cultivator, 'spiritRoot'>,
+    target: { domain: InsightDomain; subject: string },
+    ctx: DiscoveryContext = {}
+): AccessSource | null {
+    const match = discoverableInsights(cultivator, ctx).find(
+        c => c.domain === target.domain && c.subject === target.subject
+    );
+    return match ? match.access : null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -572,7 +704,21 @@ export function formInsight(
         achievementKind: achievement.kind,
         onDay: achievement.onDay,
         deepenedBy: [],
-        account: `${achievement.summary} (${candidate.opening})`
+        // The access source is named, not just the event: "comprehended in the
+        // Pavilion's inner library" is provenance a reader can act on, where
+        // "comprehended" is not.
+        //
+        // Read defensively. `access` is required on InsightCandidate, which is
+        // the compile-time guarantee that generation cannot skip it, but this
+        // constructor is shared and a hand-built candidate from a test or an
+        // older call site should produce a slightly poorer account rather than
+        // throwing. The hard requirement here is the ACHIEVEMENT; access is
+        // the gate on which candidates exist at all, enforced upstream.
+        account:
+            `${achievement.summary} (${candidate.opening}` +
+            (candidate.access
+                ? `; access: ${candidate.access.kind} - ${candidate.access.label})`
+                : ')')
     };
     return {
         id: `insight:${achievement.id}:${candidate.domain}:${candidate.subject}`,
