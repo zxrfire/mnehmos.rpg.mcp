@@ -370,10 +370,11 @@ describe('GET /api/admin/roster', () => {
         expect(res.status).toBe(200);
         expect(res.body.roster).toHaveLength(1);
         expect(Object.keys(res.body.roster[0]).sort()).toEqual([
-            'age', 'alive', 'deathCause', 'feuds', 'id', 'isPlayer', 'kind',
-            'lifespanYears', 'location', 'name', 'rankName', 'realmName',
-            'realmOrdinal', 'sectId', 'sectName', 'sectRank', 'spiritRoot',
-            'spiritRootName', 'spiritStones', 'untreatedInjuries'
+            'age', 'alive', 'deathCause', 'existenceState', 'feuds', 'id',
+            'identityContinuity', 'isPlayer', 'kind', 'lifespanYears', 'location',
+            'name', 'rankName', 'realmName', 'realmOrdinal', 'sectId', 'sectName',
+            'sectRank', 'soulState', 'spiritRoot', 'spiritRootName', 'spiritStones',
+            'untreatedInjuries'
         ]);
         expect(res.body.roster[0]).toMatchObject({
             name: 'Xu Ling',
@@ -382,6 +383,15 @@ describe('GET /api/admin/roster', () => {
             rankName: 'Qi Condensation Layer 1',
             realmName: 'Qi Condensation',
             lifespanYears: 100
+        });
+        // Existence is authoritative and `alive` is the convenience boolean
+        // beside it. The roster is the one screen a player would ever meet an
+        // NPC who is missing or soul-preserved on, so these are carried rather
+        // than collapsed into the boolean.
+        expect(res.body.roster[0]).toMatchObject({
+            existenceState: 'alive',
+            soulState: 'intact',
+            identityContinuity: 1
         });
     });
 });

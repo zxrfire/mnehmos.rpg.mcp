@@ -92,8 +92,25 @@ export function migrateCultivation(db: Database.Database): void {
       feuds TEXT NOT NULL DEFAULT '[]',              -- JSON array of ids/names holding a grudge
       known_techniques TEXT NOT NULL DEFAULT '[]',   -- JSON array, denormalised mirror of cultivator_techniques
 
+      -- Understanding: the axis that is not accumulation. Both JSON arrays,
+      -- same convention as feuds / known_techniques. Insights are keyed by
+      -- (domain, subject) inside the array and are never queried
+      -- independently of their holder, so a table would buy nothing; an
+      -- achievement is an immutable record of an event and is read only as
+      -- part of the cultivator's own history.
+      insights TEXT NOT NULL DEFAULT '[]',
+      achievements TEXT NOT NULL DEFAULT '[]',
+
       -- Death is terminal. Once alive = 0 the row is a historical record.
       alive INTEGER NOT NULL DEFAULT 1,
+      -- existence_state is authoritative; the alive flag above is the
+      -- convenience boolean kept truthful beside it. A soul with no body is
+      -- not alive in any ordinary sense and is very much still playing, which
+      -- is exactly the case the boolean alone cannot express.
+      existence_state TEXT NOT NULL DEFAULT 'alive',
+      soul_state TEXT NOT NULL DEFAULT 'intact',
+      identity_continuity REAL NOT NULL DEFAULT 1,
+      body_id TEXT,
       death_cause TEXT,
       died_on_turn INTEGER,
 
@@ -402,6 +419,48 @@ function addCultivationColumns(db: Database.Database): void {
     if (!cultivatorColumns.includes('immortal_status')) {
         console.error('[Migration] Adding immortal_status column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN immortal_status TEXT NOT NULL DEFAULT 'none';");
+    }
+
+    // Understanding. Both default to an empty array rather than NULL, and no
+    // backfill is possible or wanted: an insight must name the achievement
+    // that produced it, so there is nothing honest to invent for a row written
+    // before the subsystem existed. Having comprehended nothing is the
+    // ordinary case anyway - most cultivators live and die that way.
+    if (!cultivatorColumns.includes('insights')) {
+        console.error('[Migration] Adding insights column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN insights TEXT NOT NULL DEFAULT '[]';");
+    }
+
+    if (!cultivatorColumns.includes('achievements')) {
+        console.error('[Migration] Adding achievements column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN achievements TEXT NOT NULL DEFAULT '[]';");
+    }
+
+    // Existence. These four were in CultivatorSchema before they were in the
+    // table, which meant every load silently reset them to their defaults and
+    // every save dropped them - a cultivator could be sealed or missing in
+    // memory and read back as an ordinary living person. The schema defaults
+    // are exactly right as column defaults: a row written before existence
+    // states existed IS an ordinary living person.
+    if (!cultivatorColumns.includes('existence_state')) {
+        console.error('[Migration] Adding existence_state column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN existence_state TEXT NOT NULL DEFAULT 'alive';");
+    }
+
+    if (!cultivatorColumns.includes('soul_state')) {
+        console.error('[Migration] Adding soul_state column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN soul_state TEXT NOT NULL DEFAULT 'intact';");
+    }
+
+    if (!cultivatorColumns.includes('identity_continuity')) {
+        console.error('[Migration] Adding identity_continuity column to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN identity_continuity REAL NOT NULL DEFAULT 1;');
+    }
+
+    // Nullable: the bodiless are a real state, not a missing value.
+    if (!cultivatorColumns.includes('body_id')) {
+        console.error('[Migration] Adding body_id column to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN body_id TEXT;');
     }
 
     const runColumns = (
