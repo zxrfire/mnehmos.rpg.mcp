@@ -1,2 +1,0 @@
-thin_county N 120000 veins 22 best 39 deepestDegree 5 >=41 0 =45 0 tail [0,0,0,9,0,2,3,0,0,0,0,0,0]
-great_house N 120000 veins 610 best 40 deepestDegree 5 >=41 0 =45 0 tail [0,0,0,87,0,53,130,23,0,0,0,0,0]
