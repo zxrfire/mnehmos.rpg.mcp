@@ -15,18 +15,33 @@ cultivation itself works there**, not what the local sects are called. A place w
 own method, its own way of measuring progress, or a path that simply does not exist
 elsewhere is unmistakable from the first paragraph.
 
-Options, in rough order of power:
+**One ladder, always.** This is a hard constraint, not a preference. There is a single
+realm ladder and `realmOrdinal` is universally authoritative. A region's fourth stage
+*is* Core Formation, whatever the locals call it, and the engine never carries a second
+progression system, a parallel scale, or a conversion table between ladders.
 
-- **A different method.** Somewhere that cultivates by something other than drawing
-  ambient qi - through carving, through beasts, through inherited debt, through cold,
-  through a substance the rest of the world regards as waste.
-- **A different measure.** A region that does not count the standard realms at all, and
-  whose people have to be *translated* into them by outsiders - with the translation
-  disputed.
-- **A path that exists nowhere else**, usually because the thing that permits it is local
-  and cannot be moved.
+What varies is the **vocabulary and the method**, not the rungs:
+
+- **A different method.** Somewhere that reaches the same ranks by something other than
+  drawing ambient qi - through carving, through beasts, through inherited debt, through
+  cold, through a substance the rest of the world regards as waste. Same ordinals,
+  different road.
+- **A different name for every rank**, and a local theory to go with it. Locals may deny
+  the equivalence outright - insisting their third stage is nothing like Core Formation -
+  and be wrong, or be pointing at something real that the standard vocabulary flattens.
+- **The translation is the content.** Outsiders map local ranks onto the ladder, the
+  mapping is contested, scholars disagree, and a confident mismatch gets people killed.
+  A visitor who reads a local title as one rank lower than it is has made an ordinary
+  and fatal mistake.
+- **A path that exists nowhere else**, because the thing permitting it is local and
+  cannot be moved. It still climbs the same ladder; it just has a door nobody else has.
 - **A missing path.** Somewhere an entire discipline is impossible - no formations work,
-  or nobody can body-temper, or alchemy will not hold.
+  or nobody can body-temper, or alchemy will not hold - so local cultivators reach the
+  same ranks lopsidedly, and are strange to fight.
+
+Mechanically all of this is expressed as **modifiers over the shared ordinals**: different
+rate curves, different deviation risks, different bottlenecks, different insight
+opportunities, different costs. Never a second ladder.
 
 ### One governing fact
 
