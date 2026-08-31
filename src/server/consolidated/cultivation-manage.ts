@@ -78,7 +78,6 @@ import {
     persistFoundation,
     persistToll,
     ranksGainedThisTurn,
-    readFoundation,
     readJsonFlag,
     recordRankGained,
     reconstructSkipInjuries,
@@ -733,7 +732,7 @@ export async function handleBreakthrough(
 
             // The rank and its price are one event, so they share one transaction.
             if (result.foundationEstablished) {
-                persistFoundation(repos.db, cultivator.id, result.foundationEstablished);
+                persistFoundation(repos, cultivator.id, result.foundationEstablished);
             }
             if (result.toll) {
                 persistToll(repos, run, cultivator.id, result.toll);
@@ -891,7 +890,7 @@ export async function handleStatus(args: z.infer<typeof StatusSchema>): Promise<
         knownTechniques: cultivator.knownTechniques.length,
         pouch: listPouch(repos.db, cultivator.id).length,
         pendingBreakthroughPill: pending,
-        foundation: readFoundation(repos.db, cultivator.id),
+        foundation: cultivator.foundationQuality,
         tollsPaid: listTolls(repos.db, cultivator.id).map(t => ({
             boundary: `${rankName(t.fromOrdinal)} -> ${rankName(t.toOrdinal)}`,
             outcome: t.outcome,

@@ -27,6 +27,7 @@ interface CultivatorRow {
     attributes: string;
     realm_ordinal: number;
     cultivation_progress: number;
+    foundation_quality: string;
     hp: number;
     max_hp: number;
     qi: number;
@@ -182,7 +183,7 @@ export class CultivatorRepository {
         this.insertStmt = db.prepare(`
             INSERT INTO cultivators (
                 id, run_id, name, kind, spirit_root, attributes,
-                realm_ordinal, cultivation_progress,
+                realm_ordinal, cultivation_progress, foundation_quality,
                 hp, max_hp, qi, max_qi, satiety, starvation_turns,
                 age, years_at_current_realm,
                 spirit_stones, sect_id, sect_rank, location, feuds, known_techniques,
@@ -190,7 +191,7 @@ export class CultivatorRepository {
                 created_at, updated_at
             ) VALUES (
                 @id, @runId, @name, @kind, @spiritRoot, @attributes,
-                @realmOrdinal, @cultivationProgress,
+                @realmOrdinal, @cultivationProgress, @foundationQuality,
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns,
                 @age, @yearsAtCurrentRealm,
                 @spiritStones, @sectId, @sectRank, @location, @feuds, @knownTechniques,
@@ -204,6 +205,7 @@ export class CultivatorRepository {
                 run_id = @runId, name = @name, kind = @kind,
                 spirit_root = @spiritRoot, attributes = @attributes,
                 realm_ordinal = @realmOrdinal, cultivation_progress = @cultivationProgress,
+                foundation_quality = @foundationQuality,
                 hp = @hp, max_hp = @maxHp, qi = @qi, max_qi = @maxQi,
                 satiety = @satiety, starvation_turns = @starvationTurns,
                 age = @age, years_at_current_realm = @yearsAtCurrentRealm,
@@ -428,10 +430,39 @@ export class CultivatorRepository {
     }
 
     /**
+     * Lay the foundation established at the 12 -> 13 crossing.
+     *
+     * Separate from `update` because a foundation is laid ONCE and is the thing
+     * every realm above it is built on. Refusing to overwrite an existing one
+     * here means no later write - a bulk update, a location change, a future
+     * caller that did not know - can quietly upgrade a cracked foundation into
+     * a flawless one. Returns null when the id is unknown or a foundation was
+     * already laid.
+     */
+    establishFoundation(id: string, quality: Cultivator['foundationQuality']): Cultivator | null {
+        const existing = this.getById(id);
+        if (!existing) return null;
+        this.assertMutable(existing);
+        if (existing.foundationQuality !== 'none') return null;
+
+        const valid = CultivatorSchema.parse({
+            ...existing,
+            foundationQuality: quality,
+            updatedAt: new Date().toISOString()
+        });
+        this.updateStmt.run(this.toParams(valid));
+        return valid;
+    }
+
+    /**
      * Move up the ladder. The repo owns only the bookkeeping — clamping to
      * MAX_ORDINAL, clearing accumulated progress, and restarting the
      * stagnation clock that kills cultivators who sit at one realm for fifty
      * years. Whether the breakthrough *succeeded* is the engine's call.
+     *
+     * `foundationQuality` is deliberately untouched: it is carried through by
+     * the spread, because the foundation survives every later advance and is
+     * never re-laid.
      */
     advanceRealm(id: string, ranks = 1): Cultivator | null {
         const existing = this.getById(id);
@@ -576,6 +607,7 @@ export class CultivatorRepository {
             attributes: JSON.stringify(c.attributes),
             realmOrdinal: c.realmOrdinal,
             cultivationProgress: c.cultivationProgress,
+            foundationQuality: c.foundationQuality,
             hp: c.hp,
             maxHp: c.maxHp,
             qi: c.qi,
@@ -626,6 +658,7 @@ export class CultivatorRepository {
             attributes: JSON.parse(row.attributes),
             realmOrdinal: row.realm_ordinal,
             cultivationProgress: row.cultivation_progress,
+            foundationQuality: row.foundation_quality,
             hp: row.hp,
             maxHp: row.max_hp,
             qi: row.qi,
