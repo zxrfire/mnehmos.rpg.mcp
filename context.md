@@ -1920,6 +1920,109 @@ in the world die inside Qi Condensation. Everything on this page describes a han
 people on a continent, most of whom the player will only ever hear about.
 
 
+## The Immortal World
+
+The Immortal Realm is not only a rank. It is a **place**, and reaching it moves you there.
+
+This is the one point where cultivation progression is also *geographic* progression. A
+True Immortal does not keep walking around their starting province as a stronger version of
+themselves; they go through the Lid, and what is on the other side is a different layer of
+the same world - not another planet, not another universe, and not a second game.
+
+### What it is like up there
+
+Not the same map with bigger numbers. A genuinely different environment:
+
+- qi at densities the lower world cannot produce, and has not held since before its history
+- natural law that behaves differently, and is not negotiable by anyone newly arrived
+- resources, materials and techniques with no equivalent below
+- native cultivators who were born there
+- civilisations, immortal sects and clans that are older than the lower world's records
+- environmental dangers calibrated for immortals, which is a phrase worth taking seriously
+- politics that has been running, uninterrupted, for a very long time
+
+### A newly ascended immortal is a nobody
+
+This is the important part and the reason the layer exists.
+
+Measured against the world they left, a newly ascended immortal is beyond comprehension -
+a being whose descent would reorganise a continent. Measured against the world they have
+arrived in, they are a newcomer with no lineage, no standing, no allies, and cultivation
+that is unremarkable.
+
+Both facts are true simultaneously, and the gap between them is the entire perspective
+shift. It also produces one of the best available payoffs: an immortal descends into the
+lower world and is an absolute monster there, and the player later discovers that this
+"invincible ancestor" is not considered exceptional at all where they come from.
+
+That gives the scaling shift without the universe having to become infinitely larger.
+
+### The lower world does not pause
+
+Both layers keep running. The mortal world continues its own history after an ascension -
+the sect grows or is destroyed, the disciple becomes an elder and then a corpse, a war
+starts, a new prodigy appears and dies young - none of it waiting for anyone.
+
+An ascended cultivator therefore does not leave a snapshot behind. They leave a world that
+will be substantially different whenever they next look at it.
+
+### It is not a hard reset
+
+The player has not entered Game World 2. History, karma, relationships, factions,
+artifacts, descendants, debts and consequences all cross the boundary. What changes is
+*access*, and access is restricted in both directions - the crossings described above are
+ruinous precisely so that the boundary means something.
+
+### Immortal lineages
+
+Sects and clans are counted by how many immortals they have produced, and the counting is
+the prestige:
+
+```text
+1 immortal            a supreme lineage
+2                     extraordinary
+3                     legendary
+4+ in succession      very nearly mythical
+```
+
+Track current immortals, historical immortals, the total produced, and consecutive
+generations producing one. Prestige should emerge from that history rather than from a
+hardcoded multiplier - a lineage with three immortals is formidable because of what those
+three did and left, not because a number says so.
+
+**Mortal sects can be branches of immortal lineages.** An ancient immortal clan above, a
+branch established below, a regional sect that descends from it. The branch may know this,
+may have forgotten it, or may be *claiming* it without proof - which is another thing the
+Dao houses sell verification of, and another thing worth killing to keep unexamined.
+
+A recognised branch can expect inheritance, protection and enormous political leverage. It
+can also expect to be used.
+
+### Characters cross the boundary
+
+People stay relevant through ascension in both directions. Someone important in the lower
+world may later ascend, be summoned upward, deliberately remain below, become a branch
+ancestor, die, or found a lineage. And an ancient immortal may descend and become
+important to a story that began long before anyone knew they existed.
+
+### Deliberately light
+
+**Immortal-era play is intentionally thin, and should stay that way.**
+
+It is the "you have beaten the game" state. There is lore up there, there are things to
+find out, and there is the quiet loop already described - send something down, hear back,
+get bored, step off the ladder. There should not be a second full progression system, a
+second economy, or a second survival layer. The weight of this game lives below the Lid,
+and the Immortal World's job is to give that weight somewhere to point.
+
+### Higher layers, later or never
+
+The architecture should permit `mortal world -> immortal world -> something further`
+without any of it existing now. **One mortal world plus one immortal world is sufficient.**
+Do not generate additional layers to increase scale; add one only if the world's own
+history ever produces a reason for it, and probably never.
+
+
 ## The Last Crossing: True Immortal and False Immortal
 
 Tribulation Transcendence is not the summit. It is the approach to it.

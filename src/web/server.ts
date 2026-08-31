@@ -12,7 +12,7 @@
  *
  * Errors never leak. Every handler failure becomes `{ error }` with a status,
  * and anything that is not a GameError becomes a flat 500 with a generic
- * sentence — the stack goes to stderr, where the operator can read it, and
+ * sentence - the stack goes to stderr, where the operator can read it, and
  * never to the browser.
  */
 
@@ -43,7 +43,7 @@ const MAX_BODY_BYTES = 64 * 1024;
 export interface ProviderStatus {
     name: string;
     model: string;
-    /** True when the provider was actually constructible — key present, or local. */
+    /** True when the provider was actually constructible - key present, or local. */
     configured: boolean;
 }
 
@@ -62,7 +62,7 @@ export function readAdminMode(env: NodeJS.ProcessEnv = process.env): boolean {
  * Note what is absent: any branch on which provider was selected. The name is
  * resolved by `resolveRuntimeProviderConfig`, the instance is built by
  * `ProviderFactory`, and this function only asks whether one came back. An
- * unconfigured or unreachable provider is not an error — it is the
+ * unconfigured or unreachable provider is not an error - it is the
  * deterministic path, which is a first-class way to play this game.
  */
 export function buildNarrator(
@@ -88,7 +88,7 @@ export function buildNarrator(
     };
 }
 
-/** Package version, for /api/health. Best effort — a missing file is not fatal. */
+/** Package version, for /api/health. Best effort - a missing file is not fatal. */
 export function readVersion(): string {
     try {
         const path = fileURLToPath(new URL('../../package.json', import.meta.url));
@@ -368,7 +368,7 @@ export function startServer(): ReturnType<typeof createServer> {
     const server = createServer(app);
     server.listen(port, host, () => {
         console.error(`[web] cultivation engine listening on http://${host}:${port}`);
-        console.error(`[web] narrator: ${narrator.kind}` + (status.configured ? ` (${status.name} / ${status.model})` : ' — no provider configured, the engine narrates itself'));
+        console.error(`[web] narrator: ${narrator.kind}` + (status.configured ? ` (${status.name} / ${status.model})` : ' - no provider configured, the engine narrates itself'));
         console.error(`[web] admin mode: ${game.adminMode ? 'on' : 'off'}`);
     });
 

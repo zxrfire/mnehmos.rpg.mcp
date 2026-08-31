@@ -1,11 +1,11 @@
 /**
- * The narrator — and the wall it stands behind.
+ * The narrator - and the wall it stands behind.
  *
  * A `Narrator` does exactly two things, and neither of them is deciding what
  * happens:
  *
  *   plan()     phase 1. Free text in, ONE verb from a closed enum out.
- *   narrate()  phase 3. Engine facts in, prose out — prose that is never read
+ *   narrate()  phase 3. Engine facts in, prose out - prose that is never read
  *              back by any code in this package.
  *
  * Between them sits phase 2, which lives in game.ts and touches no narrator at
@@ -20,9 +20,9 @@
  *                          zero configuration plays like, and the whole game is
  *                          reachable through it.
  *
- *   ProviderNarrator       wraps an LLMProvider. Every failure mode — no
+ *   ProviderNarrator       wraps an LLMProvider. Every failure mode - no
  *                          response, a timeout, prose instead of JSON, an
- *                          invented action name, an invented stat field —
+ *                          invented action name, an invented stat field -
  *                          degrades to the deterministic path rather than to an
  *                          error. A player whose Ollama container is not
  *                          running should notice worse writing, not a broken
@@ -164,7 +164,7 @@ export class ProviderNarrator implements Narrator {
         }
 
         // The gate. An unknown action name, a `days` of 1e9, a `realmOrdinal`
-        // field smuggled alongside — all of it either fails validation or is
+        // field smuggled alongside - all of it either fails validation or is
         // stripped, and either way what comes out the other side is a member of
         // the closed set with bounded arguments.
         const validated = validatePlan(raw);

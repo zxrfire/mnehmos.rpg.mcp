@@ -3,7 +3,7 @@
  *
  * These tests exercise the real node:http server over a real TCP socket. The
  * static GUI in `web/` is built by a different agent against exactly these
- * shapes, so a field renamed here is a broken product, not a failing unit —
+ * shapes, so a field renamed here is a broken product, not a failing unit -
  * which is why the assertions are on shape and key names rather than values.
  */
 
@@ -131,9 +131,9 @@ describe('GET /api/state', () => {
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(res.body.ambient);
 
         expect(Object.keys(res.body.derived).sort()).toEqual([
-            'breakthroughReady', 'foundationQuality', 'lifespanRemaining', 'nameTaken',
-            'nextRankName', 'progressRequired', 'rankName', 'realmName', 'sectName',
-            'untreatedInjuries'
+            'breakthroughBlockedReason', 'breakthroughReady', 'foundationQuality',
+            'lifespanRemaining', 'nameTaken', 'nextRankName', 'progressRequired',
+            'rankName', 'realmName', 'sectName', 'untreatedInjuries'
         ]);
         expect(res.body.derived).toMatchObject({
             rankName: 'Qi Condensation Layer 1',
@@ -144,6 +144,9 @@ describe('GET /api/state', () => {
             foundationQuality: 'none',
             nameTaken: false
         });
+        // The control states its own case rather than rendering a generic
+        // "progress incomplete".
+        expect(res.body.derived.breakthroughBlockedReason).toMatch(/qi-units/);
         expect(res.body.tolls).toEqual([]);
         expect(res.body.derived.lifespanRemaining).toBe(100 - 16);
 
@@ -309,7 +312,7 @@ describe('POST /api/act', () => {
             name: 'narrator.plan', action: 'look', source: 'fallback', ok: true
         });
         expect(res.body.toolCalls.at(-1).name).toBe('narrator.narrate');
-        expect(res.body.toolCalls.map((c: any) => c.name)).toContain('engine.readState');
+        expect(res.body.toolCalls.map((c: { name: string }) => c.name)).toContain('engine.readState');
     });
 
     it('rejects an empty or missing input', async () => {
