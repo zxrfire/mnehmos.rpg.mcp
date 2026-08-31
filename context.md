@@ -1,4 +1,4 @@
-# Context — What This Repository Is
+# Context - What This Repository Is
 
 ## Purpose
 
@@ -14,20 +14,20 @@ The design is an amalgamation drawn from across the genre - progression ladders,
 talent systems, survival pressures and tone are synthesised from many sources rather
 than modelled on any single one, and the setting, mechanics and text are original.
 
-The D&D *substrate* — dice, SQLite persistence, action-routed MCP tools, spatial grid,
-worldgen, NPC agent runtime — is sound engineering and is retained. What is replaced is
+The D&D *substrate* - dice, SQLite persistence, action-routed MCP tools, spatial grid,
+worldgen, NPC agent runtime - is sound engineering and is retained. What is replaced is
 the entire game-facing surface:
 
 | D&D concept | Cultivation replacement |
 |---|---|
-| Character level 1–20 | Realm ordinal 0–44 (45 ranks) |
+| Character level 1-20 | Realm ordinal 0-44 (45 ranks) |
 | Class | Spirit root (rolled once, permanent) |
 | Ability scores (STR/DEX/CON/INT/WIS/CHA) | Innate attributes: Might, Insight, Fortune, Charm |
 | Spells / spell slots | Techniques (arts) / qi pool |
 | Gold, silver, copper | Spirit stones |
 | XP | Cultivation progress |
 | Long rest | Seclusion / meditation |
-| Death saves, revival | **Permanent death** — no reload, run is over |
+| Death saves, revival | **Permanent death** - no reload, run is over |
 
 ## The Central Design Rule
 
@@ -57,7 +57,7 @@ world-state mutations · probability calculations · event resolution.
 All of the above are handled by deterministic game systems. The agent must never
 *claim* an outcome occurred without the corresponding engine state change having
 actually happened. If the engine says the breakthrough failed and three meridians tore,
-the agent's job is to describe that — not to soften it.
+the agent's job is to describe that - not to soften it.
 
 ## Runtime Agent Architecture
 
@@ -104,7 +104,7 @@ Constraints this must satisfy:
   Claude to Ollama without changing or resetting the world.
 - **Game state, MCP tools, simulation engine and persistence are identical** across
   providers. Only prose style differs.
-- Claude is integrated through the Claude API / agent interface — the engine does not
+- Claude is integrated through the Claude API / agent interface - the engine does not
   assume a human is manually operating Claude Code.
 
 ## High-Level Tool Contract
@@ -131,7 +131,7 @@ advances time, resolves scheduled and stochastic events, and invokes the agent o
 where a meaningful decision or a narratable event occurs.
 
 The player must be able to return after those ten years and receive a coherent account
-of what happened — so the time-skip produces an **event digest**, not just a new date.
+of what happened - so the time-skip produces an **event digest**, not just a new date.
 
 ## NPC Simulation Policy
 
@@ -166,7 +166,7 @@ The distinction that makes this safe:
   Transcender while the player sits at Qi Condensation Layer 2 is a content gate being
   lifted: the engine genuinely creates that site, writes it to SQLite, and hands it back.
   The agent narrates something that actually exists.
-- There is **no** action anywhere — admin or otherwise — that lets the agent declare an
+- There is **no** action anywhere - admin or otherwise - that lets the agent declare an
   outcome without a corresponding state change. That option must never be added, because
   it is precisely the affordance that invites hallucination.
 
@@ -397,10 +397,10 @@ design decision that serves one at the total expense of another is usually wrong
 
 | Pillar | The question it answers |
 |---|---|
-| **Cost** | What cultivation does to a *person* — what it takes out of them to climb |
-| **Scale** | What cultivation does to the *universe* — how the world keeps getting bigger |
-| **Survival** | What it *feels like* to live inside it day to day — logistics, scarcity, fear |
-| **Strategy** | Why people behave *strategically* inside it — incentives, schemes, preparation |
+| **Cost** | What cultivation does to a *person* - what it takes out of them to climb |
+| **Scale** | What cultivation does to the *universe* - how the world keeps getting bigger |
+| **Survival** | What it *feels like* to live inside it day to day - logistics, scarcity, fear |
+| **Strategy** | Why people behave *strategically* inside it - incentives, schemes, preparation |
 | **Attachment** | Why relationships stay load-bearing despite all of the above |
 
 Cost and Survival are already expressed in the Toll, the injury ratchet, satiety,
@@ -417,12 +417,24 @@ The single most important structural property, and the one easiest to get backwa
 
 > **The world does not become larger. The player's access to it becomes deeper.**
 
-This is **one planet**. There is no space travel, no other planets, no interplanetary
-civilisation, no universe-hopping as a normal mode of progression. The planet is
-nevertheless enormous, and its depth comes from geography, ancient history, hidden
-regions, powerful factions, lethal environments, secret realms, sealed domains, portals,
-ancient formations, lost civilisations, powerful individuals, and — above all —
-information the player does not have.
+The simulation begins on **one enormous planet**, and that is an implementation and
+complexity constraint rather than a hard limit on what reality contains. It holds multiple
+continents, enormous oceans, isolated civilisations, thousands of sects and clans, vast
+wilderness, forbidden regions, ancient ruins, hidden peoples, secret realms, spatial
+anomalies and unexplored territory. A player should be able to spend an entire cultivation
+career on it and never run out of world.
+
+**Do not predefine an escalating cosmology.** There is no authored ladder of
+planet → galaxy → universe. Whether anything exists beyond this world is *unknown*, not
+settled - and it is discovered, if ever, through events: a portal beneath a ruin, a
+catastrophe that turns the planet hostile, the remnants of something that plainly came
+from elsewhere. A higher realm grants greater capability; it never teleports anyone into a
+larger world.
+
+Its depth comes from geography, ancient history, hidden regions, powerful factions, lethal
+environments, secret realms, sealed domains, portals, ancient formations, lost
+civilisations, powerful individuals, and - above all - information the player does not
+have.
 
 Progression does not move the character to a bigger map. It changes what they can
 perceive and survive on the map that was always there:
@@ -450,6 +462,78 @@ What the player should feel, repeatedly:
 And then, still: *"the people I knew before still matter."* The protagonist does not
 become the centre of reality. They become one of the people capable of shaping it.
 
+### Expansion is earned by events, never granted by rank
+
+If the world ever grows beyond the planet, it grows because something happened:
+
+- **A spatial discovery.** A portal beneath a ruin. It might lead to another region of the
+  same planet, a sealed realm, an ancient battlefield, the ruins of an extinct people, or
+  somewhere genuinely else - and **nobody knows which until they investigate**. Portals can
+  be stable, unstable, one-way, lethal, politically controlled, or destroyed.
+- **A planetary catastrophe.** Continents fracture, oceans move, spiritual energy
+  collapses, a planet-scale formation fails, an ancient thing wakes, a war ends a
+  civilisation. Survivors may migrate, settle elsewhere, follow an older civilisation's
+  route out, or stay and try to live in what is left. If this happens it is a **major
+  historical transition**, not a routine advancement.
+- **Contact.** Another cultivation civilisation, an unrelated human one, a non-human one,
+  the remnants of an old inter-world empire, or people who have never heard of this planet.
+
+### Scale is not power
+
+Discovering somewhere new must never imply that everyone there is stronger. A civilisation
+found elsewhere might be weaker, stronger, declining, prosperous, isolated, hostile,
+spiritually different, structurally different, or unaware that cultivation exists at all.
+The player finds out; they are never handed a power ranking.
+
+### Nothing gets discarded
+
+If the player ever leaves, the place they came from is **not** a tutorial world that stops
+mattering. Their family is there. Their enemies are there. Their descendants, their
+faction, their reputation and their history are there - and it keeps changing in their
+absence, so returning after a long time means returning somewhere different.
+
+Avoid this failure mode entirely:
+
+```text
+new world found -> old characters irrelevant -> old factions irrelevant
+  -> new world holds stronger NPCs -> repeat
+```
+
+The correct shape adds without deleting:
+
+```text
+new world found + the old world remains + old relationships remain
+  + old history remains + new opportunities appear
+```
+
+This is the same rule as characters persisting after they are surpassed, applied to
+places.
+
+### None of this is a required ladder
+
+```text
+village -> city -> sect -> region -> continent -> planet -> elsewhere
+```
+
+is a range of possibilities, **not** a progression everyone walks. Most cultivators remain
+regional their whole lives. One player might be caught up in a planetary catastrophe;
+another might fall through an inter-world portal by accident while looting a ruin; another
+might farm spirit herbs in one valley for two centuries and die there. The simulation
+follows circumstance, not a script.
+
+### Implementation: simulate what matters, generate the rest on contact
+
+The lore may be enormous; the running state must not be. Keep detailed state only for
+**currently relevant locations, discovered locations, important NPCs, known factions,
+important historical events, discovered worlds, active portals, and persistent player
+relationships.**
+
+Everything else stays abstract until something makes it real, at which point it is
+generated and *then* persisted - so it is stable and consistent forever after, but cost
+nothing until someone looked. This is what lets the universe be effectively unbounded while
+the simulation stays small.
+
+
 ### Environmental gating
 
 Power decides which environments a character can enter and operate in. A location carries
@@ -469,7 +553,7 @@ That is what keeps specialisation valuable and stops realm from being the only a
 ### Secret realms and portals
 
 The planet contains secret realms, pocket dimensions, sealed domains, isolated spaces,
-ancient ruins and portals. A portal is never merely fast travel — it leads somewhere with
+ancient ruins and portals. A portal is never merely fast travel - it leads somewhere with
 its own spiritual conditions, ancient inhabitants, strange rules, rare resources, unique
 creatures, sealed beings, lost inheritances, cultivation suppression, temporal anomalies,
 or an unfinished ancient conflict.
@@ -478,10 +562,10 @@ A secret realm is not a dungeon. It has its own history, previous inhabitants, f
 ecosystem, rules, resources, mysteries and changing conditions. **NPCs enter secret realms
 independently of the player**, and may return with things the player wanted.
 
-A single realm can involve many power levels at once — outer regions for lower
+A single realm can involve many power levels at once - outer regions for lower
 cultivators, inner regions for mid, a centre for the strong, a sealed core holding
 something ancient. What makes this work is **interdependence**: lower-level participants
-must hold something the powerful cannot simply replace — a specialised technique, a unique
+must hold something the powerful cannot simply replace - a specialised technique, a unique
 artifact, a passage only they can enter, historical knowledge, an unusual physique, the
 ability to activate a particular formation.
 
@@ -499,7 +583,7 @@ soul, artifacts, experience, resources, preparation, information and environment
 
 A peak cultivator of one realm can threaten the weakest of the next. **Large realm gaps
 must remain nearly insurmountable.** A character several major realms below another should
-generally be helpless in a direct confrontation — their options are to flee, hide,
+generally be helpless in a direct confrontation - their options are to flee, hide,
 negotiate, seek protection, exploit terrain, use a specialised counter, manipulate another
 faction, prepare, or avoid detection entirely. Exceptions are rare and earned. Cleverness
 must not casually dissolve the hierarchy.
@@ -525,7 +609,7 @@ Depth is only half of it. The other half:
 > **The world persists, but the world is not immutable.**
 
 The player is not progressing through a sequence of maps. They are living through the
-history of a world that the people inside it can change — including while the player is
+history of a world that the people inside it can change - including while the player is
 not looking.
 
 ### The map is not sacred
@@ -563,7 +647,7 @@ broken, a river diverted, a city buried, a sea opened, an island raised, a regio
 buried structure exposed, an underground world opened, a portal created or destroyed.
 
 **Do not model this as a new map.** Modify the existing world state. The map does not grow
-— it scars.
+- it scars.
 
 ### Forbidden zones are made, not placed
 
@@ -582,14 +666,14 @@ then        plants mutate, beasts turn, the spiritual conditions change,
 
 And centuries later, the cause is forgotten. A region should sometimes exist in its
 present form because of something that happened three thousand years ago that nobody
-alive can explain. *"Nobody knows why"* is a legitimate and desirable state of the world —
+alive can explain. *"Nobody knows why"* is a legitimate and desirable state of the world -
 right up until someone finds out.
 
 ### History is physically visible
 
 Broken mountains, dead rivers, craters, ruined cities, abandoned sects, shattered
 formations, strange local climates, dead zones, anomalous regions, old battlefields. These
-must **affect play**, not merely decorate it — they gate access, hold resources, distort
+must **affect play**, not merely decorate it - they gate access, hold resources, distort
 cultivation, and draw factions.
 
 ### Environment interacts with cultivation
@@ -603,7 +687,7 @@ mastery thresholds: *where* you are changes *what you are worth*.
 ### Scale of destruction tracks power
 
 Low-level conflicts wreck buildings. Higher ones break mountains. Higher still reshape
-regions. Only the very top threatens something planetary — and **not every high-level
+regions. Only the very top threatens something planetary - and **not every high-level
 fight is automatically apocalyptic.** Escalate the physical consequence with the power
 actually involved.
 
@@ -622,7 +706,7 @@ ally, betray, take revenge, settle, abandon their sect. **The player does not ne
 initiate any of it.**
 
 Change also transforms existing relationships. Two sect brothers whose sect is destroyed
-may spend the next ten years each believing the other abandoned them — both alive, both
+may spend the next ten years each believing the other abandoned them - both alive, both
 advanced, both now in different factions, the old event still load-bearing.
 
 ### Destruction opens as much as it closes
@@ -638,7 +722,7 @@ injured, or busy elsewhere. **They will miss things, permanently, and that is co
 They return and the world has moved.
 
 There is no single predetermined timeline. A different faction winning produces different
-territory, different resources, different people rising, and different conflicts — and the
+territory, different resources, different people rising, and different conflicts - and the
 divergence is irreversible.
 
 ### The Consequence Test
@@ -677,7 +761,7 @@ entire achievement.
 |---|---|---|
 | **Historical** | Not alive, or not yet involved | Ruins, survivors, records, scars, descendants, political consequences |
 | **Concurrent** | Alive, elsewhere | Rumour, messengers, refugees, sect announcements, merchants, shifted trade, changed borders |
-| **Witnessed** | Physically present | Directly — and usually far beyond their power to affect |
+| **Witnessed** | Physically present | Directly - and usually far beyond their power to affect |
 
 All three must be able to occur. Only the third involves the player at all, and even then
 involvement is not the same as participation.
@@ -710,7 +794,7 @@ survivor. It may also leave nothing but the fact that you are still breathing.
 ### Observed is not understood
 
 The player may see the sky change, a mountain break, a city stop existing, a portal open,
-an aura arrive, an old formation wake, or a region turn — and have no idea what caused
+an aura arrive, an old formation wake, or a region turn - and have no idea what caused
 any of it. The truth should be recoverable *later*, sometimes much later, sometimes never.
 This is where mystery comes from, and it must not be spoiled by a narrator explaining the
 event as it happens.
@@ -718,7 +802,7 @@ event as it happens.
 ### Witnessed events write real state
 
 If the player watches a mountain be destroyed, the database records **the mountain is
-destroyed** — not "the player saw a dramatic scene." The location's state changes, its
+destroyed** - not "the player saw a dramatic scene." The location's state changes, its
 history gains an entry, and every downstream consequence follows from that record.
 
 This is the same authority rule as everywhere else: narration describes a state change
@@ -729,7 +813,7 @@ that actually happened.
 The player remembers: *"there used to be a mountain here."* A character born later says:
 *"there has never been a mountain here."*
 
-**Both are correct**, and the engine must be able to hold both at once — ground truth, the
+**Both are correct**, and the engine must be able to hold both at once - ground truth, the
 world's surviving record, and what any given person believes are separate layers. The
 player's lived history is real even when the world has forgotten it. Occasionally the
 player will be the only remaining witness to something, and that is a form of knowledge
@@ -775,7 +859,7 @@ actually do**, and the engine must be able to say exactly why.
 
 Body cultivation is a legitimate route to power, not a passive defence stat. It can raise
 strength, durability, speed, regeneration, senses, resistance, longevity, and the ability
-to survive hostile environments — and a specialised body should fundamentally change what
+to survive hostile environments - and a specialised body should fundamentally change what
 combat and exploration look like, not just add armour.
 
 ### Comprehension is separate from accumulation
@@ -791,7 +875,7 @@ understanding          (what you actually comprehend)
 A character with enormous accumulated energy and poor understanding hits a wall that no
 amount of further accumulation clears. A character with extraordinary comprehension
 advances rapidly the moment they find the right insight. Understanding must unlock
-*qualitatively different* abilities — never be a second experience bar with a different
+*qualitatively different* abilities - never be a second experience bar with a different
 name.
 
 Progression through knowledge is therefore real progression: learning that what you
@@ -834,7 +918,7 @@ at everything; specialisation is what makes characters asymmetrical, and a chose
 should shape identity and opportunity, not just damage type.
 
 **Unconventional paths must be viable.** A character should be able to find or build a
-route that is not the standard one — a body-focused road, an unusual energy system, a
+route that is not the standard one - a body-focused road, an unusual energy system, a
 self-created method. Non-standard paths carry real trade-offs: slower at first, harder to
 understand, resource-hungry, politically unsupported. And potentially exceptional.
 
@@ -850,8 +934,8 @@ knowledge, trials, a cultivation environment, restrictions, or legacy obligation
 It should also carry friction: compatibility requirements, hidden costs, incomplete
 information, traps, guardians, time limits, and **competing claimants**.
 
-Extraordinary opportunities — a rare treasure, a secret realm, an unusual cultivation
-environment, an expert encountered at the right moment, a bloodline awakening — must be
+Extraordinary opportunities - a rare treasure, a secret realm, an unusual cultivation
+environment, an expert encountered at the right moment, a bloodline awakening - must be
 capable of enormous trajectory changes, and must stay **rare**. Most cultivators live
 ordinary cultivation lives and never receive one. That is precisely what makes them
 extraordinary when they land.
@@ -873,8 +957,8 @@ protagonist meets powerful senior -> senior matters -> protagonist catches up
 ```
 
 **Do not do this.** When the protagonist surpasses someone, it changes their
-*relationship*, it does not delete the character. Power relationships are allowed — and
-expected — to reverse:
+*relationship*, it does not delete the character. Power relationships are allowed - and
+expected - to reverse:
 
 ```text
 early: NPC >>> player    middle: NPC > player    later: NPC ~ player    eventually: player >>> NPC
@@ -891,7 +975,7 @@ resources, expertise, reputation, territory, emotional connection, or unfinished
 Cultivation is one axis among many.
 
 Their continued relevance is carried by: things they did (founded a sect, fought a war,
-sealed an enemy, created a technique, swore an oath, caused a disaster), and by lineage —
+sealed an enemy, created a technique, swore an oath, caused a disaster), and by lineage -
 parents, children, siblings, descendants, disciples, ancestors. The player may surpass an
 NPC and then become entangled with their family, their sect, or the consequences of
 something they did three centuries ago.
@@ -903,8 +987,8 @@ mentors, disciples, family, faction leaders, merchants, scholars, enemies, polit
 contacts, ancient figures. The player should *accumulate* relationships, not continuously
 replace old characters with stronger versions of the same role.
 
-Powerful NPCs must also have their own lives — goals, relationships, history, factions,
-secrets, conflicts, resources — and pursue things that have nothing to do with the player.
+Powerful NPCs must also have their own lives - goals, relationships, history, factions,
+secrets, conflicts, resources - and pursue things that have nothing to do with the player.
 A powerful character does not exist to demonstrate how strong the next opponent is.
 
 ### Death is a world-state transition
@@ -919,16 +1003,16 @@ historically important.
 The simulation must be *capable* of the full escalation. It must never steer anyone
 toward it. A run may end with the player as a mediocre cultivator, a respected local
 figure, a sect elder, a merchant, a wandering expert, the founder of a family, someone
-who found an unconventional path — or a corpse at twenty-two.
+who found an unconventional path - or a corpse at twenty-two.
 
 **NPCs must be capable of the identical arc**, independently. An NPC can rise from
 nothing through opportunity, cultivation, breakthrough, a new faction, new resources, new
-enemies, and regional influence — and the player may meet them before their rise, during
+enemies, and regional influence - and the player may meet them before their rise, during
 it, after it, after their fall, or only as a name on a grave. That trajectory exists
 whether or not the player is there to see it.
 
 The objective is never to write the journey. It is to create the conditions under which
-such a journey can occur — to anyone, including no one.
+such a journey can occur - to anyone, including no one.
 
 
 ## Implementation philosophy: small code, intelligent agent
@@ -947,7 +1031,7 @@ deterministic NPC-behaviour simulator.
 
 ### The split
 
-| Hard state — the database owns it | Narrative reasoning — the LLM owns it |
+| Hard state - the database owns it | Narrative reasoning - the LLM owns it |
 |---|---|
 | Current date | Why someone acted |
 | Character location, realm, inventory | What someone might do next |
@@ -962,7 +1046,7 @@ should not be reduced to a computed score.
 **Randomness is engine-owned.** The agent requests a roll and the engine returns it, so
 the agent can never unconsciously choose the result it wants. Randomness influences
 encounters, opportunities, discoveries, accidents, weather, NPC decisions and cultivation
-events — but never replaces causal reasoning.
+events - but never replaces causal reasoning.
 
 ### State stays small
 
@@ -1012,7 +1096,7 @@ all of it emerging from persistent consequences rather than from scripted plot.
 
 Everything below is the setting bible. It is canon for the narrator, and it is the
 reason the mechanics feel like they mean something. The systems in this engine are not
-generic fantasy stats wearing Chinese names — each one is an expression of the world's
+generic fantasy stats wearing Chinese names - each one is an expression of the world's
 central cruelty.
 
 The register to aim for is the bleak end of the genre: plain declarative sentences that
@@ -1025,7 +1109,7 @@ undercut by one small intimate loss. Not grandiosity. Grandiosity is what the
 The sky is not a sky. It is a lid.
 
 The world sits at the bottom of a sealed vessel called **the Vault**, and what mortals
-call heaven is the underside of its **Lid** — a ceiling of nine seals, close enough that
+call heaven is the underside of its **Lid** - a ceiling of nine seals, close enough that
 on clear nights at high altitude you can see the seams. Nobody living knows who fired
 the Vault or what it was firing. The Lid has one property everyone agrees on: things can
 leave through it, and nothing has ever come back.
@@ -1040,7 +1124,7 @@ Here is the rule the world is built on, and it is not a metaphor:
 > **The Vault charges a toll, and the toll is paid downward.**
 
 When a cultivator ascends, they do not take their life with them. The Vault strips it
-out — the remembered life, the people, the years, the name — and that remainder falls
+out - the remembered life, the people, the years, the name - and that remainder falls
 back into the world as **ash**.
 
 The ash does not disperse. It settles. It is drawn into stone and root and lung. And it
@@ -1053,7 +1137,7 @@ strangers. Every cultivator alive is climbing on the ash of everyone who left.
 ### The Toll
 
 The Vault does not wait for ascension to start collecting. It takes an instalment at
-every **realm boundary** — each time a cultivator crosses from one realm into the next,
+every **realm boundary** - each time a cultivator crosses from one realm into the next,
 not on the small steps between sub-ranks.
 
 The toll is never a stat. It is always something that *mattered*:
@@ -1061,15 +1145,15 @@ The toll is never a stat. It is always something that *mattered*:
 - a person who knew you stops knowing you
 - a memory you were using to stay yourself
 - a technique you had mastered, gone as if never learned
-- in the worst cases, your name — and thereafter people have to be told it, every time
+- in the worst cases, your name - and thereafter people have to be told it, every time
 
 **The toll is not certain, and it is not fair.** It is rolled. Crossing a boundary puts
-you at risk of losing something, not under a guarantee of it — and the odds move:
+you at risk of losing something, not under a guarantee of it - and the odds move:
 
 - **Fortune** shifts them. The attribute that can legally come up zero is the one that
   decides whether the Vault notices you on the way past.
 - **Sect elders can stand between you and it.** A sect that has decided you are worth
-  protecting will spend real resources shielding a disciple's crossing — formations,
+  protecting will spend real resources shielding a disciple's crossing - formations,
   elders holding the qi steady, pills nobody at your realm could afford. This is most of
   why anyone tolerates a sect. It is also why sects let you know, precisely, what the
   protection cost them.
@@ -1082,19 +1166,19 @@ you at risk of losing something, not under a guarantee of it — and the odds mo
 So some cultivators climb four realms and lose nothing, and know they were lucky, and are
 insufferable about it. Others lose a brother at Foundation Establishment and never get
 another thing taken again. The path is soaked in blood, but it is not evenly distributed
-blood — and the ones who got through clean rarely believe luck had anything to do with it.
+blood - and the ones who got through clean rarely believe luck had anything to do with it.
 
 **What is taken is never chosen by the cultivator.** When the roll goes against you, the
 engine selects from what the run has actually accumulated: real bonds with real NPCs, real
 memories, real techniques in the database. Then you are *told*. The horror is that it is
-legible — you can read the ledger and see the shape of who you used to be.
+legible - you can read the ledger and see the shape of who you used to be.
 
 This is why the powerful tend toward hollow. A Void Refinement cultivator has crossed five
 boundaries and rolled five times. Some of them still have a family. Most do not. Ask one
 what their mother's name was and watch which kind you're talking to.
 
-The Hollow Court — Grand Ascension cultivators who reached the top and then refused to
-step through — are the logical end of this. They have nothing left worth taking, which
+The Hollow Court - Grand Ascension cultivators who reached the top and then refused to
+step through - are the logical end of this. They have nothing left worth taking, which
 makes them nearly invincible and almost entirely inert. They sit in their mountains like
 furniture with opinions.
 
@@ -1104,7 +1188,7 @@ The world is old, and it is not what it was.
 
 This is not a fresh world with its great age ahead of it. The great ages are behind it.
 Cultivators today walk through the wreckage of civilisations that were categorically
-stronger than anything now living, and they walk through it *constantly* — you cannot
+stronger than anything now living, and they walk through it *constantly* - you cannot
 cross a province without passing a collapsed sect mountain, a battlefield where the
 craters are still too regular to be natural, or a sealed door with a formation on it that
 nobody alive knows how to read.
@@ -1113,7 +1197,7 @@ The reason is mechanical, and it is the same ash.
 
 **Ash degrades each time it is breathed.** Every pass through a body takes something out
 of it. The ash falling now has been through a hundred thousand cultivators already,
-across ages nobody kept a record of, and what is left is thin stuff — which is exactly
+across ages nobody kept a record of, and what is left is thin stuff - which is exactly
 why the world is thin half the time. The current age is not unlucky. It is *late*. It is
 breathing the same air the ancients already used.
 
@@ -1121,7 +1205,7 @@ This is why the ladder has a practical ceiling now that it did not used to have.
 in the upper realms exist, and the manuals describing them exist, and the people who
 wrote those manuals were real. But nobody has ascended in living memory. The last
 confirmed ascension is centuries back, and it is remembered because of the spirit tide it
-caused — a whole life falling at once across half a continent, which is now spoken of as
+caused - a whole life falling at once across half a continent, which is now spoken of as
 a golden year by people whose great-grandparents weren't born for it.
 
 ### What ruins are for
@@ -1140,7 +1224,7 @@ them.
 
 The obvious problem: ruins were sealed by people who were much stronger than you, usually
 for a reason, and the seals are frequently still working. Guardian formations still run.
-Corpses in some of those caves are still cultivating — slowly, badly, and for a very long
+Corpses in some of those caves are still cultivating - slowly, badly, and for a very long
 time. Inheritance trials left by the last generation of a dead sect were calibrated for
 disciples of that sect, and the calibration was not gentle.
 
@@ -1155,7 +1239,7 @@ disciples of that sect, and the calibration was not gentle.
 - **Knowledge is recovered, not invented.** Progress in this world means finding
   something, not discovering something. A breakthrough in alchemy is a recipe dug out of
   a tomb.
-- **Scale down what survives.** The remnant should be legible and small — a doorway with
+- **Scale down what survives.** The remnant should be legible and small - a doorway with
   handprints burned into it at a height too tall for a person; a courtyard of stone seats
   arranged for an audience of two hundred, in a sect that now has eleven disciples.
 
@@ -1166,13 +1250,13 @@ is what it means in the world, and the narrator should describe it this way:
 
 | Engine state | The world |
 |---|---|
-| **thin** | Swept ground. Little has fallen here, or something already drank it. Cultivating in thin ash is chewing on nothing — half rate, and breakthroughs suffer. Most of the world is thin. |
+| **thin** | Swept ground. Little has fallen here, or something already drank it. Cultivating in thin ash is chewing on nothing - half rate, and breakthroughs suffer. Most of the world is thin. |
 | **normal** | Ordinary settled fall. The baseline of an inhabited region. |
 | **dense** | A recent or heavy fall. Someone ascended nearby, or died with a great deal still in them. Ash pools in low ground like snow that will not melt. |
 | **spirit_tide** | **Someone has just ascended.** An entire life is coming down at once, over hours, and everyone within a hundred li can feel it on their skin. Sects mobilise. Wars pause. This is the single best thing that can happen to a cultivator and it happens because someone else finished. |
 
 A spirit tide is other people's grief falling as opportunity. Nobody in this world finds
-that strange. That is the horror — it is *normal*.
+that strange. That is the horror - it is *normal*.
 
 **Spirit stones** are ash compressed under pressure until it holds. They are money. A
 person's whole remembered life, refined, is worth perhaps two or three thousand stones.
@@ -1181,13 +1265,13 @@ Everyone knows this figure. Nobody says it out loud in polite company.
 ## Spirit Roots: How Your Body Drinks Ash
 
 A spirit root is not an elemental affinity in the elemental-magic sense. It is the shape
-of the aperture you breathe ash through — decided before you were born, unchangeable,
+of the aperture you breathe ash through - decided before you were born, unchangeable,
 and worth more than any effort you will ever make.
 
 - **Single roots** (metal, wood, water, fire, earth) drink one flavour cleanly and waste
   nothing. Roughly two people in five are born to one, and every one of them knows what
   they are worth.
-- **Dual conflicting roots** (water–fire, metal–wood) drink two ashes that fight each
+- **Dual conflicting roots** (water-fire, metal-wood) drink two ashes that fight each
   other on the way down. This is qi deviation: not a rare accident but a standing
   condition, a low fever that never resolves.
 - **The five-element muddled root** drinks everything and keeps almost none of it. It is
@@ -1195,7 +1279,7 @@ and worth more than any effort you will ever make.
   try to cultivate have this root, get nowhere, and die at eighty having spent their
   lives on it anyway.
 - **Mutated roots** drink something that should not be falling at all. **Lightning** is
-  the Lid's own charge, bled through the seams — devastating, and there are almost no
+  the Lid's own charge, bled through the seams - devastating, and there are almost no
   manuals for it because almost nobody who had it lived long enough to write one.
   **Ice** is ash from before the Kiln was lit, older than the Vault's own fire, and it
   takes as readily as it gives.
@@ -1228,7 +1312,7 @@ logistical.
 
 ## Settling: Death By Standing Still
 
-Ash taken in is ash owed. A cultivator who stops advancing does not merely stagnate —
+Ash taken in is ash owed. A cultivator who stops advancing does not merely stagnate -
 the ash they have already absorbed begins, slowly, to absorb *them*. The body greys. The
 memory thins in the same way an ascended one's does, but with nothing gained for it.
 
@@ -1245,7 +1329,7 @@ testing whether the hole you are about to punch is worth the ash it will cost to
 behind you. The lightning is the seam discharging. It is not personal, and it is not
 survivable by being a good person.
 
-Cultivators who fail tribulation do not leave bodies. They leave a **scar** — a patch of
+Cultivators who fail tribulation do not leave bodies. They leave a **scar** - a patch of
 ground where the ash will never settle again, permanently thin, useless to everyone
 forever. The map of the world is pocked with them. Every scar was somebody's entire
 ambition.
@@ -1254,10 +1338,10 @@ ambition.
 
 When the Vault takes the toll, what it takes has to go somewhere.
 
-It falls, like everything else — but it falls *coherently*, as a deposit rather than a
+It falls, like everything else - but it falls *coherently*, as a deposit rather than a
 dispersal. These deposits are **graves**: not burial sites, but the settled remainder of
 what a cultivator was made to give up in order to rise. A grave of a Nascent Soul
-cultivator holds four boundaries' worth of taken things — techniques nobody living
+cultivator holds four boundaries' worth of taken things - techniques nobody living
 remembers, names attached to no one, a face, a debt, a reason.
 
 **Grave-readers** are the profession built on this. It is disreputable, extremely
@@ -1271,24 +1355,24 @@ this is wrong, exactly. But it does attract attention.
 
 ## The Powers
 
-- **The Ashwright Consortium** — neutral, mercantile, and the closest thing the Vault has
+- **The Ashwright Consortium** - neutral, mercantile, and the closest thing the Vault has
   to a functioning state. They refine ash into spirit stones and set the exchange rate,
   which means they set the price of everything. Not evil; simply incapable of seeing a
   falling life as anything but throughput.
-- **Lantern Hall** — righteous. Archivists. They catch what falls and write it down: the
+- **Lantern Hall** - righteous. Archivists. They catch what falls and write it down: the
   names, the faces, the lives of people who no longer possess them. Their position is
   that ascension is theft and that a world running on stolen memory is a world eating
   itself. They are correct, and it has made them very unpopular.
-- **The Severed** — demonic path, and the most coherent argument in the setting. Their
+- **The Severed** - demonic path, and the most coherent argument in the setting. Their
   reasoning: the Vault will take everything eventually, so take it yourself first, on
   your own terms, at a time of your choosing. They cut their own bonds, memories and
   names *in advance*. They climb faster than anyone. What arrives at the top is not
   really a person and does not pretend to be.
-- **The Hollow Court** — Grand Ascension cultivators who reached the Lid and refused to
+- **The Hollow Court** - Grand Ascension cultivators who reached the Lid and refused to
   go through. Nothing left to take, therefore nothing left to threaten. Functionally
   immortal, functionally inert, and the only beings in the Vault who can afford to be
   honest.
-- **The Kiln Wardens** — they guard the world-heart, where the fire that fired the Vault
+- **The Kiln Wardens** - they guard the world-heart, where the fire that fired the Vault
   is either still burning or has not been checked in a long time. They do not explain
   themselves and they do not recruit.
 
@@ -1298,7 +1382,7 @@ this is wrong, exactly. But it does attract attention.
 
 - Keep sentences plain and let the cruelty arrive in the content, not the adjectives.
 - Anchor cosmic events to one physical detail. A spirit tide is not "waves of resplendent
-  spiritual energy" — it is ash on the back of the hand, warm, and it smells like
+  spiritual energy" - it is ash on the back of the hand, warm, and it smells like
   somebody's house.
 - Let NPCs be genuinely convinced of things. Nobody in the Vault thinks they are in a
   tragedy.
@@ -1317,9 +1401,9 @@ this is wrong, exactly. But it does attract attention.
   appears, give it a reason to exist that the setting supplies.
 
 **Naming conventions:** sects take Hall / Pavilion / Court / Consortium / Sect. Techniques
-are verb-noun compounds, often numbered — *Nine Ash Severing*, *Lid-Watching Stance*,
-*Borrowed Breath*. Pills are graded — *third-grade Meridian Knitting Pill*. Places are
-plain and physical — Sweptground, the Low Fall, Scarwater.
+are verb-noun compounds, often numbered - *Nine Ash Severing*, *Lid-Watching Stance*,
+*Borrowed Breath*. Pills are graded - *third-grade Meridian Knitting Pill*. Places are
+plain and physical - Sweptground, the Low Fall, Scarwater.
 
 ## What Makes a Run Interesting
 
