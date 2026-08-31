@@ -1,7 +1,7 @@
-# AGENTS.md — Working Agreement for Coding Agents
+# AGENTS.md - Working Agreement for Coding Agents
 
 The single guide for any AI coding agent (Claude Code, Codex, Cursor, Aider, …)
-working in this repository. `CLAUDE.md` is a symlink to this file — there is no
+working in this repository. `CLAUDE.md` is a symlink to this file - there is no
 Claude-specific guidance, by design. Edit this file.
 
 For *why* this project exists and what it is, read [`context.md`](context.md) first.
@@ -50,7 +50,7 @@ tests pass.
 
 ## Provider neutrality
 
-Supported runtime agents: **Claude (Anthropic)** — primary/default — and **Ollama** —
+Supported runtime agents: **Claude (Anthropic)** - primary/default - and **Ollama** -
 local/self-hosted. OpenAI and OpenRouter remain supported.
 
 - Provider-specific code lives **only** in `src/agent/provider/`. Nothing else in the
@@ -76,7 +76,7 @@ and input ⇒ identical result.
 
 NPC simulation follows the same economy:
 
-| Deterministic — no LLM call | Worth an LLM call |
+| Deterministic - no LLM call | Worth an LLM call |
 |---|---|
 | Walking to work, daily schedules | Betrayal / loyalty decisions |
 | Routine cultivation ticks | Negotiating under conflicting goals |
@@ -93,7 +93,7 @@ src/
 │                         # qi deviation, injuries, survival/death, time-skip.
 │                         # Pure functions. No DB, no I/O, no MCP.
 ├── schema/cultivation.ts # Zod contracts + survival constants (single source of truth
-│                         # for balance numbers — never hardcode them elsewhere)
+│                         # for balance numbers - never hardcode them elsewhere)
 ├── data/cultivation/     # Content: techniques, pills, recipes, herbs, sects, encounters
 ├── storage/              # SQLite: migrations.cultivation.ts + repos/
 ├── server/consolidated/  # Action-routed MCP tool handlers (index.ts = registry)
@@ -106,7 +106,7 @@ tests/                    # Mirrors src/
 ```
 
 **Balance numbers live in `src/schema/cultivation.ts`.** Satiety costs, starvation
-turns, lethal injury counts, stagnation years — import them, never retype them.
+turns, lethal injury counts, stagnation years - import them, never retype them.
 
 ---
 
@@ -114,14 +114,14 @@ turns, lethal injury counts, stagnation years — import them, never retype them
 
 ```bash
 npm test                              # full suite (Vitest)
-npx vitest run tests/engine/cultivation   # one area — prefer this while iterating
+npx vitest run tests/engine/cultivation   # one area - prefer this while iterating
 npx tsc --noEmit                      # typecheck
 npm run build                         # compile
 npm run build:binaries                # standalone executables -> dist-bundle/
 ```
 
 **Shell:** use **PowerShell** for npm and git on Windows. Prefer running a single test
-area over the full suite while iterating — the full run is slow.
+area over the full suite while iterating - the full run is slow.
 
 ---
 
@@ -137,6 +137,13 @@ area over the full suite while iterating — the full run is slow.
 - New MCP tools are **action-routed**: one tool, an `action` discriminator, fuzzy
   matching and guiding errors. Follow `src/server/consolidated/character-manage.ts` and
   register in `src/server/consolidated/index.ts`.
+
+### Writing style in docs and comments
+
+Use plain **hyphens** (`-`). Do not use em-dashes or en-dashes anywhere in this repo -
+not in Markdown, not in code comments, not in commit messages, not in player-facing
+strings. They are hard to type, hard to grep, and they break exact-match edits against
+these files.
 
 ### Commit convention
 
@@ -155,7 +162,7 @@ refactor(scope): description
 4. Commit
 5. Repeat
 
-Commit local work freely after a passing test — don't ask permission for local commits.
+Commit local work freely after a passing test - don't ask permission for local commits.
 
 ---
 
@@ -177,7 +184,7 @@ Set `ANTHROPIC_API_KEY` and `RUNTIME_PROVIDER=claude` to have Claude narrate ins
 ## If you are the narrator
 
 When an agent is acting as the runtime narrator rather than editing code, the same rule
-binds it: interpret intent, call tools, write prose — and narrate only what a tool
+binds it: interpret intent, call tools, write prose - and narrate only what a tool
 actually returned, including when the engine's answer is bad news. Never describe an
 outcome you did not get back from the engine.
 
@@ -200,7 +207,7 @@ Multiple agents may be working this repo simultaneously. Stay inside your assign
 set. In particular, do not casually edit:
 
 - `src/schema/cultivation.ts`, `src/engine/cultivation/realms.ts`,
-  `src/engine/cultivation/spirit-roots.ts` — shared contracts. Changing them breaks
+  `src/engine/cultivation/spirit-roots.ts` - shared contracts. Changing them breaks
   everyone. Propose the change instead.
-- `src/storage/migrations.ts` and `src/server/consolidated/index.ts` — shared registries
+- `src/storage/migrations.ts` and `src/server/consolidated/index.ts` - shared registries
   that conflict badly. Make the minimum one-line addition and nothing else.
