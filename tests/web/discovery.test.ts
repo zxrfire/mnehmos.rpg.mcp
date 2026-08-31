@@ -263,7 +263,7 @@ describe('the prompt never carries the answer key', () => {
         }
 
         expect(system).toContain('WHAT MAY BE NAMED');
-        expect(system).toMatch(/does not exist as far as this scene is concerned/);
+        expect(system).toMatch(/does\s+not\s+exist\s+as\s+far\s+as\s+your\s+own\s+prose\s+is\s+concerned/);
     });
 });
 

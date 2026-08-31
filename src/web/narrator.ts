@@ -47,6 +47,7 @@ import {
     narrationSystemPrompt
 } from './prompt.js';
 import type { AwarenessRow } from './knowledge.js';
+import type { Hearing } from './hearsay.js';
 import type { EngineFacts } from './facts.js';
 
 export interface NarratorScene {
@@ -60,6 +61,23 @@ export interface NarratorScene {
      * given anything else to name in the first place.
      */
     awareness?: readonly AwarenessRow[];
+    /**
+     * A name the engine has decided somebody says in this scene, if any.
+     *
+     * Licensed for dialogue only. The knowledge record for it was already
+     * written before this call, so the name is in the player's world whether or
+     * not the prose gets it right - which is the correct dependency direction.
+     */
+    hearing?: Hearing | null;
+    /**
+     * What the player literally typed.
+     *
+     * Asking turns on what was SAID rather than on any stat, so the phrasing
+     * has to reach the prose or the narration cannot reflect the thing that
+     * made the difference. It is shown to the model, never parsed back out of
+     * its reply - the authority line is exactly where it was.
+     */
+    playerSaid?: string | null;
 }
 
 export interface Narration {
