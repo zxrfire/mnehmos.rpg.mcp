@@ -188,8 +188,8 @@ export function askedAbout(input: AskedInput): Answer {
             return {
                 reach: 'blank',
                 lines: [
-                    `${who} hears the question out and does not answer it, in the manner of ` +
-                    'somebody who has answered a great many questions.'
+                    `${who} hears the question out and does not answer it, with the ease of ` +
+                    'somebody who has been asked a great many things.'
                 ],
                 structure: [...structure, 'Reach: blank. Above their stratum, and placed to say nothing.'],
                 teaches: false,
@@ -199,8 +199,8 @@ export function askedAbout(input: AskedInput): Answer {
         return {
             reach: 'guesses',
             lines: [
-                `${who} answers straight away and at length, and none of it hangs together ` +
-                'with anything else the player has been told.'
+                `${who} answers straight away and at length, and none of it sits with ` +
+                'anything else you have been told.'
             ],
             structure: [...structure, 'Reach: guesses. Above their stratum, nothing to protect, so they fill it.'],
             teaches: false,

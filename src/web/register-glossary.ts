@@ -181,6 +181,19 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
             'Built by somebody who is no longer available. Draws almost nothing, has not been serviced in centuries, and is invisible - which is why nobody can say which quiet mountain has something under it.'
     },
 
+    {
+        group: 'Seals',
+        term: 'Protector',
+        meaning:
+            'Sealed while still whole, deliberately, as a reserve. Waking one spends a weapon the faction chose to bank, and it can be spent on anything worth a weapon.'
+    },
+    {
+        group: 'Seals',
+        term: 'End of life',
+        meaning:
+            'Sealed because they were ending anyway, and the seal is what is left of them. Generally cannot be redirected - what remains is shaped around one act - and waking one spends the last of somebody already finished.'
+    },
+
     // ── the four people groups ─────────────────────────────────────────
     {
         group: 'People',

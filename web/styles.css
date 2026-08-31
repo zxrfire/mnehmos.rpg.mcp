@@ -1437,6 +1437,15 @@ kbd {
 /* ─── Time-skip digest ─── */
 
 .skip { display: grid; gap: 22px; }
+/* The narrator's account of the same span the table below reports. It leads,
+   because a player who clicked should get the game rather than the ledger. */
+.skip__prose {
+  font-family: var(--font-read);
+  font-size: 17px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  margin: 0;
+}
 .skip__head {
   display: flex;
   align-items: baseline;

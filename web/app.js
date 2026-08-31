@@ -1355,7 +1355,7 @@ async function doCultivate(days) {
   if (payload.state) applyState(payload.state);
   afterMutation({ skipRoute: true });
 
-  if (payload.timeSkip) showTimeSkip(payload.timeSkip);
+  if (payload.timeSkip) showTimeSkip(payload.timeSkip, payload.narration);
   else routeFromState();
 }
 
@@ -1577,7 +1577,7 @@ function rollViz(finalChance, roll) {
 
 /* ── time-skip digest ── */
 
-function showTimeSkip(skip) {
+function showTimeSkip(skip, narration) {
   const events = Array.isArray(skip.events) ? skip.events.slice() : [];
   events.sort((a, b) => (Number(a.dayOffset) || 0) - (Number(b.dayOffset) || 0));
   const deltas = skip.deltas || {};
@@ -1595,6 +1595,7 @@ function showTimeSkip(skip) {
 
   const body = html`
     <div class="skip">
+      ${narration ? html`<p class="skip__prose">${narration}</p>` : ''}
       <div class="skip__head">
         <span>Requested <b>${fmtDays(skip.requestedDays)}</b></span>
         <span class="muted">·</span>

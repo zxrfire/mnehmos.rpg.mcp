@@ -118,6 +118,170 @@ export const THE_JUNIOR_ANSWERS = {
         'So the size of the answer is not a measure of favour. A sect with one ancestor and a sect with six get the same junior voice; the difference is that the second one has five more people who might one day be told about you.'
 } as const;
 
+// ──────────────────────────────────────────────────────────────────────────
+// THE DECAY OF MEMORY
+// Helpfulness is a decaying function of time since ascension. Not a
+// temperament, not a virtue: an accounting error that sets in with distance.
+// ──────────────────────────────────────────────────────────────────────────
+
+export const THE_DECAY_OF_MEMORY = {
+    theRule:
+        'The longer somebody has been an immortal, the less they price mortal constraints. Not from contempt and not from cruelty - from distance. The memory of what a question costs down here fades the way memories fade, and once it has gone the consideration is simply not live for them any more.',
+    whatFadesFirst:
+        'The price. An old immortal answers precisely and completely and it does not occur to them that there will be no second exchange, because the fact that an offering is ruinous at the mortal scale is not something they can still feel. They are not withholding the context. They cannot see that context is needed.',
+    whatANewOneStillKnows:
+        'A recent one remembers the arithmetic. They know an offering is ruinously expensive to make, that the sect cannot afford many, and that nobody can - so they do not answer and stop. They front-load: the exact answer wrapped in whatever protective context stops it being misread, because they know there is no round trip in which to correct it.',
+    frontLoadingIsTheAntidote:
+        'And that is the only antidote to `THE_WRONG_QUESTION` that exists. It is not extra kindness and it is not a different answer - it is correct accounting on a budget the old ones have stopped being able to see. Only a recently ascended immortal would think of it, because only they still remember that a question is a once-a-century act rather than a conversation.',
+    theInversion:
+        'Which means a sect\'s best possible arrangement is a fresh immortal, and produces the unfairest fact in the catalog with a cause rather than a personality behind it: the Hollow Court\'s six ancients are a channel that is technically superior and practically worse, while the Azure Cloud Pavilion\'s single recent one is thin, lucky, and worth more.',
+    theClockOnAzureCloud:
+        'And it puts a term on the Pavilion. Ru Anjing will get worse. Not soon, not by choosing to, and not in any way she would recognise as a change - in a few centuries she will answer like the others, and nobody currently alive at the Pavilion will see it happen. The present advantage is a window rather than a possession.',
+    somebodyHasWorkedThisOut:
+        'One Sword Elder has followed the reasoning to the end and has been quietly organising around it for thirty years: shorter intervals between offerings, a standing instruction that every answer be recorded verbatim rather than summarised, and a slow effort to get the questions asked while they are still worth asking. There is no version of the plan that works. The best available outcome is a fuller archive of a channel going cold, and she knows it, and has not said so to anybody.',
+    howToWriteIt:
+        'Give every immortal a vintage and let the manner follow from it. Two ancestors of similar temperament and very different age should read completely differently, and the reason should be legible from how they answer without anybody stating it.'
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE WRONG QUESTION
+// They answer what was asked. Exactly. Not what you meant.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The offering is the most dangerous instrument in this world and nothing
+ * about it looks dangerous. A precisely correct answer to a badly framed
+ * question is worse than no answer at all, because you come away holding
+ * something true and you will act on it.
+ */
+export const THE_WRONG_QUESTION = {
+    theMechanism:
+        'They answer the question that was asked, exactly and completely. They do not answer the question you meant. They do not clarify it, reframe it, ask what you are actually after, or warn you that you have framed it badly - so a poorly framed question produces a precisely correct answer that ruins you. The immortal is not at fault and the outcome is still a catastrophe with bodies in it. Both are true at once, and that is the whole of the mechanism.',
+    whyTheyDoNotCorrectYou: [
+        'Because answering what was asked is the complete discharge of the obligation, and going further would be doing your thinking for you.',
+        'Because they have no particular reason to engage with mortal concerns at all, and reframing a question is engagement. See `IMMORTAL_MOTIVE` in `crossings.ts`.',
+        'Because some of them do not notice. The gap between what a sect said and what it needed is not necessarily visible from where they are standing.',
+        'And because a hint costs attention, which is spent on ties rather than on descendants. See `WHO_HINTS_AND_WHY`.'
+    ],
+    theStakes:
+        'A sect gets a question perhaps once in a thousand years. Framing it badly is not a wasted turn: it is worse than wasting it, because a wasted question leaves you where you were and a badly framed one sends you somewhere on good authority.',
+    thisIsTheAskingPrinciple:
+        'And it is the `asking.md` thesis at the top of the world, at maximum stakes. The skill was always knowing enough to ask the narrower question - who to ask, what they can actually tell you, and how to frame it so the answer is the one you need. Here the respondent is exact, the channel opens once an age, and the improvement being asked for is the player\'s rather than the character\'s. Nothing else in the setting expresses the doc\'s argument this cleanly.',
+    howToRunIt:
+        'Never let an immortal answer the intended question. Write the literal one, answer it perfectly, and let the gap do the work. If the table wants a warning, the warning has to come from a mortal in the room who has read the drafting history - which is exactly why institutions keep drafting histories.'
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHO HINTS, AND WHY
+// Warmth is not a property of kindness. It is a property of having a tie.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const WHO_HINTS_AND_WHY = {
+    theRule:
+        'Whether an answer comes with a handhold is decided by two things and neither is temperament: how long the answerer has been up there, and whether they have a tie to a living person. Vintage governs whether they still know a hint is needed; the tie governs whether they spend the attention. See `THE_DECAY_OF_MEMORY`.',
+    theHollowCourtDoesNotHint:
+        'Their ancestors are ancestors of a body rather than of anybody, and the youngest of them crossed nine hundred years ago. Picture a senior figure who has no time for you: not cruel, not contemptuous, simply busy and far above the matter. Qiu Danzhi answers because answering is the obligation, she answers exactly, and she is already gone. Nobody up there will notice that the Court framed its question badly and do it the courtesy of saying so - partly because the Court is not a person to any of them, and mostly because none of them can still feel that the Court gets one attempt.',
+    anInstitutionGetsInstitutionalService:
+        'Correct, complete, and no help whatsoever. That is not a failure of the Court\'s records or its standing - its records are the best in the world and its standing is unmatched. It is what a perfectly maintained institutional channel actually delivers.',
+    ruAnjingDoes:
+        'Ru Anjing is the exception twice over: she has a living sister, and she is three hundred and eighty years old, which is nothing. She still remembers what an offering costs to make and that the Pavilion cannot afford many. So she does not answer and stop - she front-loads, wrapping the exact answer in the context that stops it being misread, because she knows there is no second exchange in which to fix it. Not a different answer, which none of them give. The same answer, delivered by somebody who can still see the budget.',
+    theBitterIrony:
+        'Which produces the most unfair fact in the catalog, and it now has a cause rather than a personality behind it. The Hollow Court\'s excellent archives buy it a perfect channel to six people who have been up there long enough to have forgotten what a question costs. The Azure Cloud Pavilion\'s thin, lucky, sentimental arrangement - one recent ancestor, one living sister - is worth more in practice than four thousand years of immaculate record-keeping, and will stop being worth more on a timetable nobody at the Pavilion can affect.',
+    theCourtsRealVulnerability:
+        'And it gives the strongest institution in the world a genuine exposure underneath all of it: the Hollow Court is the body most likely to ask a question well and be destroyed by the answer anyway, because there is nobody up there who cares enough to break the frame. Everybody who fears the Court fears its power. The thing that could actually end it is a well-drafted sentence.',
+    howToTellWhichChannelYouAreOn:
+        'Ask two questions about the answerer: how long ago did they cross, and is there anybody alive they know. Recent and tied is the warm channel, and there is exactly one of those in the world. Everything else is exact, complete and cold, and the coldness increases with age at a rate nobody down here has been able to measure because nobody down here lives long enough to see it move.'
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE WORKED CASE
+// The guidance survives. It is correct. It destroyed them.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const THE_THRESHING_HALL = {
+    who: 'The Threshing Hall, a mid-tier righteous sect of the eastern terraces with about two hundred disciples, which does not exist now.',
+    yearsAgo: 780,
+    theSituation:
+        'A neighbour three times its size had taken two of its outlying holdings in eleven months and was plainly coming for the hall itself. The Hall had one ancestor through the Lid, one offering left that it could afford to make, and a winter to prepare in.',
+    theQuestionAsked:
+        'What must we do to keep the hall?',
+    theAnswer:
+        'Nine words: send the disciples out along the four roads before the thaw, and do not recall them.',
+    whatTheyDid:
+        'Exactly that, in full, on time, without argument. Two hundred people went out along four roads in the last weeks of winter, and the recall order that four separate elders drafted over the following two years was never sent, because the instruction had said not to.',
+    theOutcome:
+        'The hall was never taken. It was never even approached: an empty compound with nothing in it to hold was not worth the campaign, and the neighbour turned aside. The building is still standing. It is a grain store now, and the terrace it sits on has been leased three times since.',
+    andYetTheSectEnded:
+        'Because two hundred cultivators dispersed along four roads in early spring, with no recall coming, are two hundred people who stop being a sect. Some died in the first two winters, a great many were taken in by other institutions who were delighted to have them, and the rest simply became people who had once belonged to something. There was no massacre and no defeat. Within thirty years there was nobody left who could convene the Hall, and within sixty there was nobody who wanted to.',
+    theAnswerWasCorrect:
+        'And this is the part that has to be held onto: the answer was right. It was asked how to keep the hall. It gave the only method that would have worked, it worked completely, and the hall was kept. Nothing in the reply is untrue, incomplete, ambiguous, or capable of being read another way. The ancestor discharged the obligation perfectly.',
+    theQuestionWasWrong:
+        'They did not want the hall. They wanted to go on existing, and they asked about a building, because in the winter they drafted it the building was what the neighbour was coming for and the distinction had not yet occurred to anybody. One noun, chosen under pressure, by frightened people who had a month.',
+    theReconstruction: {
+        by: 'sect-lantern-hall',
+        yearsAfter: 240,
+        what:
+            'A Keeper of the Lantern Hall assembled the offering record, the four unsent recall drafts, the neighbour\'s own campaign accounts and the terrace lease history, and established the exact wording of the question for the first time - it had been paraphrased in every prior account, always as "how do we survive".',
+        theDocument:
+            'Eleven pages, and the sixth is the one people cannot get past: the question on the left, the answer on the right, and a column establishing that every clause of the answer was executed correctly and achieved its stated end. There is no error in it anywhere. That is what makes it unbearable.',
+        howItWasReceived:
+            'Very badly, and the Hall published it anyway, which is precisely the behaviour that has made it unwelcome in nine cities. Four sects sent letters. One of them was about a question its own elders were then drafting.',
+        whatItIsUsedForNow:
+            'It is the standard text on offering practice. Every institution in this file that holds a question in reserve has a copy, and the drafting rooms of at least three of them keep page six on the wall.'
+    },
+    theLesson:
+        'Not that guidance is a trap, because it is not: the answer was a gift and it worked. The lesson every careful institution took is that the noun in your question is the whole of your fate, and that you will be answered as though you meant it - because you did mean it, at the moment you wrote it, and there is nobody up there whose job it is to ask whether you still do.'
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// QUESTIONS HELD IN RESERVE
+// Entirely rational and slightly mad, which is the correct response to
+// THE_THRESHING_HALL.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const HELD_QUESTIONS: readonly {
+    factionId: string;
+    heldForYears: number;
+    drafts: number;
+    theProblem: string;
+    theCurrentWording: string;
+    whyItIsStillNotSent: string;
+}[] = [
+    {
+        factionId: 'apex-deep-survey',
+        heldForYears: 400,
+        drafts: 31,
+        theProblem:
+            'The Survey knows its arterial layer is failing and does not know in what order, and one exact sentence from the First Surveyor would settle a question its whole institutional existence is organised around.',
+        theCurrentWording:
+            'Draft thirty-one, current since the ninth revision cycle, is a single clause of nineteen characters that names no site, asks for no instruction and requests one ordering. Twenty-nine of the discarded drafts asked what the Survey should do. It stopped asking that in the second century, after somebody read page six aloud in the drafting room.',
+        whyItIsStillNotSent:
+            'Because the drafting committee has an unwritten rule that a wording must survive one full turnover of its own membership before it can be sent, and it has never yet managed that: somebody new arrives, finds a noun they cannot defend, and the clock resets. Four hundred years of this is either the most careful institutional behaviour in the world or a permanent, elegant way of never taking the risk, and the Survey has never established which.'
+    },
+    {
+        factionId: 'sect-hollow-court',
+        heldForYears: 900,
+        drafts: 2,
+        theProblem:
+            'The Court holds one question and has not needed it, which is a different situation from the Survey\'s and produces different behaviour: it is not refining a wording against a live problem, it is keeping a wording ready for a problem it expects to recognise when it arrives.',
+        theCurrentWording:
+            'Not written down anywhere, on the reasoning that a sentence in a drawer is a sentence somebody can read. Two of the four seated hold it verbatim and confirm it against each other at intervals, which is the whole of the archive.',
+        whyItIsStillNotSent:
+            'Because they know exactly what they will get: precisely what they ask for, from somebody who will not look up. The Court is the best-informed body in the world about how cold its own channel is, and the caution follows from the information rather than from fear.'
+    },
+    {
+        factionId: 'apex-long-cut',
+        heldForYears: 0,
+        drafts: 0,
+        theProblem:
+            'None. The Long Cut has a working channel and holds no question at all, which is a policy and not an oversight.',
+        theCurrentWording:
+            'There is no wording. The schedule carries the arrivals as dated entries with nothing in the reason column, and the administration has never entered an outgoing one.',
+        whyItIsStillNotSent:
+            'Because the Long Cut owns every act by name and a question is an act whose consequences it could not own. It has read page six, it agrees with page six, and it has drawn the conclusion that the other two apexes will not draw: that the correct number of questions to ask something that answers exactly is zero.'
+    }
+];
+
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
 // ─────────────────────────────────────────────────────────────────────────
@@ -149,6 +313,11 @@ export const NamedFigureSchema = z.object({
     answers: AnswerStateSchema.nullable(),
     /** Immortals only: 1 is the most junior, and the most junior answers. */
     juniority: z.number().int().min(1).nullable(),
+    /**
+     * Immortals only: how they answer, which is a function of how long they
+     * have been up there rather than of temperament. See `THE_DECAY_OF_MEMORY`.
+     */
+    manner: z.string().min(80).nullable().optional(),
     note: z.string().min(60)
 });
 export type NamedFigure = z.infer<typeof NamedFigureSchema>;
@@ -174,6 +343,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
             'The Court holds the name, has never said it aloud to an outsider, and does not use it internally either - four thousand years of referring to a man as "the one who went through first" is a practice rather than an omission. The name in this entry is the Anchorhold\'s, taken off a Standing Works site register that predates the Court\'s reticence and was never meant to be interesting.',
         answers: 'silent',
         juniority: 6,
+        manner:
+            'Four thousand four hundred years, and nothing has come back in any of them. If he were to answer, the Court\'s own position is that it would be one clause, correct, and referring to a state of affairs nobody present could identify.',
         note: 'The seniormost thing any institution in this world has a line to, and nothing has come back from him in four thousand years. Nobody at the Court reads that as a problem.'
     },
     {
@@ -189,6 +360,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
             'On the Court\'s own tablet, dated, with the three protectors named beside her. The Court does not publish the tablet and has never denied its contents to anybody who reached the mountain and asked.',
         answers: 'silent',
         juniority: 5,
+        manner:
+            'Silent for thirty-nine centuries. The three replies attributed to her in the Court record all date from her first two hundred years and all three are longer and plainer than anything the Court has received since, which nobody at the Court has ever connected to her age at the time.',
         note: 'The crossing that turned a group of very strong people into a method, which is the Court\'s actual founding rather than its first.'
     },
     {
@@ -203,6 +376,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         attestationNote: 'Tablet, dated, and corroborated by a Deep Survey register entry recording her at a site the Survey was working at the time.',
         answers: 'silent',
         juniority: 4,
+        manner:
+            'Silent. The one thing in the record from her is a two-word confirmation of a date, sent unprompted, twenty-nine centuries ago.',
         note: 'Held the guard twice before she climbed, which the Court considers the correct order and says so to applicants.'
     },
     {
@@ -217,6 +392,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         attestationNote: 'Tablet, dated twice, and the double date is the single most-copied line in the Court\'s record because it establishes that aborting is survivable.',
         answers: 'silent',
         juniority: 3,
+        manner:
+            'Silent, and the most requested of the six: the Court has petitioned her about the aborted crossing eleven times over two thousand years and received nothing, which is not a refusal so much as a matter that has stopped being live for her.',
         note: 'Two dates on one tablet, which is the whole of the evidence that a crossing can be broken off and re-attempted, and which every Void Refinement cultivator in the world would want to read.'
     },
     {
@@ -231,6 +408,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         attestationNote: 'Tablet, dated, four protectors named. The Ninefold Ledger holds an independent record of the same year because two of the four owed it obligations that lapsed on the day.',
         answers: 'silent',
         juniority: 2,
+        manner:
+            'Silent. Sixteen centuries, and the last thing anybody up there is known to have said about her was relayed by Qiu Danzhi as a single word of agreement with something the Court had not asked about.',
         note: 'Four protectors for one climber is the Court operating at its historical maximum, and it has not been able to field that since.'
     },
     {
@@ -246,6 +425,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
             'Securely attested, currently addressed by name, and answered by name - the strongest attestation available to anybody in this file, because the Court has the rare luxury of being corrected if it gets it wrong.',
         answers: 'answers',
         juniority: 1,
+        manner:
+            'Exact, complete, and no help whatsoever. She answers what was asked, in as few words as the answer requires, and does not stay. Nine hundred years is long enough that the cost of the offering is no longer something she can feel, so it does not occur to her to wrap anything in context - and just occasionally her answers run a clause longer than the other five would have managed, which is the last visible trace of a person who used to know what this costs. Nobody at the Court has noticed, and nobody there knows to be grateful for it.',
         note: 'The Court\'s working line upward, and the reason its depletion is medium rather than terminal. Its archives are good, so it can still name her; because it can name her, the channel is open. That sequence is the entire argument for record-keeping, demonstrated once, in one institution.'
     },
 
@@ -263,6 +444,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
             'In the Survey\'s own register, in the Standing hand, correctly. The Survey reads the hand perfectly well and still refers to her by title in every context, which is house style rather than loss - it is one of the few institutions in this file whose reticence is a choice it could reverse tomorrow.',
         answers: 'answers',
         juniority: 1,
+        manner:
+            'Thirty-one centuries, and the most exact voice in the world. What comes back is a figure, or a name, or a direction, with nothing around it - the Survey has never received a sentence from her that contained a verb, and has an internal style guide for interpreting replies that is longer than every reply combined.',
         note: 'One ancestor, so the junior and the senior are the same person, and the Survey has never had to discover what the rule in `THE_JUNIOR_ANSWERS` costs an institution with more than one.'
     },
     {
@@ -278,6 +461,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
             'A face number and a work rank, which is a complete name in the Marches and reads as a filing reference to everybody in the Low Fall. The schedule carries it in the same column as any other completed face, dated, with nothing in the reason column.',
         answers: 'answers',
         juniority: 1,
+        manner:
+            'Twenty-six centuries, and answers in the schedule\'s own format: a dated entry, a face, and a completion mark. The Long Cut finds this entirely natural and has never once remarked on the fact that its ancestor files rather than speaks.',
         note: 'The Long Cut is the only institution in the world whose immortal ancestor is recorded as a completed piece of work rather than as a person, and it does not regard the distinction as meaningful.'
     },
     {
@@ -293,6 +478,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
             'The best-attested name in this file by a distance: contemporary records, a living sister who was in the room, an itemised divestment sequence, and a parting gift standing point-down in the floor.',
         answers: 'answers',
         juniority: 1,
+        manner:
+            'Three hundred and eighty years, which is nothing, and it shows in everything she sends. She front-loads: the exact answer, and then the context that stops it being misread, because she knows the Pavilion gets one of these a decade at best and there is no round trip. She is the only voice in the world that has ever volunteered a caution nobody asked for, and the Pavilion - which has misread her twice anyway - does not understand how unusual that is.',
         note: 'The most junior immortal in the world, which is why she answers most often and sends the lowest grade. Both facts are `THE_JUNIOR_ANSWERS` rather than two separate observations about her character.'
     }
 ];
@@ -970,7 +1157,7 @@ export function whoAnswersFor(factionId: string): NamedFigure | undefined {
  * not in the world, which is why this file carries its own and stays out of
  * `members.ts`.
  */
-export const ENGINE_GAP = {
+export const NAMED_FIGURE_ENGINE_GAP = {
     theShape:
         'A named figure has no realm ordinal, no rank index, no faction membership and no location, because none of those questions have answers for somebody who is dead, sealed, or through the Lid. Forcing them into the member schema would require inventing all four, and inventing a realm ordinal for a founder is exactly the kind of number that later gets treated as a fact.',
     whatTheEngineWouldNeed: [

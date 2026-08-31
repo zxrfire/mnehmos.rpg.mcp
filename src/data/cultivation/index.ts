@@ -214,6 +214,7 @@ export * from './crossings.js';
 export * from './history.js';
 export * from './contingencies.js';
 export * from './sealed-ancestors.js';
+export * from './named-figures.js';
 
 export {
     ENCOUNTERS,
