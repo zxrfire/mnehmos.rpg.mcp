@@ -73,8 +73,12 @@ describe('wandering figures', () => {
         const w = getWanderer(LU_SHENG)!;
         expect(getSect(w.affiliation.factionId), 'affiliated with an unknown faction').toBeDefined();
         expect(w.affiliation.factionId).toBe('sect-hollow-court');
-        // The rank he holds is a real rank of that faction.
-        expect(getSect(w.affiliation.factionId)!.ranks).toContain(w.affiliation.rankHeld);
+        // The rank he holds is deliberately NOT one of the four rungs. Guest of
+        // the Court is honorary and sits outside the ladder, which is what lets
+        // it be held by somebody the Court could not promote if it wanted to -
+        // and is the whole reason the affiliation amounts to nothing.
+        expect(getSect(w.affiliation.factionId)!.ranks).not.toContain(w.affiliation.rankHeld);
+        expect(w.affiliation.rankHeld).toBe('Guest of the Court');
         expect(w.affiliation.whatItAmountsTo).toMatch(/empty|never used|no obligation/i);
         expect(getWanderersAffiliatedWith('sect-hollow-court').map(x => x.id)).toContain(LU_SHENG);
         expect(getWanderersAffiliatedWith('sect-azure-cloud-pavilion')).toEqual([]);

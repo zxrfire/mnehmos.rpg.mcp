@@ -441,12 +441,15 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
 
         if (row.ordinal >= HIGH_BAND_FLOOR) {
             if (withdrawn) {
-                // The ordinal is the strongest of them, which is what powerOrdinal
+                // First Seat is the highest ordinal by the rule the Court itself
+                // uses, so this is not an approximation: powerOrdinal and First
+                // Seat are the same person. The ordinal is the strongest of them,
+                // which is what powerOrdinal
                 // means everywhere else and is all the catalog records. The other
                 // seats are in the last realm and the register does not say where,
                 // because nobody outside those mountains has ever been told.
                 out.push({
-                    name: 'strongest of ' + withdrawn.count + ' seated',
+                    name: 'First Seat',
                     named: false,
                     ordinal: row.ordinal,
                     rank: row.rank,
@@ -454,8 +457,8 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                     factionName: row.name,
                     factionOrdinal: row.ordinal,
                     note: withdrawn.occupiedBy
-                        + ' The register holds one ordinal for the seats, the strongest;'
-                        + ' where the other three stand is not recorded anywhere.'
+                        + ' Seats run First to Fourth by ordinal and then by youth, so First Seat'
+                        + ' is this ordinal by construction. Where the other three stand is not recorded.'
                 });
             } else {
                 out.push({

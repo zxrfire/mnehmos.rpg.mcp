@@ -39,12 +39,14 @@ import {
     THE_LAST_REALM_IS_UNBUYABLE,
     THE_STEP_AND_THE_BOUNDARY,
     ONCE_IN_A_LIFE,
-    THE_TWO_CLAIMS
+    THE_TWO_CLAIMS,
+    WHAT_SERVICE_ACTUALLY_BUYS
 } from '../../src/data/cultivation/immortal-items.js';
 import { rankName, realmForOrdinal, isRealmBoundary } from '../../src/engine/cultivation/realms.js';
 import { MAX_RANKS_PER_TURN } from '../../src/schema/cultivation.js';
 import { getSectAdmission } from '../../src/data/cultivation/sects.js';
 import { AZURE_CLOUD_INTAKE } from '../../src/data/cultivation/hierarchy.js';
+import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
 
 describe('items from above', () => {
     it('parses, and there are almost none of them', () => {
@@ -502,5 +504,80 @@ describe('the Pavilion position after the buff', () => {
         expect(dealing.knownByGrade).toEqual({ higher: 1, middle: 1, lower: 2 });
         // And the admission bar the ceiling rule leans on is unchanged.
         expect(getSectAdmission('sect-hollow-court')!.minOrdinal).toBe(29);
+    });
+});
+
+
+// ---------------------------------------------------------------------------
+// WHAT SERVICE BUYS
+// The correction that keeps the refusal from reading as ingratitude.
+// ---------------------------------------------------------------------------
+
+describe('what service actually buys', () => {
+    it('separates rewarding service from spending an immortal medicine', () => {
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theyDoReward).toMatch(/pays enormously/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theyDoReward).toMatch(/genuinely honoured/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theLine).toMatch(/Replaceability/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theLine).toMatch(/can get more of/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theLine).toMatch(/outside the reward economy/i);
+        // The claim it must never collapse into.
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theyDoReward).toMatch(/Read nothing in this file as sects being ungrateful/i);
+    });
+
+    it('lists what a sect can actually replace, including a vein cave', () => {
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.whatIsOnOffer.length).toBeGreaterThanOrEqual(6);
+        const all = WHAT_SERVICE_ACTUALLY_BUYS.whatIsOnOffer.join(' ');
+        expect(all).toMatch(/rank/i);
+        expect(all).toMatch(/stipend/i);
+        expect(all).toMatch(/technique access/i);
+        expect(all).toMatch(/cave on a real vein/i);
+        expect(all).toMatch(/protection/i);
+        expect(all).toMatch(/opens doors/i);
+    });
+
+    it('makes generational security the largest reward on the list', () => {
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theFamily).toMatch(/generational security/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theFamily).toMatch(/taken in, kept, placed, educated, fed and not forgotten/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theFamily).toMatch(/whether or not any of them can cultivate/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theFamily).toMatch(/costs the sect a great deal/i);
+    });
+
+    it('makes it a real motive for somebody from a thin county', () => {
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.whyItIsTheRealMotivation).toMatch(/thin county/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.whyItIsTheRealMotivation).toMatch(/stop being poor/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.whyItIsTheRealMotivation).toMatch(/nothing to do with power/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.whyItIsTheRealMotivation).toMatch(/never see ordinal 20/i);
+    });
+
+    it('runs the same principle down to the poorest institution in the world', () => {
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/Gleaners/);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/not being kind/i);
+        // And the claim matches what the Gleaners entry actually says.
+        const gleaners = FACTION_CHARACTER['sect-gleaners-company']!;
+        expect(gleaners.unitOfValue).toMatch(/share goes to their family/i);
+        expect(gleaners.unitOfValue).toMatch(/never once defaulted/i);
+    });
+
+    it('narrows the refusal to the one irreplaceable category', () => {
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.soTheRefusalIsNarrow).toMatch(/Nobody deserving is turned away with nothing/i);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.soTheRefusalIsNarrow).toMatch(/harder thing to be angry about/i);
+        expect(THE_TWO_CLAIMS.itIsNotThatServiceGoesUnrewarded).toMatch(/WHAT_SERVICE_ACTUALLY_BUYS/);
+        expect(THE_TWO_CLAIMS.itIsNotThatServiceGoesUnrewarded).toMatch(/frequently do/i);
+        expect(THE_TWO_CLAIMS.theEldersKnowThis).toMatch(/not bitter about a supply problem/i);
+    });
+
+    it('gives the refused elder everything except the one object', () => {
+        const refused = THE_TWO_CLAIMS.theOneWhoWasRefused;
+        expect(refused.whatSheWasGivenInstead).toMatch(/none of it grudgingly/i);
+        expect(refused.whatSheWasGivenInstead).toMatch(/cave on the gorge vein/i);
+        expect(refused.whatSheWasGivenInstead).toMatch(/four generations/i);
+        expect(refused.whatSheWasGivenInstead).toMatch(/cannot cultivate at all still hold posts/i);
+        expect(refused.whatSheWasGivenInstead).toMatch(/refused one object/i);
+        // Her people know exactly what they were given, which is why it stings.
+        expect(refused.theGrievance).toMatch(/still living on some of it/i);
+        expect(refused.theGrievance).toMatch(/hands you everything it can/i);
+        // And the declining is of real generosity, repeatedly.
+        expect(refused.howLongItHasLasted).toMatch(/real generosity/i);
+        expect(refused.howLongItHasLasted).toMatch(/good faith/i);
     });
 });

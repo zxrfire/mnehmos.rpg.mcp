@@ -829,7 +829,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // sealed under a mountain. See the note on `recruits` below: this
         // number is real and it is almost never in the room.
         powerOrdinal: 44,
-        ranks: ['Guest of the Court', 'Seated', 'Second Seat', 'First Seat'],
+        // Four rungs, and they line up with four realms exactly: Void
+        // Refinement, Body Integration, Grand Ascension, Tribulation
+        // Transcendence. Admission at 29 plus the engine four ordinals per
+        // rank lands on 29, 33, 37 and 41, so the ladder needs no special case.
+        //
+        // "Guest of the Court" is deliberately NOT here. It is honorary, given
+        // without discussion, carries no obligation in either direction, and
+        // sits outside the ladder rather than beneath it - which is why it can
+        // be held by somebody the Court could not promote if it wanted to.
+        ranks: ['Outer Disciple', 'Inner Disciple', 'Elder', 'Seat'],
         admissionOrdinal: 29,
         stipend: [500, 1_500, 4_000, 12_000],
         teaches: [],
@@ -2902,11 +2911,42 @@ export const HOLLOW_COURT_FOSTERAGE: Fosterage = {
         'They stay where they were raised, at or near the top of it. A fostered Court child who does not go back is typically an elder somewhere reputable by the middle of their life, is treated with a deference the sect cannot quite account for, and is the single most reliable source in the province on what the Court is actually like - which is worth a great deal to people who will never get closer than that.'
 };
 
+/**
+ * How the four Seats are ordered, First through Fourth.
+ *
+ * Rank first: the highest ordinal holds First Seat, so the powerOrdinal of
+ * the Court and its First Seat are the same person by construction.
+ *
+ * Then age, and the tiebreak is an allocation rule rather than a courtesy.
+ * Among equal ordinals the YOUNGER holds the higher seat, because a seat is
+ * first claim on what the Court has, and lifespan is the constraint on the
+ * crossing. Two at Tribulation Transcendence Perfection have the same odds per
+ * attempt and different numbers of attempts left, so the resources go to the
+ * one with more years to spend them in. Nothing about it is sentimental: it is
+ * the Court putting its finite supply where it can still convert.
+ *
+ * So a seat is held rather than owned, and cannot be accumulated. Nobody here
+ * has been demoted for failing; several have been moved down for being
+ * overtaken, which is the same event described honestly - and being moved down
+ * means going second for everything the Court can hand out.
+ */
+export const SEAT_ORDER = {
+    primary: 'Realm ordinal, descending. The highest holds First Seat.',
+    tiebreak:
+        'Age, ascending. Among equal ordinals the younger holds the higher seat, because the seat is first claim on the resources and lifespan is what limits how many attempts at the crossing anybody gets. Same odds per attempt, more attempts remaining, so the supply goes there.',
+    displacement:
+        'A seat is held, not owned. Somebody arriving at an equal ordinal younger takes the seat above them and everybody below shifts down one, which moves them down the queue for everything the Court can supply. It is not a demotion and the Court does not treat it as one, which does not make it comfortable.',
+    outsideTheLadder:
+        'Guest of the Court is honorary, sits outside the four rungs, and is not a seat. It confers nothing and asks nothing.',
+    whenSomebodyRunsOut:
+        'The rule has an edge nobody designed and everybody has now seen. It allocates on attempts remaining, so somebody with none cannot be placed on it at all - not at the bottom, not anywhere. A First Seat who makes the crossing and does not complete it comes back with no ordinal and no attempts, and the ladder that ranked them has no rung that fits. Guest of the Court exists because that happened once and the Court had to put him somewhere.'
+} as const;
+
 export const WITHDRAWN_POWERS: Record<string, WithdrawnPower> = {
     'sect-hollow-court': {
         count: 4,
         occupiedBy:
-            'The crossing. Everyone seated is working on it continuously, and has been for long enough that the province measures their presence in decades of absence rather than in appearances.',
+            'Four Seats, First through Fourth, ordered by ordinal and then by youth. The crossing. Everyone seated is working on it continuously, and has been for long enough that the province measures their presence in decades of absence rather than in appearances.',
         seenAs:
             'A generation of a regional sect can pass without anyone at that sect meeting one. The mountains are visited; the occupants are not.',
         hasAppearedFor: [
