@@ -1193,6 +1193,190 @@ encounter things they do not understand.
 
 ---
 
+## Existence is multi-valued once cultivation is profound
+
+At low realms, `body destroyed = dead`. High cultivation breaks that equivalence, and the
+simulation must stop modelling a person as *one body plus one row plus one continuous
+physical existence*.
+
+A cultivator is a **persistent identity that may occupy several physical states over
+time.** This is not a separate magic system - it is a consequence of cultivation becoming
+profound, and it is kept to a small authoritative field set:
+
+```text
+existence_state   alive | physically_dead | soul_preserved | remnant | sealed
+                  | possessing | reincarnated | reconstructed | missing | unknown
+body_id           which body, if any, this identity currently occupies
+soul_state        intact | damaged | fragmented | fading
+cultivation       what survived the transition, which is often not all of it
+identity_continuity  how much of the original person this actually is
+```
+
+The engine decides whether a transition is legal. The narrator interprets it.
+
+### Nascent Soul is the threshold
+
+Nascent Soul is not "the next realm with bigger numbers." It is the qualitative change
+where the soul can persist without the body, and it is the gate below which most of these
+states are simply unavailable. Above it a cultivator *may* survive severe bodily
+destruction, hold consciousness outside the body, occupy another body under the right
+conditions, rebuild a body, or leave a remnant.
+
+**Not every Nascent Soul cultivator can do all of it.** Capability depends on
+specialisation, preparation and circumstance.
+
+### Survival is conditional, never automatic
+
+Advanced cultivation must not become automatic immortality. Surviving one's own death may
+require soul strength, a compatible vessel, a specific treasure, a suitable environment,
+resources, a technique, outside assistance, luck, or - most often - having prepared in
+advance. **A powerful cultivator can still die permanently, and most do.** The purpose is
+not immortality; it is to make death, identity and survival more interesting as
+cultivation deepens.
+
+### The transitions are real state changes
+
+If a cultivator possesses a body, the engine changes `body_id`, ownership and control, and
+resolves the outcome. It is never narrated over an unchanged database. **Possession is
+also not perfect control**: it can meet resistance, incompatibility, outright rejection,
+partial control, cultivation loss, personality conflict or soul injury. A powerful soul
+does not make every vessel suitable.
+
+**Reconstruction** may cost the original physique, cultivation, meridian integrity,
+appearance, or memories. The rebuilt body is rarely identical.
+
+**Reincarnation is not respawn.** It produces a genuinely new life. Whether memory,
+cultivation, karma, traits or relationships carry across depends on circumstance, and
+recognition - by the reincarnated person or by anyone else - is a discovery, not a given.
+
+**A remnant is not the person.** A remnant will, projection, obsession, recorded
+consciousness or inheritance guardian may say *"I was the founder of this sect"* without
+being the founder's consciousness. That distinction must be preserved in state, because
+it is frequently the whole point of the encounter.
+
+### Missing and unknown are load-bearing
+
+`missing` and `unknown` are not placeholders for a decision the engine is avoiding. They
+are correct answers. If a cultivator vanishes into a ruin, the engine does not have to
+decide whether they are alive, and the world may hold several beliefs at once - died,
+soul escaped, reincarnated, in seclusion, sealed, became a remnant - with the truth
+genuinely unresolved until something settles it.
+
+```text
+year 50     a powerful cultivator disappears
+year 500    still missing
+year 2000   civilisation treats them as long dead
+year 4000   a sealed body is found
+year 4020   they wake, with their memories, relationships and grudges intact
+```
+
+### Absence is not removal
+
+A character does not need to be present to matter. Their inheritance, remnant, disciples,
+descendants, enemies, artifacts, techniques, karma and reputation keep acting on the
+world. **Death does not remove someone from the simulation; it changes their mode of
+existence.**
+
+### Lifespan is not a straight line
+
+Higher realms generally extend life, but lifespan is also moved by injuries, techniques,
+environment, physique, treasures, and breakthroughs both successful and failed. Some low
+cultivators die unusually young. Some very powerful ones die despite enormous remaining
+longevity. Some ancient things persist far past any reasonable expectation.
+
+## Possession, ownership, and where things came from
+
+**Possession is not ownership.** Keep four things separable:
+
+```text
+possession              who is physically holding it
+ownership               whose it actually is
+claim                   who asserts a right to it
+knowledge of ownership  who knows any of the above
+```
+
+A player who finds an ancient artifact possesses it. An extinct clan's surviving
+descendant may hold a legitimate ancestral claim. Neither may know about the other. That
+gap is a situation, and situations are what this engine is for.
+
+**Significant resources carry provenance** - not every spirit stone forever, but anything
+that matters:
+
+```text
+108 spirit stones     source: an abandoned mine     found: day 180
+                      previous owner: unknown
+
+an old sword          source: a dead cultivator     acquired: inheritance
+                      previous owner: named, and remembered by their sect
+```
+
+This is what makes stolen goods, disputed inheritances, faction claims, investigations and
+century-old karmic consequences possible without a separate system for each.
+
+## Locations carry environment, not just a name
+
+A location is an environmental modifier. Keep it lightweight:
+
+```text
+spiritual_density | danger | resources | climate | political_control
+special_rules | known_secrets | historical_scars
+```
+
+so that "cultivate for ten years" resolves differently in a city, in wilderness, on a
+spirit mountain, on a poisoned battlefield, inside a ruin, in sect territory, or in a
+forbidden zone.
+
+## NPC goals persist
+
+Not psychology - five fields:
+
+```text
+goal | priority | progress | obstacles | deadline
+```
+
+*Avenge a father. High. Has identified the killer's faction. Insufficient strength. No
+deadline.*
+
+Three hundred years later that goal can still be live. And if its holder dies, **the goal
+becomes legacy state** - a disciple continues the revenge, a descendant inherits the
+grudge. That is the continuity the whole design is aiming at.
+
+## Even the engine may not know
+
+`world_facts` says what is true, but it must be able to say **unresolved**. Distinguish an
+objective fact from a historically reconstructed one, and allow genuine gaps:
+
+```text
+year 430    an ancient sect disappeared
+known       it existed; its territory was abandoned
+claimed     destroyed / ascended / sealed itself / migrated
+truth       unresolved
+```
+
+Otherwise the simulation degrades into "the database secretly knows everything and NPCs
+merely hold incorrect copies," which is a much smaller idea than a world with real
+uncertainty in it. An unresolved fact also relieves the narrator of inventing an answer
+prematurely, and leaves room for one to be found later.
+
+## Long actions are interrupted, not fast-forwarded
+
+`cultivate for ten years` must never mean *skip 3,650 days and compute the endpoint*. The
+events during the action are the content:
+
+```text
+day 74    a breakthrough
+day 181   an injury
+day 400   someone discovers the location
+day 622   a sect war reaches the region
+day 900   the spiritual vein collapses
+day 1200  continue, or not?
+```
+
+The skip runs until something worth stopping for happens, hands control back, and lets the
+player decide whether to continue. This is also how "the world does not wait for you"
+becomes true rather than merely stated - the interruptions are the world arriving.
+
+
 ## Characters persist after they are surpassed
 
 This is among the most important rules in the document, and it names a specific failure

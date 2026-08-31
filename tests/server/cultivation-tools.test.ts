@@ -31,6 +31,7 @@ import { SectRepository } from '../../src/storage/repos/sect.repo.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import {
     addToPouch,
+    cultivatorClaimKey,
     ensureCultivationDb,
     listTolls,
     tollCandidatesFor
@@ -398,15 +399,22 @@ describe('cultivation MCP tool surface', () => {
 
             const result = await cultivation({ action: 'breakthrough' });
             expect(result.error).toBeUndefined();
-            expect(result.odds.modifiers.length).toBeGreaterThanOrEqual(5);
             expect(result.odds.roll).toBeGreaterThanOrEqual(0);
             expect(result.odds.roll).toBeLessThan(1);
-            // The engine's invariant: the itemised deltas sum to the final chance.
+
+            // The contract is that the arithmetic is fully itemised, not that
+            // it has a particular number of lines: the engine adds and removes
+            // modifiers as the design moves, and a count assertion here just
+            // breaks every time it does. What must hold is that the deltas the
+            // tool reports sum EXACTLY to the chance it rolled against, so a
+            // player who dies can reconstruct why the odds were what they were.
             expect(result.odds.modifierSum).toBeCloseTo(result.odds.finalChance, 3);
+
             const sources = result.odds.modifiers.map((m: any) => m.source);
             expect(sources.some((s: string) => s.startsWith('base:'))).toBe(true);
+            expect(sources.some((s: string) => s.startsWith('spirit_root:'))).toBe(true);
+            expect(sources.some((s: string) => s.startsWith('ambient_qi:'))).toBe(true);
             expect(sources).toContain('insight');
-            expect(sources).toContain('fortune');
         });
 
         it('persists exactly what the engine returned, injuries included', async () => {
@@ -479,41 +487,119 @@ describe('cultivation MCP tool surface', () => {
 
     // ─────────────────────────────────────────────────────────────────────
     describe("the Vault's toll", () => {
-        it('offers the engine real rows as candidates, never invented ones', async () => {
+        /** A real relationship row: somebody who knows this cultivator. */
+        function seedBond(
+            holderId: string,
+            holderName: string,
+            subjectId: string,
+            significance = 'defining'
+        ): string {
+            const id = `rel_${holderId}_${subjectId}`;
+            db.prepare(`
+                INSERT INTO relationships (
+                    id, from_character_id, to_character_id, type, label, strength,
+                    significance, attitude, roles, history,
+                    established_on_day, last_updated_on_day, active
+                ) VALUES (?, ?, ?, 'sibling', 'younger brother', 0.9, ?, 'devoted', '[]',
+                          'He carried her off the mountain the year the tide came in.', 0, 0, 1)
+            `).run(id, holderId, subjectId, significance);
+
+            // And what that person holds about her.
+            db.prepare(`
+                INSERT INTO knowledge_records (
+                    id, holder_id, holder_kind, claim_key, fact_id, stance, statement,
+                    detail, source_kind, source_note, acquired_on_day, confidence, tags, superseded
+                ) VALUES (?, ?, 'character', ?, NULL, 'knows', ?, '{}', 'witnessed', '', 0, 1, '[]', 0)
+            `).run(
+                `know_${holderId}_${subjectId}`,
+                holderId,
+                cultivatorClaimKey(subjectId),
+                `${holderName} knows her. He has known her since she was six.`
+            );
+            return id;
+        }
+
+        /** A real knowledge row the cultivator holds: a memory. */
+        function seedMemory(cultivatorId: string, suffix: string, statement: string): string {
+            const id = `know_self_${cultivatorId}_${suffix}`;
+            db.prepare(`
+                INSERT INTO knowledge_records (
+                    id, holder_id, holder_kind, claim_key, fact_id, stance, statement,
+                    detail, source_kind, source_note, acquired_on_day, confidence, tags, superseded
+                ) VALUES (?, ?, 'character', ?, NULL, 'knows', ?, '{}', 'witnessed', '', 0, 1, '[]', 0)
+            `).run(id, cultivatorId, `memory:${suffix}`, statement);
+            return id;
+        }
+
+        it('draws bonds and memories from real social rows, not substitutes', async () => {
             const created = await newRun();
+            const cultivatorId = created.cultivator.id;
+
             const available = await technique({ action: 'list_available' });
             await technique({ action: 'learn', techniqueId: available.compatible[0].id });
 
-            const repos = ensureCultivationDb();
-            const cultivator = repos.cultivators.getById(created.cultivator.id)!;
-            const candidates = tollCandidatesFor(repos, cultivator);
+            const relationshipId = seedBond('npc-brother', 'Shen Kuo', cultivatorId);
+            const memoryId = seedMemory(cultivatorId, 'mother', 'Her mother\'s name was Yun Qing.');
 
-            expect(candidates.length).toBeGreaterThan(0);
+            const repos = ensureCultivationDb();
+            const candidates = tollCandidatesFor(repos, repos.cultivators.getById(cultivatorId)!);
+
+            const bond = candidates.find(c => c.kind === 'bond');
+            const memory = candidates.find(c => c.kind === 'memory');
+            const art = candidates.find(c => c.kind === 'technique');
+
+            expect(bond?.id).toBe(relationshipId);
+            expect(memory?.id).toBe(memoryId);
+            expect(art).toBeDefined();
+
+            // Every candidate id resolves to a row that exists right now.
             for (const candidate of candidates) {
-                expect(candidate.id).toBeTruthy();
-                if (candidate.kind === 'technique') {
-                    expect(repos.techniques.knows(cultivator.id, candidate.id)).toBe(true);
-                } else if (candidate.kind === 'bond') {
-                    expect(repos.cultivators.getById(candidate.id)).not.toBeNull();
+                if (candidate.kind === 'bond') {
+                    expect(db.prepare('SELECT 1 FROM relationships WHERE id = ?')
+                        .get(candidate.id)).toBeDefined();
+                } else if (candidate.kind === 'memory') {
+                    expect(db.prepare('SELECT 1 FROM knowledge_records WHERE id = ?')
+                        .get(candidate.id)).toBeDefined();
+                } else {
+                    expect(repos.techniques.knows(cultivatorId, candidate.id)).toBe(true);
                 }
             }
+
+            // A memory the cultivator does not hold is never a candidate.
+            seedMemory('somebody-else', 'theirs', 'Not hers to lose.');
+            const again = tollCandidatesFor(repos, repos.cultivators.getById(cultivatorId)!);
+            expect(again.filter(c => c.kind === 'memory').map(c => c.id)).toEqual([memoryId]);
         });
 
-        it('charges the toll at a realm boundary and really takes what it named', async () => {
-            // Deterministic scan: the first seed in this fixed order whose
-            // 12 -> 13 crossing succeeds. Reaching a boundary honestly costs
-            // decades, so the realm gate is lifted through admin and the
-            // progress is bought with a real catalog pill.
-            let sawBoundaryCrossing = false;
+        it('offers nothing when the run has accumulated nothing', async () => {
+            const created = await newRun();
+            const repos = ensureCultivationDb();
+            const candidates = tollCandidatesFor(
+                repos, repos.cultivators.getById(created.cultivator.id)!
+            );
+            expect(candidates).toHaveLength(0);
+        });
 
-            for (let i = 0; i < 40 && !sawBoundaryCrossing; i++) {
+        /**
+         * Reach a realm boundary and cross it successfully.
+         *
+         * Deterministic scan over a fixed seed order. Reaching a boundary
+         * honestly costs decades, so the realm gate is lifted through admin and
+         * the progress is bought with a real catalog pill; the crossing itself
+         * is rolled by the engine exactly as it always is.
+         */
+        async function crossABoundary(
+            seedPrefix: string,
+            setup: (cultivatorId: string) => void | Promise<void>,
+            opts: { attempts?: number; until?: (result: any) => boolean } = {}
+        ) {
+            const attempts = opts.attempts ?? 40;
+            for (let i = 0; i < attempts; i++) {
                 closeDb();
                 db = getDb(':memory:');
                 process.env.ADMIN_MODE = 'true';
-                const created = await newRun(`toll-seed-${i}`, `Climber ${i}`);
-
-                const available = await technique({ action: 'list_available' });
-                await technique({ action: 'learn', techniqueId: available.compatible[0].id });
+                const created = await newRun(`${seedPrefix}-${i}`, `Climber ${i}`);
+                await setup(created.cultivator.id);
 
                 await admin({ action: 'set_realm', ordinal: 12 });
                 await admin({ action: 'grant_item', itemId: 'pill-condensed-century' });
@@ -524,49 +610,176 @@ describe('cultivation MCP tool surface', () => {
 
                 const result = await cultivation({ action: 'breakthrough' });
                 if (result.error || result.outcome !== 'success') continue;
-
-                sawBoundaryCrossing = true;
-
-                // A successful realm-boundary crossing is always charged.
-                expect(result.toll).not.toBeNull();
-                expect(result.toll.boundaryIndex).toBe(0);
-                expect(['clean', 'taken', 'nothing_left', 'prepaid'])
-                    .toContain(result.toll.outcome);
-                expect(result.foundationEstablished).not.toBeNull();
-
-                // The ledger holds it, exactly as returned.
-                const ledger = listTolls(db, created.cultivator.id);
-                expect(ledger).toHaveLength(1);
-                expect(ledger[0].outcome).toBe(result.toll.outcome);
-                expect(ledger[0].fromOrdinal).toBe(12);
-                expect(ledger[0].toOrdinal).toBe(13);
-
-                // And what it named is genuinely gone.
-                if (result.toll.outcome === 'taken' && result.toll.taken?.kind === 'technique') {
-                    const repos = ensureCultivationDb();
-                    expect(repos.techniques.knows(created.cultivator.id, result.toll.taken.id))
-                        .toBe(false);
-                }
-
-                const after = await cultivation({ action: 'status' });
-                expect(after.foundation).toBe(result.foundationEstablished);
-                expect(after.tollsPaid).toHaveLength(1);
-
-                // Persisted on the cultivator row, not in a side table.
-                const row = db
-                    .prepare('SELECT foundation_quality FROM cultivators WHERE id = ?')
-                    .get(created.cultivator.id) as { foundation_quality: string };
-                expect(row.foundation_quality).toBe(result.foundationEstablished);
-                expect(new CultivatorRepository(db).getById(created.cultivator.id)!.foundationQuality)
-                    .toBe(result.foundationEstablished);
-
-                // A foundation is laid once and never re-laid.
-                const relaid = new CultivatorRepository(db)
-                    .establishFoundation(created.cultivator.id, 'flawless');
-                expect(relaid).toBeNull();
+                if (opts.until && !opts.until(result)) continue;
+                return { created, result };
             }
+            return null;
+        }
 
-            expect(sawBoundaryCrossing).toBe(true);
+        /** Only crossings where the Vault actually took something. */
+        const tookSomething = (result: any) => result.toll?.outcome === 'taken';
+
+        it('charges the toll at a realm boundary and records it in the ledger', async () => {
+            const crossing = await crossABoundary('toll-seed', async cultivatorId => {
+                const available = await technique({ action: 'list_available' });
+                await technique({ action: 'learn', techniqueId: available.compatible[0].id });
+            });
+            expect(crossing).not.toBeNull();
+            const { created, result } = crossing!;
+
+            expect(result.toll).not.toBeNull();
+            expect(result.toll.boundaryIndex).toBe(0);
+            expect(['clean', 'taken', 'nothing_left', 'prepaid']).toContain(result.toll.outcome);
+            expect(result.foundationEstablished).not.toBeNull();
+
+            const ledger = listTolls(db, created.cultivator.id);
+            expect(ledger).toHaveLength(1);
+            expect(ledger[0].outcome).toBe(result.toll.outcome);
+            expect(ledger[0].fromOrdinal).toBe(12);
+            expect(ledger[0].toOrdinal).toBe(13);
+
+            // Persisted on the cultivator row, not in a side table.
+            const row = db
+                .prepare('SELECT foundation_quality FROM cultivators WHERE id = ?')
+                .get(created.cultivator.id) as { foundation_quality: string };
+            expect(row.foundation_quality).toBe(result.foundationEstablished);
+
+            // A foundation is laid once and never re-laid.
+            expect(new CultivatorRepository(db)
+                .establishFoundation(created.cultivator.id, 'flawless')).toBeNull();
+
+            const after = await cultivation({ action: 'status' });
+            expect(after.foundation).toBe(result.foundationEstablished);
+            expect(after.tollsPaid).toHaveLength(1);
+        });
+
+        it('really removes a taken technique', async () => {
+            const crossing = await crossABoundary('toll-tech', async cultivatorId => {
+                // Arts only: no bonds and no memories, so a take must be an art.
+                const available = await technique({ action: 'list_available' });
+                for (const art of available.compatible.slice(0, 3)) {
+                    await technique({ action: 'learn', techniqueId: art.id });
+                }
+            }, { attempts: 150, until: tookSomething });
+            expect(crossing).not.toBeNull();
+            const { created, result } = crossing!;
+
+            expect(result.toll.taken.kind).toBe('technique');
+            expect(result.toll.applied).toBe(true);
+
+            const repos = ensureCultivationDb();
+            expect(repos.techniques.knows(created.cultivator.id, result.toll.taken.id)).toBe(false);
+            expect(db.prepare(
+                'SELECT 1 FROM cultivator_techniques WHERE cultivator_id = ? AND technique_id = ?'
+            ).get(created.cultivator.id, result.toll.taken.id)).toBeUndefined();
+        });
+
+        it('really severs a taken bond: the row is ended and the knowledge is gone', async () => {
+            // Bonds only. Learn nothing and hold no memories, so the only
+            // category with any weight is `bond`, and the name is not eligible
+            // until boundary index 3.
+            const crossing = await crossABoundary('toll-bond', cultivatorId => {
+                seedBond('npc-brother', 'Shen Kuo', cultivatorId);
+            }, { attempts: 150, until: tookSomething });
+            expect(crossing).not.toBeNull();
+            const { created, result } = crossing!;
+
+            expect(result.toll.outcome).toBe('taken');
+            expect(result.toll.taken.kind).toBe('bond');
+            expect(result.toll.applied).toBe(true);
+            expect(result.toll.appliedDetail.holderId).toBe('npc-brother');
+
+            // 1. The knowledge that person held about her is genuinely absent.
+            const held = db
+                .prepare(`
+                    SELECT stance FROM knowledge_records
+                    WHERE holder_id = 'npc-brother' AND claim_key = ?
+                `)
+                .all(cultivatorClaimKey(created.cultivator.id)) as { stance: string }[];
+            expect(held.map(r => r.stance)).toEqual(['ignorant']);
+            expect(held.some(r => r.stance === 'knows')).toBe(false);
+
+            // 2. The tie no longer operates. It is kept as history — the social
+            //    engine is explicit that ended ties are never deleted — but it
+            //    is inactive and reasoned.
+            const tie = db
+                .prepare('SELECT active, ended_reason FROM relationships WHERE id = ?')
+                .get(result.toll.taken.id) as { active: number; ended_reason: string };
+            expect(tie.active).toBe(0);
+            expect(tie.ended_reason).toBe('toll');
+
+            // 3. It is no longer offered as a candidate, so it cannot be taken twice.
+            const repos = ensureCultivationDb();
+            const candidates = tollCandidatesFor(
+                repos, repos.cultivators.getById(created.cultivator.id)!
+            );
+            expect(candidates.filter(c => c.kind === 'bond')).toHaveLength(0);
+        });
+
+        it('really deletes a taken memory, leaving the world fact alone', async () => {
+            let memoryId = '';
+            const crossing = await crossABoundary('toll-mem', cultivatorId => {
+                // Memories only.
+                db.prepare(`
+                    INSERT INTO world_facts (id, claim_key, on_day, statement, detail, subjects, tags, concealed)
+                    VALUES ('fact-mother', 'memory:mother', 0, 'Her mother was named Yun Qing.', '{}', '[]', '[]', 0)
+                `).run();
+                db.prepare(`
+                    INSERT INTO world_fact_subjects (fact_id, character_id) VALUES ('fact-mother', ?)
+                `).run(cultivatorId);
+                memoryId = `know_self_${cultivatorId}_mother`;
+                db.prepare(`
+                    INSERT INTO knowledge_records (
+                        id, holder_id, holder_kind, claim_key, fact_id, stance, statement,
+                        detail, source_kind, source_note, acquired_on_day, confidence, tags, superseded
+                    ) VALUES (?, ?, 'character', 'memory:mother', 'fact-mother', 'knows',
+                              'Her mother was named Yun Qing.', '{}', 'witnessed', '', 0, 1, '[]', 0)
+                `).run(memoryId, cultivatorId);
+            }, { attempts: 150, until: tookSomething });
+            expect(crossing).not.toBeNull();
+            const { result } = crossing!;
+
+            expect(result.toll.outcome).toBe('taken');
+            expect(result.toll.taken.kind).toBe('memory');
+            expect(result.toll.taken.id).toBe(memoryId);
+            expect(result.toll.applied).toBe(true);
+
+            // The memory is gone from the database. Not superseded — gone.
+            expect(db.prepare('SELECT 1 FROM knowledge_records WHERE id = ?')
+                .get(memoryId)).toBeUndefined();
+
+            // The world still knows. She does not. That asymmetry is the setting.
+            expect(db.prepare('SELECT statement FROM world_facts WHERE id = ?')
+                .get('fact-mother')).toBeDefined();
+        });
+
+        it('never reports a take it did not apply', async () => {
+            // Across many crossings, `applied` must be true on every `taken`.
+            for (let i = 0; i < 12; i++) {
+                closeDb();
+                db = getDb(':memory:');
+                process.env.ADMIN_MODE = 'true';
+                const created = await newRun(`toll-audit-${i}`, `Auditee ${i}`);
+                const available = await technique({ action: 'list_available' });
+                await technique({ action: 'learn', techniqueId: available.compatible[0].id });
+                seedBond('npc-brother', 'Shen Kuo', created.cultivator.id);
+                seedMemory(created.cultivator.id, 'mother', 'Her mother was named Yun Qing.');
+
+                await admin({ action: 'set_realm', ordinal: 12 });
+                await admin({ action: 'grant_item', itemId: 'pill-condensed-century' });
+                await alchemy({ action: 'consume_pill', pillId: 'pill-condensed-century' });
+
+                const status = await cultivation({ action: 'status' });
+                if (!status.breakthroughEligible) continue;
+                const result = await cultivation({ action: 'breakthrough' });
+                if (result.error || !result.toll) continue;
+
+                if (result.toll.outcome === 'taken') {
+                    expect(result.toll.applied).toBe(true);
+                    const ledger = listTolls(db, created.cultivator.id);
+                    expect(ledger[0].taken).not.toBeNull();
+                }
+            }
         });
     });
 
