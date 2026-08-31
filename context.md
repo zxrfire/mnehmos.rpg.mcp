@@ -272,6 +272,100 @@ Consequences the engine must actually model:
   obligations, resource requirements, faction interest, jealousy and reputation. Power is
   never purely beneficial.
 
+## Capability is a question, not a gate
+
+The engine must never answer an intent with *"your realm is too low, this action is
+unavailable."* It answers what happens **when you try**, which is a different question and
+a better one.
+
+Five separate predicates, and they come apart:
+
+```text
+can attempt      is the action physically initiable at all
+can survive      will the attempt kill you
+can succeed      can it actually work
+can understand   will you comprehend what you found, or what happened to you
+can force        can you impose the outcome over resistance
+```
+
+A Foundation Establishment cultivator **can attempt** to enter an ancient ruin. Whether
+they **survive** it is a different predicate, and whether they **understand** what is
+inscribed on the wall is a third. A weak cultivator **can attempt** to rob a Core Formation
+elder; the simulation must permit the attempt and let circumstances - preparation, terrain,
+the elder's attention, who else is present, what the thief knows - decide the outcome.
+
+This is also the **anti-hallucination primitive**. When the narrating agent asks "can they
+do this," the engine returns these five answers as facts, and the agent narrates from them.
+It removes the situation where a model quietly decides an action is possible because the
+story would be better that way.
+
+Specialised techniques, artifacts, physiques and knowledge modify each predicate
+independently: a lower-realm specialist may survive where a stronger generalist cannot,
+and may understand what a stronger one cannot read.
+
+## Luck generates opportunity, not success
+
+Fortune must **not** be a percentage added to winning.
+
+```text
+high fortune    more opportunities, useful coincidences, better timing,
+                encounters that happen to be survivable, discoveries
+low fortune     missed windows, bad timing, the resource already taken,
+                the wrong person present, arriving four days late
+```
+
+Luck must never override causality. A lucky weak cultivator does not randomly kill someone
+far above them. What their luck does is arrange that **the elder's attention is elsewhere
+at the moment they run** - which is the genre-correct expression of it, and far more
+interesting than a modifier.
+
+## Opportunities have windows, and close
+
+Every opportunity carries a temporal window, and the world does not hold it open:
+
+```text
+a spirit fruit ripens        12 days
+a secret realm opens         every 80 years
+an ancient cultivator wakes  once in 300 years
+sect recruitment             annually
+a war escalates              over 4 years
+```
+
+**The player can simply miss things**, permanently, including things they never learned
+about. Missing a realm that opens once a century by four months is a legitimate and
+desirable outcome. Someone else may take it instead, and that has consequences.
+
+## The world contains things that almost happened
+
+History must record **failed branches** - not alternate timelines, simply possibilities
+that did not occur:
+
+- a sect that nearly unified the continent, and did not
+- a cultivator who nearly ascended, and died
+- a house that nearly recovered its lost discipline, and lost the last holder first
+- someone who nearly joined the player, and chose otherwise
+
+These are stored as ordinary history with a near-miss marker. They cost almost nothing and
+they are the strongest available antidote to a world that looks built to produce the
+player's success. A world where everything that was tried worked is a world with a author
+standing visibly behind it.
+
+## Lineage
+
+The minimum viable version: a parent/descendant edge between characters, plus what travels
+down it - bloodline traits, family reputation, inherited enemies, inherited resources, and
+inherited obligations.
+
+This is what makes long time-skips land. A player returning after two centuries finds their
+disciple's descendants running a city, or finds someone hunting them for something an
+ancestor did. Without the edge, a century skip has nothing to attach consequence to.
+
+Factions are holders of memory in the same way people are: a faction remembers that its
+elder was saved, its disciple was killed, its artifact was stolen, or that someone refused
+an alliance - and it still remembers generations later. *"Your name is still recorded in
+our ancestral hall"* should cost one row.
+
+
 ## NPCs are protagonists of their own lives
 
 This is among the most important requirements and the easiest to fake badly.
