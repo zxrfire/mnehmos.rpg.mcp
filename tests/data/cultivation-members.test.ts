@@ -428,21 +428,30 @@ describe('members catalog', () => {
 });
 
 describe('the strongest member is somebody you can meet', () => {
-    it('gives every recruiting faction exactly one outlier, at its own ordinal', () => {
+    it('names somebody at every faction ordinal, and allows a core above the pipeline', () => {
         for (const sect of SECTS) {
             const mine = MEMBERS.filter(m => m.factionId === sect.id);
             if (mine.length === 0) continue;
-            const outliers = mine.filter(m => m.outlier);
-            expect(outliers.length, sect.id + ' should have one outlier').toBe(1);
+            // At least one, not exactly one. Remnants come in cores: a sect
+            // squatting in somebody else's compound frequently squats in it with
+            // somebody else's elders, so a faction can carry a whole band its own
+            // ground could never have produced.
+            const outliers = mine.filter(m => m.outlier)
+                .sort((a, b) => b.realmOrdinal - a.realmOrdinal);
+            expect(outliers.length, sect.id + ' names nobody at its own ordinal')
+                .toBeGreaterThanOrEqual(1);
             // The faction ordinal is defined as its strongest member, so this is
             // an identity rather than a range check.
-            expect(outliers[0].realmOrdinal, sect.id + ' outlier is not the strongest member')
+            expect(outliers[0].realmOrdinal, sect.id + ' strongest outlier is not the strongest member')
                 .toBe(sect.powerOrdinal);
-            expect(outliers[0].rankIndex, sect.id + ' outlier does not hold the top rank')
+            expect(outliers[0].rankIndex, sect.id + ' strongest outlier does not hold the top rank')
                 .toBe(sect.ranks.length - 1);
+            for (const o of outliers) {
+                expect(o.outlierReason, o.id + ' is an outlier for no stated reason').not.toBeNull();
+            }
             for (const other of mine.filter(m => !m.outlier)) {
-                expect(other.realmOrdinal, other.id + ' outranks the outlier')
-                    .toBeLessThanOrEqual(outliers[0].realmOrdinal);
+                expect(other.realmOrdinal, other.id + ' outranks every outlier')
+                    .toBeLessThanOrEqual(outliers[outliers.length - 1].realmOrdinal);
             }
         }
     });
@@ -453,5 +462,24 @@ describe('the strongest member is somebody you can meet', () => {
         const ordinary = MEMBERS.filter(m => !m.outlier);
         const median = ordinary.map(m => m.realmOrdinal).sort((a, b) => a - b)[Math.floor(ordinary.length / 2)];
         expect(median).toBeLessThanOrEqual(20);
+    });
+});
+
+describe('remnants come in cores', () => {
+    it('has at least one faction carrying a band it could not have produced', () => {
+        const cores = SECTS
+            .map(s => ({ s, r: MEMBERS.filter(m => m.factionId === s.id && m.outlierReason === 'remnant') }))
+            .filter(x => x.r.length >= 2);
+        expect(cores.length, 'nobody inherited people, only compounds').toBeGreaterThanOrEqual(1);
+
+        for (const { s, r } of cores) {
+            // The point of a core is that it is not one person, and that the
+            // faction's own pipeline is visibly below it.
+            const production = FACTION_CHARACTER[s.id]?.production.reliableOrdinal ?? 0;
+            for (const m of r) {
+                expect(m.realmOrdinal, m.id + ' is not actually above the pipeline')
+                    .toBeGreaterThan(production);
+            }
+        }
     });
 });
