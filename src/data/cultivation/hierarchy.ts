@@ -1769,6 +1769,51 @@ export const GUEST_ELDERS: readonly GuestElder[] = [
 const APEX_BY_ID: ReadonlyMap<string, ApexInstitution> = new Map(APEX_INSTITUTIONS.map(a => [a.id, a]));
 const COURT_BY_ID: ReadonlyMap<string, Court> = new Map(COURTS.map(c => [c.id, c]));
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT A BODY CALLS ITS LEADER
+//
+// "Seat" is the Hollow Court's own vocabulary and belongs to it alone. Every
+// other body names its leader after the thing it is standing on, which is the
+// ordinary convention in both provinces: a lordship is over a place or an
+// object, never over people, and the title outlives whoever holds it.
+//
+// Derived rather than typed, so a title cannot drift from the body it belongs
+// to. An apex is named for what its founder sent down - the Lamp Lord sits on
+// the Datum Lamp - and a court for the word that distinguishes it from the
+// other courts. The second is a wardenship rather than a lordship, because the
+// second does not hold the object.
+//
+// These are offices. The province can say the Lamp Lord refused a petition
+// without anybody knowing who that is, which is how the two hidden apexes
+// prefer it.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Last significant word, with a leading article dropped. */
+function lastWord(name: string): string {
+    const parts = name.replace(/^The\s+/i, '').trim().split(/\s+/);
+    return parts[parts.length - 1];
+}
+
+/** First significant word, which is what distinguishes one court from another. */
+function firstWord(name: string): string {
+    return name.replace(/^The\s+/i, '').trim().split(/\s+/)[0];
+}
+
+/** What an apex calls the one in the seat: named for the object they sit on. */
+export function leaderTitleOf(apex: ApexInstitution): string {
+    return `the ${lastWord(apex.sentDown.name)} Lord`;
+}
+
+/** And the one below them, who does not hold it. */
+export function secondTitleOf(apex: ApexInstitution): string {
+    return `the ${lastWord(apex.name)} Warden`;
+}
+
+/** A court is distinguished from its siblings by its first word, not its last. */
+export function leaderTitleOfCourt(court: Court): string {
+    return `the ${firstWord(court.name)} Lord`;
+}
+
 export function getApexInstitution(id: string): ApexInstitution | undefined {
     return APEX_BY_ID.get(id);
 }

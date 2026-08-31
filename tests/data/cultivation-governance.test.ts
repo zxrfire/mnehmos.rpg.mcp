@@ -47,6 +47,9 @@ import {
     REGION_GOVERNANCE,
     UNBACKED_PLAYER_TRADE,
     getApexInstitution,
+    leaderTitleOf,
+    leaderTitleOfCourt,
+    secondTitleOf,
     getCourt,
     getParentage,
     getSubsidiariesOf,
@@ -1050,5 +1053,38 @@ describe('the seats stand on recorded rungs', () => {
         const court = WITHDRAWN_POWERS['sect-hollow-court'];
         const ordinals = court.seats.map(s => s.ordinal);
         expect(new Set(ordinals).size).toBeLessThan(ordinals.length);
+    });
+});
+
+describe('Seat is the Hollow Court vocabulary and nobody else uses it', () => {
+    it('derives every apex and court title from the body it belongs to', () => {
+        const seen = new Set<string>();
+        for (const a of APEX_INSTITUTIONS) {
+            const leader = leaderTitleOf(a);
+            const second = secondTitleOf(a);
+            // Named for the object it sits on, and for the body respectively.
+            expect(leader).toContain('Lord');
+            expect(leader).toContain(a.sentDown.name.split(' ').pop()!);
+            expect(second).toContain('Warden');
+            expect(leader + second, a.id + ' borrows the Court vocabulary').not.toMatch(/Seat/i);
+            // Distinct, or the titles would not identify anybody.
+            expect(seen.has(leader), 'duplicate title ' + leader).toBe(false);
+            seen.add(leader);
+        }
+        for (const c of COURTS) {
+            const t = leaderTitleOfCourt(c);
+            expect(t).toContain('Lord');
+            expect(t, c.id + ' borrows the Court vocabulary').not.toMatch(/Seat/i);
+            expect(seen.has(t), 'duplicate title ' + t).toBe(false);
+            seen.add(t);
+        }
+    });
+
+    it('leaves the bare rank to the faction that means something by it', () => {
+        // A Council Seat is a seat on a council and is ordinary English. What
+        // belongs to the Court alone is the unqualified rank, and the ordinal
+        // positions it sorts into.
+        const bare = SECTS.filter(s => s.ranks.some(r => /^(first |second |third |fourth )?seat$/i.test(r)));
+        expect(bare.map(s => s.id)).toEqual(['sect-hollow-court']);
     });
 });

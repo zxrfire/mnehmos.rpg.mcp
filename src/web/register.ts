@@ -30,6 +30,9 @@ import {
 } from '../data/cultivation/sects.js';
 import {
     APEX_INSTITUTIONS,
+    leaderTitleOf,
+    leaderTitleOfCourt,
+    secondTitleOf,
     COURTS,
     FACTION_PARENTAGE,
     getApexInstitution,
@@ -414,7 +417,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
 
     for (const apex of APEX_INSTITUTIONS) {
         out.push({
-            name: apex.lastRealm.holderName ?? 'the seated one',
+            name: apex.lastRealm.holderName ?? leaderTitleOf(apex),
             named: apex.lastRealm.holderName !== null,
             ordinal: apex.powerOrdinal,
             rank: rankName(apex.powerOrdinal),
@@ -427,7 +430,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
         });
         if (apex.secondStrongestOrdinal >= HIGH_BAND_FLOOR) {
             out.push({
-                name: 'second seat',
+                name: secondTitleOf(apex),
                 named: false,
                 ordinal: apex.secondStrongestOrdinal,
                 rank: rankName(apex.secondStrongestOrdinal),
@@ -463,7 +466,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
 
         if (court.powerOrdinal < HIGH_BAND_FLOOR) continue;
         out.push({
-            name: 'the office holder',
+            name: leaderTitleOfCourt(court),
             named: false,
             ordinal: court.powerOrdinal,
             rank: rankName(court.powerOrdinal),
@@ -508,9 +511,12 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                     });
                 }
             } else {
+                const top = MEMBERS
+                    .filter(m => m.factionId === row.id && m.outlier)
+                    .sort((a, b) => b.realmOrdinal - a.realmOrdinal)[0];
                 out.push({
-                    name: 'strongest member',
-                    named: false,
+                    name: top?.name ?? 'strongest member',
+                    named: top !== undefined,
                     ordinal: row.ordinal,
                     rank: row.rank,
                     state: 'acting',
@@ -518,7 +524,9 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                     ordinalNote: null,
                     factionName: row.name,
                     factionOrdinal: row.ordinal,
-                    note: 'The catalog records the realm and not the person. Whoever holds it answers for the faction.'
+                    note: top
+                        ? top.rank + '. ' + top.detail
+                        : 'The catalog records the realm and not the person. Whoever holds it answers for the faction.'
                 });
             }
         }
