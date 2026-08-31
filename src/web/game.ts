@@ -25,7 +25,10 @@ import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import {
     SATIETY_MAX,
-    STARTING_SPIRIT_STONES,
+    // `STARTING_SPIRIT_STONES` is deliberately gone from here: what a run opens
+    // with is now a property of the birth rather than a constant, and nine
+    // births in ten still draw about that figure. The constant stays exported
+    // from the schema as the thin-county tier's own number.
     type AmbientQi,
     type BreakthroughResult,
     type Cultivator,
@@ -37,6 +40,7 @@ import { ambientForBlock } from '../engine/cultivation/ambient.js';
 import { attemptBreakthrough, canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
 import { MAX_ORDINAL, rankName } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
+import { describeBirth, drawBirth, groundDensityFor } from '../engine/birth/birth.js';
 import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
  import {
@@ -66,7 +70,33 @@ import { round2 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
-import { handleRefine } from '../server/consolidated/alchemy-manage.js';
+import {
+    auditAncestralClaim,
+    getSectAncestry,
+    sectThreat
+} from '../data/cultivation/sects.js';
+import {
+    APEX_INSTITUTIONS,
+    COURTS,
+    chainToApex,
+    getApexInstitution,
+    getCourt,
+    getParentage
+} from '../data/cultivation/hierarchy.js';
+import { getChannel } from '../data/cultivation/crossings.js';
+import { getHoldingsOf } from '../data/cultivation/immortal-items.js';
+import { DISASTER_RESPONSES } from '../data/cultivation/catastrophe.js';
+// `OPENLY_OR_IN_SECRET` moved out of `catastrophe.ts` into `standoff.ts` while
+// this was being written. Imported from where it lives rather than from the
+// file it used to live in.
+import { OPENLY_OR_IN_SECRET } from '../data/cultivation/standoff.js';
+import { IMMORTAL_MOTIVE } from '../data/cultivation/crossings.js';
+import { baseReservesFor } from '../engine/cultivation/embezzlement.js';
+import {
+    handleInventory,
+    handleListRecipes,
+    handleRefine
+} from '../server/consolidated/alchemy-manage.js';
 import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
 import { handleMarket, handleWork, standingOf } from '../server/consolidated/cultivation-mortal.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
@@ -86,20 +116,36 @@ import {
     handleOrder,
     handleRecruit
 } from '../server/consolidated/sect-leadership.js';
+import {
+    handlePetition,
+    handleWake
+} from '../server/consolidated/sect-politics.js';
 import { handleResolve } from '../server/consolidated/combat-manage.js';
-import { handleLearn, handlePractise } from '../server/consolidated/technique-manage.js';
+import {
+    handleLearn,
+    handleListAvailable,
+    handlePractise
+} from '../server/consolidated/technique-manage.js';
 import {
     FLAG_NAME_TAKEN,
+    FLAG_PENDING_PILL,
+    clearFlag,
     ensureCultivationDb,
     addToPouch,
+    listPouch,
+    removeFromPouch,
+    type PouchEntry,
+    type PouchItemKind,
     isGuidingErrorBody,
     listTolls,
     persistFoundation,
     persistToll,
     readFlag,
+    readJsonFlag,
     writeFlag,
     tollConditionsFor,
     type CultivationRepos,
+    type PendingPill,
     type TollLedgerEntry
 } from '../server/consolidated/cultivation-support.js';
 import { applyTimeSkip, tollLine } from './apply.js';
@@ -113,15 +159,51 @@ import {
     TRAINING_DAYS,
     DEFAULT_RECALL_INTENT,
     DEFAULT_SITE_INTENT,
+    DEFAULT_OFFER_INTENT,
+    DEFAULT_PETITION_INTENT,
+    DEFAULT_POSTURE_INTENT,
+    DEFAULT_SEAL_INTENT,
+    OFFER_INTENTS,
+    PETITION_INTENTS,
+    POSTURE_INTENTS,
     RECALL_INTENTS,
+    SEAL_INTENTS,
     SITE_INTENTS,
     parseCount,
     type ActionName,
+    type OfferIntent,
+    type PetitionIntent,
     type PlanSource,
     type PlannedAction,
+    type PostureIntent,
     type RecallIntent,
+    type SealIntent,
     type SiteIntent
 } from './actions.js';
+import {
+    holderOf,
+    linesDownward,
+    residentAbove,
+    theTwoWaysDown,
+    theTwoWaysStructure,
+    type Resident
+} from './above.js';
+import {
+    elderRungTitle,
+    mayCommitTheHouse,
+    offeringKey,
+    opensAtRung,
+    positionIn,
+    rankDoesNotReach,
+    readOffering,
+    readPosture,
+    readSpentSeal,
+    sealKey,
+    servesNoHouse,
+    postureKey,
+    standingStructure,
+    type HousePosition
+} from './standing.js';
 import {
     knownTechniqueNames,
     nearbyNames,
@@ -131,6 +213,7 @@ import {
     worldLocationFor,
     type ResolvedEntity,
     resolveHerb,
+    resolveKnownPlace,
     resolveParty,
     resolvePill,
     resolvePlace,
@@ -142,7 +225,7 @@ import {
     MATCH_THRESHOLD,
     type KnowledgeScope
 } from './entities.js';
-import { KnowledgeGate, placeKey, type AwarenessRow } from './knowledge.js';
+import { KnowledgeGate, loosePlaceKey, placeKey, type AwarenessRow } from './knowledge.js';
 import {
     SiteLedger,
     awarenessOfSite,
@@ -161,6 +244,9 @@ import {
 } from './trials.js';
 import { SITES, enterSite, type Site } from '../data/cultivation/inheritance-trials.js';
 import { assessPower, resolveExchange } from '../engine/cultivation/combat.js';
+import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
+import { getHerb } from '../data/cultivation/herbs.js';
+import { getPill } from '../data/cultivation/pills.js';
 import { askedAbout } from './asked.js';
 import {
     hearingProse,
@@ -172,8 +258,24 @@ import {
     type HearingIntent
 } from './hearsay.js';
 import { observableHere, observedLine } from './practices.js';
+import {
+    activityForVerb,
+    arrivableForSpan,
+    consumeArrivals,
+    daysActuallySpent,
+    encounterCalls,
+    encountersFor,
+    recordEncounters,
+    withEncounterDeltas
+} from './encounters.js';
+import type { ArrivableFact, EncounterActivity } from '../engine/encounters/index.js';
+import { unattributedTextOf } from '../engine/world/digest.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
-import { advanceWorldForCultivator, worldForRun } from '../server/state/cultivation-world.js';
+import {
+    advanceWorldForCultivator,
+    saveWorldForRun,
+    worldForRun
+} from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
 import type { PlayerDigest } from '../engine/world/digest.js';
 import type { WorldState } from '../engine/world/world-state.js';
@@ -208,7 +310,22 @@ import {
     placeName,
     type EngineFacts
 } from './facts.js';
-import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
+import {
+    canExistBeyondTheLid,
+    evaluateLidTransit,
+    resolveDescentStrikes
+} from '../engine/cultivation/existence.js';
+import {
+    BREATHS_IN_THE_LOWER_REALM,
+    OBJECT_CEILING_BELOW_THE_LID
+} from '../engine/cultivation/realms.js';
+// Aliased because this package already has a `descend` method and a `sendAcross`
+// would read as one too. The world functions are the authority; the methods
+// beside them are wiring, and the names should say which is which.
+import {
+    descend as worldDescend,
+    sendAcross as worldSendAcross
+} from '../engine/world/immortal-world.js';
 import { daoOf } from '../engine/cultivation/dao.js';
 import { PlayLog, type LogEntry } from './log.js';
 import type { Narrator } from './narrator.js';
@@ -266,6 +383,27 @@ let ambientDb: Database.Database | null = null;
  * real name never lands here and quietly gets the wrong person.
  */
 const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they)$/i;
+
+/**
+ * Pointers that are a RANK rather than a description, and must land on
+ * somebody who actually holds it.
+ *
+ * Found by a standing sweep, and it was a state-changing false positive rather
+ * than a cosmetic one. "I kill the elder", typed by a rogue at ordinal 2 with
+ * no house and no elder anywhere in the square, resolved: `elder` is in
+ * {@link POINTING}, `somebodyAtHand` returns whoever happens to be standing
+ * nearest to a pointing phrase, and the confrontation ran against a person the
+ * sentence was not about. Real wounds were written to the character.
+ *
+ * The difference from the rest of that list is the whole point. "the man",
+ * "the stranger", "him" are descriptions of whoever is there and cannot be
+ * wrong about who they are; "the elder" PRESUPPOSES A LADDER, and a sentence
+ * naming a rung must not be answered by somebody who is not on it. So a rank
+ * pointer is checked against `sectRank` on the roster row, and where nobody
+ * present holds it the pointer resolves to nothing - which every caller
+ * already handles by refusing and saying what it could not find.
+ */
+const POINTING_AT_A_RANK = /\b(elder|disciple|master|warden|head)\b/i;
 
 export const PROVISION_COST_STONES = 2;
 
@@ -422,8 +560,86 @@ const MORTAL_WORLD_ACTIONS: readonly ActionName[] = [
     // An inheritance ground is a hole in a hillside in the province. A True
     // Immortal is not standing near one, and the trip back down costs nine
     // strikes of the heaviest tribulation there is.
-    'site'
+    'site',
+    /**
+     * Hitting somebody, which is the user's own worked example of what this
+     * list should DO rather than refuse: "if you say you wanna attack the sect
+     * you could send an immortal weapon down to your sect below and a message,
+     * or you could do it yourself." Both of those are real and both are
+     * reachable, so a sentence about a fight in the province is re-offered here
+     * rather than answered by looking for somebody to swing at in a place where
+     * there is nobody.
+     */
+    'attack',
+    /**
+     * Three of the four institutional verbs. A petition travels along a chain
+     * of people; a declaration is made to somebody who has to hear it; a seal
+     * is under a mountain in the province. None of the three is reachable from
+     * the far side except by going.
+     *
+     * `offer` is deliberately NOT here, and it is the one exception on the
+     * list. It is the same verb from the other end: below the Lid it is an
+     * offering going up, above it a thing going down a line somebody is
+     * holding, and which of those a player gets is decided by state rather
+     * than by the word. Putting it here would have refused an immortal the one
+     * mortal-world action they can actually perform.
+     */
+    'petition', 'posture', 'seal'
 ] as const;
+
+/**
+ * What a house's declaration would actually require, said to somebody who has
+ * no house to declare with.
+ *
+ * The refusal a rogue gets has to be about POSITION rather than about rank -
+ * they are not junior, they are outside - and it has to name the thing they
+ * would have to go and get. "You lack authority" tells a player nothing they
+ * can act on; "a war is a thing between two houses, and you are one person"
+ * tells them what the missing piece is.
+ */
+const THE_DECLARATION_REQUIRES: Readonly<Record<'war' | 'alliance' | 'defect' | 'tribute', string>> = {
+    tribute:
+        'a levy is collected by somebody who is already owed it. What makes a payment due is a '
+        + 'house holding from another house on stated terms, in writing, with everybody in the '
+        + 'province able to name the arrangement. You are not at either end of one.',
+    war:
+        'a war is a thing between two houses. It needs a house on this side of it - people who '
+        + 'answer when the name is used, ground that can be taken off them, and somebody entitled '
+        + 'to spend both. One person saying it out loud in a square is a person saying something '
+        + 'out loud in a square.',
+    alliance:
+        'an alliance is two parties who can each promise something and be held to it. What you '
+        + 'have to offer is yourself, which is a thing you could offer by asking to be taken on, '
+        + 'and that is a different sentence with a different answer.',
+    defect:
+        'defecting is a house changing who it holds from. You hold from nobody, so there is '
+        + 'nothing to move and nobody who would notice it moving.'
+};
+
+/** How a declaration is recorded, in the world's voice rather than the schema's. */
+const DECLARED: Readonly<Record<'war' | 'alliance' | 'defect' | 'tribute', (mine: string, theirs: string) => string>> = {
+    war: (mine, theirs) => `${mine} is at war with ${theirs}.`,
+    alliance: (mine, theirs) => `${mine} has offered ${theirs} an alliance, in the open.`,
+    defect: (mine, theirs) => `${mine} holds from ${theirs} now, and said so.`,
+    tribute: (mine, theirs) => `${mine} has sent to ${theirs} for a payment.`
+};
+
+/**
+ * Months of a house's own payroll that an offering costs.
+ *
+ * A decade, which is the figure `IMMORTAL_MOTIVE.whatTheOfferingActuallyIs`
+ * states in so many words: a body that spends its principal for a decade to
+ * receive two words is being answered at the minimum rate. It is expressed in
+ * months so that it sits in the same unit as `RESERVE_MONTHS` in
+ * `embezzlement.ts`, which is twelve years of the same payroll - so the rite
+ * costs five sixths of everything a house is holding, and a house that makes
+ * one is a house that could not survive a bad decade afterwards.
+ *
+ * Here rather than in `schema/cultivation.ts` for the reason the leadership and
+ * embezzlement constants are where they are: it prices one act, and it belongs
+ * beside the act it prices.
+ */
+const OFFERING_MONTHS = 120;
 
 /**
  * The words that mean "the library" rather than naming anything in it.
@@ -435,6 +651,94 @@ const MORTAL_WORLD_ACTIONS: readonly ActionName[] = [
  */
 const GENERIC_LIBRARY_PHRASE =
     /\b(?:what|which|curriculum|curricula|library|shelf|taught|teach|teaches|teaching|methods|list|everything|anything|else)\b/i;
+
+/**
+ * The words that mean "a house" rather than naming one.
+ *
+ * The same problem `GENERIC_LIBRARY_PHRASE` solves, one verb over. "I look for
+ * a sect that will take me" carries the noun phrase "sect that will take me",
+ * which is a question about the whole category and not a name that failed to
+ * resolve - and the two need opposite answers. A name that resolves to nothing
+ * must be refused as unheard; a category has to reach the listing, which is the
+ * only thing in the game that answers it.
+ *
+ * Anchored at the start on purpose. An unanchored noun test would swallow every
+ * real house whose name ends in one of these words, which is most of them.
+ */
+/**
+ * The words that mean "a pill" rather than naming one.
+ *
+ * Third instance of the same rule, after the library and the house. A category
+ * has to reach the listing and a name has to reach the formula, and treating
+ * the first as the second is how "I refine a pill" quietly became a Minor
+ * Healing Pill - one arbitrary row out of forty-two, chosen by containment.
+ *
+ * Anchored, so `Foundation-Guiding Pill Formula` is still a name.
+ */
+/** How many formulas the listing reads out before it starts counting. */
+const RECIPES_SHOWN = 8;
+
+/** The same, for the arts. Two lists, one convention. */
+const TECHNIQUES_SHOWN = 8;
+
+/**
+ * How a name reached this cultivator, for the inspector.
+ *
+ * Both call sites used to hardcode `name_overheard` and 'from people who did
+ * not know they were heard'. There are three channels now - somebody says it to
+ * you, somebody says it near you, and a traveller says it in passing with a
+ * number of days on it - and two of those three summaries were simply false. An
+ * inspector row that misdescribes where a name came from is worse than no row:
+ * the whole discovery layer is about provenance, and this is where somebody
+ * reads it back.
+ */
+function hearingCall(heard: Hearing): ToolCallRecord {
+    const name = heard.names[0].name;
+    if (heard.mode === 'told') {
+        return {
+            name: 'knowledge.learn',
+            action: 'name_told',
+            summary:
+                `"${name}" was said to this cultivator by somebody who assumed they already `
+                + 'knew it. Recorded from a source that can be named.',
+            ok: true
+        };
+    }
+    if (heard.mode === 'passing') {
+        return {
+            name: 'knowledge.learn',
+            action: 'name_in_passing',
+            summary:
+                `"${name}" was said by somebody moving through, with a road and a number of `
+                + 'days attached to it. Where they came from can be pointed at; anything else '
+                + 'they mentioned cannot.',
+            ok: true
+        };
+    }
+    return {
+        name: 'knowledge.learn',
+        action: 'name_overheard',
+        summary:
+            `"${name}" was overheard from people who did not know they were heard. Recorded at `
+            + 'the lowest stance: acting on it would reveal where this cultivator was standing.',
+        ok: true
+    };
+}
+
+
+/** One row of `alchemy_manage.list_recipes`, as much of it as this layer reads. */
+interface RecipeRow {
+    name: string;
+    estimatedSuccessRate?: number;
+    produces: { name: string } | null;
+    ingredients: { name: string; required: number; short: number }[];
+}
+
+const GENERIC_PILL_PHRASE =
+    /^(?:a |an |any |some |the |one |another )*(?:pills?|elixirs?|medicines?|formulae?|formulas?|recipes?|concoctions?|something|anything)\b\s*$/i;
+
+const GENERIC_HOUSE_PHRASE =
+    /^(?:any |some |a |an |one |another |new |good |strong |nearby |local )*(?:sects?|orders?|schools?|clans?|houses?|cults?|somewhere|somebody|someone|anyone|anybody)\b/i;
 
 /**
  * How many things done to a place are read out at once.
@@ -664,6 +968,28 @@ export class GameService {
      * one rebuild and five.
      */
     private atHand: WorldState | null = null;
+    /**
+     * World facts that reached this player by no channel at all, still eligible
+     * to turn up on them.
+     *
+     * The digest counts what nobody told them - thirty-five events in one live
+     * five-year seclusion - and that counter is correct: a world that is mostly
+     * none of your business is the design. Arrival is the other door, and it is
+     * rolled once per FACT and stable forever, so a fact that turned up has to
+     * come OUT of this list or it turns up again in every subsequent window.
+     * `consumeArrivals` is what takes it out, and it is not optional.
+     */
+    private pendingArrivals: ArrivableFact[] = [];
+    /**
+     * Set when an action changed the world without spending a day.
+     *
+     * Every other world write rides on the time skip, which persists at the end
+     * of a span. The far-side actions do not spend days and are all real state -
+     * an abode settled, a seam opened and closed inside fifteen breaths, an
+     * object put down a channel - so they say so here and `act` writes once,
+     * after phase 2, before anything is narrated.
+     */
+    private worldDirty = false;
     private readonly narrator: Narrator;
     private readonly seedFactory: () => string;
 
@@ -754,6 +1080,17 @@ export class GameService {
             : null;
         const seed = plan ? plan.seed : this.seedFactory();
 
+        // Where this life opens, and what it opens with.
+        //
+        // Pure and deterministic off the same seed, and what it confers is a
+        // place, a purse and a handful of knowledge rows - never a realm, a
+        // rank, a membership or a foundation. That line is what keeps an origin
+        // an OPENING POSITION rather than a head start: nine births in ten are
+        // still a thin county, and what the other one in ten buys is being
+        // somewhere better with more in the purse and more names already said
+        // in front of them.
+        const birth = drawBirth(seed);
+
         const root = rollSpiritRoot(forStream(seed, 'creation', 'spirit_root').next());
         const attributeStream = forStream(seed, 'creation', 'attributes');
         const attributes = rollAttributes([
@@ -783,20 +1120,47 @@ export class GameService {
                 starvationTurns: 0,
                 age: STARTING_AGE,
                 yearsAtCurrentRealm: 0,
-                spiritStones: STARTING_SPIRIT_STONES,
-                location: STARTING_LOCATION,
+                origin: birth.origin,
+                spiritStones: birth.spiritStones,
+                location: birth.place.name,
                 alive: true
             });
             const run = this.repos.runs.startRun({ cultivatorId: cultivator.id, seed });
             return { cultivator: this.repos.cultivators.getById(cultivator.id)!, run };
         })();
 
-        // The world a villager starts with: where they stand, and the one sect
-        // anybody in the county could name. Everything else in the world is
-        // unheard of and has to be learned from a source they can point at.
-        const awareness = this.knowledge.seedStartingAwareness(
-            created.cultivator.id, 0, STARTING_LOCATION, localSect()
-        );
+        // What this life starts holding, in two layers that do different jobs.
+        //
+        // THE COUNTY first. Everybody can name the ground they grew up on and
+        // the market town two days off, whoever their parents were, and that has
+        // nothing to do with standing - it is what `seedStartingAwareness` and
+        // `localGeographyFor` are for. Home at `known`, every other settlement in
+        // the province at `placed`, the province at `placed`, provinces over the
+        // border at `named`. Being able to point at the next town is not a
+        // privilege a birth confers; it is the fix for a cultivator being trapped
+        // in their birthplace for life, measured across seven playthroughs and
+        // fatal in every one.
+        //
+        // It goes FIRST so that the ground somebody grew up on is written by the
+        // one thing that knows what growing up somewhere means. Two writers both
+        // claiming the birthplace is how home ended up at `encountered` - a place
+        // somebody has been rather than a place they are from, which reads as a
+        // traveller who arrived last week. The floor property comes from
+        // `learnIfNew` inside the seeder rather than from the ordering, so
+        // nothing is lost by running it here.
+        //
+        // THE BIRTH'S OWN ROWS on top. `drawBirth` decides which names a family
+        // of that standing would have said in front of a child, and they are
+        // written as ordinary knowledge records with ordinary stances and sources
+        // - so the gate that governs every other name governs these, and a
+        // great-house birth knows more because of who raised them rather than
+        // because of a special case. `learn` supersedes, so a name the county
+        // only placed is still upgraded by a birth that genuinely knew it.
+        this.knowledge.seedStartingAwareness(created.cultivator.id, 0, birth.place.name, null);
+        for (const row of birth.knowledge) {
+            this.knowledge.learn({ ...row, holderId: created.cultivator.id, onDay: 0 });
+        }
+        const awareness = this.knowledge.awareness(created.cultivator.id);
 
         const ambient = this.ambientFor(created.cultivator, created.run);
         const facts = factsForLook(created.cultivator, ambient, this.company(created.cultivator));
@@ -830,7 +1194,8 @@ export class GameService {
                 role: 'engine',
                 turn: 0,
                 text:
-                    `${created.cultivator.name} begins at ${rankName(0)}, age ${STARTING_AGE}, in ${STARTING_LOCATION}. ` +
+                    `${created.cultivator.name} begins at ${rankName(0)}, age ${STARTING_AGE}. ` +
+                    `${describeBirth(birth)} ` +
                     `${root.name}; Might ${attributes.might}, Insight ${attributes.insight}, ` +
                     `Fortune ${attributes.fortune}, Charm ${attributes.charm}. ` +
                     'Talent is rolled once and never redrawn.'
@@ -893,6 +1258,15 @@ export class GameService {
 
         // ── phase 2 ──
         const execution = await this.execute(plan.action, run, cultivator, ambient, trimmed);
+
+        // A world changed inside one turn is written before anything is
+        // narrated, so a restart cannot lose an abode, a descent or a thing
+        // that went down a channel. Nothing here reads the narration; the
+        // ordering is only about durability.
+        if (this.worldDirty) {
+            this.worldDirty = false;
+            await saveWorldForRun(run);
+        }
 
         const after = this.currentRun();
         const scene = {
@@ -1116,17 +1490,23 @@ export class GameService {
         // twenty-nine spirit stones. The mortal world is not somewhere they are.
         // Coming down is possible and it is the most expensive thing they can
         // do; it is not the default state of the run.
+        // ── A True Immortal is not standing in the province any more ──
+        //
+        // This used to be a flat refusal and the refusal was correct and empty:
+        // "Not from here", every time, with nothing on the other side of it.
+        // Played cold at ordinal 46 that reads as the game ending rather than
+        // as the game moving, which is exactly backwards - the layer above the
+        // Lid is one of the most complete systems in the project and none of it
+        // was reachable.
+        //
+        // The sentence a player typed HAS answers up here. There are two, they
+        // are the two the setting has always described, and both resolve
+        // through machinery that already exists: send something down a line
+        // somebody is holding, or go yourself at nine strikes for ten to
+        // fifteen breaths. So the mortal-world verbs are RE-OFFERED rather than
+        // refused, and the two verbs that carry them are in the closed set.
         if (canExistBeyondTheLid(cultivator) && MORTAL_WORLD_ACTIONS.includes(action.action)) {
-            return this.freeAction(run, action.action, factsForRefusal(
-                'Not from here.',
-                'That is a thing done among people, and there are no people here. What is around ' +
-                `${cultivator.name} now is the far side of the Lid, and the province they came ` +
-                'from is on the other side of a hole they had to punch to leave through. Reaching ' +
-                'back down is possible. It costs nine strikes of the heaviest tribulation there is, ' +
-                'and it buys ten or fifteen breaths.',
-                `existence.canExistBeyondTheLid = true; '${action.action}' is a mortal-world action ` +
-                'and is not offered above the Lid. See evaluateLidTransit(down).'
-            ));
+            return this.aboveTheLid(run, cultivator, action.action);
         }
 
         switch (action.action) {
@@ -1167,7 +1547,7 @@ export class GameService {
                 return this.train(cultivator, action.target);
 
             case 'refine':
-                return this.refine(cultivator, action.target);
+                return this.refine(run, cultivator, action.target);
 
             case 'gather':
                 return this.gather(run, cultivator, ambient, action.target);
@@ -1185,14 +1565,7 @@ ${noticedWaiting}`;
                 if (heard) {
                     waiting.hearing = heard;
                     addHearing(waiting.facts, heard);
-                    waiting.calls.push({
-                        name: 'knowledge.learn',
-                        action: 'name_overheard',
-                        summary:
-                            `"${heard.names[0].name}" was overheard while loitering. Recorded at the ` +
-                            'lowest stance, source overheard.',
-                        ok: true
-                    });
+                    waiting.calls.push(hearingCall(heard));
                 }
                 return waiting;
             }
@@ -1222,11 +1595,46 @@ ${noticedWaiting}`;
             case 'recall':
                 return this.recall(run, cultivator, action.target, action.intent);
 
+            // ── institutions acting on each other, and on the dead ──
+            //
+            // Four verbs, one shape, and one rule they all obey: the intent
+            // label selects which routine runs and never what came of it, and
+            // an unrecognised label falls through to the READ rather than to
+            // the commitment. See the four DEFAULT_* constants in actions.ts.
+            case 'petition':
+                return this.petition(run, cultivator, action.target, action.intent, action.topic);
+
+            case 'posture':
+                return this.posture(run, cultivator, action.target, action.intent);
+
+            case 'seal':
+                return this.seal(run, cultivator, action.target, action.intent);
+
+            case 'offer':
+                return this.offer(run, cultivator, action.target, action.intent, action.topic);
+
+            // Going back down, which is the one thing at the top of the ladder
+            // that is a decision rather than a fact about what you already are.
+            case 'descend':
+                return this.descend(run, cultivator, ambient, action.target);
+
             case 'treat':
                 return this.treat(run, cultivator, ambient);
 
             case 'buy':
                 return this.buy(run, cultivator, ambient, action.target);
+
+            case 'sell':
+                return this.sell(run, cultivator, action.target);
+
+            case 'inventory':
+                return this.inventory(run, cultivator);
+
+            case 'list_techniques':
+                return this.listTechniques(run, cultivator);
+
+            case 'learn_technique':
+                return this.learnTechnique(cultivator, action.target);
 
             case 'site':
                 return this.site(run, cultivator, ambient, action.target, action.intent);
@@ -1256,6 +1664,18 @@ ${noticedWaiting}`;
             }
 
             case 'look': {
+                // Looking round on the far side of the Lid is a different read
+                // from looking round in a province, and it used to be the same
+                // one. What that produced, found by playing at 46: the ambient
+                // description of a layer whose qi density is 1.0 by definition,
+                // a Dao house's practice observed among people who are not
+                // there, and two names overheard through a wall in a province
+                // on the other side of a hole. Every one of those is a mortal
+                // -layer read applied to somebody who has left it.
+                if (canExistBeyondTheLid(cultivator)) {
+                    return this.lookAbove(run, cultivator);
+                }
+
                 // Why the ground is like this, which is a different read from
                 // what is standing on it. Answered out of the location's own
                 // change log, and gated: what the place is and when it changed
@@ -1286,15 +1706,7 @@ ${noticed}`;
                 if (heard) {
                     looking.hearing = heard;
                     addHearing(looking.facts, heard);
-                    looking.calls.push({
-                        name: 'knowledge.learn',
-                        action: 'name_overheard',
-                        summary:
-                            `"${heard.names[0].name}" was overheard from people who did not know they ` +
-                            'were heard. Recorded at the lowest stance, source overheard: acting on it ' +
-                            'would reveal where this cultivator was standing.',
-                        ok: true
-                    });
+                    looking.calls.push(hearingCall(heard));
                 }
                 return looking;
             }
@@ -1545,6 +1957,50 @@ ${noticed}`;
             ));
         }
 
+        // ── a house is not a person ──
+        //
+        // `combat_manage.resolve` takes an opponent, and a faction is not one -
+        // so "I attack the Nine Abyss Flame Sect" resolved to nothing and came
+        // back `Unresolved party "Nine Abyss Flame Sect" for a confrontation`,
+        // identically at every rung from a rogue to an apex seat. That reads as
+        // a considered refusal and is not one: standing was never consulted,
+        // because the noun never resolved.
+        //
+        // What is actually true is a fact about the world rather than about the
+        // resolver, and both halves of it are already modelled. You cannot
+        // fight a house, because a house is not standing anywhere - you fight
+        // somebody in it, which is the confrontation resolver, or you set your
+        // house against theirs, which is `posture` and opens at the seat. So
+        // the refusal says that, names both routes, and prices the target out
+        // of `sectThreat` where the player can name them.
+        const asFaction = this.factionMeant(query, cultivator);
+        if (asFaction && !this.somebodyAtHand(query, cultivator)) {
+            const theirs = sectThreat(asFaction.id)?.acting
+                ?? getCourt(asFaction.id)?.powerOrdinal
+                ?? getApexInstitution(asFaction.id)?.powerOrdinal
+                ?? null;
+            const position = positionIn(this.repos, cultivator.id);
+            return refused('engine.resolveParty', 'attack', factsForRefusal(
+                'A house is not standing in front of you.',
+                `${asFaction.name} is a name, a roll and some ground. There is nobody called that `
+                + 'to swing at. What there is instead is people who answer to it - and any one of '
+                + 'them can be fought by somebody standing in the same place as them - or the '
+                + 'thing a house does to another house, which is a decision made by whoever holds '
+                + 'the seat and not by whoever is angry.'
+                + (theirs === null
+                    ? ''
+                    : ` The strongest person they will actually put in a room stands at `
+                      + `${rankName(theirs)}.`)
+                + (position
+                    ? ''
+                    : ' You hold no seat anywhere, so the second route is not open to you either.'),
+                `"${query}" resolved to faction ${asFaction.id}, not to a combatant. `
+                + `combat_manage.resolve takes a person. acting ordinal=${theirs ?? 'unknown'}; `
+                + `membership=${position?.sectId ?? 'none'}. Routes: attack a named member, or `
+                + 'posture/war from the seat.'
+            ));
+        }
+
         // A gesture at somebody in the square resolves to somebody in the
         // square. A name resolves to that name or to nothing.
         const pointed = this.somebodyAtHand(query, cultivator);
@@ -1657,11 +2113,28 @@ ${noticed}`;
         const party = pointedAt
             ? resolveCultivator(this.repos, pointedAt.name, cultivator.id, scope, cultivator.realmOrdinal)
             : resolveParty(this.repos, query, cultivator, scope);
-        if (!party && topic && topic.length >= 2) {
-            // A description is not a name. "The old woman" resolves to
-            // nobody in the roster and should not be fuzzy-matched into
-            // one; what it does mean is that there is a person in front of
-            // the player, and a person can be asked something.
+        // A DESCRIPTION is not a name. "The old woman" resolves to nobody in the
+        // roster and should not be fuzzy-matched into one; what it does mean is
+        // that there is a person in front of the player, and a person can be
+        // asked something.
+        //
+        // A NAME that resolves to nothing is the opposite case and used to take
+        // the same branch, which is the defect a live from-scratch run caught.
+        // "I ask the Hollow Court for an immortal pill", typed at ordinal 0 by
+        // somebody who has never heard of the Hollow Court, threw the Court away
+        // and put the question to whoever was standing nearest - a Qi
+        // Condensation clerk - and came back byte-identical to an unrelated
+        // question asked of the same person. The addressee was silently
+        // replaced, and the player had no way to see it.
+        //
+        // `POINTING` is the closed set of phrases that describe somebody rather
+        // than naming them, and it is the right discriminator here for the same
+        // reason it is the right one in `somebodyAtHand`: everything in it is a
+        // role, a pronoun or a demonstrative, so a name can never land in it.
+        // Everything else falls through to the refusal below - which is
+        // deliberately the SAME refusal an invented name gets, so an unheard
+        // faction and a made-up one stay indistinguishable.
+        if (!party && topic && topic.length >= 2 && POINTING.test(query)) {
             const atHand = this.present(cultivator);
             if (atHand.length > 0) {
                 return this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope);
@@ -2096,12 +2569,63 @@ ${noticed}`;
         const named = query.length >= 3 ? resolveSect(this.repos, query, scope, cultivator.sectId) : null;
 
         if (named) {
+            // ── Joining a second house is leaving the first, and it must say so ──
+            //
+            // `SectRepository.addMember` removes the existing membership row in
+            // the same transaction, correctly - membership is exclusive - and
+            // nothing anywhere told the player. A Dew Servant of the Azure Dew
+            // Sect applied to the Pavilion, the Azure Dew row vanished, and the
+            // narration mentioned neither the departure nor the contribution
+            // that went with it.
+            //
+            // The right behaviour already exists one verb over. `leave` says
+            // "contribution does not travel; whatever was earned here stays
+            // here", which is exactly the fact being silently applied. So this
+            // refuses until the player has actually left, rather than
+            // duplicating the departure path and eventually disagreeing with it.
+            const held = positionIn(this.repos, cultivator.id);
+            if (held && held.sectId !== named.id) {
+                return refused('sect_manage.join', 'sect', factsForRefusal(
+                    'You are already somebody\'s.',
+                    `You stand as ${held.rankTitle} of ${held.sectName}, and nobody is taken on `
+                    + 'twice. Whatever you have earned there is earned there and does not travel; '
+                    + 'walking out is a thing you do first, and out loud, and it costs what it '
+                    + 'costs.',
+                    `sect_members holds ${held.sectId} at rank_index=${held.rankIndex} `
+                    + `(contribution=${held.contribution}). addMember would delete that row `
+                    + 'silently; the departure path owns the forfeiture and says so.'
+                ));
+            }
+
             const result = await handleJoin({
                 action: 'join',
                 sectId: named.id,
                 cultivatorId: cultivator.id
             });
             return this.fromToolResult('sect_manage.join', 'sect', result, named.name);
+        }
+
+        // A house was named and it resolved to nothing, so the listing below is
+        // an answer to a question nobody asked.
+        //
+        // Found in a live run and it is the subtle one, because the listing is
+        // GOOD - "there is one name you have for this: Azure Dew Sect. Knowing a
+        // name is not an introduction." A player who typed "I apply to the
+        // Thousand Treasure Pavilion" read that, saw a sensible refusal, and had
+        // no way to tell that the Pavilion had been silently swapped for the
+        // one house they happened to know. The same rule the inheritance
+        // grounds already follow: a specific name that resolves to nothing does
+        // not fall through to whatever was at hand.
+        if (query.length >= 3 && !GENERIC_HOUSE_PHRASE.test(query)) {
+            return refused('engine.resolveSect', 'sect', factsForRefusal(
+                'Not a name you hold.',
+                'You have said a name and it is not one anybody has said to you. Somebody would '
+                + 'have to put it in front of you first - a name is where a door starts, and you '
+                + 'do not have this one.',
+                `Unresolved sect "${query.slice(0, 60)}": no knowledge record. The listing is `
+                + 'deliberately NOT offered as a substitute; naming a house you have not heard '
+                + 'of must not quietly enrol you somewhere else.'
+            ));
         }
 
         const listing = await handleList({
@@ -2309,6 +2833,1743 @@ ${noticed}`;
             ok: true
         }];
         return execution;
+    }
+
+    // ── institutions acting on each other, and on the dead ────────────────
+    //
+    // Four verbs, one shape. A party asks something of another party, of the
+    // dead, or of somebody above the Lid - and most of the time the answer is
+    // NO, in terms the asker can act on. That is the point rather than a
+    // shortfall: the Requisition Against Standing Stock has been granted once
+    // in four hundred years and refused ten times, and the catalog says the
+    // refusals are filed with the same care as the grant.
+    //
+    // THE GATE IS THE FEATURE, AND IT SPEAKS. Every one of these produces a
+    // different answer for a rogue, for a junior in a house, and for the seat,
+    // and each names its own reason: somebody who serves nothing is told what
+    // the act would require, somebody junior is told the rung it opens at IN
+    // THEIR OWN HOUSE'S TITLE, and the seat is told what it cost. The refusals
+    // come from `standing.ts`, which copies `sect-leadership.ts` sentence for
+    // sentence so that the ladder reads the same however a player runs into it.
+    //
+    // NONE OF THEM WEAKENS THE KNOWLEDGE GATE. Every faction goes through
+    // `factionMeant`, which filters by `isAwareOf` before it scores anything,
+    // so a house the player has not been told about resolves to nothing and is
+    // refused identically to one that does not exist. Asking about a thing
+    // must not teach that the thing is there.
+
+    /**
+     * A faction the player can actually name: a sect, a court, or an apex.
+     *
+     * `resolveSect` covers the sect catalog and the sects table. Courts and
+     * apexes live in `hierarchy.ts` and have no rows at all, and three of the
+     * twelve dead sentences named one - so they are matched here on the same
+     * terms and through the same gate, filed under the `sect` knowledge kind
+     * exactly as `sect-politics.ts` already files them.
+     *
+     * Returns null for an unheard name and for an invented one, and the two are
+     * indistinguishable to every caller. That equivalence is required rather
+     * than incidental; the shape of a refusal must never be the answer.
+     */
+    private factionMeant(
+        query: string | undefined,
+        cultivator: Cultivator
+    ): { id: string; name: string; kind: 'sect' | 'court' | 'apex' } | null {
+        const wanted = (query ?? '').trim();
+        if (wanted.length < 3) return null;
+
+        const heard = (id: string): boolean =>
+            this.knowledge.isAwareOf(cultivator.id, 'sect', id);
+
+        const scope = this.scopeFor(cultivator);
+        const asSect = resolveSect(this.repos, wanted, scope, cultivator.sectId);
+        if (asSect) return { id: asSect.id, name: asSect.name, kind: 'sect' };
+
+        let best: { id: string; name: string; kind: 'court' | 'apex' } | null = null;
+        let bestScore = MATCH_THRESHOLD;
+        for (const court of COURTS) {
+            if (!heard(court.id)) continue;
+            const score = matchScore(wanted, court.name);
+            if (score > bestScore) {
+                bestScore = score;
+                best = { id: court.id, name: court.name, kind: 'court' };
+            }
+        }
+        for (const apex of APEX_INSTITUTIONS) {
+            if (!heard(apex.id)) continue;
+            const score = matchScore(wanted, apex.name);
+            if (score > bestScore) {
+                bestScore = score;
+                best = { id: apex.id, name: apex.name, kind: 'apex' };
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Whether a sentence named a body and got nothing back.
+     *
+     * The distinction every one of these verbs turns on, and the one a live
+     * playtest caught them getting wrong. "I make an offering" with no
+     * addressee means the player's own house and is a complete sentence. "I ask
+     * the Hollow Court for a pill" NAMES SOMEBODY, and if that name resolves to
+     * nothing the request has not been made - falling through to the player's
+     * own house instead is the engine quietly answering a different question,
+     * which is the whole failure mode this batch of verbs exists to remove.
+     *
+     * True only where a name was actually typed. A short or empty string is not
+     * a failed resolution; it is no addressee at all.
+     */
+    private namedButUnresolved(
+        query: string | undefined,
+        resolved: { id: string } | null
+    ): boolean {
+        return resolved === null && (query ?? '').trim().length >= 3;
+    }
+
+    /** What the player could put a name to, for a refusal that lists rather than shrugs. */
+    private factionsKnown(cultivator: Cultivator): string[] {
+        const heard = (id: string): boolean =>
+            this.knowledge.isAwareOf(cultivator.id, 'sect', id);
+        return [
+            ...SECTS.filter(s => heard(s.id)).map(s => s.name),
+            ...COURTS.filter(c => heard(c.id)).map(c => c.name),
+            ...APEX_INSTITUTIONS.filter(a => heard(a.id)).map(a => a.name)
+        ];
+    }
+
+    /**
+     * A refusal for a sentence that named nobody this cultivator could mean.
+     *
+     * Identical whether the string was an unheard name or an invented one, and
+     * it lists only what the player already holds.
+     */
+    private noPartyNamed(
+        action: ActionName,
+        query: string | undefined,
+        cultivator: Cultivator,
+        headline: string,
+        scene: string
+    ): Execution {
+        const known = this.factionsKnown(cultivator);
+        return refused('engine.resolveFaction', action, factsForRefusal(
+            headline,
+            known.length === 0
+                ? `${scene} You could not name one if you had to. Nobody has said one in front of you.`
+                : `${scene} The names you have for anything of the kind are `
+                  + `${known.slice(0, 6).join(', ')}${known.length > 6 ? ', and others' : ''}.`,
+            `Unresolved faction "${(query ?? '').slice(0, 60)}": no knowledge record. `
+            + `${known.length} faction name(s) held by this cultivator.`
+        ));
+    }
+
+    /**
+     * Asking an institution for a thing.
+     *
+     * Three forms, selected by the label and never by what the answer turns out
+     * to be. `grant` sends it up the chain through `handlePetition`, which has
+     * been in `sect-politics.ts` the whole time and which nothing typed could
+     * reach; `stock` is the application against something the holder cannot
+     * reorder, which is the Requisition and the schedule amendment and anything
+     * else shaped like them; `descent` is a claim of a line, which is an
+     * application for recognition and is adjudicated rather than granted.
+     */
+    private async petition(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string | undefined,
+        matter: string | undefined
+    ): Promise<Execution> {
+        const which: PetitionIntent = PETITION_INTENTS.includes(intent as PetitionIntent)
+            ? intent as PetitionIntent
+            : DEFAULT_PETITION_INTENT;
+
+        if (which === 'stock') return this.requisition(run, cultivator, target, matter);
+        if (which === 'descent') return this.claimDescent(run, cultivator, target);
+
+        const position = positionIn(this.repos, cultivator.id);
+        const named = this.factionMeant(target, cultivator);
+
+        // A body was named and it resolved to nothing, so the request has not
+        // been made. Falling through to the player's own chain here would send
+        // a petition somewhere they did not ask about and report back on it.
+        if (this.namedButUnresolved(target, named)) {
+            return this.noPartyNamed(
+                'petition', target, cultivator,
+                'No such door.',
+                'You have named somebody to put it to, and it is not a name you hold. Nobody has '
+                + 'said it in front of you, and a petition goes to a body you can find.'
+            );
+        }
+
+        // Nobody to ask, and nobody to ask through. The gate here is POSITION
+        // rather than rank: a petition is carried by people who are already
+        // carrying things for you, and an unbacked cultivator has none.
+        if (!position && !named) {
+            return refused('engine.petitionChain', 'petition', factsForRefusal(
+                'Nowhere for it to go.',
+                servesNoHouse(
+                    cultivator.name,
+                    'a petition is not a thing you send - it is a thing somebody carries. It goes '
+                    + 'up over the name of a house, through whoever that house holds from, as far '
+                    + 'as each of them is willing to pass it. With no house above you and nobody '
+                    + 'named to receive it, there is nothing for it to travel along.'
+                ),
+                standingStructure(null, null)
+            ));
+        }
+
+        // The chain is the house's, so the petition starts at the house. A
+        // named body that is not on it is not above this cultivator, and saying
+        // which bodies ARE is the useful half of the refusal.
+        const startId = position?.sectId ?? named?.id ?? null;
+        if (named && position) {
+            const chain = chainToApex(position.sectId);
+            if (!chain.includes(named.id)) {
+                const nameable = chain
+                    .slice(1)
+                    .filter(id => this.knowledge.isAwareOf(cultivator.id, 'sect', id))
+                    .map(id => this.repos.sects.getById(id)?.name
+                        ?? getCourt(id)?.name
+                        ?? getApexInstitution(id)?.name
+                        ?? id);
+                return refused('engine.petitionChain', 'petition', factsForRefusal(
+                    'Not above you.',
+                    `${named.name} is not somebody ${position.sectName} holds from, so there is `
+                    + 'nobody between you and them whose business it is to carry anything. '
+                    + (nameable.length === 0
+                        ? 'Who your own house answers to is not something you have been told.'
+                        : `What is above ${position.sectName}, as far as you have been told, is `
+                          + `${nameable.join(', then ')}.`),
+                    `chainToApex(${position.sectId}) does not contain ${named.id}. `
+                    + `${standingStructure(position, null)}`
+                ));
+            }
+        }
+
+        const result = await handlePetition({
+            action: 'petition',
+            cultivatorId: cultivator.id,
+            ...(startId ? { sectId: startId } : {}),
+            matter: (matter ?? target ?? 'a hearing').slice(0, 400)
+        });
+        const execution = this.fromToolResult(
+            'sect_politics.petition', 'petition', result, 'The petition'
+        );
+        // Whose name it went up under. Not a gate - a petition may be sent from
+        // any rung - but the receiving body reads the rank off the letter, and
+        // a player is entitled to know what it says about them.
+        execution.facts.structure.push(
+            position
+                ? `Sent over ${position.rankTitle} of ${position.sectName} `
+                  + `(rank_index=${position.rankIndex} of ${position.rankCount}).`
+                : 'Sent by somebody who serves no house. There is no rank on the letter.'
+        );
+        return execution;
+    }
+
+    /**
+     * The application against something a holder cannot reorder.
+     *
+     * The Requisition Against Standing Stock is the named instance and it is
+     * DATA rather than a rule: `theForm`, `sufficientReason`, `decidedBy`,
+     * `releaseMode` and `recordedRefusal` are fields on `Holding`, so a
+     * schedule amendment at another body runs through the same code and comes
+     * back in that body's own terms. Nothing here names a faction.
+     *
+     * IT IS ALWAYS REFUSED, and the refusal is the content. Not because a grant
+     * is forbidden - one has been made - but because the engine holds no state
+     * that satisfies `sufficientReason`, and a caller asserting that it does is
+     * exactly the affordance the authority boundary exists to refuse. So the
+     * form's own standard comes back, with the applicant's own words beside it,
+     * and with the recorded precedent where the holder kept one. `savingTheSect`
+     * says what would actually change the answer, which makes the refusal a
+     * route rather than a wall.
+     */
+    private requisition(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        matter: string | undefined
+    ): Execution {
+        const named = this.factionMeant(target, cultivator);
+        if (!named) {
+            return this.noPartyNamed(
+                'petition', target, cultivator,
+                'Filed against whom?',
+                'A form is filed against a body that is holding something, and you have not said '
+                + 'which body.'
+            );
+        }
+
+        const holdings = getHoldingsOf(named.id);
+        const withForm = holdings.filter(h => h.theForm !== null);
+        if (withForm.length === 0) {
+            // Never "they hold nothing". The count is known to the people the
+            // catalog says it is known to, and an outsider learning that a body
+            // holds nothing is learning the same shape of secret as an outsider
+            // learning that it holds something.
+            return refused('engine.requisition', 'petition', factsForRefusal(
+                'No such form there.',
+                `${named.name} keeps no procedure of the kind. Whether that is because there is `
+                + 'nothing behind it to apply for, or because they have never written one down, '
+                + 'is not something anybody outside could tell you.',
+                `getHoldingsOf(${named.id}): ${holdings.length} holding(s), 0 with a stated form. `
+                + 'Counts are not disclosed either way - see Holding.countIsKnownTo.'
+            ));
+        }
+
+        const asked = (matter ?? '').trim();
+        const lines: string[] = [];
+        for (const holding of withForm) {
+            lines.push(holding.theForm as string);
+            lines.push(holding.sufficientReason);
+            lines.push(holding.decidedBy);
+            if (holding.anyoneMayRefuse) {
+                lines.push(
+                    'Any one of them can refuse without giving a reason, and the instrument does '
+                    + 'not require them to.'
+                );
+            }
+            if (holding.recordedRefusal) {
+                lines.push(holding.recordedRefusal.theCase);
+                lines.push(holding.recordedRefusal.refusedBy);
+                lines.push(holding.recordedRefusal.afterwards);
+            }
+            if (holding.savingTheSect) lines.push(holding.savingTheSect);
+        }
+        // The applicant's own words, shown back. Being refused in the terms you
+        // asked in is the interaction; nothing branches on the string.
+        lines.push(asked.length >= 2
+            ? `What you have put on the form is: ${asked}. It is filed as written.`
+            : 'The matter line is blank. It is filed as written.');
+        lines.push(
+            'It is receipted. Nothing else happens today, and nothing else was ever going to.'
+        );
+
+        const facts = factsForToolResult(`${named.name}: the form is filed.`, lines);
+        facts.structure.push(
+            `Holding.theForm present on ${withForm.length} line item(s) at ${named.id}; `
+            + `releaseMode=${withForm.map(h => h.releaseMode).join(',')}, `
+            + `anyoneMayRefuse=${withForm.map(h => String(h.anyoneMayRefuse)).join(',')}. `
+            + 'Counts and grades withheld: countIsKnownTo does not include this cultivator.'
+        );
+        facts.structure.push(
+            'Refused by construction. No state in this engine satisfies '
+            + 'Holding.sufficientReason, and no argument may assert that it has been met.'
+        );
+        // Whose name is on the form. NOT a gate, and deliberately not one: the
+        // catalog says clerks are taught the Requisition as a single procedure
+        // and that it permits an application nobody has made, so the form is
+        // open to anybody who can find the counter. What standing changes here
+        // is the letterhead, and the answer is the same either way - which is
+        // the honest shape of an instrument that has been granted once in four
+        // hundred years.
+        const filedBy = positionIn(this.repos, cultivator.id);
+        facts.structure.push(
+            filedBy
+                ? `Filed over ${filedBy.rankTitle} of ${filedBy.sectName} `
+                  + `(rank_index=${filedBy.rankIndex} of ${filedBy.rankCount}).`
+                : 'Filed by somebody who serves no house. The form does not require one.'
+        );
+
+        this.repos.runs.incrementTurn(run.id, 1);
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'refused',
+            calls: [{
+                name: 'engine.requisition',
+                action: 'petition',
+                summary:
+                    `Filed against ${named.id}. Answered out of the holder's own form. Not `
+                    + 'granted: sufficientReason is a fact about the world and nothing here may '
+                    + 'claim it has been met.',
+                ok: false
+            }]
+        };
+    }
+
+    /**
+     * Claiming a line, which is an application for recognition.
+     *
+     * `auditAncestralClaim` exists to adjudicate a FACTION's claim and the
+     * Ninefold Ledger opens a lineage audit unasked, so the world already had
+     * both halves of this - and a player had no way to make the claim that
+     * would be audited.
+     *
+     * The gate is the knowledge gate and it is the whole of it: the ancestor is
+     * matched against the ancestral records of houses this cultivator can
+     * already name, so there is no path from a name they type to a name they
+     * have not been told. An unheard ancestor and an invented one come back
+     * identical, and only the quoted string differs.
+     */
+    private claimDescent(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Execution {
+        const wanted = (target ?? '').trim();
+
+        let line: { sectId: string; sectName: string; ancestorName: string } | null = null;
+        if (wanted.length >= 3) {
+            for (const sect of SECTS) {
+                if (!this.knowledge.isAwareOf(cultivator.id, 'sect', sect.id)) continue;
+                const records = getSectAncestry(sect.id);
+                for (const ancestor of records?.ancestors ?? []) {
+                    if (matchScore(wanted, ancestor.name) > MATCH_THRESHOLD) {
+                        line = {
+                            sectId: sect.id,
+                            sectName: sect.name,
+                            ancestorName: ancestor.name
+                        };
+                        break;
+                    }
+                }
+                if (line) break;
+            }
+        }
+
+        if (!line) {
+            return refused('engine.claimDescent', 'petition', factsForRefusal(
+                'A name and nothing behind it.',
+                'You can say it. Saying it is free, and it is also all that happens: there is '
+                + 'nobody in front of you who has heard the name, no roll it appears on that you '
+                + 'have ever been shown, and nothing you are carrying that would connect you to '
+                + 'it. A claim is worth what somebody can certify, and nobody certifies this.',
+                `Unresolved ancestor "${wanted.slice(0, 60)}": no match in the ancestral records `
+                + 'of any faction this cultivator is aware of. An unheard name and an invented '
+                + 'one are answered identically here, by construction.'
+            ));
+        }
+
+        // `claimIsTrue` is ground truth and is never surfaced. What is public
+        // is whether a claim was MADE, which is what `claimed` reports.
+        const audit = auditAncestralClaim(line.sectId);
+        const lines = [
+            `${line.ancestorName} is on ${line.sectName}'s wall, and you have said you are of `
+            + 'that line.',
+            'It is filed the way any claim is filed: written down, dated, and left standing until '
+            + 'somebody has a reason to test it.',
+            audit
+                ? `${line.sectName} makes a claim of its own about what became of that line, and `
+                  + 'has done for a long time. Whether a claim is true is not a thing anybody '
+                  + 'settles by asserting it - it is a thing one house in the world sells an '
+                  + 'answer to, and it sells that answer to the claimant or to a rival with equal '
+                  + 'willingness.'
+                : `${line.sectName} makes no claim about that line at all, which is not the same `
+                  + 'as denying yours and is not evidence for it either.',
+            'Nothing has changed about what you can do, where you can stand, or what anybody owes '
+            + 'you. That is what an unexamined claim is worth.'
+        ];
+
+        const facts = factsForToolResult('The claim is made.', lines);
+        facts.structure.push(
+            `Matched "${wanted.slice(0, 40)}" to an ancestor of ${line.sectId} within this `
+            + 'cultivator\'s knowledge. claimIsTrue and afterCrossing are ground truth and are '
+            + 'not read here.'
+        );
+        facts.structure.push(
+            'No state supports a personal lineage in this engine: there is no descent edge from a '
+            + 'player to a catalogued ancestor, so the claim is recorded as an assertion and '
+            + 'nothing derives from it. Certification is the only instrument that would.'
+        );
+
+        this.repos.runs.incrementTurn(run.id, 1);
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'refused',
+            calls: [{
+                name: 'engine.claimDescent',
+                action: 'petition',
+                summary:
+                    `Claim of descent from an ancestor of ${line.sectId}, filed and unsupported. `
+                    + 'No lineage state exists to support or contradict it.',
+                ok: false
+            }]
+        };
+    }
+
+    /**
+     * What one house is to another: war, alliance, defection - or the read.
+     *
+     * The three that commit are the seat's, for one reason stated once: each of
+     * them binds the house to something it cannot quietly walk back, and there
+     * is exactly one person in a house entitled to do that. A rogue is told what
+     * a declaration would require; a junior is told the rung it opens at in
+     * their own house's title; the seat's declaration happens and is recorded.
+     *
+     * WHAT IT COSTS IS STATED AND NOT INVENTED. `DISASTER_RESPONSES` prices war
+     * and aid in consequences rather than numbers, and `sectThreat` supplies the
+     * two ordinals that decide whether this was sane. No standing figure is
+     * charged, deliberately: the catalog holds no number for what a declaration
+     * costs a head with their own people, and manufacturing one here would be a
+     * balance decision made in the narration tier - the specific thing AGENTS.md
+     * forbids. It is a real gap and it belongs in `leadership.ts`.
+     */
+    private posture(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string | undefined
+    ): Execution {
+        const which: PostureIntent = POSTURE_INTENTS.includes(intent as PostureIntent)
+            ? intent as PostureIntent
+            : DEFAULT_POSTURE_INTENT;
+
+        const named = this.factionMeant(target, cultivator);
+        const position = positionIn(this.repos, cultivator.id);
+
+        if (which === 'stance') {
+            if (!named) {
+                return this.noPartyNamed(
+                    'posture', target, cultivator,
+                    'Toward whom?',
+                    'A house takes a position toward somebody in particular, and you have not '
+                    + 'said who.'
+                );
+            }
+            return this.standingToward(run, cultivator, position, named);
+        }
+
+        // ── the gate ──
+        //
+        // BEFORE the target is resolved, and that ordering is deliberate. Both
+        // of these refusals are about the speaker and disclose nothing whatever
+        // about who was named, so they are safe to give to somebody who has
+        // never heard of the house in the sentence - and a rogue at the bottom
+        // of the ladder learns what a declaration would take, which is a thing
+        // they can go and get. Resolving first would have answered them with
+        // the knowledge gate instead, which is correct and teaches nothing.
+        //
+        // Position, then rank. Two failures and two sentences: somebody who
+        // serves nothing has nothing to declare with, and somebody junior has a
+        // house whose decision this is not.
+        if (!position) {
+            return refused('engine.housePosture', 'posture', factsForRefusal(
+                'You speak for nobody.',
+                servesNoHouse(cultivator.name, THE_DECLARATION_REQUIRES[which]),
+                standingStructure(null, null)
+            ));
+        }
+        if (!mayCommitTheHouse(position)) {
+            const opens = opensAtRung(position);
+            const elder = elderRungTitle(position);
+            return refused('engine.housePosture', 'posture', factsForRefusal(
+                'Not your decision.',
+                rankDoesNotReach(position, opens)
+                + (elder && elder !== position.ranks[opens]
+                    ? ` What ${elder} does with a thing like this is put it in front of them.`
+                    : ''),
+                standingStructure(position, opens)
+            ));
+        }
+
+        // Only now: the seat is entitled to declare, and the question is
+        // whether they have named anybody they could actually have meant.
+        if (!named) {
+            return this.noPartyNamed(
+                'posture', target, cultivator,
+                'Against nobody.',
+                'A house takes a position toward somebody in particular, and you have not said who.'
+            );
+        }
+
+        // ── it happens ──
+        const own = sectThreat(position.sectId);
+        const theirActing = sectThreat(named.id)?.acting
+            ?? getCourt(named.id)?.powerOrdinal
+            ?? getApexInstitution(named.id)?.powerOrdinal
+            ?? null;
+        const theirSeal = sectThreat(named.id);
+
+        const cost = DISASTER_RESPONSES.find(
+            r => r.response === (which === 'war' ? 'war' : 'aid')
+        );
+
+        // A levy is only a levy where the paying house already holds from the
+        // asking one. That is `getParentage`, and it means whether this is a
+        // right being exercised or a threat being made is a fact about the two
+        // parties rather than about the word the player used.
+        const theirParentage = getParentage(named.id);
+        const theyHoldFromUs = theirParentage?.parentFactionId === position.sectId;
+
+        const lines: string[] = [DECLARED[which](position.sectName, named.name)];
+        if (cost) lines.push(cost.cost);
+
+        // The measured half, and the only place a number appears. Both figures
+        // are the catalog's own `powerOrdinal`, read through `sectThreat` so the
+        // acting number and the one-off ceiling are never conflated.
+        if (own && theirActing !== null) {
+            const gap = theirActing - own.acting;
+            lines.push(
+                gap > 0
+                    ? `The strongest person ${named.name} will actually put in a room stands `
+                      + `${gap} rung${gap === 1 ? '' : 's'} above the strongest person `
+                      + `${position.sectName} can.`
+                    : gap < 0
+                        ? `${position.sectName} can put somebody in a room that ${named.name} `
+                          + 'cannot answer.'
+                        : 'Neither house can put somebody in a room the other cannot answer.'
+            );
+            // A ceiling is disclosed only where the world already knows about
+            // it. A sealed ancestor nobody has heard of stays unheard of, and
+            // the silence is not a tell, because most houses have nothing.
+            if (theirSeal?.sealedIsPublic && theirSeal.ceiling > theirSeal.acting) {
+                lines.push(
+                    'And it is common talk that they are holding something they have never '
+                    + 'spent. Whether that is true, and what it is, was somebody else\'s problem '
+                    + 'until today.'
+                );
+            }
+        }
+
+        if (which === 'alliance') lines.push(OPENLY_OR_IN_SECRET.theAllianceIsVisible);
+        if (which === 'tribute') {
+            lines.push(theyHoldFromUs
+                ? `${named.name} holds from ${position.sectName} already, on terms everybody in `
+                  + `the province can name: ${theirParentage?.holds ?? 'the arrangement is on record.'} `
+                  + 'Asking is the ordinary exercise of it, and being refused would be the news.'
+                : `${named.name} holds from nobody you can call on, so there is nothing behind the `
+                  + 'asking except what happens if they say no. That is not a levy. Everybody who '
+                  + 'hears about it will read it as the sentence before a different one.');
+        }
+        if (which === 'defect') {
+            const parentage = getParentage(position.sectId);
+            lines.push(parentage?.holds
+                ?? 'Whoever the house currently holds from will hear about it from somebody other '
+                   + 'than you.');
+        }
+
+        const onDay = Math.floor(run.elapsedDays);
+        writeFlag(
+            this.repos.db,
+            cultivator.id,
+            postureKey(position.sectId, named.id),
+            JSON.stringify({
+                stance: which,
+                towardId: named.id,
+                towardName: named.name,
+                onDay,
+                // All three are said out loud. A stance nobody can see is a
+                // conspiracy, which is a different instrument with a different
+                // failure mode - see OPENLY_OR_IN_SECRET - and this engine has
+                // no way to keep one secret.
+                openly: true
+            })
+        );
+
+        const facts = factsForToolResult(DECLARED[which](position.sectName, named.name), lines);
+        facts.structure.push(
+            `posture:${position.sectId}:${named.id} = ${which}, day ${onDay}, declared by `
+            + `${position.rankTitle} (rank_index=${position.rankIndex} of ${position.rankCount}, `
+            + 'seat).'
+        );
+        if (own && theirActing !== null) {
+            facts.structure.push(
+                `acting ordinals: ${position.sectName}=${own.acting}, ${named.name}=${theirActing}. `
+                + `Their one-off ceiling ${theirSeal?.sealedIsPublic ? `is ${theirSeal.ceiling}` : 'is not disclosed'}.`
+            );
+        }
+        facts.structure.push(
+            'No standing is charged. The catalog holds no figure for what a declaration costs a '
+            + 'head with their own people, and inventing one here would be a balance decision '
+            + 'made in the narration tier.'
+        );
+
+        this.repos.runs.incrementTurn(run.id, 1);
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'engine.housePosture',
+                action: 'posture',
+                summary:
+                    `${position.sectId} -> ${named.id}: ${which}, recorded on day ${onDay} by the `
+                    + 'seat. There is no verb anywhere that unsays it.',
+                ok: true
+            }]
+        };
+    }
+
+    /** Where two houses already stand. A read, and the cheapest branch of `posture`. */
+    private standingToward(
+        run: Run,
+        cultivator: Cultivator,
+        position: HousePosition | null,
+        named: { id: string; name: string }
+    ): Execution {
+        const lines: string[] = [];
+        const entry = position ? getSect(position.sectId) : null;
+
+        const declared = position
+            ? readPosture(this.repos.db, cultivator.id, position.sectId, named.id)
+            : null;
+        if (declared && position) {
+            lines.push(
+                `${position.sectName} has already taken a position toward ${named.name}, and it `
+                + `was ${declared.stance === 'war'
+                    ? 'war'
+                    : declared.stance === 'alliance'
+                        ? 'an alliance'
+                        : 'a change of who the house holds from'}. `
+                + 'That was said out loud and cannot be unsaid.'
+            );
+        }
+
+        if (entry) {
+            if (entry.rivals.includes(named.id)) {
+                lines.push(
+                    'There is a feud, and it is old enough that nobody argues about who started it.'
+                );
+            }
+            if (entry.ambition?.contestedWith.includes(named.id)) {
+                lines.push(
+                    `Both houses have a hand on the same thing: ${entry.ambition.wants} `
+                    + `${entry.ambition.wouldCost}`
+                );
+            }
+            if (entry.ambition?.blockedBy.includes(named.id)) {
+                lines.push(`They are what stands between ${entry.name} and what it is after.`);
+            }
+        }
+
+        // Whether anybody stands above both of them, which is what decides
+        // whether a quarrel is allowed to become anything.
+        if (position) {
+            const mine = chainToApex(position.sectId);
+            const theirs = chainToApex(named.id);
+            const shared = mine.find(id => theirs.includes(id) && id !== position.sectId);
+            if (shared && this.knowledge.isAwareOf(cultivator.id, 'sect', shared)) {
+                const name = this.repos.sects.getById(shared)?.name
+                    ?? getCourt(shared)?.name
+                    ?? getApexInstitution(shared)?.name
+                    ?? shared;
+                lines.push(
+                    `Both of you hold from ${name} somewhere above, which means whatever happens `
+                    + 'between you is something they will have an opinion about.'
+                );
+            }
+        }
+
+        if (lines.length === 0) {
+            lines.push(
+                `Nothing stands between ${position?.sectName ?? cultivator.name} and ${named.name} `
+                + 'that anybody has written down, and nothing has been said either way.'
+            );
+        }
+
+        const facts = factsForToolResult(`${named.name}: where you stand.`, lines);
+        facts.structure.push(
+            position
+                ? `${standingStructure(position, opensAtRung(position))} A declaration opens at `
+                  + `${position.ranks[opensAtRung(position)] ?? 'the seat'}.`
+                : 'No membership row. Nothing to declare with; see the refusal on the acting intents.'
+        );
+        return this.freeAction(run, 'posture', facts);
+    }
+
+    /**
+     * The thing under the mountain.
+     *
+     * WHOSE mountain it is decides which act this is, and it is read off the
+     * membership row rather than off the sentence - so no phrasing can choose
+     * between a legal decision and a crime. Waking your own house's is a
+     * decision with a stated cost. Breaking somebody else's is not a decision at
+     * all: it is theft of the most dangerous object in the region, and it is
+     * gated on GETTING TO IT rather than on standing, which is exactly what
+     * `handleWake`'s capability assessment against the seal already answers.
+     *
+     * The read is the default and the read is `handleWake` unchanged, which has
+     * been in `sect-politics.ts` the whole time: it discloses nothing about a
+     * house whose seal is not public unless the caller is senior in that house,
+     * and it says "nothing this cultivator knows of" for a house with nothing
+     * under it in exactly the same words - so the shape of the answer is not the
+     * answer. None of that is weakened here.
+     */
+    private async seal(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string | undefined
+    ): Promise<Execution> {
+        const which: SealIntent = SEAL_INTENTS.includes(intent as SealIntent)
+            ? intent as SealIntent
+            : DEFAULT_SEAL_INTENT;
+
+        const position = positionIn(this.repos, cultivator.id);
+        const named = this.factionMeant(target, cultivator);
+
+        // A mountain was named and it is not one this cultivator can find.
+        // Falling back to their own house here would answer a question about
+        // somebody else's seal with an answer about theirs, which is the
+        // elder-dismissal rule applied to mountains.
+        if (this.namedButUnresolved(target, named)) {
+            return this.noPartyNamed(
+                'seal', target, cultivator,
+                'No mountain you know of.',
+                'You have named a house, and it is not a name you hold.'
+            );
+        }
+
+        const sectId = named?.id ?? position?.sectId ?? null;
+
+        if (!sectId) {
+            return refused('engine.wakeSeal', 'seal', factsForRefusal(
+                'No mountain in particular.',
+                servesNoHouse(
+                    cultivator.name,
+                    'there is no mountain that is yours to have anything under. Whatever is asleep '
+                    + 'anywhere else is asleep under somebody, and getting to it is a matter of '
+                    + 'walking past them first.'
+                ),
+                standingStructure(null, null)
+            ));
+        }
+
+        const isOwn = position !== null && position.sectId === sectId;
+
+        // Somebody else's. Not a decision, and no rank anywhere makes it one -
+        // so the gate is the seal itself, priced by the engine's own capability
+        // predicates rather than by anything this layer decides.
+        if (which === 'wake' && !isOwn) {
+            const assessment = await handleWake({
+                action: 'wake', sectId, cultivatorId: cultivator.id
+            });
+            const execution = this.fromToolResult(
+                'sect_politics.wake', 'seal', assessment, 'The seal'
+            );
+            execution.outcome = 'refused';
+            // Pushed onto BOTH channels. `lines` is what a provider narrator is
+            // handed and `prose` is what the deterministic one ships, and the
+            // two are separate fields on `EngineFacts` - appending to one and
+            // not the other means the sentence exists for a player with a model
+            // configured and not for a player without one, which is the exact
+            // asymmetry `facts.ts` says must never appear.
+            const notYours =
+                'Whatever is down there is not yours to wake. There is no rank in any house that '
+                + 'entitles somebody to break somebody else\'s seal, because it is not a decision '
+                + 'anybody is entitled to make - it is a theft, and the only question it turns on '
+                + 'is whether you could get to it.';
+            execution.facts.lines.push(notYours);
+            execution.facts.prose = `${execution.facts.prose}\n\n${notYours}`;
+            execution.facts.structure.push(
+                `Not this cultivator's house: membership=${position?.sectId ?? 'none'}, `
+                + `target=${sectId}. Gated on reaching the seal, never on rank.`
+            );
+            execution.calls.push({
+                name: 'engine.wakeSeal',
+                action: 'seal',
+                summary:
+                    `${sectId} is not this cultivator's house. Routed to the capability assessment `
+                    + 'against the seal; no authority path exists and none should.',
+                ok: false
+            });
+            return execution;
+        }
+
+        // The read, which is where a player finds out what the condition and the
+        // cost are before spending either.
+        if (which === 'read') {
+            return this.fromToolResult(
+                'sect_politics.wake', 'seal',
+                await handleWake({ action: 'wake', sectId, cultivatorId: cultivator.id }),
+                'The seal'
+            );
+        }
+
+        // Your own house's. The rank gate, in the house's own titles.
+        if (position && !mayCommitTheHouse(position)) {
+            const opens = opensAtRung(position);
+            return refused('engine.wakeSeal', 'seal', factsForRefusal(
+                'Not your decision.',
+                `${rankDoesNotReach(position, opens)} It is not a thing the house votes on and not `
+                + 'a thing an elder does quietly. One person decides, and if you were that person '
+                + 'you would already have been shown where it is.',
+                standingStructure(position, opens)
+            ));
+        }
+
+        return this.breakTheGlass(run, cultivator, position as HousePosition);
+    }
+
+    /**
+     * The seat spends the house's last card.
+     *
+     * The one method in this package that changes a `powerOrdinal`, and the
+     * sharpest expression of what `sectThreat` has always modelled: `acting` is
+     * the strongest member who will answer, `ceiling` is the strongest thing the
+     * house can put in the world at all including one it can spend once, and
+     * waking is the event that turns the second into the first. Permanently,
+     * and once.
+     *
+     * The cost is the catalog's, verbatim, because the catalog wrote it as a
+     * cost rather than as colour: nearly every `wakeCost` in the file says the
+     * ancestor is spent, and several say the arrangement that made the house
+     * survivable ends with them.
+     */
+    private breakTheGlass(
+        run: Run,
+        cultivator: Cultivator,
+        position: HousePosition
+    ): Execution {
+        const dormant = getSectAncestry(position.sectId)?.dormant ?? null;
+        const already = readSpentSeal(this.repos.db, cultivator.id, position.sectId);
+
+        if (!dormant) {
+            // Phrased the way `handleWake` phrases a house with nothing under
+            // it, because a seat being told "there is nothing" and a seat being
+            // told "there is nothing you have been shown" must not be
+            // distinguishable from outside this method.
+            return refused('engine.wakeSeal', 'seal', factsForRefusal(
+                'Nothing to wake.',
+                `There is nothing under ${position.sectName} that you have ever been shown, and `
+                + 'you would have been shown it. That is not the same as nothing being there, and '
+                + 'nobody alive can tell you which.',
+                `SECT_ANCESTRY[${position.sectId}].dormant is null. The negative is phrased `
+                + 'identically to a withheld positive by construction.'
+            ));
+        }
+
+        if (already) {
+            return refused('engine.wakeSeal', 'seal', factsForRefusal(
+                'Spent.',
+                `${dormant.name} came up once, on the day you sent for them, and there is no `
+                + 'second time. A seal is a thing you have until you use it.',
+                `seal_spent:${position.sectId} recorded on day ${already.onDay}. Single use, by `
+                + 'construction.'
+            ));
+        }
+
+        const sect = this.repos.sects.getById(position.sectId);
+        const before = sect?.powerOrdinal ?? 0;
+        const onDay = Math.floor(run.elapsedDays);
+
+        // The state change. `powerOrdinal` is what every other surface in the
+        // engine reads to decide whether this house can be fought, refused or
+        // leaned on, so raising it to the woken ancestor's ordinal is all that
+        // waking means - and recording the spend is what stops a card from
+        // quietly becoming a resource.
+        if (sect) {
+            this.repos.sects.upsert({ ...sect, powerOrdinal: dormant.realmOrdinal });
+        }
+        writeFlag(
+            this.repos.db,
+            cultivator.id,
+            sealKey(position.sectId),
+            JSON.stringify({
+                onDay,
+                ancestorName: dormant.name,
+                ordinal: dormant.realmOrdinal
+            })
+        );
+
+        const lines = [
+            `${dormant.name} is awake, at ${dormant.restingPlace.replace(/\.$/, '')}.`,
+            `${dormant.dormantYears} years asleep, and everybody who arranged it is dead.`,
+            // The cost, in the catalog's own words. It is not a warning about
+            // what might happen; it is the account of what this has done.
+            dormant.wakeCost,
+            dormant.sealReason === 'final_breath'
+                ? 'What came up is shaped around one act and cannot be pointed at a second one. '
+                  + 'Whatever they were kept for is what you have, whether or not it is what you '
+                  + 'wanted.'
+                : 'They were banked whole and can be spent on anything worth a weapon, which is '
+                  + 'the reading a house does not say out loud about its own last card.',
+            'The circumstance the house told itself this was for was not met. It was not '
+            + 'consulted. You decided, and the record will say so for as long as there is a record.'
+        ];
+
+        const facts = factsForToolResult(`${dormant.name} is awake.`, lines);
+        facts.structure.push(
+            `sects.power_ordinal ${before} -> ${dormant.realmOrdinal} at ${position.sectId}. `
+            + 'sectThreat.ceiling has become sectThreat.acting and cannot be spent again.'
+        );
+        facts.structure.push(
+            `seal_spent:${position.sectId} written on day ${onDay}. `
+            + `sealGrade=${dormant.sealGrade}, sealReason=${dormant.sealReason}, `
+            + `publiclyKnown=${dormant.publiclyKnown}. Decided by ${position.rankTitle} `
+            + `(rank_index=${position.rankIndex} of ${position.rankCount}, seat).`
+        );
+        facts.structure.push(
+            `wakeCondition, unmet and not consulted: ${dormant.wakeCondition}`
+        );
+
+        this.repos.runs.incrementTurn(run.id, 1);
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'engine.wakeSeal',
+                action: 'seal',
+                summary:
+                    `${position.sectId}: seal spent by the seat on day ${onDay}. power_ordinal `
+                    + `${before} -> ${dormant.realmOrdinal}, permanently, once.`,
+                ok: true
+            }]
+        };
+    }
+
+    /**
+     * The offering upward, and the reading of a silence.
+     *
+     * `IMMORTAL_MOTIVE` is unusually blunt about what this is: not a great
+     * honour a sect has earned, but the cheapest possible acknowledgement,
+     * costing the giver nothing whatsoever, which the sects have built entire
+     * ceremonies around because it is all they were ever going to get. A body
+     * that spends its principal for a decade to receive two words is being
+     * answered at the minimum rate.
+     *
+     * So this method charges the decade and produces the silence, and says
+     * plainly that the silence is consistent with several things without saying
+     * which. `afterCrossing` and `claimIsTrue` are ground truth the catalog
+     * holds precisely so that nobody in the world can read them, and nothing
+     * here looks at either. There is no roll, because there is nothing to roll:
+     * whether an ancestor answers is not a thing this engine decides.
+     */
+    private offer(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string | undefined,
+        /** What goes with it, where the sender said. Carried, never branched on. */
+        message?: string
+    ): Execution {
+        const which: OfferIntent = OFFER_INTENTS.includes(intent as OfferIntent)
+            ? intent as OfferIntent
+            : DEFAULT_OFFER_INTENT;
+
+        // The other end of the same pipe. Which end the speaker is standing at
+        // is STATE rather than the word they used, so a player below who types
+        // "send" gets the offering and a player above who types "offering" gets
+        // the sending - both of them reach the thing they can actually do.
+        if (canExistBeyondTheLid(cultivator)) {
+            return this.sendDown(run, cultivator, target, message);
+        }
+
+        const position = positionIn(this.repos, cultivator.id);
+        const named = this.factionMeant(target, cultivator);
+
+        // A line was named and it is not one this cultivator can find. An
+        // offering sent up the wrong wall is not a smaller version of the right
+        // one; it is a different act.
+        if (this.namedButUnresolved(target, named)) {
+            return this.noPartyNamed(
+                'offer', target, cultivator,
+                'No line you know of.',
+                'You have named a house whose ancestors you would be addressing, and it is not a '
+                + 'name you hold.'
+            );
+        }
+
+        const sectId = named?.id ?? position?.sectId ?? null;
+
+        if (!sectId) {
+            return refused('engine.offering', 'offer', factsForRefusal(
+                'To whom?',
+                servesNoHouse(
+                    cultivator.name,
+                    'an offering goes up a line, and a line is a thing a house keeps. There is no '
+                    + 'wall with your name at the bottom of it, no rite anybody would recognise '
+                    + 'you performing, and nothing to pay for one with - what an offering costs is '
+                    + 'a decade of a house\'s principal, and it is spent whether or not anything '
+                    + 'answers.'
+                ),
+                standingStructure(null, null)
+            ));
+        }
+
+        const records = getSectAncestry(sectId);
+        const ascended = (records?.ancestors ?? []).filter(a => a.fate === 'ascended');
+        const sect = this.repos.sects.getById(sectId) ?? getSect(sectId) ?? null;
+        const isOwn = position !== null && position.sectId === sectId;
+
+        if (which === 'channel' || !isOwn) {
+            return this.readTheChannel(run, sectId, sect, records, ascended, isOwn);
+        }
+
+        // Your own house's line, and the seat's decision, for the reason every
+        // other commitment here is: it comes out of the principal, and one
+        // person in a house signs for the principal.
+        if (position && !mayCommitTheHouse(position)) {
+            const opens = opensAtRung(position);
+            return refused('engine.offering', 'offer', factsForRefusal(
+                'Not yours to spend.',
+                `${rankDoesNotReach(position, opens)} You can stand at the back of the hall while `
+                + 'it is done. Everybody does.',
+                standingStructure(position, opens)
+            ));
+        }
+
+        const seat = position as HousePosition;
+        const stipend = sect?.stipend ?? [];
+        const reserves = baseReservesFor(stipend);
+        // The house's monthly payroll, defined EXACTLY as `baseReservesFor`
+        // defines it - the sum of the ladder, not the ladder weighted by how
+        // many people stand on each rung.
+        //
+        // The first version here weighted it by `rosterByRung`, which is the
+        // more realistic figure and was wrong for the only reason that matters:
+        // the reserve it is compared against is not weighted, so the comparison
+        // was between two different quantities and the rite priced out as
+        // unaffordable for every house in the world. A verb that can never fire
+        // is a verb that is not there. Two definitions of one number is the
+        // defect, not the choice of definition.
+        const monthly = stipend.reduce((sum, s) => sum + Math.max(0, s), 0);
+        // A decade of it, which is the figure IMMORTAL_MOTIVE states in years
+        // and the stipend ladder states in stones. Against a reserve of twelve
+        // years, an offering is five sixths of everything the house is holding.
+        const cost = monthly * OFFERING_MONTHS;
+
+        const alreadySent = readOffering(this.repos.db, cultivator.id, sectId);
+        if (alreadySent) {
+            return refused('engine.offering', 'offer', factsForRefusal(
+                'Once.',
+                'It was done, and it was answered the way it was answered. A house that goes back '
+                + 'up the line inside one lifetime is a house that has misunderstood what the '
+                + 'first one was, and everybody senior would say so.',
+                `offering:${sectId} recorded on day ${alreadySent.onDay}, ${alreadySent.stones} `
+                + 'stones out of the principal.'
+            ));
+        }
+
+        if (ascended.length === 0) {
+            return refused('engine.offering', 'offer', factsForRefusal(
+                'Nobody up there to address it to.',
+                `${sect?.name ?? 'The house'} has a wall of names and not one of them went `
+                + 'through. A rite performed to a name that is only a dead person is a rite; it is '
+                + 'just not an offering, and the elders who would have to conduct it would want to '
+                + 'know who you thought it was for.',
+                `SECT_ANCESTRY[${sectId}]: 0 ancestors with fate='ascended'.`
+            ));
+        }
+
+        if (cost > reserves) {
+            return refused('engine.offering', 'offer', factsForRefusal(
+                'It cannot be paid for.',
+                `What the rite costs is a decade of everything ${sect?.name ?? 'the house'} pays `
+                + 'out, and the house does not hold a decade of everything it pays out. Making it '
+                + 'anyway would not be an offering; it would be the end of the house with an '
+                + 'offering in the middle of it.',
+                `offering cost ${cost} vs baseReservesFor(stipend)=${reserves} at ${sectId}.`
+            ));
+        }
+
+        const onDay = Math.floor(run.elapsedDays);
+        writeFlag(
+            this.repos.db, cultivator.id, offeringKey(sectId),
+            JSON.stringify({ onDay, stones: cost, response: null })
+        );
+
+        const lines = [
+            `It is made, in the name of ${sect?.name ?? 'the house'}, to ${ascended[0].name}, who `
+            + `went through ${ascended[0].yearsAgo} years ago.`,
+            `It costs ${cost} spirit stones out of the principal, which is about a decade of `
+            + 'everything the house pays out, and it is spent before anybody knows whether it '
+            + 'bought anything.',
+            IMMORTAL_MOTIVE.whatTheOfferingActuallyIs,
+            'Nothing answers. Not that day, not that season, not that year.',
+            // The four readings, none of them ranked and none of them resolved.
+            // The engine holds which is true and this method does not read it,
+            // which is the whole reason working it out is a prize.
+            'And nothing about the silence tells the possibilities apart, which is what everybody '
+            + 'who has ever done this has had to live with: that they died up there long ago; '
+            + 'that they are alive and have no reason at all to answer a house full of strangers '
+            + 'born two thousand years after they left; that the name at the top of the page has '
+            + 'been wrong for so long that an answer would arrive addressed to somebody nobody '
+            + 'here would recognise; or that it was heard, weighed, and found not worth the ten '
+            + 'breaths a reply would cost.'
+        ];
+        const previous = records?.lastOffering ?? null;
+        if (previous) {
+            lines.push(
+                `The house has done this before, ${previous.yearsAgo} years ago. ${previous.cost} `
+                + (previous.response === null
+                    ? 'Nothing came back that time either, and what the house did about it is on '
+                      + `the record: ${previous.consequence}`
+                    : `What came back was: ${previous.response} ${previous.consequence}`)
+            );
+        }
+
+        const facts = factsForToolResult('The offering is made.', lines);
+        facts.structure.push(
+            `offering:${sectId} written on day ${onDay}, ${cost} stones (${OFFERING_MONTHS} months `
+            + `of payroll at ${monthly}/month) against reserves of ${reserves}. Decided by `
+            + `${seat.rankTitle} (rank_index=${seat.rankIndex} of ${seat.rankCount}, seat).`
+        );
+        facts.structure.push(
+            'Response is null and is not rolled. Nothing in this engine decides whether an '
+            + 'ancestor answers; SectAncestor.afterCrossing is ground truth the world cannot read, '
+            + 'and this method does not read it either.'
+        );
+        facts.structure.push(
+            'The reserve is NOT decremented. `siphon_taken:<sectId>` owns that figure inside '
+            + 'sect-manage.ts behind a key this module does not reach into, and a second ledger '
+            + 'only one side reads is worse than no ledger. Unifying them is outstanding.'
+        );
+
+        this.repos.runs.incrementTurn(run.id, 1);
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'engine.offering',
+                action: 'offer',
+                summary:
+                    `${sectId}: offering made by the seat on day ${onDay} at ${cost} stones. No `
+                    + 'response, and no response was rolled for.',
+                ok: true
+            }]
+        };
+    }
+
+    /** What the line is, before anybody spends a decade on it. Free. */
+    private readTheChannel(
+        run: Run,
+        sectId: string,
+        sect: { name: string } | null,
+        records: ReturnType<typeof getSectAncestry>,
+        ascended: ReadonlyArray<{ name: string; yearsAgo: number; rememberedFor: string }>,
+        isOwn: boolean
+    ): Execution {
+        const lines: string[] = [];
+        const name = sect?.name ?? 'the house';
+
+        if (ascended.length === 0) {
+            lines.push(
+                `${name} has a wall of names, and as far as anybody will say out loud, that is all `
+                + 'it is. Genealogy does not keep realms.'
+            );
+        } else {
+            for (const one of ascended.slice(0, 2)) {
+                lines.push(`${one.name}, ${one.yearsAgo} years ago. ${one.rememberedFor}`);
+            }
+        }
+
+        // A public claim is public. Whether it is TRUE is `claimIsTrue`, which
+        // is ground truth and is read nowhere in this package.
+        if (records?.claimsLivingAncestor) {
+            lines.push(
+                `${name} says the line still answers. Every house that says this says it the same `
+                + 'way, and no house that says it can show you.'
+            );
+        }
+
+        // What the house has actually received is house business. An outsider
+        // gets the claim and the ceremony; a member gets the ledger.
+        if (isOwn) {
+            const channel = getChannel(sectId);
+            if (channel) {
+                lines.push(channel.cadence);
+                lines.push(channel.usability);
+            }
+            const previous = records?.lastOffering ?? null;
+            if (previous) {
+                lines.push(
+                    `The last offering was ${previous.yearsAgo} years ago. ${previous.cost} `
+                    + (previous.response === null
+                        ? `Nothing came back. ${previous.consequence}`
+                        : `What came back was: ${previous.response} ${previous.consequence}`)
+                );
+            }
+        }
+
+        lines.push(
+            'What an offering costs is a decade of a house\'s principal, and it is paid before '
+            + 'anybody knows whether it bought anything.'
+        );
+
+        const facts = factsForToolResult(`${name}: the line upward.`, lines);
+        facts.structure.push(
+            `SECT_ANCESTRY[${sectId}]: ${ascended.length} ascended, `
+            + `claimsLivingAncestor=${records?.claimsLivingAncestor ?? false}. Channel detail `
+            + `${isOwn ? 'disclosed: caller is of this house' : 'withheld: caller is not of this house'}. `
+            + 'claimIsTrue and afterCrossing are not read.'
+        );
+        return this.freeAction(run, 'offer', facts);
+    }
+
+    // ── the far side of the Lid ──────────────────────────────────────────
+    //
+    // Ordinal 46 is the one point where progression is also geographic, and the
+    // layer on the other side is one of the most complete systems in the
+    // project - the seam, the landing, five houses older than the lower world's
+    // records, residents, standing built on tenure and holdings rather than on
+    // a second power ladder, a peril clock, `descend` and `sendAcross`.
+    //
+    // NOTHING IN THE CODEBASE CALLED ANY OF IT, and what a player got instead
+    // was one refusal, correct and empty, in front of an empty room. That is
+    // the same defect as `treat`, `buy`, `site` and the four institutional
+    // verbs, at the one height where there is nothing else to do at all.
+
+    /**
+     * The player, as somebody the far side has a row for.
+     *
+     * Null when the world simulation is off for this run, which is the only
+     * reason the far side would have nothing to say - and the refusal below
+     * says so rather than pretending the layer is empty.
+     */
+    private residentNow(cultivator: Cultivator, run: Run): Resident | null {
+        if (!this.atHand) return null;
+        const resident = residentAbove(this.atHand, cultivator, Math.floor(run.elapsedDays));
+        if (resident?.settledJustNow) this.worldDirty = true;
+        return resident;
+    }
+
+    /**
+     * Where an immortal actually is, which is somewhere rather than nowhere.
+     *
+     * The abode first, because it is the only thing on this layer that is
+     * theirs; then both readings of what they are worth, because both are true
+     * at once and neither is the answer. Nothing from the mortal layer is drawn
+     * on - no practice, no overheard name, no province ambient - and that is
+     * enforced by not calling those readers rather than by filtering them,
+     * which is the difference between a rule and a hope.
+     */
+    private lookAbove(run: Run, cultivator: Cultivator): Execution {
+        const resident = this.residentNow(cultivator, run);
+        if (!resident) {
+            return this.freeAction(run, 'look', factsForToolResult(
+                'The far side of the Lid.',
+                [
+                    'Open ground under a sky that does not weather, and nothing on it that is '
+                    + 'yours. What is being kept track of for this run stops at the Lid, so what '
+                    + 'is out there is not being counted.'
+                ]
+            ));
+        }
+
+        const lines: string[] = [];
+        if (resident.abode) {
+            lines.push(
+                `${resident.abode.name}. ${resident.abode.description}`
+            );
+        }
+        lines.push(
+            'The seam is in sight from here, and so is the landing everybody arrives on. Nobody '
+            + 'has ever needed to say which way it is.'
+        );
+        // Both readings. The lower one is a measured division over the living
+        // roster and the upper is a rank among residents, and the whole point of
+        // returning both is that a person at this height is two incompatible
+        // things depending on where the question is asked from.
+        if (resident.readings) {
+            lines.push(resident.readings.below.statement);
+            lines.push(resident.readings.above.statement);
+        }
+
+        const facts = factsForToolResult('The far side of the Lid.', lines);
+        facts.structure.push(
+            `layer=immortal, abode=${resident.abode?.id ?? 'none'}, `
+            + `standing=${(resident.standing?.standing ?? 0).toFixed(2)} `
+            + `(rank ${resident.standing?.rankAmongResidents ?? '?'} of `
+            + `${resident.standing?.residentCount ?? '?'}). `
+            + 'No mortal-layer reader is called on this path: no practice, no hearsay, no '
+            + 'province ambient.'
+        );
+        return this.freeAction(run, 'look', facts);
+    }
+
+    /**
+     * A mortal-world sentence, re-offered in the two forms an immortal has.
+     *
+     * Not a refusal, and the difference is the point: what the player asked for
+     * is available, twice, in forms that cost different things. Both are
+     * resolved by machinery that already existed; all this does is say so, and
+     * settle the abode on the way past, because standing in a field is not what
+     * happens to somebody who comes through.
+     */
+    private aboveTheLid(run: Run, cultivator: Cultivator, attempted: ActionName): Execution {
+        const resident = this.residentNow(cultivator, run);
+        const abode = resident?.abode ?? null;
+
+        const lines = theTwoWaysDown(abode?.name ?? null);
+        if (resident?.settledJustNow && abode) {
+            lines.unshift(
+                `You have made ${abode.name} out of ground nobody was using, which is the first `
+                + 'thing anybody does up here and the first thing you have owned since the Lid '
+                + 'took the rest.'
+            );
+        }
+
+        const facts = factsForToolResult('Not from here. From here there are two ways.', lines);
+        facts.structure.push(...theTwoWaysStructure(attempted, abode?.id ?? null));
+        if (!this.atHand) {
+            facts.structure.push(
+                'World simulation is off for this run, so there is no layer to stand on and no '
+                + 'abode was settled. The two routes are still real; nothing can be resolved '
+                + 'against a world that is not running.'
+            );
+        }
+        if (resident) {
+            // Both readings, because both are true at once and neither is the
+            // answer. Measured against the world they left they are beyond
+            // comprehension; measured against the world they arrived in they
+            // are a newcomer with no tenure, no house and no holdings - and the
+            // ladder is not one of the axes, because everybody up here is 46.
+            facts.structure.push(
+                `immortalStanding=${(resident.standing?.standing ?? 0).toFixed(2)}, `
+                + `rank ${resident.standing?.rankAmongResidents ?? '?'} of `
+                + `${resident.standing?.residentCount ?? '?'} residents. `
+                + `${resident.readings?.below.statement ?? ''}`.trim()
+            );
+        }
+        return this.freeAction(run, attempted, facts);
+    }
+
+    /**
+     * Going back down, at nine strikes, for ten to fifteen breaths.
+     *
+     * The most expensive action in the game and the only one at the top of the
+     * ladder that is a decision. Three separate pieces of the engine resolve it
+     * and this method owns none of them:
+     *
+     *   `evaluateLidTransit(down)`   whether it is permitted, and what it draws
+     *   `resolveDescentStrikes`      the nine strikes, through the same
+     *                                per-strike odds every tribulation uses
+     *   `descend(state, ...)`        the breaths, the object ceiling, and the
+     *                                fact the province gets - which names
+     *                                nobody, because nobody down there could
+     *                                say what was in it
+     *
+     * The expulsion is not a second action and is not something the player has
+     * to remember: `descend` resolves the visit atomically and the resident's
+     * layer never changes, because a True Immortal in the lower world is a
+     * thing being pushed back out for the whole time they are there.
+     */
+    private descend(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined
+    ): Execution {
+        const transit = evaluateLidTransit(cultivator, 'down');
+        if (!transit.permitted) {
+            return refused('engine.evaluateLidTransit', 'descend', factsForRefusal(
+                'There is nothing to come down from.',
+                'You are standing in the world. Going down from here is a staircase, and there '
+                + 'is not one.',
+                `evaluateLidTransit(down) refused: ${transit.reason}. ${transit.detail}`
+            ));
+        }
+
+        const resident = this.residentNow(cultivator, run);
+        if (!resident || !this.atHand) {
+            return refused('engine.descend', 'descend', factsForRefusal(
+                'The way is there and the world is not.',
+                'The seam is where it always was. What is on the other side of it is not being '
+                + 'kept track of for this run, so there is nowhere in particular to arrive.',
+                'World simulation is off for this run. `descend` resolves against real locations '
+                + 'and real objects and will not be approximated.'
+            ));
+        }
+
+        // Where they are forcing it. A place they can name, or the ground they
+        // came from - never a guess, and never somewhere they have not heard of.
+        const wanted = (target ?? '').trim();
+        const named = wanted.length >= 3
+            ? resolveKnownPlace(wanted, cultivator, this.scopeFor(cultivator))
+            : null;
+        const toLocationId = named?.id
+            ?? worldLocationFor(this.atHand, cultivator.location)?.id
+            ?? null;
+        if (!toLocationId) {
+            return refused('engine.descend', 'descend', factsForRefusal(
+                'Down to where?',
+                'The seam opens where you put it, and you have not said where. Somewhere you '
+                + 'could point to, which above the Lid means somewhere you can still name.',
+                `Unresolved destination "${wanted.slice(0, 60)}" and no last mortal location on `
+                + 'record. A descent is not aimed by guessing.'
+            ));
+        }
+
+        // ── the strikes ──
+        //
+        // Rolled before the visit, because a descent that is not survived never
+        // arrives and there is nothing at the bottom of it for anybody to find.
+        const rng = forStream(run.seed, 'descent', cultivator.id, Math.floor(run.elapsedDays));
+        const weathered = resolveDescentStrikes(cultivator, ambient, rng, run.turn);
+
+        const calls: ToolCallRecord[] = [{
+            name: 'engine.evaluateLidTransit',
+            action: 'descend',
+            summary: `Permitted, at ${transit.strikes} strikes. ${transit.detail}`,
+            ok: true
+        }, {
+            name: 'engine.resolveDescentStrikes',
+            action: 'descend',
+            summary: weathered.detail,
+            ok: weathered.survived
+        }];
+
+        // One transaction, because a save that holds the injuries and not the
+        // death is worse than a save that holds neither.
+        this.db.transaction((): void => {
+            for (const injury of weathered.injuries) {
+                this.repos.cultivators.addInjury(cultivator.id, {
+                    id: injury.id,
+                    severity: injury.severity,
+                    source: injury.source,
+                    description: injury.description,
+                    sustainedOnTurn: injury.sustainedOnTurn
+                });
+            }
+            this.repos.runs.incrementTurn(run.id, 1);
+            if (!weathered.survived) {
+                this.repos.cultivators.markDead(
+                    cultivator.id, 'heavenly_tribulation', run.turn + 1,
+                    'The seam discharged on the way in and there was nothing left to arrive.'
+                );
+            }
+        })();
+
+        if (!weathered.survived) {
+            calls.push({
+                name: 'cultivator.markDead',
+                action: 'death',
+                summary:
+                    `Run closed: heavenly_tribulation on the descent. ${weathered.struck} of `
+                    + `${weathered.strikes} strikes struck home. Permadeath - no reload.`,
+                ok: true
+            });
+            return {
+                facts: factsForToolResult('It did not open for you twice.', [
+                    'The seam takes the same thing on the way in that it takes on the way out, '
+                    + 'and it does not care that you have already weathered a crossing.',
+                    weathered.detail,
+                    'Nobody below saw anything. The sky did something over a hillside and then '
+                    + 'stopped, and the only people who could have said what it was are not there.'
+                ]),
+                events: [],
+                timeSkip: null,
+                breakthrough: null,
+                outcome: 'executed',
+                calls
+            };
+        }
+
+        // ── the visit ──
+        const visit = worldDescend(this.atHand, {
+            residentId: cultivator.id,
+            toLocationId,
+            onDay: Math.floor(run.elapsedDays),
+            reason: wanted.length >= 3
+                ? `They came for ${wanted.slice(0, 120)}.`
+                : 'Nobody who was there could say why.'
+        });
+        if (!visit.ok) {
+            calls.push({
+                name: 'world.descend',
+                action: 'descend',
+                summary: `${visit.reason}: ${visit.detail}`,
+                ok: false
+            });
+            return refused('world.descend', 'descend', factsForRefusal(
+                'It does not open there.',
+                visit.detail,
+                `world.descend refused: ${visit.reason}.`
+            ));
+        }
+
+        this.worldDirty = true;
+        calls.push({
+            name: 'world.descend',
+            action: 'descend',
+            summary:
+                `${visit.breaths} breaths at ${toLocationId}; ${visit.carriedBack.length} object(s) `
+                + `taken back by the lightning, ${visit.leftBehind.length} left. `
+                + 'Layer unchanged: the expulsion is the whole visit.',
+            ok: true
+        });
+
+        const lines = [
+            weathered.detail,
+            visit.detail,
+            `${visit.breaths} breaths. Everybody within forty li stopped being able to stand up, `
+            + 'and nobody agrees on what was in it.',
+            visit.carriedBack.length > 0
+                ? `Whatever you were carrying went back up with you. Nothing above `
+                  + `${OBJECT_CEILING_BELOW_THE_LID} can sit in the lower world, and the same `
+                  + 'lightning that takes you takes it.'
+                : 'You went down carrying nothing, which is the only way anything of yours could '
+                  + 'have stayed.'
+        ];
+        if (visit.leftBehind.length > 0) {
+            lines.push(
+                `${visit.leftBehind.length} thing(s) stayed, because they were under the ceiling. `
+                + 'That is how every object of that grade in the world got there.'
+            );
+        }
+
+        const facts = factsForToolResult('You went down.', lines);
+        facts.structure.push(
+            `descent: ${weathered.struck}/${weathered.strikes} strikes landed at `
+            + `${(weathered.perStrike * 100).toFixed(0)}% per strike; breaths=${visit.breaths} `
+            + `(window ${BREATHS_IN_THE_LOWER_REALM.min}-${BREATHS_IN_THE_LOWER_REALM.max}); `
+            + `carriedBack=${visit.carriedBack.length}, leftBehind=${visit.leftBehind.length}, `
+            + `refused=${visit.refused.length}.`
+        );
+        facts.structure.push(
+            'Layer unchanged by design. The expulsion is not a second action: the visit is '
+            + 'resolved atomically because the pressure is pushing them out for the whole of it.'
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls
+        };
+    }
+
+    /**
+     * The immortal end of the channel: send something down, and a word with it.
+     *
+     * The cheap route and the unreliable one. Nothing of the sender crosses, so
+     * nothing is drawn on them - and nothing of them is there to see it done,
+     * which is the trade. What arrives is acted on by people who are not them.
+     *
+     * The gate is the LINE, and it is an object rather than a permission:
+     * `sendAcross` requires a channel carrying `lid_channel`, held by somebody
+     * on the other side. That is the whole difference between a house that
+     * receives and a house that hears nothing, and it is why an ascending
+     * cultivator's parting gift matters long after they have forgotten it.
+     */
+    private sendDown(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        message: string | undefined
+    ): Execution {
+        const resident = this.residentNow(cultivator, run);
+        if (!resident || !this.atHand) {
+            return refused('world.sendAcross', 'offer', factsForRefusal(
+                'Nothing to send it through.',
+                'What is below is not being kept track of for this run, so there is nobody in '
+                + 'particular at the other end.',
+                'World simulation is off for this run. `sendAcross` moves real objects between '
+                + 'real holders and will not be approximated.'
+            ));
+        }
+
+        const lines = linesDownward(this.atHand, cultivator.id);
+        if (lines.length === 0) {
+            // The most interesting refusal on this layer, and it is a fact
+            // about what they left rather than about what they are.
+            return refused('world.sendAcross', 'offer', factsForRefusal(
+                'There is no line.',
+                'Nothing carries it. A line through the Lid is an object, held by somebody down '
+                + 'there, left by somebody who went up - and you left nothing that anybody is '
+                + 'holding. The bodies below that receive anything at all receive it because '
+                + 'somebody on the way out cared enough about a specific house to put something '
+                + 'in its hands, and a claim to hold one is usually a claim.',
+                'No object tagged `lid_channel` is held by anybody below. See `ascend`, which '
+                + 'marks a parting gift as one on the way out.'
+            ));
+        }
+
+        // Which line. Named, or the only one there is - never a guess between
+        // several, because the object names the recipient.
+        const wanted = (target ?? '').trim();
+        const chosen = wanted.length >= 3
+            ? lines.find(line =>
+                matchScore(wanted, line.name) > MATCH_THRESHOLD
+                || matchScore(wanted, holderOf(this.atHand!, line)?.name ?? '') > MATCH_THRESHOLD)
+            : lines.length === 1 ? lines[0] : undefined;
+        if (!chosen) {
+            return refused('world.sendAcross', 'offer', factsForRefusal(
+                'Down which line?',
+                'You hold more than one way of reaching down and they do not go to the same '
+                + 'person. A channel reaches exactly one, which is what makes it a channel '
+                + 'rather than an announcement.',
+                `${lines.length} channel object(s) available; "${wanted.slice(0, 40)}" matched none.`
+            ));
+        }
+
+        const holder = holderOf(this.atHand, chosen);
+        if (!holder) {
+            return refused('world.sendAcross', 'offer', factsForRefusal(
+                'Nobody is holding it.',
+                'The line is lying somewhere nobody has picked it up from. A channel with nobody '
+                + 'at the far end is an object.',
+                `${chosen.id} has no possessor.`
+            ));
+        }
+
+        const said = (message ?? '').trim();
+        const result = worldSendAcross(this.atHand, {
+            fromId: cultivator.id,
+            toId: holder.id,
+            onDay: Math.floor(run.elapsedDays),
+            channelObjectId: chosen.id,
+            subject: 'information',
+            message: said.length >= 2
+                ? said.slice(0, 400)
+                : 'Nothing was said with it, which is its own instruction.'
+        });
+
+        if (!result.ok) {
+            return refused('world.sendAcross', 'offer', factsForRefusal(
+                'It does not go.',
+                result.detail,
+                `world.sendAcross refused: ${result.reason}.`
+            ));
+        }
+
+        this.worldDirty = true;
+        const facts = factsForToolResult(`${chosen.name} answered.`, [
+            `Whatever you put through it reached ${holder.name} and nobody else. A channel does `
+            + 'not announce; one person will know, and every account of it after this will be '
+            + 'somebody repeating what they were told.',
+            said.length >= 2
+                ? `What went with it: ${said}`
+                : 'Nothing went with it but the fact that it moved, which is a message of a kind.',
+            'And that is all you have done. It will be acted on by people who are not you, who '
+            + 'will do what they think you meant, and you will not be told what came of it '
+            + 'unless somebody sends back.'
+        ]);
+        facts.structure.push(
+            `sendAcross: information down ${chosen.id} (${chosen.name}) to ${holder.id}. `
+            + 'Stored as their memory and as a secret fact. No public knowledge is created.'
+        );
+        facts.structure.push(
+            `Object ceiling not exercised: nothing material was sent. An object would be capped `
+            + `at power ${OBJECT_CEILING_BELOW_THE_LID} to remain below.`
+        );
+
+        this.repos.runs.incrementTurn(run.id, 1);
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'world.sendAcross',
+                action: 'offer',
+                summary:
+                    `Information sent down ${chosen.id} to ${holder.id}. No tribulation drawn: `
+                    + 'nothing of the sender crossed.',
+                ok: true
+            }]
+        };
     }
 
     // ── inheritance grounds ──────────────────────────────────────────────
@@ -3129,9 +5390,81 @@ ${noticed}`;
      * ingredient burn and the pouch write, and a second implementation would
      * eventually disagree with the first about what a failed cauldron costs.
      */
-    private async refine(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+    private async refine(run: Run, cultivator: Cultivator, target: string | undefined): Promise<Execution> {
         const query = (target ?? '').trim();
-        const recipe = query.length >= 2 ? resolveRecipe(query) : null;
+
+        // ── "what can I make" ──
+        //
+        // A generic noun is not a name, and it used to be treated as one:
+        // "I refine a pill" scored "pill" against the recipe catalog, matched
+        // `Minor Healing Pill Formula` on containment, and silently picked one
+        // arbitrary formula out of forty-two. Same class as
+        // `GENERIC_LIBRARY_PHRASE` and `GENERIC_HOUSE_PHRASE` - a category is a
+        // question about the whole set and has to reach the listing.
+        //
+        // And the listing is the half of the loop that was missing entirely.
+        // `handleListRecipes` has been in `alchemy-manage.ts` the whole time,
+        // filtered by the cultivator's own realm, and nothing typed reached it -
+        // so a player could not find out which formulas they could attempt, and
+        // therefore could not know which herbs to gather. `MAX_PILL_BONUS` is
+        // 0.35, the largest modifier in the game and the intended way past the
+        // rungs that kill, and the whole of the road to it was dark.
+        if (query.length < 2 || GENERIC_PILL_PHRASE.test(query)) {
+            const listed = await handleListRecipes({
+                action: 'list_recipes',
+                cultivatorId: cultivator.id,
+                includeOutOfReach: false
+            });
+            if (isGuidingErrorBody(listed)) {
+                return this.fromToolResult(
+                    'alchemy_manage.list_recipes', 'refine', listed, 'The formulas'
+                );
+            }
+
+            // Rendered here rather than left to `fromToolResult`'s summariser.
+            // `handleListRecipes` returns rows and no `narrationHint`, and the
+            // generic fallback for a body it cannot summarise is "It is done.
+            // Nothing about it drew attention." - which is what a player asking
+            // what they can make was actually told. A read that reports nothing
+            // is worse than no read: it says the answer is empty when the answer
+            // is forty-two formulas.
+            const rows = (listed as { recipes?: RecipeRow[] }).recipes ?? [];
+            const lines = rows.length === 0
+                ? [
+                    'Nothing you could work. Every method you have ever been shown wants a rank '
+                    + 'you have not reached, and the cauldron does not care how badly you want it.'
+                ]
+                : rows.slice(0, RECIPES_SHOWN).map(row => {
+                    const short = row.ingredients.filter(i => i.short > 0);
+                    return `${row.name}, for ${row.produces?.name ?? 'something'}. `
+                        + `${row.ingredients.map(i => `${i.required} x ${i.name}`).join(', ')}. `
+                        + (short.length === 0
+                            ? 'You are holding everything it wants.'
+                            : `Short of ${short.map(i => `${i.short} x ${i.name}`).join(', ')}.`)
+                        + ` About ${Math.round((row.estimatedSuccessRate ?? 0) * 100)} in a hundred `
+                        + 'come out as a pill rather than as slag.';
+                });
+            if (rows.length > RECIPES_SHOWN) {
+                lines.push(
+                    `${rows.length - RECIPES_SHOWN} more you could attempt, and the pouch is the `
+                    + 'limit rather than the knowing.'
+                );
+            }
+
+            const facts = factsForToolResult(
+                rows.length === 0
+                    ? 'Nothing within reach.'
+                    : `${rows.length} formula${rows.length === 1 ? '' : 's'} you could work.`,
+                lines
+            );
+            facts.structure.push(
+                `alchemy_manage.list_recipes: ${rows.length} within reach at ordinal `
+                + `${cultivator.realmOrdinal}; out-of-reach formulas withheld.`
+            );
+            return this.freeAction(run, 'refine', facts);
+        }
+
+        const recipe = resolveRecipe(query);
         if (!recipe) {
             const held = pouchNames(this.db, cultivator.id);
             return refused('engine.resolveRecipe', 'refine', factsForRefusal(
@@ -3404,12 +5737,32 @@ ${noticed}`;
         options: { sealed?: boolean } = {}
     ): Promise<Execution> {
         const sealed = options.sealed ?? false;
-        const provisioning = this.buyProvisions(cultivator, days);
-        const provisioned = provisioning.cultivator;
-        const prepared = provisioning.covered >= days;
-
         const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(provisioned, days, {
+        // `cultivate` reaches here without an action-level world load, and the
+        // encounter layer reads the place and the people standing in it.
+        this.atHand = await this.loadWorld();
+
+        // BEFORE anything is spent. Provisioning is priced per day, and a
+        // seclusion cut short in year eight should not have been provisioned
+        // for twenty.
+        const enc = encountersFor(
+            { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
+            {
+                seed: run.seed,
+                startDay,
+                days,
+                activity: sealed ? 'sealed' : 'seclusion',
+                cultivator,
+                arrivable: this.pendingArrivals
+            }
+        );
+        const lived = daysActuallySpent(enc, startDay, days);
+
+        const provisioning = this.buyProvisions(cultivator, lived);
+        const provisioned = withEncounterDeltas(provisioning.cultivator, enc);
+        const prepared = provisioning.covered >= lived;
+
+        const skip = simulateTimeSkip(provisioned, lived, {
             seed: run.seed,
             locationId: placeName(provisioned),
             turn: run.turn,
@@ -3430,11 +5783,11 @@ ${noticed}`;
                 // A sealed crossing is a prepared one: the door is shut, the
                 // site was chosen, nobody is coming through it.
                 preparation: prepared ? (sealed ? SEALED_PREPARATION : PROVISIONED_PREPARATION) : 0,
-                hurried: days < HURRIED_BELOW_DAYS
+                hurried: lived < HURRIED_BELOW_DAYS
             },
             foundation: {
                 preparation: prepared ? (sealed ? SEALED_PREPARATION : PROVISIONED_PREPARATION) : 0,
-                hurried: days < HURRIED_BELOW_DAYS
+                hurried: lived < HURRIED_BELOW_DAYS
             }
         });
 
@@ -3444,6 +5797,12 @@ ${noticed}`;
         // the same hour it stopped the cultivator.
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const verb: ActionName = sealed ? 'seclude' : 'cultivate';
+
+        // AFTER the skip, because a knowledge grant is a write and writes belong
+        // in phase 2. Phase 3 then only ever gets a licence to mention something
+        // that is already true.
+        const enc2 = recordEncounters(this.knowledge, applied.cultivator, applied.run.elapsedDays, enc);
+        this.pendingArrivals = consumeArrivals(this.pendingArrivals, enc);
 
         const facts = factsForTimeSkip(
             provisioned, applied.cultivator, skip, ambient,
@@ -3457,7 +5816,9 @@ ${noticed}`;
             );
         }
         facts.lines.push(...applied.tollLines);
+        facts.lines.push(...enc2.lines);
         facts.lines.push(...world.lines);
+        facts.structure.push(...enc2.structure);
         facts.structure.push(...world.structure);
         if (world.lines.length > 0) {
             facts.prose = `${facts.prose}\n\n${world.lines.join('\n')}`;
@@ -3465,13 +5826,14 @@ ${noticed}`;
 
         return {
             facts,
-            events: skip.events,
+            events: [...skip.events, ...enc2.events].sort((a, b) => a.dayOffset - b.dayOffset),
             timeSkip: skip,
             breakthrough: null,
             outcome: 'executed',
             calls: [
                 ...skipCalls(verb, skip, provisioning.line),
                 ...tollCalls(applied.tollLines),
+                ...encounterCalls(enc, verb),
                 ...worldCalls(world)
             ]
         };
@@ -3483,10 +5845,26 @@ ${noticed}`;
         ambient: AmbientQi,
         focus: number,
         label: string,
-        days = SHORT_ACTION_DAYS
+        days = SHORT_ACTION_DAYS,
+        activity: EncounterActivity = activityForVerb(label)
     ): Promise<Execution> {
         const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(cultivator, days, {
+
+        const enc = encountersFor(
+            { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
+            {
+                seed: run.seed,
+                startDay,
+                days,
+                activity,
+                cultivator,
+                arrivable: this.pendingArrivals
+            }
+        );
+        const lived = daysActuallySpent(enc, startDay, days);
+        const before = withEncounterDeltas(cultivator, enc);
+
+        const skip = simulateTimeSkip(before, lived, {
             seed: run.seed,
             locationId: placeName(cultivator),
             turn: run.turn,
@@ -3494,18 +5872,23 @@ ${noticed}`;
             options: { focusMultiplier: focus },
             // What is in the pack feeds them here too. Only seclusion tops the
             // pack up from the purse; this eats what is already carried.
-            rations: this.drawFromPack(cultivator, days),
+            rations: this.drawFromPack(cultivator, lived),
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
-        const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
+        const applied = applyTimeSkip(this.repos, { before, run, skip });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
-        const facts = factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, label);
+        const enc2 = recordEncounters(this.knowledge, applied.cultivator, applied.run.elapsedDays, enc);
+        this.pendingArrivals = consumeArrivals(this.pendingArrivals, enc);
+
+        const facts = factsForTimeSkip(before, applied.cultivator, skip, ambient, label);
+        facts.lines.push(...enc2.lines);
         facts.lines.push(...world.lines);
+        facts.structure.push(...enc2.structure);
         facts.structure.push(...world.structure);
         if (world.lines.length > 0) {
             facts.prose = `${facts.prose}\n\n${world.lines.join('\n')}`;
@@ -3513,12 +5896,13 @@ ${noticed}`;
 
         return {
             facts,
-            events: skip.events,
+            events: [...skip.events, ...enc2.events].sort((a, b) => a.dayOffset - b.dayOffset),
             timeSkip: skip,
             breakthrough: null,
             outcome: 'executed',
             calls: [
                 ...skipCalls(label.toLowerCase().startsWith('practice') ? 'train_technique' : 'wait', skip, null),
+                ...encounterCalls(enc, label.toLowerCase()),
                 ...worldCalls(world)
             ]
         };
@@ -3534,13 +5918,54 @@ ${noticed}`;
      */
     private strikeBarrier(run: Run, cultivator: Cultivator, ambient: AmbientQi): Execution {
         const absDay = Math.floor(run.elapsedDays);
+
+        // ── the pill, which could not reach this ──
+        //
+        // The old comment here read "striking the barrier on command is
+        // deliberate but unaided: the cultivator chose the moment, and nothing
+        // was bought for it", and no `pill` was passed at all. That is not a
+        // house rule about deliberateness, it is the largest modifier in the
+        // game switched off on the only path a player can reach:
+        // `MAX_PILL_BONUS` is 0.35, five catalogued pills exist to supply it,
+        // and it is the designed mitigation for the rungs the Ladder panel
+        // itself calls the ones that kill. Four deaths at the 12->13 Foundation
+        // boundary, all funded, healthy and inside the stagnation clock, were
+        // spent on a preparation that could not be applied.
+        //
+        // The MCP path has always read it, and this now reads it the same way,
+        // from the same flag, and spends it on the same terms: the pill is
+        // recorded when it is SWALLOWED, no caller passes a potency, and the
+        // attempt consumes what was actually taken.
+        const pending = readJsonFlag<PendingPill>(this.db, cultivator.id, FLAG_PENDING_PILL);
+
         const result = attemptBreakthrough(cultivator, {
-            rng: forStream(run.seed, 'breakthrough', absDay, cultivator.realmOrdinal),
+            // ── why the attempt count is in the stream ──
+            //
+            // A failed attempt advances the turn and not the clock, so `absDay`
+            // and `realmOrdinal` were both unchanged on a retry and the next
+            // attempt was the SAME ROLL. Measured at 400 consecutive identical
+            // failures against a rung whose base odds are about 85%, with no
+            // signal to the player that clicking again could not help.
+            //
+            // It also crashed. Injury ids are drawn from this stream, so the
+            // second attempt regenerated an id already in the table and the
+            // endpoint 500'd on `UNIQUE constraint failed:
+            // cultivator_injuries.id` - reachable by double-clicking the
+            // button. One stream fix answers both, because both were the same
+            // fact: the engine could not tell two attempts apart.
+            //
+            // `run.turn` is the discriminator rather than a new counter,
+            // because it is already the thing that advances on a failure and is
+            // already persisted. Determinism is untouched: the same run
+            // replayed makes the same attempts in the same order.
+            rng: forStream(
+                run.seed, 'breakthrough', absDay, cultivator.realmOrdinal, run.turn
+            ),
             ambient,
             turn: run.turn,
+            pill: pending ? { name: pending.name, potency: pending.potency } : null,
             ranksGainedThisTurn: 0,
-            // Striking the barrier on command is deliberate but unaided: the
-            // cultivator chose the moment, and nothing was bought for it.
+            // Deliberate, and now aided where the cultivator prepared for it.
             toll: {
                 ...tollConditionsFor(this.repos, cultivator),
                 preparation: DELIBERATE_PREPARATION
@@ -3574,6 +5999,29 @@ ${noticed}`;
                 persistFoundation(this.repos, cultivator.id, result.foundationEstablished);
                 updated = this.repos.cultivators.getById(cultivator.id) ?? updated;
             }
+
+            // ── The crossing, and the field it was being dropped in ──
+            //
+            // `attemptBreakthrough` decides this and nothing here was writing
+            // it down, so a cultivator could survive the last crossing, be told
+            // in the narration that they had gone through, and still be
+            // `immortalStatus: 'none'` on the next read. Everything the far
+            // side is gated on reads that field - `canExistBeyondTheLid`,
+            // `evaluateLidTransit`, `hasCrossedTheLid`, the sheet's own "the
+            // ladder is finished for you" - so the whole of the top of the game
+            // was unreachable by one missing assignment, which is why it took
+            // playing at 46 with an admin-set status to notice anything else
+            // was wrong up there.
+            if (result.immortalStatusGained) {
+                updated = this.repos.cultivators.update(cultivator.id, {
+                    immortalStatus: result.immortalStatusGained
+                } as never) ?? updated;
+            }
+
+            // Spent, whether it helped or not. A pill swallowed for a crossing
+            // is gone the moment the crossing is attempted, and leaving the flag
+            // set would make one pill boost every future attempt for free.
+            if (pending) clearFlag(this.db, cultivator.id, FLAG_PENDING_PILL);
 
             // The instalment, charged in the same transaction as the crossing
             // that triggered it.
@@ -3627,6 +6075,32 @@ ${noticed}`;
                 name: 'engine.assessFoundation',
                 action: 'foundation_established',
                 summary: `Foundation laid: ${result.foundationEstablished}. It is what every later rank stands on.`,
+                ok: true
+            });
+        }
+        if (pending) {
+            calls.push({
+                name: 'cultivator.consumePill',
+                action: 'pill_spent',
+                summary:
+                    `${pending.name} was spent on this attempt at potency ${pending.potency}. `
+                    + 'Read from the flag it was recorded on when it was swallowed; no caller '
+                    + 'passes a potency, and it is cleared whether the attempt landed or not.',
+                ok: true
+            });
+        }
+        if (result.immortalStatusGained) {
+            calls.push({
+                name: 'cultivator.update',
+                action: 'crossing_recorded',
+                summary:
+                    `immortalStatus = ${result.immortalStatusGained}. `
+                    + (result.immortalStatusGained === 'true_immortal'
+                        ? 'The ladder is finished and the layer has changed. Mortal-world verbs '
+                          + 'stop applying and the two that replace them - descend, and the '
+                          + 'channel - open.'
+                        : 'The crossing was survived and not completed. The Lid does not open '
+                          + 'twice for the same name, and rank stops moving here.'),
                 ok: true
             });
         }
@@ -4018,6 +6492,364 @@ ${noticed}`;
     }
 
     /**
+     * Putting something on the counter.
+     *
+     * The other half of `buy`, and the missing half of gathering. `forage`
+     * prices every herb it turns up and puts it in the pouch; until this
+     * existed, nothing anywhere converted a pouch back into stones, so a
+     * cultivator who spent a season foraging was exactly as poor afterwards
+     * and carrying more.
+     *
+     * Resolved against THE POUCH and never against the party resolver. That is
+     * the whole reason this action exists as its own verb: "I sell a Qi Grass"
+     * used to reach the INTERACT table, where the engine went looking for a
+     * person by that name and reported that nobody was there.
+     *
+     * `quoteSale` decides the number. There is no roll in a sale - the ladder
+     * decides, through `regardOf`, so somebody standing well above the counter
+     * is not cheated and somebody holding a thing they visibly cannot defend
+     * is. This method chooses nothing except which lots go on the counter.
+     */
+    private async sell(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Promise<Execution> {
+        const held = listPouch(this.db, cultivator.id);
+        if (held.length === 0) {
+            return refused('storage.listPouch', 'sell', factsForRefusal(
+                'Nothing on you worth a counter.',
+                'You go through the pouch and there is nothing in it anybody would put a price '
+                + 'on. Selling requires having something first.',
+                `cultivator_pouch is empty for ${cultivator.id}. Nothing quoted, nothing written.`
+            ));
+        }
+
+        const query = (target ?? '').trim();
+        // "my herbs", "everything", "the lot" - the commonest ask, and it is
+        // not a name. Anything that reads as a category empties the pouch.
+        const wholePouch = query.length < 3 || GameService.SELL_EVERYTHING.test(query);
+
+        const lots = wholePouch
+            ? held.map(entry => this.lotFor(entry)).filter((lot): lot is SaleLot & { kind: PouchItemKind } => lot !== null)
+            : (() => {
+                const named = this.pouchEntryFor(held, query);
+                if (!named) return [];
+                const lot = this.lotFor(named);
+                return lot ? [lot] : [];
+            })();
+
+        if (lots.length === 0) {
+            const carried = held.map(entry => this.lotFor(entry)?.name ?? entry.itemId).join(', ');
+            return refused('engine.resolveHerb', 'sell', factsForRefusal(
+                'Not something you are carrying.',
+                `You reach for it and it is not there. What is in the pouch: ${carried}.`,
+                `Unresolved sale "${query}" against ${held.length} pouch row(s). `
+                + 'Nothing quoted, nothing written.'
+            ));
+        }
+
+        const regionId = standingOf(cultivator).regionId;
+        // The same multiplier the buy board is quoted through, so a province
+        // where things cost more is a province where things fetch more.
+        const local = localPrice(regionId, 100) / 100;
+        const quote = quotePouchSale(lots, { ordinal: cultivator.realmOrdinal }, local);
+
+        if (quote.offeredStones <= 0) {
+            return refused('engine.quotePouchSale', 'sell', factsForRefusal(
+                'Not enough there to count out.',
+                quote.lots[0]?.line
+                ?? 'Worth something in principle, and not enough of it survives a buyer\'s '
+                + 'margin to be worth counting.',
+                `quotePouchSale: gross ${quote.grossStones}, offered ${quote.offeredStones}. `
+                + 'Nothing removed, nothing paid.'
+            ));
+        }
+
+        const after = this.db.transaction((): Cultivator => {
+            for (const lot of lots) {
+                if (!removeFromPouch(this.db, cultivator.id, lot.itemId, lot.quantity)) {
+                    throw new GameError(`The pouch was short of ${lot.name} mid-sale.`, 500);
+                }
+            }
+            const updated = this.repos.cultivators.applyDeltas(cultivator.id, {
+                spiritStones: quote.offeredStones
+            });
+            if (!updated) throw new GameError('Cultivator vanished mid-sale.', 500);
+            this.repos.runs.incrementTurn(run.id, 1);
+            return updated;
+        })();
+
+        const facts = factsForToolResult(
+            wholePouch ? 'The pouch, sold.' : `${lots[0].name}, sold.`,
+            [
+                ...quote.lots.map(lot => `${lot.name}: ${lot.line}`),
+                `${quote.offeredStones} spirit stone${quote.offeredStones === 1 ? '' : 's'} `
+                + `counted out. ${after.spiritStones} in the purse now.`
+            ]
+        );
+        facts.structure.push(
+            `quotePouchSale over ${lots.length} lot(s) at the ${regionId} multiplier (x${local}): `
+            + `gross ${Math.round(quote.grossStones)}, offered ${quote.offeredStones}. `
+            + `Removed from cultivator_pouch: ${lots.map(l => `${l.itemId} x${l.quantity}`).join(', ')}.`
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'engine.quotePouchSale',
+                action: 'sell',
+                summary:
+                    `${lots.length} lot(s) sold for ${quote.offeredStones} spirit stone(s) against `
+                    + `a list of ${Math.round(quote.grossStones)}, priced by regard at ordinal `
+                    + `${cultivator.realmOrdinal}.`,
+                ok: true
+            }]
+        };
+    }
+
+    /**
+     * What is in the pouch.
+     *
+     * `handleInventory` has been complete since alchemy was written and no
+     * sentence reached it. Rendered here rather than left to the summariser,
+     * for the same reason `list_recipes` is: the handler returns rows and no
+     * `narrationHint`, and the last-resort line for a body nobody can summarise
+     * is "It is done. Nothing about it drew attention." - which is what a
+     * player asking what they were carrying was actually told.
+     */
+    private async inventory(run: Run, cultivator: Cultivator): Promise<Execution> {
+        const listed = await handleInventory({
+            action: 'inventory',
+            cultivatorId: cultivator.id
+        });
+        if (isGuidingErrorBody(listed)) {
+            return this.fromToolResult('alchemy_manage.inventory', 'inventory', listed, 'The pouch');
+        }
+
+        const body = listed as {
+            spiritStones?: number;
+            pills?: { name?: string; quantity?: number; value?: number }[];
+            herbs?: { name?: string; quantity?: number; value?: number }[];
+            totalValue?: number;
+            toxicity?: { accumulated?: number; tolerance?: number };
+        };
+        const pills = body.pills ?? [];
+        const herbs = body.herbs ?? [];
+        const stones = body.spiritStones ?? 0;
+
+        const lines: string[] = [];
+        if (pills.length === 0 && herbs.length === 0) {
+            lines.push(
+                'Nothing in the pouch at all. What is on you is what you are standing in and '
+                + `${stones} spirit stone${stones === 1 ? '' : 's'}.`
+            );
+        } else {
+            if (pills.length > 0) {
+                lines.push('Pills: ' + pills.map(p => `${p.quantity ?? 1} x ${p.name ?? 'unnamed'}`).join(', ') + '.');
+            }
+            if (herbs.length > 0) {
+                lines.push('Herbs: ' + herbs.map(h => `${h.quantity ?? 1} x ${h.name ?? 'unnamed'}`).join(', ') + '.');
+            }
+            if (typeof body.totalValue === 'number' && body.totalValue > 0) {
+                lines.push(
+                    `About ${Math.round(body.totalValue)} spirit stones of list value in there, `
+                    + 'and a buyer pays less than list.'
+                );
+            }
+            lines.push(`${stones} spirit stone${stones === 1 ? '' : 's'} in the purse.`);
+        }
+
+        const tox = body.toxicity;
+        if (tox && typeof tox.accumulated === 'number' && tox.accumulated > 0) {
+            lines.push(
+                `Pill toxicity stands at ${tox.accumulated.toFixed(2)} against a tolerance of `
+                + `${tox.tolerance ?? '?'}. It does not clear on its own.`
+            );
+        }
+
+        const facts = factsForToolResult(
+            pills.length + herbs.length === 0 ? 'An empty pouch.' : 'What is on you.',
+            lines
+        );
+        facts.structure.push(
+            `alchemy_manage.inventory: ${pills.length} pill row(s), ${herbs.length} herb row(s), `
+            + `${stones} stone(s).`
+        );
+        return this.freeAction(run, 'inventory', facts);
+    }
+
+    /**
+     * The arts that could be learned, filtered by everything that decides it.
+     *
+     * Realm, spirit root, dao standing and the run's own scarcity are all the
+     * handler's, and this layer chooses none of them. The conflicting list is
+     * shown WITH its warning rather than hidden: an art that fights the root is
+     * learnable, and it is the trade the genre is actually about.
+     */
+    private async listTechniques(run: Run, cultivator: Cultivator): Promise<Execution> {
+        const listed = await handleListAvailable({
+            action: 'list_available',
+            cultivatorId: cultivator.id,
+            includeConflicting: true,
+            includeForbidden: false
+        });
+        if (isGuidingErrorBody(listed)) {
+            return this.fromToolResult(
+                'technique_manage.list_available', 'list_techniques', listed, 'The arts'
+            );
+        }
+
+        const body = listed as {
+            compatible?: { name?: string; grade?: string; element?: string | null; known?: boolean }[];
+            conflicting?: { name?: string; grade?: string; element?: string | null }[];
+            counts?: { gatedByRealm?: number; unavailableInThisRun?: number };
+            note?: string;
+        };
+        const compatible = (body.compatible ?? []).filter(row => row.known !== true);
+        const conflicting = body.conflicting ?? [];
+
+        const lines: string[] = [];
+        if (compatible.length === 0 && conflicting.length === 0) {
+            lines.push(
+                'Nothing you could be taught. Every method within reach of this root either wants '
+                + 'a rank you have not reached or has surfaced nowhere in this life.'
+            );
+        } else {
+            if (compatible.length > 0) {
+                lines.push('What a root like yours could take up:');
+                for (const row of compatible.slice(0, TECHNIQUES_SHOWN)) {
+                    lines.push(
+                        `  ${row.name ?? 'unnamed'}`
+                        + `${row.element ? `, an art of ${row.element}` : ''}`
+                        + `${row.grade ? ` (${row.grade} grade)` : ''}.`
+                    );
+                }
+                if (compatible.length > TECHNIQUES_SHOWN) {
+                    lines.push(`  and ${compatible.length - TECHNIQUES_SHOWN} more besides.`);
+                }
+            }
+            if (conflicting.length > 0) {
+                lines.push(
+                    'And these, which fight the root rather than run with it. They can be learned. '
+                    + 'Learning one can tear the meridians on the spot:'
+                );
+                for (const row of conflicting.slice(0, TECHNIQUES_SHOWN)) {
+                    lines.push(`  ${row.name ?? 'unnamed'}${row.element ? `, of ${row.element}` : ''}.`);
+                }
+            }
+        }
+        const gated = body.counts?.gatedByRealm ?? 0;
+        if (gated > 0) {
+            lines.push(`${gated} more exist and want a rank above yours.`);
+        }
+        if (typeof body.note === 'string' && body.note.length > 0) lines.push(body.note);
+
+        const facts = factsForToolResult(
+            compatible.length === 0 && conflicting.length === 0
+                ? 'Nothing within reach.'
+                : `${compatible.length + conflicting.length} art(s) you could be taught.`,
+            lines
+        );
+        facts.structure.push(
+            `technique_manage.list_available: ${compatible.length} compatible, `
+            + `${conflicting.length} conflicting, ${gated} gated by realm, `
+            + `${body.counts?.unavailableInThisRun ?? 0} absent from this run by seed.`
+        );
+        return this.freeAction(run, 'list_techniques', facts);
+    }
+
+    /**
+     * Learning an art, which is not practising one.
+     *
+     * Every gate is `handleLearn`'s - realm, dao standing, element, and whether
+     * a copy exists in this run at all - and every one of them refuses with the
+     * measured reason. This layer resolves the name against the whole catalog
+     * rather than against what is already known, because the sentence is about
+     * something they do NOT have yet.
+     */
+    private async learnTechnique(
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Promise<Execution> {
+        const query = (target ?? '').trim();
+        const technique = query.length >= 2 ? resolveTechnique(this.repos, query, cultivator.id) : null;
+        if (!technique) {
+            return refused('engine.resolveTechnique', 'learn_technique', factsForRefusal(
+                query.length >= 2 ? `No art called ${query}.` : 'No art named.',
+                'You turn the name over and it is not a method anybody was ever taught. Asking for '
+                + 'what there is to learn is a different question, and it has an answer.',
+                `Unresolved technique "${query || '(nothing named)'}". `
+                + 'technique_manage.list_available answers the general form.'
+            ));
+        }
+
+        const result = await handleLearn({
+            action: 'learn',
+            techniqueId: technique.id,
+            cultivatorId: cultivator.id
+        });
+        return this.fromToolResult(
+            'technique_manage.learn', 'learn_technique', result, technique.name
+        );
+    }
+
+    /** "everything", "my herbs", "the lot" - a category, never a name. */
+    private static readonly SELL_EVERYTHING =
+        /^(?:all|everything|the lot|my |all my |the )?\s*(?:stuff|things?|goods|wares|herbs?|plants?|pills?|elixirs?|medicines?|ingredients?|reagents?|loot|haul|pouch|inventory|what i (?:have|gathered|found|picked)|whatever i have)\s*$/i;
+
+    /** The pouch row a free-text name refers to, or null. */
+    private pouchEntryFor(held: readonly PouchEntry[], query: string): PouchEntry | null {
+        let best: { entry: PouchEntry; score: number } | null = null;
+        for (const entry of held) {
+            const named = this.lotFor(entry);
+            if (!named) continue;
+            const score = matchScore(query, named.name);
+            if (score > MATCH_THRESHOLD && (!best || score > best.score)) {
+                best = { entry, score };
+            }
+        }
+        return best?.entry ?? null;
+    }
+
+    /**
+     * A pouch row joined to its catalog, priced.
+     *
+     * The catalog row itself is carried on `item`, not just its value, because
+     * `regardOf` reads whatever gate column that catalog uses. Passing an
+     * ordinal instead would quietly drop every `regard` profile a record
+     * carries.
+     */
+    private lotFor(entry: PouchEntry): (SaleLot & { kind: PouchItemKind }) | null {
+        if (entry.kind === 'herb') {
+            const herb = getHerb(entry.itemId);
+            if (!herb) return null;
+            return {
+                itemId: herb.id,
+                name: herb.name,
+                item: herb,
+                listStones: herb.value,
+                quantity: entry.quantity,
+                kind: 'herb'
+            };
+        }
+        const pill = getPill(entry.itemId);
+        if (!pill) return null;
+        return {
+            itemId: pill.id,
+            name: pill.name,
+            item: pill,
+            listStones: pill.value,
+            quantity: entry.quantity,
+            kind: 'pill'
+        };
+    }
+
+    /**
      * An action that costs a turn of attention and nothing else. No day passes,
      * no satiety is burned, no roll is made - looking around must never be able
      * to kill you, and in a permadeath game that is a rule, not a courtesy.
@@ -4233,8 +7065,43 @@ ${noticed}`;
 
     // ── plumbing ─────────────────────────────────────────────────────────
 
+    /**
+     * What the qi is doing where this cultivator is standing.
+     *
+     * THE DENSITY IS PASSED, and until now it never was - by this caller or by
+     * any other in the repository. `ambient.ts` has been correct the whole time
+     * (at density 1.0 it puts 98.4% of the weight on `dense`) and every caller
+     * omitted the figure, so everything fell through to `impliedDensityFor`,
+     * which hashes the NAME of the place. Measured over the map that produced:
+     * 64.1% of places typically thin, 25.2% normal, 10.8% dense, and
+     * `sealed_vein` - a 4x rate - unreachable in play at any location.
+     *
+     * What it looked like from inside a run: six consecutive thin months
+     * standing on ground whose usable density is 1.0, and a ladder that stops
+     * being climbable around ordinal 16 for every character, because a 6x rate
+     * swing existed in the engine and nobody could ever reach it. The engine
+     * half was written long ago; this is the half that was missing, which is
+     * why `geology.test.ts` passed while the game stayed thin.
+     *
+     * Two sources, in order of authority. The world's own location record is
+     * the real answer and carries `sealed` with it - a sealed ruin sits on a
+     * pocket nothing has drawn on and offers nobody any of it, so the vein is
+     * rich and the usable density is nil, and only the record knows that. The
+     * birth catalog's band is the fallback for a run with the world simulation
+     * off, or for a place name the world has no row for. Undefined, and only
+     * undefined, falls back to the hash.
+     */
     private ambientFor(cultivator: Cultivator, run: Run): AmbientQi {
-        return ambientForBlock(run.seed, placeName(cultivator), Math.floor(run.elapsedDays));
+        const place = placeName(cultivator);
+        const here = this.atHand ? worldLocationFor(this.atHand, place) : null;
+        const density = here
+            ? here.environment.spiritualDensity
+            : groundDensityFor(place) ?? undefined;
+
+        return ambientForBlock(run.seed, place, Math.floor(run.elapsedDays), {
+            ...(density === undefined ? {} : { density }),
+            ...(here ? { sealed: here.sealed } : {})
+        });
     }
 
     /** The newest run - live if there is one, otherwise the last one to end. */
@@ -4318,19 +7185,35 @@ ${noticed}`;
      * from Sweptground is a no-op, not a refusal.
      */
     private somewhereReal(name: string, cultivator: Cultivator): boolean {
-        const wanted = placeKey(name);
+        // Loose on both sides. The parser strips a leading article and
+        // `placeKey` keeps it, so a strict comparison could never match any
+        // location whose name begins with "the" - and in a generated world that
+        // is 26 of 33, including every ruin, every scar and all four sites at
+        // the qi ceiling. See `loosePlaceKey`.
+        const wanted = loosePlaceKey(name);
         if (wanted.length === 0) return false;
-        if (placeKey(cultivator.location ?? '') === wanted) return true;
+        if (loosePlaceKey(cultivator.location ?? '') === wanted) return true;
 
         if (this.atHand && worldLocationFor(this.atHand, name)) return true;
 
         const occupied = this.repos.cultivators.roster()
-            .some(row => row.location && placeKey(row.location) === wanted);
+            .some(row => row.location && loosePlaceKey(row.location) === wanted);
         if (occupied) return true;
 
+        // Knowing a name is not knowing a way there.
+        //
+        // Two predicates now exist and the difference is deliberate:
+        // `isAwareOf` licenses SAYING the name, and opens at `whisper`;
+        // `canPointAt` licenses SETTING OUT, and opens at `placed`. A name
+        // caught through a wall is a name and not a destination, and travelling
+        // to one used to work - which meant the overheard channel, whose whole
+        // design is fragments a player cannot yet place, was quietly a travel
+        // itinerary.
         return this.knowledge
             .awareness(cultivator.id, 'place')
-            .some(row => placeKey(row.name) === wanted || placeKey(row.id) === wanted);
+            .some(row =>
+                (loosePlaceKey(row.name) === wanted || loosePlaceKey(row.id) === wanted)
+                && this.knowledge.canPointAt(cultivator.id, 'place', row.id));
     }
 
 
@@ -4388,8 +7271,20 @@ ${noticed}`;
     }
 
     private somebodyAtHand(query: string, cultivator: Cultivator): RosterEntry | null {
-        if (!POINTING.test(query.trim())) return null;
+        const wanted = query.trim();
+        if (!POINTING.test(wanted)) return null;
         const here = this.present(cultivator);
+
+        // A rank pointer has to land on somebody who holds the rank. See
+        // POINTING_AT_A_RANK: without this, "I kill the elder" fought whoever
+        // was standing nearest and wrote the wounds to the character.
+        const rank = POINTING_AT_A_RANK.exec(wanted);
+        if (rank) {
+            const holding = here.filter(row =>
+                (row.sectRank ?? '').toLowerCase().includes(rank[1].toLowerCase()));
+            return holding.length > 0 ? holding[holding.length - 1] : null;
+        }
+
         return here.length > 0 ? here[here.length - 1] : null;
     }
 
@@ -4444,6 +7339,16 @@ ${noticed}`;
         if (!this.worldEnabled || days <= 0) return { lines: [], structure: [] };
 
         const advance = await advanceWorldForCultivator(run, cultivator, days);
+
+        // The half of the span nobody mentioned. It is not discarded: an
+        // unheard consequence keeps its one lifetime chance of turning up on
+        // this player, in this window or a later one.
+        this.pendingArrivals.push(...arrivableForSpan(
+            advance?.result.events ?? [],
+            (advance?.result.digest?.lines ?? []).map(line => line.factId),
+            unattributedTextOf
+        ));
+
         return reportFromDigest(advance?.result.digest ?? null);
     }
 
@@ -4591,7 +7496,13 @@ ${noticed}`;
             onDay: Math.floor(run.elapsedDays),
             sourceKind,
             sourceNote: note,
-            stance: sourceKind === 'witnessed' ? 'knows' : 'believes'
+            // A stage rather than a bare stance, so meeting somebody can RAISE
+            // a name that arrived as a whisper. Mapped onto the same stance
+            // vocabulary underneath, so nothing about the row changes shape -
+            // but `told` used to land at `named`, which cannot license travel,
+            // and being told where somewhere is by a person standing in front of
+            // you plainly can.
+            stage: sourceKind === 'witnessed' ? 'encountered' : 'placed'
         });
     }
 
@@ -4853,6 +7764,58 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
         }
     }
 
+    // An art taken up. `handleLearn` returns the projection and no narration
+    // hint, so without this the single most consequential thing a cultivator
+    // can do to their own body lands in the generic catch-all.
+    if (body.learned === true) {
+        const art = body.technique as { name?: string; element?: string | null; grade?: string } | undefined;
+        lines.push(
+            `${art?.name ?? 'The art'} is held now, at nothing like mastery` +
+            `${art?.element ? `, and it runs on ${art.element}` : ''}. ` +
+            'Knowing a method and being able to use it are different distances, and practice is ' +
+            'the only thing that closes the second one.'
+        );
+        if (body.elementConflict === true) {
+            lines.push(
+                'It fights the root rather than running with it. That is a permanent condition of '
+                + 'carrying it, not a one-off risk that has now passed.'
+            );
+        }
+        const dev = body.deviation as { deviated?: boolean; summary?: string } | null | undefined;
+        if (dev?.summary) lines.push(dev.summary);
+    }
+
+    // The stipend, which is the whole reason a poor cultivator joins a house.
+    //
+    // `handleStipend` returns `spiritStonesPaid` and no narration hint, so a
+    // payment of a hundred and fifty stones reached a player as "It is done.
+    // Nothing about it drew attention." - the last-resort line, on the single
+    // largest sum a low cultivator ever sees. Same defect class as `work` and
+    // `join`: a tool surface written for a model that will phrase the figures,
+    // called by something that has to phrase them itself.
+    if (body.paid === true) {
+        const payingSect = body.sect as { name?: string } | undefined;
+        const stones = typeof body.spiritStonesPaid === 'number' ? body.spiritStonesPaid : 0;
+        const months = typeof body.monthsPaid === 'number' ? body.monthsPaid : 0;
+        const now = typeof body.spiritStonesNow === 'number' ? body.spiritStonesNow : null;
+        lines.push(
+            `${stones} spirit stone${stones === 1 ? '' : 's'} drawn from ` +
+            `${payingSect?.name ?? 'the sect'}` +
+            `${months > 0 ? `, being ${months} month${months === 1 ? '' : 's'} of stipend` : ''}` +
+            `${typeof body.rank === 'string' ? ` at ${body.rank}` : ''}` +
+            `${now === null ? '.' : `. The purse holds ${now}.`}`
+        );
+        lines.push(
+            'Drawing it is service rendered and the house marks it down. Nothing was gathered ' +
+            'to earn it, which is exactly what a stipend is for.'
+        );
+        if (typeof body.daysCarriedForward === 'number' && body.daysCarriedForward > 0) {
+            lines.push(
+                `${Math.round(body.daysCarriedForward)} day(s) carry forward toward the next payment.`
+            );
+        }
+    }
+
     if (body.left === true) {
         const formerSect = body.sect as { name?: string } | undefined;
         const formerRank = typeof body.formerRank === 'string' ? body.formerRank : null;
@@ -4937,31 +7900,6 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     return lines;
 }
 
-/**
- * The one sect a villager could name.
- *
- * discovery.md: a new cultivator's world is "the county, the local sect that
- * takes disciples, the market town, and whatever their grandmother believed".
- * There is no locality model yet, so the nearest honest stand-in is the
- * catalog's lowest-admission body that takes applicants at all - the one a
- * person with no cultivation would plausibly have heard mentioned. Exactly one,
- * because the point is that the list is almost empty.
- *
- * TODO(world): once regions exist, this should be the sect whose territory
- * contains the starting location, not the softest entry in the catalog.
- */
-function localSect(): { id: string; name: string } | null {
-    const candidates = SECTS.filter(sect => sect.recruits);
-    if (candidates.length === 0) return null;
-
-    const chosen = candidates.reduce((best, sect) =>
-        sect.admissionOrdinal < best.admissionOrdinal ||
-        (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id)
-            ? sect
-            : best);
-
-    return { id: chosen.id, name: chosen.name };
-}
 
 /**
  * Put a hearing into both channels a player can reach it through.

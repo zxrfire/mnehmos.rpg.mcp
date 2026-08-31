@@ -31,7 +31,20 @@ import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
 import { rankName } from '../../engine/cultivation/index.js';
-import { getSect, getSectAdmission } from '../../data/cultivation/sects.js';
+import {
+    intakeRouteOf,
+    getDaoHouse, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
+import {
+    SIPHON_PACES,
+    SIPHON_PERIOD_DAYS,
+    baseReservesFor,
+    canReachReserves,
+    discoveryChance,
+    noticeFromShortfall,
+    resolveDiscovery,
+    siphonPeriod
+} from '../../engine/cultivation/embezzlement.js';
+import { CultivationRNG } from '../../engine/cultivation/rng.js';
 import {
     FLAG_STIPEND_PAID_DAY,
     describeCultivator,
@@ -60,12 +73,31 @@ import {
     handleVerifyClaim,
     handleWake
 } from './sect-politics.js';
+import {
+    AdmissionSchema,
+    AuthoritySchema,
+    CurriculumSchema,
+    ExpelSchema,
+    GrowSchema,
+    OrderSchema,
+    RecruitSchema,
+    handleAdmission,
+    handleAuthority,
+    handleCurriculum,
+    handleExpel,
+    handleGrow,
+    handleOrder,
+    handleRecruit
+} from './sect-leadership.js';
 
 const ACTIONS = [
-    'list', 'join', 'leave', 'promote', 'stipend', 'standing',
+    'list', 'join', 'leave', 'promote', 'stipend', 'standing', 'siphon',
     // The half of a sect that is not a stipend. Every one of these reads
     // catalog data that has had no verb attached to it until now.
-    'prospect', 'patronage', 'verify_claim', 'denounce', 'petition', 'wake', 'above'
+    'prospect', 'patronage', 'verify_claim', 'denounce', 'petition', 'wake', 'above',
+    // Authority. `order` opens at rung one and is the first thing membership
+    // actually buys; the rest is what the elder rungs and the seat can do.
+    'authority', 'order', 'recruit', 'admission', 'curriculum', 'expel', 'grow'
 ] as const;
 type SectAction = typeof ACTIONS[number];
 
@@ -217,6 +249,36 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
         );
     }
 
+    // And the houses that have a way in which is not a door.
+    //
+    // Found by the exhaustive sweep rather than by reading: a dao house is a
+    // FAMILY, and the stated way in is adoption - you are taken in as a prodigy
+    // in their dao and very often married to one of theirs. Nothing was
+    // checking that. Two of the seven admitted a stranger who walked up and
+    // asked, and the other five refused only because their admission ordinal
+    // happened to be above the applicant, which is a different rule producing
+    // the right answer by accident.
+    //
+    // `recruits` above cannot express this: it is a boolean, and a house is
+    // neither open nor closed. `intakeRouteOf` is the field that can.
+    if (facts && intakeRouteOf(sect.id) === 'adoption') {
+        const house = getDaoHouse(sect.id);
+        return guidingError(
+            'house_takes_by_adoption',
+            `${sect.name} is a house rather than a sect. There is no application: the way in is ` +
+            `adoption, offered to somebody who is already a prodigy in the dao the house holds, and ` +
+            `it is the house that decides to offer it.`,
+            {
+                sectId: sect.id,
+                route: 'adoption',
+                prodigyIn: house?.admission?.prodigyIn ?? null,
+                houseSurname: house?.houseSurname ?? null,
+                naming: house?.admission?.naming ?? null,
+                hint: 'Not a gate that can be met by standing. Being worth adopting is the whole of it.'
+            }
+        );
+    }
+
     // The admission gate is the sect's, and it is not negotiable through this
     // tool. A Qi Condensation cultivator does not get into a Core Formation
     // sect by being narrated impressively.
@@ -265,8 +327,33 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
         }
     }
 
+    // ── The rung they come in at ─────────────────────────────────────────
+    //
+    // This had a floor and no ceiling. `below_admission_ordinal` correctly
+    // refuses somebody standing under the gate, and then EVERYBODY who cleared
+    // it was seated at index 0 - so a False Immortal who walked up to a
+    // Foundation-tier sect enrolled as an Outer Disciple, on the sweeping
+    // roster, drawing the bottom stipend. Nothing was wrong at the bottom;
+    // the whole defect was at the top.
+    //
+    // The fix is the promotion ladder read backwards. `requiredOrdinalForRank`
+    // already states what realm each rung is pitched at, and it is the same
+    // function `handlePromote` gates on, so the seat somebody is given on
+    // arrival and the seat they could be raised to afterwards can never
+    // disagree. Contribution is deliberately NOT read here: it is service
+    // rendered to THIS house and a newcomer has none, which is exactly why
+    // this is entry and not promotion - what a stranger is seated by is what
+    // they visibly are.
+    let entryIndex = 0;
+    for (let index = sect.ranks.length - 1; index > 0; index--) {
+        if (cultivator.realmOrdinal >= requiredOrdinalForRank(sect.admissionOrdinal, index)) {
+            entryIndex = index;
+            break;
+        }
+    }
+
     const membership = repos.db.transaction(() => {
-        const result = repos.sects.addMember(sect.id, cultivator.id, 0);
+        const result = repos.sects.addMember(sect.id, cultivator.id, entryIndex);
         // Joining resets the stipend clock: a new disciple is not owed
         // backdated wages for the years they spent elsewhere.
         writeFlag(repos.db, cultivator.id, FLAG_STIPEND_PAID_DAY, String(run.elapsedDays));
@@ -287,6 +374,12 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
             ...(sectCatalogFacts(sect.id) ?? {})
         },
         membership,
+        // What the seat was decided by, so a player can check it and a test can
+        // assert it without re-deriving the ladder.
+        entryRankIndex: entryIndex,
+        entryRankTitle: sect.ranks[entryIndex] ?? null,
+        entryRequiredOrdinal: requiredOrdinalForRank(sect.admissionOrdinal, entryIndex),
+        seatedAboveTheDoor: entryIndex > 0,
         cultivator: describeCultivator(repos, after, runAfter)
     };
 }
@@ -460,6 +553,193 @@ export async function handleStipend(args: z.infer<typeof StipendSchema>): Promis
     };
 }
 
+export const SiphonSchema = z.object({
+    action: z.literal('siphon'),
+    cultivatorId: z.string().optional(),
+    /**
+     * How greedily. Omitted means report the position without taking anything -
+     * a player is entitled to know what the reserves hold and what the house has
+     * already half-noticed before deciding.
+     */
+    pace: z.enum(['careful', 'steady', 'greedy']).optional(),
+    /** Months to run at that pace. One period is 30 days. */
+    months: z.number().int().min(1).max(240).optional().default(1)
+});
+
+/** Flags: what has been taken from a given house, and what it has noticed. */
+const flagTaken = (sectId: string): string => `siphon_taken:${sectId}`;
+const flagNotice = (sectId: string): string => `siphon_notice:${sectId}`;
+/** Permanent, and the only mark any other house will ever hold against them. */
+export const FLAG_MARKED_THIEF = 'marked_as_thief';
+
+/**
+ * Take from the house, quietly, over time.
+ *
+ * The whole of the betrayal the setting supports. There is no smash-and-grab -
+ * see the header of `embezzlement.ts` for why - so this is a rate, a clock and
+ * a risk, and the interesting decision is when to stop rather than whether to
+ * start.
+ */
+export async function handleSiphon(args: z.infer<typeof SiphonSchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { run, cultivator } = resolved;
+    const membership = repos.sects.getMembership(cultivator.id);
+    if (!membership) {
+        return guidingError('not_a_member', `${cultivator.name} serves no sect, and has nothing to steal from.`);
+    }
+    const sect = repos.sects.getById(membership.sectId);
+    if (!sect) {
+        return guidingError('unknown_sect', `Sect ${membership.sectId} no longer exists.`);
+    }
+
+    const rankCount = sect.ranks.length;
+    if (!canReachReserves(membership.rankIndex, rankCount)) {
+        const opensAt = sect.ranks.findIndex((_, i) => canReachReserves(i, rankCount));
+        return guidingError(
+            'no_access_to_reserves',
+            `${membership.rankTitle} does not go near the reserves. ${sect.name} opens them at ` +
+            `${sect.ranks[opensAt] ?? 'a rank this house does not have'}, and not before.`,
+            {
+                rankIndex: membership.rankIndex,
+                rankTitle: membership.rankTitle,
+                opensAtRankIndex: opensAt,
+                opensAtRankTitle: sect.ranks[opensAt] ?? null,
+                hint: 'Access is the rank. This is a crime a house has to promote somebody into.'
+            }
+        );
+    }
+
+    const base = baseReservesFor(sect.stipend);
+    const state = {
+        takenTotal: readNumberFlag(repos.db, cultivator.id, flagTaken(sect.id), 0),
+        drawNotice: readNumberFlag(repos.db, cultivator.id, flagNotice(sect.id), 0)
+    };
+
+    // No pace named: report the position and take nothing.
+    if (!args.pace) {
+        const standing = siphonPeriod(state, base, 'careful', membership.rankIndex, rankCount);
+        return {
+            sect: { id: sect.id, name: sect.name },
+            rank: { index: membership.rankIndex, title: membership.rankTitle },
+            reserves: { held: Math.max(0, base - state.takenTotal), originally: base },
+            alreadyTaken: state.takenTotal,
+            suspicion: round2(state.drawNotice + noticeFromShortfall(state.takenTotal, base)),
+            discoveryChanceIfCaughtNow: round2(discoveryChance(state.drawNotice + noticeFromShortfall(state.takenTotal, base))),
+            paces: SIPHON_PACES,
+            nextPeriodAtCareful: { wouldTake: standing.taken },
+            narrationHint:
+                `${sect.name} keeps ${Math.max(0, base - state.takenTotal).toLocaleString()} spirit stones in reserve, ` +
+                `and ${membership.rankTitle} can sign for them. ` +
+                (state.takenTotal > 0
+                    ? `${state.takenTotal.toLocaleString()} is already gone, and the ledger is ${round2(state.drawNotice + noticeFromShortfall(state.takenTotal, base))} of the way to somebody asking about it. `
+                    : 'Nothing has been taken and nobody has been given a reason to count. ') +
+                'Nothing was taken now either - this was a look at the books. Careful takes half a per cent a month and buys years; greedy takes eight and buys months. The hole speaks for itself however slowly it is made, so the question is not whether to start but when to stop.',
+            note:
+                'Nothing was taken. Access is the rank, the pace is the whole strategy, and the ' +
+                'shortfall speaks for itself however slowly it was made - so the question is when to stop.'
+        };
+    }
+
+    // ── Run the months. Each is a draw and a chance the house works it out. ──
+    const rng = new CultivationRNG(`${run.seed}:siphon:${cultivator.id}:${state.takenTotal}`);
+    let current = state;
+    let taken = 0;
+    let months = 0;
+    let caught = false;
+
+    for (; months < args.months; months++) {
+        const period = siphonPeriod(current, base, args.pace, membership.rankIndex, rankCount);
+        current = { drawNotice: period.drawNotice, takenTotal: period.takenTotal };
+        taken += period.taken;
+        if (rng.next() < period.discoveryChance) { caught = true; months++; break; }
+    }
+
+    const days = months * SIPHON_PERIOD_DAYS;
+    const suspicion = current.drawNotice + noticeFromShortfall(current.takenTotal, base);
+
+    const applied = repos.db.transaction(() => {
+        writeFlag(repos.db, cultivator.id, flagTaken(sect.id), String(current.takenTotal));
+        writeFlag(repos.db, cultivator.id, flagNotice(sect.id), String(current.drawNotice));
+        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: taken });
+        repos.runs.advanceDays(run.id, days);
+        repos.runs.incrementTurn(run.id, 1);
+        return true;
+    })();
+    void applied;
+
+    if (!caught) {
+        const after = repos.cultivators.getById(cultivator.id)!;
+        const runAfter = repos.runs.getById(run.id)!;
+        return {
+            caught: false,
+            sect: { id: sect.id, name: sect.name },
+            monthsRun: months,
+            takenThisTime: taken,
+            takenInTotal: current.takenTotal,
+            reservesLeft: Math.max(0, base - current.takenTotal),
+            shareOfReservesGone: round2(current.takenTotal / Math.max(1, base)),
+            suspicion: round2(suspicion),
+            discoveryChanceNextPeriod: round2(discoveryChance(suspicion)),
+            narrationHint:
+                `${months} month${months === 1 ? '' : 's'} of it, at a ${args.pace} pace, and ` +
+                `${taken.toLocaleString()} spirit stones came across without anybody saying anything. ` +
+                `${current.takenTotal.toLocaleString()} of ${sect.name}'s reserve is gone in total, ` +
+                `which is ${Math.round((current.takenTotal / Math.max(1, base)) * 100)} per cent of it. ` +
+                (discoveryChance(suspicion) >= 0.5
+                    ? 'The next reconciliation is more likely than not to find it. Whatever is being waited for, this is past the point of waiting.'
+                    : discoveryChance(suspicion) >= 0.15
+                        ? 'Somebody has started checking figures that used to be taken on trust. It is not a question yet. It is the shape of one.'
+                        : 'Nobody has counted. The hole does not close and the notice does not fade, and every further month is drawn against a larger shortfall than the last.'),
+            note:
+                'Not noticed yet. The hole does not close and the notice does not fade; every ' +
+                'further month is drawn against a larger shortfall than the last.',
+            cultivator: describeCultivator(repos, after, runAfter)
+        };
+    }
+
+    // ── Found out. The rank was the access, so the rank goes with it. ──
+    const held = repos.cultivators.getById(cultivator.id)!.spiritStones;
+    const outcome = resolveDiscovery(held, current.takenTotal, membership.contribution);
+    repos.db.transaction(() => {
+        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -outcome.recovered });
+        repos.sects.removeMember(sect.id, cultivator.id);
+        writeFlag(repos.db, cultivator.id, FLAG_MARKED_THIEF, sect.id);
+    })();
+
+    const after = repos.cultivators.getById(cultivator.id)!;
+    const runAfter = repos.runs.getById(run.id)!;
+    return {
+        caught: true,
+        sect: { id: sect.id, name: sect.name },
+        monthsRun: months,
+        takenInTotal: current.takenTotal,
+        recovered: outcome.recovered,
+        keptAnyway: Math.max(0, current.takenTotal - outcome.recovered),
+        formerRank: membership.rankTitle,
+        contributionForfeited: outcome.contributionForfeited,
+        markedAsThief: true,
+        narrationHint:
+            `${sect.name} reconciled the reserve and the figure did not come out. ` +
+            `${current.takenTotal.toLocaleString()} stones, over ${months} month${months === 1 ? '' : 's'}, ` +
+            `taken by its own ${membership.rankTitle}. They take back the ${outcome.recovered.toLocaleString()} ` +
+            'still in the purse and cannot touch what has already been spent. The rank goes with it, ' +
+            'because the rank was the access. ' +
+            (outcome.contributionForfeited > 0
+                ? `${outcome.contributionForfeited} contribution, earned over a lifetime of service to them, is struck off. `
+                : '') +
+            'Resigning would have cost the contribution and nothing else. Being found out follows the name.',
+        note:
+            `${sect.name} reconciled the reserve and found the shortfall. The rank is gone because ` +
+            'the rank was the access, the contribution is gone because it was always theirs to ' +
+            'withdraw, and what has already been spent cannot be taken back. This is the difference ' +
+            'between resigning and being found out, and it follows the name.',
+        cultivator: describeCultivator(repos, after, runAfter)
+    };
+}
+
 export async function handleStanding(args: z.infer<typeof StandingSchema>): Promise<object> {
     const repos = ensureCultivationDb();
     const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
@@ -533,6 +813,12 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
 // ═══════════════════════════════════════════════════════════════════════════
 
 const definitions: Record<SectAction, ActionDefinition> = {
+    siphon: {
+        schema: SiphonSchema,
+        handler: handleSiphon,
+        aliases: ['embezzle', 'skim', 'divert'],
+        description: "Take from the house reserves over time. Rank-gated, and the house notices eventually"
+    },
     list: {
         schema: ListSchema,
         handler: handleList,
@@ -610,6 +896,48 @@ const definitions: Record<SectAction, ActionDefinition> = {
         handler: handleAbove,
         aliases: ['hierarchy', 'stack', 'who_rules', 'over'],
         description: 'What stands above this house, as far as this cultivator can name it'
+    },
+    authority: {
+        schema: AuthoritySchema,
+        handler: handleAuthority,
+        aliases: ['command', 'powers', 'what_can_i_do', 'lead'],
+        description: 'What this rank may make other people do, what it would cost, and what the house currently thinks'
+    },
+    order: {
+        schema: OrderSchema,
+        handler: handleOrder,
+        aliases: ['send', 'tell', 'delegate', 'dispatch', 'instruct'],
+        description: 'Send the rungs below on an errand. Their days instead of yours; opens at rung one'
+    },
+    recruit: {
+        schema: RecruitSchema,
+        handler: handleRecruit,
+        aliases: ['take_in', 'hire', 'enlist', 'take_disciples'],
+        description: 'Take disciples in under your own line (elder rungs), or buy an elder in from outside (the seat)'
+    },
+    admission: {
+        schema: AdmissionSchema,
+        handler: handleAdmission,
+        aliases: ['standard', 'set_bar', 'entrance', 'admit_from'],
+        description: 'Set the realm the house admits from. Both directions insult somebody'
+    },
+    curriculum: {
+        schema: CurriculumSchema,
+        handler: handleCurriculum,
+        aliases: ['methods', 'library', 'teach', 'foundational_methods'],
+        description: 'Change what the house hands its intake. Generational, and the dearest thing here'
+    },
+    expel: {
+        schema: ExpelSchema,
+        handler: handleExpel,
+        aliases: ['dismiss', 'fire', 'remove_elder', 'cast_out'],
+        description: 'Dismiss an elder. They leave with their disciples, and the next one costs more'
+    },
+    grow: {
+        schema: GrowSchema,
+        handler: handleGrow,
+        aliases: ['expand', 'build_up', 'enlarge'],
+        description: 'Make the house bigger over decades. The only act that earns standing rather than spending it'
     }
 };
 
@@ -623,7 +951,7 @@ export const SectManageTool = {
             they feud with, and the state of the inherited compound they occupy
 - join      the admission ordinal AND the catalog's attribute minimums are enforced by the engine.
             Being narrated impressively does not get a Qi Condensation disciple into a Core
-            Formation sect. The Hollow Court and the Kiln Wardens take no applicants at all.
+            Formation sect. The Hollow Court and the Kiln Court take no applicants at all.
 - leave     contribution is forfeited; it does not travel
 - promote   requires BOTH the realm ordinal and the contribution for the next rank; the
             contribution is spent, not merely met
@@ -650,9 +978,37 @@ POLITICS - the half of a sect that is not a stipend:
 - above     what stands above this house, AS FAR AS THIS CULTIVATOR CAN NAME IT. Beyond that
             you get what is noticed with nobody's name on it. Do not narrate past the last name.
 
+AUTHORITY - what a rank makes other people do. AUTHORITY IS THE RANK INDEX AND IT REACHES EVERY
+LOWER RUNG IN THE SAME HOUSE. Not a tier table: an Outer Disciple sends servants, an Inner
+Disciple sends outer disciples and servants, the head of the house sends anybody. Standing is
+one number for the whole ladder and every act below spends it.
+- authority what this rank may do, what each act would cost in standing, who the elders are and
+            how many disciples each of them brought in. Takes nothing and changes nothing.
+- order     send the rungs below on an errand: gather (herbs), carry (spirit stones), labour
+            (contribution). Opens at rung ONE, and it is the first thing membership actually
+            buys - it spends their days instead of the caller's. Ordering upward fails.
+- recruit   elder rungs take disciples in under their own line, which costs years and stones and
+            builds the following that makes a later bid for the seat survivable. The seat may
+            also buy an elder in from OUTSIDE, which is the specific insult to whoever waited.
+- admission the realm the house admits from. Raising it insults everyone admitted under the old
+            bar; lowering it insults everyone whose only distinction was clearing it. Enforced by
+            join and it is the same number promotion is measured from.
+- curriculum what the house hands its intake. The dearest act here, and generational: the decree
+            is immediate and takes thirty years to be what the house is.
+- expel     dismiss an elder. They do not leave alone - the disciples in their line go too - and
+            each dismissal costs more than the last.
+- grow      decades of deliberate intake. The ONLY act that earns standing. Through the seat is
+            slow and the new people are yours; through the elders is faster and they are theirs.
+
+BACKLASH escalates and is visible before it lands: grumbling, then obstruction (the order is
+simply not carried out - the one roll, and its odds come from accumulated standing), then
+departure (elders walk and take their followings, shrinking the house), then a challenge to the
+seat, and for a house that answers to a patron, removal by letter with no fight to win.
+
 Actions: ${ACTIONS.join(', ')}
 Aliases: enrol/apply->join, quit/defect->leave, pay/draw->stipend, membership->standing,
-certify->verify_claim, accuse->denounce, hierarchy->above, backing->patronage`,
+certify->verify_claim, accuse->denounce, hierarchy->above, backing->patronage,
+send/tell/delegate->order, dismiss/fire->expel, command/powers->authority`,
     actionSchemas: router.actionSchemas,
     inputSchema: z.object({
         action: z.string().describe(`Action: ${ACTIONS.join(', ')}`),
@@ -661,7 +1017,20 @@ certify->verify_claim, accuse->denounce, hierarchy->above, backing->patronage`,
         alignment: z.enum(['righteous', 'neutral', 'demonic']).optional(),
         admissibleOnly: z.boolean().optional(),
         seekGuestElder: z.boolean().optional(),
-        matter: z.string().optional()
+        matter: z.string().optional(),
+        // Authority
+        errand: z.enum(['gather', 'carry', 'labour']).optional(),
+        toRankIndex: z.number().int().optional(),
+        hands: z.number().int().optional(),
+        days: z.number().int().optional(),
+        kind: z.enum(['disciple', 'elder']).optional(),
+        count: z.number().int().optional(),
+        ordinal: z.number().int().optional(),
+        teach: z.array(z.string()).optional(),
+        retire: z.array(z.string()).optional(),
+        elderId: z.string().optional(),
+        through: z.enum(['seat', 'elders']).optional(),
+        decades: z.number().int().optional()
     })
 };
 

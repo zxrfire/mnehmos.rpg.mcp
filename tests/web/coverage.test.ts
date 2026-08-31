@@ -155,6 +155,119 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'could I survive that',
         'how dangerous is this',
         'am I strong enough'
+    ],
+    // The softlock. Every one of these was typed at a run that was stuck with
+    // three untreated meridian injuries, three hundred spirit stones and a
+    // physician advertised on the board, and every one of them failed: the
+    // first was answered with a description of the room and the rest with
+    // "the thought does not resolve".
+    treat: [
+        'I look for a physician to treat my meridian injuries',
+        'I get my injuries treated',
+        'I see a physician',
+        'I pay for treatment',
+        'treat my wounds',
+        'I need a healer'
+    ],
+    buy: [
+        'I buy a visit from the mortal physician',
+        'I buy a Minor Healing Pill',
+        'I pay for a ferry crossing',
+        'I hire a scribe'
+    ],
+    // The inheritance grounds, which were catalog-only until the parser could
+    // name one. Four steps, and the enum member carries all four.
+    // The three sentences a rank-band sweep found dead at ordinals 37-46,
+    // where the ladder is finished and comprehension is the only axis left.
+    recall: [
+        'what do I know of Lu Sheng',
+        'what do I know of the Hollow Court',
+        'what is my dao',
+        'what have I heard of the Ninth Stone',
+        'what do I know'
+    ],
+    site: [
+        'I go to the eighth stone',
+        'I look for the audit bench',
+        'what inheritance grounds are near here',
+        'I study the door',
+        'I go inside',
+        'I open the grave',
+        // The word a player actually uses when the site is a grave. Found by a
+        // standing sweep: the graves are catalogued and the taking step is
+        // implemented, and only the honest verb for it was missing.
+        'I rob the grave of Shen Guyi'
+    ],
+    // ── institutions acting on each other, and on the dead ──
+    //
+    // Twelve sentences from a sect head who had heard of every faction, all
+    // twelve dead, and five of them eaten by `interact` and answered with a
+    // paragraph about the building - so a player could not tell REFUSED from
+    // NOT IMPLEMENTED. Every phrasing below is one of those or a variant a
+    // player would reach for in the same breath.
+    petition: [
+        'I file a Requisition Against Standing Stock',
+        'I ask the Deep Survey for one of its pills',
+        'I ask the Deep Survey for an Unearned Step',
+        'I petition the Third Sill Court for a grant',
+        'I appeal to the court for protection',
+        'I claim descent from Ru Anjing'
+    ],
+    posture: [
+        'I declare war on the Nine Abyss Flame Sect',
+        'I offer an alliance to the Frostmirror Court',
+        'I propose a pact with the Storm Tyrant Court',
+        'I demand tribute from the Azure Dew Sect',
+        'I go over to the Long Cut'
+    ],
+    seal: [
+        'I wake our sealed ancestor',
+        'I rouse the sealed ancestor',
+        'I break the seal under the Kiln Wardens',
+        'I wake what is under the mountain'
+    ],
+    offer: [
+        'I make an offering to our ascended ancestor',
+        'I send an offering up to our ancestor',
+        'I burn incense to our ascended ancestor',
+        // The other end of the same pipe. Which end the speaker is standing at
+        // is state, not phrasing, so both reach the same verb.
+        'I send a sword down through the Lid',
+        'I send word down to my sect'
+    ],
+    // The far side of the Lid, where every mortal verb used to come back "Not
+    // from here" and there was nothing else to type.
+    descend: [
+        'I go back down',
+        'I descend through the Lid',
+        'I force the Lid open again',
+        'I go down to the province myself'
+    ],
+    // The counter. Every one of these used to reach the INTERACT table, where
+    // the engine went looking for a person by the name of the herb.
+    sell: [
+        'I sell the Qi Gathering Grass',
+        'I sell my herbs',
+        'I sell everything I gathered',
+        'I offload what I picked',
+        'I hawk the herbs at the stalls'
+    ],
+    inventory: [
+        'what am I carrying',
+        'check my pouch',
+        'what is in my bag',
+        'show me my inventory'
+    ],
+    list_techniques: [
+        'what arts can I learn',
+        'what techniques can I learn',
+        'list the available techniques',
+        'which arts are available to me'
+    ],
+    learn_technique: [
+        'I learn the Azure Ripple Art',
+        'I study the Iron Bell Manual',
+        'I take up the Cloudstep technique'
     ]
 };
 

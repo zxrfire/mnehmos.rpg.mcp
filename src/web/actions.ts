@@ -24,6 +24,9 @@
 
 import { z } from 'zod';
 
+import { SITE_PHRASES } from './trials.js';
+import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
+
 /** Longest stretch of seclusion that may be requested in one call: 100 years. */
 export const MAX_CULTIVATION_DAYS = 36_500;
 
@@ -115,6 +118,78 @@ export const ACTION_NAMES = [
      * cultivations and a death was the likeliest first session.
      */
     'provision',
+    /**
+     * Getting a wound seen to, which was a softlock.
+     *
+     * `treatWorstInjuries` has been in `engine/cultivation/injuries.ts` the
+     * whole time and `scripts/playtest.ts` exercises it, so the mechanic
+     * existed and only the route was missing. What that produced, found by
+     * playing cold in a browser: a cultivator at Qi Condensation with three
+     * untreated meridian injuries, told by the engine in as many words that
+     * nothing heals them on their own and that any further combat is fatal.
+     * Untreated injuries raise deviation risk, deviation adds another injury
+     * and ejects them from seclusion after about a month, and the next attempt
+     * goes wrong slightly sooner. They could not advance, could not heal, and
+     * could not die - the run was neither winnable nor loseable, with three
+     * hundred spirit stones in the purse and a physician advertised on the
+     * board in front of them.
+     *
+     * An engine that manufactures a state it labels lethal, says outright that
+     * it will not resolve itself, and offers no verb is worse than one that
+     * never had the state.
+     */
+    'treat',
+    /**
+     * Buying something off the price board by name.
+     *
+     * `mortal-world.ts` advertises twenty-two priced lines and `market` prints
+     * them; until this existed, four of the verbs that would spend money -
+     * `eat`, `provision`, `refine`, `market` - covered exactly three of those
+     * lines between them. "I buy a visit from the mortal physician" fell to the
+     * INTERACT table, which looked for a person called "visit from the mortal
+     * physician" and reported that nobody by that name was there. A price
+     * quoted to a player who cannot pay it is a shop window with a wall behind
+     * it.
+     */
+    'buy',
+    /**
+     * Putting something on the counter, which is the only way anything a
+     * cultivator gathered ever becomes stones again.
+     *
+     * `quoteSale` and `quotePouchSale` have priced this the whole time, and
+     * nothing called them. What that produced, found by playing: gathering
+     * prices every herb it finds, the pouch fills with things with a list
+     * value written next to them, and the purse stays empty, because there was
+     * no sentence in the language that converted one into the other. "I sell a
+     * Qi Grass" fell to the INTERACT table and the engine went looking for a
+     * person called Qi Grass.
+     *
+     * The pouch is the resolver, not the party. A thing you are not carrying
+     * cannot be sold, and a person is never a lot.
+     */
+    'sell',
+    /**
+     * What is in the pouch, asked in words.
+     *
+     * `alchemy_manage.inventory` has been complete the whole time - pills,
+     * herbs, stones, accumulated toxicity against tolerance - and no sentence
+     * reached it. Exactly the defect `list_recipes` had: a player could gather
+     * for a season and have no way to find out what they were carrying, which
+     * makes both the cauldron and the counter unusable.
+     */
+    'inventory',
+    /**
+     * The arts that could be learned, and the learning of one.
+     *
+     * `technique_manage.handleListAvailable` and `handleLearn` are complete -
+     * realm gates, dao gates, element compatibility, per-run scarcity, and the
+     * qi deviation a conflicting art routes through - and neither was
+     * reachable. `train_technique` practises what is ALREADY known, so until
+     * this existed the only arts a cultivator could ever hold were the ones a
+     * site handed them.
+     */
+    'list_techniques',
+    'learn_technique',
     'wait',
     // The mortal economy. Half the deaths in this world are logistical, and
     // these are the two verbs that answer that - so they must be reachable
@@ -125,10 +200,134 @@ export const ACTION_NAMES = [
     // can do - access to comprehension, to a stipend, and to knowing what is
     // out there - and it was unreachable from plain English.
     'sect',
+    /**
+     * Inheritance grounds: the trials and the graves.
+     *
+     * `data/cultivation/inheritance-trials.ts` is the largest finished system
+     * in the project - twenty-odd sites, three unrelated kinds of gate, an
+     * interior the type system keeps out of the pre-entry view - and until
+     * this member existed nothing a player could type reached a single line
+     * of it. `scripts/playtest-systems.ts` reported it as the finding: the
+     * trials existed and were unplayable.
+     *
+     * One action carrying four verbs, on the `sect` precedent, because they
+     * are four steps of one act and splitting them across `move`, `look` and
+     * `investigate` would put the expensive one behind a verb whose whole
+     * design is that it is cheap. See {@link SiteIntent}.
+     */
+    'site',
+    /**
+     * ── INSTITUTIONS ACTING ON EACH OTHER, AND ON THE DEAD ────────────────
+     *
+     * Four verbs added together because they are one discovery, made by
+     * playing the ambitious things a player reaches for once they know the
+     * world exists. Twelve sentences from a sect head with fifty thousand
+     * stones who had heard of every faction; all twelve dead, and five of them
+     * dead in the worse way - swallowed by `interact`, which matches any
+     * sentence naming a faction and answers it by walking the player over and
+     * describing them. A player asking for something enormous got a shrug and
+     * could not tell REFUSED from NOT IMPLEMENTED.
+     *
+     * The vocabulary above covers a cultivator's own life - train, eat, fight,
+     * seclude, join, climb, be treated, buy - and almost nothing of what
+     * institutions do to each other, or to you beyond membership. That is
+     * where nearly all of the lore lives, and most of it is behind a form.
+     *
+     * All four share one shape: A PARTY ASKING SOMETHING OF ANOTHER PARTY, OF
+     * THE DEAD, OR OF SOMEBODY ABOVE THE LID - and most of them are supposed
+     * to be REFUSED. A refusal that names its reason is the win condition
+     * here, not a consolation. The Requisition Against Standing Stock has been
+     * granted once in four hundred years, and a player filing it and being
+     * turned down in the terms the form itself uses has had a complete
+     * interaction.
+     *
+     * Every one is gated on standing, and the gate speaks - see
+     * `web/standing.ts`, which copies the refusal `sect-leadership.ts` already
+     * produces rather than inventing a second voice for the same act.
+     */
+    /**
+     * Asking an institution for a thing: a grant, an object off its standing
+     * stock, recognition of a lineage.
+     *
+     * `sect-politics.ts` has carried `handlePetition` the whole time - it walks
+     * the parentage chain one tier at a time, stops where the world stops it,
+     * and returns the effect without the attribution where the chain runs past
+     * what the player can name. Nothing typed reached it.
+     */
+    'petition',
+    /**
+     * One house's stance toward another: war, alliance, defection.
+     *
+     * `DISASTER_RESPONSES` prices war, aid and watching; `OPENLY_OR_IN_SECRET`
+     * distinguishes an alliance from a conspiracy and says how each fails;
+     * `ambition.contestedWith` holds nineteen symmetric contested claims and
+     * `rivals` holds the feuds. Two courts in the catalog's own history have
+     * already changed patrons. There was no verb for any of it.
+     */
+    'posture',
+    /**
+     * The thing under the mountain.
+     *
+     * Six houses hold a sealed ancestor with a written `wakeCondition` and
+     * `wakeCost`; the strongest stands at forty-four. The legal and the illegal
+     * routes are different acts by different people, and the action does not
+     * ask which - whose mountain it is decides, out of the membership row.
+     */
+    'seal',
+    /**
+     * The offering upward, and the reading of a silence.
+     *
+     * `IMMORTAL_CHANNELS` models four answering channels, what each returns and
+     * how much of it is usable; `MillennialOffering` is a type with a cost, a
+     * response that is usually null, and what the house did about it. The
+     * silence is equally consistent with four things and the engine will not
+     * say which, which is the content rather than a gap.
+     */
+    'offer',
+    /**
+     * Going back down through the Lid, which is the only thing at the top of
+     * the ladder that is a decision rather than a fact.
+     *
+     * `evaluateLidTransit(cultivator, 'down')` has priced this the whole time -
+     * permitted, at `DESCENT_TRIBULATION_STRIKES` - and nothing called it, so
+     * a True Immortal could be told what descending would cost by a comment in
+     * the engine and by nothing a player could reach. What that produced,
+     * found by playing at ordinal 46: every mortal-world verb answered "Not
+     * from here" and there was no other verb, so the far side of the Lid read
+     * as the game ending rather than as the game moving.
+     *
+     * It is not a travel option and must never become one. Nine strikes is
+     * above the heaviest crossing in the game, the window on the ground is
+     * `BREATHS_IN_THE_LOWER_REALM`, and the expulsion happens on its own
+     * because a True Immortal down there is a thing being pushed back out.
+     */
+    'descend',
     // Pure reads.
     'look',
     'status',
     'assess',
+    /**
+     * What this cultivator is carrying in their head, asked in words.
+     *
+     * The knowledge layer is the spine of `docs/world/discovery.md` and the
+     * sheet shows the other axis in a panel, and neither could be asked about.
+     * Found by a rank-band sweep, and the dead sentences were at the TOP of
+     * the ladder rather than the bottom, which is where it matters most:
+     *
+     *   "what do I know of Lu Sheng"          -> unclear
+     *   "what do I know of the Hollow Court"  -> unclear
+     *   "what is my dao"                      -> unclear
+     *
+     * All three are one verb. A read of what the holder holds - a person, a
+     * faction, a subject, or their own comprehension - answered out of
+     * `knowledge_records` and the insight list and out of nothing else.
+     *
+     * The last of the three is close to the whole game at the ceiling. A
+     * False Immortal cannot climb in rank again and can still climb in dao, so
+     * `DaoView.theOnlyAxisLeft` is literally true for them, and until this
+     * existed the only place it was ever said was a panel.
+     */
+    'recall',
     /**
      * The parser did not understand, and nothing happens.
      *
@@ -145,11 +344,38 @@ export type ActionName = typeof ACTION_NAMES[number];
 
 /** Actions that pass no in-world time and change no cultivator state. */
 export const READ_ONLY_ACTIONS: readonly ActionName[] = [
-    'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear'
+    'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear',
+    // Both are reads of what is already true - the pouch, and the catalog
+    // filtered by rows this cultivator already owns. Neither can teach and
+    // neither can kill.
+    'inventory', 'list_techniques',
+    // Reading your own head changes nothing in it. This one is a read in the
+    // strictest sense in the package: it touches no catalog the holder has no
+    // record for, so it cannot even accidentally become a way to learn.
+    'recall',
+    /**
+     * Asking is free. Getting is not, and nobody has ever got.
+     *
+     * A petition costs no days and moves no stones: it travels as far as
+     * somebody is willing to pass it and stops, and the only state it writes is
+     * a knowledge record for a tier that answered - which is one of the few
+     * legitimate ways a name enters a cultivator's world at all.
+     */
+    'petition'
 ] as const;
 
 /**
- * `sect` is not in either list on purpose.
+ * `sect`, `posture`, `seal` and `offer` are in neither list on purpose.
+ *
+ * None of them spends days, and all three of the new ones commit the house to
+ * something it cannot walk back, so classifying them as free would be as wrong
+ * as classifying them as slow. Which one happened depends on whether a party
+ * was named and on what the membership row says, so it is decided at the point
+ * of execution - and the protection a misparse actually needs is supplied
+ * instead by {@link DEFAULT_POSTURE_INTENT}, {@link DEFAULT_SEAL_INTENT} and
+ * {@link DEFAULT_OFFER_INTENT}, every one of which is a read.
+ *
+ * The original note, which still holds:
  *
  * Listing what would take you costs nothing; being taken costs a life's worth
  * of allegiance. Which one happened depends on whether a sect was named, so it
@@ -167,9 +393,38 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
 export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
     'cultivate', 'seclude', 'breakthrough', 'train_technique',
     'move', 'gather', 'wait', 'work', 'refine', 'eat',
+    // A course of care is a month lying still. It is the cheapest month in the
+    // game and it is still a month, and the food clock runs through it.
+    'treat',
     // Not because it spends days. Because it can end the run inside one
     // turn, which is the thing this list is actually protecting against.
-    'attack'
+    'attack',
+    /**
+     * Here for the same reason, and it is not obvious from the name. An art
+     * that FIGHTS the spirit root is learnable and routes through the qi
+     * deviation engine on the spot: torn meridians, lost progress, and
+     * `evaluateDeathConditions` called on the far side of it. A misparse must
+     * never reach that.
+     */
+    'learn_technique',
+    /**
+     * Here for exactly the same reason, and it is the strongest case on the
+     * list. Nine strikes of the heaviest tribulation in the game, weathered by
+     * somebody who has already spent a life reaching the point where they could
+     * be struck by it. A misparse that reaches this ends the run, so nothing
+     * ambiguous may.
+     */
+    'descend',
+    /**
+     * Here for the same reason `attack` is, and not because every intent it
+     * carries costs anything: approaching a site and reading it from outside
+     * are reads that pass no time at all. Going into one spends days and puts
+     * a body in front of a thing set at an ordinal, so the whole action is
+     * declared dangerous. This list is a floor on what a MISPARSE may reach,
+     * not a description of what each intent costs, and the conservative
+     * direction is the only safe one to be wrong in.
+     */
+    'site'
 ] as const;
 
 /** What an unparseable sentence resolves to. Inert, by construction. */
@@ -185,11 +440,1096 @@ export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'wo
  */
 export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
-    'work', 'market', 'assess', 'sect', 'attack'
+    'work', 'market', 'assess', 'sect', 'attack',
+    // The name being asked about. Matched against the holder's OWN rows and
+    // never against the world, which is the whole gate - see `GameService.recall`.
+    'recall',
+    // The site, by name. Resolved against the catalog and against what this
+    // cultivator may name, so an invented one resolves to nothing.
+    'site',
+    // The line on the price board. Resolved against `PRICES`, so a purchase
+    // the board never advertised resolves to nothing and is refused with the
+    // board attached.
+    'buy',
+    // What is on the counter, resolved against THE POUCH. Bare "I sell my
+    // herbs" carries no target and prices the whole pouch instead.
+    'sell',
+    // The art, by name. Resolved against the whole catalog and then put to
+    // `handleLearn`, which owns every gate - so naming one out of reach is
+    // refused with the measured reason rather than dropped here.
+    'learn_technique',
+    /**
+     * The other party, by name: the institution being asked, the house being
+     * declared against, the mountain with something under it, the line an
+     * offering is being sent up.
+     *
+     * All four resolve through the same knowledge-gated faction lookup, so a
+     * house the player has never heard of resolves to nothing and is refused
+     * identically to one that does not exist. That equivalence is required
+     * rather than incidental: asking about a thing must not teach its existence,
+     * and the shape of the refusal must not be the answer.
+     */
+    'petition', 'posture', 'seal', 'offer'
 ] as const;
 
-/** Actions that carry a free-text intent. Never branched on for an outcome. */
-export const INTENT_ACTIONS: readonly ActionName[] = ['interact', 'move', 'attack'] as const;
+/**
+ * `look` is deliberately NOT in the list above, even though the history read
+ * can use a place name.
+ *
+ * The deterministic parser hands its own plan straight to the service and is
+ * not filtered here, so "what happened at the Reed Scar" keeps its subject on
+ * that path. A MODEL-planned look loses it and answers about the ground the
+ * cultivator is standing on, which is the overwhelmingly common reading of the
+ * question and the safe direction to be wrong in: a stripped subject costs a
+ * player a follow-up sentence, and letting a model attach a free-text subject
+ * to every observation widens the one field this file exists to keep narrow.
+ */
+
+/**
+ * Actions that may carry a topic. `sect` uses it for the siphoning pace.
+ *
+ * `petition` uses it for the MATTER - what is actually being asked for, in the
+ * petitioner's own words. It is free text and it is safe for the same reason
+ * `intent` is: nothing branches on it to decide whether the petition is
+ * granted. It is carried into the record and shown back in the refusal, which
+ * is precisely the point - being told no in the terms you asked in is the
+ * interaction.
+ */
+export const TOPIC_ACTIONS: readonly ActionName[] = [
+    'interact', 'sect', 'petition',
+    /**
+     * `offer` uses it for the WORD that goes down the line with whatever is
+     * sent, which is half of what a proxy action is: an object arrives, and a
+     * message says what it is for. Free text, carried into the recipient's
+     * memory and into a secret fact, and read by no conditional - the whole
+     * unreliability of acting by proxy is that people who are not you decide
+     * what you meant.
+     */
+    'offer'
+] as const;
+
+/**
+ * Actions that carry a free-text intent. Never branched on for an outcome -
+ * with one deliberate exception, `sect`, whose intent selects which of the
+ * sect surface's five verbs runs. It is safe there because the value is
+ * produced by {@link SECT_INTENT_PATTERNS} rather than by a model: the model's
+ * own string is normalised to a label and then matched against the same closed
+ * set, so an unrecognised one falls through to the listing.
+ */
+export const INTENT_ACTIONS: readonly ActionName[] = [
+    'interact', 'move', 'attack', 'sect',
+    /**
+     * `look` is the second exception, and it is safe for the same reason: the
+     * label selects WHICH READ runs - the room, the faces in it, or what was
+     * done to the ground here - and every one of those is answered out of
+     * state. An unrecognised label falls through to the room, which is what
+     * `look` did before any of them existed.
+     */
+    'look',
+    /**
+     * `site` is the third, and it carries the same guarantee with one extra
+     * obligation. The label selects which of the four steps runs - reaching
+     * one, reading it from outside, going in, taking what is behind it - and
+     * every outcome on the far side is computed from the catalog and the
+     * cultivator's own rows. What is different here is that one of the four
+     * SPENDS SOMETHING, so an unrecognised label must fall through to the
+     * cheapest of them and not to the expensive one. It falls through to the
+     * listing. See `SITE_INTENTS` and `GameService.site`.
+     */
+    'site',
+    /**
+     * `recall` is the fourth, picking between what the holder has HEARD and
+     * what they have UNDERSTOOD. Two different tables, both theirs, and both
+     * free.
+     */
+    'recall',
+    /**
+     * The four new ones, all carrying the same guarantee and the same extra
+     * obligation `site` carries.
+     *
+     * The label selects WHICH ROUTINE runs - which form is being filed, which
+     * stance is being taken, whether the seal is being read or spent, whether
+     * the channel is being read or paid - and every outcome on the far side is
+     * computed from the catalog and the membership row. What is different from
+     * `look` and `recall` is that one branch of each COMMITS THE HOUSE, so an
+     * unrecognised label must fall through to the read and never to the
+     * commitment. It does, by construction: see the four DEFAULT_* constants,
+     * every one of which is the cheapest branch the action has.
+     */
+    'petition', 'posture', 'seal', 'offer'
+] as const;
+
+/** The things a member can do about their sect, in the order they are tested. */
+export type SectIntent =
+    | 'leave' | 'promote' | 'stipend' | 'standing' | 'join' | 'siphon' | 'order'
+    // What the rungs above `order` buy. Same defect as `order` had: implemented,
+    // gated, tested, and unreachable from anything a player could type.
+    | 'recruit' | 'admission' | 'curriculum' | 'expel';
+
+/**
+ * Which sect verb a sentence is asking for.
+ *
+ * `sect_manage` has had promote, stipend, standing and leave the whole time,
+ * fully implemented and gated - and until this existed, none of them could be
+ * reached from the command bar. A player could join a sect and then never be
+ * promoted, never draw a stipend, never ask where they stood and never resign,
+ * because every one of those sentences parsed to `unclear`.
+ *
+ * Order matters. Leaving is tested first because "I leave the sect and join
+ * another" is a sentence about leaving; standing is tested before joining
+ * because "what is my standing" contains no join verb but does contain the
+ * noun, and the join branch matches on the noun.
+ */
+/**
+ * The two that need no noun. "Promote me" and "my stipend" are about a sect
+ * whether or not the sentence says so - there is nothing else in the game that
+ * promotes anybody or pays an allowance - so these are tested early, ahead of
+ * the verbs that would otherwise swallow them ("collect my pay" reads as
+ * gathering, "ask for a promotion" reads as asking somebody a question).
+ */
+export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
+    ['promote', /\b(?:promote|promotes|promoted|promotion|raise me|elevate me|advance my rank|higher rank|next rank up|rise in rank)\b/],
+    ['stipend', /\b(?:stipend|allowance|my dues|collect my pay|draw my pay|what (?:i am|i'm) owed)\b/]
+];
+
+/**
+ * Sentences about taking the house's property, which are NOT sentences about
+ * resigning from it even though most of them contain the word "leave".
+ *
+ * Found by playtesting: "I take the sect treasury and leave in the night" was
+ * matched by the leave pattern and quietly resigned the player's membership.
+ * They asked to rob the place and the engine processed a resignation, without
+ * the theft, without a refusal, and without anything saying so.
+ *
+ * There is no theft action in the closed set, so the honest answer to these is
+ * that the thought does not resolve. Silently doing something adjacent and
+ * irreversible instead is the one answer that is worse than saying no.
+ */
+/**
+ * How greedily, when the sentence says. Order matters: the careful words are
+ * checked first because "quietly and steadily" is a sentence about care.
+ */
+export const SIPHON_PACE_PATTERNS: ReadonlyArray<[string, RegExp]> = [
+    ['careful', /\b(?:careful\w*|slow\w*|quiet\w*|patient\w*|little at a time|a bit at a time|cautious\w*|discreet\w*)\b/],
+    ['greedy', /\b(?:greedy|greedily|fast|quickly|hard|as much as|everything|all of it|empty|drain|clean out)\b/],
+    ['steady', /\b(?:steady|steadily|regular\w*|month by month|bit by bit|over time)\b/]
+];
+
+/**
+ * Reading the books, which is not the same as taking anything out of them.
+ *
+ * `handleSiphon` with no pace reports the position and takes NOTHING - a
+ * player is entitled to see what the reserves hold and what the house has
+ * already half-noticed before committing to a crime that runs on a clock.
+ * That branch is right and it was reached by everything, including
+ * "I steal the sect treasury".
+ *
+ * What that produced, measured across 21 positions and scored on database
+ * writes: the prose escalated perfectly by rank - `not_a_member`, then
+ * "opens them at Dew Elder, and not before", then "Azure Dew Sect keeps 54,864
+ * spirit stones in reserve, and Dew Elder can sign for them" - and at EVERY
+ * rank the verdict was `wrote: []`. The ladder was consulted and not obeyed,
+ * which is worse than silence, because the prose looks like it worked.
+ *
+ * So the two sentences are separated here. A question about the reserves is a
+ * look. A sentence that says somebody is TAKING is an act, and an act with no
+ * pace named falls through to {@link DEFAULT_SIPHON_PACE} - the same rule
+ * `site`, `petition`, `posture`, `seal` and `offer` follow, and the same
+ * direction: the default is the cheapest branch that still does what was
+ * asked, never the most expensive one.
+ */
+export const SIPHON_TAKING_VERBS =
+    'steal|steals|stealing|stole|rob|robs|robbing|loot|loots|looting|plunder|plunders|'
+    + 'pilfer|pilfers|siphon|siphons|siphoning|skim|skims|skimming|embezzle|embezzles|'
+    + 'embezzling|divert|diverts|diverting|empty|empties|emptying|drain|drains|draining|'
+    + 'clean out|take|takes|taking|help myself to|make off with|dip into|dips into';
+
+/**
+ * The pace an unpaced theft runs at.
+ *
+ * `careful` takes half a per cent a month and buys years. It is the LEAST
+ * dangerous thing the verb can do while still being the verb, which is exactly
+ * what a default has to be when the branch it is choosing between is
+ * "irreversible crime" and "nothing at all".
+ */
+export const DEFAULT_SIPHON_PACE = 'careful';
+
+/**
+ * Sending somebody below you somewhere, which is the first thing a rank buys.
+ *
+ * `sect_manage.order` has had the whole of this the whole time - authority read
+ * off the rank index, hands read off the roster taper, the errand resolved
+ * against the rung sent, the standing it costs and the obstruction it earns -
+ * and none of it could be reached from the command bar. Worse than unreachable:
+ * "I order the disciples to gather herbs" was caught by the FORAGING branch, so
+ * a sentence about spending somebody else's week spent the player's own instead.
+ * That is the same defect as "I attack the nearest cultivator" resolving to a
+ * month of meditation, and it is checked here for the same reason.
+ *
+ * Both halves are required. The verbs alone are too common to trust ("send word
+ * to the elder" is a message, not an errand), and the nouns alone appear in
+ * every second sentence in the setting. A verb aimed at a rung below is the only
+ * thing this matches.
+ */
+export const SECT_ORDER_VERBS =
+    'order|orders|command|commands|send|sends|dispatch|dispatches|detail|details|assign|assigns|task|tasks';
+
+export const SECT_SUBORDINATE_NOUNS =
+    /\b(?:disciples?|servants?|juniors?|underlings?|subordinates?|acolytes?|attendants?|initiates?|the ranks? below|my line|my people)\b/;
+
+/**
+ * Sending something rather than somebody. "I send word to the disciples" is a
+ * message and costs nobody a day; only the errand branch may claim it.
+ */
+export const SENDING_A_MESSAGE =
+    /\b(?:send|sends|sending|dispatch|dispatches)\s+(?:word|a message|a letter|a note|a reply|an invitation|my regards|for help)\b/;
+
+/**
+ * Which of the three errands an order is for.
+ *
+ * Tested in this sequence because the sentences overlap: "gather stone for the
+ * wall" is haulage that mentions gathering, so what is being FETCHED decides it
+ * before the verb does. Nothing named means the generic thing a house asks of
+ * the rung below, which is work booked against the caller's own name.
+ */
+export const SECT_ERRAND_PATTERNS: ReadonlyArray<[string, RegExp]> = [
+    ['gather', /\b(?:herbs?|roots?|plants?|ingredients?|reagents?|flowers?|mushrooms?|grasses|forage|foraging|gather\w*|harvest\w*|pick\w*)\b/],
+    ['carry', /\b(?:carry|carrying|carts?|haul\w*|freight|porter\w*|transport\w*|deliver\w*|fetch\w*|move the|shift the|stones?|ore|timber)\b/],
+    ['labour', /\b(?:labour|labor|repair\w*|rebuild\w*|build\w*|sweep\w*|dig\w*|clean\w*|maintain\w*|drill\w*|chores?|the yard|the wall)\b/]
+];
+
+/** What an order is for when the sentence does not say. */
+export const DEFAULT_ERRAND = 'labour';
+
+// ─── THE SEAT'S OWN POWERS ────────────────────────────────────────────────
+//
+// Four more verbs with the `order` defect. `sect_manage` has had recruit,
+// admission, curriculum and expel the whole time - implemented, tiered by
+// POWERS_BY_TIER, each returning a narrationHint, each tested - and none of
+// them could be reached from the command bar. "I expel an elder from the sect"
+// and "I raise the sect's admission standard" parsed to `unclear`; "I take on
+// new disciples" was taken by the INTERACT table, whose `recruit` label matches
+// "take on"; "I change what the sect teaches" was taken by the sect LISTING,
+// because the listing rule fires on the noun plus a question word and this
+// sentence has both. So three of the four did something, and none of the three
+// was the thing asked for.
+//
+// The rule the whole group follows is the one the order branch established: a
+// verb aimed at somebody below you, plus the noun that says who or what. Both
+// halves are required. The verbs alone are far too common - "take on", "raise",
+// "change", "remove" are in every second sentence - and the nouns alone are the
+// setting's own vocabulary.
+
+/**
+ * Taking somebody INTO a house, which is the opposite of asking to be let in.
+ *
+ * `admit` and `accept` are deliberately absent. "I want to be admitted as a
+ * disciple" is a sentence about joining, contains the intake noun, and would
+ * have been read as the head of a house buying an elder.
+ */
+export const SECT_RECRUIT_VERBS =
+    'recruit|recruits|recruiting|take on|takes on|taking on|take in|takes in|taking in|'
+    + 'bring in|brings in|bringing in|enlist|enlists|enlisting|induct|inducts|inducting|'
+    + 'sign on|signs on|signing on|'
+    /**
+     * The bare verb with a counted object, which "take on" does not cover and
+     * which is how anybody actually says it. "I take a disciple" fell through
+     * the entire table and reached nothing, while "I take on a disciple" - the
+     * same act, one word longer - worked. That is a PHRASING GAP rather than a
+     * missing mechanic: `sect_manage.recruit` already puts a disciple under
+     * this cultivator's own line, is gated at the elder rung, and prices the
+     * intake. A second verb for it would have been a second implementation of
+     * one act, which is how two answers to the same question get into a save.
+     *
+     * The determiner is required and is not decoration. Bare `take` next to
+     * the intake nouns collides head-on with the siphoning rule, whose own
+     * pattern is `take the|its|their|all|what`: "I take the elders' reserves"
+     * would have been read as buying an elder in from outside.
+     */
+    + 'take (?:a|an|on|in|another|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)|'
+    + 'takes (?:a|an|another|[0-9]+)|taking (?:a|an|another|[0-9]+)';
+
+/** Who is being taken in. Without one of these the sentence is not about intake. */
+export const SECT_INTAKE_NOUNS =
+    /\b(?:disciples?|elders?|students?|followers?|apprentices?|novices?|initiates?|acolytes?|intake|new blood)\b/;
+
+/**
+ * Asking to be taken in yourself, which is `join` and never `recruit`.
+ *
+ * Checked as a veto rather than an ordering, because the sentence that needs it
+ * ("see whether the hall will take me on as a disciple") satisfies the recruit
+ * rule completely and means the exact opposite of it.
+ */
+export const ASKING_TO_BE_TAKEN_IN =
+    /\b(?:take me|takes me|taking me|taken on|taken in|admit me|accept me|have me|be admitted|join|joins|joining)\b/;
+
+/** Dismissing an elder: the only leadership act that lands the day it is said. */
+export const SECT_EXPEL_VERBS =
+    'expel|expels|expelling|dismiss|dismisses|dismissing|throw out|throws out|'
+    + 'cast out|casts out|drive out|drives out|remove|removes|removing|oust|ousts|'
+    + 'sack|sacks|purge|purges|get rid of|turn out|turns out';
+
+/**
+ * Only an elder can be dismissed by this power, so the noun is the gate. A
+ * sentence about removing a seal, a disciple or a rival is not this act, and
+ * routing it here would price a dismissal nobody asked for.
+ */
+export const SECT_ELDER_NOUN = /\b(?:elders?)\b/;
+
+/**
+ * Where the house sets its bar.
+ *
+ * "the bar" is safe next to the breakthrough vocabulary: the word boundary
+ * after `bar` does not fall inside `barrier`, so "I strike at the barrier" is
+ * not a sentence about admissions. "standard" is likewise not "standing" - the
+ * member's status read is a different verb and is tested elsewhere.
+ */
+export const SECT_ADMISSION_NOUNS =
+    /\b(?:admissions?|entry (?:bar|standard|standards|requirements?)|the (?:admission )?bar|intake (?:bar|standard)|standard (?:for|of) (?:entry|admission)|who (?:we|the house|the sect|the school) admits?|admit(?:s)? from)\b/;
+
+export const SECT_ADMISSION_VERBS =
+    'raise|raises|raising|lower|lowers|lowering|set|sets|setting|change|changes|changing|'
+    + 'tighten|tightens|tightening|loosen|loosens|loosening|relax|relaxes|drop|drops|'
+    + 'move|moves|moving|reset|resets';
+
+/** Asking where the bar sits, which is the sentence before the one that moves it. */
+export const SECT_ADMISSION_QUESTION =
+    /\b(?:what (?:is|are) (?:our|the|my) (?:admission|entry|intake)|where does (?:the (?:house|sect|school)|it) admit from|how high is (?:the|our) bar)\b/;
+
+/**
+ * What the house hands its intake, which is the most consequential thing about
+ * it over a century and the only one of the four that is a generational act.
+ */
+export const SECT_CURRICULUM_NOUNS =
+    /\b(?:curriculum|curricula|what (?:we|they|the house|the sect|the school) teach(?:es)?|(?:working )?library|the shelf|teaching list|what is taught|methods (?:we|the house|the sect) teach(?:es)?)\b/;
+
+export const SECT_CURRICULUM_VERBS =
+    'change|changes|changing|set|sets|setting|rewrite|rewrites|rewriting|revise|revises|'
+    + 'decree|decrees|reform|reforms|add|adds|adding|retire|retires|retiring|drop|drops|'
+    + 'stop teaching|start teaching|teach|teaches|teaching';
+
+/**
+ * Sitting down to learn something, which is `train_technique` and never a
+ * decree. "I practise what the sect teaches" satisfies the curriculum rule and
+ * means the player is doing the drill, not rewriting the shelf.
+ */
+export const LEARNING_RATHER_THAN_DECREEING =
+    /\b(?:learn|learns|learning|study|studies|studying|practi[cs]e|practi[cs]es|practi[cs]ing|train|trains|training|drill|drills|rehearse)\b/;
+
+/** Which side of the shelf a curriculum sentence is on. Order: the narrower first. */
+export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
+    ['retire', /\b(?:retire|retires|retiring|stop teaching|stops teaching|take (?:it )?off the shelf|remove|removes|removing|drop|drops|dropping|no longer teach)\b/],
+    ['teach', /\b(?:teach|teaches|teaching|add|adds|adding|put (?:it )?on the shelf|start teaching|hand them)\b/]
+];
+
+export const SECT_THEFT_PATTERN =
+    /\b(?:steal|stole|stealing|rob|robbing|loot|looting|plunder|pilfer|siphon\w*|skim\w*|embezzl\w*|divert\w*|make off with|help myself to|vault|treasury|strongroom|storehouse|coffers|reserves|take (?:a little|some|the|its|their|everything|all|what))\b/;
+
+/**
+ * The two that do. "I leave" on its own is movement and "where do I stand" is a
+ * status read, so both of these want the noun before they mean a sect.
+ */
+export const SECT_INTENT_PATTERNS: ReadonlyArray<[SectIntent, RegExp]> = [
+    ['leave', /\b(?:leave|leaving|quit|resign|renounce|withdraw from|walk out (?:of|on)|abandon|defect|desert|break with)\b/],
+    ['standing', /\b(?:standing|where do i stand|my rank|what rank|my position|my contribution|how (?:am i|do i) (?:doing|rate))\b/]
+];
+
+// ─── WHY THE GROUND IS LIKE THIS ──────────────────────────────────────────
+//
+// `engine/world/locations.ts` has carried the whole of this from the start: a
+// place is an origin, an append-only list of things done to it, and a current
+// state that is the two folded together. A change records the day, what was
+// done, whether the true cause is on record anywhere, and - separately, because
+// they are not the same thing - the competing explanations the people here
+// hold. The map does not grow, it scars.
+//
+// None of it could be reached by typing. There was no route from a sentence to
+// asking why a place is a ruin, so the disagreement the locals are carrying was
+// invisible to the only person who might have cared about it.
+//
+// The knowledge gate is the feature and not a limitation on it. A place whose
+// cause is not on record answers with the disagreement and nothing else, and it
+// must be impossible to tell from the answer whether a truth exists and is
+// being withheld or whether there is none - the seeded ruins hold a cause fact
+// id with `causeKnown: false`, which is exactly the state that must not leak.
+
+/**
+ * Asking what was done to a place, in the ways people actually ask it.
+ *
+ * Narrow on purpose. These fire ahead of `investigate` and `interact`, both of
+ * which would otherwise take them - "find out about" is an examination and
+ * "what do they say" contains a speech verb - and a wide pattern here would
+ * take sentences that belong to those.
+ */
+export const PLACE_HISTORY_PATTERNS: readonly RegExp[] = [
+    /\bwhat happened (?:here|to (?:this|the)\b)/,
+    /\bwhat became of (?:this|the)\b/,
+    /\bwhy is (?:this|it|the)\b.*\b(?:like this|a ruin|ruined|dead|abandoned|empty|sealed|the way it is)\b/,
+    /\bwhat do (?:the )?(?:locals|people|villagers|folk|they) (?:say|think|believe|reckon)\b/,
+    /\bwhat is said (?:about|of) (?:this|the)\b/,
+    /\b(?:the )?(?:history|story|stories) of (?:this|the)\b/,
+    /\bhow did (?:this|the)\b.*\b(?:end up|come to be|get like this|get this way|happen)\b/
+];
+
+/** Where such a question names a place rather than meaning the ground underfoot. */
+export const PLACE_HISTORY_SUBJECT =
+    'happened to|happened at|became of|history of|story of|stories of|said about|said of';
+
+// ─── INHERITANCE GROUNDS ──────────────────────────────────────────────────
+//
+// `data/cultivation/inheritance-trials.ts` has carried twenty-odd sites, three
+// unrelated kinds of gate and a fully written interior from the start, and the
+// systems playtest reported the whole of it as unreachable: nothing in this
+// parser named a site, so a player could not approach, assess or enter one.
+//
+// Four steps, and they must not eat each other or anybody else's sentences.
+// The rule is the one the `order` branch established and the seat's powers
+// inherited: A VERB IN VERB POSITION, PLUS A NOUN THAT SAYS WHAT IT IS AIMED
+// AT. Both halves are required and both are load-bearing. "go to", "find",
+// "open", "take" and "study" are five of the commonest verbs in any sentence a
+// player types, and "grave", "trial" and "door" are ordinary nouns in this
+// setting; either half alone would take sentences belonging to `move`,
+// `investigate`, `work` and `gather`.
+//
+// The two exceptions are the two sentences that name nothing because they do
+// not need to - "I go inside" and "what does it look like from out here" both
+// mean the site the cultivator went to most recently, exactly the way "what
+// happened here" means the ground underfoot. Those resolve against a row in
+// `game.ts`, not against a guess here.
+
+/** The four steps of taking an inheritance, in the order they happen. */
+export type SiteIntent = 'approach' | 'outside' | 'enter' | 'take';
+
+/**
+ * The closed set, and the one that must fall through to the cheapest.
+ *
+ * `enter` is the only member that spends anything, so a model-planned `site`
+ * carrying an intent nothing here recognises resolves to the LISTING and never
+ * to the door. See `GameService.site`.
+ */
+export const SITE_INTENTS: readonly SiteIntent[] = ['approach', 'outside', 'enter', 'take'] as const;
+
+/** What an unrecognised site intent means. The read that costs nothing. */
+export const DEFAULT_SITE_INTENT: SiteIntent = 'approach';
+
+/**
+ * The generic nouns that mean an inheritance ground.
+ *
+ * `vault` is deliberately absent: `SECT_THEFT_PATTERN` owns it, and a sentence
+ * about emptying a house's vault is a siphon rather than a grave-robbing. The
+ * one site whose name contains it is reachable by that name instead.
+ */
+export const SITE_NOUNS =
+    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment)\b/;
+
+/**
+ * The face of a site: what is physically at the threshold.
+ *
+ * Every one requires its article, which is what keeps "the gate" apart from
+ * "the gate steward" and "the door" apart from a door in somebody's house. A
+ * sentence about looking at one of these is a sentence about reading a site
+ * from outside, which is the read that must never return the interior.
+ */
+export const SITE_FACE_NOUNS =
+    /\b(?:the door|the doorway|the gate frame|the gateway|the gate\b|the threshold|the marker|the headstone|the entrance|the shaft|the plate|the standing stone)\b/;
+
+/** What is behind the door, referred to without naming the site. */
+export const SITE_PRIZE_NOUNS =
+    /\b(?:what(?:'s| is) (?:behind|beyond|inside|under|on) |what(?:'s| is) (?:in there|left)|whatever(?:'s| is) (?:behind|inside|in there)|the prize|the inheritance|the grave goods|the contents|the manuals?)\b/;
+
+export const SITE_ENTER_VERBS =
+    'enter|enters|entering|go inside|goes inside|step inside|steps inside|go in|goes in|'
+    + 'step in|steps in|walk in|walks in|head inside|climb down into|descend into|descend|'
+    + 'breach|open|opens|opening|unseal|unseals|break into|breaks into|attempt|attempts|'
+    + 'attempting|try|tries|sit at|sit down at|put my hands on';
+
+export const SITE_TAKE_VERBS =
+    'take|takes|taking|claim|claims|claiming|collect|collects|lift|lifts|pocket|pockets|'
+    + 'carry off|carries off|help myself to|strip|strips|recover|recovers|walk out with|'
+    // What a player actually calls it when the site is a grave. Found by a
+    // standing sweep: "I rob the grave of Shen Guyi" reached nothing at all,
+    // while "I take what is in the grave of Shen Guyi" - the same act, said
+    // politely - went through the whole four-step surface. The graves are
+    // catalogued and the taking step is implemented; only the honest word for
+    // it was missing.
+    + 'rob|robs|robbing|loot|loots|looting|plunder|plunders|plundering|rifle|rifles|'
+    + 'dig up|digs up|digging up|break into|breaks into|breaking into';
+
+export const SITE_LOOK_VERBS =
+    'study|studies|studying|size up|sizes up|sizing up|look at|looks at|look over|looks over|'
+    + 'read|reads|reading|examine|examines|inspect|inspects|scout|scouts|eye|eyes|case|cases|'
+    + 'weigh up|weighs up';
+
+export const SITE_APPROACH_VERBS =
+    'go to|goes to|head to|heads to|head for|heads for|walk to|walks to|travel to|make for|'
+    + 'makes for|approach|approaches|find|finds|finding|look for|looks for|looking for|'
+    + 'search for|searches for|seek out|seek|seeks|locate|locates';
+
+/**
+ * Reading it from where you are standing, with no name in the sentence.
+ *
+ * This is the phrasing that guarantees the structural gate holds in practice
+ * rather than only in the type system: a player who has not gone in asking
+ * what it looks like from out here must get `interior.outside` and nothing
+ * else, however they phrase the question.
+ */
+export const SITE_FROM_OUTSIDE =
+    /\bfrom (?:out here|outside|the outside|out front|where i(?:'m| am)? stand\w*|here)\b|\bwithout going in(?:side)?\b/;
+
+/** Asking what grounds there are, which needs no verb at all. */
+export const SITE_QUESTION =
+    /\b(?:what|which|where|any|are there|is there|anything|know of|heard of)\b/;
+
+/**
+ * Sentences that are weighing an attempt rather than making one.
+ *
+ * "Could I survive that trial" and "is it safe to go in" are `assess`, and
+ * they contain a site noun and an entering verb respectively. Vetoed rather
+ * than ordered around, because `assess` sits far below this block and the
+ * sentence that needs the veto satisfies the site rule completely.
+ */
+export const WEIGHING_RATHER_THAN_GOING =
+    /\b(?:is it safe|could i (?:survive|take|handle|manage)|do i stand a chance|am i (?:strong|ready) enough|weigh (?:my|the) chances|how dangerous|what (?:would|will) happen if i)\b/;
+
+/**
+ * The site a sentence names, out of the catalog's own short forms.
+ *
+ * `SITE_PHRASES` is derived from the site ids rather than written here, so a
+ * site added to the catalog becomes typeable with no edit to the parser. The
+ * length floor keeps a two-character slug from ever becoming a wildcard.
+ */
+export function siteNamed(text: string): string | undefined {
+    for (const phrase of SITE_PHRASES) {
+        if (phrase.length >= 6 && text.includes(phrase)) return phrase;
+    }
+    return undefined;
+}
+
+/**
+ * One of the four steps of taking an inheritance, or null.
+ *
+ * Order is specificity-first and it matters at every step. "I go inside the
+ * grave" contains an approach verb and an entering one and is a sentence about
+ * going in. "I take what is behind the plate" contains no site noun at all and
+ * is still unambiguously the last step. And the whole block is vetoed for the
+ * sentences that are weighing rather than doing, because those belong to
+ * `assess` and always did.
+ */
+function siteStep(text: string, input: string): PlannedAction | null {
+    if (WEIGHING_RATHER_THAN_GOING.test(text)) return null;
+
+    const named = siteNamed(text);
+    const noun = SITE_NOUNS.test(text);
+    const face = SITE_FACE_NOUNS.test(text);
+    const anchored = named !== undefined || noun || face;
+    const target = named ?? (anchored ? namedAfter(input, SITE_ANY_VERB) : undefined);
+
+    // Going in. Ahead of everything, because an entering verb next to a site
+    // is not ambiguous and every other step's verbs turn up in the same
+    // sentence. The bare form is admitted only when nothing follows it: "I go
+    // inside" means the place they went to, and "I go into the village" is
+    // movement and must stay movement.
+    if ((anchored && usedAsVerb(text, SITE_ENTER_VERBS))
+        || (!anchored && /\b(?:i\s+)?(?:go|step|head|walk)\s+in(?:side)?\s*[.!?]?$/.test(text))) {
+        return { action: 'site', intent: 'enter', ...(target ? { target } : {}) };
+    }
+
+    // Taking it. The prize nouns stand in for a name because a player who is
+    // already inside says "what is behind the plate", not the name of the
+    // ground they walked onto an hour ago.
+    if (usedAsVerb(text, SITE_TAKE_VERBS) && (anchored || SITE_PRIZE_NOUNS.test(text))) {
+        return { action: 'site', intent: 'take', ...(target ? { target } : {}) };
+    }
+
+    // Reading it from outside. This one must never be able to return the
+    // interior, and it is phrased as its own step rather than folded into the
+    // approach so that the refusal to go further is visible in the log.
+    if (SITE_FROM_OUTSIDE.test(text) || (anchored && usedAsVerb(text, SITE_LOOK_VERBS))) {
+        return { action: 'site', intent: 'outside', ...(target ? { target } : {}) };
+    }
+
+    // Getting there, and the listing. A question with a site noun in it and no
+    // verb aimed anywhere is somebody asking what there is, which is the
+    // sentence before all of the above and the only one that names nothing on
+    // purpose.
+    if (anchored && usedAsVerb(text, SITE_APPROACH_VERBS)) {
+        return { action: 'site', intent: 'approach', ...(target ? { target } : {}) };
+    }
+    if ((noun || named !== undefined) && SITE_QUESTION.test(text)) {
+        return { action: 'site', intent: 'approach', ...(named ? { target: named } : {}) };
+    }
+
+    return null;
+}
+
+/** Every site verb, for pulling the noun phrase out of the sentence. */
+const SITE_ANY_VERB =
+    `${SITE_ENTER_VERBS}|${SITE_TAKE_VERBS}|${SITE_LOOK_VERBS}|${SITE_APPROACH_VERBS}`;
+
+// ─── WHAT AM I CARRYING IN MY HEAD ────────────────────────────────────────
+//
+// The knowledge layer decides what may be said in front of this cultivator and
+// the sheet shows what they have comprehended, and neither could be asked
+// about in words. A rank-band sweep found it at the ceiling rather than the
+// floor, which is the worst place for it: at the last two rungs the ladder is
+// finished and comprehension is the only thing still moving, so "what is my
+// dao" is close to the only question left and it parsed to nothing.
+//
+// The gate is the feature and this must not weaken it. Every pattern below
+// reaches a read of the holder's OWN rows. There is no phrasing here that
+// consults the world, so no phrasing here can teach anybody anything - being
+// unable to name a sect until somebody says it in front of you stays exactly
+// as true afterwards as before.
+
+/** The two reads. `knowledge` is what they have heard; `dao` what they hold. */
+export type RecallIntent = 'knowledge' | 'dao';
+
+export const RECALL_INTENTS: readonly RecallIntent[] = ['knowledge', 'dao'] as const;
+
+/** What an unrecognised recall intent means. Both are free; this is the wider. */
+export const DEFAULT_RECALL_INTENT: RecallIntent = 'knowledge';
+
+/**
+ * Asking after a name they may or may not be carrying.
+ *
+ * Every one requires the first person. "what do the locals say about it" is
+ * the ground's history and belongs to `look`, "what is said of the Gleaners"
+ * is somebody else's talk, and neither is a question about what this
+ * cultivator holds.
+ */
+export const RECALL_PATTERNS: readonly RegExp[] = [
+    /\bwhat do(?:es)? i? ?know (?:of|about)\b/,
+    /\bwhat do i (?:know|remember|recall) (?:of|about)\b/,
+    /\bwhat have i (?:heard|been told|learned|learnt|got) (?:of|about|on)\b/,
+    /\bwhat do i have on\b/,
+    /\bremind me (?:what i (?:know|have heard) )?(?:of|about)\b/,
+    /\bwhat i know (?:of|about)\b/,
+    /\bhave i (?:ever )?heard (?:of|about)\b/,
+    /\bdo i know (?:of|about|who|what)\b/
+];
+
+/** The whole holding, asked for at once. Names nobody on purpose. */
+export const RECALL_EVERYTHING =
+    /\bwhat do i know\b\s*[.!?]?$|\bwhat do i know at all\b|\bwhat have i heard\b\s*[.!?]?$|\bwhat names do i (?:have|hold|know)\b|\bwhat have i learn(?:ed|t)\b\s*[.!?]?$/;
+
+/**
+ * The other axis, and the one that matters at the ceiling.
+ *
+ * `DaoView.theOnlyAxisLeft` is read off the same predicate the engine gates a
+ * re-attempt with, so for somebody whose ladder is shut this is not a flavour
+ * question - it is the only account of what they are still doing.
+ */
+export const RECALL_DAO =
+    /\b(?:my dao|my own dao|my understanding|my comprehensions?|my insights?|what have i comprehended|what have i understood|what do i understand|what road am i on|which road am i on|my road|where has my understanding got to)\b/;
+
+/**
+ * Putting the dao somewhere it will outlast you, which is the WRITE of what
+ * `recall` reads - and which this engine cannot do.
+ *
+ * Vetoed rather than answered, and the veto is the honest half. "I carve my
+ * dao into the stone" and "I teach the flying blade to a disciple" both
+ * satisfy the read patterns above, and the read is a perfectly composed
+ * paragraph about what the cultivator has comprehended - which looks exactly
+ * like an answer and is not one. That is the same failure `interact` was
+ * producing for the institutional sentences, and it is worse here, because a
+ * player at the top of the ladder who has just been told what they understand
+ * has no way to tell that the carving did not happen.
+ *
+ * There is no state behind it to reach. Nothing in the engine records a
+ * carving, no disciple exists as a row that could be taught (an intake is a
+ * count on a ledger, not a person), and `legacy.ts` writes a successor's
+ * inheritance at death rather than by anybody's decision. So the sentence
+ * falls through to `unclear`, which passes no time and claims nothing, and
+ * this comment is where the next person looking for it will find out why.
+ * See `src/web/README.md`, "What the write side would need".
+ */
+export const PUTTING_IT_SOMEWHERE_ELSE =
+    /\b(?:carve|carves|carving|inscribe|inscribes|inscribing|engrave|engraves|engraving|cut it into|write (?:it |my dao )?(?:onto|into|on)|leave (?:it|my dao|my understanding) (?:to|for|behind)|pass (?:it|my dao|my understanding) (?:on|to|down)|hand (?:it|my dao) (?:on|to|down)|teach (?:it|my dao|my understanding|my road) to)\b/;
+
+/** Where a recall question stops asking and starts naming. */
+export const RECALL_SUBJECT =
+    'know of|know about|remember of|remember about|recall of|recall about|'
+    + 'heard of|heard about|been told of|been told about|learned of|learned about|'
+    + 'learnt of|learnt about|have on|got on|remind me of|remind me about';
+
+// ─── GETTING A WOUND SEEN TO ──────────────────────────────────────────────
+//
+// The route out of the injury spiral, and it has to be wide, because the
+// sentences a player types when the engine has just told them they are hurt
+// are not a vocabulary they chose. Every phrasing below was typed at a real
+// run that was stuck: "I look for a physician to treat my meridian injuries"
+// went to `look` and got a description of the room, and "I get my injuries
+// treated" went to `unclear`.
+//
+// Wide is safe here in a way it is not elsewhere. The worst a false positive
+// does is quote a price and refuse, and the branch below cannot fire without
+// either a wound in the sentence or somebody in it whose whole trade is
+// wounds.
+
+/** Wounds, in the words people use for them rather than the schema's. */
+export const INJURY_NOUNS =
+    /\b(?:injur\w*|wound\w*|meridians?|hurt|hurts|broken (?:bone|arm|leg|rib|ribs)|bones?|damage)\b/;
+
+export const TREATMENT_VERBS =
+    'treat|treats|treated|treating|heal|heals|healed|healing|mend|mends|mending|'
+    + 'patch up|patch me up|patch myself up|bind|binds|bandage|bandages|tend|tends|'
+    + 'see to|attend to|fix|fixes';
+
+/** Somebody whose trade is wounds. Naming one is half the sentence. */
+export const HEALER_NOUNS =
+    /\b(?:physician|physicians|doctor|doctors|healer|healers|apothecary|apothecaries|medic|medics|surgeon|surgeons|infirmary)\b/;
+
+/**
+ * Going to get it done, as opposed to doing it.
+ *
+ * `talk`, `ask` and `speak` are deliberately absent: "I talk to the physician"
+ * is a conversation and belongs to `interact`, and a player who wanted the
+ * treatment says so.
+ */
+export const SEEKING_CARE_VERBS =
+    'see|sees|seeing|find|finds|finding|look for|looks for|looking for|visit|visits|'
+    + 'consult|consults|pay for|pays for|pay|hire|hires|get|gets|want|wants|need|needs|'
+    + 'go to|goes to|head to|call for|send for';
+
+export const TREATMENT_NOUNS =
+    /\b(?:treatment|medical care|a course of care|course of care|first aid|the infirmary|care for)\b/;
+
+/**
+ * The phrasing where the treatment verb is a participle at the end of the
+ * sentence rather than a verb at the front of it.
+ *
+ * "I get my injuries treated" is the single most natural way to ask for this
+ * and `usedAsVerb` correctly refuses it, because "treated" there is not in
+ * verb position. Matched whole instead.
+ */
+export const HAVING_IT_SEEN_TO =
+    /\b(?:get|gets|getting|have|has|having|want|wants|wanting|need|needs|needing|would like|ask for|asking for)\b[^.!?]*\b(?:injur\w*|wounds?|meridians?|myself|me)\b[^.!?]*\b(?:treated|seen to|looked at|fixed|attended to|mended|patched up|bandaged|set)\b/;
+
+// ─── BUYING A LINE OFF THE BOARD ──────────────────────────────────────────
+//
+// `market` prints twenty-two priced lines. Four verbs spent money before this
+// existed and between them they covered three of those lines, so the board was
+// advertising a physician, a ferry, a scribe, an inn and a course of care that
+// no sentence could reach. The purchase itself is refused or resolved in
+// `game.ts` against `PRICES`; all this has to do is stop the sentence being
+// read as an approach to a person.
+
+export const BUYING_VERBS =
+    'buy|buys|buying|purchase|purchases|purchasing|pay for|pays for|order|orders|'
+    + 'book|books|hire|hires|acquire|acquires|take passage|pay the';
+
+/**
+ * Paying somebody off, which is `interact` and not a line on a board.
+ *
+ * Vetoed rather than ordered around, because the sentence that needs it
+ * satisfies the buying rule completely and means something else entirely.
+ */
+// ─── PUTTING SOMETHING ON THE COUNTER ─────────────────────────────────────
+//
+// The other direction, and the only one that existed was buying. Gathering
+// prices every herb it turns up, `quoteSale` has priced a lot the whole time,
+// and there was no sentence between the two.
+
+export const SELLING_VERBS =
+    'sell|sells|selling|offload|offloads|offloading|unload|unloads|unloading|'
+    + 'hawk|hawks|hawking|peddle|peddles|peddling|part with|parts with|'
+    + 'cash in|cashes in|trade in|trades in|trade away';
+
+/** The same list as a pattern, for `extractSubject`, which reads `.source`. */
+export const SELLING_SUBJECT_VERBS = new RegExp(SELLING_VERBS);
+
+/**
+ * Asking what a thing FETCHES rather than putting it down.
+ *
+ * Both are `sell` - a quote is a read of the same function - so this is not a
+ * veto, it is here so that a question about the board as a whole still reaches
+ * `market` and does not become an attempt to empty the pouch.
+ */
+export const SELLING_ASKED_AS_A_BOARD =
+    /\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?))\b/;
+
+export const BUYING_A_PERSON_OFF =
+    /\b(?:bribe|bribes|bribing|pay off|pays off|grease|buy (?:his|her|their|the \w+'s) silence|pay (?:him|her|them) (?:off|to))\b/;
+
+// ─── INSTITUTIONS ACTING ON EACH OTHER, AND ON THE DEAD ───────────────────
+//
+// Every rule below follows the shape the `order` branch established and the
+// four seat powers repeated: A VERB IN VERB POSITION, PLUS THE NOUN THAT SAYS
+// WHAT IT IS AIMED AT. Both halves are required, and they have to be, because
+// this vocabulary is the setting's own. "ancestor", "seal", "war", "offering",
+// "claim", "grant" and "petition" appear far more often as the object of
+// somebody else's sentence than as the subject of one of these, and every one
+// of them sits one clause away from a verb that would take the sentence
+// somewhere adjacent and answer it wrongly.
+//
+// These sit HIGH in the table - above the asking branch, above `investigate`,
+// above `interact` - and that placement is the fix for the defect that
+// produced them. `interact` matches any sentence naming a faction, so
+// "I ask the Deep Survey for one of its pills", "I offer an alliance to the
+// Frostmirror Court" and "I petition the Third Sill Court for a grant" were
+// all being answered by walking the player over and describing the building.
+// A verb that quietly does something adjacent is worse than one that does
+// nothing, because the player cannot tell refused from not implemented.
+
+/** Which form is being filed. Selects a read; never decides an outcome. */
+export type PetitionIntent = 'grant' | 'stock' | 'descent';
+export const PETITION_INTENTS: readonly PetitionIntent[] = ['grant', 'stock', 'descent'] as const;
+/** The cheapest and widest: send it up the chain and see how far it goes. */
+export const DEFAULT_PETITION_INTENT: PetitionIntent = 'grant';
+
+/**
+ * The verbs that mean this on their own.
+ *
+ * `petition` and `appeal` are enough by themselves: nothing else in the
+ * setting's vocabulary uses either word, and both name the act exactly.
+ *
+ * `apply` is deliberately NOT here, and leaving it in cost a regression that
+ * this comment exists to stop somebody re-introducing. "I apply to the
+ * Thousand Treasure Pavilion" is a sentence about JOINING - the sect surface
+ * has owned `apply to` since it was written - and a bare `apply` in this table
+ * took it and filed a request for a grant with a house the player was trying
+ * to enrol in.
+ */
+export const PETITION_VERBS_ALONE =
+    'petition|petitions|petitioning|appeal|appeals|appealing';
+
+/**
+ * The verbs that mean this only with the thing being asked for.
+ *
+ * `file`, `submit` and `lodge` reach the form branch through
+ * {@link STANDING_STOCK_NOUNS}; here they need {@link PETITION_NOUNS}, because
+ * every one of them is an ordinary word for putting a piece of paper somewhere.
+ */
+export const PETITION_VERBS =
+    'petition|petitions|petitioning|appeal|appeals|appealing|apply|applies|applying|'
+    + 'file|files|filing|submit|submits|submitting|lodge|lodges|lodging|put in|puts in';
+
+/** The asking verbs, which reach this only with an institutional object. */
+export const PETITION_ASKING_VERBS =
+    'ask|asks|asking|request|requests|requesting|beg|begs|begging|entreat|entreats';
+
+/** What is being asked for, where a bare asking verb needs a noun to qualify. */
+export const PETITION_NOUNS =
+    /\b(?:a grant|the grant|a stipend from|an allowance|a posting|a place at|relief|for aid|for protection|for help|a dispensation|an exemption|a hearing|a ruling|a (?:dao )?protector|a guard for|a technique|an art|a manual|the manual|resources|materials|stones for|a pill from)\b/;
+
+/**
+ * The form, by name and by shape.
+ *
+ * `requisition` is unambiguous and needs no verb. The rest is the general case
+ * the Requisition is one instance of: an application against something an
+ * institution is holding and cannot reorder. Nothing here names a faction.
+ */
+export const REQUISITION_NAMED = /\brequisitions?\b/;
+
+/**
+ * The objects themselves, by name, generated from the catalog.
+ *
+ * A player who has been told what one of these is called asks for it by name -
+ * "an Unearned Step", "a Second Dealing" - and a hand-written list here would
+ * go stale the moment the catalog gained a third. Built rather than typed, on
+ * the precedent `SITE_PHRASES` already sets in this file: a phrase list that
+ * can drift from the content it describes is a phrase list that will.
+ *
+ * Names only. Nothing about what any of them does, how many exist, or who is
+ * holding one crosses this boundary - the parser is deciding which verb the
+ * sentence is, and the knowledge gate in `game.ts` decides everything else.
+ */
+export const IMMORTAL_ITEM_NAMED = new RegExp(
+    '\\b(?:' + IMMORTAL_ITEMS
+        .map(item => item.name.replace(/^The\s+/i, ''))
+        .map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|')
+    + ')\\b',
+    'i'
+);
+
+export const STANDING_STOCK_NOUNS =
+    /\b(?:standing stock|the stock|schedule amendment|amendment against|golden pills?|talismans?|immortal (?:pill|item|medicine|object)|one of (?:its|their|his|her) (?:pills?|talismans?)|(?:its|their) pills?)\b/;
+
+/** Claiming a line, which is an application for recognition and is audited. */
+export const DESCENT_VERBS =
+    'claim|claims|claiming|assert|asserts|asserting|press|presses|pressing|'
+    + 'register|registers|registering|prove|proves|proving';
+
+export const DESCENT_NOUNS =
+    /\b(?:descent|descended from|descend from|my (?:line|lineage|ancestry|blood)|the line of|of the blood of|kinship (?:to|with)|ancestral claim|claim of descent)\b/;
+
+/** What a house is to another house. Selects a read; never decides an outcome. */
+export type PostureIntent = 'stance' | 'war' | 'alliance' | 'defect' | 'tribute';
+export const POSTURE_INTENTS: readonly PostureIntent[] =
+    ['stance', 'war', 'alliance', 'defect', 'tribute'] as const;
+/**
+ * The read, and it must stay the default.
+ *
+ * Three of the four commit the house irreversibly and one of them starts a war.
+ * A model answering `{"action":"posture","intent":"deal with them"}` gets the
+ * standing between the two houses and nothing else, on exactly the reasoning
+ * behind {@link DEFAULT_SITE_INTENT}.
+ */
+export const DEFAULT_POSTURE_INTENT: PostureIntent = 'stance';
+
+export const DECLARE_VERBS =
+    'declare|declares|declaring|open|opens|opening|make|makes|making|start|starts|'
+    + 'starting|go to|going to|take|takes|taking';
+
+/** The noun that says a declaration is a declaration of war. */
+export const WAR_NOUN = /\b(?:war|hostilities|the field against)\b/;
+
+export const ALLIANCE_VERBS =
+    'offer|offers|offering|propose|proposes|proposing|make|makes|making|form|forms|'
+    + 'forming|seek|seeks|seeking|extend|extends|extending|ally|allies|sue for';
+
+export const ALLIANCE_NOUNS =
+    /\b(?:alliance|alliances|allied|a pact|the pact|a league|common cause|mutual defence|mutual defense|terms with)\b/;
+
+/**
+ * Changing who the house holds from, which two courts in the catalog's own
+ * history have already done.
+ *
+ * Requires a destination. "I defect" on its own is a member leaving a sect and
+ * belongs to `sect`, which owns the word already - taking it here without
+ * somewhere to go would answer a resignation with a diplomatic manoeuvre.
+ */
+/**
+ * Demanding a payment from somebody, which is only a demand if you hold
+ * something over them.
+ *
+ * Nearly dropped for want of data, and then it turned out the data is the best
+ * part: `getParentage(client).parentFactionId` says who a house actually holds
+ * from and `holds` says in what terms, so whether this is a levy or a threat is
+ * a fact about the two parties rather than about the sentence. A house
+ * demanding from its own client is exercising a right the catalog wrote down. A
+ * house demanding from somebody else's client has said something about the
+ * patron.
+ */
+export const TRIBUTE_VERBS =
+    'demand|demands|demanding|levy|levies|levying|require|requires|requiring|'
+    + 'exact|exacts|exacting|collect|collects|collecting|call in|calls in';
+
+export const TRIBUTE_NOUNS =
+    /\b(?:tribute|a levy|the levy|dues|a tithe|the tithe|their (?:grant|stones|contribution)|what (?:they|it) owes?)\b/;
+
+export const DEFECT_PATTERN =
+    /\b(?:defect(?:s|ing)? to|go(?:es|ing)? over to|went over to|transfer (?:our|the house'?s?|its|the) (?:allegiance|grant|patronage|standing)|change (?:our |the house'?s? )?patrons?|hold from|swear the (?:house|sect|clan|school) to|put (?:us|the house|the sect) under)\b/;
+
+/** The seal. Selects a read; never decides an outcome, and never whose it is. */
+export type SealIntent = 'read' | 'wake';
+export const SEAL_INTENTS: readonly SealIntent[] = ['read', 'wake'] as const;
+/**
+ * The priced read, and it must stay the default.
+ *
+ * Waking one is the single most consequential thing a house can do and the one
+ * act in this file that changes a power ordinal. A model answering
+ * `{"action":"seal"}` with no label gets the condition and the cost.
+ */
+export const DEFAULT_SEAL_INTENT: SealIntent = 'read';
+
+export const WAKE_VERBS =
+    'wake|wakes|waking|waken|wakens|awaken|awakens|awakening|rouse|rouses|rousing|'
+    + 'raise|raises|raising|unseal|unseals|unsealing|break|breaks|breaking|'
+    + 'call up|calls up|bring up|brings up|open|opens|opening';
+
+/**
+ * Who or what is being woken. Without one of these the sentence is about
+ * something else entirely - waking at dawn, raising a bar, breaking a barrier.
+ */
+export const SEALED_NOUNS =
+    // "the sleeper" is retired vocabulary in the catalogs - they are people
+    // under a mountain rather than instruments - and it stays HERE because a
+    // parser has to accept the words a player types, not the words the world
+    // uses. Nothing downstream repeats it back.
+    /\b(?:sealed ancestor|dormant ancestor|the sleeper|sleeping ancestor|(?:our|their|its|the|my) ancestors?|seals?|what(?:'s| is) under the mountain|under the mountain|the thing under|sealed elder)\b/;
+
+/**
+ * Sentences that contain the wake vocabulary and mean something else.
+ *
+ * "break through the barrier" is the breakthrough branch and reaches this file
+ * first, but "I break the seal on the gate" at an inheritance ground is a
+ * site sentence and "I raise the admission bar" is a decree, and both would
+ * otherwise satisfy the rule above. Vetoed rather than ordered, because each of
+ * them satisfies it completely.
+ */
+export const NOT_THE_SEALED_ANCESTOR =
+    /\b(?:barrier|bottleneck|admission|entry bar|the bar\b|curriculum|dawn|morning|from sleep|up early)\b/;
+
+/**
+ * The channel, from whichever end the speaker is standing at.
+ *
+ * `send` is the immortal side of the same pipe `offering` is the mortal side
+ * of, and they are one verb on purpose. Somebody below pays a decade of a
+ * house's principal and asks; somebody above decides whether to answer and what
+ * to send. Two verbs for that would have been two implementations of one
+ * relationship, and the half that decides which end you are at is state -
+ * `canExistBeyondTheLid` - rather than the word the player used.
+ */
+export type OfferIntent = 'channel' | 'offering' | 'send';
+export const OFFER_INTENTS: readonly OfferIntent[] = ['channel', 'offering', 'send'] as const;
+/**
+ * Reading what the line is, which costs nothing.
+ *
+ * An offering is paid out of the principal rather than the interest, so the
+ * default here is the same as everywhere else in this section: the read.
+ */
+export const DEFAULT_OFFER_INTENT: OfferIntent = 'channel';
+
+export const OFFERING_VERBS =
+    'make|makes|making|send|sends|sending|offer|offers|offering|give|gives|giving|'
+    + 'burn|burns|burning|lay|lays|laying|present|presents|presenting|pay|pays|paying';
+
+export const OFFERING_NOUNS =
+    /\b(?:an offering|the offering|offerings|incense|a sacrifice|the sacrifice|tribute to (?:our|the|its) ancestor|rites? (?:to|for) (?:our|the) ancestor)\b/;
+
+/**
+ * Who the offering is aimed at, for the phrasings that name the recipient
+ * rather than the rite. "I make an offering to our ascended ancestor" is
+ * caught by the noun above; "I send word up to the founder" is caught here.
+ */
+export const ASCENDED_NOUNS =
+    /\b(?:ascended ancestor|our ancestor above|the one who crossed|our founder above|above the lid|the far side of the lid|(?:our|the) ascended)\b/;
+
+/**
+ * Sending something DOWN, which is the other end of the same pipe.
+ *
+ * Both halves required, as everywhere in this section. "send" and "down" are
+ * each far too ordinary alone - "I send the disciples down to the river" is an
+ * errand - so the rule wants a sending verb aimed at the lower world by name.
+ */
+export const SENDING_DOWN =
+    /\b(?:send|sends|sending|drop|drops|dropping|put|puts|putting|pass|passes|passing|reach|reaches|reaching|deliver|delivers)\b[^.!?]*\b(?:down through the lid|through the lid|below the lid|down the line|down the channel|down to (?:the )?(?:province|world below|lower world|mortal world|my |our |them\b))\b/;
+
+/** What is being sent, where the sentence says. Never a gate; carried through. */
+export const SENDING_NOUNS =
+    /\b(?:a word|word|a message|the message|a warning|an answer|a sword|a blade|a weapon|a pill|a talisman|an object|something|a gift|instructions?)\b/;
+
+// ─── GOING BACK DOWN YOURSELF ─────────────────────────────────────────────
+//
+// The other of the two answers, and the expensive one. Kept narrow because it
+// is the single most dangerous action in the game: nine strikes of the
+// heaviest tribulation there is, weathered by somebody who spent a life
+// reaching the rung where they could be struck by it. A sentence has to say
+// plainly that the speaker is going, and through the Lid, before it reaches
+// this - so the whole rule is a movement verb next to the boundary by name.
+//
+// "I go down" alone is deliberately NOT enough. Below the Lid it means a
+// staircase, and a phrasing that means a staircase to almost everybody must
+// not end a run for the one player standing above the Lid when they type it.
+
+export const GOING_DOWN_VERBS =
+    'go|goes|going|descend|descends|descending|return|returns|returning|come|comes|coming|'
+    + 'drop|drops|dropping|step|steps|stepping|force|forces|forcing|open|opens|opening|'
+    + 'cross|crosses|crossing|head|heads|heading';
+
+export const THE_WAY_BACK_DOWN =
+    /\b(?:back down|down through the lid|through the lid|down to the (?:province|world below|lower world|mortal world|world)|into the lower world|below the lid|down myself|down in person|the way i came)\b/;
+
+/**
+ * Going down without saying so, in the two phrasings that unmistakably mean it.
+ *
+ * A verb is not required here because neither phrase has any other reading:
+ * nobody says "I descend through the Lid" about a staircase.
+ */
+export const DESCENT_UNAMBIGUOUS =
+    /\b(?:descend(?:s|ing)? (?:through|below|past) the lid|go back down through|force (?:the lid|a hole|an opening) (?:inward|open|down)|open the lid (?:again|a second time))\b/;
 
 /**
  * Intents the prompt suggests for `move`. Suggestions, not a schema: the field
@@ -198,10 +1538,18 @@ export const INTENT_ACTIONS: readonly ActionName[] = ['interact', 'move', 'attac
  */
 export const MOVE_INTENTS = ['travel', 'flee', 'approach', 'enter', 'follow'] as const;
 
-/** Intents the prompt suggests for `interact`. Open by design; see above. */
+/**
+ * Intents the prompt suggests for `interact`. Open by design; see above.
+ *
+ * `petition` used to be on this list and is deliberately gone. It was the
+ * clearest single expression of the defect the four verbs above exist to fix:
+ * the prompt was actively suggesting that a model route a petition to the verb
+ * that walks the player over and describes the building, and a player who filed
+ * one got a paragraph about architecture.
+ */
 export const INTERACT_INTENTS = [
     'talk', 'negotiate', 'trade', 'deceive', 'interrogate',
-    'threaten', 'bribe', 'recruit', 'petition', 'apologise'
+    'threaten', 'bribe', 'recruit', 'apologise'
 ] as const;
 
 export const PlannedActionSchema = z.object({
@@ -284,6 +1632,22 @@ const WORD_NUMBERS: Readonly<Record<string, number>> = {
 };
 
 /**
+ * The same table as a regex alternation, longest first so `fifteen` is not
+ * eaten by `five`.
+ *
+ * Built rather than typed, because a hand-written list of number words next to
+ * a table of number words goes stale exactly once and then silently: "ten years
+ * of provisions" did not parse, because a provisioning rule enumerated
+ * `a|one|two|three` and stopped, so the sentence fell through to `buy` and died
+ * at the price board. Anything that needs to spell out a count in a pattern
+ * should splice this in.
+ */
+const WORD_NUMBER_ALTERNATION = Object.keys(WORD_NUMBERS)
+    .sort((a, b) => b.length - a.length)
+    .map(word => `${word} `)
+    .join('|');
+
+/**
  * Days named in a phrase, or null when none is.
  *
  * Handles "90 days", "three years", "a decade", "half a year". Deliberately
@@ -320,6 +1684,29 @@ export function parseDuration(input: string): number | null {
 
     // A bare number with no unit is not a duration. "I strike the barrier 3
     // times" must not become three days of seclusion.
+    return null;
+}
+
+/**
+ * How many were asked for, or null when the sentence does not say.
+ *
+ * Separate from {@link parseDuration} because a count is not a span and must
+ * never be read as one: "three disciples" is three people, and answering it
+ * with three days of anything would be the same class of error as reading "a
+ * season" out of a sentence about employment. Deliberately refuses a bare zero
+ * and anything that is not a plain count, so the caller falls back to the
+ * tool's own default rather than to a guess made here.
+ */
+export function parseCount(input: string): number | null {
+    const digits = /\b([0-9]{1,3})\b/.exec(input);
+    if (digits) {
+        const n = Number(digits[1]);
+        if (n >= 1) return n;
+    }
+    for (const token of input.toLowerCase().split(/[^a-z]+/).filter(Boolean)) {
+        const word = WORD_NUMBERS[token];
+        if (word !== undefined && word >= 1) return Math.round(word);
+    }
     return null;
 }
 
@@ -379,7 +1766,18 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['travel', /\b(?:travel|go to|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b/]
 ];
 
-const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|cut down|draw on|swing at|go for|set upon|set on|jump|ambush|assault|take on|put down|finish/;
+/**
+ * The nouns that are not people, however violent the verb in front of them.
+ *
+ * "Strike at the barrier" is the game's own phrase for a breakthrough attempt
+ * and appears in its own UI, and the attack rule was matching it on "the [a-z]"
+ * and sending the player after a person who is not there. Checked before the
+ * attack rule rather than after it, because the attack rule has to stay first:
+ * every sentence about a fight is full of other verbs' nouns.
+ */
+const AIMED_AT_THE_LADDER = /\b(?:the )?(?:barrier|bottleneck|blockage|realm boundary|next (?:rank|realm))\b/;
+
+const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|set upon|set on|jump|ambush|assault|take on|put down|finish/;
 
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move/;
 
@@ -501,8 +1899,358 @@ export function usedAsVerb(text: string, verbs: string): boolean {
     ).test(text);
 }
 
+/**
+ * The noun phrase a leadership verb is aimed at.
+ *
+ * Trimmed at the clause that says WHERE rather than WHO: "Elder Fang from the
+ * sect" is one person and a preposition, and handing the whole string to a
+ * matcher resolves nobody. Returns undefined when nothing usable followed the
+ * verb, and every caller treats that as a request for the LISTING rather than
+ * as a guess - seeing which elders there are and what each would cost is the
+ * sentence before the one that dismisses somebody, and it is the right answer
+ * to a sentence that named nobody.
+ */
+function namedAfter(input: string, verbs: string): string | undefined {
+    const after = new RegExp(
+        // `an` before `a`, and a boundary after the article, or "an elder"
+        // loses its n: the shorter alternative wins the race and the phrase
+        // that comes back is a fragment of the word it was supposed to skip.
+        `\\b(?:${verbs})\\b\\s*(?:the|an|a|any|some|all|my|our|its|their|new|more)?\\b\\s*`
+        + `(.{2,80}?)`
+        + `\\s*(?:\\b(?:from|out of|into|onto|to|under|because|so that|instead of)\\b.*)?[.!?]?$`,
+        'i'
+    ).exec(input);
+    const cleaned = (after?.[1] ?? '').trim().replace(/^(?:the|a|an)\s+/i, '');
+    return cleaned.length >= 2 ? cleaned.slice(0, 80) : undefined;
+}
+
+/**
+ * The other party in a sentence about two institutions.
+ *
+ * Trimmed at the clause that says WHAT WAS ASKED FOR rather than WHO OF:
+ * "petition the Third Sill Court for a grant" is a party and a matter, and
+ * handing the whole string to a faction matcher resolves nobody. Wider than
+ * {@link namedAfter}'s trim list on purpose - `for`, `about` and `over` all
+ * introduce the matter here, and none of them can introduce a faction.
+ *
+ * Returns undefined when nothing usable followed, and every caller treats that
+ * as meaning THEIR OWN HOUSE or as a request for the read, never as a guess.
+ * Declaring war on nobody in particular must not pick somebody.
+ */
+function partyAfter(input: string, markers: string): string | undefined {
+    const found = new RegExp(
+        `\\b(?:${markers})\\s+(?:the|a|an|our|its|their|his|her)?\\s*`
+        + `(.{2,80}?)`
+        + '\\s*(?:\\b(?:for|about|regarding|concerning|over|because|so that|'
+        + 'instead of|in order|and then|asking)\\b.*)?[.!?]?$',
+        'i'
+    ).exec(input);
+    // A leading preposition survives when the verb itself was the marker that
+    // matched - "apply to the Thousand Treasure Pavilion" captures "to the
+    // Thousand Treasure Pavilion" - and a faction matcher handed that string
+    // resolves nobody. Stripped after the article rather than before, because
+    // both can be there.
+    const cleaned = (found?.[1] ?? '')
+        .trim()
+        .replace(/^(?:to|at|of|with|from|before|against|upon|on)\s+/i, '')
+        .replace(/^(?:the|a|an)\s+/i, '');
+    return cleaned.length >= 2 ? cleaned.slice(0, 80) : undefined;
+}
+
+/**
+ * What is being asked for, in the petitioner's own words.
+ *
+ * Carried verbatim into the record and shown back in the refusal, which is the
+ * entire point of the verb: the Requisition requires the applicant to state
+ * what is at stake in terms of the arterial system rather than in terms of
+ * themselves, and being refused in the terms you asked in is the interaction.
+ * Nothing branches on it.
+ */
+function matterAsked(input: string): string | undefined {
+    const found = /\b(?:for|about|regarding|concerning)\s+(?:one of\s+|the\s+|a\s+|an\s+|some\s+)?(.{2,120}?)\s*[.!?]?$/i
+        .exec(input);
+    const cleaned = (found?.[1] ?? '').trim();
+    return cleaned.length >= 2 ? cleaned.slice(0, 120) : undefined;
+}
+
+/**
+ * A party phrase that is not a party.
+ *
+ * "make an offering to our ascended ancestor" names a recipient and no
+ * institution, and handing `ascended ancestor` to a faction matcher would
+ * resolve nothing and produce a refusal for a sentence that was perfectly
+ * clear. The rule is narrow on purpose: it drops the phrase only where the
+ * whole of it is the act's own vocabulary, so "our ancestor at the Pavilion"
+ * still carries the Pavilion.
+ */
+function isTheActItself(phrase: string | undefined): boolean {
+    if (!phrase) return true;
+    return /^(?:own |our |their |its |the |ascended |sealed |dormant |sleeping )*(?:ancestors?|founders?|line|forebears?|dead|seal|offering|requisition|standing stock|form|application)$/i
+        .test(phrase.trim());
+}
+
+/**
+ * One of the four institutional acts, or null when the sentence is about
+ * something else.
+ *
+ * Ordered narrowest first, and the ordering is load-bearing in two places.
+ * ALLIANCE before OFFERING, because `offer` is a verb in both tables and "I
+ * offer an alliance" is not a rite. SEAL before OFFERING for the same reason
+ * in the other direction: a sentence about an ancestor is not automatically a
+ * sentence about incense.
+ *
+ * Every branch that COMMITS the house is reachable only through an explicit
+ * verb plus its noun. There is no phrasing that arrives here vaguely and
+ * starts a war, which is the property `DEFAULT_POSTURE_INTENT` exists to keep
+ * true on the model path as well.
+ */
+function institutionalAct(text: string, input: string): PlannedAction | null {
+    // ── war ──
+    //
+    // The declaration verb has to be in verb position. Without that, "what do
+    // I know of the war with the Nine Abyss" satisfies the noun rule
+    // completely and would be answered by starting one.
+    if (usedAsVerb(text, DECLARE_VERBS) && WAR_NOUN.test(text)) {
+        const on = partyAfter(input, 'war (?:on|against|upon|with)|against|on');
+        return { action: 'posture', intent: 'war', ...(on ? { target: on } : {}) };
+    }
+
+    // ── alliance ──
+    if (usedAsVerb(text, ALLIANCE_VERBS) && ALLIANCE_NOUNS.test(text)) {
+        const to = partyAfter(input, 'alliance (?:to|with)|allied? with|ally with|pact with|cause with|terms with|to|with');
+        return { action: 'posture', intent: 'alliance', ...(to ? { target: to } : {}) };
+    }
+
+    // ── a levy, or a threat wearing one ──
+    if (usedAsVerb(text, TRIBUTE_VERBS) && TRIBUTE_NOUNS.test(text)) {
+        const from = partyAfter(input, 'tribute from|levy on|dues from|tithe from|from|on|of');
+        return { action: 'posture', intent: 'tribute', ...(from ? { target: from } : {}) };
+    }
+
+    // ── defection ──
+    //
+    // The pattern carries its own destination requirement, so "I defect" alone
+    // falls through to `sect`, which owns the word and reads it as a member
+    // walking out. Changing who a HOUSE holds from is a different act by a
+    // different person and must not be reached by the resignation phrasing.
+    if (DEFECT_PATTERN.test(text)) {
+        const to = partyAfter(input, 'defect(?:s|ing)? to|go(?:es|ing)? over to|went over to|under|to');
+        if (to) return { action: 'posture', intent: 'defect', target: to };
+    }
+
+    // ── the thing under the mountain ──
+    //
+    // Whose mountain it is is NOT read off the sentence. A player who names
+    // nobody meant their own house and one who names a house meant that one,
+    // and which of those is a decision and which is theft is decided by the
+    // membership row in `game.ts`. Reading it here would let a phrasing choose
+    // between a legal act and a crime.
+    if (usedAsVerb(text, WAKE_VERBS)
+        && SEALED_NOUNS.test(text)
+        && !NOT_THE_SEALED_ANCESTOR.test(text)) {
+        const named = partyAfter(input, 'seal (?:at|of|under|beneath)|ancestor (?:at|of|under|beneath)|at|beneath|under');
+        const whose = isTheActItself(named) ? undefined : named;
+        return { action: 'seal', intent: 'wake', ...(whose ? { target: whose } : {}) };
+    }
+
+    // ── going back down, which is the most expensive sentence in the game ──
+    //
+    // Ahead of the sending rule, because "I go back down and put a sword in
+    // front of them" is somebody going, and above `move`, which owns every
+    // other way of getting anywhere and would answer this by walking.
+    if (DESCENT_UNAMBIGUOUS.test(text)
+        || (usedAsVerb(text, GOING_DOWN_VERBS) && THE_WAY_BACK_DOWN.test(text))) {
+        // "myself" and "in person" are what distinguishes this sentence from
+        // the proxy one; they are not part of the destination, and handing them
+        // to a place matcher resolves nothing.
+        const where = partyAfter(input, 'down to|back to|down at|to the|at the|to')
+            ?.replace(/\s+(?:myself|in person|personally|alone)$/i, '')
+            .trim();
+        return {
+            action: 'descend',
+            ...(where && where.length >= 2 && !isTheActItself(where) ? { target: where } : {})
+        };
+    }
+
+    // ── the other end of the channel: sending something down ──
+    if (SENDING_DOWN.test(text)) {
+        const to = partyAfter(input, 'to my|to the|to our|down to|reach');
+        return {
+            action: 'offer',
+            intent: 'send',
+            ...(to && !isTheActItself(to) ? { target: to } : {}),
+            ...(matterAsked(input) ? { topic: matterAsked(input) as string } : {})
+        };
+    }
+
+    // ── the offering, and the reading of a silence ──
+    if (usedAsVerb(text, OFFERING_VERBS)
+        && (OFFERING_NOUNS.test(text) || ASCENDED_NOUNS.test(text))) {
+        const named = partyAfter(input, 'offering to|sacrifice to|incense to|rites to|up to|to');
+        const to = isTheActItself(named) ? undefined : named;
+        return { action: 'offer', intent: 'offering', ...(to ? { target: to } : {}) };
+    }
+
+    // ── the form, by name ──
+    //
+    // `requisition` needs no verb: nothing else in the setting uses the word,
+    // and a player who has heard it has heard it from somebody describing
+    // exactly this. Everything else needs the verb and the thing.
+    //
+    // `against` is deliberately not a party marker here. The form's own name
+    // is "a Requisition Against Standing Stock", so reading a party out of it
+    // resolved the sentence to an institution called "Standing Stock" - which
+    // is the shape of every bug this parser has produced, a phrase matched in
+    // the wrong role and answered confidently.
+    if (REQUISITION_NAMED.test(text)
+        || (usedAsVerb(text, `${PETITION_VERBS}|${PETITION_ASKING_VERBS}`)
+            && (STANDING_STOCK_NOUNS.test(text) || IMMORTAL_ITEM_NAMED.test(text)))) {
+        const named = partyAfter(
+            input,
+            `(?:${PETITION_ASKING_VERBS})|(?:with|to|at|of|before) the`
+        );
+        const of = isTheActItself(named) ? undefined : named;
+        const matter = matterAsked(input);
+        return {
+            action: 'petition',
+            intent: 'stock',
+            ...(of ? { target: of } : {}),
+            ...(matter ? { topic: matter } : {})
+        };
+    }
+
+    // ── a claim of descent ──
+    if (usedAsVerb(text, DESCENT_VERBS) && DESCENT_NOUNS.test(text)) {
+        const from = partyAfter(input, 'descent from|descended from|descend from|line of|blood of|kinship (?:to|with)|from');
+        return { action: 'petition', intent: 'descent', ...(from ? { target: from } : {}) };
+    }
+
+    // ── everything else that goes upward ──
+    //
+    // Vetoed by the joining vocabulary, which is the other half of the `apply`
+    // lesson above: "I apply to the Pavilion", "I ask them to take me on" and
+    // "I want to be admitted" are all sentences about membership, and every one
+    // of them satisfies a petition rule completely.
+    if ((usedAsVerb(text, PETITION_VERBS_ALONE)
+        || (usedAsVerb(text, `${PETITION_VERBS}|${PETITION_ASKING_VERBS}`)
+            && PETITION_NOUNS.test(text)))
+        && !ASKING_TO_BE_TAKEN_IN.test(text)) {
+        const of = partyAfter(
+            input,
+            `(?:${PETITION_VERBS})|(?:${PETITION_ASKING_VERBS})|to|at`
+        );
+        const matter = matterAsked(input);
+        return {
+            action: 'petition',
+            intent: 'grant',
+            ...(of ? { target: of } : {}),
+            ...(matter ? { topic: matter } : {})
+        };
+    }
+
+    return null;
+}
+
+/**
+ * One of the four powers a seat holds, or null when the sentence is about
+ * something else entirely.
+ *
+ * Every branch needs a verb IN VERB POSITION and the noun that says what it is
+ * aimed at, for the reason {@link usedAsVerb} exists: "elder", "disciple",
+ * "admission" and "teaches" are ordinary nouns in this setting and appear far
+ * more often as the object of somebody else's sentence than as the subject of
+ * this one. Two of the four also carry an explicit veto, because the sentence
+ * that would misfire means the OPPOSITE of the power - asking to be taken on is
+ * not recruiting, and practising what a house teaches is not decreeing it.
+ */
+function leadershipIntent(text: string, input: string): PlannedAction | null {
+    // Dismissal. The noun is the gate: this power reaches elders and nothing
+    // else, so "I remove the seal" and "I throw the disciple out" are
+    // deliberately not this rather than being answered with the wrong price.
+    if (usedAsVerb(text, SECT_EXPEL_VERBS)
+        && SECT_ELDER_NOUN.test(text)
+        && !/\b(?:expel|dismiss|remove|throw out|get rid of|turn out) me\b/.test(text)) {
+        const who = namedAfter(input, SECT_EXPEL_VERBS);
+        return { action: 'sect', intent: 'expel', ...(who ? { target: who } : {}) };
+    }
+
+    // Intake. Which rung is being taken in decides which power is being used
+    // and what it costs: a disciple goes under your own line and is paid for
+    // out of your own purse, an elder is bought in from outside and only the
+    // seat may do it.
+    if (usedAsVerb(text, SECT_RECRUIT_VERBS)
+        && SECT_INTAKE_NOUNS.test(text)
+        && !ASKING_TO_BE_TAKEN_IN.test(text)) {
+        const kind = /\belders?\b/.test(text) && !/\bdisciples?\b/.test(text) ? 'elder' : 'disciple';
+        const phrase = namedAfter(input, SECT_RECRUIT_VERBS);
+        return {
+            action: 'sect',
+            intent: 'recruit',
+            topic: kind,
+            ...(phrase ? { target: phrase } : {})
+        };
+    }
+
+    // The bar. A question about where it sits is the same action as a decree
+    // that moves it - the tool prices the move when no rank is named - so both
+    // phrasings come here rather than one of them falling through.
+    if (SECT_ADMISSION_QUESTION.test(text)
+        || (usedAsVerb(text, SECT_ADMISSION_VERBS) && SECT_ADMISSION_NOUNS.test(text))) {
+        const phrase = namedAfter(input, SECT_ADMISSION_VERBS);
+        return { action: 'sect', intent: 'admission', ...(phrase ? { target: phrase } : {}) };
+    }
+
+    // The shelf. Vetoed by the learning verbs: "I practise what the sect
+    // teaches" satisfies this rule completely and is a sentence about doing the
+    // drill, not about rewriting the library.
+    if (usedAsVerb(text, SECT_CURRICULUM_VERBS)
+        && SECT_CURRICULUM_NOUNS.test(text)
+        && !LEARNING_RATHER_THAN_DECREEING.test(text)) {
+        const side = matchIntent(text, SECT_CURRICULUM_SIDE);
+        const phrase = namedAfter(input, SECT_CURRICULUM_VERBS);
+        return {
+            action: 'sect',
+            intent: 'curriculum',
+            ...(side ? { topic: side } : {}),
+            ...(phrase ? { target: phrase } : {})
+        };
+    }
+
+    return null;
+}
+
+/**
+ * A quantity that cannot mean what it says.
+ *
+ * The sign was being SILENTLY DROPPED, which is the same class of defect as the
+ * sentence that killed a run at the top of this file and is arguably worse,
+ * because it produces a confident action rather than a wrong one. "I enter
+ * seclusion for -5 years" was reaching the number scanner, which found `5`,
+ * and running a real five-year closed-door seclusion: 750 elapsed days and a
+ * breakthrough, off a duration the player wrote as negative. An explicit zero
+ * had the mirror problem - `parseDuration` returned null, `seclude` applied its
+ * 365-day default, and asking for nothing bought a year.
+ *
+ * Both resolve to `unclear` rather than to a clamped number. A sentence that
+ * NAMED a quantity and named an impossible one is not a sentence the engine
+ * understood, and this file's own rule is that anything it did not understand
+ * must reach the cheapest action available. Guessing which positive number
+ * somebody meant by "-5" is exactly the confidence that kills characters.
+ *
+ * Narrow on purpose. The minus has to open a token, so "2-3 days" is untouched;
+ * "closed-door" and "twenty-five" are hyphens before letters and never match.
+ */
+export const MALFORMED_QUANTITY =
+    /(?:^|[\s(([])-\s*\d|(?:^|\s)(?:0+|zero|none|no)\s+(?:year|month|week|day|season|decade|centur|ration|stone|disciple|time|of)/i;
+
 export function parseIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
+
+    // Before everything, because every branch below that reads a number reads
+    // it through a scanner that cannot see a sign.
+    if (MALFORMED_QUANTITY.test(text)) {
+        return { action: FALLBACK_ACTION };
+    }
 
     // -- attacking somebody, which had no route at all --
     //
@@ -511,14 +2259,24 @@ export function parseIntent(input: string): PlannedAction {
     // way to reach any of it, so "I attack the nearest cultivator" fell
     // through the whole table until the cultivation branch caught the noun.
     // First, because every sentence about a fight is full of other verbs' nouns.
-    if (usedAsVerb(text, 'attack|attacks|strike|strikes|hit|hits|fight|fights|kill|kills|'
-        + 'cut down|draw on|swing at|go for|set (?:on|upon)|jump|ambush|assault|'
-        + 'take (?:him|her|them) on|put (?:him|her|them) down|finish (?:him|her|them)')
-        || /\bstrike (?:at )?(?:him|her|them|the [a-z])/.test(text)) {
+    if (!AIMED_AT_THE_LADDER.test(text)
+        && (usedAsVerb(text, 'attack|attacks|strike|strikes|hit|hits|fight|fights|kill|kills|'
+            + 'cut down|draw on|swing at|go for|set (?:on|upon)|jump|ambush|assault|'
+            // The words a player uses when the killing is the point rather than
+            // the fight. Found by a standing sweep: "I murder a disciple of the
+            // Nine Abyss Flame Sect" and "I assassinate the Third Lord" reached
+            // NOTHING, while "I attack the Nine Abyss Flame Sect" was refused
+            // properly at every position. A verb that answers the polite
+            // phrasing and not the honest one teaches a player that the game is
+            // small, when what is actually true is that the target is enormous.
+            + 'murder|murders|murdering|assassinate|assassinates|assassinating|slay|slays|'
+            + 'do away with|make an end of|'
+            + 'take (?:him|her|them) on|put (?:him|her|them) down|finish (?:him|her|them)')
+            || /\bstrike (?:at )?(?:him|her|them|the [a-z])/.test(text))) {
         return {
             action: 'attack',
             target: extractSubject(input, ATTACK_SUBJECT_VERBS),
-            intent: /\b(?:kill|finish|cut down|put (?:him|her|them) down)\b/.test(text)
+            intent: /\b(?:kill|murder|assassinate|slay|finish|cut down|put (?:him|her|them) down)\b/.test(text)
                 ? 'kill'
                 : /\b(?:subdue|pin|restrain|capture|take alive)\b/.test(text)
                     ? 'subdue'
@@ -528,7 +2286,148 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
-    if (/\b(?:break\s*through|breakthrough|strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|(?:try|attempt) (?:to |for )?(?:the )?(?:next realm|advancement))\b/.test(text)) {
+    // Sect promotion and stipend, before anything that could read them as
+    // asking a person a question or as going out to collect something.
+    {
+        const unambiguous = SECT_INTENT_UNAMBIGUOUS.find(([, pattern]) => pattern.test(text));
+        if (unambiguous) return { action: 'sect', intent: unambiguous[0] };
+    }
+
+    // Sending the rung below, before `work` and `gather` - both of which used to
+    // catch these sentences and answer them by spending the PLAYER's days. An
+    // order is the one action in the game whose whole point is that it does not.
+    if (usedAsVerb(text, SECT_ORDER_VERBS)
+        && SECT_SUBORDINATE_NOUNS.test(text)
+        && !SENDING_A_MESSAGE.test(text)) {
+        const errand = matchIntent(text, SECT_ERRAND_PATTERNS) ?? DEFAULT_ERRAND;
+        const days = parseDuration(text);
+        return {
+            action: 'sect',
+            intent: 'order',
+            topic: errand,
+            ...(days ? { days } : {})
+        };
+    }
+
+    // The four powers above `order`, in the same slot and for the same reason.
+    // Ahead of `work` and `gather` because a sentence about the house's intake
+    // is full of their vocabulary ("I take on new disciples to work the
+    // fields"); ahead of `train_technique` because a sentence about what the
+    // house teaches is not a sentence about practising it; and ahead of the
+    // INTERACT table, whose `recruit` label matches the bare words "take on",
+    // and of the sect LISTING, which fires on the noun plus any question word.
+    {
+        const led = leadershipIntent(text, input);
+        if (led) return led;
+    }
+
+    // Inheritance grounds, ahead of everything that owns one of their verbs.
+    //
+    // This block has to sit here rather than lower down because four separate
+    // branches below would take these sentences first and answer them with
+    // something adjacent, which is worse than answering nothing. "I look for
+    // the audit bench" was matched by the bare `look` rule and answered with
+    // the weather; "I study the door" went to `investigate` and examined a
+    // door as an object with no record behind it; "I go to the eighth stone"
+    // went to `move` and sent the cultivator to a place called "the eighth
+    // stone", which the engine stored, because a location is free text; and
+    // "I size up the trial" went to `assess`, which prices an opponent.
+    //
+    // It sits BELOW the attack and sect blocks on purpose. A fight and an
+    // errand are still a fight and an errand when they happen at a grave.
+    {
+        const step = siteStep(text, input);
+        if (step) return step;
+    }
+
+    // ── institutions acting on each other, and on the dead ──
+    //
+    // High, and it has to be. Five of the twelve sentences that produced this
+    // block did not fail: they were EATEN, four of them by the asking branch
+    // and the INTERACT table two hundred lines below, and one by `recall`.
+    // "I ask the Deep Survey for one of its pills" reached a bystander who
+    // declined to answer; "I offer an alliance to the Frostmirror Court"
+    // walked the player to the Court and described the building. Both look
+    // like answers, and a player cannot tell an answer from a gap.
+    //
+    // It sits BELOW attack, the sect powers and the inheritance grounds on
+    // purpose, for the reason the site block gives: a fight is still a fight
+    // and an errand is still an errand when the sentence also mentions a
+    // house. It sits ABOVE the asking branch because asking an INSTITUTION for
+    // something it holds is not the same act as asking a person a question,
+    // and the two have different answers from different tables.
+    {
+        const between = institutionalAct(text, input);
+        if (between) return between;
+    }
+
+    // ── what am I carrying in my head ──
+    //
+    // Ahead of the sect listing, which fires on the noun plus any question
+    // word and would take "what do I know about the sect" and answer it with a
+    // register of who would enrol the player. Ahead of `status`, whose sheet
+    // read is a different question. Ahead of the place-history block, which
+    // owns "what is said about this" - somebody else's talk about the ground,
+    // rather than what this cultivator is holding.
+    //
+    // Behind nothing that costs anything, because it costs nothing.
+    // The read only. A sentence that is trying to PUT the dao somewhere is not
+    // a question about it, and answering it with the panel is the "looks like
+    // an answer" failure this whole block exists to stop. See
+    // {@link PUTTING_IT_SOMEWHERE_ELSE}.
+    if (RECALL_DAO.test(text) && !PUTTING_IT_SOMEWHERE_ELSE.test(text)) {
+        return { action: 'recall', intent: 'dao' };
+    }
+    if (RECALL_PATTERNS.some(pattern => pattern.test(text))) {
+        const named = namedAfter(input, RECALL_SUBJECT);
+        return { action: 'recall', intent: 'knowledge', ...(named ? { target: named } : {}) };
+    }
+    if (RECALL_EVERYTHING.test(text)) {
+        return { action: 'recall', intent: 'knowledge' };
+    }
+
+    // ── getting a wound seen to ──
+    //
+    // Ahead of everything that owns one of these verbs, and it has to be:
+    // "look for a physician" was taken by the bare `look` rule, "find a
+    // healer" sits one word from the employment branch, and "see to my
+    // injuries" is a hair from `investigate`. Ahead of the ASKING branch too,
+    // which is the one deliberate cost: "I ask around for a physician" is
+    // still a question put to people, and it stays one, because none of the
+    // asking verbs are in `SEEKING_CARE_VERBS`.
+    if (HAVING_IT_SEEN_TO.test(text)
+        || (usedAsVerb(text, TREATMENT_VERBS)
+            && (INJURY_NOUNS.test(text) || /\b(?:me|myself)\b/.test(text)))
+        || (HEALER_NOUNS.test(text) && usedAsVerb(text, SEEKING_CARE_VERBS))
+        || (TREATMENT_NOUNS.test(text)
+            && usedAsVerb(text, `${SEEKING_CARE_VERBS}|${TREATMENT_VERBS}`))) {
+        return { action: 'treat' };
+    }
+
+    // ── striking the barrier, and not everything with the word in it ──
+    //
+    // The bare word used to be enough, anywhere in the sentence, and this
+    // branch sits above `refine`, `buy` and `gather` - so EVERY sentence about
+    // the thing you take BEFORE a breakthrough was answered by attempting one
+    // without it:
+    //
+    //   I refine a breakthrough pill  -> "The barrier does not move. Not enough
+    //   I buy a breakthrough pill        has accumulated: 0 of 100 qi-units."
+    //   I look for a pill that helps breakthrough
+    //
+    // That is the worst shape a misparse can have here. `MAX_PILL_BONUS` is
+    // 0.35, the single largest modifier in the game and the intended mitigation
+    // for the rungs that kill, and the three sentences that reach it were all
+    // answered by walking into the barrier bare-handed. Two deaths at the 12->13
+    // Foundation boundary, both funded and healthy, were spent finding out.
+    //
+    // `usedAsVerb` is the fix and it is exactly what it was written for: in
+    // "a breakthrough pill" the word sits behind an article, where only a noun
+    // can be, and in "I break through" it follows a subject. The phrasings that
+    // are unambiguous whatever position they are in are listed separately,
+    // because "attempt a breakthrough" is a noun and is still the attempt.
+    if (usedAsVerb(text, 'break\\s*through|breakthrough|breaks through|breaking through')
+        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|(?:try|attempt|make|go for) (?:a |the |my |another )?break\s*through|(?:try|attempt) (?:to |for )?(?:the )?(?:next realm|advancement))\b/.test(text)) {
         return { action: 'breakthrough' };
     }
 
@@ -572,6 +2471,54 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
+    // ── what am I carrying ──
+    //
+    // Ahead of everything that could read "check" or "look" as a verb aimed at
+    // the room. `alchemy_manage.inventory` answers it and nothing reached it.
+    if (/\b(?:my (?:inventory|pouch|bag|pack|belongings|possessions)|what am i carrying|what do i (?:have|carry)|what(?:'s| is) in my (?:pouch|bag|pack)|check (?:my )?(?:inventory|pouch|bag|pack)|(?:show|list|open) (?:me )?(?:my )?(?:inventory|pouch|bag|pack)|turn out (?:my )?(?:pouch|pockets))\b/.test(text)) {
+        // "take stock" is deliberately absent. `misparse.test.ts` carries
+        // "I take stock of a life that has gone nowhere in forty years",
+        // which is a man looking at his own life and not at his pockets.
+        return { action: 'inventory' };
+    }
+
+    // ── the arts, listed, before the art being learned ──
+    //
+    // The question form must win: "what can I learn" is a read of a catalog
+    // and "I learn the Azure Ripple Art" is an act that can tear meridians.
+    // Getting those the wrong way round costs a run.
+    if (/\b(?:what|which)\b[^.!?]*\b(?:arts?|techniques?|manuals?|methods?)\b[^.!?]*\b(?:can i (?:learn|study|take up|pick up)|could i (?:learn|study)|are (?:there|available|open to me)|do i have access to|am i able to learn)\b/.test(text)
+        || /\b(?:what (?:arts?|techniques?) can i learn|list (?:the )?(?:available )?(?:arts?|techniques?)|show (?:me )?(?:the )?(?:available )?(?:arts?|techniques?)|what (?:arts?|techniques?) are (?:available|going|about))\b/.test(text)) {
+        return { action: 'list_techniques' };
+    }
+
+    // ── learning one, which is not practising one ──
+    //
+    // `train_technique` raises mastery in something already held; this is the
+    // first acquisition, and it is the only route to an art outside a site.
+    // Ahead of `investigate`, whose verb list contains "study".
+    if (usedAsVerb(text, 'learn|learns|learning|study|studies|studying|take up|takes up|master|masters|acquire|acquires')
+        && /\b(?:art|arts|technique|techniques|manual|manuals|method|methods|scripture|scriptures)\b/.test(text)) {
+        return {
+            action: 'learn_technique',
+            target: extractSubject(input, /learn|study|take up|master|acquire/)
+        };
+    }
+
+    // ── selling, which is the only way a pouch becomes a purse ──
+    //
+    // Ahead of `market` and far ahead of the INTERACT table. A player who
+    // types "I sell the Qi Grass" is naming a thing they are carrying, and
+    // every reading below this one looks for a person of that name. Ahead of
+    // `market` too, because "I sell my herbs at the market" is a sale and not
+    // a request to read the board - the board question is vetoed back out.
+    if (usedAsVerb(text, SELLING_VERBS) && !SELLING_ASKED_AS_A_BOARD.test(text)) {
+        return {
+            action: 'sell',
+            target: extractSubject(input, SELLING_SUBJECT_VERBS)
+        };
+    }
+
     // The noun `market` is a place people stand in and steal from and talk
     // about. Asking to SEE the board is a different sentence, and it is
     // either a question about what things cost or a verb aimed at a stall.
@@ -585,13 +2532,64 @@ export function parseIntent(input: string): PlannedAction {
     // the expensive reading of getting it wrong is one-directional: a
     // player who meant one meal and got a month of rations has lost some
     // stones, and a player who meant a month and got one meal starves.
-    if (/\b(?:stock up|lay in|load up|provision myself|buy provisions|buy (?:some |a |my )?(?:rations?|supplies|provisions)|(?:buy|get|pick up|purchase) (?:a |one |two |three |[0-9]+ )?(?:months?|weeks?|days?|years?|seasons?) (?:of |worth of )?(?:food|rations?|provisions|supplies)|provisions? for|rations? for|food for the (?:road|trip|journey|way))\b/.test(text)) {
+    // "ten years of provisions" did not parse, because the count alternation
+    // stopped at "three" and every larger number word fell through to `buy`
+    // and died at `resolvePrice`. The whole word-number table is spliced in
+    // instead of a hand-written list, so it cannot go stale against
+    // `parseCount`, which already knows all of them.
+    if (new RegExp(
+        '\\b(?:stock up|lay in|load up|provision myself|buy provisions|'
+        + 'buy (?:some |a |my )?(?:rations?|supplies|provisions)|'
+        + `(?:buy|get|pick up|purchase) (?:a |one |${WORD_NUMBER_ALTERNATION}|[0-9]+ )?`
+        + '(?:months?|weeks?|days?|years?|seasons?) (?:of |worth of )?'
+        + '(?:food|rations?|provisions|supplies)|'
+        + `(?:a |one |${WORD_NUMBER_ALTERNATION}|[0-9]+ )?(?:months?|weeks?|days?|years?|seasons?) `
+        + '(?:of |worth of )(?:food|rations?|provisions|supplies)|'
+        + 'provisions? for|rations? for|food for the (?:road|trip|journey|way))\\b'
+    ).test(text)) {
         return { action: 'provision', days: parseDuration(text) ?? undefined };
     }
 
     if (/\b(?:eat|meal|dine|breakfast|supper|feed myself|buy food)\b/.test(text)
         || /\b(?:food|rations?)\b/.test(text)) {
         return { action: 'eat' };
+    }
+
+    // ── buying a line off the board ──
+    //
+    // Deliberately BELOW `market`, `provision` and `eat`, all three of which
+    // own a purchase of their own and all three of which work. What reaches
+    // here is everything else the board advertises, which until now reached
+    // the INTERACT table and was answered with "nobody by that name" - the
+    // engine looking for a person called "visit from the mortal physician".
+    //
+    // No noun requirement, because the board is twenty-two lines of ordinary
+    // English and any list written here would go stale against it. The subject
+    // is resolved against `PRICES` in `game.ts` instead, and a purchase the
+    // board never advertised is refused with the board attached, for free.
+    if (usedAsVerb(text, BUYING_VERBS) && !BUYING_A_PERSON_OFF.test(text)) {
+        return {
+            action: 'buy',
+            target: extractSubject(input, /buy|purchase|pay for|order|book|hire|acquire|take passage on|pay the/)
+        };
+    }
+
+    // ── what can I make ──
+    //
+    // The read that closes the alchemy loop, and it had no phrasing at all:
+    // "what recipes do I know" and "what can I refine" both parsed to
+    // `unclear`, so a player could not find out which formulas were within
+    // their realm and therefore could not know which herbs to gather. Ahead of
+    // the refining rule because it is the same verb asked as a question, and
+    // the question must not be answered by working the cauldron.
+    if (/\b(?:what|which)\b[^.!?]*\b(?:recipes?|formulae?|formulas?|pills?)\b[^.!?]*\b(?:do i (?:know|have)|can i (?:make|refine|brew|attempt)|are (?:there|available)|could i make)\b/.test(text)
+        || /\b(?:what can i (?:make|refine|brew)|what (?:recipes?|formulas?) do i know|list (?:my )?(?:recipes?|formulas?)|show (?:me )?(?:my )?(?:recipes?|formulas?))\b/.test(text)
+        // Looking for a pill that does something is a question about the
+        // catalog, not a verb aimed at the room. It used to reach the bare
+        // `look` rule and come back with the weather.
+        || (/\b(?:look|looking|search|searching|hunt|hunting|cast about) for\b/.test(text)
+            && /\b(?:pills?|elixirs?|medicines?|formulae?|formulas?|recipes?)\b/.test(text))) {
+        return { action: 'refine' };
     }
 
     if (/\b(?:refine|concoct|brew|distil|distill|alchemy|cauldron)\b/.test(text)
@@ -641,9 +2639,64 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
-    if (/\b(?:join|joining|apply to|applying to|swear to|take me on|taken on|would (?:take|have) me|accept me|admit me|be admitted)\b/.test(text)
+    // The four member verbs, which need the noun so that "I leave" on its own
+    // is still a movement and "my standing" outside a sect is still a status.
+    if (/\b(?:sect|order|school|clan|house|reserves?|treasur\w+|coffers)\b/.test(text)) {
+        // Robbing the place is not resigning from it, and it is now its own
+        // thing rather than a refusal: `siphon` takes from the reserves over
+        // months, and the word "leave" inside a sentence about taking the
+        // treasury must never reach the resignation branch.
+        if (SECT_THEFT_PATTERN.test(text)) {
+            const pace = SIPHON_PACE_PATTERNS.find(([, pattern]) => pattern.test(text));
+            // Whether anybody is TAKING, as opposed to standing in front of the
+            // vault talking about it. `SECT_THEFT_PATTERN` matches on the nouns
+            // too - treasury, coffers, reserves - which is what makes "what do
+            // the sect reserves hold" a sentence about theft; the verb position
+            // is what separates the question from the act. An act with no pace
+            // named runs at the safest one rather than at none: see the note on
+            // DEFAULT_SIPHON_PACE for what "at none" was doing to players.
+            const taking = usedAsVerb(text, SIPHON_TAKING_VERBS);
+            const chosen = pace ? pace[0] : taking ? DEFAULT_SIPHON_PACE : undefined;
+            return {
+                action: 'sect',
+                intent: 'siphon',
+                ...(chosen ? { topic: chosen } : {}),
+                ...(parseDuration(text) ? { days: parseDuration(text) as number } : {})
+            };
+        }
+        const wanted = SECT_INTENT_PATTERNS.find(([, pattern]) => pattern.test(text));
+        if (wanted) {
+            return { action: 'sect', intent: wanted[0] };
+        }
+    }
+
+    // The oath phrasings are here rather than in a verb of their own, and that
+    // is the finding rather than a shortcut. "I swear an oath to the House of
+    // the Bound Word" reached the INTERACT table and was answered by walking
+    // the player over and describing them - and the act it names is JOINING.
+    // The catalog says so in its own admission requirement, which for that
+    // house reads "forty years of intended service, sworn in front of a Warden
+    // of Terms before any training begins". The pattern held `swear to` and
+    // missed `swear an oath to`, two words apart, so a sentence that was
+    // already implemented had no route. Membership is exclusive in the
+    // repository, so a seat-holder swearing to somebody else is a defection
+    // and is answered as one - by the join path, out of real state, rather
+    // than by a second verb that would have to decide the same thing again.
+    if (/\b(?:join|joining|apply to|applying to|swear to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|give (?:my|our) (?:oath|word) to|bind myself to|take (?:the|their) oath|take me on|taken on|would (?:take|have) me|accept me|admit me|adopt me|take me in|be admitted)\b/.test(text)
         || (/\b(?:sects?|order|school|clan)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who)\b/.test(text))) {
-        return { action: 'sect', target: extractSubject(input, /joining|join|applying to|apply to|swear to|enter|find|look for/) };
+        return { action: 'sect', target: extractSubject(input, /joining|join|applying to|apply to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|swear to|give (?:my|our) (?:oath|word) to|bind myself to|enter|find|look for/) };
+    }
+
+    // ── why the ground is like this ──
+    //
+    // Ahead of `investigate`, which owns "find out about" and "look into", and
+    // ahead of `interact`, whose `talk` label matches the speech verb in "what
+    // do the locals say". Behind the ASKING branch above on purpose: putting
+    // the same question to a PERSON is a different act with a different answer,
+    // because who you ask decides what you get.
+    if (PLACE_HISTORY_PATTERNS.some(pattern => pattern.test(text))) {
+        const where = namedAfter(input, PLACE_HISTORY_SUBJECT);
+        return { action: 'look', intent: 'history', ...(where ? { target: where } : {}) };
     }
 
     // ── assess: what happens if I try, which is not the same as looking ──
@@ -703,7 +2756,15 @@ export function parseIntent(input: string): PlannedAction {
     // paragraph. Somebody scanning a square for a face is not asking about
     // the weather, and answering both with the room made the narrower
     // question pointless to ask.
-    if (/\b(?:who(?:'s| is| are)? (?:here|around|about|nearby)|is (?:anyone|anybody|somebody) (?:here|about|around)|look for (?:someone|somebody|anyone)|who else is|anybody about|see (?:anyone|anybody|who is here))\b/.test(text)) {
+    // The second half was added because the room description invites a
+    // question the parser could not answer. `describeStanding` writes "one of
+    // them is out of reach in a way that does not invite comparison", and a
+    // player who asks which one got "The thought does not resolve." Narration
+    // that prompts a question the engine cannot take is worse than narration
+    // that says nothing, so the question routes to the same read - which
+    // answers it honestly, by not being able to name a stranger either.
+    if (/\b(?:who(?:'s| is| are)? (?:here|around|about|nearby)|is (?:anyone|anybody|somebody) (?:here|about|around)|look for (?:someone|somebody|anyone)|who else is|anybody about|see (?:anyone|anybody|who is here))\b/.test(text)
+        || /\bwho (?:is|was|are|were)\s+(?:that|this|the one\b|he\b|she\b|they\b|them\b|these people|those people)/.test(text)) {
         return { action: 'look', intent: 'company' };
     }
 
@@ -827,7 +2888,7 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // Fields are kept only on the actions that own them. Letting `days` ride
     // along on a `look` would make an examination read, in the log, as though
     // it had consumed a decade.
-    const { action: name, days, target, intent, reason } = parsed.data;
+    const { action: name, days, target, intent, topic, reason } = parsed.data;
     const action: PlannedAction = { action: name };
 
     if (TIMED_ACTIONS.includes(name)) {
@@ -845,6 +2906,15 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
         // stays short and unpunctuated.
         action.intent = intent.toLowerCase().replace(/[^a-z0-9 _-]/g, '').trim().slice(0, 40) || undefined;
     }
+    // The sect surface carries two extras the other actions do not: the
+    // siphoning pace on `topic`, and how long to run it on `days`. Preserved
+    // here as well as in the deterministic parser, or a model-planned theft
+    // would silently lose its pace and run for one month at the default.
+    if (topic && TOPIC_ACTIONS.includes(name)) {
+        action.topic = topic.toLowerCase().replace(/[^a-z0-9 _-]/g, '').trim().slice(0, 40) || undefined;
+    }
+    if (days && name === 'sect') action.days = days;
+
     if (reason) action.reason = reason;
 
     return { ok: true, action };

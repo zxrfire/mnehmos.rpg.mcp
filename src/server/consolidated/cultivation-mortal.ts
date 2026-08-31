@@ -74,6 +74,8 @@ import {
     type HerbBiome
 } from '../../data/cultivation/herbs.js';
 import { forStream } from '../../engine/cultivation/rng.js';
+import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
+import { RATION_COST_STONES } from './cultivation-manage.js';
 import {
     DAYS_PER_MONTH,
     addToPouch,
@@ -293,6 +295,35 @@ export async function handleWork(
         });
     }
 
+    // ── Board, advanced against the wage ─────────────────────────────────
+    //
+    // What this fixes, and it was the single largest defect in the mortal
+    // economy: "I work as an innkeeper for a year" ran FIFTY DAYS and paid
+    // fifteen stones. Not because anything refused - because a full belly is
+    // `ACTIONS_PER_FULL_SATIETY` days long, nobody was buying food, and the
+    // time skip correctly stopped the span when the cultivator starved. A year
+    // of innkeeping is 108 stones by the catalog and a player could reach
+    // one seventh of it, which is why a poor cultivator stayed poor for ever.
+    //
+    // A worker eats out of the wage. That is one line of arithmetic applied to
+    // every occupation with no branch anywhere, priced through the same
+    // `RATION_COST_STONES` the cauldron and the cave mouth use, and it costs
+    // the worker real money - a year's board is 16 of those 108 stones. What
+    // it is NOT is free food: the advance is settled against earnings below,
+    // and somebody who dies in month four has been fed on credit nobody
+    // collects, which is the same answer the wage already gives.
+    //
+    // `handleCultivate` refuses rations the purse cannot cover, so the advance
+    // is paid BEFORE the span rather than netted after it.
+    const rationsNeeded = Math.max(0, Math.ceil(days / ACTIONS_PER_FULL_SATIETY));
+    const requested = args.rations ?? 0;
+    const rations = Math.max(requested, rationsNeeded);
+    const boardCost = rations * RATION_COST_STONES;
+    // Only the part the purse genuinely cannot cover. Somebody with stones
+    // pays for their own food and takes no advance at all.
+    const advance = Math.max(0, boardCost - cultivator.spiritStones);
+    if (advance > 0) repos.cultivators.applyDeltas(cultivator.id, { spiritStones: advance });
+
     // ── The span. One pass, and the engine owns every outcome in it. ──
     const spanResult = await cultivate({
         action: 'cultivate',
@@ -300,7 +331,7 @@ export async function handleWork(
         days,
         // Fixed, and deliberately not a parameter. See the header.
         focus: 'idle',
-        rations: args.rations ?? 0,
+        rations,
         autoBreakthrough: true,
         randomEvents: true
     });
@@ -323,10 +354,15 @@ export async function handleWork(
     const cashEarned = Math.floor(occupation.cashPerMonth * monthsWorked * jobRegard.yieldMultiplier);
     const stonesEarned = Math.floor(cashToStones(cashEarned));
 
+    // Settled against the advance. A span that earned less than its own board
+    // pays nothing and the shortfall is not chased: the house fed somebody who
+    // did not work long enough to cover it, which is an ordinary bad month and
+    // not a debt system. A death is the same answer the wage already gave.
+    const settled = died ? 0 : Math.max(0, stonesEarned - advance);
     let paid = 0;
-    if (!died && stonesEarned > 0) {
-        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: stonesEarned });
-        paid = stonesEarned;
+    if (settled > 0) {
+        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: settled });
+        paid = settled;
     }
 
     const after = repos.cultivators.getById(cultivator.id)!;
@@ -340,9 +376,18 @@ export async function handleWork(
         monthsWorked: round2(monthsWorked),
         cashEarned,
         spiritStonesEarned: paid,
+        // What the food cost, said out loud. A wage quoted without its board is
+        // the thing that made this action look profitable when it was not.
+        rationsBought: rations,
+        boardCostStones: boardCost,
+        boardAdvancedStones: advance,
+        grossSpiritStones: stonesEarned,
         unpaid: died
             ? 'The span ended in a death. Nobody settles a dead labourer\'s account.'
-            : null,
+            : stonesEarned > 0 && settled === 0
+                ? `The span earned ${stonesEarned} spirit stone(s) and ate ${advance} of board `
+                  + 'advanced against it. Nothing was left to hand over.'
+                : null,
         spiritStonesNow: after.spiritStones,
         purse: describePurse(after),
         // The whole span, exactly as the cultivation engine resolved it. Wages
