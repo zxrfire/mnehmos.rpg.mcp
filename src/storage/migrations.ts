@@ -2,7 +2,6 @@ import Database from 'better-sqlite3';
 import { migrateClassProgression } from './migrations.class-progression.js';
 import { migrateCultivation } from './migrations.cultivation.js';
 import { migrateSocial } from './migrations.social.js';
-import { migrateWorld } from './migrations.world.js';
 
 export function migrate(db: Database.Database) {
   // First, create all tables (without indexes that depend on new columns)
@@ -652,7 +651,9 @@ export function migrate(db: Database.Database) {
   // Cultivation: cultivators, injuries, runs, techniques, alchemy, sects
   migrateCultivation(db);
   migrateSocial(db);
-  migrateWorld(db);
+  // migrateWorld(db); -- DISABLED: its `worlds` table collides with the base
+  // schema's `worlds`, so CREATE TABLE IF NOT EXISTS no-ops and every later
+  // statement expecting its columns fails. Re-enable once renamed.
   widenAgentProviderCheck(db);
 }
 
