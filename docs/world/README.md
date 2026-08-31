@@ -95,3 +95,5 @@ of sects, techniques or pills. They change, and a number written into prose goes
 silently while reading as though it were checked. Say "the full ladder", "the top of the
 ladder", "the catalog". `MAX_ORDINAL` in `src/engine/cultivation/realms.ts` is the
 authority on the ladder's bounds; the catalogs are the authority on their own size.
+
+- [discovery.md](discovery.md) - how the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of.
