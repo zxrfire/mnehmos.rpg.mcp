@@ -2091,6 +2091,60 @@ whether the ancestor is dead, uninterested, or was never there. What does come b
 usually short, frequently oblique, and occasionally reorganises the region - a name, a
 warning, an instruction nobody understands for two hundred years, permission.
 
+### Two kinds of ancestor
+
+An ancestral asset comes in two forms, and they behave completely differently.
+
+| | **Ascended** | **Dormant** |
+|---|---|---|
+| Where | Through the Lid, gone | Still in the world - sealed, entombed, or nine hundred years into seclusion |
+| Contact | A millennial offering, and a few words back | They can be **woken** |
+| Cost | The sect's principal | Usually irreversible; they may have little time, little lucidity, or be spending the last of themselves |
+| Effect | Information, a warning, permission | Immediate, direct, and catastrophic for whoever caused it |
+
+The dormant kind is what makes *"I could kill this disciple - but what happens afterwards?"*
+a real question. A sect with eleven disciples and something sealed under its mountain is
+far more dangerous than a sect with three hundred and nothing, and outsiders frequently
+cannot tell which is which, because sects lie about both.
+
+Waking one is a **break-glass** decision. It generally ends them: whatever is left is spent
+doing the thing it was woken for. So the question a sect under threat actually faces is
+never "can we win" but "is this worth the ancestor" - and that is a judgement its elders
+can get wrong in both directions. Waking one to settle a border dispute is how a sect
+becomes a footnote.
+
+### Recency is most of the prestige
+
+Having an ascended ancestor is not a binary. **What matters is how recently they left**,
+because nothing goes through the Lid with them - so the years before a crossing are spent
+divesting, and the sect is where most of it goes.
+
+A sect whose ancestor crossed a few centuries ago is therefore holding a **parting gift**:
+a reserve artifact, a manual, a technique nobody in the world can teach, left behind by
+someone who no longer needed any of it. That sect is not merely old and respected. It is
+*currently* formidable, its ancestor may still take an interest, and everyone knows both
+facts.
+
+The last confirmed crossing in the world was centuries back. Whichever sect that ancestor
+came from is the preeminent institution of the present age, and is treated accordingly -
+not because its living cultivators are the strongest, but because of what is in its vault
+and who might still be listening.
+
+Prestige from an ancestor decays over the ages that follow:
+
+```text
+recent          the parting gift is intact, the ancestor may still answer,
+                and everyone in the world knows the sect's name
+several ages    the gift has been spent, lost, or quietly stolen; the offerings
+                return less; the claim is still true and still worth something
+ancient         records, a hall of tablets, and an assertion nobody can verify
+```
+
+Which is why the middle of that curve is where the politics live. A sect whose gift is
+gone but whose claim is intact has every incentive to keep the claim unexamined - and a
+rival has every incentive to have it examined.
+
+
 Consequences worth building on:
 
 - **Sects lie about this.** A claimed immortal ancestor is the cheapest prestige in the
