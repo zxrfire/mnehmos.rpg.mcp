@@ -42,9 +42,11 @@ import { MAX_ORDINAL, TOTAL_RANKS, LAST_CROSSING_ORDINAL } from '../../engine/cu
 
 // ─────────────────────────────────────────────────────────────────────────
 // PROVENANCE - the Late Age rule
-// The world is spent. Ash degrades every time it is breathed, nobody has
-// ascended in living memory, and the manuals that describe the upper realms
-// were written by people who are no longer available to explain them.
+// The world is poorer than it was. Veins that ran rich for a thousand years
+// have been drawn down, old wars killed whole regions outright, and what the
+// fallen civilisations did not consume they monopolised. Nobody has ascended
+// in living memory, and the manuals describing the upper realms were written
+// by people who are not available to explain them.
 //
 // So a technique is not simply "available at ordinal N". It has a source, and
 // above a certain grade that source is never a teacher:
@@ -52,13 +54,15 @@ import { MAX_ORDINAL, TOTAL_RANKS, LAST_CROSSING_ORDINAL } from '../../engine/cu
 //   taught → a living sect holds a working transmission of it.
 //   ruin   → recovered from a sealed site. No living teacher exists; the manual
 //            is the teacher, and it was not written for a reader like you.
-//   grave  → recovered from a grave deposit: the settled remainder of what the
-//            Vault took off someone at a realm boundary. Disreputable,
-//            extremely profitable, and it attracts attention.
+//   grave  → taken off a body. Cultivators die carrying everything they own,
+//            most of them die somewhere remote, and what they were part-way
+//            through is still on them. Disreputable, extremely profitable, and
+//            it attracts attention, because sects keep records of where their
+//            people fell.
 //
 // This is what makes digging a viable path for a cultivator born without
-// talent. You will not out-cultivate a single-root prodigy on ambient ash.
-// You might out-dig them.
+// talent, or born somewhere poor. You will not out-cultivate a single-root
+// prodigy on the ambient qi of a late age. You might out-dig them.
 // ─────────────────────────────────────────────────────────────────────────
 
 export type TechniqueProvenance = 'taught' | 'ruin' | 'grave';
@@ -136,7 +140,7 @@ export const GRAVE_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
 const SOURCE_NOTES: Record<TechniqueProvenance, string> = {
     taught: 'Transmitted by at least one living sect. A teacher exists and can be paid, joined, or robbed.',
     ruin: 'Recovered, not taught. Copies survive only in sealed sites, and no living cultivator learned it from a person.',
-    grave: 'Found in a grave deposit - the settled remainder of what a realm boundary took off somebody. Taking it takes what someone else already paid for.'
+    grave: 'Taken off a body. Somebody died carrying it, somewhere remote enough that it stayed where they fell, and their sect very likely knows where that was.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1133,7 +1137,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: null,
         cooldown: 0,
         description:
-            'Six pages, block-printed, sold at every market town for the price of a meal. It teaches one to breathe settled ash in a way that accumulates rather than dissipates. The ash is thin, the manual is old, and nine in ten cultivators never learn anything better.'
+            'Six pages, block-printed, sold at every market town for the price of a meal. It teaches one to draw ambient qi in a way that accumulates rather than dissipates. On thin ground it accumulates nothing, which the manual does not mention, and nine in ten cultivators never learn anything better.'
     }),
     art({
         id: 'five-breath-circulation-scripture',
@@ -1324,7 +1328,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: null,
         cooldown: 3,
         description:
-            'A name is spoken into the register and held there by someone other than its owner. When the Vault takes a name at a realm boundary, the register still has it, and the holder can give it back - slowly, incompletely, and at whatever price the house has decided that year.'
+            'A name is spoken into the register and held there by someone other than its owner. When a crossing takes a name at a realm boundary, the register still has it, and the holder can give it back - slowly, incompletely, and at whatever price the house has decided that year.'
     }),
     art({
         id: 'anchor-stance-of-fixed-ground',
@@ -1460,7 +1464,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: '12d12+50',
         cooldown: 7,
         description:
-            'Collects an inherited debt from whoever currently stands at the end of the thread, in full, at once, regardless of whether that person has ever heard of the original transaction. It is recovered from grave deposits rather than ruins, because the last people who could use it were made to pay for it themselves.'
+            'Collects an inherited debt from whoever currently stands at the end of the thread, in full, at once, regardless of whether that person has ever heard of the original transaction. Copies turn up on bodies rather than in ruins, because the last people who could use it were made to pay for it themselves, somewhere remote.'
     }),
 
     // ═══════════════════════════════════════════════════════════════════

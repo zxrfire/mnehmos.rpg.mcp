@@ -27,15 +27,16 @@
  *
  * RUINS ARE THE CORE LOOP
  * -----------------------
- * This is a late age. The ash falling now has been through a hundred thousand
- * cultivators already, and nobody has ascended in living memory. A sealed site
- * is a pocket of ash that has NOT been breathed, along with whatever its owner
- * did not get to take out - manuals in grades no living teacher can transmit,
- * refining methods nobody alive devised, and formations still drawing on a vein
- * that was rich when it was tapped.
+ * This is a late age. Most veins have been drawn down, whole regions were
+ * killed outright by old wars, and nobody has ascended in living memory. A
+ * sealed site is a pocket of qi that nothing has drawn on, along with whatever
+ * its owner did not get to take out - manuals in grades no living teacher can
+ * transmit, refining methods nobody alive devised, and formations still
+ * drawing on a vein that was rich when it was tapped.
  *
  * That makes digging the only realistic path upward for a cultivator born
- * without talent, so the `ruin` and `grave` entries below are the heaviest
+ * without talent, or born somewhere poor, so the `ruin` and `grave` entries
+ * below are the heaviest
  * block in the table by weight, not a garnish on it. They are also the most
  * specific way to die: seals punish the wrong opening method, guardian
  * formations have been running for two ages without tiring, corpses in the
@@ -651,14 +652,14 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: false,
         threatOrdinal: null,
         summaryTemplate:
-            'The ground at {place} is a tribulation scar {range} paces across, {years} years old. Ash will not settle here again. The name of who failed is held in the ledgers of {faction}.',
+            'The ground at {place} is a tribulation scar {range} paces across, {years} years old. The qi here has not come back and will not. The name of who failed is held in the ledgers of {faction}.',
         tokens: ['place', 'range', 'years', 'faction'],
         tags: ['ruin', 'permanently-thin', 'safe', 'texture']
     },
 
     // ═══════════════════════════════════════════════════════════════════
     // THE LATE AGE: SEALED SITES
-    // Unbreathed ash, and the reasons it is still unbreathed.
+    // Qi nothing has drawn on, and the reasons nothing has.
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'enc-sealed-cave-mouth',
@@ -671,9 +672,9 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'A sealed cave mouth is exposed at {place}. Seal grade: {sealGrade}. The ash behind it has not been breathed; estimated density on opening {ambient}. The intended opening method is not legible from outside.',
+            'A sealed cave mouth is exposed at {place}. Seal grade: {sealGrade}. Nothing has drawn on the qi behind it; estimated density on opening {ambient}. The intended opening method is not legible from outside.',
         tokens: ['place', 'sealGrade', 'ambient'],
-        tags: ['ruin', 'sealed', 'unbreathed-ash', 'high-risk']
+        tags: ['ruin', 'sealed', 'untouched-qi', 'high-risk']
     },
     {
         id: 'enc-collapsed-sect-compound',
@@ -691,8 +692,8 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['ruin', 'sealed', 'loot', 'competition']
     },
     {
-        id: 'enc-unbreathed-ash-pocket',
-        name: 'Pocket of Unbreathed Ash',
+        id: 'enc-untouched-qi-pocket',
+        name: 'Pocket of Untouched Qi',
         kind: 'ruin',
         simEventKind: 'opportunity',
         weight: 60,
@@ -701,9 +702,9 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: false,
         threatOrdinal: null,
         summaryTemplate:
-            'A sealed pocket at {place} holds ash that has never been through a body. Density on opening: {ambient}. It thins to ordinary fall within {days} days of the seal being broken.',
+            'A sealed pocket at {place} holds qi nothing has ever drawn on. Density on opening: {ambient}. It falls to the local ambient level within {days} days of the seal being broken.',
         tokens: ['place', 'ambient', 'days'],
-        tags: ['ruin', 'unbreathed-ash', 'cultivation-rate', 'timed']
+        tags: ['ruin', 'untouched-qi', 'cultivation-rate', 'timed']
     },
     {
         id: 'enc-guardian-formation-running',
@@ -836,7 +837,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: false,
         threatOrdinal: null,
         summaryTemplate:
-            'A dead formation node at {place} can be relit with {loot}. While it runs, ambient ash inside the compound holds at {ambient}. {count} of the site\'s nodes are already lit; the rest are not understood.',
+            'A dead formation node at {place} can be relit with {loot}. While it runs, ambient qi inside the compound holds at {ambient}. {count} of the site\'s nodes are already lit; the rest are not understood.',
         tokens: ['place', 'loot', 'ambient', 'count'],
         tags: ['ruin', 'formation', 'cultivation-rate', 'safe']
     },
@@ -866,9 +867,9 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'A hall at {place} has been sealed since before the current records begin. The seal is rated at {wardOrdinal} and is intact. Ash inside has never been breathed; density {ambient}. The last party to reach the door left {years} years ago without opening it.',
+            'A hall at {place} has been sealed since before the current records begin. The seal is rated at {wardOrdinal} and is intact. Nothing has drawn on the qi inside; density {ambient}. The last party to reach the door left {years} years ago without opening it.',
         tokens: ['place', 'wardOrdinal', 'ambient', 'years'],
-        tags: ['ruin', 'sealed', 'unbreathed-ash', 'ruin-only', 'high-risk']
+        tags: ['ruin', 'sealed', 'untouched-qi', 'ruin-only', 'high-risk']
     },
     {
         id: 'enc-spirit-tide',
@@ -881,20 +882,22 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'Somebody has ascended. Ash is coming down across {place} over {days} days. Ambient state during the fall: {ambient}. {count} sects have mobilised to hold ground under it.',
+            'A surge is running under {place} and will hold {days} days: a vein shifting, or a seal that has failed somewhere upstream. Ambient state during the surge: {ambient}. {count} sects have mobilised to hold ground over it, and two of them have a prior claim.',
         tokens: ['place', 'days', 'ambient', 'count'],
         tags: ['opportunity', 'cultivation-rate', 'timed', 'competition']
     },
 
     // ═══════════════════════════════════════════════════════════════════
     // THE LATE AGE: GRAVES AND GRAVE-READERS
-    // A grave is not a burial. It is the settled remainder of what a realm
-    // boundary took off somebody. Robbing one takes what another person
-    // already paid for, and it attracts attention.
+    // A grave is not a burial. Cultivators carry everything they own,
+    // most of them die somewhere remote, and all of it stays where they
+    // fell. A grave is indifferent and therefore kills more people than
+    // an inheritance does: nothing on a corpse is calibrated to whoever
+    // finds it. And sects keep records of where their people died.
     // ═══════════════════════════════════════════════════════════════════
     {
-        id: 'enc-grave-deposit-shallow',
-        name: 'Shallow Grave Deposit',
+        id: 'enc-grave-recent-death',
+        name: 'Somebody Died Here',
         kind: 'grave',
         simEventKind: 'opportunity',
         weight: 55,
@@ -903,13 +906,13 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: false,
         threatOrdinal: null,
         summaryTemplate:
-            'A grave deposit at {place} holds one boundary\'s worth of what was taken off a cultivator at {threatRank}. Legible so far: {loot}. The name attached to it belongs to nobody now living.',
-        tokens: ['place', 'threatRank', 'loot'],
+            'A cultivator who died at {threatRank} is lying at {place}, roughly {days} days dead, with everything they were carrying still on them: {loot}. Nothing here was arranged for a finder.',
+        tokens: ['threatRank', 'place', 'days', 'loot'],
         tags: ['grave', 'loot', 'attention', 'safe']
     },
     {
-        id: 'enc-grave-deposit-deep',
-        name: 'Deep Grave Deposit',
+        id: 'enc-grave-remote-and-old',
+        name: 'Remains, Well Off the Road',
         kind: 'grave',
         simEventKind: 'opportunity',
         weight: 35,
@@ -918,13 +921,13 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'A deposit at {place} holds {count} boundaries\' worth of what was taken off a cultivator at {threatRank}. Included: a technique nobody living remembers, a face, and {loot}.',
-        tokens: ['place', 'count', 'threatRank', 'loot'],
+            'Remains at {place}, dead approximately {years} years, at {threatRank} in life. Recovered from the body: a manual they were part-way through, {loot}, and pills they were saving for a crossing they never attempted. Whatever has grown up around the site since is still here.',
+        tokens: ['place', 'years', 'threatRank', 'loot'],
         tags: ['grave', 'technique', 'loot', 'attention', 'high-value']
     },
     {
         id: 'enc-grave-of-a-transcender',
-        name: 'Grave of a Transcender',
+        name: 'Remains of Somebody Far Above',
         kind: 'grave',
         simEventKind: 'opportunity',
         weight: 6,
@@ -933,7 +936,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'The deposit at {place} is the toll of a cultivator at {threatRank}, {gap} ranks above the finder. The contents are usable and are not survivable at this realm. Estimated value: {stones} spirit stones.',
+            'The body at {place} was a cultivator at {threatRank}, {gap} ranks above the finder. What they were carrying is usable and is not survivable at this realm. Estimated value: {stones} spirit stones. It was not left for anyone.',
         tokens: ['place', 'threatRank', 'gap', 'stones'],
         tags: ['grave', 'technique', 'high-value', 'lethal', 'once']
     },
@@ -948,7 +951,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: null,
         summaryTemplate:
-            'A grave-reader working out of {place} proposes terms: their reading, the other party\'s digging, {percent} percent of what comes up. They have worked {count} deposits and can name every one.',
+            'A grave-reader working out of {place} proposes terms: their reading of where people fell, the other party\'s digging, {percent} percent of what comes up. They have worked {count} sites and can tell a grave from an inheritance on sight.',
         tokens: ['place', 'percent', 'count'],
         tags: ['grave', 'social', 'quest', 'avoidable']
     },
@@ -963,9 +966,92 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: 22,
         summaryTemplate:
-            'The deposit taken at {place} was being watched. {faction} has sent {count} to recover it, strongest at {threatRank}. They have not opened with a request for its return.',
+            'The body stripped at {place} was one of theirs, and {faction} keeps records of where its people fell. {count} sent to recover the goods, strongest at {threatRank}. They have not opened with a request for their return.',
         tokens: ['place', 'faction', 'count', 'threatRank'],
         tags: ['grave', 'hostile', 'feud-seed', 'unavoidable']
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // QI IS A CONTESTED RESOURCE
+    // A region supports only so many cultivators, and qi drawn by one is
+    // not available to another. Everyone can do the arithmetic. Nobody
+    // defends the conclusion out loud, and the practice has never quite
+    // been stamped out.
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'enc-valley-overdrawn',
+        name: 'Too Many Drawing on One Valley',
+        kind: 'misfortune',
+        simEventKind: 'resource_depleted',
+        weight: 45,
+        minOrdinal: 0,
+        maxOrdinal: 24,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            '{place} comfortably carries {supported} cultivators and currently holds {count}. Measured ambient has fallen to {ambient} and progress here is running at {percent} percent of the rate it was two years ago. Nobody has said anything.',
+        tokens: ['place', 'supported', 'count', 'ambient', 'percent'],
+        tags: ['contested-qi', 'cultivation-rate', 'relocate', 'safe']
+    },
+    {
+        id: 'enc-thin-region-ceiling',
+        name: 'A Region With a Ceiling',
+        kind: 'misfortune',
+        simEventKind: 'resource_depleted',
+        weight: 35,
+        minOrdinal: 0,
+        maxOrdinal: 12,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            'Ambient qi across {place} is {ambient} and has been for as long as anyone has measured. Nobody local has passed Qi Condensation in {years} years. Cultivating here does not advance; it holds. The nearest ground that will support advancement is {days} days away and owned.',
+        tokens: ['place', 'ambient', 'years', 'days'],
+        tags: ['contested-qi', 'ceiling', 'relocate', 'ordinary']
+    },
+    {
+        id: 'enc-vein-claim-dispute',
+        name: 'Two Claims on One Vein',
+        kind: 'sect_event',
+        simEventKind: 'sect_event',
+        weight: 30,
+        minOrdinal: 8,
+        maxOrdinal: 34,
+        interrupts: true,
+        threatOrdinal: 24,
+        summaryTemplate:
+            '{faction} and {rivalFaction} both hold a claim on the vein under {place}, dated {years} years apart and both documented. Field strength on the ground peaks at {threatRank}. Whoever holds it in a year will still be producing cultivators in fifty.',
+        tokens: ['faction', 'rivalFaction', 'place', 'years', 'threatRank'],
+        tags: ['contested-qi', 'sect', 'war', 'territory']
+    },
+    {
+        id: 'enc-vein-lost',
+        name: 'A Sect That Lost Its Vein',
+        kind: 'sect_event',
+        simEventKind: 'sect_event',
+        weight: 25,
+        minOrdinal: 6,
+        maxOrdinal: 36,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            '{faction} lost the vein under {place} to {rivalFaction} {years} years ago. Its intake has produced {count} cultivators past Foundation Establishment since. It is selling its library, and the terms are better than they should be.',
+        tokens: ['faction', 'place', 'rivalFaction', 'years', 'count'],
+        tags: ['contested-qi', 'sect', 'decline', 'trade', 'technique']
+    },
+    {
+        id: 'enc-cull-for-qi',
+        name: 'The Arithmetic, Acted On',
+        kind: 'misfortune',
+        simEventKind: 'encounter',
+        weight: 18,
+        minOrdinal: 4,
+        maxOrdinal: 30,
+        interrupts: true,
+        threatOrdinal: 20,
+        summaryTemplate:
+            'The outer disciples of {faction} at {place} were killed over {days} days, {count} of them, by parties at {threatRank}. Measured ambient in the valley has risen from {ambient} since. No sect has claimed it and three have moved cultivators in.',
+        tokens: ['faction', 'place', 'days', 'count', 'threatRank', 'ambient'],
+        tags: ['contested-qi', 'hostile', 'atrocity', 'reputation', 'feud-seed']
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1080,6 +1166,21 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
             'The station at {place} will not carry the cultivator. {faction} gives the reason as {reason}. The walked distance to the destination is {days} days; the span is one hour, and every other route out is also theirs.',
         tokens: ['place', 'faction', 'reason', 'days'],
         tags: ['dao-house', 'civil', 'space', 'logistics', 'safe']
+    },
+    {
+        id: 'enc-ancestral-claim-verification',
+        name: 'A Claim Nobody Has Checked',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 22,
+        minOrdinal: 5,
+        maxOrdinal: 38,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            '{faction} has claimed a living ancestor above the ceiling for {years} years, and its standing rests on it. {rivalFaction} will certify or refuse the claim for {stones} spirit stones and has refused {count} such claims before. The certification is public whichever way it goes.',
+        tokens: ['faction', 'years', 'rivalFaction', 'stones', 'count'],
+        tags: ['dao-house', 'civil', 'ancestry', 'reputation', 'afterwards']
     },
     {
         id: 'enc-house-member-killed',

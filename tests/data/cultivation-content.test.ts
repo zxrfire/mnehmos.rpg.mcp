@@ -86,7 +86,14 @@ import {
     getCounterHouse,
     getDisputesFor,
     getSuccessionAccounts,
-    isDaoHouse
+    isDaoHouse,
+    SECT_ANCESTRY,
+    getSectAncestry,
+    getDormantAncestors,
+    getSectsClaimingLivingAncestor,
+    getPartingGift,
+    getPreeminentSect,
+    auditAncestralClaim
 } from '../../src/data/cultivation/sects.js';
 import {
     ENCOUNTERS,
@@ -924,7 +931,7 @@ describe('the Late Age: provenance and the exploration loop', () => {
 
     it('carries the five standing powers of the Vault', () => {
         const powers: Record<string, string> = {
-            'sect-ashwright-consortium': 'neutral',
+            'sect-stonewright-consortium': 'neutral',
             'sect-lantern-hall': 'righteous',
             'sect-the-severed': 'demonic',
             'sect-hollow-court': 'neutral',
@@ -959,6 +966,201 @@ describe('the Late Age: provenance and the exploration loop', () => {
         }
         expect(inherited / SECTS.length, 'most sects inherited their ground').toBeGreaterThan(0.7);
         expect(incomplete, 'most sects cannot run their whole inheritance').toBeGreaterThan(SECTS.length / 2);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+describe('qi, veins and the Late Age', () => {
+    it('carries no trace of the discarded ash metaphysics', () => {
+        // Qi is ordinary ambient spiritual energy pooled in veins. It is not
+        // the settled remains of ascended lives, nothing is breathed twice,
+        // and no sect is a Vault.
+        const banned = [
+            /settled ash/i,
+            /unbreathed/i,
+            /ash (falling|is coming down|has (not )?been breathed)/i,
+            /breath(e|ed|ing) (the )?(dead|ash)/i,
+            /falling lives?/i,
+            /\bthe Vault\b/
+        ];
+        const corpus: { label: string; text: string }[] = [
+            ...TECHNIQUES.map(t => ({ label: t.id, text: `${t.name} ${t.description} ${t.sourceNote}` })),
+            ...PILLS.map(p => ({ label: p.id, text: `${p.name} ${p.description}` })),
+            ...HERBS.map(h => ({ label: h.id, text: `${h.name} ${h.description}` })),
+            ...ENCOUNTERS.map(e => ({ label: e.id, text: `${e.name} ${e.summaryTemplate} ${e.tags.join(' ')}` })),
+            ...SECTS.map(s => ({ label: s.id, text: `${s.name} ${s.description} ${s.territory} ${s.compound.remnant}` }))
+        ];
+        for (const { label, text } of corpus) {
+            for (const pattern of banned) {
+                expect(pattern.test(text), `${label} still carries the ash conceit: ${pattern}`).toBe(false);
+            }
+        }
+    });
+
+    it('renamed the Ashwright Consortium and kept it in the seeding catalog', () => {
+        expect(getSect('sect-stonewright-consortium')).toBeDefined();
+        expect(getSect('sect-ashwright-consortium')).toBeUndefined();
+        expect(getSect('sect-stonewright-consortium')!.name).toBe('Stonewright Consortium');
+        // Rivalry symmetry survived the rename.
+        for (const rival of getSect('sect-stonewright-consortium')!.rivals) {
+            expect(getSect(rival)!.rivals).toContain('sect-stonewright-consortium');
+        }
+    });
+
+    it('states the vein economy in the sect catalog rather than implying it', () => {
+        const veinAware = SECTS.filter(s =>
+            /vein/i.test(`${s.description} ${s.territory} ${s.compound.remnant}`));
+        expect(veinAware.length, 'a sect is old because it holds a vein').toBeGreaterThanOrEqual(5);
+        // The Kiln Wardens guard the deep vein at the world's root.
+        expect(getSect('sect-kiln-wardens')!.description).toMatch(/vein/i);
+    });
+
+    it('puts contested qi in the encounter table', () => {
+        const contested = ENCOUNTERS.filter(e => e.tags.includes('contested-qi'));
+        expect(contested.length).toBeGreaterThanOrEqual(4);
+        // Including the conclusion nobody defends out loud.
+        expect(getEncounter('enc-cull-for-qi')).toBeDefined();
+        // And the hard ceiling that ends most lives without anybody's fault.
+        expect(getEncounter('enc-thin-region-ceiling')).toBeDefined();
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+describe('ancestral records', () => {
+    it('every faction has records, and the wall of names is never empty', () => {
+        for (const s of SECTS) {
+            const records = getSectAncestry(s.id);
+            expect(records, `${s.id} has no ancestral records`).toBeDefined();
+            expect(records!.ancestors.length, `${s.id} records no ancestors`).toBeGreaterThan(0);
+            expect(records!.standingNote.length, `${s.id} standing note`).toBeGreaterThan(60);
+            for (const a of records!.ancestors) {
+                expect(['dead', 'ascended', 'dormant', 'lost']).toContain(a.fate);
+                expect(a.yearsAgo).toBeGreaterThanOrEqual(0);
+                expect(a.rememberedFor.length, `${s.id}: ${a.name}`).toBeGreaterThan(30);
+            }
+        }
+        // No stray entries for factions that do not exist.
+        for (const id of Object.keys(SECT_ANCESTRY)) {
+            expect(getSect(id), `ancestry for unknown faction ${id}`).toBeDefined();
+        }
+    });
+
+    it('keeps a living ancestor rare enough to define a sect', () => {
+        const claiming = getSectsClaimingLivingAncestor();
+        expect(claiming.length).toBeGreaterThanOrEqual(2);
+        expect(claiming.length, 'this must stay rare').toBeLessThanOrEqual(5);
+        const trueClaims = claiming.filter(id => SECT_ANCESTRY[id].claimIsTrue);
+        expect(trueClaims.length).toBeGreaterThanOrEqual(2);
+        expect(trueClaims.length).toBeLessThanOrEqual(3);
+    });
+
+    it('has at least one false claim, with traces a rival could pay to find', () => {
+        const liars = getSectsClaimingLivingAncestor()
+            .filter(id => !SECT_ANCESTRY[id].claimIsTrue);
+        expect(liars.length, 'sects lie about this').toBeGreaterThanOrEqual(1);
+        for (const id of liars) {
+            const audit = auditAncestralClaim(id)!;
+            expect(audit.claimed).toBe(true);
+            expect(audit.true).toBe(false);
+            expect(audit.traces.length, `${id} lies without evidence`).toBeGreaterThanOrEqual(3);
+            for (const trace of audit.traces) expect(trace.length).toBeGreaterThan(30);
+        }
+        // An honest claim audits clean rather than being unauditable.
+        const honest = getSectsClaimingLivingAncestor()
+            .filter(id => SECT_ANCESTRY[id].claimIsTrue && SECT_ANCESTRY[id].recency !== 'several_ages');
+        expect(honest.length).toBeGreaterThan(0);
+        for (const id of honest) expect(auditAncestralClaim(id)!.traces).toEqual([]);
+        // A faction making no claim cannot be audited for one.
+        expect(auditAncestralClaim('sect-hollow-bell-wanderers')).toBeUndefined();
+    });
+
+    it('puts the politics in the middle of the decay curve', () => {
+        // A true claim whose gift is gone: every incentive to keep it unexamined.
+        const middle = Object.entries(SECT_ANCESTRY)
+            .filter(([, r]) => r.claimIsTrue && r.recency === 'several_ages' && r.partingGift?.intact === false);
+        expect(middle.length, 'nobody is on the interesting part of the curve').toBeGreaterThanOrEqual(1);
+        for (const [id, r] of middle) {
+            expect(r.discoverableTraces.length, `${id} gift loss leaves no trace`).toBeGreaterThanOrEqual(3);
+            expect(r.lastOffering, `${id} should have offered at least once`).not.toBeNull();
+        }
+        // And the house that sells the examination exists and says so.
+        const ledger = getDaoHouse('house-ninefold-ledger')!;
+        expect(ledger.services.some(s => /certif/i.test(s) && /ancest/i.test(s))).toBe(true);
+        expect(getEncounter('enc-ancestral-claim-verification')).toBeDefined();
+    });
+
+    it('designates exactly one preeminent institution, and shows its gift', () => {
+        const preeminent = getPreeminentSect();
+        expect(preeminent, 'no sect holds the last crossing').toBeDefined();
+
+        const recentIntact = Object.values(SECT_ANCESTRY)
+            .filter(r => r.claimIsTrue && r.recency === 'recent' && r.partingGift?.intact);
+        expect(recentIntact.length, 'exactly one preeminent sect').toBe(1);
+
+        const records = getSectAncestry(preeminent!.id)!;
+        const gift = getPartingGift(preeminent!.id)!;
+        expect(gift.id).toMatch(/^artifact-/);
+        expect(gift.description.length).toBeGreaterThan(120);
+        expect(gift.reserveTerms.length, 'a reserve artifact is held, not wielded')
+            .toBeGreaterThan(60);
+        expect(gift.intact).toBe(true);
+
+        // The crossing is recent, and dated.
+        const ascended = records.ancestors.find(a => a.fate === 'ascended')!;
+        expect(ascended.yearsAgo).toBeLessThanOrEqual(600);
+
+        // Standing comes from the ancestor, not from its living members: it is
+        // not the strongest sect in the catalog by power ordinal.
+        const strongest = Math.max(...SECTS.map(s => s.powerOrdinal));
+        expect(preeminent!.powerOrdinal).toBeLessThan(strongest);
+
+        // The politics are recorded: rivals resent it, and someone is working
+        // on what happens when the gift is spent.
+        expect(records.standingNote.length).toBeGreaterThan(120);
+        expect(records.lastOffering, 'a recent ancestor gets offered to').not.toBeNull();
+    });
+
+    it('models dormant ancestors as a break-glass decision with a stated cost', () => {
+        const dormant = getDormantAncestors();
+        expect(dormant.length, 'the dangerous kind must exist').toBeGreaterThanOrEqual(2);
+        expect(dormant.length, 'and stay rare').toBeLessThanOrEqual(5);
+        for (const { sectId, dormant: d } of dormant) {
+            expect(getSect(sectId), `dormant ancestor for unknown ${sectId}`).toBeDefined();
+            expect(d.dormantYears).toBeGreaterThan(100);
+            expect(d.wakeCondition.length, `${sectId} wake condition`).toBeGreaterThan(40);
+            expect(d.wakeCost.length, `${sectId} wake cost`).toBeGreaterThan(40);
+            expect(d.restingPlace.length).toBeGreaterThan(30);
+            // A dormant ancestor is in the world, so the sect's records agree.
+            const records = getSectAncestry(sectId)!;
+            expect(records.ancestors.some(a => a.fate === 'dormant'), `${sectId} records`).toBe(true);
+            // Dormant is not ascended: no offering channel, no parting gift.
+            expect(records.lastOffering).toBeNull();
+            expect(records.partingGift).toBeNull();
+        }
+        // Most are hidden, which is what makes the threat invisible.
+        const hidden = dormant.filter(d => !d.dormant.publiclyKnown);
+        expect(hidden.length).toBeGreaterThan(dormant.length / 2);
+        // And at least one is published, because publishing it is a deterrent.
+        expect(dormant.some(d => d.dormant.publiclyKnown)).toBe(true);
+    });
+
+    it('makes an offering cost the principal and return very little', () => {
+        const offerings = Object.entries(SECT_ANCESTRY)
+            .filter(([, r]) => r.lastOffering !== null);
+        expect(offerings.length).toBeGreaterThanOrEqual(3);
+        for (const [id, r] of offerings) {
+            const o = r.lastOffering!;
+            expect(o.cost.length, `${id} offering cost`).toBeGreaterThan(40);
+            expect(o.consequence.length, `${id} offering consequence`).toBeGreaterThan(60);
+            expect(o.yearsAgo).toBeGreaterThan(0);
+            // A few words, or nothing at all.
+            if (o.response !== null) {
+                expect(o.response.split(/\s+/).length, `${id} answer is not a few words`)
+                    .toBeLessThanOrEqual(12);
+            }
+        }
+        // Somebody got silence and recorded it.
+        expect(offerings.some(([, r]) => r.lastOffering!.response === null)).toBe(true);
     });
 });
 

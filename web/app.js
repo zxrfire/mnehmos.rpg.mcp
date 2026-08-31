@@ -181,18 +181,14 @@ function isTrueImmortal(run = S.run, cultivator = S.cultivator) {
 }
 
 /**
- * A False Immortal's ceiling is vast, finite and countable, and it is NOT the
- * Tribulation Transcendence figure their ordinal implies. Engine constant.
+ * Lifespan remaining, straight from the engine.
+ *
+ * `derivedView` reads it through `effectiveLifespanYears(ordinal, immortalStatus)`,
+ * so a False Immortal's own vast-but-finite ceiling is already accounted for and
+ * the client does not duplicate the constant.
  */
-const FALSE_IMMORTAL_LIFESPAN_YEARS = 300000;
-
-/** Lifespan remaining, corrected for a False Immortal's own ceiling. */
-function lifespanRemaining(derived = S.derived, cultivator = S.cultivator) {
-  const reported = Number(derived && derived.lifespanRemaining);
-  if (!isFalseImmortal(derived, cultivator)) return reported;
-  const age = Number(cultivator && cultivator.age);
-  if (!Number.isFinite(age)) return reported;
-  return FALSE_IMMORTAL_LIFESPAN_YEARS - age;
+function lifespanRemaining(derived = S.derived) {
+  return Number(derived && derived.lifespanRemaining);
 }
 
 /** Highest legal ordinal, taken from the ladder the engine served. */
@@ -202,9 +198,156 @@ function summitOrdinal() {
     : 45;
 }
 
+/* -- Existence -----------------------------------------------------------
+   At low realms a destroyed body is a dead cultivator. From Nascent Soul up
+   that stops being true, and a cultivator becomes a persistent identity that
+   may occupy several physical states over time.
+
+   `existenceState` is authoritative over `alive`. This file only chooses copy
+   from it; it never computes it, and the classification switches below mirror
+   `engine/cultivation/existence.ts` for presentation purposes only.
+   ---------------------------------------------------------------------- */
+
+const EXISTENCE = {
+    alive: {
+        label: 'Alive',
+        tone: 'ok',
+        line: 'One body, occupied, working.'
+    },
+    physically_dead: {
+        label: 'Physically dead',
+        tone: 'bad',
+        line: 'The body went and nothing survived it. This one is terminal; there is no state after it.'
+    },
+    soul_preserved: {
+        label: 'Soul preserved',
+        tone: 'odd',
+        line: 'Consciousness persists with no body to put it in. You can still act, badly, and not at all with hands.'
+    },
+    remnant: {
+        label: 'Remnant',
+        tone: 'bad',
+        line: 'An imprint left behind. This is not the person - it is something the person left that can talk, and it does not always know the difference.'
+    },
+    sealed: {
+        label: 'Sealed',
+        tone: 'odd',
+        line: 'Intact and unable to act, for as long as that lasts. Sealed is not dead; people have come out of it after four thousand years.'
+    },
+    possessing: {
+        label: 'Possessing',
+        tone: 'odd',
+        line: 'Occupying a body that was not yours. Control is rarely total and the vessel rarely agrees.'
+    },
+    reincarnated: {
+        label: 'Reincarnated',
+        tone: 'odd',
+        line: 'A genuinely new life, not a respawn. What carried across is whatever carried across.'
+    },
+    reconstructed: {
+        label: 'Reconstructed',
+        tone: 'odd',
+        line: 'A rebuilt body. It is rarely identical to the first, and the difference cost something.'
+    },
+    missing: {
+        label: 'Missing',
+        tone: 'unresolved',
+        line: 'Whereabouts unknown, and aliveness genuinely unresolved. This is an answer, not a gap in the record.'
+    },
+    unknown: {
+        label: 'Unknown',
+        tone: 'unresolved',
+        line: 'The engine has not decided, and does not have to. The world may hold several beliefs at once.'
+    }
+};
+
+const SOUL_STATE = {
+    intact: { label: 'Intact', tone: 'ok', line: '' },
+    damaged: { label: 'Damaged', tone: 'warn', line: 'The soul took harm the body did not.' },
+    fragmented: { label: 'Fragmented', tone: 'bad', line: 'Pieces of it are elsewhere, or gone.' },
+    fading: { label: 'Fading', tone: 'critical', line: 'It is going out. This is the clock that does not stop for pills.' }
+};
+
+/** Presentation mirror of `isGoingConcern`. Never used to compute state. */
+const NOT_A_GOING_CONCERN = ['remnant', 'physically_dead'];
+/** Presentation mirror of `hasBody`. */
+const BODILESS = ['soul_preserved', 'remnant', 'physically_dead', 'missing', 'unknown'];
+
+const existenceOf = (c) => (c && c.existenceState) || 'alive';
+const soulStateOf = (c) => (c && c.soulState) || 'intact';
+
+/**
+ * How much of the original person this actually is, 0..1.
+ *
+ * The engine field is `identityContinuity`; the design document calls the same
+ * idea identity fraction, so both spellings are read.
+ */
+function identityContinuity(c = S.cultivator) {
+    const v = Number(c && (c.identityContinuity !== undefined ? c.identityContinuity : c.identityFraction));
+    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 1;
+}
+
+const isBodiless = (c = S.cultivator) => BODILESS.includes(existenceOf(c));
+
+/**
+ * True only for the ordinary case: one occupied body, an intact soul, and all
+ * of the original person. The existence panel stays out of the way for this,
+ * because surfacing it would imply a system the player cannot yet touch.
+ */
+function existenceIsUnremarkable(c = S.cultivator) {
+    return existenceOf(c) === 'alive'
+        && soulStateOf(c) === 'intact'
+        && identityContinuity(c) >= 1;
+}
+
+/** Plain statement of what a reduced continuity means. Never a bare percentage. */
+function continuityLine(c = S.cultivator) {
+    const v = identityContinuity(c);
+    if (v >= 1) return '';
+    const state = existenceOf(c);
+    const pct = `${Math.round(v * 100)}%`;
+    if (state === 'remnant') {
+        return `About ${pct} of the original person. A remnant can say "I founded this sect" in `
+            + 'perfect sincerity and be wrong, and this is the number that says so.';
+    }
+    if (v <= 0.35) {
+        return `About ${pct} of the original person came through. Most of who set out is not here.`;
+    }
+    if (v <= 0.75) {
+        return `About ${pct} of the original person. Enough is missing that people who knew them notice.`;
+    }
+    return `About ${pct} of the original person. Something did not come back, and it was not nothing.`;
+}
+
+function existenceMarkup(c) {
+    if (existenceIsUnremarkable(c)) return '';
+
+    const state = existenceOf(c);
+    const meta = EXISTENCE[state] || { label: titleise(state), tone: 'unresolved', line: 'The engine reports an existence state this client does not recognise.' };
+    const soul = soulStateOf(c);
+    const soulMeta = SOUL_STATE[soul] || { label: titleise(soul), tone: 'warn', line: '' };
+    const continuity = continuityLine(c);
+    const terminal = state === 'physically_dead';
+    const notGoing = NOT_A_GOING_CONCERN.includes(state);
+
+    // An ordinary living cultivator whose only anomaly is the soul does not get
+    // the whole panel; the soul reads as a vital instead.
+    if (state === 'alive' && !continuity) return '';
+
+    return html`
+    <div class="statusflag statusflag--existence tone-${raw(meta.tone)}">
+      <div class="statusflag__title">${meta.label}</div>
+      <div class="statusflag__body">${meta.line}</div>
+      ${continuity ? raw(html`<div class="statusflag__body statusflag__body--continuity">${continuity}</div>`) : ''}
+      ${soul !== 'intact' ? raw(html`<div class="statusflag__body">Soul ${soulMeta.label.toLowerCase()}. ${soulMeta.line}</div>`) : ''}
+      ${c.bodyId && state === 'possessing' ? raw(html`<div class="statusflag__meta">occupying body <code>${String(c.bodyId)}</code></div>`) : ''}
+      ${notGoing && !terminal ? raw(html`<div class="statusflag__meta">Not a going concern. Whatever is acting here, it is not the cultivator.</div>`) : ''}
+    </div>`;
+}
+
 const FOUNDATION_TEXT = {
   none: 'Nothing laid yet. Below Foundation Establishment there is nothing to stand on.',
-  exceptional: 'Laid in dense ash, unhurried, with the right pill. It will carry anything.',
+  exceptional: 'Laid on dense qi, unhurried, with the right pill. It will carry anything.',
   stable: 'The ordinary good outcome. It holds and it does not complain.',
   unstable: 'It holds, but it complains. Every rung above it costs more than it should.',
   incomplete: 'Rushed. Part of the structure was never formed, and never will be.',
@@ -220,7 +363,7 @@ const FOUNDATION_TONE = {
 };
 
 const TOLL_OUTCOME_TEXT = {
-  clean: 'The Vault went past without noticing.',
+  clean: 'The crossing went past without taking an interest.',
   prepaid: 'Paid in advance, on their own terms.',
   taken: 'Something that mattered is gone.',
   nothing_left: 'The roll failed and there was nothing worth taking.'
@@ -492,25 +635,26 @@ function renderWarnings() {
   if (!c) { host.innerHTML = ''; return; }
 
   const items = [];
+  const hasBody = !isBodiless(c);
 
-  // 1. Starvation.
+  // 1. Starvation. Nothing bodiless starves.
   const starving = Number(c.starvationTurns) || 0;
   const satiety = Number(c.satiety) || 0;
-  if (starving > 0) {
+  if (hasBody && starving > 0) {
     items.push({
       level: 'critical',
       mark: '✕',
       title: `Starving - ${starving} turn${starving === 1 ? '' : 's'} at zero satiety`,
       body: 'Five consecutive turns without food is fatal. Eat now.'
     });
-  } else if (satiety <= 15) {
+  } else if (hasBody && satiety <= 15) {
     items.push({
       level: 'critical',
       mark: '!',
       title: `Satiety ${fmtInt(satiety)} - starvation is imminent`,
       body: 'At zero, the starvation counter starts. Five turns after that, the run ends.'
     });
-  } else if (satiety <= 30) {
+  } else if (hasBody && satiety <= 30) {
     items.push({
       level: 'severe',
       mark: '!',
@@ -558,7 +702,7 @@ function renderWarnings() {
   }
 
   // 4. Lifespan. A False Immortal's ceiling is their own, not their ordinal's.
-  const life = lifespanRemaining(d, c);
+  const life = lifespanRemaining(d);
   if (Number.isFinite(life) && life <= 3) {
     items.push({
       level: 'critical',
@@ -575,10 +719,28 @@ function renderWarnings() {
     });
   }
 
-  // 5. Body failing.
+  // 5. The soul is its own clock, and pills do not touch it.
+  const soul = soulStateOf(c);
+  if (soul === 'fading') {
+    items.push({
+      level: 'critical',
+      mark: 'x',
+      title: 'The soul is fading',
+      body: 'This is the one that does not stop for pills, seclusion or a better cave. Whatever is going to be done about it has to be done now.'
+    });
+  } else if (soul === 'fragmented') {
+    items.push({
+      level: 'severe',
+      mark: '!',
+      title: 'The soul is fragmented',
+      body: 'Pieces of it are elsewhere, or gone. What is left is what is acting.'
+    });
+  }
+
+  // 6. Body failing. Only meaningful for something that has one.
   const hp = Number(c.hp) || 0;
   const maxHp = Number(c.maxHp) || 1;
-  if (hp > 0 && hp / maxHp <= 0.25) {
+  if (!isBodiless(c) && hp > 0 && hp / maxHp <= 0.25) {
     items.push({
       level: 'critical',
       mark: '✕',
@@ -790,7 +952,7 @@ function renderSheet() {
 
   const hpRatio = (Number(c.maxHp) || 1) > 0 ? (Number(c.hp) || 0) / Number(c.maxHp) : 0;
 
-  const life = lifespanRemaining(d, c);
+  const life = lifespanRemaining(d);
   const age = Number(c.age) || 0;
   const lifeCeiling = Number.isFinite(life) ? age + Math.max(0, life) : 0;
   const lifeState = Number.isFinite(life) && life <= 3 ? 'is-danger' : Number.isFinite(life) && life <= 15 ? 'is-warn' : '';
@@ -801,12 +963,15 @@ function renderSheet() {
   const ordinal = Number(c.realmOrdinal) || 0;
   const falseImmortal = isFalseImmortal(d, c);
   const foundation = d.foundationQuality || 'none';
+  const soulState = soulStateOf(c);
+  const soulMeta = SOUL_STATE[soulState] || { label: titleise(soulState), tone: 'warn', line: '' };
+  const bodiless = isBodiless(c);
 
   host.innerHTML = html`
     <div class="sheet__id">
       <div class="sheet__name">${c.name}</div>
       ${d.nameTaken ? raw(html`<div class="taken-name">
-        The Vault took this name. It is written here because someone has to keep it;
+        The Toll took this name. It is written here because someone has to keep it;
         no one you meet remembers it.
       </div>`) : ''}
       <div class="sheet__rank">${d.rankName || `Rank ${ordinal}`}</div>
@@ -814,6 +979,7 @@ function renderSheet() {
         Ordinal ${fmtInt(ordinal)} of ${fmtInt(summitOrdinal())}${d.nextRankName ? ` · next: ${d.nextRankName}` : ' · the top of the ladder'}
         · <button class="btn btn--ghost btn--sm" type="button" data-open="ladder" style="padding:0;font-size:12px;text-decoration:underline">view ladder</button>
       </div>
+      ${raw(existenceMarkup(c))}
       ${falseImmortal ? raw(html`<div class="statusflag statusflag--false">
         <div class="statusflag__title">False Immortal</div>
         <div class="statusflag__body">
@@ -882,18 +1048,42 @@ function renderSheet() {
 
     <section class="sheet__group">
       <h3 class="sheet__label">Vitals</h3>
-      ${raw(meter({ name: 'Health', value: c.hp, max: c.maxHp, kind: 'hp', state: hpRatio <= 0.25 ? 'is-danger' : hpRatio <= 0.5 ? 'is-warn' : '' }))}
+      ${bodiless
+        ? raw(html`<div class="vital-line tone-odd">
+            <div class="vital-line__top">
+              <span class="meter__name">Health</span>
+              <span class="vital-line__val">No body</span>
+            </div>
+            <div class="meter__note">There is nothing here to wound. What can still be harmed is the soul.</div>
+          </div>`)
+        : raw(meter({ name: 'Health', value: c.hp, max: c.maxHp, kind: 'hp', state: hpRatio <= 0.25 ? 'is-danger' : hpRatio <= 0.5 ? 'is-warn' : '' }))}
       ${raw(meter({ name: 'Qi', value: c.qi, max: c.maxQi, kind: 'qi' }))}
-      ${raw(meter({
-        name: 'Satiety',
-        value: satiety,
-        max: 100,
-        kind: 'food',
-        state: satietyState,
-        note: (Number(c.starvationTurns) || 0) > 0
-          ? `STARVING - turn ${fmtInt(c.starvationTurns)} of 5. The fifth is fatal.`
-          : ''
-      }))}
+      ${soulState !== 'intact' ? raw(html`
+        <div class="vital-line tone-${raw(soulMeta.tone)}">
+          <div class="vital-line__top">
+            <span class="meter__name">Soul</span>
+            <span class="vital-line__val">${soulMeta.label}</span>
+          </div>
+          <div class="meter__note">${soulMeta.line}</div>
+        </div>`) : ''}
+      ${bodiless
+        ? raw(html`<div class="vital-line tone-odd">
+            <div class="vital-line__top">
+              <span class="meter__name">Satiety</span>
+              <span class="vital-line__val">Not applicable</span>
+            </div>
+            <div class="meter__note">Hunger, wounds and ageing are the body's arithmetic, and there is no body.</div>
+          </div>`)
+        : raw(meter({
+            name: 'Satiety',
+            value: satiety,
+            max: 100,
+            kind: 'food',
+            state: satietyState,
+            note: (Number(c.starvationTurns) || 0) > 0
+              ? `STARVING - turn ${fmtInt(c.starvationTurns)} of 5. The fifth is fatal.`
+              : ''
+          }))}
     </section>
 
     <section class="sheet__group">
@@ -905,11 +1095,13 @@ function renderSheet() {
         unit: ' yr',
         kind: 'age',
         state: lifeState,
-        note: Number.isFinite(life)
-          ? (falseImmortal
-              ? `${fmtNum(life)} years remain of a False Immortal's own span. Vast, finite, and countable.`
-              : `${fmtNum(life)} years of lifespan remain at this realm.`)
-          : ''
+        note: bodiless
+          ? 'Time still passes. The ceiling belongs to a body that is not currently in play.'
+          : Number.isFinite(life)
+            ? (falseImmortal
+                ? `${fmtNum(life)} years remain of a False Immortal's own span. Vast, finite, and countable.`
+                : `${fmtNum(life)} years of lifespan remain at this realm.`)
+            : ''
       }))}
       ${raw(meter({
         name: 'Years at current realm',
@@ -964,8 +1156,8 @@ function renderSheet() {
     </section>`;
 }
 
-/* -- The Vault's ledger -------------------------------------------------
-   Every instalment charged at a realm boundary, oldest first. What the Vault
+/* -- The Toll -----------------------------------------------------------
+   Every instalment charged at a realm boundary, oldest first. What a crossing
    takes is never a stat: a bond, a memory, a mastered technique, or the name.
    Read top to bottom it is the shape of who the cultivator used to be, which
    is why it gets a panel rather than a line.
@@ -1010,13 +1202,13 @@ function tollLedgerMarkup(tolls, opts = {}) {
           ${fmtInt(takenCount)} collected
         </p>
         <ol class="tolls">${raw(list.map(tollRowMarkup).join(''))}</ol>`
-    : html`<p class="empty">The Vault has charged nothing yet. It charges at realm boundaries, never at a sub-rank step.</p>`;
+    : html`<p class="empty">Nothing charged yet. The Toll falls at realm boundaries, never on the small steps between sub-ranks.</p>`;
 
   if (bare) return body;
 
   return html`
     <section class="sheet__group">
-      <h3 class="sheet__label">The Vault's ledger${takenCount ? ` · ${fmtInt(takenCount)} taken` : ''}</h3>
+      <h3 class="sheet__label">The Toll${takenCount ? ` · ${fmtInt(takenCount)} taken` : ''}</h3>
       ${raw(body)}
     </section>`;
 }
@@ -1030,24 +1222,37 @@ function renderQuickActions() {
   const ready = !!d.breakthroughReady;
   const barred = isFalseImmortal();
 
-  // A False Immortal is refused outright by the engine, so the control is
-  // disabled with the reason rather than left to fail on click.
-  if (barred) {
-    btn.disabled = true;
-    btn.classList.add('btn--barred');
-    hint.textContent = 'the Lid will not open twice';
-    btn.title =
-      'Permanently barred. The Lid has already been opened once against this name. ' +
-      'The engine refuses the attempt; there is no version of this that works.';
-  } else {
+  // Every refusal states its own case. `breakthroughBlockedReason` is the
+  // engine's own refusal text, so the control never has to guess at why.
+  const reason = typeof d.breakthroughBlockedReason === 'string' && d.breakthroughBlockedReason
+    ? d.breakthroughBlockedReason
+    : null;
+
+  const refusal = $('#refusal');
+
+  if (ready) {
     btn.classList.remove('btn--barred');
-    btn.disabled = !ready;
-    hint.textContent = ready
-      ? (d.nextRankName ? `to ${d.nextRankName}` : 'the engine says you are ready')
-      : 'progress incomplete';
-    btn.title = ready
-      ? 'The engine reports breakthroughReady = true.'
-      : 'Available only when the engine reports breakthroughReady.';
+    btn.disabled = false;
+    hint.textContent = d.nextRankName ? `to ${d.nextRankName}` : 'the engine says you are ready';
+    btn.title = 'The engine reports breakthroughReady = true.';
+    refusal.hidden = true;
+    refusal.textContent = '';
+  } else {
+    // Barred is permanent rather than merely not-yet, and reads differently.
+    btn.classList.toggle('btn--barred', barred);
+    btn.disabled = true;
+    hint.textContent = barred ? 'the Lid will not open twice' : 'not yet';
+    btn.title = reason
+      || (barred
+        ? 'Permanently barred. The Lid has already been opened once against this name. ' +
+          'The engine refuses the attempt; there is no version of this that works.'
+        : 'Available only when the engine reports breakthroughReady.');
+
+    // The engine's own words, on the page rather than in a tooltip - there is
+    // no hover on a phone, and the refusal is the most useful thing on screen.
+    refusal.textContent = reason || '';
+    refusal.classList.toggle('refusal--barred', barred);
+    refusal.hidden = !reason;
   }
 
   const busy = S.busy;
@@ -1766,7 +1971,7 @@ const ROSTER_COLUMNS = [
   { key: 'age', label: 'Age / lifespan', type: 'num', cls: 'num' },
   { key: 'spiritStones', label: 'Stones', type: 'num', cls: 'num col-stones' },
   { key: 'untreatedInjuries', label: 'Untr. inj.', type: 'num', cls: 'num' },
-  { key: 'alive', label: 'Status', type: 'bool', cls: 'wrap' }
+  { key: 'existenceState', label: 'Existence', type: 'text', cls: 'wrap' }
 ];
 
 async function openRoster() {
@@ -1823,14 +2028,39 @@ function rosterFiltered() {
       if (s !== ROSTER.sect) return false;
     }
     if (ROSTER.realm && r.realmName !== ROSTER.realm) return false;
-    if (ROSTER.status === 'alive' && !r.alive) return false;
-    if (ROSTER.status === 'dead' && r.alive) return false;
+    const state = r.existenceState || (r.alive ? 'alive' : 'physically_dead');
+    if (ROSTER.status === 'alive' && state !== 'alive') return false;
+    if (ROSTER.status === 'dead' && state !== 'physically_dead') return false;
+    if (ROSTER.status === 'unresolved' && state !== 'missing' && state !== 'unknown') return false;
+    if (ROSTER.status === 'profound' && ['alive', 'physically_dead', 'missing', 'unknown'].includes(state)) return false;
     return true;
   }).sort(rosterCompare);
 }
 
+/**
+ * Existence, rendered honestly. `missing` and `unknown` are correct answers
+ * about someone the world has not settled, not gaps in the record, and they
+ * are written as such rather than as an empty cell.
+ */
+function rosterExistenceCell(r) {
+  const state = r.existenceState || (r.alive ? 'alive' : 'physically_dead');
+  const meta = EXISTENCE[state] || { label: titleise(state), tone: 'unresolved' };
+  const cause = state === 'physically_dead' || (!r.existenceState && !r.alive);
+
+  return html`
+    <span class="ex ex--${raw(meta.tone)}">${meta.label}</span>
+    ${cause && r.deathCause ? raw(html`<span class="cause">${causeText(r.deathCause)}</span>`) : ''}
+    ${state === 'missing' || state === 'unknown'
+      ? raw(html`<span class="sub">unresolved, not unrecorded</span>`)
+      : ''}
+    ${Number.isFinite(Number(r.identityContinuity)) && Number(r.identityContinuity) < 1
+      ? raw(html`<span class="sub">${Math.round(Number(r.identityContinuity) * 100)}% of the original</span>`)
+      : ''}`;
+}
+
 function rosterRowMarkup(r) {
-  const dead = !r.alive;
+  const state = r.existenceState || (r.alive ? 'alive' : 'physically_dead');
+  const dead = state === 'physically_dead' || (!r.existenceState && !r.alive);
   const stones = Number(r.spiritStones);
   const inj = Number(r.untreatedInjuries) || 0;
   const lifespan = Number(r.lifespanYears);
@@ -1851,9 +2081,7 @@ function rosterRowMarkup(r) {
       <td class="num">${fmtInt(r.age)}${Number.isFinite(lifespan) ? ` / ${fmtInt(lifespan)}` : ''}</td>
       <td class="num col-stones">${Number.isFinite(stones) ? fmtInt(stones) : '-'}</td>
       <td class="num ${raw(inj >= 3 ? 'hurt' : '')}">${inj ? raw(html`<span class="${raw(inj >= 3 ? 'hurt' : '')}">${fmtInt(inj)}</span>`) : '0'}</td>
-      <td class="wrap">${dead
-        ? raw(html`Dead<span class="cause">${causeText(r.deathCause)}</span>`)
-        : 'Alive'}</td>
+      <td class="wrap">${raw(rosterExistenceCell(r))}</td>
     </tr>`;
 }
 
@@ -1894,9 +2122,11 @@ function renderRosterPanel() {
           ${raw(realms.map((s) => html`<option value="${s}" ${raw(ROSTER.realm === s ? 'selected' : '')}>${s}</option>`).join(''))}
         </select>
         <select id="r-status" aria-label="Filter by alive or dead">
-          <option value="">Alive &amp; dead</option>
+          <option value="">Any existence</option>
           <option value="alive" ${raw(ROSTER.status === 'alive' ? 'selected' : '')}>Alive only</option>
-          <option value="dead" ${raw(ROSTER.status === 'dead' ? 'selected' : '')}>Dead only</option>
+          <option value="dead" ${raw(ROSTER.status === 'dead' ? 'selected' : '')}>Physically dead</option>
+          <option value="profound" ${raw(ROSTER.status === 'profound' ? 'selected' : '')}>Neither, exactly</option>
+          <option value="unresolved" ${raw(ROSTER.status === 'unresolved' ? 'selected' : '')}>Missing or unknown</option>
         </select>
       </div>
 
@@ -1989,7 +2219,7 @@ function renderDeath() {
     </dl>
 
     ${raw(endingTollSection(
-      'What the Vault took on the way up',
+      'What the crossings took on the way up',
       'Charged in instalments at every realm boundary. None of it comes back.'
     ))}
 
@@ -2027,7 +2257,7 @@ function renderTrueImmortal(host, run, c) {
     </p>
 
     <div class="collected">
-      <div class="collected__title">The Vault collected in full</div>
+      <div class="collected__title">The crossing collected in full</div>
       <p class="collected__body">
         Everything the Toll had been taking in instalments came due at once. Whatever you still
         had, you did not take with you. What fell back is the spirit tide that a whole region
@@ -2047,7 +2277,7 @@ function renderTrueImmortal(host, run, c) {
     </dl>
 
     ${raw(endingTollSection(
-      'Everything the Vault took',
+      'Everything the crossings took',
       'Read top to bottom, this is the shape of who you used to be. The last line is the whole of what was left.'
     ))}
 
