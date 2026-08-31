@@ -426,6 +426,20 @@ export const LineageStandingSchema = z.object({
     /** The public reckoning, by the world's own table. */
     tier: LineageTierSchema,
     mostRecentCrossingYearsAgo: z.number().int().min(1),
+    /**
+     * Who made the most recent one, where the house still has the name.
+     *
+     * Only the latest is named, deliberately. A house that produced six across
+     * four thousand years does not remember six people - it remembers the last
+     * one and a number, and the older names have gone the way names go.
+     *
+     * They are not founders. A crossing is somebody the house produced, which
+     * is a different thing from whoever built it; most houses here have both,
+     * and the two are rarely the same person.
+     */
+    mostRecentCrossingName: z.string().nullable(),
+    /** One line on who they were before they crossed. */
+    mostRecentCrossingNote: z.string().min(60).nullable(),
     depletion: DepletionSchema,
     /** Total objects held, across both medicines. Volume, not quality. */
     volume: z.number().int().min(0),
@@ -448,6 +462,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         count: 6,
         tier: 'very_nearly_mythical',
         mostRecentCrossingYearsAgo: 600,
+        mostRecentCrossingName: 'Yin Que',
+        mostRecentCrossingNote:
+            'Took Second Seat at four hundred and eleven, held it for ninety years, and crossed from the east mountain without telling the other three she was going. The Court has never said whether that was discourtesy or consideration.',
         depletion: 'medium',
         volume: 0,
         gradeCeiling: 'none',
@@ -464,6 +481,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         count: 3,
         tier: 'legendary',
         mostRecentCrossingYearsAgo: 1_900,
+        mostRecentCrossingName: 'Qiao Yan',
+        mostRecentCrossingNote:
+            'A field surveyor for two centuries before anybody suggested she was anything else, and the Survey still files her under the district she worked rather than under the crossing. The Lamp is older than her and came from somebody else.',
         depletion: 'heavy',
         volume: 4,
         gradeCeiling: 'higher',
@@ -480,6 +500,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         count: 2,
         tier: 'extraordinary',
         mostRecentCrossingYearsAgo: 2_600,
+        mostRecentCrossingName: 'Bai Zhuo',
+        mostRecentCrossingNote:
+            'Cut his own road, in the Marches, on driven ground, with no patron and a posted staff that did not notice until it was over. The Nail was already there and had been for a long time.',
         depletion: 'light',
         volume: 4,
         gradeCeiling: 'higher',
@@ -496,6 +519,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         count: 1,
         tier: 'supreme',
         mostRecentCrossingYearsAgo: 380,
+        mostRecentCrossingName: 'Ru Anjing',
+        mostRecentCrossingNote:
+            'Third Master of the Pavilion, and the only crossing this house has ever produced. She is named in the sect ancestry too, which is where the detail lives.',
         depletion: 'light',
         volume: 9,
         gradeCeiling: 'lower',

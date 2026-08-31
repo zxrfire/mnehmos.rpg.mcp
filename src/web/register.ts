@@ -187,6 +187,12 @@ export interface HighPerson {
      * a claim it has no way to check.
      */
     alive: boolean;
+    /**
+     * Shown instead of the ordinal where the catalog holds a band rather than a
+     * rung. `ordinal` still carries the band floor so the table can sort, and
+     * printing that number on its own would assert something nobody recorded.
+     */
+    ordinalNote: string | null;
     factionName: string;
     factionOrdinal: number;
     note: string;
@@ -414,6 +420,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             rank: rankName(apex.powerOrdinal),
             state: 'pinned',
             alive: true,
+            ordinalNote: null,
             factionName: apex.name,
             factionOrdinal: apex.powerOrdinal,
             note: apex.lastRealm.note
@@ -426,6 +433,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                 rank: rankName(apex.secondStrongestOrdinal),
                 state: 'acting',
                 alive: true,
+                ordinalNote: null,
                 factionName: apex.name,
                 factionOrdinal: apex.powerOrdinal,
                 note: apex.depthNote
@@ -445,6 +453,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             rank: rankName(court.powerOrdinal),
             state: 'acting',
             alive: true,
+            ordinalNote: null,
             factionName: court.name,
             factionOrdinal: court.powerOrdinal,
             note: 'Administers an arterial vein for '
@@ -477,12 +486,36 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                     rank: row.rank,
                     state: 'withdrawn',
                     alive: true,
+                    ordinalNote: null,
                     factionName: row.name,
                     factionOrdinal: row.ordinal,
                     note: withdrawn.occupiedBy
                         + ' Seats run First to Fourth by ordinal and then by youth, so First Seat'
                         + ' is this ordinal by construction. Where the other three stand is not recorded.'
                 });
+
+                // First Seat is the recorded ordinal; the other three are in the
+                // band and the catalog does not say where. They are listed
+                // because they exist and an operator needs to see four Seats,
+                // and they are unnamed because nobody outside the mountains has
+                // ever been given a name for any of them.
+                const BAND_FLOOR = 41;
+                for (const seat of ['Second Seat', 'Third Seat', 'Fourth Seat'].slice(0, Math.max(0, withdrawn.count - 1))) {
+                    out.push({
+                        name: seat,
+                        named: false,
+                        ordinal: BAND_FLOOR,
+                        ordinalNote: BAND_FLOOR + '-' + row.ordinal,
+                        rank: realmForOrdinal(BAND_FLOOR).name,
+                        state: 'withdrawn',
+                        alive: true,
+                        factionName: row.name,
+                        factionOrdinal: row.ordinal,
+                        note: seat === 'Third Seat'
+                            ? 'Holds the north mountain. Seats run by ordinal and then by youth, so a rung is implied and not recorded.'
+                            : 'Somewhere in the last realm. Seats run by ordinal and then by youth, so a rung is implied and not recorded.'
+                    });
+                }
             } else {
                 out.push({
                     name: 'strongest member',
@@ -491,6 +524,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                     rank: row.rank,
                     state: 'acting',
                     alive: true,
+                    ordinalNote: null,
                     factionName: row.name,
                     factionOrdinal: row.ordinal,
                     note: 'The catalog records the realm and not the person. Whoever holds it answers for the faction.'
@@ -509,6 +543,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             rank: rankName(sl.ordinal),
             state: 'sealed',
             alive: true,
+            ordinalNote: null,
             factionName: sl.hostName,
             factionOrdinal: sl.hostOrdinal,
             note: sl.sealGrade + ' seal, sealed as a ' + sl.sealReason.replace(/_/g, ' ') + ', '
@@ -529,6 +564,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                 rank: rankName(a.realmOrdinal as number),
                 state: a.afterCrossing === 'died_above' ? 'died above' : 'ascended',
                 alive: a.afterCrossing !== 'died_above',
+                ordinalNote: null,
                 factionName: nameOf(hostId),
                 factionOrdinal: getSect(hostId)?.powerOrdinal ?? 0,
                 note: a.yearsAgo.toLocaleString() + ' years ago. '
@@ -540,6 +576,54 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
         }
     }
 
+    // Every house that has produced a crossing, which is not the same as a
+    // founder - most of these are people the house made rather than people who
+    // made the house. The Court has produced
+    // six. None of them are in SECT_ANCESTRY, because none of those bodies is a
+    // sect, so the ascended half of this page was missing them entirely.
+    //
+    // Only the most recent is named. A house that produced six across four
+    // thousand years does not remember six people - it remembers the last one
+    // and a number - so the rest are carried as a count, which is what the
+    // catalog actually holds.
+    //
+    // Whether they are still up there is derived rather than guessed: an
+    // answering channel means somebody above the Lid is picking up. That is what
+    // the channel IS. A body whose channel still answers has at least one
+    // founder alive on the other side.
+    for (const standing of LINEAGE_STANDINGS) {
+        const alreadyNamed = (SECT_ANCESTRY[standing.factionId]?.ancestors ?? [])
+            .filter(a => a.fate === 'ascended').length;
+        const unnamed = standing.count - alreadyNamed;
+        if (unnamed <= 0) continue;
+
+        const channel = IMMORTAL_CHANNELS.find(c => c.factionId === standing.factionId);
+        const answering = channel?.kind === 'answering_channel';
+        const ordinal = REALM_TIERS[REALM_TIERS.length - 1].ordinalStart;
+
+        out.push({
+            name: standing.mostRecentCrossingName ?? `${unnamed} who crossed`,
+            named: standing.mostRecentCrossingName !== null,
+            ordinal,
+            rank: rankName(ordinal),
+            state: answering ? 'ascended' : 'ascended, unheard',
+            alive: answering,
+            ordinalNote: null,
+            factionName: nameOf(standing.factionId),
+            factionOrdinal: getSect(standing.factionId)?.powerOrdinal
+                ?? getApexInstitution(standing.factionId)?.powerOrdinal
+                ?? 0,
+            note: `Crossed ${standing.mostRecentCrossingYearsAgo.toLocaleString()} years ago, the most recent this house has produced. `
+                + (standing.mostRecentCrossingNote ? standing.mostRecentCrossingNote + ' ' : '')
+                + (unnamed > 1
+                    ? `${unnamed - 1} earlier crossing${unnamed === 2 ? '' : 's'} from this house, and the names have gone. `
+                    : '')
+                + (answering
+                    ? 'The channel still answers, which is how the sheet knows somebody is up there: an answering channel is somebody picking up.'
+                    : 'Nothing has answered in a long time, and the sheet does not claim to know why.')
+        });
+    }
+
     for (const w of WANDERERS) {
         if (w.lastOrdinal < HIGH_BAND_FLOOR) continue;
         out.push({
@@ -549,6 +633,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             rank: rankName(w.lastOrdinal),
             state: w.crossingOutcome.replace(/_/g, ' '),
             alive: true,
+            ordinalNote: null,
             factionName: w.affiliation ? nameOf(w.affiliation.factionId) : 'none',
             factionOrdinal: w.affiliation ? getSect(w.affiliation.factionId)?.powerOrdinal ?? 0 : 0,
             note: 'Called ' + w.commonName + '. Crossed ' + w.crossingYearsAgo.toLocaleString()
@@ -1346,7 +1431,7 @@ export function renderRegisterHtml(
   <p class="note">${band.hint}</p>
   <div class="scroll"><table>
   <thead><tr><th>Ord</th><th>Who</th><th>State</th><th>Faction</th><th>Detail</th></tr></thead><tbody>
-  ${rows.map(p => `<tr><td class="n">${p.ordinal}</td>`
+  ${rows.map(p => `<tr><td class="n">${esc(p.ordinalNote ?? String(p.ordinal))}</td>`
         + `<td class="nm">${esc(p.name)}${p.named ? '' : ' <span class="chip">unnamed</span>'}</td>`
         + `<td class="m">${esc(p.state)}</td>`
         + `<td class="q">${esc(p.factionName)} <span class="dim">${p.factionOrdinal || ''}</span></td>`
