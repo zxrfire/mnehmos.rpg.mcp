@@ -516,6 +516,130 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
 
 // ─────────────────────────────────────────────────────────────────────────
 // LOOKUPS
+
+// -------------------------------------------------------------------------
+// HIGH-REALM PROVENANCE
+// Survivors of a richer age, stated rather than implied.
+//
+// The engine has measured that ordinal 36 and above is unreachable under
+// present-day conditions in every ambient band, which is correct and is the
+// whole of the Late Age: the great ages are behind this world, the veins have
+// been drawn down, and nobody has ascended in living memory.
+//
+// So a faction with members standing that high is not evidence that the climb
+// is possible. It is evidence of when it stopped being possible, and the
+// record has to say so - when they climbed, on what ground, and why the same
+// climb would not work today. If a faction cannot answer that plausibly, its
+// power ordinal is too high and should come down instead.
+// -------------------------------------------------------------------------
+
+/** Above this ordinal a faction owes an account of which age it climbed in. */
+export const HIGH_REALM_THRESHOLD = 32;
+
+/**
+ * Engine-measured: at or above this ordinal, present-day conditions do not
+ * support the climb in ANY ambient band, including a spirit tide.
+ */
+export const PRESENT_DAY_CEILING = 36;
+
+export interface HighRealmProvenance {
+    /** The ordinal in question, matching the faction's powerOrdinal. */
+    highestOrdinal: number;
+    /** Years since that person made the climb. Always long ago. */
+    climbedYearsAgo: number;
+    /** The ground it was done on, which is usually gone or diminished. */
+    climbedWhere: string;
+    /** Which age, in the faction's own terms. */
+    ageNote: string;
+    /** Why the same climb does not work now. The load-bearing half. */
+    couldNotBeDoneNow: string;
+}
+
+/**
+ * Factions above the threshold whose records are being revised elsewhere and
+ * are deliberately not written here. Kept explicit so the gap is visible
+ * rather than silent, and so the catalog test can hold the line for
+ * everything else.
+ */
+export const PROVENANCE_PENDING: ReadonlySet<string> = new Set([
+    'sect-hollow-court',
+    'sect-kiln-wardens'
+]);
+
+export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
+    'sect-stonewright-consortium': {
+        highestOrdinal: 33,
+        climbedYearsAgo: 210,
+        climbedWhere: 'The Weiring vein in a province two borders east, which the Consortium assayed, worked and published the closing figure on eighty years ago.',
+        ageNote: 'Late enough to be recorded properly and early enough to still be possible: the Consortium can name the year, the vein and the surveyor, which is more than most factions at this height can do.',
+        couldNotBeDoneNow: 'The vein that carried him is closed, by the Consortium\'s own assay, and there is no ground left on its books that would support the same climb. It has responded by buying its high-realm members rather than growing them, which is a policy and not an accident.'
+    },
+    'house-quiet-cut': {
+        highestOrdinal: 33,
+        climbedYearsAgo: 240,
+        climbedWhere: 'A province since drawn down to nothing, worked quietly while the house had no name and no clients worth recording.',
+        ageNote: 'The generation before the drawdown, when a cutter could take the years the road needs without buying the ground to take them on.',
+        couldNotBeDoneNow: 'Severance has never depended on ambient qi, but the decades it takes do. The house has not produced a Last Cut in two hundred years and does not expect to, and cuts its own records rather than admit how long it has been.'
+    },
+    'house-measured-span': {
+        highestOrdinal: 34,
+        climbedYearsAgo: 260,
+        climbedWhere: 'The terminal network, across nine more open gates than the house now holds, cultivating in transit the way surveyors do.',
+        ageNote: 'The last age in which the road itself was rich: the span between two working terminals carried qi the walked distance never did.',
+        couldNotBeDoneNow: 'Twenty-two of thirty-one terminals are closed and the house cannot reopen one. The road that made a Keeper is most of the way gone, and its Elder Surveyors now stall in the mid-twenties on the routes that remain.'
+    },
+    'sect-nine-abyss-flame-sect': {
+        highestOrdinal: 34,
+        climbedYearsAgo: 110,
+        climbedWhere: 'The vent vein under the caldera, when it still ran hot enough that a Flame Hall Master could work it without a grant day.',
+        ageNote: 'Within living memory, barely, which is why the sect believes the road is still open and behaves accordingly.',
+        couldNotBeDoneNow: 'The vent has thinned measurably since, the last three sovereign-track candidates stalled at Deity Transformation, and the sect blames the transformation contract rather than the caldera. Its own tribute records show the yield falling in step.'
+    },
+    'sect-frostmirror-court': {
+        highestOrdinal: 35,
+        climbedYearsAgo: 400,
+        climbedWhere: 'The cold vein under the glacier, forty spans deeper into the ice than the working face now reaches.',
+        ageNote: 'Four centuries back, when the ice ran deep enough that the curriculum could be practised at the depth it was written for.',
+        couldNotBeDoneNow: 'The glacier has retreated and the cold vein with it. Every Court Sovereign since has stopped at Core Formation Perfection, and the Court has quietly stopped teaching the deepest three inscriptions because nobody can reach the state they describe.'
+    },
+    'house-anchorhold': {
+        highestOrdinal: 35,
+        climbedYearsAgo: 340,
+        climbedWhere: 'The eastern perimeter, when the scar behind it was still active enough that standing a watch on it was cultivation rather than administration.',
+        ageNote: 'The generation after the Girdle, when the house was holding a live containment rather than maintaining a quiet one.',
+        couldNotBeDoneNow: 'The scar has gone quiet, which is the house\'s entire purpose and also the reason its own people no longer advance on the watch. Two perimeters are maintained below standard and the Datum faction has begun arguing that the house is now a survey office with a legend attached.'
+    },
+    'sect-storm-tyrant-court': {
+        highestOrdinal: 36,
+        climbedYearsAgo: 300,
+        climbedWhere: 'The floating stone, while the tether still drew and the vein under it could be reached at the bottom.',
+        ageNote: 'Three centuries back, before Yan Kuo concealed that the tether was failing - the last window in which the Court\'s own road ran the whole way up.',
+        couldNotBeDoneNow: 'At this height the climb does not work anywhere in the world today under any ambient condition, and the Court has the local proof as well: no Storm Elder has passed Nascent Soul in a century, and the Court has stopped opening the vault at successions rather than explain why.'
+    },
+    'sect-the-severed': {
+        highestOrdinal: 38,
+        climbedYearsAgo: 180,
+        climbedWhere: 'Six cities and no ground at all, on the fastest road anyone has ever found and at the price the road charges.',
+        ageNote: 'The last generation for whom paying in advance was enough. The doctrine did not stop working; the ground did.',
+        couldNotBeDoneNow: 'Nothing available today carries a climb this high, whatever a cultivator is willing to cut away first - the ceiling is the world rather than the will. Nobody on the road has passed Void Refinement Late in a hundred and eighty years, and the house presents this as patience.'
+    }
+};
+
+export function getHighRealmProvenance(factionId: string): HighRealmProvenance | undefined {
+    return HIGH_REALM_PROVENANCE[factionId];
+}
+
+/**
+ * Factions standing above the present-day ceiling, which is every faction whose
+ * strength is a fact about a previous age rather than about this one.
+ */
+export function survivorsOfARicherAge(): { factionId: string; provenance: HighRealmProvenance }[] {
+    return Object.entries(HIGH_REALM_PROVENANCE)
+        .filter(([, p]) => p.highestOrdinal >= PRESENT_DAY_CEILING)
+        .map(([factionId, provenance]) => ({ factionId, provenance }));
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────
 
 export function getFactionCharacter(factionId: string): FactionCharacter | undefined {

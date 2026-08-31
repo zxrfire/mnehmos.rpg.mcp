@@ -195,16 +195,26 @@ export interface DormantAncestor {
      * tell which sects have something under the mountain, because sects lie
      * about it in both directions. See `sealedCeiling`.
      *
-     * A seal is also an OFFENSIVE instrument, and the catalog should be read
-     * that way. What is under a mountain is a single use, so the standing
-     * question a sect carries is what would be worth spending it on - and
-     * there are exactly two objects in the world that answer it. Trading a
-     * one-off for a permanent advantage is a good trade, and every sect with
-     * something sealed has priced it at least once. See `sentDown` on the apex
-     * institutions in `hierarchy.ts`, and `partingGift` below: they are the
-     * same phenomenon at two ends of the ladder. An ascending cultivator
-     * divests downward, rarely but reliably, and what a sect gets is a gift
-     * while what an apex got is the reason it is an apex.
+     * A SEAL CUTS BOTH WAYS, and the catalog should be read in both directions.
+     *
+     * Defensively it is the last card, and this is the reading every entry here
+     * is written in: the wake conditions are disaster clauses. The caldera is
+     * breached. The library is entered by force. Two perimeters are lost in one
+     * season. That is what a sect tells itself the seal is for, and it is true.
+     *
+     * Offensively it is a single use looking for something worth spending it
+     * on, and that is the reading a sect does not say out loud. Same object,
+     * same decision, opposite direction - which means a sect that has quietly
+     * reclassified its last card as an opening move looks exactly like one that
+     * has not. Nothing visible about it changes.
+     *
+     * Two objects in the world would justify the offensive read. See `sentDown`
+     * on the apex institutions in `hierarchy.ts`, and `partingGift` below: they
+     * are the same phenomenon at two ends of the ladder. An ascending cultivator
+     * divests downward, rarely but reliably; what a sect gets is a gift, and
+     * what an apex got is the reason it is an apex. Note also `asAnArtifact`:
+     * those objects are immortal-made and formidable before the Lid enters into
+     * it, so the sum works even for a sect with no route upward at all.
      *
      * The band is Void Refinement to Tribulation Transcendence, and which end
      * depends on `sealGrade` rather than on the sect. Holding a body and a soul
@@ -2699,6 +2709,19 @@ export interface WithdrawnPower {
      * they are never sent, and the institution is unassailable at home and
      * absent everywhere else. More than one means the ground stays covered
      * while somebody leaves, and REDUNDANCY IS WHAT BUYS REACH.
+     *
+     * Redundancy is also why the Court cannot be robbed, and this is the half
+     * that decides the standoff. An apex with one holder can defend its object
+     * or pursue whoever took it, never both, so the correct play against an
+     * apex is to make it choose. Against the Court there is no such play: it
+     * sends two, recovers the object, kills everyone involved, and the mountain
+     * was covered the entire time. Every party that has thought about taking
+     * something from the Court has arrived at that arithmetic and stopped.
+     *
+     * So the two ends of the world are asymmetric in a way that is easy to miss.
+     * The apexes are individually unbeatable and structurally fragile. The Court
+     * is neither pinned nor exposed, and is the only body in the setting with no
+     * failure mode anybody has been able to name.
      *
      * This is the only faction in the world with a count above one, which makes
      * it the only faction that can put the last realm somewhere that is not its
