@@ -138,3 +138,42 @@ Consequences worth having:
 **No dao is the default and the common case.** Most people cultivate, accumulate, break
 through where they can, and comprehend nothing anyone would name. A Dao is what makes a
 cultivator worth a story, and the world contains very few of them.
+
+### And it is limited by what you can reach
+
+You cannot comprehend what you have never been near.
+
+A Dao is not latent in a person waiting to be unlocked by effort. It requires **exposure** -
+something to comprehend *from*:
+
+- a teacher who holds it, and is willing
+- a manual you can actually read, which is a much smaller set than the manuals you own
+- a site, a phenomenon, a vein, a scar, a thing that happened in front of you
+- an artifact that carries it
+- a tradition that practises it at all
+- an inheritance left by someone who had it
+
+**Without access, the Dao is not harder. It is absent.** It never appears among the things
+a cultivator might comprehend, and they will not know it was missing.
+
+This is the quiet cruelty in the setting, and it is where most lives are actually decided:
+
+- A cultivator born in a thin province with no sect, no library and no living teacher has a
+  narrow set of comprehensible Daos, and effort does not widen it. They can work for two
+  hundred years and remain unable to reach what a mediocre inner disciple got by walking
+  into a room.
+- **This is what a sect is really selling.** The stipend and the toll protection are real,
+  but access to comprehension is the thing worth a lifetime of obligation. A sect library,
+  an elder who answers questions, a site the sect controls, and permission to stand in it.
+- **It is why the Late Age bites.** Not merely fewer resources - fewer *teachers*, and
+  libraries nobody can read any more. Every unlit formation node and lost manual is a Dao
+  that has left the world.
+- **It is why ruins matter beyond loot.** A sealed site can hold the only remaining access
+  to something. Not a technique to learn: a thing to understand, which nobody alive can
+  teach.
+- **It is what a Dao house guards most carefully.** Their principle is not secret because
+  the words are hidden; it is inaccessible because standing where it can be comprehended
+  requires being inside the house, and they decide who comes in.
+
+So access is a resource, it is owned, it is sold, and it is inherited - and it is
+distributed as unfairly as the veins are.
