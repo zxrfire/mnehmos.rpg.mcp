@@ -1,0 +1,437 @@
+/**
+ * The long-simulation primitive.
+ *
+ * The contract being tested: one deterministic pass, no per-day LLM
+ * involvement, no O(days) blow-up, byte-identical results for the same seed,
+ * early termination on anything the player needs to see, and a digest coherent
+ * enough that returning after ten years is an account rather than a date change.
+ */
+
+import {
+    SATIETY_COST_PER_ACTION,
+    SATIETY_MAX,
+    STAGNATION_YEARS,
+    STARVATION_TURNS,
+    type Cultivator
+} from '../../../src/schema/cultivation.js';
+import {
+    DEVIATION_CHECK_DAYS,
+    simulateTimeSkip,
+    type TimeSkipContext
+} from '../../../src/engine/cultivation/time-skip.js';
+import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
+import {
+    lifespanForOrdinal,
+    progressRequiredForOrdinal
+} from '../../../src/engine/cultivation/realms.js';
+import { makeCultivator } from './fixtures.js';
+
+const TEN_YEARS = 10 * DAYS_PER_YEAR;
+
+function ctx(overrides: Partial<TimeSkipContext> = {}): TimeSkipContext {
+    return {
+        seed: 'run-seed-0001',
+        locationId: 'azure-cloud-peak',
+        turn: 0,
+        startDay: 0,
+        grainAbstinence: true,
+        ...overrides
+    };
+}
+
+/** A sealed decade: no encounters, no auto-breakthroughs, no hunger. */
+function sealed(overrides: Partial<TimeSkipContext> = {}): TimeSkipContext {
+    return ctx({ randomEvents: false, autoBreakthrough: false, ...overrides });
+}
+
+/**
+ * A cultivator whose progress bar cannot be filled inside the test window.
+ *
+ * Ordinal 20 costs ~40,000 qi-units and a clean root in the best possible
+ * ambient band earns at most ~16,000 in a decade. That matters because with
+ * `autoBreakthrough: false` a low-ordinal cultivator fills the bar in a couple
+ * of months and then sits on overfull qi, which is deliberately a deviation
+ * hazard - real behaviour, but noise in a test that is about something else.
+ * A clean single root at ordinal 20 has a flat zero deviation risk, so a sealed
+ * stretch is genuinely uneventful.
+ */
+function secluded(overrides: Partial<Cultivator> = {}): Cultivator {
+    return makeCultivator({ spiritRoot: 'single_fire', realmOrdinal: 20, ...overrides });
+}
+
+describe('determinism', () => {
+    it('produces a byte-identical result for the same seed and input', () => {
+        const cultivator = makeCultivator({ spiritRoot: 'dual_water_fire' });
+        const a = simulateTimeSkip(cultivator, TEN_YEARS, ctx());
+        const b = simulateTimeSkip(cultivator, TEN_YEARS, ctx());
+        expect(JSON.stringify(b)).toBe(JSON.stringify(a));
+    });
+
+    it('produces a different history for a different seed', () => {
+        const cultivator = makeCultivator({ spiritRoot: 'dual_water_fire' });
+        const a = simulateTimeSkip(cultivator, TEN_YEARS, ctx({ seed: 'run-A' }));
+        const b = simulateTimeSkip(cultivator, TEN_YEARS, ctx({ seed: 'run-B' }));
+        expect(JSON.stringify(b)).not.toBe(JSON.stringify(a));
+    });
+
+    it('is unaffected by how the caller splits the request', () => {
+        // The digest of one 360-day call and the digest of the events that fall
+        // in the first 360 days of a longer call must agree, because every roll
+        // is keyed to an absolute day rather than to a position in a stream.
+        const cultivator = makeCultivator({ spiritRoot: 'dual_water_fire' });
+        const short = simulateTimeSkip(cultivator, 360, sealed());
+        const long = simulateTimeSkip(cultivator, 720, sealed());
+        const longPrefix = long.events.filter(e => e.dayOffset <= 360);
+        expect(longPrefix.map(e => [e.kind, e.dayOffset])).toEqual(
+            short.events.map(e => [e.kind, e.dayOffset])
+        );
+    });
+
+    it('never mutates the cultivator it was handed', () => {
+        const cultivator = makeCultivator({ spiritRoot: 'dual_water_fire' });
+        const before = JSON.parse(JSON.stringify(cultivator));
+        simulateTimeSkip(cultivator, TEN_YEARS, ctx());
+        expect(cultivator).toEqual(before);
+    });
+});
+
+describe('performance and scale', () => {
+    it('resolves a full uninterrupted decade quickly', () => {
+        const started = Date.now();
+        const result = simulateTimeSkip(secluded(), TEN_YEARS, sealed());
+        const elapsedMs = Date.now() - started;
+
+        expect(result.simulatedDays).toBe(TEN_YEARS);
+        expect(result.interrupted).toBe(false);
+        expect(result.died).toBe(false);
+        // Generous: the real figure is a couple of milliseconds. This is a
+        // guard against a future edit reintroducing a per-day loop.
+        expect(elapsedMs).toBeLessThan(3000);
+    });
+
+    it('resolves a century without blowing up', () => {
+        const started = Date.now();
+        const result = simulateTimeSkip(secluded({ age: 20 }), 100 * DAYS_PER_YEAR, sealed());
+        expect(Date.now() - started).toBeLessThan(3000);
+        expect(result.simulatedDays).toBeGreaterThan(0);
+    });
+
+    it('accounts the elapsed time exactly, in days and in years', () => {
+        const result = simulateTimeSkip(secluded(), TEN_YEARS, sealed());
+        expect(result.requestedDays).toBe(TEN_YEARS);
+        expect(result.simulatedDays).toBe(TEN_YEARS);
+        expect(result.deltas.age).toBeCloseTo(10, 6);
+    });
+
+    it('does nothing at all for a zero-day skip', () => {
+        const result = simulateTimeSkip(makeCultivator(), 0, ctx());
+        expect(result.simulatedDays).toBe(0);
+        expect(result.events).toHaveLength(0);
+        expect(result.deltas.cultivationProgress).toBe(0);
+        expect(result.died).toBe(false);
+    });
+});
+
+describe('progress and advancement', () => {
+    it('accrues progress at the computed rate over a sealed stretch', () => {
+        const result = simulateTimeSkip(secluded(), 300, sealed());
+        expect(result.deltas.cultivationProgress).toBeGreaterThan(0);
+        expect(result.deltas.realmOrdinal).toBe(0);
+    });
+
+    it('climbs several ranks over a decade and reports each one', () => {
+        // A run that gets through a decade of Qi Condensation without a
+        // wounding breakthrough is the lucky case, not the typical one, so
+        // sweep seeds deterministically for it rather than assuming one.
+        let best: ReturnType<typeof simulateTimeSkip> | null = null;
+        for (let i = 0; i < 40; i++) {
+            const result = simulateTimeSkip(
+                makeCultivator(),
+                TEN_YEARS,
+                ctx({ seed: `climb-${i}`, randomEvents: false })
+            );
+            const successes = result.events.filter(e => e.kind === 'breakthrough_success');
+            if (successes.length >= 2) {
+                best = result;
+                break;
+            }
+        }
+        expect(best).not.toBeNull();
+
+        const successes = best!.events.filter(e => e.kind === 'breakthrough_success');
+        expect(best!.deltas.realmOrdinal).toBe(successes.length);
+        for (const event of successes) {
+            expect(event.summary).toContain('Breakthrough succeeded');
+            expect(event.interrupts).toBe(false);
+            expect(event.data.toOrdinal).toBe((event.data.fromOrdinal as number) + 1);
+        }
+    });
+
+    it('does not advance a rank when auto-breakthrough is off, however much progress banks up', () => {
+        const result = simulateTimeSkip(
+            makeCultivator({ cultivationProgress: progressRequiredForOrdinal(0) * 10 }),
+            TEN_YEARS,
+            sealed()
+        );
+        expect(result.deltas.realmOrdinal).toBe(0);
+        expect(result.events.some(e => e.kind === 'breakthrough_success')).toBe(false);
+    });
+
+    it('keeps the event digest in chronological order', () => {
+        const result = simulateTimeSkip(
+            makeCultivator({ spiritRoot: 'dual_water_fire' }),
+            TEN_YEARS,
+            ctx()
+        );
+        for (let i = 1; i < result.events.length; i++) {
+            expect(result.events[i].dayOffset).toBeGreaterThanOrEqual(
+                result.events[i - 1].dayOffset
+            );
+        }
+    });
+
+    it('emits engine-authored factual summaries the narrator can render', () => {
+        const result = simulateTimeSkip(
+            makeCultivator({ spiritRoot: 'dual_water_fire' }),
+            TEN_YEARS,
+            ctx()
+        );
+        expect(result.events.length).toBeGreaterThan(0);
+        for (const event of result.events) {
+            expect(typeof event.summary).toBe('string');
+            expect(event.summary.trim().length).toBeGreaterThan(0);
+            expect(event.dayOffset).toBeGreaterThanOrEqual(0);
+            expect(event.dayOffset).toBeLessThanOrEqual(result.simulatedDays);
+        }
+    });
+});
+
+describe('survival during a skip', () => {
+    it('starves to death on exactly the documented day without provisions', () => {
+        // Full belly buys 50 days; five more at zero satiety is fatal.
+        const expectedDeathDay = SATIETY_MAX / SATIETY_COST_PER_ACTION + STARVATION_TURNS;
+        const result = simulateTimeSkip(
+            secluded(),
+            TEN_YEARS,
+            sealed({ grainAbstinence: false, rations: 0 })
+        );
+        expect(result.died).toBe(true);
+        expect(result.deathCause).toBe('starvation');
+        expect(result.simulatedDays).toBe(expectedDeathDay);
+        expect(result.interrupted).toBe(true);
+        expect(result.interruptReason).toBe('death:starvation');
+        expect(result.events.at(-1)?.kind).toBe('death');
+    });
+
+    it('warns when the belly empties, before it kills', () => {
+        const result = simulateTimeSkip(
+            secluded(),
+            TEN_YEARS,
+            sealed({ grainAbstinence: false, rations: 0 })
+        );
+        const warning = result.events.find(e => e.kind === 'starvation_warning');
+        expect(warning).toBeDefined();
+        expect(warning!.dayOffset).toBe(SATIETY_MAX / SATIETY_COST_PER_ACTION);
+        expect(warning!.dayOffset).toBeLessThan(result.simulatedDays);
+    });
+
+    it('eats through provisions and reports when the last of them is gone', () => {
+        const rations = 3;
+        const result = simulateTimeSkip(
+            secluded(),
+            TEN_YEARS,
+            sealed({ grainAbstinence: false, rations })
+        );
+        // Each ration buys another 50 days on top of the starting belly.
+        const expectedDeathDay =
+            (rations + 1) * (SATIETY_MAX / SATIETY_COST_PER_ACTION) + STARVATION_TURNS;
+        expect(result.simulatedDays).toBe(expectedDeathDay);
+        expect(result.deathCause).toBe('starvation');
+        expect(result.events.some(e => e.kind === 'resource_depleted')).toBe(true);
+    });
+
+    it('does not starve at all on grain abstinence', () => {
+        const result = simulateTimeSkip(secluded(), TEN_YEARS, sealed());
+        expect(result.deltas.satiety).toBe(0);
+        expect(result.events.some(e => e.kind === 'starvation_warning')).toBe(false);
+        expect(result.died).toBe(false);
+    });
+
+    it('dies of old age exactly at the realm lifespan ceiling', () => {
+        const ceiling = lifespanForOrdinal(20);
+        const result = simulateTimeSkip(
+            secluded({ age: ceiling - 10, yearsAtCurrentRealm: 0 }),
+            100 * DAYS_PER_YEAR,
+            sealed()
+        );
+        expect(result.died).toBe(true);
+        expect(result.deathCause).toBe('lifespan_exhausted');
+        expect(result.simulatedDays).toBe(10 * DAYS_PER_YEAR);
+    });
+
+    it('dies of stagnation exactly at the stagnation budget', () => {
+        // Ordinal 20's bar cannot be filled here, so nothing can rescue this
+        // cultivator by advancing them - which is precisely the situation
+        // STAGNATION_YEARS exists to end.
+        const result = simulateTimeSkip(
+            secluded({ age: 60, yearsAtCurrentRealm: STAGNATION_YEARS - 10 }),
+            100 * DAYS_PER_YEAR,
+            sealed()
+        );
+        expect(result.died).toBe(true);
+        expect(result.deathCause).toBe('stagnation_aging');
+        expect(result.simulatedDays).toBe(10 * DAYS_PER_YEAR);
+    });
+
+    it('stops the moment it dies and simulates nothing after', () => {
+        const result = simulateTimeSkip(
+            secluded(),
+            TEN_YEARS,
+            sealed({ grainAbstinence: false, rations: 0 })
+        );
+        expect(result.simulatedDays).toBeLessThan(result.requestedDays);
+        for (const event of result.events) {
+            expect(event.dayOffset).toBeLessThanOrEqual(result.simulatedDays);
+        }
+        expect(result.deltas.age).toBeCloseTo(result.simulatedDays / DAYS_PER_YEAR, 6);
+    });
+});
+
+describe('interruption', () => {
+    it('hands control back on a major encounter', () => {
+        // Sweep seeds until a major encounter comes up; there is nothing
+        // special about which one, only that the branch is reachable and
+        // correctly shaped.
+        let found: ReturnType<typeof simulateTimeSkip> | null = null;
+        for (let i = 0; i < 60 && found === null; i++) {
+            const result = simulateTimeSkip(
+                makeCultivator(),
+                TEN_YEARS,
+                ctx({ seed: `encounter-${i}`, autoBreakthrough: false })
+            );
+            if (result.interruptReason === 'major_encounter') found = result;
+        }
+        expect(found).not.toBeNull();
+        expect(found!.interrupted).toBe(true);
+        expect(found!.died).toBe(false);
+        expect(found!.simulatedDays).toBeLessThan(TEN_YEARS);
+        const last = found!.events.at(-1)!;
+        expect(last.kind).toBe('encounter');
+        expect(last.interrupts).toBe(true);
+        expect(last.data.severity).toBe('major');
+    });
+
+    it('hands control back when a breakthrough leaves a wound', () => {
+        let found: ReturnType<typeof simulateTimeSkip> | null = null;
+        for (let i = 0; i < 60 && found === null; i++) {
+            const result = simulateTimeSkip(
+                makeCultivator(),
+                TEN_YEARS,
+                ctx({ seed: `wound-${i}`, randomEvents: false })
+            );
+            if (result.interruptReason?.startsWith('breakthrough_failure')) found = result;
+        }
+        expect(found).not.toBeNull();
+        expect(found!.deltas.injuriesGained).toBeGreaterThan(0);
+        expect(found!.events.at(-1)!.kind).toBe('breakthrough_failure');
+        expect(found!.events.at(-1)!.interrupts).toBe(true);
+    });
+
+    it('does not interrupt for a breakthrough that failed cleanly', () => {
+        const result = simulateTimeSkip(
+            makeCultivator(),
+            TEN_YEARS,
+            ctx({ randomEvents: false })
+        );
+        const cleanFailures = result.events.filter(
+            e => e.kind === 'breakthrough_failure' && e.data.outcome === 'failure_stable'
+        );
+        for (const event of cleanFailures) {
+            expect(event.interrupts).toBe(false);
+        }
+    });
+
+    it('hands control back when untreated injuries reach the lethal threshold', () => {
+        let found: ReturnType<typeof simulateTimeSkip> | null = null;
+        for (let i = 0; i < 40 && found === null; i++) {
+            const result = simulateTimeSkip(
+                makeCultivator({ spiritRoot: 'dual_water_fire', maxHp: 500, hp: 500 }),
+                50 * DAYS_PER_YEAR,
+                ctx({ seed: `deviation-${i}`, randomEvents: false, autoBreakthrough: false })
+            );
+            if (result.interruptReason === 'lethal_injury_threshold') found = result;
+        }
+        expect(found).not.toBeNull();
+        expect(found!.deltas.injuriesGained).toBeGreaterThanOrEqual(3);
+        expect(found!.events.at(-1)!.kind).toBe('injury_sustained');
+    });
+});
+
+describe('qi deviation during a skip', () => {
+    it('never deviates for a clean root cultivating an elementless art', () => {
+        const result = simulateTimeSkip(secluded(), TEN_YEARS, sealed());
+        expect(result.events.some(e => e.kind === 'qi_deviation')).toBe(false);
+        expect(result.deltas.injuriesGained).toBe(0);
+    });
+
+    it('does put a clean root at risk once it sits on overfull qi', () => {
+        // Qi that has nowhere to go turns on its owner: banking progress past
+        // the bottleneck and refusing to attempt it is not a safe strategy.
+        const hoarder = makeCultivator({
+            spiritRoot: 'single_fire',
+            cultivationProgress: progressRequiredForOrdinal(0) * 5,
+            maxHp: 500,
+            hp: 500
+        });
+        const result = simulateTimeSkip(hoarder, TEN_YEARS, sealed());
+        expect(result.events.some(e => e.kind === 'qi_deviation')).toBe(true);
+    });
+
+    it('checks deviation on the fixed grid, never off it', () => {
+        const result = simulateTimeSkip(
+            makeCultivator({ spiritRoot: 'dual_water_fire', maxHp: 500, hp: 500 }),
+            5 * DAYS_PER_YEAR,
+            sealed({ })
+        );
+        for (const event of result.events.filter(e => e.kind === 'qi_deviation')) {
+            expect(event.dayOffset % DEVIATION_CHECK_DAYS).toBe(0);
+        }
+    });
+
+    it('deviates for a conflicting technique that a clean root would survive', () => {
+        const base: Partial<Cultivator> = { maxHp: 500, hp: 500 };
+        const safe = simulateTimeSkip(secluded(base), TEN_YEARS, sealed());
+        const reckless = simulateTimeSkip(
+            secluded(base),
+            TEN_YEARS,
+            sealed({ techniqueElement: 'water' })
+        );
+        expect(safe.events.filter(e => e.kind === 'qi_deviation')).toHaveLength(0);
+        expect(reckless.events.filter(e => e.kind === 'qi_deviation').length).toBeGreaterThan(0);
+    });
+});
+
+describe('deltas', () => {
+    it('reports net change rather than absolute state', () => {
+        const cultivator = makeCultivator({ spiritStones: 100, cultivationProgress: 0 });
+        const result = simulateTimeSkip(cultivator, TEN_YEARS, ctx({ randomEvents: false }));
+        expect(result.deltas.spiritStones).toBe(0);
+        expect(result.deltas.qi).toBe(0);
+        expect(result.deltas.cultivationProgress).toBeGreaterThan(0);
+        expect(result.deltas.age).toBeGreaterThan(0);
+    });
+
+    it('credits an opportunity to the spirit-stone delta', () => {
+        let found: ReturnType<typeof simulateTimeSkip> | null = null;
+        for (let i = 0; i < 60 && found === null; i++) {
+            const result = simulateTimeSkip(
+                makeCultivator({ attributes: { might: 2, insight: 2, fortune: 3, charm: 2 } }),
+                TEN_YEARS,
+                ctx({ seed: `opportunity-${i}`, autoBreakthrough: false })
+            );
+            if (result.events.some(e => e.kind === 'opportunity')) found = result;
+        }
+        expect(found).not.toBeNull();
+        expect(found!.deltas.spiritStones).toBeGreaterThan(0);
+    });
+});

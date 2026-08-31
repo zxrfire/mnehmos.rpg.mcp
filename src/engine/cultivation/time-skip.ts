@@ -189,9 +189,21 @@ export function simulateTimeSkip(
         events.push({ kind, dayOffset: elapsed, summary, interrupts, data });
     };
 
-    const currentAge = (): number => roundYears(startAge + elapsed / DAYS_PER_YEAR);
-    const currentYearsAtRealm = (): number =>
-        roundYears(realmClockBase + daysSinceAdvance / DAYS_PER_YEAR);
+    // Two flavours of the same clock, deliberately.
+    //
+    // `raw*` is used to compute how many days remain before a threshold: it
+    // must not be rounded, because rounding DOWN by half a microsecond makes
+    // the remaining distance look a fraction of a day longer and the chunker
+    // then steps one day past the threshold.
+    //
+    // `current*` is rounded and is what the death check and the returned deltas
+    // see: `Math.ceil` on the day count can land a few nanoseconds short of the
+    // threshold, and rounding to the nearest microsecond snaps that back onto
+    // the documented number so death fires exactly ON it.
+    const rawAge = (): number => startAge + elapsed / DAYS_PER_YEAR;
+    const rawYearsAtRealm = (): number => realmClockBase + daysSinceAdvance / DAYS_PER_YEAR;
+    const currentAge = (): number => roundYears(rawAge());
+    const currentYearsAtRealm = (): number => roundYears(rawYearsAtRealm());
 
     const snapshot = () => ({
         realmOrdinal: ordinal,
@@ -315,8 +327,8 @@ export function simulateTimeSkip(
             breakthroughDays: autoBreakthrough
                 ? daysToNextBreakthrough({ realmOrdinal: ordinal, cultivationProgress: progress }, rate.perDay)
                 : Infinity,
-            lifespanDays: Math.ceil((lifespanForOrdinal(ordinal) - currentAge()) * DAYS_PER_YEAR),
-            stagnationDays: Math.ceil((STAGNATION_YEARS - currentYearsAtRealm()) * DAYS_PER_YEAR),
+            lifespanDays: daysUntilYear(lifespanForOrdinal(ordinal), rawAge()),
+            stagnationDays: daysUntilYear(STAGNATION_YEARS, rawYearsAtRealm()),
             starvationDays:
                 grainAbstinence || rations > 0
                     ? Infinity
@@ -602,6 +614,18 @@ function consumeFood(days: number, state: FoodState): FoodState & { rationsUsed:
  */
 function roundYears(years: number): number {
     return Math.round(years * 1e6) / 1e6;
+}
+
+/**
+ * Whole days from `current` years to `limit` years.
+ *
+ * The epsilon absorbs the float residue in `(limit - current) * 365`: without
+ * it a distance that is truly 20 days computes as 20.0000000001 and ceils to
+ * 21, stepping the simulation one day past a death threshold that the tests -
+ * and the player - expect to land exactly on the documented number.
+ */
+function daysUntilYear(limit: number, current: number): number {
+    return Math.ceil((limit - current) * DAYS_PER_YEAR - 1e-6);
 }
 
 function deathSummary(cause: DeathCause, name: string, ordinal: number, age: number): string {
