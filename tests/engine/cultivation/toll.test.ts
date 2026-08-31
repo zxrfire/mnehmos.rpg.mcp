@@ -79,7 +79,9 @@ describe('when the toll is charged at all', () => {
         for (const ordinal of ALL_ORDINALS) {
             expect(isTolled(ordinal)).toBe(isRealmBoundary(ordinal) && ordinal < MAX_ORDINAL);
         }
-        expect(TOLL_BOUNDARY_ORDINALS).toEqual([12, 16, 20, 24, 28, 32, 36, 40]);
+        // 44 is on the list now: the last crossing is a realm boundary too,
+        // and it is the one where the price is collected in full.
+        expect(TOLL_BOUNDARY_ORDINALS).toEqual([12, 16, 20, 24, 28, 32, 36, 40, 44]);
     });
 
     it('throws rather than inventing an instalment for a sub-rank step', () => {
@@ -195,7 +197,11 @@ describe('the odds move on things the player can act on', () => {
             makeCultivator({ realmOrdinal: 20, attributes: attrs(0) }),
             { ambient: 'normal' }
         );
-        expect(base.modifiers.find(m => m.source === 'fortune')!.delta).toBe(0);
+        // Relabelled: Fortune does not make a cultivator harder to charge, it
+        // means the crossing passed over lightly.
+        expect(
+            base.modifiers.find(m => m.source === 'fortune:attention_elsewhere')!.delta
+        ).toBe(0);
     });
 
     it('sect protection measurably reduces the toll', () => {
@@ -204,7 +210,7 @@ describe('the odds move on things the player can act on', () => {
         expect(shielded).toBeLessThan(alone - 0.15);
     });
 
-    it('preparation and dense ash both help; a hurried crossing hurts', () => {
+    it('preparation and dense qi both help; a hurried crossing hurts', () => {
         const cultivator = makeCultivator({ realmOrdinal: 20 });
         const ditch = computeTollRisk(cultivator, { ambient: 'thin', hurried: true }).risk;
         const ordinary = computeTollRisk(cultivator, { ambient: 'normal' }).risk;
@@ -216,7 +222,7 @@ describe('the odds move on things the player can act on', () => {
         expect(chosenCave).toBeLessThan(ordinary);
     });
 
-    it('a holed foundation is easier for the Vault to reach into', () => {
+    it('a holed foundation is easier for a crossing to reach into', () => {
         const sound = computeTollRisk(
             makeCultivator({ realmOrdinal: 20, foundationQuality: 'exceptional' }),
             { ambient: 'normal' }
@@ -320,7 +326,7 @@ describe('what gets taken', () => {
     });
 
     it('prefers what mattered more', () => {
-        // The Vault is not looking for the cheapest item. Over many crossings
+        // The severance is not looking for the cheapest item. Over many crossings
         // the weight-5 brother must be taken more often than the weight-3
         // teacher, both being bonds.
         let brother = 0;

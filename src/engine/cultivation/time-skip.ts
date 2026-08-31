@@ -30,8 +30,28 @@
  * untreated-injury threshold all return control to the player with the skip
  * truncated and the reason stated.
  *
- * Pure: the input cultivator is never mutated. Everything is returned as
- * deltas and events for the caller to apply.
+ * ── What the caller applies ───────────────────────────────────────────────
+ * Pure: the input cultivator is never mutated. Everything the skip produced
+ * comes back as data for the caller to persist, and none of it should ever be
+ * recovered by reading the engine's own prose:
+ *
+ *   injuriesSustained  the real Injury records, ids and all, chronological
+ *   tolls              what each boundary crossing took
+ *   foundationEstablished  the foundation laid, if 12 -> 13 was crossed
+ *   deltas             net change for the values where a delta is meaningful
+ *   endState           absolute values for the two counters that RESET
+ *   events             the digest, for the narrator and only for the narrator
+ *
+ * The split between `deltas` and `endState` is not cosmetic. Starvation turns
+ * clear the moment there is food, and years-at-realm returns to zero on any
+ * advance, so "before plus delta" is not merely imprecise for those two, it is
+ * wrong. They are reported absolute. Everything in `deltas` is a true net
+ * change that inverts correctly.
+ *
+ * `events` are engine-authored summaries for a narrator to render. They are
+ * NOT a data channel: a caller that parses a summary string to decide what to
+ * write to the database has inverted the project's central rule, and will
+ * silently break the next time someone rewords a sentence.
  */
 
 import {
@@ -44,6 +64,7 @@ import {
     type DeathCause,
     type Element,
     type FoundationQuality,
+    type ImmortalStatus,
     type Injury,
     type SimEvent,
     type SimEventKind,
@@ -87,10 +108,72 @@ export const ENCOUNTER_CHANCE = 0.2;
 /** Of encounters, the fraction serious enough to interrupt seclusion. */
 export const MAJOR_ENCOUNTER_FRACTION = 0.35;
 
-/** Base probability of an opportunity, before Fortune. */
-export const OPPORTUNITY_BASE_CHANCE = 0.15;
-/** Added opportunity probability per point of Fortune. Zero Fortune gets none. */
-export const OPPORTUNITY_PER_FORTUNE = 0.05;
+// ─────────────────────────────────────────────────────────────────────────
+// FORTUNE
+//
+// Luck generates opportunity, not success. Fortune appears in this file and
+// almost nowhere else, because event generation is the only place it belongs.
+//
+// THE RULE, and it is narrow: Fortune may influence WHICH of the branches the
+// world already permits occurs, and WHEN. It biases timing, presence,
+// availability and coincidence. It must never manufacture a branch, never
+// soften a resolution, and never reach into a probability that represents a
+// real capability gap.
+//
+// Legitimate:   the patrol arrives twenty minutes later; the herb happens to
+//               grow nearby; the elder takes the other road; the treasure has
+//               not already been taken; the window is still open.
+// Illegitimate: an encounter the world says is lethal resolves as survivable;
+//               a weak cultivator's luck kills a strong one; an outcome that
+//               contradicts an established fact or a capability threshold.
+//
+// Concretely, below: Fortune moves whether an opportunity is DRAWN, whether it
+// is still AVAILABLE when reached, and whether a passing danger ARRIVES on top
+// of the cultivator or goes past. Once something has arrived, Fortune has no
+// further say - it does not touch the damage, the severity, the deviation
+// roll, the breakthrough, or the tribulation.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Base probability of an opportunity being drawn, before Fortune. */
+export const OPPORTUNITY_BASE_CHANCE = 0.1;
+/**
+ * Added opportunity probability per point of Fortune. Weighted heavily: this
+ * is where Fortune earns its place on the character sheet, now that it has
+ * been taken out of breakthrough odds and tribulation survival.
+ */
+export const OPPORTUNITY_PER_FORTUNE = 0.1;
+
+/**
+ * Chance a drawn opportunity has already been taken, or the window has already
+ * closed, by the time the cultivator gets to it. Falls with Fortune: "arriving
+ * four days late" is exactly what low Fortune means.
+ */
+export const OPPORTUNITY_MISSED_BASE = 0.4;
+export const OPPORTUNITY_MISSED_PER_FORTUNE = -0.11;
+
+/**
+ * Chance that a minor disturbance passes by instead of landing on the
+ * cultivator. This is presence and timing - whether the thing arrives at all -
+ * and NOT a reduction in what it does once it has.
+ */
+export const DISTURBANCE_PASSES_BASE = 0.15;
+export const DISTURBANCE_PASSES_PER_FORTUNE = 0.12;
+
+/**
+ * Chance that a major encounter arrives at a moment the cultivator can simply
+ * withdraw from: the elder took the other road, the patrol is facing the wrong
+ * way. It changes whether the confrontation happens, never who would win it.
+ * The encounter still interrupts either way, and any fight that does happen is
+ * resolved by the combat layer at full strength.
+ */
+export const CLEAN_WITHDRAWAL_BASE = 0.1;
+export const CLEAN_WITHDRAWAL_PER_FORTUNE = 0.12;
+
+/** Fortune clamped to its legal 0..3 range, defensively. */
+function fortuneOf(attributes: { fortune: number }): number {
+    const f = attributes.fortune;
+    return Number.isFinite(f) ? Math.max(0, Math.min(3, f)) : 0;
+}
 
 /** Hard iteration ceiling. A safety net against a future edit that stalls the
  *  chunker; it should never be reached, and the simulation reports it if it is. */
@@ -129,9 +212,9 @@ export interface TimeSkipContext {
     /** Roll encounters and opportunities. Default true. */
     randomEvents?: boolean;
     /**
-     * Conditions for the Vault's toll at any realm boundary crossed during the
+     * Conditions for the price of advancement at any realm boundary crossed during the
      * skip. The candidate list must come from real rows - the engine holds no
-     * database - so a caller that omits it will see the Vault find nothing
+     * database - so a caller that omits it will see the crossing find nothing
      * worth taking, which is a visible result rather than a silent skip.
      */
     toll?: TollConditions;
@@ -180,7 +263,9 @@ export function simulateTimeSkip(
     let rations = Math.max(0, Math.floor(ctx.rations ?? 0));
     /** May be set during the skip, if it crosses Foundation Establishment. */
     let foundation: FoundationQuality = cultivator.foundationQuality ?? 'none';
-    /** Everything the Vault took during the skip, for the caller to apply. */
+    /** May be set during the skip, if it resolves the last crossing. */
+    let immortalStatus: ImmortalStatus = cultivator.immortalStatus ?? 'none';
+    /** Everything the crossings took during the skip, for the caller to apply. */
     const tolls: TollResult[] = [];
 
     /** Integer day counters. Ages are derived from these, never accumulated,
@@ -195,7 +280,12 @@ export function simulateTimeSkip(
     let interruptReason: string | null = null;
     let died = false;
     let deathCause: DeathCause | null = null;
-    let injuriesGained = 0;
+    /**
+     * Every wound the skip produced, in the order it happened. This is the
+     * authoritative record the caller persists; `deltas.injuriesGained` is
+     * derived from its length so the two can never disagree.
+     */
+    const sustained: Injury[] = [];
     /** Ranks gained on the current day, enforcing MAX_RANKS_PER_TURN. */
     let ranksOnDay = 0;
     let ranksOnDayFor = -1;
@@ -232,6 +322,7 @@ export function simulateTimeSkip(
         spiritRoot: cultivator.spiritRoot,
         attributes: cultivator.attributes,
         foundationQuality: foundation,
+        immortalStatus,
         name: cultivator.name,
         injuries,
         hp,
@@ -273,7 +364,14 @@ export function simulateTimeSkip(
 
         if (autoBreakthrough) {
             const eligibility = canAttemptBreakthrough(
-                { realmOrdinal: ordinal, cultivationProgress: progress, alive: true },
+                {
+                    realmOrdinal: ordinal,
+                    cultivationProgress: progress,
+                    alive: true,
+                    // A False Immortal is refused here for the rest of the
+                    // skip, so the loop stops re-attempting the last crossing.
+                    immortalStatus
+                },
                 { ranksGainedThisTurn: ranksOnDay }
             );
             if (eligibility.eligible) {
@@ -287,9 +385,14 @@ export function simulateTimeSkip(
                 });
 
                 progress = Math.max(0, progress - result.progressConsumed);
+                // Every breakthrough outcome that wounds contributes here -
+                // failure_injured, failure_deviation, a fatal rupture, and the
+                // burns from a survived tribulation. This is the path callers
+                // used to recover by scraping a severity word out of the
+                // narration hint; they now get the records themselves.
                 if (result.injuriesSustained.length > 0) {
                     injuries = [...injuries, ...result.injuriesSustained];
-                    injuriesGained += result.injuriesSustained.length;
+                    sustained.push(...result.injuriesSustained);
                 }
 
                 if (result.outcome === 'success') {
@@ -300,15 +403,19 @@ export function simulateTimeSkip(
                     if (result.foundationEstablished !== null) {
                         foundation = result.foundationEstablished;
                     }
+                    if (result.immortalStatusGained !== null) {
+                        immortalStatus = result.immortalStatusGained;
+                    }
                     push('breakthrough_success', result.narrationHint, false, {
                         fromOrdinal: result.fromOrdinal,
                         toOrdinal: result.toOrdinal,
                         finalChance: result.finalChance,
                         tribulation: result.tribulation,
-                        foundationEstablished: result.foundationEstablished
+                        foundationEstablished: result.foundationEstablished,
+                        immortalStatusGained: result.immortalStatusGained
                     });
 
-                    // The Vault's instalment gets its own line in the digest.
+                    // The price of the crossing gets its own line in the digest.
                     // A crossing that cost someone a brother must not be a
                     // footnote inside a success message.
                     if (result.toll !== null) {
@@ -441,7 +548,7 @@ export function simulateTimeSkip(
                 progress = Math.max(0, progress - resolution.progressLost);
                 hp = Math.max(0, hp - resolution.hpLost);
                 injuries = [...injuries, ...resolution.injuries];
-                injuriesGained += resolution.injuries.length;
+                sustained.push(...resolution.injuries);
                 push('qi_deviation', resolution.summary, false, {
                     severity: resolution.severity,
                     risk: check.risk
@@ -464,18 +571,47 @@ export function simulateTimeSkip(
         }
 
         if (randomEvents && onGrid(newAbsDay, ENCOUNTER_CHECK_DAYS)) {
+            // Four samples drawn unconditionally, so the stream stays aligned
+            // whatever the cultivator's Fortune: whether something comes, how
+            // serious it is, whether it lands, and whether it can be left.
             const rng = forStream(ctx.seed, 'encounter', newAbsDay);
-            if (rng.chance(ENCOUNTER_CHANCE)) {
-                const major = rng.chance(MAJOR_ENCOUNTER_FRACTION);
-                if (major) {
-                    interrupted = true;
-                    interruptReason = 'major_encounter';
+            const came = rng.chance(ENCOUNTER_CHANCE);
+            const major = rng.chance(MAJOR_ENCOUNTER_FRACTION);
+            const landed = rng.next();
+            const withdrawal = rng.next();
+            const fortune = fortuneOf(cultivator.attributes);
+
+            if (came && major) {
+                // Fortune decides whether the confrontation happens at all -
+                // the elder took the other road - and nothing whatever about
+                // who would win it if it does. Either way the player gets
+                // control back, because either way this is a decision point.
+                const canWithdraw =
+                    withdrawal < CLEAN_WITHDRAWAL_BASE + fortune * CLEAN_WITHDRAWAL_PER_FORTUNE;
+                interrupted = true;
+                interruptReason = 'major_encounter';
+                push(
+                    'encounter',
+                    canWithdraw
+                        ? 'Seclusion broken: another cultivator is nearby and has not seen this place yet. ' +
+                          `There is a way out that does not cross them. ${rankName(ordinal)} standing, ` +
+                          `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : 'Seclusion broken: another cultivator has found this place and is approaching. ' +
+                          `${rankName(ordinal)} standing, ${untreatedInjuryCount(injuries)} untreated injuries.`,
+                    true,
+                    { severity: 'major', canWithdraw }
+                );
+            } else if (came) {
+                // Presence, not severity. Fortune can mean the thing passed by;
+                // it cannot mean the thing arrived and hurt less.
+                const passedBy =
+                    landed < DISTURBANCE_PASSES_BASE + fortune * DISTURBANCE_PASSES_PER_FORTUNE;
+                if (passedBy) {
                     push(
                         'encounter',
-                        `Seclusion broken: another cultivator has found this place and is approaching. ` +
-                        `${rankName(ordinal)} standing, ${untreatedInjuryCount(injuries)} untreated injuries.`,
-                        true,
-                        { severity: 'major' }
+                        'Something passed close by the cave and went on without stopping.',
+                        false,
+                        { severity: 'minor', passedBy: true, damage: 0 }
                     );
                 } else {
                     const damage = Math.min(hp, Math.max(1, Math.round(cultivator.maxHp * 0.1)));
@@ -484,25 +620,47 @@ export function simulateTimeSkip(
                         'encounter',
                         `A minor disturbance interrupted cultivation and cost ${damage} HP. Nothing followed it.`,
                         false,
-                        { severity: 'minor', damage }
+                        { severity: 'minor', passedBy: false, damage }
                     );
                 }
             }
         }
 
         if (randomEvents && !interrupted && onGrid(newAbsDay, OPPORTUNITY_CHECK_DAYS)) {
+            // Three samples drawn unconditionally, keeping the stream aligned
+            // across cultivators of different Fortune: was there something,
+            // was it still there, and how much was it worth.
             const rng = forStream(ctx.seed, 'opportunity', newAbsDay);
-            const chance =
-                OPPORTUNITY_BASE_CHANCE + cultivator.attributes.fortune * OPPORTUNITY_PER_FORTUNE;
-            if (rng.chance(chance)) {
-                const stones = rng.int(10, 60) * (1 + ordinal);
-                spiritStones += stones;
-                push(
-                    'opportunity',
-                    `Found while in seclusion: a spirit-stone cache worth ${stones} stones.`,
-                    false,
-                    { spiritStones: stones }
-                );
+            const drawn = rng.next();
+            const availability = rng.next();
+            const size = rng.int(10, 60);
+            const fortune = fortuneOf(cultivator.attributes);
+
+            const chance = OPPORTUNITY_BASE_CHANCE + fortune * OPPORTUNITY_PER_FORTUNE;
+            if (drawn < chance) {
+                // The window is the second half of luck, and the half the genre
+                // actually turns on: the cache is there either way, and low
+                // Fortune means arriving after someone else did.
+                const missedChance =
+                    OPPORTUNITY_MISSED_BASE + fortune * OPPORTUNITY_MISSED_PER_FORTUNE;
+                if (availability < missedChance) {
+                    push(
+                        'opportunity_missed',
+                        'There had been a spirit-stone cache in the rock nearby. ' +
+                        'Someone reached it first, and not recently.',
+                        false,
+                        { missedBy: 'already_taken' }
+                    );
+                } else {
+                    const stones = size * (1 + ordinal);
+                    spiritStones += stones;
+                    push(
+                        'opportunity',
+                        `Found while in seclusion: a spirit-stone cache worth ${stones} stones.`,
+                        false,
+                        { spiritStones: stones }
+                    );
+                }
             }
         }
 
@@ -530,13 +688,22 @@ export function simulateTimeSkip(
             satiety: satiety - cultivator.satiety,
             spiritStones: spiritStones - cultivator.spiritStones,
             age: roundYears(finalAge - startAge),
-            injuriesGained
+            // Derived, never tracked separately, so the count and the records
+            // cannot drift apart.
+            injuriesGained: sustained.length
         },
         died,
         deathCause,
+        injuriesSustained: sustained,
         tolls,
+        endState: {
+            starvationTurns,
+            yearsAtCurrentRealm: currentYearsAtRealm()
+        },
         foundationEstablished:
-            foundation === (cultivator.foundationQuality ?? 'none') ? null : foundation
+            foundation === (cultivator.foundationQuality ?? 'none') ? null : foundation,
+        immortalStatusGained:
+            immortalStatus === (cultivator.immortalStatus ?? 'none') ? null : immortalStatus
     };
 }
 

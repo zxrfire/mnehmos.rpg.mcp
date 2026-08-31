@@ -35,7 +35,7 @@ import { CultivationRNG } from '../../../src/engine/cultivation/rng.js';
 const ALL_ORDINALS = Array.from({ length: TOTAL_RANKS }, (_, i) => i);
 
 describe('realm ladder', () => {
-    it('covers 0..44 with no holes and no overlaps', () => {
+    it('covers 0..45 with no holes and no overlaps', () => {
         for (const ordinal of ALL_ORDINALS) {
             expect(() => realmForOrdinal(ordinal)).not.toThrow();
         }
@@ -44,7 +44,11 @@ describe('realm ladder', () => {
             0
         );
         expect(covered).toBe(TOTAL_RANKS);
-        expect(MAX_ORDINAL).toBe(44);
+        // 45, not 44: Tribulation Transcendence is the approach to the Lid and
+        // True Immortal sits above it as a single rank.
+        expect(MAX_ORDINAL).toBe(45);
+        expect(TOTAL_RANKS).toBe(46);
+        expect(rankName(MAX_ORDINAL)).toBe('True Immortal');
     });
 
     it('places a boundary exactly at the last ordinal of each realm but the top one', () => {
@@ -116,7 +120,7 @@ describe('realm ladder', () => {
 
     it('makes the 40 to 41 crossing a realm boundary AND a tribulation', () => {
         // The single worst moment in a run: boundary odds, boundary failure
-        // table, heavenly lightning, and the Vault's toll, all at once.
+        // table, heavenly lightning, and the price of advancement, all at once.
         expect(isRealmBoundary(40)).toBe(true);
         expect(triggersHeavenlyTribulation(40)).toBe(true);
     });

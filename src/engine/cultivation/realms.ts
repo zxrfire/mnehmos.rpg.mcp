@@ -1,5 +1,5 @@
 /**
- * The Cultivation Ladder - 45 ranks, ordinal 0 through 44.
+ * The Cultivation Ladder - 46 ranks, ordinal 0 through 45.
  *
  * This is the spine of the entire game. Every other cultivation system
  * (breakthrough odds, lifespan, combat power, sect standing, technique tiers)
@@ -20,7 +20,8 @@ export type RealmKey =
     | 'void_refinement'
     | 'body_integration'
     | 'grand_ascension'
-    | 'tribulation_transcendence';
+    | 'tribulation_transcendence'
+    | 'true_immortal';
 
 export interface RealmTier {
     key: RealmKey;
@@ -44,6 +45,16 @@ export interface RealmTier {
     powerMultiplier: number;
     description: string;
 }
+
+/**
+ * Lifespan stand-in for True Immortal.
+ *
+ * A billion years rather than `Infinity`: the value is carried in result
+ * objects that get serialised, and `JSON.stringify(Infinity)` is `null`, which
+ * would arrive downstream as "no lifespan recorded" rather than "unbounded".
+ * Nothing in this engine ages anywhere near it.
+ */
+export const UNBOUNDED_LIFESPAN_YEARS = 1_000_000_000;
 
 export const REALM_TIERS: readonly RealmTier[] = [
     {
@@ -152,12 +163,34 @@ export const REALM_TIERS: readonly RealmTier[] = [
         lifespanYears: 100000,
         powerMultiplier: 65536,
         description:
-            'Survive the heavenly tribulation and ascend, or do not.'
+            'The approach to the Lid, not the summit. Survive the heavenly tribulation and ascend, or do not.'
+    },
+    {
+        key: 'true_immortal',
+        name: 'True Immortal',
+        hanzi: '真仙',
+        ordinalStart: 45,
+        ordinalEnd: 45,
+        // One rank, because there is nothing to be partway through. Either the
+        // hole in the Lid was punched and the cultivator went through it, or it
+        // was not.
+        subRanks: ['Ascended'],
+        lifespanYears: UNBOUNDED_LIFESPAN_YEARS,
+        powerMultiplier: 1048576,
+        description:
+            'The crossing completed. The top of the ladder, and the only way a run ends that is not a death. Lifespan stops being a number that means anything.'
     }
 ] as const;
 
-/** Highest legal ordinal on the ladder. */
-export const MAX_ORDINAL = 44;
+/**
+ * Highest legal ordinal on the ladder: True Immortal.
+ *
+ * Note this is reachable only by completing the last crossing. A False Immortal
+ * - the common outcome of attempting it - stays at 44 forever and is described
+ * by `immortalStatus` rather than by an ordinal, because they did not arrive
+ * anywhere. See `FALSE_IMMORTAL_*` below.
+ */
+export const MAX_ORDINAL = 45;
 /** Total number of ranks, including ordinal 0. */
 export const TOTAL_RANKS = MAX_ORDINAL + 1;
 
@@ -190,9 +223,16 @@ export function subRankForOrdinal(ordinal: number): string {
     return tier.subRanks[clamped - tier.ordinalStart];
 }
 
-/** Full display name, e.g. "Qi Condensation Layer 7", "Core Formation Perfection". */
+/**
+ * Full display name, e.g. "Qi Condensation Layer 7", "Core Formation Perfection".
+ *
+ * A realm holding exactly one rank is named by the realm alone: "True Immortal"
+ * rather than "True Immortal Ascended". There is nothing to be partway through
+ * up there, so the sub-rank carries no information.
+ */
 export function rankName(ordinal: number): string {
     const tier = realmForOrdinal(ordinal);
+    if (tier.subRanks.length === 1) return tier.name;
     return `${tier.name} ${subRankForOrdinal(ordinal)}`;
 }
 
@@ -203,6 +243,68 @@ export function lifespanForOrdinal(ordinal: number): number {
 
 export function powerMultiplierForOrdinal(ordinal: number): number {
     return realmForOrdinal(ordinal).powerMultiplier;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE FALSE IMMORTAL
+//
+// The half-failure of the last crossing, and deliberately NOT an ordinal. The
+// tribulation was survived and the Lid was opened, but the crossing did not
+// complete - the seam closed early, or the body would not follow the soul, or
+// something on the other side declined to take them. What is left stays on
+// this side permanently.
+//
+// Representing it as a status rather than a rank is the whole point. A False
+// Immortal did not arrive anywhere; they are standing exactly where they were,
+// changed. Giving them ordinal 45 would say they ascended, and giving them a
+// rank of their own would put them on a ladder they are permanently off.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Whether a cultivator completed the last crossing, half-completed it, or has not tried. */
+export type ImmortalStatus = 'none' | 'false_immortal' | 'true_immortal';
+
+/**
+ * Strictly above Tribulation Transcendence Perfection (65536) and strictly
+ * below True Immortal (1048576). Part of the transformation did happen, and it
+ * is the reason a False Immortal is one of the most dangerous things alive.
+ */
+export const FALSE_IMMORTAL_POWER_MULTIPLIER = 262144;
+
+/**
+ * Vast, and finite, and countable. They will die on this side having been most
+ * of the way through, which is the entire tragedy of the Hollow Court.
+ */
+export const FALSE_IMMORTAL_LIFESPAN_YEARS = 300000;
+
+/** Power multiplier accounting for a False Immortal's incomplete ascension. */
+export function effectivePowerMultiplier(ordinal: number, status: ImmortalStatus = 'none'): number {
+    if (status === 'false_immortal') return FALSE_IMMORTAL_POWER_MULTIPLIER;
+    return powerMultiplierForOrdinal(ordinal);
+}
+
+/** Lifespan ceiling accounting for a False Immortal's extended, finite span. */
+export function effectiveLifespanYears(ordinal: number, status: ImmortalStatus = 'none'): number {
+    if (status === 'false_immortal') return FALSE_IMMORTAL_LIFESPAN_YEARS;
+    return lifespanForOrdinal(ordinal);
+}
+
+/**
+ * True for anyone who has already been through the last crossing, either way.
+ *
+ * The Lid does not open twice for the same name, so this is also the predicate
+ * that permanently bars a re-attempt. It is a refusal by the engine, not a
+ * small probability.
+ */
+export function hasCrossedTheLid(status: ImmortalStatus = 'none'): boolean {
+    return status !== 'none';
+}
+
+/** Ordinal of the last crossing: the attempt from Tribulation Transcendence Perfection. */
+export const LAST_CROSSING_ORDINAL = MAX_ORDINAL - 1;
+
+/** Whether an attempt from this ordinal is the last crossing through the Lid. */
+export function isLastCrossing(ordinal: number): boolean {
+    return clampOrdinal(ordinal) === LAST_CROSSING_ORDINAL;
 }
 
 /**
@@ -244,20 +346,25 @@ export function baseBreakthroughChance(ordinal: number): number {
 /**
  * Whether an attempt FROM this ordinal summons heavenly lightning.
  *
- * The test is on the DESTINATION, not the origin: lightning is the Lid's seam
- * discharging as it decides whether the hole you are about to punch is worth
- * the ash it will cost to seal behind you, so it fires the moment you enter
- * Tribulation Transcendence - the 40 -> 41 crossing - and at every step after.
+ * Lightning is the Lid's seam discharging while it decides whether the hole you
+ * are about to punch is worth the qi it will cost to seal behind you. It
+ * therefore fires on every crossing INTO Tribulation Transcendence (40 -> 41),
+ * on every step WITHIN it, and on the last crossing OUT of it (44 -> 45), which
+ * is the one the whole realm is named for and the heaviest tribulation in the
+ * game.
  *
- * An earlier revision tested the origin, which had the absurd consequence that
- * the one crossing named after tribulation was the only one in the realm that
- * did not summon any. Attempts from 40, 41, 42 and 43 all trigger; 44 is the
- * summit and never attempts anything.
+ * Expressed as "origin or destination is Tribulation Transcendence" so that
+ * both ends of the realm are covered. An earlier revision tested the origin
+ * alone, which meant the entry crossing summoned nothing; testing only the
+ * destination would now miss the exit crossing instead.
  */
 export function triggersHeavenlyTribulation(ordinal: number): boolean {
     const clamped = clampOrdinal(ordinal);
     if (clamped >= MAX_ORDINAL) return false;
-    return realmForOrdinal(clamped + 1).key === 'tribulation_transcendence';
+    return (
+        realmForOrdinal(clamped).key === 'tribulation_transcendence' ||
+        realmForOrdinal(clamped + 1).key === 'tribulation_transcendence'
+    );
 }
 
 function clamp01(n: number): number {

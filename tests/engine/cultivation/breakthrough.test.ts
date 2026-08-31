@@ -175,7 +175,9 @@ describe('odds', () => {
         expect(sources.some(s => s.startsWith('base:'))).toBe(true);
         expect(sources).toContain('realm_boundary_strain');
         expect(sources).toContain('insight');
-        expect(sources).toContain('fortune');
+        // No Fortune line, deliberately: luck generates opportunity, not
+        // success, and a breakthrough is a causal outcome.
+        expect(sources).not.toContain('fortune');
         expect(sources.some(s => s.startsWith('spirit_root:'))).toBe(true);
         expect(sources.some(s => s.startsWith('ambient_qi:'))).toBe(true);
         expect(sources.some(s => s.startsWith('untreated_injuries:'))).toBe(true);
@@ -504,7 +506,7 @@ describe('the toll, charged through a breakthrough', () => {
     });
 
     it('finds nothing to take when the caller supplies no candidates', () => {
-        // Deliberately visible rather than silent: the Vault does not wait for
+        // Deliberately visible rather than silent: the crossing does not wait for
         // a caller to be ready, so a forgotten candidate list surfaces here.
         const outcomes = new Set(
             crossings(16, 300, { candidates: [] })
@@ -567,7 +569,7 @@ describe('foundation establishment', () => {
     });
 
     it('exposes the fresh foundation to the same crossing that laid it', () => {
-        // The foundation laid at 12 -> 13 is what the Vault reaches into on the
+        // The foundation laid at 12 -> 13 is what the severance reaches into on the
         // way past, so it must be the new one and not the pre-crossing 'none'.
         let seen = null;
         for (let i = 0; i < 300 && seen === null; i++) {
