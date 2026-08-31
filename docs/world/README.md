@@ -98,3 +98,4 @@ authority on the ladder's bounds; the catalogs are the authority on their own si
 
 - [discovery.md](discovery.md) - how the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of.
 - [asking.md](asking.md) - who you ask and what you say; genuine ignorance versus deflection, the right words, and why the player rather than the character is what improves across runs.
+- [origin.md](origin.md) - where you were born and what it was worth; privilege buys inputs and never rank, and the children of great houses mostly fail anyway.
