@@ -645,6 +645,62 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'Archivists of what the crossings take. When a boundary cuts something away - a face, a name, the fact that two people were brothers - the Hall writes down what it was, from whatever record and whichever witness is left, so that somebody in the world still holds it. Their position is that a world which requires its best people to cut away everything they loved in order to rise is a world eating itself, and that the cheerful phrase for this is "the price". They are unpopular in exactly the way that suggests, and they will read a cultivator their own ledger whether or not it was requested.'
     },
 
+    // ── the two Azure feeders ──────────────────────────────────────────
+    // The Pavilion holds no courts and grants to nobody except these, which is
+    // the whole of its structure. A court administers an arterial vein for an
+    // apex; a feeder does not administer anything - it takes people the apex is
+    // not currently willing to hold and keeps them where they can be watched.
+    //
+    // Being sent down to one is not a disgrace and nobody in the Low Fall reads
+    // it as one. A disciple on probation at Mist or Dew is a disciple the
+    // Pavilion has decided is worth the cost of somewhere to put them, which is
+    // a great deal more than it decides about most people.
+    {
+        id: 'sect-azure-mist-court',
+        name: 'Azure Mist Court',
+        alignment: 'righteous',
+        powerOrdinal: 27,
+        ranks: ['Mist Servant', 'Outer Disciple', 'Inner Disciple', 'Mist Elder', 'Court Warden'],
+        admissionOrdinal: 1,
+        stipend: [3, 10, 30, 95, 300],
+        teaches: ['lesser-qi-gathering-manual', 'foundation-tempering-scripture', 'iron-thread-finger', 'hundred-cut-flying-blade'],
+        signatureTechniqueId: 'hundred-cut-flying-blade',
+        specialities: ['attack'],
+        rivals: [],
+        territory: 'The lower gorge, below the Azure Cloud terraces and inside the same grant, on the half of the vein that was never worth terracing.',
+        recruits: true,
+        compound: {
+            inherited: true,
+            formationNodesTotal: 19,
+            formationNodesLit: 12,
+            remnant: 'A practice yard laid out for four hundred, kept swept for sixty, with the stone worn into lanes that no longer match where anybody stands.'
+        },
+        description:
+            'The first of the two Azure feeders and the one people are sent to. It takes the Pavilion\'s probationers, its late admissions and everybody who was refused at the terraces for a reason short of disqualifying, and it teaches them the same forms slightly slower. A Mist disciple who is recalled goes back up with the years counted, which is the arrangement working; a Mist disciple who is not recalled becomes a Mist Elder, which is a career and not a failure, and the Pavilion is careful to say so out loud.'
+    },
+    {
+        id: 'sect-azure-dew-sect',
+        name: 'Azure Dew Sect',
+        alignment: 'righteous',
+        powerOrdinal: 24,
+        ranks: ['Dew Servant', 'Outer Disciple', 'Inner Disciple', 'Dew Elder', 'Sect Warden'],
+        admissionOrdinal: 0,
+        stipend: [2, 8, 26, 85, 260],
+        teaches: ['lesser-qi-gathering-manual', 'foundation-tempering-scripture'],
+        signatureTechniqueId: 'lesser-qi-gathering-manual',
+        specialities: ['support'],
+        rivals: [],
+        territory: 'Four hill villages at the head of the gorge, where the vein runs shallow enough that a mortal can feel it on a cold morning.',
+        recruits: true,
+        compound: {
+            inherited: false,
+            formationNodesTotal: 6,
+            formationNodesLit: 6,
+            remnant: 'The only compound in the grant that was built rather than inherited, which the Dew mentions more often than the Pavilion finds comfortable.'
+        },
+        description:
+            'The second feeder, and the one people are found by. Where Mist takes the Pavilion\'s rejects, Dew goes looking: it admits at nothing, teaches in the villages, and sends up two or three a decade who would never have reached a terrace gate on their own. It is the smallest holding in the Azure grant and the only part of it built rather than inherited, and its Wardens have a habit of saying both facts in the same sentence.'
+    },
     // ═══════════════════════════════════════════════════════════════════
     // NEUTRAL
     // ═══════════════════════════════════════════════════════════════════
@@ -1948,6 +2004,16 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: ['single_fire', 'single_metal'],
         requirement: 'Clan blood, or three years indentured at the bellows, whichever the applicant has.'
     },
+    'sect-azure-mist-court': {
+        minOrdinal: 1,
+        preferredRoots: [],
+        requirement: 'A refusal from the terraces, or a probation order from them, or nothing at all. Mist asks what happened and writes the answer down, and has never once refused somebody for the answer being unflattering.'
+    },
+    'sect-azure-dew-sect': {
+        minOrdinal: 0,
+        preferredRoots: [],
+        requirement: 'Be found. Dew teaches in the villages first and admits afterwards, so by the time anybody is asked they have already been coming for two years.'
+    },
     'sect-hollow-bell-wanderers': {
         minOrdinal: 0,
         preferredRoots: [],
@@ -2541,6 +2607,32 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         discoverableTraces: [],
         standingNote: 'A clan of smiths with a genealogy rather than a hagiography: they can name every ancestor and none of them is interesting.'
     },
+    'sect-azure-mist-court': {
+        ancestors: [
+            { name: 'The first Mist Warden, who was a Sword Elder first', fate: 'dead', realmOrdinal: null, yearsAgo: 340, afterCrossing: null, rememberedFor: 'Took the posting as a demotion and spent forty years establishing that it was not one, which is why the arrangement reads the way it does now.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'Its hall of tablets is a shelf, and every name on it was somebody the terraces sent down. The Mist keeps it in the entrance rather than the interior, on purpose.'
+    },
+    'sect-azure-dew-sect': {
+        ancestors: [
+            { name: 'Shu Lianniang, who taught in the villages for sixty years', fate: 'dead', realmOrdinal: null, yearsAgo: 190, afterCrossing: null, rememberedFor: 'Never held a rank above Dew Elder and sent eleven people up the gorge, which is more than the Mist managed in the same period and is not mentioned by anybody at the terraces.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'No ancestors of consequence and no pretence of any. The Dew counts its history in people sent up rather than in names kept.'
+    },
     'sect-hollow-bell-wanderers': {
         ancestors: [
             { name: 'Whoever hung the first bell', fate: 'lost', realmOrdinal: null, yearsAgo: 200, afterCrossing: null, rememberedFor: 'Nothing. There is a bell at a crossroads and a practice of hanging more.' },
@@ -2997,6 +3089,51 @@ export const HOLLOW_COURT_FOSTERAGE: Fosterage = {
  * overtaken, which is the same event described honestly - and being moved down
  * means going second for everything the Court can hand out.
  */
+/**
+ * The Azure intake: one gate, three places to be put, and probation everywhere.
+ *
+ * The Pavilion does not refuse people at the terrace gate. It takes them, scores
+ * them, and places them - and where somebody is placed is a statement about the
+ * score rather than about them. All three placements are probationary, which is
+ * the part outsiders consistently miss: a terrace disciple is on probation at
+ * the terraces exactly as a Mist disciple is on probation at the Mist, and the
+ * terms are posted the same way.
+ *
+ *   exceptional   probation at the Azure Cloud Pavilion itself, immediately
+ *   promising     placed at the Azure Mist Court, which teaches the same
+ *                 forms more slowly to people who have time to be taught
+ *   unformed      placed at the Azure Dew Sect, or more often found by it
+ *                 first and admitted afterwards
+ *
+ * Movement is upward and it is ordinary. Somebody exceptional emerging at the
+ * Mist or the Dew is reintegrated to the terraces, which happens often enough
+ * that the Mist keeps a recall roll and rarely enough that everybody at the Mist
+ * knows the current number.
+ *
+ * So being sent down is not a disgrace and the Low Fall does not read it as one.
+ * It reads it as the Pavilion deciding somebody is worth the cost of somewhere
+ * to put them, which is a great deal more than it decides about most people -
+ * and the alternative, at every other sect in the province, is being turned away
+ * at the gate with no record that you were ever there.
+ */
+export const AZURE_INTAKE = {
+    theGate:
+        'One gate, at the terraces, and nobody is refused at it. An applicant is taken, scored, and placed, and the placement is the answer.',
+    placements: [
+        'exceptional: probation at the Azure Cloud Pavilion itself, from the first day',
+        'promising: the Azure Mist Court, which teaches the terrace forms to people who failed them or were never taught them',
+        'unformed: the Azure Dew Sect, which more often finds somebody two years before it admits them'
+    ],
+    everythingIsProbation:
+        'All three are probationary and all three post the term the same way, in the disciple\'s own hand, struck through in the same hand when it ends. A terrace disciple is not more permanent than a Mist one; they are on a shorter term.',
+    reintegration:
+        'Upward and ordinary. Somebody exceptional emerging at the Mist or the Dew is recalled to the terraces on the years served, and the Mist keeps the roll. It happens often enough to be a system and rarely enough that everybody at the Mist can tell you the current number without looking.',
+    whyItIsNotShameful:
+        'Because the alternative everywhere else is the gate. Every other sect in the province refuses people and keeps no record that they came; the Pavilion places them and writes down where. A Mist posting is the Pavilion spending something on somebody, and the province has understood that for four hundred years.',
+    whatItCostsThePavilion:
+        'Two holdings it could have kept for itself, on a vein it is not using either half of, and a standing obligation to read a quarterly roll. It reads the roll rarely, which is the one part of the arrangement that would embarrass it.'
+} as const;
+
 export const SEAT_ORDER = {
     primary: 'Realm ordinal, descending. The highest holds First Seat.',
     tiebreak:

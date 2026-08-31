@@ -465,6 +465,8 @@ export const REGIONS: readonly Region[] = [
             'Federated. Twenty-seven institutions holding single veins on twelve-year grants from something none of them names in public, competing for standing with whoever renews them rather than for the veins themselves - which is why the province argues constantly and burns rarely. A newcomer with talent has options here, and every one of them is somebody else\'s tenant.',
         factionIds: [
             'sect-azure-cloud-pavilion',
+            'sect-azure-mist-court',
+            'sect-azure-dew-sect',
             'sect-verdant-spring-hall',
             'sect-nine-peaks-ascetic-order',
             'sect-clear-river-alliance',

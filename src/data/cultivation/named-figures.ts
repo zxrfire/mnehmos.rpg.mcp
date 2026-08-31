@@ -573,6 +573,34 @@ export const SEALED_FIGURE_NAMES: readonly NamedFigure[] = [
 
 export const FOUNDERS: readonly NamedFigure[] = [
     {
+        id: 'figure-the-first-mist-warden',
+        name: 'The first Mist Warden',
+        alsoCalled: 'the one who was sent down',
+        kind: 'founder',
+        factionId: 'sect-azure-mist-court',
+        whatTheyWere: 'A Sword Elder of the terraces who was sent to the lower gorge as a punishment nobody wrote down, and spent forty years turning the posting into an institution.',
+        yearsAgo: 340,
+        attestation: 'secure',
+        attestationNote: 'The Pavilion kept the posting order and the Mist kept everything after it, and the two records agree on every date and disagree on what the posting was for.',
+        answers: null,
+        juniority: null,
+        note: 'The whole of the Mist follows from one man declining to be humiliated. He is why a probation term is posted on the wall in the disciple\'s own hand: he posted his own on the day he arrived and never struck it through.'
+    },
+    {
+        id: 'figure-shu-lianniang',
+        name: 'Shu Lianniang',
+        alsoCalled: 'the village teacher',
+        kind: 'founder',
+        factionId: 'sect-azure-dew-sect',
+        whatTheyWere: 'A Dew Elder who never held a rank above that and taught in four hill villages for sixty years, sending eleven people up the gorge.',
+        yearsAgo: 190,
+        attestation: 'secure',
+        attestationNote: 'Attested by the village rolls, which the Dew keeps and the terraces have never read, and by eleven terrace admissions that record a Dew origin and nothing about her.',
+        answers: null,
+        juniority: null,
+        note: 'Eleven is more than the Mist managed in the same period. Nobody at the terraces has ever put those two figures side by side, and the Dew has never been in a position to.'
+    },
+    {
         id: 'figure-kang-ye',
         name: 'Kang Ye',
         alsoCalled: 'founder',

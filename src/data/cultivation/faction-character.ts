@@ -320,6 +320,54 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         distinctSentence: 'A clan whose entire religion is a duty rota for a fire they inherited, cannot relight, and have not let go out in eleven generations.'
     },
+    'sect-azure-mist-court': {
+        knownFor: {
+            outside: 'Where the Azure Cloud Pavilion puts people it is not currently willing to hold. Everybody in the Low Fall can name it and nobody thinks about it.',
+            actuallyGoodAt: 'Teaching the Pavilion\'s forms to people who failed at them once. It has four centuries of experience with exactly that problem and the terraces have none, because the terraces never keep anybody who fails.',
+            theGap: 'The Pavilion recalls on years served rather than on who is teaching well, so the Mist has never been asked what it does differently, and has never volunteered it.'
+        },
+        quietlyStopped: 'Petitioning for a written grant. It asked four times across two centuries, was neither refused nor answered, and stopped.',
+        practice: 'Every disciple\'s probation term is posted on the yard wall on the day they arrive, in their own hand, and struck through in their own hand on the day it ends.',
+        grievance: 'That the terraces call a recall a return and call everything else a placement, and that the Mist is required to use both words.',
+        fear: 'That the Pavilion will one day want the lower gorge back, and that there is nothing whatsoever the Mist could do about it.',
+        lateness: 'Twelve of nineteen nodes lit, in a yard laid out for four hundred and kept swept for sixty.',
+        disagreement: 'The Mist Elders who came down and stayed hold that the Pavilion should be told what the recall rate would be if teaching mattered. The Warden holds that the day the Mist becomes interesting is the day it stops being safe.',
+        wrongAbout: 'It believes the terraces read the quarterly probation roll. The roll has been filed unopened for ninety years and the clerk who files it has said so to three separate Mist Elders, none of whom passed it on.',
+        unitOfValue: 'Years of probation served, counted publicly on a wall, and worth exactly nothing anywhere else in the world.',
+        production: {
+            reliableOrdinal: 17,
+            currentCount: 31,
+            peakOrdinal: 27,
+            peakCount: 1,
+            yearsSinceLastPeak: 40,
+            note: 'Reliable to Core Formation, which is better than the number of nodes would suggest and is entirely down to teaching people who have already failed once.'
+        },
+        distinctSentence: 'It is the only institution in the world whose entire purpose is holding somebody else\'s disciples until somebody else wants them back, and it does that well enough that most of them go.'
+    },
+    'sect-azure-dew-sect': {
+        knownFor: {
+            outside: 'Barely known at all. Four hill villages and a small compound, and most of the province could not place it on a map.',
+            actuallyGoodAt: 'Finding people. It sends two or three a decade up the gorge who would never have reached a terrace gate on their own, which over four centuries is a great many swords.',
+            theGap: 'Nobody at the terraces knows which of their disciples came through the Dew, because the roll records a Dew admission and the Pavilion files by the terrace gate.'
+        },
+        quietlyStopped: 'Sending its finds directly to the terraces. It routes them through the Mist now, because a Mist year makes the terrace gate open and a Dew recommendation does not.',
+        practice: 'Dew teachers work in the villages for two years before anybody is asked to join, so admission is a formality performed on somebody who has already been coming.',
+        grievance: 'That it built its own compound and is still described as part of somebody else\'s grant.',
+        fear: 'That the shallow vein is the reason the villages are there, and that nobody has surveyed how much of it is left.',
+        lateness: 'None. Six nodes of six, all lit, all built - the only holding in the Azure grant that inherited nothing, which its Wardens raise more often than the Pavilion enjoys.',
+        disagreement: 'Half the Dew Elders want the finds sent straight up and the credit with them. The other half point out that the Mist year is what makes them stick.',
+        wrongAbout: 'It believes the Pavilion values it for the finds. The Pavilion values it because a body teaching in the villages keeps the villages from teaching themselves, which no Dew Elder has ever considered.',
+        unitOfValue: 'People sent up the gorge, counted by name, going back four hundred years.',
+        production: {
+            reliableOrdinal: 14,
+            currentCount: 22,
+            peakOrdinal: 24,
+            peakCount: 1,
+            yearsSinceLastPeak: 70,
+            note: 'Low and steady. The Dew does not keep its best, by design, and the number reflects a body that exports rather than accumulates.'
+        },
+        distinctSentence: 'It is the only holding in the Azure grant that built what it stands in, and the only one that measures itself in people it no longer has.'
+    },
     'sect-hollow-bell-wanderers': {
         knownFor: {
             outside: 'Nothing much. A league of diggers and nobodies who ring a bell, taken seriously by no institution in the region.',
