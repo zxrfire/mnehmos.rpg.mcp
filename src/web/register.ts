@@ -105,7 +105,7 @@ export interface RegisterSealed {
  *   active     alive, in the sect, and can be met
  *   sealed     alive, cannot act without being spent
  *   ascended   through the Lid, and gone
- *   terminal   dead or lost, and the line stops there
+ *   dead/lost  the line stops there
  */
 export interface SectDossier {
     id: string;
@@ -219,7 +219,22 @@ export interface WorldRegister {
         depletion: string | null;
         mostRecentCrossingYearsAgo: number | null;
     }[];
-    items: { id: string; name: string; form: string; effect: string; knownCount: number }[];
+    /**
+     * The two objects, and what each grade of them actually does.
+     *
+     * Grade is not dosage and the counts are not evenly spread: the higher
+     * grade of each is a single object, and the lower grade is the one anybody
+     * has actually seen. A holdings figure that does not say which grade is
+     * being held is close to meaningless, which is why this sits beside them.
+     */
+    items: {
+        id: string;
+        name: string;
+        form: string;
+        effect: string;
+        knownCount: number;
+        grades: { higher: string; middle: string; lower: string };
+    }[];
     holdings: { factionId: string; name: string; itemId: string; count: number }[];
     wanderers: {
         id: string;
@@ -233,8 +248,6 @@ export interface WorldRegister {
     withdrawn: { factionId: string; name: string; count: number; occupiedBy: string }[];
     /** The reporting tree, one root per apex. */
     stack: StackNode[];
-    /** Factions that hold from nobody, grouped by why. */
-    unaffiliated: { governance: string; members: { id: string; name: string }[] }[];
     /** Everybody at or above Grand Ascension, strongest first. */
     high: HighPerson[];
     /** Every faction with everything attached to it, strongest acting member first. */
@@ -264,13 +277,17 @@ function nameOf(id: string): string {
 }
 
 /**
- * The reporting tree, one root per apex.
+ * Every faction, as one tree.
+ *
+ * Roots are ordered by acting ordinal, so an apex heads the list because it is
+ * strongest rather than because it is an apex. A faction that holds from nobody
+ * is a root with no children, which is the honest drawing of it: independence
+ * is not a separate category of thing, it is a branch that stops immediately.
  *
  * A court is a node rather than a label because a court is a real intermediary:
  * it issues the grant, it arbitrates, and losing it would not be the same event
  * as losing the apex. Sub-tenancies hang off the sect that granted them, which
- * is the shape the parentage table actually holds and the shape a flat register
- * flattens away.
+ * is the shape the parentage table holds and the shape a flat register loses.
  */
 function buildStack(dossierIds: ReadonlySet<string>): StackNode[] {
     /** An apex is filed under two ids; a court under none. */
@@ -305,7 +322,8 @@ function buildStack(dossierIds: ReadonlySet<string>): StackNode[] {
             }))
             .sort((a, b) => b.ordinal - a.ordinal);
 
-    return APEX_INSTITUTIONS
+    const claimed = new Set<string>();
+    const roots: StackNode[] = APEX_INSTITUTIONS
         .map(apex => ({
             id: apex.id,
             name: apex.name,
@@ -324,28 +342,32 @@ function buildStack(dossierIds: ReadonlySet<string>): StackNode[] {
                 // Held direct, with no court in between. Rare, and worth seeing.
                 ...childrenOf(apex.id)
             ].sort((a, b) => b.ordinal - a.ordinal)
-        }))
-        .sort((a, b) => b.ordinal - a.ordinal);
-}
+        }));
 
-/**
- * Everyone outside the tree, grouped by the reason they are outside it.
- *
- * Four different reasons, and lumping them together would be the mistake: an
- * unbacked sect pays continuously to stay independent, an unassailable one pays
- * nothing, a deference holding is running on a belief, and a Dao house was never
- * in the pyramid to begin with.
- */
-function buildUnaffiliated(rows: RegisterRow[]): { governance: string; members: { id: string; name: string }[] }[] {
-    const groups = new Map<string, { id: string; name: string }[]>();
-    for (const row of rows) {
-        if (row.parentId) continue;
-        if (!groups.has(row.governance)) groups.set(row.governance, []);
-        groups.get(row.governance)!.push({ id: row.id, name: row.name });
+    // Anything already drawn somewhere in the tree must not appear again at the
+    // root, or the Pavilion would be listed twice: once as an apex and once as
+    // a faction that holds from nobody, which are the same fact said twice.
+    const walk = (n: StackNode): void => {
+        claimed.add(n.id);
+        if (n.linkId) claimed.add(n.linkId);
+        n.children.forEach(walk);
+    };
+    roots.forEach(walk);
+
+    for (const p of Object.values(FACTION_PARENTAGE)) {
+        if (p.parentFactionId) continue;
+        if (claimed.has(p.factionId)) continue;
+        roots.push({
+            id: p.factionId,
+            name: nameOf(p.factionId),
+            ordinal: ordinalOf(p.factionId),
+            standing: p.standing,
+            linkId: linkFor(p.factionId),
+            children: []
+        });
     }
-    return [...groups.entries()]
-        .map(([governance, members]) => ({ governance, members }))
-        .sort((a, b) => b.members.length - a.members.length);
+
+    return roots.sort((a, b) => b.ordinal - a.ordinal || a.name.localeCompare(b.name));
 }
 
 /**
@@ -749,7 +771,12 @@ export function buildRegister(): WorldRegister {
         sealed,
         channels,
         items: IMMORTAL_ITEMS.map(i => ({
-            id: i.id, name: i.name, form: i.form, effect: i.effect, knownCount: i.knownCount
+            id: i.id,
+            name: i.name,
+            form: i.form,
+            effect: i.effect,
+            knownCount: i.knownCount,
+            grades: { higher: i.grades.higher, middle: i.grades.middle, lower: i.grades.lower }
         })),
         holdings: IMMORTAL_HOLDINGS.map(h => ({
             factionId: h.factionId, name: nameOf(h.factionId), itemId: h.itemId, count: h.count
@@ -767,7 +794,6 @@ export function buildRegister(): WorldRegister {
             factionId, name: nameOf(factionId), count: w.count, occupiedBy: w.occupiedBy
         })),
         stack: buildStack(new Set(dossiers.map(d => d.id))),
-        unaffiliated: buildUnaffiliated(rows),
         high: buildHighBand(rows, sealed),
         dossiers,
         grandAscension: [
@@ -876,18 +902,28 @@ color:var(--faint);margin:0 0 3px}
 .met dd{margin:0;font:500 15px "IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
 .prose{border-left:3px solid var(--datum);background:var(--datum-soft);padding:14px 18px;margin:0 0 14px;max-width:70ch;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .prose p{margin:0;font-size:15.5px;line-height:1.62;color:var(--ink);font-style:italic}
+.govgrp{margin-bottom:26px}
+.govhead{font:600 11px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;
+color:var(--datum);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--strong);display:flex;gap:9px;align-items:baseline}
+.govhead span{color:var(--faint);font-weight:400;letter-spacing:.06em}
+.govlist{display:flex;flex-direction:column;gap:8px}
 .orgchart{border:1px solid var(--rule);background:var(--panel);padding:18px 20px;overflow-x:auto}
 .orgchart ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 /* Children hang off a rail dropped from the card above them. */
 .orgchart ul ul{margin:10px 0 0 26px;padding-left:24px;border-left:2px solid var(--rule)}
 .orgchart li{position:relative}
 .orgchart ul ul>li::before{content:"";position:absolute;left:-24px;top:24px;width:22px;height:2px;background:var(--rule)}
-.ncard{appearance:none;text-align:left;width:100%;max-width:560px;cursor:pointer;
-background:var(--ground);border:1px solid var(--rule);border-left:3px solid var(--faint);
-padding:11px 14px;display:grid;gap:3px;color:inherit;font:inherit}
-.ncard:hover{border-color:var(--datum);border-left-color:var(--datum)}
-.ncard--flat{cursor:default}
-.ncard--flat:hover{border-color:var(--rule)}
+.ncard{background:var(--ground);border:1px solid var(--rule);border-left:3px solid var(--faint);max-width:none}
+.ncard>summary{list-style:none;cursor:pointer;padding:11px 14px;display:grid;gap:3px}
+.ncard>summary::-webkit-details-marker{display:none}
+.ncard>summary:hover{background:var(--datum-soft)}
+.ncard>summary:focus-visible{outline:2px solid var(--datum);outline-offset:-2px}
+.ncard[open]{border-color:var(--datum);border-left-color:var(--datum)}
+.ncard[open]>summary{border-bottom:1px solid var(--rule)}
+.ncard--flat{padding:11px 14px;display:grid;gap:3px}
+.nbody{padding:14px}
+.nbody .dos{border:none;border-left:none;background:transparent;padding:0}
+.ncard[open] .ngo::after{content:" (open)"}
 .ncard:focus-visible{outline:2px solid var(--datum);outline-offset:2px}
 .node.apex>.ncard{border-left-color:var(--datum);border-left-width:5px;background:var(--datum-soft)}
 .node.court>.ncard{border-left-color:var(--datum)}
@@ -897,6 +933,12 @@ padding:11px 14px;display:grid;gap:3px;color:inherit;font:inherit}
 .nkind{font:10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:8px}
 .ngo{font:11px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--datum);opacity:0;transition:opacity .12s}
 .ncard:hover .ngo,.ncard:focus-visible .ngo{opacity:1}
+.objblk{border:1px solid var(--rule);background:var(--panel);padding:16px 18px;margin-bottom:12px}
+.objblk h3{font:600 18px Archivo,"Helvetica Neue",Arial,sans-serif;margin:0 0 12px;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.objmeta{font:11px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.grades{margin:0;display:grid;grid-template-columns:78px 1fr;gap:8px 16px}
+.grades dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--datum);padding-top:3px}
+.grades dd{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
 .jump{color:var(--datum);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .dos:target,.dos.flash{border-left-color:var(--datum);box-shadow:0 0 0 2px var(--datum-soft)}
 .tabs{display:flex;gap:2px;margin-top:clamp(22px,3vw,32px);border-bottom:2px solid var(--ink)}
@@ -995,10 +1037,11 @@ function dossier(d: SectDossier): string {
 
     if (d.people.sealed) {
         const sl = d.people.sealed;
-        groups.push(`<div class="grp sealed"><h4>Sealed <span>1</span></h4>`
+        const kind = sl.reason === 'protector' ? 'Protector' : 'Final breath';
+        groups.push(`<div class="grp sealed"><h4>Sealed ancestors &middot; ${kind} <span>1</span></h4>`
             + `<div class="who"><span class="wn">${esc(sl.name)}</span>`
             + `<span class="wo">${sl.ordinal}</span>`
-            + `<span class="wr">${esc(sl.grade)} seal · ${esc(sl.reason.replace(/_/g, ' '))} · ${sl.years.toLocaleString()} yr · ${sl.publiclyKnown ? 'known' : 'hidden'}</span>`
+            + `<span class="wr">${esc(sl.grade)} seal · ${sl.years.toLocaleString()} yr · ${sl.publiclyKnown ? 'known' : 'hidden'}</span>`
             + `<span class="wd">${esc(sl.wakeCondition)}</span></div></div>`);
     }
 
@@ -1013,7 +1056,7 @@ function dossier(d: SectDossier): string {
     }
 
     if (d.people.terminal.length) {
-        groups.push(`<div class="grp terminal"><h4>Terminal <span>${d.people.terminal.length}</span></h4>`
+        groups.push(`<div class="grp terminal"><h4>Dead and lost <span>${d.people.terminal.length}</span></h4>`
             + d.people.terminal.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span>`
                 + `<span class="wo">${p.ordinal ?? '-'}</span>`
@@ -1041,7 +1084,7 @@ function dossier(d: SectDossier): string {
         groups.push('<div class="grp"><p class="none">Nobody recorded and nothing held. The faction exists; the register has no names for it.</p></div>');
     }
 
-    return `<article class="dos${d.apex ? ' apex' : ''}" id="faction-${d.id}">
+    return `<article class="dos${d.apex ? ' apex' : ''}">
   <header>
     <span class="ord">${d.ordinal}</span>
     <div>
@@ -1071,39 +1114,85 @@ function dossier(d: SectDossier): string {
 }
 
 /**
- * One node of the grant tree, as a card.
+ * One faction: a card that opens its full entry in place.
  *
- * Cards do not shrink with depth. A tenant three levels down is a whole faction
- * with a vein, a roster and a sealed ancestor, and drawing it as a smaller box
- * than the court above it would say something about it that is not true - the
- * tree records who issues the grant, not who matters. Depth is carried by the
- * connector lines and the indent instead.
+ * `<details>` rather than a scripted panel. It is keyboard-operable, it works
+ * with the page's own find, and a reader who opens six keeps all six open -
+ * which is what an operator comparing factions actually does, and what a
+ * jump-to-anchor would have taken away.
  *
- * Every card jumps to that faction's full entry, because an org chart that ends
- * the enquiry at a name is where the detail gets lost.
+ * The card head carries who it holds from, so grouping by governance does not
+ * cost the reporting relation: the group says what kind of arrangement it is,
+ * and the line says who the other party is.
  */
-function stackNode(node: StackNode, depth: number): string {
-    const flag = node.standing === 'strained' || node.standing === 'probationary'
-        ? ` <span class="chip ex">${esc(node.standing)}</span>`
+function factionCard(d: SectDossier): string {
+    const flag = d.standing === 'strained' || d.standing === 'probationary'
+        ? ` <span class="chip ex">${esc(d.standing)}</span>`
         : '';
-    const kind = getApexInstitution(node.id)
-        ? 'apex'
-        : getCourt(node.id) ? 'court' : 'tenant';
+    const from = d.parentName
+        ? `holds from ${esc(d.parentName)}`
+        : 'holds from nobody';
 
-    const body = `<span class="nhead"><span class="nname">${esc(node.name)}</span>`
-        + `<span class="nord">${node.ordinal || ''}</span></span>`
-        + `<span class="nkind">${kind}${flag}</span>`;
+    return `<details class="ncard" id="faction-${esc(d.id)}">
+      <summary>
+        <span class="nhead"><span class="nname"><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}</span><span class="nord">${d.ordinal}</span></span>
+        <span class="nkind">${from}${flag}${d.apex ? ' <span class="chip pin">apex</span>' : ''}${d.ceiling ? ` <span class="chip sl">ceiling ${d.ceiling}</span>` : ''}</span>
+      </summary>
+      <div class="nbody">${dossier(d)}</div>
+    </details>`;
+}
 
-    // A court has no entry to open, so it is a card rather than a dead link.
-    const card = node.linkId
-        ? `<button class="ncard" type="button" data-goto="faction-${esc(node.linkId)}" title="Open the full entry for ${esc(node.name)}">${body}<span class="ngo">Open entry &rarr;</span></button>`
-        : `<div class="ncard ncard--flat">${body}<span class="nkind">no separate entry</span></div>`;
+/**
+ * One node of an apex hierarchy.
+ *
+ * Only drawn where there is something to draw. A root with no children is not a
+ * one-node tree, it is a card, and rendering it with rails and an indent would
+ * dress up independence as a structure it does not have.
+ *
+ * A court gets a flat card: it is an office rather than a faction, so there is
+ * no entry behind it and a disclosure control would open onto nothing.
+ */
+function treeNode(node: StackNode, byId: ReadonlyMap<string, SectDossier>): string {
+    const entry = node.linkId ? byId.get(node.linkId) : undefined;
+    const kind = getApexInstitution(node.id) ? 'apex' : getCourt(node.id) ? 'court' : 'faction';
+
+    const card = entry
+        ? factionCard(entry)
+        : `<div class="ncard ncard--flat">
+        <span class="nhead"><span class="nname">${esc(node.name)}</span><span class="nord">${node.ordinal || ''}</span></span>
+        <span class="nkind">${kind} &middot; no separate entry</span>
+      </div>`;
 
     return `<li class="node ${kind}">${card}`
         + (node.children.length
-            ? `<ul>${node.children.map(c => stackNode(c, depth + 1)).join('')}</ul>`
+            ? `<ul>${node.children.map(c => treeNode(c, byId)).join('')}</ul>`
             : '')
         + '</li>';
+}
+
+/**
+ * Governance groups, strongest group first, strongest faction first inside.
+ *
+ * Ordered by the strongest member of each group rather than by a fixed list, so
+ * the ordering says something true about the world instead of encoding an
+ * opinion about which arrangement matters most.
+ */
+function byGovernance(
+    dossiers: SectDossier[],
+    inTree: ReadonlySet<string>
+): { governance: string; members: SectDossier[] }[] {
+    const groups = new Map<string, SectDossier[]>();
+    for (const d of dossiers) {
+        if (inTree.has(d.id)) continue;
+        if (!groups.has(d.governance)) groups.set(d.governance, []);
+        groups.get(d.governance)!.push(d);
+    }
+    return [...groups.entries()]
+        .map(([governance, members]) => ({
+            governance,
+            members: members.slice().sort((a, b) => b.ordinal - a.ordinal || a.name.localeCompare(b.name))
+        }))
+        .sort((a, b) => b.members[0].ordinal - a.members[0].ordinal);
 }
 
 /** The whole sheet as one self-contained document. */
@@ -1112,6 +1201,17 @@ export function renderRegisterHtml(
     blocks?: Record<string, { text: string; stale?: boolean }>
 ): string {
     const c = reg.counts;
+    const dossierById = new Map(reg.dossiers.map(d => [d.id, d]));
+    // A root with children is a hierarchy worth drawing. A root without is a
+    // faction that holds from nobody, and belongs with its governance group.
+    const hierarchies = reg.stack.filter(n => n.children.length > 0);
+    const inTree = new Set<string>();
+    const claim = (n: typeof reg.stack[number]): void => {
+        if (n.linkId) inTree.add(n.linkId);
+        inTree.add(n.id);
+        n.children.forEach(claim);
+    };
+    hierarchies.forEach(claim);
     const stamp = reg.generatedAt.replace('T', ' ').slice(0, 16) + ' UTC';
 
     const apexCards = reg.apexes.map(a => `
@@ -1154,7 +1254,6 @@ export function renderRegisterHtml(
 <nav class="tabs" role="tablist">
   <button class="tab" role="tab" data-tab="people" aria-selected="true">People &ge; Grand Ascension <span>${reg.high.length}</span></button>
   <button class="tab" role="tab" data-tab="factions" aria-selected="false">Factions <span>${c.factions}</span></button>
-  <button class="tab" role="tab" data-tab="world" aria-selected="false">World organization</button>
   <button class="tab" role="tab" data-tab="key" aria-selected="false">Key</button>
 </nav>
 
@@ -1176,24 +1275,6 @@ export function renderRegisterHtml(
 
 <div class="pane" data-pane="factions" hidden>
 
-
-
-
-<section>
-  <div class="sh"><h2>The factions</h2><span class="r">${c.factions} · strongest acting member first</span></div>
-  <p class="note">One entry per faction, everything it holds underneath it. The four groups are kept apart because they are not degrees of one thing: <strong>active</strong> can be met, <strong>sealed</strong> is an event waiting for a trigger, <strong>ascended</strong> is through the Lid, and <strong>terminal</strong> is where a line stopped. Alignment: <span class="dot righteous"></span>righteous <span class="dot neutral"></span>neutral <span class="dot demonic"></span>demonic.</p>
-  ${prose(blocks, 'register')}
-  <div class="stack">${reg.dossiers.map(dossier).join('')}</div>
-  ${prose(blocks, 'sealed')}
-</section>
-
-
-
-
-
-</div>
-
-<div class="pane" data-pane="world" hidden>
 <section>
   <div class="sh"><h2>The apexes</h2><span class="r">Founded by a crossing · holds what was sent down</span></div>
   <p class="note">An apex received something from an ascended founder <strong>and can hold it</strong>. The second half is the whole test. Age runs backwards for consumables: an ancient apex has depth of position and an empty storehouse, a young one has a shallow position and a nearly full one.</p>
@@ -1202,36 +1283,35 @@ export function renderRegisterHtml(
 </section>
 
 <section>
-  <div class="sh"><h2>Who reports to what</h2><span class="r">The grant tree</span></div>
-  <p class="note">Read downward: an apex holds the vein system, a court administers one arterial vein on its behalf, and a faction holds a single vein from that court on a renewable grant. A faction sitting under another faction is a sub-tenant, which is a different relationship and a different thing to lose. Grants under pressure are flagged on the edge they belong to. <strong>Every card opens its full entry in the Factions tab.</strong></p>
-  <div class="orgchart"><ul>${reg.stack.map(n => stackNode(n, 0)).join('')}</ul></div>
+  <div class="sh"><h2>Every faction</h2><span class="r">${c.factions} · by governance · click to open</span></div>
+  <p class="note">Grouped by how each faction holds its ground, strongest group first and strongest faction first inside it. The group says what kind of arrangement it is; the line under each name says who the other party is, so the reporting relation survives the grouping. <strong>Click any faction to open its full entry.</strong></p>
+  ${prose(blocks, 'register')}
+  ${hierarchies.length ? `<div class="govgrp">
+    <h3 class="govhead">apex hierarchies <span>${hierarchies.length}</span></h3>
+    <div class="orgchart"><ul>${hierarchies.map(n => treeNode(n, dossierById)).join('')}</ul></div>
+  </div>` : ''}
+  ${byGovernance(reg.dossiers, inTree).map(g => `<div class="govgrp">
+    <h3 class="govhead">${esc(g.governance)} <span>${g.members.length}</span></h3>
+    <div class="govlist">${g.members.map(factionCard).join('')}</div>
+  </div>`).join('')}
 </section>
 
-<section>
-  <div class="sh"><h2>Outside the tree</h2><span class="r">Holds from nobody</span></div>
-  <p class="note">Four different reasons, and they are not interchangeable. An <strong>unbacked</strong> faction pays continuously to stay independent; an <strong>unassailable</strong> one pays nothing because no instrument exists to bill it; a <strong>deference</strong> holding runs on a belief that decays; and an <strong>outside</strong> house was never in the pyramid to begin with.</p>
-  <div class="scroll"><table><caption>Independent, by reason</caption>
-  <thead><tr><th>Governance</th><th>Count</th><th>Who</th></tr></thead><tbody>
-  ${reg.unaffiliated.map(g => `<tr><td class="nm">${esc(g.governance)}</td>`
-        + `<td class="n">${g.members.length}</td>`
-        + `<td class="q">${g.members.map(m => `<a class="jump" data-goto="faction-${esc(m.id)}">${esc(m.name)}</a>`).join(', ')}</td></tr>`).join('')}
-  </tbody></table></div>
-</section>
 
-<section>
-  <div class="sh"><h2>Who is still answering</h2><span class="r">The real hierarchy</span></div>
-  <p class="note">Immortal-realm consumables come down and cannot be made or reordered here, so a faction holding them has a channel - and a channel means somebody above the Lid still picks up. That, not vein wealth or realm distribution, is the actual ranking.</p>
-  <div class="scroll"><table><caption>Crossings produced · channel · depletion</caption>
-  <thead><tr><th>Crossings</th><th>Faction</th><th>Tier</th><th>Most recent</th><th>Channel</th><th>Depletion</th></tr></thead><tbody>
-  ${reg.channels.map(ch => `<tr><td class="n">${ch.crossings}</td><td class="nm">${esc(ch.name)}</td>`
-        + `<td class="q">${esc((ch.tier ?? '-').replace(/_/g, ' '))}</td>`
-        + `<td class="m">${ch.mostRecentCrossingYearsAgo === null ? '-' : ch.mostRecentCrossingYearsAgo.toLocaleString() + ' yr'}</td>`
-        + `<td class="q">${esc(ch.kind.replace(/_/g, ' '))}</td>`
-        + `<td class="m">${esc(ch.depletion ?? '-')}</td></tr>`).join('')}
-  </tbody></table></div>
-  ${prose(blocks, 'channels')}
-</section>
 </div>
+
+<section>
+  <div class="sh"><h2>The immortal objects</h2><span class="r">Two kinds, three grades each</span></div>
+  <p class="note">Holdings are listed under each faction; this is what a holding is <em>worth</em>. Grade is not dosage, and the counts run the wrong way to intuition: the higher grade of each is a single object, and the lower grade is the one anybody has actually seen.</p>
+  ${reg.items.map(i => `<div class="objblk">
+    <h3>${esc(i.name)} <span class="objmeta">${esc(i.form.replace(/_/g, ' '))} · ${esc(i.effect.replace(/_/g, ' '))} · ${i.knownCount} known</span></h3>
+    <dl class="grades">
+      <dt>Higher</dt><dd>${esc(i.grades.higher)}</dd>
+      <dt>Middle</dt><dd>${esc(i.grades.middle)}</dd>
+      <dt>Lower</dt><dd>${esc(i.grades.lower)}</dd>
+    </dl>
+  </div>`).join('')}
+  ${prose(blocks, 'items')}
+</section>
 
 <div class="pane" data-pane="key" hidden>
 <section class="legend">
