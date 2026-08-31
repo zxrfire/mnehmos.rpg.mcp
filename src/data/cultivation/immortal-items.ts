@@ -41,18 +41,27 @@
  * woman who left them, and can therefore act. There is somebody to convince,
  * and getting one is a social and political problem rather than a heist.
  *
- * The Hollow Court and the Kiln Wardens are a different kind of obstacle
- * entirely, and it is worth being precise about the difference: they are not
- * rationing. Rationing implies a policy, and a policy implies somebody who
- * sets it and could be persuaded to bend it. There is no such person here.
- * The holding is small enough that releasing one is a decision the institution
- * takes collectively, every one of them would rather not, and any one of them
- * can say no. The patriarch asking is not sufficient; at the Court there is no
- * patriarch at all, and at the gate the body that would decide is not the same
- * body next month.
+ * The Deep Survey and the Long Cut are a different kind of obstacle entirely,
+ * and the difference is the point. These are the administrators of the world:
+ * they hold the veins, set the terms and keep the registers, and a body that
+ * runs an economy is exactly the body that counts a finite irreplaceable stock
+ * down to the unit, minutes it, and requires a quorum to touch it. Their
+ * carefulness is not sentiment and not hoarding. It is what an institution
+ * does with a line item it cannot reorder.
+ *
+ * So the holding is small enough that releasing one is a decision taken
+ * collectively, every member would rather not be the one who moved it, and any
+ * one of them can say no. Rank does not help: a Surveyor asking is one voice,
+ * and the others can refuse. There is a form for requesting one. It has been
+ * submitted. The answer was no.
  *
  * That is arithmetic rather than a lever, and there is no version of the
  * problem where the player finds the right person and applies enough pressure.
+ *
+ * The contrast is deliberate: Azure Cloud is a sect holding a dead woman's
+ * gift and trying to honour what she meant by it, and the apexes are
+ * bureaucracies holding an unreplenishable line item. Same objects, entirely
+ * different obstacle.
  */
 
 import { z } from 'zod';
@@ -109,6 +118,11 @@ export const HoldingSchema = z.object({
     sufficientReason: z.string().min(120),
     /** What saying yes costs the holder internally. */
     costOfSayingYes: z.string().min(120),
+    /**
+     * The instrument, where the holder is a bureaucracy: there is a form, it
+     * has been submitted, and the answer was no.
+     */
+    theForm: z.string().min(120).nullable(),
     /** Collective holders only: the time somebody good was told no. */
     recordedRefusal: RecordedRefusalSchema.nullable(),
     /**
@@ -220,108 +234,117 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
             'Ru Anjing left instructions rather than a prohibition, and they are specific: one goes to a cultivator who has done the accumulation and is being stopped by something outside their control. A documented injury that will not close. A bottleneck the Pavilion physicians have recorded over years. A lifespan that will run out before the road does. Ambition is not a reason. Usefulness to the Pavilion is explicitly not a reason, and she wrote that part twice.',
         costOfSayingYes:
             'One of three becomes one of two, and the Master who authorised it is named in the grant book beside the entry, permanently. Two of the last four Masters spent none at all. Worse than the count is what follows: after the last one was given, eleven disciples petitioned formally inside a year, and the Pavilion had to write a refusal doctrine it did not previously need and now cannot un-write.',
+        theForm: null,
         recordedRefusal: null,
         savingTheSect: null
     },
 
-    // ── the Hollow Court: four people, and any one of them ends it ─────
+    // ── the Deep Survey: a line item, minuted, with a form ─────────────
     {
-        factionId: 'sect-hollow-court',
+        factionId: 'apex-deep-survey',
         itemId: 'immortal-unearned-step',
         count: 2,
         countIsKnownTo:
-            'All four Seats. Each of them knows it is two, and each of them knows the other three know, which is most of why the subject does not come up.',
+            'The four Surveyors, the standing stock register, and the annual minute that confirms the register. It is two. It has been two for a hundred and forty years, and the figure is written down in a place four people can read.',
         releaseMode: 'collective_consent',
         decidedBy:
-            'All four Seats, unanimously. There is no patriarch to appeal over the top of: the First Seat is one voice among four and by the practice of the Court is the last to speak rather than the loudest, which was a deliberate arrangement and has held for six hundred years.',
+            'All four Surveyors, unanimously, against a minuted request. There is no office above them to appeal to and no post that can act alone: a Surveyor who wants one released is one voice of four, and the other three can refuse without giving a reason and have.',
         anyoneMayRefuse: true,
         sufficientReason:
-            'Nothing has ever been recorded as sufficient. What the Court weighs is not the merit of the petitioner but whether the remaining count is what the Court itself needs to finish four crossings, and since nobody knows how many a crossing takes, the honest answer has always been that it might. A case can be excellent and still lose that argument, and the Court does not pretend otherwise.',
+            'The register describes the stock as unreorderable and the standing instruction is that it is spent only where the arterial system itself is at stake. Nothing about individual merit enters it. A cultivator of enormous promise is not a reason under the instruction, and the Survey does not consider that harsh so much as simply not what the line item is for.',
         costOfSayingYes:
-            'Two becomes one, and the Court is four people working on the only thing any of them still wants. Saying yes is a decision to have less of the thing they are collectively spending their existence on, made by the four people who would use it, which is why the arithmetic does not move.',
-        recordedRefusal: {
-            yearsAgo: 90,
-            theCase:
-                'A former disciple of the Second Seat, at Void Refinement Perfection, with a meridian injury the Verdant Spring Hall had documented across forty years and could not close, and a lifespan the Ledger calculated would run out roughly four decades before the accumulation could. He asked once, in person, having travelled for two years. The Second Seat argued for him.',
-            refusedBy:
-                'The Third Seat, alone, with the other three willing. The reason given, in full, was: not enough. He did not elaborate and was not asked to.',
-            afterwards:
-                'He went home, kept cultivating, and died at Void Refinement Perfection eleven years later without having reached the boundary. He never spoke against the Court.',
-            probablyRight:
-                'The Court was probably right, and this is not a case of institutional cowardice dressed as prudence. Two objects, four crossings, and no way to know what a crossing costs: on those numbers a refusal is defensible and the Third Seat has never been shown to be wrong. It simply also meant a man died of it.',
-            costAnyway:
-                'The Second Seat has not spoken to the Third Seat since - ninety years, four mountains, and a silence the rest of the world reads as the Court being inert. It is not inertia. It is two people who cannot be in a room together, and the Court is four people, so the arithmetic of that is also unforgiving.'
-        },
-        savingTheSect:
-            'Saving the Court does not buy one, and nobody at the Court will pretend it does. What it does is remove the argument: if the vein is taken, or a Seat is interrupted in the last days of a crossing and survives because an outsider stood in the way, then refusing that outsider becomes indefensible to at least two of the four. Two is not four. It is entirely possible to save the Hollow Court, be thanked precisely and permanently, and be refused by one Seat who will not explain, and a player standing in that outcome has not been cheated.'
-    },
-    {
-        factionId: 'sect-hollow-court',
-        itemId: 'immortal-second-dealing',
-        count: 1,
-        countIsKnownTo:
-            'All four Seats know it is one, and nobody else living knows there is anything to count. The Court has never confirmed it holds one, and the Ledger infers the number from the nine-hundred-year-old file and from what was not in the estate it arbitrated.',
-        releaseMode: 'collective_consent',
-        decidedBy:
-            'All four Seats, unanimously, and the Court has never taken the question to a vote in six hundred years because no case has been brought that any of them thought worth raising with the other three.',
-        anyoneMayRefuse: true,
-        sufficientReason:
-            'None is on record and the Court has never described one. What can be said is that the Seats are four people at the top of the ladder who each drew the root they drew, and that at least two of them would have benefited from this object several centuries ago and did not use it - which is either discipline or an argument they had once and settled, and no outsider has ever been told which.',
-        costOfSayingYes:
-            'One becomes none, and it becomes none permanently, for the world and not merely for the Court. There is no second one to fall back on and no prospect of another. Whichever Seat spoke for releasing it would be proposing to end a category of thing.',
-        recordedRefusal: null,
-        savingTheSect:
-            'The Court does not connect the two. Saving it makes refusal indefensible on the pill and does not touch this, and a petitioner who has just done the Court an enormous service and asks for the talisman instead has, in the view of all four Seats, misunderstood what they are standing in front of.'
-    },
-
-    // ── the Kiln Wardens: the body that decides is not the same body ───
-    {
-        factionId: 'sect-kiln-wardens',
-        itemId: 'immortal-unearned-step',
-        count: 1,
-        countIsKnownTo:
-            'Every Warden, in the same way they know the number of nodes: it is one, it has been one for as long as any of them has been posted, and they will say so plainly in numbers if asked.',
-        releaseMode: 'collective_consent',
-        decidedBy:
-            'The four Wardens holding the gate at that hour together with the Keeper of the Kiln - a shift rather than an office. Membership rotates, so the body that would decide today is not the body that would decide next month, and no Warden has standing to bind the next shift to anything.',
-        anyoneMayRefuse: true,
-        sufficientReason:
-            'The Wardens have never stated one. What they do instead is acknowledge a debt precisely, in writing, in numbers, and treat the acknowledgement as a serious instrument - which it is, and which is not the same as parting with the object. A petitioner is far more likely to leave with a written acknowledgement than with anything else, and the Wardens do not regard that as a lesser outcome.',
-        costOfSayingYes:
-            'One becomes none, at the gate that has held for nine hundred years, decided by five people who happened to be on that shift and who would be handing away the only such object their posting has ever held. No Warden has been willing to be the one who was standing there when it went.',
+            'Two becomes one, permanently, in a register that has never been revised upward and never will be. Every Surveyor who consents is minuted by name, and the minute outlives them. There is no institution above to authorise it and therefore nobody to share the entry with.',
+        theForm:
+            'A Requisition Against Standing Stock, which exists, has a number, and requires the applicant to state what is at stake in terms of the arterial system rather than in terms of themselves. It has been submitted eleven times in four hundred years. It has been granted once, in a year the Survey does not discuss, and refused ten times, and the refusals are filed with the same care as the grant.',
         recordedRefusal: {
             yearsAgo: 140,
             theCase:
-                'A formation master relit a node that had been dark for six years, alone, over a winter, at a cost to herself the Wardens recorded in detail. It is the only instance in the outside record of anybody doing the Wardens a service they could not do themselves, and she asked for the pill for a disciple rather than for herself.',
+                'A formation master relit a node at the Root Sill that had been dark for six years, alone, over a winter, at a cost to herself the Kiln Wardens recorded in detail. It is the only instance in the outside record of anybody doing that court a service it could not do itself, and she filed the requisition for a disciple rather than for herself.',
             refusedBy:
-                'The shift on the gate that day, with the Keeper present. Four of the five were silent and the fifth said no, and the Wardens recorded the refusal in the same document as the debt.',
+                'Two of the four Surveyors, in writing, on the ground that a service to a court is not a matter touching the arterial system. The other two consented and it made no difference, because the instrument requires all four.',
             afterwards:
-                'She accepted, took what they offered instead - passage and water, which the Wardens consider serious things - and the disciple she had asked for never advanced past Core Formation.',
+                'She accepted, took what the Wardens offered instead - passage and water, which they consider serious things - and the disciple she had filed for never advanced past Core Formation.',
             probablyRight:
-                'On their own terms they were right: a posted body cannot spend an object it holds on behalf of something it does not speak for, and no Warden could have justified it upward, because there is no upward that answers. The refusal follows from what the Wardens are, and that is exactly why it was never going to go differently.',
+                'On the instruction as written they were correct, and nobody has ever shown otherwise: the stock is for the arterial system, her service was to a court, and the distinction is exactly the sort of thing a register exists to hold. It also meant that the only outsider who ever did the Survey a real favour was told no on a technicality.',
             costAnyway:
-                'The written acknowledgement still stands and is still honoured, a hundred and forty years later, in small ways nobody has ever totalled: her line has never been refused passage, water, shelter or a warning. The Wardens are still paying a debt they could have discharged in a single afternoon, and every Warden posted since has inherited it.'
+                'The Wardens acknowledged the debt in writing themselves, in numbers, and are still honouring it a hundred and forty years later in small ways nobody has totalled - her line has never been refused passage, water, shelter or a warning. The Survey saved a line item and its own court has been paying the bill by instalments ever since.'
         },
         savingTheSect:
-            'If the gate holds because of an outsider, or a node is relit and stays lit, the shift on duty is in a position where refusing is indefensible - and the shift changes. A player who saves the Wardens and returns two months later is asking a different five people, one of whom was not there, and that is not obstruction. It is what a rotating body is.'
+            'Saving the Survey does not buy one and no Surveyor will pretend otherwise. What it does is remove the argument the instruction rests on: if the arterial system itself was at stake and an outsider is the reason it held, then refusing them is indefensible to at least two of the four. Two is not four. It is entirely possible to save the Deep Survey, be minuted for it permanently, and be refused by one Surveyor who does not give a reason, and a player standing in that outcome has been treated honestly.'
     },
     {
-        factionId: 'sect-kiln-wardens',
+        factionId: 'apex-deep-survey',
         itemId: 'immortal-second-dealing',
         count: 1,
         countIsKnownTo:
-            'Every Warden. Outside the gate it is not known at all, and the Ledger does not carry it: the Wardens have simply never been asked a question that would require them to deny it.',
+            'The four Surveyors and the standing stock register, where it is a single line with no annotation. It is one. The register has never carried a second.',
         releaseMode: 'collective_consent',
         decidedBy:
-            'The shift on the gate and the Keeper of the Kiln, unanimously, exactly as with the pill - and the Wardens draw no distinction between the two objects in procedure, which outsiders find either admirable or alarming depending on what they came for.',
+            'All four Surveyors, unanimously, and no requisition against this line has ever been submitted - not refused, submitted. The form permits it and nobody has ever filled it in.',
         anyoneMayRefuse: true,
         sufficientReason:
-            'Never described, never petitioned for, and there is no record of anybody outside the gate knowing there was something to petition for. The Wardens hold it the way they hold everything else: it is on the inventory, the inventory is correct, and nothing on the inventory is for anything.',
+            'None is stated anywhere, and the absence is deliberate: the register describes the item and does not describe a circumstance for it. The Survey administers a world in which talent is dealt once and every arrangement it operates assumes so, which makes the line item an instrument for undoing one of its own foundations, and no Surveyor has ever wanted to be the one who raised it.',
         costOfSayingYes:
-            'It would take the world from two of these to one, and the Wardens are the only holder who could do that without four people first having to agree that it should be done. That the least discursive institution in the world is also the one with the shortest path to spending it is a fact the Ledger has noticed and has not written down.',
+            'One becomes none, for the world rather than for the Survey, and there is no prospect of another. Whichever Surveyor moved it would be proposing to end a category of thing, in a minute, with their name on it, in a register that is read by their successors.',
+        theForm:
+            'The same Requisition Against Standing Stock, which does not distinguish between the two line items and therefore permits an application nobody has made. Clerks are taught the form as a single procedure and most have never noticed that the second line exists.',
         recordedRefusal: null,
         savingTheSect:
-            'The same rotating body, the same procedure, and the same answer in every recorded instance of anybody asking the Wardens for anything at all: an acknowledgement, precisely worded, and not the object.'
+            'Not connected. Saving the arterial system makes refusal indefensible on the pill and does not reach this line at all, and a petitioner who has just done the Survey an enormous service and asks for the talisman instead has, in the view of all four Surveyors, misunderstood what they are standing in front of.'
+    },
+
+    // ── the Long Cut: receipted, scheduled, and slower than a life ─────
+    {
+        factionId: 'apex-long-cut',
+        itemId: 'immortal-unearned-step',
+        count: 1,
+        countIsKnownTo:
+            'The Course Keepers, and the schedule, where it appears as an entry with no date against it. It is one, everybody senior can say so, and the entry is read aloud at every schedule revision.',
+        releaseMode: 'collective_consent',
+        decidedBy:
+            'The Course Keepers together, unanimously, at a schedule revision rather than on request - which means the body that would decide is not assembled when anybody asks and cannot be assembled early. A petition arriving between revisions is receipted, logged, and waits.',
+        anyoneMayRefuse: true,
+        sufficientReason:
+            'Nothing in the schedule provides for it. The Long Cut administers driven ground on a horizon measured in centuries and treats a human career as a rounding error, so a case that turns on one person having very little time is not a case the instrument can read at all.',
+        costOfSayingYes:
+            'One becomes none, and the Long Cut is the holder least able to justify it: it owns every act by name, has no vassal to attribute anything to, and would have to minute the decision as its own. The administration is legalistic precisely because it cannot deflect, and this is the largest thing it could do without being able to deflect.',
+        theForm:
+            'A schedule amendment, receipted on submission and answered at the next revision, which is up to twenty years away. Three have been submitted. All three were answered with the original entry restated and no reasoning, which is the standard form of a refusal here and is not intended as contempt.',
+        recordedRefusal: {
+            yearsAgo: 60,
+            theCase:
+                'A Weir Office warden submitted an amendment for a carver at Standing Cut who had held a collapsing face alone for nine days while a crew got out, and whose lungs were finished by it. The Office backed the submission, which it had never done before and has not since, and attached the crew rolls as evidence.',
+            refusedBy:
+                'The Course Keepers at the following revision, four years later, by restating the entry. No reasoning was given, because the form does not require one and the administration does not volunteer.',
+            afterwards:
+                'The carver died of dust-lung two years before the revision was held. The Office was notified of the refusal in the ordinary way and filed it.',
+            probablyRight:
+                'By its own instrument it was correct, and the instrument is what makes the Long Cut governable at all: a body administering five provinces on forty staff cannot start reading cases on their merits without ceasing to be able to administer anything. The cost of that consistency was that the only person the Weir Office ever asked for was dead before the question was heard.',
+            costAnyway:
+                'The Weir Office has never submitted another amendment of any kind, on any subject, in sixty years - not out of protest, which it would consider improper, but because it now regards the instrument as something that does not answer. An administration that stops being petitioned by its own bureau has lost something it cannot measure and has no line for.'
+        },
+        savingTheSect:
+            'The same body, the same revision cycle, and the same answer in every recorded instance: a receipt, and the entry restated. If the driven ground itself was at stake and an outsider is why it held, refusing at the next revision becomes indefensible to most of the Keepers - and the revision is still up to twenty years away, and one Keeper can still hold out, and nobody will explain.'
+    },
+    {
+        factionId: 'apex-long-cut',
+        itemId: 'immortal-second-dealing',
+        count: 1,
+        countIsKnownTo:
+            'The Course Keepers. Outside the administration it is not known at all, and the Deep Survey does not know the Long Cut holds one, which is the single largest gap in either register.',
+        releaseMode: 'collective_consent',
+        decidedBy:
+            'The Course Keepers together, unanimously, at a revision, exactly as with the pill - the Long Cut draws no procedural distinction between the two objects, which outsiders find either admirable or alarming depending on what they came for.',
+        anyoneMayRefuse: true,
+        sufficientReason:
+            'Never described and never petitioned for. It sits on the schedule as an entry with no date, and every Keeper for three centuries has read it aloud at revisions without any of them proposing anything about it.',
+        costOfSayingYes:
+            'It would take the world from two of these to one, minuted, by name, in an administration that owns every act it takes. Nobody has been willing to be the Keeper whose name is against that line.',
+        theForm:
+            'The same schedule amendment, which does not distinguish the two entries and has never been submitted against this one. The Keepers are aware that it could be, and have never discussed what they would do.',
+        recordedRefusal: null,
+        savingTheSect:
+            'The Long Cut has never connected the two and would regard the connection as a category error. The most a petitioner has ever received on this line is a receipt confirming that their submission was received, which is accurate and is all it says.'
     }
 ];
 

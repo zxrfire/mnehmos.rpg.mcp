@@ -64,12 +64,13 @@ import { treatWorstInjuries } from '../cultivation/injuries.js';
 import { rollAttributes, rollSpiritRoot } from '../cultivation/spirit-roots.js';
 import {
     discoverableInsights,
-    formInsight,
+    integrateInsight,
     recordAchievement
 } from '../cultivation/understanding.js';
 import {
     FOUNDATION_PILL_STONES,
     ORIGIN_TIERS,
+    PRICE_GROWTH_PER_ORDINAL,
     STONES_PER_YEAR_OF_SECLUSION,
     affordablePillPotency,
     breakthroughPillPrice,
@@ -116,6 +117,13 @@ const FUNDED_FOCUS = 0.7;
 const UNFUNDED_FOCUS = 0.45;
 
 /**
+ * Somebody sitting in a pocket of qi nothing has drawn on does not come out.
+ * They have stopped needing the economy, which is the whole of what the site
+ * is worth and is not something anybody's family arranged.
+ */
+const SEALED_VEIN_FOCUS = 1;
+
+/**
  * Stones a year a cultivator at this rank can make for themselves.
  *
  * Everyone earns. A poor cultivator is not locked out of the pill market
@@ -124,8 +132,24 @@ const UNFUNDED_FOCUS = 0.45;
  * this axis is trying to be.
  */
 function earningsPerYear(ordinal: number): number {
-    return 14 * Math.pow(1.22, Math.max(0, ordinal));
+    return EARNINGS_AT_ORDINAL_ZERO * Math.pow(PRICE_GROWTH_PER_ORDINAL, Math.max(0, ordinal));
 }
+
+/**
+ * Stones a year a mortal-rank cultivator can make.
+ *
+ * Income grows at the SAME rate prices do, which makes affordability
+ * scale-invariant: at every rank on the ladder, roughly eighty years of a
+ * cultivator's own earnings buys one pill at full potency. Nothing about the
+ * economy gets structurally easier or harder as the realms climb.
+ *
+ * That is what confines a starting fortune to being a HEAD START rather than a
+ * standing advantage. It moves a cultivator a fixed number of rungs further up
+ * before they have to start buying out of income, and above that line the
+ * patriarch's son and the farmer are shopping in the same market on the same
+ * terms.
+ */
+const EARNINGS_AT_ORDINAL_ZERO = 6;
 
 /**
  * Ordinal from which a sect recruits on what you have reached rather than on
@@ -157,6 +181,15 @@ const RUIN_FLOOR = 13;
  */
 const RUIN_WILLINGNESS = 0.18;
 
+/**
+ * Chance a willing cultivator goes back in at any given rank.
+ *
+ * The doc's conjunction requires risk taken REPEATEDLY, so going once is not
+ * the shape being modelled. It is also why almost nobody who takes this road
+ * arrives anywhere: the survival roll is made again every time.
+ */
+const RUIN_RETURN_RATE = 0.4;
+
 /** Base survival of one attempt, before anything supplied is added. */
 const RUIN_BASE_SURVIVAL = 0.45;
 
@@ -176,10 +209,29 @@ const RUIN_STONES = 2_200;
  * anyone would record, and access decides WHICH things are on the table rather
  * than how many come off it.
  */
-const COMPREHENSION_BASE = 0.012;
+const COMPREHENSION_BASE = 0.06;
 
 /** How much Insight moves that. Still a chance, never a schedule. */
-const COMPREHENSION_PER_INSIGHT = 0.006;
+const COMPREHENSION_PER_INSIGHT = 0.03;
+
+/**
+ * Years of sitting with something before it gets another chance to arrive.
+ *
+ * Comprehension is a function of time spent, not of ranks crossed. A rank near
+ * the top of the ladder is centuries long and a rank near the bottom is a
+ * decade, and a cultivator who spent three hundred years on a vein with a
+ * library has had three hundred years of chances - which is how a run reaches
+ * the degrees the last realms actually need.
+ */
+const YEARS_PER_COMPREHENSION_CHANCE = 25;
+
+/**
+ * Cap on draws per rank. Deliberately far above what any crossable rank
+ * produces: it is a runaway guard, not a balance knob. Binding it lower would
+ * quietly assert that a cultivator who sat with something for four hundred
+ * years has the same chances as one who sat with it for forty.
+ */
+const MAX_COMPREHENSION_DRAWS = 400;
 
 /** Hard stop, so a sweep cannot run away. */
 const MAX_YEARS = 6_000;
@@ -211,6 +263,18 @@ export interface LifeResult {
     ruinsEntered: number;
     /** Comprehensions formed. Zero is the ordinary case. */
     insightCount: number;
+    /** Deepest degree reached. Below 3 is not a thing anybody would record. */
+    deepestDegree: number;
+    /** Sum of degrees held. The blunt measure of total comprehension. */
+    degreeTotal: number;
+    /** Years lived. */
+    ageAtEnd: number;
+    /** What the foundation turned out to be. */
+    foundation: FoundationQuality;
+    debugRate: number;
+    debugUntreated: number;
+    debugStones: number;
+    debugAmbient: string;
 }
 
 /**
@@ -244,19 +308,22 @@ export function simulateLife(
 
     // Where this life happens to be, drawn from the world's own distribution,
     // with the family's holding as a floor under it and nothing more.
-    const groundRng = stream('origin-sweep-ground');
-    let ambient = betterAmbient(groundRng.weighted(WORLD_AMBIENT_WEIGHTS), origin.ground);
+    let ambient = betterAmbient(
+        stream('origin-sweep-ground', 0).weighted(WORLD_AMBIENT_WEIGHTS),
+        origin.ground
+    );
     let stones = origin.spiritStones;
     let suppliedLeft = origin.expeditions.supplied;
     let ruinsEntered = 0;
     let foundVein = false;
+    let nearDeath = false;
+    let survivedTribulation = false;
 
     // Access. Everything the birth put within reach, plus whatever a ruin
     // later adds. An origin with none contributes nothing and the cultivator
     // reaches their own root, which is the ordinary case.
     const inheritances: { subject: string; label: string }[] = [];
     const insights: Insight[] = [];
-    const held = new Set<string>();
 
     let ordinal = 0;
     let peak = 0;
@@ -267,11 +334,12 @@ export function simulateLife(
     let foundation: FoundationQuality = 'none';
     const injuries: Injury[] = [];
     let end: LifeEnd = 'lifespan';
+    let lastRate = 0;
 
     while (age < MAX_YEARS) {
         // ── What a year costs, and whether it is funded ──────────────────
         const funded = stones > 0;
-        const focus = funded ? FUNDED_FOCUS : UNFUNDED_FOCUS;
+        const focus = foundVein ? SEALED_VEIN_FOCUS : funded ? FUNDED_FOCUS : UNFUNDED_FOCUS;
 
         // Placement is worth something only while it is the ONLY way in. Once a
         // cultivator has reached what a sect recruits at, the poor one who got
@@ -296,6 +364,7 @@ export function simulateLife(
                 sectBonus
             }
         ).perDay;
+        lastRate = rate;
         if (rate <= 0) {
             end = 'settling';
             break;
@@ -340,15 +409,30 @@ export function simulateLife(
         // the candidate set, and effort does not widen it.
         const ctx = withOriginAccess(originKey, {
             inheritances: inheritances.slice(),
-            locationTags: foundVein ? ['deep_cave'] : []
+            locationTags: foundVein ? ['deep_cave'] : [],
+            // Having stood under heavenly lightning and still been standing
+            // after is access nobody's family arranges and nobody sells. It is
+            // the only route to the void domain in this harness, and it is why
+            // the last few rungs are reachable only from inside the last realm.
+            survived: survivedTribulation ? 'tribulation' : nearDeath ? 'near_death' : null
         });
         const candidates = discoverableInsights({ spiritRoot: root.key }, ctx);
         const comprehendRng = stream('origin-sweep-comprehend', ordinal, attempt);
         const chance = COMPREHENSION_BASE + attributes.insight * COMPREHENSION_PER_INSIGHT;
-        for (const candidate of candidates) {
-            const key = `${candidate.domain}:${candidate.subject}`;
-            if (held.has(key)) continue;
+        // ONE candidate per draw. Access decides WHICH comprehensions are on
+        // the table, never how many come off it - a library does not make
+        // somebody comprehend five things at once, it makes the thing they
+        // comprehend a different thing. A cultivator with a single candidate
+        // and a cultivator with nine roll the same odds on any given draw, and
+        // the number of draws is a function of time sat, which nobody's family
+        // arranges.
+        const draws = Math.min(
+            MAX_COMPREHENSION_DRAWS,
+            Math.max(1, Math.floor(yearsNeeded / YEARS_PER_COMPREHENSION_CHANCE))
+        );
+        for (let d = 0; d < draws && candidates.length > 0; d++) {
             if (!comprehendRng.chance(chance)) continue;
+            const candidate = comprehendRng.pick(candidates);
             const achievement = recordAchievement(
                 {
                     kind: 'profound_principle',
@@ -358,14 +442,19 @@ export function simulateLife(
                 },
                 comprehendRng
             );
-            insights.push(formInsight(candidate, 3, achievement));
-            held.add(key);
+            const merged = integrateInsight(insights, candidate, achievement);
+            insights.length = 0;
+            insights.push(...merged.insights);
         }
 
         // ── The ruin ─────────────────────────────────────────────────────
         // Where the ceiling is actually broken, and the only door in the world
         // that opens on nerve rather than on standing.
-        if (willing && ordinal >= RUIN_FLOOR && !foundVein) {
+        // Repeatedly, and until they have what they went in for. Somebody
+        // sitting on a pocket of qi nothing has drawn on has no further reason
+        // to walk into anywhere lethal, and stops.
+        if (willing && ordinal >= RUIN_FLOOR && !foundVein &&
+            stream('origin-sweep-goes', ordinal, attempt).chance(RUIN_RETURN_RATE)) {
             const ruinRng = stream('origin-sweep-ruin', ordinal, attempt);
             const supplied = suppliedLeft > 0;
             if (supplied) suppliedLeft--;
@@ -375,8 +464,11 @@ export function simulateLife(
                 end = 'died_in_a_ruin';
                 break;
             }
-            stones += RUIN_STONES;
-            if (ruinRng.chance(RUIN_VEIN_CHANCE)) {
+            stones += RUIN_STONES * Math.pow(PRICE_GROWTH_PER_ORDINAL, ordinal - RUIN_FLOOR);
+            // Having stood close enough to see it is access in its own right,
+            // and it is the one source a poor cultivator can reach.
+            nearDeath = true;
+            if (!foundVein && ruinRng.chance(RUIN_VEIN_CHANCE)) {
                 // A pocket nothing has drawn on. Not conferred by anybody.
                 ambient = 'sealed_vein';
                 foundVein = true;
@@ -387,6 +479,17 @@ export function simulateLife(
                     label: 'what was left behind in a sealed place'
                 });
             }
+        }
+
+        // Where they are standing now. People move, and the world is drawn
+        // rather than assigned - the family's holding is a floor under the
+        // draw and never a band nobody else can reach. A sealed vein, once
+        // found, is not re-rolled: they are sitting in it.
+        if (!foundVein) {
+            ambient = betterAmbient(
+                stream('origin-sweep-ground', ordinal, attempt).weighted(WORLD_AMBIENT_WEIGHTS),
+                origin.ground
+            );
         }
 
         // ── The crossing ─────────────────────────────────────────────────
@@ -439,6 +542,7 @@ export function simulateLife(
         progress = Math.max(0, progress - result.progressConsumed);
         for (const injury of result.injuriesSustained) injuries.push(injury);
         if (result.foundationEstablished) foundation = result.foundationEstablished;
+        if (result.tribulation?.survived) survivedTribulation = true;
 
         // Torn meridians are the ratchet, and a healer costs stones. This is
         // the single largest thing a holding buys, and it is why a poor run
@@ -472,7 +576,15 @@ export function simulateLife(
         end,
         foundVein,
         ruinsEntered,
-        insightCount: insights.length
+        insightCount: insights.length,
+        deepestDegree: insights.reduce((best, i) => Math.max(best, i.degree), 0),
+        degreeTotal: insights.reduce((sum, i) => sum + i.degree, 0),
+        ageAtEnd: age,
+        foundation,
+        debugRate: lastRate,
+        debugUntreated: injuries.filter(i => !i.treated).length,
+        debugStones: stones,
+        debugAmbient: ambient
     };
 }
 
@@ -498,8 +610,16 @@ export interface OriginOutcomeRow {
     veinShare: number;
     /** Share that ever walked into somewhere lethal. */
     ruinShare: number;
-    /** Share that ever comprehended anything at all. */
+    /** Share that ever comprehended anything at all, at any degree. */
     comprehendedShare: number;
+    /**
+     * Share holding a comprehension at intent degree or better.
+     *
+     * The "anything anyone would record" bar. A glimpse of your own root
+     * element is not a thing the world notices, and counting it as
+     * comprehension would make the axis look far more generous than it is.
+     */
+    deepComprehensionShare: number;
 }
 
 export interface OriginOutcomeReport {
@@ -563,6 +683,7 @@ export function measureOriginOutcomes(
         let veins = 0;
         let ruins = 0;
         let comprehended = 0;
+        let deeplyComprehended = 0;
 
         for (let i = 0; i < n; i++) {
             const life = simulateLife(seed, i, tier.key);
@@ -571,6 +692,7 @@ export function measureOriginOutcomes(
             if (life.foundVein) veins++;
             if (life.ruinsEntered > 0) ruins++;
             if (life.insightCount > 0) comprehended++;
+            if (life.deepestDegree >= 3) deeplyComprehended++;
         }
 
         const sorted = [...peaks].sort((a, b) => a - b);
@@ -590,7 +712,8 @@ export function measureOriginOutcomes(
             ends,
             veinShare: veins / n,
             ruinShare: ruins / n,
-            comprehendedShare: comprehended / n
+            comprehendedShare: comprehended / n,
+            deepComprehensionShare: deeplyComprehended / n
         });
     }
 

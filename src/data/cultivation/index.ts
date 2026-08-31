@@ -29,6 +29,7 @@ import { FACTION_CHARACTER } from './faction-character.js';
 import { APEX_INSTITUTIONS, COURTS, FACTION_PARENTAGE, GUEST_ELDERS } from './hierarchy.js';
 import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from './immortal-items.js';
 import { WANDERERS } from './wanderers.js';
+import { IMMORTAL_CHANNELS } from './crossings.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RE-EXPORTS
@@ -160,6 +161,7 @@ export * from './faction-character.js';
 export * from './hierarchy.js';
 export * from './immortal-items.js';
 export * from './wanderers.js';
+export * from './crossings.js';
 
 export {
     ENCOUNTERS,
@@ -231,6 +233,8 @@ export interface CultivationCatalogCounts {
     immortalHoldings: number;
     /** Unattached figures worth asking. Vanishingly few. */
     wanderers: number;
+    /** Institutions with somebody above the Lid still answering, plus gifts. */
+    immortalChannels: number;
 }
 
 /** Catalog sizes, for tool responses and for the content smoke test. */
@@ -256,7 +260,8 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         placedInStack: Object.keys(FACTION_PARENTAGE).length,
         immortalItems: IMMORTAL_ITEMS.length,
         immortalHoldings: IMMORTAL_HOLDINGS.length,
-        wanderers: WANDERERS.length
+        wanderers: WANDERERS.length,
+        immortalChannels: IMMORTAL_CHANNELS.length
     };
 }
 

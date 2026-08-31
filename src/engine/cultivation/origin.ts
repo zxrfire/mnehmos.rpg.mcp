@@ -152,8 +152,20 @@ export interface OriginTier {
     description: string;
 }
 
-/** Ceiling on what any origin can put underfoot. A vein is found, not given. */
-export const MAX_ORIGIN_AMBIENT: AmbientQi = 'dense';
+/**
+ * Ceiling on what any origin can put underfoot.
+ *
+ * Ordinary ground, and no better. A family's holding removes the RISK of being
+ * born on a thin hillside; it does not put anybody somewhere exceptional. The
+ * bands above this are contested holdings that get fought over rather than
+ * inherited, and the band above those is a sealed vein, which nobody owns.
+ *
+ * This matters more than it looks. Thin to dense is a fourfold multiplier on
+ * cultivation rate - larger than the gap between the best spirit root and the
+ * worst - so an origin that handed out dense ground would be a bigger term
+ * than talent, and talent is supposed to decide nearly everything.
+ */
+export const MAX_ORIGIN_AMBIENT: AmbientQi = 'normal';
 
 /** Ceiling on the expedition margin standing can buy. */
 export const MAX_EXPEDITION_MARGIN = 0.2;
@@ -266,7 +278,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         name: 'An established cultivating clan',
         weight: 36,
         spiritStones: 15_000,
-        ground: 'dense',
+        ground: 'normal',
         placement: {
             reach: 29,
             atAge: 9,
@@ -296,7 +308,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         name: 'A great house',
         weight: 4,
         spiritStones: 90_000,
-        ground: 'dense',
+        ground: 'normal',
         placement: {
             reach: 38,
             atAge: 7,
@@ -396,15 +408,18 @@ export const TREATMENT_STONES = 120;
  * A pill that carries a Qi Condensation cultivator through a crossing is not
  * the same object as one that carries a Nascent Soul cultivator through one,
  * and it is not priced like it either: the ingredients are rarer by the same
- * order the ladder's own cost curve climbs. At 1.28 a great house's entire
- * holding is spent somewhere in the low twenties, which is exactly the
- * fiction - resources on a patriarch's scale, SPENT rather than hoarded, and
- * gone by the time the interesting part starts.
+ * order the ladder's own cost curve climbs.
  *
- * Deliberately below the ladder's own 1.35 growth, so wealth is not merely
- * decorative either. It buys a real stretch of road and then it stops.
+ * It is set to EXACTLY the ladder's own 1.35 rank-cost growth, and that
+ * identity is the whole point. When price and cost climb together, the number
+ * of ranks a fortune covers is logarithmic in the fortune: thirty times the
+ * money buys about eleven more rungs, not thirty times the road. So a
+ * patriarch's holding is worth a real and legible stretch of the climb and
+ * then it is simply gone, at which point its holder is buying pills out of
+ * income like everybody else. Resources on a patriarch's scale, spent rather
+ * than hoarded.
  */
-export const PRICE_GROWTH_PER_ORDINAL = 1.28;
+export const PRICE_GROWTH_PER_ORDINAL = 1.35;
 
 /** What a breakthrough pill for this rank actually costs. */
 export function breakthroughPillPrice(ordinal: number): number {

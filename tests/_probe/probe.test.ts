@@ -10,7 +10,7 @@ describe('probe', () => {
                 'median', String(row.medianPeakOrdinal).padStart(3),
                 'mean', row.meanPeakOrdinal.toFixed(2).padStart(6),
                 '>=13', row.reachedAtLeast[13].toFixed(3),
-                '>=25', row.reachedAtLeast[25].toFixed(3),
+                '>=21', row.reachedAtLeast[21].toFixed(3), '>=25', row.reachedAtLeast[25].toFixed(4),
                 '>=33', row.reachedAtLeast[33].toFixed(4),
                 '>=41', row.reachedAtLeast[41].toFixed(4),
                 '=45', row.reachedAtLeast[45].toFixed(4),
