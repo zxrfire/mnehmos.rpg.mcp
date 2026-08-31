@@ -332,7 +332,7 @@ describe('the wiring', () => {
                 action: 'assess',
                 cultivatorId: created.cultivator.id,
                 against: 'place',
-                place: 'The Ninth Face'
+                place: 'The Ninth Face Court'
             });
             expect(view.error).toBe('place_not_known');
         });

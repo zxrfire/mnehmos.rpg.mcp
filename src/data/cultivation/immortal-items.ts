@@ -261,9 +261,9 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
             lower: 'Reliable, bounded, and the most useful object in this file. A five-root becomes a four or a three; a four or a three becomes a two. It never produces better than a two, and it cannot produce a single root at any point, by any route, for anybody. What it does is take the worst root in the world and make it merely bad, every time, without a gamble - and because nobody gets a second one, the two it leaves behind is where that person stays forever. Two are known, both at the Azure Cloud Pavilion.'
         },
         effectNote:
-            'It changes the root once and forever, to the extent its grade permits: the lower narrows reliably and never past a two, the middle goes to a one or a two on luck alone, and the higher grants a single mutated root outright. Nobody gets a second, at any grade, in any circumstance. The thing that was dealt once and could not be redrawn is redrawn, and a cultivator who was muddled is not muddled any more. Every rule in the world says this is impossible - the manuals say it, the physicians say it, the Frostmirror Court has four centuries of records saying it - and the rule is correct in every case but this one, which is precisely what a world-historic exception is.',
+            'It changes the root once and forever, to the extent its grade permits: the lower narrows reliably and never past a two, the middle goes to a one or a two on luck alone, and the higher grants a single mutated root outright. Nobody gets a second, at any grade, in any circumstance. The thing that was dealt once and could not be redrawn is redrawn, and a cultivator who was muddled is not muddled any more. Every rule in the world says this is impossible - the manuals say it, the physicians say it, the Frostmirror Sect has four centuries of records saying it - and the rule is correct in every case but this one, which is precisely what a world-historic exception is.',
         socialConsequence:
-            'There is no version of this that stays quiet. The House of Held Names holds a register entry describing a person who no longer matches it, and an entry that has stopped matching its holder is the single loudest signal that register can produce - it is what the register is for. The Quiet Cut will take a commission to make the discrepancy go away and will not be able to, which has happened once and did not improve their reputation. The House of the Narrow Hour cannot sight the person correctly for some years afterwards, because every reading it holds was cast on a root that is no longer there. And two institutions in particular want to know: the Frostmirror Court and the Storm Tyrant Court both survive on an intake of one root in a hundred, and a manufactured mutated root would end that problem permanently, which makes them the least safe parties in the world to be recognised by.',
+            'There is no version of this that stays quiet. The House of Held Names holds a register entry describing a person who no longer matches it, and an entry that has stopped matching its holder is the single loudest signal that register can produce - it is what the register is for. The Quiet Cut will take a commission to make the discrepancy go away and will not be able to, which has happened once and did not improve their reputation. The House of the Narrow Hour cannot sight the person correctly for some years afterwards, because every reading it holds was cast on a root that is no longer there. And two institutions in particular want to know: the Frostmirror Sect and the Storm Tyrant Sect both survive on an intake of one root in a hundred, and a manufactured mutated root would end that problem permanently, which makes them the least safe parties in the world to be recognised by.',
         ruinAvailability:
             'In principle only, and nobody sensible plans on it. The legitimate case is identical to the pill - a grave, one person, one object, somewhere remote - and it has never once been the recorded outcome of a dig. The Bone Lantern Cult, which works more graves than anybody, states that it has never seen one and does not expect to. There is no cache, there has never been a cache, and the claim that there is one has been the bait in at least three lethal frauds.',
         description:
@@ -727,7 +727,7 @@ export type ReceiptHistory = z.infer<typeof ReceiptHistorySchema>;
 export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     // -- spent well, and it is why they are what they are --------------
     {
-        factionId: 'sect-storm-tyrant-court',
+        factionId: 'sect-storm-tyrant-sect',
         itemId: 'immortal-unearned-step',
         throughLine: 'The First Tyrant, styled the Standing Storm, who crossed three and a half thousand years ago and has answered four times since.',
         everReceived: { higher: 0, middle: 1, lower: 4 },
@@ -739,7 +739,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
             'The best-spent stock in the world and nobody disputes it, including the people who hate them. The only working lightning curriculum in existence is there because five cultivators who would have died at a boundary went on teaching instead, and the Court at ordinal 36 is the compounded result of a rule somebody wrote in the first century and every successor had the discipline to keep. It is also why the Court collects rather than recruits: it has nothing left to spend and knows exactly what it cost to get here.'
     },
     {
-        factionId: 'sect-storm-tyrant-court',
+        factionId: 'sect-storm-tyrant-sect',
         itemId: 'immortal-second-dealing',
         throughLine: 'The same line, which sent one talisman in thirty-five centuries and nothing like it since.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
@@ -748,7 +748,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
         spentOn:
             'A lower Second Dealing, sixteen hundred years ago, on a five-root child of the Tyrant house who was carrying a name the Court needed carried. It narrowed her to a three. She was never anything remarkable and she held the seat for four hundred years, which was the entire purpose.',
         judgedInHindsight:
-            'Regarded internally as sound and externally as revealing: the Court spent an irreplaceable object on succession rather than on strength, which tells you what the Storm Tyrant Court is actually organised around. The Ninefold Ledger, which audited it, has never said so out loud and has the file.'
+            'Regarded internally as sound and externally as revealing: the Court spent an irreplaceable object on succession rather than on strength, which tells you what the Storm Tyrant Sect is actually organised around. The Ninefold Ledger, which audited it, has never said so out loud and has the file.'
     },
     // -- spent badly, and everybody knows ------------------------------
     {
@@ -815,7 +815,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
             'Obviously correct inside the Hall and slightly disappointing outside it, because she was a hospital administrator rather than a prodigy and the province expected something more dramatic from the only object the Hall will ever receive. The position of the Hall, stated once and never repeated, was that she was the person who kept the doors open.'
     },
     {
-        factionId: 'sect-frostmirror-court',
+        factionId: 'sect-frostmirror-sect',
         itemId: 'immortal-second-dealing',
         throughLine: 'The Deep Survey line, through the Third Sill court, exactly once and never again.',
         everReceived: { higher: 0, middle: 0, lower: 1 },

@@ -736,7 +736,7 @@ describe('what the player actually reads', () => {
         mode: 'overheard' as const,
         speaker: null,
         names: [
-            { kind: 'sect' as const, id: 'a', name: 'The Third Sill' },
+            { kind: 'sect' as const, id: 'a', name: 'The Third Sill Court' },
             { kind: 'place' as const, id: 'b', name: 'Kettle' }
         ],
         note: 'n',
@@ -746,7 +746,7 @@ describe('what the player actually reads', () => {
 
     it('performs the exchange instead of describing it', () => {
         const prose = hearingProse(overheard);
-        expect(prose).toContain('The Third Sill');
+        expect(prose).toContain('The Third Sill Court');
         expect(prose).toContain('Kettle');
         expect(prose).not.toMatch(/a fragment|it contained/i);
     });
@@ -782,7 +782,7 @@ describe('what the player actually reads', () => {
 
     it('handles a single overheard name as well as a pair', () => {
         const one = hearingProse({ ...overheard, names: [overheard.names[0]] });
-        expect(one).toContain('The Third Sill');
+        expect(one).toContain('The Third Sill Court');
         expect(one).toMatch(/no idea what that was/i);
     });
 });

@@ -387,14 +387,14 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         distinctSentence: 'A league whose members mark where they have been rather than where they are, and which loses every promising member to the sects that refused them first.'
     },
-    'sect-frostmirror-court': {
+    'sect-frostmirror-sect': {
         knownFor: {
             outside: 'Refusal. Cold, arrogant, turns away everybody, leaves its floors unswept, and is unpleasant about all three.',
             actuallyGoodAt: 'Triage. It holds the only complete curriculum for a root that kills its bearers, and every applicant it refuses is somebody the arts would have killed. The refusal is the service.',
             theGap: 'A door that closes looks the same from outside whatever the reason, and the Court has never considered explaining itself to be part of the work.'
         },
         practice: 'Nobody sweeps. The floors of the cold hall are left exactly as they are on doctrine, and a visitor who tidies is not corrected but is not admitted again.',
-        grievance: 'That the Storm Tyrant Court has raided them twice and the province regards the Frostmirror as the curiosity in that relationship.',
+        grievance: 'That the Storm Tyrant Sect has raided them twice and the province regards the Frostmirror as the curiosity in that relationship.',
         fear: 'That the ice curriculum is finite - it was dug out, not written, and there is no more glacier to dig.',
         lateness: 'Twenty-six of forty-four nodes lit; and the curriculum above Rime Disciple is recovered inscription with gaps the Court fills by inference and does not tell disciples it is filling.',
         disagreement: 'The Rime Disciples want to admit clean-root cultivators under supervision. The Court Sovereign has calculated that this kills about four in five and refuses.',
@@ -524,7 +524,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         distinctSentence: 'Hands every applicant the full text of a transformation contract whose counterparty its own scripture does not name, and lights nineteen nodes in an alternating ring because it can read every other line.'
     },
-    'sect-storm-tyrant-court': {
+    'sect-storm-tyrant-sect': {
         knownFor: {
             outside: 'Collection. A court that takes cultivators and treats refusal as a scheduling matter, which is the only fact most people in the province hold about it.',
             actuallyGoodAt: 'Instruction. It has the world\'s only working lightning curriculum and teaches it properly, which is why the ones it collected mostly stay.',
@@ -858,7 +858,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         whyNobodyHasSince: 'The vent has thinned measurably and the last three sovereign-track candidates stalled at Deity Transformation. The sect blames the transformation contract rather than the caldera; its own tribute records show the yield falling in step.',
         settledBelief: 'Alone among the high factions, this one has not concluded that the road is shut - which reads as either the only clear sight in either province or the contract talking, and nobody outside the caldera can tell which.'
     },
-    'sect-frostmirror-court': {
+    'sect-frostmirror-sect': {
         highestOrdinal: 35,
         climbedYearsAgo: 400,
         climbedWhere: 'The cold vein under the glacier, forty spans deeper into the ice than the working face now reaches.',
@@ -874,7 +874,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         whyNobodyHasSince: 'The scar has gone quiet, which is the entire purpose of the house and also why its own people no longer advance on the watch. Two perimeters run below the standard the house publishes, and the Datum faction argues it is now a survey office with a legend attached.',
         settledBelief: 'Taken as settled inside the house that a Standing Anchor was something the live containment produced and that the containment has finished producing. The published wake schedule for Xu Ci is, read closely, an admission that nobody expects to replace her.'
     },
-    'sect-storm-tyrant-court': {
+    'sect-storm-tyrant-sect': {
         highestOrdinal: 36,
         climbedYearsAgo: 300,
         climbedWhere: 'The floating stone, while the tether still drew and the vein under it could be reached at the bottom.',
