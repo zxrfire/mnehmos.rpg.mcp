@@ -1759,7 +1759,7 @@ Condensation cultivator who forgets to eat dies exactly as fast as a farmer who 
 to eat, and considerably more embarrassingly.
 
 This is why the hunger clock exists mechanically and why the Grain Abstinence Pill is a
-genuine mid-game goal rather than a convenience item. Half the deaths in the Vault are
+genuine mid-game goal rather than a convenience item. Half the deaths in this world are
 logistical.
 
 ## Settling: Death By Standing Still
@@ -1777,7 +1777,7 @@ about it. The engine calls it death by aging. The world calls it becoming furnit
 
 At the last realm, the Lid stops ignoring you.
 
-Heavenly tribulation is not a divine judgement on virtue. It is structural: the Vault
+Heavenly tribulation is not a divine judgement on virtue. It is structural: the Lid
 testing whether the hole you are about to punch is worth the cost of sealing it behind
 you. The lightning is the seam discharging. It is not personal, and it is not
 survivable by being a good person.
@@ -1892,7 +1892,7 @@ anything is done to you.
 ### Tribulation Transcendence - the Lid answers back
 
 The approach to the crossing. Every breakthrough from here draws heavenly tribulation,
-because the Vault has begun accounting for the hole they intend to make.
+because the Lid has begun accounting for the hole they intend to make.
 
 Possible: opening the Lid partially, which is what a portal actually is; suppressing or
 provoking another's tribulation; persisting through ages in stasis; leaving remnants so
@@ -1933,7 +1933,7 @@ The hole is punched, and the cultivator goes through it. This is the top of the 
 the end of a run in the only way that is not a death. Lifespan stops being a number that
 means anything.
 
-It is also, structurally, the moment the Vault collects in full. Everything the Toll had
+It is also, structurally, the moment the crossing collects in full. Everything the Toll had
 been taking in instalments comes due at once: whatever the cultivator still had, they do
 not take with them. What falls back is the spirit tide that a whole region will remember as
 a golden year, and which the cultivator will never know they caused.
@@ -2011,6 +2011,101 @@ ledger records the run as ended by ascension rather than by death, which - in a 
 almost every other run ends with a corpse - is the rarest line in it.
 
 
+### What an immortal run actually is
+
+It is a quieter game, and a deliberately smaller one.
+
+An immortal has no survival pressure, no scarcity, and nothing above them to climb toward
+that anyone below the Lid can describe. What they have is **time, resources, and the
+people they left**. So the loop is:
+
+- potter about, largely undisturbed
+- spend absurd money throwing something down to a sect, a descendant, a disciple - a
+  technique nobody in the world can teach, an artifact three grades above anything in the
+  region, a warning
+- receive word back: a descendant has done something, a sect has risen or been destroyed,
+  someone has died, someone is asking after them
+- eventually get bored, and step off the ladder
+
+That last one is a real ending and the player chooses when. Nothing forces it.
+
+The emotional content is that everything below keeps moving and you can only ever touch it
+at arm's length, through objects and messages, while the people who remember you die off
+one at a time. Sending a gift down is the most an immortal does in a century, and it is
+enough to reshape a region.
+
+### The two crossings nobody makes
+
+**Sending someone up is not a plan, it is a way to destroy two things at once.**
+
+A cultivator below True Immortal cannot exist on the other side. Not "faces long odds" -
+cannot exist. And the artifacts capable of moving something through the Lid are among the
+rarest objects in the world. So the trade is: burn an irreplaceable treasure, and the
+person you spent it on dies on arrival. Nobody who understands the exchange proposes it,
+and the handful of times it has been attempted are remembered as a category of madness
+rather than as a gamble.
+
+**Coming down costs an immortal more than it is worth, almost always.**
+
+An immortal returning below the Lid is not travelling; they are forcing an opening
+inward, and the Lid does not distinguish that from any other breach. They pay for it out
+of cultivation condensed over ages - the actual substance of what they became - and they
+get very little time. Ten breaths is the figure people quote, and people who quote it have
+usually never seen it done.
+
+If it goes badly, and it often does: the body fails and what is left is a single drop of
+blood, drawn back up through the seam by the Lid itself. The immortal survives, technically,
+and spends the next several thousand years recovering enough to be a person again.
+
+If it goes worse than that, they do not come back at all. **This is one of the few ways an
+immortal actually dies**, and it is why the ones who did come down are remembered so
+precisely: whatever they returned for was worth more to them than the several thousand
+years, and working out what it was is one of the most interesting questions in the world.
+
+The engine should treat both crossings as real, resolvable, and catastrophically
+expensive - never as a travel option, and never as a narration flourish.
+
+### Ancestral records and the millennial offering
+
+Every sect keeps records of its ancestors. For almost all of them this is genealogy and
+hagiography: a wall of names, a founder's sword nobody can draw, a hall of tablets to
+people who have been dead for two thousand years and are not coming back.
+
+**A handful of sects have an ancestor who is still alive.**
+
+Someone who crossed, went through, and is on the other side of the Lid right now. This is
+the single largest determinant of a sect's standing in the world - larger than its current
+strongest member, larger than its territory, larger than its vein. A sect with a living
+immortal ancestor is not treated as a strong sect. It is treated as a sect that might, at
+some point, be answered.
+
+Roughly once a millennium - or when the need is bad enough to justify spending the
+principal - such a sect hosts an **offering**. It costs an appalling amount: rare
+materials, the sect's accumulated reserves, sometimes the working artifact that makes the
+channel possible at all. The whole institution bends around it for years beforehand.
+
+And what comes back is **a few words**.
+
+Sometimes fewer. Sometimes nothing, and the sect spends the next century arguing about
+whether the ancestor is dead, uninterested, or was never there. What does come back is
+usually short, frequently oblique, and occasionally reorganises the region - a name, a
+warning, an instruction nobody understands for two hundred years, permission.
+
+Consequences worth building on:
+
+- **Sects lie about this.** A claimed immortal ancestor is the cheapest prestige in the
+  world if nobody can check, and verifying such a claim is exactly the sort of service a
+  Dao house sells - and exactly the sort of thing worth killing to keep unverified.
+- **An offering is a world event.** Preparations are visible for years, rivals know the
+  date, and the sect is at its most vulnerable and most valuable in the same week.
+- **The player can be present for one.** Being an outer disciple during an offering is the
+  kind of thing a cultivator tells people about for the rest of their life, usually
+  inaccurately.
+- **And if the player ascends,** their own sect inherits this. Descendants and disciples
+  may spend a millennium saving up to ask them a question - which is the far end of the
+  loop, and worth reaching.
+
+
 ### False Immortal
 
 The half-failure, and the more interesting outcome.
@@ -2049,22 +2144,36 @@ and nothing else.
 
 ## Graves and Grave-Readers
 
-When the Vault takes the toll, what it takes has to go somewhere.
+Cultivators die carrying everything they own.
 
-It falls, like everything else - but it falls *coherently*, as a deposit rather than a
-dispersal. These deposits are **graves**: not burial sites, but the settled remainder of
-what a cultivator was made to give up in order to rise. A grave of a Nascent Soul
-cultivator holds four boundaries' worth of taken things - techniques nobody living
-remembers, names attached to no one, a face, a debt, a reason.
+There are no banks worth the name and nothing worth leaving at home, so a cultivator's
+possessions travel on their body: their storage pouch, their artifacts, the manual they
+were part-way through, the pills they were saving for a crossing they never attempted. When
+they die somewhere remote - and most of them die somewhere remote - all of it stays where
+they fell.
 
-**Grave-readers** are the profession built on this. It is disreputable, extremely
-profitable, and the fastest way for a low-realm cultivator to obtain something they have
-no business having. It is also how a Qi Condensation cultivator can stumble onto the
-grave of a Tribulation Transcender and find something that will either make them or kill
-them within the year. Usually the latter.
+**Grave-reading** is the profession built on that fact. It is disreputable, extremely
+profitable, and the fastest way for a low-realm cultivator to obtain something they have no
+business owning. It is also how someone at Qi Condensation stumbles onto the remains of
+somebody who died at Nascent Soul and finds a thing that will either make them or kill them
+inside a year. Usually the latter.
 
-Robbing a grave takes what someone else already paid for. Nobody in the Vault thinks
-this is wrong, exactly. But it does attract attention.
+A grave is not the same as an inheritance, and knowing which you are standing in front of is
+most of the skill:
+
+| | **A grave** | **An inheritance** |
+|---|---|---|
+| Origin | Someone died here | Someone arranged this before ascending |
+| Contents | Whatever they happened to be carrying | Chosen, curated, often the best of what they had |
+| Protection | Whatever has grown up around it since | Designed trials, gates, conditions of worth |
+| Attitude | Indifferent | Intended for *someone*, and often opinionated about who |
+
+An inheritance can refuse you. A grave never does - which is exactly why graves kill more
+people. Nothing about a corpse's belongings is calibrated to the person who finds them.
+
+And robbing the dead attracts attention. Sects keep records of where their people fell.
+Families remember. Some of what looks abandoned is being watched, and a few of the richest
+sites in the world are baited.
 
 ## The Powers
 
@@ -2078,13 +2187,13 @@ this is wrong, exactly. But it does attract attention.
   loved is a world eating itself. They are hard to argue with, and it has made them very
   unpopular.
 - **The Severed** - demonic path, and the most coherent argument in the setting. Their
-  reasoning: the Vault will take everything eventually, so take it yourself first, on
+  reasoning: the crossings will take everything eventually, so take it yourself first, on
   your own terms, at a time of your choosing. They cut their own bonds, memories and
   names *in advance*. They climb faster than anyone. What arrives at the top is not
   really a person and does not pretend to be.
 - **The Hollow Court** - Grand Ascension cultivators who reached the Lid and refused to
   go through. Nothing left to take, therefore nothing left to threaten. Functionally
-  immortal, functionally inert, and the only beings in the Vault who can afford to be
+  immortal, functionally inert, and the only people left who can afford to be
   honest.
 - **The Kiln Wardens** - they guard the deep vein at the world's root, which is either
   still running or has not been checked in a very long time. They do not explain
@@ -2122,12 +2231,12 @@ plain and physical - Sweptground, the Low Fall, Scarwater.
 ## What Makes a Run Interesting
 
 The engine produces the tragedy on its own if it is left alone to do so. A run is
-interesting when the player has to choose between two things the Vault will make them
+interesting when the player has to choose between two things the world will make them
 regret:
 
 - Breakthrough now at poor odds, or stagnate toward settling.
 - Rob the grave and take the attention, or stay poor and stay slow.
-- Cut a bond yourself the Severed way, or let the Vault choose which one it takes.
+- Cut a bond yourself the Severed way, or let the crossing choose which one it takes.
 - Eat, or keep the stones.
 
 None of those choices has a right answer, and the engine is not required to provide one.
