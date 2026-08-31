@@ -254,7 +254,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         whoPays: 'Sects that need bodies for something they would rather not have disciples seen doing, and unbacked sects that need a border held and have nobody to hold it.',
         unbackedCost: 'A crew is hired precisely because it is deniable, which means it is deniable. Every crew that has worked a border dispute knows a crew that was left holding one.',
         deathRate: null,
-        factionIds: ['sect-storm-tyrant-sect', 'sect-standing-grove']
+        factionIds: ['sect-storm-tyrant-court', 'sect-standing-grove']
     },
     {
         id: 'rogue-formation-hand',

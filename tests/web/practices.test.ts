@@ -99,7 +99,7 @@ describe('the narrow gate: a practice that says its own name', () => {
             'sect-hollow-bell-wanderers',
             'sect-standing-grove',
             'sect-stonewright-consortium',
-            'sect-storm-tyrant-sect',
+            'sect-storm-tyrant-court',
             'sect-thousand-treasure-pavilion',
             'sect-weir-office'
         ]);

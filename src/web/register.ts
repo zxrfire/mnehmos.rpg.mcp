@@ -98,7 +98,7 @@ export interface RegisterSealed {
  *
  * The register used to be a set of cross-cutting tables - all factions here,
  * all sealed ancestors there - which answers "who is strongest" well and
- * "what am I dealing with" badly. A person reading about the Frostmirror Sect
+ * "what am I dealing with" badly. A person reading about the Frostmirror Court
  * had to find it in four places. This is the other arrangement: the sect is the
  * unit, and everything that belongs to it is underneath it.
  *

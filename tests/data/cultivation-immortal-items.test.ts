@@ -727,7 +727,7 @@ describe('receipt histories', () => {
 
     it('has the four judgements the catalog needs', () => {
         const storm = RECEIPT_HISTORIES.find(
-            r => r.factionId === 'sect-storm-tyrant-sect' && r.itemId === 'immortal-unearned-step')!;
+            r => r.factionId === 'sect-storm-tyrant-court' && r.itemId === 'immortal-unearned-step')!;
         expect(storm.judgedInHindsight).toMatch(/best-spent stock in the world/i);
         expect(storm.stillHeld).toEqual({ higher: 0, middle: 0, lower: 0 });
 

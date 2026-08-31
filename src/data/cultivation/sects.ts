@@ -539,7 +539,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'unyielding-mountain-body',
         specialities: ['defense', 'attack', 'cultivation'],
-        rivals: ['sect-storm-tyrant-sect'],
+        rivals: ['sect-storm-tyrant-court'],
         territory: 'Nine linked peaks over the deepest vein anyone has surveyed and managed to keep.',
         recruits: true,
         compound: {
@@ -849,10 +849,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'A loose league of rogue cultivators with five ranks, no mountain, and no requirement beyond turning up. Most members dig for a living and sell what they find by weight. Nobody else will take a Qi Condensation nobody with a muddled root and no family, and the Wanderers know it, and price their instruction accordingly.'
     },
     {
-        id: 'sect-frostmirror-sect',
-        name: 'Frostmirror Sect',
+        id: 'sect-frostmirror-court',
+        name: 'Frostmirror Court',
         alignment: 'neutral',
-        powerOrdinal: 34,
+        powerOrdinal: 36,
         ranks: ['Snow Servant', 'Mirror Disciple', 'Rime Disciple', 'Court Warden', 'Frost Elder', 'Court Sovereign'],
         admissionOrdinal: 13,
         stipend: [10, 30, 90, 300, 1_000, 3_000],
@@ -865,7 +865,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'rime-heart-stillness-canon',
         specialities: ['attack', 'defense', 'movement', 'cultivation'],
-        rivals: ['sect-storm-tyrant-sect'],
+        rivals: ['sect-storm-tyrant-court'],
         territory: 'A glacier court above the snowline, on a cold vein nobody else can work, appearing on no accurate map.',
         recruits: true,
         compound: {
@@ -875,7 +875,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A hall kept cold enough that nothing has ever drawn on the qi standing in it, which is why the Court cultivates there and nowhere else.'
         },
         description:
-            'The only institution left holding a complete ice curriculum, because the ice curriculum was sealed in the glacier and the Court dug it out rather than inheriting it from teachers. It will not open its library to anyone without a mutated ice root - not out of malice, but because the arts kill everyone else. A mutated ice cultivator who finds this Court has found the one place their talent is not a death sentence. Most never find it.'
+            'The only institution left holding a complete ice curriculum, because the ice curriculum was sealed in the glacier and the Court dug it out rather than inheriting it from teachers. It will not open its library to anyone without a mutated ice root - not out of malice, but because the arts kill everyone else. A mutated ice cultivator who finds this Court has found the one place their talent is not a death sentence. Most never find it. It is a court now, and it is the only one in the Low Fall openly gunning for another: the Frostmirror wants the arterial the Third Sill administers, says so in terms just short of quotable, and has begun describing itself in correspondence as a peer rather than a junior. The Third Sill has not replied to any of it, which the Frostmirror reads as weakness and the province reads as the Third Sill having read it correctly.'
     },
     {
         id: 'sect-kiln-wardens',
@@ -1060,8 +1060,8 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'The strongest openly demonic sect in the region, and the only one that does not pretend to be anything else. Its transformation art was recovered from the caldera it now occupies, along with the contract terms, which the sect provides to applicants in full. Elders are recognisable, late on, by what has stopped being human about them.'
     },
     {
-        id: 'sect-storm-tyrant-sect',
-        name: 'Storm Tyrant Sect',
+        id: 'sect-storm-tyrant-court',
+        name: 'Storm Tyrant Court',
         alignment: 'demonic',
         powerOrdinal: 34,
         ranks: ['Rod Bearer', 'Storm Servant', 'Arc Disciple', 'Thunder Warden', 'Storm Elder', 'Storm Tyrant'],
@@ -1076,7 +1076,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'nine-heaven-scourging-bolt',
         specialities: ['attack', 'movement', 'defense'],
-        rivals: ['sect-nine-peaks-ascetic-order', 'sect-frostmirror-sect'],
+        rivals: ['sect-nine-peaks-ascetic-order', 'sect-frostmirror-court'],
         territory: 'A floating stone over a permanent storm, tethered to the peak it broke off, drawing on a vein it can no longer reach the bottom of.',
         recruits: true,
         compound: {
@@ -2019,7 +2019,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: [],
         requirement: 'Show up. Ring the bell. That is the whole ceremony.'
     },
-    'sect-frostmirror-sect': {
+    'sect-frostmirror-court': {
         minOrdinal: 13,
         minInsight: 3,
         preferredRoots: ['mutated_ice'],
@@ -2056,7 +2056,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: ['single_fire', 'dual_water_fire'],
         requirement: 'Foundation-track talent, and a signed acceptance of the transformation contract.'
     },
-    'sect-storm-tyrant-sect': {
+    'sect-storm-tyrant-court': {
         minOrdinal: 9,
         preferredRoots: ['mutated_lightning'],
         requirement: 'A mutated lightning root. Everyone else the Court speaks to is not an applicant.'
@@ -2291,7 +2291,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     // ═══════════════════════════════════════════════════════════════════
     // TRUE CLAIM, GIFT GONE, CLAIM DEFENDED
     // ═══════════════════════════════════════════════════════════════════
-    'sect-storm-tyrant-sect': {
+    'sect-storm-tyrant-court': {
         ancestors: [
             {
                 name: 'The First Tyrant, styled the Standing Storm',
@@ -2354,10 +2354,10 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             'the rod has not been shown at a succession in three generations, and the Court now describes it instead',
             'a rod answering its description was sold through a Thousand Treasure auction two centuries ago by a seller the Pavilion will not name',
             'the Court has refused Ledger certification of its vault inventory four times, most recently in writing',
-            'Frostmirror Sect has offered to pay the Ledger\'s fee itself, which the Ledger has neither accepted nor declined'
+            'Frostmirror Court has offered to pay the Ledger\'s fee itself, which the Ledger has neither accepted nor declined'
         ],
         standingNote:
-            'The claim is true, the gift is gone, and the Court is spending real resources to keep anyone from establishing the second fact. Frostmirror Sect knows, cannot prove it, and would like it examined by somebody whose certification the world accepts.'
+            'The claim is true, the gift is gone, and the Court is spending real resources to keep anyone from establishing the second fact. Frostmirror Court knows, cannot prove it, and would like it examined by somebody whose certification the world accepts.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -2408,7 +2408,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         standingNote:
             'Nobody outside the sect knows the Kindler is there. Its rivals price it as a strong demonic sect with a caldera, which is why the Ashen Forge Clan has twice pushed a border dispute further than it would have if it knew what was under the floor.'
     },
-    'sect-frostmirror-sect': {
+    'sect-frostmirror-court': {
         ancestors: [
             {
                 name: 'The First Sovereign, called the Mirror',
@@ -2449,7 +2449,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             'two forced entries are recorded by outside parties; the parties are not recorded as having left'
         ],
         standingNote:
-            'The Court is small, isolated and treated as a curiosity with a good collection. The Storm Tyrant Sect, which has raided it twice and stopped, does not agree with that assessment and has not explained why.'
+            'The Court is small, isolated and treated as a curiosity with a good collection. The Storm Tyrant Court, which has raided it twice and stopped, does not agree with that assessment and has not explained why.'
     },
     'house-anchorhold': {
         ancestors: [

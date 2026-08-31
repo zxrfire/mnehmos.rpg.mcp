@@ -745,7 +745,7 @@ export const COURTS: readonly Court[] = [
         id: 'court-third-sill',
         name: 'The Third Sill Court',
         apexId: 'apex-deep-survey',
-        // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Sect at
+        // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Court at
         // Body Integration Perfection, and a court that could not answer its own
         // tenant would be issuing suggestions rather than grants.
         powerOrdinal: 38,
@@ -951,7 +951,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         factionId: 'sect-cinnabar-crucible-guild',
         governance: 'federated',
         relation: 'subsidiary',
-        parentFactionId: 'court-third-sill',
+        parentFactionId: 'sect-frostmirror-court',
         holds: 'The volcanic field furnace halls, and the refining hall with the method-script on the wall.',
         terms: {
             tributeStonesPerYear: 18_000,
@@ -965,13 +965,13 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'Standing is strained because the Guild\'s heaven-grade failure rate has risen and the in-kind clause does not care why. It has begun buying finished pills to meet the quota, at a loss it cannot sustain for another cycle.'
+        note: 'Moved under the Frostmirror when the Frostmirror was promoted, which the Guild was not consulted about and has not forgiven. It now buys cold from its own landlord.'
     },
-    'sect-frostmirror-sect': {
-        factionId: 'sect-frostmirror-sect',
+    'sect-frostmirror-court': {
+        factionId: 'sect-frostmirror-court',
         governance: 'federated',
-        relation: 'subsidiary',
-        parentFactionId: 'court-third-sill',
+        relation: 'court',
+        parentFactionId: 'apex-deep-survey',
         holds: 'The glacier and the cold vein under it, on a grant nobody else has ever applied for.',
         terms: {
             tributeStonesPerYear: 3_000,
@@ -985,7 +985,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Court is the only Low Fall sect that has worked out roughly what it is dealing with, and has responded by paying promptly, sending the inscriptions on, and asking nothing.'
+        note: 'Promoted out of the Third Sill once the ice curriculum turned out to be the one thing in the province nobody could replace. It administers the cold arterial and grants to the Cinnabar Crucible Guild, which needs the cold more than it admits.'
     },
     'sect-nine-abyss-flame-sect': {
         factionId: 'sect-nine-abyss-flame-sect',
@@ -1007,11 +1007,11 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: null,
         note: 'The Sill grants to a demonic sect on the same terms as anyone else because tribute is tribute, and the Sweptground Temple has been told this to its face by a courier who did not stay to discuss it.'
     },
-    'sect-storm-tyrant-sect': {
-        factionId: 'sect-storm-tyrant-sect',
+    'sect-storm-tyrant-court': {
+        factionId: 'sect-storm-tyrant-court',
         governance: 'federated',
-        relation: 'subsidiary',
-        parentFactionId: 'court-third-sill',
+        relation: 'court',
+        parentFactionId: 'apex-deep-survey',
         holds: 'The floating stone, and a vein the Court can no longer reach the bottom of.',
         terms: {
             tributeStonesPerYear: 30_000,
@@ -1025,13 +1025,13 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'A six-year renewal is what the Sill does instead of a threat. The Court has not told its disciples, has stopped opening the vault at successions, and is trying to buy a lightning-root intake it can present at the next calling.'
+        note: 'Held on probation by the Third Sill for two centuries and promoted over its head, because the lightning curriculum is the one thing in the Low Fall nobody can replace and the Survey would rather administer such a thing than lease it. The probation came with it: a court on probation is a new arrangement and nobody is comfortable with it, least of all the Third Sill, which was not asked.'
     },
     'sect-crimson-abyss-hall': {
         factionId: 'sect-crimson-abyss-hall',
         governance: 'federated',
         relation: 'subsidiary',
-        parentFactionId: 'court-third-sill',
+        parentFactionId: 'sect-storm-tyrant-court',
         holds: 'The sinkhole and the thin vein beneath the town, on the least valuable grant in the province.',
         terms: {
             tributeStonesPerYear: 9_000,
@@ -1045,7 +1045,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The in-kind clause is the interesting one: something above the province wants the refusal lists, and the Hall has never been told why it collects them.'
+        note: 'Moved under the Storm Tyrant when the Storm Tyrant was promoted, for a reason the Survey stated in one line: one letter should cover both demonic holdings. Neither party was consulted and both resent it in the same words.'
     },
     'sect-thousand-treasure-pavilion': {
         factionId: 'sect-thousand-treasure-pavilion',
@@ -1152,7 +1152,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'No grant, so no vein, so no pipeline: a Warden stops at Chipping and stays there. The Wardens perform the single most useful public service in the region and are paid in paint.',
         unbackedReason: 'arrangement_that_is_not_patronage',
         independenceStance: 'would_take_a_backer',
-        note: 'The one specific reason they have not been absorbed: the woman at Sixmile, who walks the burn edge once a month and is very probably Twice-Worked, and who would be annoyed. Nobody has said this out loud, the arrangement is not patronage and could not be described as such, and the administration has quietly left the Wardens alone for nineteen years. Otherwise tolerated because the roads they mark are the roads the administration\'s own contractors walk in on.'
+        note: 'Holds nothing from anybody and never has. The paint and the stakes are the whole of the institution, and the burn edge does not care whose name is on a grant.'
     },
 
     'sect-standing-grove': {

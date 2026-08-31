@@ -658,8 +658,8 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
             'sect-azure-cloud-pavilion',
             'sect-verdant-spring-hall',
             'sect-nine-peaks-ascetic-order',
-            'sect-frostmirror-sect',
-            'sect-storm-tyrant-sect',
+            'sect-frostmirror-court',
+            'sect-storm-tyrant-court',
             'sect-clear-river-alliance'
         ],
         currency: 'most_of_the_world',
@@ -1221,7 +1221,7 @@ export const CALENDARS: readonly Calendar[] = [
             'sect-azure-cloud-pavilion',
             'sect-nine-peaks-ascetic-order',
             'sect-verdant-spring-hall',
-            'sect-frostmirror-sect',
+            'sect-frostmirror-court',
             'sect-crimson-abyss-hall'
         ],
         countsFrom:
