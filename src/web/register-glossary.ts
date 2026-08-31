@@ -189,7 +189,7 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     },
     {
         group: 'Seals',
-        term: 'End of life',
+        term: 'Final breath',
         meaning:
             'Sealed because they were ending anyway, and the seal is what is left of them. Generally cannot be redirected - what remains is shaped around one act - and waking one spends the last of somebody already finished.'
     },
@@ -214,7 +214,7 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     },
     {
         group: 'People',
-        term: 'Terminal',
+        term: 'Dead and lost',
         meaning:
             'Dead or lost. The line stops there, and the entry exists because what they did still shapes the faction.'
     }

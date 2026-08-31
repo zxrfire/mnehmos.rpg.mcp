@@ -190,7 +190,7 @@ export type SealGrade = 'crude' | 'sound' | 'masterwork';
  *
  *   protector     sealed while still whole, deliberately, as a reserve. Waking
  *                 one spends a weapon the sect chose to bank.
- *   end_of_life   sealed because they were ending anyway, and the seal is what
+ *   final_breath   sealed because they were ending anyway, and the seal is what
  *                 is left of them. Waking one spends the last of a person who
  *                 was already finished, usually to do a single specific thing
  *                 nobody else can.
@@ -201,7 +201,7 @@ export type SealGrade = 'crude' | 'sound' | 'masterwork';
  * sect that armed itself and a sect that could not bear to let go, and rivals
  * read those two very differently.
  */
-export type SealReason = 'protector' | 'end_of_life';
+export type SealReason = 'protector' | 'final_breath';
 
 export interface DormantAncestor {
     name: string;
@@ -2216,7 +2216,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             dormantYears: 900,
             realmOrdinal: 40,
             sealGrade: 'masterwork',
-            sealReason: 'end_of_life',
+            sealReason: 'final_breath',
             wakeCondition:
                 'The lightning curriculum is taken out of the Court by force, or the floating stone is brought down. Both have been attempted; neither got far enough to find out.',
             wakeCost:
@@ -2278,7 +2278,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             dormantYears: 1_200,
             realmOrdinal: 37,
             sealGrade: 'sound',
-            sealReason: 'end_of_life',
+            sealReason: 'final_breath',
             wakeCondition:
                 'The caldera itself is breached, or a Flame Sovereign dies without a named successor. The sect has come within one death of the second condition twice.',
             wakeCost:
@@ -2321,7 +2321,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             dormantYears: 2_000,
             realmOrdinal: 42,
             sealGrade: 'masterwork',
-            sealReason: 'end_of_life',
+            sealReason: 'final_breath',
             wakeCondition: 'The library is entered by force. Not theft, not trespass - force.',
             wakeCost:
                 'She wakes cold and unhurried, and the Court\'s own hall does not survive it. The Court has written down that this is acceptable.',
@@ -2517,7 +2517,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             dormantYears: 3_100,
             realmOrdinal: 44,
             sealGrade: 'masterwork',
-            sealReason: 'end_of_life',
+            sealReason: 'final_breath',
             wakeCondition:
                 'The fire is found to have gone out, or to be going out. Nothing else, and the Wardens have never described what either would look like to somebody who was not one of them.',
             wakeCost:
