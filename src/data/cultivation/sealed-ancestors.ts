@@ -316,7 +316,7 @@ export const THE_LINEAGE_CLAIM = {
     whereItAlreadyBites: [
         'sect-thousand-treasure-pavilion: two bodies claiming one ancestor, at most one correctly, neither able to settle it and the Ledger refusing to certify either. If that ancestor were ever woken, the dispute ends in an afternoon, which is why the quiet claimant is quiet.',
         'sect-clear-river-alliance: a name written down later because the ceremony needed one. The Alliance would not survive its own ancestor being asked, and has no way of finding that out.',
-        'sect-frostmirror-sect: a claim that is probably fine, resting on records that are good rather than perfect - and the Court has never once written down that this is one of the things it is risking when it opens the ice.'
+        'sect-frostmirror-court: a claim that is probably fine, resting on records that are good rather than perfect - and the Court has never once written down that this is one of the things it is risking when it opens the ice.'
     ]
 } as const;
 
@@ -450,7 +450,7 @@ export const HELD_INSTRUMENTS: readonly HeldInstrument[] = [
     {
         id: 'sealed-the-mirror',
         name: 'The Mirror',
-        holderFactionId: 'sect-frostmirror-sect',
+        holderFactionId: 'sect-frostmirror-court',
         whoTheyWere: 'The first Sovereign, who dug the ice curriculum out of the glacier, taught it to nine people, and then lay down in the hall she had cleared.',
         dormantYears: 2_000,
         restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
@@ -625,7 +625,7 @@ export const SEALED_ANCESTOR_PATTERN = {
         whatItCost:
             'The sealed ancestor, the mountain, and forty years later the Hall itself. Having spent the only thing that made anybody careful around it, it was an ordinary sect with two veins and a reputation for having no reserve left - and a third party that had watched the whole thing absorbed it inside two generations, without a fight, mostly by hiring its people.',
         theLessonEverybodyTook:
-            'Not that it fails, because it did not fail: it worked completely. The lesson every current holder reasons from is that it works and then you are food. That is why the Anchorhold publishes rather than uses, why the Frostmirror Sect will only spend the Mirror on something that leaves it the wealthiest institution in the world afterwards, and why the Nine Abyss Flame Sect is saving the Kindler for a creditor rather than for a rival.'
+            'Not that it fails, because it did not fail: it worked completely. The lesson every current holder reasons from is that it works and then you are food. That is why the Anchorhold publishes rather than uses, why the Frostmirror Court will only spend the Mirror on something that leaves it the wealthiest institution in the world afterwards, and why the Nine Abyss Flame Sect is saving the Kindler for a creditor rather than for a rival.'
     },
     theyArePeople:
         'Read this whole section in the light of `AGE_IS_NOT_MENACE`. The vocabulary above - instrument, asset, deterrent, spend - is the holders speaking and not the narrator. What it describes is somebody asleep under a building who was young once, built the place, would still like it to do well, and would be surprised to hear herself priced. Three things can happen when one wakes, only one of them is what anybody planned, and the other two are better. See `WHAT_SHE_DOES_WITH_THE_TIME`.',

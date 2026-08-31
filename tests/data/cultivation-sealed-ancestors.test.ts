@@ -214,7 +214,7 @@ describe('the worked contingency', () => {
             expect(target, `${c.id} aimed at unknown faction`).toBeDefined();
         }
         const mirror = getContingency('contingency-cold-hall-for-a-vault')!;
-        expect(contingenciesHeldBy('sect-frostmirror-sect')).toContain(mirror);
+        expect(contingenciesHeldBy('sect-frostmirror-court')).toContain(mirror);
         expect(contingenciesAgainst('apex-deep-survey')).toContain(mirror);
         // The holder does not name the target in its own records.
         expect(mirror.namesTheTarget).toBe(false);

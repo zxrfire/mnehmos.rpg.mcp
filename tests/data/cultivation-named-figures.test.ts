@@ -105,7 +105,7 @@ describe('attestation', () => {
         expect(ATTESTATION_IS_USABILITY.theQuietOne).toMatch(/indistinguishable from `secure`/);
         const mirror = getNamedFigure('figure-lian-suwen')!;
         expect(mirror.attestation).toBe('ceremonial');
-        expect(mirror.factionId).toBe('sect-frostmirror-sect');
+        expect(mirror.factionId).toBe('sect-frostmirror-court');
         expect(mirror.attestationNote).toMatch(/four centuries after the sealing/i);
     });
 });

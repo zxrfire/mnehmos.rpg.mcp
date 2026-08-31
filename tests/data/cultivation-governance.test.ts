@@ -379,8 +379,11 @@ describe('guest elders', () => {
     });
 
     it('lists subsidiaries in both directions', () => {
+        // Smaller than it was: the Frostmirror and the Storm Tyrant were promoted
+        // to courts beside it and took a tenant each with them, which is the
+        // Survey reorganising rather than the Sill failing.
         const sillHolders = getSubsidiariesOf('court-third-sill');
-        expect(sillHolders.length).toBeGreaterThanOrEqual(8);
+        expect(sillHolders.length).toBeGreaterThanOrEqual(5);
         for (const p of sillHolders) expect(p.governance).toBe('federated');
         expect(getSubsidiariesOf('sect-weir-office').map(p => p.factionId))
             .toContain('sect-gleaners-company');
