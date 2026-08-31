@@ -363,7 +363,16 @@ describe('the wiring', () => {
             expect(done.worked).toBe(true);
             const after = new CultivatorRepository(db).getById(created.cultivator.id)!;
             if (!done.span.died) {
-                expect(after.spiritStones).toBe(before.spiritStones + done.spiritStonesEarned);
+                // A year of work is a year of eating, and the food comes out of
+                // the wage. The purse moves by the gross earnings less the board
+                // - not by the take-home, which is already net of the advance.
+                expect(after.spiritStones).toBe(
+                    before.spiritStones - done.boardCostStones + done.grossSpiritStones
+                );
+                expect(done.boardCostStones).toBeGreaterThan(0);
+                // And the span genuinely ran. It used to stop at one full belly,
+                // which is why a year of work paid a seventh of a year's wage.
+                expect(done.daysWorked).toBeGreaterThan(100);
                 // The trade the action exists to make real.
                 expect(done.span.rate.focus).toBe('idle');
             }

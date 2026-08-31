@@ -35,7 +35,12 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
-import { rankName, lifespanForOrdinal, progressRequiredForOrdinal } from '../engine/cultivation/realms.js';
+import {
+    MAX_ORDINAL,
+    rankName,
+    lifespanForOrdinal,
+    progressRequiredForOrdinal
+} from '../engine/cultivation/realms.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { ACTION_NAMES, MAX_CULTIVATION_DAYS } from './actions.js';
@@ -297,7 +302,8 @@ yield). Lantern Hall (righteous archivists; they record what the crossings take,
 the people no longer remembered by anyone who knew them). The Severed (cut their own bonds,
 memories and names in advance, on their own terms, and climb fastest). The Hollow Court (reached
 the ceiling and refused to go through; nothing left to take, so nothing left to threaten). The
-Kiln Wardens (guard the deep vein at the world's root; do not explain themselves).
+Kiln Court (guard the deep vein at the world's root; do not explain themselves - the province
+has called them the Kiln Wardens for nine hundred years and they have never corrected it).
 
 NAMES: sects take Hall / Pavilion / Court / Consortium / Sect. Techniques are verb-noun
 compounds, often numbered - Nine Severing Threads, Lid-Watching Stance, Borrowed Breath. Pills
@@ -339,8 +345,12 @@ invent an omen to fill the space.`;
 
 const ACTION_GLOSSARY = `interact         anything done to or with a PERSON or a FACTION. "target" names them; "intent"
                  says what was being attempted - negotiate, trade, deceive, interrogate,
-                 threaten, bribe, recruit, petition, apologise, talk, or any other short label
+                 threaten, bribe, recruit, apologise, talk, or any other short label
                  that fits. Use this rather than asking for a verb that is not on this list.
+                 NOT for a request made OF an institution - see petition, posture, seal and
+                 offer below. This action walks the player over and describes the party, and
+                 answering "I file a Requisition" or "I offer an alliance" with that is worse
+                 than answering nothing, because it looks like an answer.
 investigate      examine a place, a person, a record, an inscription, an object; search a ruin.
                  "target" names what is being examined.
 move             go somewhere. "target" is the destination; "intent" is how - travel, flee,
@@ -353,15 +363,82 @@ train_technique  practise a specific art the cultivator already knows. "target" 
 refine           work the cauldron. "target" names the formula or the pill wanted.
 gather           forage for herbs and materials. "target" may name what is wanted.
 eat              buy and eat a meal.
+treat            get a wound seen to. Untreated meridian injuries never heal on their own,
+                 they raise the odds of the next one, and this is the only route out of
+                 that. Choose it whenever the player says they are hurt and wants it dealt
+                 with, whether or not they name a physician. Costs stones and a month.
+buy              buy one line off the mortal price board by name. "target" is the thing:
+                 a pill, a physician's visit, a course of care, a ferry crossing. Use this
+                 rather than "interact" for anything with a price on it - a purchase is
+                 not an approach to a person.
+sell             put something on the counter. "target" names one thing in the pouch; omit
+                 it (or say "everything") to price the whole pouch at once. This is the
+                 ONLY way a gathered herb becomes spirit stones, so it is the right answer
+                 whenever the player wants money and is carrying something. A buyer pays
+                 less than list, and how much less depends on the ladder. Passes no time.
 work             take an occupation for a span, for wages. "days" (default 90); "target" may
                  name the kind of work. This is how somebody with no stones eats, and it is
                  the right answer far more often than a model expects.
 market           what is for sale where they are standing, and at what price. Passes no time.
+inventory        what is in the pouch: pills, herbs, stones, accumulated pill toxicity.
+                 Passes no time.
+list_techniques  the arts this cultivator could actually be taught, filtered by realm,
+                 spirit root, dao standing and what has surfaced in this life at all.
+                 Passes no time. Use it for "what can I learn".
+learn_technique  take up an art for the first time. "target" names it. NOT the same as
+                 train_technique, which practises one already held. An art that fights the
+                 spirit root is learnable and can tear meridians on the spot, so choose
+                 this only when the player plainly asked to learn something.
 assess           what would happen if they tried something: the odds, not the attempt.
                  "target" names the place or the opponent.
+site             an inheritance ground: a trial somebody built to be inherited from, or a
+                 grave that was arranged for nobody. "target" names it; "intent" is one of
+                 approach (get to it, or ask what there is), outside (read it from the
+                 threshold without going in), enter (go in - this SPENDS DAYS and can kill),
+                 take (carry out what is behind the door). Choose "outside" when the player
+                 is looking rather than going, and "enter" only when they plainly said so.
 wait             let a day go by doing nothing in particular.
 look             observe the surroundings. Passes no time.
 status           report the cultivator's own condition. Passes no time.
+recall           what this cultivator is carrying in their own head. "target" names a person,
+                 a faction or a subject they may have heard of; omit it for everything they
+                 hold. "intent" is "dao" for what they have comprehended, "knowledge"
+                 otherwise. Passes no time, and it CANNOT teach them anything - it reads
+                 their own records and never the world, so a name they have not been told
+                 comes back as nothing. Use it for "what do I know of X".
+petition         ask an INSTITUTION for something: a grant, an object off its standing stock,
+                 recognition of a line. "target" names the body; "topic" is what is being
+                 asked for, in the player's own words, and is carried verbatim onto the form.
+                 "intent" is "stock" for an application against something a body is holding
+                 and cannot reorder (a Requisition, a schedule amendment, a request for one
+                 of its pills), "descent" for a claim of an ancestral line, "grant" for
+                 everything else that goes upward. Nearly always refused, and the refusal is
+                 the answer - it comes back in the instrument's own terms. Passes no time.
+posture          what one HOUSE is to another. Only the head of a house can do three of
+                 these, and the refusal for everybody else names the rung it opens at.
+                 "target" names the other party; "intent" is "war", "alliance", "defect"
+                 (change who the house holds from), "tribute" (call in a payment), or
+                 "stance" to READ where the two already stand. Default to "stance" unless the
+                 player plainly declared something - the other four cannot be unsaid.
+seal             the sealed ancestor a house keeps under its mountain. "target" names the
+                 house, or omit it for the player's own. "intent" is "read" for the condition
+                 and the cost, "wake" to actually do it. Waking your own house's is the
+                 head's decision and changes the house permanently, once; waking somebody
+                 else's is not a decision at all, it is a theft. Default to "read".
+offer            the channel through the Lid, from whichever end the player is standing at.
+                 Below it: an offering sent up to an ancestor who crossed - "target" names
+                 the house, or omit it for the player's own, and "intent" is "channel" to
+                 read what the line is or "offering" to make one, which costs a decade of the
+                 house's principal and is the head's decision. Above it: "send", which puts
+                 an object or a word DOWN a line somebody below is holding, with "topic" as
+                 what is said with it. Which end they are at is decided by the engine, not by
+                 the label. Default to "channel".
+descend          a True Immortal going back down through the Lid, in person. "target" names
+                 where they are forcing it open. This is the most expensive action in the
+                 game: nine strikes of the heaviest tribulation there is, then ten to fifteen
+                 breaths on the ground, then the pressure puts them back. Choose it only when
+                 the player has plainly said they are going themselves - "send" is the other
+                 answer to the same intention and costs nothing.
 unclear          DO NOT CHOOSE THIS. It is the deterministic parser's fallback for a sentence
                  it could not read. If you are unsure, choose "look" or "investigate".`;
 
@@ -384,7 +461,9 @@ Schema:
   {"action": <one of: ${ACTION_NAMES.join(' | ')}>,
    "days":   <integer, only for cultivate | seclude>,
    "target": <short string naming a real person, faction, place, art, formula or herb>,
-   "intent": <short label, only for interact | move>,
+   "intent": <short label, only for interact | move | sect | look | site | recall |
+              petition | posture | seal | offer>,
+   "topic":  <short string, only for interact | sect | petition>,
    "reason": <one short sentence>}
 
 Actions:
@@ -567,10 +646,18 @@ export function composeStateSummary(input: StateSummaryInput): string {
 
     return [
         `Cultivator: ${cultivator.name}`,
-        `Rank: ${rankName(cultivator.realmOrdinal)} (ordinal ${cultivator.realmOrdinal} of 44)`,
+        // The ceiling is read off the ladder rather than written out. It was
+        // written out here as 44, and it had been 46 for some time.
+        `Rank: ${rankName(cultivator.realmOrdinal)} (ordinal ${cultivator.realmOrdinal} of ${MAX_ORDINAL})`,
         `Spirit root: ${root.name}`,
         `Attributes: Might ${cultivator.attributes.might}, Insight ${cultivator.attributes.insight}, Fortune ${cultivator.attributes.fortune}, Charm ${cultivator.attributes.charm}`,
-        `Progress: ${Math.round(cultivator.cultivationProgress)} / ${required} qi-units to the next rank`,
+        // Null above the Lid, where there is no next rank and no exchange rate
+        // to quote. This used to print "/ null qi-units" straight into the
+        // narrator's own state summary, which is the model being handed a
+        // database artifact and asked to describe it.
+        required === null
+            ? 'Progress: not denominated in qi at this rank, and there is no rung above to spend it on'
+            : `Progress: ${Math.round(cultivator.cultivationProgress)} / ${required} qi-units to the next rank`,
         `Age ${Math.floor(cultivator.age)} of a ${lifespan}-year ceiling; ${cultivator.yearsAtCurrentRealm.toFixed(1)} years at this realm`,
         `HP ${cultivator.hp}/${cultivator.maxHp}, satiety ${cultivator.satiety}/100, ${cultivator.spiritStones} spirit stones`,
         `Untreated meridian injuries: ${untreated}`,

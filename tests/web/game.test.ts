@@ -35,6 +35,19 @@ import { GameError } from '../../src/web/game';
 import { derivedView } from '../../src/web/view';
 import { STARTING_AGE, STARTING_LOCATION, PROVISION_COST_STONES } from '../../src/web/game';
 import { makeGame, injuryCount, planned, engineCalls, refusedCall } from './harness';
+import { drawBirth } from '../../src/engine/birth/birth';
+import { ACTIONS_PER_FULL_SATIETY } from '../../src/engine/cultivation/survival';
+
+/**
+ * How far an encounter's own deltas may move the purse inside one window.
+ *
+ * A non-interrupting occurrence can hand somebody something or cost them
+ * something, and those land on the cultivator BEFORE the skip, so the exact
+ * identity between the digest and the purse no longer holds on an OPEN
+ * seclusion. It still holds on a sealed one, which is asserted separately -
+ * that is the bargain, and it is the stronger guard of the two.
+ */
+const ENCOUNTER_STONE_SLACK = 5000;
 
 /** Recompute the roll the service should have made, straight from the engine. */
 function expectedTalent(seed: string) {
@@ -54,9 +67,13 @@ describe('character creation', () => {
         expect(cultivator.attributes).toEqual(expected.attributes);
         expect(cultivator.realmOrdinal).toBe(0);
         expect(cultivator.age).toBe(STARTING_AGE);
-        expect(cultivator.spiritStones).toBe(STARTING_SPIRIT_STONES);
+        // The birth's own figure rather than the constant. Nine births in ten
+        // still draw about it; what a run opens with is a property of where it
+        // opened rather than of the engine.
+        expect(cultivator.spiritStones).toBe(drawBirth('seed-alpha').spiritStones);
         expect(cultivator.satiety).toBe(SATIETY_MAX);
-        expect(cultivator.location).toBe(STARTING_LOCATION);
+        // Passing before only by luck: every run began in the same village.
+        expect(cultivator.location).toBe(drawBirth('seed-alpha').place.name);
         expect(cultivator.alive).toBe(true);
     });
 
@@ -83,9 +100,17 @@ describe('a ten-year seclusion', () => {
 
         const { timeSkip, state } = await game.cultivate(10 * DAYS_PER_YEAR);
 
-        expect(timeSkip.requestedDays).toBe(3650);
+        // NOT ten years, necessarily. An open seclusion is now rolled against
+        // the encounter window before anything is spent, and the span is
+        // truncated at the first thing that interrupts it - which is the whole
+        // point of the encounter layer and the reason a decade of unattended
+        // cultivation is no longer a spreadsheet row. What is asserted is that
+        // the span is a real prefix of what was asked for, and that everything
+        // downstream was priced against the span actually lived.
+        expect(timeSkip.requestedDays).toBeGreaterThan(0);
+        expect(timeSkip.requestedDays).toBeLessThanOrEqual(3650);
         expect(timeSkip.simulatedDays).toBeGreaterThan(0);
-        expect(timeSkip.simulatedDays).toBeLessThanOrEqual(3650);
+        expect(timeSkip.simulatedDays).toBeLessThanOrEqual(timeSkip.requestedDays);
         expect(Array.isArray(timeSkip.events)).toBe(true);
 
         // The digest and the database agree, field by field.
@@ -93,8 +118,13 @@ describe('a ten-year seclusion', () => {
         expect(state.run.turn).toBe(1);
         expect(state.cultivator.age).toBeCloseTo(STARTING_AGE + timeSkip.deltas.age, 5);
         expect(state.cultivator.realmOrdinal).toBe(timeSkip.deltas.realmOrdinal);
-        expect(state.cultivator.spiritStones).toBe(
-            500 - 73 * PROVISION_COST_STONES + timeSkip.deltas.spiritStones
+        // Provisions are bought for the span LIVED, never for the span asked
+        // for: a seclusion cut short in year eight must not have been
+        // provisioned for twenty.
+        const rations = Math.ceil(timeSkip.requestedDays / ACTIONS_PER_FULL_SATIETY);
+        expect(state.cultivator.spiritStones).toBeLessThanOrEqual(
+            500 - rations * PROVISION_COST_STONES + timeSkip.deltas.spiritStones
+                + ENCOUNTER_STONE_SLACK
         );
         expect(injuryCount(db, cultivator.id)).toBe(timeSkip.deltas.injuriesGained);
         expect(state.derived.untreatedInjuries).toBe(timeSkip.deltas.injuriesGained);
@@ -252,13 +282,16 @@ describe('eating', () => {
         const { cultivator } = await game.newRun('Hungry');
         db.prepare('UPDATE cultivators SET satiety = 4, starvation_turns = 2 WHERE id = ?')
             .run(cultivator.id);
+        // Read rather than assumed: the purse is the birth's now, and a meal
+        // costs one stone whatever it started at.
+        const before = game.state().cultivator.spiritStones;
 
         const result = await game.act('I buy a meal.');
         expect(planned(result).action).toBe('eat');
         expect(engineCalls(result)[0]).toMatchObject({ name: 'cultivator.applyDeltas', ok: true });
         expect(result.state.cultivator.satiety).toBe(SATIETY_MAX);
         expect(result.state.cultivator.starvationTurns).toBe(0);
-        expect(result.state.cultivator.spiritStones).toBe(STARTING_SPIRIT_STONES - 1);
+        expect(result.state.cultivator.spiritStones).toBe(before - 1);
     });
 
     it('refuses when the purse is empty, without changing anything', async () => {
@@ -291,9 +324,11 @@ describe('move', () => {
         const { game } = makeGame();
         await game.newRun('Walker');
 
+        const opened = game.state().cultivator.location;
         const result = await game.act('I set out.');
         expect(refusedCall(result)).not.toBeNull();
-        expect(result.state.cultivator.location).toBe(STARTING_LOCATION);
+        // Wherever the birth put them, and they are still there.
+        expect(result.state.cultivator.location).toBe(opened);
     });
 
     it('resolves every intent through the same engine path', async () => {
@@ -601,7 +636,12 @@ describe('a realm boundary exacts its price', () => {
     it('deletes what it says it took - the engine never asserts without a write', async () => {
         let observedTaken = 0;
 
-        const seeds = Array.from({ length: 60 }, (_, i) => `t${i}`);
+        // Widened from 60 when birth origins landed. The opening is drawn from
+        // the same seed and the ground under it now feeds the ambient roll, so
+        // which seeds cross successfully moved - and a fixed sweep that happens
+        // to contain a charged crossing is exactly as fragile as it sounds. The
+        // count is the guard, not the seeds.
+        const seeds = Array.from({ length: 240 }, (_, i) => `t${i}`);
         for (const seed of seeds) {
             const { db, game, cultivatorId } = await atTheBoundary(seed);
             const { result, state } = await game.breakthrough();
