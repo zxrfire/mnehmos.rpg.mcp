@@ -8,6 +8,14 @@ function clearKeys() {
     delete process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_REFERER;
     delete process.env.OPENROUTER_TITLE;
+    // Anthropic/Ollama can also be present in a developer's ambient environment;
+    // clear them so "which providers initialized" assertions stay deterministic.
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_MODEL;
+    delete process.env.OLLAMA_BASE_URL;
+    delete process.env.OLLAMA_MODEL;
+    delete process.env.RUNTIME_PROVIDER;
+    delete process.env.RPG_RUNTIME_PROVIDER;
 }
 
 describe('ProviderFactory', () => {
@@ -87,6 +95,48 @@ describe('ProviderFactory', () => {
         const got = factory.get('openai');
         const result = await got.call({ model: 'x', messages: [] });
         expect(result.text).toBe('fixture');
+    });
+
+    it('initializes anthropic from env var', () => {
+        process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+        const factory = new ProviderFactory();
+        const names = factory.initialize();
+        expect(names).toContain('anthropic');
+        expect(factory.get('anthropic').name).toBe('anthropic');
+    });
+
+    it('initializes ollama without any API key when configured', () => {
+        process.env.OLLAMA_BASE_URL = 'http://localhost:11434';
+        const factory = new ProviderFactory();
+        const names = factory.initialize();
+        expect(names).toContain('ollama');
+        expect(factory.get('ollama').name).toBe('ollama');
+    });
+
+    it('initializes ollama when it is the selected runtime provider', () => {
+        process.env.RUNTIME_PROVIDER = 'ollama';
+        const factory = new ProviderFactory();
+        expect(factory.initialize()).toContain('ollama');
+    });
+
+    it('does not initialize ollama when nothing configures it', () => {
+        const factory = new ProviderFactory();
+        expect(factory.initialize()).not.toContain('ollama');
+        expect(factory.tryGet('ollama')).toBeNull();
+    });
+
+    it('honors an explicit ollamaEnabled=false even when env configures it', () => {
+        process.env.OLLAMA_BASE_URL = 'http://localhost:11434';
+        const factory = new ProviderFactory({ ollamaEnabled: false });
+        expect(factory.initialize()).not.toContain('ollama');
+    });
+
+    it('names the correct env var for each missing provider', () => {
+        const factory = new ProviderFactory();
+        factory.initialize();
+
+        expect(() => factory.get('anthropic')).toThrow(/ANTHROPIC_API_KEY/);
+        expect(() => factory.get('ollama')).toThrow(/OLLAMA_BASE_URL/);
     });
 
     it('passes OPENROUTER_REFERER and OPENROUTER_TITLE through env', () => {

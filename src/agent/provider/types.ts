@@ -1,9 +1,18 @@
 /**
  * LLM provider interface for the agent runtime.
  *
- * Implementations: OpenAI Chat Completions, OpenRouter (same shape, different base URL).
+ * Implementations:
+ *   - Anthropic Messages API  (Claude — primary/default runtime agent)
+ *   - Ollama /api/chat        (local/self-hosted alternative, no API key, no cost)
+ *   - OpenAI Chat Completions
+ *   - OpenRouter              (OpenAI wire format, different base URL)
+ *
  * Plain-text responses only — no structured-output / JSON schema enforcement.
+ * Every provider-specific request/response quirk lives behind this interface;
+ * nothing outside src/agent/provider/ may branch on which provider is in use.
  */
+
+import type { ProviderName } from './config.js';
 
 export type ChatRole = 'system' | 'user' | 'assistant';
 
@@ -61,18 +70,27 @@ export class ProviderError extends Error {
 }
 
 export interface LLMProvider {
-    readonly name: 'openai' | 'openrouter';
+    /** Canonical provider name — the union is owned by ./config.ts. */
+    readonly name: ProviderName;
     call(opts: ProviderCallOpts): Promise<ProviderCallResult>;
 }
 
 /**
  * Classify a fetch / HTTP failure into a ProviderError kind.
- * Shared by both OpenAI and OpenRouter implementations.
+ * Shared by every provider implementation.
  */
 export function classifyFetchError(err: unknown): ProviderError {
     if (err instanceof ProviderError) return err;
     if (err instanceof Error) {
-        const msg = err.message.toLowerCase();
+        // undici surfaces connection failures as a bare `TypeError: fetch failed`
+        // and hides the real reason (ECONNREFUSED, ENOTFOUND, ...) on `cause`.
+        // Without folding the cause in, a local server that simply isn't running
+        // would be classified 'unknown' instead of 'network'.
+        const cause = (err as { cause?: unknown }).cause;
+        const causeMsg = cause instanceof Error
+            ? `${cause.message} ${(cause as { code?: string }).code ?? ''}`
+            : typeof cause === 'string' ? cause : '';
+        const msg = `${err.message} ${causeMsg}`.toLowerCase();
         if (err.name === 'AbortError' || msg.includes('aborted') || msg.includes('timeout')) {
             return new ProviderError(err.message, 'timeout');
         }

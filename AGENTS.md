@@ -1,8 +1,8 @@
 # AGENTS.md — Working Agreement for Coding Agents
 
-Canonical guide for any AI coding agent (Claude Code, Codex, Cursor, Aider, …)
-working in this repository. `CLAUDE.md` defers to this file; keep them in sync by
-editing **this** one.
+The single guide for any AI coding agent (Claude Code, Codex, Cursor, Aider, …)
+working in this repository. `CLAUDE.md` is a symlink to this file — there is no
+Claude-specific guidance, by design. Edit this file.
 
 For *why* this project exists and what it is, read [`context.md`](context.md) first.
 
@@ -156,6 +156,30 @@ refactor(scope): description
 5. Repeat
 
 Commit local work freely after a passing test — don't ask permission for local commits.
+
+---
+
+## Running the game
+
+```bash
+docker compose up
+```
+
+Brings up the web GUI (http://localhost:8787) and the MCP endpoint together, sharing one
+SQLite volume. No API key is needed to play with a local model:
+
+```bash
+docker compose --profile local-llm up
+```
+
+Set `ANTHROPIC_API_KEY` and `RUNTIME_PROVIDER=claude` to have Claude narrate instead.
+
+## If you are the narrator
+
+When an agent is acting as the runtime narrator rather than editing code, the same rule
+binds it: interpret intent, call tools, write prose — and narrate only what a tool
+actually returned, including when the engine's answer is bad news. Never describe an
+outcome you did not get back from the engine.
 
 ---
 
