@@ -175,6 +175,235 @@ they are excluded from the death ledger and from any balance statistics.
 
 ---
 
+# DESIGN CHARTER
+
+The world bible below says what the world *is*. This section says what the simulation
+must be *capable of*, and it outranks any individual feature.
+
+## The goal, stated precisely
+
+The wrong question is "how do we make the player feel like the hero of a cultivation
+epic." The right question is:
+
+> **What systems must exist for lives like that to emerge on their own?**
+
+We are not scripting arcs. We are building a simulation whose ordinary operation produces
+them. Success looks like the engine generating, without anyone authoring it: an
+untalented person who becomes terrifying through persistence; a prodigy who dies at
+twenty-three; a genius who is crippled and has to find another path; a weak cultivator
+who wins by preparation and poison; someone who spends forty years on a single goal;
+someone who outlives everyone they loved; a grudge that survives three generations; a
+sect that rises and falls while the player is in seclusion.
+
+No single outcome may be guaranteed. Including the good ones.
+
+## Priority order
+
+When two design goals conflict, resolve in this order:
+
+1. **Internal simulation consistency**
+2. **Persistent consequences**
+3. **NPC autonomy**
+4. **Cultivation-world logic**
+5. **Scarcity and meaningful progression**
+6. **Character relationships**
+7. **Narrative quality**
+8. **Spectacle**
+
+Never sacrifice consistency to produce a dramatic scene. A dramatic scene the simulation
+did not actually earn is worth less than nothing, because it teaches the player that
+none of it is real.
+
+## The hardest rule: the world does not protect the player
+
+**Never secretly adjust probabilities in the player's favour.** No rubber-banding, no
+hidden floor under a losing fight, no quiet re-roll of a fatal result, no scaling an
+encounter down because the run is going badly. The player may die, fail, miss the
+opportunity, lose the fight, be betrayed, lose their cultivation, and choose badly.
+
+The counterpart matters as much: **do not manufacture drama either.** Betrayal happens
+when an NPC's incentives make it rational, not because the story is due for a twist.
+Opportunities are not sprinkled in to maintain excitement. Long mundane stretches are
+correct and necessary - years of cultivating, earning, travelling, recovering, studying,
+dealing with ordinary people. That contrast is the only thing that makes an extraordinary
+event feel extraordinary.
+
+## Realm is social reality, not a stat
+
+A cultivator's realm decides social status, political influence, resource access, who
+will speak to them, who fears them, who wants to recruit them, who wants them dead, which
+territories they can safely enter, and which opportunities exist at all. A Core Formation
+cultivator lives in a materially different world from a mortal - not a better-equipped
+version of the same one.
+
+But strength must not eliminate politics. A weaker character survives through alliances,
+deception, preparation, reputation, sect backing, formations, treasures, poison, escape
+techniques, information, and by exploiting conflicts between stronger cultivators.
+
+Upsets must be **possible and exceptional**. A weaker cultivator can win through superior
+technique, an artifact, preparation, terrain, ambush, poison, a formation, numbers, or by
+exploiting an existing injury. Routinely - no. Never - also no.
+
+## Trajectories are non-linear
+
+Progression must not read as `XP -> XP -> next realm`. The shape to support is:
+
+```text
+slow cultivation -> setback -> opportunity -> rapid development
+    -> bottleneck -> catastrophe -> adaptation -> new path
+```
+
+Consequences the engine must actually model:
+
+- **Talent is not destiny.** Ordinary aptitude plus persistence, opportunity,
+  comprehension, unusual techniques, resources and extreme circumstance must be a viable
+  road to the top. The muddled-root run has to be *winnable*, not merely survivable.
+- **Foundation has quality and history**, not just a rank. It can be stable, unstable,
+  damaged, exceptional, incomplete, transformed, sacrificed, or rebuilt. Two cultivators
+  at the same ordinal may have very different futures, and the engine must be able to say
+  why.
+- **Experience is a form of power.** Surviving hardship should produce mechanical
+  consequences: judgement, combat experience, caution, ruthlessness, knowledge, enemies,
+  reputation, changed relationships.
+- **Loss branches rather than subtracts.** Cultivation destroyed should open a search for
+  another path - a new mentor, a new technique, a new faction, new enemies - not simply
+  reduce a number.
+- **Power creates problems.** Gaining it must generate attention, enemies, political
+  obligations, resource requirements, faction interest, jealousy and reputation. Power is
+  never purely beneficial.
+
+## NPCs are protagonists of their own lives
+
+This is among the most important requirements and the easiest to fake badly.
+
+NPCs do not exist to serve the player. They have independent trajectories: they find
+opportunities, become prodigies, join sects, betray people, marry, raise children, fail
+breakthroughs, become elders, found clans, die, and leave descendants. **The player will
+never witness most of it, and that is correct.** The world must be larger than the
+player's story, and must keep running while the player is in seclusion for thirty years.
+
+Exceptional NPCs emerge from the same inputs the player has - talent, comprehension,
+physique, luck, choices, resources, relationships, opportunities, environment, faction,
+experience, random events - never from a "this one is important" flag.
+
+Prodigies must not all succeed. Some die young, some turn arrogant, some are used by their
+sect, some meet someone stronger, some waste it, some vanish into a secret realm. Talent
+creates potential, not destiny.
+
+Personality must be real and varied - cowardly, ambitious, greedy, arrogant, kind,
+paranoid, eccentric, lazy, obsessive, loyal, pragmatic - and must drive decisions. Not
+every cultivator is a cold mysterious genius.
+
+## Memory: grudges, gratitude, and reputation
+
+- **Grudges persist for decades.** Humiliation, betrayal, robbery, injury, a killed loved
+  one - these stay in an NPC's motivation. An NPC must be able to conclude "I cannot
+  defeat him now; I will remember this," and act on it forty years later. Grudges outlive
+  their owners and are inherited.
+- **Gratitude persists too.** Someone the player saved may repay it, offer information,
+  give shelter, sponsor a sect introduction, or protect the player's descendants.
+- **Betrayal is rational.** It arises from incentives - an NPC learns what the player
+  carries; an elder decides the player's talent threatens their faction; an ally leaves
+  because the enemy is overwhelming; a clan sacrifices one member to survive. Betrayal
+  must make sense in retrospect. Never generate it for drama.
+
+**Information is imperfect, and that is a modelled fact rather than a limitation.** The
+engine must distinguish:
+
+```text
+what actually happened
+    -> what a witness saw
+        -> what someone was told
+            -> what people believe
+```
+
+Rumours may be true, partly true, false, or deliberately fabricated. Reputation spreads
+and distorts as it goes. The player may be wrong. NPCs may be wrong. Ancient history may
+be misremembered, and legends may hold fragments of truth.
+
+**Information is therefore a resource** - bought, sold, stolen, hidden, misunderstood and
+weaponised. Knowing where a treasure lies, when a secret realm opens, an enemy's weakness,
+or which technique counters another is a real advantage.
+
+Progression can come from **knowledge**, not only from stats: discovering that what you
+believed about cultivation was incomplete can unlock techniques, paths, regions, factions,
+and explanations for things that already happened to you.
+
+## Sects are institutions
+
+A sect is not a quest hub. It has hierarchy, elders, disciples, resources, territory,
+rules, internal factions, treasures, techniques, enemies, allies, political interests,
+secrets, and succession problems.
+
+Members' interests conflict. One elder protects the sect; another builds their faction; a
+disciple wants to become an elder; another wants revenge on a rival. The sect behaves like
+a political organisation, because it is one.
+
+Resources are scarce - spirit stones, pills, herbs, cultivation grounds, caves,
+inheritances, techniques, artifacts, rare beasts, secret realms - and scarcity is what
+generates conflict. Two sects want the same vein. Two disciples want one inheritance. An
+elder quietly favours their own. A talented disciple becomes politically dangerous because
+several factions want to own them.
+
+Cultivation should also be **embedded in society**, not confined to mountaintop hermits:
+alchemists, formation masters, merchants, craftsmen, teachers, officials, military
+cultivators, researchers, administrators, healers, explorers. That is what makes an
+economy exist.
+
+## Morality is contextual
+
+No good/evil axis, and no alignment-by-faction. Cultivators hold competing values - family,
+sect loyalty, survival, honour, ambition, revenge, wealth, enlightenment, immortality,
+compassion, curiosity - and act on whichever is load-bearing at the time. An NPC can be
+tender with their family and monstrous to outsiders. A sect can shelter its disciples and
+bleed the mortals below it. The player may do indefensible things because the alternative
+was dying.
+
+The strong genuinely do prey on the weak here: extortion, tribute, theft, forced
+recruitment, eliminating threats. But some powerful cultivators are honourable, some cruel,
+some pragmatic, some protective, and some are generous in a way that is going somewhere.
+
+## Time is a mechanic, not a calendar
+
+Characters age. Sects change. Generations replace each other. Enemies die and their grudges
+are inherited. Cities grow, factions collapse, techniques are lost, treasures are
+rediscovered.
+
+A ten-year retreat must genuinely change the world. The player must be able to vanish for
+decades and return to a substantially different one.
+
+Long life is bittersweet: outliving friends, watching generations die, losing touch with
+where you came from, growing detached, accumulating enemies, becoming isolated.
+
+## Tone
+
+Serious, mysterious, occasionally funny, emotionally consequential, dangerous,
+slow-burning, expansive.
+
+Humour is required, not optional - eccentric cultivators, arrogant disciples, absurd sect
+rules, rivalries, misunderstandings, merchants, drinking, gambling, petty arguments,
+embarrassing failures. It should arise from character, and must never undercut a real
+consequence.
+
+Avoid constant melodrama. Avoid telling the player they are special. Avoid guaranteeing
+that every action produces an event. The world is sometimes mundane, and that is what buys
+the extraordinary its weight.
+
+## The core emotional principle
+
+The simulation should repeatedly produce, without anyone authoring it:
+
+> *"I could have done something differently."*
+
+and sometimes:
+
+> *"There was nothing I could do."*
+
+Ambition, wonder, fear, attachment, betrayal, regret, loss, revenge, discovery, triumph -
+all of it emerging from persistent consequences rather than from scripted plot.
+
+---
+
 # THE WORLD
 
 Everything below is the setting bible. It is canon for the narrator, and it is the
