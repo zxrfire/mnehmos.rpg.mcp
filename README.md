@@ -20,19 +20,20 @@ breakthrough failed, the story you get is about a breakthrough that failed.
 ## Run it
 
 ```bash
-docker compose up
+npm run play
 ```
 
-Then open **http://localhost:8787**. That's the whole setup - the GUI, the game engine,
-the database, and the MCP endpoint all come up together.
+That installs on first run, compiles only if something changed, starts the game and opens
+your browser at **http://localhost:8787**. No Docker, no services, no API key.
 
-No API key is required. Out of the box the engine narrates deterministically. To get
-LLM prose, pick a narrator:
+Out of the box the engine narrates itself and the game is fully playable. To get LLM
+prose instead, pick a narrator:
 
-**Local model, nothing leaves your machine:**
+**A local model, nothing leaving your machine** - start Ollama, then:
 
 ```bash
-docker compose --profile local-llm up
+echo "RUNTIME_PROVIDER=ollama" >> .env
+npm run play
 ```
 
 **Claude:**
@@ -40,11 +41,17 @@ docker compose --profile local-llm up
 ```bash
 echo "RUNTIME_PROVIDER=claude" >> .env
 echo "ANTHROPIC_API_KEY=sk-ant-..." >> .env
-docker compose up
+npm run play
 ```
 
 Copy `.env.example` to `.env` to see every option. There are no paid tiers, no turn
-limits, and no metering - it's your machine.
+limits, and no metering - it is your machine.
+
+### Or with Docker
+
+If you would rather containerise it, `docker compose up` brings up the same GUI plus an
+MCP endpoint on 8788 sharing one database, and `docker compose --profile local-llm up`
+adds a bundled Ollama.
 
 ---
 
