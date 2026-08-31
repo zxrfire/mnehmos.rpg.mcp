@@ -60,6 +60,7 @@ import {
     type AmbientQi
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
+import { MEMBERS } from '../../data/cultivation/members.js';
 import {
     BREAKTHROUGH_PILL_STONES,
     STONES_PER_YEAR_OF_SECLUSION,
@@ -139,6 +140,59 @@ const AFFILIATION_RATE = 0.45;
 /** Youngest and oldest a seeded adult may be. */
 const MIN_AGE = 16;
 const MAX_AGE = 120;
+
+/**
+ * Ceiling on a named figure's age. They are people the world knows, not
+ * ancients under a mountain - the sealed ones are a separate catalog.
+ */
+const MAX_NAMED_AGE = 700;
+/** Rough years a rank costs, for giving a named figure a plausible age. */
+const NAMED_YEARS_PER_ORDINAL = 9;
+
+/**
+ * Lowest declared power at which a faction gets an instance it did not derive.
+ *
+ * Below this the ordinary population reaches the claim on its own, and seeding
+ * one would put a figure in the world the arithmetic already produced.
+ */
+const APEX_SEED_FLOOR = 17;
+
+/**
+ * What a year of work is worth to somebody at this rank.
+ *
+ * Rank is earning power in this world: a Foundation Establishment cultivator
+ * can take contracts a mortal cannot survive and refuse ones a mortal cannot
+ * refuse. Scaled off the seclusion cost so the two terms stay in proportion
+ * when either is retuned, and capped so an apex figure is wealthy rather than
+ * absurd - a Grand Ascension cultivator's holdings are not what makes them
+ * dangerous, and the economy should not imply otherwise.
+ */
+function earningsPerYear(ordinal: number): number {
+    const scale = Math.min(EARNINGS_RANK_CAP, 1 + ordinal * EARNINGS_PER_ORDINAL);
+    return STONES_PER_YEAR_OF_SECLUSION * EARNINGS_BASE_SHARE * scale;
+}
+
+/**
+ * What a catalog figure is holding.
+ *
+ * Named people do not get their purse from the life walk, because their rank
+ * and realm are curated rather than derived - so it is composed from the two
+ * things that decide earning power in this world: what they are, and where
+ * they stand in the institution. Wide, because a senior figure who is poor is
+ * a story and the catalog should be allowed to produce one.
+ */
+function holdingsFor(ordinal: number, rankIndex: number, rng: CultivationRNG): number {
+    const perYear = earningsPerYear(clampOrdinal(ordinal));
+    const standing = 1 + Math.max(0, rankIndex) * 0.4;
+    return Math.round(perYear * rng.int(1, 8) * standing);
+}
+
+/** A working year covers this share of a secluded year's upkeep, at ordinal 0. */
+const EARNINGS_BASE_SHARE = 0.9;
+const EARNINGS_PER_ORDINAL = 0.35;
+const EARNINGS_RANK_CAP = 9;
+/** Share of their realm's lifespan an apex figure has already spent. */
+const APEX_AGE_FRACTION = 0.25;
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE SEED
@@ -515,7 +569,13 @@ function betterAmbient(a: AmbientQi, b: AmbientQi): AmbientQi {
  * qi. The world's ancients are explained by `eraQiDensity` - they climbed when
  * the air was richer - rather than by anybody being exempt from the arithmetic.
  */
-export function deriveOrdinal(
+export interface DerivedLife {
+    ordinal: number;
+    /** Stones left after a lifetime of upkeep, stipend and pills. */
+    spiritStones: number;
+}
+
+export function deriveLife(
     root: SpiritRootKey,
     attributes: InnateAttributes,
     ageYears: number,
@@ -523,9 +583,9 @@ export function deriveOrdinal(
     ceiling: number,
     rng: CultivationRNG,
     opts: DeriveOrdinalOptions = {}
-): number {
+): DerivedLife {
     const lifetime = Math.max(0, ageYears - MIN_AGE);
-    if (lifetime <= 0) return 0;
+    if (lifetime <= 0) return { ordinal: 0, spiritStones: 0 };
 
     // Most people are not sitting in a cave. A wide, right-skewed draw that
     // stands for everything this layer does not model about a life.
@@ -537,15 +597,16 @@ export function deriveOrdinal(
     const era = opts.eraQiDensity === undefined ? 1 : eraAmbientMultiplier(opts.eraQiDensity);
     const maxAttempts = Math.max(1, opts.maxAttemptsPerRank ?? 12);
 
+    const focus = Math.min(1, effort);
     const rate = computeCultivationRate({ spiritRoot: root, injuries: [] }, ambient, {
-        focusMultiplier: Math.min(1, effort),
+        focusMultiplier: focus,
         locationBonus: Math.max(0.1, regionRateMultiplier) * era,
         techniqueBonus: 1 + attributes.insight * 0.06,
         // Placement: arrays, elder guidance, and a stipend that means this
         // person is not foraging. 1 for the nine births in ten that have none.
         sectBonus: origin.placement.sectBonus
     }).perDay;
-    if (rate <= 0) return 0;
+    if (rate <= 0) return { ordinal: 0, spiritStones: Math.max(0, Math.round(origin.spiritStones)) };
 
     const perYear = rate * DAYS_PER_YEAR;
     // The province's ceiling is absolute, and placement does NOT lift it.
@@ -586,11 +647,24 @@ export function deriveOrdinal(
             yearsAtRank += yearsNeeded;
             age += yearsNeeded;
             spent += yearsNeeded;
-            // Upkeep first, and the stipend against it. A life spent at a rank
-            // costs stones whether or not anything comes of it.
+            // Upkeep, stipend, and the work. A year at a rank costs stones
+            // whether or not anything comes of it - but a life is not spent
+            // entirely in a cave, and the part that is not IS the earning.
+            //
+            // `effort` already says what fraction of the time this person
+            // actually cultivates, so the remainder is the fraction they spend
+            // gathering, escorting, refining, or being useful to somebody who
+            // pays. Without this term the walk modelled pure burn and every
+            // NPC in the world finished holding nothing, which left the
+            // economy with no participants at all.
+            const secludedYears = yearsNeeded * focus;
+            const workingYears = yearsNeeded - secludedYears;
             stones = Math.max(
                 0,
-                stones + yearsNeeded * (origin.placement.stipendPerYear - STONES_PER_YEAR_OF_SECLUSION)
+                stones
+                    + yearsNeeded * origin.placement.stipendPerYear
+                    - secludedYears * STONES_PER_YEAR_OF_SECLUSION
+                    + workingYears * earningsPerYear(ordinal)
             );
 
             // One pill, bought if the holding covers it, and actually paid for.
@@ -625,7 +699,27 @@ export function deriveOrdinal(
         ordinal++;
     }
 
-    return ordinal;
+    return { ordinal, spiritStones: Math.max(0, Math.round(stones)) };
+}
+
+/**
+ * What the life walk left them holding, alongside where it left them.
+ *
+ * The stones were always computed - upkeep, stipend and pills are what decide
+ * how many attempts a life gets - and were thrown away at the end, which is
+ * why every NPC in the world held nothing. Returning them costs nothing and
+ * gives the economy its participants.
+ */
+export function deriveOrdinal(
+    root: SpiritRootKey,
+    attributes: InnateAttributes,
+    ageYears: number,
+    regionRateMultiplier: number,
+    ceiling: number,
+    rng: CultivationRNG,
+    opts: DeriveOrdinalOptions = {}
+): number {
+    return deriveLife(root, attributes, ageYears, regionRateMultiplier, ceiling, rng, opts).ordinal;
 }
 
 /**
@@ -681,7 +775,7 @@ function seedPopulation(
             // for why a great house has the members it does. Nobody is placed
             // in one; the origin roll puts them there and the derivation spends
             // what it supplied.
-            const ordinal = deriveOrdinal(
+            const life = deriveLife(
                 npc.cultivation.spiritRoot,
                 npc.cultivation.attributes,
                 age,
@@ -690,7 +784,9 @@ function seedPopulation(
                 rng,
                 { origin: npc.identity.origin }
             );
+            const ordinal = life.ordinal;
             npc = setRealm(npc, ordinal, presentDay - years(rng.int(0, 8)));
+            npc = { ...npc, spiritStones: life.spiritStones };
             npc = {
                 ...npc,
                 cultivation: {
@@ -716,8 +812,182 @@ function seedPopulation(
     }
     state.nextNpcSeq = seq;
 
+    // The catalogs already contain the people the derivation cannot produce.
+    // Instantiate them before roles are handed out, so a faction's curated
+    // seniors are in the room when the pyramid is built.
+    created.push(...seedNamedFigures(state, catalog, presentDay));
+    created.push(...seedFactionApex(state, catalog, presentDay));
+
     assignFactionRoles(state, catalogById, presentDay);
     return created;
+}
+
+/**
+ * Instantiate the named people the content catalogs already describe.
+ *
+ * ── Why this exists ──────────────────────────────────────────────────────
+ *
+ * `deriveOrdinal` walks the real cost curve against the real clocks, which is
+ * correct and which means a present-day cultivator with a hundred and twenty
+ * years cannot get past Foundation Establishment in the Late Age. Left to it,
+ * a seeded world's strongest inhabitant was ordinal 16 - so the catalogs could
+ * describe Dao houses, apex institutions and sealed ancestors while the world
+ * contained no instance of any of them, and nothing in the discovery ladder
+ * could fire because there was nobody from a higher stratum to walk past.
+ *
+ * The answer is not to loosen the derivation. It is that the upper stratum was
+ * never a procedural product in the first place: those people are CONTENT, with
+ * names, factions, ranks and reasons, and `members.ts` holds a hundred and
+ * fifteen of them. Seeding them is instantiating what the world already says
+ * is true, rather than generating a second, luckier population beside the one
+ * the arithmetic produced.
+ *
+ * They are placed at their faction's seat, not scattered through market towns:
+ * the stratum has to EXIST so it can act, be referred to and be encountered
+ * rarely, without becoming something a beginner trips over.
+ */
+function seedNamedFigures(
+    state: WorldState,
+    catalog: WorldCatalog,
+    presentDay: number
+): NpcRecord[] {
+    const catalogById = new Map(catalog.factions.map(f => [f.id, f]));
+    const created: NpcRecord[] = [];
+
+    for (const member of MEMBERS) {
+        const faction = catalogById.get(member.factionId);
+        if (!faction) continue;
+
+        const id = `npc-${member.id}`;
+        if (state.npcs.some(n => n.id === id)) continue;
+
+        const rng = forStream(state.seed, 'seed-named', id);
+        // Old enough to have got where the catalog says they are, without
+        // being implausibly ancient for it.
+        const age = Math.min(
+            MAX_NAMED_AGE,
+            MIN_AGE + Math.round(member.realmOrdinal * NAMED_YEARS_PER_ORDINAL) + rng.int(0, 40)
+        );
+
+        let npc = createNpc(state.seed, {
+            id,
+            bornOnDay: presentDay - years(age),
+            onDay: presentDay,
+            locationId: seatLocationId(catalog, faction),
+            occupation: 'unknown',
+            tags: ['catalog:member', `faction:${faction.id}`]
+        });
+
+        npc = setRealm(npc, clampOrdinal(member.realmOrdinal), presentDay - years(rng.int(0, 12)));
+        npc = {
+            ...npc,
+            name: member.name,
+            factionId: faction.id,
+            factionRankIndex: Math.min(member.rankIndex, Math.max(0, faction.ranks.length - 1)),
+            spiritStones: holdingsFor(member.realmOrdinal, member.rankIndex, rng),
+            cultivation: {
+                ...npc.cultivation,
+                foundation: member.realmOrdinal >= 13 ? 'stable' : 'incomplete',
+                specialties: getSpiritRoot(npc.cultivation.spiritRoot).elements.slice()
+            }
+        };
+
+        state.npcs.push(npc);
+        created.push(npc);
+    }
+
+    return created;
+}
+
+/**
+ * Give every faction somebody who is actually as strong as it claims to be.
+ *
+ * A faction's `powerOrdinal` is a statement about the world - it is what lets
+ * the thing bully, hold a vein, and be feared - and until now nothing stood
+ * behind it. A house that says its strongest member is Grand Ascension while
+ * its strongest instance is a Foundation Establishment disciple is a claim the
+ * simulation cannot back, and the whole apex tier was in that state.
+ *
+ * One figure per faction, at the seat, and only where the derived and named
+ * membership fell short of what the catalog declares. They are not placed
+ * anywhere a beginner goes and they are not marked important: they are simply
+ * the person the faction has always said it had.
+ */
+function seedFactionApex(
+    state: WorldState,
+    catalog: WorldCatalog,
+    presentDay: number
+): NpcRecord[] {
+    const created: NpcRecord[] = [];
+
+    for (const faction of catalog.factions) {
+        const declared = clampOrdinal(faction.powerOrdinal);
+        if (declared < APEX_SEED_FLOOR) continue;
+
+        const strongest = state.npcs
+            .filter(n => n.factionId === faction.id && n.status === 'alive')
+            .reduce((best, n) => Math.max(best, n.cultivation.realmOrdinal), -1);
+        if (strongest >= declared) continue;
+
+        const id = `npc-apex-${faction.id}`;
+        if (state.npcs.some(n => n.id === id)) continue;
+
+        const rng = forStream(state.seed, 'seed-apex', id);
+        // Somebody at this ordinal climbed when the climbing was possible, so
+        // they are old on the scale their realm actually grants.
+        const age = Math.min(
+            Math.max(MIN_AGE + 1, Math.floor(lifespanForOrdinal(declared) * APEX_AGE_FRACTION)),
+            Math.floor(lifespanForOrdinal(declared) * 0.9)
+        ) + rng.int(0, 200);
+
+        let npc = createNpc(state.seed, {
+            id,
+            bornOnDay: presentDay - years(age),
+            onDay: presentDay,
+            locationId: seatLocationId(catalog, faction),
+            occupation: 'unknown',
+            tags: ['catalog:apex', `faction:${faction.id}`]
+        });
+
+        npc = setRealm(npc, declared, presentDay - years(rng.int(20, 400)));
+        npc = {
+            ...npc,
+            factionId: faction.id,
+            factionRankIndex: Math.max(0, faction.ranks.length - 1),
+            spiritStones: holdingsFor(declared, Math.max(0, faction.ranks.length - 1), rng),
+            cultivation: {
+                ...npc.cultivation,
+                foundation: 'stable',
+                specialties: getSpiritRoot(npc.cultivation.spiritRoot).elements.slice()
+            }
+        };
+
+        state.npcs.push(npc);
+        created.push(npc);
+    }
+
+    return created;
+}
+
+/**
+ * Where a faction sits. Matched against region ids and place names, falling
+ * back to the first region so a catalog entry with an unrecognised territory
+ * still lands somewhere real rather than nowhere.
+ */
+function seatLocationId(catalog: WorldCatalog, faction: CatalogFaction): string {
+    const wanted = faction.territory.toLowerCase();
+    for (const region of catalog.regions) {
+        if (region.id.toLowerCase().includes(wanted) || wanted.includes(region.id.toLowerCase())) {
+            return regionLocationId(region.id);
+        }
+        for (const place of region.places) {
+            if (place.name.toLowerCase() === wanted) {
+                return placeLocationId(region.id, place.name);
+            }
+        }
+    }
+    const home = catalog.regions.find(r => r.factionIds.includes(faction.id)) ?? catalog.regions[0];
+    return home ? regionLocationId(home.id) : 'the open road';
 }
 
 /**
@@ -764,7 +1034,19 @@ function assignFactionRoles(
                         : i <= Math.max(2, Math.floor(members.length * 0.25)) ? Math.min(elderFloor, 2)
                             : i <= Math.max(3, Math.floor(members.length * 0.5)) ? 1 : 0;
             const at = state.npcs.findIndex(n => n.id === members[i].id);
-            if (at >= 0) state.npcs[at] = { ...state.npcs[at], factionRankIndex: rank };
+            if (at < 0) continue;
+
+            // A catalog figure's rank is curated content and the seeder should
+            // not argue with the writing - but it does not get to claim the
+            // seat either. The top of a ladder goes to whoever actually came
+            // out strongest, which is the one thing this pass exists to
+            // enforce, so a curated rank is honoured as a FLOOR everywhere
+            // except the top rung.
+            const curated = state.npcs[at].tags.some(t => t.startsWith('catalog:'));
+            const assigned = curated
+                ? (i === 0 ? ladder - 1 : Math.min(Math.max(state.npcs[at].factionRankIndex, rank), Math.max(0, ladder - 2)))
+                : rank;
+            state.npcs[at] = { ...state.npcs[at], factionRankIndex: assigned };
         }
 
         // The faction's real power is its strongest member, whatever the

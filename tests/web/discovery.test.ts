@@ -160,7 +160,12 @@ describe('being in the room counts', () => {
 
         const gate = new KnowledgeGate(db);
         expect(gate.isAwareOf(cultivator.id, 'cultivator', 'npc-stranger')).toBe(true);
-        const record = gate.awareness(cultivator.id, 'cultivator')[0];
+        // Found rather than indexed: the same turn can also deposit a name
+        // somebody dropped in passing, and hearsay now draws people out of the
+        // catalogs as well as factions, so "the first person row" is no longer
+        // the same thing as "the person they just met".
+        const record = gate.awareness(cultivator.id, 'cultivator')
+            .find(row => row.id === 'npc-stranger');
         expect(record).toMatchObject({ name: 'The Stranger', sourceKind: 'witnessed' });
     });
 

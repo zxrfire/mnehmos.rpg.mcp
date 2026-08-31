@@ -9,6 +9,9 @@
  * breathes it. The severance charged at a realm boundary is the Price of
  * Advancement; the mechanics never changed, only the framing.
  *
+ * The same applies to `sleeper`, which was the working name for the sealed
+ * ancestors before they were written as people rather than as instruments.
+ *
  * The retired vocabulary is easy to reintroduce by accident, because it reads
  * like ordinary fantasy prose. This test walks the repository and fails if it
  * comes back, naming the file, the line, and the offending text.
@@ -94,6 +97,28 @@ const VOCABULARY_ALLOWLIST: readonly string[] = [
  */
 const TEMPORARY_ALLOWLIST: readonly string[] = [];
 
+/**
+ * Files exempt from the `sleeper` rule only.
+ *
+ * The class was renamed to `sealed ancestors`; the vocabulary survives in three
+ * places that are not the sealed-ancestor catalog and are owned elsewhere. Each
+ * entry comes out when that owner renames, and none of them affects any other
+ * rule - this list is deliberately separate from the temporary allowlist so it
+ * cannot quietly weaken the dash guard.
+ */
+const SLEEPER_ALLOWLIST: readonly string[] = [
+    // Owned by the sect-politics handler. `sleeperRank` is a response field on
+    // a tool contract that `rpg-mcp-live` consumes over HTTP, so renaming it is
+    // a breaking change and belongs to that owner, not to this catalog.
+    'src/server/consolidated/sect-politics.ts',
+
+    // The register renderer, owned by the web agent. Prose and a table header.
+    'src/web/',
+
+    // The beast catalog's own test, which quotes the beast by its proper name.
+    'tests/data/cultivation-beasts.test.ts'
+];
+
 /** Files exempt from the hyphens rule. Same reasoning, same short list. */
 const DASH_ALLOWLIST: readonly string[] = [
     'docs/bastion/',
@@ -118,6 +143,8 @@ interface Rule {
     readonly group: RuleGroup;
     readonly pattern: RegExp;
     readonly allowlist: readonly string[];
+    /** A line matching this is not a violation, wherever it appears. */
+    readonly except?: RegExp;
 }
 
 /**
@@ -143,6 +170,20 @@ const RETIRED_PHRASING =
     /falling lives?|breathed before|unbreathed|settled remains of|what the crossing left/i;
 
 /**
+ * `sleeper` for the sealed-ancestor class. Retired: they are people under a
+ * building with a name, a lineage and a claim on somebody, and the word made
+ * them read as dormant hazards.
+ *
+ * `The Sleeper in the Cut Face` is a proper name - a beast, not an ancestor -
+ * and stays, so the rule carries an exception for it and its material rather
+ * than exempting the whole beast catalog.
+ */
+const SLEEPER = /(?<![A-Za-z0-9])[Ss]leepers?(?![a-z0-9])|(?<![A-Za-z0-9])sleeper(?=[-_A-Z])/;
+
+/** The one proper name that keeps the word, plus its derived identifiers. */
+const SLEEPER_PROPER_NAME = /[Ss]leeper[- ][Ii]n[- ][Tt]he[- ][Cc]ut|mat-sleeper-seam-core/;
+
+/**
  * Em-dash (U+2014) and en-dash (U+2013), built from their codepoints so this
  * file does not contain the characters it forbids. U+2500 box drawing, used in
  * the comment banners above, is a different codepoint and is not matched.
@@ -156,6 +197,13 @@ const RULES: readonly Rule[] = [
     { name: "'Ashwright' (renamed to Stonewright)", group: 'retired-vocabulary', pattern: ASHWRIGHT, allowlist: VOCAB_EXEMPT },
     { name: "'Vault' as a proper noun", group: 'retired-vocabulary', pattern: VAULT, allowlist: VOCAB_EXEMPT },
     { name: 'prose from the discarded conceit', group: 'retired-vocabulary', pattern: RETIRED_PHRASING, allowlist: VOCAB_EXEMPT },
+    {
+        name: "'sleeper' (renamed to sealed ancestor)",
+        group: 'retired-vocabulary',
+        pattern: SLEEPER,
+        allowlist: [...VOCAB_EXEMPT, ...SLEEPER_ALLOWLIST],
+        except: SLEEPER_PROPER_NAME
+    },
 
     { name: 'em-dash or en-dash (AGENTS.md: hyphens only)', group: 'style', pattern: DASH, allowlist: DASH_ALLOWLIST }
 ];
@@ -227,6 +275,7 @@ function scan(): { violations: Violation[]; fileCount: number; usedAllowlist: Se
             for (const rule of RULES) {
                 const match = rule.pattern.exec(line);
                 if (!match) continue;
+                if (rule.except?.test(line)) continue;
                 // An allowlisted file is scanned anyway, so an entry that is no
                 // longer suppressing anything can be reported as dead weight.
                 const exempting = rule.allowlist.find(

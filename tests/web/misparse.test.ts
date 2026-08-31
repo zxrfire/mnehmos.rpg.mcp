@@ -88,7 +88,12 @@ describe('the fallback is inert', () => {
             'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear',
             // `sect` is a listing until a sect is named, and a life's allegiance
             // after. Neither half spends in-world time, so it is inert here.
-            'sect'
+            'sect',
+            // Buying food spends stones, not days. It is deliberately inert on
+            // this axis: a misparse that lands here has cost the player nothing
+            // they cannot walk back, and being able to reach it cheaply is the
+            // entire point of adding it.
+            'provision'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -226,6 +231,11 @@ describe('every verb is reachable from plain English', () => {
      * deleted by an unrelated change.
      */
     const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, string> = {
+    // Added when combat became reachable. It had been in the engine the
+    // whole time and in the parser not at all, which is how "I attack the
+    // nearest cultivator" ended up meditating for a month.
+        attack: 'I attack the nearest cultivator',
+        provision: 'I stock up on provisions',
         cultivate: 'I cultivate for three years.',
         seclude: 'I seal the cave for ten years',
         breakthrough: 'break through',

@@ -313,6 +313,49 @@ describe('faction distinctness pass', () => {
         }
     });
 
+    it('separates what each one is known for from what it is good at', () => {
+        for (const [id, c] of Object.entries(FACTION_CHARACTER)) {
+            expect(c.knownFor, `${id} has no reputation record`).toBeDefined();
+            expect(c.knownFor.outside.length, `${id} outside`).toBeGreaterThan(60);
+            expect(c.knownFor.actuallyGoodAt.length, `${id} actuallyGoodAt`).toBeGreaterThan(60);
+            expect(c.knownFor.theGap.length, `${id} theGap`).toBeGreaterThan(40);
+            // The whole point: the two halves must not be the same claim.
+            expect(
+                c.knownFor.outside.toLowerCase(),
+                `${id} is known for exactly what it is good at, which is not a gap`
+            ).not.toBe(c.knownFor.actuallyGoodAt.toLowerCase());
+        }
+    });
+
+    it('keeps every reputation distinct, the way the sentences are', () => {
+        const outside = Object.values(FACTION_CHARACTER).map(c => c.knownFor.outside);
+        expect(new Set(outside).size, 'two factions share a reputation').toBe(outside.length);
+        const real = Object.values(FACTION_CHARACTER).map(c => c.knownFor.actuallyGoodAt);
+        expect(new Set(real).size, 'two factions share a capability').toBe(real.length);
+    });
+
+    it('lets reputation run ahead of capability in at least one case', () => {
+        // Usually the world underrates a faction. The Weir Office is the
+        // inversion, and the catalog would be a monotone without it.
+        const weir = FACTION_CHARACTER['sect-weir-office']!;
+        expect(weir.knownFor.actuallyGoodAt).toMatch(/nothing anybody outside would recognise/i);
+        expect(weir.knownFor.theGap).toMatch(/ahead of capability/i);
+        expect(weir.knownFor.theGap).toMatch(/positional/i);
+    });
+
+    it('lets some factions have quietly stopped doing the thing they are for', () => {
+        const stopped = Object.entries(FACTION_CHARACTER).filter(([, c]) => c.quietlyStopped);
+        expect(stopped.length, 'nobody in the catalog is coasting, which is not honest').toBeGreaterThanOrEqual(3);
+        for (const [id, c] of stopped) {
+            expect(c.quietlyStopped!.length, `${id} quietlyStopped`).toBeGreaterThan(120);
+        }
+        // And it is a decision nobody made, rather than a policy anybody announced.
+        const all = stopped.map(([, c]) => c.quietlyStopped!).join(' ');
+        expect(all).toMatch(/Nobody decided this|has not come up|no decision anywhere/i);
+        // Not everybody, or the world reads as uniformly decayed.
+        expect(stopped.length).toBeLessThan(Object.keys(FACTION_CHARACTER).length / 3);
+    });
+
     it('passes the faction test: every sentence is unique to its faction', () => {
         const sentences = Object.values(FACTION_CHARACTER).map(c => c.distinctSentence);
         expect(new Set(sentences).size, 'two factions share a sentence').toBe(sentences.length);

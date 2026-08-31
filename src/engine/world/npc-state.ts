@@ -277,6 +277,18 @@ export interface NpcRecord {
     /** Index into the faction's rank ladder. -1 when unaffiliated. */
     factionRankIndex: number;
 
+    /**
+     * What they are actually holding.
+     *
+     * Not invented for a roster: it is what `deriveOrdinal` already spent a
+     * whole life computing - an origin's purse, plus a stipend, minus the
+     * upkeep of every year at a rank and every pill bought on the way - and
+     * then discarded. Without it nobody in the world held a single stone, so
+     * nothing could be bought, sold, stolen, bribed, inherited or extorted and
+     * the economy content had no participants at all.
+     */
+    spiritStones: number;
+
     goals: NpcGoal[];
     relationships: NpcRelationship[];
 
@@ -327,6 +339,8 @@ export interface CreateNpcOptions {
     locationId?: string | null;
     factionId?: string | null;
     factionRankIndex?: number;
+    /** What they hold. Seeding passes what the life derivation actually left. */
+    spiritStones?: number;
     occupation?: string;
     description?: string;
     /** Override the rolled talent. Used when importing an existing character. */
@@ -397,6 +411,7 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         locationId: opts.locationId ?? null,
         factionId: opts.factionId ?? null,
         factionRankIndex: opts.factionRankIndex ?? (opts.factionId ? 0 : -1),
+        spiritStones: Math.max(0, Math.round(opts.spiritStones ?? 0)),
         goals: [],
         relationships: [],
         historyFactIds: [],

@@ -348,6 +348,9 @@ export function migrateWorld(db: Database.Database): void {
       location_id TEXT,
       faction_id TEXT,
       faction_rank_index INTEGER NOT NULL DEFAULT -1,
+      -- What they hold. Derived by the life walk rather than assigned, so a
+      -- patriarch's fortune and a barrow hand's nothing both have a history.
+      spirit_stones INTEGER NOT NULL DEFAULT 0,
 
       -- Existence is multi-valued once cultivation is profound: above Nascent
       -- Soul, body destroyed is no longer the same as dead. 'missing' and

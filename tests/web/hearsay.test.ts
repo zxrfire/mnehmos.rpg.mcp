@@ -103,7 +103,10 @@ describe('the engine picks the name, and writes it down', () => {
         const learned = recordHearing(gate, cultivator, run, heard!);
         expect(learned).toHaveLength(1);
 
-        const record = gate.awareness(cultivator.id, 'sect').find(r => r.name === learned[0].name)!;
+        // Not filtered by kind: the speakable world is not the sect catalog
+        // any more, so what a carter drops may be a place, a person, an age or
+        // whatever is sealed under a hall two valleys over.
+        const record = gate.awareness(cultivator.id).find(r => r.name === learned[0].name)!;
         expect(record).toBeDefined();
         expect(record.stance).toBe('suspects');
         expect(record.sourceKind).toBe('told');
@@ -175,7 +178,7 @@ describe('the engine picks the name, and writes it down', () => {
         }
         recordHearing(gate, cultivator, run, heard!);
 
-        const record = gate.awareness(cultivator.id, 'sect')
+        const record = gate.awareness(cultivator.id)
             .find(r => r.name === heard!.names[0].name)!;
         expect(record.sourceKind).toBe('overheard');
         expect(record.sourceNote).toMatch(/where this cultivator was standing/i);
@@ -199,7 +202,7 @@ describe('the whole path, through act', () => {
             if (!learnCall) continue;
 
             const gate = new KnowledgeGate(db);
-            const overheard = gate.awareness(cultivator.id, 'sect')
+            const overheard = gate.awareness(cultivator.id)
                 .filter(r => r.sourceKind === 'overheard');
 
             expect(overheard.length).toBeGreaterThan(0);
@@ -303,7 +306,7 @@ describe('asking', () => {
         // And nothing anywhere in the layer matches the player's text against a
         // table of magic words. The barrier is knowing what to say, which is
         // real without being enforced.
-        const sources = ['game', 'prompt', 'entities', 'hearsay', 'knowledge', 'facts']
+        const sources = ['game', 'prompt', 'entities', 'hearsay', 'lore', 'knowledge', 'facts']
             .map(name => web.readFileSync(`src/web/${name}.ts`, 'utf-8'))
             .join('\n');
         expect(sources).not.toMatch(/KEY_PHRASES|detectKeys|assessAsking|persuasion/i);

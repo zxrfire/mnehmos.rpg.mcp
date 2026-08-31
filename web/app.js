@@ -2383,6 +2383,15 @@ function wire() {
     submitAction(e);
   });
   $('#btn-cultivate').addEventListener('click', () => openCultivatePicker());
+  // Issued down the ordinary command path rather than as a side-channel read,
+  // so the narrator handles it and it lands in the transcript like any other
+  // turn. `status` is a read: no time passes and no satiety burns.
+  $('#btn-status').addEventListener('click', () => {
+    const input = $('#command-input');
+    if (!input || S.busy) return;
+    input.value = 'status';
+    submitAction();
+  });
   $('#btn-breakthrough').addEventListener('click', () => openBreakthroughConfirm());
   $('#sheet-toggle').addEventListener('click', toggleSheetDrawer);
   $('#sheet-scrim').addEventListener('click', closeSheetDrawer);

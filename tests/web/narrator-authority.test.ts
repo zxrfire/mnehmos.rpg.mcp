@@ -254,7 +254,9 @@ describe('the deterministic path is a first-class way to play', () => {
             ['lie to the gate steward', 'deceive'],
             ['negotiate with Lantern Hall', 'negotiate'],
             ['question the merchant about the ruin', 'interrogate'],
-            ['speak with the gate steward', 'talk']
+            ['speak with the gate steward', 'talk'],
+            ['I follow the cultivator', 'follow'],
+            ['approach the old woman', 'approach']
         ] as const) {
             const parsed = parseIntent(text);
             expect(parsed.action).toBe('interact');
@@ -266,7 +268,12 @@ describe('the deterministic path is a first-class way to play', () => {
             ['travel to the Low Fall', 'travel'],
             ['I flee the courtyard', 'flee'],
             ['sneak into the sect compound', 'enter'],
-            ['approach the old woman', 'approach']
+            // `approach` and `follow` are gone from this list on purpose. Both
+            // take a person, and reading their trailing noun as a destination
+            // is exactly how a player ended up standing in a place called
+            // `cultivator`, having spent the travel days getting there. They
+            // are asserted as `interact` above.
+            ['I depart for Scarwater', 'travel']
         ] as const) {
             const parsed = parseIntent(text);
             expect(parsed.action).toBe('move');

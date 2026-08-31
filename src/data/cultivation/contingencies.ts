@@ -111,6 +111,17 @@ export const ContingencySchema = z.object({
     theWakingItself: z.string().min(300),
     /** The flaw at the centre of it. This is the last word on the entry. */
     askingIsWaking: z.string().min(300),
+    /**
+     * The three things she can actually do with the hours, only one of which
+     * the plan is written for. See `WHAT_SHE_DOES_WITH_THE_TIME`.
+     */
+    theThreeOutcomes: z.string().min(300),
+    /**
+     * Whether the holding body could survive her ruling on its own lineage,
+     * which is a risk entirely separate from the arithmetic.
+     * See `THE_LINEAGE_CLAIM`.
+     */
+    theClaimRisk: z.string().min(300),
     /** Their own understanding of what it is for, in their terms. */
     inTheirWords: z.string().min(200),
     /** The target, named here because the catalog is not the narrator. */
@@ -254,6 +265,10 @@ export const CONTINGENCIES: readonly Contingency[] = [
             'The Court has written the briefing. It is nine lines, it has been revised eleven times in a hundred and ninety years, and it exists because somebody worked out early that her first minutes will be spent establishing what the sect has become, what year it is, who holds the seat and whether the people in front of her are who they say - and that those minutes come off the clock. The nine lines are the single largest contribution the living can make to a waking, and the Court knows it. What the Court has never been able to write is the other half of the scene: she is the first Sovereign, the people asking will be her successors at a distance she can measure in a glance, she may not be impressed, and she will say so once, briefly, while deciding whether to go and rob somebody. Nobody in that hall expects to enjoy it.',
         askingIsWaking:
             'And here is the flaw at the centre of all of it: you cannot consult a sealed ancestor. Asking is waking. The Court has spent a hundred and ninety years planning around what they believe she would agree to, and they have never once been able to check - every term of the plan rests on a reading of a woman nobody currently alive has met, assembled out of records, out of what she was reportedly like, out of what the founding volumes say she cared about. They may simply be wrong. She may wake, listen to what they want her to do, and decline it - and the hall is gone either way, because the waking is the irreversible part and her answer comes afterwards.',
+        theThreeOutcomes:
+            'And the plan has priced one outcome out of three. She can do the thing, which is what every line of the vault reasoning assumes. She can decide the best use of the hours is to hand down something the world has lost, and spend them teaching whichever people are in the room - which would be the Court\'s single greatest gain in nine hundred years and would leave the vault exactly where it is. Or she can listen, decline without drama, walk out of the broken hall and go and look at the sky, because she has been under ice for two thousand years and would rather see the sun go down than rob a bank for her successors. Nothing about that third one is a rebuke and there is nothing in it anybody could take offence at, which is why it would be worse for the Court than a refusal with reasons. The plan is not a plan for spending an asset. It is a proposal being put to a person, and the Court has quietly assumed an answer it has no way to obtain.',
+        theClaimRisk:
+            'There is also a risk in this that the Court has never written down, and it is not the arithmetic. She is the only authority in the world who could rule on whether the Frostmirror Court is really her Court, and the moment she opens her eyes she is doing exactly that, before anybody says a word about vaults. The Court believes its claim is sound and it is probably right - the records are good, the line is legible, the hall is the hall. Probably is doing a lot of work in that sentence when the ruling is public, immediate and final, and when the alternative reading is that a body of administrators woke a founder in order to defraud her into working for them. Nobody in that hall has ever raised it aloud, which is not the same as nobody having thought about it at three in the morning.',
         versusTheRecordedCondition:
             'The written wake condition is defensive: the library entered by force. That is what the Court has recorded, it is true, and it is not the whole of what the Court intends. The offensive reading has never been added to the record, and the reason is exactly why it has never been added: writing it down would make it a plan somebody could find, and the Court would rather hold a question than a document. A seal cuts both ways, and this is the case the phrase was for.'
     }
