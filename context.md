@@ -518,6 +518,153 @@ send disciples, control resources, spread or suppress information, conceal their
 create incentives, arrange conflicts, and work through intermediaries. One may shape
 events around the player for years before the player learns they exist.
 
+## The world remembers, and the world changes
+
+Depth is only half of it. The other half:
+
+> **The world persists, but the world is not immutable.**
+
+The player is not progressing through a sequence of maps. They are living through the
+history of a world that the people inside it can change — including while the player is
+not looking.
+
+### The map is not sacred
+
+A location is not a permanent object with a fixed description. It can be destroyed,
+abandoned, conquered, rebuilt, forbidden, corrupted, enriched, sunk, raised, split,
+merged, sealed off, turned into a secret realm, have its spiritual conditions altered, or
+have its ecosystem transformed.
+
+A player must be able to return somewhere familiar and find it fundamentally changed.
+
+### Locations carry their history as state
+
+Every location conceptually holds `origin → historical changes → current state`, and the
+player uncovers that history gradually:
+
+```text
+Blackwater Valley
+  origin           an ordinary river valley
+  3000 years ago   a sect established here
+  1800 years ago   the sect destroyed
+  500 years ago    a battle moved the river
+  100 years ago    a merchant city built on the ruin
+  now              a half-ruined city beside a corrupted river
+```
+
+This is stored state, not lore text. The layers must be separately queryable, because the
+current inhabitants may hold competing explanations, the ancient records may be
+incomplete, and the true cause may be recoverable centuries later.
+
+### Catastrophes make geography
+
+A sufficiently violent event permanently alters the physical world: a mountain range
+broken, a river diverted, a city buried, a sea opened, an island raised, a region split, a
+buried structure exposed, an underground world opened, a portal created or destroyed.
+
+**Do not model this as a new map.** Modify the existing world state. The map does not grow
+— it scars.
+
+### Forbidden zones are made, not placed
+
+A normal region becomes forbidden *because something happened there*: a battle between
+powerful beings, a failed breakthrough, an ancient weapon, the death of something large,
+spiritual contamination, dimensional instability, a curse, mass death.
+
+```text
+before      a fertile forest
+event       an ancient cultivator dies here
+after       a forbidden forest
+then        plants mutate, beasts turn, the spiritual conditions change,
+            ordinary people evacuate, cultivators come to investigate,
+            rare resources appear, and nearby factions fight over access
+```
+
+And centuries later, the cause is forgotten. A region should sometimes exist in its
+present form because of something that happened three thousand years ago that nobody
+alive can explain. *"Nobody knows why"* is a legitimate and desirable state of the world —
+right up until someone finds out.
+
+### History is physically visible
+
+Broken mountains, dead rivers, craters, ruined cities, abandoned sects, shattered
+formations, strange local climates, dead zones, anomalous regions, old battlefields. These
+must **affect play**, not merely decorate it — they gate access, hold resources, distort
+cultivation, and draw factions.
+
+### Environment interacts with cultivation
+
+A cultivator's capability is contextual. A poison specialist is stronger in a corrupted
+region; a fire cultivator near a volcanic vein; a soul cultivator weaker inside a
+soul-suppressing domain; a sword cultivator inside an old sword formation. This is what
+makes geography mechanically real, and it pairs with the entry/survival/operational/
+mastery thresholds: *where* you are changes *what you are worth*.
+
+### Scale of destruction tracks power
+
+Low-level conflicts wreck buildings. Higher ones break mountains. Higher still reshape
+regions. Only the very top threatens something planetary — and **not every high-level
+fight is automatically apocalyptic.** Escalate the physical consequence with the power
+actually involved.
+
+### Change creates power vacuums
+
+Events generate incentives, and incentives reorganise the world:
+
+```text
+an old mountain collapses -> buried ruins exposed -> sects investigate
+  -> a treasure surfaces -> factions compete -> war -> cultivators migrate
+    -> a new city grows where there was nothing
+```
+
+NPCs react on their own: they flee, investigate, exploit, defend, conquer, trade, migrate,
+ally, betray, take revenge, settle, abandon their sect. **The player does not need to
+initiate any of it.**
+
+Change also transforms existing relationships. Two sect brothers whose sect is destroyed
+may spend the next ten years each believing the other abandoned them — both alive, both
+advanced, both now in different factions, the old event still load-bearing.
+
+### Destruction opens as much as it closes
+
+A destroyed place becomes ruins, a forbidden zone, a treasure site, a pilgrimage site, an
+excavation, a new settlement, a battlefield, a secret-realm entrance, or a resource. The
+end of a location is a transition, not a deletion.
+
+### The player is not the world's clock
+
+Major events happen while the player is in seclusion, travelling, inside a secret realm,
+injured, or busy elsewhere. **They will miss things, permanently, and that is correct.**
+They return and the world has moved.
+
+There is no single predetermined timeline. A different faction winning produces different
+territory, different resources, different people rising, and different conflicts — and the
+divergence is irreversible.
+
+### The Consequence Test
+
+For every event that claims to be major, the engine and the narrator should be able to
+answer all ten:
+
+1. What changed immediately?
+2. What changed **physically**?
+3. Who benefited?
+4. Who lost something?
+5. Which factions reacted?
+6. Which relationships changed?
+7. What new opportunities appeared?
+8. What old opportunities disappeared?
+9. What rumours spread?
+10. What is still true ten years later?
+
+**If an event has no consequences once the scene ends, it was not a major event.** Either
+give it consequences or stop calling it one.
+
+The feeling to produce:
+
+> *"The world I knew is still here, but it isn't the same world any more."*
+
+
 ## Power is composite, not a single number
 
 Realm is the spine, but it must never be the whole of a character's capability. Model
