@@ -127,7 +127,10 @@ export interface SectDossier {
         heritage: string;
         stock: string;
         secondSeat: number;
+        /** Who holds the seat and why they do not leave it. */
         seatNote: string;
+        /** What could take the position away. Never the same answer twice. */
+        instability: string;
     } | null;
     channel: {
         kind: string;
@@ -538,7 +541,8 @@ function buildDossiers(
                     heritage: apex.heritage,
                     stock: apex.stock.remaining,
                     secondSeat: apex.secondStrongestOrdinal,
-                    seatNote: apex.lastRealm.note
+                    seatNote: apex.lastRealm.note,
+                    instability: apex.instability
                 }
                 : null,
             channel: channel
@@ -630,7 +634,8 @@ function buildDossiers(
                 heritage: a.heritage,
                 stock: a.stock.remaining,
                 secondSeat: a.secondStrongestOrdinal,
-                seatNote: a.lastRealm.note
+                seatNote: a.lastRealm.note,
+                instability: a.instability
             },
             channel: (channels.find(c => c.factionId === a.id) ?? null) && {
                 kind: channels.find(c => c.factionId === a.id)!.kind,
@@ -965,6 +970,7 @@ padding:10px 16px;cursor:pointer;display:flex;gap:8px;align-items:center}
 .dos header{display:flex;gap:16px;align-items:flex-start}
 .dos .ord{font:500 30px "IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--datum);line-height:1;min-width:46px}
 .dos h3{font:600 19px Archivo,"Helvetica Neue",Arial,sans-serif;margin:0 0 3px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.dos .terr b{color:var(--ink);font-weight:600}
 .dos .terr{margin:0;font-size:14.5px;color:var(--quiet);max-width:70ch}
 .meta{display:flex;flex-wrap:wrap;gap:4px 20px;font:12px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--quiet);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:8px 0}
 .meta b{font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;font-size:10px;margin-right:5px}
@@ -1104,11 +1110,14 @@ function dossier(d: SectDossier): string {
       ['holds from', d.parentName ?? 'nobody'],
       ['gift', d.partingGift ? d.partingGift.name + (d.partingGift.intact ? '' : ' (spent)') : ''],
       ['sent down', d.apex?.giftName ?? ''],
+      ['heritage', d.apex?.heritage ?? ''],
       ['stock', d.apex ? d.apex.stock.replace(/_/g, ' ') : ''],
       ['second seat', d.apex ? String(d.apex.secondSeat) : ''],
       ['channel', d.channel ? `${d.channel.kind.replace(/_/g, ' ')} · ${d.channel.crossings} crossing${d.channel.crossings === 1 ? '' : 's'} · ${d.channel.depletion ?? '-'}` : '']
   ])}
   ${d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : ''}
+  ${d.apex ? `<p class="terr"><b>The seat.</b> ${esc(d.apex.seatNote)}</p>
+  <p class="terr"><b>What could end it.</b> ${esc(d.apex.instability)}</p>` : ''}
   <div class="grps">${groups.join('')}</div>
 </article>`;
 }
@@ -1214,21 +1223,6 @@ export function renderRegisterHtml(
     hierarchies.forEach(claim);
     const stamp = reg.generatedAt.replace('T', ' ').slice(0, 16) + ' UTC';
 
-    const apexCards = reg.apexes.map(a => `
-      <article class="card${a.heritage === 'recent' ? ' recent' : ''}">
-        <h3>${esc(a.name)}</h3>
-        <p class="gift">${esc(a.giftName)}</p>
-        <div class="met">
-          <div><dt>Ordinal</dt><dd>${a.ordinal}</dd></div>
-          <div><dt>Next below</dt><dd>${a.secondStrongestOrdinal}</dd></div>
-          <div><dt>Heritage</dt><dd>${esc(a.heritage)}</dd></div>
-          <div><dt>Stock</dt><dd>${esc(a.stock.replace('_', ' '))}</dd></div>
-        </div>
-        <p><strong>Known as:</strong> ${esc(a.startingAwareness)}${
-            a.courts.length ? ' · courts: ' + a.courts.map(x => esc(x.name) + ' (' + x.ordinal + ')').join(', ') : ' · no courts'
-        }</p>
-        <p>${esc(a.instability)}</p>
-      </article>`).join('');
 
 
     return `<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -1274,14 +1268,6 @@ export function renderRegisterHtml(
 </div>
 
 <div class="pane" data-pane="factions" hidden>
-
-<section>
-  <div class="sh"><h2>The apexes</h2><span class="r">Founded by a crossing · holds what was sent down</span></div>
-  <p class="note">An apex received something from an ascended founder <strong>and can hold it</strong>. The second half is the whole test. Age runs backwards for consumables: an ancient apex has depth of position and an empty storehouse, a young one has a shallow position and a nearly full one.</p>
-  <div class="cards">${apexCards}</div>
-  ${prose(blocks, 'apexes')}
-</section>
-
 <section>
   <div class="sh"><h2>Every faction</h2><span class="r">${c.factions} · by governance · click to open</span></div>
   <p class="note">Grouped by how each faction holds its ground, strongest group first and strongest faction first inside it. The group says what kind of arrangement it is; the line under each name says who the other party is, so the reporting relation survives the grouping. <strong>Click any faction to open its full entry.</strong></p>
@@ -1289,6 +1275,7 @@ export function renderRegisterHtml(
   ${hierarchies.length ? `<div class="govgrp">
     <h3 class="govhead">apex hierarchies <span>${hierarchies.length}</span></h3>
     <div class="orgchart"><ul>${hierarchies.map(n => treeNode(n, dossierById)).join('')}</ul></div>
+    ${prose(blocks, 'apexes')}
   </div>` : ''}
   ${byGovernance(reg.dossiers, inTree).map(g => `<div class="govgrp">
     <h3 class="govhead">${esc(g.governance)} <span>${g.members.length}</span></h3>

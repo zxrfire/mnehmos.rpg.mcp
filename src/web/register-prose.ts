@@ -44,7 +44,7 @@ import type { LLMProvider } from '../agent/provider/types.js';
 import type { WorldRegister } from './register.js';
 
 /** Bump when the prompt or the block set changes in a way that invalidates text. */
-export const PROSE_SCHEMA_VERSION = 1;
+export const PROSE_SCHEMA_VERSION = 2;
 
 export interface ProseBlock {
     /** Hash of the facts this text was written from. */
@@ -91,17 +91,11 @@ export const PROSE_SECTIONS: readonly ProseSection[] = [
             'Orient a reader to the three apexes in one short paragraph. Say what separates them from each other, using only the heritage, ordinal, depth-below, stock and instability given. Do not list all three in order; say the thing a reader would otherwise have to work out by comparing rows.'
     },
     {
-        id: 'channels',
-        heading: 'On the channels',
-        facts: reg => reg.channels,
-        brief:
-            'One short paragraph on what the channel figures mean taken together. The interesting fact is that crossing count, recency and depletion do not move together, and that one body receives something different in kind from the others.'
-    },
-    {
         id: 'register',
         heading: 'On the register',
         facts: reg => ({
             bands: reg.ladder,
+            sealed: reg.sealed,
             spread: {
                 highest: reg.rows[0],
                 lowest: reg.rows[reg.rows.length - 1],
@@ -115,7 +109,7 @@ export const PROSE_SECTIONS: readonly ProseSection[] = [
             }, {})
         }),
         brief:
-            'One short paragraph orienting a reader to the faction table: where the mass of it sits, what the extremes are, and what the admission column reveals that the ordinal column does not.'
+            'One short paragraph orienting a reader to the faction list. Two things worth saying together: what the admission column reveals that the ordinal column does not, and the pattern across the sealed ancestors, whose grade, publicity and strength correlate in a way a reader would otherwise assemble by opening every card.'
     },
     {
         id: 'grandascension',
@@ -125,26 +119,12 @@ export const PROSE_SECTIONS: readonly ProseSection[] = [
             'One short paragraph on the band as a whole. The point is that it is populated by several different kinds of thing at once, and that only some of them can be met, so counting factions alone understates it.'
     },
     {
-        id: 'sealed',
-        heading: 'On what is sealed',
-        facts: reg => reg.sealed,
-        brief:
-            'One short paragraph on the sealed sleepers as a set. Grade, publicity and ordinal are correlated in a way worth stating, and at least one of them is weaker than the body holding it, which means a seal is not always a reserve of force.'
-    },
-    {
         id: 'items',
         heading: 'On what came down',
         facts: reg => ({ items: reg.items, holdings: reg.holdings }),
         brief:
             'One short paragraph on the immortal objects and who holds them. The distribution is the point: who has most, who has none, and what that implies about what each holder actually wants.'
     },
-    {
-        id: 'offladder',
-        heading: 'On the wanderers',
-        facts: reg => ({ wanderers: reg.wanderers, withdrawn: reg.withdrawn }),
-        brief:
-            'One short paragraph on the figures who are not on the ladder or not in the room. Say why an outcome that is not an ordinal is recorded differently from one that is.'
-    }
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
