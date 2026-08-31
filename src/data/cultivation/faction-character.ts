@@ -583,6 +583,18 @@ export const PROVENANCE_PENDING: ReadonlySet<string> = new Set([
 ]);
 
 export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
+    'sect-azure-cloud-pavilion': {
+        highestOrdinal: 41,
+        climbedYearsAgo: 380,
+        climbedWhere:
+            'The gorge vein beneath the Pavilion itself, worked continuously by one person for the better part of two centuries while the sect around her was an ordinary Third Sill tenant paying an ordinary tribute.',
+        ageNote:
+            'Late Age throughout, which is the part nobody can explain away. Ru Anjing did not climb in a richer era; she climbed in this one, on a vein a court had already assessed and priced, and every faction that insists the road is closed has to hold her at arms length to keep saying it.',
+        whyNobodyHasSince:
+            'The Pavilion has produced exactly one more at the last realm in three hundred and eighty years and produced them slowly. It teaches what she left, and what she left is a record of a divestment rather than a method, so the sect is in the position of having the outcome and not the working.',
+        settledBelief:
+            'The province holds that the Pavilion knows something. The Pavilion has never said otherwise, has never said what, and has been living off the difference for three centuries.'
+    },
     'sect-stonewright-consortium': {
         highestOrdinal: 33,
         climbedYearsAgo: 210,

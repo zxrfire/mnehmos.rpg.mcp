@@ -330,24 +330,33 @@ describe('cultivation MCP tool surface', () => {
             // No provisions and no grain abstinence: a full belly covers 50
             // turn-actions and five turns past empty is fatal, so a decade of
             // seclusion ends around day 55 rather than on day 3650.
-            const result = await cultivation({
-                action: 'cultivate',
+            const args = {
+                action: 'cultivate' as const,
                 years: 10,
                 rations: 0,
                 autoBreakthrough: false,
                 randomEvents: false
-            });
+            };
+            // The skip now hands control back when the food runs out rather
+            // than narrating a death nobody was asked about, so starving takes
+            // pressing on after being told. Each further call declines again.
+            let result = await cultivation(args);
+            for (let leg = 0; leg < 8 && !result.died; leg++) result = await cultivation(args);
 
             expect(result.died).toBe(true);
             expect(result.deathCause).toBe('starvation');
             expect(result.simulatedDays).toBeLessThan(365);
-            expect(result.run.elapsedDays).toBe(result.simulatedDays);
+            // The run clock is cumulative across the legs it took to decline
+            // the food warning, so it is at least the final leg and still well
+            // inside the first year.
+            expect(result.run.elapsedDays).toBeGreaterThanOrEqual(result.simulatedDays);
+            expect(result.run.elapsedDays).toBeLessThan(365);
             expect(result.run.status).toBe('dead');
 
             const storedRun = new RunRepository(db).getById(result.run.id)!;
             expect(storedRun.status).toBe('dead');
             expect(storedRun.deathCause).toBe('starvation');
-            expect(storedRun.elapsedDays).toBe(result.simulatedDays);
+            expect(storedRun.elapsedDays).toBe(result.run.elapsedDays);
             expect(storedRun.elapsedDays).toBeLessThan(10 * DAYS_PER_YEAR);
             assertPersistenceMatchesSimulation(result, db);
         });
@@ -844,10 +853,15 @@ describe('cultivation MCP tool surface', () => {
     describe('permadeath', () => {
         async function killTheRun() {
             await newRun();
-            const result = await cultivation({
-                action: 'cultivate', years: 10, rations: 0,
+            const args = {
+                action: 'cultivate' as const, years: 10, rations: 0,
                 autoBreakthrough: false, randomEvents: false
-            });
+            };
+            // The skip hands control back when the provisions run out instead
+            // of narrating a death nobody was asked about, so a run has to be
+            // driven into the ground on purpose. Each call declines again.
+            let result = await cultivation(args);
+            for (let leg = 0; leg < 8 && !result.died; leg++) result = await cultivation(args);
             expect(result.died).toBe(true);
             return result;
         }
@@ -1405,11 +1419,15 @@ describe('cultivation MCP tool surface', () => {
                 .get((await run({ action: 'current' })).run.id) as { admin: number };
             expect(flag.admin).toBe(1);
 
-            // A run ends by dying. Starve this one out to get it into the ledger.
-            const dead = await cultivation({
-                action: 'cultivate', years: 10, rations: 0,
+            // A run ends by dying. Starve this one out to get it into the
+            // ledger - which now takes declining the food warning repeatedly,
+            // because the skip stops to ask.
+            const starveArgs = {
+                action: 'cultivate' as const, years: 10, rations: 0,
                 autoBreakthrough: false, randomEvents: false
-            });
+            };
+            let dead = await cultivation(starveArgs);
+            for (let leg = 0; leg < 8 && !dead.died; leg++) dead = await cultivation(starveArgs);
             expect(dead.died).toBe(true);
             expect(dead.run.status).toBe('dead');
 

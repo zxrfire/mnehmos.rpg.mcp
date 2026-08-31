@@ -46,8 +46,6 @@ import {
     REGION_GOVERNANCE,
     UNBACKED_PLAYER_TRADE,
     getApexInstitution,
-    getApexCandidacy,
-    APEX_CANDIDATES,
     getCourt,
     getParentage,
     getSubsidiariesOf,
@@ -237,9 +235,18 @@ describe('the four governance models', () => {
 describe('above the map', () => {
     it('has apex institutions a starting cultivator does not know exist', () => {
         expect(APEX_INSTITUTIONS.length).toBeGreaterThanOrEqual(1);
-        expect(APEX_INSTITUTIONS.length).toBeLessThanOrEqual(2);
+        expect(APEX_INSTITUTIONS.length).toBeLessThanOrEqual(3);
         for (const a of APEX_INSTITUTIONS) {
             expect(() => ApexInstitutionSchema.parse(a), a.id).not.toThrow();
+        }
+
+        // The hidden ones. Being unnameable is what the two ancient apexes
+        // trade for being unreachable, and every invariant below is a
+        // consequence of that trade rather than of being an apex - the third,
+        // which has a front gate, meets none of them and should not.
+        const hidden = APEX_INSTITUTIONS.filter(a => a.heritage === 'ancient');
+        expect(hidden.length).toBe(2);
+        for (const a of hidden) {
             expect(a.startingAwareness).toBe('unaware');
             expect(mayBeNamed(a.startingAwareness), `${a.id} may not be named to a beginner`).toBe(false);
             expect(a.awarenessSources.length, `${a.id} is unlearnable`).toBeGreaterThanOrEqual(3);
@@ -247,6 +254,12 @@ describe('above the map', () => {
             expect(a.actsWithoutAttribution.length).toBeGreaterThanOrEqual(3);
             expect(unattributedEffectsOf(a.id).length).toBe(a.actsWithoutAttribution.length);
         }
+
+        // And the visible one acts in its own name, which is the trade run the
+        // other way: everything it does is attributable, dated and remembered.
+        const visible = APEX_INSTITUTIONS.filter(a => a.heritage === 'recent');
+        expect(visible.length).toBe(1);
+        expect(mayBeNamed(visible[0].startingAwareness)).toBe(true);
         for (const c of COURTS) {
             expect(() => CourtSchema.parse(c), c.id).not.toThrow();
             expect(getApexInstitution(c.apexId), `${c.id} serves unknown apex`).toBeDefined();
@@ -679,7 +692,7 @@ describe('the sent-down treasures', () => {
             // apart, the apexes are just strong rather than stuck.
             expect(apex.lastRealm.pinned).toBe(true);
             expect(apex.sentDown.ifUncovered.length).toBeGreaterThan(80);
-            expect(apex.sentDown.ifUncovered).toMatch(/seat|sitting|elsewhere|vacated|reach/i);
+            expect(apex.sentDown.ifUncovered).toMatch(/seat|sits|sitting|elsewhere|vacated|reach|defence/i);
         }
     });
 
@@ -746,59 +759,55 @@ function readSects(): string {
     return readFileSync('src/data/cultivation/sects.ts', 'utf-8');
 }
 
-describe('apex in standing, tenant in structure', () => {
-    it('recognises the newest gift in the world without promoting its holder', () => {
-        const candidacy = getApexCandidacy('sect-azure-cloud-pavilion')!;
-        expect(candidacy).toBeDefined();
-        expect(candidacy.yearsAgo).toBe(380);
+describe('the third apex: young, visible, and holding outright', () => {
+    const AZURE = 'sect-azure-cloud-pavilion';
 
-        // The provenance is real and the catalog agrees with itself about it.
-        const record = ANCESTRY_FOR_CANDIDACY['sect-azure-cloud-pavilion'];
-        expect(record.recency).toBe('recent');
-        expect(record.claimsLivingAncestor).toBe(true);
-        expect(record.claimIsTrue).toBe(true);
-        expect(record.partingGift!.id).toBe(candidacy.giftId);
-        expect(record.partingGift!.intact).toBe(true);
-        expect(record.ancestors.some(a => a.fate === 'ascended' && a.realmOrdinal === 45)).toBe(true);
-
-        // And it is still a tenant, because holding is the test.
-        expect(APEX_INSTITUTIONS.map(a => a.id)).not.toContain('sect-azure-cloud-pavilion');
-        const parentage = getParentage('sect-azure-cloud-pavilion')!;
-        expect(parentage.relation).toBe('subsidiary');
-        expect(parentage.parentFactionId).toBe('court-third-sill');
+    it('is an apex in the structure, not only in the province gossip', () => {
+        const apex = getApexInstitution('apex-azure-cloud');
+        expect(apex, 'the Pavilion is missing from APEX_INSTITUTIONS').toBeDefined();
+        expect(apex!.heritage).toBe('recent');
+        expect(apex!.lastRealm.count).toBe(1);
+        expect(apex!.lastRealm.pinned).toBe(true);
+        expect(apex!.sentDown.id).toBe('artifact-the-standing-edge');
+        // The catalog and the structure agree about the same object.
+        const gift = SECT_ANCESTRY[AZURE].partingGift!;
+        expect(gift.id).toBe(apex!.sentDown.id);
+        expect(gift.intact).toBe(true);
     });
 
-    it('is treated as an apex by the world and by nothing else', () => {
-        const c = getApexCandidacy('sect-azure-cloud-pavilion')!;
-        // Both readings have to survive. Drop the recognition and it becomes a
-        // provincial sect with a nice sword; drop the instability and it
-        // becomes a third apex, which it structurally is not.
-        expect(c.recognisedAs.length).toBeGreaterThan(60);
-        expect(c.instability.length).toBeGreaterThan(80);
-        expect(c.instability).toMatch(/event|renew|thins|decay/i);
+    it('holds outright and pays nobody, since the crossing', () => {
+        const p = getParentage(AZURE)!;
+        expect(p.governance).toBe('unassailable');
+        expect(p.parentFactionId).toBeNull();
+        expect(p.terms).toBeNull();
+        expect(p.unbackedReason).toBeNull();
+        expect(chainToApex(AZURE)).toEqual([AZURE]);
+        // And it is no longer counted among the Third Sill's tenants.
+        expect(getSubsidiariesOf('court-third-sill').map(x => x.factionId)).not.toContain(AZURE);
     });
 
-    it('rests on something that does not renew', () => {
-        // The older two stand on a person. This one stands on a date, and the
-        // offering that might have refreshed it came back unusable.
-        const record = ANCESTRY_FOR_CANDIDACY['sect-azure-cloud-pavilion'];
-        expect(record.lastOffering).not.toBeNull();
-        expect(record.lastOffering!.response).toBe('Not yet.');
-        for (const apex of APEX_INSTITUTIONS) {
-            expect(apex.lastRealm.count).toBe(1);
-        }
-        expect(getSect('sect-azure-cloud-pavilion')!.powerOrdinal).toBeLessThan(41);
+    it('is the only apex a starting cultivator can name', () => {
+        const named = APEX_INSTITUTIONS.filter(a => a.startingAwareness !== 'unaware');
+        expect(named.map(a => a.id)).toEqual(['apex-azure-cloud']);
+        // Visibility is the exposure, and the catalog has to say so.
+        expect(named[0].instability).toMatch(/found|gate|watched|joined/i);
     });
 
-    it('leaves every candidate short by the same thing', () => {
-        for (const c of APEX_CANDIDATES) {
-            const sect = getSect(c.factionId)!;
-            const strongestApex = Math.min(...APEX_INSTITUTIONS.map(a => a.powerOrdinal));
-            // Short of the last realm, which is the only qualification that counts.
-            expect(sect.powerOrdinal, c.factionId).toBeLessThan(strongestApex);
-            expect(c.cannotHold.length).toBeGreaterThan(80);
-            expect(c.wouldQualifyIf).toMatch(/tribulation transcendence/i);
-        }
+    it('is the weakest of the three and the shallowest', () => {
+        const apexes = APEX_INSTITUTIONS;
+        const azure = getApexInstitution('apex-azure-cloud')!;
+        expect(azure.powerOrdinal).toBe(Math.min(...apexes.map(a => a.powerOrdinal)));
+        expect(apexes.filter(a => a.heritage === 'ancient').length).toBe(2);
+        expect(apexes.filter(a => a.heritage === 'recent').length).toBe(1);
+        // Still the last realm, still below the Court.
+        expect(azure.powerOrdinal).toBeGreaterThanOrEqual(41);
+        expect(azure.powerOrdinal).toBeLessThan(getSect('sect-hollow-court')!.powerOrdinal);
+    });
+
+    it('gives all three a distinct way to lose the position', () => {
+        const reasons = APEX_INSTITUTIONS.map(a => a.instability);
+        expect(new Set(reasons).size).toBe(reasons.length);
+        for (const r of reasons) expect(r.length).toBeGreaterThan(80);
     });
 });
 
