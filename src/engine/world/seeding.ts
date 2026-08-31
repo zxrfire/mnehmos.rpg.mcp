@@ -328,7 +328,11 @@ function seedRegions(
                     historicalScars: []
                 }),
                 tags: ['place', place.kind],
-                data: { catalogRegionId: region.id }
+                data: {
+                    catalogRegionId: region.id,
+                    // Read by the demography when it draws a birthplace.
+                    populationWeight: PLACE_POPULATION_WEIGHT[place.kind] ?? 1
+                }
             }));
         }
 
@@ -371,6 +375,39 @@ function seedRegions(
 
     return byRegion;
 }
+
+/**
+ * Relative headcount by settlement kind, for weighting births.
+ *
+ * Anchored on the gazetteer's own `typicalPopulation` bands in
+ * `mortal-world.ts` - 20-80 for a hamlet up to 80,000-plus for a city -
+ * flattened to a ratio, because the demography only ever needs the shape.
+ * Compressed hard against the real spread: a city genuinely holds a thousand
+ * hamlets' worth of people, and a world where every birth lands in one is not
+ * the world this setting describes.
+ *
+ * A `site` is not a settlement and holds nobody. It is 0, and `birthplacesIn`
+ * reads that as uninhabitable rather than as unset.
+ */
+const PLACE_POPULATION_WEIGHT: Readonly<Record<string, number>> = {
+    hamlet: 3,
+    village: 10,
+    market_town: 28,
+    sect_town: 22,
+    city: 60,
+    waystation: 1,
+    site: 0
+};
+
+/**
+ * A house's ground holds its household, not a town.
+ *
+ * Deliberately near the bottom of the scale. There are far more houses in the
+ * catalog than there are towns, and drawing births uniformly over habitable
+ * ground put 61% of the living world inside a compound within a hundred and
+ * fifty years - which is not a setting where a sect is a thing you can join.
+ */
+const SECT_GROUND_POPULATION_WEIGHT = 1;
 
 function placeKindFor(kind: string): LocationRecord['kind'] {
     switch (kind) {
@@ -522,6 +559,7 @@ function seedSectGround(
         data: {
             factionId: cf.id,
             admissionOrdinal: cf.admissionOrdinal,
+            populationWeight: SECT_GROUND_POPULATION_WEIGHT,
             catalogRegionId: region.data.catalogRegionId as string ?? ''
         }
     });

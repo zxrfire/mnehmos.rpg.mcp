@@ -208,6 +208,128 @@ export function applyPressure(
     return { events, yearsStepped, born };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHERE PEOPLE ARE
+//
+// A region is a container. Nobody stands in one, and `npcsAt` matches on an
+// exact `locationId`, so anything placed on a region node is placed nowhere
+// anybody can meet it.
+//
+// This was placing every newborn there, and the result was a province that
+// hollowed out while its headcount held steady. Measured over a seeded,
+// advanced world:
+//
+//   day 0   Sweptground 25   Low Fall 30   Kettle 14   Sixmile 13
+//   +20y    Sweptground 18   Low Fall 18   Kettle  6   Sixmile  6
+//   +50y    Sweptground  7   Low Fall  4   Kettle  0   Sixmile  1
+//
+// Total alive held at about 350 the whole time - nobody was dying off. "The
+// Quiet Marches (region)" went from 39 to 170 over the same span. Every
+// settlement was draining into a node nobody can walk into, and the encounter
+// system draws its cast from who is present, so the end state is person-free
+// events forever.
+//
+// The two helpers below are the fix, and they are also the fix for a second
+// bug of the same shape: three separate filters compared things to `region.id`
+// - a newborn's home, a parent's whereabouts, and a faction's seat. All three
+// wanted "under this region", and none of them said so.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The region a location sits in, or itself when it is one.
+ *
+ * Walks the parent chain with a visited guard, so a cycle introduced by a bad
+ * patch returns an answer instead of hanging a five-century soak.
+ */
+function regionOf(state: WorldState, locationId: string | null): string | null {
+    let cursor = locationId;
+    const seen = new Set<string>();
+    while (cursor && !seen.has(cursor)) {
+        seen.add(cursor);
+        const location = state.locations.find(l => l.id === cursor);
+        if (!location) return null;
+        if (location.kind === 'region' || location.parentId === null) return location.id;
+        cursor = location.parentId;
+    }
+    return null;
+}
+
+/** Every location id at or beneath this one. Containers included. */
+function locationIdsUnder(state: WorldState, regionId: string): Set<string> {
+    const under = new Set<string>([regionId]);
+    // Two passes is enough for region -> place, and the loop is bounded by the
+    // location count so a malformed parent chain cannot hang the world tick.
+    for (let pass = 0; pass < state.locations.length; pass++) {
+        let grew = false;
+        for (const location of state.locations) {
+            if (location.parentId && under.has(location.parentId) && !under.has(location.id)) {
+                under.add(location.id);
+                grew = true;
+            }
+        }
+        if (!grew) break;
+    }
+    return under;
+}
+
+/**
+ * Somewhere in this region a person can actually be born.
+ *
+ * Habitability is read off columns that already exist rather than a new tag:
+ *
+ *   kind        a settlement, or ground a house holds. Not a vein, a ruin, a
+ *               scar or a region node - nobody lives in any of those.
+ *   thresholds  survivable by a newborn, which means at ordinal zero. The same
+ *               `survival` bar everything else reads, so a place calibrated
+ *               for Nascent Soul does not quietly acquire villagers.
+ *   sealed      a sealed pocket has no births in it, by definition.
+ */
+function birthplacesIn(state: WorldState, region: LocationRecord): LocationRecord[] {
+    const under = locationIdsUnder(state, region.id);
+    return state.locations.filter(l =>
+        l.id !== region.id &&
+        under.has(l.id) &&
+        (l.kind === 'settlement' || l.kind === 'sect_seat') &&
+        !l.sealed &&
+        l.thresholds.entry <= 0 &&
+        l.thresholds.survival <= 0 &&
+        populationWeightOf(l) > 0
+    );
+}
+
+/**
+ * How many people a place holds, relative to the others.
+ *
+ * Set at seeding from the settlement kind the gazetteer already carries, and
+ * read here. The draw HAS to be weighted: there are far more houses in the
+ * catalog than there are towns, so drawing uniformly over habitable children
+ * put 61% of the living world inside a compound within a hundred and fifty
+ * years. A city is not a hamlet and a sect's ground is a household.
+ *
+ * Defaults to 1 rather than 0, so a location seeded before this column existed
+ * still receives people instead of silently becoming uninhabitable.
+ */
+function populationWeightOf(location: LocationRecord): number {
+    const raw = Number(location.data.populationWeight ?? 1);
+    return Number.isFinite(raw) && raw >= 0 ? raw : 1;
+}
+
+/** Weighted draw over birthplaces. Seeded, so a world replays identically. */
+function drawBirthplace(
+    places: readonly LocationRecord[],
+    rng: CultivationRNG
+): LocationRecord | null {
+    if (places.length === 0) return null;
+    const total = places.reduce((sum, l) => sum + populationWeightOf(l), 0);
+    if (total <= 0) return places[rng.int(0, places.length - 1)];
+    let cursor = rng.next() * total;
+    for (const place of places) {
+        cursor -= populationWeightOf(place);
+        if (cursor < 0) return place;
+    }
+    return places[places.length - 1];
+}
+
 /**
  * People keep being born.
  *
@@ -215,6 +337,10 @@ export function applyPressure(
  * the gap between the living population and what the world can carry. Without
  * it five centuries produce an empty province and a set of factions that folded
  * for want of members, which is a modelling artefact rather than history.
+ *
+ * They are born IN A PLACE - a village, a market town, the ground a house
+ * holds - and never on the region node that contains those. See the block
+ * above for what happened while they were.
  *
  * Newcomers are generated exactly the way everybody else is: root and
  * attributes rolled from the world seed, realm DERIVED from those inputs over
@@ -251,11 +377,18 @@ function applyDemography(
         const rateMultiplier = Number(region.data.ambientRateMultiplier ?? 1);
         const age = own.int(16, 22);
 
+        // A place, not the container. The fallback to the region node is the
+        // honest last resort for a province with nowhere habitable in it, and
+        // it is loud rather than silent: if it ever fires in a seeded world the
+        // demography test below goes red.
+        const under = locationIdsUnder(state, region.id);
+        const home = drawBirthplace(birthplacesIn(state, region), own) ?? region;
+
         let npc = createNpc(state.seed, {
             id,
             bornOnDay: day - years(age),
             onDay: day,
-            locationId: region.id,
+            locationId: home.id,
             occupation: 'unknown',
             // Two people with one name breaks the knowledge system, which is
             // keyed by id while everything the player reads is keyed by name.
@@ -280,9 +413,15 @@ function applyDemography(
 
         // A parent, where the world has one to offer: same region, old enough,
         // and alive. Lineage is what long time-skips land on.
+        //
+        // This said `n.locationId === region.id`, which was only ever true of
+        // the cohort the placement bug had parked on the container. Once births
+        // land in real settlements that filter matches nobody and every child
+        // is born without a surname or a line - so the same bug would have
+        // silently taken lineage with it. It is the region, not the node.
         const candidates = state.npcs.filter(
             n => n.status === 'alive' && isBelowTheLid(n) &&
-                n.locationId === region.id &&
+                n.locationId !== null && under.has(n.locationId) &&
                 day - n.identity.bornOnDay >= years(age + 18)
         );
         if (candidates.length > 0) {
@@ -314,10 +453,19 @@ function applyDemography(
         // rolls only ever shrink: every founding member dies inside two
         // centuries and nobody replaces them, and the institutions fold for a
         // reason that is arithmetic rather than history.
+        // Seats moved, and this did not follow them.
+        //
+        // `f.seatLocationId === region.id` was true while a faction's seat WAS
+        // the region node. Sects now hold ground of their own - a `sect_seat`
+        // child of the region - so that comparison became false for every
+        // faction in the world, `admitting` was always empty, and the rolls
+        // could only ever shrink. A regression introduced with the sect-ground
+        // work and not caught, because nothing in that suite advanced a world.
+        // The question was always "is its seat in this region".
         const admitting = state.factions.filter(
             f => f.dissolvedOnDay === null && isBelowTheLid(f) &&
                 f.tags.includes('recruits') &&
-                f.seatLocationId === region.id &&
+                f.seatLocationId !== null && under.has(f.seatLocationId) &&
                 ordinal >= Number(f.resources.admission_ordinal ?? 0)
         );
         if (admitting.length > 0 && own.chance(0.45)) {
@@ -423,10 +571,18 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
         const npc = state.npcs[at];
         if (npc.factionId !== null || npc.status !== 'alive') continue;
 
+        // In reach of the gate, which means the same province.
+        //
+        // This used to accept a seat that WAS the npc's location or its direct
+        // parent. Both of those were true only while factions were seated on
+        // region nodes and everybody was standing on one; with real settlements
+        // and real sect grounds the seat is a sibling of the npc's village, not
+        // its parent, and the filter matched nobody.
+        const home = regionOf(state, npc.locationId);
         const options = admitting.filter(f =>
             npc.cultivation.realmOrdinal >= Number(f.resources.admission_ordinal ?? 0) &&
-            (f.seatLocationId === null || f.seatLocationId === npc.locationId ||
-                state.locations.find(l => l.id === npc.locationId)?.parentId === f.seatLocationId)
+            (f.seatLocationId === null ||
+                (home !== null && regionOf(state, f.seatLocationId) === home))
         );
         if (options.length === 0) continue;
         if (!rng.chance(0.35)) continue;
