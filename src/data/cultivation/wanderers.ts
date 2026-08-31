@@ -284,8 +284,23 @@ export const WandererSchema = z.object({
         formerRank: z.string().nullable(),
         whatItAmountsTo: z.string().min(150),
         /** What the faction gets out of it without doing anything. */
-        whatTheFactionGets: z.string().min(80)
+        whatTheFactionGets: z.string().min(80),
+        /** What the visits are actually like, which is not what either side says. */
+        whenHeVisits: z.string().min(150)
     }),
+    /**
+     * Who knows any of the above.
+     *
+     * The Court does not brief anybody and never has, so every fact in this
+     * affiliation is held by five people: the four Seats and him. It leaks only
+     * where he leaks it, which he does carelessly, in the wrong order, to
+     * whoever is in front of him - and that is the only channel there is.
+     *
+     * The consequence for play is worth stating plainly: a cultivator cannot
+     * research this. There is no archive, no register entry and no rumour with
+     * a source, and anybody claiming otherwise is repeating something he said.
+     */
+    whoKnows: z.string().min(150),
     /** Why he is not there, which is the whole logic of him. */
     whyNotWithThem: z.string().min(150),
     /** Wanted, and unsupplied by anybody below the Lid. */
@@ -470,10 +485,14 @@ export const WANDERERS: readonly Wanderer[] = [
             rankHeld: 'Guest of the Court',
             formerRank: 'First Seat',
             whatItAmountsTo:
-                'It is real and it is empty, and it is what is left of something that was not. He held First Seat: at Tribulation Transcendence Perfection there was nobody above him, and he made the crossing from the top of the Court rather than from the edge of it. What came back could not hold a seat. Seats go by ordinal and then by remaining years, and a False Immortal has no ordinal and no attempts left at all, so he is not merely unranked - he is the one person the rule can never favour, and the Court had to invent somewhere to put him. Guest of the Court sits outside the four rungs rather than beneath them, he was entered on it without discussion, and has never used it for anything. No Seat has asked him for a service, he has never been to the mountains, and the last time any of the four saw him is not recorded. There is no obligation attached in either direction and neither party has ever proposed one - including the obvious one: if the mountains were attacked tomorrow nothing whatsoever compels him to come, and nobody can say whether he would. The tie is real for all that. He is on the roll, he has never asked to be taken off it, and the fact that no outsider can price what he would do is worth more to the Court as deterrence than a promise it could not enforce anyway.',
+                'It is real and it is empty, and it is what is left of something that was not. He held First Seat: at Tribulation Transcendence Perfection there was nobody above him, and he made the crossing from the top of the Court rather than from the edge of it. What came back could not hold a seat. Seats go by ordinal and then by remaining years, and a False Immortal has no ordinal and no attempts left at all, so he is not merely unranked - he is the one person the rule can never favour, and the Court had to invent somewhere to put him. Guest of the Court sits outside the four rungs rather than beneath them, he was entered on it without discussion, and has never used it for anything. No Seat has asked him for a service. He does go back, though - not often and on no schedule, and he sits with the Seats and talks, which is the one obligation-free conversation any of them get and the only place he is not the strangest thing in the room. There is no obligation attached in either direction and neither party has ever proposed one - including the obvious one: if the mountains were attacked tomorrow nothing whatsoever compels him to come, and nobody can say whether he would. The tie is real for all that. He is on the roll, he has never asked to be taken off it, and the fact that no outsider can price what he would do is worth more to the Court as deterrence than a promise it could not enforce anyway.',
             whatTheFactionGets:
-                'Prestige, without having done anything to earn it: the Court has a False Immortal on its roll, everyone who knows anything knows it, and the Court has never once mentioned him. It also gets the only living account of what the crossing looks like from the top of that ladder, from somebody who went at it with every advantage the Court can supply. It has never asked, and the three who would benefit most are the three who have to sit with why not.'
+                'Prestige, without having done anything to earn it: the Court has a False Immortal on its roll, everyone who knows anything knows it, and the Court has never once mentioned him. It also gets the only living account of what the crossing looks like from the top of that ladder, from somebody who went at it with every advantage the Court can supply. It has never asked, and the three who would benefit most are the three who have to sit with why not.',
+            whenHeVisits:
+                'Every visit the Third Seat delivers a dao sermon on obligation, at length, to a man permanently barred from the only obligation that would have mattered. He finds it insufferable and does not hide it well. He sits through it anyway, and not for her: the other three would lose face if a Seat were seen to be walked out on, and he has nothing left to lose but they do. It is the only thing in his life he still does purely because somebody else would be diminished if he did not.'
         },
+        whoKnows:
+            'Four Seats and him. The Court is opaque by construction rather than by policy - it does not announce, deny, correct or brief, and it has never once mentioned him in any setting where a third party was present. So none of this is discoverable: no archive holds it, no register records it, and there is no rumour with a source behind it. What escapes, escapes because he said it to somebody, usually in passing, usually to a person with no way to check and no idea what they were being handed.',
         whyNotWithThem:
             'The Hollow Court is four people working continuously on the crossing, and presence there is measured in decades of absence because that is what the work looks like. He is permanently barred from that crossing - it has been opened against his name and will not open again - so there is nothing at the Court for him to do. Everyone else on those mountains has the only thing he does not have, which is something left to attempt. So he left, and nobody argued.',
         wants:
