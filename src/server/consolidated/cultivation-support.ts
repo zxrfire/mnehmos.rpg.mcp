@@ -75,7 +75,9 @@ import {
     AMBIENT_REFRESH_DAYS,
     getSpiritRoot,
     openingPosition,
+    originDiscoveryContext,
     provisionedYears,
+    withOriginAccess,
     progressRequiredForOrdinal,
     progressRemaining,
     rankName,
@@ -1521,15 +1523,34 @@ export function discoveryContextFor(
         ? getTechnique(options.practisingTechniqueId)
         : undefined;
 
-    return {
-        context: {
-            readableManuals,
-            teachers,
-            locationTags,
-            techniqueElement: practised?.element ?? null
-        },
-        sources
-    };
+    // Where they were born, folded into the same set. An origin has no access
+    // mechanism of its own: it contributes teachers, readable manuals and at
+    // most one tradition to the context that already exists, and every one of
+    // them becomes an ordinary AccessSource with a real label. Nine births in
+    // ten contribute nothing at all, and those cultivators reach their own
+    // spirit root and nothing else however long they sit.
+    const context = withOriginAccess(cultivator.origin, {
+        readableManuals,
+        teachers,
+        locationTags,
+        techniqueElement: practised?.element ?? null
+    });
+    const born = originDiscoveryContext(cultivator.origin);
+    for (const teacher of born.teachers ?? []) {
+        sources.push({ kind: 'teacher', label: teacher.label, id: teacher.id ?? null });
+    }
+    for (const manual of born.readableManuals ?? []) {
+        sources.push({ kind: 'manual', label: manual.label, id: manual.id ?? null });
+    }
+    if (born.tradition) {
+        sources.push({
+            kind: 'tradition',
+            label: born.tradition.label,
+            id: born.tradition.id ?? null
+        });
+    }
+
+    return { context, sources };
 }
 
 /**

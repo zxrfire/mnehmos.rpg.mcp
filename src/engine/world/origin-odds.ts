@@ -194,7 +194,7 @@ const RUIN_RETURN_RATE = 0.4;
 const RUIN_BASE_SURVIVAL = 0.45;
 
 /** Chance a survived attempt turns up a pocket nothing has drawn on. */
-const RUIN_VEIN_CHANCE = 0.05;
+const RUIN_VEIN_CHANCE = 0.02;
 
 /** Chance a survived attempt turns up an inheritance worth comprehending. */
 const RUIN_INHERITANCE_CHANCE = 0.18;
@@ -233,11 +233,28 @@ const YEARS_PER_COMPREHENSION_CHANCE = 25;
  */
 const MAX_COMPREHENSION_DRAWS = 400;
 
-/** Hard stop, so a sweep cannot run away. */
-const MAX_YEARS = 6_000;
+/**
+ * Hard stop, so a sweep cannot run away.
+ *
+ * Set ABOVE the largest lifespan on the ladder - Tribulation Transcendence
+ * grants a hundred thousand years - so that the guard can never bind before
+ * the real clocks do. A guard below the top realm's lifespan is not a guard,
+ * it is an invisible ceiling: at 6,000 it silently truncated every run in the
+ * last three realms, and reported them as having died of old age.
+ */
+const MAX_YEARS = 250_000;
 
 /** The rungs worth reporting a share for. */
 export const REPORTED_THRESHOLDS: readonly number[] = [13, 21, 25, 29, 33, 37, 41, 45];
+
+/** First ordinal of Foundation Establishment. Where an origin actually bites. */
+const FOUNDATION_ORDINAL = 13;
+
+/** First ordinal of Core Formation. A complete cultivator, and the reference. */
+const CORE_FORMATION_ORDINAL = 21;
+
+/** Below this many lives in a denominator, a conditional share says nothing. */
+const MIN_CONDITIONAL_DENOMINATOR = 30;
 
 function betterAmbient(a: AmbientQi, b: AmbientQi): AmbientQi {
     return AMBIENT_QI_RATE_MULTIPLIER[b] > AMBIENT_QI_RATE_MULTIPLIER[a] ? b : a;
@@ -252,7 +269,9 @@ export type LifeEnd =
     | 'died_in_a_ruin'
     | 'lifespan'
     | 'settling'
-    | 'summit';
+    | 'summit'
+    /** The runaway guard bound. Always a bug; reported so it cannot hide. */
+    | 'guard';
 
 export interface LifeResult {
     peakOrdinal: number;
@@ -265,16 +284,15 @@ export interface LifeResult {
     insightCount: number;
     /** Deepest degree reached. Below 3 is not a thing anybody would record. */
     deepestDegree: number;
-    /** Sum of degrees held. The blunt measure of total comprehension. */
+    /**
+     * Sum of degrees held. The blunt measure of total comprehension, and the
+     * term the last three realms actually run on.
+     */
     degreeTotal: number;
     /** Years lived. */
     ageAtEnd: number;
     /** What the foundation turned out to be. */
     foundation: FoundationQuality;
-    debugRate: number;
-    debugUntreated: number;
-    debugStones: number;
-    debugAmbient: string;
 }
 
 /**
@@ -333,8 +351,10 @@ export function simulateLife(
     let attempt = 0;
     let foundation: FoundationQuality = 'none';
     const injuries: Injury[] = [];
-    let end: LifeEnd = 'lifespan';
-    let lastRate = 0;
+    // Only ever overwritten by a real clock or a real gate. If a life leaves
+    // the loop still holding this, the guard bound, and that is a bug in the
+    // harness rather than an outcome in the world.
+    let end: LifeEnd = 'guard';
 
     while (age < MAX_YEARS) {
         // ── What a year costs, and whether it is funded ──────────────────
@@ -364,7 +384,6 @@ export function simulateLife(
                 sectBonus
             }
         ).perDay;
-        lastRate = rate;
         if (rate <= 0) {
             end = 'settling';
             break;
@@ -392,7 +411,16 @@ export function simulateLife(
 
         age += yearsNeeded;
         yearsAtRank += yearsNeeded;
-        progress += need;
+        // Land just ABOVE the requirement rather than exactly on it.
+        // `need` is `required - substituted - progress`, so adding it back
+        // reconstructs `required` through two floating-point subtractions and
+        // lands a few ulps below it about half the time. At ordinal 39 the
+        // requirement is around 1e7 and an ulp is a hundredth of a qi-unit,
+        // which is invisible - and `canAttemptBreakthrough` then refuses the
+        // attempt for `insufficient_progress`, silently stalling every run in
+        // the last three realms. The epsilon is smaller than a day of
+        // accumulation at any rate this harness produces.
+        progress += need + Math.max(1e-6, required * 1e-9);
         // Upkeep, the stipend, and what this person can make for themselves.
         // Everybody earns; the well-born simply start with a holding as well.
         const stipend = ordinal >= MERIT_ADMISSION_ORDINAL ? 0 : origin.placement.stipendPerYear;
@@ -500,7 +528,12 @@ export function simulateLife(
             insights,
             alive: true
         });
-        if (!gate.eligible) break;
+        if (!gate.eligible) {
+            // Never silently. A run that stops here has hit a gate rather than
+            // a clock, and reporting it as a lifespan would hide the fact.
+            end = gate.reason === 'at_ladder_summit' ? 'summit' : 'settling';
+            break;
+        }
 
         // Priced against the rank it is for. This is what stops a fortune
         // compounding: the pill that carries somebody through ordinal 24 is not
@@ -580,11 +613,7 @@ export function simulateLife(
         deepestDegree: insights.reduce((best, i) => Math.max(best, i.degree), 0),
         degreeTotal: insights.reduce((sum, i) => sum + i.degree, 0),
         ageAtEnd: age,
-        foundation,
-        debugRate: lastRate,
-        debugUntreated: injuries.filter(i => !i.treated).length,
-        debugStones: stones,
-        debugAmbient: ambient
+        foundation
     };
 }
 
@@ -604,6 +633,17 @@ export interface OriginOutcomeRow {
     medianPeakOrdinal: number;
     /** Share reaching each of {@link REPORTED_THRESHOLDS}, conditional on the tier. */
     reachedAtLeast: Record<number, number>;
+    /**
+     * Of the lives that got as far as Core Formation, the share that went on to
+     * the last realm.
+     *
+     * The cleanest test of the design's central claim. If an origin buys the
+     * ENTRANCE and not the summit, this number should be roughly the same for a
+     * farmer's child and a patriarch's - the well-born are simply far more
+     * likely to be in the denominator at all. Null when the denominator is too
+     * small to say anything, which is the honest answer at these rates.
+     */
+    summitGivenCoreFormation: number | null;
     /** How the lives ended. */
     ends: Record<LifeEnd, number>;
     /** Share that ever stood on a sealed vein. */
@@ -646,7 +686,26 @@ export interface OriginOutcomeReport {
         medianLift: number;
         meanLift: number;
         topLift: number;
-        /** Share of ALL runs reaching the last realm that were well-born. */
+        /**
+         * The same ratio at Foundation Establishment, which is where an origin
+         * actually bites. Reported beside `topLift` because the honest account
+         * of this axis is "decisive in the first realm and a half, and a
+         * constant factor inherited from that everywhere above it".
+         */
+        foundationLift: number;
+        /**
+         * Share of ALL runs reaching the last realm that were well-born,
+         * weighted by the birth distribution.
+         *
+         * Read this one with care: at any tractable sample size it is dominated
+         * by sampling noise in the two enormous tiers, because a single summit
+         * among a hundred thousand thin-county lives outweighs thirty among a
+         * hundred thousand great-house ones once the 90%-versus-0.004% birth
+         * weights are applied. What it is genuinely good for is the sign: the
+         * poor are so much more numerous that most of the world's immortals are
+         * still poor people who walked into a ruin, however much likelier any
+         * INDIVIDUAL patriarch's child is to arrive.
+         */
         wellBornShareOfSummits: number;
     };
 }
@@ -678,7 +737,8 @@ export function measureOriginOutcomes(
             died_in_a_ruin: 0,
             lifespan: 0,
             settling: 0,
-            summit: 0
+            summit: 0,
+            guard: 0
         };
         let veins = 0;
         let ruins = 0;
@@ -696,6 +756,8 @@ export function measureOriginOutcomes(
         }
 
         const sorted = [...peaks].sort((a, b) => a - b);
+        const reachedCore = peaks.filter(p => p >= CORE_FORMATION_ORDINAL).length;
+        const reachedSummit = peaks.filter(p => p >= MAX_ORDINAL).length;
         const reachedAtLeast: Record<number, number> = {};
         for (const threshold of REPORTED_THRESHOLDS) {
             reachedAtLeast[threshold] = peaks.filter(p => p >= threshold).length / n;
@@ -709,6 +771,8 @@ export function measureOriginOutcomes(
             meanPeakOrdinal: peaks.reduce((a, b) => a + b, 0) / n,
             medianPeakOrdinal: sorted[Math.floor(n / 2)],
             reachedAtLeast,
+            summitGivenCoreFormation:
+                reachedCore >= MIN_CONDITIONAL_DENOMINATOR ? reachedSummit / reachedCore : null,
             ends,
             veinShare: veins / n,
             ruinShare: ruins / n,
@@ -741,12 +805,16 @@ export function measureOriginOutcomes(
         privilegeLift: {
             medianLift: richest.medianPeakOrdinal - poorest.medianPeakOrdinal,
             meanLift: richest.meanPeakOrdinal - poorest.meanPeakOrdinal,
+            // Floored at one life in the sample, so the ratio stays a finite
+            // LOWER BOUND rather than an infinity that serialises as null.
             topLift:
-                poorest.reachedAtLeast[MAX_ORDINAL] > 0
-                    ? richest.reachedAtLeast[MAX_ORDINAL] / poorest.reachedAtLeast[MAX_ORDINAL]
-                    : richest.reachedAtLeast[MAX_ORDINAL] > 0
-                        ? Number.POSITIVE_INFINITY
-                        : 0,
+                richest.reachedAtLeast[MAX_ORDINAL] /
+                Math.max(poorest.reachedAtLeast[MAX_ORDINAL], 1 / n),
+            foundationLift:
+                rows[0].reachedAtLeast[FOUNDATION_ORDINAL] > 0
+                    ? richest.reachedAtLeast[FOUNDATION_ORDINAL] /
+                      rows[0].reachedAtLeast[FOUNDATION_ORDINAL]
+                    : 0,
             wellBornShareOfSummits: summitTotal > 0 ? wellBornSummits / summitTotal : 0
         }
     };

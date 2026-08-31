@@ -112,6 +112,28 @@ describe('WorldStateRepository', () => {
             db.close();
         });
 
+        it('preserves where every NPC was born', () => {
+            const db = makeDb();
+            const repo = new WorldStateRepository(db);
+            const state = world();
+
+            // Same failure mode as the fields above: an origin the seeder rolls
+            // and the table has no column for would come back as 'thin_county'
+            // for everybody, and the reason a great house has the members it
+            // does would quietly stop being true across a save.
+            const origins = new Map(state.npcs.map(n => [n.id, n.identity.origin]));
+            expect(origins.size).toBeGreaterThan(0);
+
+            repo.saveWorld(state);
+            const loaded = repo.loadWorld(state.id)!;
+
+            for (const npc of loaded.npcs) {
+                expect(npc.identity.origin).toBe(origins.get(npc.id));
+            }
+
+            db.close();
+        });
+
         it('returns null for an unknown world rather than throwing', () => {
             const db = makeDb();
             const repo = new WorldStateRepository(db);

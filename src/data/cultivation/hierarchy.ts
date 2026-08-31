@@ -334,6 +334,38 @@ export const ApexInstitutionSchema = z.object({
         reserveTerms: z.string().min(60),
         /** What becomes possible the moment the seat is empty. */
         ifUncovered: z.string().min(80),
+        /**
+         * Optional, and it is the whole shape of the Deep Survey: the object is
+         * portable, its effects would travel, and it is never going anywhere.
+         *
+         * The reason is mundane and should be written that way. Nothing
+         * metaphysical happens if the Lamp leaves. The headquarters is simply
+         * full of valuable things and the defence is presence: take the Lamp
+         * and the one last-realm cultivator out of the vault and what remains
+         * is a building holding several centuries of accumulated wealth behind
+         * seals that a lesser sect could work through given time and an
+         * absence. It is a security posture, not a mystical necessity.
+         */
+        cannotLeave: z.object({
+            portable: z.literal(true),
+            whatItCouldDo: z.string().min(150),
+            whyItNeverWill: z.string().min(150),
+            whatExposedMeans: z.array(z.string().min(60)).min(3),
+            howQuickly: z.string().min(100),
+            theBind: z.string().min(150),
+            /** Who would actually try it, which is not an apex rival. */
+            whoWouldTry: z.string().min(150),
+            /** Deference-border logic, applied to an apex. */
+            deferenceLogic: z.string().min(200),
+            nearlyDid: z.object({
+                yearsAgo: z.number().int().min(1),
+                what: z.string().min(150),
+                proposedBy: z.string().min(60),
+                theArgumentThatStopped: z.string().min(200),
+                outcome: z.string().min(100)
+            }),
+            whoOutsideKnows: z.string().min(200)
+        }).nullable(),
         intact: z.boolean()
     }),
     /** What it holds, which is never a single vein. */
@@ -447,12 +479,43 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 'A survey instrument, in the sense that a sword is a length of metal. The founder of the Survey sent it back down after her crossing, and it does the one thing nothing on this side does: it holds a fixed reference that is not local. Everything the Survey measures is measured against it in the end.',
             uses: [
                 'comprehension at the last realm - it presents a structure from the far side of the Lid as something that can be studied rather than inferred, which is the difference between guessing at the crossing and reading about it',
-                'a channel upward, used four times in nine hundred years, each of which cost more than the Survey has ever explained'
+                'a channel upward, used four times in nine hundred years, each of which cost more than the Survey has ever explained - and the cost is the better explanation for the number than expense alone: every use is presumed to risk the thing the object is anchoring, which is why four is a total rather than a rate'
             ],
             asAnArtifact:
                 'Set the Lid aside and it is still an immortal-made instrument, and the practical effect is that its holder cannot be lied to about where anything is. Formations do not resolve against it, concealment does not hold in front of it, and a boundary dispute in its presence is over. The Survey has won four hundred years of arbitrations it never had to attend, and the reason is not procedural.',
             reserveTerms:
-                'Never carried, never lent, never demonstrated. The Survey does not deny that it exists and has never once described what it does.',
+                'Never carried, never lent, never demonstrated - and this reads as policy only until you understand that it is not one. See `cannotLeave`. The Survey does not deny that it exists and has never once described what it does.',
+            cannotLeave: {
+                portable: true,
+                whatItCouldDo:
+                    'Nothing physically stops four Surveyors carrying it out of the vault, and its effects would travel with it. A holder who cannot be lied to about where anything is, formations that do not resolve against it, concealment that does not hold in front of it, and any boundary dispute anywhere in the world over on arrival. Walked into a room, it settles the room. There is no faction in either province that could argue with it in person and several that would simply concede on sight.',
+                whyItNeverWill:
+                    'Because the headquarters would be empty. Nothing happens to the institution if the Lamp goes out of the door - no structure fails, nothing is unanchored, and the Survey would be exactly as capable in the field. The problem is that the seat is full of valuable things and the defence is presence: the Lamp and the one seated under the vault are what keeps the place unopened, and both of them would be somewhere else. It is a logistics problem and a security posture, and the Survey has never dressed it up as anything more interesting.',
+                whatExposedMeans: [
+                    'A building with several centuries of accumulated wealth in it and nobody of consequence inside: the standing stock, the founding volumes, the arterial survey in its original hand, artifacts entered on the register and never described, and the sealed volumes for years four hundred to nine hundred.',
+                    'Seals that hold against a casual attempt and are not proof against a competent crew with weeks and no interruptions. They were cut to deter, and deterrence assumes somebody is coming home.',
+                    'The one seated under the vault cannot carry it. Nobody can. She could take the Lamp and perhaps two other things, and everything else stays in a room whose only real defence has just walked out of the province.',
+                    'The courts would keep functioning throughout, which is the part that makes it survivable and also the part that makes it tempting: the Survey would still be the Survey, minus whatever was taken, and would have to explain the gap in a register it publishes to itself.'
+                ],
+                howQuickly:
+                    'The absence is the whole window. A crew that knows the vault is unattended has exactly as long as the journey lasts, and a Survey party walking a dispute in person is gone for weeks. Nothing about it needs to be fast - it needs to be uninterrupted, which is the same thing from the other side.',
+                theBind:
+                    'Their single greatest asset is the one thing they cannot take anywhere, and the reason is not grand. They stay put because leaving means being robbed. They could settle any dispute in the world by attending it, and would come back to a lighter building - so the Lamp has never left the chamber, and the Survey has never once turned up to anything in person.',
+                whoWouldTry:
+                    'Not an apex, which is what makes it a real risk rather than a theoretical one. An ordinary ambitious sect with a formation master, a decent crew and patience - the Ashen Forge Clan could field one, the Crimson Abyss Hall would pay for one, and there are eleven institutions in the province with the means and no standing to lose. None of them would face the Survey. All of them can count.',
+                deferenceLogic:
+                    'It is the deference border applied to an apex. The Survey is not defended in the sense of being hard to enter; it is defended by a belief about what would happen to anybody who tried, held by everybody who might otherwise. That belief is worth exactly what the last test was worth, and there has not been a test - so nobody knows the real value, including the Survey. Its whole posture, the couriers who do not wait, the arbitration nobody attends, the rulings that cannot be appealed, exists so that the question is never put. The institution is built to make sure nobody ever needs to find out whether the one under the vault would come out, and the honest answer is that she would rather not, and they cannot afford to be asked. Somebody has certainly thought about this. Somebody may already be counting the days the vault has gone unattended.',
+                nearlyDid: {
+                    yearsAgo: 240,
+                    what: 'Two arterial veins were being worked simultaneously by parties the Survey could not identify, its couriers were being turned back at three borders, and a Sill ruling was openly ignored for the first time in the institutional record. It was the closest the arterial system has come to being taken out of Survey administration, and everybody involved knew it.',
+                    proposedBy: 'The Surveyor of the second arterial, seconded by the Sill-Sworn of the Third Sill, in writing, in a minute that still exists.',
+                    theArgumentThatStopped:
+                        'The Surveyor of the fourth arterial asked who was sitting on the vault while they did this. Nobody had an answer, because there is not one: there is one person of consequence at the seat, she was the person they proposed to send, and the building she would be leaving contains everything the institution has ever been given. The minute records the question and no reply, and then the proposal being withdrawn by the party that made it. It is four lines long and it is the whole of the Survey self-understanding: they are not an army, they are a very well-supplied office with one guard.',
+                    outcome: 'The Lamp stayed in the chamber. The Survey lost the two arterials for nineteen years, recovered them by ordinary administration and outliving the parties, and has never revisited the question. The Surveyor who proposed it was not censured and served another two hundred years.'
+                },
+                whoOutsideKnows:
+                    'The Long Cut has wondered for two centuries why the Survey never brings the object to a dispute in person, and its files record the observation as institutional discretion - the reading one legalistic body naturally reaches about another. The gap between discretion and cannot is the entire intelligence question. If the Long Cut ever established that the Survey stays home because leaving means being robbed, it would hold the most valuable thing either apex has about the other: not that the Survey is strong, which everybody knows, but that its strength has a fixed address and one guard, and that every unappealable ruling for four hundred years has been issued by an institution that could not have enforced it in person. Nobody else has even the observation. The Anchorhold, which has noticed that its own datum stone refers to a survey it does not hold, is closer than it knows and is asking a different question.'
+            },
             ifUncovered:
                 'It is a physical object in a room, and the room is guarded by exactly one person. If that person is ever elsewhere it can be taken by anyone who can reach the chamber - and the Court, which has four people who would each have a reason, is only the most obvious. Every sect holding a sealed ancestor is holding a single-use asset, and this is the object that would justify spending it - a permanent advantage for a one-off, which is a trade a great many quiet mountains have already priced.',
             intact: true
@@ -531,6 +594,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 'The Long Cut cannot move it and has stopped pretending that this is a policy. It is where it is. The seat was built around it afterwards.',
             ifUncovered:
                 'It cannot be carried off, which makes the problem different rather than smaller: anyone who reaches it can use it in place for as long as they are left alone there, and the only reason nobody has is that somebody is always sitting on it. The Long Cut is candid inside its own records that if the seat is ever vacated the contenders will not be the Court alone but every sect that has been maintaining a seal and waiting for a reason to spend it.',
+            cannotLeave: null,
             intact: true
         },
         holds:
@@ -600,6 +664,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 'Held in reserve, never carried. The Pavilion Master may draw it only with four Sword Elders consenting in the same room, and the Pavilion has refused itself permission at least nine times, including once during a siege.',
             ifUncovered:
                 'Easily the most exposed of the three, and the Pavilion knows it. The hall is inside a working sect with a gate and a courtyard rather than under a mountain nobody can find, and the one who sits with it is the whole of the defence. Every party that has priced the other two has also priced this one, and it prices lower.',
+            cannotLeave: null,
             intact: true
         },
         holds:

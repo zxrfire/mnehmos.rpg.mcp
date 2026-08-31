@@ -85,7 +85,10 @@ describe('the fallback is inert', () => {
         // A new verb has to be classified one way or the other, or the guard
         // above silently stops covering it.
         const inert: ActionName[] = [
-            'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear'
+            'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear',
+            // `sect` is a listing until a sect is named, and a life's allegiance
+            // after. Neither half spends in-world time, so it is inert here.
+            'sect'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -238,7 +241,8 @@ describe('every verb is reachable from plain English', () => {
         investigate: 'examine the inscription',
         assess: 'could I survive that cave',
         look: 'I look around.',
-        status: 'how am I doing'
+        status: 'how am I doing',
+        sect: 'I look for a sect that will take me'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

@@ -187,7 +187,12 @@ describe('cultivation migration', () => {
         const addedSinceRelease = [
             'location', 'foundation_quality', 'immortal_status',
             'insights', 'achievements',
-            'existence_state', 'soul_state', 'identity_continuity', 'body_id'
+            'existence_state', 'soul_state', 'identity_continuity', 'body_id',
+            // Where they were born. A schema field with a default and no column
+            // behind it is this repository's most-repeated bug: Zod fills it on
+            // every read, no save ever carries it, and the feature does not
+            // exist at rest.
+            'origin_tier'
         ];
         for (const column of addedSinceRelease) {
             expect(cultivatorColumns(db)).not.toContain(column);
@@ -281,6 +286,24 @@ describe('CultivatorRepository', () => {
         expect(repo.listInjuries('nobody')).toEqual([]);
         expect(repo.countUntreatedInjuries('nobody')).toBe(0);
         expect(repo.treatInjury('no-such-injury')).toBeNull();
+    });
+
+    it('round-trips an origin, and reads a pre-origin row as born to nothing', () => {
+        repo.create(sampleCultivator({ id: 'cult-house', origin: 'great_house' }));
+        expect(repo.getById('cult-house')!.origin).toBe('great_house');
+
+        // The column is real, and the value in it is the value that was saved.
+        const stored = db
+            .prepare('SELECT origin_tier FROM cultivators WHERE id = ?')
+            .get('cult-house') as { origin_tier: string };
+        expect(stored.origin_tier).toBe('great_house');
+
+        // A caller who never mentions an origin gets the overwhelming majority
+        // of births, which is also the honest reading of a row written before
+        // the axis existed: no teacher, no manual, no vein.
+        const { origin: _omitted, ...withoutOrigin } = sampleCultivator({ id: 'cult-farm' });
+        repo.create(withoutOrigin as CreateCultivatorInput);
+        expect(repo.getById('cult-farm')!.origin).toBe('thin_county');
     });
 
     it('round-trips a null location', () => {

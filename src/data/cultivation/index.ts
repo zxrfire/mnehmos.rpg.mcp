@@ -30,7 +30,11 @@ import { FACTION_CHARACTER } from './faction-character.js';
 import { APEX_INSTITUTIONS, COURTS, FACTION_PARENTAGE, GUEST_ELDERS } from './hierarchy.js';
 import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from './immortal-items.js';
 import { WANDERERS } from './wanderers.js';
+import { MEMBERS } from './members.js';
 import { IMMORTAL_CHANNELS } from './crossings.js';
+import { AGES, DEAD_CIVILISATIONS, LID_THEORIES, ORIGIN_ACCOUNTS, CALENDARS } from './history.js';
+import { CONTINGENCIES } from './contingencies.js';
+import { HELD_INSTRUMENTS, UNOWNED_ANCESTORS } from './sealed-ancestors.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RE-EXPORTS
@@ -205,7 +209,11 @@ export * from './faction-character.js';
 export * from './hierarchy.js';
 export * from './immortal-items.js';
 export * from './wanderers.js';
+export * from './members.js';
 export * from './crossings.js';
+export * from './history.js';
+export * from './contingencies.js';
+export * from './sealed-ancestors.js';
 
 export {
     ENCOUNTERS,
@@ -285,6 +293,23 @@ export interface CultivationCatalogCounts {
     beastTides: number;
     /** Institutions with somebody above the Lid still answering, plus gifts. */
     immortalChannels: number;
+    /** Plans held by parties, waiting on events that have not happened. */
+    contingencies: number;
+    /** Sealed high-realm beings: held instruments and unowned hazards. */
+    heldInstruments: number;
+    unownedAncestors: number;
+    /** Named people inside the factions, at the scale a player can know. */
+    members: number;
+    /** Named ages, including the present one. */
+    ages: number;
+    /** Civilisations that are gone and whose works the present is using. */
+    deadCivilisations: number;
+    /** Competing accounts of where cultivation came from. None endorsed. */
+    originAccounts: number;
+    /** Incompatible theories of the Lid, held by serious institutions. */
+    lidTheories: number;
+    /** Reckonings in use. Two of them are provincial and disagree. */
+    calendars: number;
 }
 
 /** Catalog sizes, for tool responses and for the content smoke test. */
@@ -314,7 +339,16 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         beasts: BEASTS.length,
         beastMaterials: BEAST_MATERIALS.length,
         beastTides: BEAST_TIDES.length,
-        immortalChannels: IMMORTAL_CHANNELS.length
+        immortalChannels: IMMORTAL_CHANNELS.length,
+        contingencies: CONTINGENCIES.length,
+        heldInstruments: HELD_INSTRUMENTS.length,
+        unownedAncestors: UNOWNED_ANCESTORS.length,
+        members: MEMBERS.length,
+        ages: AGES.length,
+        deadCivilisations: DEAD_CIVILISATIONS.length,
+        originAccounts: ORIGIN_ACCOUNTS.length,
+        lidTheories: LID_THEORIES.length,
+        calendars: CALENDARS.length
     };
 }
 

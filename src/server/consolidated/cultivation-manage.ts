@@ -52,8 +52,6 @@ import {
     lifespanForOrdinal,
     progressRequiredForOrdinal,
     openingPosition,
-    originProbability,
-    provisionedYears,
     rankName,
     rollAttributes,
     rollOrigin,
@@ -457,9 +455,9 @@ export async function handleCreateCultivator(
         // and nothing recommends a path from it.
         originRoll: {
             seedStream: `origin, nonce ${nonce}`,
+            // Unrounded on purpose. A great house is four births in a hundred
+            // thousand, and round4 would report that as a probability of zero.
             ...openingPosition(origin.key),
-            probability: round4(originProbability(origin.key)),
-            provisionedYears: round4(provisionedYears(origin.spiritStones)),
             locked: true,
             note: 'Where this life started. It confers stones, placement, access, standing and supplied risk. It confers no realm, no rank, no admission and no progress.'
         },

@@ -43,12 +43,14 @@ import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { rollHerb } from '../data/cultivation/index.js';
 import { findWorkForOrdinal } from '../data/cultivation/mortal-world.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
+import { round2 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { handleRefine } from '../server/consolidated/alchemy-manage.js';
 import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
 import { handleMarket, handleWork } from '../server/consolidated/cultivation-mortal.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
+import { handleJoin, handleList } from '../server/consolidated/sect-manage.js';
 import { handlePractise } from '../server/consolidated/technique-manage.js';
 import {
     FLAG_NAME_TAKEN,
@@ -84,11 +86,13 @@ import {
     resolveParty,
     resolvePlace,
     resolveRecipe,
+    resolveSect,
     resolveTechnique,
     type KnowledgeScope
 } from './entities.js';
 import { KnowledgeGate, type AwarenessRow } from './knowledge.js';
 import { offerHearing, othersPresent, recordHearing, type Hearing } from './hearsay.js';
+import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { advanceWorldForCultivator, worldForRun } from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
 import type { PlayerDigest } from '../engine/world/digest.js';
@@ -101,6 +105,7 @@ import {
     factsForInvestigation,
     factsForLook,
     factsForMove,
+    type Company,
     factsForRefusal,
     factsForStatus,
     factsForTimeSkip,
@@ -154,6 +159,60 @@ export const SHORT_ACTION_DAYS = 1;
 export const TRAVEL_FOCUS = 0.15;
 export const GATHERING_FOCUS = 0.2;
 export const WAITING_FOCUS = 0.25;
+
+/**
+ * A price as the mortal-economy tool reports it.
+ *
+ * Both currencies, because the world has two on purpose: `mortal-world.ts`
+ * anchors a hundred cash to the spirit stone precisely so that ordinary life
+ * is priced in cash and cultivation is priced in stones.
+ */
+interface MarketPrice {
+    name?: string;
+    category?: string;
+    unit?: string;
+    cash?: number;
+    spiritStones?: number;
+    affordable?: boolean;
+}
+
+/**
+ * Categories that belong to ordinary life and are priced in cash.
+ *
+ * Rendering a bowl of millet as 0.01 spirit stones throws away the whole point
+ * of the second currency and produces a number nobody can hold in their head.
+ * One cash for the millet, a hundred and twenty for a month of rations: those
+ * are figures a player can reason with.
+ */
+const MORTAL_CATEGORIES = new Set(['food', 'lodging', 'transport', 'medicine', 'service']);
+
+/** What a thing costs, in whichever currency it is actually sold in. */
+function priceOf(item: MarketPrice): string {
+    const unit = item.unit ? ` the ${item.unit}` : '';
+    const mortal = item.category === undefined || MORTAL_CATEGORIES.has(item.category);
+
+    if (mortal && typeof item.cash === 'number') {
+        return `${Math.round(item.cash)} cash${unit}`;
+    }
+    if (typeof item.spiritStones === 'number') {
+        return `${round2(item.spiritStones)} spirit stones${unit}`;
+    }
+    return `an unmarked price${unit}`;
+}
+
+/**
+ * The purse, in both currencies.
+ *
+ * The conversion appears here and almost nowhere else, which is where it
+ * belongs: changing a stone for cash is the small moment a cultivator has when
+ * they discover their savings are somebody's month of dinners.
+ */
+function describePurseCash(purse: { cash?: number; spiritStones?: number }): string {
+    const stones = typeof purse.spiritStones === 'number' ? purse.spiritStones : 0;
+    const cash = typeof purse.cash === 'number' ? purse.cash : stones * 100;
+    if (stones === 0) return `${Math.round(cash)} cash and no stones`;
+    return `${stones} spirit stones, which is ${Math.round(cash)} cash`;
+}
 
 /** Market board categories the parser can narrow to. */
 const MARKET_CATEGORIES = [
@@ -299,6 +358,16 @@ export class GameService {
     private readonly knowledge: KnowledgeGate;
     /** Whether time passing for the cultivator also passes for everyone else. */
     readonly worldEnabled: boolean;
+    /**
+     * The world, loaded once per action.
+     *
+     * Resolving who is standing in front of the player needs the world, and it
+     * is asked several times in the course of one action - by the scope, by the
+     * hearing check, by a refusal deciding whether anybody is about. Loading it
+     * once at the top of the action and holding it is the difference between
+     * one rebuild and five.
+     */
+    private atHand: WorldState | null = null;
     private readonly narrator: Narrator;
     private readonly seedFactory: () => string;
 
@@ -409,7 +478,7 @@ export class GameService {
         );
 
         const ambient = this.ambientFor(created.cultivator, created.run);
-        const facts = factsForLook(created.cultivator, ambient);
+        const facts = factsForLook(created.cultivator, ambient, this.company(created.cultivator));
         const opening = await this.narrator.narrate(facts, {
             place: placeName(created.cultivator),
             ambient,
@@ -476,6 +545,7 @@ export class GameService {
 
         const { run, cultivator } = this.requireLiveRun();
         const ambient = this.ambientFor(cultivator, run);
+        this.atHand = await this.loadWorld();
 
         // ── phase 1 ──
         const plan = await this.narrator.plan(
@@ -586,6 +656,20 @@ export class GameService {
     }
 
     // ── read-only surfaces ───────────────────────────────────────────────
+
+    /**
+     * Refuse an operator surface when admin mode is off.
+     *
+     * Shared so every admin endpoint refuses in the same words and with the
+     * same status. It does not guard state - nothing behind it writes - it
+     * guards *disclosure*: these surfaces state plainly what the world spends
+     * a great deal of effort keeping unstated.
+     */
+    assertAdmin(what: string): void {
+        if (!this.adminMode) {
+            throw new GameError(`Admin mode is off. Set ADMIN_MODE=true to enable ${what}.`, 403);
+        }
+    }
 
     ledger(limit = 50): { runs: LedgerRowView[] } {
         const rows = this.repos.runs.deathLedger(limit).map(run => {
@@ -736,6 +820,9 @@ export class GameService {
             case 'market':
                 return this.market(cultivator, action.target);
 
+            case 'sect':
+                return this.sect(cultivator, action.target);
+
             case 'assess':
                 return this.assess(cultivator, action.target);
 
@@ -761,7 +848,10 @@ export class GameService {
             }
 
             case 'look': {
-                const looking = this.freeAction(run, 'look', factsForLook(cultivator, ambient));
+                const looking = this.freeAction(
+                    run, 'look',
+                    factsForLook(cultivator, ambient, this.company(cultivator))
+                );
                 // Two people talking on the far side of a wall, who were having
                 // the conversation anyway. Nothing here is staged for the
                 // player, which is exactly why it is worth anything.
@@ -886,7 +976,10 @@ export class GameService {
     ): Execution {
         const query = (target ?? '').trim();
         if (query.length < 2) {
-            return this.freeAction(run, 'investigate', factsForLook(cultivator, ambient));
+            return this.freeAction(
+                run, 'investigate',
+                factsForLook(cultivator, ambient, this.company(cultivator))
+            );
         }
 
         const scope = this.scopeFor(cultivator);
@@ -1079,6 +1172,79 @@ export class GameService {
             async args => await handleCultivate(args as never) as Record<string, unknown>
         );
         return this.fromToolResult('cultivation_mortal.work', 'work', result, 'The work');
+    }
+
+    /**
+     * Sects: which ones would take them, and joining one.
+     *
+     * Two halves, decided by whether a sect was actually named. Listing is a
+     * read and costs nothing; joining is one of the most consequential things
+     * a low cultivator can do, and both belong to `sect_manage` rather than to
+     * anything reimplemented here.
+     *
+     * The listing is discovery-gated on the way out. `sect_manage.list` returns
+     * every sect in the campaign, which is the correct answer for a tool whose
+     * caller is an operator and exactly the wrong one for a villager: a
+     * starting cultivator has heard of one, and handing them the register would
+     * spend a hundred turns of revelation on a single query.
+     */
+    private async sect(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+        const scope = this.scopeFor(cultivator);
+        const query = (target ?? '').trim();
+        const named = query.length >= 3 ? resolveSect(this.repos, query, scope, cultivator.sectId) : null;
+
+        if (named) {
+            const result = await handleJoin({
+                action: 'join',
+                sectId: named.id,
+                cultivatorId: cultivator.id
+            });
+            return this.fromToolResult('sect_manage.join', 'sect', result, named.name);
+        }
+
+        const listing = await handleList({
+            action: 'list',
+            cultivatorId: cultivator.id,
+            admissibleOnly: true
+        });
+        if (isGuidingErrorBody(listing)) {
+            return this.fromToolResult('sect_manage.list', 'sect', listing, 'The sects');
+        }
+
+        const all = (listing as { sects?: Array<{ id: string; name: string; admissible?: boolean | null }> }).sects ?? [];
+        const heard = all.filter(s => this.knowledge.isAwareOf(cultivator.id, 'sect', s.id));
+
+        const facts = heard.length === 0
+            ? factsForRefusal(
+                'No door you know of.',
+                'You do not know the name of a single order that takes people on. Somebody would ' +
+                'have to say one in front of you first, and nobody has.',
+                `sect_manage.list returned ${all.length} admissible sect(s); none are known to this cultivator.`)
+            : factsForToolResult(
+                `${heard.length} order${heard.length === 1 ? '' : 's'} you could put yourself in front of.`,
+                [
+                    'Orders this cultivator has heard of, and could plausibly present themselves to:',
+                    ...heard.map(s => `  ${s.name}${s.admissible === false ? ', which would not have them as they stand' : ''}.`),
+                    'Being taken is not the same as applying, and nobody here arranges either on their behalf.'
+                ]);
+
+        facts.structure.push(
+            `sect_manage.list: ${all.length} admissible, ${heard.length} known to this cultivator.`
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: heard.length === 0 ? 'refused' : 'executed',
+            calls: [{
+                name: 'sect_manage.list',
+                action: 'sect',
+                summary: `${all.length} admissible sect(s); ${heard.length} within this cultivator's knowledge.`,
+                ok: heard.length > 0
+            }]
+        };
     }
 
     /**
@@ -1301,7 +1467,7 @@ export class GameService {
         const detail = summariseToolBody(body);
         const lines = hint
             ? [hint, ...detail]
-            : detail.length > 0 ? detail : [`${subject} is done.`];
+            : detail.length > 0 ? detail : ['It is done. Nothing about it drew attention.'];
 
         return {
             facts: factsForToolResult(hint ?? lines[0], lines),
@@ -1711,8 +1877,51 @@ export class GameService {
         return {
             gate: this.knowledge,
             holderId: cultivator.id,
-            here: cultivator.location
+            here: cultivator.location,
+            present: this.present(cultivator)
         };
+    }
+
+    /**
+     * Everybody standing where the player is standing.
+     *
+     * Both populations, joined on the place name. This is the call that was
+     * missing: nineteen people were at Sweptground and every social path
+     * dead-ended, because the only population anybody asked about was the
+     * `cultivators` table and the world's people were not in it.
+     */
+    private present(cultivator: Cultivator): RosterEntry[] {
+        return othersPresent(this.repos, cultivator, this.atHand);
+    }
+
+    /**
+     * Who is here, split by whether the player can name them.
+     *
+     * The discovery rule, applied to people. Being in the room is permission to
+     * see somebody; it is not permission to know who they are. So a face the
+     * player has a record for gets a name and everybody else gets a reading of
+     * how they carry themselves, and the count of the rest is a crowd rather
+     * than a cast list.
+     */
+    private company(cultivator: Cultivator): Company {
+        const here = this.present(cultivator);
+        const named: Company['named'] = [];
+        const strangers: Company['strangers'] = [];
+
+        for (const person of here) {
+            if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) {
+                named.push({ name: person.name, ordinal: person.realmOrdinal });
+            } else {
+                strangers.push({ ordinal: person.realmOrdinal });
+            }
+        }
+
+        // Deepest first: in a square, the person you notice is the one the
+        // others are being careful around.
+        named.sort((a, b) => b.ordinal - a.ordinal);
+        strangers.sort((a, b) => b.ordinal - a.ordinal);
+
+        return { named, strangers, total: here.length };
     }
 
     /**
@@ -1750,7 +1959,7 @@ export class GameService {
         addressingId: string | null
     ): Hearing | null {
         const addressing = addressingId
-            ? othersPresent(this.repos, cultivator).find(row => row.id === addressingId) ?? null
+            ? this.present(cultivator).find(row => row.id === addressingId) ?? null
             : null;
 
         const offered = offerHearing({
@@ -1759,7 +1968,8 @@ export class GameService {
             cultivator,
             run,
             addressing,
-            occasion
+            occasion,
+            world: this.atHand
         });
         if (!offered) return null;
 
@@ -1782,7 +1992,7 @@ export class GameService {
      * worked.
      */
     private blankLook(cultivator: Cultivator): string {
-        const here = othersPresent(this.repos, cultivator);
+        const here = this.present(cultivator);
         const where = placeName(cultivator);
         if (here.length === 0) {
             return `You say it aloud in ${where} and ${where} carries on as it was. ` +
@@ -1800,7 +2010,7 @@ export class GameService {
      * developer affordance wearing a sentence.
      */
     private whoIsAbout(cultivator: Cultivator): string {
-        const here = othersPresent(this.repos, cultivator);
+        const here = this.present(cultivator);
         const where = placeName(cultivator);
         if (here.length === 0) {
             return `There is nobody about in ${where} at all, and you had not settled on who you ` +
@@ -2090,6 +2300,40 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
         if (typeof body.unpaid === 'string') lines.push(body.unpaid);
     }
 
+    // -- the sects --
+    //
+    // `sect_manage.join` and `.leave` return a membership record rather than a
+    // narration hint. Without this the last-resort line reached a player as
+    // "The Gleaners' Company is done." - which reads as the sect being
+    // finished, not as the joining having happened. Same defect class as the
+    // work and market boards: a tool surface written for a model that will
+    // phrase the figures, called here by something that has to phrase them
+    // itself.
+    if (body.joined === true) {
+        const joinedSect = body.sect as { name?: string } | undefined;
+        const membership = body.membership as { rankTitle?: string } | undefined;
+        lines.push(
+            `Taken on by ${joinedSect?.name ?? 'the sect'}` +
+            `${membership?.rankTitle ? `, at ${membership.rankTitle}` : ''}.`
+        );
+        if (typeof body.defectedFrom === 'string' && body.defectedFrom.length > 0) {
+            lines.push(
+                'Whatever standing was built at the last door stayed there. ' +
+                'Contribution does not travel.'
+            );
+        }
+    }
+
+    if (body.left === true) {
+        const formerSect = body.sect as { name?: string } | undefined;
+        const formerRank = typeof body.formerRank === 'string' ? body.formerRank : null;
+        lines.push(
+            `No longer of ${formerSect?.name ?? 'the sect'}` +
+            `${formerRank ? `, where the rank was ${formerRank}` : ''}.`
+        );
+        if (typeof body.note === 'string') lines.push(body.note);
+    }
+
     const offered = body.work as Array<{ name?: string; cashPerMonth?: number; monthsLodgingItCovers?: number; risk?: string }> | undefined;
     if (Array.isArray(offered)) {
         if (offered.length === 0) {
@@ -2111,7 +2355,7 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
         }
     }
 
-    const prices = body.prices as Array<{ name?: string; spiritStones?: number; affordable?: boolean; unit?: string }> | undefined;
+    const prices = body.prices as MarketPrice[] | undefined;
     if (Array.isArray(prices)) {
         if (prices.length === 0) {
             lines.push(
@@ -2121,10 +2365,23 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
         } else {
             lines.push('What is on offer, and what it costs here:');
             for (const item of prices.slice(0, 8)) {
-                const cost = typeof item.spiritStones === 'number'
-                    ? `${item.spiritStones} spirit stones${item.unit ? ` the ${item.unit}` : ''}`
-                    : 'an unmarked price';
-                lines.push(`  ${item.name ?? 'unnamed'}, ${cost}${item.affordable === false ? ', which is out of reach' : ''}.`);
+                lines.push(`  ${item.name ?? 'unnamed'}, ${priceOf(item)}.`);
+            }
+
+            // Said once, about the purse, rather than eleven times about the
+            // goods. Whether a bowl of millet is out of reach is a fact about
+            // the player, and repeating it on every line turns a market board
+            // into a wall of the same sentence.
+            const purse = body.purse as { cash?: number; spiritStones?: number } | undefined;
+            const afford = prices.filter(item => item.affordable !== false).length;
+            if (purse) {
+                lines.push(
+                    afford === 0
+                        ? `The purse holds ${describePurseCash(purse)}, which is not enough for anything on the board.`
+                        : afford === prices.length
+                            ? `The purse holds ${describePurseCash(purse)}, which covers all of it.`
+                            : `The purse holds ${describePurseCash(purse)}: ${afford} of those ${prices.length} are within it.`
+                );
             }
         }
         // Whether this ground can still take them anywhere is the one thing a

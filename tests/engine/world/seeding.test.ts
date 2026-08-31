@@ -3,6 +3,7 @@ import { fixtureCatalog } from './fixtures.js';
 import { deriveOrdinal, histogram, livingPopulation, seedWorld } from '../../../src/engine/world/seeding.js';
 import { densityFromProfile, dominantAmbient } from '../../../src/engine/world/catalog.js';
 import { getSpiritRoot } from '../../../src/engine/cultivation/spirit-roots.js';
+import { isOriginTierKey } from '../../../src/engine/cultivation/origin.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { queryFacts } from '../../../src/engine/world/history.js';
 import { locationHistory } from '../../../src/engine/world/locations.js';
@@ -191,6 +192,55 @@ describe('seeding: nobody is flagged important', () => {
             return rows.reduce((s, n) => s + n.cultivation.realmOrdinal, 0) / Math.max(1, rows.length);
         };
         expect(meanFor('region-highstair')).toBeGreaterThan(meanFor('region-scarwater'));
+    });
+
+    it('rolls where every NPC was born, and rolls it the same way the player is', () => {
+        const { state } = seeded('seed-a', 400);
+        // Nobody is assigned a great house. The origin comes out of the seed on
+        // the same weights the player draws on, which is the honest explanation
+        // for why a great house has the members it does.
+        for (const npc of state.npcs) {
+            expect(isOriginTierKey(npc.identity.origin)).toBe(true);
+        }
+        const thin = state.npcs.filter(n => n.identity.origin === 'thin_county').length;
+        expect(thin / state.npcs.length).toBeGreaterThan(0.75);
+
+        // Same seed, same births.
+        const again = seeded('seed-a', 400);
+        expect(again.state.npcs.map(n => n.identity.origin))
+            .toEqual(state.npcs.map(n => n.identity.origin));
+    });
+
+    it('lets an origin move the inputs and never the rank', () => {
+        const attrs = { might: 2, insight: 2, fortune: 1, charm: 2 };
+        const rngFor = () => forStream('x', 'origin-derive', 3);
+
+        // A great house child and a farmer's child with IDENTICAL talent. The
+        // house is worth something and it is worth it through the rate, the
+        // stipend and the pills - never through a rank that was handed over.
+        const poor = deriveOrdinal('single_fire', attrs, 120, 1, 44, rngFor(), {
+            origin: 'thin_county'
+        });
+        const rich = deriveOrdinal('single_fire', attrs, 120, 1, 44, rngFor(), {
+            origin: 'great_house'
+        });
+        expect(rich).toBeGreaterThanOrEqual(poor);
+
+        // And a fortune cannot rescue the draw that decides everything. A
+        // muddled root born to a great house still loses to a clean root born
+        // on a farm, which is the whole of "talent is dealt once".
+        const richMuddled = deriveOrdinal('muddled_five_element', attrs, 120, 1, 44, rngFor(), {
+            origin: 'great_house'
+        });
+        expect(richMuddled).toBeLessThan(poor);
+    });
+
+    it('still caps a great house child at the province ceiling', () => {
+        const attrs = { might: 3, insight: 4, fortune: 3, charm: 3 };
+        const capped = deriveOrdinal('single_fire', attrs, 400, 2, 9, forStream('x', 'cap', 1), {
+            origin: 'great_house'
+        });
+        expect(capped).toBeLessThanOrEqual(9);
     });
 
     it('gives everyone a goal with the five fields filled in', () => {

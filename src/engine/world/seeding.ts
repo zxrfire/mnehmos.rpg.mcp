@@ -548,11 +548,16 @@ export function deriveOrdinal(
     if (rate <= 0) return 0;
 
     const perYear = rate * DAYS_PER_YEAR;
-    // A province's ceiling is what nobody HERE has passed. Somebody placed out
-    // of it as a child is not bound by it - which is the whole of what
-    // placement is worth, and is bounded by the house that took them.
-    const reachable = Math.max(clampOrdinal(ceiling), clampOrdinal(origin.placement.reach));
-    const cap = Math.min(reachable, MAX_ORDINAL);
+    // The province's ceiling is absolute, and placement does NOT lift it.
+    //
+    // That is deliberate and it is the harder of the two readings. A fostered
+    // child is somewhere else, and this derivation is for the people who are
+    // here: `localCeilingOrdinal` means nobody in this province has passed it
+    // in living memory, and an origin that could quietly exceed it would make
+    // the statement false for the exact people the province is least likely to
+    // have produced. What being placed is worth here is the support and the
+    // stipend, which are already in the rate above.
+    const cap = Math.min(clampOrdinal(ceiling), MAX_ORDINAL);
 
     let ordinal = 0;
     let age = MIN_AGE;

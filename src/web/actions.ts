@@ -93,6 +93,10 @@ export const ACTION_NAMES = [
     // from plain English or the logistics layer might as well not exist.
     'work',
     'market',
+    // Joining a sect is one of the most consequential things a low cultivator
+    // can do - access to comprehension, to a stipend, and to knowing what is
+    // out there - and it was unreachable from plain English.
+    'sect',
     // Pure reads.
     'look',
     'status',
@@ -115,6 +119,14 @@ export type ActionName = typeof ACTION_NAMES[number];
 export const READ_ONLY_ACTIONS: readonly ActionName[] = [
     'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear'
 ] as const;
+
+/**
+ * `sect` is not in either list on purpose.
+ *
+ * Listing what would take you costs nothing; being taken costs a life's worth
+ * of allegiance. Which one happened depends on whether a sect was named, so it
+ * is classified at the point of execution rather than here.
+ */
 
 /**
  * Actions that spend in-world time, and can therefore kill.
@@ -142,7 +154,7 @@ export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'wo
  */
 export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
-    'work', 'market', 'assess'
+    'work', 'market', 'assess', 'sect'
 ] as const;
 
 /** Actions that carry a free-text intent. Never branched on for an outcome. */
@@ -432,6 +444,11 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
+    if (/\b(?:join|joining|apply to|applying to|swear to|take me on|taken on|would (?:take|have) me|accept me|admit me|be admitted)\b/.test(text)
+        || (/\b(?:sects?|order|school|clan)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who)\b/.test(text))) {
+        return { action: 'sect', target: extractSubject(input, /joining|join|applying to|apply to|swear to|enter|find|look for/) };
+    }
+
     // ── assess: what happens if I try, which is not the same as looking ──
     if (/\b(?:size up|weigh (?:my|the) chances|assess|how dangerous|could i (?:survive|take|handle|manage)|what (?:would|will) happen if i|am i (?:strong|ready) enough|is it safe|do i stand a chance|judge the odds)\b/.test(text)) {
         return {
@@ -476,7 +493,7 @@ export function parseIntent(input: string): PlannedAction {
     // fallthrough, so the moment the fallback became inert, "I look around"
     // stopped working. A verb that is only reachable by accident is a verb
     // waiting to be deleted by an unrelated change.
-    if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|where am i|what do i see|what is (?:here|around))\b/.test(text)
+    if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|where am i|what do i see|what is (?:here|around)|who(?:'s| is| are)? (?:here|around|about|nearby)|is (?:anyone|anybody|somebody) (?:here|about|around)|look for (?:someone|somebody|anyone))\b/.test(text)
         || /^\s*(?:i\s+)?looks?\b/.test(text)) {
         return { action: 'look' };
     }

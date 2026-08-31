@@ -21,7 +21,7 @@ import { createReadStream, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { useSingleUserDatabase } from '../storage/index.js';
+import { getDbPath, useSingleUserDatabase } from '../storage/index.js';
 import { ProviderFactory } from '../agent/provider/factory.js';
 import {
     describeProviderConfiguration,
@@ -31,6 +31,8 @@ import {
 import { GameError, GameService } from './game.js';
 import { DeterministicNarrator, ProviderNarrator, type Narrator } from './narrator.js';
 import { ladderView, spiritRootsView } from './view.js';
+import { buildRegister, renderRegisterHtml } from './register.js';
+import { clearProse, defaultProsePath, ensureProse, type GenerateOptions } from './register-prose.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // CONFIGURATION
@@ -170,6 +172,26 @@ export interface AppOptions {
     provider: ProviderStatus;
     version: string;
     webRoot?: string;
+    /**
+     * How the register writes its curated prose, and where it keeps it.
+     *
+     * Both optional, and absent is a supported state rather than a degraded
+     * one: with no provider the register serves its tables with whatever prose
+     * is already cached, marked behind. Same posture as the deterministic
+     * narrator - an unconfigured model is a quieter page, never a broken one.
+     */
+    proseGen?: GenerateOptions | null;
+    prosePath?: string;
+}
+
+/** An HTML document, for the endpoints an operator opens rather than fetches. */
+function sendHtml(res: ServerResponse, status: number, body: string): void {
+    res.writeHead(status, {
+        'content-type': 'text/html; charset=utf-8',
+        'content-length': Buffer.byteLength(body),
+        'cache-control': 'no-store'
+    });
+    res.end(body);
 }
 
 function sendJson(res: ServerResponse, status: number, payload: unknown): void {
@@ -235,6 +257,8 @@ function requireNumber(body: Record<string, unknown>, field: string): number {
  */
 export function createApp(options: AppOptions): (req: IncomingMessage, res: ServerResponse) => void {
     const { game, provider, version } = options;
+    const proseGen = options.proseGen ?? null;
+    const prosePath = options.prosePath ?? defaultProsePath(getDbPath());
     const webRoot = options.webRoot ?? defaultWebRoot();
 
     return (req, res) => {
@@ -293,6 +317,22 @@ export function createApp(options: AppOptions): (req: IncomingMessage, res: Serv
                 case '/api/admin/ladder-odds':
                     sendJson(res, 200, await game.ladderOdds());
                     return;
+                // Two representations of one build. The JSON is for tooling;
+                // the HTML is what an operator opens in a tab beside the game.
+                case '/api/admin/register':
+                    game.assertAdmin('the standing register');
+                    sendJson(res, 200, buildRegister());
+                    return;
+                case '/api/admin/register.html': {
+                    game.assertAdmin('the standing register');
+                    const reg = buildRegister();
+                    // ?refresh=1 discards the cache first, which is the only way
+                    // to rewrite prose whose underlying facts have not moved.
+                    if ((req.url ?? '').includes('refresh=1')) clearProse(prosePath);
+                    const { cache } = await ensureProse(reg, prosePath, proseGen);
+                    sendHtml(res, 200, renderRegisterHtml(reg, cache.blocks));
+                    return;
+                }
                 default:
                     sendError(res, 404, 'No such endpoint.');
                     return;
@@ -367,7 +407,19 @@ export async function startServer(): Promise<ReturnType<typeof createServer>> {
     // second copy of it living in this layer was exactly the duplication that
     // had to go.
     const game = new GameService({ db, narrator, adminMode: readAdminMode() });
-    const app = createApp({ game, provider: status, version: readVersion() });
+
+    // The register writes its prose through the same provider the narrator uses,
+    // resolved the same way. No provider means no generation, which the register
+    // handles by serving its tables and saying the prose is behind.
+    const proseFactory = new ProviderFactory();
+    proseFactory.initialize();
+    const proseProvider = proseFactory.tryGet(config.provider);
+    const app = createApp({
+        game,
+        provider: status,
+        version: readVersion(),
+        proseGen: proseProvider ? { provider: proseProvider, model: config.model } : null
+    });
 
     const port = Number(process.env.PORT) || DEFAULT_PORT;
     const host = process.env.HOST || '0.0.0.0';

@@ -1138,7 +1138,10 @@ describe('ancestral records', () => {
     it('models dormant ancestors as a break-glass decision with a stated cost', () => {
         const dormant = getDormantAncestors();
         expect(dormant.length, 'the dangerous kind must exist').toBeGreaterThanOrEqual(2);
-        expect(dormant.length, 'and stay rare').toBeLessThanOrEqual(5);
+        // The class is deliberately larger than it once was - everyone at the
+        // top ordinal is sealed under a mountain somewhere - so rarity is
+        // carried by `sealed-ancestors.ts` rather than by a small count here.
+        expect(dormant.length, 'and stay countable').toBeLessThanOrEqual(12);
         for (const { sectId, dormant: d } of dormant) {
             expect(getSect(sectId), `dormant ancestor for unknown ${sectId}`).toBeDefined();
             expect(d.dormantYears).toBeGreaterThan(100);
@@ -1149,8 +1152,9 @@ describe('ancestral records', () => {
             const records = getSectAncestry(sectId)!;
             expect(records.ancestors.some(a => a.fate === 'dormant'), `${sectId} records`).toBe(true);
             // Dormant is not ascended: no offering channel, no parting gift.
-            expect(records.lastOffering).toBeNull();
-            expect(records.partingGift).toBeNull();
+            // A sect may hold both kinds at once, and several do: an ascended
+            // ancestor who answers, a parting gift from them, and a sealed one
+            // under the floor who never left. Dormancy couples to none of it.
         }
         // Most are hidden, which is what makes the threat invisible.
         const hidden = dormant.filter(d => !d.dormant.publiclyKnown);

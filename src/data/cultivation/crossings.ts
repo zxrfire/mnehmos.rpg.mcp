@@ -113,6 +113,11 @@ export const HOLLOW_COURT_COLLABORATION = {
 export const ChannelKindSchema = z.enum([
     /** Somebody up there is still answering, at intervals measured in ages. */
     'answering_channel',
+    /**
+     * Somebody up there is answering constantly, because they have a reason
+     * down here that is a person rather than an institution.
+     */
+    'personal_channel',
     /** Somebody left what they left, and nothing further is coming. */
     'parting_gift'
 ]);
@@ -132,6 +137,18 @@ export const ImmortalChannelSchema = z.object({
     cadence: z.string().min(100),
     /** How much of it is usable. For accounts of the crossing, very little. */
     usability: z.string().min(150),
+    /** The best grade this channel can supply, and why it is capped there. */
+    gradeCeiling: z.enum(['higher', 'middle', 'lower', 'none']),
+    gradeNote: z.string().min(150),
+    /**
+     * Present only on a personal channel: the reason it answers so often, and
+     * the reason it will stop. Never resolved - the shape is the point.
+     */
+    theClock: z.object({
+        who: z.string().min(60),
+        why: z.string().min(150),
+        note: z.string().min(200)
+    }).nullable(),
     /** What having this explains about the institution. */
     whatItExplains: z.array(z.string().min(40)),
     note: z.string().min(120)
@@ -151,6 +168,10 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'Objects. Consumables of a kind nobody below can make, arriving without announcement, entered on the standing stock register on the day they are found and never explained. The Survey has never received a message, an instruction or a word: it receives items, and it counts them.',
         cadence:
             'At intervals measured in ages, with no way to request more, no schedule, and no guarantee that the next one comes at all. The last arrival is a hundred and forty years old and the gap before it was longer.',
+        gradeCeiling: 'higher',
+        gradeNote:
+            'An ancestor three thousand years across sends rarely and sends well. What arrives is graded across the range and includes the only higher-grade golden pill anybody in the world can point to, which is the whole of the Survey advantage: not volume, which it has never had, but the top of the range, which nobody else can reach at all.',
+        theClock: null,
         usability:
             'Entirely usable, which is the point and also the problem. An object is a line item: it can be counted, minuted, stored, and released by quorum, and every instinct a bureaucracy has applies to it correctly. What cannot be done is reorder it, and that single fact is what turns careful administration into the arithmetic that no petitioner can move.',
         whatItExplains: [
@@ -173,6 +194,10 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'Objects, exactly as with the Survey, and received the same way: found, receipted, entered on the schedule, and never discussed. The Long Cut has never had a word from the other side either, and has never expected one.',
         cadence:
             'Ages apart, unrequestable, and unguaranteed. The schedule carries the arrivals as dated entries with nothing in the reason column, which is the most the administration is willing to write down.',
+        gradeCeiling: 'higher',
+        gradeNote:
+            'Two thousand six hundred years across, answering at intervals measured in ages, sending well when it sends. The Long Cut holds the only higher-grade talisman in existence and two middle pills against it, which is a thinner stock than the Pavilion by any count and a better one by the only measure that decides what can actually be done with it.',
+        theClock: null,
         usability:
             'Fully usable and fully governed. The Long Cut owns every act it takes by name, so an object it cannot reorder is the hardest possible thing for it to spend: there is no vassal to attribute the decision to and no authority above it to authorise the loss. The result is a body that can act on anything except this.',
         whatItExplains: [
@@ -195,6 +220,10 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'Not objects. Accounts of the crossing itself, from somebody who made it: fragments about what the approach is like, what the seam does, what is required and in what order, and what happens to a person at the moment it resolves. It is the only thing the Court wants and the one thing that cannot be obtained below the Lid by any other means.',
         cadence:
             'At intervals measured in ages, arriving when it arrives, in response to nothing anybody can identify. Four beings have been working on this for a very long time and are still working, which is the most accurate available statement about how often it comes.',
+        gradeCeiling: 'none',
+        gradeNote:
+            'Nothing material comes down this channel at all, at any grade. The Court receives accounts and no objects, which is why it is the only holder in this file with nothing on the standing stock of anybody and the only one that does not care.',
+        theClock: null,
         usability:
             'Very little of it. Answers from the far side of a boundary that strips everything arrive incomplete, oddly weighted, and sometimes plainly wrong in ways nobody below can check - a step described in detail that nobody can locate, an ordering that contradicts the previous account, an emphasis on something no cultivator here can identify. The Court does not know whether the discrepancies are transmission, translation, or the thing itself being different for each person. That the four of them are still at it after four thousand years tells you exactly how good the information is.',
         whatItExplains: [
@@ -209,27 +238,148 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
     },
     {
         factionId: 'sect-azure-cloud-pavilion',
-        kind: 'parting_gift',
+        kind: 'personal_channel',
         ancestor: {
             name: 'Ru Anjing, Third Master of the Pavilion',
             whatTheyWere: 'The last confirmed crossing in the world, who spent eleven years divesting into the sect before she made it',
             crossedYearsAgo: 380
         },
         whatItReturns:
-            'Nothing further. She left what she left - three of the golden pills, the Standing Edge, and written instructions about the first - and the giver is gone in the sense that matters. One offering has been made since and returned two words, which is not a channel and the Pavilion has never pretended it was.',
+            'Objects, constantly by the standards of anybody else: golden pills and talismans arriving every nine to fourteen years, sometimes twice in a decade, always without ceremony and always in the same condition. The Pavilion has received more from above in the last century than the two administering bodies of the world have received between them in a thousand years.',
         cadence:
-            'None. There is no schedule because there is no relationship: a parting gift is a fixed quantity that only goes down, and the Pavilion is a hundred and eighty years past the only reply it has ever had.',
+            'Every nine to fourteen years, which is not a cadence anybody else in this file would recognise as one. The apexes measure their arrivals in ages. The Pavilion has had four in living memory and expects the next one.',
         usability:
-            'Completely usable and completely finite, which is the sharpest possible contrast with the two apexes. The Pavilion is formidable now, on the best terms anybody in the province has, and on a slope: it is the strongest institution in the world holding an asset that cannot be renewed, and everyone senior in it can do that arithmetic.',
+            'Completely usable and immediately so, and this is where the Pavilion position inverts. It has more of these objects than any institution in the world, they are all at the bottom of the range, and it therefore holds a great deal of something that will carry a cultivator into Core Formation and nothing that will carry one past Void Refinement. It is rich in quantity and poor in quality, exactly opposite to the apexes, and neither side would trade.',
+        gradeCeiling: 'lower',
+        gradeNote:
+            'All of it lower, without exception, and the reason is not stinginess: she is three hundred and eighty years across, which is nothing. A fresh immortal has neither the standing to ask for better nor the power to send it, and she sends anyway - as much as she can, as often as she can manage it, at the only grade available to her. Everybody senior at the Pavilion understands this and nobody has ever described it as a limitation of hers.',
+        theClock: {
+            who: 'Ru Anxi, her younger sister, still in the Pavilion at Core Formation Perfection and four hundred and forty-seven years old.',
+            why: 'The channel is a person. It answers this often because there is somebody specific down here that Ru Anjing has a reason to answer for, and everybody at the Pavilion knows exactly whose channel it is - the objects arrive, and within the month Ru Anxi is asked politely about her health by people who have no other reason to ask.',
+            note: 'She is mortal in the way that matters. Core Formation carries five hundred years and she is four hundred and forty-seven, so the arithmetic is available to anybody who wants to do it and everybody senior has done it. What happens to the flow when she dies is the single largest open question about the strongest institution in the world, it is discussed by nobody, and it is not resolved here. The Pavilion is strong now, on an income, with a clock running underneath it that has perhaps fifty years on it.'
+        },
         whatItExplains: [
-            'why the Pavilion can give one away at all - somebody left instructions, so somebody can act on them',
-            'why a faction inside the Stonewright Consortium is quietly modelling the year the Edge is spent',
-            'why the Pavilion stands at apex height on a stock rather than a channel - the only one of the three whose position is a countdown'
+            'why the Pavilion can give a pill away at all, and why it now gives them away more freely than any institution in history',
+            'why its stock has been revised upward four times in a century while every other register in the world only goes down',
+            'why the Pavilion holds nothing that would help anybody at the top of the ladder, and does not seem to mind',
+            'why the two apexes find its position alarming without being able to say it is better than theirs'
         ],
         note:
-            'This is the difference the other two understand and almost nobody else does. Azure Cloud has a treasure, held at apex height and spent against confrontations it should lose. The Deep Survey and the Long Cut have a relationship, and a relationship renews, however rarely. That is not a better hoard; it is a different category of asset entirely, and it is the whole of why the Pavilion is on a countdown and they are not.'
+            'The difference the apexes understand and almost nobody else does. Azure Cloud has an income, from a person, at the bottom of the range. The Deep Survey and the Long Cut have a relationship with something ancient that answers rarely and sends the top of the range. Neither is straightforwardly better and the four cannot be put in a single order, which is why every attempt to rank them produces an argument.'
     }
 ];
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHY AN IMMORTAL WOULD EVER DO ANYTHING
+// The question is not why they do not intervene. It is why on earth they
+// would, and for almost all of them the answer is that they would not, and
+// arriving at it takes no deliberation at all.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const IMMORTAL_MOTIVE = {
+    theirOwnPriorities:
+        'An immortal is cultivating immortal qi on a ladder above this one, and that is what they are doing with their existence. Descending costs them personally, risks them personally, and gains them nothing personally. Every hour spent reaching down is an hour not spent climbing, measured against a road they are still on.',
+    theLateAgeIsWorthless:
+        'And this is the part that closes it: there is nothing here they want. A depleted world is not merely dangerous to them, it is worthless - no resource worth the trip, no opportunity, nothing to cultivate that they did not exhaust before they left. So every reason to descend is sentimental, obligatory or spiteful. None of them is self-interested, which is exactly why they are so rare.',
+    descendingIsRisky:
+        'Not merely expensive. It is exposure: forcing an opening inward, paid out of cultivation condensed over ages, for ten to fifteen breaths, and the ones who get it wrong do not come back at all. An immortal who dies down here dies for somebody else\'s benefit having gained nothing, and that risk is priced against a ladder where the same effort spent upward is spent on themselves.',
+    descendantsAreStrangers:
+        'An ancestor who ascended four thousand years ago has no relationship with anybody alive. The sect that reveres them is an institution they walked out of, run by people born thousands of years after they were last here. Reverence flows one way and always has, and no amount of ceremony converts it into an obligation.',
+    tiesAreTheMechanism:
+        'So the entire mechanism is ties, and they have to be specific and personal rather than institutional. Four things actually move one: somebody they knew and still love; an oath they personally swore; something they built themselves and still care about; and a grudge, which is a tie like any other and motivates a descent every bit as well as affection does.',
+    sendingVersusComing:
+        'Which produces the baseline behaviour of every apex ancestor. Sending is cheap - a medicine dispatched costs them nothing they will miss and carries no risk at all. Coming down is the expensive, dangerous thing. So they send occasionally, appear almost never, and answer an offering once a millennium with a few words.',
+    whatTheOfferingActuallyIs:
+        'Not a great honour a sect has earned. The cheapest possible acknowledgement, costing the giver nothing whatsoever, and the sects have built entire ceremonies around it because it is all they were ever going to get. A body that spends its principal for a decade to receive two words is not being rewarded; it is being answered at the minimum rate.',
+    theExceptionAndWhy:
+        'Ru Anjing is the rule producing an exception rather than a fact about one woman. She has a living sister - a real relationship with a real person who is alive right now - and that is the only category of thing that reliably outweighs the sum above. Everything downstream follows from it: she answers every nine to fourteen years instead of once an age, she sends as much as she can manage at the only grade she can reach, and the Azure Cloud Pavilion is the strongest institution in the world because of sisterly love rather than because of anything the sect did.',
+    readTheApexesThisWay: [
+        'Deep Survey: three ancestors, all of them nineteen centuries or more gone, all of them institutional rather than personal. Rare answers and good grade is exactly what the rule predicts for ties that have decayed to nothing but provenance.',
+        'Long Cut: two ancestors, same shape, same answer rate. Fewer ties, same decay, and an administration that has never expected more.',
+        'Hollow Court: six, and what comes back is accounts of the crossing rather than objects - because the tie there is professional interest rather than affection. They are being answered by people who find the question interesting, which is a weaker tie than love and a stronger one than reverence.',
+        'Azure Cloud: one ancestor, three hundred and eighty years, and a living sister. The highest answer rate in the world, the lowest grade in the world, and both are the same fact.'
+    ]
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ARCHIVE IS THE CLAIM
+// A sect that has lost its ancestor's name has severed the only thing that
+// would ever have made them answer.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const ARCHIVE_AS_CLAIM = {
+    thePrinciple:
+        'The mechanism is personal ties, so a sect\'s archive is not sentimental: it is the sect\'s entire claim on an immortal. Lose the name and you have not lost a document, you have cut the tie - and you can do it quietly, over centuries of perfectly diligent ceremony, without anybody noticing.',
+    bothDirections: {
+        downward:
+            'The sect makes an offering to a name that may be wrong, and would not recognise an answer if one arrived under a different name.',
+        upward:
+            'And the half nobody in the world has thought about: an immortal answers because somebody down here is specifically theirs. A body that cannot name them is addressing a stranger, and a stranger is under no obligation to it. They are not being ignored out of indifference. They have severed the thing that would have made the answer happen.'
+    },
+    cases: [
+        {
+            case: 'record intact and legible',
+            example: 'sect-azure-cloud-pavilion',
+            note: 'Three hundred and eighty years old, in a hand everybody can still read, naming a woman whose sister is alive. Rare, and it is the reason the answers keep coming.'
+        },
+        {
+            case: 'holds the record and cannot read it',
+            example: 'sect-nine-peaks-ascetic-order',
+            note: 'The best case in the catalog and it is already implied by the transmission work in `history.ts`: the Standing hand\'s numerals are read completely and its prose is not read at all. So the Order can state the exact weight and count of every offering ever made and cannot read the name at the top of the page. Somebody has been reading that document aloud for eight hundred years as a list of quantities.'
+        },
+        {
+            case: 'wrong name, honestly held',
+            example: 'sect-clear-river-alliance',
+            note: 'A name written down later because the ceremony needed one, held in complete good faith, with nothing anywhere to contradict it. The Alliance is not lying and has no way to find out.'
+        },
+        {
+            case: 'two sects claiming the same ancestor',
+            example: 'sect-thousand-treasure-pavilion',
+            note: 'At most one correctly, neither able to settle it, and the Ninefold Ledger will certify neither because certification requires a record and both records are assertions. The Pavilion is the loud claimant; the quiet one has never been named here on purpose.'
+        },
+        {
+            case: 'does not know it has one',
+            example: 'sect-hollow-bell-wanderers',
+            note: 'Never made an offering, therefore never been answered, therefore concludes it has no ancestor. Correct behaviour, wrong conclusion, and the loss is completely invisible to them.'
+        },
+        {
+            case: 'ancestor died, offerings continued',
+            example: 'sect-sweptground-temple',
+            note: 'Nobody can tell the difference between an ancestor who is dead and one who simply has better things to do, which is the point. The Temple recorded its silence honestly and drew no conclusion from it, which is the most anybody can do.'
+        }
+    ],
+    theCounterExample:
+        'The Hollow Court is the counter-example and should read as one. Their records are good, and that is not incidental to their strength - it is their strength. Six ancestors who can still be named and addressed correctly is the whole reason their depletion is medium rather than terminal at four thousand four hundred years. Every other institution\'s decline includes a component of simple forgetting, and theirs does not.',
+    howToUseIt:
+        'Where a sect\'s answer rate is unexplained, this is now the available explanation, and it is usually the correct one. An institution does not lose a channel in a dramatic event. It loses a page.'
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// MORE MEDICINE THAN CULTIVATORS
+// What an institution does when the stock outruns the people, and who has
+// worked out that it is happening.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const PAVILION_SURPLUS = {
+    theTension:
+        'The Azure Cloud Pavilion holds nine of these objects and cannot use them. A lower Unearned Step needs somebody standing at an early boundary who has done the accumulation and been stopped by something outside their control, and the Pavilion produces reliably at Core Formation with six people at that height and about ninety disciples below it. The stock arrives faster than the sect can find anybody the instructions permit it to be spent on.',
+    whatItDoes: [
+        'Gives them away, at a rate no institution in history has matched, because the instructions permit it and the arithmetic no longer punishes it - four grants in the last century against one in the two centuries before.',
+        'Places them outward: with allied sects, with guest elders, and twice with cultivators who hold no affiliation at all, which is the closest thing the world has seen to an institution exporting advancement.',
+        'Buys loyalty in medicine rather than in stones, which is a currency the Stonewright Consortium cannot price and does not like.',
+        'Argues with itself. The refusal doctrine was written when a grant was a wound, and it is now being applied to an income by people who know it and have not revised it.'
+    ],
+    theQuietProblem:
+        'Every object placed outside creates somebody who owes the Pavilion a realm, and the Pavilion has never decided what it wants that to be. It is not building a faction, it is not charging, and it has not asked for anything back - so it is accumulating obligations at a rate its own Sword Elders describe as untidy and nobody has proposed a use for.',
+    whoHasNoticed: [
+        'The Stonewright Consortium, whose Kettle and Low Fall houses see the second-order flow - stones not spent on medicine that should have been bought - and cannot account for it.',
+        'The Ninefold Ledger, because unexplained advancements cluster around Pavilion allies and each one opens a lineage audit that finds nothing wrong and no explanation.',
+        'The Thousand Treasure Pavilion, which has noticed the opposite of a thing: not one of these has ever come to auction from a sect that plainly has more than it needs.',
+        'The Deep Survey, which holds three objects, keeps a register on the subject, and has no explanation whatever for how a single sect in a single province has nine.'
+    ],
+    whatNobodyHasWorkedOut:
+        'That the flow has a name and an address, and that the name is in the Pavilion.'
+} as const;
 
 // ─────────────────────────────────────────────────────────────────────────
 // LINEAGE STANDING
@@ -248,6 +398,14 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
 // extraordinary, three legendary, four or more in succession very nearly
 // mythical. That reckoning is public and undisputed. The second axis is not
 // public at all, and it is the one that decides how an institution behaves.
+//
+// And there are two more that cut across both: VOLUME, how much is actually
+// held, and GRADE CEILING, the best of it that can be reached for. Those two
+// point in opposite directions for the Pavilion and for the apexes, which is
+// why THE FOUR CANNOT BE PUT IN A SINGLE ORDER. Sorting by remaining channel
+// is still the right question to ask about resilience; it is not a ranking,
+// and `byVolume` and `byGradeCeiling` will disagree with it and with each
+// other. Any tool that renders one of these as a league table is wrong.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const LineageTierSchema = z.enum([
@@ -269,6 +427,12 @@ export const LineageStandingSchema = z.object({
     tier: LineageTierSchema,
     mostRecentCrossingYearsAgo: z.number().int().min(1),
     depletion: DepletionSchema,
+    /** Total objects held, across both medicines. Volume, not quality. */
+    volume: z.number().int().min(0),
+    /** The best grade the house can reach for. Quality, not volume. */
+    gradeCeiling: z.enum(['higher', 'middle', 'lower', 'none']),
+    /** Which way the stock is moving. Only one of them is going up. */
+    trend: z.enum(['rising', 'flat', 'falling']),
     /** What depletion actually looks like here, in specifics. */
     whatDepletionLooksLike: z.string().min(150),
     /** What the count buys: how many silences the house can survive. */
@@ -285,6 +449,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         tier: 'very_nearly_mythical',
         mostRecentCrossingYearsAgo: 600,
         depletion: 'medium',
+        volume: 0,
+        gradeCeiling: 'none',
+        trend: 'flat',
         whatDepletionLooksLike:
             'Longer gaps than the records from two thousand years ago describe, and accounts that arrive thinner than the older ones held in the same hall - more fragmentary, more oddly weighted, and harder to reconcile with what came before. Nothing has gone quiet. It has simply become a slower and less generous correspondence than four beings working continuously would like.',
         resilience:
@@ -298,6 +465,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         tier: 'legendary',
         mostRecentCrossingYearsAgo: 1_900,
         depletion: 'heavy',
+        volume: 4,
+        gradeCeiling: 'higher',
+        trend: 'falling',
         whatDepletionLooksLike:
             'Intervals that have roughly doubled across the last thousand years, the most recent arrival a hundred and forty years ago against a previous gap that was longer still, and a standing stock counted down to three objects total. Two of the three channels have produced nothing in over a thousand years and the Survey does not know whether they are quiet or finished, because there is no instrument that would tell it.',
         resilience:
@@ -311,6 +481,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         tier: 'extraordinary',
         mostRecentCrossingYearsAgo: 2_600,
         depletion: 'light',
+        volume: 4,
+        gradeCeiling: 'higher',
+        trend: 'flat',
         whatDepletionLooksLike:
             'Very little. The intervals are enormous and always were, the arrivals are dated on the schedule with nothing in the reason column, and almost nothing has ever been spent - two objects held against two ancestors, with three refused amendments in three hundred years and no grant on record at all. What looks like severity from outside is a stock that has barely been touched.',
         resilience:
@@ -323,13 +496,16 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         count: 1,
         tier: 'supreme',
         mostRecentCrossingYearsAgo: 380,
-        depletion: 'ended',
+        depletion: 'light',
+        volume: 9,
+        gradeCeiling: 'lower',
+        trend: 'rising',
         whatDepletionLooksLike:
-            'The connection is over rather than worn. One ancestor, one crossing, one offering held since, and two words back a hundred and eighty years ago. The yield itself is intact - three golden pills and the Standing Edge, all of it usable today - and there is no mechanism by which any of it is replaced.',
+            'Nothing that anybody else in this file would recognise as depletion. One ancestor, one crossing, and a channel that answers every nine to fourteen years - so the stock has been revised upward four times in a century while every other register in the world only goes down. What it does look like is a ceiling: everything that arrives is lower grade, has always been lower grade, and will be for as long as the sender is only three hundred and eighty years across.',
         resilience:
-            'None whatsoever. A single channel that has ended means every object is a countdown, and the Pavilion is the only holder in the world for whom spending and losing are the same act.',
+            'Enormous in the short term and entirely contingent. A single channel with a person at the end of it produces more objects than three ancient ones combined, and stops completely when that person dies. The Pavilion has the deepest stock in the world and the shortest guarantee on it, and both halves of that are true at once.',
         behaviour:
-            'The opposite shape to the Court: potent right now, and with nothing behind it. That is exactly why the Pavilion can give a pill away at all - somebody left instructions, so somebody can act on them - and exactly why it has refused itself permission to draw the Standing Edge nine times, including once during a siege. A supreme lineage by the world\'s reckoning, a hundred and eighty years past its only reply, and entirely aware of the arithmetic.'
+            'One ancestor, light depletion and a rising stock produces the opposite of rationing: the Pavilion gives pills away more freely than any institution in history, because they are income rather than principal. That is also why its refusal doctrine is under strain, why eleven disciples petitioned inside a year of the last grant, and why the Master who authorises one is now named in a book that reads less like a confession every decade.'
     }
 ];
 
@@ -346,6 +522,37 @@ export function lineageTierFor(count: number): LineageTier {
     if (count === 3) return 'legendary';
     if (count === 2) return 'extraordinary';
     return 'supreme';
+}
+
+/** Deepest stock first. Disagrees with every other ordering here. */
+export function byVolume(): LineageStanding[] {
+    return [...LINEAGE_STANDINGS].sort((a, b) => b.volume - a.volume);
+}
+
+/** Best reachable grade first, which is the apex advantage and nothing else. */
+export function byGradeCeiling(): LineageStanding[] {
+    const rank: Record<LineageStanding['gradeCeiling'], number> =
+        { higher: 0, middle: 1, lower: 2, none: 3 };
+    return [...LINEAGE_STANDINGS].sort((a, b) =>
+        rank[a.gradeCeiling] - rank[b.gradeCeiling] || b.volume - a.volume);
+}
+
+/**
+ * The four orderings, side by side, so a caller can see that they disagree
+ * rather than picking one and calling it the ranking.
+ */
+export function standingsAreNotATotalOrder(): {
+    byChannel: string[];
+    byVolume: string[];
+    byGrade: string[];
+    note: string;
+} {
+    return {
+        byChannel: byRemainingChannel().map(l => l.factionId),
+        byVolume: byVolume().map(l => l.factionId),
+        byGrade: byGradeCeiling().map(l => l.factionId),
+        note: 'Three questions, three different answers, and no way to combine them. The Pavilion is first on volume, last on grade and near the top on channel; the Long Cut is first on grade and thin on volume; the Court holds no objects at all and is the top of the public tier table. Anybody who produces a single ranking has chosen an axis and not said so.'
+    };
 }
 
 /**

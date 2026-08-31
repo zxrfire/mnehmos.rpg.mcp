@@ -206,9 +206,80 @@ Selection is configuration, resolved once in `server.ts` by
 `resolveRuntimeProviderConfig()`. `Narrator.providerName` exists for diagnostics only. See
 [`../agent/provider/README.md`](../agent/provider/README.md).
 
+## The standing register
+
+**The world reference sheet lives in [`register.ts`](register.ts). That is where to change
+it, and it is the only place.**
+
+It is a **view over the catalogs**, not a document. `buildRegister()` reads
+`data/cultivation/` and `engine/cultivation/realms.ts` and returns a `WorldRegister`;
+`renderRegisterHtml()` turns that into one self-contained page. Nothing in the file
+authors a fact, so the sheet cannot drift from what the engine believes - if a figure
+looks wrong, the catalog is wrong and the fix belongs there.
+
+Three ways to get it, one build behind all of them:
+
+| | |
+|---|---|
+| `GET /api/admin/register` | the structure, as JSON, for tooling |
+| `GET /api/admin/register.html` | the rendered sheet - what the **Register** button in the game opens |
+| `npm run register` | writes it to `build/standing-register.html` |
+
+Regenerating is a reload. The endpoint rebuilds on every request, so after editing a
+catalog the sheet is current with no step in between.
+
+### The curated prose
+
+The tables are the catalog. The italic paragraphs between them are a model talking about
+the catalog, and they live in [`register-prose.ts`](register-prose.ts) so the two can never
+be confused for each other - separate file, separate cache, separate visual block.
+
+**Lazy, cached, and fingerprinted.** Nothing is generated until somebody opens the sheet.
+Every block stores a hash of the facts it was written from, recomputed on each request:
+
+| | |
+|---|---|
+| fingerprint matches | serve it, no provider call |
+| fingerprint differs | the catalog moved - rewrite that block only |
+| missing | write it |
+
+Blocks are fingerprinted individually, so editing one catalog does not invalidate the
+whole sheet. The cache is JSON beside the database, so it survives restarts and rebuilds.
+
+**It never fails the page.** No provider, no key, a timeout: the stale text is served with
+a *behind the catalog* marker rather than dropped. A sheet with one dated paragraph that
+admits it is dated beats a sheet with a hole in it. Same posture as the deterministic
+narrator - an unconfigured model is a quieter page, never a broken one.
+
+**Forcing a rewrite:** shift-click the Register button, or `?refresh=1`. That is the only
+way to rewrite prose whose facts have not moved, and it is deliberately not what an
+ordinary click does, because it costs provider calls.
+
+**The prompt rule:** the model is handed `section.facts(reg)` and nothing else, and is told
+it may not introduce a name, number, date or relationship absent from them. Same discipline
+as `facts.ts` feeding phase 3 - a model may describe what the engine decided and may not
+decide anything. Bump `PROSE_SCHEMA_VERSION` when the prompt changes and every block
+invalidates without touching a catalog.
+
+**Adding a new kind of thing to the world?** Add it to `WorldRegister`, extend
+`buildRegister()` to read its catalog, and add a `<section>` to `renderRegisterHtml()`.
+Keep the ordering rule the sheet is built on: **ordinal is the strongest _acting_
+member**, never a sealed ceiling and never a withdrawn one - those are separate columns
+because conflating them is the specific bug the register exists to make visible.
+
+### Why it is admin-gated
+
+Not a security boundary; a disclosure one. Nothing behind `assertAdmin()` writes. The
+sheet names the two apexes a starting cultivator is `unaware` of, prints which sealed
+ancestors are *not* publicly known, and lists a wanderer whose entire design is that
+nobody knows he exists. Handing it to a player is handing them the answer key. Same
+reasoning as `game.ts`'s refusal to let a `sect` query return the register: see the note
+above `GameService.sect()`.
+
 ## Related
 
 - [`../../context.md`](../../context.md) - the authority rule this package enforces
+- [`register.ts`](register.ts) - the standing register, and the only place to change it
 - [`../engine/cultivation/README.md`](../engine/cultivation/README.md) - what phase 2 actually runs
 - [`../agent/provider/README.md`](../agent/provider/README.md) - provider selection and config precedence
 - [`../storage/README.md`](../storage/README.md) - the database both front doors share

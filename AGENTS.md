@@ -279,3 +279,35 @@ set. In particular, do not casually edit:
   everyone. Propose the change instead.
 - `src/storage/migrations.ts` and `src/server/consolidated/index.ts` - shared registries
   that conflict badly. Make the minimum one-line addition and nothing else.
+
+### Do not act on an error in a file you do not own
+
+While other agents are running, the working tree is a moving target and any snapshot of it
+you take is already stale. This has bitten us concretely:
+
+- **A typecheck or test failure in somebody else's file is not yours to fix.** You are
+  looking at a half-written edit. Fixing it races the owner, and the "obvious" fix is often
+  wrong - an unused import you remove is used two lines later once their edit lands.
+  Report it to the owner and move on.
+- **A red suite is not automatically a regression.** Check who owns the failing file before
+  concluding anything, and never revert somebody else's work to get back to green.
+
+### Do not `git add -A` while agents are running
+
+Test runs create transient files (`*.db-journal` and friends). If one appears and is gone
+again between staging and indexing, `git add -A` fails and stages nothing:
+
+```text
+error: unable to index file 'test-invoke.db-journal'
+```
+
+Stage explicit paths instead, or make sure every artifact pattern is in `.gitignore`
+before staging. When a run produces an artifact that is not ignored, **add the pattern**;
+do not delete the file and hope, because the next run recreates it.
+
+### Only commit from a state you verified in one pass
+
+Green tests from five minutes ago say nothing about the tree now. Run the suite and
+`tsc --noEmit`, and commit only if both pass **in that same pass** with no agent edits in
+between. If the tree is moving too fast to get a clean pair, wait for the owners to finish
+rather than committing a snapshot you cannot vouch for.

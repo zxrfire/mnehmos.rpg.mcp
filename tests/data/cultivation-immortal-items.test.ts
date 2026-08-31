@@ -24,6 +24,9 @@ import {
     ImmortalItemSchema,
     IMMORTAL_HOLDINGS,
     HoldingSchema,
+    worldCountByGrade,
+    totalHeldBy,
+    gradeCeilingOf,
     RecordedRefusalSchema,
     ENGINE_GAPS,
     getImmortalItem,
@@ -43,7 +46,7 @@ describe('items from above', () => {
             expect(item.id.startsWith('immortal-'), `${item.id} needs the immortal- prefix`).toBe(true);
             // Tiny and explicit, never "a few".
             expect(item.knownCount).toBeGreaterThan(0);
-            expect(item.knownCount).toBeLessThanOrEqual(8);
+            expect(item.knownCount).toBeLessThanOrEqual(20);
             expect(item.everKnown, `${item.id} cannot have fewer ever than exist now`)
                 .toBeGreaterThanOrEqual(item.knownCount);
         }
@@ -86,7 +89,9 @@ describe('items from above', () => {
         // Rarer than the pill, by construction.
         const step = IMMORTAL_ITEMS.find(i => i.effect === 'promote_realm')!;
         expect(dealing.knownCount).toBeLessThan(step.knownCount);
-        expect(dealing.knownCount).toBeLessThanOrEqual(2);
+        // The world-historic object is the HIGHER grade, and there is one.
+        expect(dealing.knownByGrade.higher).toBe(1);
+        expect(dealing.grades.higher).toMatch(/should not exist|exactly one/i);
         // It states the rule it breaks rather than quietly breaking it.
         expect(`${dealing.effectNote} ${dealing.description}`)
             .toMatch(/dealt once|permanent|impossible|should not/i);
@@ -101,7 +106,7 @@ describe('who holds them', () => {
             expect(holder, `holding by unknown faction ${h.factionId}`).toBeDefined();
             expect(getImmortalItem(h.itemId), `holding of unknown item ${h.itemId}`).toBeDefined();
             expect(h.count).toBeGreaterThan(0);
-            expect(h.count).toBeLessThanOrEqual(4);
+            expect(h.count).toBeLessThanOrEqual(9);
         }
         // Three holders in the whole world, and no more.
         const holders = new Set(IMMORTAL_HOLDINGS.map(h => h.factionId));
@@ -135,9 +140,13 @@ describe('who holds them', () => {
 
     it('gives exactly one holder somebody who can be convinced', () => {
         const persuadable = persuadableHolders();
-        expect(persuadable.length, 'there should be one door that opens on persuasion').toBe(1);
+        // One faction, both its holdings: exactly one door in the world opens
+        // on persuasion, and everything behind it is lower grade.
+        expect(new Set(persuadable.map(h => h.factionId)).size,
+            'there should be one door that opens on persuasion').toBe(1);
         expect(persuadable[0].factionId).toBe('sect-azure-cloud-pavilion');
-        expect(persuadable[0].anyoneMayRefuse).toBe(false);
+        expect(persuadable.every(h => !h.anyoneMayRefuse)).toBe(true);
+        expect(persuadable.every(h => h.byGrade.higher === 0)).toBe(true);
         // Instructions exist, so an office can act on them.
         expect(persuadable[0].decidedBy).toMatch(/Pavilion Master/i);
         expect(persuadable[0].sufficientReason.length).toBeGreaterThan(120);
@@ -244,5 +253,57 @@ describe('what happens afterwards', () => {
         // And the two sects with an intake problem are the danger.
         expect(dealing.socialConsequence).toMatch(/Frostmirror/);
         expect(dealing.socialConsequence).toMatch(/Storm Tyrant/);
+    });
+});
+
+describe('three grades, and the comparison they make', () => {
+    it('grades every item and every holding, consistently', () => {
+        for (const item of IMMORTAL_ITEMS) {
+            for (const grade of ['higher', 'middle', 'lower'] as const) {
+                expect(item.grades[grade].length, `${item.id} ${grade}`).toBeGreaterThan(120);
+            }
+            // The world counts by grade sum to the headline count.
+            const sum = item.knownByGrade.higher + item.knownByGrade.middle + item.knownByGrade.lower;
+            expect(sum, `${item.id} grade counts disagree with knownCount`).toBe(item.knownCount);
+            // And they agree with what the holders actually hold.
+            expect(worldCountByGrade(item.id)).toEqual(item.knownByGrade);
+        }
+        for (const h of IMMORTAL_HOLDINGS) {
+            const sum = h.byGrade.higher + h.byGrade.middle + h.byGrade.lower;
+            expect(sum, `${h.factionId}/${h.itemId} grades disagree with count`).toBe(h.count);
+        }
+    });
+
+    it('keeps the higher grade almost nonexistent', () => {
+        const higher = IMMORTAL_ITEMS.reduce((n, i) => n + i.knownByGrade.higher, 0);
+        expect(higher, 'the top of the range must stay vanishing').toBeLessThanOrEqual(2);
+        // One each to the two ancient channels, and none to the fresh one.
+        expect(gradeCeilingOf('apex-deep-survey')).toBe('higher');
+        expect(gradeCeilingOf('apex-long-cut')).toBe('higher');
+        expect(gradeCeilingOf('sect-azure-cloud-pavilion')).toBe('lower');
+    });
+
+    it('inverts the table: the Pavilion is deepest and worst', () => {
+        const pavilion = totalHeldBy('sect-azure-cloud-pavilion');
+        const survey = totalHeldBy('apex-deep-survey');
+        const longCut = totalHeldBy('apex-long-cut');
+        // Most in total, by a distance.
+        expect(pavilion.total).toBeGreaterThan(survey.total + longCut.total - 2);
+        expect(pavilion.total).toBeGreaterThan(survey.total);
+        expect(pavilion.total).toBeGreaterThan(longCut.total);
+        // And nothing above the bottom of the range.
+        expect(pavilion.higher).toBe(0);
+        expect(pavilion.middle).toBe(0);
+        // While the apexes are thin and good.
+        expect(survey.higher + longCut.higher).toBe(2);
+        expect(survey.total).toBeLessThan(pavilion.total);
+        expect(longCut.total).toBeLessThan(pavilion.total);
+    });
+
+    it('says why the Pavilion stock is all lower, and that it is rising', () => {
+        const holdings = getHoldingsOf('sect-azure-cloud-pavilion');
+        expect(holdings.length).toBe(2);
+        const text = holdings.map(h => `${h.countIsKnownTo} ${h.costOfSayingYes}`).join(' ');
+        expect(text).toMatch(/revised upward|income|again inside a decade/i);
     });
 });
