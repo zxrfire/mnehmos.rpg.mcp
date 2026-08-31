@@ -1,18 +1,18 @@
 /**
- * scene_manage — DM-committed shared narrative state.
+ * scene_manage - DM-committed shared narrative state.
  *
  * The DM is the System; the System is the DM. set_scene commits the current
  * narrative frame to the engine. Every agent invocation auto-pulls the
- * latest scene the character is a participant in — so every party-mate
+ * latest scene the character is a participant in - so every party-mate
  * reads the same narration, the same engine state, the same NPC list.
  * Zero drift on shared facts. Agents contribute only their character's
  * INTENT; the DM (this tool) authors the world.
  *
  * Actions:
- *   set      — commit a new scene (DM "GM screen" voice)
- *   list     — recent scenes for a world
- *   get      — fetch one by id
- *   current  — the latest scene for a participant (debug; auto-injection
+ *   set      - commit a new scene (DM "GM screen" voice)
+ *   list     - recent scenes for a world
+ *   get      - fetch one by id
+ *   current  - the latest scene for a participant (debug; auto-injection
  *              uses the same query under the hood)
  */
 
@@ -36,9 +36,9 @@ const SetSchema = z.object({
     title: z.string().optional().describe('Short scene title (e.g., "What the Hour Can Honestly Hold")'),
     whenLabel: z.string().optional().describe('In-world time label (e.g., "PD 606 · Day 1 · 00:15")'),
     placeLabel: z.string().optional().describe('In-world place label (e.g., "Vocation House Inner Chamber, Sebastopyr")'),
-    narration: z.string().min(1).describe('DM-authored prose for the scene — the shared world state every participant sees'),
+    narration: z.string().min(1).describe('DM-authored prose for the scene - the shared world state every participant sees'),
     engineState: z.record(z.any()).optional().describe('Engine-tracked meters / hazards / flags for this moment (e.g., vas_halidani: "6412/15468", brass_nail_line: "nominal"). Free-form key/value.'),
-    participants: z.array(z.string()).min(1).describe('Character IDs at the table for this scene — only these characters\' agents will see this scene on invoke'),
+    participants: z.array(z.string()).min(1).describe('Character IDs at the table for this scene - only these characters\' agents will see this scene on invoke'),
     previousSceneId: z.string().optional().describe('Optional back-pointer to the prior scene (for transcript / linked-list ordering)'),
     sceneId: z.string().optional().describe('Optional explicit scene ID (default: auto-generated UUID)')
 });
@@ -144,7 +144,7 @@ const definitions: Record<SceneAction, ActionDefinition> = {
         schema: SetSchema,
         handler: handleSet,
         aliases: ['commit', 'set_scene', 'create', 'new', 'frame', 'narrate_scene'],
-        description: 'Commit a new scene — DM voice. Auto-injected into all participants\' next invoke.'
+        description: 'Commit a new scene - DM voice. Auto-injected into all participants\' next invoke.'
     },
     list: {
         schema: ListSchema,
@@ -174,7 +174,7 @@ const router = createActionRouter({
 
 export const SceneManageTool = {
     name: 'scene_manage',
-    description: `Manage DM-committed shared scenes — the engine-side source of truth for "what is happening now."
+    description: `Manage DM-committed shared scenes - the engine-side source of truth for "what is happening now."
 
 🎬 SET A SCENE (DM voice):
   scene_manage action: 'set'
@@ -183,7 +183,7 @@ export const SceneManageTool = {
 
 🎭 AUTO-INJECTION:
   After set, every participant agent's invoke will automatically include this
-  scene as a system slice — same narration, same engine state, same party
+  scene as a system slice - same narration, same engine state, same party
   roster for everyone. Agents submit INTENT; they do not author the scene.
 
 ⏪ AUDIT:

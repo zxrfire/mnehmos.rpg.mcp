@@ -105,7 +105,7 @@ describe('per-campaign database resolution', () => {
         ['empty', ''],
     ])('refuses a malformed campaign id (%s)', (_label, campaignId) => {
         // The id becomes a path segment, so it is validated rather than
-        // sanitized — a rejected id is a bug or an attack, and neither should
+        // sanitized - a rejected id is a bug or an attack, and neither should
         // be repaired into something that opens a file.
         expect(() => runInTenant(tenant(campaignId), () => getDb())).toThrow(/malformed campaign id/);
     });

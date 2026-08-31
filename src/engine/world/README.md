@@ -167,7 +167,8 @@ forbidden zone.
 A cultivator's capability is contextual. A poison specialist is stronger in a corrupted
 region; a fire cultivator near a volcanic vein; a soul cultivator weaker inside a
 soul-suppressing domain; a sword cultivator inside an old sword formation. This is what
-makes geography mechanically real: *where* you are changes *what you are worth*.
+makes geography mechanically real, and it pairs with the entry / survival / operational /
+mastery thresholds below: *where* you are changes *what you are worth*.
 
 ### Environmental gating
 

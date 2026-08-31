@@ -1,5 +1,5 @@
 /**
- * Consolidated Sect Tool — `sect_manage`
+ * Consolidated Sect Tool - `sect_manage`
  *
  * Sects are the difference between cultivating alone on a cold mountain and
  * cultivating with a spirit-gathering array, an elder who answers questions,
@@ -9,7 +9,7 @@
  * ------------------
  * - `join` enforces the sect's own `admissionOrdinal` and the catalog's
  *   engine-checkable attribute minimums. A caller cannot talk their way past a
- *   realm gate by asserting that the elders were impressed. Two of the Vault's
+ *   realm gate by asserting that the elders were impressed. Two of the region's
  *   standing powers take no applicants at all (`recruits: false`); for those,
  *   `join` refuses outright rather than negotiating.
  *
@@ -180,7 +180,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
 
     const facts = getSect(sect.id);
 
-    // Two of the Vault's standing powers take no applicants: the Hollow Court,
+    // Two of the region's standing powers take no applicants: the Hollow Court,
     // which has nothing left to want, and the Kiln Wardens, who do not explain
     // themselves and do not recruit. This is not a threshold to be met, so
     // there is no shortfall to report and nothing for the narrator to work on.
@@ -212,7 +212,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     }
 
     // The catalog's entrance examination, where it has one. Only the
-    // engine-checkable half is enforced here — a minimum in an innate attribute
+    // engine-checkable half is enforced here - a minimum in an innate attribute
     // is a number the engine already owns. `preferredRoots` is deliberately NOT
     // a gate: the catalog says the sect actively recruits those roots, not that
     // it turns the others away, and reading it as a refusal would invent a

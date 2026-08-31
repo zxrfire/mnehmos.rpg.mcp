@@ -40,7 +40,7 @@ function isAuthorized(req: IncomingMessage, authToken: string): boolean {
  * closed there instead, which keeps the boundary at the database rather than
  * at a transport rule that would have to enumerate which tools are safe.
  *
- * A header that is *present but invalid* is always rejected — that is a caller
+ * A header that is *present but invalid* is always rejected - that is a caller
  * asserting an identity it cannot prove, which is never a request we want to
  * serve unscoped.
  */
@@ -93,12 +93,12 @@ function readBody(req: IncomingMessage, maxBytes: number): Promise<unknown> {
  * a plain health check at /health for platform healthchecks (Railway, etc).
  *
  * Runs in stateless mode (sessionIdGenerator: undefined). The SDK enforces
- * "one transport instance per request" in stateless mode — reusing a
+ * "one transport instance per request" in stateless mode - reusing a
  * transport across requests throws "Stateless transport cannot be reused
- * across requests" — so a fresh McpServer + StreamableHTTPServerTransport
+ * across requests" - so a fresh McpServer + StreamableHTTPServerTransport
  * pair is built per POST /mcp request via `serverFactory`. Pass a factory
  * that reuses your app-level singletons (DB, pubsub, audit logger) and only
- * constructs a new McpServer/tool-registration wrapper each call — tool
+ * constructs a new McpServer/tool-registration wrapper each call - tool
  * registration itself is cheap (no I/O).
  */
 export async function startHttpServerTransport(
@@ -178,7 +178,7 @@ export async function startHttpServerTransport(
             }
             try {
                 // The campaign comes from the signed context, never from the
-                // request body — a caller cannot name someone else's campaign.
+                // request body - a caller cannot name someone else's campaign.
                 const deleted = deleteCampaignDatabase(scope.context.campaignId);
                 res.writeHead(200, { 'content-type': 'application/json' });
                 res.end(JSON.stringify({ deleted }));

@@ -1,7 +1,7 @@
 /**
  * Scene-scope gate tests (TDD RED phase).
  *
- * Verifies that invokeAgent enforces SYSTEM.md Rule 5 — an agent cannot
+ * Verifies that invokeAgent enforces SYSTEM.md Rule 5 - an agent cannot
  * mechanically observe or act on a scene they're not physically in.
  *
  * Test matrix from the design doc:
@@ -15,7 +15,7 @@
  *   - voice_of_god_remote_contact_bypasses_with_audit
  *   - skipped_invoke_never_throws_never_breaks_caller
  *
- * NOTE: NO `import { describe, it, expect } from 'vitest'` — vitest globals only.
+ * NOTE: NO `import { describe, it, expect } from 'vitest'` - vitest globals only.
  * That import breaks test collection on Windows + vitest 1.6.1.
  */
 
@@ -66,7 +66,7 @@ function fakeProvider(impl: (opts: { model: string; messages: { role: string; co
     };
 }
 
-describe('invokeAgent — scene-scope gate', () => {
+describe('invokeAgent - scene-scope gate', () => {
     let db: ReturnType<typeof initDB>;
     let factory: ProviderFactory;
     let deps: ReturnType<typeof buildAgentRuntime>;
@@ -99,7 +99,7 @@ describe('invokeAgent — scene-scope gate', () => {
         return deps.agentRepo.findById(agent.id)!;
     }
 
-    // Minimal room insert — characters.current_room_id has a FK to room_nodes(id).
+    // Minimal room insert - characters.current_room_id has a FK to room_nodes(id).
     // We can't create characters with nonexistent room ids without violating it.
     function setupRoom(id: string, biome: string = 'urban') {
         const now = new Date().toISOString();

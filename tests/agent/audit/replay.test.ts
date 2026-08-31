@@ -190,7 +190,7 @@ describe('replayCall', () => {
 
         expect(result.diff).toBeDefined();
         expect(result.diff!.sameText).toBe(false);
-        // original.rawResponse is the raw JSON, not the response text — different from 'totally different'
+        // original.rawResponse is the raw JSON, not the response text - different from 'totally different'
         expect(result.diff!.replayLength).toBe('totally different'.length);
     });
 

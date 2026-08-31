@@ -118,7 +118,7 @@ const BatchAddSchema = z.object({
         entityId: z.string().optional(),
         entityType: z.enum(['character', 'npc', 'location', 'item']).optional(),
         status: noteStatusSchema().optional().default('active')
-    })).min(1).max(20).describe('1–20 notes to create in one transaction')
+    })).min(1).max(20).describe('1-20 notes to create in one transaction')
 });
 
 const SearchSchema = z.object({
@@ -564,7 +564,7 @@ const definitions: Record<NarrativeAction, ActionDefinition> = {
         schema: BatchAddSchema,
         handler: handleBatchAdd,
         aliases: ['add_many', 'bulk_add', 'multi_add', 'log_session'],
-        description: 'Create multiple narrative notes in one transaction — preferred over repeated add calls'
+        description: 'Create multiple narrative notes in one transaction - preferred over repeated add calls'
     },
     search: {
         schema: SearchSchema,
@@ -661,7 +661,7 @@ Aliases: add_many/bulk_add/log_session→batch_add, create→add, find→search,
             entityId: z.string().optional(),
             entityType: z.enum(['character', 'npc', 'location', 'item']).optional(),
             status: noteStatusSchema().optional()
-        })).optional().describe('Array of notes for batch_add (1–20)'),
+        })).optional().describe('Array of notes for batch_add (1-20)'),
         query: z.string().optional().describe('Text search (for search action)'),
         limit: z.number().optional(),
         orderBy: z.enum(['created_at', 'updated_at']).optional(),

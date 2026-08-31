@@ -191,7 +191,7 @@ describe('CharacterRepository', () => {
 
             const returned = repo.update('xp-update', { xp: 500 });
 
-            // The echoed response and the stored row must agree — the original
+            // The echoed response and the stored row must agree - the original
             // bug returned 500 here while writing nothing.
             expect(returned?.xp).toBe(500);
             expect(repo.findById('xp-update')?.xp).toBe(500);

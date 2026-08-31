@@ -1,5 +1,5 @@
 /**
- * Scene slice — current DM-committed scene for this character.
+ * Scene slice - current DM-committed scene for this character.
  *
  * Looked up from the scenes table at compose time. Renders the shared
  * narrative frame (when, place, narration, engine_state, party roster)
@@ -14,7 +14,7 @@ import { Character, NPC } from '../../../schema/character.js';
 const HEADER = '--- CURRENT SCENE (DM-COMMITTED · SHARED ACROSS PARTY) ---';
 
 export interface SceneSliceOptions {
-    /** How many recent scenes to include (default 1 — just the current). */
+    /** How many recent scenes to include (default 1 - just the current). */
     lookback?: number;
 }
 
@@ -24,7 +24,7 @@ function formatRoster(participants: string[], characterRepo: CharacterRepository
     for (const id of participants) {
         const char = characterRepo.findById(id) as Character | NPC | null;
         if (!char) {
-            lines.push(`  - ${id} (unknown — character record missing)`);
+            lines.push(`  - ${id} (unknown - character record missing)`);
             continue;
         }
         const cls = char.characterClass ? ` ${char.characterClass}` : '';
@@ -33,7 +33,7 @@ function formatRoster(participants: string[], characterRepo: CharacterRepository
             ? ` · HP ${char.hp}/${char.maxHp}`
             : '';
         const ac = typeof char.ac === 'number' ? ` · AC ${char.ac}` : '';
-        lines.push(`  - ${char.name}${cls ? ' —' + cls : ''}${lvl}${hp}${ac}`);
+        lines.push(`  - ${char.name}${cls ? ' -' + cls : ''}${lvl}${hp}${ac}`);
     }
     return lines.join('\n');
 }
@@ -70,7 +70,7 @@ function formatScene(scene: Scene, characterRepo: CharacterRepository, isCurrent
         parts.push(engineState);
     }
     parts.push('');
-    parts.push('PARTICIPANTS (this is your party — they are at the table with you):');
+    parts.push('PARTICIPANTS (this is your party - they are at the table with you):');
     parts.push(formatRoster(scene.participants, characterRepo));
     return parts.join('\n');
 }
@@ -94,6 +94,6 @@ export function buildSceneSlice(
         if (!isCurrent) blocks.push('---');
     }
     blocks.push('');
-    blocks.push('THIS IS THE SHARED WORLD STATE. You do not author the scene. You do not invent NPCs, locations, or facts not in the narration above. You submit your CHARACTER\'S INTENT — what they say, what they do, what queries they fire — and the DM/engine adjudicates the result.');
+    blocks.push('THIS IS THE SHARED WORLD STATE. You do not author the scene. You do not invent NPCs, locations, or facts not in the narration above. You submit your CHARACTER\'S INTENT - what they say, what they do, what queries they fire - and the DM/engine adjudicates the result.');
     return blocks.join('\n');
 }

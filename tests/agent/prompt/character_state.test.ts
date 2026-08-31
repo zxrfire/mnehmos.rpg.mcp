@@ -102,7 +102,7 @@ describe('buildCharacterStateSlice', () => {
 
     it('renders spellcasting section with slots when present', () => {
         // NOTE: CharacterRepository does not currently persist spellcastingAbility,
-        // spellSaveDC, or spellAttackBonus columns — they're defined on the schema
+        // spellSaveDC, or spellAttackBonus columns - they're defined on the schema
         // but the INSERT/UPDATE statements omit them. The slice CODE handles them
         // (see character_state.ts); when the repo is extended to round-trip these
         // fields, additional assertions for "Ability: WIS / Save DC / Attack" can
@@ -182,7 +182,7 @@ describe('buildCharacterStateSlice', () => {
 
     it.skip('renders skill / save proficiencies when persisted', () => {
         // NOTE: CharacterRepository does not currently persist skillProficiencies
-        // or saveProficiencies — schema defines them but INSERT/UPDATE statements
+        // or saveProficiencies - schema defines them but INSERT/UPDATE statements
         // do not include them. The slice code is correct; when the repo is
         // extended to round-trip these fields, this test can be unskipped.
         deps.characterRepo.create(baseChar('c1', {

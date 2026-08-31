@@ -6,7 +6,7 @@ import { closeDb, getDb } from '../../src/storage/index.js';
  *
  * Tool handlers resolve their database from the ambient tenant, which only
  * exists inside a real HTTP request. Tests drive handlers directly, so they
- * install an explicit database instead — `getDb(':memory:')` is the test-only
+ * install an explicit database instead - `getDb(':memory:')` is the test-only
  * escape hatch that sets it, and handlers' plain `getDb()` then receives it.
  *
  * Scoped with beforeAll rather than beforeEach on purpose: these suites build

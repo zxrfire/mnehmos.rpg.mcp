@@ -3,7 +3,7 @@
  *
  * Pins the "poisoned row" bug: a stored effect row whose mechanics fail
  * CustomEffectSchema.parse (e.g. a legacy/invalid mechanic type written before input
- * validation tightened) used to make its (target, name) un-reusable forever — every
+ * validation tightened) used to make its (target, name) un-reusable forever - every
  * later apply() re-parsed the bad row and re-threw the stored error verbatim, regardless
  * of the new payload. apply() must now self-heal (drop the corrupt row) and write clean.
  */
@@ -62,13 +62,13 @@ function insertPoisonedRow(db: any, name: string) {
         sourceType: 'unknown',
         category: 'boon',
         powerLevel: 1,
-        // "modifier" is NOT a member of MechanicTypeSchema — this is the poison.
+        // "modifier" is NOT a member of MechanicTypeSchema - this is the poison.
         mechanics: JSON.stringify([{ type: 'modifier', value: 1 }]),
         now: new Date().toISOString()
     });
 }
 
-describe('CustomEffectsRepository — poisoned row recovery', () => {
+describe('CustomEffectsRepository - poisoned row recovery', () => {
     let repo: CustomEffectsRepository;
     let db: any;
 
@@ -81,7 +81,7 @@ describe('CustomEffectsRepository — poisoned row recovery', () => {
     it('self-heals: a valid apply() over a corrupt same-name row succeeds instead of re-throwing', () => {
         insertPoisonedRow(db, "Brawler's Fists");
 
-        // Before the fix this threw `received "modifier" at mechanics.0.type` — the stored
+        // Before the fix this threw `received "modifier" at mechanics.0.type` - the stored
         // poison, parsed fresh, masquerading as a validation error against the new payload.
         const effect = repo.apply(validArgs("Brawler's Fists"));
 

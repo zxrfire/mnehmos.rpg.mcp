@@ -37,7 +37,7 @@ describe('tenant context', () => {
         // The regression guard for using AsyncLocalStorage instead of a
         // module-level "current tenant" variable. With a plain variable, B's
         // assignment would still be installed when A resumes after its await,
-        // and A would read B's tenant — one campaign served another campaign's
+        // and A would read B's tenant - one campaign served another campaign's
         // database. The interleaved ticks force that overlap deterministically.
         const observed: string[] = [];
 

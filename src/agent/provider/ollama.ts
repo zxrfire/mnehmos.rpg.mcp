@@ -1,5 +1,5 @@
 /**
- * Ollama provider — the local / self-hosted runtime agent.
+ * Ollama provider - the local / self-hosted runtime agent.
  *
  * Talks to a locally running Ollama server (default http://localhost:11434) via
  * POST /api/chat with `stream: false`, so the whole reply arrives as one JSON
@@ -13,7 +13,7 @@
  *      constructs it whenever it is configured/enabled.
  *   2. NO COST. Local inference is free, so costUsd is a hard 0 reported as
  *      provider-authoritative rather than an estimate. This deployment is
- *      single-user and self-hosted with no paid tiers — a run under Ollama must
+ *      single-user and self-hosted with no paid tiers - a run under Ollama must
  *      never accrue a dollar figure that implies otherwise.
  *
  * Wire-shape mapping: `message.content` -> .text, `prompt_eval_count` /
@@ -69,7 +69,7 @@ export class OllamaProvider implements LLMProvider {
     private readonly fetchImpl: typeof fetch;
 
     constructor(config: OllamaProviderConfig = {}) {
-        // No apiKey guard on purpose — a local server needs no credential, and
+        // No apiKey guard on purpose - a local server needs no credential, and
         // requiring one would make the self-hosted path impossible to configure.
         this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
         this.defaultModel = config.defaultModel ?? PROVIDER_DEFAULT_MODEL.ollama;
@@ -97,7 +97,7 @@ export class OllamaProvider implements LLMProvider {
         if (Object.keys(options).length > 0) body.options = options;
 
         // reasoningEffort is deliberately NOT mapped. Ollama exposes thinking via
-        // a `think` flag that only thinking-tuned models accept — sending it to an
+        // a `think` flag that only thinking-tuned models accept - sending it to an
         // ordinary local model is a hard error, so effort stays a no-op here.
 
         let response: Response;
@@ -178,7 +178,7 @@ export class OllamaProvider implements LLMProvider {
             totalTokens: promptTokens !== undefined && completionTokens !== undefined
                 ? promptTokens + completionTokens
                 : undefined,
-            // Local inference is free and we know it — this is a fact, not an estimate.
+            // Local inference is free and we know it - this is a fact, not an estimate.
             costUsd: 0,
             costSource: 'provider',
             raw: rawText,

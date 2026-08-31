@@ -1,5 +1,5 @@
 /**
- * Preflight gates — decide whether to invoke the LLM at all.
+ * Preflight gates - decide whether to invoke the LLM at all.
  *
  * These checks run BEFORE prompt composition (and before any token spend).
  * Each gate either passes or returns a synthetic "skip" result that the
@@ -44,7 +44,7 @@ export function preflight(input: {
 }): PreflightResult {
     const { agent, character } = input;
 
-    // 1. Paused agent — explicit DM hold.
+    // 1. Paused agent - explicit DM hold.
     if (agent.status === 'paused') {
         return { skipped: true, status: 'paused', reason: 'agent_paused' };
     }
@@ -52,12 +52,12 @@ export function preflight(input: {
         return { skipped: true, status: 'paused', reason: 'agent_retired' };
     }
 
-    // 2. Circuit breaker open — too many recent failures.
+    // 2. Circuit breaker open - too many recent failures.
     if (agent.circuitState === 'open') {
         return { skipped: true, status: 'circuit_open', reason: 'circuit_open_after_failures' };
     }
 
-    // 3. Budget exhausted — DM must top up.
+    // 3. Budget exhausted - DM must top up.
     if (agent.budgetTokens !== null && agent.tokensUsed >= agent.budgetTokens) {
         return {
             skipped: true,
@@ -79,7 +79,7 @@ export function preflight(input: {
         };
     }
 
-    // 4. Character is incapacitated — no point burning tokens.
+    // 4. Character is incapacitated - no point burning tokens.
     if (!character) {
         return { skipped: true, status: 'incapable', reason: 'character_not_found' };
     }

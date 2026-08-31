@@ -901,7 +901,7 @@ describe('the Late Age: provenance and the exploration loop', () => {
             'enc-corpse-still-cultivating',
             'enc-inheritance-trial-dead-sect',
             'enc-seal-opened-wrong',
-            'enc-formation-locked-vault'
+            'enc-formation-locked-door'
         ];
         for (const id of required) {
             const entry = getEncounter(id);
@@ -929,7 +929,7 @@ describe('the Late Age: provenance and the exploration loop', () => {
         }
     });
 
-    it('carries the five standing powers of the Vault', () => {
+    it('carries the five standing powers of the region', () => {
         const powers: Record<string, string> = {
             'sect-stonewright-consortium': 'neutral',
             'sect-lantern-hall': 'righteous',
@@ -973,8 +973,8 @@ describe('the Late Age: provenance and the exploration loop', () => {
 describe('qi, veins and the Late Age', () => {
     it('carries no trace of the discarded ash metaphysics', () => {
         // Qi is ordinary ambient spiritual energy pooled in veins. It is not
-        // the settled remains of ascended lives, nothing is breathed twice,
-        // and no sect is a Vault.
+        // the settled remains of ascended lives, nothing is breathed twice, and
+        // the world is not a sealed vessel with a proper name.
         const banned = [
             /settled ash/i,
             /unbreathed/i,

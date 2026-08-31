@@ -4,7 +4,14 @@ The single guide for any AI coding agent (Claude Code, Codex, Cursor, Aider, …
 working in this repository. `CLAUDE.md` is a symlink to this file - there is no
 Claude-specific guidance, by design. Edit this file.
 
-For *why* this project exists and what it is, read [`context.md`](context.md) first.
+For *why* this project exists and what it is, read [`context.md`](context.md) first. It is
+short, and it indexes everything else.
+
+**Design docs live next to the code they govern.** Before you modify a directory, read the
+`README.md` in it: it states that code's contract, the rules it must not break, and why.
+If you change a contract, update that README in the same commit. Do not add design
+material to `context.md` - it is an entry point and an index, and it is deliberately kept
+short. World and setting material goes under [`docs/world/`](docs/world/), split by topic.
 
 ---
 
@@ -89,24 +96,39 @@ NPC simulation follows the same economy:
 
 ```
 src/
-├── engine/cultivation/   # THE CORE. Realm ladder, spirit roots, breakthrough,
-│                         # qi deviation, injuries, survival/death, time-skip.
-│                         # Pure functions. No DB, no I/O, no MCP.
+├── engine/               # README.md - implementation philosophy, the five pillars
+│   ├── cultivation/      # README.md - THE CORE. Realm ladder, spirit roots,
+│   │                     #   breakthrough, the Price of Advancement, qi deviation,
+│   │                     #   injuries, existence states, survival/death, time-skip.
+│   │                     #   Pure functions. No DB, no I/O, no MCP.
+│   ├── world/            # README.md - places, capability predicates, opportunity
+│   │                     #   windows, history, lineage, possessions, time
+│   ├── social/           # README.md - relationships, grudges, knowledge and
+│   │                     #   belief, secrets. Storage, never simulation
+│   └── {combat,magic,spatial,worldgen,strategy,perception}/  # Retained substrate
 ├── schema/cultivation.ts # Zod contracts + survival constants (single source of truth
-│                         # for balance numbers - never hardcode them elsewhere)
-├── data/cultivation/     # Content: techniques, pills, recipes, herbs, sects, encounters
-├── storage/              # SQLite: migrations.cultivation.ts + repos/
+│                         #   for balance numbers - never hardcode them elsewhere)
+├── data/cultivation/     # README.md - content catalogs, grade bands, provenance
+├── storage/              # README.md - migrations, idempotent ALTER, repo conventions
+├── web/                  # README.md - the narrator's three-phase split and the
+│                         #   authority boundary in code
 ├── server/consolidated/  # Action-routed MCP tool handlers (index.ts = registry)
-├── agent/provider/       # LLM providers: anthropic, ollama, openai, openrouter
+├── agent/provider/       # README.md - provider abstraction and config precedence
 ├── agent/{prompt,runtime,audit}/  # NPC agent composition, invocation, replay
-├── math/                 # Dice, algebra, physics
-└── engine/{combat,spatial,worldgen,strategy}/  # Retained substrate
+└── math/                 # Dice, algebra, physics
 
+docs/world/               # README.md - the setting bible, split by topic and tiered
 tests/                    # Mirrors src/
 ```
 
+Each `README.md` above is the contract for the directory it sits in. Read it before
+editing that directory; update it in the same commit if you change the contract.
+
 **Balance numbers live in `src/schema/cultivation.ts`.** Satiety costs, starvation
 turns, lethal injury counts, stagnation years - import them, never retype them.
+
+**Ladder bounds live in `src/engine/cultivation/realms.ts`.** `MAX_ORDINAL` is the
+authority. Never restate the number of ranks in prose - it has gone stale before.
 
 ---
 

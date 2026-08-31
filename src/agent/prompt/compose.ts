@@ -1,17 +1,17 @@
 /**
- * Prompt composer — assembles modular slices into a ChatMessage[] for the provider.
+ * Prompt composer - assembles modular slices into a ChatMessage[] for the provider.
  *
  * Slice order (fixed):
  *   system message (concatenated):
- *     1. persona            — DM-authored identity / voice
- *     2. directive          — DM-authored behavioral instructions
- *     3. secrets            — agent-private knowledge
- *     4. character_state    — auto-built mechanical sheet (HP/AC/slots/etc)
- *     5. recent             — long-term memories from npc_memories
- *     6. narrative_feed     — rolling DM-curated observations
+ *     1. persona            - DM-authored identity / voice
+ *     2. directive          - DM-authored behavioral instructions
+ *     3. secrets            - agent-private knowledge
+ *     4. character_state    - auto-built mechanical sheet (HP/AC/slots/etc)
+ *     5. recent             - long-term memories from npc_memories
+ *     6. narrative_feed     - rolling DM-curated observations
  *
  *   user message:
- *     7. situation          — DM-supplied per-invoke scene narrative
+ *     7. situation          - DM-supplied per-invoke scene narrative
  *
  * Escape hatches:
  *   - systemOverride: replaces the assembled system message entirely
@@ -117,7 +117,7 @@ export function composePrompt(input: ComposeInput, deps: ComposeDeps): ComposeRe
         // Scene slice: the DM-committed shared narrative frame for THIS character.
         // Renders the current scene (and optional prior context) so every
         // party-mate reads the same world state. Goes LAST in the system
-        // assembly so it sits closest to the user message — the freshest
+        // assembly so it sits closest to the user message - the freshest
         // foreground for the agent's intent declaration.
         if (deps.sceneRepo) {
             const scene = buildSceneSlice(input.characterId, deps.sceneRepo, deps.characterRepo);

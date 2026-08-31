@@ -12,7 +12,7 @@ export interface SessionContext {
  *
  * Only tenant-agnostic meta-tools (search_tools, load_tool_schema) legitimately
  * reach a handler this way; anything touching storage fails closed inside
- * getDb(). The value is deliberately not a plausible id — the previous
+ * getDb(). The value is deliberately not a plausible id - the previous
  * `'default'` fallback read like a real session and quietly pooled unrelated
  * callers into one bucket.
  */
@@ -23,7 +23,7 @@ const UNSCOPED = 'unscoped';
  *
  * The context is derived from the *verified* tenant established by the HTTP
  * transport, never from the arguments. Previously `sessionId` was read straight
- * out of the tool arguments — which are assembled from model output — so a
+ * out of the tool arguments - which are assembled from model output - so a
  * prompt-injected or hallucinated value became the request's identity. Any
  * `sessionId` a caller still sends is now simply stripped by the tool's own
  * schema and ignored.

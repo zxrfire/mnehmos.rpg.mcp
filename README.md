@@ -1,4 +1,4 @@
-# The Vault - a cultivation RPG engine
+# The Cultivation Ladder - a xianxia RPG engine
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)]()
@@ -7,7 +7,7 @@
 **A xianxia cultivation roguelike with permanent death, where an LLM narrates and a
 deterministic engine decides.**
 
-You play a cultivator climbing a 45-rank ladder from Qi Condensation Layer 1 to
+You play a cultivator climbing the realm ladder from Qi Condensation Layer 1 toward
 Tribulation Transcendence. Your talent is rolled once and locked forever. You will
 almost certainly die somewhere in the first realm - of starvation, of torn meridians, of
 a breakthrough you attempted at 31% because waiting was worse.
@@ -50,24 +50,33 @@ limits, and no metering - it's your machine.
 
 ## What the world is
 
-The sky is a lid. The world sits at the bottom of a sealed vessel, and to ascend is to
-punch a hole in the ceiling and leave.
+The sky is a lid. The world sits under a ceiling, and to ascend is to punch a hole in it
+and leave. Almost nobody does.
 
-The Vault charges a toll for that, and the toll is paid downward. When a cultivator
-ascends, their remembered life is stripped out and falls back into the world as **ash** -
-and that ash is the spiritual energy every other cultivator breathes. To cultivate is to
-inhale the discarded lives of strangers.
+Below the lid, everything runs on **qi**. Qi pools in **spiritual veins** the way ore
+does, and its density varies enormously from place to place. The great sects are old
+because they sit on rich veins, and they sit on rich veins because they are old enough to
+have taken them. In a genuinely qi-poor region a cultivator does not merely progress
+slowly - they stop, and no amount of talent or discipline manufactures what is not there.
 
-The toll is collected in instalments. Every time you cross a realm boundary, the Vault
-takes something that mattered: a person who knew you stops knowing you, a memory you were
-using to stay yourself, a technique you had mastered, sometimes your name. You don't
-choose what goes. You're just told.
+The world is also **late**. Veins that ran rich for a thousand years have been drawn
+down, ancient wars killed whole regions outright, and what the old civilisations did not
+consume they monopolised and then lost. Most ground is thin because most ground has
+already been used. **Spirit stones** - qi compressed until it holds its shape - are money,
+fuel, and the only way to cultivate somewhere the ambient qi will not support you.
+
+And advancement has a price. Every time you cross a realm boundary, the crossing demands
+that something be cut away: a person who knew you stops knowing you, a memory you were
+using to stay yourself, a technique you had mastered, sometimes your name. A cultivator
+cannot carry everything they were into what they are becoming. You don't choose what
+goes. You're just told.
 
 Which is why the powerful are hollow. Whatever they were climbing for was usually among
 the things the climb took.
 
 The full setting bible - the powers, the graves, why you still have to eat, what a spirit
-tide actually is - lives in [`context.md`](context.md).
+tide actually is - lives in [`docs/world/`](docs/world/), split by topic.
+[`context.md`](context.md) is the short entry point and indexes everything else.
 
 ---
 
@@ -75,7 +84,7 @@ tide actually is - lives in [`context.md`](context.md).
 
 Talk to it in plain language. The narrator turns intent into engine actions:
 
-> *"I spend the next three months gathering ash in the low fall."*
+> *"I spend the next three months cultivating in the cave I found."*
 
 becomes `cultivate(duration=90 days)`, and the engine determines the progress, the food
 you burned, whether your meridians held, what wandered past, and whether you're now
@@ -179,8 +188,12 @@ npm run build
 
 Contributor and agent guidance lives in [`AGENTS.md`](AGENTS.md) (`CLAUDE.md` is a
 symlink to it). The short version: balance constants live in
-`src/schema/cultivation.ts` and nowhere else, relative imports carry `.js` extensions,
-and no code path may ever let the model become authoritative over state.
+`src/schema/cultivation.ts` and nowhere else, ladder bounds live in
+`src/engine/cultivation/realms.ts`, relative imports carry `.js` extensions, and no code
+path may ever let the model become authoritative over state.
+
+Design docs sit next to the code they govern - each major directory under `src/` carries a
+`README.md` stating its contract. Start from [`context.md`](context.md).
 
 ### Admin mode
 

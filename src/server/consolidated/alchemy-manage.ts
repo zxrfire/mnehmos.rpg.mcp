@@ -1,5 +1,5 @@
 /**
- * Consolidated Alchemy Tool — `alchemy_manage`
+ * Consolidated Alchemy Tool - `alchemy_manage`
  *
  * Pills are the only reliable way to undo damage in this world, and they are
  * scarce. This tool owns refining them, swallowing them, and the pouch they sit
@@ -338,7 +338,7 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
             : null,
         narrationHint: succeeded && pill
             ? `The cauldron held. One ${pill.name} at ${round2(odds.chance * 100)}% odds.`
-            : `The cauldron did not hold. The ingredients are ash, at ${round2(odds.chance * 100)}% odds.`,
+            : `The cauldron did not hold. The ingredients are slag, at ${round2(odds.chance * 100)}% odds.`,
         pouch: projectPouch(repos.db, cultivator.id)
     };
 }

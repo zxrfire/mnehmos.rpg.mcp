@@ -1,10 +1,10 @@
 /**
  * Runtime provider configuration.
  *
- * ARCHITECTURAL CONTRACT (context.md — "Provider abstraction"):
+ * ARCHITECTURAL CONTRACT (context.md - "Provider abstraction"):
  * This module is the ONLY place in the codebase that is allowed to interpret a
- * provider *name string*. Everything else — the engine, the MCP tools, the agent
- * runtime — takes an already-resolved `ProviderName` or asks this module for a
+ * provider *name string*. Everything else - the engine, the MCP tools, the agent
+ * runtime - takes an already-resolved `ProviderName` or asks this module for a
  * neutral fact about a provider (which env var configures it, what its default
  * model is). That is what keeps "no provider-specific logic in the game engine"
  * true as providers are added.
@@ -18,7 +18,7 @@
  * Resolution precedence (highest wins):
  *   1. explicit argument (a caller that already knows, e.g. a stored agent row)
  *   2. environment       (RUNTIME_PROVIDER, then RPG_RUNTIME_PROVIDER)
- *   3. config file       (config/runtime.json — same `runtime_provider` keys)
+ *   3. config file       (config/runtime.json - same `runtime_provider` keys)
  *   4. default           ('anthropic')
  *
  * The environment layer is where `.env` lands: src/server/index.ts loads the
@@ -34,7 +34,7 @@ import { resolve } from 'path';
 export const PROVIDER_NAMES = ['anthropic', 'ollama', 'openai', 'openrouter'] as const;
 export type ProviderName = typeof PROVIDER_NAMES[number];
 
-/** The default when nothing is configured — Claude is the primary runtime agent. */
+/** The default when nothing is configured - Claude is the primary runtime agent. */
 export const DEFAULT_PROVIDER: ProviderName = 'anthropic';
 
 /**
@@ -51,7 +51,7 @@ const PROVIDER_ALIASES: Readonly<Record<string, ProviderName>> = {
 };
 
 /**
- * The env var that configures each provider — used verbatim in "not configured"
+ * The env var that configures each provider - used verbatim in "not configured"
  * errors so the operator is told exactly what to set. Ollama needs no secret, so
  * its configuration knob is its base URL rather than a key.
  */
@@ -92,7 +92,7 @@ export const PROVIDER_MODEL_ENV: Readonly<Record<ProviderName, string>> = {
 
 /**
  * Model used when neither the caller, the env, nor the config file names one.
- * These are defaults, not policy — every one is overridable per agent row and
+ * These are defaults, not policy - every one is overridable per agent row and
  * by the env vars above.
  */
 export const PROVIDER_DEFAULT_MODEL: Readonly<Record<ProviderName, string>> = {
@@ -130,7 +130,7 @@ export interface ResolvedRuntimeProviderConfig {
     provider: ProviderName;
     /** The model to use with that provider. Never empty. */
     model: string;
-    /** Where `provider` came from — surfaced in diagnostics, never branched on. */
+    /** Where `provider` came from - surfaced in diagnostics, never branched on. */
     providerSource: ConfigSource;
     /** Where `model` came from. */
     modelSource: ConfigSource;
@@ -141,9 +141,9 @@ export interface ResolvedRuntimeProviderConfig {
 }
 
 export interface RuntimeProviderConfigInput {
-    /** Explicit choice — beats every other source. Accepts aliases. */
+    /** Explicit choice - beats every other source. Accepts aliases. */
     provider?: string | null;
-    /** Explicit model — beats every other source. */
+    /** Explicit model - beats every other source. */
     model?: string | null;
     /** Environment to read. Defaults to process.env; injectable for tests. */
     env?: Record<string, string | undefined>;
@@ -156,7 +156,7 @@ export interface RuntimeProviderConfigInput {
 
 /**
  * Normalize a user-supplied provider string to a canonical ProviderName.
- * Returns null for anything unrecognized — callers decide whether that is an
+ * Returns null for anything unrecognized - callers decide whether that is an
  * error or a fallback. Tolerates case, surrounding whitespace, and the
  * dash/underscore spellings people type ("open-router", "OPEN_ROUTER").
  */
@@ -180,7 +180,7 @@ export function describeProviderConfiguration(name: ProviderName): string {
     const option = PROVIDER_CONFIG_OPTION[name];
     return PROVIDER_REQUIRES_API_KEY[name]
         ? `Set ${envVar} in the environment (or pass ${option} to ProviderFactory).`
-        : `${name} runs locally and needs no API key — set ${envVar} in the environment `
+        : `${name} runs locally and needs no API key - set ${envVar} in the environment `
         + `(or pass ${option} to ProviderFactory) to enable it, and make sure the server is running.`;
 }
 
@@ -196,7 +196,7 @@ export function loadRuntimeConfigFile(env: Record<string, string | undefined> = 
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
         return parsed as RuntimeConfigFile;
     } catch {
-        // Missing file, unreadable file, or bad JSON — all mean "no config file".
+        // Missing file, unreadable file, or bad JSON - all mean "no config file".
         return null;
     }
 }
@@ -227,7 +227,7 @@ function nonEmpty(value: unknown): string | null {
 /**
  * Resolve the active runtime provider and its model.
  *
- * Throws on an explicitly-configured but unrecognized provider name — a typo in
+ * Throws on an explicitly-configured but unrecognized provider name - a typo in
  * `RUNTIME_PROVIDER` should fail loudly at startup, not silently fall back to a
  * different (possibly paid) provider than the operator asked for.
  */

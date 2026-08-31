@@ -224,7 +224,7 @@ async function handleCreateNpc(args: z.infer<typeof NewCreateSchema>): Promise<o
     const warnings: string[] = [];
 
     // STEP 1: Delegate to character_manage.handleCreate. If this throws, fail
-    // fast — there's nothing yet to clean up.
+    // fast - there's nothing yet to clean up.
     const charArgs = {
         action: 'create' as const,
         name: args.name,
@@ -310,7 +310,7 @@ async function handleCreateNpc(args: z.infer<typeof NewCreateSchema>): Promise<o
         }
     }
 
-    // STEP 7: Bind agent (best-effort — failure becomes a warning)
+    // STEP 7: Bind agent (best-effort - failure becomes a warning)
     let agentId: string | null = null;
     let agentRecord: unknown = null;
     if (args.agent) {
@@ -383,7 +383,7 @@ async function handleCreateNpc(args: z.infer<typeof NewCreateSchema>): Promise<o
     const message = agentId
         ? `Created NPC ${args.name} with bound agent ${agentId}`
         : args.agent
-            ? `Created NPC ${args.name} (agent binding failed — see warnings)`
+            ? `Created NPC ${args.name} (agent binding failed - see warnings)`
             : `Created NPC ${args.name} (no agent bound)`;
 
     const response: Record<string, unknown> = {
@@ -506,7 +506,7 @@ async function handleGetFullContext(args: z.infer<typeof GetFullContextSchema>):
             }
             sectionsIncluded.push('persona');
         } else {
-            // No agent bound — explicitly null
+            // No agent bound - explicitly null
             persona = null;
             sectionsIncluded.push('persona');
         }
@@ -710,7 +710,7 @@ async function handleGetFullContext(args: z.infer<typeof GetFullContextSchema>):
             const relItems = (relationships?.items as any[]) || [];
             const relLines = relItems.length === 0
                 ? 'No known relationships.'
-                : relItems.map((r: any) => `- ${r.characterId}: ${r.familiarity} / ${r.disposition}${r.notes ? ` — ${r.notes}` : ''}`).join('\n');
+                : relItems.map((r: any) => `- ${r.characterId}: ${r.familiarity} / ${r.disposition}${r.notes ? ` - ${r.notes}` : ''}`).join('\n');
             const relSummary = relLines;
 
             const memItems = (memories?.items as any[]) || [];

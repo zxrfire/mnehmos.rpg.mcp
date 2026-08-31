@@ -182,7 +182,7 @@ describe('combat_action consolidated tool', () => {
             expect(lairIndex).toBeGreaterThanOrEqual(0);
             state.currentTurnIndex = lairIndex;
 
-            // Now PC tries to act — should warn even though the active slot is LAIR.
+            // Now PC tries to act - should warn even though the active slot is LAIR.
             const acted = await handleExecuteCombatAction({
                 encounterId: lairEncounterId,
                 action: 'attack',
@@ -428,7 +428,7 @@ describe('combat_action consolidated tool', () => {
             const da = parseResult(a);
             const db = parseResult(b);
             // One must succeed (the first) and the other must reject due to
-            // hasDashed/economy — but neither may throw "already exists".
+            // hasDashed/economy - but neither may throw "already exists".
             expect([da, db].some((d) => d.success === true)).toBe(true);
             for (const d of [da, db]) {
                 if (d.error) {

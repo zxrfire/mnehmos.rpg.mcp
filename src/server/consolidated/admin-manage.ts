@@ -1,5 +1,5 @@
 /**
- * Consolidated Admin Tool — `admin_manage`
+ * Consolidated Admin Tool - `admin_manage`
  *
  * Exploratory testing surface. Gated behind `ADMIN_MODE=true` in the process
  * environment and refused, clearly, otherwise.
@@ -38,7 +38,7 @@
  * invites the model to narrate a world that does not exist.
  *
  * Every call is written to the audit log with the run id as its target, which
- * is also how a run is flagged as admin-touched — `run_manage.ledger` reads the
+ * is also how a run is flagged as admin-touched - `run_manage.ledger` reads the
  * same rows to exclude those runs from the death ledger and from balance data.
  */
 
@@ -456,7 +456,7 @@ export async function handleSetAmbient(args: z.infer<typeof SetAmbientSchema>): 
     const base = cultivator.location ?? 'the open road';
 
     // Ambient qi is a pure function of (seed, place, day). The honest way to
-    // change it is therefore to change the place — and to a place the engine
+    // change it is therefore to change the place - and to a place the engine
     // really does compute this band for, not to a claim about the old one.
     const alias = aliasForAmbient(run.seed, base, day, args.band as AmbientQi);
     if (!alias) {
@@ -494,7 +494,7 @@ export async function handleSetAmbient(args: z.infer<typeof SetAmbientSchema>): 
         toDay: blockEnd,
         note:
             'The gate lifted is "you must happen to be somewhere with this band". The band itself is still ' +
-            `derived by the engine from (seed, "${alias}", day) — it was found, not declared. It holds for ` +
+            `derived by the engine from (seed, "${alias}", day) - it was found, not declared. It holds for ` +
             'this 30-day ambient block only, then the world goes back to being what it is.',
         runFlagged: true
     };
@@ -699,7 +699,7 @@ const definitions: Record<AdminAction, ActionDefinition> = {
         schema: AuditLogSchema,
         handler: handleAuditLog,
         aliases: ['audit', 'log', 'trail'],
-        description: 'The admin audit trail for a run — the rows that flag it'
+        description: 'The admin audit trail for a run - the rows that flag it'
     }
 };
 
@@ -707,14 +707,14 @@ const router = createActionRouter({ actions: ACTIONS, definitions, threshold: 0.
 
 export const AdminManageTool = {
     name: 'admin_manage',
-    description: `ADMIN — exploratory testing surface. Requires ADMIN_MODE=true in the environment;
+    description: `ADMIN - exploratory testing surface. Requires ADMIN_MODE=true in the environment;
 every other call is refused with a clear error and no fallback path.
 
 ADMIN LIFTS GATES, NOT TRUTH. Spawning a Tribulation Transcender's grave for a Qi Condensation
 player is a content gate being lifted: the engine really creates the site, really rolls its
 contents from the run seed, and really writes it to SQLite. You narrate something that exists.
 
-There is NO action here — and there must never be one — that takes an outcome as input and
+There is NO action here - and there must never be one - that takes an outcome as input and
 records it. No declare, no force_success, no set_hp, no revive. Every action below performs a real
 deterministic mutation and returns what the engine actually did.
 

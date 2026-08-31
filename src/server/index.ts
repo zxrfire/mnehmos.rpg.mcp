@@ -20,7 +20,7 @@ import { z } from 'zod';
 //
 // IMPORTANT: dotenv's default behavior is to read `.env` relative to
 // process.cwd(). MCP hosts almost universally spawn server binaries with
-// the host's cwd, not the project root — so a vanilla `loadDotenv()` would
+// the host's cwd, not the project root - so a vanilla `loadDotenv()` would
 // silently load nothing and the operator gets the misleading
 // "Provider 'X' is not configured" error even when their .env is correct.
 //
@@ -47,7 +47,7 @@ if (existsSync(envFromFile)) {
   loadDotenv({ path: envFromCwd, quiet: true });
   envLoadedFrom = envFromCwd;
 } else {
-  // dotenv is silent if the file is missing — explicit no-op here for clarity.
+  // dotenv is silent if the file is missing - explicit no-op here for clarity.
   envLoadedFrom = null;
 }
 
@@ -119,12 +119,12 @@ function setupShutdownHandlers(): void {
 }
 
 /**
- * Builds a fresh McpServer with every tool registered. Cheap (no I/O) —
+ * Builds a fresh McpServer with every tool registered. Cheap (no I/O) -
  * safe to call once for the long-lived stdio/tcp/unix/websocket transports,
  * or per-request for the stateless HTTP transport, which requires a new
  * McpServer + StreamableHTTPServerTransport pair per request (the SDK
  * throws "Stateless transport cannot be reused across requests" otherwise).
- * `pubsub` and `auditLogger` are app-level singletons shared across calls —
+ * `pubsub` and `auditLogger` are app-level singletons shared across calls -
  * only the protocol-level McpServer/tool-registration wrapper is rebuilt.
  */
 function buildServer(pubsub: PubSub, auditLogger: AuditLogger): McpServer {
@@ -207,7 +207,7 @@ async function main() {
     // wrong-cwd trap is universal; surfacing the resolved .env path makes it
     // obvious in 5 seconds.
     console.error('[Agent] Runtime initialized:');
-    console.error(`[Agent]   .env loaded from: ${envLoadedFrom ?? '(none found — relying on ambient env)'}`);
+    console.error(`[Agent]   .env loaded from: ${envLoadedFrom ?? '(none found - relying on ambient env)'}`);
     console.error(`[Agent]   process cwd:      ${process.cwd()}`);
     if (providers.length > 0) {
       console.error(`[Agent]   providers ready:  ${providers.join(', ')}`);
@@ -217,7 +217,7 @@ async function main() {
       const keyNames = PROVIDER_NAMES
         .filter(n => PROVIDER_REQUIRES_API_KEY[n])
         .map(n => PROVIDER_CONFIG_ENV[n]);
-      console.error(`[Agent]   providers ready:  (none — set one of ${keyNames.join(', ')}, or run Ollama locally)`);
+      console.error(`[Agent]   providers ready:  (none - set one of ${keyNames.join(', ')}, or run Ollama locally)`);
       // Show which key names exist in the process env (presence only, never values)
       const visibleKeys = [...keyNames, 'OPENAI_ORGANIZATION', 'OPENROUTER_REFERER']
         .filter(k => process.env[k] !== undefined);
@@ -325,7 +325,7 @@ async function main() {
     const port = getArgValue('--port') ? parseInt(getArgValue('--port')!, 10) : parseInt(process.env.PORT || '3000', 10);
 
     // '::' binds dual-stack (IPv6 + IPv4). Required for Railway private
-    // networking, which is IPv6-only — see transport/http.ts.
+    // networking, which is IPv6-only - see transport/http.ts.
     const httpHost = getArgValue('--host') || '::';
     await startHttpServerTransport(() => buildServer(pubsub, auditLogger), port, {
       host: httpHost,

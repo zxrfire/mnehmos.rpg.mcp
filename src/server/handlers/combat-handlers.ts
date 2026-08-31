@@ -130,7 +130,7 @@ function formatCombatStateText(state: CombatState): string {
     // Header with round info
     const turnIcon = isEnemy ? '👹' : '⚔️';
     let output = `\n┌─────────────────────────────────────────┐\n`;
-    output += `│ ${turnIcon} ROUND ${state.round} — ${currentParticipant?.name}'s Turn\n`;
+    output += `│ ${turnIcon} ROUND ${state.round} - ${currentParticipant?.name}'s Turn\n`;
     output += `└─────────────────────────────────────────┘\n\n`;
 
     // Initiative order with clear formatting
@@ -173,7 +173,7 @@ function formatCombatStateText(state: CombatState): string {
         output += `   Available targets: ${validEnemyTargets.join(', ') || 'None'}\n`;
         output += `   → Awaiting player action\n`;
     } else {
-        output += `⏭️ Current combatant is defeated — call advance_turn\n`;
+        output += `⏭️ Current combatant is defeated - call advance_turn\n`;
     }
 
     return output;
@@ -1132,7 +1132,7 @@ export async function handleCreateEncounter(args: unknown, ctx: SessionContext) 
     const repo = new EncounterRepository(db);
 
     // Create the encounter record first (with initiative and isEnemy).
-    // PR #57 follow-up: persist ac/attackDamage/attackBonus too — those drive
+    // PR #57 follow-up: persist ac/attackDamage/attackBonus too - those drive
     // attack resolution, and omitting them on initial create made loadState()
     // (before any saveState) drop back to the default-AC-10 fallback.
     repo.create({
@@ -1152,7 +1152,7 @@ export async function handleCreateEncounter(args: unknown, ctx: SessionContext) 
             ac: p.ac,
             attackDamage: p.attackDamage,
             attackBonus: p.attackBonus,
-            // Damage modifiers — drop them and post-load attacks lose half/2x/immune behavior
+            // Damage modifiers - drop them and post-load attacks lose half/2x/immune behavior
             resistances: p.resistances,
             vulnerabilities: p.vulnerabilities,
             immunities: p.immunities,
@@ -1264,7 +1264,7 @@ export async function handleExecuteCombatAction(args: unknown, ctx: SessionConte
     // handler (attack / cast_spell / move / dash / dodge / help / heal /
     // disengage / ready) is an on-turn action. If actorId doesn't match the
     // active participant, surface a warning so the caller can see the
-    // misuse — we don't throw because reactions aren't modeled yet and
+    // misuse - we don't throw because reactions aren't modeled yet and
     // some legitimate flows could be disrupted. A stricter mode can be
     // layered on top later.
     let turnWarning: string | undefined;
@@ -1275,7 +1275,7 @@ export async function handleExecuteCombatAction(args: unknown, ctx: SessionConte
             if (
                 activeId &&
                 parsed.actorId !== activeId &&
-                // Ignore if the supplied actorId isn't a real participant —
+                // Ignore if the supplied actorId isn't a real participant -
                 // the action handler will produce a clearer error downstream.
                 liveState.participants.some((p) => p.id === parsed.actorId)
             ) {

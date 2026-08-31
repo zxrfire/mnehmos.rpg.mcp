@@ -8,7 +8,7 @@
  *           via a direct provider call, persist a new agent_calls row for the replay,
  *           and return original + replay side-by-side with a lightweight text diff.
  *
- * Live mode does NOT go through invokeAgent — it bypasses preflight, circuit
+ * Live mode does NOT go through invokeAgent - it bypasses preflight, circuit
  * breaker, journal append, and event_inbox emission on purpose. A replay is a
  * DM-initiated audit action, not a turn the agent is taking.
  */

@@ -25,14 +25,14 @@ export const CurrencySchema = z.object({
 /**
  * Bastion world-brief origin tracker.
  *
- * The world's central conceit is that almost no one is native to Bastion —
+ * The world's central conceit is that almost no one is native to Bastion -
  * the population is summoned from every fictional universe (Forgotten Realms,
  * Konoha, contemporary Earth, ...). origin records where a soul came from
  * and when it arrived, so tools can enforce/expose that fact.
  */
 export const CharacterOriginSchema = z.object({
     universe: z.string().min(1)
-        .describe('Source universe (e.g. "Contemporary Earth — Arizona Mine", "Forgotten Realms", "Konoha")'),
+        .describe('Source universe (e.g. "Contemporary Earth - Arizona Mine", "Forgotten Realms", "Konoha")'),
     native: z.boolean().default(false)
         .describe('True iff born in Bastion; false for summoned souls'),
     arrivedAt: z.string().optional()
@@ -122,7 +122,7 @@ export const CharacterSchema = z.object({
 
     // §10.3 forward-compat: generalized resource pools.
     // Operator's attentional_capacity lives here (resourcePools.attentional_capacity).
-    // Backwards-compatible — existing 5e characters keep spellSlots untouched.
+    // Backwards-compatible - existing 5e characters keep spellSlots untouched.
     resourcePools: z.record(z.string(), z.object({
         current: z.number(),
         max: z.number(),
@@ -147,7 +147,7 @@ export const CharacterSchema = z.object({
     currency: CurrencySchema.optional().default({})
         .describe('Character currency in gold, silver, and copper denominations'),
 
-    // Background and alignment — accepted previously but silently dropped on
+    // Background and alignment - accepted previously but silently dropped on
     // persistence (no migration column). See docs/bastion/05-world-brief-vs-tool-surface.md.
     background: z.string().optional()
         .describe('Character background (e.g. "Soldier", "Charlatan", "Folk Hero")'),

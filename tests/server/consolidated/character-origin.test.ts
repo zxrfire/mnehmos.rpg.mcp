@@ -1,7 +1,7 @@
 /**
  * Tests for character.origin field + silent-drop fix for background/alignment.
  *
- * Per CLAUDE.md: NO `import { describe, it, expect } from 'vitest'` — vitest globals
+ * Per CLAUDE.md: NO `import { describe, it, expect } from 'vitest'` - vitest globals
  * are configured and explicit imports break test collection on Windows + vitest 1.6.1.
  */
 
@@ -51,7 +51,7 @@ describe('character.origin field + background/alignment silent-drop fix', () => 
                 background: 'Soldier',
                 alignment: 'lawful_neutral',
                 origin: {
-                    universe: 'Contemporary Earth — Arizona Mine',
+                    universe: 'Contemporary Earth - Arizona Mine',
                     native: false,
                     arrivedAt: 'PD 47'
                 },
@@ -62,7 +62,7 @@ describe('character.origin field + background/alignment silent-drop fix', () => 
             expect(created.success).toBe(true);
             expect(created.id).toBeDefined();
             expect(created.origin).toBeDefined();
-            expect(created.origin.universe).toBe('Contemporary Earth — Arizona Mine');
+            expect(created.origin.universe).toBe('Contemporary Earth - Arizona Mine');
             expect(created.origin.native).toBe(false);
             expect(created.origin.arrivedAt).toBe('PD 47');
 
@@ -73,7 +73,7 @@ describe('character.origin field + background/alignment silent-drop fix', () => 
             }, ctx);
             const fetched = extractCharacterJson(getRes.content[0].text);
             expect(fetched.origin).toBeDefined();
-            expect(fetched.origin.universe).toBe('Contemporary Earth — Arizona Mine');
+            expect(fetched.origin.universe).toBe('Contemporary Earth - Arizona Mine');
             expect(fetched.origin.native).toBe(false);
             expect(fetched.origin.arrivedAt).toBe('PD 47');
         });

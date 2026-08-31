@@ -198,7 +198,7 @@ const ApplyEffectSchema = z.object({
         type: MechanicTypeSchema.describe('What the mechanic does (closed set). Use custom_trigger for narrative-only effects'),
         value: z.union([z.string(), z.number()]).describe('Number for bonuses (e.g. 2, -10); string for typed effects (e.g. "fire" for damage_resistance)'),
         condition: z.string().optional().describe('When it applies, e.g. "against undead", "attack_rolls"')
-    })).describe('One or more mechanical riders. REQUIRED — each needs {type, value}. type is a closed enum; freeform strings are rejected'),
+    })).describe('One or more mechanical riders. REQUIRED - each needs {type, value}. type is a closed enum; freeform strings are rejected'),
     durationType: z.enum(['rounds', 'minutes', 'hours', 'days', 'permanent', 'until_removed']),
     durationValue: z.number().int().optional().describe('Magnitude for timed durations; ignored for permanent/until_removed'),
     triggers: z.array(z.object({
@@ -769,7 +769,7 @@ STUNT (Rule of Cool):
 
 CUSTOM EFFECTS (apply_effect):
 - Required: targetId, targetType, name, category, mechanics[], durationType
-- mechanics[] = { type, value, condition? } — type is a CLOSED ENUM, value is a number (bonuses) or string (typed effects like "fire")
+- mechanics[] = { type, value, condition? } - type is a CLOSED ENUM, value is a number (bonuses) or string (typed effects like "fire")
 - type ∈ ${MechanicTypeSchema.options.join(', ')}
 - Categories: boon, curse, neutral, transformative | Power levels 1-5 | Duration types: rounds, minutes, hours, days, permanent, until_removed
 - Use custom_trigger (value 1) for narrative-only effects with no numeric rider

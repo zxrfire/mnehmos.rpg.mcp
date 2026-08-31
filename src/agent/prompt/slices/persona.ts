@@ -1,5 +1,5 @@
 /**
- * Persona slice — the DM-authored identity / voice of the character.
+ * Persona slice - the DM-authored identity / voice of the character.
  * Reads from agent_prompt_slices kind='persona'.
  */
 

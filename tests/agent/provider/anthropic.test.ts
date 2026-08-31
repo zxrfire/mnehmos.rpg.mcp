@@ -69,7 +69,7 @@ describe('AnthropicProvider', () => {
         const headers = mock.lastRequest.init?.headers as Record<string, string>;
         expect(headers['x-api-key']).toBe('sk-ant-test');
         expect(headers['anthropic-version']).toBe(ANTHROPIC_VERSION);
-        // Anthropic does NOT use bearer auth — a stray Authorization header
+        // Anthropic does NOT use bearer auth - a stray Authorization header
         // would silently shadow the key on some gateways.
         expect(headers['Authorization']).toBeUndefined();
     });

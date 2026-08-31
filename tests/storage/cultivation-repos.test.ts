@@ -73,7 +73,7 @@ function sampleTechnique(overrides: Partial<Technique> = {}): Technique {
         qiCost: 5,
         damage: '2d6+4',
         mastery: 0,
-        description: 'A palm strike that leaves the air smelling of ash.',
+        description: 'A palm strike that leaves the air smelling of scorched stone.',
         cooldown: 3,
         ...overrides
     });

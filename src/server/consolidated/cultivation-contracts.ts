@@ -1,8 +1,8 @@
 /**
  * Tool contracts for the cultivation surface.
  *
- * Mirrors `contracts.ts` exactly — one authoritative descriptor table, one
- * `defineToolContract`-shaped factory — but lives in its own file so the
+ * Mirrors `contracts.ts` exactly - one authoritative descriptor table, one
+ * `defineToolContract`-shaped factory - but lives in its own file so the
  * cultivation tools can be registered without editing the D&D-era descriptor
  * table that another agent owns. The two tables are merged only at the point of
  * registration in `index.ts`.

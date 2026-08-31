@@ -63,7 +63,7 @@ describe('OllamaProvider', () => {
 
     it('requires no API key and sends no auth header', async () => {
         const mock = mockFetch({ body: chatReply('x') });
-        // Constructing with zero config must work — that is the whole point of
+        // Constructing with zero config must work - that is the whole point of
         // the local provider.
         const provider = new OllamaProvider({ fetchImpl: mock.fn });
         await provider.call({ model: 'llama3.1', messages: [{ role: 'user', content: 'hi' }] });
@@ -138,7 +138,7 @@ describe('OllamaProvider', () => {
         expect(result.totalTokens).toBe(59);
     });
 
-    it('reports zero cost as provider-authoritative — local inference is free', async () => {
+    it('reports zero cost as provider-authoritative - local inference is free', async () => {
         const mock = mockFetch({ body: chatReply('x') });
         const provider = new OllamaProvider({ fetchImpl: mock.fn });
 

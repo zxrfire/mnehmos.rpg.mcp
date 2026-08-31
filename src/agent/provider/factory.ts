@@ -17,7 +17,7 @@ import {
     RUNTIME_PROVIDER_ENV_VARS
 } from './config.js';
 
-// The canonical provider-name union lives in ./config.ts — the single place
+// The canonical provider-name union lives in ./config.ts - the single place
 // allowed to interpret a provider name. Re-exported here so existing importers
 // of ProviderName keep working.
 export type { ProviderName } from './config.js';
@@ -34,7 +34,7 @@ export interface ProviderFactoryConfig {
     ollamaModel?: string;
     /**
      * Force Ollama on/off. Ollama has no API key to gate on, so absent an
-     * explicit value it is enabled whenever the operator has configured it —
+     * explicit value it is enabled whenever the operator has configured it -
      * see shouldEnableOllama().
      */
     ollamaEnabled?: boolean;
@@ -64,7 +64,7 @@ export class ProviderFactory {
     /**
      * Eagerly instantiate every provider that has credentials available.
      * Returns the list of provider names that were successfully configured.
-     * Providers without keys are silently skipped — they'll throw clearly
+     * Providers without keys are silently skipped - they'll throw clearly
      * if anyone tries to use them later.
      */
     initialize(): ProviderName[] {
@@ -143,7 +143,7 @@ export class ProviderFactory {
         return provider;
     }
 
-    /** Non-throwing variant — useful for health checks / readiness probes. */
+    /** Non-throwing variant - useful for health checks / readiness probes. */
     tryGet(name: ProviderName): LLMProvider | null {
         return this.providers.get(name) ?? null;
     }

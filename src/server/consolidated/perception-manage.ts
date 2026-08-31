@@ -1,12 +1,12 @@
 /**
- * perception_manage — the Operator's constraint-perception lens.
+ * perception_manage - the Operator's constraint-perception lens.
  *
  * Five actions:
- *   assess         — debit attention, scan committed state, rank controls.
- *   list_hazards   — cheap decomposition (cached first-call per scene).
- *   read_hazard    — deep-read origin and removal options for one hazard.
- *   recover        — refill attentional_capacity (rest hook).
- *   get_capacity   — read-side query, free.
+ *   assess         - debit attention, scan committed state, rank controls.
+ *   list_hazards   - cheap decomposition (cached first-call per scene).
+ *   read_hazard    - deep-read origin and removal options for one hazard.
+ *   recover        - refill attentional_capacity (rest hook).
+ *   get_capacity   - read-side query, free.
  *
  * Every commit writes a perception_assessments row + an event_logs row
  * sharing the same intent_id (Phase-1 shadow ledger per §10.2).
@@ -135,7 +135,7 @@ const AssessSchema = z.object({
     targetRef: TargetRefSchema,
     lens: z.enum(['full', 'elimination_only', 'top_n']).default('full'),
     topN: z.number().int().min(1).max(5).optional().default(3),
-    // Test hook — simulate the wind-up being interrupted.
+    // Test hook - simulate the wind-up being interrupted.
     _interrupt: z.boolean().optional(),
 });
 
@@ -211,7 +211,7 @@ async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<object>
         };
     }
 
-    // 3. Invalid target check — no debit, no row
+    // 3. Invalid target check - no debit, no row
     if (!targetExists(targetRef, { db } as ScanDeps)) {
         return {
             disposition: 'reject_inert' as Disposition,
@@ -228,7 +228,7 @@ async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<object>
         };
     }
 
-    // 4. Concentration guard — looking shares attention with a held effect
+    // 4. Concentration guard - looking shares attention with a held effect
     if (concentrationRepo.isConcentrating(observerId)) {
         const state = concentrationRepo.findByCharacterId(observerId);
         return {
@@ -266,7 +266,7 @@ async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<object>
     // 6. Debit capacity (the cost of looking is real)
     const after = debit(observerId, characterRepo, 1);
 
-    // 7. Interrupt test hook — simulates wind-up disruption
+    // 7. Interrupt test hook - simulates wind-up disruption
     if (args._interrupt) {
         const ledgerTarget = targetRefToLedger(targetRef);
         assessmentRepo.create({
@@ -319,7 +319,7 @@ async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<object>
         finalControls = applicableControls.filter(c => c.level === 'elimination');
     }
 
-    // 11. Ledger write — atomic with the event log
+    // 11. Ledger write - atomic with the event log
     const ledgerTarget = targetRefToLedger(targetRef);
     const tx = db.transaction(() => {
         const assessment = assessmentRepo.create({
@@ -602,7 +602,7 @@ async function handleRecover(args: z.infer<typeof RecoverSchema>): Promise<objec
 
     const disposition: Disposition = result.mutated ? 'commit' : 'no_op_spoken';
 
-    // Audit row — write even on no-op so rest-manage can trace the call.
+    // Audit row - write even on no-op so rest-manage can trace the call.
     assessmentRepo.create({
         observerId,
         intentId,
@@ -673,7 +673,7 @@ const definitions: Record<PerceptionAction, ActionDefinition> = {
         schema: ListHazardsSchema,
         handler: async (args) => handleListHazards(args as z.infer<typeof ListHazardsSchema>),
         aliases: ['enumerate', 'list'],
-        description: 'Cheap decomposition — list hazards without ranking controls',
+        description: 'Cheap decomposition - list hazards without ranking controls',
     },
     read_hazard: {
         schema: ReadHazardSchema,

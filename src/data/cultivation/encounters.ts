@@ -722,8 +722,8 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['ruin', 'hostile', 'formation', 'avoidable']
     },
     {
-        id: 'enc-formation-locked-vault',
-        name: 'Formation-Locked Vault',
+        id: 'enc-formation-locked-door',
+        name: 'Formation-Locked Door',
         kind: 'ruin',
         simEventKind: 'opportunity',
         weight: 45,

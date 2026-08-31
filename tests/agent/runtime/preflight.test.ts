@@ -139,7 +139,7 @@ describe('preflight', () => {
     });
 
     it('preflight ordering: paused beats circuit_open beats budget beats incapable', () => {
-        // All bad — should report 'paused' (first check)
+        // All bad - should report 'paused' (first check)
         const result = preflight({
             agent: makeAgent({
                 status: 'paused',

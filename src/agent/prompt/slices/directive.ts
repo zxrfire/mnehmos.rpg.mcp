@@ -1,5 +1,5 @@
 /**
- * Directive slice — DM-authored behavioral instructions for this campaign.
+ * Directive slice - DM-authored behavioral instructions for this campaign.
  * Reads from agent_prompt_slices kind='directive'.
  */
 
