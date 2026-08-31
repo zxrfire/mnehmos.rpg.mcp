@@ -9,7 +9,7 @@
  *
  *  1. THE ENGINE SHOWS ITS WORK. Every modifier is itemised in
  *     `result.modifiers`, and the deltas sum exactly to `finalChance`. The UI
- *     must be able to print "0.33 base, -0.06 injuries, +0.09 fortune" without
+ *     must be able to print "0.33 base, -0.06 injuries, +0.08 insight" without
  *     recomputing anything, and a player who dies must be able to see why the
  *     odds were what they were. This invariant is tested.
  *
@@ -26,15 +26,23 @@
  *     meridians, qi deviation and corpses come from. Boundaries are not merely
  *     less likely to succeed - they are far more expensive to fail.
  *
- * Tribulation Transcendence (ordinals 41-44) adds heavenly lightning on top:
- * the primary roll gets you to the tribulation, and then a multi-strike
- * sequence decides whether you survive having gotten there.
+ * Tribulation Transcendence adds heavenly lightning on top, on every crossing
+ * into it, within it, and out of it: the primary roll gets you to the
+ * tribulation, and then a multi-strike sequence decides whether you survive
+ * having gotten there.
+ *
+ * The last crossing, 44 -> 45, is the only attempt in the game that resolves
+ * three ways rather than two. See THE LAST CROSSING near the bottom of the
+ * file.
+ *
+ * Note what is NOT in the odds: Fortune. Luck generates opportunity, not
+ * success, and a breakthrough is a causal outcome. See FORTUNE_PER_POINT.
  */
 
 import {
     MAX_RANKS_PER_TURN,
     type AmbientQi,
-    type BreakthroughOutcome,
+    type BreakthroughFailure,
     type BreakthroughResult,
     type Cultivator,
     type Injury,
@@ -44,6 +52,8 @@ import {
     MAX_ORDINAL,
     REALM_TIERS,
     baseBreakthroughChance,
+    hasCrossedTheLid,
+    isLastCrossing,
     isRealmBoundary,
     progressRequiredForOrdinal,
     rankName,
@@ -100,14 +110,52 @@ export const INSIGHT_PIVOT = 2;
 export const INSIGHT_PER_POINT = 0.04;
 
 /**
- * Fortune is pure luck and may legally be 0, so it is a one-sided bonus rather
- * than a centred modifier: 0 to +0.09. A player with Fortune 0 is not cursed,
- * they simply never get the gift.
+ * Fortune contributes NOTHING here, and that is a deliberate correction.
+ *
+ * Luck generates opportunity, not success. A breakthrough is a causal outcome -
+ * it is decided by talent, comprehension, preparation, ambient qi, the state
+ * of the meridians and what was swallowed beforehand - and none of those are
+ * things luck should be allowed to buy. A cultivator does not punch through a
+ * bottleneck because the dice liked them.
+ *
+ * Fortune's real weight lives in the time-skip's event generation, where it
+ * selects among branches the world already permits: whether an opportunity is
+ * drawn at all, whether the window is still open when you arrive, whether the
+ * patrol took the other road. It biases timing, presence and availability. It
+ * never softens a resolution and never reaches into a probability that
+ * represents a real capability gap. It also still moves the Toll, where it
+ * means "the crossing happened to pass over lightly", not "this one is harder to
+ * charge".
+ *
+ * The constant is kept, at zero, so the intent is legible at the call site
+ * instead of being an unexplained absence.
  */
-export const FORTUNE_PER_POINT = 0.03;
+export const FORTUNE_PER_POINT = 0;
 
 /** Extra strain at a realm boundary, on top of the 0.45x already in the base. */
 export const REALM_BOUNDARY_STRAIN = -0.08;
+
+/**
+ * Additional strain on the last crossing, 44 -> 45, on top of the boundary tax
+ * and the boundary strain. The hardest attempt in the game by a wide margin,
+ * and the only one whose failure table is not the end of the story.
+ */
+export const LAST_CROSSING_STRAIN = -0.15;
+
+/**
+ * Chance that a SURVIVED last crossing actually completes, before modifiers.
+ *
+ * Low on purpose. Surviving seven strikes of heavenly lightning only earns the
+ * right to find out whether the seam stays open long enough, and for most of
+ * those who get that far it does not. False Immortal is the common outcome and
+ * True Immortal is the rare one - that asymmetry is the Hollow Court's actual
+ * membership, and the reason nobody currently alive has crossed.
+ */
+export const TRUE_IMMORTAL_BASE_COMPLETION = 0.12;
+/** Each strike that landed is damage the crossing has to carry through the seam. */
+export const COMPLETION_PER_LANDED_STRIKE = -0.05;
+export const MIN_COMPLETION_CHANCE = 0.01;
+export const MAX_COMPLETION_CHANCE = 0.45;
 
 /** Cap on how much a single pill may contribute, however good the pill is. */
 export const MAX_PILL_BONUS = 0.35;
@@ -127,7 +175,7 @@ export const FAILURE_TABLE = {
 } as const;
 
 /** Fraction of the required progress burned by each failure outcome. */
-export const FAILURE_PROGRESS_LOSS: Record<Exclude<BreakthroughOutcome, 'success'>, number> = {
+export const FAILURE_PROGRESS_LOSS: Record<BreakthroughFailure, number> = {
     failure_stable: 0.25,
     failure_injured: 0.5,
     failure_deviation: 0.75,
@@ -142,7 +190,7 @@ export const FAILURE_PROGRESS_LOSS: Record<Exclude<BreakthroughOutcome, 'success
  * tribulation at 3 strikes, then 4, 5 and 6 for the steps above it. Indexing
  * on the destination is what puts the lightest tribulation on the boundary
  * crossing, where it belongs: the Lid is deciding for the first time whether
- * this cultivator is worth the ash it will cost to seal behind them, and it has
+ * this cultivator is worth the qi it will cost to seal behind them, and it has
  * not yet made up its mind.
  *
  * That crossing is consequently the single worst moment in a run - it is a
@@ -182,8 +230,8 @@ export interface BreakthroughContext {
      */
     ranksGainedThisTurn?: number;
     /**
-     * Conditions for the Vault's toll, charged on a SUCCESSFUL realm-boundary
-     * crossing. Omitting this does not skip the toll - the Vault does not wait
+     * Conditions for the price of advancement, charged on a SUCCESSFUL realm-boundary
+     * crossing. Omitting this does not skip the toll - the crossing does not wait
      * for a caller to be ready - it charges with no candidates, which surfaces
      * as `nothing_left` in the result. A caller that owns bonds, memories and
      * techniques must supply them here.
@@ -210,7 +258,8 @@ export interface EligibilityCheck {
  * should consult this instead of catching the throw from `attemptBreakthrough`.
  */
 export function canAttemptBreakthrough(
-    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'alive'>,
+    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'alive'> &
+        Partial<Pick<Cultivator, 'immortalStatus'>>,
     ctx: Pick<BreakthroughContext, 'ranksGainedThisTurn'> = {}
 ): EligibilityCheck {
     const required = progressRequiredForOrdinal(cultivator.realmOrdinal);
@@ -221,6 +270,12 @@ export function canAttemptBreakthrough(
 
     if (!cultivator.alive) {
         return { eligible: false, reason: 'dead', ...base };
+    }
+    // The Lid does not open twice for the same name. A False Immortal is
+    // REFUSED, not merely made unlikely - this is a hard engine gate, and it is
+    // the whole reason False Immortal is a status rather than a setback.
+    if (hasCrossedTheLid(cultivator.immortalStatus ?? 'none')) {
+        return { eligible: false, reason: 'barred:the_lid_opened_once', ...base };
     }
     if (cultivator.realmOrdinal >= MAX_ORDINAL) {
         return { eligible: false, reason: 'at_ladder_summit', ...base };
@@ -279,6 +334,10 @@ export function computeBreakthroughOdds(
         modifiers.push({ source: 'realm_boundary_strain', delta: REALM_BOUNDARY_STRAIN });
     }
 
+    if (isLastCrossing(ordinal)) {
+        modifiers.push({ source: 'last_crossing_strain', delta: LAST_CROSSING_STRAIN });
+    }
+
     modifiers.push({
         source: `spirit_root:${root.key}`,
         delta: BREAKTHROUGH_ROOT_MOD[root.grade]
@@ -289,10 +348,7 @@ export function computeBreakthroughOdds(
         delta: (cultivator.attributes.insight - INSIGHT_PIVOT) * INSIGHT_PER_POINT
     });
 
-    modifiers.push({
-        source: 'fortune',
-        delta: cultivator.attributes.fortune * FORTUNE_PER_POINT
-    });
+    // No Fortune line. Luck does not buy a breakthrough; see FORTUNE_PER_POINT.
 
     modifiers.push({
         source: `ambient_qi:${ctx.ambient}`,
@@ -365,7 +421,7 @@ export function computeBreakthroughOdds(
  * `name` and `foundationQuality` are optional because most callers legitimately
  * do not carry them - NPC stubs from the world layer, rows written before
  * foundations existed, the time-skip's internal snapshot. A missing foundation
- * reads as 'none'; a missing name means the Vault has nothing legible to take
+ * reads as 'none'; a missing name means the crossing has nothing legible to take
  * and simply cannot reach for one.
  */
 export type BreakthroughSubject = Pick<
@@ -426,7 +482,7 @@ interface SuccessFrame {
 
 /**
  * The one place a successful crossing is assembled, so that the two things the
- * world charges for a success - the foundation at 12 -> 13 and the Vault's toll
+ * world charges for a success - the foundation at 12 -> 13 and the price of advancement
  * at every realm boundary - cannot be forgotten on one path and applied on
  * another. Both the ordinary success return and the survived-tribulation return
  * come through here.
@@ -453,9 +509,9 @@ function finishSuccess(
         foundationHint = ` ${assessment.narrationHint}`;
     }
 
-    // ── The Vault's instalment, if this crossing is charged. ──
+    // ── The price of the crossing, if this one is charged. ──
     // Never on a sub-rank step. Always on a boundary, whether or not the caller
-    // remembered to supply candidates - the Vault does not wait to be ready.
+    // remembered to supply candidates - the crossing does not wait to be ready.
     let toll: BreakthroughResult['toll'] = null;
     let tollHint = '';
     if (isTolled(fromOrdinal)) {
@@ -464,7 +520,7 @@ function finishSuccess(
                 realmOrdinal: fromOrdinal,
                 attributes: cultivator.attributes,
                 name: cultivator.name,
-                // The foundation laid by THIS crossing is what the Vault reaches
+                // The foundation laid by THIS crossing is what the severance reaches
                 // into on the way past, so a freshly assessed one counts.
                 foundationQuality: foundationEstablished ?? foundationOf(cultivator)
             },
@@ -485,6 +541,9 @@ function finishSuccess(
         tribulation: frame.tribulation,
         toll,
         foundationEstablished,
+        // Only the last crossing confers a status, and it does not route
+        // through here - it has its own resolution.
+        immortalStatusGained: null,
         narrationHint:
             `Breakthrough succeeded: ${rankName(fromOrdinal)} to ${rankName(toOrdinal)}` +
             `${odds.isBoundary ? ', crossing into a new realm' : ''}. ` +
@@ -509,7 +568,7 @@ function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): Breakthr
     const table = frame.odds.isBoundary ? FAILURE_TABLE.boundary : FAILURE_TABLE.subRank;
     const severityRoll = ctx.rng.next();
 
-    let outcome: Exclude<BreakthroughOutcome, 'success'>;
+    let outcome: BreakthroughFailure;
     if (severityRoll < table.stable) outcome = 'failure_stable';
     else if (severityRoll < table.injured) outcome = 'failure_injured';
     else if (severityRoll < table.deviation) outcome = 'failure_deviation';
@@ -542,10 +601,11 @@ function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): Breakthr
         injuriesSustained: injuries,
         progressConsumed,
         tribulation: null,
-        // A failed crossing is not a crossing. The Vault charges for arriving,
+        // A failed crossing is not a crossing. The price is charged for arriving,
         // not for trying, and a foundation you did not lay has no quality.
         toll: null,
         foundationEstablished: null,
+        immortalStatusGained: null,
         narrationHint: failureNarration(outcome, frame, injuries)
     };
 }
@@ -556,7 +616,7 @@ function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): Breakthr
  * from.
  */
 function failureInjurySeverity(
-    outcome: Exclude<BreakthroughOutcome, 'success' | 'failure_stable'>,
+    outcome: Exclude<BreakthroughFailure, 'failure_stable'>,
     boundary: boolean,
     rng: CultivationRNG
 ): InjurySeverity {
@@ -573,7 +633,7 @@ function failureInjurySeverity(
 }
 
 function failureNarration(
-    outcome: Exclude<BreakthroughOutcome, 'success'>,
+    outcome: BreakthroughFailure,
     frame: AttemptFrame,
     injuries: readonly Injury[]
 ): string {
@@ -596,14 +656,24 @@ function failureNarration(
 // Ordinals 41-44. The primary roll only earns the right to be struck at.
 // ─────────────────────────────────────────────────────────────────────────
 
-/** First ordinal of Tribulation Transcendence: the destination of the 40 -> 41 crossing. */
-const TRIBULATION_REALM_START = REALM_TIERS[REALM_TIERS.length - 1].ordinalStart;
+/**
+ * First ordinal of Tribulation Transcendence: the destination of the 40 -> 41
+ * crossing.
+ *
+ * Looked up by key rather than taken as the last tier, because the last tier is
+ * now True Immortal. Reading it positionally was correct only while
+ * Tribulation Transcendence was the summit.
+ */
+const TRIBULATION_REALM_START = REALM_TIERS.find(
+    t => t.key === 'tribulation_transcendence'
+)!.ordinalStart;
 
 /**
  * Lightning strikes an attempt from this ordinal must weather.
  *
  * Counted from the destination: from 40 -> 3 strikes, 41 -> 4, 42 -> 5,
- * 43 -> 6. Returns 0 for an attempt that summons no tribulation at all.
+ * 43 -> 6, and the last crossing at 44 -> 7, the heaviest in the game.
+ * Returns 0 for an attempt that summons no tribulation at all.
  */
 export function tribulationStrikeCount(ordinal: number): number {
     if (!triggersHeavenlyTribulation(ordinal)) return 0;
@@ -611,7 +681,14 @@ export function tribulationStrikeCount(ordinal: number): number {
     return TRIBULATION_BASE_STRIKES + (destination - TRIBULATION_REALM_START);
 }
 
-/** Per-strike survival probability, before any strike is rolled. */
+/**
+ * Per-strike survival probability, before any strike is rolled.
+ *
+ * Might, ambient qi and the state of the meridians only. Surviving a lightning
+ * strike is as causal as an outcome gets - it is how much qi the body can hold
+ * before it starts holding you - and Fortune has been removed from it for the
+ * same reason it was removed from breakthrough odds.
+ */
 export function tribulationStrikeSurvival(
     cultivator: Pick<Cultivator, 'attributes' | 'injuries'>,
     ambient: AmbientQi
@@ -619,7 +696,6 @@ export function tribulationStrikeSurvival(
     const injuries = aggregateInjuryPenalties(cultivator.injuries);
     const raw =
         TRIBULATION_BASE_SURVIVAL +
-        cultivator.attributes.fortune * FORTUNE_PER_POINT +
         cultivator.attributes.might * 0.02 +
         ambientBreakthroughMod(ambient) -
         injuries.breakthroughPenalty;
@@ -676,10 +752,21 @@ function resolveTribulation(
             // tribulation do not leave a body; they leave a scar on the ground.
             toll: null,
             foundationEstablished: null,
+            immortalStatusGained: null,
             narrationHint:
                 `Heavenly tribulation was not survived: ${failedStrikes} of ${strikes} strikes struck home ` +
                 `(${(perStrike * 100).toFixed(0)}% survival per strike). The cultivator was destroyed by the lightning.`
         };
+    }
+
+    // ── The last crossing resolves three ways, not two. ──
+    if (isLastCrossing(frame.fromOrdinal)) {
+        return resolveLastCrossing(cultivator, ctx, frame, {
+            strikes,
+            failedStrikes,
+            perStrike,
+            injuries
+        });
     }
 
     // Survived. Route through the shared success path so the toll is charged
@@ -701,5 +788,156 @@ function resolveTribulation(
             `(${(perStrike * 100).toFixed(0)}% survival per strike). ` +
             `${rankName(frame.fromOrdinal)} to ${rankName(frame.fromOrdinal + 1)}.` +
             (result.toll ? ` ${result.toll.narrationHint}` : '')
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE LAST CROSSING
+// The attempt from Tribulation Transcendence Perfection, and the only one in
+// the game that does not resolve as success-or-failure. The lightning decides
+// whether the cultivator lives; if they do, a second roll decides whether the
+// seam stays open long enough for them to actually go through.
+// ─────────────────────────────────────────────────────────────────────────
+
+interface TribulationOutcome {
+    strikes: number;
+    failedStrikes: number;
+    perStrike: number;
+    injuries: Injury[];
+}
+
+/**
+ * Chance a survived last crossing completes.
+ *
+ * Deliberately does NOT read Fortune. Whether the Lid stays open is the most
+ * causal thing in the setting - it is the world deciding whether the hole is
+ * worth the qi it will cost to seal - and luck is not permitted to buy it.
+ * What moves it is how cleanly the tribulation went, the structure the
+ * cultivator is built on, and how much ambient qi there is at the moment.
+ */
+export function completionChance(
+    cultivator: Pick<Cultivator, 'injuries'> & Partial<Pick<Cultivator, 'foundationQuality'>>,
+    ambient: AmbientQi,
+    failedStrikes: number
+): { chance: number; modifiers: BreakthroughModifier[] } {
+    const foundation = foundationOf(cultivator);
+    const injuries = aggregateInjuryPenalties(cultivator.injuries);
+
+    const modifiers: BreakthroughModifier[] = [
+        { source: 'base:completion', delta: TRUE_IMMORTAL_BASE_COMPLETION },
+        {
+            source: `strikes_landed:${failedStrikes}`,
+            delta: failedStrikes * COMPLETION_PER_LANDED_STRIKE
+        },
+        { source: `ambient_qi:${ambient}`, delta: ambientBreakthroughMod(ambient) }
+    ];
+
+    if (foundation !== 'none') {
+        modifiers.push({
+            source: `foundation:${foundation}`,
+            delta: foundationEffect(foundation).breakthroughModifier
+        });
+    }
+    if (injuries.untreatedCount > 0) {
+        modifiers.push({
+            source: `untreated_injuries:${injuries.untreatedCount}`,
+            delta: -injuries.breakthroughPenalty
+        });
+    }
+
+    const raw = modifiers.reduce((sum, m) => sum + m.delta, 0);
+    const chance = Math.max(MIN_COMPLETION_CHANCE, Math.min(MAX_COMPLETION_CHANCE, raw));
+    if (chance !== raw) {
+        modifiers.push({
+            source: chance > raw ? 'clamp:floor' : 'clamp:ceiling',
+            delta: chance - raw
+        });
+    }
+    return { chance, modifiers };
+}
+
+function resolveLastCrossing(
+    cultivator: BreakthroughSubject,
+    ctx: BreakthroughContext,
+    frame: AttemptFrame,
+    tribulation: TribulationOutcome
+): BreakthroughResult {
+    const { strikes, failedStrikes, perStrike, injuries } = tribulation;
+    const completion = completionChance(cultivator, ctx.ambient, failedStrikes);
+    const completionRoll = ctx.rng.next();
+    const completed = completionRoll < completion.chance;
+
+    const weathered =
+        `Heavenly tribulation weathered at the last crossing: ${strikes} strikes, ` +
+        `${failedStrikes} struck home (${(perStrike * 100).toFixed(0)}% survival per strike). ` +
+        `The Lid opened at ${(completion.chance * 100).toFixed(1)}%.`;
+
+    // Modifiers carry the primary odds plus the completion arithmetic, so a UI
+    // can show both halves of a crossing that had two independent gates.
+    const modifiers = [
+        ...frame.odds.modifiers,
+        ...completion.modifiers.map(m => ({ source: `completion.${m.source}`, delta: m.delta }))
+    ];
+
+    if (completed) {
+        // ── True Immortal. The account is closed in full. ──
+        const toll = evaluateToll(
+            {
+                realmOrdinal: frame.fromOrdinal,
+                attributes: cultivator.attributes,
+                name: cultivator.name,
+                foundationQuality: foundationOf(cultivator)
+            },
+            { ...(ctx.toll ?? {}), rng: ctx.rng, ambient: ctx.ambient, collectInFull: true }
+        );
+
+        return {
+            outcome: 'success',
+            fromOrdinal: frame.fromOrdinal,
+            toOrdinal: MAX_ORDINAL,
+            finalChance: frame.odds.finalChance,
+            modifiers,
+            roll: frame.roll,
+            injuriesSustained: injuries,
+            progressConsumed: frame.required,
+            tribulation: { strikes, survived: true },
+            toll,
+            foundationEstablished: null,
+            immortalStatusGained: 'true_immortal',
+            narrationHint:
+                `${weathered} The crossing completed: ${rankName(MAX_ORDINAL)}. ${toll.narrationHint}`
+        };
+    }
+
+    // ── False Immortal. Survived, opened the Lid, did not go through. ──
+    // The ordinal does not move. Something is taken regardless of any roll,
+    // because "incomplete in a way that shows" is a fact of the setting and
+    // never nothing.
+    const toll = evaluateToll(
+        {
+            realmOrdinal: frame.fromOrdinal,
+            attributes: cultivator.attributes,
+            name: cultivator.name,
+            foundationQuality: foundationOf(cultivator)
+        },
+        { ...(ctx.toll ?? {}), rng: ctx.rng, ambient: ctx.ambient, guaranteed: true }
+    );
+
+    return {
+        outcome: 'false_immortal',
+        fromOrdinal: frame.fromOrdinal,
+        toOrdinal: frame.fromOrdinal,
+        finalChance: frame.odds.finalChance,
+        modifiers,
+        roll: frame.roll,
+        injuriesSustained: injuries,
+        progressConsumed: frame.required,
+        tribulation: { strikes, survived: true },
+        toll,
+        foundationEstablished: null,
+        immortalStatusGained: 'false_immortal',
+        narrationHint:
+            `${weathered} The crossing did not complete. What is left stays on this side of the Lid, ` +
+            `permanently: a False Immortal, barred from ever attempting again. ${toll.narrationHint}`
     };
 }

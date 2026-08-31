@@ -141,7 +141,7 @@ describe('two cultivators at the same ordinal', () => {
         expect(weak.modifiers.some(m => m.source === 'foundation:damaged')).toBe(true);
     });
 
-    it('are exposed to the Vault differently at a boundary', () => {
+    it('are exposed at a boundary differently at a boundary', () => {
         const strong = computeTollRisk(at('exceptional'), { ambient: 'normal' }).risk;
         const weak = computeTollRisk(at('damaged'), { ambient: 'normal' }).risk;
         expect(weak).toBeGreaterThan(strong);
@@ -157,7 +157,7 @@ describe('two cultivators at the same ordinal', () => {
 
     it('lets the engine say why, in a sentence', () => {
         expect(describeFoundation('damaged')).toContain('torn meridians');
-        expect(describeFoundation('exceptional')).toContain('dense ash');
+        expect(describeFoundation('exceptional')).toContain('dense qi');
     });
 
     it('diverge over a decade, from the same rank and the same root', () => {

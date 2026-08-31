@@ -6,18 +6,18 @@
  * `XP -> XP -> next realm`, and the single largest lever on that is the
  * Foundation Establishment crossing at ordinal 12 -> 13. Everything above it is
  * built on whatever got laid down there. A cultivator who spent two years
- * finding a dense-ash cave, bought the right pill, healed their meridians first
+ * finding a dense-qi cave, bought the right pill, healed their meridians first
  * and crossed unhurried is not "slightly ahead" of one who crossed in a ditch
  * with three torn meridians because something was chasing them - they are on a
  * different curve for the rest of the run.
  *
  * The quality is a permanent multiplier on cultivation rate, a permanent
- * modifier on breakthrough odds, and - because the Vault notices structure -
+ * modifier on breakthrough odds, and - because a crossing reaches into structure -
  * a modifier on the toll. A damaged foundation is not a debuff that wears off.
  * It is what the rest of the life is built on.
  *
  * IMPORTANT, and it is a charter rule: none of this is rubber-banded. The
- * assessment reads only preparation, ambient ash, injuries, pills, talent and
+ * assessment reads only preparation, ambient qi, injuries, pills, talent and
  * one seeded sample. It does not know how the run is going and it does not
  * care. A prodigy who rushes lays a bad foundation; a muddled root who prepares
  * for a decade lays a good one. That asymmetry is the point - it is the
@@ -48,7 +48,7 @@ export interface FoundationEffect {
     /** Flat modifier on breakthrough probability. */
     breakthroughModifier: number;
     /**
-     * Flat modifier on toll risk. Positive means the Vault is MORE likely to
+     * Flat modifier on toll risk. Positive means a crossing is MORE likely to
      * take something: a structure with holes in it is easier to reach into.
      */
     tollModifier: number;
@@ -66,7 +66,7 @@ export const FOUNDATION_EFFECTS: Record<FoundationQuality, FoundationEffect> = {
         cultivationMultiplier: 1.25,
         breakthroughModifier: 0.06,
         tollModifier: -0.05,
-        description: 'Laid in dense ash, unhurried, with the right pill and clean meridians. Everything above it will be easier than it was for anyone else at this rank.'
+        description: 'Laid in dense qi, unhurried, with the right pill and clean meridians. Everything above it will be easier than it was for anyone else at this rank.'
     },
     stable: {
         cultivationMultiplier: 1,
@@ -94,7 +94,7 @@ export const FOUNDATION_EFFECTS: Record<FoundationQuality, FoundationEffect> = {
     },
     transformed: {
         // The fastest thing in the table, and the only positive tollModifier:
-        // whatever reworked this foundation made it legible to the Vault.
+        // whatever reworked this foundation made it easier to reach into.
         cultivationMultiplier: 1.35,
         breakthroughModifier: 0.04,
         tollModifier: 0.02,
@@ -143,7 +143,7 @@ export function foundationOf(
 // actually spent, so the outcome is earned rather than dealt.
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Ambient ash contribution. Thin ash cannot fill a structure this size. */
+/** Ambient qi contribution. Thin qi cannot fill a structure this size. */
 export const FOUNDATION_AMBIENT_SCORE: Record<AmbientQi, number> = {
     thin: -2,
     normal: 0,
@@ -211,8 +211,8 @@ export function assessFoundation(
 
     const factors: FoundationFactor[] = [
         {
-            source: 'ambient_ash',
-            label: `Ambient ash (${conditions.ambient})`,
+            source: 'ambient_qi',
+            label: `Ambient qi (${conditions.ambient})`,
             delta: FOUNDATION_AMBIENT_SCORE[conditions.ambient]
         },
         {

@@ -136,14 +136,14 @@ export const INJURY_WEIGHTS: Record<InjurySeverity, { cultivationPenalty: number
 // 12 -> 13 and what has happened to it since.
 //
 // Set once at the Foundation Establishment crossing from preparation, ambient
-// ash, injuries and pills; mutated afterwards only by events that genuinely
+// qi, injuries and pills; mutated afterwards only by events that genuinely
 // rework it (a body-refining inheritance, spending it, rebuilding it from
 // wreckage). It is the engine's answer to "why did those two diverge".
 // ─────────────────────────────────────────────────────────────────────────
 
 export const FoundationQualitySchema = z.enum([
     'none',         // below Foundation Establishment; nothing laid yet
-    'exceptional',  // laid in dense ash, unhurried, with the right pill
+    'exceptional',  // laid in dense qi, unhurried, with the right pill
     'stable',       // the ordinary good outcome
     'unstable',     // it holds, but it complains
     'incomplete',   // rushed; part of the structure was never formed
@@ -153,6 +153,54 @@ export const FoundationQualitySchema = z.enum([
     'sacrificed'    // spent deliberately for something else
 ]);
 export type FoundationQuality = z.infer<typeof FoundationQualitySchema>;
+
+// ─────────────────────────────────────────────────────────────────────────
+// EXISTENCE
+//
+// At low realms, body destroyed = dead. Nascent Soul breaks that equivalence,
+// and above it a cultivator is better modelled as a persistent identity that
+// may occupy several physical states over time than as one body plus one row.
+//
+// This is a small authoritative field set, not a metaphysics engine. The
+// engine decides whether a transition is LEGAL; the narrator interprets what
+// it means. Everything here is additive with defaults, so a row written before
+// existence states existed loads as an ordinary living person.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const ExistenceStateSchema = z.enum([
+    'alive',            // one body, occupied, working
+    'physically_dead',  // the body went and nothing survived it: terminal
+    'soul_preserved',   // consciousness persists with no body to put it in
+    'remnant',          // an imprint left behind. NOT the person
+    'sealed',           // intact and unable to act, for as long as that lasts
+    'possessing',       // occupying a body that was not theirs
+    'reincarnated',     // a genuinely new life, not a respawn
+    'reconstructed',    // a rebuilt body, rarely identical to the first
+    'missing',          // whereabouts unknown; aliveness genuinely unresolved
+    'unknown'           // the engine has not decided, and does not have to
+]);
+export type ExistenceState = z.infer<typeof ExistenceStateSchema>;
+
+export const SoulStateSchema = z.enum(['intact', 'damaged', 'fragmented', 'fading']);
+export type SoulState = z.infer<typeof SoulStateSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE LAST CROSSING
+// Tribulation Transcendence is the approach to the Lid, not the summit. The
+// attempt from its Perfection rank resolves three ways: through (True
+// Immortal, ordinal 45), half-through (False Immortal, which is a STATUS and
+// not a rank - they stay at 44 forever), or dead.
+//
+// False Immortal is a status precisely because those cultivators did not
+// arrive anywhere. They are standing where they were, changed and barred.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const ImmortalStatusSchema = z.enum([
+    'none',            // has not attempted the last crossing
+    'false_immortal',  // survived it, did not complete it, permanently barred
+    'true_immortal'    // went through; ordinal 45
+]);
+export type ImmortalStatus = z.infer<typeof ImmortalStatusSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE CULTIVATOR
@@ -179,7 +227,7 @@ export const CultivatorSchema = z.object({
     name: z.string().min(1).max(100),
     kind: CultivatorKindSchema.default('pc'),
 
-    // Talent — rolled once, permanent, never editable after creation.
+    // Talent - rolled once, permanent, never editable after creation.
     spiritRoot: SpiritRootKeySchema,
     attributes: InnateAttributesSchema,
 
@@ -191,9 +239,18 @@ export const CultivatorSchema = z.object({
      * What the rank is standing on. Defaults to 'none' so rows written before
      * foundations existed still parse; set at the Foundation Establishment
      * crossing and thereafter modifies cultivation rate, breakthrough odds and
-     * how visible the cultivator is to the Vault at a boundary.
+     * how much a boundary crossing takes.
      */
     foundationQuality: FoundationQualitySchema.default('none'),
+    /**
+     * Result of the last crossing, if it has been attempted. Defaults to 'none'
+     * so rows written before the crossing existed still parse.
+     *
+     * A 'false_immortal' is at ordinal 44 and permanently barred from trying
+     * again - the Lid does not open twice for the same name - and carries a
+     * vast but finite lifespan instead of Tribulation Transcendence's.
+     */
+    immortalStatus: ImmortalStatusSchema.default('none'),
 
     // Vitals.
     hp: z.number().int().min(0),
@@ -228,8 +285,35 @@ export const CultivatorSchema = z.object({
 
     knownTechniques: z.array(z.string()).default([]),
 
-    /** Set the moment a death condition resolves. A dead cultivator is immutable. */
+    /**
+     * Convenience boolean, kept truthful so the hundreds of existing call sites
+     * that ask "is this person still a going concern" keep working.
+     *
+     * `existenceState` is AUTHORITATIVE. When the two could disagree, trust the
+     * state and recompute this from `isGoingConcern()` in
+     * `engine/cultivation/existence.ts`. A soul with no body is not `alive` in
+     * any ordinary sense and is very much still playing.
+     */
     alive: z.boolean().default(true),
+    /**
+     * What kind of existence this identity currently has. Authoritative.
+     * Defaults to 'alive', so rows written before this field existed load as
+     * ordinary living people.
+     */
+    existenceState: ExistenceStateSchema.default('alive'),
+    /** Condition of the soul itself, which survives some things the body does not. */
+    soulState: SoulStateSchema.default('intact'),
+    /**
+     * How much of the original person this actually is, 0..1.
+     *
+     * The field that stops a remnant being mistaken for the cultivator who left
+     * it. A remnant may say "I founded this sect" in perfect sincerity and be
+     * wrong, and that distinction is frequently the whole point of the
+     * encounter, so it lives in state rather than in prose.
+     */
+    identityContinuity: z.number().min(0).max(1).default(1),
+    /** Which body this identity currently occupies, if any. Null for the bodiless. */
+    bodyId: z.string().nullable().default(null),
     deathCause: DeathCauseSchema.nullable().default(null),
     diedOnTurn: z.number().int().min(0).nullable().default(null),
 
@@ -377,7 +461,7 @@ export type Run = z.infer<typeof RunSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE TOLL
-// The Vault charges an instalment at every realm boundary - never at a
+// A crossing exacts a price at every realm boundary - never at a
 // sub-rank step. It is rolled, not guaranteed, and what it takes is never a
 // stat: a bond, a memory, a mastered technique, or in the worst cases the
 // cultivator's name. The cultivator does not choose. They are told.
@@ -387,15 +471,21 @@ export const TollKindSchema = z.enum(['bond', 'memory', 'technique', 'name']);
 export type TollKind = z.infer<typeof TollKindSchema>;
 
 export const TollOutcomeSchema = z.enum([
-    'clean',        // the roll passed; the Vault went past without noticing
+    'clean',        // the roll passed; the crossing passed over without taking
     'prepaid',      // the Severed already paid, on their own terms
     'taken',        // the roll failed and something that mattered is gone
-    'nothing_left'  // the roll failed and there was nothing worth taking
+    'nothing_left', // the roll failed and there was nothing worth taking
+    /**
+     * The True Immortal crossing. Not an instalment - the account is closed.
+     * Everything the cultivator still had is taken at once, and what falls back
+     * is the spirit tide a whole region will remember as a golden year.
+     */
+    'collected_in_full'
 ]);
 export type TollOutcome = z.infer<typeof TollOutcomeSchema>;
 
 /**
- * Something the run actually accumulated, offered to the Vault as a candidate.
+ * Something the run actually accumulated, offered to the crossing as a candidate.
  * The caller supplies these from real rows - real NPC bonds, real memories,
  * real techniques - because the engine layer holds no database.
  */
@@ -406,7 +496,7 @@ export const TollCandidateSchema = z.object({
     /** Human-facing label: an NPC's name, a memory's summary, a technique's name. */
     label: z.string().min(1),
     /**
-     * How much this mattered. The Vault takes what mattered, so a higher
+     * How much this mattered. The severance takes what mattered, so a higher
      * weight is MORE likely to be taken, not less. Defaults to 1.
      */
     weight: z.number().min(0).default(1)
@@ -429,7 +519,7 @@ export const TollResultSchema = z.object({
     toOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** Which boundary this was, counting from 0 at 12 -> 13. */
     boundaryIndex: z.number().int().min(0),
-    /** Final probability the Vault took something. */
+    /** Final probability the crossing took something. */
     risk: z.number().min(0).max(1),
     /** Itemised, and sums exactly to `risk`. */
     modifiers: z.array(z.object({
@@ -437,7 +527,17 @@ export const TollResultSchema = z.object({
         delta: z.number()
     })).default([]),
     roll: z.number().min(0).max(1),
-    /** Null unless `outcome` is 'taken'. */
+    /**
+     * EVERYTHING this charge took, and the field callers should persist from.
+     * Empty for 'clean', 'prepaid' and 'nothing_left'; exactly one entry for
+     * 'taken'; the cultivator's whole remaining ledger for 'collected_in_full'.
+     */
+    takenAll: z.array(TollTakenSchema).default([]),
+    /**
+     * Convenience view of a single instalment: always `takenAll[0] ?? null`.
+     * Do not use it to decide what to delete - a True Immortal crossing takes
+     * more than one thing and this field would silently under-report it.
+     */
     taken: TollTakenSchema.nullable().default(null),
     narrationHint: z.string().default('')
 });
@@ -464,6 +564,14 @@ export const SimEventKindSchema = z.enum([
     'lifespan_warning',
     'toll_charged',
     'foundation_established',
+    /**
+     * Something was there and is not any more. A distinct kind rather than a
+     * flag on 'opportunity', so that counting opportunities counts things that
+     * actually happened - and so the narrator can render a missed window as
+     * what it is, which is one of the more characteristic experiences of a low
+     * Fortune run.
+     */
+    'opportunity_missed',
     'death'
 ]);
 export type SimEventKind = z.infer<typeof SimEventKindSchema>;
@@ -501,16 +609,48 @@ export const TimeSkipResultSchema = z.object({
     died: z.boolean().default(false),
     deathCause: DeathCauseSchema.nullable().default(null),
     /**
-     * Every instalment the Vault charged during the skip, in order. The caller
+     * Every wound the skip actually produced, in chronological order, as real
+     * Injury records carrying their own ids, severity, source, description,
+     * turn and penalties.
+     *
+     * Persist these directly. Callers must never reconstruct wounds by reading
+     * the engine's own narration - severity scraped out of a summary string is
+     * a database write that silently changes the next time someone rewords a
+     * sentence. `deltas.injuriesGained` is the count of this array and exists
+     * only for a compact summary line.
+     */
+    injuriesSustained: z.array(InjurySchema).default([]),
+    /**
+     * Every price the crossings in this skip exacted, in order. The caller
      * must apply these - delete the bond, the memory, the technique - because
      * the engine holds no database and cannot.
      */
     tolls: z.array(TollResultSchema).default([]),
     /**
+     * ABSOLUTE end-of-skip values, not deltas.
+     *
+     * These two counters both RESET during a skip - starvation clears the
+     * moment there is food again, and years-at-realm returns to zero on any
+     * rank advance - so a delta against the starting value is meaningless and
+     * cannot be inverted. The caller writes these straight onto the cultivator.
+     */
+    endState: z.object({
+        /** Consecutive turns at zero satiety as the skip ended. */
+        starvationTurns: z.number().int().min(0).default(0),
+        /** Years at the current realm as the skip ended. */
+        yearsAtCurrentRealm: z.number().min(0).default(0)
+    }).default({ starvationTurns: 0, yearsAtCurrentRealm: 0 }),
+    /**
      * Set if the skip crossed 12 -> 13. The caller persists it onto the
      * cultivator; it is not derivable from the ordinal afterwards.
      */
-    foundationEstablished: FoundationQualitySchema.nullable().default(null)
+    foundationEstablished: FoundationQualitySchema.nullable().default(null),
+    /**
+     * Set if the skip resolved the last crossing. The caller persists it; a
+     * 'false_immortal' must be written, because it is what bars the cultivator
+     * from ever attempting again.
+     */
+    immortalStatusGained: ImmortalStatusSchema.nullable().default(null)
 });
 export type TimeSkipResult = z.infer<typeof TimeSkipResultSchema>;
 
@@ -519,9 +659,22 @@ export type TimeSkipResult = z.infer<typeof TimeSkipResultSchema>;
 // ─────────────────────────────────────────────────────────────────────────
 
 export const BreakthroughOutcomeSchema = z.enum([
-    'success', 'failure_stable', 'failure_injured', 'failure_deviation', 'death'
+    'success', 'failure_stable', 'failure_injured', 'failure_deviation', 'death',
+    /**
+     * The last crossing only. The tribulation was survived and the Lid opened,
+     * but the crossing did not complete. Neither a success nor a failure: the
+     * ordinal does not move, and the cultivator is permanently barred from
+     * trying again.
+     */
+    'false_immortal'
 ]);
 export type BreakthroughOutcome = z.infer<typeof BreakthroughOutcomeSchema>;
+
+/** The four outcomes produced by a failed attempt, as opposed to a stalled one. */
+export const BreakthroughFailureSchema = z.enum([
+    'failure_stable', 'failure_injured', 'failure_deviation', 'death'
+]);
+export type BreakthroughFailure = z.infer<typeof BreakthroughFailureSchema>;
 
 export const BreakthroughResultSchema = z.object({
     outcome: BreakthroughOutcomeSchema,
@@ -553,6 +706,13 @@ export const BreakthroughResultSchema = z.object({
      * actually laid, which the caller must persist onto the cultivator.
      */
     foundationEstablished: FoundationQualitySchema.nullable().default(null),
+    /**
+     * Set only by the last crossing: 'true_immortal' on completion,
+     * 'false_immortal' on the half-failure. Null everywhere else. The caller
+     * persists it onto the cultivator; for a False Immortal it is the record
+     * that permanently bars any further attempt.
+     */
+    immortalStatusGained: ImmortalStatusSchema.nullable().default(null),
     narrationHint: z.string().default('')
 });
 export type BreakthroughResult = z.infer<typeof BreakthroughResultSchema>;

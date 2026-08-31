@@ -34,8 +34,9 @@ import {
     type Cultivator,
     type DeathCause
 } from '../../schema/cultivation.js';
-import { lifespanForOrdinal, rankName } from './realms.js';
+import { effectiveLifespanYears, rankName } from './realms.js';
 import { untreatedInjuryCount } from './injuries.js';
+import { hasBody, isGoingConcern, isTerminal } from './existence.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SATIETY
@@ -114,9 +115,13 @@ function clampSatiety(n: number): number {
 
 /** Years of lifespan remaining at the current realm. Negative means overdue. */
 export function lifespanRemaining(
-    cultivator: Pick<Cultivator, 'realmOrdinal' | 'age'>
+    cultivator: Pick<Cultivator, 'realmOrdinal' | 'age'> &
+        Partial<Pick<Cultivator, 'immortalStatus'>>
 ): number {
-    return lifespanForOrdinal(cultivator.realmOrdinal) - cultivator.age;
+    return (
+        effectiveLifespanYears(cultivator.realmOrdinal, cultivator.immortalStatus ?? 'none') -
+        cultivator.age
+    );
 }
 
 /**
@@ -201,29 +206,47 @@ export function evaluateDeathConditions(
         Cultivator,
         'hp' | 'maxHp' | 'satiety' | 'starvationTurns' | 'age' | 'realmOrdinal' |
         'yearsAtCurrentRealm' | 'injuries' | 'alive'
-    >,
+    > & Partial<Pick<Cultivator, 'existenceState' | 'immortalStatus'>>,
     ctx: DeathContext = {}
 ): DeathCause | null {
-    // Already dead stays dead. A dead cultivator is immutable.
+    const existence = cultivator.existenceState ?? 'alive';
+    const status = cultivator.immortalStatus ?? 'none';
+
+    // Already ended stays ended. A resolved identity is immutable.
+    if (isTerminal(existence) || !isGoingConcern(existence)) return null;
     if (!cultivator.alive) return null;
 
-    if (cultivator.hp <= 0) return 'combat_defeat';
+    // The body's own arithmetic - blood, hunger, the flesh keeping its mortal
+    // schedule - only applies to someone who has a body. A soul persisting
+    // without one does not starve and cannot be stabbed; it is killed by other
+    // things, resolved elsewhere.
+    if (hasBody(existence)) {
+        if (cultivator.hp <= 0) return 'combat_defeat';
 
-    if (cultivator.starvationTurns >= STARVATION_TURNS) return 'starvation';
+        if (cultivator.starvationTurns >= STARVATION_TURNS) return 'starvation';
 
-    if (ctx.forcingCombat) {
-        if (untreatedInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES) {
-            return 'untreated_injuries';
+        if (ctx.forcingCombat) {
+            if (untreatedInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES) {
+                return 'untreated_injuries';
+            }
+            const hpFraction = cultivator.maxHp > 0 ? cultivator.hp / cultivator.maxHp : 0;
+            if (hpFraction < SUICIDAL_HP_FRACTION) return 'obviously_fatal_choice';
         }
-        const hpFraction = cultivator.maxHp > 0 ? cultivator.hp / cultivator.maxHp : 0;
-        if (hpFraction < SUICIDAL_HP_FRACTION) return 'obviously_fatal_choice';
     }
 
-    if (cultivator.age >= lifespanForOrdinal(cultivator.realmOrdinal)) {
+    // A True Immortal is through the Lid and out of the world's arithmetic
+    // entirely. A False Immortal is emphatically NOT immortal - they get a vast
+    // finite span, and `effectiveLifespanYears` is where that lives.
+    if (status !== 'true_immortal' && cultivator.age >= effectiveLifespanYears(cultivator.realmOrdinal, status)) {
         return 'lifespan_exhausted';
     }
 
-    if (cultivator.yearsAtCurrentRealm >= STAGNATION_YEARS) return 'stagnation_aging';
+    // Settling is what happens to a cultivator who stopped climbing. Neither
+    // kind of immortal is still climbing, and neither is settling: one is gone
+    // and the other is permanently barred, counting down a lifespan instead.
+    if (status === 'none' && cultivator.yearsAtCurrentRealm >= STAGNATION_YEARS) {
+        return 'stagnation_aging';
+    }
 
     return null;
 }
@@ -234,7 +257,8 @@ export function evaluateDeathConditions(
  */
 export function describeDeath(
     cause: DeathCause,
-    cultivator: Pick<Cultivator, 'name' | 'realmOrdinal' | 'age'>
+    cultivator: Pick<Cultivator, 'name' | 'realmOrdinal' | 'age'> &
+        Partial<Pick<Cultivator, 'immortalStatus'>>
 ): string {
     const who = `${cultivator.name}, ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}`;
     switch (cause) {
@@ -243,7 +267,7 @@ export function describeDeath(
         case 'obviously_fatal_choice':
             return `${who}: forced a fight while barely able to stand, and did not survive it.`;
         case 'lifespan_exhausted':
-            return `${who}: lifespan exhausted at the limit of ${lifespanForOrdinal(cultivator.realmOrdinal)} years for this realm. Died of old age.`;
+            return `${who}: lifespan exhausted at the limit of ${effectiveLifespanYears(cultivator.realmOrdinal, cultivator.immortalStatus ?? 'none')} years. Died of old age.`;
         case 'stagnation_aging':
             return `${who}: spent ${STAGNATION_YEARS} years without advancing a single rank. Died of old age at a bottleneck never crossed.`;
         case 'untreated_injuries':

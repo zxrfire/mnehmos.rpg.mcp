@@ -15,8 +15,9 @@
  *   cultivation.ts   progress accrual - an itemised rate, applied per day
  *   injuries.ts      the ratchet: damage that does not heal, and scar tempering
  *   foundation.ts    why two cultivators at the same ordinal diverge
+ *   existence.ts     what happens when "body destroyed = dead" stops holding
  *   deviation.ts     cultivation going wrong inside the body
- *   toll.ts          the Vault's instalment, charged at every realm boundary
+ *   toll.ts          the price of advancement, charged at every realm boundary
  *   breakthrough.ts  the centrepiece; the only routine way a run ends well
  *   survival.ts      the death engine; the ONLY place death is decided
  *   time-skip.ts     "I cultivate for ten years", resolved in one pass
@@ -27,6 +28,7 @@ export * from './spirit-roots.js';
 export * from './rng.js';
 export * from './ambient.js';
 export * from './foundation.js';
+export * from './existence.js';
 export * from './cultivation.js';
 export * from './injuries.js';
 export * from './deviation.js';

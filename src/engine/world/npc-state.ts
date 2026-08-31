@@ -1,0 +1,882 @@
+/**
+ * NPCs as small durable records.
+ *
+ * This is storage, not simulation. There is no tick loop here, no behaviour
+ * tree, no per-NPC decision model, and no scheduler that wakes anybody up. The
+ * LLM is the reasoning engine: given an NPC's record it can work out what that
+ * person would do. The database's job is to make sure the record is still there
+ * in thirty years and still says the same thing.
+ *
+ * The whole required shape is eight fields:
+ *
+ *   identity        who they are
+ *   cultivation     where they stand on the ladder, and what they were dealt
+ *   location        where they are
+ *   faction         who they answer to
+ *   goals           what they are currently trying to do
+ *   relationships   who they are bound to, and how
+ *   history         fact ids in the world ledger - what has happened to them
+ *   memories        memory record ids - what they are carrying
+ *
+ * A trajectory is therefore stored as A FEW DURABLE FACTS rather than as a
+ * simulated life: current goals plus recent significant events. "He has spent
+ * eleven years trying to get into the Cold Kiln Hall and has been refused
+ * twice" is two goal rows and two fact ids, and it is enough for the LLM to
+ * reason about what he does when the player offers him a way in. Simulating
+ * those eleven years would produce the same sentence at a thousand times the
+ * cost.
+ *
+ * ── What the engine still owns ────────────────────────────────────────────
+ *
+ * Randomness. Talent is rolled here, from the run seed, via the cultivation
+ * engine's own `rollSpiritRoot` and `rollAttributes` - never by the LLM, which
+ * would unconsciously pick the answer it wanted. Everything stochastic about an
+ * NPC comes out of `forStream(seed, ...)` and is reproducible.
+ */
+
+import { forStream } from '../cultivation/rng.js';
+import { clampOrdinal, lifespanForOrdinal, rankName } from '../cultivation/realms.js';
+import {
+    rollAttributes,
+    rollSpiritRoot,
+    type InnateAttributes,
+    type SpiritRootKey
+} from '../cultivation/spirit-roots.js';
+import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { personName } from './history.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// GOALS
+// ─────────────────────────────────────────────────────────────────────────
+
+export type GoalKind =
+    | 'cultivation'
+    | 'revenge'
+    | 'wealth'
+    | 'status'
+    | 'protection'
+    | 'discovery'
+    | 'survival'
+    | 'reunion'
+    | 'debt'
+    | 'other';
+
+export type GoalStatus = 'active' | 'achieved' | 'abandoned' | 'blocked' | 'impossible';
+
+/**
+ * One thing an NPC is trying to do.
+ *
+ * A goal is durable state and is the main thing the LLM reads to decide how
+ * somebody behaves. It carries its own history - when it was opened, what
+ * blocked it, when it closed - because "he has wanted this for forty years" is
+ * a fact about the world and not a mood.
+ */
+export interface NpcGoal {
+    id: string;
+    kind: GoalKind;
+    /** 1. The goal. Plain statement, written by the LLM, stored verbatim. */
+    text: string;
+    /** 2. Priority, 0..1. What this person drops everything else for. */
+    priority: number;
+    /**
+     * 3. Progress. Where they have got to, in words:
+     * "Has identified the killer's faction."
+     */
+    progress: string;
+    /**
+     * 4. Obstacles. What is in the way: "Insufficient strength." Plural
+     * because there is usually more than one, and because a goal that becomes
+     * possible is a goal one obstacle came off.
+     */
+    obstacles: string[];
+    /** 5. Deadline, as an absolute day. Null for "no deadline", which is common. */
+    deadlineOnDay: number | null;
+
+    status: GoalStatus;
+    /** Who or what it is about: an NPC id, a faction id, a location id. */
+    targetId: string | null;
+    openedOnDay: number;
+    closedOnDay: number | null;
+    /** Why it is blocked or was abandoned. Empty while active. */
+    note: string;
+    /**
+     * Set when this goal was inherited rather than formed.
+     *
+     * A goal does not end with its holder. A disciple continues the revenge; a
+     * descendant inherits the search. Three hundred years later the goal can
+     * still be live, and the chain back to whose it originally was is what makes
+     * that legible rather than arbitrary.
+     */
+    inheritedFromId: string | null;
+    /** The person who first opened it, however many hands ago. */
+    originHolderId: string;
+    /** How many times it has been handed on. Zero for a goal you formed. */
+    generation: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// RELATIONSHIPS
+// ─────────────────────────────────────────────────────────────────────────
+
+export type RelationshipKind =
+    | 'kin'
+    | 'spouse'
+    | 'parent'
+    | 'child'
+    | 'master'
+    | 'disciple'
+    | 'ally'
+    | 'rival'
+    | 'enemy'
+    | 'patron'
+    | 'client'
+    | 'creditor'
+    | 'debtor'
+    | 'acquaintance';
+
+/**
+ * A durable tie between two people.
+ *
+ * `standing` runs -1 (wants them dead) to +1 (would die for them). It is a
+ * stored number rather than an inferred one so that a grudge opened in year 744
+ * still reads -0.9 in year 812, and so that inheritance can carry it forward
+ * without anyone having to re-derive why.
+ */
+export interface NpcRelationship {
+    targetId: string;
+    targetName: string;
+    kind: RelationshipKind;
+    standing: number;
+    /** What it is actually about. One line, factual. */
+    note: string;
+    sinceDay: number;
+    lastChangedDay: number;
+    /** Fact ids that explain this relationship. The causal chain. */
+    factIds: string[];
+    /** Set when the tie was inherited rather than earned. */
+    inheritedFromId: string | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE RECORD
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Existence is multi-valued once cultivation is profound.
+ *
+ * At low realms `body destroyed = dead`. Above Nascent Soul that equivalence
+ * breaks, and a cultivator stops being one body plus one row plus one
+ * continuous physical existence. A person is a persistent identity that may
+ * occupy several physical states over time.
+ *
+ * `missing` and `unknown` are the two this layer cares about most, and they are
+ * NOT placeholders for a decision the engine is avoiding. They are correct
+ * answers. If a cultivator vanishes into a ruin the engine does not have to
+ * adjudicate what happened to them, and the world may hold several incompatible
+ * beliefs at once - died, soul escaped, reincarnated, in seclusion, sealed,
+ * became a remnant - with the truth genuinely unresolved until something
+ * settles it. The belief side lives in the social layer; the unresolved fact
+ * lives in `history.ts` with `truth: 'unresolved'`; this field is where the
+ * person's own record says "nobody knows".
+ *
+ *     year 50     a powerful cultivator disappears        missing
+ *     year 500    still missing                           missing
+ *     year 2000   civilisation treats them as long dead   missing (belief: dead)
+ *     year 4000   a sealed body is found                  sealed
+ *     year 4020   they wake, memories and grudges intact  alive
+ *
+ * Absence is not removal. A dead or missing character's inheritance, remnant,
+ * disciples, descendants, enemies, artifacts, techniques and reputation keep
+ * acting on the world: death changes their mode of existence, it does not take
+ * them out of the simulation.
+ */
+export type ExistenceState =
+    | 'alive'
+    | 'physically_dead'
+    | 'soul_preserved'
+    | 'remnant'
+    | 'sealed'
+    | 'possessing'
+    | 'reincarnated'
+    | 'reconstructed'
+    | 'missing'
+    | 'unknown';
+
+/** Retained name for the field. */
+export type NpcStatus = ExistenceState;
+
+/** How intact the soul is. Orthogonal to which body, if any, it is in. */
+export type SoulState = 'intact' | 'damaged' | 'fragmented' | 'fading';
+
+/** States in which the person is still acting in the world under their own will. */
+const ACTING_STATES = new Set<ExistenceState>(['alive', 'soul_preserved', 'possessing', 'reconstructed']);
+
+export function isActing(state: ExistenceState): boolean {
+    return ACTING_STATES.has(state);
+}
+
+/** States in which the engine genuinely does not know what happened. */
+export function isUnadjudicated(state: ExistenceState): boolean {
+    return state === 'missing' || state === 'unknown';
+}
+
+export interface NpcIdentity {
+    /** Absolute day of birth. Age is a subtraction, never a stored field. */
+    bornOnDay: number;
+    /** What they do when they are not cultivating. The economy is made of these. */
+    occupation: string;
+    /** Titles, sect ranks, epithets. Free text; the LLM writes them. */
+    titles: string[];
+    /** Other names they are known by. Rumours attach to these. */
+    aliases: string[];
+    /** One or two lines. Appearance, manner, the thing people remember. */
+    description: string;
+}
+
+export interface NpcCultivation {
+    realmOrdinal: number;
+    spiritRoot: SpiritRootKey;
+    attributes: InnateAttributes;
+    /**
+     * Foundation is a history, not a rank: 'stable', 'unstable', 'damaged',
+     * 'exceptional', 'incomplete', 'rebuilt'. Two people at the same ordinal
+     * can have very different futures and the record must be able to say why.
+     */
+    foundation: string;
+    /** Untreated meridian injuries. The ratchet, stored as a count. */
+    untreatedInjuries: number;
+    /** Technique ids they can actually use. */
+    techniqueIds: string[];
+    /** Tags for environmental compatibility: 'fire', 'poison', 'soul', 'sword'. */
+    specialties: string[];
+    /** Absolute day their lifespan runs out at the current realm. */
+    lifespanEndsOnDay: number;
+    /** Absolute day of their most recent rank advance. Settling counts from here. */
+    lastAdvancedOnDay: number;
+}
+
+export interface NpcRecord {
+    id: string;
+    name: string;
+    identity: NpcIdentity;
+    cultivation: NpcCultivation;
+
+    locationId: string | null;
+    factionId: string | null;
+    /** Index into the faction's rank ladder. -1 when unaffiliated. */
+    factionRankIndex: number;
+
+    goals: NpcGoal[];
+    relationships: NpcRelationship[];
+
+    /** Fact ids in the world ledger. The trajectory, as durable facts. */
+    historyFactIds: string[];
+    /** Memory record ids. What this person is carrying. */
+    memoryIds: string[];
+
+    status: ExistenceState;
+    /**
+     * Which body this identity currently occupies, when it is not their own.
+     * Null for `alive` in the original body, and for states with no body at all.
+     */
+    bodyId: string | null;
+    soulState: SoulState;
+    /**
+     * How much of the original person this actually is, 0..1.
+     *
+     * A remnant is not the person. A will, a projection, an obsession, a
+     * recorded consciousness or an inheritance guardian may say "I was the
+     * founder of this sect" without being the founder's consciousness, and that
+     * distinction is frequently the whole point of the encounter - so it is
+     * preserved in state rather than left to the narrator to remember.
+     */
+    identityContinuity: number;
+    /** Absolute day of the transition out of `alive`. Not always a death. */
+    diedOnDay: number | null;
+    /** Factual note on how they ended. The narrator renders it; it is not lore. */
+    endNote: string;
+
+    /** Absolute day the record was last confirmed. Not a simulation cursor. */
+    lastConfirmedOnDay: number;
+    updatedOnDay: number;
+    tags: string[];
+    nextGoalSeq: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CREATION
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface CreateNpcOptions {
+    id: string;
+    /** Omit to have the engine roll a name. */
+    name?: string;
+    bornOnDay: number;
+    onDay: number;
+    locationId?: string | null;
+    factionId?: string | null;
+    factionRankIndex?: number;
+    occupation?: string;
+    description?: string;
+    /** Override the rolled talent. Used when importing an existing character. */
+    cultivation?: Partial<NpcCultivation>;
+    tags?: string[];
+}
+
+/**
+ * Create an NPC record, with talent rolled by the engine.
+ *
+ * Spirit root and attributes come out of the run seed through the cultivation
+ * engine's own roll functions, in separate named sub-streams keyed on the id.
+ * That matters for a reason beyond reproducibility: if the LLM chose these, it
+ * would give the interesting NPC the good root every time, and the world's
+ * distribution of talent would quietly become a distribution of narrative
+ * convenience.
+ */
+export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
+    const rootRng = forStream(seed, 'npc-root', opts.id);
+    const attrRng = forStream(seed, 'npc-attrs', opts.id);
+    const nameRng = forStream(seed, 'npc-name', opts.id);
+
+    const root = rollSpiritRoot(rootRng.next());
+    const attributes = rollAttributes([
+        attrRng.next(), attrRng.next(), attrRng.next(), attrRng.next()
+    ]);
+    const ordinal = clampOrdinal(opts.cultivation?.realmOrdinal ?? 0);
+
+    const cultivation: NpcCultivation = {
+        realmOrdinal: ordinal,
+        spiritRoot: root.key,
+        attributes,
+        foundation: 'incomplete',
+        untreatedInjuries: 0,
+        techniqueIds: [],
+        specialties: root.elements.slice(),
+        lifespanEndsOnDay: opts.bornOnDay + lifespanForOrdinal(ordinal) * DAYS_PER_YEAR,
+        lastAdvancedOnDay: opts.onDay,
+        ...(opts.cultivation ?? {})
+    };
+    // Recompute the derived field if the caller overrode the ordinal but not it.
+    if (opts.cultivation?.lifespanEndsOnDay === undefined) {
+        cultivation.lifespanEndsOnDay =
+            opts.bornOnDay + lifespanForOrdinal(cultivation.realmOrdinal) * DAYS_PER_YEAR;
+    }
+
+    return {
+        id: opts.id,
+        name: opts.name ?? personName(nameRng),
+        identity: {
+            bornOnDay: opts.bornOnDay,
+            occupation: opts.occupation ?? 'unknown',
+            titles: [],
+            aliases: [],
+            description: opts.description ?? ''
+        },
+        cultivation,
+        locationId: opts.locationId ?? null,
+        factionId: opts.factionId ?? null,
+        factionRankIndex: opts.factionRankIndex ?? (opts.factionId ? 0 : -1),
+        goals: [],
+        relationships: [],
+        historyFactIds: [],
+        memoryIds: [],
+        status: 'alive',
+        bodyId: null,
+        soulState: 'intact',
+        identityContinuity: 1,
+        diedOnDay: null,
+        endNote: '',
+        lastConfirmedOnDay: opts.onDay,
+        updatedOnDay: opts.onDay,
+        tags: opts.tags ?? [],
+        nextGoalSeq: 1
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// UPDATES
+// All pure. Take a record, return a new one. Persistence is at the edges.
+// ─────────────────────────────────────────────────────────────────────────
+
+export function setLocation(npc: NpcRecord, locationId: string | null, onDay: number): NpcRecord {
+    return { ...npc, locationId, updatedOnDay: onDay, lastConfirmedOnDay: onDay };
+}
+
+export function setFaction(
+    npc: NpcRecord,
+    factionId: string | null,
+    rankIndex: number,
+    onDay: number
+): NpcRecord {
+    return {
+        ...npc,
+        factionId,
+        factionRankIndex: factionId ? rankIndex : -1,
+        updatedOnDay: onDay
+    };
+}
+
+/**
+ * Move a cultivator up the ladder.
+ *
+ * Recomputes lifespan and resets the settling clock, because both are functions
+ * of the realm and neither should ever be stored inconsistently with it.
+ */
+export function setRealm(npc: NpcRecord, ordinal: number, onDay: number): NpcRecord {
+    const realmOrdinal = clampOrdinal(ordinal);
+    return {
+        ...npc,
+        cultivation: {
+            ...npc.cultivation,
+            realmOrdinal,
+            lifespanEndsOnDay:
+                npc.identity.bornOnDay + lifespanForOrdinal(realmOrdinal) * DAYS_PER_YEAR,
+            lastAdvancedOnDay: onDay
+        },
+        updatedOnDay: onDay
+    };
+}
+
+export interface GoalInput {
+    kind: GoalKind;
+    text: string;
+    priority?: number;
+    progress?: string;
+    obstacles?: string[];
+    deadlineOnDay?: number | null;
+    targetId?: string | null;
+    note?: string;
+}
+
+export function addGoal(npc: NpcRecord, input: GoalInput, onDay: number): NpcRecord {
+    const goal: NpcGoal = {
+        id: `${npc.id}-g${npc.nextGoalSeq}`,
+        kind: input.kind,
+        text: input.text,
+        priority: clamp01(input.priority ?? 0.5),
+        progress: input.progress ?? '',
+        obstacles: input.obstacles ?? [],
+        deadlineOnDay: input.deadlineOnDay ?? null,
+        status: 'active',
+        targetId: input.targetId ?? null,
+        openedOnDay: onDay,
+        closedOnDay: null,
+        note: input.note ?? '',
+        inheritedFromId: null,
+        originHolderId: npc.id,
+        generation: 0
+    };
+    return {
+        ...npc,
+        goals: npc.goals.concat(goal),
+        nextGoalSeq: npc.nextGoalSeq + 1,
+        updatedOnDay: onDay
+    };
+}
+
+export function closeGoal(
+    npc: NpcRecord,
+    goalId: string,
+    status: Exclude<GoalStatus, 'active'>,
+    onDay: number,
+    note = ''
+): NpcRecord {
+    return {
+        ...npc,
+        goals: npc.goals.map(g =>
+            g.id === goalId ? { ...g, status, closedOnDay: onDay, note: note || g.note } : g
+        ),
+        updatedOnDay: onDay
+    };
+}
+
+export function activeGoals(npc: NpcRecord): NpcGoal[] {
+    return npc.goals
+        .filter(g => g.status === 'active' || g.status === 'blocked')
+        .sort((a, b) => b.priority - a.priority || a.openedOnDay - b.openedOnDay || (a.id < b.id ? -1 : 1));
+}
+
+export interface RelationshipInput {
+    targetId: string;
+    targetName: string;
+    kind: RelationshipKind;
+    standing: number;
+    note?: string;
+    factIds?: string[];
+    inheritedFromId?: string | null;
+}
+
+/**
+ * Create or update a tie.
+ *
+ * Merges rather than replaces: the `sinceDay` of an existing relationship is
+ * preserved, so a forty-year friendship that turns hostile is still forty years
+ * old. That is the whole reason betrayal reads as betrayal.
+ */
+export function upsertRelationship(
+    npc: NpcRecord,
+    input: RelationshipInput,
+    onDay: number
+): NpcRecord {
+    const at = npc.relationships.findIndex(r => r.targetId === input.targetId);
+    const next = npc.relationships.slice();
+    if (at >= 0) {
+        const prev = next[at];
+        next[at] = {
+            ...prev,
+            kind: input.kind,
+            standing: clampStanding(input.standing),
+            note: input.note ?? prev.note,
+            lastChangedDay: onDay,
+            factIds: mergeIds(prev.factIds, input.factIds ?? []),
+            inheritedFromId: input.inheritedFromId ?? prev.inheritedFromId
+        };
+    } else {
+        next.push({
+            targetId: input.targetId,
+            targetName: input.targetName,
+            kind: input.kind,
+            standing: clampStanding(input.standing),
+            note: input.note ?? '',
+            sinceDay: onDay,
+            lastChangedDay: onDay,
+            factIds: (input.factIds ?? []).slice(),
+            inheritedFromId: input.inheritedFromId ?? null
+        });
+    }
+    next.sort((a, b) => (a.targetId < b.targetId ? -1 : a.targetId > b.targetId ? 1 : 0));
+    return { ...npc, relationships: next, updatedOnDay: onDay };
+}
+
+export function adjustStanding(
+    npc: NpcRecord,
+    targetId: string,
+    delta: number,
+    onDay: number,
+    note?: string
+): NpcRecord {
+    const at = npc.relationships.findIndex(r => r.targetId === targetId);
+    if (at < 0) return npc;
+    const next = npc.relationships.slice();
+    next[at] = {
+        ...next[at],
+        standing: clampStanding(next[at].standing + delta),
+        note: note ?? next[at].note,
+        lastChangedDay: onDay
+    };
+    return { ...npc, relationships: next, updatedOnDay: onDay };
+}
+
+export function relationshipWith(npc: NpcRecord, targetId: string): NpcRelationship | null {
+    return npc.relationships.find(r => r.targetId === targetId) ?? null;
+}
+
+/** Everyone this person has an active account with, worst first. */
+export function enemiesOf(npc: NpcRecord, threshold = -0.4): NpcRelationship[] {
+    return npc.relationships
+        .filter(r => r.standing <= threshold)
+        .sort((a, b) => a.standing - b.standing || (a.targetId < b.targetId ? -1 : 1));
+}
+
+/** Link a world fact to this NPC. The trajectory is a list of these. */
+export function recordFact(npc: NpcRecord, factId: string, onDay: number): NpcRecord {
+    if (npc.historyFactIds.includes(factId)) return npc;
+    return {
+        ...npc,
+        historyFactIds: npc.historyFactIds.concat(factId),
+        updatedOnDay: onDay,
+        lastConfirmedOnDay: Math.max(npc.lastConfirmedOnDay, onDay)
+    };
+}
+
+export function attachMemory(npc: NpcRecord, memoryId: string, onDay: number): NpcRecord {
+    if (npc.memoryIds.includes(memoryId)) return npc;
+    return { ...npc, memoryIds: npc.memoryIds.concat(memoryId), updatedOnDay: onDay };
+}
+
+export function detachMemories(npc: NpcRecord, memoryIds: readonly string[], onDay: number): NpcRecord {
+    const drop = new Set(memoryIds);
+    return {
+        ...npc,
+        memoryIds: npc.memoryIds.filter(id => !drop.has(id)),
+        updatedOnDay: onDay
+    };
+}
+
+/**
+ * The body is gone.
+ *
+ * Note what this does NOT do: it does not close the record, and above Nascent
+ * Soul it may not even be the end of the person. Goals are marked `impossible`
+ * for this holder specifically so that {@link legacyGoals} can pick them up and
+ * hand them on - the goal is not deleted, because a disciple continuing a
+ * revenge three hundred years later is the continuity the whole design is for.
+ */
+export function markDead(npc: NpcRecord, onDay: number, endNote: string): NpcRecord {
+    return {
+        ...npc,
+        status: 'physically_dead',
+        soulState: 'fading',
+        diedOnDay: onDay,
+        endNote,
+        updatedOnDay: onDay,
+        lastConfirmedOnDay: onDay,
+        goals: npc.goals.map(g =>
+            g.status === 'active' || g.status === 'blocked'
+                ? { ...g, status: 'impossible' as GoalStatus, closedOnDay: onDay }
+                : g
+        )
+    };
+}
+
+/**
+ * Nobody has seen them.
+ *
+ * Not dead, not confirmed alive, and deliberately not adjudicated. Goals stay
+ * ACTIVE, because a missing person's goals are not known to have stopped -
+ * which is the difference between this and death, and is what makes the
+ * fifty-year-old search still a live thread.
+ */
+export function markMissing(npc: NpcRecord, onDay: number, endNote = ''): NpcRecord {
+    return {
+        ...npc,
+        status: 'missing',
+        endNote: endNote || npc.endNote,
+        updatedOnDay: onDay
+    };
+}
+
+export interface ExistenceTransition {
+    to: ExistenceState;
+    onDay: number;
+    bodyId?: string | null;
+    soulState?: SoulState;
+    /** What survived the transition. Often not all of it. */
+    identityContinuity?: number;
+    note?: string;
+}
+
+/**
+ * Change the mode of existence.
+ *
+ * The engine decides whether a transition is legal; the narrator interprets it.
+ * Legality is not enforced here on purpose - `capability.ts` answers whether a
+ * cultivator can do this, and this is the write path once the answer is yes, so
+ * the check lives in one place instead of two that can disagree.
+ *
+ * Reconstruction and possession normally cost something: pass a lowered
+ * `identityContinuity` and a `soulState` to say so. The rebuilt body is rarely
+ * identical, and a powerful soul does not make every vessel suitable.
+ */
+export function setExistence(npc: NpcRecord, t: ExistenceTransition): NpcRecord {
+    const leavingLife = npc.status === 'alive' && t.to !== 'alive';
+    return {
+        ...npc,
+        status: t.to,
+        bodyId: t.bodyId !== undefined ? t.bodyId : npc.bodyId,
+        soulState: t.soulState ?? npc.soulState,
+        identityContinuity: t.identityContinuity !== undefined
+            ? Math.max(0, Math.min(1, t.identityContinuity))
+            : npc.identityContinuity,
+        diedOnDay: leavingLife && npc.diedOnDay === null ? t.onDay : npc.diedOnDay,
+        endNote: t.note ?? npc.endNote,
+        updatedOnDay: t.onDay,
+        lastConfirmedOnDay: t.to === 'missing' || t.to === 'unknown'
+            ? npc.lastConfirmedOnDay
+            : t.onDay
+    };
+}
+
+/**
+ * Goals that should be handed on when this person stops being able to pursue
+ * them.
+ *
+ * Anything that was live and mattered. Low-priority goals die with their
+ * holder, which is correct: nobody inherits somebody else's intention to buy a
+ * better cauldron.
+ */
+export function legacyGoals(npc: NpcRecord, minPriority = 0.5): NpcGoal[] {
+    return npc.goals
+        .filter(
+            g =>
+                g.priority >= minPriority &&
+                (g.status === 'impossible' || g.status === 'active' || g.status === 'blocked')
+        )
+        .sort((a, b) => b.priority - a.priority || a.openedOnDay - b.openedOnDay || (a.id < b.id ? -1 : 1));
+}
+
+/**
+ * Take up somebody else's unfinished business.
+ *
+ * The goal keeps its ORIGINAL opening date, its progress and its obstacles, and
+ * gains a generation. Three hundred years later the record still says when it
+ * was opened and by whom, which is what makes an inherited revenge read as
+ * inherited rather than as a fresh grievance somebody invented.
+ */
+export function inheritGoals(
+    heir: NpcRecord,
+    goals: readonly NpcGoal[],
+    fromId: string,
+    onDay: number
+): NpcRecord {
+    let next = heir;
+    let seq = heir.nextGoalSeq;
+    const added: NpcGoal[] = [];
+    for (const goal of goals) {
+        if (heir.goals.some(g => g.originHolderId === goal.originHolderId && g.text === goal.text)) {
+            continue;
+        }
+        added.push({
+            ...goal,
+            id: `${heir.id}-g${seq++}`,
+            status: 'active',
+            closedOnDay: null,
+            inheritedFromId: fromId,
+            originHolderId: goal.originHolderId,
+            generation: goal.generation + 1,
+            note: goal.note || `Inherited from ${fromId} on day ${onDay}.`,
+            obstacles: goal.obstacles.slice()
+        });
+    }
+    if (added.length === 0) return heir;
+    next = {
+        ...heir,
+        goals: heir.goals.concat(added),
+        nextGoalSeq: seq,
+        updatedOnDay: onDay
+    };
+    return next;
+}
+
+/** Update where a goal has got to, and what is still in the way. */
+export function updateGoal(
+    npc: NpcRecord,
+    goalId: string,
+    patch: { progress?: string; obstacles?: string[]; priority?: number; deadlineOnDay?: number | null },
+    onDay: number
+): NpcRecord {
+    return {
+        ...npc,
+        goals: npc.goals.map(g =>
+            g.id === goalId
+                ? {
+                    ...g,
+                    progress: patch.progress ?? g.progress,
+                    obstacles: patch.obstacles ?? g.obstacles,
+                    priority: patch.priority !== undefined ? clamp01(patch.priority) : g.priority,
+                    deadlineOnDay:
+                        patch.deadlineOnDay !== undefined ? patch.deadlineOnDay : g.deadlineOnDay
+                }
+                : g
+        ),
+        updatedOnDay: onDay
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// READING
+// ─────────────────────────────────────────────────────────────────────────
+
+export function ageInYears(npc: NpcRecord, onDay: number): number {
+    return Math.floor((onDay - npc.identity.bornOnDay) / DAYS_PER_YEAR);
+}
+
+export function yearsToLifespanEnd(npc: NpcRecord, onDay: number): number {
+    return (npc.cultivation.lifespanEndsOnDay - onDay) / DAYS_PER_YEAR;
+}
+
+export interface NpcBrief {
+    id: string;
+    name: string;
+    rank: string;
+    ageYears: number;
+    locationId: string | null;
+    factionId: string | null;
+    status: ExistenceState;
+    /** What they are currently trying to do, highest priority first. */
+    goals: {
+        text: string;
+        kind: GoalKind;
+        priority: number;
+        progress: string;
+        obstacles: string[];
+        deadlineInDays: number | null;
+        status: GoalStatus;
+        yearsOpen: number;
+        generation: number;
+    }[];
+    /** Ties that matter, strongest feeling first. */
+    relationships: { name: string; kind: RelationshipKind; standing: number; note: string }[];
+    /** Ids of the most recent facts about them. The trajectory, compactly. */
+    recentFactIds: string[];
+    memoryIds: string[];
+    /** Days since this record was last confirmed. Stale records are a fact. */
+    staleDays: number;
+}
+
+/**
+ * The compact bundle the LLM is handed to reason about this person.
+ *
+ * Deliberately small. An NPC's behaviour comes out of goals, relationships and
+ * a handful of recent events; handing over the full record every time is how a
+ * context window gets spent on nothing.
+ */
+export function npcBrief(npc: NpcRecord, onDay: number, recentFacts = 6, relationshipLimit = 8): NpcBrief {
+    return {
+        id: npc.id,
+        name: npc.name,
+        rank: rankName(npc.cultivation.realmOrdinal),
+        ageYears: ageInYears(npc, onDay),
+        locationId: npc.locationId,
+        factionId: npc.factionId,
+        status: npc.status,
+        goals: activeGoals(npc).map(g => ({
+            text: g.text,
+            kind: g.kind,
+            priority: g.priority,
+            progress: g.progress,
+            obstacles: g.obstacles.slice(),
+            deadlineInDays: g.deadlineOnDay === null ? null : g.deadlineOnDay - onDay,
+            status: g.status,
+            yearsOpen: Math.floor((onDay - g.openedOnDay) / DAYS_PER_YEAR),
+            generation: g.generation
+        })),
+        relationships: npc.relationships
+            .slice()
+            .sort((a, b) =>
+                Math.abs(b.standing) - Math.abs(a.standing) || (a.targetId < b.targetId ? -1 : 1)
+            )
+            .slice(0, relationshipLimit)
+            .map(r => ({ name: r.targetName, kind: r.kind, standing: r.standing, note: r.note })),
+        recentFactIds: npc.historyFactIds.slice(-recentFacts),
+        memoryIds: npc.memoryIds,
+        staleDays: Math.max(0, onDay - npc.lastConfirmedOnDay)
+    };
+}
+
+/** Environmental profile for the location layer's compatibility check. */
+export function environmentProfile(npc: NpcRecord): {
+    specialties: string[];
+    vulnerabilities: string[];
+} {
+    return {
+        specialties: npc.cultivation.specialties.slice(),
+        vulnerabilities: (npc.tags.filter(t => t.startsWith('vuln:')) ?? []).map(t => t.slice(5))
+    };
+}
+
+function clamp01(n: number): number {
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(1, n));
+}
+
+function clampStanding(n: number): number {
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(-1, Math.min(1, n));
+}
+
+function mergeIds(a: readonly string[], b: readonly string[]): string[] {
+    const out = a.slice();
+    for (const id of b) if (!out.includes(id)) out.push(id);
+    return out;
+}

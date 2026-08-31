@@ -5,10 +5,10 @@
  * `BreakthroughResult` or a survival state becomes a sentence. Both narrator
  * paths consume it and neither may bypass it:
  *
- *   - the provider narrator is handed `lines` as the *entire* factual content
+ * - the provider narrator is handed `lines` as the *entire* factual content
  *     of its phase-3 prompt, so the model has nothing to narrate from except
  *     what the engine actually returned;
- *   - the deterministic narrator ships `prose` verbatim.
+ * - the deterministic narrator ships `prose` verbatim.
  *
  * That symmetry is the point. With no provider configured the player reads the
  * engine's own account; with one configured they read the same account in
@@ -47,26 +47,27 @@ export interface EngineFacts {
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE WORLD, AS THE ENGINE'S STATES MEAN IT
-// The ambient table is the ash table. These strings are the bible's own
-// reading of each band, and they are what the narrator is given — so a model
-// that has never seen context.md still cannot describe a spirit tide as
-// scenery.
+// The ambient table is the qi-density table. Qi is a resource that pools in
+// spiritual veins and is not evenly distributed, so these strings say what a
+// band means to live in rather than what it multiplies. They are what the
+// narrator is given, so a model that has never seen context.md still cannot
+// describe a spirit tide as scenery.
 // ─────────────────────────────────────────────────────────────────────────
 
 const AMBIENT_IN_WORLD: Record<AmbientQi, string> = {
-    thin: 'The ash here is thin. Swept ground — little has fallen, or something already drank it. Cultivation runs at half rate and breakthroughs suffer.',
-    normal: 'The ash here is ordinary settled fall. Neither help nor hindrance.',
-    dense: 'The ash here is dense. It pools in the low ground like snow that will not melt; someone ascended nearby, or died with a great deal still in them. Cultivation runs at double rate.',
-    spirit_tide: 'A spirit tide is running. Someone has just ascended, and an entire remembered life is coming down at once — warm on the back of the hand, and it smells like somebody\'s house. Qi is three times as abundant and the heavens are unusually permissive.'
+    thin: 'The qi here is thin: drawn down long ago, or never rich. Cultivating in it is chewing on nothing - half rate, and breakthroughs suffer. Most of the world is like this and some of it is hopeless.',
+    normal: 'The qi here is ordinary inhabited land. Progress is possible and unhurried.',
+    dense: 'The qi here is dense - a vein close to the surface, or ground nobody has worked. Cultivation runs at double rate. Somebody owns this, or somebody is about to.',
+    spirit_tide: 'A spirit tide is running: a vein shifting, a seal failing, a season turning over. The hair lifts on your arms and breathing is easier than it was an hour ago. Qi is three times as abundant, the heavens are unusually permissive, everyone within a hundred li can feel it, and it does not last.'
 };
 
 const DEATH_IN_WORLD: Record<DeathCause, string> = {
     combat_defeat: 'killed in combat',
     obviously_fatal_choice: 'forced a fight while barely able to stand',
-    lifespan_exhausted: 'lifespan exhausted — died of old age at the ceiling of the realm',
-    stagnation_aging: 'settled: fifty years at one realm, and the ash finished absorbing what had absorbed it',
+    lifespan_exhausted: 'lifespan exhausted - died of old age at the ceiling of the realm',
+    stagnation_aging: 'settled: fifty years at one realm, and the qi already inside them finished working on them instead',
     untreated_injuries: 'the meridians gave out, untreated',
-    starvation: 'starved — the flesh keeps its mortal arithmetic',
+    starvation: 'starved - the flesh keeps its mortal arithmetic',
     failed_breakthrough: 'the meridians ruptured mid-breakthrough',
     qi_deviation: 'qi deviation',
     heavenly_tribulation: 'destroyed by heavenly tribulation'
@@ -89,7 +90,7 @@ export function placeName(cultivator: Pick<Cultivator, 'location'>): string {
     return cultivator.location?.trim() || 'Sweptground';
 }
 
-/** "10 years", "3 months", "18 days" — whichever unit reads plainest. */
+/** "10 years", "3 months", "18 days" - whichever unit reads plainest. */
 export function humanDays(days: number): string {
     const d = Math.max(0, Math.round(days));
     if (d >= DAYS_PER_YEAR) {
@@ -209,11 +210,11 @@ function timeSkipProse(
     const where = placeName(before);
 
     const opening = ambient === 'thin'
-        ? `${where}. The ash is thin here; it always has been. ${before.name} sat down anyway.`
+        ? `${where}. The qi is thin here; it always has been. ${before.name} sat down anyway.`
         : ambient === 'spirit_tide'
-            ? `${where}. A tide was running when ${before.name} sat down — somebody's whole life coming down warm over the hours.`
+            ? `${where}. A tide was running when ${before.name} sat down, and for once the air gave more than it asked.`
             : ambient === 'dense'
-                ? `${where}. The ash lies deep in the low ground. ${before.name} sat down in it.`
+                ? `${where}. There is a vein under this ground, close enough to feel. ${before.name} sat down on top of it.`
                 : `${where}. ${before.name} sat down and began to breathe.`;
     paragraphs.push(`${opening} ${label} of ${humanDays(skip.requestedDays)} was intended.`);
 
@@ -222,7 +223,7 @@ function timeSkipProse(
             `Nothing found you. ${humanDays(skip.simulatedDays)} went by in the ordinary way, which in this world is the good outcome and almost never the interesting one.`
         );
     } else {
-        const beats = skip.events.map(e => `${dayStamp(e)} — ${e.summary}`);
+        const beats = skip.events.map(e => `${dayStamp(e)} - ${e.summary}`);
         paragraphs.push(beats.join('\n'));
     }
 
@@ -245,13 +246,13 @@ function timeSkipProse(
         closing.push(`Spirit stones: ${after.spiritStones}, a change of ${signed(skip.deltas.spiritStones)}.`);
     }
     if (after.satiety <= 20 && after.alive) {
-        closing.push(`Satiety is down to ${after.satiety}. Ash feeds the meridians; it does not feed the body.`);
+        closing.push(`Satiety is down to ${after.satiety}. Qi feeds the meridians; it does not feed the body.`);
     }
     paragraphs.push(closing.join(' '));
 
     if (skip.died) {
         paragraphs.push(
-            `${after.name} is dead — ${describeDeathCause(skip.deathCause)}. The run is closed and written to the ledger. There is no reload and no revival.`
+            `${after.name} is dead - ${describeDeathCause(skip.deathCause)}. The run is closed and written to the ledger. There is no reload and no revival.`
         );
     }
 
@@ -298,8 +299,9 @@ export function factsForBreakthrough(
     lines.push(`Progress consumed: ${Math.round(result.progressConsumed)} qi-units.`);
     if (result.outcome === 'success' && isBoundaryCrossing(result)) {
         lines.push(
-            'This crossed a realm boundary, so the Vault took its instalment. The toll is never a stat; ' +
-            'it is a person, a memory, a technique, or a name.'
+            'This crossed a realm boundary, where the crossing demands that something be cut away. ' +
+            'What it takes is never a stat: a person who knew you, a memory you were using to stay ' +
+            'yourself, a mastered technique, or at the highest crossings a name. It is rolled, not certain.'
         );
     }
     lines.push(
@@ -324,6 +326,7 @@ function breakthroughHeadline(result: BreakthroughResult, before: Cultivator): s
         case 'failure_stable': return 'The barrier held. Nothing tore.';
         case 'failure_injured': return 'The barrier held, and something tore.';
         case 'failure_deviation': return 'The attempt collapsed into qi deviation.';
+        case 'false_immortal': return `The Lid opened. ${before.name} did not go through it.`;
     }
 }
 
@@ -341,7 +344,7 @@ function breakthroughProse(before: Cultivator, after: Cultivator, result: Breakt
         paragraphs.push(
             result.tribulation.survived
                 ? `${result.tribulation.strikes} strikes came down out of the seam. ${before.name} was still standing at the end of them.`
-                : `${result.tribulation.strikes} strikes came down out of the seam, and ${before.name} was not standing at the end of them. What is left is a scar in the ground where ash will never settle again.`
+                : `${result.tribulation.strikes} strikes came down out of the seam, and ${before.name} was not standing at the end of them. What is left is a scar in the ground where the qi never returns.`
         );
     }
 
@@ -357,7 +360,7 @@ function breakthroughProse(before: Cultivator, after: Cultivator, result: Breakt
     if (result.outcome === 'success') {
         paragraphs.push(
             boundary
-                ? `You are ${rankName(after.realmOrdinal)}. The Vault took its instalment on the way across, the way it always does at a boundary. You will notice what is missing later, or you will not, which is worse.`
+                ? `You are ${rankName(after.realmOrdinal)}. Something was cut away on the way across, the way something always is at a boundary. You will notice what is missing later, or you will not, which is worse.`
                 : `You are ${rankName(after.realmOrdinal)}. The step was expensive and it was only a step.`
         );
     } else if (result.outcome !== 'death') {
@@ -411,28 +414,42 @@ export function factsForTalk(cultivator: Cultivator, ambient: AmbientQi, target:
         headline: `A conversation with ${who}.`,
         lines,
         prose:
-            `${cultivator.name} speaks to ${who}. Nothing in the world's ledgers moves for it — no stones change hands, no standing shifts, ` +
+            `${cultivator.name} speaks to ${who}. Nothing in the world's ledgers moves for it - no stones change hands, no standing shifts, ` +
             `no one owes anyone anything they did not already owe. In ${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}, that is what most conversations are.`
     };
 }
 
-export function factsForTravel(
+/**
+ * Going somewhere.
+ *
+ * `intent` says how it was meant - travelling, fleeing, slipping in - and it is
+ * carried into the account so the narrator can describe it. It selects nothing:
+ * the engine resolves every movement the same way, and until the world layer's
+ * capability predicates land it has no basis for treating a flight differently
+ * from a stroll. Pretending otherwise would be inventing a mechanic in the
+ * narration layer.
+ */
+export function factsForMove(
     before: Cultivator,
     after: Cultivator,
     destination: string,
+    intent: string,
     skip: TimeSkipResult,
     ambientBefore: AmbientQi,
     ambientAfter: AmbientQi
 ): EngineFacts {
     const base = factsForTimeSkip(before, after, skip, ambientBefore, 'Travel');
     const lines = [
-        `${before.name} travelled from ${placeName(before)} to ${destination}. The journey took ${humanDays(skip.simulatedDays)}.`,
-        `The ash at the destination: ${describeAmbientInWorld(ambientAfter)}`,
+        `${before.name} went from ${placeName(before)} to ${destination}. Manner of going: ${intent}. ` +
+        `It took ${humanDays(skip.simulatedDays)}.`,
+        'The engine resolved the movement itself; it did not resolve whether anyone was watching, ' +
+        'pursuing, or waiting.',
+        `The qi at the destination: ${describeAmbientInWorld(ambientAfter)}`,
         ...base.lines
     ];
 
     const prose = skip.events.length === 0 && !skip.died
-        ? `${before.name} walked out of ${placeName(before)} and into ${destination}. ` +
+        ? `${before.name} went out of ${placeName(before)} and into ${destination}. ` +
           `${describeAmbientInWorld(ambientAfter)} Nothing happened on the road, which is not the same as nothing being on it.`
         : base.prose;
 
@@ -442,22 +459,153 @@ export function factsForTravel(
 export function factsForEat(cultivator: Cultivator, satietyRestored: number, stonesSpent: number): EngineFacts {
     const lines = [
         `${cultivator.name} ate. Satiety restored by ${satietyRestored} to ${cultivator.satiety}/100; ${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'} spent, leaving ${cultivator.spiritStones}.`,
-        'Ash feeds the meridians. It does not feed the body. Until a Grain Abstinence Pill, the flesh keeps its mortal arithmetic.'
+        'Qi feeds the meridians. It does not feed the body. Until a Grain Abstinence Pill, the flesh keeps its mortal arithmetic.'
     ];
     return {
         headline: `Fed. ${cultivator.spiritStones} stones left.`,
         lines,
         prose:
             `A meal, bought for ${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'}. Satiety back to ${cultivator.satiety}. ` +
-            `Half the deaths in the Vault are logistical, and a Qi Condensation cultivator who forgets to eat dies exactly as fast as a farmer who does, ` +
+            `Half the deaths in this world are logistical, and a Qi Condensation cultivator who forgets to eat dies exactly as fast as a farmer who does, ` +
             `and considerably more embarrassingly.`
     };
 }
 
 /**
- * An action the engine declined. Refusals are facts too — and they are the ones
+ * An action the engine declined. Refusals are facts too, and they are the ones
  * a narrator is most tempted to soften, so they are stated flatly.
  */
 export function factsForRefusal(headline: string, detail: string): EngineFacts {
     return { headline, lines: [detail], prose: detail };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SEMANTIC ACTIONS
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * An examination.
+ *
+ * Everything in `subjectFacts` was read out of a row or a catalog entry. The
+ * narrator dresses it; it does not get to add a detail the record does not
+ * hold, which is the point of examining something in a simulation rather than
+ * in a story.
+ */
+export function factsForInvestigation(
+    cultivator: Cultivator,
+    ambient: AmbientQi,
+    subject: string,
+    subjectFacts: readonly string[]
+): EngineFacts {
+    const lines = [
+        `${cultivator.name} examined ${subject}. Nothing was moved, spent or taken; this was looking.`,
+        ...subjectFacts,
+        `Observed from ${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}.`,
+        describeAmbientInWorld(ambient)
+    ];
+    return {
+        headline: `${subject}, examined.`,
+        lines,
+        prose: [
+            `${subject}. ${subjectFacts.join(' ')}`,
+            'That is what the record holds. What it means is a separate question, and nobody in ' +
+            `${placeName(cultivator)} is obliged to answer it.`
+        ].join('\n\n')
+    };
+}
+
+/**
+ * An attempted interaction.
+ *
+ * Note what this deliberately does NOT contain: an outcome. The engine can
+ * state who this party is and what stands between them from real rows, and it
+ * cannot yet resolve what came of the approach. Saying so plainly is the whole
+ * discipline - an intent is an attempt, and an attempt narrated as an
+ * accomplishment is the drift this architecture exists to prevent.
+ */
+export function factsForInteraction(
+    cultivator: Cultivator,
+    subject: string,
+    intent: string,
+    subjectFacts: readonly string[],
+    unresolved: string
+): EngineFacts {
+    return {
+        headline: `${subject}, approached.`,
+        lines: [
+            `${cultivator.name} approached ${subject}. Stated intent: ${intent}.`,
+            'This is an attempt, not an outcome. Nothing has been agreed, bought, believed or refused.',
+            ...subjectFacts,
+            unresolved
+        ],
+        prose: [
+            `${cultivator.name} goes to ${subject}. The intent is ${intent}.`,
+            subjectFacts.join(' '),
+            `What comes of it is not settled. ${unresolved}`
+        ].join('\n\n')
+    };
+}
+
+/**
+ * An action the engine genuinely cannot resolve yet.
+ *
+ * The alternative would be to let the narrator describe it, and a described
+ * outcome with no state change behind it is precisely the failure mode the
+ * whole architecture is built against. So this is a first-class result: it says
+ * what was attempted, that nothing happened, and which layer would have to
+ * exist for something to happen.
+ */
+export function factsForUnsupported(attempt: string, missing: string): EngineFacts {
+    const detail =
+        `The engine cannot resolve that yet: ${attempt}. Nothing in the world changed, no time passed, ` +
+        `and nothing was spent. ${missing}`;
+    return {
+        headline: 'The engine has no answer for that yet.',
+        lines: [detail],
+        prose: detail
+    };
+}
+
+/**
+ * A result handed back by one of the MCP tool handlers, which are the same
+ * engine paths the tool surface uses. Their `narrationHint` is engine-authored,
+ * so it goes through unchanged.
+ */
+export function factsForToolResult(
+    headline: string,
+    lines: readonly string[],
+    prose?: string
+): EngineFacts {
+    return {
+        headline,
+        lines: [...lines],
+        prose: prose ?? lines.join('\n')
+    };
+}
+
+/** A stretch of foraging, and whatever the ground gave up. */
+export function factsForGather(
+    before: Cultivator,
+    after: Cultivator,
+    skip: TimeSkipResult,
+    ambient: AmbientQi,
+    found: { name: string; grade: string; value: number } | null
+): EngineFacts {
+    const base = factsForTimeSkip(before, after, skip, ambient, 'Foraging');
+    const outcome = found
+        ? `Found and pouched: one ${found.name}, ${found.grade} grade, worth about ${found.value} spirit stones.`
+        : 'Nothing worth carrying. The ground here has been worked over already, the way most ground has.';
+
+    return {
+        headline: found ? `${found.name}, pouched.` : 'Nothing worth carrying.',
+        lines: [
+            `${before.name} spent ${humanDays(skip.simulatedDays)} working the ground around ${placeName(before)}.`,
+            outcome,
+            ...base.lines
+        ],
+        prose: [
+            `${humanDays(skip.simulatedDays)} bent over the ground around ${placeName(before)}.`,
+            outcome
+        ].join('\n\n')
+    };
 }

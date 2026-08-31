@@ -8,6 +8,7 @@
  */
 
 import {
+    InjurySchema,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
     STAGNATION_YEARS,
@@ -411,7 +412,230 @@ describe('qi deviation during a skip', () => {
     });
 });
 
-describe('the Vault, during a long seclusion', () => {
+describe('injuriesSustained', () => {
+    /**
+     * The point of this block: a caller must be able to persist the wounds a
+     * skip produced without inferring anything. No reading severity off an
+     * event payload, and above all no scraping a severity word out of a
+     * narration string the engine happens to have worded a particular way.
+     */
+
+    /** First skip in the sweep whose digest contains an event of `kind`. */
+    function findWith(kind: string, runs: ReturnType<typeof simulateTimeSkip>[]) {
+        return runs.find(result => result.events.some(e => e.kind === kind)) ?? null;
+    }
+
+    // Built once and shared. These sweeps are deterministic, so rebuilding
+    // them per test only burns time.
+    let deviationCache: ReturnType<typeof simulateTimeSkip>[] | null = null;
+    let failureCache: ReturnType<typeof simulateTimeSkip>[] | null = null;
+
+    function deviationRuns() {
+        deviationCache ??= Array.from({ length: 40 }, (_, i) =>
+            simulateTimeSkip(
+                makeCultivator({ spiritRoot: 'dual_water_fire', maxHp: 500, hp: 500 }),
+                TEN_YEARS,
+                ctx({ seed: `injury-dev-${i}`, randomEvents: false, autoBreakthrough: false })
+            )
+        );
+        return deviationCache;
+    }
+
+    function breakthroughFailureRuns() {
+        failureCache ??= Array.from({ length: 60 }, (_, i) =>
+            simulateTimeSkip(
+                makeCultivator(),
+                TEN_YEARS,
+                ctx({ seed: `injury-bt-${i}`, randomEvents: false })
+            )
+        );
+        return failureCache;
+    }
+
+    it('always agrees with the count in deltas', () => {
+        for (const result of [...deviationRuns(), ...breakthroughFailureRuns()]) {
+            expect(result.injuriesSustained).toHaveLength(result.deltas.injuriesGained);
+        }
+    });
+
+    it('is empty for a skip that produced no wounds', () => {
+        const result = simulateTimeSkip(secluded(), TEN_YEARS, sealed());
+        expect(result.injuriesSustained).toEqual([]);
+        expect(result.deltas.injuriesGained).toBe(0);
+    });
+
+    it('hands back complete, directly persistable Injury records', () => {
+        const result = findWith('qi_deviation', deviationRuns());
+        expect(result).not.toBeNull();
+        expect(result!.injuriesSustained.length).toBeGreaterThan(0);
+
+        for (const injury of result!.injuriesSustained) {
+            // Round-trips through the schema, so it is writable as-is.
+            expect(() => InjurySchema.parse(injury)).not.toThrow();
+            expect(injury.id).toMatch(
+                /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+            );
+            expect(injury.treated).toBe(false);
+            expect(injury.description.length).toBeGreaterThan(0);
+            expect(injury.cultivationPenalty).toBeGreaterThan(0);
+            expect(injury.breakthroughPenalty).toBeGreaterThan(0);
+        }
+    });
+
+    it('carries the ids that are actually on the cultivator, with no duplicates', () => {
+        const result = findWith('qi_deviation', deviationRuns());
+        const ids = result!.injuriesSustained.map(i => i.id);
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('includes deviation wounds, tagged at the source rather than described', () => {
+        const result = findWith('qi_deviation', deviationRuns());
+        const deviationInjuries = result!.injuriesSustained.filter(
+            i => i.source === 'qi_deviation'
+        );
+        expect(deviationInjuries.length).toBeGreaterThan(0);
+
+        // The severity the event reported and the severity on the record agree,
+        // so nothing has to be recovered from the payload either.
+        const events = result!.events.filter(e => e.kind === 'qi_deviation');
+        expect(events.length).toBe(deviationInjuries.length);
+        events.forEach((event, i) => {
+            expect(deviationInjuries[i].severity).toBe(event.data.severity);
+        });
+    });
+
+    it('includes breakthrough-failure wounds - the case that was read from prose', () => {
+        const result = findWith('breakthrough_failure', breakthroughFailureRuns());
+        expect(result).not.toBeNull();
+        const failure = result!.events.find(e => e.kind === 'breakthrough_failure')!;
+
+        if (failure.interrupts) {
+            // A wounding failure. The record must be present and must NOT need
+            // the narration hint to be parsed for its severity.
+            const fromBreakthrough = result!.injuriesSustained.filter(
+                i => i.source === 'failed_breakthrough' || i.source === 'qi_deviation'
+            );
+            expect(fromBreakthrough.length).toBeGreaterThan(0);
+            const wound = result!.injuriesSustained.at(-1)!;
+            expect(['minor', 'serious', 'crippling']).toContain(wound.severity);
+            // Belt and braces: the prose agrees with the record, but callers
+            // no longer have to take the prose's word for it.
+            expect(failure.summary).toContain(wound.severity);
+        }
+    });
+
+    it('is chronological', () => {
+        for (const result of [...deviationRuns(), ...breakthroughFailureRuns()]) {
+            const turns = result.injuriesSustained.map(i => i.sustainedOnTurn);
+            for (let i = 1; i < turns.length; i++) {
+                expect(turns[i]).toBeGreaterThanOrEqual(turns[i - 1]);
+            }
+        }
+    });
+
+    it('records the burns of a SURVIVED tribulation', () => {
+        // The third case that used to be recovered from prose, and the worst
+        // of them: the caller was pulling the number of strikes that landed
+        // out of the narration with a regex. Every one of those burns is now
+        // a record in the array.
+        // A one-day window, so exactly one crossing is attempted per seed and
+        // the run cannot climb on into 41, 42 and 43 behind the assertion.
+        let weathered = null;
+        for (let i = 0; i < 400 && weathered === null; i++) {
+            const result = simulateTimeSkip(
+                makeCultivator({ realmOrdinal: 40, cultivationProgress: 1e12 }),
+                1,
+                ctx({ seed: `trib-burn-${i}`, randomEvents: false, toll: { candidates: [] } })
+            );
+            const success = result.events.find(
+                e => e.kind === 'breakthrough_success' && e.data.tribulation !== null
+            );
+            if (success && result.injuriesSustained.length > 0) weathered = result;
+        }
+        expect(weathered).not.toBeNull();
+
+        const burns = weathered!.injuriesSustained.filter(i => i.source === 'tribulation');
+        expect(burns.length).toBeGreaterThan(0);
+        expect(weathered!.deltas.realmOrdinal).toBe(1);
+        for (const burn of burns) {
+            expect(() => InjurySchema.parse(burn)).not.toThrow();
+            expect(burn.description).toContain('Heavenly lightning');
+        }
+    });
+
+    it('records the wounds of a fatal breakthrough too', () => {
+        let fatal = null;
+        for (let i = 0; i < 400 && fatal === null; i++) {
+            const result = simulateTimeSkip(
+                makeCultivator({ realmOrdinal: 12, cultivationProgress: progressRequiredForOrdinal(12) }),
+                TEN_YEARS,
+                ctx({ seed: `fatal-${i}`, randomEvents: false, toll: { candidates: [] } })
+            );
+            if (result.deathCause === 'failed_breakthrough') fatal = result;
+        }
+        expect(fatal).not.toBeNull();
+        expect(fatal!.injuriesSustained.length).toBeGreaterThan(0);
+        expect(fatal!.injuriesSustained.at(-1)!.source).toBe('failed_breakthrough');
+    });
+});
+
+describe('endState', () => {
+    it('reports starvation as an absolute count, not a delta', () => {
+        const result = simulateTimeSkip(
+            secluded(),
+            TEN_YEARS,
+            sealed({ grainAbstinence: false, rations: 0 })
+        );
+        expect(result.deathCause).toBe('starvation');
+        expect(result.endState.starvationTurns).toBe(STARVATION_TURNS);
+    });
+
+    it('reports zero starvation for a well-fed skip', () => {
+        const result = simulateTimeSkip(secluded(), TEN_YEARS, sealed());
+        expect(result.endState.starvationTurns).toBe(0);
+    });
+
+    it('reports years-at-realm reset by an advance, which no delta could express', () => {
+        // The counter returns to zero on a rank advance, so "before + delta"
+        // is not just imprecise, it is wrong. Absolute is the only honest form.
+        let advanced = null;
+        for (let i = 0; i < 40 && advanced === null; i++) {
+            const result = simulateTimeSkip(
+                makeCultivator({ yearsAtCurrentRealm: 30 }),
+                TEN_YEARS,
+                ctx({ seed: `reset-${i}`, randomEvents: false })
+            );
+            if (result.deltas.realmOrdinal > 0 && !result.interrupted) advanced = result;
+        }
+        expect(advanced).not.toBeNull();
+        expect(advanced!.endState.yearsAtCurrentRealm).toBeLessThan(30);
+        expect(advanced!.endState.yearsAtCurrentRealm).toBeLessThanOrEqual(
+            advanced!.simulatedDays / DAYS_PER_YEAR
+        );
+    });
+
+    it('accumulates years-at-realm when nothing advanced', () => {
+        const result = simulateTimeSkip(
+            secluded({ yearsAtCurrentRealm: 5 }),
+            TEN_YEARS,
+            sealed()
+        );
+        expect(result.deltas.realmOrdinal).toBe(0);
+        expect(result.endState.yearsAtCurrentRealm).toBeCloseTo(15, 4);
+    });
+
+    it('matches the stagnation threshold exactly when stagnation kills', () => {
+        const result = simulateTimeSkip(
+            secluded({ age: 60, yearsAtCurrentRealm: STAGNATION_YEARS - 10 }),
+            100 * DAYS_PER_YEAR,
+            sealed()
+        );
+        expect(result.deathCause).toBe('stagnation_aging');
+        expect(result.endState.yearsAtCurrentRealm).toBeCloseTo(STAGNATION_YEARS, 4);
+    });
+});
+
+describe('the price of advancement, during a long seclusion', () => {
     /** Standing at the Foundation boundary with the progress already banked. */
     function atBoundary(overrides: Partial<Cultivator> = {}) {
         return makeCultivator({
@@ -441,7 +665,7 @@ describe('the Vault, during a long seclusion', () => {
         expect(charged!.tolls[0].boundaryIndex).toBe(0);
     });
 
-    it('hands control back when the Vault actually takes something', () => {
+    it('hands control back when a crossing actually takes something', () => {
         // Losing a brother must not be a footnote the player reads ten years
         // late in a list of events.
         let taken = null;
