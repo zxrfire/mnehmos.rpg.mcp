@@ -1920,6 +1920,76 @@ a golden year, and which the cultivator will never know they caused.
 Nobody currently alive has done this. The last confirmed crossing is centuries back, and it
 is remembered for the tide rather than the person.
 
+### What immortals leave behind
+
+Nothing goes through the Lid except the cultivator. They know this well in advance, and
+they act on it.
+
+So the years before a crossing are spent **divesting**. An ascending cultivator sells,
+gifts, buries, seals and arranges: artifacts they will not need, manuals they will not
+read again, spirit stones that will buy nothing where they are going, and above all
+**inheritances** - deliberately constructed, deliberately hidden, deliberately gated, left
+for whoever proves worth them.
+
+This is the author of the world's entire inheritance economy. It is why sealed caves have
+trials in them, why the trials are *calibrated* rather than merely lethal, why a manual
+three grades above anything taught is sitting behind a door with a riddle on it. Somebody
+put it there on purpose, on their way out, knowing they would never come back to check.
+
+It also gives grave-reading two distinct kinds of site, and telling them apart is a
+profession:
+
+| | **A grave** | **An inheritance** |
+|---|---|---|
+| Origin | Involuntary - what the Toll took | Deliberate - what an ascending cultivator left |
+| Contents | Fragments, names, a face, a debt | Chosen, curated, often the best of what they had |
+| Protection | Whatever settled around it | Designed trials, gates, conditions of worth |
+| Attitude | Indifferent | Intended for *someone*, and frequently opinionated about who |
+
+An inheritance can therefore refuse you. A grave never does.
+
+### What crosses the Lid
+
+**People do not.** A cultivator below True Immortal who reaches the other side is crushed -
+not attacked, simply unable to exist at that pressure. And an immortal returning downward
+draws tribulation lightning on the way through, because the Lid does not distinguish
+between a hole made outward and one made inward.
+
+Neither is *impossible*. Both are ruinously expensive. An immortal who comes back down
+pays a price that almost none of them are willing to pay, and the ones who did are
+remembered for it - usually because whatever they came back for was worth more to them
+than what it cost, which is by itself the most interesting fact anyone will ever learn
+about them.
+
+**Information does.** There exist artifacts - extremely rare, mostly ancient, several of
+them the deliberate parting gift of somebody's ascension - through which knowledge can
+pass the Lid in either direction. A message. An answer. A warning. The confirmation that
+someone arrived.
+
+This is the setting's only reliable channel between the two sides, and it is the reason
+anything below the Lid knows the other side exists at all. It also means the most valuable
+commodity in the world is not a treasure or a technique but **a working line of enquiry to
+somebody who already went through** - which is precisely the sort of thing a Dao house
+would kill to control, and precisely the sort of thing that gets misreported, faked and
+sold.
+
+### Ascension does not end the run
+
+Reaching True Immortal is not a game-over screen. The player may keep going.
+
+An immortal run is a different game, and deliberately so: the concerns are no longer
+survival and scarcity but obligation, legacy, what to leave, whom to answer, and what is
+worth the price of reaching back down. Everything below is still there - the sects, the
+descendants, the grudges, the people who knew them - and they can still be reached, at
+cost.
+
+**And the player may end the run whenever they choose.** Ascension is the one point at
+which a run can be closed voluntarily rather than by dying: a cultivator can go through,
+settle their affairs, leave what they leave, and step off the ladder deliberately. The
+ledger records the run as ended by ascension rather than by death, which - in a game where
+almost every other run ends with a corpse - is the rarest line in it.
+
+
 ### False Immortal
 
 The half-failure, and the more interesting outcome.
