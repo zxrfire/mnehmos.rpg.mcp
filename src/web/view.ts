@@ -32,6 +32,7 @@ import {
 import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
+import type { NpcRecord } from '../engine/world/npc-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // REFERENCE
@@ -263,6 +264,50 @@ export function ledgerRowView(run: Run, name: string): LedgerRowView {
         deathCause: run.deathCause,
         deathDescription: run.deathDescription,
         endedAt: run.endedAt
+    };
+}
+
+/**
+ * A world NPC as a roster row.
+ *
+ * The database holds the player and whoever a run has written down. The world
+ * holds the other four hundred people, who exist whether or not anybody has met
+ * them - which is the entire point of seeding a population rather than spawning
+ * one on demand. Both go in the same list because an operator looking at "who
+ * is in this world" does not care which table somebody came out of.
+ */
+export function worldRosterRow(npc: NpcRecord, presentDay: number): RosterRowView {
+    const ordinal = npc.cultivation.realmOrdinal;
+    const age = Math.max(0, Math.floor((presentDay - npc.identity.bornOnDay) / 365));
+
+    return {
+        id: npc.id,
+        name: npc.name,
+        kind: 'npc',
+        isPlayer: false,
+        spiritRoot: npc.cultivation.spiritRoot,
+        spiritRootName: getSpiritRoot(npc.cultivation.spiritRoot).name,
+        realmOrdinal: ordinal,
+        rankName: rankName(ordinal),
+        realmName: realmForOrdinal(ordinal).name,
+        lifespanYears: lifespanForOrdinal(ordinal),
+        location: npc.locationId,
+        sectId: npc.factionId,
+        sectName: null,
+        sectRank: npc.factionRankIndex >= 0 ? String(npc.factionRankIndex) : null,
+        age,
+        alive: npc.status === 'alive',
+        deathCause: npc.status === 'alive' ? null : npc.status,
+        spiritStones: 0,
+        untreatedInjuries: npc.cultivation.untreatedInjuries,
+        feuds: [],
+        // The world models what is left of somebody in more detail than the
+        // cultivator table does: a projection, a remnant and a corpse are
+        // different states, and `identityContinuity` is how much of the
+        // original person a thing still is.
+        existenceState: npc.status,
+        soulState: npc.soulState,
+        identityContinuity: npc.identityContinuity
     };
 }
 

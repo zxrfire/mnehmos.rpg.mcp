@@ -41,6 +41,7 @@ import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roo
 import { ACTIONS_PER_FULL_SATIETY, describeDeath } from '../engine/cultivation/survival.js';
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { rollHerb } from '../data/cultivation/index.js';
+import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
 import { setDb } from '../storage/index.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { handleRefine } from '../server/consolidated/alchemy-manage.js';
@@ -84,6 +85,13 @@ import {
 import { KnowledgeGate, type AwarenessRow } from './knowledge.js';
 import { offerHearing, othersPresent, recordHearing, type Hearing } from './hearsay.js';
 import {
+    accessFor,
+    observerFor,
+    reportFromDigest,
+    type WorldReport,
+    type WorldSession
+} from './world.js';
+import {
     factsForBreakthrough,
     factsForEat,
     factsForGather,
@@ -109,6 +117,7 @@ import {
     refusalText,
     rosterRowView,
     runView,
+    worldRosterRow,
     type DerivedView,
     type LedgerRowView,
     type RosterRowView,
@@ -228,6 +237,16 @@ export interface BreakthroughApiResult {
 export interface GameServiceOptions {
     db: Database.Database;
     narrator: Narrator;
+    /**
+     * The world the runs happen inside.
+     *
+     * Optional, and absent means the world simply does not move: every other
+     * system keeps working, and a deployment that has not built one yet is
+     * degraded rather than broken. Built once at startup because seeding loads
+     * the content catalogs asynchronously and everything downstream of it here
+     * is synchronous.
+     */
+    world?: WorldSession | null;
     adminMode?: boolean;
     /** Injectable for tests that need a reproducible run. */
     seedFactory?: () => string;
@@ -272,6 +291,8 @@ export class GameService {
      * narrator is never handed a name the player has not earned.
      */
     private readonly knowledge: KnowledgeGate;
+    /** Null when no world was built. See GameServiceOptions.world. */
+    readonly world: WorldSession | null;
     private readonly narrator: Narrator;
     private readonly seedFactory: () => string;
 
@@ -292,6 +313,7 @@ export class GameService {
         this.repos = ensureCultivationDb();
         this.log = new PlayLog(this.db);
         this.knowledge = new KnowledgeGate(this.db);
+        this.world = options.world ?? null;
     }
 
     // ── run lifecycle ────────────────────────────────────────────────────
@@ -320,7 +342,16 @@ export class GameService {
             );
         }
 
-        const seed = this.seedFactory();
+        // The next life begins in the world the last one left behind, not in a
+        // fresh one. `planNextRun` decides the seed, so a run is a life lived
+        // inside this world rather than a world of its own - which is what
+        // makes the ruins the new cultivator digs through the previous
+        // cultivator's. When there is no world, the seed factory stands in.
+        const plan = this.world
+            ? this.world.planNext(this.world.lastRun(), this.world.runCount)
+            : null;
+        const seed = plan ? plan.seed : this.seedFactory();
+
         const root = rollSpiritRoot(forStream(seed, 'creation', 'spirit_root').next());
         const attributeStream = forStream(seed, 'creation', 'attributes');
         const attributes = rollAttributes([
@@ -373,7 +404,26 @@ export class GameService {
             awareness
         });
 
+        // What the world contributes to this life, in the world's own words.
+        // A stranger is told they are a stranger; a descendant is told whose.
+        if (plan) {
+            this.world?.record({
+                id: created.run.id,
+                seed,
+                index: plan.index,
+                cultivatorId: created.cultivator.id,
+                cultivatorName: created.cultivator.name,
+                startedOnDay: this.world.day,
+                endedOnDay: null,
+                outcome: 'active',
+                peakOrdinal: 0,
+                graveLocationId: null,
+                successorRelation: null
+            });
+        }
+
         this.log.append(created.run.id, [
+            ...(plan ? [{ role: 'narrator' as const, turn: 0, text: plan.note }] : []),
             {
                 role: 'engine',
                 turn: 0,
@@ -548,7 +598,36 @@ export class GameService {
         const player = this.repos.runs.getActiveRun()?.cultivatorId
             ?? this.repos.runs.deathLedger(1)[0]?.cultivatorId
             ?? null;
-        return { roster: this.repos.cultivators.roster().map(entry => rosterRowView(entry, player)) };
+        // Both populations. The database holds the player and whoever a run
+        // wrote down; the world holds the several hundred people who were
+        // already here. An operator asking who is in this world wants the
+        // world, not the subset that happens to have a row.
+        const stored = this.repos.cultivators.roster().map(entry => rosterRowView(entry, player));
+        const inWorld = this.world
+            ? this.world.state.npcs.map(npc => worldRosterRow(npc, this.world!.day))
+            : [];
+
+        return {
+            roster: [...stored, ...inWorld].sort((a, b) =>
+                Number(b.alive) - Number(a.alive) ||
+                b.realmOrdinal - a.realmOrdinal ||
+                a.name.localeCompare(b.name))
+        };
+    }
+
+    /**
+     * How far anybody actually gets, three ways.
+     *
+     * Belief, model and measurement side by side, plus what this particular
+     * world contains today. Admin only, and a balance instrument rather than a
+     * play surface: it answers "is the ladder doing what we think it does" and
+     * nothing a player would ever ask.
+     */
+    ladderOdds(): LadderOddsReport {
+        if (!this.adminMode) {
+            throw new GameError('Admin mode is off. Set ADMIN_MODE=true to read the ladder odds.', 403);
+        }
+        return ladderOddsReport(this.world?.state.seed ?? 'no-world', {}, this.world?.state);
     }
 
     // ── engine execution (phase 2) ───────────────────────────────────────
@@ -697,6 +776,7 @@ export class GameService {
         const applied = applyTimeSkip(this.repos, {
             before: cultivator, run, skip, location: place.name
         });
+        const world = this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
         // Standing somewhere is how a place stops being a rumour. Recorded with
         // its source so a place walked to and a place read about stay different
@@ -722,7 +802,8 @@ export class GameService {
                     ok: true
                 },
                 ...skipCalls('move', skip, null),
-                ...tollCalls(applied.tollLines)
+                ...tollCalls(applied.tollLines),
+                ...worldCalls(world)
             ]
         };
     }
@@ -1003,6 +1084,7 @@ export class GameService {
         });
 
         const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
+        const world = this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
         // A named herb narrows the draw to that herb if it is within reach;
         // otherwise the catalog's weighted table decides, which is the honest
@@ -1020,6 +1102,7 @@ export class GameService {
         const calls: ToolCallRecord[] = [
             ...skipCalls('gather', skip, null),
             ...tollCalls(applied.tollLines),
+            ...worldCalls(world),
             {
                 name: pouched ? 'storage.addToPouch' : 'engine.rollHerb',
                 action: 'gather',
@@ -1145,6 +1228,10 @@ export class GameService {
         });
 
         const applied = applyTimeSkip(this.repos, { before: provisioned, run, skip });
+        // The world spends exactly the days the cultivator spent. Not the days
+        // that were asked for: a skip cut short by a wound stops the world at
+        // the same hour it stopped the cultivator.
+        const world = this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const verb: ActionName = sealed ? 'seclude' : 'cultivate';
 
         const facts = factsForTimeSkip(
@@ -1159,6 +1246,11 @@ export class GameService {
             );
         }
         facts.lines.push(...applied.tollLines);
+        facts.lines.push(...world.lines);
+        facts.structure.push(...world.structure);
+        if (world.lines.length > 0) {
+            facts.prose = `${facts.prose}\n\n${world.lines.join('\n')}`;
+        }
 
         return {
             facts,
@@ -1166,7 +1258,11 @@ export class GameService {
             timeSkip: skip,
             breakthrough: null,
             outcome: 'executed',
-            calls: [...skipCalls(verb, skip, provisioning.line), ...tollCalls(applied.tollLines)]
+            calls: [
+                ...skipCalls(verb, skip, provisioning.line),
+                ...tollCalls(applied.tollLines),
+                ...worldCalls(world)
+            ]
         };
     }
 
@@ -1193,14 +1289,25 @@ export class GameService {
         });
 
         const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
+        const world = this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+
+        const facts = factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, label);
+        facts.lines.push(...world.lines);
+        facts.structure.push(...world.structure);
+        if (world.lines.length > 0) {
+            facts.prose = `${facts.prose}\n\n${world.lines.join('\n')}`;
+        }
 
         return {
-            facts: factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, label),
+            facts,
             events: skip.events,
             timeSkip: skip,
             breakthrough: null,
             outcome: 'executed',
-            calls: skipCalls(label.toLowerCase().startsWith('practice') ? 'train_technique' : 'wait', skip, null)
+            calls: [
+                ...skipCalls(label.toLowerCase().startsWith('practice') ? 'train_technique' : 'wait', skip, null),
+                ...worldCalls(world)
+            ]
         };
     }
 
@@ -1465,6 +1572,30 @@ export class GameService {
             holderId: cultivator.id,
             here: cultivator.location
         };
+    }
+
+    /**
+     * Move the world the same span the cultivator just spent.
+     *
+     * Called from every path that consumes days, so that forty years in a cave
+     * come out into a world that had forty years. The digest is built against
+     * this cultivator's own knowledge, which means the same span reaching two
+     * different people would tell them different things - and tell most people
+     * nothing at all, which is the intended ratio and not a bug to fix.
+     *
+     * The count of what never reached them goes to the inspector and never to
+     * the narrator. Surfacing it would turn "the world is mostly none of your
+     * business" into a status line.
+     */
+    private advanceWorld(days: number, cultivator: Cultivator, run: Run): WorldReport {
+        if (!this.world || days <= 0) return { lines: [], structure: [] };
+
+        const result = this.world.advance(
+            days,
+            accessFor(this.knowledge, cultivator),
+            observerFor(cultivator, run)
+        );
+        return reportFromDigest(result.digest);
     }
 
     /**
@@ -1859,6 +1990,22 @@ function hearingFact(hearing: Hearing): string {
           'without revealing where they were standing, and has no way to place it.'
         : `${hearing.speaker ?? 'Somebody'} said ${names} in passing, as though it needed no ` +
           'explaining. This cultivator does not know what that is and was not told.';
+}
+
+/**
+ * What the world did while the player was busy, as inspectable rows.
+ *
+ * Only the structural half. The digest lines themselves are already in the
+ * narration facts, and repeating them here would double every world event in
+ * the play log.
+ */
+function worldCalls(world: WorldReport): ToolCallRecord[] {
+    return world.structure.map(line => ({
+        name: 'world.advanceWorldForPlay',
+        action: 'world_time',
+        summary: line,
+        ok: true
+    }));
 }
 
 /**

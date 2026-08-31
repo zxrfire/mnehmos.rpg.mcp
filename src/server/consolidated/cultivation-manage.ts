@@ -652,7 +652,18 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     // for, and what comes back is filtered through what this cultivator has a
     // knowledge record for - so a faction they have never heard of arrives as a
     // closed road rather than as a named report.
-    const world = await advanceWorldForCultivator(runAfter, after, result.simulatedDays);
+    //
+    // Deliberately non-fatal. The cultivator's own state is already committed
+    // by the transaction above, and losing that because the world could not be
+    // built would be the worse failure by a wide margin. A null digest is an
+    // honest "nothing reached you", which is also the commonest true answer.
+    let world: Awaited<ReturnType<typeof advanceWorldForCultivator>> = null;
+    let worldError: string | null = null;
+    try {
+        world = await advanceWorldForCultivator(runAfter, after, result.simulatedDays);
+    } catch (error) {
+        worldError = error instanceof Error ? error.message : String(error);
+    }
 
     const rate = computeCultivationRate(
         before,
@@ -734,6 +745,9 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
                     'is a name they hold; anything unattributed must stay unattributed in narration.'
             }
             : null,
+        // Set only when the world pass itself failed. The cultivation result
+        // above still stands and was written; nothing about it is in doubt.
+        worldUnavailable: worldError,
         events: result.events.map(e => ({
             kind: e.kind,
             dayOffset: e.dayOffset,

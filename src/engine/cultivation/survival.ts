@@ -15,7 +15,7 @@
  *   combat_defeat       hp reaches 0
  *   starvation          STARVATION_TURNS consecutive turns at 0 satiety
  *   lifespan_exhausted  age reaches the realm's lifespanYears
- *   stagnation_aging    STAGNATION_YEARS without advancing a rank
+ *   stagnation_aging    stagnationYearsForOrdinal() without advancing a rank
  *   untreated_injuries  LETHAL_UNTREATED_INJURIES untreated, and you fight anyway
  *
  * Note the shape of that last one. Standing at three torn meridians is legal
@@ -28,7 +28,7 @@ import {
     LETHAL_UNTREATED_INJURIES,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
-    STAGNATION_YEARS,
+    stagnationYearsForOrdinal,
     STARVATION_TURNS,
     SUICIDAL_HP_FRACTION,
     type Cultivator,
@@ -136,9 +136,9 @@ export function lifespanRemaining(
  * one the numbers were built for.
  */
 export function stagnationRemaining(
-    cultivator: Pick<Cultivator, 'yearsAtCurrentRealm'>
+    cultivator: Pick<Cultivator, 'yearsAtCurrentRealm' | 'realmOrdinal'>
 ): number {
-    return STAGNATION_YEARS - cultivator.yearsAtCurrentRealm;
+    return stagnationYearsForOrdinal(cultivator.realmOrdinal) - cultivator.yearsAtCurrentRealm;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -244,7 +244,10 @@ export function evaluateDeathConditions(
     // Settling is what happens to a cultivator who stopped climbing. Neither
     // kind of immortal is still climbing, and neither is settling: one is gone
     // and the other is permanently barred, counting down a lifespan instead.
-    if (status === 'none' && cultivator.yearsAtCurrentRealm >= STAGNATION_YEARS) {
+    if (
+        status === 'none' &&
+        cultivator.yearsAtCurrentRealm >= stagnationYearsForOrdinal(cultivator.realmOrdinal)
+    ) {
         return 'stagnation_aging';
     }
 
@@ -269,7 +272,7 @@ export function describeDeath(
         case 'lifespan_exhausted':
             return `${who}: lifespan exhausted at the limit of ${effectiveLifespanYears(cultivator.realmOrdinal, cultivator.immortalStatus ?? 'none')} years. Died of old age.`;
         case 'stagnation_aging':
-            return `${who}: spent ${STAGNATION_YEARS} years without advancing a single rank. Died of old age at a bottleneck never crossed.`;
+            return `${who}: spent ${Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal))} years without advancing a single rank. Died of old age at a bottleneck never crossed.`;
         case 'untreated_injuries':
             return `${who}: fought with ${LETHAL_UNTREATED_INJURIES} or more untreated meridian injuries. The meridians gave out.`;
         case 'starvation':

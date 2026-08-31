@@ -25,14 +25,20 @@ const CULTIVATION_TOOL_DESCRIPTORS: Readonly<Record<string, ToolDescriptor>> = {
         keywords: [
             'cultivate', 'cultivation', 'xianxia', 'realm', 'breakthrough', 'qi', 'seclusion',
             'spirit root', 'talent', 'time skip', 'meditate', 'ladder', 'rank', 'tribulation',
-            'deviation', 'progress', 'injury', 'meridian'
+            'deviation', 'progress', 'injury', 'meridian',
+            'can i', 'assess', 'capability', 'survive', 'attempt', 'understand', 'force',
+            'insight', 'dao', 'comprehension', 'enlightenment',
+            'work', 'job', 'wage', 'earn', 'price', 'market', 'settlement', 'mortal'
         ],
         capabilities: [
             'Server-side spirit-root and attribute rolls from the run seed',
-            'Whole-duration time skips ("ten years") resolved in one deterministic pass',
+            'Whole-duration time skips ("ten years") resolved in one deterministic pass, with the world advancing the same span alongside and a digest filtered through what this cultivator knows',
             'Breakthrough attempts with the full itemised modifier breakdown and raw roll',
             'Permadeath persistence: death closes the run in the same transaction',
-            'The 45-rank realm ladder as a reference table'
+            'The 45-rank realm ladder as a reference table',
+            'Five capability predicates - attempt / survive / succeed / understand / force - answered together with the arithmetic and a reason, instead of "unavailable"',
+            'Comprehension held, where each piece came from, the Dao it adds up to, and what that road opens and closes',
+            'Occupations, wages, local prices and how mortals here treat a cultivator at this rank'
         ],
         estimatedTokenCost: 'variable'
     },
@@ -81,12 +87,20 @@ const CULTIVATION_TOOL_DESCRIPTORS: Readonly<Record<string, ToolDescriptor>> = {
         category: 'sect',
         keywords: [
             'sect', 'join', 'disciple', 'elder', 'promote', 'stipend', 'contribution',
-            'standing', 'righteous', 'demonic', 'membership'
+            'standing', 'righteous', 'demonic', 'membership',
+            'politics', 'patron', 'patronage', 'guest elder', 'denounce', 'accuse',
+            'certify', 'ancestral claim', 'petition', 'appeal', 'hierarchy', 'ancestor',
+            'dormant', 'grievance', 'tribute', 'grant'
         ],
         capabilities: [
             'Admission ordinal enforcement',
             'Promotion requiring both realm ordinal and spent contribution',
-            'Stipend accrued from the in-world clock'
+            'Stipend accrued from the in-world clock',
+            'The access question a house is mechanically selling: what joining would put within reach that is currently absent rather than difficult',
+            'Backing, grant terms and what independence costs the sects nobody backs; guest-elder arrangements that are not membership',
+            'Bought certification of an ancestral claim, published either way, and denunciation that lands only with a certification in hand',
+            'Petitions that travel upward exactly as far as somebody is willing and able to pass them',
+            'The governance stack returned only as far as this cultivator can name it'
         ],
         estimatedTokenCost: 'low'
     },

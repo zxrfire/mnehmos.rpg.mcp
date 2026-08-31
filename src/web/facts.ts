@@ -22,7 +22,7 @@
 
 import {
     LETHAL_UNTREATED_INJURIES,
-    STAGNATION_YEARS,
+    stagnationYearsForOrdinal,
     type AmbientQi,
     BreakthroughResult,
     Cultivator,
@@ -205,7 +205,7 @@ export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): s
     return [
         `realmOrdinal=${cultivator.realmOrdinal} (${rankName(cultivator.realmOrdinal)}), spiritRoot=${cultivator.spiritRoot}, foundation=${cultivator.foundationQuality}.`,
         `untreatedInjuries=${untreatedInjuryCount(cultivator.injuries)} of ${LETHAL_UNTREATED_INJURIES} lethal; ` +
-        `yearsAtRealm=${cultivator.yearsAtCurrentRealm.toFixed(1)} of ${STAGNATION_YEARS} before settling.`,
+        `yearsAtRealm=${cultivator.yearsAtCurrentRealm.toFixed(1)} of ${Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal))} before settling.`,
         describeAmbientInWorld(ambient)
     ];
 }
@@ -504,7 +504,7 @@ function selfNoticing(cultivator: Cultivator): string {
         notes.push('What is left in the purse would not buy a season.');
     }
 
-    if (cultivator.yearsAtCurrentRealm >= STAGNATION_YEARS * 0.7) {
+    if (cultivator.yearsAtCurrentRealm >= stagnationYearsForOrdinal(cultivator.realmOrdinal) * 0.7) {
         notes.push('It has been a very long time since anything moved, and the body has begun to have opinions about that.');
     } else if (cultivator.yearsAtCurrentRealm >= 5) {
         notes.push('Nothing has shifted in years.');

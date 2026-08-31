@@ -15,7 +15,14 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
+import {
+    SECTS,
+    SECT_ANCESTRY,
+    getSect,
+    sectThreat,
+    sectsWithASealedCeiling,
+    WITHDRAWN_POWERS
+} from '../../src/data/cultivation/sects.js';
 import { REGIONS, getRegion } from '../../src/data/cultivation/regions.js';
 import {
     APEX_INSTITUTIONS,
@@ -354,5 +361,196 @@ describe('guest elders', () => {
         expect(getSubsidiariesOf('sect-weir-office').map(p => p.factionId))
             .toContain('sect-gleaners-company');
         expect(getSubsidiariesOf('sect-hollow-bell-wanderers')).toEqual([]);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// ONE RANKING
+//
+// The governance stack and the power table describe the same world and used to
+// be scored on different scales - every faction carried a `powerOrdinal` while
+// the two institutions above all of them carried none, so "who outranks whom"
+// had two incompatible answers. These assertions keep them one ranking.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the stack and the power table are one ranking', () => {
+    /** Realm of whoever a body can actually field. Apex, court or sect. */
+    function actingPowerOf(id: string): number | null {
+        return getApexInstitution(id)?.powerOrdinal
+            ?? getCourt(id)?.powerOrdinal
+            ?? getSect(id)?.powerOrdinal
+            ?? null;
+    }
+
+    it('measures the apexes and courts on the same scale as everyone else', () => {
+        for (const apex of APEX_INSTITUTIONS) {
+            expect(ApexInstitutionSchema.parse(apex).powerOrdinal).toBeGreaterThan(0);
+        }
+        for (const court of COURTS) {
+            expect(CourtSchema.parse(court).powerOrdinal).toBeGreaterThan(0);
+        }
+    });
+
+    it('keeps every holder weaker than what it holds from', () => {
+        // A grant is only worth something if the granter can take it back. An
+        // edge where the tenant outranks the landlord is not a lease, it is a
+        // fiction the tenant is choosing to maintain - and if that is what is
+        // meant, it belongs in the deference model, not in a parentage edge.
+        const offences: string[] = [];
+        for (const p of Object.values(FACTION_PARENTAGE)) {
+            if (!p.parentFactionId) continue;
+            const child = actingPowerOf(p.factionId);
+            const parent = actingPowerOf(p.parentFactionId);
+            if (child == null || parent == null) continue;
+            if (parent <= child) {
+                offences.push(`${p.factionId} (${child}) holds from ${p.parentFactionId} (${parent})`);
+            }
+        }
+        expect(offences, offences.join('; ')).toEqual([]);
+    });
+
+    it('puts each apex above every court beneath it', () => {
+        for (const court of COURTS) {
+            const apex = getApexInstitution(court.apexId);
+            expect(apex, court.apexId).toBeDefined();
+            expect(apex!.powerOrdinal).toBeGreaterThan(court.powerOrdinal);
+        }
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// ACTING POWER IS NOT SEALED POWER
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('what a sect can field, versus what it can spend once', () => {
+    const VOID_REFINEMENT_START = 29;
+    const TRIBULATION_END = 44;
+
+    it('seals only what is worth the formation to hold', () => {
+        // A seal is a formation running for centuries off a vein. Below Void
+        // Refinement nobody would pay for it; above Tribulation Transcendence
+        // nothing in the Late Age was built to hold one.
+        for (const [sectId, record] of Object.entries(SECT_ANCESTRY)) {
+            const sealed = record.dormant;
+            if (!sealed) continue;
+            expect(sealed.realmOrdinal, `${sectId}: ${sealed.name}`)
+                .toBeGreaterThanOrEqual(VOID_REFINEMENT_START);
+            expect(sealed.realmOrdinal, `${sectId}: ${sealed.name}`)
+                .toBeLessThanOrEqual(TRIBULATION_END);
+        }
+    });
+
+    it('uses the whole band rather than one comfortable rung', () => {
+        const sealed = Object.values(SECT_ANCESTRY)
+            .map(r => r.dormant)
+            .filter((d): d is NonNullable<typeof d> => d != null);
+        expect(sealed.length).toBeGreaterThanOrEqual(3);
+        expect(new Set(sealed.map(d => d.sealGrade)).size).toBeGreaterThanOrEqual(3);
+        expect(Math.max(...sealed.map(d => d.realmOrdinal))
+            - Math.min(...sealed.map(d => d.realmOrdinal))).toBeGreaterThanOrEqual(5);
+    });
+
+    it('never folds a sealed ancestor into public strength', () => {
+        // The whole point: an eleven-disciple sect with something under the
+        // mountain must still read as an eleven-disciple sect from outside.
+        for (const [sectId, record] of Object.entries(SECT_ANCESTRY)) {
+            const sealed = record.dormant;
+            if (!sealed) continue;
+            const sect = getSect(sectId);
+            if (!sect) continue;
+            expect(sect.powerOrdinal, `${sectId} absorbed its sealed ancestor`)
+                .not.toBe(sealed.realmOrdinal);
+        }
+    });
+
+    it('reports acting and ceiling separately, and they can differ', () => {
+        const raised = sectsWithASealedCeiling();
+        expect(raised.length).toBeGreaterThan(0);
+        for (const sect of raised) {
+            const threat = sectThreat(sect.id)!;
+            expect(threat.acting).toBe(sect.powerOrdinal);
+            expect(threat.ceiling).toBeGreaterThan(threat.acting);
+            // A ceiling you cannot trigger is not a ceiling.
+            expect(threat.wakeCondition).toBeTruthy();
+            expect(threat.wakeCost).toBeTruthy();
+        }
+    });
+
+    it('keeps at least one sealed asset that outsiders cannot see', () => {
+        // Sects lie in both directions, so the catalog must contain a case a
+        // player has no way to read off the outside of the mountain.
+        const hidden = Object.values(SECT_ANCESTRY)
+            .filter(r => r.dormant && !r.dormant.publiclyKnown);
+        expect(hidden.length).toBeGreaterThan(0);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE UNASSAILABLE CASE
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('holding ground by being unanswerable', () => {
+    const HOLLOW_COURT = 'sect-hollow-court';
+    const VOID_REFINEMENT_START = 29;
+
+    it('separates paying for independence from not being billable', () => {
+        // 'unbacked' means holds nothing and pays continuously. The Court holds
+        // its ground outright and pays nobody, and collapsing the two makes the
+        // unbacked sects' actual precarity vanish.
+        const court = getParentage(HOLLOW_COURT)!;
+        expect(court.governance).toBe('unassailable');
+        expect(court.parentFactionId).toBeNull();
+        expect(court.unbackedReason).toBeNull();
+
+        const unbacked = Object.values(FACTION_PARENTAGE)
+            .filter(p => p.governance === 'unbacked');
+        expect(unbacked.length).toBeGreaterThan(0);
+        for (const p of unbacked) {
+            expect(p.unbackedReason, `${p.factionId} is unbacked without a reason`).toBeTruthy();
+        }
+    });
+
+    it('puts the strongest acting power in the world outside the stack', () => {
+        // The Deep Survey administers the vein system. The one vein it does not
+        // administer is the best one, and the reason is standing on it.
+        const court = getSect(HOLLOW_COURT)!;
+        const strongestApex = Math.max(...APEX_INSTITUTIONS.map(a => a.powerOrdinal));
+        expect(court.powerOrdinal).toBeGreaterThan(strongestApex);
+        expect(court.powerOrdinal).toBe(Math.max(...SECTS.map(s => s.powerOrdinal)));
+        expect(chainToApex(HOLLOW_COURT)).toEqual([]);
+    });
+
+    it('admits on the bar alone, and forecloses inheritance explicitly', () => {
+        const court = getSect(HOLLOW_COURT)!;
+        expect(court.recruits).toBe(true);
+        expect(court.admissionOrdinal).toBe(VOID_REFINEMENT_START);
+        // The one door in the world where lineage buys nothing. If this text
+        // ever softens, the Court becomes an ordinary powerful sect.
+        const requirement = getSectAdmission(HOLLOW_COURT)!.requirement;
+        expect(requirement).toMatch(/fostered out/i);
+    });
+
+    it('keeps the awake ceiling out of the room', () => {
+        // Awake, unsealed, and almost never present. The failure this guards is
+        // the opposite of the sealed one: here the ordinal is honest and the
+        // availability is the lie.
+        const threat = sectThreat(HOLLOW_COURT)!;
+        expect(threat.acting).toBe(44);
+        expect(threat.ceiling).toBe(threat.acting);
+        expect(threat.withdrawn).not.toBeNull();
+        expect(threat.withdrawn!.hasAppearedFor.length).toBeGreaterThan(0);
+
+        // Everyone else at the top of the ladder is asleep under a mountain.
+        for (const [id, record] of Object.entries(SECT_ANCESTRY)) {
+            if (id === HOLLOW_COURT) continue;
+            const sect = getSect(id);
+            if (!sect || sect.powerOrdinal < 41) continue;
+            expect(WITHDRAWN_POWERS[id], `${id} is awake at the last realm too`).toBeUndefined();
+        }
+    });
+
+    it('holds the withdrawn list to almost nothing', () => {
+        // A ceiling several factions hold is not a ceiling.
+        expect(Object.keys(WITHDRAWN_POWERS).length).toBeLessThanOrEqual(2);
     });
 });

@@ -35,7 +35,7 @@
 
 import { z } from 'zod';
 import { rankName } from '../../engine/cultivation/index.js';
-import { hasAccessTo, type InsightDomain } from '../../engine/cultivation/understanding.js';
+import { hasAccessTo } from '../../engine/cultivation/understanding.js';
 import {
     auditAncestralClaim,
     getSect,
@@ -69,8 +69,14 @@ import {
     writeFlag
 } from './cultivation-support.js';
 import { standingOf } from './cultivation-mortal.js';
+import { capabilityActorFor } from './cultivation-perception.js';
+import {
+    assessCapability,
+    makeSubject,
+    requirementsFromOpposition
+} from '../../engine/world/index.js';
 import { KnowledgeGate } from '../../web/knowledge.js';
-import type { Cultivator } from '../../schema/cultivation.js';
+import type { Cultivator, InsightDomain } from '../../schema/cultivation.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -584,7 +590,12 @@ export async function handleDenounce(args: z.infer<typeof DenounceSchema>): Prom
         persistBeliefs(repos.db, [
             {
                 holderId: args.sectId,
-                holderKind: 'faction',
+                // A faction is a holder of memory in the same way a person is,
+                // and the knowledge layer's holder kinds are 'character' and
+                // 'public'. An institution's record of something said in front
+                // of it is the public kind: it is not one person's memory, and
+                // everybody in the house has it.
+                holderKind: 'public',
                 claimKey: `denounced_by:${cultivator.id}`,
                 stance: 'knows',
                 statement: `${cultivator.name} denounced us in public on day ${onDay}.`,
@@ -882,12 +893,62 @@ export async function handleWake(args: z.infer<typeof WakeSchema>): Promise<obje
         wakeCondition: dormant.wakeCondition,
         // Nearly always the ancestor.
         wakeCost: dormant.wakeCost,
+        // The risky action routed through the predicates rather than refused.
+        // The seal is a physical fact, so `attempt` genuinely fails and says
+        // why - which is the one legitimate reason it may fail at all.
+        ifYouTriedItYourself: describeSealAssessment(cultivator, dormant, onDay),
         woken: false,
         whyNot:
             'The condition is a fact about the world, and no action anywhere in this engine lets a ' +
             'caller assert that it has been met. When something happens that satisfies it, it will ' +
             'have happened - and this will resolve against that, not against a claim about it.',
         note: run.turn >= 0 ? records?.standingNote ?? null : null
+    };
+}
+
+/**
+ * What breaking the seal yourself would actually mean.
+ *
+ * The requirements come from the engine's own opposition constructor against
+ * the sleeper's real ordinal, so nothing here is arithmetic this file invented.
+ * `alertness` is zero because a sleeper is not watching, and `attempt` is
+ * blocked by the seal itself - a physical fact, and the only kind of reason
+ * `attempt` is ever permitted to fail for.
+ */
+function describeSealAssessment(
+    cultivator: Cultivator,
+    dormant: { name: string; realmOrdinal: number; restingPlace: string },
+    onDay: number
+): Record<string, unknown> {
+    const subject = makeSubject({
+        kind: 'formation',
+        id: `seal:${dormant.name}`,
+        name: `the seal at ${dormant.restingPlace}`,
+        requirements: requirementsFromOpposition({
+            id: `seal:${dormant.name}`,
+            name: dormant.name,
+            realmOrdinal: dormant.realmOrdinal,
+            alertness: 0
+        }),
+        // Shut, and there is no key row anywhere that opens it.
+        sealed: true,
+        keyId: null
+    });
+    const assessment = assessCapability(capabilityActorFor(cultivator), subject, onDay);
+    return {
+        sleeperRank: rankName(dormant.realmOrdinal),
+        attempt: {
+            holds: assessment.attempt.holds,
+            blockers: assessment.attempt.blockers,
+            reason: assessment.attempt.reason
+        },
+        survive: { likelihood: assessment.survive.likelihood, reason: assessment.survive.reason },
+        force: { likelihood: assessment.force.likelihood, reason: assessment.force.reason },
+        understand: {
+            likelihood: assessment.understand.likelihood,
+            reason: assessment.understand.reason
+        },
+        summary: assessment.summary
     };
 }
 

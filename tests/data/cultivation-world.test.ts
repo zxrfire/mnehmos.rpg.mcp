@@ -354,7 +354,7 @@ describe('faction distinctness pass', () => {
     it('makes the Hollow Court the extreme case of the two metrics disagreeing', () => {
         const court = getSect('sect-hollow-court')!;
         expect(getProductionTier(court.id)!.reliableOrdinal).toBe(0);
-        expect(court.powerOrdinal).toBe(40);
+        expect(court.powerOrdinal).toBe(44);
     });
 });
 

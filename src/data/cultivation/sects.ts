@@ -150,6 +150,30 @@ export interface MillennialOffering {
     consequence: string;
 }
 
+/**
+ * What the seal itself is, which decides what it can hold and for how long.
+ *
+ * A seal is a formation running continuously for centuries, and the grade is
+ * mostly a statement about how much it burns to do that. The band it can hold
+ * runs from Void Refinement to Tribulation Transcendence - below that nobody
+ * would pay for it, and above it nothing in the Late Age has been built.
+ *
+ *   crude       cheap to raise and expensive to keep. Burns vein output
+ *               continuously, degrades measurably within a lifetime, and the
+ *               sleeper thins inside it. Holds the bottom of the band.
+ *   sound       the ordinary standard, and the ordinary reason a sect is poor.
+ *   masterwork  built by somebody who is not available any more. Draws almost
+ *               nothing, has not been serviced in centuries, and is the reason
+ *               a small sect can be sitting on something enormous without the
+ *               expenditure that would give it away.
+ *
+ * The grade is therefore also a tell. A sect running a crude seal cannot hide
+ * it - the vein output does not add up and the Consortium can read that off a
+ * ledger. A masterwork is invisible, which is exactly why nobody can say which
+ * quiet mountain has something under it.
+ */
+export type SealGrade = 'crude' | 'sound' | 'masterwork';
+
 export interface DormantAncestor {
     name: string;
     /** Where they are, in one concrete line. */
@@ -171,16 +195,24 @@ export interface DormantAncestor {
      * tell which sects have something under the mountain, because sects lie
      * about it in both directions. See `sealedCeiling`.
      *
-     * Never low, and the reason is economic rather than dramatic. Holding a
-     * body and a soul intact for centuries costs a formation nobody in the
-     * Late Age can build and a vein to run it off, so a sect seals somebody
-     * only when what is kept is worth more than the ground it stands on.
-     * Grand Ascension is the practical floor; the three here are Tribulation
-     * Transcendence. A lower ordinal is a claim about the SEALER rather than
-     * the sealed - somebody with an unreasonable amount of money and a
-     * personal reason - and it has to be said out loud in `wakeCondition`.
+     * The band is Void Refinement to Tribulation Transcendence, and which end
+     * depends on `sealGrade` rather than on the sect. Holding a body and a soul
+     * intact costs a formation running continuously off a vein, so the floor is
+     * economic: below Void Refinement nobody would spend it, and above
+     * Tribulation Transcendence nothing in the Late Age was ever built to hold.
+     *
+     * A crude seal holds the bottom of that band and eats the vein doing it. A
+     * masterwork holds the top and draws almost nothing, which is why the
+     * dangerous case is a small sect with a very old formation nobody can read.
+     *
+     * An ordinal below the band is not forbidden, but it is a claim about the
+     * SEALER rather than the sealed - somebody with an unreasonable amount of
+     * money and a personal reason - and it has to be said out loud in
+     * `wakeCondition` rather than left for a reader to notice.
      */
     realmOrdinal: number;
+    /** What is holding them, which decides both the band and the running cost. */
+    sealGrade: SealGrade;
     /** The circumstance under which the sect would actually break the glass. */
     wakeCondition: string;
     /** What waking costs. Nearly always the ancestor. */
@@ -734,16 +766,24 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         id: 'sect-hollow-court',
         name: 'The Hollow Court',
         alignment: 'neutral',
-        powerOrdinal: 40,
+        // The highest acting power in the world, and the only faction whose
+        // Tribulation Transcenders are awake. Everyone else at this ordinal is
+        // sealed under a mountain. See the note on `recruits` below: this
+        // number is real and it is almost never in the room.
+        powerOrdinal: 44,
         ranks: ['Guest of the Court', 'Seated', 'Second Seat', 'First Seat'],
-        admissionOrdinal: 37,
+        admissionOrdinal: 29,
         stipend: [500, 1_500, 4_000, 12_000],
         teaches: [],
         signatureTechniqueId: null,
         specialities: ['defense'],
         rivals: [],
-        territory: 'Four mountains, one occupant each, and a great deal of quiet in between.',
-        recruits: false,
+        territory: 'Four mountains standing on the richest vein anyone has ever surveyed, one occupant each, and a great deal of quiet in between.',
+        // They do recruit, and the bar is the whole character of the place: Void
+        // Refinement floor, and evidence you could reach the last realm. Nothing
+        // else counts, which includes being somebody's child - see the admission
+        // requirement.
+        recruits: true,
         compound: {
             inherited: true,
             formationNodesTotal: 200,
@@ -751,7 +791,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Stone seats arranged for an audience of two hundred, occupied by four people who have not moved them.'
         },
         description:
-            'Grand Ascension cultivators who reached the Lid and refused to step through. They have nothing left worth taking, which makes them nearly invincible and almost entirely inert. They will answer a direct question honestly, since honesty costs them nothing now, and they will not get up to do it. They do not admit members; the four seats were filled by people who arrived already qualified.'
+            'The holy ground of cultivation, and the only place in the world where the last realm is awake rather than sealed. Everyone here is working, continuously, on the crossing, which is why almost nobody has seen one of them: presence at the Court is measured in decades of absence. They hold the best vein in existence, they pay nobody for it, and no institution has ever found an instrument by which to raise the subject. What they are is not inertia. It is the only concentration of attention in the world pointed entirely at the Lid, and a cultivator admitted here has stopped participating in every other thing the world does.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1832,9 +1872,9 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         requirement: 'The Wardens do not take applicants. People who arrive at the gate are turned around, once, politely.'
     },
     'sect-hollow-court': {
-        minOrdinal: 37,
+        minOrdinal: 29,
         preferredRoots: [],
-        requirement: 'Grand Ascension, and nothing left that anyone could use against you. The Court does not admit; it notices.'
+        requirement: 'Void Refinement at the floor, and evidence - not ambition, evidence - that the last realm is reachable from where you stand. Nothing else is considered, and the exclusion is enforced downward as hard as upward: the children of the seated are fostered out to allied sects as a matter of course, at whatever rank they happen to be, and are not reconsidered later. In a world that runs on lineage, patronage and inherited claim, this is the only door where none of it is worth anything, which is most of why the Court is spoken of the way it is.'
     },
     'sect-the-severed': {
         minOrdinal: 5,
@@ -2138,7 +2178,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'The Kindler, first Flame Sovereign',
                 fate: 'dormant',
-                realmOrdinal: 41,
+                realmOrdinal: 37,
                 yearsAgo: 1_200,
                 rememberedFor: 'Took the caldera, signed the transformation contract in full, and went down into the vent rather than finish the terms above ground.'
             },
@@ -2157,7 +2197,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             name: 'The Kindler',
             restingPlace: 'The vent under the caldera floor, behind a seal the sect maintains and has never opened.',
             dormantYears: 1_200,
-            realmOrdinal: 41,
+            realmOrdinal: 37,
+            sealGrade: 'sound',
             wakeCondition:
                 'The caldera itself is breached, or a Flame Sovereign dies without a named successor. The sect has come within one death of the second condition twice.',
             wakeCost:
@@ -2199,6 +2240,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
             dormantYears: 2_000,
             realmOrdinal: 42,
+            sealGrade: 'masterwork',
             wakeCondition: 'The library is entered by force. Not theft, not trespass - force.',
             wakeCost:
                 'She wakes cold and unhurried, and the Court\'s own hall does not survive it. The Court has written down that this is acceptable.',
@@ -2218,7 +2260,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'Xu Ci, the Second Standing Anchor',
                 fate: 'dormant',
-                realmOrdinal: 41,
+                realmOrdinal: 33,
                 yearsAgo: 700,
                 rememberedFor: 'Drove the replacement eastern nail personally, then had herself entombed under the datum stone rather than retire, on the argument that a nail should stay where it is.'
             },
@@ -2237,7 +2279,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             name: 'Xu Ci',
             restingPlace: 'Under the datum stone, in the chamber every measurement in the region is ultimately taken from.',
             dormantYears: 700,
-            realmOrdinal: 41,
+            realmOrdinal: 33,
+            sealGrade: 'crude',
             wakeCondition:
                 'Two perimeters lost in a single season. One is a shortfall the house posts publicly; two is the condition.',
             wakeCost:
@@ -2622,6 +2665,48 @@ const SECTS_BY_TAUGHT_TECHNIQUE: ReadonlyMap<string, readonly SectEntry[]> = (()
 // most dangerous thing in the province and afterwards has nothing at all.
 // ──────────────────────────────────────────────────────────────────────
 
+/**
+ * A power that is awake, unsealed, and almost never present.
+ *
+ * The third case, and the one the Hollow Court needed. A sealed ancestor
+ * CANNOT act without being spent. A withdrawn power CAN act, at full strength,
+ * any time it likes - and does not, because its attention is committed to
+ * something that does not leave room for the province.
+ *
+ * Mechanically this is the opposite failure from folding a sealed ancestor
+ * into `powerOrdinal`. Here the ordinal is honest and the AVAILABILITY is the
+ * lie: reading the Court's 44 as a thing that will meet you at a border gets
+ * the world wrong in the other direction. What is true is that it could, that
+ * it will not, and that nothing anyone does makes the second part a promise.
+ */
+export interface WithdrawnPower {
+    /** What the attention is committed to instead. */
+    occupiedBy: string;
+    /** Roughly how often anyone sees one, in plain terms. */
+    seenAs: string;
+    /** The circumstances under which it has actually come out. Short list, on purpose. */
+    hasAppearedFor: readonly string[];
+}
+
+/**
+ * Keyed by sect id. One entry, and it should stay close to one: a world where
+ * several factions hold an unreachable ceiling is a world where the ceiling
+ * stops meaning anything.
+ */
+export const WITHDRAWN_POWERS: Record<string, WithdrawnPower> = {
+    'sect-hollow-court': {
+        occupiedBy:
+            'The crossing. Everyone seated is working on it continuously, and has been for long enough that the province measures their presence in decades of absence rather than in appearances.',
+        seenAs:
+            'A generation of a regional sect can pass without anyone at that sect meeting one. The mountains are visited; the occupants are not.',
+        hasAppearedFor: [
+            'a direct question asked in person, which is answered honestly and briefly, because honesty costs them nothing',
+            'somebody arriving at the gate who actually meets the bar, which has happened four times',
+            'interference with the vein itself, which has happened once and is not described in any surviving record'
+        ]
+    }
+};
+
 export interface SectThreat {
     /** Strongest member who will actually answer. The public number. */
     acting: number;
@@ -2636,6 +2721,12 @@ export interface SectThreat {
     wakeCost: string | null;
     /** False when outsiders do not know there is anything under the mountain. */
     sealedIsPublic: boolean;
+    /**
+     * Set where `acting` is real, awake, and effectively never in the room.
+     * An engine deciding whether a border will actually be defended must read
+     * this before it reads `acting`.
+     */
+    withdrawn: WithdrawnPower | null;
 }
 
 /**
@@ -2655,7 +2746,8 @@ export function sectThreat(id: string): SectThreat | undefined {
         ceiling: Math.max(sect.powerOrdinal, sealed?.realmOrdinal ?? 0),
         wakeCondition: sealed?.wakeCondition ?? null,
         wakeCost: sealed?.wakeCost ?? null,
-        sealedIsPublic: sealed?.publiclyKnown ?? false
+        sealedIsPublic: sealed?.publiclyKnown ?? false,
+        withdrawn: WITHDRAWN_POWERS[id] ?? null
     };
 }
 
