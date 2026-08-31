@@ -649,6 +649,66 @@ export function migrate(db: Database.Database) {
 
   // Cultivation: cultivators, injuries, runs, techniques, alchemy, sects
   migrateCultivation(db);
+  widenAgentProviderCheck(db);
+}
+
+/**
+ * Widen agents.provider to accept the Anthropic and Ollama runtime providers.
+ *
+ * The original CHECK allowed only ('openai', 'openrouter'), so on a database
+ * created before those providers existed every agent_manage write for a Claude
+ * or Ollama NPC would fail on a raw SQLite constraint error. SQLite has no
+ * ALTER ... DROP CONSTRAINT, so the table has to be rebuilt.
+ *
+ * Guarded on the old constraint text, which makes this a no-op on fresh
+ * databases and on databases already migrated.
+ */
+function widenAgentProviderCheck(db: Database.Database): void {
+  const row = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='agents'")
+    .get() as { sql: string } | undefined;
+  if (!row?.sql.includes("provider IN ('openai', 'openrouter')")) return;
+
+  console.error('[Migration] Widening agents.provider CHECK for anthropic/ollama');
+
+  // Foreign keys must be off while the referenced table is swapped, otherwise
+  // the DROP cascades into child rows we are about to re-point.
+  const fkEnabled = db.pragma('foreign_keys', { simple: true }) === 1;
+  if (fkEnabled) db.pragma('foreign_keys = OFF');
+  try {
+    db.exec(`
+      CREATE TABLE agents_migrated (
+        id TEXT PRIMARY KEY,
+        character_id TEXT NOT NULL UNIQUE REFERENCES characters(id) ON DELETE CASCADE,
+        provider TEXT NOT NULL CHECK (provider IN ('anthropic', 'ollama', 'openai', 'openrouter')),
+        model TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'retired')),
+        auto_on_turn INTEGER NOT NULL DEFAULT 0,
+        auto_on_legendary INTEGER NOT NULL DEFAULT 0,
+        temperature REAL DEFAULT 0.7,
+        max_tokens INTEGER DEFAULT 800,
+        budget_tokens INTEGER,
+        competency_override TEXT,
+        tokens_used INTEGER NOT NULL DEFAULT 0,
+        timeout_ms INTEGER NOT NULL DEFAULT 25000,
+        consecutive_failures INTEGER NOT NULL DEFAULT 0,
+        circuit_state TEXT NOT NULL DEFAULT 'closed' CHECK (circuit_state IN ('closed', 'open', 'half_open')),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      INSERT INTO agents_migrated SELECT
+        id, character_id, provider, model, status, auto_on_turn, auto_on_legendary,
+        temperature, max_tokens, budget_tokens, competency_override, tokens_used,
+        timeout_ms, consecutive_failures, circuit_state, created_at, updated_at
+      FROM agents;
+      DROP TABLE agents;
+      ALTER TABLE agents_migrated RENAME TO agents;
+      CREATE INDEX IF NOT EXISTS idx_agents_character ON agents(character_id);
+      CREATE INDEX IF NOT EXISTS idx_agents_auto_on_turn ON agents(auto_on_turn) WHERE auto_on_turn = 1;
+    `);
+  } finally {
+    if (fkEnabled) db.pragma('foreign_keys = ON');
+  }
 }
 
 function runMigrations(db: Database.Database) {
@@ -1000,7 +1060,7 @@ function runMigrations(db: Database.Database) {
     CREATE TABLE IF NOT EXISTS agents (
       id TEXT PRIMARY KEY,
       character_id TEXT NOT NULL UNIQUE REFERENCES characters(id) ON DELETE CASCADE,
-      provider TEXT NOT NULL CHECK (provider IN ('openai', 'openrouter')),
+      provider TEXT NOT NULL CHECK (provider IN ('anthropic', 'ollama', 'openai', 'openrouter')),
       model TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'retired')),
       auto_on_turn INTEGER NOT NULL DEFAULT 0,

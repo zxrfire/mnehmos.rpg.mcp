@@ -1,10 +1,13 @@
 import { z } from 'zod';
+import { PROVIDER_NAMES } from '../agent/provider/config.js';
 
 // ============================================================================
 // AGENT — LLM-driven character bindings
 // ============================================================================
 
-export const AgentProviderSchema = z.enum(['openai', 'openrouter']);
+// PROVIDER_NAMES is the one place the provider union is declared; deriving
+// the schema from it keeps zod, the DB CHECK, and the factory in step.
+export const AgentProviderSchema = z.enum(PROVIDER_NAMES);
 export type AgentProvider = z.infer<typeof AgentProviderSchema>;
 
 export const AgentStatusSchema = z.enum(['active', 'paused', 'retired']);

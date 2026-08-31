@@ -26,6 +26,7 @@ import {
 } from './agent-manage.js';
 import { buildCharacterStateSlice } from '../../agent/prompt/slices/character_state.js';
 import { CharacterOriginSchema } from '../../schema/character.js';
+import { AgentProviderSchema } from '../../schema/agent.js';
 import { CompetencyOverrideSchema } from '../../schema/agent.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -109,7 +110,7 @@ const NewCreateSchema = z.object({
     }).optional(),
 
     agent: z.object({
-        provider: z.enum(['openai', 'openrouter']),
+        provider: AgentProviderSchema,
         model: z.string().min(1),
         competencyOverride: CompetencyOverrideSchema.nullable().optional()
             .describe('Fixed model/reasoning policy for this NPC agent; overrides INT-based selection'),
