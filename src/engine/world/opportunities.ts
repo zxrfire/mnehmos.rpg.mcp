@@ -151,9 +151,19 @@ export function isOpportunityOpen(opp: OpportunityWindow, day: number): boolean 
     return w !== null;
 }
 
-/** The window containing this day, or null. */
-export function windowContaining(opp: OpportunityWindow, day: number): Window | null {
-    if (opp.claimed && opp.recurrenceDays === null) return null;
+/**
+ * The window containing this day, or null.
+ *
+ * `includeClaimed` is for the miss report: a one-shot that somebody else took
+ * still HAD a window, and reporting that window is the difference between "you
+ * arrived late" and "a rival got there first".
+ */
+export function windowContaining(
+    opp: OpportunityWindow,
+    day: number,
+    includeClaimed = false
+): Window | null {
+    if (opp.claimed && opp.recurrenceDays === null && !includeClaimed) return null;
     if (day < opp.opensOnDay) return null;
     if (opp.endsAfterDay !== null && day > opp.endsAfterDay) return null;
 
@@ -173,8 +183,12 @@ export function windowContaining(opp: OpportunityWindow, day: number): Window | 
 }
 
 /** The next window opening at or after `fromDay`, or null when there is none. */
-export function nextWindow(opp: OpportunityWindow, fromDay: number): Window | null {
-    if (opp.claimed && opp.recurrenceDays === null) return null;
+export function nextWindow(
+    opp: OpportunityWindow,
+    fromDay: number,
+    includeClaimed = false
+): Window | null {
+    if (opp.claimed && opp.recurrenceDays === null && !includeClaimed) return null;
 
     if (opp.recurrenceDays === null || opp.recurrenceDays <= 0) {
         if (fromDay >= opp.opensOnDay + opp.durationDays) return null;
@@ -183,7 +197,7 @@ export function nextWindow(opp: OpportunityWindow, fromDay: number): Window | nu
         return { opensOnDay: opens, closesOnDay: opp.opensOnDay + opp.durationDays, index: 0 };
     }
 
-    const current = windowContaining(opp, fromDay);
+    const current = windowContaining(opp, fromDay, includeClaimed);
     if (current) return { ...current, opensOnDay: Math.max(fromDay, current.opensOnDay) };
 
     const elapsed = fromDay - opp.opensOnDay;
@@ -205,12 +219,13 @@ export function windowsBetween(
     opp: OpportunityWindow,
     fromDay: number,
     toDay: number,
-    limit = 16
+    limit = 16,
+    includeClaimed = false
 ): Window[] {
     const out: Window[] = [];
     let cursor = fromDay;
     while (out.length < limit) {
-        const w = nextWindow(opp, cursor);
+        const w = nextWindow(opp, cursor, includeClaimed);
         if (!w || w.opensOnDay > toDay) break;
         out.push(w);
         const step = opp.recurrenceDays && opp.recurrenceDays > 0 ? opp.recurrenceDays : opp.durationDays + 1;
@@ -315,7 +330,9 @@ export function missedWindowsFor(
     limit = 8
 ): MissedWindow[] {
     const out: MissedWindow[] = [];
-    for (const w of windowsBetween(opp, fromDay, toDay, limit)) {
+    // Claimed windows are included: a rival taking it is a miss, and a
+    // materially different one from the window simply lapsing.
+    for (const w of windowsBetween(opp, fromDay, toDay, limit, true)) {
         // A window still open at the end of the span has not been missed yet.
         if (w.closesOnDay > toDay) continue;
         const takenByObserver =
