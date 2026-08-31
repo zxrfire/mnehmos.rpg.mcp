@@ -2216,7 +2216,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             dormantYears: 900,
             realmOrdinal: 40,
             sealGrade: 'masterwork',
-            sealReason: 'final_breath',
+            sealReason: 'protector',
             wakeCondition:
                 'The lightning curriculum is taken out of the Court by force, or the floating stone is brought down. Both have been attempted; neither got far enough to find out.',
             wakeCost:
@@ -2362,7 +2362,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             dormantYears: 700,
             realmOrdinal: 33,
             sealGrade: 'crude',
-            sealReason: 'protector',
+            sealReason: 'final_breath',
             wakeCondition:
                 'Two perimeters lost in a single season. One is a shortfall the house posts publicly; two is the condition.',
             wakeCost:
@@ -2517,7 +2517,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             dormantYears: 3_100,
             realmOrdinal: 44,
             sealGrade: 'masterwork',
-            sealReason: 'final_breath',
+            sealReason: 'protector',
             wakeCondition:
                 'The fire is found to have gone out, or to be going out. Nothing else, and the Wardens have never described what either would look like to somebody who was not one of them.',
             wakeCost:
@@ -2734,7 +2734,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             dormantYears: 2_400,
             realmOrdinal: 39,
             sealGrade: 'sound',
-            sealReason: 'protector',
+            sealReason: 'final_breath',
             wakeCondition:
                 'The datum itself is moved, or is proved to have moved. The house maintains that the second is impossible and audits for it quarterly anyway.',
             wakeCost:

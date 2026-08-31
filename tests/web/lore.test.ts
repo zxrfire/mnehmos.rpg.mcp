@@ -43,7 +43,13 @@ import {
     type LoreCatalog,
     type Mentionable
 } from '../../src/web/lore';
-import { offerHearing, recordHearing, speakableFor } from '../../src/web/hearsay';
+import {
+    SPOKEN_NAME_CHANCE,
+    offerHearing,
+    recordHearing,
+    speakableFor,
+    type AnswerReach
+} from '../../src/web/hearsay';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support';
 import { makeGame } from './harness';
@@ -486,6 +492,216 @@ describe('the overheard channel', () => {
 
         for (let i = 0; i < 40; i++) {
             expect(offerHearing({ repos, gate, cultivator, run, occasion: `mono-${i}` })).toBeNull();
+        }
+    });
+});
+
+/**
+ * Asking has to deliver a name, not describe a conversation.
+ *
+ * A live playtest found the gap these tests close. The answering layer was
+ * producing a good sentence about the SHAPE of an exchange - "answers straight
+ * away and at length, and none of it sits with anything else you have been
+ * told" - and the player came away with nothing to write down. A fragment was
+ * available and was discarded before it reached the page.
+ *
+ * discovery.md is explicit that a character saying a name flatly is the primary
+ * way names enter a player's world. If the one deliberate act the player can
+ * spend a turn on is the only channel that never yields one, the lesson learned
+ * is that asking does not work, which is the opposite of what asking.md is for.
+ */
+describe('asking is a real act with a real payoff', () => {
+    async function withSpeaker(seed: string, speaker: {
+        id: string; name: string; ordinal: number; sectId?: string; sectRank?: string;
+    }) {
+        const { db, game } = makeGame({ seed });
+        const { cultivator } = await game.newRun('Villager');
+        const gate = new KnowledgeGate(db);
+        const repos = ensureCultivationDb();
+        placePerson(db, speaker.id, speaker.name, speaker.ordinal, {
+            sectId: speaker.sectId ?? null,
+            sectRank: speaker.sectRank ?? null
+        });
+        const asked = repos.cultivators.roster().find(r => r.id === speaker.id)!;
+        return { db, gate, repos, cultivator, run: game.state().run as never, asked };
+    }
+
+    /** How often a name falls out of an answer, over enough occasions to be a rate. */
+    async function rateFor(reach: AnswerReach): Promise<number> {
+        const { gate, repos, cultivator, run, asked } =
+            await withSpeaker(`rate-${reach}`, { id: 'npc-x', name: 'The Asked', ordinal: 9 });
+        const tries = 200;
+        let fired = 0;
+        for (let i = 0; i < tries; i++) {
+            const heard = offerHearing({
+                repos, gate, cultivator, run, addressing: asked,
+                occasion: `ask-${reach}-${i}`, intent: 'asked', reach
+            });
+            if (heard) fired++;
+            // Deliberately not recorded: this measures the roll, not how fast
+            // one speaker's vocabulary gets used up.
+        }
+        return fired / tries;
+    }
+
+    it('pays off far more often than walking past somebody does', async () => {
+        for (const reach of ['answers', 'partial', 'guesses'] as const) {
+            const rate = await rateFor(reach);
+            expect(rate, `${reach} paid off at ${rate}`).toBeGreaterThan(SPOKEN_NAME_CHANCE);
+        }
+    });
+
+    it('makes the confident guesser the most productive person to ask', async () => {
+        // asking.md: "He may guess, confidently and wrongly." Somebody filling
+        // a gap fills it with proper nouns, which makes the least reliable
+        // person in the room the best source of names in the game.
+        expect(await rateFor('guesses')).toBeGreaterThan(await rateFor('answers'));
+        expect(await rateFor('answers')).toBeGreaterThan(await rateFor('deflects'));
+    });
+
+    it('still lets a refusal mention one thing on the way out', async () => {
+        // The entire reason a deflection is worth sitting through.
+        expect(await rateFor('deflects')).toBeGreaterThan(0);
+    });
+
+    it('teaches nothing at all from a shrug', async () => {
+        expect(await rateFor('blank')).toBe(0);
+    });
+
+    it('records a guess as assumed rather than as told', async () => {
+        const { gate, repos, cultivator, run, asked } =
+            await withSpeaker('guess-src', { id: 'npc-g', name: 'The Guesser', ordinal: 4 });
+
+        let heard = null;
+        for (let i = 0; i < 20 && !heard; i++) {
+            heard = offerHearing({
+                repos, gate, cultivator, run, addressing: asked,
+                occasion: `g-${i}`, intent: 'asked', reach: 'guesses'
+            });
+        }
+        expect(heard).not.toBeNull();
+        expect(heard!.sourceKind).toBe('assumed');
+        expect(heard!.note).toMatch(/filling a gap/i);
+        expect(heard!.note).toMatch(/nothing to do with what was asked/i);
+
+        recordHearing(gate, cultivator, run, heard!);
+        const row = gate.awareness(cultivator.id).find(r => r.name === heard!.names[0].name)!;
+        // A name the player now holds, from somebody who was making it up, and
+        // they have no way at all to tell. That is the correct state.
+        expect(row.sourceKind).toBe('assumed');
+        expect(row.stance).toBe('suspects');
+    });
+
+    it('separates a freely given answer from a name dropped in passing', async () => {
+        const { gate, repos, cultivator, run, asked } =
+            await withSpeaker('answer-src', {
+                id: 'npc-a', name: 'The Archivist', ordinal: 14,
+                sectId: 'sect-lantern-hall', sectRank: 'Lantern Bearer'
+            });
+
+        let asking = null;
+        let passing = null;
+        for (let i = 0; i < 60 && !(asking && passing); i++) {
+            asking ??= offerHearing({
+                repos, gate, cultivator, run, addressing: asked,
+                occasion: `a-${i}`, intent: 'asked', reach: 'answers'
+            });
+            passing ??= offerHearing({
+                repos, gate, cultivator, run, addressing: asked, occasion: `p-${i}`
+            });
+        }
+        expect(asking).not.toBeNull();
+        expect(passing).not.toBeNull();
+
+        expect(asking!.sourceKind).toBe('told');
+        expect(asking!.note).toMatch(/said it when asked/i);
+        expect(asking!.note).toMatch(/freely given/i);
+        expect(passing!.sourceKind).toBe('told');
+        expect(passing!.note).toMatch(/in passing/i);
+    });
+
+    it('discounts what somebody says after they have already refused', async () => {
+        const { gate, repos, cultivator, run, asked } =
+            await withSpeaker('deflect-conf', {
+                id: 'npc-o', name: 'The Official', ordinal: 16,
+                sectId: 'sect-lantern-hall', sectRank: 'Lantern Bearer'
+            });
+
+        let answered = null;
+        let deflected = null;
+        for (let i = 0; i < 80 && !(answered && deflected); i++) {
+            answered ??= offerHearing({
+                repos, gate, cultivator, run, addressing: asked,
+                occasion: `ans-${i}`, intent: 'asked', reach: 'answers'
+            });
+            deflected ??= offerHearing({
+                repos, gate, cultivator, run, addressing: asked,
+                occasion: `def-${i}`, intent: 'asked', reach: 'deflects'
+            });
+        }
+        expect(deflected!.confidence).toBeLessThan(answered!.confidence);
+        expect(deflected!.note).toMatch(/on the way out/i);
+    });
+
+    it('leaves every existing call site on the ambient rate', async () => {
+        // No `intent` means what it has always meant. Adding a third call site
+        // must not change the behaviour of the two that were already wired.
+        const { gate, repos, cultivator, run, asked } =
+            await withSpeaker('ambient', { id: 'npc-b', name: 'The Bystander', ordinal: 6 });
+        let fired = 0;
+        for (let i = 0; i < 200; i++) {
+            if (offerHearing({
+                repos, gate, cultivator, run, addressing: asked, occasion: `amb-${i}`
+            })) fired++;
+        }
+        expect(Math.abs(fired / 200 - SPOKEN_NAME_CHANCE)).toBeLessThan(0.1);
+    });
+});
+
+/**
+ * Loitering is the cheapest action a poor cultivator has.
+ *
+ * The overheard channel carries six times the deep band's weight - it is the
+ * only route by which the material a player cannot ask about ever reaches them
+ * - and the playtest found it had no deliberate trigger. Standing in a market
+ * with no business there is exactly how this is supposed to be harvested.
+ */
+describe('listening on purpose', () => {
+    it('pays off far more often than walking through the square', async () => {
+        const { db, game } = makeGame({ seed: 'listening' });
+        const { cultivator } = await game.newRun('Villager');
+        const gate = new KnowledgeGate(db);
+        const repos = ensureCultivationDb();
+        placePerson(db, 'npc-one', 'The First', 15, { sectId: 'sect-lantern-hall' });
+        placePerson(db, 'npc-two', 'The Second', 18, { sectId: 'sect-verdant-spring-hall' });
+        const run = game.state().run as never;
+
+        let ambient = 0;
+        let listening = 0;
+        for (let i = 0; i < 200; i++) {
+            if (offerHearing({ repos, gate, cultivator, run, occasion: `amb-${i}` })) ambient++;
+            if (offerHearing({
+                repos, gate, cultivator, run, occasion: `lis-${i}`, intent: 'listening'
+            })) listening++;
+        }
+        expect(listening).toBeGreaterThan(ambient * 2);
+        // And not every time. Two people on the far side of a wall are usually
+        // talking about the price of salt.
+        expect(listening).toBeLessThan(200);
+    });
+
+    it('is still impossible with nobody to overhear', async () => {
+        const { db, game } = makeGame({ seed: 'listen-alone' });
+        const { cultivator } = await game.newRun('Villager');
+        const gate = new KnowledgeGate(db);
+        const repos = ensureCultivationDb();
+        placePerson(db, 'npc-one', 'The Only', 12);
+        const run = game.state().run as never;
+
+        for (let i = 0; i < 60; i++) {
+            expect(offerHearing({
+                repos, gate, cultivator, run, occasion: `la-${i}`, intent: 'listening'
+            })).toBeNull();
         }
     });
 });

@@ -98,7 +98,14 @@ import {
 } from './entities.js';
 import { KnowledgeGate, placeKey, type AwarenessRow } from './knowledge.js';
 import { askedAbout } from './asked.js';
-import { offerHearing, othersPresent, recordHearing, type Hearing } from './hearsay.js';
+import {
+    offerHearing,
+    othersPresent,
+    recordHearing,
+    type AnswerReach,
+    type Hearing,
+    type HearingIntent
+} from './hearsay.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { advanceWorldForCultivator, worldForRun } from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
@@ -902,8 +909,23 @@ export class GameService {
             case 'gather':
                 return this.gather(run, cultivator, ambient, action.target);
 
-            case 'wait':
-                return this.shortSkip(run, cultivator, ambient, WAITING_FOCUS, 'Waiting');
+            case 'wait': {
+                const waiting = await this.shortSkip(run, cultivator, ambient, WAITING_FOCUS, 'Waiting');
+                const heard = this.hear(cultivator, run, 'wait', null, { intent: 'listening' });
+                if (heard) {
+                    waiting.hearing = heard;
+                    addHearing(waiting.facts, heard);
+                    waiting.calls.push({
+                        name: 'knowledge.learn',
+                        action: 'name_overheard',
+                        summary:
+                            `"${heard.names[0].name}" was overheard while loitering. Recorded at the ` +
+                            'lowest stance, source overheard.',
+                        ok: true
+                    });
+                }
+                return waiting;
+            }
 
             case 'eat':
                 return this.eat(run, cultivator);
@@ -1523,13 +1545,22 @@ export class GameService {
                 `${asked.name} said it at ${placeName(cultivator)}.`)
             : false;
 
+        // The last mile. `asked.ts` decides how far the answer got; what falls
+        // out of it is a name said flatly, which discovery.md calls the primary
+        // way names enter a player's world. Written before the prose exists.
+        const dropped = this.hear(
+            cultivator, run, `ask:${asked.id}:${topic}`, asked.id,
+            { intent: 'asked', reach: answer.reach });
+
         const facts = factsForToolResult(
             `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
             answer.lines
         );
         facts.structure.push(...answer.structure);
+        if (dropped) addHearing(facts, dropped);
 
         const execution = this.freeAction(run, 'interact', facts);
+        execution.hearing = dropped;
         execution.calls = [
             {
                 name: 'engine.askedAbout',
@@ -1548,6 +1579,17 @@ export class GameService {
                 summary:
                     `${asked.name} recorded as believed, source told: they answered, and answering ` +
                     'is how a stranger stops being one. A shrug would not have written this row.',
+                ok: true
+            });
+        }
+        if (dropped) {
+            execution.calls.push({
+                name: 'knowledge.learn',
+                action: 'name_dropped',
+                summary:
+                    `"${dropped.names[0].name}" fell out of the answer and was recorded at the ` +
+                    `lowest stance, source ${dropped.sourceKind}. The player has the word and ` +
+                    'nothing else.',
                 ok: true
             });
         }
@@ -2600,7 +2642,8 @@ export class GameService {
         cultivator: Cultivator,
         run: Run,
         occasion: string,
-        addressingId: string | null
+        addressingId: string | null,
+        listening?: { intent: HearingIntent; reach?: AnswerReach }
     ): Hearing | null {
         const addressing = addressingId
             ? this.present(cultivator).find(row => row.id === addressingId) ?? null
@@ -2613,7 +2656,8 @@ export class GameService {
             run,
             addressing,
             occasion,
-            world: this.atHand
+            world: this.atHand,
+            ...(listening ?? {})
         });
         if (!offered) return null;
 

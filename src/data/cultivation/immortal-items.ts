@@ -228,12 +228,12 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         notForSale:
             'It has never appeared in a Thousand Treasure catalogue, and the Stonewright Consortium declines to assay one on the stated grounds that an assay implies a rate. There is no price, there has never been a price, and a party who opens with an offer of stones has told the room something about themselves.',
         grades: {
-            higher: 'Moves a cultivator up a small realm outright, from anywhere on the ladder, including the crossings that kill people. One is known to exist, it is held by the Deep Survey, and it is the object every account of these things is actually describing.',
-            middle: 'Moves a cultivator up a small realm below the upper reaches, and does nothing whatever above them - it will carry somebody into Core Formation and will not touch a Void Refinement boundary. Three are known. The limit is not a matter of dosage and nobody below can explain it.',
-            lower: 'Carries somebody across one of the early boundaries and no further: it is a Foundation Establishment or a Core Formation that arrives without the accumulation, and above that it does nothing at all. Nine are known, all of them in one place, and it is the grade everybody has actually seen.'
+            higher: 'May deliver a cultivator into Grand Ascension and no higher, so the greatest crossing it enables is Body Integration Perfection to Grand Ascension Early - ordinal 36 to 37, the last boundary on the mortal plane. One is known to exist and the Deep Survey holds it. It is still one rung, still only from Perfection, and it still stops dead below 41. See `THE_LAST_REALM_IS_UNBUYABLE`.',
+            middle: 'May deliver a cultivator into Void Refinement and no higher: at best Deity Transformation Perfection to Void Refinement Early, ordinal 28 to 29. That is the boundary most careers end at, which makes a middle the difference between a regional power and one of the dozen strongest people in a province - and it is one rung, from the top, like every other grade. Three are known.',
+            lower: 'May deliver a cultivator into Deity Transformation and no higher: at best Nascent Soul Perfection to Deity Transformation Early, ordinal 24 to 25. Not a lesser effect - the same single crossing every grade performs, capped at a lower destination - and 25 is body and soul merged, two thousand years of lifespan, and a region learning your name. Nine are known: seven at the Azure Cloud Pavilion, one at the Deep Survey, one on the Long Cut schedule.'
         },
         effectNote:
-            'It moves a cultivator up a small realm outright, without the accumulation, to the extent its grade permits. What would have been forty years of sitting, or a century, or a lifetime that ran out first, is simply done - and the body arrives at the new realm without having built the road to it, which is a thing every physician who has examined a recipient has remarked on and none of them can quantify.',
+            'It carries a cultivator across exactly one realm boundary, from Perfection of their current realm into Early of the next, and it does nothing else at all. It is not a ride from wherever somebody happens to be standing: what it moves is one rung, from where the recipient stands to Early of the next realm, and Perfection is where that is worth the most rather than where it is required. The grade caps how high that destination may be. What would have been forty years of sitting at Perfection, or a century, or a lifetime that ran out at the boundary, is simply done - and the body arrives without having built the road to it, which every physician who has examined a recipient has remarked on and none can quantify. See `THE_STEP_AND_THE_BOUNDARY` and `ONCE_IN_A_LIFE`.',
         socialConsequence:
             'The arithmetic is public. Anybody who has watched a cultivator for a decade can see that the accumulation was not there, and the conclusion arrives in a week. The Ninefold Ledger opens a lineage audit without being asked, because an unexplained jump is exactly what an unrecorded transfer looks like and the Ledger does not distinguish. Rivals stop treating the person as an individual and start treating them as the instrument of whoever gave it, which is usually correct. And the giver becomes publicly known to hold one fewer, which invites the only question that matters about a finite supply: how many are left. The recipient is not admired. What gets remarked on is the part that could not be given.',
         ruinAvailability:
@@ -256,12 +256,12 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         notForSale:
             'No price, no catalogue, no assay, and no broker who will carry an approach. The Thousand Treasure Pavilion, which will handle almost anything, has twice declined to pass a message about one and did not explain why either time.',
         grades: {
-            higher: 'Rewrites the root outright, to anything, including the mutated roots that no institution in the world can supply by any other means. Exactly one is known to exist. This is the object that should not exist, and everything alarming ever said about the Second Dealing is about this grade.',
-            middle: 'Cleans rather than replaces. It will resolve a dual conflicting root into one of its two elements, or settle a muddled root onto the one it leans toward, and it cannot produce anything the person was not already partly made of. One is known. It is life-changing and it is not world-historic, and the distinction matters enormously to exactly four institutions.',
-            lower: 'Widens the aperture without changing what comes through it: a muddled root draws its five a little less badly, a conflicting root fights itself a little less. The person is the same person with the same ceiling, and for somebody who has spent forty years getting nowhere it is still the best thing that has ever happened to them. Two are known, both at the Azure Cloud Pavilion.'
+            higher: 'Grants a single mutated root - the best outcome that exists below the Lid, and the thing no institution in the world can supply by any other means. Exactly one is known. This is the object that should not exist, and everything alarming ever said about the Second Dealing is about this grade.',
+            middle: 'Takes a five-root straight to a one or a two, and which of the two you get is luck. Not dosage, not preparation, not the skill of anybody present: luck, on the day, with no way found in nine hundred years to influence it. That uncertainty is exactly why it is a middle grade rather than a higher one - a better ceiling than the lower and a worse floor than anybody would choose for something this rare. One is known.',
+            lower: 'Reliable, bounded, and the most useful object in this file. A five-root becomes a four or a three; a four or a three becomes a two. It never produces better than a two, and it cannot produce a single root at any point, by any route, for anybody. What it does is take the worst root in the world and make it merely bad, every time, without a gamble - and because nobody gets a second one, the two it leaves behind is where that person stays forever. Two are known, both at the Azure Cloud Pavilion.'
         },
         effectNote:
-            'It changes the root, to the extent its grade permits. The thing that was dealt once and could not be redrawn is redrawn, and a cultivator who was muddled is not muddled any more. Every rule in the world says this is impossible - the manuals say it, the physicians say it, the Frostmirror Court has four centuries of records saying it - and the rule is correct in every case but this one, which is precisely what a world-historic exception is.',
+            'It changes the root once and forever, to the extent its grade permits: the lower narrows reliably and never past a two, the middle goes to a one or a two on luck alone, and the higher grants a single mutated root outright. Nobody gets a second, at any grade, in any circumstance. The thing that was dealt once and could not be redrawn is redrawn, and a cultivator who was muddled is not muddled any more. Every rule in the world says this is impossible - the manuals say it, the physicians say it, the Frostmirror Court has four centuries of records saying it - and the rule is correct in every case but this one, which is precisely what a world-historic exception is.',
         socialConsequence:
             'There is no version of this that stays quiet. The House of Held Names holds a register entry describing a person who no longer matches it, and an entry that has stopped matching its holder is the single loudest signal that register can produce - it is what the register is for. The Quiet Cut will take a commission to make the discrepancy go away and will not be able to, which has happened once and did not improve their reputation. The House of the Narrow Hour cannot sight the person correctly for some years afterwards, because every reading it holds was cast on a root that is no longer there. And two institutions in particular want to know: the Frostmirror Court and the Storm Tyrant Court both survive on an intake of one root in a hundred, and a manufactured mutated root would end that problem permanently, which makes them the least safe parties in the world to be recognised by.',
         ruinAvailability:
@@ -270,6 +270,129 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
             'A talisman, thin, and warm in a way that does not change with the room. Two are known. The correct reaction to being told one is in the building is not excitement, and the people who have handled one describe the same thing afterwards: that it should not be here, and that it plainly is.'
     }
 ];
+
+// -------------------------------------------------------------------------
+// THE LAST REALM IS UNBUYABLE
+// The ceiling on every grade of every object in this file, stated once as an
+// absolute so nothing downstream has to reason about it.
+// -------------------------------------------------------------------------
+
+/**
+ * Nothing carries anybody into Tribulation Transcendence. Ordinal 41 and
+ * everything above it is done by hand, always, by everybody, with no exception
+ * anywhere in the catalog or the record.
+ */
+export const THE_LAST_REALM_IS_UNBUYABLE = {
+    theAbsolute:
+        'No object, at any grade, from any source, in any circumstance, delivers anybody to ordinal 41 or above. Tribulation Transcendence is walked to or it is not reached. There is no exception in this catalog, none in the historical record, and none that could be introduced without breaking the thing the ladder is for.',
+    theCeilings: [
+        'lower: may deliver into Deity Transformation. Top crossing 24 to 25.',
+        'middle: may deliver into Void Refinement. Top crossing 28 to 29.',
+        'higher: may deliver into Grand Ascension. Top crossing 36 to 37.',
+        'and then nothing. Grand Ascension Perfection at 40 is the highest rung any object touches, and 41 upward is reachable only by the work.'
+    ],
+    gradeCapsDestinationNotDistance:
+        'Note what the grades actually buy, because it is easy to misread: every grade performs the same single crossing, from Perfection to the Early rung above it. What a higher grade buys is permission to perform that crossing further up the ladder, not a longer journey. A higher-grade pill spent at Nascent Soul Perfection does exactly what a lower-grade one would have done there, and the difference between them is spent for nothing.',
+    whyItStopsThere:
+        'Because 40 is the last rung of the mortal plane and 41 is the approach to the Lid. Everything below the sky can be given: inputs, time, teachers, medicine, a rung. The approach cannot, and that is not a rule about these objects - it is the same rule as the Hollow Court refusing to look at anybody below a Void Refinement floor with evidence they could cross, and the same rule as `origin.md` holding that privilege buys inputs and never rank. Being handed things gets you to the foot of the last climb and no further.',
+    whatItProtects:
+        'The meaning of the top of the ladder. If any grade could hand somebody 41, everything above 40 would be a statement about what an institution had in a vault rather than about a person, and every Tribulation Transcender in the world would be an open question about who paid for them. Instead the answer is known in advance and is the same for all of them: they walked. That is why the last realm still means something, and why the four seated at the Hollow Court are impressive in a way no holding can imitate.',
+    theConsequenceForHolders:
+        'It also caps what any of this buys politically. The Deep Survey holds the only higher-grade pill in existence and could not manufacture a peer for the Hollow Court with it - the best it can do is move somebody who has already climbed to 36 onto the first rung of the last mortal realm. An apex spending its rarest object still cannot buy its way into the last realm, every apex knows it, and that takes a great deal of heat out of the cold war.'
+} as const;
+
+// -------------------------------------------------------------------------
+// THE STEP AND THE BOUNDARY
+// One crossing, into Early of the next realm. Taking it from Perfection is
+// the clean case and the rare one; most Steps in history were taken early by
+// somebody who was running out of time.
+// -------------------------------------------------------------------------
+
+export const THE_STEP_AND_THE_BOUNDARY = {
+    theRule:
+        'It carries a cultivator across exactly one realm boundary and delivers them to Early of the next realm. The grade caps how high that destination may be. What varies is where the recipient was standing when they took it, and that decides what they are for the rest of their life.',
+    perfectionIsTheCleanCase:
+        'Taken at Perfection of the current realm, the crossing is clean. The accumulation was finished, the boundary is simply paid for, and what arrives on the far side is an ordinary cultivator of the new realm with an ordinary foundation who will go on climbing. This is the full value of the object and it is the outcome every instrument in this file was written to produce.',
+    takingItEarlyIsAvailable:
+        'And taking it below Perfection works. It is not a waste, not a misfire and not a refusal: the Step still crosses the boundary, the recipient still arrives at Early of the next realm, and they are still alive on the other side of a wall that was going to kill them. What they gave up is ceiling. What they bought is time.',
+    whyPeopleDoIt: [
+        'They are running out of life at their current realm, which is the big one. Lifespan is tied to realm, so crossing is the only thing that extends the clock. A cultivator with fifteen years left at Nascent Soul who is plainly not reaching Perfection in fifteen years has no decision to make: take it now and live, or hold out for the better outcome and die holding the pill.',
+        'Or they simply do not care. Somebody who is not chasing the summit wants the power and the years now, and the theoretical ceiling they are trading away is one they were never going to approach. That is not a failure of nerve, and treating it as one is a thing sects do rather than a thing that is true.'
+    ],
+    whatItCosts:
+        'A permanent ceiling. They arrive in the new realm having never properly finished the last one - the accumulation was skipped rather than completed - and the foundation they land on is correspondingly poor, which is exactly what `foundationQuality` already exists to hold. They are alive, they are a realm higher, they have centuries they would not otherwise have had, and they will very probably stall where they stand for all of it.',
+    theOrdinaryCase:
+        'This is how Steps actually get used, and the catalog should read that way. The disciplined version - a candidate held at Perfection, an object spent at the exact right moment by an institution with the patience to wait - is the rare one. The ordinary one is a frightened person with a deadline making a rational trade, and most Steps in the history of the world have been spent exactly like that.',
+    thePopulation:
+        'So the world contains a visible number of people who are one realm above what their foundation supports: permanently stalled, obviously carried rather than climbed, and legible as such to any cultivator who looks properly. It is a social fact rather than a secret. It is also not uniformly shameful - a good many of them made the only sensible choice available to them, and the ones who sneer are usually people who have never had a deadline.',
+    holdingSomebodyAtPerfection:
+        'Which reframes the disciplined case as a luxury rather than a practice. An institution with time in hand can ask a candidate at Perfection to hold there while a council decides, and the request is correct, because a cultivator who pushes through the boundary on their own has spent the crossing the Step was going to pay for. So they wait. Some of them wait years. Nobody in the room is behaving badly and the person waiting has no good way to describe what is being done to them.',
+    theCompensationThatIsNotOne:
+        'Institutions that do this usually pay in rank, which costs them nothing and reads outside as a promotion: a seat, a title, a stipend, and a standing instruction not to break through. At an apex, where rank is decoupled from realm anyway, the arrangement is almost invisible from outside and completely legible to anybody inside who has been asked the same thing.'
+} as const;
+
+// -------------------------------------------------------------------------
+// THE TWO CLAIMS
+// Potential and debt. Same object, two incompatible justifications, and no
+// institution holding one of these escapes the argument.
+// -------------------------------------------------------------------------
+
+export const THE_TWO_CLAIMS = {
+    theTest:
+        'Saving the sect is necessary and it is not sufficient. To have a Step spent on you as an old servant you must have saved the institution AND your continued living must be of use to it, and the second term is the one that decides. The first only clears you to be considered.',
+    theQuestionIsForwardLooking:
+        'Because the sect is not settling accounts. It is asking what it gets for this, which is a question about the years ahead rather than the years behind, and gratitude is not an answer to it. Somebody who saved the institution forty years ago and has nothing further to offer does not get one. The debt is real, it is acknowledged, everybody agrees it exists, and it does not move the object.',
+    theEldersKnowThis:
+        'And this is the part that matters most: they are not deceived. Nobody senior is waiting in hope, nobody is owed an illusion, and nobody has to have it explained to them. They understand that they are being assessed on what remains rather than on what they did, and most of them hold that the assessment is the correct one for the sect to make. Being on the wrong side of a judgement you agree with is a specific and quiet kind of hard.',
+    soMostOfThemDie:
+        'Which should be stated plainly, because it is the ordinary outcome. The Step spent on an elder is rare even among the deserving - rarer than the founding acts that would qualify somebody for it. Most people who have earned it die at their realm on schedule, the sect grieves properly, and nobody opens the box. That is not a failure of the institution. It is the institution working as everybody inside it expects.',
+    bothClaimsAreForwardLooking:
+        'Which makes the argument worse rather than better. It is not debt against potential: it is two estimates of future value, in the same units, directly comparable - and the old one is nearly always lower. A young cultivator who reaches Perfection in forty years and takes a clean crossing will serve for centuries at a ceiling nobody can see the top of. An elder given the same object arrives on a poor foundation, stalls there permanently, and buys the sect a known quantity of a known thing. The comparison is honest and it almost always comes out the same way, and everyone in the room can do the arithmetic.',
+    theOneWhoWasKept: {
+        who: 'Elder Ji Wanru of the Azure Cloud Pavilion, formation master, who took a lower Step ninety years ago at Nascent Soul Perfection and is now the only person in the sect who has ever held the compound at nine lit nodes.',
+        theReason:
+            'Entirely instrumental and stated as such at the time. The Pavilion inherited a network of forty-one nodes, can light nine, and has failed for sixty years to train anybody who can hold that many at once. Spending the Step bought two thousand years of the one person who can, against a training problem the sect has not solved and may not solve. Nobody described it as an honour.',
+        sheKnowsIt:
+            'Completely, and says so without bitterness when asked, which is rarely. She was not honoured and she was not thanked. She was kept, the way a sect keeps anything it cannot replace, and she has spent ninety years being the reason the lights are on and knowing exactly why she is still here.',
+        theCost:
+            'She stalled at Deity Transformation Early the year she took it and has not moved since, which everybody expected. A Sword Elder seat was not offered and she did not ask for one; the Pavilion pays what it owes in stipend and in access and has never pretended the arrangement was anything else.'
+    },
+    theOneWhoWasRefused: {
+        who: 'A Sword Elder who held the lower gate through the second Crimson Abyss incursion and lost the use of an arm doing it, and who was refused sixty years later.',
+        theReasoning:
+            'Unanimous, correct on the instrument, and delivered to her face by people who had all been in the hall she saved. She had cleared the threshold and there was nothing further she could offer: the arm was gone, the seat was ceremonial by then, and the Pavilion could not name a single thing her next two thousand years would produce that its next two thousand years needed.',
+        theGrievance:
+            'And this is the shape it actually takes, which is not what anybody assumes. Her people do not say she was ungratefully treated - they say the Pavilion was right, and they have never forgiven it. Watching an institution correctly conclude that the rest of your life is not worth an object, and having no argument against it, is far more corrosive than an injustice would be. An injustice can be disputed. This can only be agreed with.',
+        howLongItHasLasted:
+            'Four generations. Her line is still at the Pavilion, still serves, and has declined every seat offered to it since, always politely, always with a reason that is not the reason.'
+    },
+    theOnesWhoDoNotAsk:
+        'Which is why the good ones do not raise it. They can do the arithmetic themselves and they know the answer before anybody else in the room does. One of them declined to raise it at all, deliberately, and died at Nascent Soul Perfection with the sect holding an object it might well have spent on her. The hall found out afterwards, from somebody she had told and asked to stay quiet until it no longer mattered. Nobody at the Pavilion has been able to say what that did to the argument, and it has been running for sixty years since without anybody proposing a rule.',
+    rivalsReadIt:
+        'And the decision is legible from outside either way. A sect that spends an irreplaceable object to keep one functioning specialist alive has told everybody what it cannot replace, which is a useful thing for a rival to know. A sect that refuses has told them something else, equally useful. There is no way to make this decision privately.',
+    itKeysToUnitOfValue:
+        'How a given institution runs the argument is predictable from what it counts - see `unitOfValue` in `faction-character.ts`, which is doing more work here than anywhere else in the catalog. The Azure Cloud Pavilion keeps no ledger of favours and an exact mental account of who stood up, so its version is conducted from memory by people who remember it differently and cannot produce a document, and takes sixty years. The Ninefold Ledger prices every obligation with a term attached, would answer the same question in an afternoon by reading the entry aloud, and finds the Pavilion argument mildly embarrassing to watch.',
+    howToRunIt:
+        'Put both claimants in the room and give neither of them a flaw. The scene is not who deserves it - both of them do, and the deserving is not what is being measured. It is an institution deciding in public what it expects to need, permanently, in front of everybody who will have to live with the answer.'
+} as const;
+
+// -------------------------------------------------------------------------
+// ONCE IN A LIFE
+// Both objects. No stacking, no repeating, no second attempt.
+// -------------------------------------------------------------------------
+
+export const ONCE_IN_A_LIFE = {
+    theRule:
+        'One Unearned Step per person, ever. One Second Dealing per person, ever. They do not stack, cannot be repeated, and a second one of either does nothing at all to somebody who has already taken one - it is simply consumed against a body that will not take it twice.',
+    whyItMattersForTheStep:
+        'Because it converts merit into timing. Whatever crossing somebody spends their one Step on is the only one they will ever be given, so a cultivator carried across an early boundary can never be carried across a later one - and somebody who took theirs below Perfection to buy years has also used it up. Nothing here is wasted and everything here is final, which is a harder thing to reason about than waste.',
+    whyItBitesHardestOnTheLowerDealing:
+        'And it lands hardest on the grade that looked safest. A five-root taken to a three by a lower Dealing has spent their one use: a second lower Dealing will not take them from a three to a two, ever, and no accumulation of lower-grade objects walks anybody down the ladder of roots. Reliable and bounded now means permanently bounded, at whatever the first one happened to produce, and the difference between a three and a two is a career.',
+    theHardestVersion:
+        'The cruellest case is a five-root who receives a lower Dealing and lands on a three, and then, decades later, stands in a room with the middle-grade one - which would have taken them to a one or a two straight from five, and which will now do nothing for them at all. That situation is possible in this world today, and one of the four institutions that hold these objects would recognise it immediately.',
+    whatItProtects:
+        'It stops the objects from being an accumulation strategy. No sect can assemble a champion by stacking gifts; the most any one person can ever receive from this entire category is one rung and one root, and everything else they become they have to build.'
+} as const;
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHO HOLDS THEM
@@ -442,19 +565,34 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
 export const ENGINE_GAPS: readonly {
     effect: ImmortalItemEffect;
     missing: string;
-    blockedBy: string;
+    blockedBy?: string;
+    /** What the effect must do, stated precisely enough to be wired. */
+    contract: readonly string[];
     note: string;
 }[] = [
     {
         effect: 'promote_realm',
         missing: 'There is no `PillEffect` for advancing a rank. The closest is `advance_progress`, which adds cultivation progress toward the next rank and is not the same thing: progress still has to be spent through a breakthrough attempt that can fail, and the whole point of this object is that it does not.',
-        blockedBy: '`MAX_RANKS_PER_TURN = 1` in `src/schema/cultivation.ts` caps advancement per turn regardless of accumulated progress, so even a granted rank needs an explicit engine path rather than a large progress number.',
-        note: 'Needs an engine decision on whether a granted rank skips the breakthrough roll entirely, and on what the Price of Advancement does about a boundary crossed without accumulation - which is the more interesting question and is not one content should answer.'
+        blockedBy: 'Nothing, as it turns out, and this is worth stating because it used to be the objection. `MAX_RANKS_PER_TURN = 1` in `src/schema/cultivation.ts` caps advancement at one rank per turn, and the Step grants exactly one rank - so the cap and the object agree rather than collide. What is missing is the effect, not room for it.',
+        contract: [
+            'It crosses exactly one realm boundary and delivers the recipient to the Early rung of the next realm. It never grants a within-realm rung and never grants two.',
+            'Grade caps the destination realm, not the distance: lower may deliver no higher than Deity Transformation (top crossing 24 to 25), middle no higher than Void Refinement (28 to 29), higher no higher than Grand Ascension (36 to 37).',
+            'Ordinal 41 and above is unreachable by this or any object, for anybody, always. Hard stop, not a modifier.',
+            'Once per cultivator for life. A second Step is consumed and does nothing.',
+            'Perfection of the current realm is the clean case and is not a requirement. Taken below Perfection it still crosses, and the skipped accumulation lands as a permanently poor `foundationQuality` on the far side.'
+        ],
+        note: 'The remaining engine decision is what the Price of Advancement does about a boundary crossed without accumulation. Content has answered the social half - they stall, visibly, for the rest of a much longer life - and deliberately not the arithmetic.'
     },
     {
         effect: 'change_spirit_root',
         missing: 'There is no `PillEffect` for it and there is no field-level path to it either. `CultivatorSchema.spiritRoot` is documented as rolled once, permanent and never editable after creation, and `spirit-roots.ts` states in its header that there is no respec, no reroll and no item that changes it.',
         blockedBy: 'The permanence is not merely a comment: cultivation rate, deviation risk, matched-technique bonus and technique availability are all derived from the root, so a change is a recalculation of a run rather than a field write.',
+        contract: [
+            'lower: five to four or three; four or three to two. Never better than two, and never a single root, by any route.',
+            'middle: five straight to one or two, decided by luck at use time and by nothing else. No input influences which.',
+            'higher: grants a single mutated root outright.',
+            'Once per cultivator for life, at every grade. A five-root taken to a three by a lower one can never be improved again by anything.'
+        ],
         note: 'Deliberately left unresolvable. If this is ever implemented it should be an engine ceremony with its own audit record, not a mutation - and the catalog should not be the place that decided how it works.'
     }
 ];

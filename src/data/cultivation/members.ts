@@ -358,6 +358,24 @@ export const MEMBERS: readonly Member[] = [
             costsThem: 'A question about Ru Anjing puts him in an argument the Sword Elders have been having for forty years, in which he has no standing and a stated position he no longer believes.'
         }
     },
+    // The seat is the compensation. See THE_STEP_AND_THE_BOUNDARY in
+    // `immortal-items.ts`: a candidate asked to hold at Perfection while a
+    // council decides, paid in rank because rank costs the Pavilion nothing.
+    {
+        id: 'member-xiang-yuwei',
+        name: 'Xiang Yuwei',
+        factionId: 'sect-azure-cloud-pavilion',
+        rankIndex: 4,
+        rank: 'Sword Elder',
+        realmOrdinal: 24,
+        role: 'senior',
+        wants: 'a decision, in either direction, from four people who have not been able to reach one in eleven years',
+        fears: 'that she will be asked to keep holding until she is old enough that the arithmetic answers itself',
+        detail: 'Made a Sword Elder at thirty-one, which the province read as the fastest rise in four centuries and the hall read correctly: she is standing at the top of her realm under a standing instruction not to break through, and the seat arrived the same season the instruction did.',
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
 
     // --- Verdant Spring Hall -------------------------------------------
     {

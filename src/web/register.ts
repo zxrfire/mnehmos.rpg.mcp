@@ -139,7 +139,7 @@ export interface SectDossier {
         depletion: string | null;
     } | null;
     withdrawn: { count: number; occupiedBy: string } | null;
-    holdings: { item: string; count: number }[];
+    holdings: { item: string; count: number; byGrade: { higher: number; middle: number; lower: number } }[];
     partingGift: { name: string; intact: boolean } | null;
     people: {
         active: { name: string; rank: string; ordinal: number; role: string; wants: string; detail: string }[];
@@ -236,6 +236,9 @@ export interface WorldRegister {
         form: string;
         effect: string;
         knownCount: number;
+        /** How many were ever known, which is a larger and unhappier figure. */
+        everKnown: number;
+        knownByGrade: { higher: number; middle: number; lower: number };
         grades: { higher: string; middle: string; lower: string };
     }[];
     holdings: { factionId: string; name: string; itemId: string; count: number }[];
@@ -384,15 +387,66 @@ function buildStack(dossierIds: ReadonlySet<string>): StackNode[] {
 function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighPerson[] {
     const out: HighPerson[] = [];
 
+    for (const apex of APEX_INSTITUTIONS) {
+        out.push({
+            name: apex.lastRealm.holderName ?? 'the seated one',
+            named: apex.lastRealm.holderName !== null,
+            ordinal: apex.powerOrdinal,
+            rank: rankName(apex.powerOrdinal),
+            state: 'pinned',
+            factionName: apex.name,
+            factionOrdinal: apex.powerOrdinal,
+            note: apex.lastRealm.note
+        });
+        if (apex.secondStrongestOrdinal >= HIGH_BAND_FLOOR) {
+            out.push({
+                name: 'second seat',
+                named: false,
+                ordinal: apex.secondStrongestOrdinal,
+                rank: rankName(apex.secondStrongestOrdinal),
+                state: 'acting',
+                factionName: apex.name,
+                factionOrdinal: apex.powerOrdinal,
+                note: apex.depthNote
+            });
+        }
+    }
+
+    // A court is an office, but somebody holds it, and that person is in the
+    // band. Listed as a seat rather than a name for the same reason as the rest:
+    // the catalog stores a realm for the office and no identity for the holder.
+    for (const court of COURTS) {
+        if (court.powerOrdinal < HIGH_BAND_FLOOR) continue;
+        out.push({
+            name: 'the office holder',
+            named: false,
+            ordinal: court.powerOrdinal,
+            rank: rankName(court.powerOrdinal),
+            state: 'acting',
+            factionName: court.name,
+            factionOrdinal: court.powerOrdinal,
+            note: 'Administers an arterial vein for '
+                + (getApexInstitution(court.apexId)?.name ?? court.apexId)
+                + ', and issues the grants every tenant beneath it holds on.'
+        });
+    }
+
     for (const row of rows) {
-        const apex = APEX_INSTITUTIONS.find(a => a.name === row.name);
+        const apexForRow = APEX_INSTITUTIONS.find(
+            a => a.name.replace(/^The /, '') === row.name.replace(/^The /, '')
+        );
+        // Already emitted above from the apex catalog.
+        if (apexForRow) continue;
         const withdrawn = WITHDRAWN_POWERS[row.id];
 
         if (row.ordinal >= HIGH_BAND_FLOOR) {
             if (withdrawn) {
-                // Four seats, one ordinal, no names. Rendered as the count it is.
+                // The ordinal is the strongest of them, which is what powerOrdinal
+                // means everywhere else and is all the catalog records. The other
+                // seats are in the last realm and the register does not say where,
+                // because nobody outside those mountains has ever been told.
                 out.push({
-                    name: withdrawn.count + ' seated',
+                    name: 'strongest of ' + withdrawn.count + ' seated',
                     named: false,
                     ordinal: row.ordinal,
                     rank: row.rank,
@@ -400,17 +454,8 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                     factionName: row.name,
                     factionOrdinal: row.ordinal,
                     note: withdrawn.occupiedBy
-                });
-            } else if (apex) {
-                out.push({
-                    name: apex.lastRealm.holderName ?? 'the seated one',
-                    named: apex.lastRealm.holderName !== null,
-                    ordinal: row.ordinal,
-                    rank: row.rank,
-                    state: 'pinned',
-                    factionName: row.name,
-                    factionOrdinal: row.ordinal,
-                    note: apex.lastRealm.note
+                        + ' The register holds one ordinal for the seats, the strongest;'
+                        + ' where the other three stand is not recorded anywhere.'
                 });
             } else {
                 out.push({
@@ -426,18 +471,6 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             }
         }
 
-        if (apex && apex.secondStrongestOrdinal >= HIGH_BAND_FLOOR) {
-            out.push({
-                name: 'second seat',
-                named: false,
-                ordinal: apex.secondStrongestOrdinal,
-                rank: rankName(apex.secondStrongestOrdinal),
-                state: 'acting',
-                factionName: row.name,
-                factionOrdinal: row.ordinal,
-                note: apex.depthNote
-            });
-        }
     }
 
     for (const sl of sealedList) {
@@ -560,7 +593,8 @@ function buildDossiers(
                 .filter(h => h.factionId === row.id)
                 .map(h => ({
                     item: IMMORTAL_ITEMS.find(i => i.id === h.itemId)?.name ?? h.itemId,
-                    count: h.count
+                    count: h.count,
+                    byGrade: { ...h.byGrade }
                 })),
             partingGift: record?.partingGift
                 ? { name: record.partingGift.name, intact: record.partingGift.intact }
@@ -648,7 +682,8 @@ function buildDossiers(
                 .filter(h => h.factionId === a.id)
                 .map(h => ({
                     item: IMMORTAL_ITEMS.find(i => i.id === h.itemId)?.name ?? h.itemId,
-                    count: h.count
+                    count: h.count,
+                    byGrade: { ...h.byGrade }
                 })),
             partingGift: null,
             people: {
@@ -781,6 +816,8 @@ export function buildRegister(): WorldRegister {
             form: i.form,
             effect: i.effect,
             knownCount: i.knownCount,
+            everKnown: i.everKnown,
+            knownByGrade: { ...i.knownByGrade },
             grades: { higher: i.grades.higher, middle: i.grades.middle, lower: i.grades.lower }
         })),
         holdings: IMMORTAL_HOLDINGS.map(h => ({
@@ -940,6 +977,7 @@ color:var(--datum);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid va
 .ncard:hover .ngo,.ncard:focus-visible .ngo{opacity:1}
 .objblk{border:1px solid var(--rule);background:var(--panel);padding:16px 18px;margin-bottom:12px}
 .objblk h3{font:600 18px Archivo,"Helvetica Neue",Arial,sans-serif;margin:0 0 12px;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.objcount{margin:-6px 0 12px;font:12px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--datum);font-variant-numeric:tabular-nums}
 .objmeta{font:11px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
 .grades{margin:0;display:grid;grid-template-columns:78px 1fr;gap:8px 16px}
 .grades dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--datum);padding-top:3px}
@@ -1080,7 +1118,11 @@ function dossier(d: SectDossier): string {
     if (d.apex) weapons.push(`<div class="who"><span class="wn">${esc(d.apex.giftName)}</span><span class="wo">-</span><span class="wr">sent down</span><span class="wd">Permanent, unreproducible, and the reason this faction is an apex.</span></div>`);
     if (d.partingGift) weapons.push(`<div class="who"><span class="wn">${esc(d.partingGift.name)}</span><span class="wo">-</span><span class="wr">parting gift${d.partingGift.intact ? '' : ' · spent'}</span><span class="wd">Left on the way out by somebody who crossed.</span></div>`);
     for (const h of d.holdings) {
-        weapons.push(`<div class="who"><span class="wn">${esc(h.item)}</span><span class="wo">${h.count}</span><span class="wr">consumable</span><span class="wd">Came down. Cannot be made or reordered here; every use is permanent.</span></div>`);
+        const mix = (['higher', 'middle', 'lower'] as const)
+            .filter(g => h.byGrade[g] > 0)
+            .map(g => `${h.byGrade[g]} ${g}`)
+            .join(', ');
+        weapons.push(`<div class="who"><span class="wn">${esc(h.item)}</span><span class="wo">${h.count}</span><span class="wr">${esc(mix)}</span><span class="wd">Came down. Cannot be made or reordered here; every use is permanent.</span></div>`);
     }
     if (weapons.length) {
         groups.unshift(`<div class="grp weapons"><h4>Immortal weapons <span>${weapons.length}</span></h4>${weapons.join('')}</div>`);
@@ -1288,9 +1330,10 @@ export function renderRegisterHtml(
 
 <section>
   <div class="sh"><h2>The immortal objects</h2><span class="r">Two kinds, three grades each</span></div>
-  <p class="note">Holdings are listed under each faction; this is what a holding is <em>worth</em>. Grade is not dosage, and the counts run the wrong way to intuition: the higher grade of each is a single object, and the lower grade is the one anybody has actually seen.</p>
+  <p class="note">Holdings are listed under each faction; this is what a holding is <em>worth</em>. <strong>Grade caps the destination, not the distance.</strong> Every grade performs the same single crossing - Perfection of one realm to Early of the next - and what a higher grade buys is permission to perform it further up the ladder. Lower reaches ordinal 25, middle 29, higher 37, <strong>and nothing reaches 41</strong>: the last realm is walked to or it is not reached.</p>
   ${reg.items.map(i => `<div class="objblk">
-    <h3>${esc(i.name)} <span class="objmeta">${esc(i.form.replace(/_/g, ' '))} · ${esc(i.effect.replace(/_/g, ' '))} · ${i.knownCount} known</span></h3>
+    <h3>${esc(i.name)} <span class="objmeta">${esc(i.form.replace(/_/g, ' '))} · ${esc(i.effect.replace(/_/g, ' '))} · ${i.knownCount} of ${i.everKnown} ever known</span></h3>
+    <p class="objcount">higher ${i.knownByGrade.higher} · middle ${i.knownByGrade.middle} · lower ${i.knownByGrade.lower}</p>
     <dl class="grades">
       <dt>Higher</dt><dd>${esc(i.grades.higher)}</dd>
       <dt>Middle</dt><dd>${esc(i.grades.middle)}</dd>
