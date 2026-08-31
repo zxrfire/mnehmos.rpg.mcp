@@ -148,3 +148,44 @@ Notes:
 - **A name heard is not a name understood.** Record the source. A name from a drunk carter
   and a name from a sect archivist are different facts, and the carter's may still be the
   true one.
+
+### Overheard
+
+The sharpest form, because the option to ask is gone.
+
+Two elders talking on the other side of a courtyard wall. Not to the player, not for the
+player, and not moderated for an audience. They use names, shorthand, half-sentences and a
+shared history neither is going to summarise. One of them is annoyed.
+
+> "- and if the Marches send another, we send it back with the same answer."
+>
+> "You will not be the one answering. Ninefold has already been asked."
+>
+> A pause. Then, quieter, about the weather.
+
+What the player gets:
+
+- **A fragment they cannot resolve.** Two names, a relationship implied between them, an
+  event that has apparently already happened, and no way to place any of it.
+- **No opportunity to ask.** Interrupting is impossible or unwise. Asking *later* reveals
+  where they were standing, which is its own problem.
+- **Knowledge with compromising provenance.** They know something they cannot admit to
+  knowing. Acting on it exposes how they came by it - so the fact sits in their hands
+  unusable until it can be corroborated from somewhere they are allowed to have got it.
+  Record the source honestly as *overheard*; it should read differently from *told*.
+- **Possibly about them.** Not always. But the version where the player realises, four
+  sentences in, that the thing being discussed is *them* is the best use of the device and
+  should be rare enough to land.
+
+Rules for writing one:
+
+- **Write it as it would actually be spoken** - elliptical, mid-conversation, assuming
+  everything. Do not have either speaker helpfully restate context for the benefit of a
+  listener they do not know is there. That is the whole failure mode this exists to avoid.
+- **Do not resolve it in the same scene**, or ideally for a long time. An overheard
+  fragment that is explained a paragraph later was just exposition wearing a costume.
+- The player may be **wrong** about what they heard, and should sometimes be allowed to act
+  on a misreading. A half-heard name and a confident conclusion is a very ordinary way for
+  a cultivator to get into trouble.
+- The speakers should have been having this conversation anyway. If it exists to inform the
+  player, it is a briefing with a wall in front of it.
