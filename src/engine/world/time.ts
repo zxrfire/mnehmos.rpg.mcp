@@ -326,11 +326,16 @@ export function advanceTime(
 
     // ── 1. Scheduled consequences, in date order. ────────────────────────
     // O(effects due), not O(days). An empty book means a century costs nothing.
+    // A work queue rather than a snapshot: a repeating effect that fires and
+    // reschedules inside the span has to be examined again, or an annual
+    // recruitment would fire once across three hundred years.
     const due = state.schedule
         .filter(e => !e.fired && e.dueOnDay > fromDay && e.dueOnDay <= requestedTarget)
         .sort((a, b) => a.dueOnDay - b.dueOnDay || (a.id < b.id ? -1 : 1));
 
-    for (const effect of due) {
+    let guard = 0;
+    while (due.length > 0 && guard++ < 100_000) {
+        const effect = due.shift()!;
         if (effect.dueOnDay > target) break;
 
         // The engine decides whether the scheduled thing actually happened.
@@ -359,11 +364,18 @@ export function advanceTime(
         const at = state.schedule.findIndex(e => e.id === effect.id);
         if (at >= 0) {
             if (effect.repeatDays && effect.repeatDays > 0) {
-                state.schedule[at] = {
+                const next = {
                     ...effect,
                     dueOnDay: effect.dueOnDay + effect.repeatDays,
                     firedOnDay: effect.dueOnDay
                 };
+                state.schedule[at] = next;
+                if (next.dueOnDay <= requestedTarget) {
+                    // Re-enter the queue in date order.
+                    let i = 0;
+                    while (i < due.length && due[i].dueOnDay <= next.dueOnDay) i++;
+                    due.splice(i, 0, next);
+                }
             } else {
                 state.schedule[at] = { ...effect, fired: true, firedOnDay: effect.dueOnDay };
             }

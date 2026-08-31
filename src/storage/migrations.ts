@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { migrateClassProgression } from './migrations.class-progression.js';
 import { migrateCultivation } from './migrations.cultivation.js';
 import { migrateSocial } from './migrations.social.js';
+import { migrateWorld } from './migrations.world.js';
 
 export function migrate(db: Database.Database) {
   // First, create all tables (without indexes that depend on new columns)
@@ -651,6 +652,7 @@ export function migrate(db: Database.Database) {
   // Cultivation: cultivators, injuries, runs, techniques, alchemy, sects
   migrateCultivation(db);
   migrateSocial(db);
+  migrateWorld(db);
   widenAgentProviderCheck(db);
 }
 

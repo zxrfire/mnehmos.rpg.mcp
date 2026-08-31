@@ -36,7 +36,7 @@ import type Database from 'better-sqlite3';
  *    memories (`m7`), effects (`e7`) and location changes (`loc-x-c7`).
  *
  * 4. BELIEF IS NOT HERE. These tables hold ground truth and the surviving
- *    record — `fidelity` and `cause_known`. What an NPC knows, believes or
+ *    record - `fidelity` and `cause_known`. What an NPC knows, believes or
  *    suspects, and what the public believes, live in the social layer's
  *    knowledge tables and reference `world_facts.id`. One place to be wrong
  *    about who thinks what.
@@ -88,7 +88,7 @@ export function migrateWorld(db: Database.Database): void {
     -- "fidelity = 'lost'" does not mean it did not happen. It means it happened
     -- and nothing legible remains, which is the normal condition of this
     -- world's past. "cause_known = 0" is "nobody knows why", stored as a real
-    -- state — right up until someone finds out and it is updated.
+    -- state - right up until someone finds out and it is updated.
     CREATE TABLE IF NOT EXISTS world_facts (
       id TEXT NOT NULL,                              -- sequential: f1, f2, ... see header note 3
       world_id TEXT NOT NULL,
@@ -102,6 +102,17 @@ export function migrateWorld(db: Database.Database): void {
       visibility TEXT NOT NULL DEFAULT 'regional',   -- public|regional|faction|secret
       fidelity TEXT NOT NULL DEFAULT 'full',         -- full|partial|rumour|lost
       cause_known INTEGER NOT NULL DEFAULT 1,
+      -- How the ENGINE stands to this fact, as distinct from how well the
+      -- record survives. 'unresolved' is the important one: without it the
+      -- simulation degrades into "the database secretly knows everything and
+      -- NPCs merely hold incorrect copies".
+      truth TEXT NOT NULL DEFAULT 'objective',       -- objective|reconstructed|unresolved
+      claimed_outcomes TEXT NOT NULL DEFAULT '[]',   -- JSON: candidates, none endorsed
+      -- Something that almost happened and did not. An ordinary row with a
+      -- flag, and the cheapest available antidote to a history in which
+      -- everything anyone tried worked.
+      near_miss INTEGER NOT NULL DEFAULT 0,
+      near_miss_note TEXT NOT NULL DEFAULT '',
       magnitude REAL NOT NULL DEFAULT 0.3,
       actors TEXT NOT NULL DEFAULT '[]',             -- JSON [{id,name,role}]
       witness_ids TEXT NOT NULL DEFAULT '[]',        -- JSON: who was physically present
@@ -121,6 +132,11 @@ export function migrateWorld(db: Database.Database): void {
     -- "What does nobody know?" is a real query a scholar or grave-reader runs.
     CREATE INDEX IF NOT EXISTS idx_world_facts_unexplained
       ON world_facts(world_id) WHERE cause_known = 0;
+    -- "What does the engine itself not know?" is a different, smaller list.
+    CREATE INDEX IF NOT EXISTS idx_world_facts_unresolved
+      ON world_facts(world_id) WHERE truth = 'unresolved';
+    CREATE INDEX IF NOT EXISTS idx_world_facts_near_miss
+      ON world_facts(world_id) WHERE near_miss = 1;
 
     -- Actor participation is many-to-many and is queried from both ends
     -- ("what happened to her", "who was involved in that"), so it is a join
@@ -160,6 +176,21 @@ export function migrateWorld(db: Database.Database): void {
 
       hazards TEXT NOT NULL DEFAULT '[]',            -- JSON tags, matched by specialist counters
       affinities TEXT NOT NULL DEFAULT '[]',         -- JSON [{tag,multiplier,thresholdOffset,note}]
+
+      -- A location is an environmental modifier, not just a name. These are
+      -- what make "cultivate for ten years" resolve differently in a city, on a
+      -- spirit mountain, and on a poisoned battlefield.
+      -- spiritual_density is usable qi NOW; ash_density is unbreathed fall the
+      -- ground holds. A sealed ruin runs high on one and zero on the other, and
+      -- that gap is the entire economy of exploration.
+      env_spiritual_density REAL NOT NULL DEFAULT 0.35,
+      env_danger REAL NOT NULL DEFAULT 0.2,
+      env_resources TEXT NOT NULL DEFAULT '[]',      -- JSON
+      env_climate TEXT NOT NULL DEFAULT 'temperate',
+      env_political_control TEXT NOT NULL DEFAULT '',
+      env_special_rules TEXT NOT NULL DEFAULT '[]',  -- JSON: local laws of the place
+      env_known_secrets TEXT NOT NULL DEFAULT '[]',  -- JSON
+      env_historical_scars TEXT NOT NULL DEFAULT '[]', -- JSON
       links TEXT NOT NULL DEFAULT '[]',              -- JSON; portals are links on the same planet
 
       -- Secret realms and sealed domains: a period, a window and a phase, so
@@ -187,6 +218,7 @@ export function migrateWorld(db: Database.Database): void {
       origin_thresholds TEXT NOT NULL DEFAULT '{}',  -- JSON
       origin_hazards TEXT NOT NULL DEFAULT '[]',     -- JSON
       origin_affinities TEXT NOT NULL DEFAULT '[]',  -- JSON
+      origin_environment TEXT NOT NULL DEFAULT '{}', -- JSON: the whole block, as it began
       origin_from_day INTEGER,
 
       next_change_seq INTEGER NOT NULL DEFAULT 1,
@@ -261,7 +293,7 @@ export function migrateWorld(db: Database.Database): void {
 
     -- ── NPCS: SMALL DURABLE RECORDS ──────────────────────────────────────
     -- Not simulated agents. Identity, cultivation, location, faction, goals,
-    -- relationships, history and memories — enough for the LLM to reason about
+    -- relationships, history and memories - enough for the LLM to reason about
     -- behaviour without anything here ever having to decide it.
     CREATE TABLE IF NOT EXISTS world_npcs (
       id TEXT NOT NULL,
@@ -288,7 +320,19 @@ export function migrateWorld(db: Database.Database): void {
       faction_id TEXT,
       faction_rank_index INTEGER NOT NULL DEFAULT -1,
 
-      status TEXT NOT NULL DEFAULT 'alive',          -- alive|dead|missing|ascended|sealed
+      -- Existence is multi-valued once cultivation is profound: above Nascent
+      -- Soul, body destroyed is no longer the same as dead. 'missing' and
+      -- 'unknown' are CORRECT ANSWERS rather than placeholders for a decision
+      -- the engine is avoiding, and the world may hold several incompatible
+      -- beliefs about such a person at once.
+      status TEXT NOT NULL DEFAULT 'alive',          -- alive|physically_dead|soul_preserved|
+                                                     -- remnant|sealed|possessing|reincarnated|
+                                                     -- reconstructed|missing|unknown
+      body_id TEXT,                                  -- which body, when not their own
+      soul_state TEXT NOT NULL DEFAULT 'intact',     -- intact|damaged|fragmented|fading
+      -- How much of the original person this actually is. A remnant is not the
+      -- person, and that distinction is frequently the whole encounter.
+      identity_continuity REAL NOT NULL DEFAULT 1,
       died_on_day INTEGER,
       end_note TEXT NOT NULL DEFAULT '',
 
@@ -315,13 +359,26 @@ export function migrateWorld(db: Database.Database): void {
       world_id TEXT NOT NULL,
       npc_id TEXT NOT NULL,
       kind TEXT NOT NULL,                            -- cultivation|revenge|wealth|status|...
+      -- The five fields, and no psychology: goal, priority, progress,
+      -- obstacles, deadline. "Avenge a father. High. Has identified the
+      -- killer's faction. Insufficient strength. No deadline."
       text TEXT NOT NULL,
       priority REAL NOT NULL DEFAULT 0.5,
+      progress TEXT NOT NULL DEFAULT '',
+      obstacles TEXT NOT NULL DEFAULT '[]',          -- JSON array of strings
+      deadline_on_day INTEGER,                       -- NULL is common and correct
       status TEXT NOT NULL DEFAULT 'active',         -- active|achieved|abandoned|blocked|impossible
       target_id TEXT,
       opened_on_day INTEGER NOT NULL,
       closed_on_day INTEGER,
       note TEXT NOT NULL DEFAULT '',
+      -- A goal does not end with its holder. A disciple continues the revenge;
+      -- a descendant inherits the search. opened_on_day is preserved across the
+      -- handoff, which is what makes a three-hundred-year-old goal legible as
+      -- three hundred years old.
+      inherited_from_id TEXT,
+      origin_holder_id TEXT NOT NULL DEFAULT '',
+      generation INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (world_id, id),
       FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
     );
@@ -490,6 +547,173 @@ export function migrateWorld(db: Database.Database): void {
       ON world_processes(world_id, actor_id);
     CREATE INDEX IF NOT EXISTS idx_world_processes_open
       ON world_processes(world_id) WHERE ends_on_day IS NULL;
+
+    -- ── LINEAGE ──────────────────────────────────────────────────────────
+    -- The minimum viable version: an edge, plus what travels down it. No
+    -- genetics model. This is what long time-skips land on: without the edge a
+    -- century skip has nothing to attach consequence to.
+    CREATE TABLE IF NOT EXISTS world_lineages (
+      id TEXT NOT NULL,
+      world_id TEXT NOT NULL,
+      surname TEXT NOT NULL,
+      founder_id TEXT NOT NULL,
+      founded_on_day INTEGER NOT NULL,
+      member_ids TEXT NOT NULL DEFAULT '[]',         -- JSON
+      traits TEXT NOT NULL DEFAULT '[]',             -- JSON bloodline traits + their modifiers
+      reputation REAL NOT NULL DEFAULT 0,            -- what the name is worth, -1..1
+      holdings TEXT NOT NULL DEFAULT '{}',           -- JSON: family resources
+      -- Ids in the social layer's obligation ledger. The records live there;
+      -- only the link lives here, so neither layer owns half a grudge.
+      obligation_ids TEXT NOT NULL DEFAULT '[]',     -- JSON
+      inherited_enemy_ids TEXT NOT NULL DEFAULT '[]',-- JSON: accounts against the line
+      extinct_on_day INTEGER,
+      tags TEXT NOT NULL DEFAULT '[]',
+      PRIMARY KEY (world_id, id),
+      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+    );
+
+    -- The edge itself. Its own table because it is walked from both ends:
+    -- "who are this person's descendants" and "whose descendant is this".
+    CREATE TABLE IF NOT EXISTS world_lineage_edges (
+      world_id TEXT NOT NULL,
+      lineage_id TEXT NOT NULL,
+      parent_id TEXT NOT NULL,
+      child_id TEXT NOT NULL,
+      -- Values match the social layer's InheritanceRelation exactly, so heirs
+      -- pass to inheritLedgerOnDeath with no mapping step.
+      relation TEXT NOT NULL,                        -- descendant|disciple|successor|clan|sworn_sibling
+      on_day INTEGER NOT NULL,
+      note TEXT NOT NULL DEFAULT '',
+      PRIMARY KEY (world_id, parent_id, child_id, relation),
+      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_world_lineage_edges_child
+      ON world_lineage_edges(world_id, child_id);
+    CREATE INDEX IF NOT EXISTS idx_world_lineage_edges_lineage
+      ON world_lineage_edges(world_id, lineage_id);
+
+    -- ── OPPORTUNITY WINDOWS ──────────────────────────────────────────────
+    -- Every opportunity carries a window and the world does not hold it open.
+    -- Stored as (opens, duration, recurrence) so "is the eighty-year realm open
+    -- in year 9,000" is arithmetic rather than three centuries of ticking, and
+    -- so a window can open and shut while the player is in a cave.
+    CREATE TABLE IF NOT EXISTS world_opportunities (
+      id TEXT NOT NULL,
+      world_id TEXT NOT NULL,
+      kind TEXT NOT NULL,                            -- resource|realm_opening|awakening|recruitment|...
+      name TEXT NOT NULL,
+      summary TEXT NOT NULL DEFAULT '',
+      location_id TEXT,
+      faction_ids TEXT NOT NULL DEFAULT '[]',        -- JSON
+      opens_on_day INTEGER NOT NULL,
+      duration_days INTEGER NOT NULL DEFAULT 1,
+      recurrence_days INTEGER,                       -- NULL for a one-shot
+      remaining_occurrences INTEGER,                 -- NULL for unbounded
+      ends_after_day INTEGER,
+      requirements TEXT NOT NULL DEFAULT '{}',       -- JSON: the five capability predicates
+      claimed INTEGER NOT NULL DEFAULT 0,
+      claimed_by_id TEXT,                            -- somebody else taking it is a real outcome
+      claimed_on_day INTEGER,
+      missed_windows INTEGER NOT NULL DEFAULT 0,
+      -- Empty means nobody knows it exists, which is the normal case and is why
+      -- a player can miss something they never heard about.
+      known_to_ids TEXT NOT NULL DEFAULT '[]',       -- JSON
+      tags TEXT NOT NULL DEFAULT '[]',
+      data TEXT NOT NULL DEFAULT '{}',
+      PRIMARY KEY (world_id, id),
+      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_world_opportunities_opens
+      ON world_opportunities(world_id, opens_on_day);
+    CREATE INDEX IF NOT EXISTS idx_world_opportunities_location
+      ON world_opportunities(world_id, location_id);
+    CREATE INDEX IF NOT EXISTS idx_world_opportunities_live
+      ON world_opportunities(world_id) WHERE claimed = 0;
+
+    -- ── OBJECTS: POSSESSION IS NOT OWNERSHIP ─────────────────────────────
+    -- Four separable things: who holds it, whose it is, who claims it, and who
+    -- knows any of that. A player possessing an ancient artifact and an extinct
+    -- clan's descendant holding a legitimate ancestral claim, neither aware of
+    -- the other, is a situation - and situations are what this engine is for.
+    CREATE TABLE IF NOT EXISTS world_objects (
+      id TEXT NOT NULL,
+      world_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      kind TEXT NOT NULL,                            -- artifact|manual|currency|token|key|...
+      -- 'mundane' objects get no provenance. The world does not track where
+      -- every spirit stone came from, and pretending otherwise makes the table
+      -- useless and the queries slow.
+      significance TEXT NOT NULL DEFAULT 'notable',  -- mundane|notable|significant|legendary
+      description TEXT NOT NULL DEFAULT '',
+      possessor_id TEXT,                             -- who is physically holding it
+      owner_id TEXT,                                 -- whose it actually is; NULL is a real answer
+      owner_name TEXT NOT NULL DEFAULT '',
+      known_ownership_by TEXT NOT NULL DEFAULT '[]', -- JSON: who can name it on sight
+      location_id TEXT,
+      tags TEXT NOT NULL DEFAULT '[]',
+      data TEXT NOT NULL DEFAULT '{}',
+      next_claim_seq INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (world_id, id),
+      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_world_objects_possessor
+      ON world_objects(world_id, possessor_id);
+    CREATE INDEX IF NOT EXISTS idx_world_objects_owner
+      ON world_objects(world_id, owner_id);
+
+    -- Claims are rows, not a field, because there are routinely several and
+    -- they routinely conflict. Nothing here adjudicates: who wins is a matter
+    -- of force, politics and evidence, none of which the storage layer owns.
+    CREATE TABLE IF NOT EXISTS world_object_claims (
+      id TEXT NOT NULL,
+      world_id TEXT NOT NULL,
+      object_id TEXT NOT NULL,
+      claimant_id TEXT NOT NULL,
+      claimant_name TEXT NOT NULL DEFAULT '',
+      basis TEXT NOT NULL,                           -- ancestral|purchase|conquest|finder|debt|...
+      asserted_on_day INTEGER NOT NULL,
+      strength REAL NOT NULL DEFAULT 0.5,
+      acknowledged_by_ids TEXT NOT NULL DEFAULT '[]',-- JSON
+      evidence_fact_ids TEXT NOT NULL DEFAULT '[]',  -- JSON: what an investigation turned up
+      note TEXT NOT NULL DEFAULT '',
+      active INTEGER NOT NULL DEFAULT 1,             -- withdrawn claims are kept; old ones resurface
+      PRIMARY KEY (world_id, id),
+      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_world_object_claims_object
+      ON world_object_claims(world_id, object_id) WHERE active = 1;
+    CREATE INDEX IF NOT EXISTS idx_world_object_claims_claimant
+      ON world_object_claims(world_id, claimant_id);
+
+    -- Where a thing came from. Append-only, one chain per object. This is what
+    -- makes stolen goods, disputed inheritances, faction claims, investigations
+    -- and century-old consequences possible without a separate system for each.
+    CREATE TABLE IF NOT EXISTS world_object_provenance (
+      world_id TEXT NOT NULL,
+      object_id TEXT NOT NULL,
+      seq INTEGER NOT NULL,
+      on_day INTEGER NOT NULL,
+      holder_id TEXT,                                -- NULL when it went into the ground
+      holder_name TEXT NOT NULL DEFAULT '',
+      how TEXT NOT NULL,                             -- found|inherited|bought|stolen|looted|...
+      source TEXT NOT NULL DEFAULT '',
+      previous_holder_id TEXT,
+      previous_holder_name TEXT,
+      fact_id TEXT,
+      note TEXT NOT NULL DEFAULT '',
+      PRIMARY KEY (world_id, object_id, seq),
+      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+    );
+
+    -- "Has this ever been stolen" is the query an investigation opens with.
+    CREATE INDEX IF NOT EXISTS idx_world_provenance_how
+      ON world_object_provenance(world_id, how);
+    CREATE INDEX IF NOT EXISTS idx_world_provenance_holder
+      ON world_object_provenance(world_id, holder_id);
   `);
 
     addWorldColumns(db);
@@ -500,7 +724,7 @@ export function migrateWorld(db: Database.Database): void {
  *
  * CREATE TABLE IF NOT EXISTS is a no-op on a database that already has the
  * table, so a column added to the DDL above reaches new databases only. Every
- * post-release column therefore needs an explicit, guarded ALTER here — the
+ * post-release column therefore needs an explicit, guarded ALTER here - the
  * same shape runMigrations() in migrations.ts uses for the `characters` table.
  * Checking PRAGMA table_info rather than catching the duplicate-column error
  * keeps startup quiet on the overwhelmingly common already-migrated path.

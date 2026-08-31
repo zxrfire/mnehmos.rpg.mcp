@@ -65,6 +65,11 @@ export function migrateCultivation(db: Database.Database): void {
       -- and never again: it is the quality of the thing every realm above it is
       -- built on. 'none' until Foundation Establishment is actually reached.
       foundation_quality TEXT NOT NULL DEFAULT 'none',
+      -- Result of the last crossing. A 'false_immortal' stays at ordinal 44
+      -- and is permanently barred from attempting again, so this column is
+      -- what enforces the bar: without it the bar lasts only as long as the
+      -- process, and the Lid would open twice for the same name.
+      immortal_status TEXT NOT NULL DEFAULT 'none',
 
       -- Vitals. REAL is wrong for these; they are integer resources by schema.
       hp INTEGER NOT NULL,
@@ -388,6 +393,15 @@ function addCultivationColumns(db: Database.Database): void {
     if (!cultivatorColumns.includes('foundation_quality')) {
         console.error('[Migration] Adding foundation_quality column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN foundation_quality TEXT NOT NULL DEFAULT 'none';");
+    }
+
+    // The result of the last crossing: none | false_immortal | true_immortal.
+    // Durable because both non-'none' values are permanent facts about the
+    // cultivator - one bars every further attempt, the other is the only thing
+    // in this engine that permits ending a run without dying.
+    if (!cultivatorColumns.includes('immortal_status')) {
+        console.error('[Migration] Adding immortal_status column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN immortal_status TEXT NOT NULL DEFAULT 'none';");
     }
 
     const runColumns = (

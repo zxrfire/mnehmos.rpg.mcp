@@ -28,6 +28,7 @@ interface CultivatorRow {
     realm_ordinal: number;
     cultivation_progress: number;
     foundation_quality: string;
+    immortal_status: string;
     hp: number;
     max_hp: number;
     qi: number;
@@ -183,7 +184,7 @@ export class CultivatorRepository {
         this.insertStmt = db.prepare(`
             INSERT INTO cultivators (
                 id, run_id, name, kind, spirit_root, attributes,
-                realm_ordinal, cultivation_progress, foundation_quality,
+                realm_ordinal, cultivation_progress, foundation_quality, immortal_status,
                 hp, max_hp, qi, max_qi, satiety, starvation_turns,
                 age, years_at_current_realm,
                 spirit_stones, sect_id, sect_rank, location, feuds, known_techniques,
@@ -191,7 +192,7 @@ export class CultivatorRepository {
                 created_at, updated_at
             ) VALUES (
                 @id, @runId, @name, @kind, @spiritRoot, @attributes,
-                @realmOrdinal, @cultivationProgress, @foundationQuality,
+                @realmOrdinal, @cultivationProgress, @foundationQuality, @immortalStatus,
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns,
                 @age, @yearsAtCurrentRealm,
                 @spiritStones, @sectId, @sectRank, @location, @feuds, @knownTechniques,
@@ -205,7 +206,7 @@ export class CultivatorRepository {
                 run_id = @runId, name = @name, kind = @kind,
                 spirit_root = @spiritRoot, attributes = @attributes,
                 realm_ordinal = @realmOrdinal, cultivation_progress = @cultivationProgress,
-                foundation_quality = @foundationQuality,
+                foundation_quality = @foundationQuality, immortal_status = @immortalStatus,
                 hp = @hp, max_hp = @maxHp, qi = @qi, max_qi = @maxQi,
                 satiety = @satiety, starvation_turns = @starvationTurns,
                 age = @age, years_at_current_realm = @yearsAtCurrentRealm,
@@ -455,6 +456,34 @@ export class CultivatorRepository {
     }
 
     /**
+     * Record the result of the last crossing.
+     *
+     * Separate from `update` for the same reason `establishFoundation` is: both
+     * non-'none' values are permanent and load-bearing. A 'false_immortal' is
+     * what bars every further attempt, and refusing to overwrite it here means
+     * no later write can quietly clear the bar and let the Lid open twice for
+     * the same name. Returns null when the id is unknown or a status is already
+     * recorded.
+     */
+    recordImmortalStatus(
+        id: string,
+        status: Cultivator['immortalStatus']
+    ): Cultivator | null {
+        const existing = this.getById(id);
+        if (!existing) return null;
+        this.assertMutable(existing);
+        if (existing.immortalStatus !== 'none') return null;
+
+        const valid = CultivatorSchema.parse({
+            ...existing,
+            immortalStatus: status,
+            updatedAt: new Date().toISOString()
+        });
+        this.updateStmt.run(this.toParams(valid));
+        return valid;
+    }
+
+    /**
      * Move up the ladder. The repo owns only the bookkeeping — clamping to
      * MAX_ORDINAL, clearing accumulated progress, and restarting the
      * stagnation clock that kills cultivators who sit at one realm for fifty
@@ -608,6 +637,7 @@ export class CultivatorRepository {
             realmOrdinal: c.realmOrdinal,
             cultivationProgress: c.cultivationProgress,
             foundationQuality: c.foundationQuality,
+            immortalStatus: c.immortalStatus,
             hp: c.hp,
             maxHp: c.maxHp,
             qi: c.qi,
@@ -659,6 +689,7 @@ export class CultivatorRepository {
             realmOrdinal: row.realm_ordinal,
             cultivationProgress: row.cultivation_progress,
             foundationQuality: row.foundation_quality,
+            immortalStatus: row.immortal_status,
             hp: row.hp,
             maxHp: row.max_hp,
             qi: row.qi,
