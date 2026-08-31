@@ -2,7 +2,7 @@
 /**
  * One-command launcher: `npm run play`.
  *
- * Brings up the whole game — compiles if needed, opens the database, starts the
+ * Brings up the whole game - compiles if needed, opens the database, starts the
  * web GUI and its backend, and points a browser at it. No Docker required, no
  * services to configure, no API key needed.
  *
@@ -93,7 +93,7 @@ async function main() {
     }
 
     const url = `http://localhost:${PORT}`;
-    console.log(`\n  The Vault is open at ${url}\n`);
+    console.log(`\n  The Cultivation Ladder is open at ${url}\n`);
 
     if (shouldOpen) {
         // Give the listener a moment before the browser races it.
