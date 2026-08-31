@@ -296,3 +296,42 @@ For a player, an unbacked sect is the most *available* institution - lower admis
 faster advancement, genuine responsibility early - and the ceiling arrives sooner and
 harder than anywhere else. Rising fast in a sect with nowhere to send you is its own kind
 of trap.
+
+## Direct rule: a backer with no subsidiaries
+
+The pyramid is one model, not the only one. A powerful institution can hold its territory
+**directly** - no client sects, no courts, no leases. It administers every vein itself and
+deals with the people on them itself.
+
+The trade it is making:
+
+- **Nothing is skimmed.** A federated power loses a cut at every tier and is told what its
+  subsidiaries want it to hear. A direct ruler gets the whole yield and its own reports.
+- **And it must do all the work.** Administration, patrols, disputes, intake, granaries,
+  formation upkeep - everything a client sect would have handled. So it is either much
+  larger in personnel than its realm profile suggests, or its reach is genuinely small.
+  Both are interesting; a direct power holding a huge territory on too few people is a
+  taut, brittle thing.
+- **No buffer, no deniability.** A federated power can let a subsidiary do something
+  regrettable and disown it. A direct ruler owns every act by name, which makes it more
+  cautious, more legalistic, and much harder to provoke into a mistake.
+- **No feeder pipeline.** Nobody is selecting its next generation for it, so it must
+  recruit directly - going out and looking, testing broadly, or simply taking. Its intake
+  is therefore either unusually wide (it tests everyone in the province) or unusually
+  narrow (it takes almost no one and grows slowly).
+- **Uniformity instead of politics.** No vassals with their own interests means far less
+  internal factional churn of the kind that makes a federated power exploitable - and
+  correspondingly fewer seams for an outsider to work.
+
+What it feels like from below is completely different, and that is the point. Under a
+federated power there is a local sect to belong to, a familiar hierarchy, and someone
+nearby to petition. Under direct rule there is **no intermediate institution at all** -
+the cultivator's relationship is with the large thing itself, which is impersonal,
+consistent, and does not know their name. Petitioning it means addressing a clerk.
+
+For the player: joining a federated power means joining a sect. Joining a direct ruler
+means being processed.
+
+Both models should exist in the world, ideally adjacent, and the difference should be
+visible the moment a border is crossed - a province of squabbling client sects on one
+side, and on the other a single administration with a register and a schedule.
