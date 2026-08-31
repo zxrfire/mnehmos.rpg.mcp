@@ -147,3 +147,25 @@ make reasoning useful.
 
 Self-hosted, single-user, no paid tiers, no turn limits, no metering. One command
 brings up the GUI and all backend services.
+
+## ADMIN Mode (exploratory testing)
+
+Saying `ADMIN` in play unlocks a privileged tool surface for exploratory testing. It is
+deliberately designed so that it does **not** create a hallucination surface.
+
+**ADMIN does not relax the authority rule.** The agent still may not assert state. What
+changes is that the engine exposes `admin_manage`, whose actions perform real,
+deterministic, audited mutations that are normally gated.
+
+The distinction that makes this safe:
+
+- ADMIN bypasses **gates**, not **truth**. Spawning the grave of a Tribulation
+  Transcender while the player sits at Qi Condensation Layer 2 is a content gate being
+  lifted: the engine genuinely creates that site, writes it to SQLite, and hands it back.
+  The agent narrates something that actually exists.
+- There is **no** action anywhere — admin or otherwise — that lets the agent declare an
+  outcome without a corresponding state change. That option must never be added, because
+  it is precisely the affordance that invites hallucination.
+
+Every admin action is written to the audit log, and runs that used admin are flagged so
+they are excluded from the death ledger and from any balance statistics.
