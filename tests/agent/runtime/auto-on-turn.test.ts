@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Integration test: combat_manage advance auto-invokes an agent
  * when the new current actor has auto_on_turn=true.
  *
  * Wires a fake provider into the agent runtime via setAgentRuntime so we can
- * verify the full path (turn advance → next actor lookup → invoke → embedded
+ * verify the full path (turn advance â†’ next actor lookup â†’ invoke â†’ embedded
  * agentResponse) without needing API keys.
  */
 
@@ -28,10 +28,10 @@ function extractAgentManageJson(result: { content: Array<{ type: string; text: s
 
 function extractAdvanceData(result: { content: Array<{ type: string; text: string }> }) {
     const text = result.content[0].text;
-    // combat_manage uses STATE_JSON embedded tag; the consolidated layer parses
+    // combat_manage uses COMBAT_MANAGE embedded tag; the consolidated layer parses
     // it into result data and returns the data JSON wrapped by the router.
     const tryMatchPatterns = [
-        /<!-- STATE_JSON\n([\s\S]*?)\nSTATE_JSON -->/,
+        /<!-- COMBAT_MANAGE\n([\s\S]*?)\nCOMBAT_MANAGE -->/,
         /<!-- COMBAT_MANAGE_JSON\n([\s\S]*?)\nCOMBAT_MANAGE_JSON -->/
     ];
     for (const re of tryMatchPatterns) {
@@ -313,3 +313,4 @@ describe('combat_manage advance - agent auto-invoke hook', () => {
         expect(data.agentResponse.status).toBe('timeout');
     });
 });
+

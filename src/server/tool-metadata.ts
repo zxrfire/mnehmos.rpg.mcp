@@ -4,13 +4,13 @@
  */
 
 export type ToolCategory =
-  | 'world' | 'combat' | 'character' | 'inventory' | 'quest' | 'party'
-  | 'math' | 'strategy' | 'secret' | 'concentration' | 'rest' | 'scroll'
-  | 'aura' | 'npc' | 'spatial' | 'theft' | 'corpse' | 'improvisation'
+  | 'world' | 'inventory' | 'quest' | 'party'
+  | 'math' | 'strategy' | 'secret'
+  | 'npc' | 'spatial' | 'theft' | 'corpse' | 'improvisation'
   | 'turn-management' | 'meta' | 'batch' | 'context' | 'narrative' | 'composite'
   | 'agent'
   // Cultivation (xianxia) surface
-  | 'cultivation' | 'run' | 'technique' | 'alchemy' | 'sect' | 'admin';
+  | 'cultivation' | 'run' | 'technique' | 'alchemy' | 'sect' | 'admin' | 'combat';
 
 export type TokenCost = 'low' | 'medium' | 'high' | 'variable';
 

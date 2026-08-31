@@ -24,7 +24,6 @@
 import { ChatMessage } from '../provider/types.js';
 import { AgentRepository } from '../../storage/repos/agent.repo.js';
 import { CharacterRepository } from '../../storage/repos/character.repo.js';
-import { ConcentrationRepository } from '../../storage/repos/concentration.repo.js';
 import { InventoryRepository } from '../../storage/repos/inventory.repo.js';
 import { NpcMemoryRepository } from '../../storage/repos/npc-memory.repo.js';
 import { SceneRepository } from '../../storage/repos/scene.repo.js';
@@ -40,7 +39,6 @@ import { buildSceneSlice } from './slices/scene.js';
 export interface ComposeDeps {
     agentRepo: AgentRepository;
     characterRepo: CharacterRepository;
-    concentrationRepo: ConcentrationRepository;
     inventoryRepo: InventoryRepository;
     npcMemoryRepo: NpcMemoryRepository;
     sceneRepo?: SceneRepository;
@@ -103,7 +101,6 @@ export function composePrompt(input: ComposeInput, deps: ComposeDeps): ComposeRe
 
         const characterState = buildCharacterStateSlice(input.characterId, {
             characterRepo: deps.characterRepo,
-            concentrationRepo: deps.concentrationRepo,
             inventoryRepo: deps.inventoryRepo
         });
         if (characterState) { systemParts.push(characterState); slicesIncluded.push('character_state'); } else { slicesSkipped.push('character_state'); }
@@ -131,7 +128,7 @@ export function composePrompt(input: ComposeInput, deps: ComposeDeps): ComposeRe
 
     if (systemParts.length > 0) {
         // Append a small standing instruction to encourage the plain-text intent shape.
-        const closing = '\n\n--- HOW TO RESPOND ---\nSpeak in character. Briefly describe what you want to do, the way a player at the table would declare their action ("I attack the orc with my longbow.", "I cast cure wounds on Theron at 2nd level.", "I want to make a Stealth check to slip past the guard."). The DM will roll dice and narrate the outcome.';
+        const closing = '\n\n--- HOW TO RESPOND ---\nSpeak in character. Briefly describe what you want to do, the way a player at the table would declare their action ("I strike at the man with the split hands.", "I circulate what qi I have left and try to hold the doorway.", "I want to slip past the gate guard without being noticed."). The engine resolves the outcome; you do not.';
         messages.push({
             role: 'system',
             content: systemParts.join('\n\n') + closing

@@ -11,6 +11,7 @@
 
 import { z } from 'zod';
 import { MAX_ORDINAL } from '../engine/cultivation/realms.js';
+import { TraditionIdSchema } from '../engine/cultivation/tradition.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SURVIVAL CONSTANTS
@@ -373,6 +374,15 @@ export const CultivatorSchema = z.object({
     // Talent - rolled once, permanent, never editable after creation.
     spiritRoot: SpiritRootKeySchema,
     attributes: InnateAttributesSchema,
+    /**
+     * Which of the two roads this cultivator walks.
+     *
+     * Not flavour: it decides whether a soul-directed art does anything to them
+     * and what destroying their body actually accomplishes. Backed by the
+     * `tradition_id` column, defaulting to the Drawn Road, which is what every
+     * row written before the Cut Road existed always was.
+     */
+    traditionId: TraditionIdSchema.default('tradition-drawn'),
 
     // Position on the ladder.
     realmOrdinal: z.number().int().min(0).max(MAX_ORDINAL).default(0),
@@ -438,6 +448,17 @@ export const CultivatorSchema = z.object({
     feuds: z.array(z.string()).default([]),
 
     knownTechniques: z.array(z.string()).default([]),
+
+    /**
+     * Confrontations survived, and how many of them were won.
+     *
+     * Experience is a form of power in this world, so it is a counted fact
+     * rather than a recollection: `assessPower` reads `battlesSurvived` on
+     * every exchange. Both are denormalised from `combat_records`, which stays
+     * authoritative and holds who, when and how it went.
+     */
+    battlesSurvived: z.number().int().min(0).default(0),
+    battlesWon: z.number().int().min(0).default(0),
 
     /**
      * Convenience boolean, kept truthful so the hundreds of existing call sites

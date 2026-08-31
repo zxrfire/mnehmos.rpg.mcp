@@ -13,7 +13,7 @@ import { CharacterRepository } from '../../storage/repos/character.repo.js';
 import { InventoryRepository } from '../../storage/repos/inventory.repo.js';
 import { ItemRepository } from '../../storage/repos/item.repo.js';
 import { SessionContext } from '../types.js';
-import { handleCreate as handleCharacterCreate } from './character-manage.js';
+import { createCharacterRecord } from './character-record.js';
 
 export interface McpResponse {
     content: Array<{ type: 'text'; text: string }>;
@@ -247,13 +247,9 @@ async function handleCreateCharacters(input: BatchManageInput, _ctx: SessionCont
 
     for (const charData of input.characters) {
         try {
-            // Batch creation delegates to the same authoritative path as
-            // character_manage so HP, proficiencies, backgrounds, and starter
-            // items cannot drift between two engine entry points.
-            const character = await handleCharacterCreate({
-                action: 'create',
-                ...charData
-            } as any) as any;
+            // Batch creation goes through the same single insert npc_manage
+            // uses, so the two entry points cannot drift.
+            const character = createCharacterRecord(charData as any) as any;
             createdCharacters.push({
                 id: character.id,
                 name: character.name,

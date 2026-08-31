@@ -64,7 +64,7 @@ import { AuditLogger } from './audit.js';
 import { withSession } from './types.js';
 import { closeDb, campaignDbPath, assertNoLegacyDatabase, useSingleUserDatabase } from '../storage/index.js';
 import { setWorldPubSub } from './tools.js';
-import { setCombatPubSub } from './handlers/combat-handlers.js';
+import { setCombatPubSub } from './consolidated/combat-manage.js';
 
 // Agent runtime
 import { ProviderFactory } from '../agent/provider/factory.js';

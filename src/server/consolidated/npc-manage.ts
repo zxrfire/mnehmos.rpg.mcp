@@ -14,11 +14,10 @@ import { NpcMemoryRepository, Familiarity, Disposition, Importance } from '../..
 import { CharacterRepository } from '../../storage/repos/character.repo.js';
 import { SpatialRepository } from '../../storage/repos/spatial.repo.js';
 import { AgentRepository } from '../../storage/repos/agent.repo.js';
-import { ConcentrationRepository } from '../../storage/repos/concentration.repo.js';
 import { InventoryRepository } from '../../storage/repos/inventory.repo.js';
 import { calculateHearingRadius, VolumeLevel } from '../../engine/social/hearing.js';
 import { rollStealthVsPerception, isDeafened, getEnvironmentModifier } from '../../engine/social/stealth-perception.js';
-import { handleCreate as handleCharacterCreate } from './character-manage.js';
+import { createCharacterRecord } from './character-record.js';
 import {
     handleCreate as handleAgentCreate,
     handleSetSlice as handleAgentSetSlice,
@@ -223,37 +222,31 @@ const InteractSchema = z.object({
 async function handleCreateNpc(args: z.infer<typeof NewCreateSchema>): Promise<object> {
     const warnings: string[] = [];
 
-    // STEP 1: Delegate to character_manage.handleCreate. If this throws, fail
-    // fast - there's nothing yet to clean up.
-    const charArgs = {
-        action: 'create' as const,
-        name: args.name,
-        class: args.class,
-        race: args.race,
-        background: args.background,
-        alignment: args.alignment,
-        stats: args.stats,
-        hp: args.hp,
-        maxHp: args.maxHp,
-        ac: args.ac,
-        level: args.level,
-        characterType: args.characterType,
-        factionId: args.factionId,
-        behavior: args.behavior,
-        knownSpells: args.knownSpells,
-        preparedSpells: args.preparedSpells,
-        resistances: args.resistances,
-        vulnerabilities: args.vulnerabilities,
-        immunities: args.immunities,
-        origin: args.origin,
-        provisionEquipment: args.provisionEquipment,
-        customEquipment: args.customEquipment,
-        startingGold: args.startingGold
-    };
-
-    const charResult = await handleCharacterCreate(charArgs as any) as any;
-    if (charResult?.error) {
-        return { error: true, message: charResult.message || 'Character creation failed' };
+    // STEP 1: Write the character row. The single hard-commit point; if this
+    // throws, fail fast - there is nothing yet to clean up.
+    let charResult: any;
+    try {
+        charResult = createCharacterRecord({
+            name: args.name,
+            class: args.class,
+            race: args.race,
+            background: args.background,
+            alignment: args.alignment,
+            stats: args.stats,
+            hp: args.hp,
+            maxHp: args.maxHp,
+            ac: args.ac,
+            level: args.level,
+            characterType: args.characterType,
+            factionId: args.factionId,
+            behavior: args.behavior,
+            resistances: args.resistances,
+            vulnerabilities: args.vulnerabilities,
+            immunities: args.immunities,
+            origin: args.origin
+        });
+    } catch (e) {
+        return { error: true, message: (e as Error).message || 'Character creation failed' };
     }
 
     const characterId = charResult.id as string;
@@ -410,7 +403,6 @@ async function handleGetFullContext(args: z.infer<typeof GetFullContextSchema>):
     const agentRepo = new AgentRepository(db);
     const memoryRepo = new NpcMemoryRepository(db);
     const spatialRepo = new SpatialRepository(db);
-    const concentrationRepo = new ConcentrationRepository(db);
     const inventoryRepo = new InventoryRepository(db);
 
     const character = charRepo.findById(args.characterId);
@@ -695,7 +687,6 @@ async function handleGetFullContext(args: z.infer<typeof GetFullContextSchema>):
         try {
             const sheetStr = buildCharacterStateSlice(args.characterId, {
                 characterRepo: charRepo,
-                concentrationRepo,
                 inventoryRepo
             });
 

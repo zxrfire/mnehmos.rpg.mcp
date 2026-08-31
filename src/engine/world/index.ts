@@ -65,6 +65,31 @@
  *                    serialisable data, pure mutations, persistence at the
  *                    edges.
  *
+ *   catalog.ts       the narrow view of `src/data/cultivation/` that seeding
+ *                    needs, mapped in one auditable place so content churn
+ *                    cannot take down the world engine.
+ *
+ *   seeding.ts       turns the catalogs into a world that is already running:
+ *                    regions with veins and gating, factions with real members,
+ *                    hundreds of NPCs whose realms are DERIVED from their own
+ *                    rolled inputs rather than assigned, lineages, dated
+ *                    opportunities and the grant renewals that fall due later.
+ *
+ *   pressure.ts      the world changing on its own. Weighted templates that
+ *                    bind to real entities and write real state: a vein changes
+ *                    hands, an elder dies, a border moves, a faction folds. It
+ *                    schedules THAT something happened; it never simulates why
+ *                    anybody did it.
+ *
+ *   digest.ts        what the player actually learns, gated on channel and then
+ *                    on attribution. An event involving a faction they have
+ *                    never heard of reaches them as a closed road, never as a
+ *                    named report.
+ *
+ *   driver.ts        `advanceWorldForPlay(state, {days, access})`. One call:
+ *                    clock, then pressure, then the filtered digest. This is
+ *                    what the play loop wires to.
+ *
  *   time.ts          `advanceTime(days)`. Moves the date, fires what fell due,
  *                    applies durable rates, settles deaths, and reports what
  *                    the observer missed. Long actions are interrupted by world
@@ -93,3 +118,8 @@ export * from './npc-state.js';
 export * from './memory.js';
 export * from './world-state.js';
 export * from './time.js';
+export * from './catalog.js';
+export * from './seeding.js';
+export * from './pressure.js';
+export * from './digest.js';
+export * from './driver.js';

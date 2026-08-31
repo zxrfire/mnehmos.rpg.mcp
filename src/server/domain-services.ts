@@ -12,7 +12,6 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import Database from 'better-sqlite3';
 import { getDb } from '../storage/index.js';
 import { CharacterRepository } from '../storage/repos/character.repo.js';
-import { CombatActionLogRepository } from '../storage/repos/combat-action-log.repo.js';
 import { ConcentrationRepository } from '../storage/repos/concentration.repo.js';
 import { EncounterRepository } from '../storage/repos/encounter.repo.js';
 import { EventInboxRepository } from '../storage/repos/event-inbox.repo.js';
@@ -24,7 +23,6 @@ import { WorldSnapshotRepository } from '../storage/repos/world-snapshot.repo.js
 export interface DomainServices {
     readonly db: Database.Database;
     readonly character: CharacterRepository;
-    readonly combatActionLog: CombatActionLogRepository;
     readonly concentration: ConcentrationRepository;
     readonly encounter: EncounterRepository;
     readonly eventInbox: EventInboxRepository;
@@ -41,7 +39,6 @@ export function createDomainServices(db: Database.Database): DomainServices {
     return {
         db,
         character: new CharacterRepository(db),
-        combatActionLog: new CombatActionLogRepository(db),
         concentration: new ConcentrationRepository(db),
         encounter: new EncounterRepository(db),
         eventInbox: new EventInboxRepository(db),

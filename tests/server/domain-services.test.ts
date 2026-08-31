@@ -20,10 +20,10 @@ describe('domain service boundary', () => {
         expect(getDomainServices()).not.toBe(services);
     });
 
-    it('exposes the repository dependencies needed by combat, world, and inventory', () => {
+    it('exposes the repository dependencies needed by world, npc and inventory', () => {
         const services = getDomainServices();
         const required: Array<keyof DomainServices> = [
-            'db', 'character', 'combatActionLog', 'concentration', 'encounter',
+            'db', 'character', 'concentration', 'encounter',
             'eventInbox', 'inventory', 'item', 'world', 'worldSnapshot'
         ];
 

@@ -374,6 +374,70 @@ export function migrateCultivation(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_cultivation_tolls_cultivator
       ON cultivation_tolls(cultivator_id);
+
+    -- -- CONFRONTATIONS -----------------------------------------------------
+    -- Combat is not a scene the narrator remembers, it is state. The encounter
+    -- row holds the initiative order and the round; the participant rows hold
+    -- who is in it and where they stand in that order.
+    --
+    -- Kept separate from the cultivator row on purpose: HP and injuries belong
+    -- to the person and outlive the fight, while initiative and round belong to
+    -- the fight and must not leak into anything that reads a cultivator.
+    CREATE TABLE IF NOT EXISTS combat_encounters (
+      id TEXT PRIMARY KEY,
+      run_id TEXT,
+      seed TEXT NOT NULL,                            -- derived from the run seed
+      status TEXT NOT NULL DEFAULT 'active',         -- active | ended
+      round INTEGER NOT NULL DEFAULT 1,
+      turn_index INTEGER NOT NULL DEFAULT 0,
+      location TEXT,
+      ambient TEXT NOT NULL DEFAULT 'normal',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      ended_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_combat_encounters_run ON combat_encounters(run_id);
+    CREATE INDEX IF NOT EXISTS idx_combat_encounters_status ON combat_encounters(status);
+
+    CREATE TABLE IF NOT EXISTS combat_participants (
+      encounter_id TEXT NOT NULL,
+      participant_id TEXT NOT NULL,                  -- cultivator id, character id, or a free label
+      name TEXT NOT NULL,
+      cultivator_id TEXT,                            -- set when this participant is a cultivator
+      ordinal INTEGER NOT NULL DEFAULT 0,
+      initiative REAL NOT NULL DEFAULT 0,
+      slot INTEGER NOT NULL DEFAULT 0,               -- position in the rolled order
+      active INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (encounter_id, participant_id),
+      FOREIGN KEY (encounter_id) REFERENCES combat_encounters(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_combat_participants_slot
+      ON combat_participants(encounter_id, slot);
+
+    -- -- WHAT A CULTIVATOR HAS SURVIVED --------------------------------------
+    -- Experience is a form of power, so it has to be a fact rather than a
+    -- recollection. One row per confrontation resolved, which is both the
+    -- history a player can read back and the count assessPower prices.
+    CREATE TABLE IF NOT EXISTS combat_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      cultivator_id TEXT NOT NULL,
+      opponent_id TEXT,
+      opponent_name TEXT NOT NULL DEFAULT '',
+      opponent_ordinal INTEGER NOT NULL DEFAULT 0,
+      outcome TEXT NOT NULL,                         -- ConfrontationOutcome
+      won INTEGER NOT NULL DEFAULT 0,
+      realm_gap INTEGER NOT NULL DEFAULT 0,
+      edges TEXT NOT NULL DEFAULT '[]',              -- JSON array of Edge
+      on_day REAL NOT NULL DEFAULT 0,
+      turn INTEGER NOT NULL DEFAULT 0,
+      summary TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_combat_records_cultivator
+      ON combat_records(cultivator_id);
   `);
 
     addCultivationColumns(db);
@@ -461,6 +525,30 @@ function addCultivationColumns(db: Database.Database): void {
     if (!cultivatorColumns.includes('body_id')) {
         console.error('[Migration] Adding body_id column to cultivators table');
         db.exec('ALTER TABLE cultivators ADD COLUMN body_id TEXT;');
+    }
+
+    // Which road they walk. NOT NULL with a default rather than nullable: every
+    // cultivator walks one of exactly two, and 'tradition-drawn' is what every
+    // row written before the Cut Road existed always was. The column decides
+    // whether soul-directed arts do anything to this person, so it has to be
+    // durable - a tradition that reset to a default on every read would make a
+    // carver killable by an art that cannot touch them.
+    if (!cultivatorColumns.includes('tradition_id')) {
+        console.error('[Migration] Adding tradition_id column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN tradition_id TEXT NOT NULL DEFAULT 'tradition-drawn';");
+    }
+
+    // Confrontations survived. Denormalised from `combat_records` because
+    // `assessPower` asks for it on every exchange and a COUNT per strike is a
+    // scan nobody needs. The table stays authoritative; this is the index.
+    if (!cultivatorColumns.includes('battles_survived')) {
+        console.error('[Migration] Adding battles_survived column to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN battles_survived INTEGER NOT NULL DEFAULT 0;');
+    }
+
+    if (!cultivatorColumns.includes('battles_won')) {
+        console.error('[Migration] Adding battles_won column to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN battles_won INTEGER NOT NULL DEFAULT 0;');
     }
 
     const runColumns = (

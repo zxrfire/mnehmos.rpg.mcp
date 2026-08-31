@@ -1,727 +1,1189 @@
 /**
- * Consolidated Combat Management Tool
- * Replaces 7 separate tools for encounter lifecycle management:
- * create_encounter, get_encounter_state, end_encounter, load_encounter,
- * advance_turn, roll_death_save, execute_lair_action
+ * Consolidated Combat Tool - `combat_manage`
+ *
+ * Confrontation, as a cultivation world has it.
+ *
+ * THE FIRST THING THIS TOOL DOES IS REFUSE
+ * ----------------------------------------
+ * `assess` exists so a narrator can find out, before anything is committed,
+ * that what they were about to describe is not a fight. Two major realms apart
+ * and the engine returns `no_contest` and a list of the things that would
+ * actually work: flee, hide, negotiate, seek protection, exploit terrain, find
+ * the specialised counter, manipulate a third party, prepare, or simply not be
+ * found. Those are not consolations. They are the encounter.
+ *
+ * AUTHORITY BOUNDARY
+ * ------------------
+ * - No action accepts an outcome. Callers supply intent - who, against whom,
+ *   with which art, aiming at what, carrying which advantages - and never a
+ *   result. There is no `action: 'declare_victory'` and there must never be.
+ * - Every draw comes from `forStream(run.seed, ...)`. The same call against the
+ *   same state returns the same fight, and a player who died can replay it.
+ * - `edges` are claims about the world that the caller must have earned
+ *   elsewhere: an ambush is a position, a formation is weeks of work and a
+ *   fortune in stones, an artifact is an inventory row. This tool prices them;
+ *   it does not grant them.
+ * - Nothing here declares anyone dead. The engine reports damage, injuries and
+ *   whether the finishing requirement was met; `survival.ts` decides death and
+ *   the persistence step asks it.
+ *
+ * THE TRADITIONS
+ * --------------
+ * `strike` and `resolve` consult `killRequirement` at the moment a killing blow
+ * would land. A soul-directed art against a Cut cultivator is nullified outright
+ * - not reduced, nullified - and a body-directed killing of a Drawn cultivator
+ * above Nascent Soul destroys a body and does not end a person. Both results are
+ * reported plainly, because the winner walking away with the wrong belief is
+ * exactly how a feud outlives a funeral.
  */
 
 import { z } from 'zod';
-import { randomUUID } from 'crypto';
+import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
-import { SessionContext } from '../types.js';
 import { RichFormatter } from '../utils/formatter.js';
+import { PubSub } from '../../engine/pubsub.js';
 import {
-    handleCreateEncounter,
-    handleGetEncounterState,
-    handleEndEncounter,
-    handleLoadEncounter,
-    handleAdvanceTurn,
-    handleRollDeathSave,
-    handleExecuteLairAction
-} from '../handlers/combat-handlers.js';
-import { expandCreatureTemplate, listAllTemplates } from '../../data/creature-presets.js';
-import { getDomainServices } from '../domain-services.js';
-import { CombatEngine } from '../../engine/combat/engine.js';
-import { getCombatManager } from '../state/combat-manager.js';
+    ALL_EDGES,
+    MAX_EDGE_MULTIPLIER,
+    assessEdges,
+    assessGap,
+    assessPower,
+    attemptFlight,
+    canDirectAtSoul,
+    canUseTechnique,
+    evaluateDeathConditions,
+    forStream,
+    rankName,
+    resolveConfrontation,
+    resolveExchange,
+    rollInitiative,
+    type CombatantInput,
+    type Edge
+} from '../../engine/cultivation/index.js';
+import { describeDeath } from '../../engine/cultivation/survival.js';
+import { getTechnique } from '../../data/cultivation/techniques.js';
+import { CombatRepository } from '../../storage/repos/combat.repo.js';
+import { AgentRepository } from '../../storage/repos/agent.repo.js';
 import { getAgentRuntime, buildAgentRuntime } from '../../agent/runtime/deps.js';
 import { invokeAgent } from '../../agent/runtime/invoke.js';
 import { ProviderFactory } from '../../agent/provider/factory.js';
+import {
+    currentAmbient,
+    describeCultivator,
+    ensureCultivationDb,
+    guidingError,
+    isGuidingErrorBody,
+    resolveActiveRun,
+    round2,
+    round4,
+    summariseInjury,
+    type CultivationRepos,
+    type GuidingErrorBody
+} from './cultivation-support.js';
+import type { Cultivator, Run } from '../../schema/cultivation.js';
+
+const ACTIONS = [
+    'assess', 'strike', 'resolve', 'flee', 'history',
+    'create', 'get', 'advance', 'end'
+] as const;
+type CombatAction = typeof ACTIONS[number];
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONSTANTS
+// PUBSUB
+// Mirrors setWorldPubSub: wired once at server startup so a confrontation can
+// be streamed to a watching client without this module owning a transport.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const ACTIONS = ['create', 'get', 'end', 'load', 'advance', 'death_save', 'lair_action', 'spawn_quick_enemy', 'get_history'] as const;
-type CombatManageAction = typeof ACTIONS[number];
+let pubsub: PubSub | null = null;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ACTION SCHEMAS
-// ═══════════════════════════════════════════════════════════════════════════
-
-const ParticipantSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    initiativeBonus: z.number().int().default(0),
-    initiative: z.number().int().optional().describe('Optional pre-rolled initiative; otherwise the engine rolls it'),
-    hp: z.number().int().nonnegative(), // Allow 0 HP for dying characters
-    maxHp: z.number().int().positive(),
-    ac: z.number().int().min(0).optional()
-        .describe('Armor Class. If omitted, falls back to attacker-side derivation.'),
-    isEnemy: z.boolean().optional(),
-    /**
-     * Convenience alias for `isEnemy`. Values "enemy" / "hostile" map to
-     * isEnemy=true; "party" / "ally" / "friendly" / "neutral" map to false.
-     * If both `side` and `isEnemy` are provided, `isEnemy` wins.
-     */
-    side: z.enum(['party', 'enemy', 'hostile', 'ally', 'friendly', 'neutral']).optional(),
-    conditions: z.array(z.string()).default([]),
-    position: z.object({
-        x: z.number(),
-        y: z.number(),
-        z: z.number().optional()
-    }).optional(),
-    resistances: z.array(z.string()).optional(),
-    vulnerabilities: z.array(z.string()).optional(),
-    immunities: z.array(z.string()).optional()
-});
-
-/**
- * Coerce a participant's `side` into an `isEnemy` boolean.
- * Explicit `isEnemy` wins; otherwise derived from `side`.
- */
-function deriveIsEnemy(p: { isEnemy?: boolean; side?: string }): boolean | undefined {
-    if (typeof p.isEnemy === 'boolean') return p.isEnemy;
-    if (!p.side) return undefined;
-    return p.side === 'enemy' || p.side === 'hostile';
+export function setCombatPubSub(instance: PubSub): void {
+    pubsub = instance;
 }
 
-// Some MCP transports / hosts serialize nested object parameters as JSON strings.
-// Preprocess so callers can pass either a literal object OR a JSON-stringified object
-// and we end up with a real object before the inner schema validates.
-const TerrainSchema = z.preprocess(
-    (val) => {
-        if (typeof val === 'string' && val.trim().startsWith('{')) {
-            try { return JSON.parse(val); } catch { return val; }
-        }
-        return val;
-    },
-    z.object({
-        obstacles: z.array(z.string()).default([]),
-        difficultTerrain: z.array(z.string()).optional(),
-        water: z.array(z.string()).optional()
-    }).optional()
-);
+function publish(topic: string, payload: Record<string, unknown>): void {
+    try {
+        pubsub?.publish(topic, payload);
+    } catch {
+        // A watching client failing must never break a resolution.
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCHEMAS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const EdgeSchema = z.enum(ALL_EDGES as unknown as [Edge, ...Edge[]]);
+
+const OpponentSchema = z.object({
+    /** An existing cultivator to fight. Preferred: the engine reads their real state. */
+    cultivatorId: z.string().optional(),
+    /** Or describe one. Used for NPCs the world has not written down yet. */
+    name: z.string().optional(),
+    realmOrdinal: z.number().int().min(0).optional(),
+    traditionId: z.enum(['tradition-drawn', 'tradition-cut']).optional(),
+    might: z.number().int().min(1).max(3).optional(),
+    insight: z.number().int().min(1).max(4).optional(),
+    hp: z.number().int().min(1).optional(),
+    maxHp: z.number().int().min(1).optional(),
+    artifactGrade: z.number().min(0).max(5).optional(),
+    battlesSurvived: z.number().int().min(0).optional(),
+    /** Untreated injuries they are already carrying. The commonest real edge. */
+    untreatedInjuries: z.number().int().min(0).max(10).optional()
+});
+
+const AssessSchema = z.object({
+    action: z.literal('assess'),
+    cultivatorId: z.string().optional(),
+    opponent: OpponentSchema,
+    techniqueId: z.string().optional().describe('The art they would fight with'),
+    edges: z.array(EdgeSchema).optional().default([])
+        .describe('Advantages actually held. The engine prices them; it does not grant them.')
+});
+
+const StrikeSchema = z.object({
+    action: z.literal('strike'),
+    cultivatorId: z.string().optional(),
+    opponent: OpponentSchema,
+    techniqueId: z.string().describe('Catalog id of the art being used'),
+    vector: z.enum(['body', 'soul']).optional().default('body')
+        .describe('Where the strike is aimed. A soul-directed art needs to be able to reach one.'),
+    edges: z.array(EdgeSchema).optional().default([]),
+    opponentEdges: z.array(EdgeSchema).optional().default([])
+});
+
+const ResolveSchema = z.object({
+    action: z.literal('resolve'),
+    cultivatorId: z.string().optional(),
+    opponent: OpponentSchema,
+    goal: z.enum(['kill', 'subdue', 'drive_off', 'humiliate']).optional().default('drive_off')
+        .describe('What the cultivator is trying to achieve. Decides which endings are reachable.'),
+    techniqueId: z.string().optional(),
+    vector: z.enum(['body', 'soul']).optional().default('body'),
+    edges: z.array(EdgeSchema).optional().default([]),
+    opponentEdges: z.array(EdgeSchema).optional().default([]),
+    /** Whether the loser breaks off rather than be finished. Usually true. */
+    fightToTheEnd: z.boolean().optional().default(false)
+});
+
+const FleeSchema = z.object({
+    action: z.literal('flee'),
+    cultivatorId: z.string().optional(),
+    opponent: OpponentSchema,
+    movementTechniqueId: z.string().optional().describe('A qinggong art, if one is ready'),
+    edges: z.array(EdgeSchema).optional().default([])
+});
+
+const HistorySchema = z.object({
+    action: z.literal('history'),
+    cultivatorId: z.string().optional(),
+    limit: z.number().int().min(1).max(200).optional().default(25)
+});
 
 const CreateSchema = z.object({
     action: z.literal('create'),
-    seed: z.string().default('combat').describe('Seed for deterministic combat resolution'),
-    participants: z.array(ParticipantSchema).min(1),
-    terrain: TerrainSchema
+    runId: z.string().optional(),
+    seed: z.string().optional(),
+    location: z.string().optional(),
+    participants: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        cultivatorId: z.string().optional(),
+        realmOrdinal: z.number().int().min(0).optional(),
+        initiativeBonus: z.number().optional()
+    })).min(1)
 });
 
 const GetSchema = z.object({
     action: z.literal('get'),
-    encounterId: z.string().describe('The ID of the encounter')
-});
-
-const EndSchema = z.object({
-    action: z.literal('end'),
-    encounterId: z.string().describe('The ID of the encounter')
-});
-
-const LoadSchema = z.object({
-    action: z.literal('load'),
-    encounterId: z.string().describe('The ID of the encounter to load')
+    encounterId: z.string().optional()
 });
 
 const AdvanceSchema = z.object({
     action: z.literal('advance'),
-    encounterId: z.string().describe('The ID of the encounter')
+    encounterId: z.string().optional()
 });
 
-const DeathSaveSchema = z.object({
-    action: z.literal('death_save'),
-    encounterId: z.string().describe('The ID of the encounter'),
-    characterId: z.string().describe('The ID of the character at 0 HP')
-});
-
-const LairActionSchema = z.object({
-    action: z.literal('lair_action'),
-    encounterId: z.string().describe('The ID of the encounter'),
-    actionDescription: z.string().describe('Description of the lair action'),
-    targetIds: z.array(z.string()).optional(),
-    damage: z.number().int().min(0).optional(),
-    damageType: z.string().optional(),
-    savingThrow: z.object({
-        ability: z.enum(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']),
-        dc: z.number().int().min(1).max(30)
-    }).optional(),
-    halfDamageOnSave: z.boolean().default(true)
-});
-
-const SpawnQuickEnemySchema = z.object({
-    action: z.literal('spawn_quick_enemy'),
-    creature: z.string().describe('Creature name or template (e.g., "goblin", "orc:warrior")'),
-    count: z.number().int().min(1).max(10).default(1).describe('Number of enemies to spawn'),
-    position: z.object({ x: z.number(), y: z.number() }).optional().describe('Starting position (defaults to random)'),
-    encounterId: z.string().optional().describe('Add to existing encounter (creates new if omitted)'),
-    seed: z.string().optional().describe('Seed for deterministic combat (auto-generated if omitted)')
-});
-
-const GetHistorySchema = z.object({
-    action: z.literal('get_history'),
-    encounterId: z.string().describe('The ID of the encounter'),
-    round: z.number().int().optional().describe('Get actions from a specific round (omit for all)'),
-    limit: z.number().int().min(1).max(100).default(20).describe('Max actions to return (default 20)')
+const EndSchema = z.object({
+    action: z.literal('end'),
+    encounterId: z.string().optional()
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONTEXT HOLDER (for passing session context to handlers)
+// HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ACTION DEFINITIONS
-// ═══════════════════════════════════════════════════════════════════════════
+/**
+ * Build the engine's view of the acting cultivator from real persisted state.
+ *
+ * Nothing is invented here. Artifact grade is deliberately absent because this
+ * engine has no artifact catalog yet, and the honest value for "what are they
+ * carrying that helps" is zero rather than a guess.
+ */
+function combatantFromCultivator(
+    cultivator: Cultivator,
+    repos: CultivationRepos,
+    techniqueId?: string
+): CombatantInput {
+    const known = techniqueId ? repos.techniques.getKnown(cultivator.id, techniqueId) : null;
+    return {
+        id: cultivator.id,
+        name: cultivator.name,
+        realmOrdinal: cultivator.realmOrdinal,
+        immortalStatus: cultivator.immortalStatus,
+        traditionId: cultivator.traditionId,
+        spiritRoot: cultivator.spiritRoot,
+        attributes: cultivator.attributes,
+        injuries: cultivator.injuries,
+        insights: cultivator.insights,
+        foundationQuality: cultivator.foundationQuality,
+        soulState: cultivator.soulState,
+        hp: cultivator.hp,
+        maxHp: cultivator.maxHp,
+        qi: cultivator.qi,
+        maxQi: cultivator.maxQi,
+        battlesSurvived: cultivator.battlesSurvived,
+        technique: known ?? (techniqueId ? getTechnique(techniqueId) ?? null : null),
+        techniqueMastery: known?.mastery ?? 0
+    };
+}
 
-const definitions: Record<CombatManageAction, ActionDefinition> = {
-    create: {
-        schema: CreateSchema,
-        handler: async (params: z.infer<typeof CreateSchema>, ctx?: SessionContext) => {
-            if (!ctx) throw new Error('No session context');
-            // Map convenience `side` field down to canonical `isEnemy` and drop `side`
-            // before forwarding to handleCreateEncounter (which doesn't accept it).
-            const normalizedParticipants = params.participants.map((p) => {
-                const { side: _side, ...rest } = p;
-                const derived = deriveIsEnemy(p);
-                return derived === undefined ? rest : { ...rest, isEnemy: derived };
+/**
+ * Build the engine's view of an opponent.
+ *
+ * Prefers a real cultivator row. When the caller describes one instead, every
+ * unstated field takes the honest neutral value rather than something flattering
+ * to either side: a described opponent is an ordinary person at the stated rank.
+ */
+function combatantFromOpponent(
+    spec: z.infer<typeof OpponentSchema>,
+    repos: CultivationRepos
+): CombatantInput | GuidingErrorBody {
+    if (spec.cultivatorId) {
+        const row = repos.cultivators.getById(spec.cultivatorId);
+        if (!row) {
+            return guidingError('unknown_opponent', `No cultivator with id ${spec.cultivatorId}.`, {
+                hint: 'Omit cultivatorId and describe the opponent instead, or cultivation_manage({ action: "list" }).'
             });
-            const originalParams = {
-                seed: params.seed,
-                participants: normalizedParticipants,
-                terrain: params.terrain
-            };
-            const result = await handleCreateEncounter(originalParams, ctx);
-            return extractResultData(result, 'create');
+        }
+        return combatantFromCultivator(row, repos);
+    }
+
+    if (spec.realmOrdinal === undefined) {
+        return guidingError(
+            'opponent_not_specified',
+            'An opponent needs either a cultivatorId or a realmOrdinal. Rank is the one thing this engine will not guess.',
+            { hint: 'opponent: { name: "...", realmOrdinal: 14 }' }
+        );
+    }
+
+    const maxHp = spec.maxHp ?? Math.max(10, 20 + spec.realmOrdinal * 12);
+    const untreated = spec.untreatedInjuries ?? 0;
+
+    return {
+        id: `opponent:${(spec.name ?? 'unnamed').toLowerCase().replace(/\s+/g, '-')}`,
+        name: spec.name ?? 'the other one',
+        realmOrdinal: spec.realmOrdinal,
+        traditionId: spec.traditionId,
+        spiritRoot: 'muddled_five_element',
+        attributes: {
+            might: spec.might ?? 2,
+            insight: spec.insight ?? 2,
+            fortune: 1,
+            charm: 2
         },
-        aliases: ['start', 'new', 'begin', 'init']
-    },
+        injuries: Array.from({ length: untreated }, (_, i) => ({
+            id: `described-injury-${i}`,
+            severity: 'serious' as const,
+            source: 'combat' as const,
+            description: 'A wound they were already carrying when this started.',
+            sustainedOnTurn: 0,
+            treated: false,
+            cultivationPenalty: 0.25,
+            breakthroughPenalty: 0.12
+        })),
+        hp: spec.hp ?? maxHp,
+        maxHp,
+        qi: maxHp,
+        maxQi: maxHp,
+        artifactGrade: spec.artifactGrade ?? 0,
+        battlesSurvived: spec.battlesSurvived ?? 0,
+        technique: null,
+        techniqueMastery: 0
+    };
+}
 
-    get: {
-        schema: GetSchema,
-        handler: async (params: z.infer<typeof GetSchema>, ctx?: SessionContext) => {
-            if (!ctx) throw new Error('No session context');
-            const result = await handleGetEncounterState({ encounterId: params.encounterId }, ctx);
-            return extractResultData(result, 'get');
+function projectPower(power: ReturnType<typeof assessPower>): Record<string, unknown> {
+    return {
+        rank: power.rank,
+        realm: power.realmKey,
+        ordinal: power.ordinal,
+        tradition: power.tradition,
+        realmBase: round2(power.realmBase),
+        total: round2(power.total),
+        factors: power.factors.map(f => ({
+            source: f.source,
+            factor: round4(f.factor),
+            note: f.note
+        })),
+        killRequirement: power.kill
+    };
+}
+
+/** Turn an outcome into the honest one-line verdict a narrator renders from. */
+function outcomeLine(outcome: string): string {
+    switch (outcome) {
+        case 'no_contest': return 'Not a fight.';
+        case 'withdrawal': return 'Broken off.';
+        case 'capture': return 'Taken alive.';
+        case 'humiliation': return 'Beaten and let go.';
+        case 'crippled': return 'Crippled.';
+        case 'body_destroyed': return 'Body destroyed. Not necessarily ended.';
+        case 'lethal': return 'Finished.';
+        case 'stalemate': return 'Neither could finish it.';
+        default: return outcome;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACTION HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { run, cultivator } = resolved;
+    const opponent = combatantFromOpponent(args.opponent, repos);
+    if (isGuidingErrorBody(opponent)) return opponent;
+
+    const day = Math.floor(run.elapsedDays);
+    const ambient = currentAmbient(repos.db, run, cultivator.location, day);
+    const self = combatantFromCultivator(cultivator, repos, args.techniqueId);
+
+    const selfPower = assessPower(self, { ambient });
+    const opponentPower = assessPower(opponent, { ambient });
+    const gap = assessGap(selfPower, opponentPower);
+    const edges = assessEdges(args.edges ?? []);
+
+    // What the edges actually buy, stated against the gap they would have to
+    // close. This is the number a player needs before they commit, and it is
+    // the reason `assess` exists as its own action.
+    const needed = opponentPower.total / Math.max(selfPower.total, 1e-9);
+
+    return {
+        cultivator: { id: cultivator.id, name: cultivator.name },
+        self: projectPower(selfPower),
+        opponent: { id: opponent.id, name: opponent.name, ...projectPower(opponentPower) },
+        gap: {
+            verdict: gap.verdict,
+            realmGap: gap.realmGap,
+            powerRatio: round2(gap.powerRatio),
+            summary: gap.summary,
+            options: gap.options
         },
-        aliases: ['state', 'status', 'show']
-    },
-
-    end: {
-        schema: EndSchema,
-        handler: async (params: z.infer<typeof EndSchema>, ctx?: SessionContext) => {
-            if (!ctx) throw new Error('No session context');
-            const result = await handleEndEncounter({ encounterId: params.encounterId }, ctx);
-            return extractResultData(result, 'end');
+        edges: {
+            held: edges.edges,
+            multiplier: round2(edges.multiplier),
+            capped: edges.capped,
+            cap: MAX_EDGE_MULTIPLIER,
+            requiredToEven: round2(needed),
+            sufficient: edges.multiplier >= needed,
+            note: edges.capped
+                ? `Everything carried is worth ${round2(edges.multiplier)}x, which is the cap. Stacking more changes nothing: advantages are not a realm.`
+                : `Everything carried is worth ${round2(edges.multiplier)}x. Evening this would take ${round2(needed)}x.`
         },
-        aliases: ['finish', 'complete', 'stop', 'close']
-    },
+        ambient,
+        note:
+            gap.verdict === 'helpless'
+                ? 'The engine will refuse a direct confrontation here. The listed options are what the world actually permits.'
+                : 'Nothing has happened yet. This is a reading, not a resolution.'
+    };
+}
 
-    load: {
-        schema: LoadSchema,
-        handler: async (params: z.infer<typeof LoadSchema>, ctx?: SessionContext) => {
-            if (!ctx) throw new Error('No session context');
-            const result = await handleLoadEncounter({ encounterId: params.encounterId }, ctx);
-            return extractResultData(result, 'load');
-        },
-        aliases: ['restore', 'resume', 'continue']
-    },
+export async function handleStrike(args: z.infer<typeof StrikeSchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
 
-    advance: {
-        schema: AdvanceSchema,
-        handler: async (params: z.infer<typeof AdvanceSchema>, ctx?: SessionContext) => {
-            if (!ctx) throw new Error('No session context');
-            const result = await handleAdvanceTurn({ encounterId: params.encounterId }, ctx);
-            const data = extractResultData(result, 'advance');
+    const { run, cultivator } = resolved;
+    const opponent = combatantFromOpponent(args.opponent, repos);
+    if (isGuidingErrorBody(opponent)) return opponent;
 
-            // ──────────────────────────────────────────────────────────────────
-            // Agent auto-invoke hook: after initiative advances, if the new
-            // current actor has an active agent with auto_on_turn=true, fire a
-            // synchronous invoke and embed the response in this payload.
-            // Errors here NEVER block the turn - the turn already advanced.
-            // ──────────────────────────────────────────────────────────────────
-            try {
-                const currentTurn = (data as { currentTurn?: { id?: string; name?: string } }).currentTurn;
-                const currentActorId = currentTurn?.id;
-                if (currentActorId) {
-                    const runtime = getAgentRuntime() ?? (() => {
-                        const factory = new ProviderFactory();
-                        factory.initialize();
-                        return buildAgentRuntime(getDomainServices().db, factory);
-                    })();
+    const known = repos.techniques.getKnown(cultivator.id, args.techniqueId);
+    const technique = known ?? getTechnique(args.techniqueId) ?? null;
+    if (!technique) {
+        return guidingError('unknown_technique', `No art with id ${args.techniqueId} exists.`, {
+            hint: 'technique_manage({ action: "list_available" })'
+        });
+    }
+    if (!known) {
+        return guidingError(
+            'technique_not_known',
+            `${cultivator.name} does not know ${technique.name}.`,
+            { hint: 'technique_manage({ action: "learn", techniqueId }) first.' }
+        );
+    }
 
-                    const agent = runtime.agentRepo.findByCharacterId(currentActorId);
-                    if (agent && agent.autoOnTurn && agent.status === 'active') {
-                        const round = (data as { round?: number }).round;
-                        const situation = `It's your turn in encounter ${params.encounterId}` +
-                            (round !== undefined ? `, round ${round}.` : '.');
-                        const agentResult = await invokeAgent(
-                            {
-                                agentId: agent.id,
-                                situation,
-                                encounterId: params.encounterId,
-                                round,
-                                requestId: ctx.sessionId
-                            },
-                            runtime
-                        );
-                        (data as Record<string, unknown>).agentResponse = {
-                            status: agentResult.status,
-                            reason: agentResult.reason,
-                            characterName: agentResult.characterName,
-                            response: agentResult.response,
-                            callId: agentResult.callId,
-                            promptTokens: agentResult.promptTokens,
-                            completionTokens: agentResult.completionTokens,
-                            durationMs: agentResult.durationMs
-                        };
-                    }
-                }
-            } catch (err) {
-                // Auto-invoke must NEVER break turn advance. Surface the failure
-                // in the payload so the DM can investigate, but the turn stands.
-                (data as Record<string, unknown>).agentResponse = {
-                    status: 'error',
-                    reason: `auto_invoke_threw: ${err instanceof Error ? err.message : String(err)}`
-                };
-            }
+    const usable = canUseTechnique(cultivator, technique, known.cooldownRemaining);
+    if (!usable.usable) {
+        return guidingError('technique_unusable', `${technique.name} cannot be used: ${usable.reason}.`, {
+            reason: usable.reason,
+            qi: cultivator.qi,
+            qiCost: technique.qiCost,
+            cooldownRemaining: known.cooldownRemaining
+        });
+    }
 
-            return data;
-        },
-        aliases: ['next', 'next_turn', 'advance_turn']
-    },
+    if (args.vector === 'soul' && !canDirectAtSoul(technique)) {
+        return guidingError(
+            'art_cannot_reach_a_soul',
+            `${technique.name} cannot be aimed at a soul. Elemental qi has to travel through a body to arrive, and soul arts proper do not exist below Nascent Soul.`,
+            { element: technique.element, requiredOrdinal: technique.requiredOrdinal }
+        );
+    }
 
-    death_save: {
-        schema: DeathSaveSchema,
-        handler: async (params: z.infer<typeof DeathSaveSchema>, ctx?: SessionContext) => {
-            if (!ctx) throw new Error('No session context');
-            const result = await handleRollDeathSave({
-                encounterId: params.encounterId,
-                characterId: params.characterId
-            }, ctx);
-            return extractResultData(result, 'death_save');
-        },
-        aliases: ['death_saving_throw', 'save_death', 'dying']
-    },
+    const day = Math.floor(run.elapsedDays);
+    const ambient = currentAmbient(repos.db, run, cultivator.location, day);
+    const self = combatantFromCultivator(cultivator, repos, args.techniqueId);
+    const selfPower = assessPower(self, { ambient });
+    const opponentPower = assessPower(opponent, { ambient });
 
-    lair_action: {
-        schema: LairActionSchema,
-        handler: async (params: z.infer<typeof LairActionSchema>, ctx?: SessionContext) => {
-            if (!ctx) throw new Error('No session context');
-            const { action, ...lairParams } = params;
-            const result = await handleExecuteLairAction(lairParams, ctx);
-            return extractResultData(result, 'lair_action');
-        },
-        aliases: ['lair', 'legendary', 'boss_action']
-    },
+    const gap = assessGap(selfPower, opponentPower);
+    if (gap.verdict === 'helpless') {
+        return {
+            struck: false,
+            refused: 'helpless',
+            gap: { verdict: gap.verdict, realmGap: gap.realmGap, summary: gap.summary, options: gap.options },
+            note: 'The strike was not resolved because there is nothing to resolve. Pick one of the options.'
+        };
+    }
 
-    spawn_quick_enemy: {
-        schema: SpawnQuickEnemySchema,
-        handler: async (params: z.infer<typeof SpawnQuickEnemySchema>, ctx?: SessionContext) => {
-            if (!ctx) throw new Error('No session context');
+    const nextTurn = run.turn + 1;
+    const result = resolveExchange(selfPower, opponentPower, opponent.maxHp, {
+        rng: forStream(run.seed, 'combat_strike', nextTurn, cultivator.id, opponent.id),
+        ambient,
+        turn: nextTurn,
+        vector: args.vector,
+        attackerEdges: args.edges ?? [],
+        defenderEdges: args.opponentEdges ?? []
+    });
 
-            // Expand creature template
-            const preset = expandCreatureTemplate(params.creature);
-            if (!preset) {
-                const available = listAllTemplates();
-                return {
-                    error: true,
-                    actionType: 'spawn_quick_enemy',
-                    message: `Unknown creature: "${params.creature}"`,
-                    availableCreatures: available.slice(0, 20),
-                    hint: `Try one of: ${available.slice(0, 5).join(', ')}...`
-                };
-            }
+    // Persist what the strike actually cost the striker, and what it did to a
+    // real opponent when the opponent is a real row.
+    const persist = repos.db.transaction(() => {
+        repos.cultivators.applyDeltas(cultivator.id, { qi: -technique.qiCost });
+        repos.techniques.markUsed(cultivator.id, technique.id, nextTurn);
+        repos.runs.incrementTurn(run.id, 1);
 
-            // Build participants from preset
-            const count = params.count || 1;
-            const participants = [];
-
-            for (let i = 0; i < count; i++) {
-                const id = `enemy-${randomUUID().slice(0, 8)}`;
-                const basePos = params.position || { x: 10, y: 10 };
-                const pos = count > 1
-                    ? { x: basePos.x + (i % 3) * 2, y: basePos.y + Math.floor(i / 3) * 2 }
-                    : basePos;
-
-                participants.push({
-                    id,
-                    name: count > 1 ? `${preset.name} ${i + 1}` : preset.name,
-                    initiativeBonus: Math.floor((preset.stats.dex - 10) / 2),
-                    hp: preset.hp,
-                    maxHp: preset.maxHp,
-                    ac: preset.ac,
-                    attackDamage: preset.defaultAttack?.damage,
-                    attackBonus: preset.defaultAttack?.toHit,
-                    isEnemy: true,
-                    conditions: [],
-                    position: pos,
-                    resistances: preset.resistances || [],
-                    vulnerabilities: preset.vulnerabilities || [],
-                    immunities: preset.immunities || []
+        if (args.opponent.cultivatorId && !result.nullified) {
+            repos.cultivators.applyDeltas(args.opponent.cultivatorId, { hp: -result.damage });
+            if (result.injury) {
+                repos.cultivators.addInjury(args.opponent.cultivatorId, {
+                    id: result.injury.id,
+                    severity: result.injury.severity,
+                    source: result.injury.source,
+                    description: result.injury.description,
+                    sustainedOnTurn: result.injury.sustainedOnTurn,
+                    cultivationPenalty: result.injury.cultivationPenalty,
+                    breakthroughPenalty: result.injury.breakthroughPenalty
                 });
             }
+        }
+    });
+    persist();
 
-            // If encounterId is supplied, append the new enemies to that
-            // encounter. Auto-loads from the database when the engine isn't
-            // in memory (mirroring handleGetEncounterState / handleExecute*),
-            // and persists the new state back so a subsequent restart still
-            // sees the spawned enemies. Only falls back to creating a fresh
-            // encounter when the id genuinely doesn't exist anywhere.
-            if (params.encounterId) {
-                const sessionKey = `${ctx.sessionId}:${params.encounterId}`;
-                let engine = getCombatManager().get(sessionKey);
-                let loadedFromDb = false;
+    const after = repos.cultivators.getById(cultivator.id)!;
+    publish('combat.strike', {
+        cultivatorId: cultivator.id,
+        opponentId: opponent.id,
+        damage: result.damage,
+        nullified: result.nullified
+    });
 
-                if (!engine) {
-                    const persisted = getDomainServices().encounter.loadState(params.encounterId);
-                    if (persisted) {
-                        engine = new CombatEngine(params.encounterId);
-                        engine.loadState(persisted);
-                        getCombatManager().create(sessionKey, engine);
-                        loadedFromDb = true;
-                    }
-                }
-
-                if (engine) {
-                    // Snapshot for rollback before mutating in-memory state.
-                    const beforeIds = new Set(engine.getState()?.participants.map((p) => p.id) ?? []);
-                    const state = engine.addParticipants(
-                        participants as unknown as Parameters<typeof engine.addParticipants>[0]
-                    );
-
-                    // Persist the appended state so a restart doesn't lose the
-                    // newly spawned enemies. PR #58 reviewer ask: don't return
-                    // success if persistence fails - that splits in-memory and
-                    // DB state. Roll back the in-memory addParticipants and
-                    // surface an explicit error.
-                    try {
-                        getDomainServices().encounter.saveState(params.encounterId, state);
-                    } catch (err) {
-                        // Roll back: drop the just-added participants so memory
-                        // matches DB. Use the engine's state directly since we
-                        // know the schema.
-                        const live = engine.getState();
-                        if (live) {
-                            live.participants = live.participants.filter((p) => beforeIds.has(p.id));
-                            live.turnOrder = live.turnOrder.filter((id) => id === 'LAIR' || beforeIds.has(id));
-                        }
-                        return {
-                            error: true,
-                            actionType: 'spawn_quick_enemy',
-                            encounterId: params.encounterId,
-                            message: `Failed to persist appended encounter state: ${(err as Error).message}. In-memory append rolled back.`,
-                            rolledBack: true
-                        };
-                    }
-
-                    return {
-                        success: true,
-                        actionType: 'spawn_quick_enemy',
-                        encounterId: params.encounterId,
-                        creature: params.creature,
-                        spawnedCount: count,
-                        appendedToExisting: true,
-                        loadedFromDb,
-                        enemies: participants.map(p => ({
-                            id: p.id,
-                            name: p.name,
-                            hp: p.hp,
-                            maxHp: p.maxHp,
-                            ac: preset.ac,
-                            position: p.position,
-                            attack: preset.defaultAttack
-                        })),
-                        turnOrder: state.turnOrder,
-                        // currentTurnIndex indexes turnOrder, NOT participants -
-                        // those arrays can diverge when LAIR is in the order.
-                        currentTurn: state.turnOrder[state.currentTurnIndex],
-                        readyForCombat: true,
-                        hint: `Added ${count} ${preset.name}(s) to existing encounter. Initiative re-sorted.`
-                    };
-                }
-                // encounterId given but neither in memory nor in DB - return
-                // an explicit error rather than silently creating a new
-                // encounter with the spawned enemies. Silent fallback hides
-                // typos and stale ids from the caller (PR #58 reviewer ask).
-                return {
-                    error: true,
-                    actionType: 'spawn_quick_enemy',
-                    message: `Encounter ${params.encounterId} not found in memory or DB. Omit encounterId to create a new encounter.`,
-                    requestedEncounterId: params.encounterId
-                };
-            }
-
-            // Create encounter with these participants
-            const seed = params.seed || `quick-${Date.now()}`;
-            const createParams = {
-                seed,
-                participants,
-                terrain: { obstacles: [], difficultTerrain: [], water: [] }
-            };
-
-            const result = await handleCreateEncounter(createParams, ctx);
-            const resultData = extractResultData(result, 'spawn_quick_enemy');
-
-            // Enhance with spawn info
-            return {
-                ...resultData,
-                actionType: 'spawn_quick_enemy',
-                creature: params.creature,
-                spawnedCount: count,
-                enemies: participants.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    hp: p.hp,
-                    maxHp: p.maxHp,
-                    ac: preset.ac,
-                    position: p.position,
-                    attack: preset.defaultAttack
-                })),
-                creatureStats: {
-                    name: preset.name,
-                    hp: preset.hp,
-                    ac: preset.ac,
-                    cr: preset.cr,
-                    traits: preset.traits
-                },
-                readyForCombat: true,
-                hint: 'Use combat_action to attack, combat_map to render grid'
-            };
+    return {
+        struck: true,
+        technique: { id: technique.id, name: technique.name, qiSpent: technique.qiCost },
+        vector: result.vector,
+        nullified: result.nullified,
+        nullifiedReason: result.nullifiedReason,
+        damage: result.damage,
+        injury: result.injury ? summariseInjury(result.injury) : null,
+        advantage: round2(result.advantage),
+        roll: round4(result.roll),
+        modifiers: result.modifiers.map(m => ({ source: m.source, factor: round4(m.factor) })),
+        opponent: {
+            id: opponent.id,
+            name: opponent.name,
+            rank: rankName(opponent.realmOrdinal),
+            tradition: opponentPower.tradition,
+            killRequirement: opponentPower.kill
         },
-        aliases: ['quick', 'spawn', 'summon', 'add_enemy']
-    },
+        qiRemaining: after.qi,
+        narrationHint: result.narrationHint,
+        note: 'One exchange. The engine rolled it from the run seed; narrate the number it returned.'
+    };
+}
 
-    get_history: {
-        schema: GetHistorySchema,
-        handler: async (params: z.infer<typeof GetHistorySchema>) => {
-            const actionLogRepo = getDomainServices().combatActionLog;
+export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
 
-            let actions;
-            if (params.round !== undefined) {
-                actions = actionLogRepo.getByRound(params.encounterId, params.round);
-            } else {
-                actions = actionLogRepo.getRecent(params.encounterId, params.limit);
-            }
+    const { run, cultivator } = resolved;
+    const opponent = combatantFromOpponent(args.opponent, repos);
+    if (isGuidingErrorBody(opponent)) return opponent;
 
-            if (actions.length === 0) {
-                return {
-                    success: true,
-                    actionType: 'get_history',
-                    encounterId: params.encounterId,
-                    actions: [],
-                    summary: 'No combat actions recorded for this encounter.',
-                    hint: 'Actions are logged automatically when using combat_action.'
-                };
-            }
-
-            // Build summary for context reconstruction
-            const summary = actionLogRepo.getSummary(params.encounterId);
-
-            return {
-                success: true,
-                actionType: 'get_history',
-                encounterId: params.encounterId,
-                totalActions: actions.length,
-                actions: actions.map(a => ({
-                    round: a.round,
-                    actor: a.actorName,
-                    action: a.actionType,
-                    summary: a.resultSummary,
-                    damage: a.damageDealt,
-                    healing: a.healingDone,
-                    timestamp: a.timestamp
-                })),
-                summary,
-                hint: 'Use this to reconstruct combat state after context compaction.'
-            };
-        },
-        aliases: ['history', 'log', 'replay', 'actions']
+    const technique = args.techniqueId
+        ? repos.techniques.getKnown(cultivator.id, args.techniqueId)
+        : null;
+    if (args.techniqueId && !technique) {
+        return guidingError(
+            'technique_not_known',
+            `${cultivator.name} does not know ${args.techniqueId}.`
+        );
     }
-};
+    if (args.vector === 'soul' && !canDirectAtSoul(technique)) {
+        return guidingError(
+            'art_cannot_reach_a_soul',
+            'Nothing this cultivator is bringing can be aimed at a soul.',
+            { hint: 'A soul-directed art is elementless and needs Nascent Soul or above.' }
+        );
+    }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════
+    const day = Math.floor(run.elapsedDays);
+    const ambient = currentAmbient(repos.db, run, cultivator.location, day);
+    const self = combatantFromCultivator(cultivator, repos, args.techniqueId);
+    const nextTurn = run.turn + 1;
 
-function extractResultData(result: McpResponse, actionType: string): Record<string, unknown> {
-    const text = result.content[0].text;
+    const result = resolveConfrontation(self, opponent, {
+        rng: forStream(run.seed, 'combat_resolve', nextTurn, cultivator.id, opponent.id),
+        ambient,
+        turn: nextTurn,
+        vector: args.vector,
+        attackerEdges: args.edges ?? [],
+        defenderEdges: args.opponentEdges ?? [],
+        intent: {
+            goal: args.goal,
+            willWithdraw: !(args.fightToTheEnd ?? false)
+        }
+    });
 
-    // Try to extract STATE_JSON
-    const stateMatch = text.match(/<!-- STATE_JSON\n([\s\S]*?)\nSTATE_JSON -->/);
-    if (stateMatch) {
-        try {
-            const stateData = JSON.parse(stateMatch[1]);
+    // ── Persistence. One transaction: a confrontation that recorded the wounds
+    // and not the outcome, or the outcome and not the wounds, is the drift this
+    // engine exists to make impossible. ──
+    const combat = new CombatRepository(repos.db);
+    let death: { cause: string; description: string } | null = null;
+
+    const persist = repos.db.transaction(() => {
+        const selfHpDelta = result.hp[cultivator.id] - cultivator.hp;
+        if (selfHpDelta !== 0) {
+            repos.cultivators.applyDeltas(cultivator.id, { hp: selfHpDelta });
+        }
+        for (const injury of result.injuries[cultivator.id] ?? []) {
+            repos.cultivators.addInjury(cultivator.id, {
+                id: injury.id,
+                severity: injury.severity,
+                source: injury.source,
+                description: injury.description,
+                sustainedOnTurn: injury.sustainedOnTurn,
+                cultivationPenalty: injury.cultivationPenalty,
+                breakthroughPenalty: injury.breakthroughPenalty
+            });
+        }
+
+        if (args.opponent.cultivatorId) {
+            const opponentRow = repos.cultivators.getById(args.opponent.cultivatorId);
+            if (opponentRow) {
+                const delta = result.hp[opponent.id] - opponentRow.hp;
+                if (delta !== 0) {
+                    repos.cultivators.applyDeltas(opponentRow.id, { hp: delta });
+                }
+                for (const injury of result.injuries[opponent.id] ?? []) {
+                    repos.cultivators.addInjury(opponentRow.id, {
+                        id: injury.id,
+                        severity: injury.severity,
+                        source: injury.source,
+                        description: injury.description,
+                        sustainedOnTurn: injury.sustainedOnTurn,
+                        cultivationPenalty: injury.cultivationPenalty,
+                        breakthroughPenalty: injury.breakthroughPenalty
+                    });
+                }
+            }
+        }
+
+        // A standing feud is one of the ordinary outputs, so it is written down
+        // rather than left to be remembered. Direction matters: the record is
+        // held BY the loser ABOUT the winner.
+        for (const seed of result.obligations) {
+            if (seed.holderId === cultivator.id) {
+                const feuds = new Set(repos.cultivators.getById(cultivator.id)?.feuds ?? []);
+                feuds.add(seed.subjectId);
+                repos.cultivators.update(cultivator.id, { feuds: [...feuds] });
+            }
+        }
+
+        combat.recordBattle({
+            cultivatorId: cultivator.id,
+            opponentId: args.opponent.cultivatorId ?? null,
+            opponentName: opponent.name,
+            opponentOrdinal: opponent.realmOrdinal,
+            outcome: result.outcome,
+            won: result.winnerId === cultivator.id,
+            realmGap: result.gap.realmGap,
+            edges: args.edges ?? [],
+            onDay: run.elapsedDays,
+            turn: nextTurn,
+            summary: result.narrationHint
+        });
+
+        repos.runs.incrementTurn(run.id, 1);
+
+        // The death gate. Combat produced damage; survival.ts decides whether
+        // that was an ending, and nothing else in this file may.
+        const after = repos.cultivators.getById(cultivator.id)!;
+        const cause = evaluateDeathConditions(after, { forcingCombat: true });
+        if (cause) {
+            death = { cause, description: describeDeath(cause, after) };
+            repos.cultivators.markDead(cultivator.id, cause, nextTurn, death.description);
+        }
+    });
+    persist();
+
+    const after = repos.cultivators.getById(cultivator.id)!;
+    const runAfter = repos.runs.getById(run.id)!;
+
+    publish('combat.resolved', {
+        cultivatorId: cultivator.id,
+        opponentId: opponent.id,
+        outcome: result.outcome
+    });
+
+    return {
+        outcome: result.outcome,
+        verdict: outcomeLine(result.outcome),
+        winnerId: result.winnerId,
+        loserId: result.loserId,
+        gap: {
+            verdict: result.gap.verdict,
+            realmGap: result.gap.realmGap,
+            powerRatio: round2(result.gap.powerRatio),
+            summary: result.gap.summary,
+            options: result.gap.options
+        },
+        self: projectPower(result.aggressor),
+        opponent: { id: opponent.id, name: opponent.name, ...projectPower(result.defender) },
+        exchanges: result.exchanges.map(x => ({
+            index: x.index,
+            attackerId: x.attackerId,
+            defenderId: x.defenderId,
+            damage: x.result.damage,
+            nullified: x.result.nullified,
+            advantage: round2(x.result.advantage),
+            defenderHpAfter: x.defenderHpAfter,
+            injury: x.result.injury ? summariseInjury(x.result.injury) : null
+        })),
+        injuries: {
+            self: (result.injuries[cultivator.id] ?? []).map(summariseInjury),
+            opponent: (result.injuries[opponent.id] ?? []).map(summariseInjury)
+        },
+        finished: result.finished,
+        killRequirement: result.killRequirement,
+        remnant: result.remnant,
+        obligations: result.obligations,
+        died: death !== null,
+        death,
+        narrationHint: result.narrationHint,
+        cultivator: describeCultivator(repos, after, runAfter),
+        note:
+            'Death is decided by the survival layer, not by this tool. `finished` says the finishing ' +
+            'requirement was met; `died` says the engine recorded a death.'
+    };
+}
+
+export async function handleFlee(args: z.infer<typeof FleeSchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { run, cultivator } = resolved;
+    const opponent = combatantFromOpponent(args.opponent, repos);
+    if (isGuidingErrorBody(opponent)) return opponent;
+
+    const day = Math.floor(run.elapsedDays);
+    const ambient = currentAmbient(repos.db, run, cultivator.location, day);
+    const selfPower = assessPower(combatantFromCultivator(cultivator, repos), { ambient });
+    const opponentPower = assessPower(opponent, { ambient });
+
+    const movement = args.movementTechniqueId
+        ? repos.techniques.getKnown(cultivator.id, args.movementTechniqueId)
+        : null;
+    if (args.movementTechniqueId && !movement) {
+        return guidingError(
+            'technique_not_known',
+            `${cultivator.name} does not know ${args.movementTechniqueId}.`
+        );
+    }
+
+    const nextTurn = run.turn + 1;
+    const result = attemptFlight(selfPower, opponentPower, {
+        rng: forStream(run.seed, 'combat_flee', nextTurn, cultivator.id, opponent.id),
+        turn: nextTurn,
+        maxHp: cultivator.maxHp,
+        movementTechnique: movement,
+        movementMastery: movement?.mastery,
+        edges: args.edges ?? []
+    });
+
+    let death: { cause: string; description: string } | null = null;
+    const persist = repos.db.transaction(() => {
+        repos.cultivators.applyDeltas(cultivator.id, { hp: -result.damage });
+        if (result.injury) {
+            repos.cultivators.addInjury(cultivator.id, {
+                id: result.injury.id,
+                severity: result.injury.severity,
+                source: result.injury.source,
+                description: result.injury.description,
+                sustainedOnTurn: result.injury.sustainedOnTurn,
+                cultivationPenalty: result.injury.cultivationPenalty,
+                breakthroughPenalty: result.injury.breakthroughPenalty
+            });
+        }
+        if (movement) repos.techniques.markUsed(cultivator.id, movement.id, nextTurn);
+        repos.runs.incrementTurn(run.id, 1);
+
+        const after = repos.cultivators.getById(cultivator.id)!;
+        const cause = evaluateDeathConditions(after);
+        if (cause) {
+            death = { cause, description: describeDeath(cause, after) };
+            repos.cultivators.markDead(cultivator.id, cause, nextTurn, death.description);
+        }
+    });
+    persist();
+
+    const after = repos.cultivators.getById(cultivator.id)!;
+    const runAfter = repos.runs.getById(run.id)!;
+
+    return {
+        escaped: result.escaped,
+        chance: round4(result.chance),
+        roll: round4(result.roll),
+        modifiers: result.modifiers.map(m => ({ source: m.source, delta: round4(m.delta) })),
+        damage: result.damage,
+        injury: result.injury ? summariseInjury(result.injury) : null,
+        died: death !== null,
+        death,
+        narrationHint: result.narrationHint,
+        cultivator: describeCultivator(repos, after, runAfter)
+    };
+}
+
+export async function handleHistory(args: z.infer<typeof HistorySchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { cultivator } = resolved;
+    const combat = new CombatRepository(repos.db);
+    const records = combat.listRecords(cultivator.id, args.limit ?? 25);
+
+    return {
+        cultivator: { id: cultivator.id, name: cultivator.name, rank: rankName(cultivator.realmOrdinal) },
+        battlesSurvived: cultivator.battlesSurvived,
+        battlesWon: cultivator.battlesWon,
+        records: records.map(r => ({
+            outcome: r.outcome,
+            won: r.won,
+            opponent: r.opponentName,
+            opponentRank: rankName(r.opponentOrdinal),
+            realmGap: r.realmGap,
+            edges: r.edges,
+            onDay: round2(r.onDay),
+            turn: r.turn,
+            summary: r.summary
+        })),
+        note:
+            'Experience is a form of power in this world and it is counted, not remembered. ' +
+            'These rows are what `assess` prices as battle experience.'
+    };
+}
+
+// ── ENCOUNTER LIFECYCLE ──────────────────────────────────────────────────
+
+export async function handleCreateEncounter(
+    args: z.infer<typeof CreateSchema>
+): Promise<object> {
+    const repos = ensureCultivationDb();
+    const combat = new CombatRepository(repos.db);
+
+    // A run is preferred but not required: an encounter can be staged for
+    // testing or for NPCs before a player run exists.
+    let run: Run | null = null;
+    if (args.runId) {
+        run = repos.runs.getById(args.runId);
+    } else {
+        run = repos.runs.getActiveRun();
+    }
+
+    const seed = args.seed ?? run?.seed ?? 'encounter';
+    const order = rollInitiative(
+        args.participants.map(p => ({
+            id: p.id,
+            name: p.name,
+            ordinal: p.realmOrdinal ?? (p.cultivatorId
+                ? repos.cultivators.getById(p.cultivatorId)?.realmOrdinal ?? 0
+                : 0),
+            bonus: p.initiativeBonus
+        })),
+        forStream(seed, 'combat_initiative', run?.turn ?? 0)
+    );
+
+    const encounter = combat.createEncounter({
+        runId: run?.id ?? null,
+        seed,
+        location: args.location ?? null,
+        ambient: run ? currentAmbient(repos.db, run, args.location ?? null, Math.floor(run.elapsedDays)) : 'normal',
+        participants: order.map(entry => {
+            const source = args.participants.find(p => p.id === entry.id)!;
             return {
-                success: true,
-                actionType,
-                ...stateData,
-                rawText: text.replace(/<!-- STATE_JSON[\s\S]*?STATE_JSON -->/, '').trim()
+                participantId: entry.id,
+                name: entry.name,
+                cultivatorId: source.cultivatorId ?? null,
+                ordinal: entry.ordinal,
+                initiative: entry.initiative
             };
-        } catch {
-            // Fall through to text parsing
+        })
+    });
+
+    const participants = combat.listParticipants(encounter.id);
+    const current = combat.currentParticipant(encounter.id);
+
+    publish('combat.created', { encounterId: encounter.id });
+
+    return {
+        encounterId: encounter.id,
+        round: encounter.round,
+        ambient: encounter.ambient,
+        turnOrder: participants.map(p => ({
+            id: p.participantId,
+            name: p.name,
+            rank: rankName(p.ordinal),
+            initiative: round2(p.initiative)
+        })),
+        currentTurn: current ? { id: current.participantId, name: current.name } : null,
+        note:
+            'Initiative is decided by rank first and a seeded sample second. In this world, who moves ' +
+            'first is mostly answered by who is further up the ladder.'
+    };
+}
+
+function resolveEncounterId(combat: CombatRepository, encounterId?: string): string | null {
+    if (encounterId) return encounterId;
+    return combat.activeEncounter()?.id ?? null;
+}
+
+export async function handleGetEncounter(args: z.infer<typeof GetSchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const combat = new CombatRepository(repos.db);
+    const id = resolveEncounterId(combat, args.encounterId);
+    if (!id) {
+        return guidingError('no_encounter', 'There is no active encounter.', {
+            hint: 'combat_manage({ action: "create", participants: [...] })'
+        });
+    }
+
+    const encounter = combat.getEncounter(id);
+    if (!encounter) {
+        return guidingError('unknown_encounter', `No encounter with id ${id}.`);
+    }
+
+    const participants = combat.listParticipants(id);
+    const current = combat.currentParticipant(id);
+
+    return {
+        encounterId: encounter.id,
+        status: encounter.status,
+        round: encounter.round,
+        ambient: encounter.ambient,
+        location: encounter.location,
+        turnOrder: participants.map(p => ({
+            id: p.participantId,
+            name: p.name,
+            rank: rankName(p.ordinal),
+            initiative: round2(p.initiative),
+            active: p.active
+        })),
+        currentTurn: current ? { id: current.participantId, name: current.name } : null
+    };
+}
+
+export async function handleAdvance(
+    args: z.infer<typeof AdvanceSchema>,
+    ctx?: SessionContext
+): Promise<object> {
+    const repos = ensureCultivationDb();
+    const combat = new CombatRepository(repos.db);
+    const id = resolveEncounterId(combat, args.encounterId);
+    if (!id) {
+        return guidingError('no_encounter', 'There is no active encounter to advance.');
+    }
+    if (!combat.getEncounter(id)) {
+        return guidingError('unknown_encounter', `No encounter with id ${id}.`);
+    }
+
+    const { encounter, current } = combat.advanceTurn(id);
+
+    const data: Record<string, unknown> = {
+        encounterId: encounter.id,
+        round: encounter.round,
+        currentTurn: current ? { id: current.participantId, name: current.name } : null
+    };
+
+    // ── The auto-invoke hook. ──
+    // An NPC bound to an agent with autoOnTurn speaks for itself when its turn
+    // comes up. Failures are surfaced in the payload and never break the turn:
+    // the encounter state is authoritative and a provider timing out is not
+    // allowed to corrupt it.
+    if (current) {
+        try {
+            const runtime = getAgentRuntime() ?? buildAgentRuntime(repos.db, new ProviderFactory());
+            const agentRepo = new AgentRepository(repos.db);
+            const agent = agentRepo.findByCharacterId(current.participantId);
+            if (agent && agent.autoOnTurn && agent.status === 'active') {
+                const result = await invokeAgent(
+                    {
+                        agentId: agent.id,
+                        situation: `It is your turn in encounter ${encounter.id}, round ${encounter.round}.`,
+                        encounterId: encounter.id,
+                        round: encounter.round,
+                        requestId: ctx?.sessionId
+                    },
+                    runtime
+                );
+                data.agentResponse = {
+                    status: result.status,
+                    reason: result.reason,
+                    characterName: result.characterName,
+                    response: result.response,
+                    callId: result.callId,
+                    promptTokens: result.promptTokens,
+                    completionTokens: result.completionTokens
+                };
+            }
+        } catch (err) {
+            data.agentResponse = {
+                status: 'error',
+                reason: `auto_invoke_threw: ${err instanceof Error ? err.message : String(err)}`
+            };
         }
     }
 
-    // Return as raw text
+    publish('combat.advanced', { encounterId: encounter.id, round: encounter.round });
+    return data;
+}
+
+export async function handleEndEncounter(args: z.infer<typeof EndSchema>): Promise<object> {
+    const repos = ensureCultivationDb();
+    const combat = new CombatRepository(repos.db);
+    const id = resolveEncounterId(combat, args.encounterId);
+    if (!id) {
+        return guidingError('no_encounter', 'There is no active encounter to end.');
+    }
+
+    const ended = combat.endEncounter(id);
+    if (!ended) {
+        return guidingError('unknown_encounter', `No encounter with id ${id}.`);
+    }
+
+    publish('combat.ended', { encounterId: ended.id });
     return {
-        success: true,
-        actionType,
-        message: text
+        encounterId: ended.id,
+        status: ended.status,
+        rounds: ended.round,
+        note: 'The encounter is closed. Wounds, feuds and the record of it are not.'
     };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ROUTER & TOOL DEFINITION
+// ROUTER
 // ═══════════════════════════════════════════════════════════════════════════
 
-const router = createActionRouter({
-    actions: ACTIONS,
-    definitions,
-    threshold: 0.6
-});
+const definitions: Record<CombatAction, ActionDefinition> = {
+    assess: {
+        schema: AssessSchema,
+        handler: handleAssess,
+        aliases: ['read', 'size_up', 'evaluate', 'compare'],
+        description: 'Price both sides and read the gap BEFORE committing to anything'
+    },
+    strike: {
+        schema: StrikeSchema,
+        handler: handleStrike,
+        aliases: ['attack', 'hit', 'use'],
+        description: 'One exchange with a named art'
+    },
+    resolve: {
+        schema: ResolveSchema,
+        handler: handleResolve,
+        aliases: ['fight', 'confront', 'duel', 'engage'],
+        description: 'Resolve a whole confrontation to an outcome'
+    },
+    flee: {
+        schema: FleeSchema,
+        handler: handleFlee,
+        aliases: ['escape', 'run', 'withdraw', 'disengage'],
+        description: 'Break off and try to get away'
+    },
+    history: {
+        schema: HistorySchema,
+        handler: handleHistory,
+        aliases: ['record', 'battles', 'past'],
+        description: 'What this cultivator has survived, and against whom'
+    },
+    create: {
+        schema: CreateSchema,
+        handler: handleCreateEncounter,
+        aliases: ['start', 'begin', 'open'],
+        description: 'Open a multi-party encounter and roll the order of action'
+    },
+    get: {
+        schema: GetSchema,
+        handler: handleGetEncounter,
+        aliases: ['state', 'status'],
+        description: 'Read the encounter: order, round, whose move it is'
+    },
+    advance: {
+        schema: AdvanceSchema,
+        handler: handleAdvance,
+        aliases: ['next', 'next_turn', 'advance_turn'],
+        description: 'Pass the turn to the next actor in the order'
+    },
+    end: {
+        schema: EndSchema,
+        handler: handleEndEncounter,
+        aliases: ['close', 'finish', 'stop'],
+        description: 'Close the encounter'
+    }
+};
+
+const router = createActionRouter({ actions: ACTIONS, definitions, threshold: 0.6 });
 
 export const CombatManageTool = {
     name: 'combat_manage',
-    description: `Unified combat encounter management. Actions: ${ACTIONS.join(', ')}.
-Aliases: start/begin→create, state/status→get, finish/stop→end, restore/resume→load, next→advance, quick/spawn→spawn_quick_enemy.
+    description: `Confrontation in a world where realm gaps are categorical.
 
-⚔️ QUICK START:
-- spawn_quick_enemy: Instantly create combat with preset creatures (goblin, orc, skeleton, etc.)
-  Example: { action: "spawn_quick_enemy", creature: "goblin", count: 3 }
+- assess    price both sides, read the gap, and find out whether this is a fight at all. Call this
+            FIRST. Two major realms apart and the engine will refuse a direct confrontation and hand
+            back the options that actually work: flee, hide, negotiate, seek protection, exploit
+            terrain, a specialised counter, a third party, preparation, or not being found.
+- strike    one exchange with a named art. Spends qi, starts the cooldown, rolls from the run seed.
+- resolve   a whole confrontation, to one of eight outcomes. Death is one of them and not the
+            usual one: withdrawal, capture, humiliation, a crippling wound and a standing feud are.
+- flee      break off. Itemised odds; a movement art is worth more here than anything else.
+- history   what this cultivator has survived. Experience is counted, and it is priced.
+- create / get / advance / end   multi-party encounters with a rolled order of action.
 
-⚔️ FULL WORKFLOW:
-1. create - Start encounter with custom participants and terrain
-2. get - View current state
-3. advance - Move to next turn
-4. death_save - Roll death save for downed character
-5. lair_action - Execute boss lair action
-6. end - Finish combat
+POWER IS COMPOSITE. Realm is the spine and never the whole: body, soul, comprehension, technique
+mastery, artifacts, battle experience, environment and current condition each appear as their own
+line, and the lines multiply to the number the fight was decided by.
 
-For combat ACTIONS (attack, move, cast), use combat_action tool instead.
-For MAP operations (render, aoe, terrain), use combat_map tool instead.
-For CORPSES after combat, use corpse_manage tool.`,
+UPSETS ARE POSSIBLE AND EXCEPTIONAL. \`edges\` prices what a weaker cultivator actually brought -
+superior technique, an artifact, preparation, terrain, an ambush, poison, a formation, numbers, or
+a wound the other one was already carrying. Their product is capped at ${MAX_EDGE_MULTIPLIER}x, which is enough to
+overturn one realm and nowhere near enough for two.
+
+TRADITIONS DIFFER ABOUT DYING. A soul-directed art does nothing at all to a Cut cultivator, at any
+rank. Destroying the body of a Drawn cultivator at Nascent Soul or above is an expense, not a
+death. The engine reports both plainly; the winner does not necessarily know.
+
+Actions: ${ACTIONS.join(', ')}
+Aliases: size_up->assess, attack->strike, fight/duel->resolve, escape->flee`,
     actionSchemas: router.actionSchemas,
     inputSchema: z.object({
         action: z.string().describe(`Action: ${ACTIONS.join(', ')}`),
-        encounterId: z.string().optional().describe('Encounter ID (required for most actions)'),
-        seed: z.string().optional().describe('Seed for new encounter (create only)'),
-        participants: z.array(z.any()).optional().describe('Array of participants (create only)'),
-        terrain: z.any().optional().describe('Terrain configuration (create only)'),
-        characterId: z.string().optional().describe('Character ID (death_save only)'),
-        actionDescription: z.string().optional().describe('Lair action description'),
-        targetIds: z.array(z.string()).optional().describe('Target IDs for lair action'),
-        damage: z.number().optional().describe('Lair action damage'),
-        damageType: z.string().optional().describe('Damage type'),
-        savingThrow: z.any().optional().describe('Saving throw for lair action'),
-        halfDamageOnSave: z.boolean().optional().describe('Half damage on save'),
-        // spawn_quick_enemy fields
-        creature: z.string().optional().describe('Creature template (e.g., "goblin", "orc:warrior")'),
-        count: z.number().optional().describe('Number of enemies to spawn (1-10)'),
-        position: z.object({ x: z.number(), y: z.number() }).optional().describe('Starting position')
+        cultivatorId: z.string().optional(),
+        opponent: z.record(z.any()).optional().describe('cultivatorId, or a described opponent with realmOrdinal'),
+        techniqueId: z.string().optional(),
+        movementTechniqueId: z.string().optional(),
+        vector: z.enum(['body', 'soul']).optional(),
+        goal: z.enum(['kill', 'subdue', 'drive_off', 'humiliate']).optional(),
+        edges: z.array(z.string()).optional(),
+        opponentEdges: z.array(z.string()).optional(),
+        fightToTheEnd: z.boolean().optional(),
+        encounterId: z.string().optional(),
+        runId: z.string().optional(),
+        seed: z.string().optional(),
+        location: z.string().optional(),
+        participants: z.array(z.any()).optional(),
+        limit: z.number().optional()
     })
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
-
-export async function handleCombatManage(args: unknown, ctx: SessionContext): Promise<McpResponse> {
+export async function handleCombatManage(
+    args: unknown,
+    ctx?: SessionContext
+): Promise<McpResponse> {
+    const response = await router(args as Record<string, unknown>, ctx);
     try {
-        const result = await router(args as Record<string, unknown>, ctx);
-        const parsed = JSON.parse(result.content[0].text);
+        const jsonText = response.content[0]?.text;
+        if (!jsonText) return response;
+        const data = JSON.parse(jsonText);
 
         let output = '';
-
-        if (parsed.error) {
-            output = RichFormatter.header('Error', '❌');
-            output += RichFormatter.alert(parsed.message || 'Unknown error', 'error');
-            if (parsed.suggestions) {
-                output += '\n**Did you mean:**\n';
-                parsed.suggestions.forEach((s: { value: string; similarity: number }) => {
-                    output += `  • ${s.value} (${s.similarity}% match)\n`;
-                });
+        if (data.error === true || typeof data.error === 'string') {
+            output = RichFormatter.header('Combat Error', '❌');
+            output += RichFormatter.alert(data.message || 'Unknown error', 'error');
+            if (data.hint) output += `\n*${data.hint}*\n`;
+        } else if (data.gap && data.self && !data.outcome) {
+            output = RichFormatter.header('Reading the Gap', '⚖️');
+            output += RichFormatter.keyValue({
+                'You': `${data.self.rank} (power ${data.self.total})`,
+                'Them': `${data.opponent?.rank} (power ${data.opponent?.total})`,
+                'Verdict': data.gap.verdict,
+                'Realm gap': data.gap.realmGap,
+                'Edges': `${data.edges?.multiplier}x of ${data.edges?.requiredToEven}x needed`
+            });
+            output += `\n${data.gap.summary}\n`;
+            if (data.gap.options?.length) {
+                output += RichFormatter.section('What actually works');
+                output += RichFormatter.list(data.gap.options);
             }
+        } else if (data.outcome) {
+            output = RichFormatter.header(`Confrontation: ${data.verdict}`, '⚔️');
+            output += RichFormatter.keyValue({
+                'Outcome': data.outcome,
+                'Exchanges': data.exchanges?.length ?? 0,
+                'Finished': data.finished ? 'yes' : 'no',
+                'Died': data.died ? 'yes' : 'no'
+            });
+            output += `\n${data.narrationHint}\n`;
+        } else if (data.struck) {
+            output = RichFormatter.header(`Strike: ${data.technique?.name}`, '⚔️');
+            output += RichFormatter.keyValue({
+                'Damage': data.nullified ? 'none' : data.damage,
+                'Advantage': data.advantage,
+                'Vector': data.vector
+            });
+            output += `\n${data.narrationHint}\n`;
+        } else if (typeof data.escaped === 'boolean') {
+            output = RichFormatter.header(data.escaped ? 'Broke Away' : 'Did Not Get Clear', '🏃');
+            output += RichFormatter.keyValue({ 'Chance': data.chance, 'Roll': data.roll, 'Cost': data.damage });
+        } else if (data.turnOrder) {
+            output = RichFormatter.header('Encounter', '⚔️');
+            output += RichFormatter.table(
+                ['Name', 'Rank', 'Initiative'],
+                data.turnOrder.map((p: Record<string, unknown>) => [
+                    String(p.name), String(p.rank), String(p.initiative)
+                ])
+            );
         } else {
-            // Format based on action type
-            switch (parsed.actionType) {
-                case 'create':
-                    output = RichFormatter.header('Combat Started', '⚔️');
-                    if (parsed.encounterId) {
-                        output += RichFormatter.keyValue({ 'Encounter ID': `\`${parsed.encounterId}\`` });
-                    }
-                    break;
-                case 'spawn_quick_enemy':
-                    output = RichFormatter.header('Quick Combat Ready', '👹');
-                    if (parsed.encounterId) {
-                        output += RichFormatter.keyValue({
-                            'Encounter ID': `\`${parsed.encounterId}\``,
-                            'Creature': parsed.creature,
-                            'Count': parsed.spawnedCount
-                        });
-                    }
-                    if (parsed.creatureStats) {
-                        output += '\n**Creature Stats:**\n';
-                        output += RichFormatter.keyValue({
-                            'HP': parsed.creatureStats.hp,
-                            'AC': parsed.creatureStats.ac,
-                            'CR': parsed.creatureStats.cr || 'N/A'
-                        });
-                        if (parsed.creatureStats.traits?.length > 0) {
-                            output += '\n**Traits:** ' + parsed.creatureStats.traits.join(', ') + '\n';
-                        }
-                    }
-                    if (parsed.enemies?.length > 0) {
-                        output += '\n**Enemies Spawned:**\n';
-                        const rows = parsed.enemies.map((e: { name: string; hp: number; position: { x: number; y: number }; attack?: { name: string; damage: string } }) =>
-                            [e.name, `${e.hp} HP`, `(${e.position.x}, ${e.position.y})`, e.attack?.damage || '-']
-                        );
-                        output += RichFormatter.table(['Name', 'HP', 'Position', 'Attack'], rows);
-                    }
-                    output += '\n' + RichFormatter.alert('Combat ready! Use combat_action to attack.', 'success');
-                    break;
-                case 'get':
-                    output = RichFormatter.header('Encounter State', '📋');
-                    break;
-                case 'end':
-                    output = RichFormatter.header('Combat Ended', '🏁');
-                    break;
-                case 'load':
-                    output = RichFormatter.header('Encounter Loaded', '📂');
-                    break;
-                case 'advance':
-                    output = RichFormatter.header('Turn Advanced', '⏭️');
-                    break;
-                case 'death_save':
-                    output = RichFormatter.header('Death Save', '💀');
-                    break;
-                case 'lair_action':
-                    output = RichFormatter.header('Lair Action', '🏰');
-                    break;
-                default:
-                    output = RichFormatter.header('Combat', '⚔️');
-            }
-
-            // Add raw text if present
-            if (parsed.rawText) {
-                output += '\n' + parsed.rawText + '\n';
-            } else if (parsed.message) {
-                output += '\n' + parsed.message + '\n';
-            }
-
-            // Add state info if present
-            if (parsed.round !== undefined) {
-                output += RichFormatter.keyValue({
-                    'Round': parsed.round,
-                    'Active': parsed.activeParticipant || 'N/A'
-                });
-            }
+            output = RichFormatter.header('Combat', '⚔️');
+            output += JSON.stringify(data, null, 2) + '\n';
         }
 
-        output += RichFormatter.embedJson(parsed, 'COMBAT_MANAGE');
-
-        return {
-            content: [{
-                type: 'text' as const,
-                text: output
-            }]
-        };
-    } catch (error) {
-        return {
-            content: [{
-                type: 'text' as const,
-                text: RichFormatter.header('Error', '') +
-                    RichFormatter.alert(error instanceof Error ? error.message : String(error), 'error')
-            }]
-        };
+        output += RichFormatter.embedJson(data, 'COMBAT_MANAGE');
+        return { content: [{ type: 'text', text: output }] };
+    } catch {
+        return response;
     }
 }

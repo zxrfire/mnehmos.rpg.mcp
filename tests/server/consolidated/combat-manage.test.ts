@@ -1,770 +1,464 @@
 /**
- * Tests for consolidated combat_manage tool
- * Validates all 7 actions: create, get, end, load, advance, death_save, lair_action
+ * Tool-level tests for `combat_manage`.
+ *
+ * What is under test is the authority boundary, not the arithmetic - the
+ * engine's own suite covers the numbers. Here the questions are: can a caller
+ * assert an outcome (no), does the database end up holding what the tool said
+ * happened (yes), and does the tool refuse a confrontation the setting says is
+ * not one (yes).
  */
 
-import { handleCombatManage, CombatManageTool } from '../../../src/server/consolidated/combat-manage.js';
-import { clearCombatState } from '../../../src/server/handlers/combat-handlers.js';
-import { getDb } from '../../../src/storage/index.js';
-import { randomUUID } from 'crypto';
+import {
+    CombatManageTool,
+    handleCombatManage
+} from '../../../src/server/consolidated/combat-manage.js';
+import { handleCultivationManage } from '../../../src/server/consolidated/cultivation-manage.js';
+import { handleTechniqueManage } from '../../../src/server/consolidated/technique-manage.js';
+import { ConsolidatedTools } from '../../../src/server/consolidated/index.js';
+import { closeDb, getDb } from '../../../src/storage/index.js';
+import { CultivatorRepository } from '../../../src/storage/repos/cultivator.repo.js';
+import { CombatRepository } from '../../../src/storage/repos/combat.repo.js';
+import { REAL_OPTIONS } from '../../../src/engine/cultivation/combat.js';
+import { REALM_TIERS } from '../../../src/engine/cultivation/realms.js';
 
-// Force test mode
-process.env.NODE_ENV = 'test';
+const ctx = { sessionId: 'combat-test' };
 
-function parseResult(result: { content: Array<{ type: string; text: string }> }) {
-    const text = result.content[0].text;
-    // Try COMBAT_MANAGE_JSON format first
-    const jsonMatch = text.match(/<!-- COMBAT_MANAGE_JSON\n([\s\S]*?)\nCOMBAT_MANAGE_JSON -->/);
-    if (jsonMatch) {
-        return JSON.parse(jsonMatch[1]);
-    }
-    // Fall back to raw JSON (error responses from router)
-    try {
-        const parsed = JSON.parse(text);
-        if (typeof parsed === 'object' && parsed !== null) {
-            return parsed;
-        }
-    } catch {
-        // Not valid JSON
-    }
-    return { error: 'parse_failed', rawText: text };
+function payload(response: { content: Array<{ text: string }> }): any {
+    const text = response.content[0].text;
+    const match = /<!-- [A-Z_]+_JSON\n([\s\S]*?)\n[A-Z_]+_JSON -->/.exec(text);
+    if (match) return JSON.parse(match[1]);
+    return JSON.parse(text);
 }
 
-describe('combat_manage consolidated tool', () => {
-    const ctx = { sessionId: `test-session-${randomUUID()}` };
-    let testEncounterId: string;
+const combat = async (args: Record<string, unknown>) => payload(await handleCombatManage(args, ctx));
+const cultivation = async (args: Record<string, unknown>) =>
+    payload(await handleCultivationManage(args, ctx));
+const technique = async (args: Record<string, unknown>) =>
+    payload(await handleTechniqueManage(args, ctx));
 
-    beforeEach(async () => {
-        // Reset test database
-        const db = getDb(':memory:');
-        db.exec('DELETE FROM encounters');
+function realmStart(key: string): number {
+    return REALM_TIERS.find(t => t.key === key)!.ordinalStart;
+}
 
-        // Clear in-memory combat state
-        clearCombatState();
+async function newCultivator(name = 'Shen Yue', seed = 'combat-seed') {
+    const created = await cultivation({ action: 'create_cultivator', name, seed, location: 'Sweptground' });
+    expect(created.error).toBeUndefined();
+    return created;
+}
+
+/** Put a cultivator at a rank without going through a breakthrough, for setup. */
+function setRank(db: ReturnType<typeof getDb>, id: string, ordinal: number, extra: Record<string, unknown> = {}) {
+    const repo = new CultivatorRepository(db);
+    const current = repo.getById(id)!;
+    repo.update(id, {
+        realmOrdinal: ordinal,
+        hp: 200,
+        maxHp: 200,
+        qi: 400,
+        maxQi: 400,
+        ...extra
+    } as never);
+    return repo.getById(id) ?? current;
+}
+
+describe('combat_manage', () => {
+    let db: ReturnType<typeof getDb>;
+
+    beforeEach(() => {
+        closeDb();
+        db = getDb(':memory:');
     });
 
-    describe('Tool Definition', () => {
-        it('should have correct tool name', () => {
-            expect(CombatManageTool.name).toBe('combat_manage');
+    // ─────────────────────────────────────────────────────────────────────
+    describe('registration', () => {
+        it('is registered as a full contract with the rest of the surface', () => {
+            const contract = ConsolidatedTools.find(c => c.name === 'combat_manage');
+            expect(contract).toBeDefined();
+            expect(contract!.metadata.name).toBe('combat_manage');
+            expect(contract!.metadata.category).toBe('combat');
+            expect(contract!.metadata.description).toBe(CombatManageTool.description);
+            expect(contract!.schema).toBe(contract!.inputSchema);
+            expect(contract!.actionSchemas).toBeDefined();
+            expect(typeof contract!.handler).toBe('function');
         });
 
-        it('should list all available actions in description', () => {
-            expect(CombatManageTool.description).toContain('create');
-            expect(CombatManageTool.description).toContain('get');
-            expect(CombatManageTool.description).toContain('end');
-            expect(CombatManageTool.description).toContain('load');
-            expect(CombatManageTool.description).toContain('advance');
-            expect(CombatManageTool.description).toContain('death_save');
-            expect(CombatManageTool.description).toContain('lair_action');
-        });
-    });
-
-    describe('terrain field robustness (regression for playtest bug)', () => {
-        const minimalParticipants = [
-            { id: 'h1', name: 'H', initiativeBonus: 0, hp: 10, maxHp: 10, isEnemy: false, conditions: [], position: { x: 0, y: 0 } },
-            { id: 'e1', name: 'E', initiativeBonus: 0, hp: 10, maxHp: 10, isEnemy: true, conditions: [], position: { x: 5, y: 5 } }
-        ];
-
-        it('accepts terrain as an object literal', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'terrain-obj',
-                participants: minimalParticipants,
-                terrain: { obstacles: ['altar'], difficultTerrain: ['mud'], water: ['pool'] }
-            }, ctx);
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-        });
-
-        it('accepts terrain as a JSON-stringified object (some MCP transports stringify)', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'terrain-str',
-                participants: minimalParticipants,
-                terrain: JSON.stringify({ obstacles: ['altar'], difficultTerrain: ['mud'], water: ['pool'] })
-            }, ctx);
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-        });
-
-        it('accepts terrain field omitted entirely', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'terrain-none',
-                participants: minimalParticipants
-            }, ctx);
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-        });
-
-        it('uses defaults when seed and initiative bonus are omitted', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                participants: [
-                    { id: 'default-hero', name: 'Default Hero', hp: 10, maxHp: 10 }
-                ]
-            }, ctx);
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-            expect(data.encounterId).toContain('encounter-combat-');
-
-            const state = getDb(':memory:').prepare(
-                'SELECT tokens FROM encounters WHERE id = ?'
-            ).get(data.encounterId) as { tokens: string };
-            const token = JSON.parse(state.tokens)[0];
-            expect(typeof token.initiative).toBe('number');
-            expect(token.initiativeBonus).toBe(0);
+        it('offers no action that lets a caller declare a result', () => {
+            const actions = Object.keys(CombatManageTool.actionSchemas);
+            for (const forbidden of ['declare', 'set_outcome', 'win', 'kill_target', 'apply_damage']) {
+                expect(actions).not.toContain(forbidden);
+            }
+            expect(actions.sort()).toEqual(
+                ['advance', 'assess', 'create', 'end', 'flee', 'get', 'history', 'resolve', 'strike'].sort()
+            );
         });
     });
 
-    describe('create action', () => {
-        it('should create a new encounter', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'test-battle-1',
-                participants: [
-                    {
-                        id: 'hero-1',
-                        name: 'Test Hero',
-                        initiativeBonus: 2,
-                        hp: 30,
-                        maxHp: 30,
-                        isEnemy: false,
-                        conditions: [],
-                        position: { x: 5, y: 5 }
-                    },
-                    {
-                        id: 'goblin-1',
-                        name: 'Goblin',
-                        initiativeBonus: 1,
-                        hp: 7,
-                        maxHp: 7,
-                        isEnemy: true,
-                        conditions: [],
-                        position: { x: 10, y: 10 }
-                    }
-                ]
-            }, ctx);
+    // ─────────────────────────────────────────────────────────────────────
+    describe('assess', () => {
+        it('prices both sides and shows its working', async () => {
+            const created = await newCultivator();
+            const result = await combat({
+                action: 'assess',
+                opponent: { name: 'a bandit', realmOrdinal: 2 }
+            });
 
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-            expect(data.actionType).toBe('create');
-            expect(data.encounterId).toContain('test-battle-1');
+            expect(result.error).toBeUndefined();
+            expect(result.self.factors.length).toBeGreaterThan(5);
 
-            // Store for later tests
-            testEncounterId = data.encounterId;
+            // The factors multiply, in listed order, to exactly the total the
+            // fight would be decided by. Rounded for transport, so compare loosely.
+            let product = result.self.realmBase;
+            for (const factor of result.self.factors) product *= factor.factor;
+            expect(product).toBeCloseTo(result.self.total, 1);
+
+            expect(result.cultivator.id).toBe(created.cultivator.id);
         });
 
-        it('should create encounter with terrain', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'terrain-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 20, maxHp: 20 }
-                ],
-                terrain: {
-                    obstacles: ['5,5', '5,6', '5,7'],
-                    water: ['10,10', '10,11']
+        it('refuses to call two major realms a fight, and says what would work', async () => {
+            await newCultivator();
+            const result = await combat({
+                action: 'assess',
+                opponent: { name: 'an elder', realmOrdinal: realmStart('nascent_soul') }
+            });
+
+            expect(result.gap.verdict).toBe('helpless');
+            expect(result.gap.options).toEqual([...REAL_OPTIONS]);
+            expect(result.note).toContain('refuse');
+        });
+
+        it('states what the edges carried are worth against what evening it would take', async () => {
+            await newCultivator();
+            const bare = await combat({
+                action: 'assess',
+                opponent: { name: 'a rival', realmOrdinal: 6 }
+            });
+            const armed = await combat({
+                action: 'assess',
+                opponent: { name: 'a rival', realmOrdinal: 6 },
+                edges: ['ambush', 'terrain']
+            });
+
+            expect(bare.edges.multiplier).toBe(1);
+            expect(armed.edges.multiplier).toBeGreaterThan(bare.edges.multiplier);
+            expect(armed.edges.requiredToEven).toBeGreaterThan(0);
+            expect(typeof armed.edges.sufficient).toBe('boolean');
+        });
+
+        it('changes nothing at all', async () => {
+            const created = await newCultivator();
+            const repo = new CultivatorRepository(db);
+            const before = repo.getById(created.cultivator.id)!;
+
+            await combat({ action: 'assess', opponent: { name: 'x', realmOrdinal: 4 } });
+
+            const after = repo.getById(created.cultivator.id)!;
+            expect(after.hp).toBe(before.hp);
+            expect(after.qi).toBe(before.qi);
+            expect(after.injuries.length).toBe(before.injuries.length);
+        });
+
+        it('needs a rank rather than guessing one', async () => {
+            await newCultivator();
+            const result = await combat({ action: 'assess', opponent: { name: 'someone' } });
+            expect(result.error).toBe('opponent_not_specified');
+        });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    describe('strike', () => {
+        it('refuses an art the cultivator does not know', async () => {
+            await newCultivator();
+            const result = await combat({
+                action: 'strike',
+                techniqueId: 'ember-palm',
+                opponent: { name: 'a bandit', realmOrdinal: 1 }
+            });
+            expect(['technique_not_known', 'unknown_technique']).toContain(result.error);
+        });
+
+        it('spends qi and starts the cooldown when it lands', async () => {
+            const created = await newCultivator();
+            const id = created.cultivator.id;
+
+            const available = await technique({ action: 'list_available', cultivatorId: id });
+            const art = available.compatible.find((t: any) => t.qiCost > 0 && t.category === 'attack')
+                ?? available.compatible[0];
+            expect(art).toBeDefined();
+            await technique({ action: 'learn', techniqueId: art.id, cultivatorId: id });
+
+            const repo = new CultivatorRepository(db);
+            repo.update(id, { qi: 400, maxQi: 400 } as never);
+            const before = repo.getById(id)!;
+
+            const result = await combat({
+                action: 'strike',
+                techniqueId: art.id,
+                opponent: { name: 'a bandit', realmOrdinal: 1 }
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(result.struck).toBe(true);
+            const after = repo.getById(id)!;
+            expect(after.qi).toBe(before.qi - art.qiCost);
+            expect(result.qiRemaining).toBe(after.qi);
+        });
+
+        it('will not aim an elemental art at a soul', async () => {
+            const created = await newCultivator();
+            const id = created.cultivator.id;
+            const available = await technique({ action: 'list_available', cultivatorId: id });
+            const elemental = available.compatible.find((t: any) => t.element !== null);
+            expect(elemental).toBeDefined();
+            await technique({ action: 'learn', techniqueId: elemental.id, cultivatorId: id });
+
+            const result = await combat({
+                action: 'strike',
+                techniqueId: elemental.id,
+                vector: 'soul',
+                opponent: { name: 'a rival', realmOrdinal: 1 }
+            });
+            expect(result.error).toBe('art_cannot_reach_a_soul');
+        });
+
+        it('refuses to resolve a strike across a categorical gap', async () => {
+            const created = await newCultivator();
+            const id = created.cultivator.id;
+            const available = await technique({ action: 'list_available', cultivatorId: id });
+            await technique({ action: 'learn', techniqueId: available.compatible[0].id, cultivatorId: id });
+            new CultivatorRepository(db).update(id, { qi: 400, maxQi: 400 } as never);
+
+            const result = await combat({
+                action: 'strike',
+                techniqueId: available.compatible[0].id,
+                opponent: { name: 'an elder', realmOrdinal: realmStart('deity_transformation') }
+            });
+
+            expect(result.struck).toBe(false);
+            expect(result.refused).toBe('helpless');
+            expect(result.gap.options.length).toBeGreaterThan(0);
+        });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    describe('resolve', () => {
+        it('writes the wounds it reported into the database', async () => {
+            const created = await newCultivator();
+            const id = created.cultivator.id;
+            setRank(db, id, realmStart('foundation_establishment'));
+
+            const result = await combat({
+                action: 'resolve',
+                goal: 'kill',
+                fightToTheEnd: true,
+                opponent: { name: 'a rival', realmOrdinal: realmStart('foundation_establishment'), maxHp: 200 }
+            });
+
+            expect(result.error).toBeUndefined();
+            const stored = new CultivatorRepository(db).getById(id)!;
+            expect(stored.injuries.length).toBe(result.injuries.self.length);
+            for (const injury of result.injuries.self) {
+                expect(stored.injuries.some(i => i.id === injury.id)).toBe(true);
+            }
+        });
+
+        it('records the confrontation and counts it as experience', async () => {
+            const created = await newCultivator();
+            const id = created.cultivator.id;
+            setRank(db, id, realmStart('core_formation'));
+
+            await combat({
+                action: 'resolve',
+                goal: 'humiliate',
+                opponent: { name: 'a rival', realmOrdinal: 4 }
+            });
+
+            const stored = new CultivatorRepository(db).getById(id)!;
+            expect(stored.battlesSurvived).toBe(1);
+            expect(stored.battlesWon).toBe(1);
+
+            const records = new CombatRepository(db).listRecords(id);
+            expect(records).toHaveLength(1);
+            expect(records[0].outcome).toBe('humiliation');
+            expect(records[0].opponentName).toBe('a rival');
+        });
+
+        it('produces a standing feud rather than only a corpse', async () => {
+            const created = await newCultivator();
+            const id = created.cultivator.id;
+            setRank(db, id, realmStart('core_formation'));
+
+            const result = await combat({
+                action: 'resolve',
+                goal: 'humiliate',
+                opponent: { name: 'Wen Sho', realmOrdinal: 4 }
+            });
+
+            expect(result.outcome).toBe('humiliation');
+            expect(result.died).toBe(false);
+            expect(result.obligations).toHaveLength(1);
+            expect(result.obligations[0].cause).toBe('humiliation');
+            expect(result.obligations[0].subjectId).toBe(id);
+        });
+
+        it('destroys a high Drawn cultivator\'s body without calling it a death', async () => {
+            const created = await newCultivator('Attacker');
+            const attackerId = created.cultivator.id;
+            setRank(db, attackerId, 40);
+
+            const victim = await cultivation({
+                action: 'create_cultivator',
+                name: 'Elder Rong',
+                seed: 'victim-seed'
+            });
+            // Two runs cannot both be active, so the victim is used as a described
+            // opponent at their real rank rather than as a live cultivator row.
+            expect(victim).toBeDefined();
+
+            const result = await combat({
+                action: 'resolve',
+                cultivatorId: attackerId,
+                goal: 'kill',
+                opponent: {
+                    name: 'Elder Rong',
+                    realmOrdinal: realmStart('nascent_soul'),
+                    traditionId: 'tradition-drawn'
                 }
-            }, ctx);
+            });
 
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
+            expect(result.outcome).toBe('body_destroyed');
+            expect(result.finished).toBe(false);
+            expect(result.remnant).toBe('soul');
+            expect(result.killRequirement.bodyIsEnough).toBe(false);
         });
 
-        // Regression for issue #46: side="enemy" was silently dropped, leaving
-        // isEnemy=undefined → false. Enemies showed as PCs in the turn prompt.
-        it('honors participant `side` as alias for isEnemy', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'side-alias-test',
-                participants: [
-                    { id: 'pc-vela', name: 'Vela', initiativeBonus: 0, hp: 38, maxHp: 38, side: 'party', position: { x: 1, y: 1 } },
-                    { id: 'pc-tobin', name: 'Tobin', initiativeBonus: 4, hp: 28, maxHp: 28, side: 'ally', position: { x: 1, y: 2 } },
-                    { id: 'enemy-rurk', name: 'Rurk', initiativeBonus: 1, hp: 22, maxHp: 22, side: 'enemy', position: { x: 5, y: 5 } },
-                    { id: 'enemy-mira', name: 'Mira', initiativeBonus: 2, hp: 16, maxHp: 16, side: 'hostile', position: { x: 6, y: 5 } }
-                ]
-            }, ctx);
+        it('leaves a carver a seam rather than a soul', async () => {
+            const created = await newCultivator('Attacker');
+            setRank(db, created.cultivator.id, 40);
 
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
+            const result = await combat({
+                action: 'resolve',
+                goal: 'kill',
+                opponent: {
+                    name: 'a carver',
+                    realmOrdinal: 4,
+                    traditionId: 'tradition-cut'
+                }
+            });
 
-            const byId = Object.fromEntries(
-                (data.participants as Array<{ id: string; isEnemy: boolean }>).map((p) => [p.id, p.isEnemy])
-            );
-            expect(byId['pc-vela']).toBe(false);
-            expect(byId['pc-tobin']).toBe(false);
-            expect(byId['enemy-rurk']).toBe(true);
-            expect(byId['enemy-mira']).toBe(true);
+            expect(result.outcome).toBe('body_destroyed');
+            expect(result.remnant).toBe('seam');
+            expect(result.killRequirement.soulAttackWorks).toBe(false);
         });
 
-        it('explicit isEnemy wins over side when both are supplied', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'side-conflict-test',
-                participants: [
-                    { id: 'overridden', name: 'Override', initiativeBonus: 0, hp: 10, maxHp: 10, side: 'enemy', isEnemy: false }
-                ]
-            }, ctx);
+        it('refuses across a categorical gap and hurts nobody doing it', async () => {
+            const created = await newCultivator();
+            const id = created.cultivator.id;
+            const repo = new CultivatorRepository(db);
+            const before = repo.getById(id)!;
 
-            const data = parseResult(result);
-            const p = (data.participants as Array<{ id: string; isEnemy: boolean }>).find((x) => x.id === 'overridden');
-            expect(p?.isEnemy).toBe(false);
+            const result = await combat({
+                action: 'resolve',
+                goal: 'kill',
+                opponent: { name: 'an ancestor', realmOrdinal: realmStart('void_refinement') }
+            });
+
+            expect(result.outcome).toBe('no_contest');
+            expect(result.exchanges).toEqual([]);
+            expect(repo.getById(id)!.hp).toBe(before.hp);
         });
 
-        // Regression for issue #48: spawn_quick_enemy with encounterId was
-        // ignoring the id and creating a fresh encounter, leaving PCs without
-        // opponents in the original.
-        it('spawn_quick_enemy appends to existing encounter when encounterId is set', async () => {
-            // Create encounter with PCs only
-            const createResult = await handleCombatManage({
-                action: 'create',
-                seed: 'spawn-append-test',
-                participants: [
-                    { id: 'pc-hero', name: 'Hero', initiativeBonus: 3, hp: 30, maxHp: 30, isEnemy: false, position: { x: 0, y: 0 } }
-                ]
-            }, ctx);
-            const originalId = parseResult(createResult).encounterId;
+        it('advances the run turn exactly once', async () => {
+            const created = await newCultivator();
+            setRank(db, created.cultivator.id, realmStart('core_formation'));
+            const before = created.run.turn;
 
-            // Spawn goblins into the same encounter
-            const spawnResult = await handleCombatManage({
-                action: 'spawn_quick_enemy',
-                encounterId: originalId,
-                creature: 'goblin',
-                count: 2,
-                position: { x: 10, y: 10 }
-            }, ctx);
-            const spawnData = parseResult(spawnResult);
+            const result = await combat({
+                action: 'resolve',
+                goal: 'drive_off',
+                opponent: { name: 'a rival', realmOrdinal: 6 }
+            });
 
-            expect(spawnData.success).toBe(true);
-            expect(spawnData.appendedToExisting).toBe(true);
-            expect(spawnData.encounterId).toBe(originalId);
-            expect(spawnData.spawnedCount).toBe(2);
-            // Original encounter now has PC + 2 goblins = 3 participants
-            expect(spawnData.turnOrder.length).toBe(3);
-        });
-
-        // Reviewer follow-ups on PR #58:
-        // - currentTurn must come from turnOrder index, not participants[i]?.id.
-        // - Auto-load from DB when the in-memory engine is gone.
-        it('spawn_quick_enemy currentTurn comes from turnOrder index', async () => {
-            const createResult = await handleCombatManage({
-                action: 'create',
-                seed: 'spawn-currentTurn-test',
-                participants: [
-                    { id: 'pc-hero', name: 'Hero', initiativeBonus: 5, hp: 30, maxHp: 30, isEnemy: false, position: { x: 0, y: 0 } }
-                ]
-            }, ctx);
-            const originalId = parseResult(createResult).encounterId;
-
-            const spawnResult = await handleCombatManage({
-                action: 'spawn_quick_enemy',
-                encounterId: originalId,
-                creature: 'goblin',
-                count: 1
-            }, ctx);
-            const spawnData = parseResult(spawnResult);
-
-            // currentTurn must remain anchored to the pre-existing actor.
-            // (Asserting turnOrder[0] is brittle to initiative re-sorting.)
-            expect(spawnData.currentTurn).toBe('pc-hero');
-            expect(spawnData.turnOrder).toContain(spawnData.currentTurn);
-        });
-
-        it('spawn_quick_enemy auto-loads from DB when engine is evicted from memory', async () => {
-            const { getCombatManager } = await import('../../../src/server/state/combat-manager.js');
-            const createResult = await handleCombatManage({
-                action: 'create',
-                seed: 'spawn-autoload-test',
-                participants: [
-                    { id: 'pc-hero', name: 'Hero', initiativeBonus: 5, hp: 30, maxHp: 30, isEnemy: false, position: { x: 0, y: 0 } }
-                ]
-            }, ctx);
-            const originalId = parseResult(createResult).encounterId;
-
-            // Simulate process restart / context eviction.
-            getCombatManager().clear();
-
-            const spawnResult = await handleCombatManage({
-                action: 'spawn_quick_enemy',
-                encounterId: originalId,
-                creature: 'goblin',
-                count: 1
-            }, ctx);
-            const spawnData = parseResult(spawnResult);
-
-            expect(spawnData.success).toBe(true);
-            expect(spawnData.appendedToExisting).toBe(true);
-            expect(spawnData.loadedFromDb).toBe(true);
-            expect(spawnData.encounterId).toBe(originalId);
-            expect(spawnData.turnOrder.length).toBe(2);
-        });
-
-        // Reviewer follow-up on PR #58: when persistence fails after an
-        // in-memory append, we must NOT return success - that splits memory
-        // and DB state. Roll back the in-memory addParticipants.
-        it('spawn_quick_enemy rolls back in-memory append when persistence fails', async () => {
-            const { getCombatManager } = await import('../../../src/server/state/combat-manager.js');
-            const createResult = await handleCombatManage({
-                action: 'create',
-                seed: 'spawn-rollback-test',
-                participants: [
-                    { id: 'pc-hero', name: 'Hero', initiativeBonus: 5, hp: 30, maxHp: 30, isEnemy: false, position: { x: 0, y: 0 } }
-                ]
-            }, ctx);
-            const eid = parseResult(createResult).encounterId;
-            const engine = getCombatManager().get(`${ctx.sessionId}:${eid}`)!;
-            const beforeCount = engine.getState()!.participants.length;
-
-            // Simulate persistence failure by stubbing saveState to throw.
-            const repoMod = await import('../../../src/storage/repos/encounter.repo.js');
-            const originalSave = repoMod.EncounterRepository.prototype.saveState;
-            repoMod.EncounterRepository.prototype.saveState = function () {
-                throw new Error('disk full');
-            };
-
-            try {
-                const result = await handleCombatManage({
-                    action: 'spawn_quick_enemy',
-                    encounterId: eid,
-                    creature: 'goblin',
-                    count: 1
-                }, ctx);
-                const data = parseResult(result);
-                expect(data.error).toBe(true);
-                expect(data.rolledBack).toBe(true);
-                expect(data.message).toMatch(/persist/i);
-                // In-memory state must match what it was before the attempt.
-                expect(engine.getState()!.participants.length).toBe(beforeCount);
-            } finally {
-                repoMod.EncounterRepository.prototype.saveState = originalSave;
-            }
-        });
-
-        // Reviewer follow-up on PR #58: when an encounterId is supplied but
-        // doesn't exist anywhere, return an explicit error. Silent fallback
-        // to creating a fresh encounter hides typos / stale ids.
-        it('spawn_quick_enemy errors when encounterId is unknown to memory and DB', async () => {
-            const spawnResult = await handleCombatManage({
-                action: 'spawn_quick_enemy',
-                encounterId: 'encounter-does-not-exist-anywhere',
-                creature: 'goblin',
-                count: 1
-            }, ctx);
-            const data = parseResult(spawnResult);
-            expect(data.error).toBe(true);
-            expect(data.message).toMatch(/not found/i);
-            expect(data.requestedEncounterId).toBe('encounter-does-not-exist-anywhere');
-        });
-
-        it('spawn_quick_enemy still creates a new encounter when encounterId is omitted', async () => {
-            const result = await handleCombatManage({
-                action: 'spawn_quick_enemy',
-                creature: 'goblin',
-                count: 1
-            }, ctx);
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-            expect(data.appendedToExisting).toBeUndefined();
-            expect(data.encounterId).toBeDefined();
-        });
-
-        it('should accept "start" alias', async () => {
-            const result = await handleCombatManage({
-                action: 'start',
-                seed: 'alias-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 20, maxHp: 20 }
-                ]
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-        });
-
-        // PR #57 follow-up: damage modifiers must also survive the initial
-        // create -> loadState cycle. Dropping resistances/immunities/etc.
-        // changes damage resolution after a cold load.
-        it('persists resistances/immunities/vulnerabilities into the initial encounter row', async () => {
-            const { EncounterRepository } = await import('../../../src/storage/repos/encounter.repo.js');
-            const createResult = await handleCombatManage({
-                action: 'create',
-                seed: 'damage-mods-cold-load',
-                participants: [
-                    {
-                        id: 'fire-elem',
-                        name: 'Fire Elemental',
-                        initiativeBonus: 0,
-                        hp: 30,
-                        maxHp: 30,
-                        isEnemy: true,
-                        resistances: ['bludgeoning', 'piercing', 'slashing'],
-                        immunities: ['fire'],
-                        vulnerabilities: ['cold']
-                    }
-                ]
-            }, ctx);
-            const encounterId = parseResult(createResult).encounterId;
-
-            const repo = new EncounterRepository(getDb(':memory:'));
-            const loaded = repo.loadState(encounterId);
-            const elem = loaded.participants.find((p: { id: string }) => p.id === 'fire-elem');
-            expect(elem?.resistances).toEqual(['bludgeoning', 'piercing', 'slashing']);
-            expect(elem?.immunities).toEqual(['fire']);
-            expect(elem?.vulnerabilities).toEqual(['cold']);
-        });
-
-        // PR #57 follow-up: ensure ac survives an initial create -> loadState
-        // round-trip even before any saveState() is called.
-        it('persists ac into the initial encounter row (no loss on cold load)', async () => {
-            const { EncounterRepository } = await import('../../../src/storage/repos/encounter.repo.js');
-            const createResult = await handleCombatManage({
-                action: 'create',
-                seed: 'ac-persistence-cold-load',
-                participants: [
-                    { id: 'tanky', name: 'Tank', initiativeBonus: 0, hp: 30, maxHp: 30, ac: 18, isEnemy: false }
-                ]
-            }, ctx);
-            const encounterId = parseResult(createResult).encounterId;
-
-            const repo = new EncounterRepository(getDb(':memory:'));
-            const loaded = repo.loadState(encounterId);
-            expect(loaded).not.toBeNull();
-            const tank = loaded.participants.find((p: { id: string; ac?: number }) => p.id === 'tanky');
-            expect(tank?.ac).toBe(18);
-        });
-
-        // Regression for issue #47: participant `ac` was being silently dropped
-        // by the consolidated schema and never reached the attack resolver. All
-        // attacks resolved vs AC 10 regardless of the supplied value.
-        it('honors participant `ac` in encounter state', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'ac-persistence-test',
-                participants: [
-                    { id: 'tanky-pc', name: 'Tank', initiativeBonus: 0, hp: 38, maxHp: 38, ac: 18, isEnemy: false, position: { x: 0, y: 0 } },
-                    { id: 'squishy-enemy', name: 'Bandit', initiativeBonus: 0, hp: 10, maxHp: 10, ac: 11, isEnemy: true, position: { x: 1, y: 0 } }
-                ]
-            }, ctx);
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-
-            const byId = Object.fromEntries(
-                (data.participants as Array<{ id: string; ac?: number }>).map((p) => [p.id, p.ac])
-            );
-            expect(byId['tanky-pc']).toBe(18);
-            expect(byId['squishy-enemy']).toBe(11);
+            expect(result.cultivator.run.turn).toBe(before + 1);
         });
     });
 
-    describe('get action', () => {
-        beforeEach(async () => {
-            // Create an encounter first
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'get-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 2, hp: 30, maxHp: 30 },
-                    { id: 'goblin-1', name: 'Goblin', initiativeBonus: 1, hp: 7, maxHp: 7, isEnemy: true }
-                ]
-            }, ctx);
-            testEncounterId = parseResult(result).encounterId;
-        });
+    // ─────────────────────────────────────────────────────────────────────
+    describe('flee', () => {
+        it('itemises the odds and costs something either way', async () => {
+            const created = await newCultivator();
+            const id = created.cultivator.id;
+            const repo = new CultivatorRepository(db);
+            const before = repo.getById(id)!;
 
-        it('should get encounter state', async () => {
-            const result = await handleCombatManage({
-                action: 'get',
-                encounterId: testEncounterId
-            }, ctx);
+            const result = await combat({
+                action: 'flee',
+                opponent: { name: 'a pursuer', realmOrdinal: 8 }
+            });
 
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-            expect(data.actionType).toBe('get');
-        });
-
-        it('should accept "state" alias', async () => {
-            const result = await handleCombatManage({
-                action: 'state',
-                encounterId: testEncounterId
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
+            expect(typeof result.escaped).toBe('boolean');
+            const sum = result.modifiers.reduce((total: number, m: any) => total + m.delta, 0);
+            expect(sum).toBeCloseTo(result.chance, 3);
+            expect(result.damage).toBeGreaterThan(0);
+            expect(repo.getById(id)!.hp).toBeLessThan(before.hp);
         });
     });
 
-    describe('advance action', () => {
-        beforeEach(async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'advance-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 10, hp: 30, maxHp: 30 },
-                    { id: 'goblin-1', name: 'Goblin', initiativeBonus: 1, hp: 7, maxHp: 7, isEnemy: true }
-                ]
-            }, ctx);
-            testEncounterId = parseResult(result).encounterId;
+    // ─────────────────────────────────────────────────────────────────────
+    describe('history', () => {
+        it('reports nothing before anything has happened', async () => {
+            await newCultivator();
+            const result = await combat({ action: 'history' });
+            expect(result.records).toEqual([]);
+            expect(result.battlesSurvived).toBe(0);
         });
 
-        it('should advance to next turn', async () => {
-            const result = await handleCombatManage({
-                action: 'advance',
-                encounterId: testEncounterId
-            }, ctx);
+        it('reads back what was actually resolved', async () => {
+            const created = await newCultivator();
+            setRank(db, created.cultivator.id, realmStart('core_formation'));
+            await combat({ action: 'resolve', goal: 'subdue', opponent: { name: 'Bo', realmOrdinal: 3 } });
 
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-            expect(data.actionType).toBe('advance');
-        });
-
-        it('should accept "next" alias', async () => {
-            const result = await handleCombatManage({
-                action: 'next',
-                encounterId: testEncounterId
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
+            const result = await combat({ action: 'history' });
+            expect(result.records).toHaveLength(1);
+            expect(result.records[0].opponent).toBe('Bo');
+            expect(result.records[0].outcome).toBe('capture');
         });
     });
 
-    describe('end action', () => {
-        beforeEach(async () => {
-            const result = await handleCombatManage({
+    // ─────────────────────────────────────────────────────────────────────
+    describe('encounters', () => {
+        it('rolls an order dominated by rank, and advances through it', async () => {
+            const created = await combat({
                 action: 'create',
-                seed: 'end-test',
+                seed: 'encounter-seed',
                 participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 30, maxHp: 30 }
+                    { id: 'mortal', name: 'A Farmhand', realmOrdinal: 0 },
+                    { id: 'elder', name: 'An Elder', realmOrdinal: realmStart('core_formation') }
                 ]
-            }, ctx);
-            testEncounterId = parseResult(result).encounterId;
+            });
+
+            expect(created.error).toBeUndefined();
+            expect(created.turnOrder[0].id).toBe('elder');
+            expect(created.currentTurn.id).toBe('elder');
+
+            const advanced = await combat({ action: 'advance', encounterId: created.encounterId });
+            expect(advanced.currentTurn.id).toBe('mortal');
+            expect(advanced.round).toBe(1);
+
+            const wrapped = await combat({ action: 'advance', encounterId: created.encounterId });
+            expect(wrapped.currentTurn.id).toBe('elder');
+            expect(wrapped.round).toBe(2);
+
+            const state = await combat({ action: 'get', encounterId: created.encounterId });
+            expect(state.round).toBe(2);
+            expect(state.status).toBe('active');
+
+            const ended = await combat({ action: 'end', encounterId: created.encounterId });
+            expect(ended.status).toBe('ended');
         });
 
-        it('should end the encounter', async () => {
-            const result = await handleCombatManage({
-                action: 'end',
-                encounterId: testEncounterId
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-            expect(data.actionType).toBe('end');
-            const row = getDb(':memory:').prepare('SELECT status, active_token_id FROM encounters WHERE id = ?')
-                .get(testEncounterId) as { status: string; active_token_id: string | null };
-            expect(row.status).toBe('completed');
-            expect(row.active_token_id).toBeNull();
-        });
-
-        it('should accept "finish" alias', async () => {
-            // Create another encounter since previous was ended
-            const createResult = await handleCombatManage({
-                action: 'create',
-                seed: 'finish-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 30, maxHp: 30 }
-                ]
-            }, ctx);
-            const encId = parseResult(createResult).encounterId;
-
-            const result = await handleCombatManage({
-                action: 'finish',
-                encounterId: encId
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-        });
-    });
-
-    describe('load action', () => {
-        beforeEach(async () => {
-            // Create an encounter
-            const createResult = await handleCombatManage({
-                action: 'create',
-                seed: 'load-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 30, maxHp: 30 }
-                ]
-            }, ctx);
-            testEncounterId = parseResult(createResult).encounterId;
-
-            // End the encounter to save it to DB
-            await handleCombatManage({
-                action: 'end',
-                encounterId: testEncounterId
-            }, ctx);
-        });
-
-        it('should load encounter from database', async () => {
-            // Clear in-memory state first
-            clearCombatState();
-
-            const result = await handleCombatManage({
-                action: 'load',
-                encounterId: testEncounterId
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-            expect(data.actionType).toBe('load');
-        });
-
-        it('should accept "resume" alias', async () => {
-            clearCombatState();
-
-            const result = await handleCombatManage({
-                action: 'resume',
-                encounterId: testEncounterId
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-        });
-    });
-
-    describe('death_save action', () => {
-        beforeEach(async () => {
-            // Create encounter with a character at 0 HP
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'death-save-test',
-                participants: [
-                    { id: 'dying-hero', name: 'Dying Hero', initiativeBonus: 0, hp: 0, maxHp: 30 },
-                    { id: 'goblin-1', name: 'Goblin', initiativeBonus: 0, hp: 7, maxHp: 7, isEnemy: true }
-                ]
-            }, ctx);
-            testEncounterId = parseResult(result).encounterId;
-        });
-
-        it('should roll death save for character at 0 HP', async () => {
-            const result = await handleCombatManage({
-                action: 'death_save',
-                encounterId: testEncounterId,
-                characterId: 'dying-hero'
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-            expect(data.actionType).toBe('death_save');
-        });
-
-        it('should accept "dying" alias', async () => {
-            const result = await handleCombatManage({
-                action: 'dying',
-                encounterId: testEncounterId,
-                characterId: 'dying-hero'
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-        });
-    });
-
-    describe('lair_action action', () => {
-        beforeEach(async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'lair-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 30, maxHp: 30 },
-                    { id: 'dragon-1', name: 'Dragon', initiativeBonus: 10, hp: 100, maxHp: 100, isEnemy: true }
-                ]
-            }, ctx);
-            testEncounterId = parseResult(result).encounterId;
-        });
-
-        it('should route lair_action correctly (may fail on turn timing)', async () => {
-            const result = await handleCombatManage({
-                action: 'lair_action',
-                encounterId: testEncounterId,
-                actionDescription: 'Stalactites fall from the ceiling',
-                targetIds: ['hero-1'],
-                damage: 10,
-                damageType: 'bludgeoning',
-                savingThrow: { ability: 'dexterity', dc: 15 }
-            }, ctx);
-
-            const data = parseResult(result);
-            // Lair actions require initiative 20 - we're testing the routing works
-            // The action may fail due to turn timing, which is valid game logic
-            if (data.error) {
-                // Verify it's the expected turn-timing error, not a routing error
-                expect(data.message).toContain('lair');
-            } else {
-                expect(data.success).toBe(true);
-                expect(data.actionType).toBe('lair_action');
-            }
-        });
-
-        it('should accept "lair" alias', async () => {
-            const result = await handleCombatManage({
-                action: 'lair',
-                encounterId: testEncounterId,
-                actionDescription: 'The floor erupts with fire'
-            }, ctx);
-
-            const data = parseResult(result);
-            // Same as above - may fail due to turn timing
-            if (data.error) {
-                expect(data.message).toContain('lair');
-            } else {
-                expect(data.success).toBe(true);
-            }
-        });
-    });
-
-    describe('fuzzy matching', () => {
-        it('should auto-correct close typos', async () => {
-            const result = await handleCombatManage({
-                action: 'creat',  // Missing 'e' - similarity with "create" is 0.83
-                seed: 'fuzzy-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 20, maxHp: 20 }
-                ]
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.success).toBe(true);
-        });
-
-        it('should provide helpful error for unknown action', async () => {
-            const result = await handleCombatManage({
-                action: 'xyz',
-                encounterId: 'test'
-            }, ctx);
-
-            const data = parseResult(result);
-            expect(data.error).toBe('invalid_action');
-            expect(data.message).toContain('Unknown action');
-        });
-    });
-
-    describe('output formatting', () => {
-        it('should include rich text formatting', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'format-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 20, maxHp: 20 }
-                ]
-            }, ctx);
-
-            const text = result.content[0].text;
-            expect(text).toContain('⚔️'); // Combat emoji
-            expect(text).toContain('COMBAT STARTED'); // RichFormatter.header uppercases
-        });
-
-        it('should embed JSON for parsing', async () => {
-            const result = await handleCombatManage({
-                action: 'create',
-                seed: 'json-test',
-                participants: [
-                    { id: 'hero-1', name: 'Hero', initiativeBonus: 0, hp: 20, maxHp: 20 }
-                ]
-            }, ctx);
-
-            const text = result.content[0].text;
-            expect(text).toContain('<!-- COMBAT_MANAGE_JSON');
+        it('says so plainly when there is no encounter', async () => {
+            const result = await combat({ action: 'advance' });
+            expect(result.error).toBe('no_encounter');
         });
     });
 });

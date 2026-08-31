@@ -1,5 +1,4 @@
 import Database from 'better-sqlite3';
-import { migrateClassProgression } from './migrations.class-progression.js';
 import { migrateCultivation } from './migrations.cultivation.js';
 import { migrateSocial } from './migrations.social.js';
 import { migrateWorld } from './migrations.world.js';
@@ -645,9 +644,6 @@ export function migrate(db: Database.Database) {
 
   // Now create indexes that depend on migrated columns
   createPostMigrationIndexes(db);
-
-  // Per-class progression: homebrew multiclass tracks (no single general level)
-  migrateClassProgression(db);
 
   // Cultivation: cultivators, injuries, runs, techniques, alchemy, sects
   migrateCultivation(db);

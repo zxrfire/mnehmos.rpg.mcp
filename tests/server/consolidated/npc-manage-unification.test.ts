@@ -498,7 +498,7 @@ describe('npc_manage unification - create + get_full_context', () => {
             expect(typeof data.prompt.sheet).toBe('string');
             expect(data.prompt.sheet).toContain('YOUR CHARACTER');
             expect(data.prompt.sheet).toContain('HP:');
-            expect(data.prompt.sheet).toContain('AC:');
+            expect(data.prompt.sheet).toContain('Stats:');
             expect(data.prompt.combined).toContain(data.prompt.sheet);
         });
 

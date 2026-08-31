@@ -22,11 +22,24 @@
  *
  * The item catalogs (techniques, pills, herbs, formulas) are not scoped; see
  * the note on `KnownEntityKind` for why.
+ *
+ * ── And a fourth: structure ───────────────────────────────────────────────
+ * docs/world/tone.md: nobody tells the protagonist how anything works. Knowing
+ * that a sect exists is not knowing that it admits from ordinal 3, that its
+ * ranks run Barrow Hand to Company Master, or that it is neutral rather than
+ * righteous - those are schema categories, and a category handed to a narrator
+ * becomes a briefing, because that is what a category in a prompt is for.
+ *
+ * So every resolver returns two channels. `facts` is what a person would
+ * perceive or has been told, and is the only thing a prompt ever sees.
+ * `structure` is the governance, the ladder, the ordinals and the grades, and
+ * goes to the inspector, where mechanical precision is the entire point.
  */
 
 import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
 import { rankName } from '../engine/cultivation/realms.js';
+import { describeStanding } from './facts.js';
 import {
     HERBS,
     PILLS,
@@ -67,8 +80,15 @@ export interface ResolvedEntity {
     id: string;
     /** Display name, from the row or the catalog. Never the player's spelling. */
     name: string;
-    /** Engine-sourced statements about it. Every one is read from state. */
+    /**
+     * What this cultivator perceives or has been told. Narratable.
+     *
+     * Every one is read from state, and every one is phrased as observation.
+     * If a line here would teach the player a rule, it belongs in `structure`.
+     */
     facts: string[];
+    /** Categories, ladders, ordinals, grades. Inspector only, never prompted. */
+    structure: string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -201,7 +221,8 @@ export function resolveCultivator(
     repos: CultivationRepos,
     query: string,
     selfId: string,
-    scope?: KnowledgeScope
+    scope?: KnowledgeScope,
+    observerOrdinal = 0
 ): ResolvedEntity | null {
     const here = scope?.here?.trim().toLowerCase() ?? null;
     const rows = repos.cultivators.roster().filter(entry => {
@@ -224,27 +245,48 @@ export function resolveCultivator(
             'a sect whose name means nothing to this cultivator')
         : null;
 
+    // Rank is not stated. A cultivator perceives a gap, not an ordinal, and
+    // handing a narrator "Nascent Soul Mid" produces power-level exposition,
+    // which Tier 1 bans outright. The engine does the arithmetic; the prose
+    // reports what it feels like to stand next to the answer.
     const facts = [
-        `${match.name} is a ${match.kind} at ${rankName(match.realmOrdinal)}, age ${Math.floor(match.age)}.`,
-        match.alive ? `${match.name} is alive.` : `${match.name} is dead: ${match.deathCause ?? 'cause unrecorded'}.`,
+        `${match.name} is here, and reads as ${describeStanding(observerOrdinal, match.realmOrdinal)}.`,
+        match.alive
+            ? `They carry ${Math.floor(match.age)} years, however many of those show.`
+            : `${match.name} is dead. Whatever ended them is not written where this cultivator can read it.`,
         affiliation
-            ? `Affiliation: ${affiliation}${match.sectRank ? `, ${match.sectRank}` : ''}.`
-            : `${match.name} is unaffiliated.`,
-        `Whereabouts on record: ${placeOrShape(scope, match.location)}. ` +
-        `Spirit stones: ${match.spiritStones}. Untreated injuries: ${match.untreatedInjuries}.`
+            ? `They wear the marks of ${affiliation}${match.sectRank ? `, and are addressed as ${match.sectRank}` : ''}.`
+            : `${match.name} answers to nobody visible.`,
+        `Last known to be at ${placeOrShape(scope, match.location)}.`
     ];
+
+    if (match.untreatedInjuries > 0) {
+        facts.push(`Something is wrong with the way they hold themselves. ${match.untreatedInjuries} injuries are open.`);
+    }
 
     // Feuds are stored as free-text party labels rather than ids, so there is
     // nothing to check them against. They are withheld wholesale rather than
     // guessed at: a grudge the player cannot name is still a grudge.
     if (match.feuds.length > 0) {
         const feudLine = scope
-            ? describeParties('Standing grudges on record', [], match.feuds.length)
+            ? describeParties('There are parties who will not be in a room with them', [], match.feuds.length)
             : describeParties('Standing grudges on record', [...match.feuds], 0);
         if (feudLine) facts.push(feudLine);
     }
 
-    return { kind: 'cultivator', id: match.id, name: match.name, facts };
+    return {
+        kind: 'cultivator',
+        id: match.id,
+        name: match.name,
+        facts,
+        structure: [
+            `kind=${match.kind}, realmOrdinal=${match.realmOrdinal} (${rankName(match.realmOrdinal)}), ` +
+            `age=${match.age}, alive=${match.alive}${match.deathCause ? `, deathCause=${match.deathCause}` : ''}.`,
+            `sectId=${match.sectId ?? 'none'}, sectRank=${match.sectRank ?? 'none'}, ` +
+            `spiritRoot=${match.spiritRoot}, spiritStones=${match.spiritStones}, ` +
+            `untreatedInjuries=${match.untreatedInjuries}, location=${match.location ?? 'unrecorded'}.`
+        ]
+    };
 }
 
 /**
@@ -254,7 +296,8 @@ export function resolveCultivator(
 export function resolveSect(
     repos: CultivationRepos,
     query: string,
-    scope?: KnowledgeScope
+    scope?: KnowledgeScope,
+    memberOf: string | null = null
 ): ResolvedEntity | null {
     const heard = (id: string): boolean =>
         !scope || scope.gate.isAwareOf(scope.holderId, 'sect', id);
@@ -265,10 +308,11 @@ export function resolveSect(
             kind: 'sect',
             id: stored.id,
             name: stored.name,
-            facts: [
-                `${stored.name} is a ${stored.alignment} sect.`,
-                `It admits from ${rankName(stored.admissionOrdinal)}; its strongest member stands at ${rankName(stored.powerOrdinal)}.`,
-                `Ranks, outer to inner: ${stored.ranks.join(', ')}.`
+            facts: sectFacts(stored.name, stored.admissionOrdinal, memberOf === stored.id, stored.ranks),
+            structure: [
+                `alignment=${stored.alignment}, admissionOrdinal=${stored.admissionOrdinal}, ` +
+                `powerOrdinal=${stored.powerOrdinal} (${rankName(stored.powerOrdinal)}).`,
+                `ranks=[${stored.ranks.join(', ')}]`
             ]
         };
     }
@@ -277,12 +321,17 @@ export function resolveSect(
     if (!catalogued) return null;
 
     const seat = placeOrShape(scope, catalogued.territory);
-    const facts = [
-        `${catalogued.name} is a ${catalogued.alignment} sect seated at ${seat}.`,
-        `It admits from ${rankName(catalogued.admissionOrdinal)}; its strongest member stands at ${rankName(catalogued.powerOrdinal)}.`,
-        catalogued.recruits ? 'It takes applicants.' : 'It takes no applicants at all.',
-        `Ranks, outer to inner: ${catalogued.ranks.join(', ')}.`
-    ];
+    const facts = sectFacts(
+        catalogued.name, catalogued.admissionOrdinal, memberOf === catalogued.id, catalogued.ranks
+    );
+    facts.push(
+        seat === catalogued.territory
+            ? `They are seated at ${seat}.`
+            : 'Where they are seated is not something this cultivator could point to on any road they know.'
+    );
+    if (!catalogued.recruits) {
+        facts.push('Nobody has ever heard of them taking anyone on.');
+    }
 
     // Rivals are the classic leak: asking about the one sect a villager has
     // heard of should not hand back the names of the four it fights with.
@@ -292,11 +341,50 @@ export function resolveSect(
             name: SECTS.find(sect => sect.id === id)?.name ?? id
         }));
         const { named, hidden } = knownNamesOnly(scope, 'sect', rivals);
-        const line = describeParties('It has standing feuds with', named, hidden);
+        const line = describeParties('There are parties they will not deal with', named, hidden);
         if (line) facts.push(line);
     }
 
-    return { kind: 'sect', id: catalogued.id, name: catalogued.name, facts };
+    return {
+        kind: 'sect',
+        id: catalogued.id,
+        name: catalogued.name,
+        facts,
+        structure: [
+            `alignment=${catalogued.alignment}, admissionOrdinal=${catalogued.admissionOrdinal}, ` +
+            `powerOrdinal=${catalogued.powerOrdinal} (${rankName(catalogued.powerOrdinal)}), recruits=${catalogued.recruits}.`,
+            `territory=${catalogued.territory}, ranks=[${catalogued.ranks.join(', ')}], ` +
+            `rivals=[${catalogued.rivals.join(', ')}], specialities=[${catalogued.specialities.join(', ')}].`
+        ]
+    };
+}
+
+/**
+ * A sect, as somebody outside it perceives it.
+ *
+ * Alignment is never stated: "righteous" and "demonic" are the schema's words,
+ * and a person forms that judgement by watching what a sect does, if they ever
+ * form it at all. The rank ladder is stated only to a member, because a member
+ * lives inside it - to everybody else it is a set of titles overheard without
+ * an explanation, which is exactly the texture tone.md asks for.
+ */
+function sectFacts(
+    name: string,
+    admissionOrdinal: number,
+    isMember: boolean,
+    ranks: readonly string[]
+): string[] {
+    const facts = [
+        admissionOrdinal <= 4
+            ? `${name} takes people on early enough that being taken is not something anyone boasts about.`
+            : `${name} does not look at anyone who has not already got somewhere on their own.`
+    ];
+
+    facts.push(isMember
+        ? `From the inside, the order runs ${ranks.join(', then ')}, and everyone knows where they sit in it.`
+        : `Titles get used around them - ${ranks.slice(0, 2).join(', ')} and others - and nobody explains what they mean to anyone who is not one.`);
+
+    return facts;
 }
 
 /** An art, from the catalog. Mastery is read from the join table when known. */
@@ -310,14 +398,24 @@ export function resolveTechnique(
 
     const known = repos.techniques.getKnown(cultivatorId, match.id);
     const facts = [
-        `${match.name} is a ${match.grade}-grade ${match.category} art${match.element ? ` of ${match.element}` : ', elementless'}.`,
-        `It requires ${rankName(match.requiredOrdinal)} to begin.`,
+        `${match.name}${match.element ? `, an art of ${match.element}` : ', an art of no element'}. ${match.description}`,
         known
-            ? `Mastery: ${(known.mastery * 100).toFixed(0)}%.`
-            : 'It is not known to this cultivator.',
-        match.description
+            ? known.mastery >= 0.99
+                ? 'They have it whole. There is nothing further in it for them.'
+                : `They have some of it. ${(known.mastery * 100).toFixed(0)}% of the way to holding it whole.`
+            : 'They have never been taught it, and reading it would not be the same as knowing it.'
     ];
-    return { kind: 'technique', id: match.id, name: match.name, facts };
+    return {
+        kind: 'technique',
+        id: match.id,
+        name: match.name,
+        facts,
+        structure: [
+            `grade=${match.grade}, category=${match.category}, element=${match.element ?? 'none'}, ` +
+            `requiredOrdinal=${match.requiredOrdinal} (${rankName(match.requiredOrdinal)}), ` +
+            `mastery=${known ? known.mastery.toFixed(2) : 'not known'}.`
+        ]
+    };
 }
 
 /** A formula, from the recipe catalog. */
@@ -342,8 +440,14 @@ export function resolveRecipe(query: string): ResolvedEntity | null {
         name: match.name,
         facts: [
             `${match.name} produces ${pill?.name ?? match.producesPillId}.`,
-            `Base success ${(match.baseSuccessRate * 100).toFixed(0)}%, and it needs ${rankName(match.requiredOrdinal)}.`,
-            `Ingredients: ${match.ingredients.map(i => `${i.quantity} x ${HERBS.find(h => h.id === i.itemId)?.name ?? i.itemId}`).join(', ') || 'none'}.`
+            `It calls for ${match.ingredients.map(i => `${i.quantity} x ${HERBS.find(h => h.id === i.itemId)?.name ?? i.itemId}`).join(', ') || 'nothing'}.`,
+            match.baseSuccessRate >= 0.6
+                ? 'People who work this formula mostly get a pill out of it.'
+                : 'People who work this formula mostly get slag out of it.'
+        ],
+        structure: [
+            `baseSuccessRate=${match.baseSuccessRate}, requiredOrdinal=${match.requiredOrdinal} ` +
+            `(${rankName(match.requiredOrdinal)}), producesPillId=${match.producesPillId}.`
         ]
     };
 }
@@ -357,9 +461,12 @@ export function resolveHerb(query: string): ResolvedEntity | null {
         id: match.id,
         name: match.name,
         facts: [
-            `${match.name} is a ${match.grade}-grade herb of the ${match.biome}.`,
-            `Harvesting it safely wants ${rankName(match.harvestOrdinal)}. Market value about ${match.value} spirit stones.`,
-            match.description
+            `${match.name}. ${match.description}`,
+            `It grows where the ${match.biome} is, and it goes for about ${match.value} spirit stones to anyone buying.`
+        ],
+        structure: [
+            `grade=${match.grade}, biome=${match.biome}, rarityWeight=${match.rarityWeight}, ` +
+            `harvestOrdinal=${match.harvestOrdinal}, value=${match.value}.`
         ]
     };
 }
@@ -373,9 +480,12 @@ export function resolvePill(query: string): ResolvedEntity | null {
         id: match.id,
         name: match.name,
         facts: [
-            `${match.name} is a ${match.grade}-grade pill: ${match.effect}, potency ${match.potency}.`,
-            `Toxicity ${match.toxicity}. Market value about ${match.value} spirit stones.`,
-            match.description
+            `${match.name}. ${match.description}`,
+            `It goes for about ${match.value} spirit stones, when anyone has one to sell.`
+        ],
+        structure: [
+            `grade=${match.grade}, effect=${match.effect}, potency=${match.potency}, ` +
+            `toxicity=${match.toxicity}, value=${match.value}.`
         ]
     };
 }
@@ -407,10 +517,8 @@ export function resolvePlace(query: string | undefined): ResolvedEntity | null {
         kind: 'place',
         id: cleaned,
         name: cleaned,
-        facts: [
-            `${cleaned} is a place name the engine records but does not model. ` +
-            'Nothing about it is simulated, and who holds the ground is not on record here.'
-        ]
+        facts: [`${cleaned}. Nothing more about it is on record than the name and the road to it.`],
+        structure: ['Places are free text in this engine; nothing about them is simulated.']
     };
 }
 
@@ -432,8 +540,8 @@ export function resolveAnything(
     scope?: KnowledgeScope
 ): ResolvedEntity | null {
     return (
-        resolveCultivator(repos, query, self.id, scope) ??
-        resolveSect(repos, query, scope) ??
+        resolveCultivator(repos, query, self.id, scope, self.realmOrdinal) ??
+        resolveSect(repos, query, scope, self.sectId) ??
         resolveKnownPlace(query, self, scope) ??
         resolveTechnique(repos, query, self.id) ??
         resolveRecipe(query) ??
@@ -472,8 +580,8 @@ export function resolveParty(
     self: Cultivator,
     scope?: KnowledgeScope
 ): ResolvedEntity | null {
-    return resolveCultivator(repos, query, self.id, scope)
-        ?? resolveSect(repos, query, scope);
+    return resolveCultivator(repos, query, self.id, scope, self.realmOrdinal)
+        ?? resolveSect(repos, query, scope, self.sectId);
 }
 
 /**

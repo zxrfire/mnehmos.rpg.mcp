@@ -20,8 +20,10 @@
  * one physical detail.
  */
 
-import type {
-    AmbientQi,
+import {
+    LETHAL_UNTREATED_INJURIES,
+    STAGNATION_YEARS,
+    type AmbientQi,
     BreakthroughResult,
     Cultivator,
     DeathCause,
@@ -39,10 +41,31 @@ export interface EngineFacts {
     /**
      * The complete factual content of the outcome, one statement per entry.
      * This is what a narrator is allowed to know. Nothing else is sent.
+     *
+     * OBSERVABLE ONLY. Everything here must be something a person in the room
+     * could see, hear, feel or be told - never a category out of the schema.
+     * docs/world/tone.md: nobody tells the protagonist how anything works, and
+     * a bare label in a prompt is an invitation to paraphrase it into a
+     * briefing. That is what a category in a prompt is FOR.
      */
     lines: string[];
+    /**
+     * The structural truth: governance, ladders, grades, ordinals, thresholds.
+     *
+     * Engine-only. It reaches the inspector and the play log, where mechanical
+     * precision is the whole point, and it is never sent to a narrator. The
+     * engine holds the structure so that people can BEHAVE according to it,
+     * which is its only purpose in narration - so the narrator gets the
+     * behaviour and the operator gets the structure.
+     */
+    structure: string[];
     /** The deterministic rendering, ready to show a player as-is. */
     prose: string;
+}
+
+/** Build facts with an empty structure channel. Most outcomes have none. */
+function observable(headline: string, lines: string[], prose: string, structure: string[] = []): EngineFacts {
+    return { headline, lines, structure, prose };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -55,10 +78,26 @@ export interface EngineFacts {
 // ─────────────────────────────────────────────────────────────────────────
 
 const AMBIENT_IN_WORLD: Record<AmbientQi, string> = {
-    thin: 'The qi here is thin: drawn down long ago, or never rich. Cultivating in it is chewing on nothing - half rate, and breakthroughs suffer. Most of the world is like this and some of it is hopeless.',
-    normal: 'The qi here is ordinary inhabited land. Progress is possible and unhurried.',
-    dense: 'The qi here is dense - a vein close to the surface, or ground nobody has worked. Cultivation runs at double rate. Somebody owns this, or somebody is about to.',
-    spirit_tide: 'A spirit tide is running: a vein shifting, a seal failing, a season turning over. The hair lifts on your arms and breathing is easier than it was an hour ago. Qi is three times as abundant, the heavens are unusually permissive, everyone within a hundred li can feel it, and it does not last.'
+    thin: 'Qi density thin: half cultivation rate, and a penalty to breakthrough odds. Drawn down long ago, or never rich.',
+    normal: 'Qi density ordinary: no modifier either way. Inhabited land.',
+    dense: 'Qi density dense: double cultivation rate, and a bonus to breakthrough odds. A vein near the surface, or ground nobody has worked.',
+    spirit_tide: 'Qi density spirit tide: triple cultivation rate and the largest breakthrough bonus in the table. A vein shifting, a seal failing, a season turning over. Temporary.'
+};
+
+/**
+ * The same four states, as a person standing in them would experience them.
+ *
+ * This is what goes to the narrator; the table above goes to the inspector.
+ * Nobody in this world is told they are standing in a 0.5x multiplier - they
+ * sit down for an hour and get less than an hour back, and after enough years
+ * of that they draw their own conclusions. Rate language would teach the player
+ * a rule, which is the one thing narration is not for.
+ */
+const AMBIENT_PERCEIVED: Record<AmbientQi, string> = {
+    thin: 'The air here gives very little back. A long sitting yields what a short one should, and everybody local has stopped remarking on it.',
+    normal: 'The air here is unremarkable. It neither helps nor gets in the way, which is most places.',
+    dense: 'The air here is thick enough to notice on the first breath. Whatever is under this ground is close to the surface, and the ground shows signs of being worked.',
+    spirit_tide: 'The hair lifts on the arms. Breathing is easier than it was an hour ago, and it will not stay that way. Somewhere out of sight people are already moving.'
 };
 
 const DEATH_IN_WORLD: Record<DeathCause, string> = {
@@ -73,8 +112,14 @@ const DEATH_IN_WORLD: Record<DeathCause, string> = {
     heavenly_tribulation: 'destroyed by heavenly tribulation'
 };
 
+/** Mechanical reading. Inspector and log only - never a narrator prompt. */
 export function describeAmbientInWorld(ambient: AmbientQi): string {
     return AMBIENT_IN_WORLD[ambient];
+}
+
+/** What it is like to stand in it. The narration-safe rendering. */
+export function describeAmbientPerceived(ambient: AmbientQi): string {
+    return AMBIENT_PERCEIVED[ambient];
 }
 
 export function describeDeathCause(cause: DeathCause | null | undefined): string {
@@ -85,6 +130,27 @@ export function describeDeathCause(cause: DeathCause | null | undefined): string
 // ─────────────────────────────────────────────────────────────────────────
 // SHARED FRAGMENTS
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the difference between two cultivators feels like from below.
+ *
+ * The engine knows both ordinals exactly. Handing them to a narrator produces
+ * "as a mere Qi Condensation Layer 3, he could never..." - power-level
+ * exposition, banned in Tier 1 and tedious besides. What a person actually
+ * perceives is a gap, and discovery.md is explicit that the player should do
+ * the arithmetic themselves rather than be given the sum.
+ */
+export function describeStanding(observerOrdinal: number, subjectOrdinal: number): string {
+    const gap = subjectOrdinal - observerOrdinal;
+    if (gap <= -13) return 'plainly beneath notice, and aware of it';
+    if (gap <= -4) return 'noticeably slighter, and careful about it';
+    if (gap < 0) return 'a little behind, near enough that it could go either way';
+    if (gap === 0) return 'level, as far as anyone can tell from looking';
+    if (gap <= 3) return 'somewhat ahead, and unhurried about proving it';
+    if (gap <= 8) return 'far enough ahead that the difference is not a matter of effort';
+    if (gap <= 16) return 'out of reach in a way that does not invite comparison';
+    return 'so far above that the question of comparison does not arise, and they are not thinking about it either';
+}
 
 export function placeName(cultivator: Pick<Cultivator, 'location'>): string {
     return cultivator.location?.trim() || 'Sweptground';
@@ -110,7 +176,15 @@ function signed(n: number, digits = 0): string {
     return v > 0 ? `+${v}` : `${v}`;
 }
 
-/** The standing facts a narrator needs for any scene. */
+/**
+ * The player's own condition, as they experience it.
+ *
+ * Their own sheet is not world structure and is not withheld - a person knows
+ * their own rank and counts their own money. What IS withheld is the rule
+ * behind each number: not "three untreated injuries and the next fight is
+ * fatal", which teaches a threshold, but the state of the meridians, which the
+ * player can draw a conclusion from. The interface shows the arithmetic.
+ */
 export function standingLines(cultivator: Cultivator, ambient: AmbientQi): string[] {
     const untreated = untreatedInjuryCount(cultivator.injuries);
     const root = getSpiritRoot(cultivator.spiritRoot);
@@ -119,9 +193,19 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
         `Spirit root: ${root.name}. Might ${cultivator.attributes.might}, Insight ${cultivator.attributes.insight}, Fortune ${cultivator.attributes.fortune}, Charm ${cultivator.attributes.charm}.`,
         `Cultivation progress ${Math.round(cultivator.cultivationProgress)} qi-units. HP ${cultivator.hp}/${cultivator.maxHp}. Satiety ${cultivator.satiety}/100. Spirit stones ${cultivator.spiritStones}.`,
         untreated === 0
-            ? 'No untreated meridian injuries.'
-            : `${untreated} untreated meridian injur${untreated === 1 ? 'y' : 'ies'}. Three, and the next fight is fatal.`,
-        `Years at this realm without advancing: ${cultivator.yearsAtCurrentRealm.toFixed(1)} of the fifty that finish a cultivator.`,
+            ? 'The meridians are whole.'
+            : `${untreated} meridian injur${untreated === 1 ? 'y is' : 'ies are'} still open, and have been since they were taken.`,
+        `${cultivator.yearsAtCurrentRealm.toFixed(1)} years at this realm without advancing.`,
+        describeAmbientPerceived(ambient)
+    ];
+}
+
+/** The thresholds behind those numbers. Inspector only. */
+export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): string[] {
+    return [
+        `realmOrdinal=${cultivator.realmOrdinal} (${rankName(cultivator.realmOrdinal)}), spiritRoot=${cultivator.spiritRoot}, foundation=${cultivator.foundationQuality}.`,
+        `untreatedInjuries=${untreatedInjuryCount(cultivator.injuries)} of ${LETHAL_UNTREATED_INJURIES} lethal; ` +
+        `yearsAtRealm=${cultivator.yearsAtCurrentRealm.toFixed(1)} of ${STAGNATION_YEARS} before settling.`,
         describeAmbientInWorld(ambient)
     ];
 }
@@ -139,9 +223,7 @@ export function factsForTimeSkip(
 ): EngineFacts {
     const lines: string[] = [];
 
-    lines.push(
-        `${label} at ${placeName(before)}, ${describeAmbientInWorld(ambient).split('.')[0].toLowerCase()}.`
-    );
+    lines.push(`${label} at ${placeName(before)}. ${describeAmbientPerceived(ambient)}`);
     lines.push(
         skip.simulatedDays === skip.requestedDays
             ? `${humanDays(skip.requestedDays)} passed as asked.`
@@ -167,6 +249,7 @@ export function factsForTimeSkip(
     return {
         headline: timeSkipHeadline(skip, before, after),
         lines,
+        structure: standingStructure(after, ambient),
         prose: timeSkipProse(before, after, skip, ambient, label)
     };
 }
@@ -283,27 +366,22 @@ export function factsForBreakthrough(
     lines.push(`Breakthrough attempted from ${rankName(result.fromOrdinal)} toward ${rankName(Math.min(44, result.fromOrdinal + 1))}.`);
     lines.push(`Final chance ${(result.finalChance * 100).toFixed(1)}%; the roll was ${result.roll.toFixed(4)}.`);
     lines.push(`Modifiers: ${result.modifiers.map(m => `${m.source} ${signed(m.delta * 100, 1)}pp`).join(', ')}.`);
-    lines.push(describeAmbientInWorld(ambient));
+    lines.push(describeAmbientPerceived(ambient));
     lines.push(result.narrationHint);
 
     if (result.tribulation) {
         lines.push(
-            `Heavenly tribulation: ${result.tribulation.strikes} strikes. ` +
-            `${result.tribulation.survived ? 'Survived.' : 'Not survived.'} ` +
-            'The lightning is the seam of the Lid discharging. It is not personal.'
+            `Heavenly tribulation: ${result.tribulation.strikes} strikes came down. ` +
+            `${result.tribulation.survived ? 'Still standing at the end of them.' : 'Not standing at the end of them.'}`
         );
     }
     for (const injury of result.injuriesSustained) {
         lines.push(`Injury sustained: ${injury.description} (${injury.severity}, untreated).`);
     }
     lines.push(`Progress consumed: ${Math.round(result.progressConsumed)} qi-units.`);
-    if (result.outcome === 'success' && isBoundaryCrossing(result)) {
-        lines.push(
-            'This crossed a realm boundary, where the crossing demands that something be cut away. ' +
-            'What it takes is never a stat: a person who knew you, a memory you were using to stay ' +
-            'yourself, a mastered technique, or at the highest crossings a name. It is rolled, not certain.'
-        );
-    }
+    // Deliberately not explained. Whether something was cut away is carried by
+    // the toll line the caller appends; the RULE that boundaries exact a price
+    // is a thing the player works out by crossing one, not by being told.
     lines.push(
         `Standing afterwards: ${rankName(after.realmOrdinal)}, ${untreatedInjuryCount(after.injuries)} untreated injuries, ${Math.round(after.cultivationProgress)} progress remaining.`
     );
@@ -311,6 +389,12 @@ export function factsForBreakthrough(
     return {
         headline: breakthroughHeadline(result, before),
         lines,
+        structure: [
+            `outcome=${result.outcome}, from=${result.fromOrdinal}, to=${result.toOrdinal}, ` +
+            `finalChance=${result.finalChance.toFixed(4)}, roll=${result.roll.toFixed(4)}, ` +
+            `boundary=${isBoundaryCrossing(result)}.`,
+            ...standingStructure(after, ambient)
+        ],
         prose: breakthroughProse(before, after, result)
     };
 }
@@ -387,7 +471,7 @@ export function factsForLook(cultivator: Cultivator, ambient: AmbientQi): Engine
         (untreated > 0 ? ` ${untreated} meridian injur${untreated === 1 ? 'y' : 'ies'} still open.` : '')
     ].join('\n\n');
 
-    return { headline: `${where}.`, lines, prose };
+    return observable(`${where}.`, lines, prose, standingStructure(cultivator, ambient));
 }
 
 export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progressRequired: number, ready: boolean): EngineFacts {
@@ -400,6 +484,10 @@ export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progr
     return {
         headline: `${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}.`,
         lines,
+        structure: [
+            ...standingStructure(cultivator, ambient),
+            `progress=${Math.round(cultivator.cultivationProgress)}/${progressRequired}, breakthroughReady=${ready}.`
+        ],
         prose: lines.join('\n')
     };
 }
@@ -413,6 +501,7 @@ export function factsForTalk(cultivator: Cultivator, ambient: AmbientQi, target:
     return {
         headline: `A conversation with ${who}.`,
         lines,
+        structure: standingStructure(cultivator, ambient),
         prose:
             `${cultivator.name} speaks to ${who}. Nothing in the world's ledgers moves for it - no stones change hands, no standing shifts, ` +
             `no one owes anyone anything they did not already owe. In ${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}, that is what most conversations are.`
@@ -444,30 +533,40 @@ export function factsForMove(
         `It took ${humanDays(skip.simulatedDays)}.`,
         'The engine resolved the movement itself; it did not resolve whether anyone was watching, ' +
         'pursuing, or waiting.',
-        `The qi at the destination: ${describeAmbientInWorld(ambientAfter)}`,
+        `At the destination: ${describeAmbientPerceived(ambientAfter)}`,
         ...base.lines
     ];
 
     const prose = skip.events.length === 0 && !skip.died
         ? `${before.name} went out of ${placeName(before)} and into ${destination}. ` +
-          `${describeAmbientInWorld(ambientAfter)} Nothing happened on the road, which is not the same as nothing being on it.`
+          `${describeAmbientPerceived(ambientAfter)} Nothing happened on the road, which is not the same as nothing being on it.`
         : base.prose;
 
-    return { headline: `${destination}.`, lines, prose };
+    return observable(
+        `${destination}.`, lines, prose,
+        [`ambientAfter=${ambientAfter}. ${describeAmbientInWorld(ambientAfter)}`, ...standingStructure(after, ambientAfter)]
+    );
 }
 
 export function factsForEat(cultivator: Cultivator, satietyRestored: number, stonesSpent: number): EngineFacts {
     const lines = [
-        `${cultivator.name} ate. Satiety restored by ${satietyRestored} to ${cultivator.satiety}/100; ${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'} spent, leaving ${cultivator.spiritStones}.`,
-        'Qi feeds the meridians. It does not feed the body. Until a Grain Abstinence Pill, the flesh keeps its mortal arithmetic.'
+        `${cultivator.name} ate. Satiety restored by ${satietyRestored} to ${cultivator.satiety}/100; ` +
+        `${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'} spent, leaving ${cultivator.spiritStones}.`,
+        'The hunger stops. It will come back.'
     ];
     return {
         headline: `Fed. ${cultivator.spiritStones} stones left.`,
         lines,
+        // Why a cultivator still has to eat is a rule, and rules are learned by
+        // living in them. The player finds out what a Grain Abstinence Pill is
+        // for by wanting one, not by being told what it does.
+        structure: [
+            'Qi feeds the meridians, not the body. Satiety burns per turn-consuming action ' +
+            'until a Grain Abstinence Pill removes the requirement.'
+        ],
         prose:
-            `A meal, bought for ${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'}. Satiety back to ${cultivator.satiety}. ` +
-            `Half the deaths in this world are logistical, and a Qi Condensation cultivator who forgets to eat dies exactly as fast as a farmer who does, ` +
-            `and considerably more embarrassingly.`
+            `A meal, bought for ${stonesSpent} spirit stone${stonesSpent === 1 ? '' : 's'}. The hunger stops, ` +
+            'and a farmer sitting at the next table did the same thing for less.'
     };
 }
 
@@ -476,7 +575,7 @@ export function factsForEat(cultivator: Cultivator, satietyRestored: number, sto
  * a narrator is most tempted to soften, so they are stated flatly.
  */
 export function factsForRefusal(headline: string, detail: string): EngineFacts {
-    return { headline, lines: [detail], prose: detail };
+    return observable(headline, [detail], detail);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -500,11 +599,12 @@ export function factsForInvestigation(
     const lines = [
         `${cultivator.name} examined ${subject}. Nothing was moved, spent or taken; this was looking.`,
         ...subjectFacts,
-        `Observed from ${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}.`,
-        describeAmbientInWorld(ambient)
+        `Observed from ${placeName(cultivator)}.`,
+        describeAmbientPerceived(ambient)
     ];
     return {
         headline: `${subject}, examined.`,
+        structure: standingStructure(cultivator, ambient),
         lines,
         prose: [
             `${subject}. ${subjectFacts.join(' ')}`,
@@ -532,6 +632,7 @@ export function factsForInteraction(
 ): EngineFacts {
     return {
         headline: `${subject}, approached.`,
+        structure: [],
         lines: [
             `${cultivator.name} approached ${subject}. Stated intent: ${intent}.`,
             'This is an attempt, not an outcome. Nothing has been agreed, bought, believed or refused.',
@@ -559,11 +660,7 @@ export function factsForUnsupported(attempt: string, missing: string): EngineFac
     const detail =
         `The engine cannot resolve that yet: ${attempt}. Nothing in the world changed, no time passed, ` +
         `and nothing was spent. ${missing}`;
-    return {
-        headline: 'The engine has no answer for that yet.',
-        lines: [detail],
-        prose: detail
-    };
+    return observable('The engine has no answer for that yet.', [detail], detail);
 }
 
 /**
@@ -576,11 +673,7 @@ export function factsForToolResult(
     lines: readonly string[],
     prose?: string
 ): EngineFacts {
-    return {
-        headline,
-        lines: [...lines],
-        prose: prose ?? lines.join('\n')
-    };
+    return observable(headline, [...lines], prose ?? lines.join('\n'));
 }
 
 /** A stretch of foraging, and whatever the ground gave up. */
@@ -598,6 +691,7 @@ export function factsForGather(
 
     return {
         headline: found ? `${found.name}, pouched.` : 'Nothing worth carrying.',
+        structure: base.structure,
         lines: [
             `${before.name} spent ${humanDays(skip.simulatedDays)} working the ground around ${placeName(before)}.`,
             outcome,

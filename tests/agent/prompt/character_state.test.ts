@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import { initDB } from '../../../src/storage/db';
 import { migrate } from '../../../src/storage/migrations';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo';
-import { ConcentrationRepository } from '../../../src/storage/repos/concentration.repo';
 import { InventoryRepository } from '../../../src/storage/repos/inventory.repo';
 import { buildCharacterStateSlice } from '../../../src/agent/prompt/slices/character_state';
 import { Character } from '../../../src/schema/character';
@@ -37,7 +36,7 @@ function baseChar(id: string, overrides: Partial<Character> = {}): Character {
 
 describe('buildCharacterStateSlice', () => {
     let db: ReturnType<typeof initDB>;
-    let deps: { characterRepo: CharacterRepository; concentrationRepo: ConcentrationRepository; inventoryRepo: InventoryRepository };
+    let deps: { characterRepo: CharacterRepository; inventoryRepo: InventoryRepository };
 
     beforeEach(() => {
         cleanup();
@@ -45,7 +44,6 @@ describe('buildCharacterStateSlice', () => {
         migrate(db);
         deps = {
             characterRepo: new CharacterRepository(db),
-            concentrationRepo: new ConcentrationRepository(db),
             inventoryRepo: new InventoryRepository(db)
         };
     });
@@ -69,7 +67,9 @@ describe('buildCharacterStateSlice', () => {
         expect(slice).toContain('ranger');
         expect(slice).toContain('level 5');
         expect(slice).toContain('HP: 32/45');
-        expect(slice).toContain('AC: 16');
+        // No AC line. Armour class went with the D&D combat engine; a
+        // cultivator's defence is composite and lives in combat_manage.
+        expect(slice).not.toContain('AC:');
         expect(slice).toContain('STR 12 (+1)');
         expect(slice).toContain('DEX 17 (+3)');
         expect(slice).toContain('Conditions: none');
@@ -96,75 +96,18 @@ describe('buildCharacterStateSlice', () => {
         }));
         const slice = buildCharacterStateSlice('c1', deps)!;
         expect(slice).toContain('Poisoned (3r)');
-        expect(slice).toContain("← wyvern's sting");
+        expect(slice).toContain("<- wyvern's sting");
         expect(slice).toContain('Prone');
     });
 
-    it('renders spellcasting section with slots when present', () => {
-        // NOTE: CharacterRepository does not currently persist spellcastingAbility,
-        // spellSaveDC, or spellAttackBonus columns - they're defined on the schema
-        // but the INSERT/UPDATE statements omit them. The slice CODE handles them
-        // (see character_state.ts); when the repo is extended to round-trip these
-        // fields, additional assertions for "Ability: WIS / Save DC / Attack" can
-        // be added here.
-        deps.characterRepo.create(baseChar('c1', {
-            spellSlots: {
-                level1: { current: 3, max: 4 },
-                level2: { current: 2, max: 3 },
-                level3: { current: 0, max: 0 },
-                level4: { current: 0, max: 0 },
-                level5: { current: 0, max: 0 },
-                level6: { current: 0, max: 0 },
-                level7: { current: 0, max: 0 },
-                level8: { current: 0, max: 0 },
-                level9: { current: 0, max: 0 }
-            },
-            knownSpells: ['Hunters Mark', 'Cure Wounds', 'Goodberry'],
-            cantripsKnown: ['Druidcraft']
-        }));
-
-        const slice = buildCharacterStateSlice('c1', deps)!;
-        expect(slice).toContain('Spellcasting:');
-        expect(slice).toContain('L1[3/4]');
-        expect(slice).toContain('L2[2/3]');
-        expect(slice).toContain('Hunters Mark');
-        expect(slice).toContain('Druidcraft');
-    });
-
-    it('renders concentration when active and character has spellcasting', () => {
-        deps.characterRepo.create(baseChar('c1', {
-            spellSlots: {
-                level1: { current: 3, max: 4 },
-                level2: { current: 0, max: 0 },
-                level3: { current: 0, max: 0 },
-                level4: { current: 0, max: 0 },
-                level5: { current: 0, max: 0 },
-                level6: { current: 0, max: 0 },
-                level7: { current: 0, max: 0 },
-                level8: { current: 0, max: 0 },
-                level9: { current: 0, max: 0 }
-            },
-            knownSpells: ["Hunter's Mark"]
-        }));
-        deps.concentrationRepo.create({
-            characterId: 'c1',
-            activeSpell: "Hunter's Mark",
-            spellLevel: 1,
-            targetIds: ['orc-1'],
-            startedAt: 1,
-            saveDCBase: 10
-        });
-
-        const slice = buildCharacterStateSlice('c1', deps)!;
-        expect(slice).toContain("Concentrating on: Hunter's Mark (L1)");
-    });
-
-    it('omits concentration when character has no spellcasting section', () => {
-        // A non-spellcaster row can technically have a concentration row (e.g. legacy),
-        // but the spellcasting block (and thus concentration line) only renders for
-        // spellcasters. This is intentional: it keeps the slice compact.
+    it('puts no spellcasting block in front of the narrator', () => {
+        // The D&D spellcasting layer is gone, along with the fields it read.
+        // A cultivator's arts, qi and rank are cultivation state, and the
+        // narrator reads them from the cultivator row rather than from here.
         deps.characterRepo.create(baseChar('c1'));
         const slice = buildCharacterStateSlice('c1', deps)!;
+        expect(slice).not.toContain('Spellcasting:');
+        expect(slice).not.toContain('Slots:');
         expect(slice).not.toContain('Concentrating');
     });
 
@@ -194,16 +137,13 @@ describe('buildCharacterStateSlice', () => {
         expect(slice).toContain('Skill proficiencies: stealth, perception, sleight of hand');
     });
 
-    it('renders legendary actions for legendary creatures', () => {
-        deps.characterRepo.create(baseChar('c1', {
-            legendaryActions: 3,
-            legendaryActionsRemaining: 2,
-            legendaryResistances: 3,
-            legendaryResistancesRemaining: 3
-        }));
+    it('has no legendary-action block', () => {
+        // Legendary actions were a D&D monster affordance and went with the
+        // combat engine that resolved them. What makes something in this world
+        // hard to fight is its rank, and rank is not a per-round budget.
+        deps.characterRepo.create(baseChar('c1'));
         const slice = buildCharacterStateSlice('c1', deps)!;
-        expect(slice).toContain('Legendary actions: 2/3 per round');
-        expect(slice).toContain('Legendary resistances: 3/3 per day');
+        expect(slice).not.toContain('Legendary');
     });
 
     it('omits inventory section when no items', () => {
