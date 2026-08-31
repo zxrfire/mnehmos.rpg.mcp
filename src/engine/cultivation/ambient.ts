@@ -41,6 +41,21 @@ export const AMBIENT_QI_ORDER: readonly AmbientQi[] = [
     'thin', 'normal', 'spirit_tide', 'dense'
 ] as const;
 
+/**
+ * Bands that exist but the world never rolls.
+ *
+ * `sealed_vein` is absent from AMBIENT_QI_ORDER above, which is the structural
+ * guarantee that no amount of travelling, waiting or re-reading can produce
+ * one: `rollAmbientQi` only ever walks the rollable order. A sealed vein is a
+ * place a caller declares, not a band a cultivator can wander into.
+ */
+export const SITE_ONLY_BANDS: readonly AmbientQi[] = ['sealed_vein'] as const;
+
+/** Whether this band can arise from ordinary ambient conditions anywhere. */
+export function isReachableByTravel(band: AmbientQi): boolean {
+    return !SITE_ONLY_BANDS.includes(band);
+}
+
 /** Sum of the ambient weights. 100 by construction, computed so it stays true. */
 export const AMBIENT_WEIGHT_TOTAL = AMBIENT_QI_ORDER.reduce(
     (sum, key) => sum + AMBIENT_QI_WEIGHTS[key],
@@ -93,11 +108,26 @@ export function rollAmbientQi(sample: number): AmbientQi {
 export function ambientForLocationOnDay(
     runSeed: string,
     locationId: string,
-    day: number
+    day: number,
+    opts: SiteConditions = {}
 ): AmbientQi {
+    // A sealed site does not roll and does not refresh. What is in there has
+    // been in there since somebody closed it, and it stays until it is drawn
+    // down - which is what makes it something to hold rather than to visit.
+    if (opts.sealed) return 'sealed_vein';
     const wholeDay = Number.isFinite(day) ? Math.floor(day) : 0;
     const rng = forStream(runSeed, 'ambient', locationId, wholeDay);
     return rollAmbientQi(rng.next());
+}
+
+/** What the caller knows about a place that the ambient roll does not. */
+export interface SiteConditions {
+    /**
+     * This location is a pocket nothing has drawn on: an unopened ruin, a
+     * sealed vein, a secret realm. Supplied by the world layer from real
+     * state; the engine holds no map and will never infer it.
+     */
+    sealed?: boolean;
 }
 
 /**
@@ -123,9 +153,10 @@ export function ambientBlockStart(day: number): number {
 export function ambientForBlock(
     runSeed: string,
     locationId: string,
-    day: number
+    day: number,
+    opts: SiteConditions = {}
 ): AmbientQi {
-    return ambientForLocationOnDay(runSeed, locationId, ambientBlockStart(day));
+    return ambientForLocationOnDay(runSeed, locationId, ambientBlockStart(day), opts);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -134,11 +165,49 @@ export function ambientForBlock(
 // get to invent a spirit tide that the engine did not roll.
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * Rate multiplier implied by an ERA's qi density, 0..1.
+ *
+ * The world layer's `world_eras` carries a density that only ever falls, and
+ * this is how that number becomes cultivation arithmetic. It exists so the
+ * upper stratum of the world can be derived HONESTLY: a Grand Ascension
+ * ancient is not an exemption in the maths, they are somebody who walked the
+ * same cost curve in an age whose open-world baseline was richer than
+ * anything now available.
+ *
+ * Anchored on the present-day bands so the two scales cannot drift apart, and
+ * deliberately reaching past `sealed_vein` at the top: the first ages were
+ * richer in the open air than a preserved pocket is today.
+ */
+const ERA_DENSITY_ANCHORS: readonly { density: number; multiplier: number }[] = [
+    { density: 0.15, multiplier: 0.5 },  // scoured ground, thin
+    { density: 0.35, multiplier: 1 },    // the Late Age baseline, normal
+    { density: 0.55, multiplier: 2 },    // dense
+    { density: 0.75, multiplier: 3.2 },
+    { density: 0.95, multiplier: 4.5 }   // the first ages, in the open air
+] as const;
+
+export function eraAmbientMultiplier(qiDensity: number): number {
+    const d = Number.isFinite(qiDensity) ? Math.max(0, Math.min(1, qiDensity)) : 0.35;
+    const first = ERA_DENSITY_ANCHORS[0];
+    if (d <= first.density) return first.multiplier;
+    for (let i = 1; i < ERA_DENSITY_ANCHORS.length; i++) {
+        const lo = ERA_DENSITY_ANCHORS[i - 1];
+        const hi = ERA_DENSITY_ANCHORS[i];
+        if (d <= hi.density) {
+            const t = (d - lo.density) / (hi.density - lo.density);
+            return lo.multiplier + t * (hi.multiplier - lo.multiplier);
+        }
+    }
+    return ERA_DENSITY_ANCHORS[ERA_DENSITY_ANCHORS.length - 1].multiplier;
+}
+
 const AMBIENT_DESCRIPTIONS: Record<AmbientQi, string> = {
     thin: 'The spiritual energy here is thin; cultivation is half as fast and breakthroughs are noticeably riskier.',
     normal: 'Spiritual energy here is unremarkable - neither help nor hindrance.',
     dense: 'Spiritual energy here is dense; cultivation runs at double rate and breakthroughs are easier.',
-    spirit_tide: 'A spirit tide is running. Qi is three times as abundant as normal and the heavens are unusually permissive.'
+    spirit_tide: 'A spirit tide is running. Qi is three times as abundant as normal and the heavens are unusually permissive.',
+    sealed_vein: 'A pocket nothing has drawn on. Qi stands four times the ordinary baseline and does not thin while it holds - the density the open world stopped being able to produce.'
 };
 
 export function describeAmbient(ambient: AmbientQi): string {

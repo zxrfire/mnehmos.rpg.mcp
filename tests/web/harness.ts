@@ -10,7 +10,6 @@ import { GameService } from '../../src/web/game';
 import { DeterministicNarrator, ProviderNarrator } from '../../src/web/narrator';
 import type { Narrator } from '../../src/web/narrator';
 import { createApp, type ProviderStatus } from '../../src/web/server';
-import type { WorldSession } from '../../src/web/world';
 import { ensureCultivationDb, type CultivationRepos } from '../../src/server/consolidated/cultivation-support';
 
 /** In-memory database with the real migrations, foreign keys on. */
@@ -82,8 +81,13 @@ export class UnreachableProvider implements LLMProvider {
 export interface HarnessOptions {
     adminMode?: boolean;
     seed?: string;
-    /** The world these runs happen in. Omit and the world does not move. */
-    world?: WorldSession | null;
+    /**
+     * Whether time passing for the cultivator passes for everyone else.
+     *
+     * Off by default in tests: seeding several hundred people costs real time
+     * and almost no test is asserting anything about them.
+     */
+    worldEnabled?: boolean;
     narrator?: Narrator;
     provider?: LLMProvider;
 }
@@ -106,7 +110,7 @@ export function makeGame(options: HarnessOptions = {}): Harness {
     const game = new GameService({
         db,
         narrator,
-        world: options.world ?? null,
+        worldEnabled: options.worldEnabled ?? false,
         adminMode: options.adminMode ?? false,
         seedFactory: () => options.seed ?? 'test-seed'
     });

@@ -22,6 +22,8 @@ import {
     getSectAdmission,
     sectThreat,
     sectsWithASealedCeiling,
+    canProjectLastRealm,
+    HOLLOW_COURT_FOSTERAGE,
     WITHDRAWN_POWERS
 } from '../../src/data/cultivation/sects.js';
 import { REGIONS, getRegion } from '../../src/data/cultivation/regions.js';
@@ -557,5 +559,90 @@ describe('holding ground by being unanswerable', () => {
     it('holds the withdrawn list to almost nothing', () => {
         // A ceiling several factions hold is not a ceiling.
         expect(Object.keys(WITHDRAWN_POWERS).length).toBeLessThanOrEqual(2);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// REDUNDANCY IS WHAT BUYS REACH
+//
+// Several bodies hold the last realm. Almost none of them can send it
+// anywhere, and the reason is arithmetic rather than temperament.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('who can actually put the last realm somewhere else', () => {
+    it('gives each apex exactly one, and pins them to the seat', () => {
+        for (const apex of APEX_INSTITUTIONS) {
+            expect(apex.lastRealm.count, apex.id).toBe(1);
+            expect(apex.lastRealm.pinned, apex.id).toBe(true);
+            // The ordinal is real; the availability is not.
+            expect(apex.powerOrdinal).toBeGreaterThanOrEqual(41);
+        }
+    });
+
+    it('lets exactly one faction in the world spare one', () => {
+        const projectors = SECTS.map(s => s.id).filter(canProjectLastRealm);
+        expect(projectors).toEqual(['sect-hollow-court']);
+        expect(WITHDRAWN_POWERS['sect-hollow-court'].count).toBeGreaterThan(1);
+
+        // And no apex qualifies, however strong it is at home.
+        for (const apex of APEX_INSTITUTIONS) {
+            expect(canProjectLastRealm(apex.id), apex.id).toBe(false);
+        }
+    });
+
+    it('makes the Court stronger than the apexes on both counts', () => {
+        const court = getSect('sect-hollow-court')!;
+        const withdrawn = WITHDRAWN_POWERS[court.id];
+        for (const apex of APEX_INSTITUTIONS) {
+            expect(court.powerOrdinal).toBeGreaterThan(apex.powerOrdinal);
+            expect(withdrawn.count).toBeGreaterThan(apex.lastRealm.count);
+        }
+    });
+
+    it('does not let redundancy become availability', () => {
+        // Being able to spare one is not the same as being willing to. The
+        // Court is busy rather than pinned, and busy is a decision it keeps
+        // making - so the appearance list stays short.
+        const withdrawn = WITHDRAWN_POWERS['sect-hollow-court'];
+        expect(withdrawn.hasAppearedFor.length).toBeLessThanOrEqual(4);
+        expect(withdrawn.occupiedBy).toBeTruthy();
+    });
+});
+
+describe('fosterage: the door is not shut, it is just the same door', () => {
+    it('sends them out and lets them back on the same terms as anyone', () => {
+        const requirement = getSectAdmission('sect-hollow-court')!.requirement;
+        expect(requirement).toMatch(/fostered out/i);
+        // The distinction the rule turns on. If this ever reads as a bar, the
+        // Court becomes cruel rather than indifferent, which is a different
+        // faction.
+        expect(requirement).toMatch(/not barred/i);
+        expect(requirement).toMatch(/same terms as a stranger/i);
+    });
+
+    it('gates on age rather than on rank, and says why', () => {
+        const f = HOLLOW_COURT_FOSTERAGE;
+        expect(f.returnOrdinal).toBe(getSect('sect-hollow-court')!.admissionOrdinal);
+        expect(f.returnByAge).toBeGreaterThan(0);
+        // Age, because the question is whether the rest of the road fits in the
+        // life that is left - not whether they are impressive now.
+        expect(f.returnByAge).toBeLessThan(500);
+    });
+
+    it('fosters only to sects that actually exist and are reputable', () => {
+        expect(HOLLOW_COURT_FOSTERAGE.fosteredTo.length).toBeGreaterThanOrEqual(3);
+        for (const id of HOLLOW_COURT_FOSTERAGE.fosteredTo) {
+            const host = getSect(id);
+            expect(host, `unknown foster sect ${id}`).toBeDefined();
+            expect(host!.alignment, `${id} is not a fit host`).not.toBe('demonic');
+            expect(host!.recruits, `${id} takes nobody`).toBe(true);
+        }
+    });
+
+    it('makes not returning a life rather than a punishment', () => {
+        // Half the point. If the fallback is bleak the rule reads as exile, and
+        // the Court stops being holy ground and becomes a cult.
+        expect(HOLLOW_COURT_FOSTERAGE.otherwise.length).toBeGreaterThan(120);
+        expect(HOLLOW_COURT_FOSTERAGE.otherwise).toMatch(/elder|deference|reputable/i);
     });
 });

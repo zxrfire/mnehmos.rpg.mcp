@@ -130,7 +130,21 @@ export type InnateAttributes = z.infer<typeof InnateAttributesSchema>;
  * Ambient spiritual energy where the cultivator currently stands. Directly
  * modifies cultivation rate and breakthrough odds.
  */
-export const AmbientQiSchema = z.enum(['thin', 'normal', 'dense', 'spirit_tide']);
+export const AmbientQiSchema = z.enum([
+    'thin', 'normal', 'dense', 'spirit_tide',
+    /**
+     * A pocket of qi that nothing has drawn on: a sealed vein, an unopened
+     * ruin, a secret realm. Denser than anything the open world can still
+     * produce, because it is a piece of an older age that nobody has breathed.
+     *
+     * NOT REACHABLE BY TRAVEL. It carries weight 0 and is deliberately absent
+     * from AMBIENT_QI_ORDER, so `rollAmbientQi` can never return it however
+     * long a cultivator wanders. It exists only where a caller declares a site
+     * to be sealed, which means it has to be found, opened and held rather
+     * than stood in - see `ambientForLocationOnDay`.
+     */
+    'sealed_vein'
+]);
 export type AmbientQi = z.infer<typeof AmbientQiSchema>;
 
 /** Distribution of ambient qi. Weights are out of 100. */
@@ -138,7 +152,10 @@ export const AMBIENT_QI_WEIGHTS: Record<AmbientQi, number> = {
     thin: 50,
     normal: 35,
     spirit_tide: 10,
-    dense: 5
+    dense: 5,
+    // Zero, and it stays zero. A sealed vein is not a band the world rolls; it
+    // is a place, and the only way into one is to find it.
+    sealed_vein: 0
 };
 
 /** Breakthrough-odds modifier contributed by ambient conditions. */
@@ -146,7 +163,8 @@ export const AMBIENT_QI_BREAKTHROUGH_MOD: Record<AmbientQi, number> = {
     thin: -0.15,
     normal: 0,
     dense: 0.1,
-    spirit_tide: 0.2
+    spirit_tide: 0.2,
+    sealed_vein: 0.25
 };
 
 /** Cultivation-rate multiplier contributed by ambient conditions. */
@@ -154,7 +172,19 @@ export const AMBIENT_QI_RATE_MULTIPLIER: Record<AmbientQi, number> = {
     thin: 0.5,
     normal: 1,
     dense: 2,
-    spirit_tide: 3
+    spirit_tide: 3,
+    /**
+     * 4x, and it is the only thing in the present day that makes the top of
+     * the ladder passable at all.
+     *
+     * Measured rather than chosen: at a best-realistic sustained build the
+     * Body Integration boundary needs about 1.32x more rate than dense qi
+     * supplies, and the two boundaries above it need about 1.47x. 4x clears
+     * all three with roughly a quarter margin, which is enough that a run can
+     * plausibly do it and not so much that the site stops being the whole
+     * story. See `docs/world/the-late-age.md`.
+     */
+    sealed_vein: 4
 };
 
 // ─────────────────────────────────────────────────────────────────────────

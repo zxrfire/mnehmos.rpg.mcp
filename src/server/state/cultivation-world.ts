@@ -1,93 +1,142 @@
 /**
- * The world the cultivator is standing in, for the play loop.
+ * The world the runs happen inside. One implementation, for every caller.
  *
- * `src/engine/world/` builds and advances a world; nothing was calling it. This
- * module is the join: it owns one `WorldState` per run, seeded from the run's
- * own seed, and it is what `cultivate` advances so that a decade of seclusion
- * costs the player a decade of world.
+ * ═════════════════════════════════════════════════════════════════════════
+ * THE WORLD IS THE OUTER OBJECT, AND IT OUTLIVES ITS RUNS
+ * ═════════════════════════════════════════════════════════════════════════
  *
- * ── WHY THERE IS NO TABLE HERE ────────────────────────────────────────────
+ * That single sentence decides everything below, and two earlier designs got
+ * it wrong in opposite directions:
  *
- * A world is a pure function of `(seed, days advanced)`. `seedWorld` derives
- * everything from the seed through `forStream`, `advanceTime` and
- * `applyPressure` are keyed to absolute days, and the driver guarantees that
- * advancing ten years then twenty lands on the same world as advancing thirty.
- * So the world does not need to be written down to survive a restart - it needs
- * to be REBUILT, from the two numbers that are already durable: `runs.seed` and
- * `runs.elapsed_days`.
+ *   seeded from `runs.seed`   gives every run its OWN world, which deletes
+ *                             cross-run persistence outright. The whole point
+ *                             is that your last cultivator's grave is on THIS
+ *                             map, and it cannot be if the map is new.
+ *   a default seed            gives every installation the identical world and
+ *                             no way to start a different one.
  *
- * That is deliberately the cheap correct thing rather than the fast one. The
- * world layer has a full relational schema waiting for it in
- * `storage/migrations.world.ts` and no repository behind it yet; when that
- * repository exists, this module should load and save through it and keep the
- * rebuild only as the cold-start path. Until then, replaying is honest: a
- * restart cannot silently produce a DIFFERENT world, because the same two
- * numbers cannot produce one.
+ * So: a world has its own seed, chosen once and persisted. Runs are its
+ * children, and their seeds are derived from it through `runSeedFor`, exactly
+ * as `legacy.ts` already specifies - which is what makes run three of a world
+ * always the same run three, and what stops starting a new run perturbing any
+ * stream the world has already drawn from.
  *
- * ── OVERLAP TO RESOLVE: `src/web/world.ts` ────────────────────────────────
+ *   world seed  -> runSeedFor(worldSeed, 0) -> run one
+ *              -> runSeedFor(worldSeed, 1) -> run two
+ *              -> runSeedFor(worldSeed, 2) -> run three
  *
- * The narrator layer grew a `WorldSession` doing the same join for the web
- * surface while this was being written, and the two should become one. They are
- * not interchangeable as they stand, and the difference is worth keeping on the
- * way in:
+ * A new run enters the EXISTING world. That is the default and it takes no
+ * ceremony. Creating a fresh world is a separate, deliberate act
+ * (`createWorld`), because it is one: it throws away every grave, every
+ * inherited grudge and every ruin the previous lives left behind.
  *
- *   `web/world.ts`  one session for the process, seeded from a default seed.
- *                   Right for a single narrator serving one player.
- *   this module      one world per RUN, seeded from `runs.seed`, rebuilt from
- *                   `(seed, elapsed_days)` on a cold start. Right for a tool
- *                   surface, where two runs must not share a world and the
- *                   process may restart between calls.
+ * ── PERSISTENCE: LOAD, ELSE REPLAY ───────────────────────────────────────
  *
- * Whichever survives has to keep the run-seeding and the rebuild. Merging the
- * other way silently gives every run the same world.
+ * `WorldStateRepository` is the source of truth. Determinism alone was enough
+ * while nothing wrote to the world that the seed could not reproduce, and it
+ * stopped being enough the moment `legacy.ts` landed: a grave, an ancestral
+ * hall entry, memories on the survivors and an inherited goal are facts about
+ * what happened, not functions of a seed.
  *
- * ── THE AUTHORITY BOUNDARY ────────────────────────────────────────────────
+ * So the order is load, else replay:
  *
- * Nothing here accepts an outcome. Callers pass a span in days and the identity
- * of who is watching; what happened comes back from the driver. The digest is
- * filtered through `knowledge_records` before it leaves, so a tool cannot hand
- * the narrator a name the cultivator has never heard.
+ *   1. `loadWorld(id)` returns everything, runs' writings included. Use it.
+ *   2. Nothing stored under that id - a world that was created and never
+ *      saved, or a database that has been swapped underneath us - and the seed
+ *      still reproduces the BASE world exactly. Replay it and save.
+ *
+ * Replay can only ever reconstruct the base. It is a cold-start fallback and
+ * never a substitute for the repository.
+ *
+ * ── THE AUTHORITY BOUNDARY ───────────────────────────────────────────────
+ *
+ * Nothing here accepts an outcome. Callers pass a span in days and who is
+ * watching; what happened comes back from the driver. The digest is filtered
+ * through `knowledge_records` before it leaves, so no caller can be handed a
+ * name this cultivator has never heard.
  */
 
+import { randomUUID } from 'crypto';
+import type Database from 'better-sqlite3';
 import { getDb } from '../../storage/index.js';
 import {
     advanceWorldForPlay,
     loadCultivationCatalog,
+    recordRun as recordRunOnState,
+    runSeedFor,
     seedWorld,
     simpleAccess,
     type Observer,
     type PlayAdvanceResult,
     type PlayerAccess,
     type WorldCatalog,
+    type WorldRun,
     type WorldState
 } from '../../engine/world/index.js';
+import { WorldStateRepository } from '../../storage/repos/world-state.repo.js';
 import type { Cultivator, Run } from '../../schema/cultivation.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
 
 /**
- * Living NPCs the world keeps records for.
+ * Living NPCs a new world keeps records for.
  *
  * Hundreds, not thousands: the whole cost of a century of world time is linear
  * in this, and a province holds about this many people worth remembering.
+ * It is a property of the world, fixed when the world is created, so changing
+ * it never alters a world that already exists.
  */
 export const WORLD_POPULATION = 240;
 
-interface WorldEntry {
+// ─────────────────────────────────────────────────────────────────────────
+// PROCESS STATE
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface WorldHandle {
+    id: string;
+    /** The world's own seed. Not derived from any run. */
     seed: string;
     state: WorldState;
-    /** Absolute world day the run began on. Run day 0 is this day. */
-    startDay: number;
-    /** Run days already folded into the world. */
-    advancedDays: number;
 }
 
-const worlds = new Map<string, WorldEntry>();
-let catalog: WorldCatalog | null = null;
+export interface WorldSummary {
+    id: string;
+    seed: string;
+    currentDay: number;
+    year: number;
+    runs: number;
+    active: boolean;
+}
 
-/** Discard every cached world. For tests and for a database swap. */
+/** Worlds held open in this process, by world id. */
+const loaded = new Map<string, WorldHandle>();
+/** Which world a run lives in. Resolved from `world_runs`, then cached. */
+const runToWorld = new Map<string, string>();
+/** The world new runs enter. Persisted implicitly as "the first one created". */
+let activeId: string | null = null;
+let catalog: WorldCatalog | null = null;
+const repos = new WeakMap<Database.Database, WorldStateRepository>();
+
+/**
+ * Discard everything held in this process.
+ *
+ * For tests and for a database swap. It does not delete anything: the worlds
+ * are in SQLite and come back on the next touch.
+ */
 export function resetCultivationWorlds(): void {
-    worlds.clear();
+    loaded.clear();
+    runToWorld.clear();
+    activeId = null;
     catalog = null;
+}
+
+function repo(): WorldStateRepository {
+    const db = getDb();
+    let existing = repos.get(db);
+    if (!existing) {
+        existing = new WorldStateRepository(db);
+        repos.set(db, existing);
+    }
+    return existing;
 }
 
 async function cultivationCatalog(): Promise<WorldCatalog> {
@@ -95,47 +144,312 @@ async function cultivationCatalog(): Promise<WorldCatalog> {
     return catalog;
 }
 
-/**
- * The world for this run, caught up to the run's clock.
- *
- * Rebuilds from the seed on a cold start and then fast-forwards to
- * `run.elapsedDays`, so a tool never sees a world that is behind the
- * cultivator. The catch-up produces no digest: nothing that happened while the
- * process was not running is news the player is hearing for the first time.
- */
-export async function worldForRun(run: Run): Promise<WorldState> {
-    const entry = await ensureWorld(run);
-    const behind = Math.floor(run.elapsedDays) - entry.advancedDays;
-    if (behind > 0) {
-        advanceWorldForPlay(entry.state, { days: behind, stopOnInterrupt: false });
-        entry.advancedDays += behind;
-    }
-    return entry.state;
+// ─────────────────────────────────────────────────────────────────────────
+// CREATING AND CHOOSING A WORLD
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface CreateWorldOptions {
+    /**
+     * The world's seed. Omit and one is minted and then PERSISTED, which is
+     * what makes it the world's own rather than a default every installation
+     * shares. Supplying one reproduces a known world exactly.
+     */
+    seed?: string;
+    population?: number;
+    presentYear?: number;
+    /** Make this the world new runs enter. Default true. */
+    makeActive?: boolean;
 }
 
-async function ensureWorld(run: Run): Promise<WorldEntry> {
-    const existing = worlds.get(run.id);
-    if (existing && existing.seed === run.seed) return existing;
+/**
+ * Create a world.
+ *
+ * A deliberate act, and the only one in this module that discards anything:
+ * every run afterwards enters this world instead of the old one, and the old
+ * one's graves, grudges and ruins are no longer the ones a new cultivator digs
+ * through. The existing world is not deleted - `listWorlds` still shows it and
+ * `setActiveWorld` still returns to it - but nothing walks into two at once.
+ */
+export async function createWorld(options: CreateWorldOptions = {}): Promise<WorldSummary> {
+    const seed = options.seed ?? randomUUID();
+    const seeded = seedWorld({
+        seed,
+        catalog: await cultivationCatalog(),
+        population: options.population ?? WORLD_POPULATION,
+        presentYear: options.presentYear
+    });
+
+    const handle: WorldHandle = { id: seeded.state.id, seed, state: seeded.state };
+    repo().saveWorld(handle.state);
+    loaded.set(handle.id, handle);
+    if (options.makeActive !== false) activeId = handle.id;
+
+    return summarise(handle, true);
+}
+
+/**
+ * The world new runs enter.
+ *
+ * No ceremony: if one exists it is used, and only a genuinely empty
+ * installation causes one to be made. The seed for that first world is minted
+ * once and written to `world_runtime`, so it is the world's own from then on
+ * and a restart does not produce a different one.
+ */
+export async function activeWorld(): Promise<WorldHandle> {
+    if (activeId !== null) {
+        const held = loaded.get(activeId);
+        if (held) return held;
+        const reopened = await open(activeId);
+        if (reopened) return reopened;
+        // The active id no longer resolves - a database swap, or a deletion.
+        // Fall through and choose again rather than failing the call.
+        activeId = null;
+    }
+
+    // Oldest first, so "the world this installation has been playing in" is a
+    // stable answer rather than whichever row came back first.
+    const stored = repo().listWorlds();
+    if (stored.length > 0) {
+        const handle = await open(stored[0].id);
+        if (handle) {
+            activeId = handle.id;
+            return handle;
+        }
+    }
+
+    const created = await createWorld();
+    return loaded.get(created.id)!;
+}
+
+/** Point new runs at a different existing world. */
+export async function setActiveWorld(worldId: string): Promise<WorldSummary | null> {
+    const handle = await open(worldId);
+    if (!handle) return null;
+    activeId = handle.id;
+    return summarise(handle, true);
+}
+
+export function activeWorldId(): string | null {
+    return activeId;
+}
+
+/** Every world this installation holds, oldest first. */
+export function listWorlds(): WorldSummary[] {
+    const store = repo();
+    return store.listWorlds().map(row => ({
+        id: row.id,
+        seed: row.seed,
+        currentDay: row.currentDay,
+        year: Math.floor(row.currentDay / 365),
+        runs: store.runsOf(row.id).length,
+        active: row.id === activeId
+    }));
+}
+
+/**
+ * Open a world: from the repository if it is there, by replaying its seed if
+ * it is not.
+ *
+ * The fallback exists because a world can be known (its id and seed are on the
+ * runtime row) without its body being loadable - a half-written save, or a
+ * database rebuilt underneath a process that still holds the id. Replaying
+ * reconstructs the BASE world, which is exactly and only what the seed can
+ * produce; anything runs have since written onto it lives in the repository
+ * and is lost if it was never saved. That is the honest limit of the fallback
+ * and it is why the repository is the source of truth.
+ */
+async function open(worldId: string): Promise<WorldHandle | null> {
+    const held = loaded.get(worldId);
+    if (held) return held;
+
+    const store = repo();
+    const state = store.loadWorld(worldId);
+    if (state) {
+        const handle: WorldHandle = { id: state.id, seed: state.seed, state };
+        loaded.set(handle.id, handle);
+        return handle;
+    }
+
+    const known = store.listWorlds().find(row => row.id === worldId);
+    if (!known) return null;
 
     const seeded = seedWorld({
-        seed: run.seed,
+        seed: known.seed,
         catalog: await cultivationCatalog(),
         population: WORLD_POPULATION
     });
-    const entry: WorldEntry = {
-        seed: run.seed,
-        state: seeded.state,
-        startDay: seeded.state.currentDay,
-        advancedDays: 0
-    };
-    worlds.set(run.id, entry);
+    const handle: WorldHandle = { id: seeded.state.id, seed: known.seed, state: seeded.state };
+    store.saveWorld(handle.state);
+    loaded.set(handle.id, handle);
+    return handle;
+}
 
-    const behind = Math.floor(run.elapsedDays);
-    if (behind > 0) {
-        advanceWorldForPlay(entry.state, { days: behind, stopOnInterrupt: false });
-        entry.advancedDays = behind;
+function summarise(handle: WorldHandle, active: boolean): WorldSummary {
+    return {
+        id: handle.id,
+        seed: handle.seed,
+        currentDay: handle.state.currentDay,
+        year: Math.floor(handle.state.currentDay / 365),
+        runs: handle.state.runs.length,
+        active
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// RUNS AS CHILDREN OF A WORLD
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface NextRunSeed {
+    worldId: string;
+    /** Run one, run two, run three. */
+    index: number;
+    /** `runSeedFor(worldSeed, index)`. Never independent of the world. */
+    seed: string;
+    /** World day the run will begin on. */
+    startsOnDay: number;
+}
+
+/**
+ * The seed the next run in the active world gets.
+ *
+ * Called by `create_cultivator` so a run's randomness hangs off the world's
+ * rather than being minted beside it. A caller who supplies their own seed is
+ * replaying a specific run and is honoured; everything else derives.
+ */
+export async function seedForNextRun(): Promise<NextRunSeed> {
+    const handle = await activeWorld();
+    const index = handle.state.runs.length;
+    return {
+        worldId: handle.id,
+        index,
+        seed: runSeedFor(handle.seed, index),
+        startsOnDay: handle.state.currentDay
+    };
+}
+
+/**
+ * Record that this life is being lived here.
+ *
+ * Idempotent: a run already recorded is left alone, so re-entering an existing
+ * run does not create a second entry or move its start day. The start day is
+ * what joins the two clocks afterwards - a run's `elapsedDays` is measured from
+ * it, and the world is behind by exactly the difference.
+ */
+export async function beginRunInWorld(
+    run: Run,
+    cultivator: Cultivator
+): Promise<WorldRun> {
+    const handle = await worldHandleFor(run);
+    const existing = handle.state.runs.find(r => r.id === run.id);
+    if (existing) return existing;
+
+    const index = handle.state.runs.length;
+    const record: WorldRun = {
+        id: run.id,
+        seed: run.seed,
+        index,
+        cultivatorId: cultivator.id,
+        cultivatorName: cultivator.name,
+        startedOnDay: handle.state.currentDay,
+        endedOnDay: null,
+        outcome: 'active',
+        peakOrdinal: cultivator.realmOrdinal,
+        graveLocationId: null,
+        successorRelation: null
+    };
+
+    recordRunOnState(handle.state, record);
+    runToWorld.set(run.id, handle.id);
+    // A run beginning is a checkpoint, not a tick.
+    repo().saveWorld(handle.state);
+    return record;
+}
+
+/**
+ * Close a run's entry against the world.
+ *
+ * This records how the life ended and what it reached. It does NOT enshrine:
+ * putting the grave on the map, the entry in the ancestral hall and the
+ * inherited goals into the world is `legacy.ts`'s `enshrineRun`, which needs
+ * the dead cultivator to be a world NPC first. Two ways to persist a
+ * consequence is two ways to persist half of it.
+ */
+export async function endRunInWorld(
+    run: Run,
+    outcome: WorldRun['outcome'],
+    peakOrdinal: number
+): Promise<WorldRun | null> {
+    const handle = await worldHandleFor(run);
+    const record = handle.state.runs.find(r => r.id === run.id);
+    if (!record) return null;
+
+    record.outcome = outcome;
+    record.peakOrdinal = Math.max(record.peakOrdinal, peakOrdinal);
+    record.endedOnDay = handle.state.currentDay;
+    repo().saveWorld(handle.state);
+    return record;
+}
+
+/** Which world this run lives in, resolved from `world_runs` and then cached. */
+async function worldHandleFor(run: Run): Promise<WorldHandle> {
+    const cached = runToWorld.get(run.id);
+    if (cached) {
+        const handle = await open(cached);
+        if (handle) return handle;
+        runToWorld.delete(run.id);
     }
-    return entry;
+
+    const store = repo();
+    for (const row of store.listWorlds()) {
+        if (!store.runsOf(row.id).some(r => r.id === run.id)) continue;
+        const handle = await open(row.id);
+        if (handle) {
+            runToWorld.set(run.id, handle.id);
+            return handle;
+        }
+    }
+
+    // Not recorded anywhere yet: this run enters the world that is already
+    // running. That is the default, and it is what cross-run persistence is.
+    const handle = await activeWorld();
+    runToWorld.set(run.id, handle.id);
+    return handle;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE TWO CLOCKS ARE ONE CLOCK
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The world this run lives in, caught up to the run's clock.
+ *
+ * A run's `elapsedDays` is measured from the world day it started on, so the
+ * world is behind by `startedOnDay + elapsedDays - currentDay`. Both halves are
+ * persisted, which is what makes the catch-up correct across a restart rather
+ * than merely plausible.
+ *
+ * The catch-up produces no digest. Nothing that happened while this process was
+ * not running is news the player is hearing for the first time.
+ */
+export async function worldForRun(run: Run): Promise<WorldState> {
+    const handle = await worldHandleFor(run);
+    catchUp(handle, run, 0);
+    return handle.state;
+}
+
+/** Advance the world to where the run's clock says it should be, less `less`. */
+function catchUp(handle: WorldHandle, run: Run, less: number): number {
+    const record = handle.state.runs.find(r => r.id === run.id);
+    // A run with no world entry yet has no start day to measure from, and
+    // guessing one would move the world by the whole of its history.
+    if (!record) return 0;
+
+    const target = record.startedOnDay + Math.floor(run.elapsedDays) - Math.floor(less);
+    const behind = target - handle.state.currentDay;
+    if (behind <= 0) return 0;
+
+    advanceWorldForPlay(handle.state, { days: behind, stopOnInterrupt: false });
+    return behind;
 }
 
 export interface WorldAdvance {
@@ -143,14 +457,15 @@ export interface WorldAdvance {
     /** Absolute world day the span started on. */
     fromDay: number;
     toDay: number;
+    worldId: string;
 }
 
 /**
  * Advance the world alongside the cultivator, and report what reached them.
  *
- * The span is the span the cultivator actually lived through - a seclusion
- * broken in year three does not get seven more years of world - so callers pass
- * the SIMULATED days the cultivation engine returned, never the requested ones.
+ * The span is the one the cultivator actually LIVED - a seclusion broken in
+ * year three does not get seven more years of world - so callers pass the
+ * simulated days the cultivation engine returned, never the requested ones.
  */
 export async function advanceWorldForCultivator(
     run: Run,
@@ -161,42 +476,46 @@ export async function advanceWorldForCultivator(
     const span = Math.floor(days);
     if (span <= 0) return null;
 
-    const entry = await ensureWorld(run);
-    // Fold in anything the run clock already knows about but the world does
-    // not, so the span below is genuinely this call's span.
-    const alreadyElapsed = Math.floor(run.elapsedDays) - span;
-    const behind = alreadyElapsed - entry.advancedDays;
-    if (behind > 0) {
-        advanceWorldForPlay(entry.state, { days: behind, stopOnInterrupt: false });
-        entry.advancedDays += behind;
+    const handle = await worldHandleFor(run);
+    // The run may not have been recorded yet - a cultivator created before this
+    // module existed, or an NPC-only run. Record it now so the clocks join.
+    if (!handle.state.runs.some(r => r.id === run.id)) {
+        await beginRunInWorld(run, cultivator);
     }
 
-    const fromDay = entry.state.currentDay;
-    const result = advanceWorldForPlay(entry.state, {
+    // Fold in anything the run clock already knows about but the world does
+    // not, so the span below is genuinely this call's span.
+    catchUp(handle, run, span);
+
+    const fromDay = handle.state.currentDay;
+    const result = advanceWorldForPlay(handle.state, {
         days: span,
         access: accessForCultivator(cultivator),
-        observer: observerFor(cultivator, entry),
+        observer: observerFor(cultivator, handle),
         stopOnInterrupt: false,
         digest: { limit: options.limit ?? 12, factionRankIndex: rankIndexOf(cultivator) }
     });
-    entry.advancedDays += result.daysAdvanced;
 
-    return { result, fromDay, toDay: entry.state.currentDay };
+    // A tick, not a checkpoint: the append path skips the chronicle and memory
+    // bulk below its high-water mark, which is the difference between a
+    // five-century soak costing one write and costing five hundred.
+    repo().appendWorld(handle.state);
+
+    return { result, fromDay, toDay: handle.state.currentDay, worldId: handle.id };
 }
 
 /**
- * The player as an observer.
+ * The player as somebody the world can have happened to.
  *
- * `bornOnDay` is derived from their age against the world clock, so a fact
+ * `bornOnDay` is derived from their age against the WORLD clock, so a fact
  * dated before they existed is historical to them however recently the world
- * recorded it.
+ * recorded it - including facts from previous runs, which is exactly the point.
  */
-function observerFor(cultivator: Cultivator, entry: WorldEntry): Observer {
-    const bornOnDay = Math.max(
-        0,
-        Math.floor(entry.startDay + entry.advancedDays - cultivator.age * 365)
-    );
-    return { id: cultivator.id, bornOnDay };
+export function observerFor(cultivator: Cultivator, handle: WorldHandle): Observer {
+    return {
+        id: cultivator.id,
+        bornOnDay: Math.max(0, Math.floor(handle.state.currentDay - cultivator.age * 365))
+    };
 }
 
 function rankIndexOf(cultivator: Cultivator): number {
@@ -207,30 +526,32 @@ function rankIndexOf(cultivator: Cultivator): number {
  * What this cultivator has standing to be told.
  *
  * Backed by `knowledge_records` through `KnowledgeGate`, which is the same
- * table the narrator layer's discovery gate reads. A faction they have never
- * heard of reaches them as a closed road and never as a named report - and that
- * filtering happens HERE, before the digest leaves the tool, rather than as an
- * instruction to the model.
+ * table the narrator layer's discovery gate reads. The three predicates are
+ * asked live rather than snapshotted into sets, so a name learned DURING the
+ * span is already known by the time the digest is built. A faction they have
+ * never heard of reaches them as a closed road and never as a named report -
+ * and that filtering happens here, before anything leaves, rather than as an
+ * instruction to a model.
  */
 export function accessForCultivator(cultivator: Cultivator): PlayerAccess {
     const gate = new KnowledgeGate(getDb());
-    const factions = gate.awareIds(cultivator.id, 'sect');
-    const npcs = gate.awareIds(cultivator.id, 'cultivator');
-    const places = gate.awareIds(cultivator.id, 'place');
-
     const here = cultivator.location ? placeKey(cultivator.location) : null;
-    // The location ids the world layer uses are its own; a cultivator standing
-    // in a place they have a record for sees it, and everything else has to
-    // reach them by a channel.
-    const visible = here === null ? [] : [here, ...places];
 
     return simpleAccess({
         actorId: cultivator.id,
         locationId: here,
-        visibleLocationIds: visible,
+        visibleLocationIds: here === null ? [] : [here],
         factionId: cultivator.sectId ?? null,
-        knownFactionIds: factions,
-        knownNpcIds: npcs,
-        knownPlaceIds: places
+        knownFactionIds: gate.awareIds(cultivator.id, 'sect'),
+        knownNpcIds: gate.awareIds(cultivator.id, 'cultivator'),
+        knownPlaceIds: gate.awareIds(cultivator.id, 'place')
     });
 }
+
+/**
+ * Presentation - turning a digest into prose channels - is deliberately NOT
+ * here. `src/web/game.ts` owns `reportFromDigest` and `WorldReport`, because
+ * what a narrator is handed is a narrator-layer decision and this module's
+ * remit stops at "what actually reached them". One implementation each, and
+ * neither reaches into the other.
+ */
