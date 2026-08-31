@@ -1186,12 +1186,7 @@ function dossier(d: SectDossier): string {
     const groups: string[] = [];
 
     if (d.people.active.length) {
-        const topNamed = Math.max(...d.people.active.map(p => p.ordinal));
-        groups.push(`<div class="grp healthy"><h4>Members <span>${d.people.active.length}</span>`
-            + (topNamed < d.ordinal
-                ? `<span class="gap">strongest named ${topNamed}, faction stands at ${d.ordinal}</span>`
-                : '')
-            + '</h4>'
+        groups.push(`<div class="grp healthy"><h4>Members <span>${d.people.active.length}</span></h4>`
             + d.people.active.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span>`
                 + `<span class="wo">${p.ordinal}</span>`
@@ -1441,7 +1436,7 @@ export function renderRegisterHtml(
 <div class="pane" data-pane="factions" hidden>
 <section>
   <div class="sh"><h2>Every faction</h2><span class="r">${c.factions} · by governance · click to open</span></div>
-  <p class="note">Grouped by how each faction holds its ground, strongest group first and strongest faction first inside it. The group says what kind of arrangement it is; the line under each name says who the other party is, so the reporting relation survives the grouping. <strong>Click any faction to open its full entry.</strong></p>
+  <p class="note">Grouped by how each faction holds its ground, strongest group first and strongest faction first inside it. The group says what kind of arrangement it is; the line under each name says who the other party is, so the reporting relation survives the grouping. The people under each faction are weighted to the bottom of the ladder, because that is where the player starts and where almost everybody is - and each list now ends on the strongest member, who is the person the faction ordinal has always been naming. <strong>Click any faction to open its full entry.</strong></p>
   ${prose(blocks, 'register')}
   ${hierarchies.length ? `<div class="govgrp">
     <h3 class="govhead">apex hierarchies <span>${hierarchies.length}</span></h3>
