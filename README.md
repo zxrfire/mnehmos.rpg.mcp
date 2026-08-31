@@ -1,438 +1,205 @@
-# mnehmos.rpg.mcp: Agentic Embodied Simulation Kernel
+# The Vault — a cultivation RPG engine
 
-[![npm version](https://img.shields.io/npm/v/mnehmos.rpg.mcp.svg)](https://www.npmjs.com/package/mnehmos.rpg.mcp)
-[![License: ISC](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)]()
-[![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)]()
-[![Tests](https://img.shields.io/badge/tests-2214%20passing-brightgreen.svg)]()
-[![Tools](https://img.shields.io/badge/MCP%20tools-36-blue.svg)]()
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)]()
+[![MCP](https://img.shields.io/badge/MCP-compatible-green.svg)]()
 
-**A rules-enforced RPG backend that turns any LLM into a game master who can't cheat.**
+**A xianxia cultivation roguelike with permanent death, where an LLM narrates and a
+deterministic engine decides.**
 
----
+You play a cultivator climbing a 45-rank ladder from Qi Condensation Layer 1 to
+Tribulation Transcendence. Your talent is rolled once and locked forever. You will
+almost certainly die somewhere in the first realm — of starvation, of torn meridians, of
+a breakthrough you attempted at 31% because waiting was worse.
 
-## What Is This? (Start Here)
-
-**You are the player. The AI is the dungeon master.**
-
-You talk to an AI (Claude, GPT, etc.) in natural language. You say things like "I attack the goblin" or "I search the room for traps." The AI narrates what happens and describes the world.
-
-**The difference from pure AI storytelling:** This engine enforces the rules. When you attack, it actually rolls dice, checks armor class, calculates damage, and updates HP in a real database. The AI can't just decide you hit or miss—the math happens, and both you and the AI see the result.
-
-### What can you actually do?
-
-- **Explore procedurally generated worlds** with 28+ biome types
-- **Fight enemies** using D&D 5e-style combat (initiative, AC, damage rolls, death saves)
-- **Cast spells** with real slot tracking—if you're out of slots, you can't cast
-- **Manage inventory** with equipment slots, weight, and item properties
-- **Complete quests** with tracked objectives and rewards
-- **Interact with NPCs** who remember your conversations across sessions
-- **Everything persists**—close the game, come back tomorrow, your character is exactly where you left them
-
-### Who is this for?
-
-- **Solo RPG players** who want AI-driven adventures with mechanical integrity
-- **People frustrated with AI RPGs** that fall apart when you ask "wait, how much HP do I have?"
-- **Developers** building AI game integrations who need a reference implementation
-
-### How do I play?
-
-1. Install the MCP server (see Installation below)
-2. Connect it to Claude Desktop (or any MCP-compatible client)
-3. Tell the AI: "Let's start a new game. Create a character for me."
-4. Play naturally—the AI handles narration, the engine handles mechanics
+The AI writes the prose. It does not decide the outcomes. When the engine says the
+breakthrough failed, the story you get is about a breakthrough that failed.
 
 ---
 
-## v1.0 Release (January 2026)
-
-### 81% Tool Reduction: 195 → 36 Tools (31 Consolidated + 5 Meta/Event)
-
-This release consolidates 195 individual tools into **31 action-based tools** plus 5 standalone meta/event tools using:
-
-- **Action enums** - Each tool handles multiple operations via an `action` parameter
-- **Fuzzy matching** - Typo-tolerant action matching with suggestions
-- **Guiding errors** - Clear feedback when actions don't match
-
-**Before:** `create_character`, `get_character`, `update_character`, `delete_character`, `list_characters`...
-**After:** `character_manage` with action-based CRUD, progression, and source-backed creation options
-
-### Key Metrics
-
-| Metric | Before | After | Change |
-|--------|--------|-------|--------|
-| MCP Tools | 195 | 36 | **81.5% reduction** |
-| Tests | 1,242 | 2,214 | +78% coverage |
-| Token overhead | ~50K | ~6-8K | **85% reduction** |
-
-### Meta-Tools for Discovery
-
-Four standalone tools support discovery and real-time events:
-
-| Tool | Purpose |
-|------|---------|
-| `search_tools` | Search tools by keyword, category, or capability |
-| `load_tool_schema` | Load full parameter schema before first use |
-| `subscribe_to_events` | Subscribe to PubSub event topics (combat, quest, etc.) |
-| `unsubscribe_from_events` | Unsubscribe from event topics |
-
----
-
-## Architecture Philosophy
-
-This engine implements the **Event-Driven Agentic AI Architecture**:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                         │
-│   EVENT                                                                                 │
-│     │                                                                                   │
-│     ▼                                                                                   │
-│   ┌───────────┐     ┌───────────┐     ┌────────────┐     ┌───────────┐     ┌─────────┐ │
-│   │  OBSERVE  │ ──▶ │  ORIENT   │ ──▶ │   DECIDE   │ ──▶ │    ACT    │ ──▶ │VALIDATE │ │
-│   │           │     │           │     │            │     │           │     │         │ │
-│   │ MCP Read  │     │ LLM Brain │     │Orchestrator│     │ MCP Write │     │ Engine  │ │
-│   │  Tools    │     │  Analyze  │     │   Plan     │     │   Tools   │     │  Rules  │ │
-│   └───────────┘     └───────────┘     └────────────┘     └───────────┘     └────┬────┘ │
-│         ▲                                                                       │      │
-│         │                                                                       │      │
-│         └───────────────────────────────────────────────────────────────────────┘      │
-│                                    WORLD STATE                                         │
-│                                  (updates & loops)                                     │
-│                                                                                         │
-└─────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### The Embodiment Model
-
-| Biological System  | RPG-MCP Component     | Role                                                   |
-| ------------------ | --------------------- | ------------------------------------------------------ |
-| **Brain**          | LLM Agent (external)  | Strategic reasoning, planning, interpretation          |
-| **Nervous System** | Engine + Orchestrator | Validates intent, enforces constraints, routes actions |
-| **Reflex Arc**     | Constraint Validator  | Blocks impossible actions before execution             |
-| **Sensory Organs** | Observation Tools     | `getObservation`, `queryEntities`, `getWorldSnapshot`  |
-| **Muscles**        | Action Tools          | `proposeAction`, `moveEntity`, `attack`, `interact`    |
-| **Environment**    | World State + Physics | SQLite-persisted, deterministic, forkable reality      |
-
-**Key invariant**: LLMs propose intentions. The engine validates and executes. LLMs never directly mutate world state.
-
----
-
-## Consolidated Tools Reference (31 Tools)
-
-### Character & Party
-
-| Tool | Actions | Description |
-|------|---------|-------------|
-| `character_manage` | create, get, update, delete, list, options, add_xp, level_up | Character CRUD plus pinned SRD creation mechanics |
-| `party_manage` | create, get, update, delete, add_member, remove_member, set_leader, context | Party management and member operations |
-
-### Combat System
-
-| Tool | Actions | Description |
-|------|---------|-------------|
-| `combat_manage` | create, get, end, load, advance, death_save, lair_action, add_participant, remove_participant | Encounter lifecycle and initiative |
-| `combat_action` | attack, cast, move, dash, dodge, disengage, help, ready | Combat actions with full D&D 5e rules |
-| `combat_map` | get_terrain, set_terrain, get_positions, calculate_aoe | Tactical grid and terrain management |
-
-### Inventory & Economy
-
-| Tool | Actions | Description |
-|------|---------|-------------|
-| `item_manage` | create, get, update, delete, list, search, catalog_search, catalog_get, materialize | Custom items plus pinned SRD lookup/materialization |
-| `inventory_manage` | give, remove, transfer, equip, unequip, use | Inventory operations between characters |
-| `corpse_manage` | create, get, list, loot, harvest, advance_decay, cleanup | Death and loot mechanics |
-| `theft_manage` | steal, check_stolen, check_recognition, report | Theft with heat tracking |
-
-### World & Spatial
-
-| Tool | Actions | Description |
-|------|---------|-------------|
-| `world_manage` | generate, get, update, list, delete | Procedural world generation |
-| `world_map` | get_overview, get_region, patch, preview | Map queries and modifications |
-| `spatial_manage` | look, generate, update, get_exits, move, list, network_create, network_get, network_list | Dungeon navigation and room networks |
-
-### Quests & NPCs
-
-| Tool | Actions | Description |
-|------|---------|-------------|
-| `quest_manage` | create, get, list, assign, complete, fail, abandon, add_objective, update_objective | Quest lifecycle management |
-| `npc_manage` | get_relationship, update_relationship, record_memory, get_history, interact | NPC memory and social interactions |
-| `aura_manage` | create, list, get_affecting, process, remove, expire | Area effects and buffs/debuffs |
-
-### Magic & Rest
-
-| Tool | Actions | Description |
-|------|---------|-------------|
-| `scroll_manage` | use, create, identify, get_dc, get_details | Scroll mechanics |
-| `rest_manage` | long_rest, short_rest | HP and spell slot recovery |
-| `concentration_manage` | check_save, break, get_state, check_duration | Spell concentration tracking |
-
-### Utility & Meta
-
-| Tool | Actions | Description |
-|------|---------|-------------|
-| `secret_manage` | create, get, list, update, delete, reveal, check_conditions | DM secrets with reveal conditions |
-| `narrative_manage` | add, search, update, get, delete, get_context | Story notes and session history |
-| `improvisation_manage` | stunt, apply_effect, get_effects, remove_effect, process_triggers, advance_durations, synthesize, get_spellbook | Rule of Cool and custom effects |
-| `math_manage` | dice_roll, probability, algebra, physics | Dice and calculations |
-| `strategy_manage` | create_nation, get_state, propose_alliance, claim_region | Grand strategy simulation |
-| `turn_manage` | init, get_status, submit_actions, mark_ready, poll_results | Async turn management |
-| `spawn_manage` | spawn_character, spawn_location, spawn_encounter, spawn_preset_location, spawn_tactical | Entity and encounter spawning |
-| `session_manage` | initialize_session, get_context | Session state management |
-| `travel_manage` | travel, loot, rest | Party movement and field actions |
-| `batch_manage` | create_characters, create_npcs, distribute_items, execute_workflow | Bulk operations |
-
-### LLM-Driven NPCs (Agents)
-
-| Tool | Actions | Description |
-|------|---------|-------------|
-| `agent_manage` | create, get, list, update, delete, resume, health, budget, set_slice, remove_slice, toggle_slice, list_slices, narrate, broadcast, preview_prompt, add_secret, list_secrets, remove_secret, add_journal, get_journal, invoke, replay | Bind an LLM (OpenAI / OpenRouter) to a character as an autonomous NPC mind. Modular prompt slices (persona/directive/secrets/narrative_feed/recent/character_state), private journal, audit-logged calls, circuit breaker, plain-text intent declarations for DM dispatch. Auto-invokes on initiative when `auto_on_turn=true`. Emits `npc_action` events to `event_inbox` for frontend polling. |
-
----
-
-## Installation
-
-### Option 1: npm (Recommended)
+## Run it
 
 ```bash
-npm install mnehmos.rpg.mcp
+docker compose up
 ```
 
-### Option 2: Standalone Binaries
+Then open **http://localhost:8787**. That's the whole setup — the GUI, the game engine,
+the database, and the MCP endpoint all come up together.
 
-Download pre-built binaries from [Releases](https://github.com/Mnehmos/rpg-mcp/releases):
+No API key is required. Out of the box the engine narrates deterministically. To get
+LLM prose, pick a narrator:
+
+**Local model, nothing leaves your machine:**
 
 ```bash
-# Windows
-.\rpg-mcp-win.exe
-
-# macOS (Intel)
-chmod +x rpg-mcp-macos && ./rpg-mcp-macos
-
-# macOS (Apple Silicon)
-chmod +x rpg-mcp-macos-arm64 && ./rpg-mcp-macos-arm64
-
-# Linux
-chmod +x rpg-mcp-linux && ./rpg-mcp-linux
+docker compose --profile local-llm up
 ```
 
-### Option 3: From Source
+**Claude:**
 
 ```bash
-git clone https://github.com/Mnehmos/rpg-mcp.git
-cd rpg-mcp
+echo "RUNTIME_PROVIDER=claude" >> .env
+echo "ANTHROPIC_API_KEY=sk-ant-..." >> .env
+docker compose up
+```
+
+Copy `.env.example` to `.env` to see every option. There are no paid tiers, no turn
+limits, and no metering — it's your machine.
+
+---
+
+## What the world is
+
+The sky is a lid. The world sits at the bottom of a sealed vessel, and to ascend is to
+punch a hole in the ceiling and leave.
+
+The Vault charges a toll for that, and the toll is paid downward. When a cultivator
+ascends, their remembered life is stripped out and falls back into the world as **ash** —
+and that ash is the spiritual energy every other cultivator breathes. To cultivate is to
+inhale the discarded lives of strangers.
+
+The toll is collected in instalments. Every time you cross a realm boundary, the Vault
+takes something that mattered: a person who knew you stops knowing you, a memory you were
+using to stay yourself, a technique you had mastered, sometimes your name. You don't
+choose what goes. You're just told.
+
+Which is why the powerful are hollow. Whatever they were climbing for was usually among
+the things the climb took.
+
+The full setting bible — the powers, the graves, why you still have to eat, what a spirit
+tide actually is — lives in [`context.md`](context.md).
+
+---
+
+## How it plays
+
+Talk to it in plain language. The narrator turns intent into engine actions:
+
+> *"I spend the next three months gathering ash in the low fall."*
+
+becomes `cultivate(duration=90 days)`, and the engine determines the progress, the food
+you burned, whether your meridians held, what wandered past, and whether you're now
+eligible to break through. Then the narrator describes what actually happened.
+
+Long spans are cheap and deterministic. `"I cultivate for ten years"` resolves in a
+single pass and hands back a chronological digest of those ten years — not ten years of
+LLM calls.
+
+### What kills you
+
+| Cause | Rule |
+|---|---|
+| Starvation | Satiety at zero for 5 consecutive turns |
+| Untreated injuries | 3+ untreated meridian injuries and you force another fight |
+| Settling | 50 years at the same realm without advancing |
+| Lifespan | Your realm's ceiling, reached |
+| Failed breakthrough | Attempting one poisoned, injured, or at terrible odds |
+| Combat | Losing a fight with no exit |
+
+Death is permanent. There is no reload, no save slot, and no continue button. The run
+goes into the Death Ledger and you start again with different talent.
+
+---
+
+## Talent
+
+Rolled once at creation, never rerollable, and it decides most of your ceiling.
+
+| Spirit root | Odds | Effect |
+|---|---|---|
+| Single Metal / Wood / Water / Fire / Earth | 8.1% each | Clean affinity, fast cultivation |
+| Water–Fire or Metal–Wood dual | 16.2% each | Conflicting elements; standing qi-deviation risk |
+| Five-Element Muddled | 21.6% | All five, none clean. Cultivation crawls. |
+| Mutated Lightning / Ice | 2.7% each | Devastating, and almost no manuals exist |
+
+Plus four innate attributes locked at creation: **Might** (1–3), **Insight** (1–4),
+**Fortune** (0–3, and it can genuinely be zero), **Charm** (1–3).
+
+The most common draw in the game is the muddled root. That is the real experience of
+this world.
+
+---
+
+## Architecture
+
+```text
+Player
+  │
+  ▼
+Runtime Agent ──┬── Claude (Anthropic)
+  │             ├── Ollama (local)
+  │             └── OpenAI / OpenRouter
+  ▼
+MCP tools
+  │
+  ▼
+Deterministic Game Engine
+  │
+  ▼
+SQLite
+```
+
+The runtime agent interprets intent, picks tools, and writes prose. It is **not**
+authoritative over stats, cultivation progress, realm changes, breakthroughs, combat,
+inventory, health, lifespan, or death — those are resolved by engine code backed by
+SQLite, and the agent narrates whatever came back.
+
+Provider choice is configuration, never code (`RUNTIME_PROVIDER=claude|ollama|openai|openrouter`).
+The same saved world is playable under any of them; switching narrators never touches
+world state.
+
+Every stochastic system draws from the run's seed, so a run is reproducible.
+
+---
+
+## Connecting an MCP client
+
+The compose stack exposes MCP over WebSocket on port **8788**, sharing the same database
+as the web GUI. Point Claude Desktop, Claude Code, or any MCP client at it to drive the
+same world you're playing in the browser.
+
+To run the server directly over stdio instead:
+
+```bash
+npm install && npm run build
+node dist/server/index.js --db-path ./cultivation.db
+```
+
+---
+
+## Development
+
+```bash
 npm install
+npm test                                 # full suite
+npx vitest run tests/engine/cultivation  # one area
+npx tsc --noEmit                         # typecheck
 npm run build
-npm test  # 2214 tests should pass
 ```
 
-### MCP Client Configuration
+Contributor and agent guidance lives in [`AGENTS.md`](AGENTS.md) (`CLAUDE.md` is a
+symlink to it). The short version: balance constants live in
+`src/schema/cultivation.ts` and nowhere else, relative imports carry `.js` extensions,
+and no code path may ever let the model become authoritative over state.
 
-**Claude Desktop / MCP Clients:**
+### Admin mode
 
-```json
-{
-  "mcpServers": {
-    "rpg-mcp": {
-      "command": "npx",
-      "args": ["-y", "-p", "mnehmos.rpg.mcp@1.0.3", "mnehmos-rpg-mcp"]
-    }
-  }
-}
-```
-
-Security note: pin an explicit package version in `args` to avoid unintentionally running a newly published release.
-
-**Using Binary:**
-
-```json
-{
-  "mcpServers": {
-    "rpg-mcp": {
-      "command": "path/to/rpg-mcp-win.exe"
-    }
-  }
-}
-```
+`ADMIN_MODE=true` unlocks an audited `admin_manage` tool surface for exploratory testing.
+It lifts **content gates** — it can hand a Qi Condensation cultivator the grave of a
+Tribulation Transcender — but it never lets the agent fabricate state. Every admin action
+is a real, logged engine mutation, and runs that use it are flagged out of the ledger.
 
 ---
 
-## Core Systems
+## Credits
 
-### Combat & Encounters
+Forked from [Mnehmos/rpg-mcp](https://github.com/Mnehmos/rpg-mcp), a D&D 5e MCP game
+engine. The substrate — dice, SQLite persistence, action-routed MCP tools, spatial grid,
+worldgen, NPC agent runtime — is theirs and is retained; the game-facing surface has been
+replaced with cultivation mechanics.
 
-- **Initiative tracking** with advantage/disadvantage
-- **Spatial combat** with grid positioning and collision
-- **Opportunity attacks** with reaction economy
-- **Death saving throws** (D&D 5e rules)
-- **Damage resistance/vulnerability/immunity**
-- **Legendary creatures** with lair actions and legendary resistances
-- **Encounter presets** - Pre-balanced encounters by party level
+Game design inspired by the xianxia genre's take on the
+cultivation roguelike, and by the tone of the genre's xianxia. The setting, mechanics, and
+text here are original.
 
-### Magic System
-
-- **15+ SRD spells** (Magic Missile, Fireball, Cure Wounds, etc.)
-- **Spell slot tracking** with class-based progression
-- **Warlock pact magic** with short rest recovery
-- **Concentration tracking**
-- **Anti-hallucination validation** - LLMs cannot cast spells they don't know
-
-### Theft & Economy
-
-- **Stolen item tracking** with heat levels (burning → cold)
-- **Witness recording** for theft detection
-- **Fence NPCs** with buy rates and heat capacity
-- **Item recognition** - original owners detect their stolen goods
-
-### NPC Memory
-
-- **Relationship tracking** (familiarity + disposition)
-- **Conversation memory** with importance levels
-- **Context injection** for LLM prompts
-- **Interaction history** across sessions
-
-### Improvisation Engine
-
-- **Rule of Cool stunts** - "I kick the brazier into the zombies"
-- **Custom effects** - Divine boons, curses, transformations
-- **Arcane synthesis** - Dynamic spell creation with wild surge risk
-
----
-
-## Project Structure
-
-```
-src/
-├── schema/           # Zod schemas: entities, actions, world state
-├── engine/
-│   ├── combat/       # Encounters, initiative, damage, death saves
-│   ├── spatial/      # Grid, collision, movement
-│   ├── worldgen/     # Procedural generation (28+ biomes)
-│   └── strategy/     # Nation simulation
-├── data/
-│   ├── creature-presets.ts   # 1100+ creature templates
-│   ├── encounter-presets.ts  # 50+ balanced encounters
-│   └── items/               # PHB weapons, armor, magic items
-├── storage/
-│   ├── migrations.ts # SQLite schema definitions
-│   └── repos/        # Repository pattern for persistence
-├── server/
-│   ├── consolidated/ # 31 action-based tools
-│   ├── handlers/     # Extracted handler implementations (combat, spatial)
-│   ├── consolidated-registry.ts  # Tool registration
-│   ├── meta-tools.ts # search_tools, load_tool_schema
-│   └── events.ts     # PubSub + MCP notification streaming
-└── utils/
-    ├── fuzzy-enum.ts      # Action matching with typo tolerance
-    └── schema-shorthand.ts # Token-efficient parsing
-
-tests/                # 2214 tests mirroring src/ structure
-docs/                 # White paper and LLM spatial guide
-```
-
----
-
-## Design Principles
-
-1. **LLMs propose, never execute**
-   The brain suggests; the nervous system validates.
-
-2. **All action is tool-mediated**
-   No direct world mutation. Every change flows through MCP tools.
-
-3. **Validation precedes observation**
-   Act → Validate → Observe. The reflex arc pattern.
-
-4. **Deterministic outcomes**
-   Same inputs → same outputs. Always reproducible.
-
-5. **Schema-driven everything**
-   Zod validates all data at boundaries. Type safety end-to-end.
-
-6. **Anti-hallucination by design**
-   LLMs cannot cast spells they don't know or claim damage they didn't roll.
-
-7. **Token efficiency**
-   31 consolidated tools with action routing reduce context overhead by 85%.
-
-8. **Guiding errors**
-   Invalid actions return suggestions, not just failures.
-
-## Tool-surface policy
-
-The consolidated MCP contracts are the public tool surface. The older
-world-map helpers in `src/server/tools.ts` are retained in compatibility mode
-as an internal adapter because `world_map` still delegates to their validated
-world persistence and patch implementation. New public tools must be added to
-the consolidated contracts, and the adapter matrix is enforced by
-`src/server/legacy-surface-policy.ts`.
-
----
-
-## Test Coverage
-
-```bash
-npm test
-# 2252 tests passing, 7 skipped
-# 148 test files
-# Coverage across all 36 tools (31 consolidated + 5 meta/event)
-```
-
----
-
-## Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Write tests for new functionality
-4. Follow existing code style (TypeScript + Zod + tests)
-5. Submit a pull request
-
----
-
-## Roadmap
-
-- [x] Full spellcasting system with validation
-- [x] Theft and fence economy
-- [x] Corpse and loot mechanics
-- [x] NPC memory and relationships
-- [x] Improvisation engine
-- [x] Tool consolidation (195 → 36)
-- [x] Fuzzy action matching
-- [x] Preset systems (creatures, encounters, locations)
-- [ ] WebSocket real-time subscriptions
-- [ ] Dialogue tree system
-- [ ] Cover mechanics in combat
-- [ ] Quest chains with prerequisites
-
----
-
-## License
-
-[ISC](LICENSE) — Use freely, attribution appreciated.
-
----
-
-## Related
-
-- [Model Context Protocol Specification](https://modelcontextprotocol.io)
-- [Quest Keeper AI](https://github.com/Mnehmos/QuestKeeperAI-v2) — Desktop AI dungeon master using this engine
-
----
-
-## Documentation
-
-- **[CLAUDE.md](CLAUDE.md)** - Development instructions
-- **[docs/WHITE_PAPER.md](docs/WHITE_PAPER.md)** - Design philosophy and architecture
-- **[docs/LLMSpatialGuide.md](docs/LLMSpatialGuide.md)** - LLM spatial navigation guide
-- **[docs/ADR-005-unified-ownership-architecture.md](docs/ADR-005-unified-ownership-architecture.md)** - Target ownership architecture
-- **[docs/EXECUTION-PRIORITIES-unified-ownership.md](docs/EXECUTION-PRIORITIES-unified-ownership.md)** - Outcome-based execution priorities
-
----
-
-<p align="center">
-<em>"AI-native autonomic organisms capable of maintaining and improving themselves in complex environments"</em>
-</p>
+MIT licensed.
