@@ -40,7 +40,14 @@ import {
     THE_STEP_AND_THE_BOUNDARY,
     ONCE_IN_A_LIFE,
     THE_TWO_CLAIMS,
-    WHAT_SERVICE_ACTUALLY_BUYS
+    WHAT_SERVICE_ACTUALLY_BUYS,
+    STOCK_VERSUS_FLOW,
+    THE_SENDING_PYRAMID,
+    REGISTERS_COUNT_WHAT_THEY_CAN_SEE,
+    RECEIPT_HISTORIES,
+    ReceiptHistorySchema,
+    receiptsFor,
+    spentAcrossHistories
 } from '../../src/data/cultivation/immortal-items.js';
 import { rankName, realmForOrdinal, isRealmBoundary } from '../../src/engine/cultivation/realms.js';
 import { MAX_RANKS_PER_TURN } from '../../src/schema/cultivation.js';
@@ -579,5 +586,166 @@ describe('what service actually buys', () => {
         // And the declining is of real generosity, repeatedly.
         expect(refused.howLongItHasLasted).toMatch(/real generosity/i);
         expect(refused.howLongItHasLasted).toMatch(/good faith/i);
+    });
+});
+
+
+// ---------------------------------------------------------------------------
+// SEEDING THE REST OF THE WORLD
+// Receipts, spends, and the stock-versus-flow axis the apexes turn on.
+// ---------------------------------------------------------------------------
+
+describe('stock versus flow', () => {
+    it('splits the apexes on two axes that do not align', () => {
+        expect(STOCK_VERSUS_FLOW.theDistinction).toMatch(/stock only ever goes down/i);
+        expect(STOCK_VERSUS_FLOW.theTwoAxesDoNotAlign.length).toBe(2);
+        expect(STOCK_VERSUS_FLOW.theTwoAxesDoNotAlign[0]).toMatch(/Quality without flow/i);
+        expect(STOCK_VERSUS_FLOW.theTwoAxesDoNotAlign[1]).toMatch(/Flow without quality/i);
+        expect(STOCK_VERSUS_FLOW.whyAzureCloudIsAllLower).toMatch(/two properties have one cause/i);
+    });
+
+    it('holds the Pavilion to an all-lower shelf in the data, not just the prose', () => {
+        const pavilion = IMMORTAL_HOLDINGS.filter(h => h.factionId === 'sect-azure-cloud-pavilion');
+        expect(pavilion.length).toBeGreaterThan(0);
+        for (const h of pavilion) {
+            expect(h.byGrade.higher, 'the Pavilion must hold no higher grade').toBe(0);
+            expect(h.byGrade.middle, 'the Pavilion must hold no middle grade').toBe(0);
+        }
+        expect(gradeCeilingOf('apex-deep-survey')).toBe('higher');
+        expect(gradeCeilingOf('apex-long-cut')).toBe('higher');
+        expect(gradeCeilingOf('sect-azure-cloud-pavilion')).toBe('lower');
+    });
+
+    it('states the ceiling that follows, in ordinals', () => {
+        expect(STOCK_VERSUS_FLOW.theHardConsequence).toMatch(/never put anybody past Deity Transformation/i);
+        expect(STOCK_VERSUS_FLOW.theHardConsequence).toMatch(/ordinal 28/);
+        expect(STOCK_VERSUS_FLOW.theHardConsequence).toMatch(/Grand Ascension at 37/);
+        expect(rankName(28)).toBe('Deity Transformation Perfection');
+        expect(rankName(37)).toBe('Grand Ascension Early');
+    });
+
+    it('makes width the correct purchase against an unbuyable summit', () => {
+        expect(STOCK_VERSUS_FLOW.theArgument.length).toBeGreaterThanOrEqual(4);
+        const argument = STOCK_VERSUS_FLOW.theArgument.join(' ');
+        expect(argument).toMatch(/cannot be bought by anybody/i);
+        expect(argument).toMatch(/seven independent chances/i);
+        expect(argument).toMatch(/multiplicative/i);
+        expect(argument).toMatch(/number of candidates standing at the bottom/i);
+        expect(STOCK_VERSUS_FLOW.soTheStatisticalBetIsCorrect).toMatch(/beats the singular one/i);
+        expect(STOCK_VERSUS_FLOW.soTheStatisticalBetIsCorrect).toMatch(/not the poor cousin/i);
+        // The framing that was corrected must not come back.
+        const all = Object.values(STOCK_VERSUS_FLOW)
+            .map(v => Array.isArray(v) ? v.join(' ') : String(v)).join(' ');
+        expect(all).not.toMatch(/galling/i);
+        expect(all).not.toMatch(/never going to help/i);
+    });
+
+    it('has them running it deliberately, on a timescale nobody will see out', () => {
+        expect(STOCK_VERSUS_FLOW.theyAreDoingItOnPurpose).toMatch(/organised around it/i);
+        expect(STOCK_VERSUS_FLOW.theyAreDoingItOnPurpose).toMatch(/probation programme is its front end/i);
+        expect(STOCK_VERSUS_FLOW.itIsALongBet).toMatch(/has not been born/i);
+        expect(STOCK_VERSUS_FLOW.itIsALongBet).toMatch(/future is real/i);
+        expect(STOCK_VERSUS_FLOW.thePavilionPlanIsWide).toMatch(/on purpose/i);
+    });
+
+    it('gives the Deep Survey the argument and the wrong inventory', () => {
+        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Deep Survey has, exactly and independently/i);
+        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/converts a higher into six lowers/i);
+        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Long Cut has not raised the question/i);
+        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Hollow Court does not need to/i);
+    });
+});
+
+describe('the sending pyramid', () => {
+    it('explains why old lines received more and hold less', () => {
+        expect(THE_SENDING_PYRAMID.olderBenefactorsSendLowersEasily).toMatch(/trivial to send/i);
+        expect(THE_SENDING_PYRAMID.andSpentThem).toMatch(/should not read as decline/i);
+        expect(THE_SENDING_PYRAMID.thePyramid).toMatch(/two higher-grade objects in the entire world/i);
+        expect(THE_SENDING_PYRAMID.theOrdinaryFactionShape).toMatch(/almost all of it spent/i);
+    });
+
+    it('says plainly who has never received anything', () => {
+        expect(THE_SENDING_PYRAMID.whoNeverReceivedAnything).toMatch(/A receipt requires a line/i);
+        for (const id of [
+            'sect-standing-grove', 'sect-sixmile-wardens', 'sect-hollow-bell-wanderers',
+            'sect-bone-lantern-cult', 'sect-the-severed', 'sect-clear-river-alliance'
+        ]) {
+            expect(getSect(id), `${id} is unknown`).toBeDefined();
+            expect(receiptsFor(id), `${id} should have no receipts`).toBeUndefined();
+        }
+        for (const r of RECEIPT_HISTORIES) expect(r.factionId.startsWith('house-')).toBe(false);
+    });
+});
+
+describe('receipt histories', () => {
+    it('parse, and hang off factions and items that exist', () => {
+        for (const r of RECEIPT_HISTORIES) {
+            expect(() => ReceiptHistorySchema.parse(r), `${r.factionId} fails`).not.toThrow();
+            expect(getSect(r.factionId) ?? getApexInstitution(r.factionId)).toBeDefined();
+            expect(getImmortalItem(r.itemId), `${r.itemId} unknown`).toBeDefined();
+            expect(r.stillHeld.higher).toBeLessThanOrEqual(r.everReceived.higher);
+            expect(r.stillHeld.middle).toBeLessThanOrEqual(r.everReceived.middle);
+            expect(r.stillHeld.lower).toBeLessThanOrEqual(r.everReceived.lower);
+        }
+    });
+
+    it('accounts exactly for the gap between everKnown and knownCount', () => {
+        for (const item of IMMORTAL_ITEMS) {
+            const spent = spentAcrossHistories(item.id);
+            const total = spent.higher + spent.middle + spent.lower;
+            expect(total, `${item.id} spend history does not close`).toBe(item.everKnown - item.knownCount);
+        }
+    });
+
+    it('never seeds a higher grade outside the apexes', () => {
+        for (const r of RECEIPT_HISTORIES) {
+            expect(r.everReceived.higher, `${r.factionId} received a higher grade`).toBe(0);
+        }
+        const ever = RECEIPT_HISTORIES.reduce(
+            (acc, r) => ({
+                higher: acc.higher + r.everReceived.higher,
+                middle: acc.middle + r.everReceived.middle,
+                lower: acc.lower + r.everReceived.lower
+            }),
+            { higher: 0, middle: 0, lower: 0 }
+        );
+        expect(ever.lower).toBeGreaterThan(ever.middle);
+        expect(ever.middle).toBeGreaterThan(ever.higher);
+    });
+
+    it('keeps uncounted holdings out of the registers and out of the world counts', () => {
+        const uncounted = RECEIPT_HISTORIES.filter(r => !r.countedByTheRegisters);
+        expect(uncounted.length, 'somebody must hold something nobody has counted').toBeGreaterThanOrEqual(2);
+        for (const r of uncounted) {
+            const held = r.stillHeld.higher + r.stillHeld.middle + r.stillHeld.lower;
+            expect(held, `${r.factionId} is uncounted but holds nothing`).toBeGreaterThan(0);
+            expect(getHoldingsOf(r.factionId).length).toBe(0);
+        }
+        expect(REGISTERS_COUNT_WHAT_THEY_CAN_SEE.theCaveat).toMatch(/knowledge claim rather than a census/i);
+        expect(REGISTERS_COUNT_WHAT_THEY_CAN_SEE.soItIsAFloor).toMatch(/will not discuss its shelf/i);
+    });
+
+    it('has the four judgements the catalog needs', () => {
+        const storm = RECEIPT_HISTORIES.find(
+            r => r.factionId === 'sect-storm-tyrant-court' && r.itemId === 'immortal-unearned-step')!;
+        expect(storm.judgedInHindsight).toMatch(/best-spent stock in the world/i);
+        expect(storm.stillHeld).toEqual({ higher: 0, middle: 0, lower: 0 });
+
+        const treasure = receiptsFor('sect-thousand-treasure-pavilion')!;
+        expect(treasure.spentOn).toMatch(/took it early/i);
+        expect(treasure.judgedInHindsight).toMatch(/shorthand for a bad decision/i);
+
+        const peaks = receiptsFor('sect-nine-peaks-ascetic-order')!;
+        expect(peaks.stillHeld.lower).toBe(1);
+        expect(peaks.countedByTheRegisters).toBe(false);
+        expect(peaks.judgedInHindsight).toMatch(/forty-one years/i);
+        expect(peaks.judgedInHindsight).toMatch(/HELD_QUESTIONS/);
+
+        const temple = RECEIPT_HISTORIES.find(
+            r => r.factionId === 'sect-sweptground-temple' && r.itemId === 'immortal-second-dealing')!;
+        expect(temple.stillHeld.middle).toBe(1);
+        expect(temple.countedByTheRegisters).toBe(false);
+        expect(temple.judgedInHindsight).toMatch(/LOST_RECORDS/);
+        expect(temple.judgedInHindsight).toMatch(/nobody living has opened/i);
     });
 });

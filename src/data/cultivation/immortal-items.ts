@@ -632,11 +632,236 @@ export const ENGINE_GAPS: readonly {
     }
 ];
 
+// -------------------------------------------------------------------------
+// STOCK VERSUS FLOW
+// The axis the four apexes actually turn on, and it is not age.
+// -------------------------------------------------------------------------
+
+export const STOCK_VERSUS_FLOW = {
+    theDistinction:
+        'There are two positions in this world and only one institution holds the second. Stock is what you have on the shelf, and stock only ever goes down. Flow is somebody sending, now, repeatedly. Every other holder in the catalog is living off stock with no expectation of resupply; the Azure Cloud Pavilion has an income.',
+    whyFlowIsSoRare:
+        'Because flow needs a benefactor who both answers often and still remembers that answering matters, and that means a recent crossing with a living tie. There is one of those in the world. Every other line upward runs to somebody who crossed millennia ago, answers at intervals measured in ages, and can no longer feel what a request costs the people making it - see `THE_DECAY_OF_MEMORY` in `named-figures.ts`.',
+    theTwoAxesDoNotAlign: [
+        'The old lines - the Hollow Court, the Deep Survey, the Long Cut - hold a proper pyramid: one higher apiece where they have one at all, a little middle, more lower, and most of what they were ever sent long since spent. Quality without flow.',
+        'The Azure Cloud Pavilion holds more objects than anybody else in the world and not one of them above lower grade. Flow without quality.'
+    ],
+    whyAzureCloudIsAllLower:
+        'And that is the decay rule running in the other direction, which is the part worth stating plainly. Ru Anjing answers often and sends often because she is new. Lower grade is what a new immortal can reach. The same three hundred and eighty years that make her generous make her limited, and there is no version of the Pavilion position where the flow is large and the grade is high, because the two properties have one cause.',
+    theHardConsequence:
+        'So the Pavilion can never put anybody past Deity Transformation with medicine. A lower Step tops out at ordinal 28 and 28 is the ceiling of everything the Pavilion will ever hold. The Deep Survey, which is poor in this currency, holds one higher Step that could deliver somebody to Grand Ascension at 37. Abundance buys breadth. Poverty, in exactly one case, bought height.',
+    theyAreDifferentBetsAndOneIsBetter:
+        'These are different bets and for most purposes there is no exchange rate between them. On the one question that actually matters there is, and it does not favour the shelf everybody envies.',
+    theArgument: [
+        'The last realm cannot be bought by anybody. Nothing delivers past Grand Ascension Perfection, and 41 upward is climbed unaided by everyone who has ever done it. That is fixed and universal - see `THE_LAST_REALM_IS_UNBUYABLE`.',
+        'So height purchased is spent on the part of the ladder that was never the constraint. A higher Step puts exactly one person at 37, and that person then faces the unbuyable stretch alone. If they do not have whatever it takes, the object is gone and there is no second candidate.',
+        'Width is therefore the rational purchase. Seven people carried across the first hard boundary is seven independent chances that one of them turns out to be somebody who can make the last climb without help.',
+        'And the conjunction at the top is multiplicative and brutal: talent, affinity, luck, time, a protector, and forty centuries of not dying. Nothing anybody can buy moves any of those terms. The only lever in the world is the number of candidates standing at the bottom of the climb.'
+    ],
+    soTheStatisticalBetIsCorrect:
+        'Against an unbuyable summit the statistical bet beats the singular one, and it is not close. The Azure Cloud Pavilion is not the poor cousin holding the wrong currency. It is the institution that worked out what the currency is for.',
+    thePavilionPlanIsWide:
+        'Which fixes what the Pavilion attempts, and it is chosen rather than settled for. Seven crossings at 24 to 25, if it can manufacture seven people who qualify, and nothing above that ever - see `AZURE_CLOUD_INTAKE` in `hierarchy.ts`. A sect hunting one extraordinary talent would run a different programme. The Pavilion is running the wide one on purpose.',
+    theyAreDoingItOnPurpose:
+        'And they know. Somebody at the Pavilion articulated this - the Sword Elder who worked out the decay clock, in the same decade and from the same reasoning - and the hall has been organised around it since: test mortals, carry the best of them through probation, produce as many people at Nascent Soul Perfection as the sect can feed, and spend a lower Step on every one of them who gets there. Every part of the Pavilion behaviour serves that plan. The probation programme is its front end, the outward placement of objects is the same instinct applied to allies, and the refusal to hoard is a policy rather than a temperament.',
+    itIsALongBet:
+        'The admirable part is that nobody now living will see it resolve. Seven crossings at 24 to 25, over decades, feeding a climb that takes millennia and that the Pavilion cannot assist past 28 in any case. They are spending everything they have on raising the odds for somebody who has not been born, in an institution that will not know whether it worked. That is not cleverness. It is an institution behaving as though the future is real.',
+    whoElseHasWorkedItOut:
+        'The Deep Survey has, exactly and independently, and can do nothing about it - which is the sharpest position of the four. Its register holds one higher Step, one middle and one lower, and there is no operation in the world that converts a higher into six lowers. It understands the argument perfectly, agrees with it, and holds the wrong inventory to act on it, which the four Surveyors have discussed once and minuted in a single line. The Long Cut has not raised the question, because a body that treats a human career as a rounding error has no instrument that could read the argument. The Hollow Court does not need to: it is the thing at the top of the funnel that everybody else is trying to produce.'
+} as const;
+
+// -------------------------------------------------------------------------
+// WHY THE OLD LINES RECEIVED MORE, AND HELD LESS
+// -------------------------------------------------------------------------
+
+export const THE_SENDING_PYRAMID = {
+    olderBenefactorsSendLowersEasily:
+        'A faction whose founder crossed long ago has a benefactor who is well established up there, and for such a one a lower-grade object is trivial to send. So the old lines received a great many lowers across their history - more than the Azure Cloud Pavilion has ever seen - and received them at intervals measured in centuries rather than decades.',
+    andSpentThem:
+        'Which is the half that matters. Their shelves are thin now not because nothing ever came, but because a great deal came and was used over two thousand years, at a rate of roughly one a century, by people who each thought they were spending it well and mostly were. A long list of receipts and a nearly empty shelf is the normal condition of an old institution, and it should not read as decline.',
+    thePyramid:
+        'The distribution is a pyramid everywhere it is measured: in what gets sent, in what is held now, and in what any given faction has ever seen in its whole history. Many lower, fewer middle, and higher grade vanishingly rare outside the apexes and mostly absent inside them too. There are two higher-grade objects in the entire world.',
+    theOrdinaryFactionShape:
+        'So the ordinary faction shape is: a handful of lowers received across centuries, perhaps one middle in the whole record, no higher ever, and almost all of it spent. Anything richer than that needs a reason written down.',
+    whoNeverReceivedAnything:
+        'And a great many factions have never received anything at all, ever, which the catalog states rather than leaves implied. A receipt requires a line: somebody up there who is yours. The Standing Grove, the Sixmile Wardens, the Hollow Bell Wanderers, the Bone Lantern Cult, the Severed, the Clear River Alliance and every Dao house have no crossed ancestor and no parent that has one, and consequently no history of receipts whatever. For them these objects are a rumour about other people.'
+} as const;
+
+// -------------------------------------------------------------------------
+// WHAT THE REGISTERS CAN ACTUALLY COUNT
+// -------------------------------------------------------------------------
+
+export const REGISTERS_COUNT_WHAT_THEY_CAN_SEE = {
+    theCaveat:
+        '`knownCount` is a knowledge claim rather than a census. It is what the Anchorhold survey standard and the Deep Survey register can between them point at, and both are honest about the limit: thirteen Steps and four Dealings are what the world can name, not what the world contains.',
+    soItIsAFloor:
+        'The true figure is at least that and probably a little higher, and the two parties most likely to hold something uncounted are exactly the ones the registers cannot reach: an institution that will not discuss its shelf, and an institution that keeps no accounts of any kind.',
+    andEverKnownIsToo:
+        'The same applies to `everKnown`. Twenty-four Steps and seven Dealings is what the record can trace, and the record is a Standing Works inheritance with four thousand years of gaps in it. Nobody who works with these figures treats them as complete, and nobody has a better method.'
+} as const;
+
+// -------------------------------------------------------------------------
+// RECEIPT HISTORIES
+// What each line received across its whole history, what it did with it, and
+// how that decision reads now to people who were not there.
+// -------------------------------------------------------------------------
+
+export const ReceiptHistorySchema = z.object({
+    factionId: z.string(),
+    /** Which object. A faction may have a separate history for each. */
+    itemId: z.string(),
+    /** Which crossed ancestor the receipts came through. */
+    throughLine: z.string().min(20),
+    /** Everything ever received, by grade, across the whole history. */
+    everReceived: GradeCountsSchema,
+    /** What is on the shelf now, and whether the registers know about it. */
+    stillHeld: GradeCountsSchema,
+    countedByTheRegisters: z.boolean(),
+    /** What the spent ones went on. */
+    spentOn: z.string().min(150),
+    /** How the decision reads now, to people who were not in the room. */
+    judgedInHindsight: z.string().min(150)
+});
+export type ReceiptHistory = z.infer<typeof ReceiptHistorySchema>;
+
+export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
+    // -- spent well, and it is why they are what they are --------------
+    {
+        factionId: 'sect-storm-tyrant-court',
+        itemId: 'immortal-unearned-step',
+        throughLine: 'The First Tyrant, styled the Standing Storm, who crossed three and a half thousand years ago and has answered four times since.',
+        everReceived: { higher: 0, middle: 1, lower: 4 },
+        stillHeld: { higher: 0, middle: 0, lower: 0 },
+        countedByTheRegisters: true,
+        spentOn:
+            'Curriculum holders, every time, on a rule the Court has never once broken: an object goes to whoever is currently carrying the lightning curriculum and to nobody else. Four lowers across thirty-five centuries and one middle eleven hundred years ago, each spent on a Storm Elder standing at Perfection who was going to die at the boundary, and each of whom went on teaching for another two thousand years.',
+        judgedInHindsight:
+            'The best-spent stock in the world and nobody disputes it, including the people who hate them. The only working lightning curriculum in existence is there because five cultivators who would have died at a boundary went on teaching instead, and the Court at ordinal 36 is the compounded result of a rule somebody wrote in the first century and every successor had the discipline to keep. It is also why the Court collects rather than recruits: it has nothing left to spend and knows exactly what it cost to get here.'
+    },
+    {
+        factionId: 'sect-storm-tyrant-court',
+        itemId: 'immortal-second-dealing',
+        throughLine: 'The same line, which sent one talisman in thirty-five centuries and nothing like it since.',
+        everReceived: { higher: 0, middle: 0, lower: 1 },
+        stillHeld: { higher: 0, middle: 0, lower: 0 },
+        countedByTheRegisters: true,
+        spentOn:
+            'A lower Second Dealing, sixteen hundred years ago, on a five-root child of the Tyrant house who was carrying a name the Court needed carried. It narrowed her to a three. She was never anything remarkable and she held the seat for four hundred years, which was the entire purpose.',
+        judgedInHindsight:
+            'Regarded internally as sound and externally as revealing: the Court spent an irreplaceable object on succession rather than on strength, which tells you what the Storm Tyrant Court is actually organised around. The Ninefold Ledger, which audited it, has never said so out loud and has the file.'
+    },
+    // -- spent badly, and everybody knows ------------------------------
+    {
+        factionId: 'sect-thousand-treasure-pavilion',
+        itemId: 'immortal-unearned-step',
+        throughLine: 'Wei Zhaoyin, the Ascended Steward, whose claim the Pavilion bought at an estate sale and which at most one of two bodies holds correctly.',
+        everReceived: { higher: 0, middle: 0, lower: 1 },
+        stillHeld: { higher: 0, middle: 0, lower: 0 },
+        countedByTheRegisters: true,
+        spentOn:
+            'One lower Step, four hundred years ago, on a Grand Steward of thirty-one who was the finest appraiser anybody had seen and was nowhere near Perfection at the time. He took it early, on the argument that the Pavilion could not afford to wait, arrived on a poor foundation, stalled where he landed, and eleven years later accepted the Crimson Abyss Hall offer and left, taking the client book with him.',
+        judgedInHindsight:
+            'Discussed on the floor to this day, in front of customers, as shorthand for a bad decision. The Pavilion spent the only object it will ever receive on somebody who was neither at the boundary nor loyal, and the two errors compound: had he been made to wait he might have been worth it, and had he been worth it he might not have left. Nobody involved is alive. The story has hardened into a rule the Pavilion states as though it were ancient - never spend on somebody who has not finished - which is correct, and was learned in the most expensive way available.'
+    },
+    // -- one left, and forty-one years of not deciding ------------------
+    {
+        factionId: 'sect-nine-peaks-ascetic-order',
+        itemId: 'immortal-unearned-step',
+        throughLine: 'The Deep Survey line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since.',
+        everReceived: { higher: 0, middle: 0, lower: 3 },
+        stillHeld: { higher: 0, middle: 0, lower: 1 },
+        countedByTheRegisters: false,
+        spentOn:
+            'Two lowers, six and nine centuries ago, both on ascetics standing at Nascent Soul Perfection who had carried the same stone for two hundred years. Both clean crossings, both uncontroversial then and since.',
+        judgedInHindsight:
+            'The two spends are not the interesting part. The third object is: the Order has held one lower Step for forty-one years without agreeing on a recipient. The Peak Wardens want it spent on somebody who works the vein; the Mountain Elders hold that no candidate has appeared. The argument has the exact shape of a held question - see `HELD_QUESTIONS` in `named-figures.ts` - the Order does not discuss it beyond the peaks, the registers do not count it, and two of the four ascetics who would have qualified have died while the discussion continued.'
+    },
+    // -- does not know what it has -------------------------------------
+    {
+        factionId: 'sect-sweptground-temple',
+        itemId: 'immortal-unearned-step',
+        throughLine: 'The First Abbot, who crossed twenty-three centuries ago off swept ground, whose name the Temple never recorded and whose claim nobody believes.',
+        everReceived: { higher: 0, middle: 0, lower: 2 },
+        stillHeld: { higher: 0, middle: 0, lower: 0 },
+        countedByTheRegisters: true,
+        spentOn:
+            'Unrecorded by the Temple and reconstructed entirely from outside. The Ninefold Ledger holds two lineage audits, six hundred years apart, each opened because a Sweptground monk advanced in a way that did not add up and each closed without a finding. The Ledger is confident about the count and has no idea who authorised either.',
+        judgedInHindsight:
+            'Nobody can judge it, because nobody can say who received them or why. What is not in dispute is that a temple which takes in beggars and muddled roots put two irreplaceable objects into two people it never named, and the province - which regards the place as a charity - has never once wondered what it does with what it is given.'
+    },
+    {
+        factionId: 'sect-sweptground-temple',
+        itemId: 'immortal-second-dealing',
+        throughLine: 'The same line, which sent one talisman at an unknown date and has sent nothing since that anybody can establish.',
+        everReceived: { higher: 0, middle: 1, lower: 0 },
+        stillHeld: { higher: 0, middle: 1, lower: 0 },
+        countedByTheRegisters: false,
+        spentOn:
+            'Nothing. It is still there, and this is the entry: the Temple keeps no accounts of any kind, has never inventoried anything, and the shelf has not been looked at by anybody currently alive.',
+        judgedInHindsight:
+            'It cannot be judged, which is the point. Somewhere in the Temple is a box nobody living has opened, holding a middle-grade Second Dealing received before any of the four current monks was born, and none of them could tell you it exists. This is `LOST_RECORDS` at its most literal. The poorest institution in the province is sitting on the single most valuable object outside the apexes, behind the ground rice - and would give it away inside the hour to whoever needed it, if only somebody would tell them it was there.'
+    },
+    // -- the ordinary shape --------------------------------------------
+    {
+        factionId: 'sect-verdant-spring-hall',
+        itemId: 'immortal-unearned-step',
+        throughLine: 'The Deep Survey line, through the Third Sill court and the Nine Peaks above it, which is two removes and shows in the volume.',
+        everReceived: { higher: 0, middle: 0, lower: 1 },
+        stillHeld: { higher: 0, middle: 0, lower: 0 },
+        countedByTheRegisters: true,
+        spentOn:
+            'One lower Step, two hundred and twenty years ago, on a Life Elder standing at Nascent Soul Perfection who had run the springs for sixty years and was three years from dying at the boundary. A clean crossing, unanimously agreed. She practised for another eighty years and trained the physicians who trained the current ones.',
+        judgedInHindsight:
+            'Obviously correct inside the Hall and slightly disappointing outside it, because she was a hospital administrator rather than a prodigy and the province expected something more dramatic from the only object the Hall will ever receive. The position of the Hall, stated once and never repeated, was that she was the person who kept the doors open.'
+    },
+    {
+        factionId: 'sect-frostmirror-court',
+        itemId: 'immortal-second-dealing',
+        throughLine: 'The Deep Survey line, through the Third Sill court, exactly once and never again.',
+        everReceived: { higher: 0, middle: 0, lower: 1 },
+        stillHeld: { higher: 0, middle: 0, lower: 0 },
+        countedByTheRegisters: true,
+        spentOn:
+            'A lower Second Dealing, nine hundred years ago, which was the wrong object arriving at the wrong door. The Court needs mutated ice roots; a lower Dealing cannot produce a mutated root by any route, and what it does instead is narrow a bad root to a two, which is of no use whatever to an institution that admits one root in a hundred. It was spent on the steward who ran the hall - a five-root who could not have used the library if she had wanted to, and who was made merely bad instead of hopeless.',
+        judgedInHindsight:
+            'The Court records it without comment and considers the matter closed. Everybody else finds it quietly astonishing that the one institution in the world with an obvious use for a higher-grade Dealing received a lower one and spent it on an administrator. The answer of the Court, when anybody is rude enough to ask, is that no lower Dealing was ever going to make an ice cultivator out of anybody, and that the steward was cold enough already.'
+    },
+    {
+        factionId: 'sect-cinnabar-crucible-guild',
+        itemId: 'immortal-second-dealing',
+        throughLine: 'The Deep Survey line, through the Third Sill court, which sent one object to the Guild and has sent nothing since.',
+        everReceived: { higher: 0, middle: 1, lower: 0 },
+        stillHeld: { higher: 0, middle: 0, lower: 0 },
+        countedByTheRegisters: true,
+        spentOn:
+            'The middle Second Dealing spent nine hundred years ago, whose file the Ninefold Ledger still holds. The Guild gambled it on its most promising alchemist, a muddled five-root who leaned toward fire, expecting a single fire root. A middle Dealing goes to a one or a two on luck and nothing else. It produced a dual water and metal, which is a real and useful root and is close to useless at a furnace.',
+        judgedInHindsight:
+            'The object did exactly what it does. The Guild bet on the half of the outcome it wanted and lost, and the alchemist - who was not meaningfully consulted, and who became a perfectly successful formation contractor two provinces away - is the reason every institution that has held a middle Dealing since has declined to spend it. The Deep Survey has never submitted a requisition against its own, and its clerks are taught the form without ever being told why nobody uses it.'
+    }
+];
+
 // ─────────────────────────────────────────────────────────────────────────
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
 const ITEM_BY_ID: ReadonlyMap<string, ImmortalItem> = new Map(IMMORTAL_ITEMS.map(i => [i.id, i]));
+
+const RECEIPTS_BY_FACTION: ReadonlyMap<string, ReceiptHistory> =
+    new Map(RECEIPT_HISTORIES.map(r => [r.factionId, r]));
+
+/** What this faction has ever received. Undefined means never anything. */
+export function receiptsFor(factionId: string): ReceiptHistory | undefined {
+    return RECEIPTS_BY_FACTION.get(factionId);
+}
+
+/** What the receipt histories account for as spent, by grade, for one item. */
+export function spentAcrossHistories(itemId: string): GradeCounts {
+    return RECEIPT_HISTORIES.filter(r => r.itemId === itemId).reduce<GradeCounts>((acc, r) => ({
+        higher: acc.higher + (r.everReceived.higher - r.stillHeld.higher),
+        middle: acc.middle + (r.everReceived.middle - r.stillHeld.middle),
+        lower: acc.lower + (r.everReceived.lower - r.stillHeld.lower)
+    }), { higher: 0, middle: 0, lower: 0 });
+}
 
 export function getImmortalItem(id: string): ImmortalItem | undefined {
     return ITEM_BY_ID.get(id);

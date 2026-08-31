@@ -413,6 +413,27 @@ export const CourtSchema = z.object({
      * every sect holding from it, or non-renewal is a suggestion.
      */
     powerOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    /**
+     * The one who got furthest, and what happened to them.
+     *
+     * This is the difference between a court and an apex, stated as a fact
+     * rather than a rank. An apex has somebody at the last realm sitting on
+     * what a founder sent down. A court had somebody at the last realm and no
+     * longer does, and the two ways of no longer having them are the two ways
+     * the crossing ends for everybody who is not an apex: you attempt it and
+     * leave a scar, or you do not attempt it and old age takes you at the top
+     * of the ladder.
+     *
+     * Null where a court has never produced one, which is the ordinary case.
+     */
+    highWaterMark: z.object({
+        name: z.string().min(2),
+        ordinal: z.number().int().min(0).max(MAX_ORDINAL),
+        yearsAgo: z.number().int().min(1),
+        /** 'attempted' left a scar; 'declined' died of old age at the rung. */
+        end: z.enum(['attempted', 'declined']),
+        note: z.string().min(120)
+    }).nullable(),
     /** The arterial vein it administers. */
     administers: z.string().min(40),
     /** Region id whose sects hold from it. */
@@ -728,6 +749,13 @@ export const COURTS: readonly Court[] = [
         // Body Integration Perfection, and a court that could not answer its own
         // tenant would be issuing suggestions rather than grants.
         powerOrdinal: 38,
+        highWaterMark: {
+            name: 'Shen Guyi',
+            ordinal: 44,
+            yearsAgo: 160,
+            end: 'declined',
+            note: 'Reached the end of Tribulation Transcendence in the Sill\'s own service and spent his last eleven years divesting, exactly the way somebody preparing to cross divests: artifacts, manuals, stones, given away in a recorded order. Then he did not attempt it. He sat, and old age took him at a rung nobody has stood on in the Low Fall since. He never said why, and the one time he was asked he said that he had thought about it. The Sill has been a court for a hundred and sixty years rather than something else because of that decision, and does not discuss it.'
+        },
         administers: 'The third arterial vein, which the eleven surveyed veins of the Low Fall branch from.',
         grantsInRegionId: 'region-low-fall',
         embodiedByFactionId: null,
@@ -740,6 +768,7 @@ export const COURTS: readonly Court[] = [
         name: 'The Root Sill',
         apexId: 'apex-deep-survey',
         powerOrdinal: 37,
+        highWaterMark: null,
         administers: 'The datum itself: the deep vein at the world\'s root that the arterial system is measured from.',
         grantsInRegionId: 'region-low-fall',
         embodiedByFactionId: 'sect-kiln-wardens',
@@ -755,6 +784,13 @@ export const COURTS: readonly Court[] = [
         // Early - so this is far above what the Marches requires. A court of the
         // Long Cut is not sized against its province.
         powerOrdinal: 37,
+        highWaterMark: {
+            name: 'Yun Baiheng',
+            ordinal: 44,
+            yearsAgo: 90,
+            end: 'attempted',
+            note: 'The Face took her to the end of Tribulation Transcendence on driven ground, which is the thing a court exists to be able to do once, and she went up alone in the spring and attempted the crossing. There is a scar in the high Marches, eleven li of ground that has not held qi since, and there is no body, because a failed crossing does not leave one. It is the most recent attempt anybody in either province can date, and the Long Cut has not authorised a candidate since.'
+        },
         administers: 'The driven ground of the Quiet Marches and four provinces beyond it that the Marches has never heard named.',
         grantsInRegionId: 'region-quiet-marches',
         embodiedByFactionId: null,
