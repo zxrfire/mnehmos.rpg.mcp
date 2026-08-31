@@ -1765,6 +1765,140 @@ ground where the ash will never settle again, permanently thin, useless to every
 forever. The map of the world is pocked with them. Every scar was somebody's entire
 ambition.
 
+## What each realm actually makes possible
+
+A realm is a **capability class**, not a damage multiplier. For every rank above Core
+Formation the question the engine must be able to answer is: *what is possible here that
+was fundamentally impossible one realm ago?*
+
+Everything below is **potential, not entitlement.** A cultivator has access to their
+realm's class; whether they hold any particular capability within it depends on
+specialisation, preparation, technique, and what they were willing to pay. Two Deity
+Transformation cultivators can be wildly different. Nobody gets the whole list.
+
+These map directly onto the capability predicates - most of them change what
+`can survive`, `can understand` and `can force` return, and several change which
+environments are enterable at all.
+
+| Realm | The line it crosses |
+|---|---|
+| Core Formation | The reference point: a complete cultivator, mortal in kind |
+| Nascent Soul | The soul persists without the body |
+| Deity Transformation | Stops drinking ash and starts displacing it |
+| Void Refinement | Stops needing ash at all |
+| Body Integration | Stops having a seam to attack |
+| Grand Ascension | Can read and handle the Lid |
+| Tribulation Transcendence | The Lid answers back |
+| True Immortal | Through |
+
+### Core Formation - the reference point
+
+The golden core is a complete, self-sustaining engine. Sects negotiate rather than
+recruit. Everything above this is measured against it, and everything below it is, in the
+end, a person.
+
+### Nascent Soul - the soul persists without the body
+
+The threshold where `body destroyed = dead` stops being true. Possible here, conditionally:
+surviving the destruction of the body, holding consciousness outside it, occupying another
+body where circumstances allow, rebuilding a body, leaving a remnant, and soul techniques
+proper.
+
+None of it is automatic and all of it has conditions - a compatible vessel, a treasure, an
+environment, preparation made in advance. Most Nascent Soul cultivators who die simply
+die, because they had not arranged otherwise.
+
+**Environmentally:** can enter places that kill the body, provided the soul has somewhere
+to go.
+
+### Deity Transformation - displacing ash instead of drinking it
+
+Body and soul merge. The cultivator stops being a thing that *draws* ambient qi and
+becomes a thing that *moves* it. Consequences:
+
+- Ambient density changes measurably in their vicinity. Standing somewhere for a long time
+  alters the site, which is why their old dwellings are worth finding.
+- Presence alone suppresses lower cultivators - not an attack, a pressure. A Qi Condensation
+  cultivator in the same room may be unable to circulate at all.
+- Spiritual perception extends across a region rather than a field.
+- Ordinary means stop being able to find or follow them.
+
+**Environmentally:** thin regions cease to matter. They carry their own conditions.
+
+### Void Refinement - no longer dependent on ash
+
+Refining the self against emptiness, which produces the single most consequential change
+on the ladder: **they no longer need ambient spiritual energy to sustain cultivation.**
+
+In the Late Age, where everything is thin because it has all been breathed before, this
+decouples a cultivator from the scarcity the entire world is organised around. It is why
+the few who reach it stop participating in the economy, and stop being describable.
+
+Also possible: short-range spatial folding, entering sealed and dead domains that nothing
+else survives, reading regional formation structure as a whole rather than node by node,
+and projecting a partial presence somewhere they are not.
+
+**Environmentally:** dead zones, tribulation scars and voids open up - the places that are
+lethal *because* there is nothing there.
+
+### Body Integration - no seam to attack
+
+Soul and body become indivisible, and damage changes meaning. There is no longer a
+division between the two to exploit: soul attacks find nothing separable, and destroying
+parts of the body does not remove parts of the person.
+
+They are their own vessel, which makes the Nascent Soul survival tricks trivial for them
+and largely unnecessary. Their physical presence alters terrain passively rather than
+deliberately.
+
+**Environmentally:** forbidden zones, corrupted regions and contaminated ground stop being
+hazards. Very little in the world is still *environmentally* dangerous to them.
+
+### Grand Ascension - reading the Lid
+
+The last realm of this side. Everything about it points upward, and for the first time the
+Lid is a thing that can be examined rather than assumed.
+
+Possible: perceiving the seams directly; deliberately making or unmaking spiritual veins;
+sealing and unsealing domains; perceiving causal and karmic structure that the Dao houses
+spend millennia studying indirectly; leaving inheritances that survive ages intact.
+
+Their attention is itself a hazard. Being *noticed* by one has consequences before
+anything is done to you.
+
+**Environmentally:** they are no longer gated by places. They gate places.
+
+### Tribulation Transcendence - the Lid answers back
+
+The approach to the crossing. Every breakthrough from here draws heavenly tribulation,
+because the Vault has begun accounting for the hole they intend to make.
+
+Possible: opening the Lid partially, which is what a portal actually is; suppressing or
+provoking another's tribulation; persisting through ages in stasis; leaving remnants so
+complete they are nearly the person.
+
+Their deaths leave permanent geography. The failure scars on the map are mostly theirs.
+
+### True Immortal - through
+
+The top of the ladder and the end of the run. Outside the simulation, and outside the
+reach of everything in it - which is why the world's opinion of them is entirely
+posthumous rumour.
+
+## Two rules that keep this from becoming a power fantasy
+
+**Capability is not invulnerability.** Every realm above Core Formation is *harder* to
+kill in specific, enumerable ways, and none of them is unkillable. The counters get more
+exotic as the realms climb - a Body Integration cultivator has no seam, so you attack
+their obligations, their sect, their disciples, their karma, or you wait; a Void
+Refinement cultivator needs nothing, so you take away the thing they wanted instead. The
+higher the realm, the more the answer moves out of combat entirely.
+
+**And nobody at any of these realms is common.** The overwhelming majority of cultivators
+in the world die inside Qi Condensation. Everything on this page describes a handful of
+people on a continent, most of whom the player will only ever hear about.
+
+
 ## The Last Crossing: True Immortal and False Immortal
 
 Tribulation Transcendence is not the summit. It is the approach to it.
