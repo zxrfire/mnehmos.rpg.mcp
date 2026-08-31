@@ -57,6 +57,9 @@ import { progressRequiredForOrdinal } from '../../../src/engine/cultivation/real
 import { CultivationRNG } from '../../../src/engine/cultivation/rng.js';
 import { makeCultivator } from './fixtures.js';
 
+/** Access every test candidate is reachable through. Required, by design. */
+const TEST_ACCESS = { kind: 'teacher' as const, label: 'a willing teacher' };
+
 /** An achievement that genuinely happened, for building insights in tests. */
 function anAchievement(seed = 'ach'): Achievement {
     return recordAchievement(
@@ -78,7 +81,7 @@ function anInsight(
     seed = 'ach'
 ): Insight {
     const achievement = anAchievement(seed);
-    let insight = formInsight({ domain, subject, opening: 'test opening' }, 1, achievement);
+    let insight = formInsight({ domain, subject, opening: 'test opening', access: TEST_ACCESS }, 1, achievement);
     for (let d = 1; d < degree; d++) insight = deepenInsight(insight, achievement);
     return insight;
 }
@@ -93,7 +96,7 @@ describe('degrees are qualitative states, not levels', () => {
 
     it('deepens rather than restarting, and stops at the top', () => {
         const achievement = anAchievement();
-        let insight = formInsight({ domain: 'weapon', subject: 'sword', opening: 'o' }, 1, achievement);
+        let insight = formInsight({ domain: 'weapon', subject: 'sword', opening: 'o', access: TEST_ACCESS }, 1, achievement);
         for (let i = 0; i < 20; i++) insight = deepenInsight(insight, achievement);
         expect(insight.degree).toBe(MAX_DEGREE);
     });
@@ -204,7 +207,7 @@ describe('2. it cannot be bought', () => {
 describe('3. it is always traceable', () => {
     it('derives the insight id from the achievement, so it cannot exist alone', () => {
         const achievement = anAchievement();
-        const insight = formInsight({ domain: 'element', subject: 'fire', opening: 'o' }, 1, achievement);
+        const insight = formInsight({ domain: 'element', subject: 'fire', opening: 'o', access: TEST_ACCESS }, 1, achievement);
         expect(insight.id).toContain(achievement.id);
         expect(insight.provenance.achievementId).toBe(achievement.id);
         expect(insight.provenance.account).toContain(achievement.summary);
@@ -239,7 +242,7 @@ describe('3. it is always traceable', () => {
             { kind: 'enlightenment', onDay: 900, turn: 9, summary: 'It arrived, unasked.' },
             new CultivationRNG('second')
         );
-        const start = formInsight({ domain: 'element', subject: 'water', opening: 'o' }, 1, first);
+        const start = formInsight({ domain: 'element', subject: 'water', opening: 'o', access: TEST_ACCESS }, 1, first);
         const deeper = deepenInsight(start, second);
         expect(deeper.degree).toBe(2);
         // Both events remain readable in the account.
@@ -254,7 +257,7 @@ describe('3. it is always traceable', () => {
     });
 
     it('keys the set by (domain, subject) so a repeat deepens rather than duplicates', () => {
-        const candidate = { domain: 'element' as const, subject: 'fire', opening: 'o' };
+        const candidate = { domain: 'element' as const, subject: 'fire', opening: 'o', access: TEST_ACCESS };
         let insights: Insight[] = [];
         const a = integrateInsight(insights, candidate, anAchievement('a'));
         insights = a.insights;
@@ -516,7 +519,7 @@ describe('the cultivator record', () => {
 
     it('round-trips insights and achievements', () => {
         const achievement = anAchievement();
-        const insight = formInsight({ domain: 'element', subject: 'fire', opening: 'o' }, 3, achievement);
+        const insight = formInsight({ domain: 'element', subject: 'fire', opening: 'o', access: TEST_ACCESS }, 3, achievement);
         const parsed = CultivatorSchema.parse({
             id: 'c', name: 'Test', spiritRoot: 'single_fire',
             attributes: { might: 2, insight: 2, fortune: 1, charm: 2 },

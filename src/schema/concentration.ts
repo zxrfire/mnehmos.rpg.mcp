@@ -1,8 +1,18 @@
-import { z } from 'zod';
-
 /**
- * Concentration state for a character actively maintaining a concentration spell
+ * Held attention: an effect somebody is actively sustaining.
+ *
+ * What survived of the retired spellcasting layer, and it survived because the
+ * Operator's constraint-perception lens reads it. `perception_manage` refuses
+ * an assessment from an observer who is already holding something, on the
+ * grounds that looking properly and sustaining an effect compete for the same
+ * attention. That rule is about attention, not about spells, and it outlived
+ * the engine that used to write these rows.
+ *
+ * Nothing in the engine writes here any more. When sustained cultivation arts
+ * arrive they should write here rather than growing a second table.
  */
+
+import { z } from 'zod';
 export const ConcentrationStateSchema = z.object({
     characterId: z.string(),
     activeSpell: z.string(), // Spell name

@@ -179,7 +179,13 @@ export const AchievementKindSchema = z.enum([
     'extraordinary_instruction', // taught by someone who did not have to
     'witnessed_phenomenon',    // saw something that changed what is believed true
     'resolved_obstacle',       // a personal or dao obstacle, finally answered
-    'unusual_opportunity'      // a cultivation opportunity that does not recur
+    'unusual_opportunity',     // a cultivation opportunity that does not recur
+    /**
+     * First contact with a Dao this cultivator was always going to be
+     * extraordinary at. Unmistakable to them; to everyone else they went
+     * quiet. Nothing announced it beforehand, because nothing knew.
+     */
+    'recognition'
 ]);
 export type AchievementKind = z.infer<typeof AchievementKindSchema>;
 

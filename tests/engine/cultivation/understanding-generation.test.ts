@@ -16,6 +16,10 @@ import {
     VISION_CHECK_DAYS,
     isTraceable
 } from '../../../src/engine/cultivation/understanding.js';
+import {
+    AFFINITY_INITIAL_DEGREE,
+    affinityFor
+} from '../../../src/engine/cultivation/dao.js';
 import { progressRequiredForOrdinal } from '../../../src/engine/cultivation/realms.js';
 import { makeCultivator } from './fixtures.js';
 
@@ -377,5 +381,139 @@ describe('understanding changes what a skip does', () => {
 
         expect(shallow.events.some(e => e.kind.startsWith('breakthrough_'))).toBe(false);
         expect(deep.events.some(e => e.kind.startsWith('breakthrough_'))).toBe(true);
+    });
+});
+
+describe('affinity, and finding out too late', () => {
+    /** A cultivator who was always going to be extraordinary at karma. */
+    function giftedAt(subject: string, domain: 'karma' | 'weapon', seed: string): string {
+        for (let i = 0; i < 40_000; i++) {
+            const id = `c-${i}`;
+            if (affinityFor(seed, id, { domain, subject }) === 'extraordinary') return id;
+        }
+        throw new Error('no gifted cultivator found in the sweep');
+    }
+
+    const SEED = 'run-x';
+    const GIFTED = giftedAt('debt', 'karma', SEED);
+
+    /** The room where karma is practised. Access, and nothing else. */
+    const INSIDE_THE_HOUSE = {
+        tradition: { subject: 'debt', label: 'the Ninefold Pavilion' }
+    };
+
+    function run(id: string, understanding: object, seed = SEED) {
+        return simulateTimeSkip(
+            makeCultivator({ id, spiritRoot: 'single_fire' }),
+            TEN_YEARS,
+            ctx({ seed, randomEvents: false, autoBreakthrough: false, understanding })
+        );
+    }
+
+    it('is worth exactly zero without access, forever', () => {
+        // The body sect at eleven. Twenty-nine years. Competent, unremarkable.
+        // The gift is real the entire time and does precisely nothing.
+        const inTheWrongSect = run(GIFTED, { techniqueSubjects: ['body'] });
+        expect(inTheWrongSect.achievements.some(a => a.kind === 'recognition')).toBe(false);
+        expect(inTheWrongSect.insightsGained.some(i => i.subject === 'debt')).toBe(false);
+    });
+
+    it('never hints at it beforehand, anywhere in the digest', () => {
+        const blind = run(GIFTED, { techniqueSubjects: ['body'] });
+        const text = JSON.stringify(blind);
+        expect(text).not.toMatch(/affinity/i);
+        expect(text).not.toMatch(/suited|aptitude|potential for|would be better/i);
+    });
+
+    it('arrives the moment access does, and announces itself', () => {
+        // The inter-sect competition. Watching someone work karma, and it is
+        // simply obvious.
+        const admitted = run(GIFTED, INSIDE_THE_HOUSE);
+        const recognition = admitted.achievements.find(a => a.kind === 'recognition');
+        expect(recognition).toBeDefined();
+        expect(recognition!.detail.subject).toBe('debt');
+        expect(recognition!.summary).toMatch(/obvious/i);
+        // To anyone watching, they simply went quiet.
+        expect(recognition!.summary).toMatch(/quiet/i);
+    });
+
+    it('comprehends at a speed nothing prepared them for', () => {
+        const admitted = run(GIFTED, INSIDE_THE_HOUSE);
+        const insight = admitted.insightsGained.find(i => i.subject === 'debt')!;
+        expect(insight).toBeDefined();
+        // Not a glimpse worked up from nothing: already deep.
+        expect(insight.degree).toBe(AFFINITY_INITIAL_DEGREE.extraordinary);
+        expect(insight.degree).toBeGreaterThan(1);
+        expect(isTraceable([insight])).toBe(true);
+        expect(insight.provenance.achievementKind).toBe('recognition');
+    });
+
+    it('was always there - exposure supplies access, not the gift', () => {
+        // The same person, exposed on two entirely different schedules,
+        // recognises the SAME thing. A gift conjured on first contact could
+        // not do that, and a run has to be able to contain "they had it all
+        // along and died without knowing".
+        const early = run(GIFTED, INSIDE_THE_HOUSE);
+        const late = simulateTimeSkip(
+            makeCultivator({ id: GIFTED, spiritRoot: 'single_fire' }),
+            TEN_YEARS,
+            ctx({
+                seed: SEED,
+                randomEvents: false,
+                autoBreakthrough: false,
+                startDay: 9000,
+                understanding: INSIDE_THE_HOUSE
+            })
+        );
+        const subjectOf = (r: ReturnType<typeof simulateTimeSkip>) =>
+            r.achievements.find(a => a.kind === 'recognition')?.detail.subject;
+        expect(subjectOf(early)).toBe('debt');
+        expect(subjectOf(late)).toBe('debt');
+    });
+
+    it('does not fire for someone without the gift, in the same room', () => {
+        // Access is not the gift. Most disciples of the house are just
+        // disciples of the house.
+        let ordinary = 0;
+        for (let i = 0; i < 60; i++) {
+            const id = `ordinary-${i}`;
+            if (affinityFor(SEED, id, { domain: 'karma', subject: 'debt' }) === 'extraordinary') continue;
+            const result = run(id, INSIDE_THE_HOUSE);
+            if (!result.achievements.some(a => a.kind === 'recognition')) ordinary++;
+        }
+        expect(ordinary).toBeGreaterThan(50);
+    });
+
+    it('fires once, not every year they stand in the room', () => {
+        const admitted = run(GIFTED, INSIDE_THE_HOUSE);
+        const recognitions = admitted.achievements.filter(a => a.kind === 'recognition');
+        expect(recognitions).toHaveLength(1);
+    });
+
+    it('happens to NPCs on the identical path', () => {
+        const pc = simulateTimeSkip(
+            makeCultivator({ id: GIFTED, spiritRoot: 'single_fire', kind: 'pc' }),
+            TEN_YEARS,
+            ctx({ seed: SEED, randomEvents: false, autoBreakthrough: false, understanding: INSIDE_THE_HOUSE })
+        );
+        const npc = simulateTimeSkip(
+            makeCultivator({ id: GIFTED, spiritRoot: 'single_fire', kind: 'npc' }),
+            TEN_YEARS,
+            ctx({ seed: SEED, randomEvents: false, autoBreakthrough: false, understanding: INSIDE_THE_HOUSE })
+        );
+        expect(npc.achievements.map(a => a.kind)).toEqual(pc.achievements.map(a => a.kind));
+        expect(npc.insightsGained.map(i => i.subject)).toEqual(pc.insightsGained.map(i => i.subject));
+    });
+
+    it('leaves the overwhelming majority of runs with no recognition at all', () => {
+        // Most cultivators die never having stood in a room where their own
+        // Dao was being practised.
+        let recognised = 0;
+        const runs = 150;
+        for (let i = 0; i < runs; i++) {
+            const result = run(`pop-${i}`, { techniqueSubjects: ['sword'] });
+            if (result.achievements.some(a => a.kind === 'recognition')) recognised++;
+        }
+        expect(recognised / runs).toBeLessThan(0.15);
     });
 });
