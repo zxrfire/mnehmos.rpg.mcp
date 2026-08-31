@@ -28,7 +28,7 @@ import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/a
 import { RichFormatter } from '../utils/formatter.js';
 import {
     DAYS_PER_YEAR,
-    MAX_ORDINAL,
+    canEndRunVoluntarily,
     deriveSeed,
     getSpiritRoot,
     rankName
@@ -195,14 +195,42 @@ export async function handleEnd(args: z.infer<typeof EndSchema>): Promise<object
     }
 
     const cultivator = repos.cultivators.getById(run.cultivatorId);
-    // Reaching the top of the ladder and stepping through is the only ending
-    // that is not a death. Everything else closes as 'dead' with no cause,
-    // because "abandoned" is not one of the nine ways the engine kills you.
-    const ascended = cultivator !== null && cultivator.realmOrdinal >= MAX_ORDINAL;
-    const description = args.reason ?? (ascended ? 'Ascended through the Lid.' : 'Run closed.');
+    if (!cultivator) {
+        return guidingError('unknown_cultivator', `Run ${run.id} has no cultivator record.`);
+    }
+
+    // ── The one door out that is not a death. ──
+    //
+    // A run ends when the cultivator dies. The single exception is a True
+    // Immortal, who punched a hole in the sky to earn the choice: they may
+    // settle their affairs, step off the ladder, and close the run by
+    // ascension. Everyone else - including a Grand Ascension cultivator, and
+    // including a False Immortal who survived the last crossing and did not
+    // complete it - plays until something kills them.
+    //
+    // Deliberately NOT generalised into a quit action. There is no honourable
+    // retirement at Core Formation, and offering one would make permadeath a
+    // setting rather than the shape of the game.
+    const eligibility = canEndRunVoluntarily(cultivator);
+    if (!eligibility.legal) {
+        return guidingError('voluntary_end_not_permitted', eligibility.detail, {
+            reason: eligibility.reason,
+            runId: run.id,
+            cultivatorId: cultivator.id,
+            rank: rankName(cultivator.realmOrdinal),
+            immortalStatus: cultivator.immortalStatus,
+            hint:
+                'A run ends by dying. Nothing here abandons, retires or quits one, and reaching the ' +
+                'top of the ladder is not enough on its own - only a True Immortal may step off it.'
+        });
+    }
+
+    const description =
+        args.reason ??
+        'Settled their affairs and stepped off the ladder. Ended by ascension rather than by death.';
 
     const ended = repos.db.transaction(() =>
-        repos.runs.endRun(run.id, null, description, ascended ? 'ascended' : 'dead')
+        repos.runs.endRun(run.id, null, description, 'ascended')
     )();
 
     if (!ended) {
@@ -211,7 +239,10 @@ export async function handleEnd(args: z.infer<typeof EndSchema>): Promise<object
 
     return {
         ended: true,
+        endedBy: 'ascension',
         run: projectRun(ended, isAdminRun(repos.db, ended.id)),
+        cultivator: describeCultivator(repos, cultivator, ended),
+        note: eligibility.detail,
         permadeath: 'This run is closed permanently. No action in this engine reopens it.'
     };
 }
@@ -337,8 +368,8 @@ const definitions: Record<RunAction, ActionDefinition> = {
     end: {
         schema: EndSchema,
         handler: handleEnd,
-        aliases: ['close', 'finish', 'stop'],
-        description: 'Close the run permanently'
+        aliases: ['close', 'finish', 'ascend', 'step_off'],
+        description: 'A True Immortal closes the run by ascension; refused for anyone else'
     },
     ledger: {
         schema: LedgerSchema,
@@ -363,9 +394,15 @@ export const RunManageTool = {
 A run is one life. When it ends it is over — there is no resume, revive, reload, rollback or
 restore action in this tool, and none will be added. Do not tell the player otherwise.
 
+A run ends when the cultivator DIES. The single exception is a True Immortal, who may step off
+the ladder deliberately — and who had to punch a hole in the sky to earn the choice. There is no
+quit at Qi Condensation and no honourable retirement at Core Formation.
+
 - start     open a run for an existing cultivator (creating a cultivator normally does this for you)
 - current   the live run plus full cultivator state
-- end       close the run permanently; 'ascended' only at the top of the ladder
+- end       a True Immortal steps off the ladder and closes the run by ascension. This is the
+            ONLY way a run ends other than dying, it is refused for everybody else, and there is
+            no abandon, retire or quit anywhere in this tool.
 - ledger    how previous cultivators died; admin-flagged runs excluded by default
 - seed_info the seed and the named sub-streams every roll derives from
 

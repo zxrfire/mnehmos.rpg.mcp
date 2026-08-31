@@ -40,6 +40,7 @@ import {
     MAX_ORDINAL,
     attemptBreakthrough,
     canAttemptBreakthrough,
+    canEndRunVoluntarily,
     computeBreakthroughOdds,
     computeCultivationRate,
     daysToNextBreakthrough,
@@ -76,11 +77,11 @@ import {
     listPouch,
     listTolls,
     persistFoundation,
+    persistImmortalStatus,
     persistToll,
     ranksGainedThisTurn,
     readJsonFlag,
     recordRankGained,
-    reconstructSkipInjuries,
     resolveActiveRun,
     round2,
     round4,
@@ -511,7 +512,9 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     // ── PERSISTENCE. Everything the simulation decided, or nothing at all. ──
     const before = cultivator;
     const end = skipEndState(before, result);
-    const injuries = reconstructSkipInjuries(result, run.turn);
+    // The engine's own records, ids and penalties intact. Nothing is inferred
+    // from its narration any more.
+    const injuries = result.injuriesSustained;
     const ranksGained = Math.max(0, end.realmOrdinal - before.realmOrdinal);
     const nextTurn = run.turn + 1;
 
@@ -520,15 +523,30 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     const persist = repos.db.transaction(() => {
         for (const injury of injuries) {
             repos.cultivators.addInjury(before.id, {
+                id: injury.id,
                 severity: injury.severity,
                 source: injury.source,
                 description: injury.description,
-                sustainedOnTurn: injury.sustainedOnTurn
+                sustainedOnTurn: injury.sustainedOnTurn,
+                cultivationPenalty: injury.cultivationPenalty,
+                breakthroughPenalty: injury.breakthroughPenalty,
+                treated: injury.treated
             });
         }
 
         if (ranksGained > 0) {
             repos.cultivators.advanceRealm(before.id, ranksGained);
+        }
+
+        // A skip can cross 12 -> 13 and can resolve the last crossing. Both
+        // results are facts about the cultivator that the ordinal does not
+        // encode, and a 'false_immortal' in particular is what bars every
+        // further attempt - losing it would let the Lid open twice.
+        if (result.foundationEstablished) {
+            persistFoundation(repos, before.id, result.foundationEstablished);
+        }
+        if (result.immortalStatusGained) {
+            persistImmortalStatus(repos, before.id, result.immortalStatusGained);
         }
 
         // Every instalment the Vault charged during the skip, in the same
@@ -613,11 +631,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             cultivationProgress: round2(result.deltas.cultivationProgress),
             age: round2(result.deltas.age)
         },
-        injuriesPersisted: injuries.map(i => ({
-            severity: i.severity,
-            source: i.source,
-            sustainedOnTurn: i.sustainedOnTurn
-        })),
+        injuriesSustained: injuries.map(summariseInjury),
         tolls: (result.tolls ?? []).map((toll, index) => ({
             fromOrdinal: toll.fromOrdinal,
             toOrdinal: toll.toOrdinal,
@@ -628,16 +642,13 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             risk: round4(toll.risk),
             roll: round4(toll.roll),
             modifiers: toll.modifiers.map(m => ({ source: m.source, delta: round4(m.delta) })),
-            taken: toll.taken,
+            takenAll: toll.takenAll,
             applied: tollApplications[index]?.applied ?? false,
-            appliedDetail: tollApplications[index]?.detail ?? null,
+            appliedDetail: tollApplications[index]?.details ?? [],
             narrationHint: toll.narrationHint
         })),
-        injuryReconciliation: {
-            engineReported: result.deltas.injuriesGained,
-            persisted: injuries.length,
-            consistent: injuries.length === result.deltas.injuriesGained
-        },
+        foundationEstablished: result.foundationEstablished,
+        immortalStatusGained: result.immortalStatusGained,
         events: result.events.map(e => ({
             kind: e.kind,
             dayOffset: e.dayOffset,
@@ -716,6 +727,11 @@ export async function handleBreakthrough(
     // assignment made inside the transaction closure, and would narrow a
     // `let` back to null at the read site below.
     const tollApplications: TollApplication[] = [];
+    // 'false_immortal' is emphatically NOT terminal. The tribulation was
+    // survived and the Lid opened; the crossing simply did not complete. The
+    // cultivator stands exactly where they were, permanently barred from ever
+    // trying again, and goes on living - which is the worse outcome, and the
+    // point. Only 'death' ends a run here.
     const died = result.outcome === 'death';
     const deathCause = died
         ? (result.tribulation ? 'heavenly_tribulation' as const : 'failed_breakthrough' as const)
@@ -742,9 +758,6 @@ export async function handleBreakthrough(
             recordRankGained(repos.db, cultivator.id, nextTurn, 1);
 
             // The rank and its price are one event, so they share one transaction.
-            if (result.foundationEstablished) {
-                persistFoundation(repos, cultivator.id, result.foundationEstablished);
-            }
             if (result.toll) {
                 tollApplications.push(persistToll(repos, run, cultivator.id, result.toll));
             }
@@ -752,6 +765,21 @@ export async function handleBreakthrough(
             repos.cultivators.applyDeltas(cultivator.id, {
                 cultivationProgress: -result.progressConsumed
             });
+
+            // A False Immortal does not advance and is not dead, so it lands
+            // here - and the status still has to be written, because it is the
+            // record that bars every further attempt. The engine refuses the
+            // re-attempt by reading it back.
+            if (result.toll) {
+                tollApplications.push(persistToll(repos, run, cultivator.id, result.toll));
+            }
+        }
+
+        if (result.foundationEstablished) {
+            persistFoundation(repos, cultivator.id, result.foundationEstablished);
+        }
+        if (result.immortalStatusGained) {
+            persistImmortalStatus(repos, cultivator.id, result.immortalStatusGained);
         }
 
         if (pending) clearFlag(repos.db, cultivator.id, FLAG_PENDING_PILL);
@@ -808,14 +836,19 @@ export async function handleBreakthrough(
                     source: m.source,
                     delta: round4(m.delta)
                 })),
+                // takenAll is authoritative: the ascension crossing collects
+                // the whole remaining ledger at once, and `taken` is only its
+                // first entry.
+                takenAll: result.toll.takenAll,
                 taken: result.toll.taken,
-                // Proof the ledger is not lying: what was named is gone.
+                // Proof the ledger is not lying: everything named is gone.
                 applied: tollApplications[0]?.applied ?? false,
-                appliedDetail: tollApplications[0]?.detail ?? null,
+                appliedDetail: tollApplications[0]?.details ?? [],
                 narrationHint: result.toll.narrationHint
             }
             : null,
         foundationEstablished: result.foundationEstablished,
+        immortalStatusGained: result.immortalStatusGained,
         injuriesSustained: result.injuriesSustained.map(summariseInjury),
         progressConsumed: round2(result.progressConsumed),
         died,
@@ -905,6 +938,8 @@ export async function handleStatus(args: z.infer<typeof StatusSchema>): Promise<
         pouch: listPouch(repos.db, cultivator.id).length,
         pendingBreakthroughPill: pending,
         foundation: cultivator.foundationQuality,
+        immortalStatus: cultivator.immortalStatus,
+        mayEndRunVoluntarily: canEndRunVoluntarily(cultivator).legal,
         tollsPaid: listTolls(repos.db, cultivator.id).map(t => ({
             boundary: `${rankName(t.fromOrdinal)} -> ${rankName(t.toOrdinal)}`,
             outcome: t.outcome,
