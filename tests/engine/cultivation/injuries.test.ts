@@ -9,6 +9,9 @@ import {
 import {
     MAX_INJURY_BREAKTHROUGH_PENALTY,
     MAX_INJURY_CULTIVATION_PENALTY,
+    MAX_TEMPERING,
+    TEMPERING_PER_SCAR,
+    scarTempering,
     aggregateInjuryPenalties,
     createInjury,
     defaultInjuryDescription,
@@ -123,6 +126,52 @@ describe('isLethalInjuryState', () => {
         expect(isLethalInjuryState(makeCultivator({ injuries: treated }))).toBe(false);
         expect(untreatedInjuryCount(treated)).toBe(LETHAL_UNTREATED_INJURIES - 1);
         expect(untreatedInjuries(treated)).toHaveLength(LETHAL_UNTREATED_INJURIES - 1);
+    });
+});
+
+describe('scarTempering', () => {
+    it('pays nothing for a cultivator who has never been hurt', () => {
+        expect(scarTempering([])).toEqual({
+            scars: 0,
+            breakthroughBonus: 0,
+            deviationRelief: 0
+        });
+    });
+
+    it('pays nothing for wounds that are still open', () => {
+        // The ratchet is untouched: an untreated injury is a liability and
+        // never quietly becomes an asset.
+        expect(scarTempering(makeInjuries(5, 'crippling')).breakthroughBonus).toBe(0);
+    });
+
+    it('pays only once the wound has actually been closed', () => {
+        const injuries = makeInjuries(2, 'serious');
+        expect(scarTempering(injuries).scars).toBe(0);
+        const closed = treatWorstInjuries(injuries, 2).injuries;
+        expect(scarTempering(closed).scars).toBe(2);
+        expect(scarTempering(closed).breakthroughBonus).toBeCloseTo(
+            2 * TEMPERING_PER_SCAR.serious,
+            10
+        );
+    });
+
+    it('pays more for a worse wound survived', () => {
+        const closed = (severity: Parameters<typeof makeInjuries>[1]) =>
+            scarTempering(treatWorstInjuries(makeInjuries(1, severity), 1).injuries)
+                .breakthroughBonus;
+        expect(closed('crippling')).toBeGreaterThan(closed('serious'));
+        expect(closed('serious')).toBeGreaterThan(closed('minor'));
+    });
+
+    it('caps hard, so experience never becomes a second talent stat', () => {
+        const veteran = treatWorstInjuries(makeInjuries(100, 'crippling'), 100).injuries;
+        expect(scarTempering(veteran).breakthroughBonus).toBe(MAX_TEMPERING);
+    });
+
+    it('is worth half as much against deviation as at a breakthrough', () => {
+        const closed = treatWorstInjuries(makeInjuries(3, 'serious'), 3).injuries;
+        const tempering = scarTempering(closed);
+        expect(tempering.deviationRelief).toBeCloseTo(tempering.breakthroughBonus / 2, 12);
     });
 });
 

@@ -411,60 +411,112 @@ is the one a realm ladder alone does not deliver.
 
 ---
 
-## Escalation: every gain in power enlarges the world
+## Depth, not scale: one planet, understood further down
 
-The single most important structural property to reproduce:
+The single most important structural property, and the one easiest to get backwards:
 
-> A character does not merely become stronger *inside* the same environment. They become
-> stronger and discover that the environment they thought was enormous was a small corner
-> of something much larger.
+> **The world does not become larger. The player's access to it becomes deeper.**
 
-The arc is not `level 1 → level 2 → level 3`. It is:
+This is **one planet**. There is no space travel, no other planets, no interplanetary
+civilisation, no universe-hopping as a normal mode of progression. The planet is
+nevertheless enormous, and its depth comes from geography, ancient history, hidden
+regions, powerful factions, lethal environments, secret realms, sealed domains, portals,
+ancient formations, lost civilisations, powerful individuals, and — above all —
+information the player does not have.
 
-```text
-weak individual -> local cultivator -> regional power -> major faction member
-    -> world-level existence -> higher-world existence -> cosmic existence
-```
-
-Each transition should feel like entering a fundamentally larger world, and each should
-retroactively shrink the previous one. Early: *"the strongest person in my valley is a
-Foundation cultivator."* Later: *"the strongest person in this region is a minor
-figure."* Later still: *"this entire world is a spent corner of something that does not
-know it exists."*
-
-This is why the setting is a sealed **Vault** with a **Lid** rather than an open sky. The
-Lid is not a metaphor for a level cap — it is a floor of the next world. What ascension
-*is*, structurally, is discovering the next layer.
-
-**Discipline required:** do not expose the scale up front, and do not do the cheap
-version of it. Constant "actually there is an even stronger person" is not escalation, it
-is deflation. Escalation happens at meaningful points, and each revealed layer must be
-coherent and worth having discovered.
-
-### Layers have different rules, not just bigger numbers
-
-Entering a higher layer must change the assumptions a character lives under, not merely
-the map: ambient energy density, environmental lethality, available resources, viable
-cultivation methods, native beings, political structures, the local realm ceiling, and
-which phenomena are even possible. A region that was lethal below the Lid may be
-trivially survivable above it, and vice versa.
-
-### Realm gaps are qualitative, not linear
-
-Distinguish minor rank differences, major realm differences, and **qualitative
-transformations**. A breakthrough should sometimes make a previously impossible thing
-trivial:
+Progression does not move the character to a bigger map. It changes what they can
+perceive and survive on the map that was always there:
 
 ```text
-before: cannot survive this environment      after: the environment is harmless
-before: must flee this faction               after: that faction cannot threaten you
+a low cultivator sees        a dangerous mountain
+a stronger one sees          a spiritual vein
+a stronger one still sees    an ancient formation beneath the mountain
+a very powerful one finds    the mountain is one node of a formation spanning the region
 ```
 
-A slightly stronger cultivator does not reliably beat someone several major realms above
-them. That gap should feel categorical — and it is what makes an upset, won through
-preparation and terrain and poison, worth a story.
+The mountain never changed. The character's ability to perceive reality did.
 
----
+What the player should feel, repeatedly:
+
+```text
+"I became stronger."
+    -> "I can survive somewhere I could not before."
+        -> "Things are happening here I did not know existed."
+            -> "Someone vastly stronger has been shaping events around me."
+                -> "I finally understand what was happening."
+                    -> "I am strong enough to shape events myself."
+```
+
+And then, still: *"the people I knew before still matter."* The protagonist does not
+become the centre of reality. They become one of the people capable of shaping it.
+
+### Environmental gating
+
+Power decides which environments a character can enter and operate in. A location carries
+four thresholds:
+
+```text
+entry        can set foot in it at all
+survival     can remain without dying
+operational  can act, fight, search, cultivate there
+mastery      can manipulate the environment itself
+```
+
+Crucially, **specialised techniques, artifacts, physiques or knowledge modify these
+thresholds.** A lower-realm specialist may survive somewhere a stronger generalist cannot.
+That is what keeps specialisation valuable and stops realm from being the only axis.
+
+### Secret realms and portals
+
+The planet contains secret realms, pocket dimensions, sealed domains, isolated spaces,
+ancient ruins and portals. A portal is never merely fast travel — it leads somewhere with
+its own spiritual conditions, ancient inhabitants, strange rules, rare resources, unique
+creatures, sealed beings, lost inheritances, cultivation suppression, temporal anomalies,
+or an unfinished ancient conflict.
+
+A secret realm is not a dungeon. It has its own history, previous inhabitants, factions,
+ecosystem, rules, resources, mysteries and changing conditions. **NPCs enter secret realms
+independently of the player**, and may return with things the player wanted.
+
+A single realm can involve many power levels at once — outer regions for lower
+cultivators, inner regions for mid, a centre for the strong, a sealed core holding
+something ancient. What makes this work is **interdependence**: lower-level participants
+must hold something the powerful cannot simply replace — a specialised technique, a unique
+artifact, a passage only they can enter, historical knowledge, an unusual physique, the
+ability to activate a particular formation.
+
+### Realms are qualitative
+
+Never model cultivation as `realm 1 = 100 power, realm 2 = 200`. Ask instead: *what is
+possible at this realm that was fundamentally impossible before?* A breakthrough can
+change physical capability, lifespan, perception, soul, energy quality, movement,
+environmental resistance, available techniques, strategic options and influence.
+
+A realm sets a broad **capability ceiling**; it does not determine actual strength. Within
+a realm, internal progression is real, and two cultivators at the same stage can differ
+enormously by cultivation method, foundation quality, comprehension, techniques, body,
+soul, artifacts, experience, resources, preparation, information and environment.
+
+A peak cultivator of one realm can threaten the weakest of the next. **Large realm gaps
+must remain nearly insurmountable.** A character several major realms below another should
+generally be helpless in a direct confrontation — their options are to flee, hide,
+negotiate, seek protection, exploit terrain, use a specialised counter, manipulate another
+faction, prepare, or avoid detection entirely. Exceptions are rare and earned. Cleverness
+must not casually dissolve the hierarchy.
+
+### Why didn't the stronger person just kill them?
+
+Whenever an obviously stronger character does not simply remove a weaker one, there must
+be an actual reason: political consequences, another faction, an oath, territorial
+restriction, incomplete information, resource cost, risk of exposure, hidden protection,
+strategic usefulness, or a conflicting objective. **Never unexplained plot armour.**
+
+### The powerful act indirectly
+
+Very powerful characters usually avoid direct confrontation. They manipulate factions,
+send disciples, control resources, spread or suppress information, conceal their identity,
+create incentives, arrange conflicts, and work through intermediaries. One may shape
+events around the player for years before the player learns they exist.
 
 ## Power is composite, not a single number
 
@@ -568,22 +620,57 @@ encounter things they do not understand.
 
 ---
 
-## Scale never erases the personal
+## Characters persist after they are surpassed
 
-At every level of power, the problems change in *kind*:
+This is among the most important rules in the document, and it names a specific failure
+mode to avoid:
 
 ```text
-"How do I survive?" -> "How do I get resources?" -> "Which faction do I join?"
-    -> "How do I protect my people?" -> "How do I survive beings on another level?"
-    -> "What does cultivation actually mean?"
+protagonist meets powerful senior -> senior matters -> protagonist catches up
+    -> senior becomes irrelevant -> a stronger senior is introduced -> repeat forever
 ```
 
-But cosmic scale must never flatten human-scale consequence. Friends, family, disciples,
-sects, promises, enemies and losses stay load-bearing at every tier. A being who can
-break a region should still be reachable through the person they failed to protect three
-hundred years ago.
+**Do not do this.** When the protagonist surpasses someone, it changes their
+*relationship*, it does not delete the character. Power relationships are allowed — and
+expected — to reverse:
 
----
+```text
+early: NPC >>> player    middle: NPC > player    later: NPC ~ player    eventually: player >>> NPC
+```
+
+That is a good outcome, not a problem to fix. **Never power-creep an NPC merely to keep
+them combat-relevant.** Their cultivation may stay low while their importance stays high.
+
+### Importance is not cultivation
+
+Never implement `stronger NPC = more important NPC`. A character can matter because of
+knowledge, family, faction, political authority, history, secrets, relationships,
+resources, expertise, reputation, territory, emotional connection, or unfinished goals.
+Cultivation is one axis among many.
+
+Their continued relevance is carried by: things they did (founded a sect, fought a war,
+sealed an enemy, created a technique, swore an oath, caused a disaster), and by lineage —
+parents, children, siblings, descendants, disciples, ancestors. The player may surpass an
+NPC and then become entangled with their family, their sect, or the consequences of
+something they did three centuries ago.
+
+### The cast grows sideways
+
+The protagonist grows vertically; the cast must grow **horizontally**. Friends, rivals,
+mentors, disciples, family, faction leaders, merchants, scholars, enemies, political
+contacts, ancient figures. The player should *accumulate* relationships, not continuously
+replace old characters with stronger versions of the same role.
+
+Powerful NPCs must also have their own lives — goals, relationships, history, factions,
+secrets, conflicts, resources — and pursue things that have nothing to do with the player.
+A powerful character does not exist to demonstrate how strong the next opponent is.
+
+### Death is a world-state transition
+
+When an important character dies: their faction reacts, their family reacts, their
+disciples react, their enemies react, succession begins, resources move, alliances shift,
+rumours spread, and their unfinished goals remain. A powerful dead cultivator stays
+historically important.
 
 ## And none of it is promised to the player
 
@@ -601,6 +688,68 @@ whether or not the player is there to see it.
 The objective is never to write the journey. It is to create the conditions under which
 such a journey can occur — to anyone, including no one.
 
+
+## Implementation philosophy: small code, intelligent agent
+
+**Do not build a giant simulation engine.** This is a hard architectural constraint, not a
+preference.
+
+- **The LLM is the reasoning engine.**
+- **The database is the source of truth.**
+- **The code provides: persistence, retrieval, time, randomness, state updates.** That is
+  close to all of it.
+
+Explicitly do NOT implement: behaviour trees for every NPC, a full political simulation, a
+physics engine, or mathematically resolved combat for every interaction. Do not build a
+deterministic NPC-behaviour simulator.
+
+### The split
+
+| Hard state — the database owns it | Narrative reasoning — the LLM owns it |
+|---|---|
+| Current date | Why someone acted |
+| Character location, realm, inventory | What someone might do next |
+| Resources, faction membership | Whether a person is trustworthy |
+| Important relationships | How a faction responds |
+| Major world events, persistent memories | What a character feels |
+
+The agent must not casually invent anything in the left column. When unsure, it **queries
+state** rather than inventing it. Everything in the right column is the agent's job, and
+should not be reduced to a computed score.
+
+**Randomness is engine-owned.** The agent requests a roll and the engine returns it, so
+the agent can never unconsciously choose the result it wants. Randomness influences
+encounters, opportunities, discoveries, accidents, weather, NPC decisions and cultivation
+events — but never replaces causal reasoning.
+
+### State stays small
+
+Store durable facts, not every thought an NPC ever had. For an NPC this is enough:
+
+```text
+identity | cultivation | location | faction | goals
+important relationships | important history | important memories
+```
+
+From that, the agent reconstructs believable behaviour. Factions similarly need only:
+`name, leaders, territory, resources, allies, enemies, goals, internal conflicts`.
+
+**Memory compresses.** A hundred accumulated events become five to ten durable memories,
+preserving relationships, betrayals, promises, debts, major discoveries, major losses,
+important history and faction changes, and discarding conversational trivia.
+
+### Situations, not quests
+
+Never generate `"collect ten herbs"`. Generate *circumstances* and let conflict emerge:
+
+```text
+an NPC needs a rare herb + three factions want it + the NPC owes a debt to one of them
+  + the player can reach the region + another faction offers payment
+  + the player knows something the NPC does not
+  = a situation with no clean answer
+```
+
+The system generates conditions. The story is what happens in them.
 
 ## The core emotional principle
 

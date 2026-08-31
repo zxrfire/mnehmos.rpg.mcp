@@ -101,10 +101,24 @@ describe('realm ladder', () => {
         }
     });
 
-    it('triggers heavenly tribulation only in Tribulation Transcendence', () => {
+    it('summons heavenly lightning on every crossing INTO Tribulation Transcendence', () => {
+        // The test is on the destination, not the origin. Attempting from 40
+        // lands at 41 and therefore summons lightning - that crossing is the
+        // whole point of the realm's name. 44 is the summit and never attempts.
         for (const ordinal of ALL_ORDINALS) {
-            expect(triggersHeavenlyTribulation(ordinal)).toBe(ordinal >= 41);
+            const expected = ordinal >= 40 && ordinal < MAX_ORDINAL;
+            expect(triggersHeavenlyTribulation(ordinal)).toBe(expected);
         }
+        expect(triggersHeavenlyTribulation(39)).toBe(false);
+        expect(triggersHeavenlyTribulation(40)).toBe(true);
+        expect(triggersHeavenlyTribulation(MAX_ORDINAL)).toBe(false);
+    });
+
+    it('makes the 40 to 41 crossing a realm boundary AND a tribulation', () => {
+        // The single worst moment in a run: boundary odds, boundary failure
+        // table, heavenly lightning, and the Vault's toll, all at once.
+        expect(isRealmBoundary(40)).toBe(true);
+        expect(triggersHeavenlyTribulation(40)).toBe(true);
     });
 
     it('names every rank uniquely', () => {

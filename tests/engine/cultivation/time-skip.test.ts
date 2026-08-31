@@ -411,6 +411,112 @@ describe('qi deviation during a skip', () => {
     });
 });
 
+describe('the Vault, during a long seclusion', () => {
+    /** Standing at the Foundation boundary with the progress already banked. */
+    function atBoundary(overrides: Partial<Cultivator> = {}) {
+        return makeCultivator({
+            realmOrdinal: 12,
+            cultivationProgress: progressRequiredForOrdinal(12),
+            ...overrides
+        });
+    }
+
+    const POOL = [
+        { kind: 'bond' as const, id: 'npc-brother', label: 'their brother', weight: 5 },
+        { kind: 'memory' as const, id: 'mem-fall', label: 'the summer at the low fall', weight: 2 }
+    ];
+
+    it('charges a boundary crossed mid-skip and records it in the digest', () => {
+        let charged = null;
+        for (let i = 0; i < 60 && charged === null; i++) {
+            const result = simulateTimeSkip(
+                atBoundary(),
+                TEN_YEARS,
+                ctx({ seed: `skip-toll-${i}`, randomEvents: false, toll: { candidates: POOL } })
+            );
+            if (result.tolls.length > 0) charged = result;
+        }
+        expect(charged).not.toBeNull();
+        expect(charged!.events.some(e => e.kind === 'toll_charged')).toBe(true);
+        expect(charged!.tolls[0].boundaryIndex).toBe(0);
+    });
+
+    it('hands control back when the Vault actually takes something', () => {
+        // Losing a brother must not be a footnote the player reads ten years
+        // late in a list of events.
+        let taken = null;
+        for (let i = 0; i < 80 && taken === null; i++) {
+            const result = simulateTimeSkip(
+                atBoundary(),
+                TEN_YEARS,
+                ctx({ seed: `skip-taken-${i}`, randomEvents: false, toll: { candidates: POOL } })
+            );
+            if (result.tolls.some(t => t.outcome === 'taken')) taken = result;
+        }
+        expect(taken).not.toBeNull();
+        expect(taken!.interrupted).toBe(true);
+        expect(taken!.interruptReason).toBe('toll_charged');
+        expect(taken!.simulatedDays).toBeLessThan(TEN_YEARS);
+        const event = taken!.events.at(-1)!;
+        expect(event.kind).toBe('toll_charged');
+        expect(event.interrupts).toBe(true);
+        expect(event.data.taken).not.toBeNull();
+    });
+
+    it('lets a Severed cultivator cross without interrupting the seclusion', () => {
+        const result = simulateTimeSkip(
+            atBoundary(),
+            TEN_YEARS,
+            ctx({ randomEvents: false, toll: { candidates: POOL, severed: true } })
+        );
+        for (const toll of result.tolls) {
+            expect(toll.outcome).toBe('prepaid');
+        }
+        expect(result.interruptReason).not.toBe('toll_charged');
+    });
+
+    it('reports the foundation laid by a crossing during the skip', () => {
+        let laid = null;
+        for (let i = 0; i < 60 && laid === null; i++) {
+            const result = simulateTimeSkip(
+                atBoundary(),
+                TEN_YEARS,
+                ctx({
+                    seed: `skip-foundation-${i}`,
+                    randomEvents: false,
+                    foundation: { preparation: 1 },
+                    toll: { candidates: [] }
+                })
+            );
+            if (result.foundationEstablished !== null) laid = result;
+        }
+        expect(laid).not.toBeNull();
+        expect(laid!.deltas.realmOrdinal).toBeGreaterThan(0);
+        expect(
+            laid!.events.some(
+                e => e.kind === 'breakthrough_success' && e.data.foundationEstablished !== null
+            )
+        ).toBe(true);
+    });
+
+    it('reports no foundation and no toll for a skip that crosses nothing', () => {
+        const result = simulateTimeSkip(secluded(), TEN_YEARS, sealed());
+        expect(result.tolls).toEqual([]);
+        expect(result.foundationEstablished).toBeNull();
+    });
+
+    it('stays byte-identical with the toll and foundation in play', () => {
+        const conditions = ctx({
+            randomEvents: false,
+            toll: { candidates: POOL },
+            foundation: { preparation: 0.5 }
+        });
+        const a = simulateTimeSkip(atBoundary(), TEN_YEARS, conditions);
+        const b = simulateTimeSkip(atBoundary(), TEN_YEARS, conditions);
+        expect(JSON.stringify(b)).toBe(JSON.stringify(a));
+    });
+});
+
 describe('deltas', () => {
     it('reports net change rather than absolute state', () => {
         const cultivator = makeCultivator({ spiritStones: 100, cultivationProgress: 0 });
