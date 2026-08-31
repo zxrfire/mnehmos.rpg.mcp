@@ -102,10 +102,19 @@ describe('pressure: the world changes on its own', () => {
     it('schedules its own follow-ons: a war opened now settles later', () => {
         const state = world('drv-war');
         const before = state.schedule.length;
-        applyPressure(state, state.currentDay, state.currentDay + 150 * YEAR);
-        const wars = state.schedule.filter(e => e.kind === 'war_resolves');
-        expect(state.schedule.length).toBeGreaterThan(before);
-        for (const war of wars) expect(war.dueOnDay).toBeGreaterThan(state.currentDay);
+        const out = applyPressure(state, state.currentDay, state.currentDay + 300 * YEAR);
+
+        // Assert the invariant, not the draw: a weighted table may or may not
+        // produce a war in any given span, but every war it does produce must
+        // have put its own ending on the books.
+        const opened = out.events.filter(e => e.kind === 'war_opened');
+        const scheduled = state.schedule.filter(e => e.kind === 'war_resolves');
+        expect(scheduled.length).toBe(opened.length);
+        if (opened.length > 0) expect(state.schedule.length).toBeGreaterThan(before);
+        for (const war of scheduled) {
+            expect(war.dueOnDay).toBeGreaterThan(war.data.openedOnDay ?? 0);
+            expect(war.fired).toBe(false);
+        }
     });
 
     it('authors a name-free consequence on every event it produces', () => {

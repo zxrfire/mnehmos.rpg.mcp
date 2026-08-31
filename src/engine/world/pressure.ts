@@ -87,6 +87,7 @@ import {
 export type PressureKind =
     | 'vein_lost'
     | 'elder_died'
+    | 'killing'
     | 'ruin_opened'
     | 'opportunity_taken'
     | 'border_moved'
@@ -193,6 +194,7 @@ export function applyPressure(
         // people advance, institutions pay their bills, and children are born.
         // Births last, so a year's dead are counted before its replacements.
         applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
+        applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
         applyFactionEconomy(state);
         born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
     }
@@ -374,6 +376,56 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         advanced.push(state.npcs[at]);
     }
     return advanced;
+}
+
+/**
+ * Sects take people on as they become worth taking on.
+ *
+ * Admission is a realm threshold, and a newcomer is almost never over it: a
+ * sect that only ever looked at people on the day they were born would empty
+ * within a generation, and then fold for want of members. So the rolls are
+ * refreshed each year from whoever has since become admissible - which is what
+ * a recruitment cycle IS, and is why every faction has one on the books.
+ *
+ * A flow, not a decision: nobody here weighs whether to apply.
+ */
+function applyRecruitment(state: WorldState, year: number, day: number): number {
+    const admitting = state.factions.filter(
+        f => f.dissolvedOnDay === null && f.tags.includes('recruits')
+    );
+    if (admitting.length === 0) return 0;
+
+    const rng = forStream(state.seed, 'recruitment', year);
+    let joined = 0;
+
+    // A sample rather than the whole roster: joining is rare per person per
+    // year, and the cost has to stay a constant across five centuries.
+    const free: number[] = [];
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        if (npc.status === 'alive' && npc.factionId === null) free.push(i);
+    }
+    if (free.length === 0) return 0;
+
+    const looks = Math.max(1, Math.round(free.length / 12));
+    for (let s = 0; s < looks; s++) {
+        const at = free[rng.int(0, free.length - 1)];
+        const npc = state.npcs[at];
+        if (npc.factionId !== null || npc.status !== 'alive') continue;
+
+        const options = admitting.filter(f =>
+            npc.cultivation.realmOrdinal >= Number(f.resources.admission_ordinal ?? 0) &&
+            (f.seatLocationId === null || f.seatLocationId === npc.locationId ||
+                state.locations.find(l => l.id === npc.locationId)?.parentId === f.seatLocationId)
+        );
+        if (options.length === 0) continue;
+        if (!rng.chance(0.35)) continue;
+
+        const faction = options[rng.int(0, options.length - 1)];
+        state.npcs[at] = { ...npc, factionId: faction.id, factionRankIndex: 0, updatedOnDay: day };
+        joined++;
+    }
+    return joined;
 }
 
 /**
@@ -699,6 +751,90 @@ const TEMPLATES: Template[] = [
             }, {
                 factions: faction ? [faction.id] : [],
                 npcs: [npc.id]
+            }, [handoff]);
+        }
+    },
+
+    // ── Somebody killed somebody. ───────────────────────────────────────
+    //
+    // The canonical grudge source, and the reason the world has inherited
+    // accounts at all: a death by natural causes leaves an estate, and a death
+    // at a named hand leaves an estate AND somebody to blame. The account is
+    // written onto the victim before they die, so the ordinary inheritance path
+    // carries it to the heir without a second mechanism.
+    //
+    // Who and why is not modelled. That two people in feuding sects ended up
+    // in a room is a fact; what was said is the narrator's.
+    {
+        kind: 'killing',
+        weight: 11,
+        apply(state, day, rng) {
+            const living = state.npcs.filter(n => n.status === 'alive');
+            const victim = pick(rng, living);
+            if (!victim) return null;
+
+            // Preferably somebody with a reason to be there: a member of a
+            // faction the victim's own is at odds with. Failing that, anyone
+            // in the same place, because most killings are local and petty.
+            const victimFaction = victim.factionId
+                ? state.factions.find(f => f.id === victim.factionId) ?? null : null;
+            const hostileIds = victimFaction
+                ? Object.entries(victimFaction.standing)
+                    .filter(([, v]) => v <= -0.3).map(([k]) => k)
+                : [];
+            const pool = living.filter(n =>
+                n.id !== victim.id &&
+                (hostileIds.includes(n.factionId ?? '') || n.locationId === victim.locationId)
+            );
+            const killer = pick(rng, pool);
+            if (!killer) return null;
+
+            // The dead keep their account open. It is what the heir inherits.
+            const at = state.npcs.findIndex(n => n.id === victim.id);
+            if (at < 0) return null;
+            state.npcs[at] = upsertRelationship(state.npcs[at], {
+                targetId: killer.id,
+                targetName: killer.name,
+                kind: 'enemy',
+                standing: -1,
+                note: `Killed them at ${victim.locationId ?? 'somewhere'}.`
+            }, day);
+            const dying = state.npcs[at];
+
+            state.npcs[at] = markDead(dying, day, `Killed by ${killer.name}.`);
+            const handoff = settleNpcDeath(state, dying, day);
+
+            return emit(state, 'killing', day, {
+                day,
+                kind: 'grudge_opened',
+                scale: 'personal',
+                summary:
+                    `${killer.name} killed ${victim.name}` +
+                    (victimFaction ? ` of the ${victimFaction.name}` : '') + '.',
+                actors: [
+                    { id: killer.id, name: killer.name, role: 'killer' },
+                    { id: victim.id, name: victim.name, role: 'victim' }
+                ],
+                locationId: victim.locationId,
+                factionIds: victimFaction ? [victimFaction.id] : [],
+                visibility: 'regional',
+                magnitude: 0.45,
+                unattributed:
+                    'A body was found on the low road and nobody is saying whose it was.',
+                consequences: {
+                    immediate: 'One fewer, and somebody knows who did it.',
+                    losers: [{ id: victim.id, name: victim.name, role: 'victim' }],
+                    beneficiaries: [{ id: killer.id, name: killer.name, role: 'killer' }],
+                    relationshipChanges: handoff.primaryHeirId
+                        ? [{ aId: handoff.primaryHeirId, bId: killer.id, change: 'an inherited account' }]
+                        : [],
+                    tenYearsLater: handoff.primaryHeirId
+                        ? 'Somebody younger is still asking where he lives.'
+                        : 'Nobody was left to ask about it.'
+                }
+            }, {
+                npcs: [victim.id, killer.id],
+                factions: victimFaction ? [victimFaction.id] : []
             }, [handoff]);
         }
     },
@@ -1202,7 +1338,7 @@ const TEMPLATES: Template[] = [
                 chance: 1,
                 fired: false,
                 firedOnDay: null,
-                data: { kind: 'war_resolution', sideA: a.id, sideB: b.id, magnitude: 0.7 }
+                data: { kind: 'war_resolution', sideA: a.id, sideB: b.id, magnitude: 0.7, openedOnDay: day }
             };
             state.schedule.push(effect);
 

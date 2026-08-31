@@ -36,6 +36,7 @@ import { AuditRepository } from '../../storage/audit.repo.js';
 import {
     endRelationship,
     recordKnowledge,
+    type KnowledgeInput,
     type Relationship
 } from '../../engine/social/index.js';
 import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
@@ -1584,7 +1585,23 @@ export function persistVisions(
     db: Database.Database,
     visions: readonly VisionSeed[]
 ): number {
-    if (visions.length === 0) return 0;
+    return persistBeliefs(db, visions);
+}
+
+/**
+ * Write beliefs to the knowledge layer.
+ *
+ * The one insert path for anything a cultivator comes to hold outside the
+ * existence gate in `web/knowledge.ts`. Ids are stable and derived from the
+ * content, so re-recording the same belief on the same day is idempotent and
+ * a genuinely new acquisition is a new row - which is correct, because how
+ * somebody came to hold something twice is worth keeping.
+ */
+export function persistBeliefs(
+    db: Database.Database,
+    beliefs: readonly KnowledgeInput[]
+): number {
+    if (beliefs.length === 0) return 0;
     const insert = db.prepare(`
         INSERT INTO knowledge_records (
             id, holder_id, holder_kind, claim_key, fact_id, stance, statement, detail,
@@ -1599,7 +1616,7 @@ export function persistVisions(
     `);
 
     let written = 0;
-    for (const seed of visions) {
+    for (const seed of beliefs) {
         const record = recordKnowledge(seed);
         const result = insert.run({
             id: record.id,

@@ -127,6 +127,14 @@ export type AncestralRecency = 'none' | 'recent' | 'several_ages' | 'ancient';
 export interface SectAncestor {
     name: string;
     fate: AncestorFate;
+    /**
+     * What they stood at, or null where the record does not say - which is
+     * most of them. A wall of tablets is genealogy, and genealogy does not
+     * keep realms. Only the ancestors who are still load-bearing (ascended, or
+     * sealed and wakeable) are recorded, because those are the two cases where
+     * somebody had to be able to afford it.
+     */
+    realmOrdinal: number | null;
     /** Years since the death, the crossing, or the sealing. */
     yearsAgo: number;
     rememberedFor: string;
@@ -147,6 +155,32 @@ export interface DormantAncestor {
     /** Where they are, in one concrete line. */
     restingPlace: string;
     dormantYears: number;
+    /**
+     * THIS IS NOT THE SECT'S `powerOrdinal`, AND MUST NEVER BE FOLDED INTO IT.
+     *
+     * `powerOrdinal` is the strongest member who will actually answer: someone
+     * who takes a challenge, walks a border, sits at a negotiation. A sealed
+     * ancestor does none of that. They are a break-glass asset with a stated
+     * trigger and a stated cost, spent once and generally not survived, so a
+     * sect holding one is an ordinary sect in every week of its life and a
+     * catastrophe in the one week its `wakeCondition` fires.
+     *
+     * Reading the two as one number breaks the world in both directions: it
+     * makes an eleven-disciple sect unfightable on paper, and it removes the
+     * only thing that made robbing them interesting - that outsiders cannot
+     * tell which sects have something under the mountain, because sects lie
+     * about it in both directions. See `sealedCeiling`.
+     *
+     * Never low, and the reason is economic rather than dramatic. Holding a
+     * body and a soul intact for centuries costs a formation nobody in the
+     * Late Age can build and a vein to run it off, so a sect seals somebody
+     * only when what is kept is worth more than the ground it stands on.
+     * Grand Ascension is the practical floor; the three here are Tribulation
+     * Transcendence. A lower ordinal is a claim about the SEALER rather than
+     * the sealed - somebody with an unreasonable amount of money and a
+     * personal reason - and it has to be said out loud in `wakeCondition`.
+     */
+    realmOrdinal: number;
     /** The circumstance under which the sect would actually break the glass. */
     wakeCondition: string;
     /** What waking costs. Nearly always the ancestor. */
@@ -1923,18 +1957,21 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'Ru Anjing, Third Master of the Pavilion',
                 fate: 'ascended',
+                realmOrdinal: 45,
                 yearsAgo: 380,
                 rememberedFor: 'The last confirmed crossing in the world. Spent her final eleven years divesting: every artifact, every manual, every stone, all of it into the sect, in a sequence the Pavilion recorded and has never published in full.'
             },
             {
                 name: 'Ru Wenshi, Second Master',
                 fate: 'dead',
+                realmOrdinal: null,
                 yearsAgo: 640,
                 rememberedFor: 'Held the gorge through two sieges and died of ordinary age at Deity Transformation, which the Pavilion considers a failure and says so at every memorial.'
             },
             {
                 name: 'Kang Ye, founder',
                 fate: 'dead',
+                realmOrdinal: null,
                 yearsAgo: 1_900,
                 rememberedFor: 'Took the gorge and the vein under it off a house whose name the Pavilion no longer records.'
             }
@@ -1972,12 +2009,14 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'The First Abbot, whose name the Temple did not record',
                 fate: 'ascended',
+                realmOrdinal: 45,
                 yearsAgo: 2_600,
                 rememberedFor: 'Crossed from the plain outside the wall, having given away everything beforehand to people rather than to the Temple, which is why the Temple has no gift and says so.'
             },
             {
                 name: 'Abbot Sheng',
                 fate: 'dead',
+                realmOrdinal: null,
                 yearsAgo: 400,
                 rememberedFor: 'Refused a vein offered by the Clear River Alliance on the grounds that accepting it would change who applied.'
             }
@@ -2007,12 +2046,14 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'Wei Zhaoyin, "the Ascended Steward"',
                 fate: 'lost',
+                realmOrdinal: null,
                 yearsAgo: 430,
                 rememberedFor: 'Recorded by the Pavilion as having crossed at the northern scar. Recorded by nobody else as having existed.'
             },
             {
                 name: 'Mu Ganlu, first Grand Steward',
                 fate: 'dead',
+                realmOrdinal: null,
                 yearsAgo: 610,
                 rememberedFor: 'Bought the Pavilion\'s first auction floor and its tablet hall in the same year, from the same estate.'
             }
@@ -2047,12 +2088,14 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'The First Tyrant, styled the Standing Storm',
                 fate: 'ascended',
+                realmOrdinal: 45,
                 yearsAgo: 3_400,
                 rememberedFor: 'Crossed from the floating stone, and left the Court the manual that is still the world\'s only working lightning curriculum.'
             },
             {
                 name: 'Yan Kuo, ninth Storm Tyrant',
                 fate: 'dead',
+                realmOrdinal: null,
                 yearsAgo: 700,
                 rememberedFor: 'Held the tether through the century it began to fail, and did not report that it was failing.'
             }
@@ -2095,12 +2138,14 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'The Kindler, first Flame Sovereign',
                 fate: 'dormant',
+                realmOrdinal: 41,
                 yearsAgo: 1_200,
                 rememberedFor: 'Took the caldera, signed the transformation contract in full, and went down into the vent rather than finish the terms above ground.'
             },
             {
                 name: 'Sovereign Jiang Wu',
                 fate: 'dead',
+                realmOrdinal: null,
                 yearsAgo: 300,
                 rememberedFor: 'Burned two allied sects to hold the bridge, and was not disciplined for it.'
             }
@@ -2112,6 +2157,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             name: 'The Kindler',
             restingPlace: 'The vent under the caldera floor, behind a seal the sect maintains and has never opened.',
             dormantYears: 1_200,
+            realmOrdinal: 41,
             wakeCondition:
                 'The caldera itself is breached, or a Flame Sovereign dies without a named successor. The sect has come within one death of the second condition twice.',
             wakeCost:
@@ -2133,12 +2179,14 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'The First Sovereign, called the Mirror',
                 fate: 'dormant',
+                realmOrdinal: 42,
                 yearsAgo: 2_000,
                 rememberedFor: 'Dug the curriculum out of the glacier, taught it to nine people, and then lay down in the hall she had cleared.'
             },
             {
                 name: 'Sovereign Bai Ning',
                 fate: 'dead',
+                realmOrdinal: null,
                 yearsAgo: 500,
                 rememberedFor: 'Turned away forty applicants with clean roots and no ice, all of whom would have died learning it.'
             }
@@ -2150,6 +2198,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             name: 'The Mirror',
             restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
             dormantYears: 2_000,
+            realmOrdinal: 42,
             wakeCondition: 'The library is entered by force. Not theft, not trespass - force.',
             wakeCost:
                 'She wakes cold and unhurried, and the Court\'s own hall does not survive it. The Court has written down that this is acceptable.',
@@ -2169,12 +2218,14 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'Xu Ci, the Second Standing Anchor',
                 fate: 'dormant',
+                realmOrdinal: 41,
                 yearsAgo: 700,
                 rememberedFor: 'Drove the replacement eastern nail personally, then had herself entombed under the datum stone rather than retire, on the argument that a nail should stay where it is.'
             },
             {
                 name: 'The First Standing Anchor',
                 fate: 'dead',
+                realmOrdinal: null,
                 yearsAgo: 900,
                 rememberedFor: 'Founded the house on the ruins of the Girdle, and wrote the official account of how that happened.'
             }
@@ -2186,6 +2237,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             name: 'Xu Ci',
             restingPlace: 'Under the datum stone, in the chamber every measurement in the region is ultimately taken from.',
             dormantYears: 700,
+            realmOrdinal: 41,
             wakeCondition:
                 'Two perimeters lost in a single season. One is a shortfall the house posts publicly; two is the condition.',
             wakeCost:
@@ -2205,8 +2257,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     // ═══════════════════════════════════════════════════════════════════
     'sect-verdant-spring-hall': {
         ancestors: [
-            { name: 'Physician Lu Wan', fate: 'dead', yearsAgo: 1_100, rememberedFor: 'Wrote the restoration method the Hall recovered from the valley ruin, or copied it; the Hall is honest that it cannot tell.' },
-            { name: 'Hall Sovereign Ji Rou', fate: 'dead', yearsAgo: 260, rememberedFor: 'Treated a Crimson Abyss envoy, billed him, and was killed for the second thing rather than the first.' }
+            { name: 'Physician Lu Wan', fate: 'dead', realmOrdinal: null, yearsAgo: 1_100, rememberedFor: 'Wrote the restoration method the Hall recovered from the valley ruin, or copied it; the Hall is honest that it cannot tell.' },
+            { name: 'Hall Sovereign Ji Rou', fate: 'dead', realmOrdinal: null, yearsAgo: 260, rememberedFor: 'Treated a Crimson Abyss envoy, billed him, and was killed for the second thing rather than the first.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2219,8 +2271,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-nine-peaks-ascetic-order': {
         ancestors: [
-            { name: 'The Stone Bearer', fate: 'dead', yearsAgo: 1_600, rememberedFor: 'Carried the founding stone over all nine peaks and never said why, which is now the admission requirement.' },
-            { name: 'Patriarch Meng Da', fate: 'lost', yearsAgo: 800, rememberedFor: 'Walked into the vein workings to survey them and did not come out. The Order has never sealed the entrance.' }
+            { name: 'The Stone Bearer', fate: 'dead', realmOrdinal: null, yearsAgo: 1_600, rememberedFor: 'Carried the founding stone over all nine peaks and never said why, which is now the admission requirement.' },
+            { name: 'Patriarch Meng Da', fate: 'lost', realmOrdinal: null, yearsAgo: 800, rememberedFor: 'Walked into the vein workings to survey them and did not come out. The Order has never sealed the entrance.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2233,8 +2285,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-clear-river-alliance': {
         ancestors: [
-            { name: 'Old Shen of the Third Ford', fate: 'dead', yearsAgo: 300, rememberedFor: 'Federated eleven ferry towns by refusing to carry anyone who would not sign.' },
-            { name: 'River Elder Pei', fate: 'dead', yearsAgo: 90, rememberedFor: 'Drowned holding a ford against a Thousand Treasure toll collection.' }
+            { name: 'Old Shen of the Third Ford', fate: 'dead', realmOrdinal: null, yearsAgo: 300, rememberedFor: 'Federated eleven ferry towns by refusing to carry anyone who would not sign.' },
+            { name: 'River Elder Pei', fate: 'dead', realmOrdinal: null, yearsAgo: 90, rememberedFor: 'Drowned holding a ford against a Thousand Treasure toll collection.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2247,8 +2299,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-lantern-hall': {
         ancestors: [
-            { name: 'The First Keeper of Names', fate: 'dead', yearsAgo: 1_500, rememberedFor: 'Began the counter-register by writing down what a crossing had taken from a man who could no longer say it himself.' },
-            { name: 'Keeper Ao Shi', fate: 'dead', yearsAgo: 220, rememberedFor: 'Published the crossing ledger of a sitting Grand Elder and was expelled from four cities for it.' }
+            { name: 'The First Keeper of Names', fate: 'dead', realmOrdinal: null, yearsAgo: 1_500, rememberedFor: 'Began the counter-register by writing down what a crossing had taken from a man who could no longer say it himself.' },
+            { name: 'Keeper Ao Shi', fate: 'dead', realmOrdinal: null, yearsAgo: 220, rememberedFor: 'Published the crossing ledger of a sitting Grand Elder and was expelled from four cities for it.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2261,8 +2313,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-stonewright-consortium': {
         ancestors: [
-            { name: 'Principal Hou Jian', fate: 'dead', yearsAgo: 780, rememberedFor: 'Set the first published exchange rate between raw qi and cut stones, which is still the basis of every price in the region.' },
-            { name: 'Rate-Setter Tuo Ming', fate: 'dead', yearsAgo: 150, rememberedFor: 'Priced a vein sale that started a war, and collected the commission from both sides afterwards.' }
+            { name: 'Principal Hou Jian', fate: 'dead', realmOrdinal: null, yearsAgo: 780, rememberedFor: 'Set the first published exchange rate between raw qi and cut stones, which is still the basis of every price in the region.' },
+            { name: 'Rate-Setter Tuo Ming', fate: 'dead', realmOrdinal: null, yearsAgo: 150, rememberedFor: 'Priced a vein sale that started a war, and collected the commission from both sides afterwards.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2275,8 +2327,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-cinnabar-crucible-guild': {
         ancestors: [
-            { name: 'Grandmaster Xie Lan', fate: 'dead', yearsAgo: 900, rememberedFor: 'Read a third of the method-script on the refining hall wall and built the guild on it.' },
-            { name: 'Furnace Elder Bo', fate: 'dead', yearsAgo: 40, rememberedFor: 'Died proving that the fourth line of the wall script is not a step in the method.' }
+            { name: 'Grandmaster Xie Lan', fate: 'dead', realmOrdinal: null, yearsAgo: 900, rememberedFor: 'Read a third of the method-script on the refining hall wall and built the guild on it.' },
+            { name: 'Furnace Elder Bo', fate: 'dead', realmOrdinal: null, yearsAgo: 40, rememberedFor: 'Died proving that the fourth line of the wall script is not a step in the method.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2289,8 +2341,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-ashen-forge-clan': {
         ancestors: [
-            { name: 'The First Hammer', fate: 'dead', yearsAgo: 1_400, rememberedFor: 'Found the furnace already burning and built the compound around it rather than move it.' },
-            { name: 'Clan Chief Duan Qi', fate: 'dead', yearsAgo: 170, rememberedFor: 'Refused to arm the Azure Cloud Pavilion for a decade over a remark, and the clan is still poorer for it.' }
+            { name: 'The First Hammer', fate: 'dead', realmOrdinal: null, yearsAgo: 1_400, rememberedFor: 'Found the furnace already burning and built the compound around it rather than move it.' },
+            { name: 'Clan Chief Duan Qi', fate: 'dead', realmOrdinal: null, yearsAgo: 170, rememberedFor: 'Refused to arm the Azure Cloud Pavilion for a decade over a remark, and the clan is still poorer for it.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2303,7 +2355,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-hollow-bell-wanderers': {
         ancestors: [
-            { name: 'Whoever hung the first bell', fate: 'lost', yearsAgo: 200, rememberedFor: 'Nothing. There is a bell at a crossroads and a practice of hanging more.' }
+            { name: 'Whoever hung the first bell', fate: 'lost', realmOrdinal: null, yearsAgo: 200, rememberedFor: 'Nothing. There is a bell at a crossroads and a practice of hanging more.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2316,7 +2368,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-kiln-wardens': {
         ancestors: [
-            { name: 'The First Keeper of the Kiln', fate: 'lost', yearsAgo: 4_000, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' }
+            { name: 'The First Keeper of the Kiln', fate: 'lost', realmOrdinal: null, yearsAgo: 4_000, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2332,7 +2384,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-hollow-court': {
         ancestors: [
-            { name: 'The four seated', fate: 'dead', yearsAgo: 0, rememberedFor: 'Nothing yet. They are still sitting there, and they are the ancestors of nobody, having taken no disciples.' }
+            { name: 'The four seated', fate: 'dead', realmOrdinal: null, yearsAgo: 0, rememberedFor: 'Nothing yet. They are still sitting there, and they are the ancestors of nobody, having taken no disciples.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2345,7 +2397,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-the-severed': {
         ancestors: [
-            { name: 'The First Cut', fate: 'lost', yearsAgo: 600, rememberedFor: 'Cut every bond, memory and name in advance, and is recorded in the house ledger as an entry with the identifying columns blank.' }
+            { name: 'The First Cut', fate: 'lost', realmOrdinal: null, yearsAgo: 600, rememberedFor: 'Cut every bond, memory and name in advance, and is recorded in the house ledger as an entry with the identifying columns blank.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2360,8 +2412,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-crimson-abyss-hall': {
         ancestors: [
-            { name: 'The First Abyss Lord', fate: 'dead', yearsAgo: 500, rememberedFor: 'Opened the sinkhole hall and set the tithe at a rate the Hall has never raised.' },
-            { name: 'Left Envoy Shu', fate: 'dead', yearsAgo: 60, rememberedFor: 'Recruited two hundred refused applicants in one season, which is still the record.' }
+            { name: 'The First Abyss Lord', fate: 'dead', realmOrdinal: null, yearsAgo: 500, rememberedFor: 'Opened the sinkhole hall and set the tithe at a rate the Hall has never raised.' },
+            { name: 'Left Envoy Shu', fate: 'dead', realmOrdinal: null, yearsAgo: 60, rememberedFor: 'Recruited two hundred refused applicants in one season, which is still the record.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2374,7 +2426,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-bone-lantern-cult': {
         ancestors: [
-            { name: 'The Pale Ancestor', fate: 'dead', yearsAgo: 700, rememberedFor: 'Worked the third year after a war and established the rotation the Cult still follows.' }
+            { name: 'The Pale Ancestor', fate: 'dead', realmOrdinal: null, yearsAgo: 700, rememberedFor: 'Worked the third year after a war and established the rotation the Cult still follows.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2387,8 +2439,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-standing-grove': {
         ancestors: [
-            { name: 'The first Keeper, who planted nothing and cleared nothing', fate: 'dead', yearsAgo: 240, rememberedFor: 'Settled a border war between two granted sects by walking into the middle of it unarmed and staying there for eleven days.' },
-            { name: 'Keeper Wen Zhao', fate: 'dead', yearsAgo: 60, rememberedFor: 'Answered the last test of the deference zone in nine days, visibly, and then went home and never referred to it again.' }
+            { name: 'The first Keeper, who planted nothing and cleared nothing', fate: 'dead', realmOrdinal: null, yearsAgo: 240, rememberedFor: 'Settled a border war between two granted sects by walking into the middle of it unarmed and staying there for eleven days.' },
+            { name: 'Keeper Wen Zhao', fate: 'dead', realmOrdinal: null, yearsAgo: 60, rememberedFor: 'Answered the last test of the deference zone in nine days, visibly, and then went home and never referred to it again.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2401,8 +2453,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-weir-office': {
         ancestors: [
-            { name: 'Warden Qiu Shen', fate: 'dead', yearsAgo: 220, rememberedFor: 'Took the weir works during the resettlement, wrote the grant book, and never explained why access was to be rented rather than shared.' },
-            { name: 'Weir Master Ho Lian', fate: 'dead', yearsAgo: 60, rememberedFor: 'Reached Core Formation on Office grants, which remains the highest anyone has ever gone from inside the Marches.' }
+            { name: 'Warden Qiu Shen', fate: 'dead', realmOrdinal: null, yearsAgo: 220, rememberedFor: 'Took the weir works during the resettlement, wrote the grant book, and never explained why access was to be rented rather than shared.' },
+            { name: 'Weir Master Ho Lian', fate: 'dead', realmOrdinal: null, yearsAgo: 60, rememberedFor: 'Reached Core Formation on Office grants, which remains the highest anyone has ever gone from inside the Marches.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2415,7 +2467,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-sixmile-wardens': {
         ancestors: [
-            { name: 'The first Marker, name not recorded', fate: 'dead', yearsAgo: 190, rememberedFor: 'Walked the burn edge until it killed her, painting stakes, and the survey she left is still the basis of every safe route in the region.' }
+            { name: 'The first Marker, name not recorded', fate: 'dead', realmOrdinal: null, yearsAgo: 190, rememberedFor: 'Walked the burn edge until it killed her, painting stakes, and the survey she left is still the basis of every safe route in the region.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2428,8 +2480,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-gleaners-company': {
         ancestors: [
-            { name: 'Company Master Bo Ai', fate: 'dead', yearsAgo: 140, rememberedFor: 'Established the rotation that keeps a burn zone unworked for nine years between passes, which halved the losses and is still resented.' },
-            { name: 'Deep Gleaner Xun', fate: 'lost', yearsAgo: 30, rememberedFor: 'Went through the sealed part of the sorting-yard ruin on a wager and did not come back. The Company sealed it again and raised the wager.' }
+            { name: 'Company Master Bo Ai', fate: 'dead', realmOrdinal: null, yearsAgo: 140, rememberedFor: 'Established the rotation that keeps a burn zone unworked for nine years between passes, which halved the losses and is still resented.' },
+            { name: 'Deep Gleaner Xun', fate: 'lost', realmOrdinal: null, yearsAgo: 30, rememberedFor: 'Went through the sealed part of the sorting-yard ruin on a wager and did not come back. The Company sealed it again and raised the wager.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2442,8 +2494,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'house-ninefold-ledger': {
         ancestors: [
-            { name: 'First Keeper Yan Duo', fate: 'dead', yearsAgo: 2_290, rememberedFor: 'Founded the Ledger the year after the Tally Court ended, having been one of its auditors.' },
-            { name: 'Circuit Arbiter Tang Wei', fate: 'dead', yearsAgo: 400, rememberedFor: 'Established that a debt survives the death of the borrower, in a ruling every sect now relies on and several have tried to overturn.' }
+            { name: 'First Keeper Yan Duo', fate: 'dead', realmOrdinal: null, yearsAgo: 2_290, rememberedFor: 'Founded the Ledger the year after the Tally Court ended, having been one of its auditors.' },
+            { name: 'Circuit Arbiter Tang Wei', fate: 'dead', realmOrdinal: null, yearsAgo: 400, rememberedFor: 'Established that a debt survives the death of the borrower, in a ruling every sect now relies on and several have tried to overturn.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2456,8 +2508,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'house-narrow-hour': {
         ancestors: [
-            { name: 'The First Sighting', fate: 'dead', yearsAgo: 3_180, rememberedFor: 'Established that possibilities narrow, and that the narrowing is the only part worth reading.' },
-            { name: 'Reader Cao Yin', fate: 'dead', yearsAgo: 300, rememberedFor: 'Sighted the year of the scar, said nothing publicly, and left the house a sealed account that does not match what happened.' }
+            { name: 'The First Sighting', fate: 'dead', realmOrdinal: null, yearsAgo: 3_180, rememberedFor: 'Established that possibilities narrow, and that the narrowing is the only part worth reading.' },
+            { name: 'Reader Cao Yin', fate: 'dead', realmOrdinal: null, yearsAgo: 300, rememberedFor: 'Sighted the year of the scar, said nothing publicly, and left the house a sealed account that does not match what happened.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2470,8 +2522,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'house-bound-word': {
         ancestors: [
-            { name: 'The First Oathwright', fate: 'dead', yearsAgo: 3_780, rememberedFor: 'Swore the house\'s founding oath, which is still binding and is why the house cannot witness for the Severed.' },
-            { name: 'Warden of Terms Lin Ke', fate: 'dead', yearsAgo: 500, rememberedFor: 'Read a treaty back to two sects until both withdrew from a war they had already started.' }
+            { name: 'The First Oathwright', fate: 'dead', realmOrdinal: null, yearsAgo: 3_780, rememberedFor: 'Swore the house\'s founding oath, which is still binding and is why the house cannot witness for the Severed.' },
+            { name: 'Warden of Terms Lin Ke', fate: 'dead', realmOrdinal: null, yearsAgo: 500, rememberedFor: 'Read a treaty back to two sects until both withdrew from a war they had already started.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2484,7 +2536,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'house-quiet-cut': {
         ancestors: [
-            { name: 'Unrecorded', fate: 'lost', yearsAgo: 1_900, rememberedFor: 'The house cuts its own founding records as a matter of doctrine, and does not know who started it.' }
+            { name: 'Unrecorded', fate: 'lost', realmOrdinal: null, yearsAgo: 1_900, rememberedFor: 'The house cuts its own founding records as a matter of doctrine, and does not know who started it.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2497,7 +2549,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'house-held-names': {
         ancestors: [
-            { name: 'First Register Gu Yao', fate: 'dead', yearsAgo: 2_690, rememberedFor: 'Held a name through a crossing and gave most of it back, which is the founding demonstration and the house\'s entire product.' }
+            { name: 'First Register Gu Yao', fate: 'dead', realmOrdinal: null, yearsAgo: 2_690, rememberedFor: 'Held a name through a crossing and gave most of it back, which is the founding demonstration and the house\'s entire product.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2510,8 +2562,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'house-measured-span': {
         ancestors: [
-            { name: 'The Long Measure', fate: 'dead', yearsAgo: 4_900, rememberedFor: 'Wrote both distances for the first time, walked and true, and the survey has been argued from ever since.' },
-            { name: 'Keeper Fu Zhen', fate: 'lost', yearsAgo: 1_400, rememberedFor: 'Went through a terminal in the year the gates closed and has not been reported since. Four terminals open somewhere breathable.' }
+            { name: 'The Long Measure', fate: 'dead', realmOrdinal: null, yearsAgo: 4_900, rememberedFor: 'Wrote both distances for the first time, walked and true, and the survey has been argued from ever since.' },
+            { name: 'Keeper Fu Zhen', fate: 'lost', realmOrdinal: null, yearsAgo: 1_400, rememberedFor: 'Went through a terminal in the year the gates closed and has not been reported since. Four terminals open somewhere breathable.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -2555,6 +2607,65 @@ const SECTS_BY_TAUGHT_TECHNIQUE: ReadonlyMap<string, readonly SectEntry[]> = (()
     return map;
 })();
 
+
+// ──────────────────────────────────────────────────────────────────────
+// ACTING POWER VERSUS SEALED POWER
+//
+// Two different questions that must never be answered with one number:
+//
+//   what can this sect field on a Tuesday   -> `powerOrdinal`
+//   what can it field once, ever, at cost   -> `sealedCeiling`
+//
+// The gap between them is the interesting part of a sect. A sect with a small
+// gap is what it looks like. A sect with a large one is an ordinary provincial
+// institution until a specific condition fires, and then it is briefly the
+// most dangerous thing in the province and afterwards has nothing at all.
+// ──────────────────────────────────────────────────────────────────────
+
+export interface SectThreat {
+    /** Strongest member who will actually answer. The public number. */
+    acting: number;
+    /**
+     * Strongest thing the sect can put in the world at all, including one it
+     * can only spend once. Equals `acting` where there is nothing sealed.
+     */
+    ceiling: number;
+    /** Null where nothing is sealed. What has to happen for `ceiling` to be real. */
+    wakeCondition: string | null;
+    /** Null where nothing is sealed. What spending it costs, which is usually all of it. */
+    wakeCost: string | null;
+    /** False when outsiders do not know there is anything under the mountain. */
+    sealedIsPublic: boolean;
+}
+
+/**
+ * What a sect is worth being afraid of, split into the two numbers.
+ *
+ * Deliberately returns both rather than a max: an engine deciding whether a
+ * challenge is survivable wants `acting`, and an engine deciding whether a
+ * plan to burn the sect down is wise wants `ceiling`. Collapsing them is the
+ * bug this function exists to prevent.
+ */
+export function sectThreat(id: string): SectThreat | undefined {
+    const sect = getSect(id);
+    if (!sect) return undefined;
+    const sealed = SECT_ANCESTRY[id]?.dormant ?? null;
+    return {
+        acting: sect.powerOrdinal,
+        ceiling: Math.max(sect.powerOrdinal, sealed?.realmOrdinal ?? 0),
+        wakeCondition: sealed?.wakeCondition ?? null,
+        wakeCost: sealed?.wakeCost ?? null,
+        sealedIsPublic: sealed?.publiclyKnown ?? false
+    };
+}
+
+/** Sects whose one-off ceiling is above what they can field day to day. */
+export function sectsWithASealedCeiling(): SectEntry[] {
+    return SECTS.filter(s => {
+        const d = SECT_ANCESTRY[s.id]?.dormant;
+        return d != null && d.realmOrdinal > s.powerOrdinal;
+    });
+}
 export function getSect(id: string): SectEntry | undefined {
     return SECT_BY_ID.get(id);
 }

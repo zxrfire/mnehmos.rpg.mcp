@@ -673,8 +673,10 @@ export class GameService {
         if (!place) {
             return refused('engine.resolvePlace', 'move', factsForRefusal(
                 'Nowhere in particular.',
-                'No destination was named, so nothing moved. Places in this world are plain and ' +
-                'physical - Sweptground, the Low Fall, Scarwater. Name one.'
+                `You get as far as the edge of ${placeName(cultivator)} before it occurs to you ` +
+                'that you have not decided where you are going, and there is nothing out there ' +
+                'obliging enough to decide it for you.',
+                'No destination named; location unchanged and no time passed.'
             ));
         }
 
@@ -753,12 +755,13 @@ export class GameService {
         if (!subject) {
             // Worded so that it does not confirm existence either. "You have
             // never heard of it" and "it is not there" have to look the same
-            // from inside, or the refusal itself becomes the answer key.
+            // from inside, or the refusal itself becomes the answer key. And it
+            // is written as a scene, because an error message reaching the
+            // player is a scene that failed to get written.
             return refused('engine.resolveEntity', 'investigate', factsForRefusal(
-                `Nothing you know of by that name.`,
-                `"${query}" is not something this cultivator has heard of, and nothing they can ` +
-                `see answers to it. The engine will not describe what the player has no ` +
-                `knowledge of, and it will not confirm whether such a thing exists. ` +
+                'Nothing here answers to it.',
+                this.blankLook(cultivator),
+                `Unresolved subject "${query}": no knowledge record and nothing co-located. ` +
                 `${this.knownNamesLine(cultivator, scope)}`
             ));
         }
@@ -826,18 +829,17 @@ export class GameService {
         if (query.length < 2) {
             return refused('engine.resolveParty', 'interact', factsForRefusal(
                 'Nobody in particular.',
-                'No person or faction was named, so nobody was approached. ' +
-                `${this.knownNamesLine(cultivator, scope)}`
+                this.whoIsAbout(cultivator),
+                `No party named; nobody approached. ${this.knownNamesLine(cultivator, scope)}`
             ));
         }
 
         const party = resolveParty(this.repos, query, cultivator, scope);
         if (!party) {
             return refused('engine.resolveParty', 'interact', factsForRefusal(
-                `Nobody you know of by that name.`,
-                `"${query}" is nobody this cultivator has heard of and nobody standing in front of ` +
-                `them, so there was nobody to approach. The engine will not conjure a person to ` +
-                `have a conversation with, and it will not say whether such a person exists. ` +
+                'Nobody by that name.',
+                this.blankLook(cultivator),
+                `Unresolved party "${query}": no knowledge record and nobody co-located. ` +
                 `${this.knownNamesLine(cultivator, scope)}`
             ));
         }
@@ -853,11 +855,12 @@ export class GameService {
             ? this.hear(cultivator, run, `interact:${party.id}`, party.id)
             : null;
 
+        // The player gets the honest in-fiction shape of it - an approach made,
+        // nothing settled. Why it is not settled is a fact about this codebase,
+        // not about the world, and it belongs on the mechanical channel.
         const unresolved =
-            'The engine can say who they are and what stands between you; it cannot yet say what ' +
-            'came of the approach. Resolving that needs the social layer (relationships, grudges, ' +
-            'obligations, what each side knows) and the capability predicates. Until those land, ' +
-            'nothing was agreed and no state changed.';
+            'Nothing is settled by it. Nobody agreed to anything, nothing changed hands, and ' +
+            'no standing shifted one way or the other.';
 
         const facts = factsForInteraction(cultivator, party.name, intent, party.facts, unresolved);
         if (spoken) addHearing(facts, spoken);
@@ -910,10 +913,13 @@ export class GameService {
             const held = pouchNames(this.db, cultivator.id);
             return refused('engine.resolveRecipe', 'refine', factsForRefusal(
                 query.length >= 2 ? `No formula called ${query}.` : 'No formula named.',
-                `The cauldron needs a formula the world actually holds. ` +
-                `In the pouch: ${held.join(', ') || 'nothing'}. ` +
-                'Knowledge in this world is recovered, not invented: a formula is dug out of a tomb, ' +
-                'not thought up at the cauldron.'
+                held.length > 0
+                    ? 'You turn out the pouch and look at what is in it for a while. Nothing in ' +
+                      'there adds up to the thing you had in mind, and there is no method for it ' +
+                      'that you were ever taught.'
+                    : 'The pouch is empty and the cauldron is cold, and wanting a pill is not a ' +
+                      'method for making one.',
+                `Unresolved recipe "${query}". Pouch: ${held.join(', ') || 'empty'}.`
             ));
         }
 
@@ -945,10 +951,15 @@ export class GameService {
             return refused('engine.resolveTechnique', 'train_technique', factsForRefusal(
                 technique ? `${technique.name} is not known.` : 'No art named.',
                 technique
-                    ? `${cultivator.name} has never been taught ${technique.name}. A manual is somebody ` +
-                      `else's memory, and it has to be found before it can be read. ` +
-                      `Known: ${knows.join(', ') || 'nothing at all'}.`
-                    : `Name an art to practise. Known: ${knows.join(', ') || 'nothing at all'}.`
+                    ? `You know the name and that is the whole of what you have of it. Nobody ever ` +
+                      `taught you ${technique.name}, and going through the motions of something you ` +
+                      'have not been shown is just moving.'
+                    : knows.length > 0
+                        ? 'You settle to practise, and then cannot decide which of the things you ' +
+                          'know you meant to practise.'
+                        : 'You settle to practise, and it comes to you that you have never actually ' +
+                          'been taught anything.',
+                `Unresolved or unlearned technique. Known: ${knows.join(', ') || 'none'}.`
             ));
         }
 
@@ -1049,10 +1060,14 @@ export class GameService {
         subject: string
     ): Execution {
         if (isGuidingErrorBody(result)) {
-            const hint = typeof result.hint === 'string' ? ` ${result.hint}` : '';
+            // `message` is written in the world's voice by the tool layer.
+            // `hint` is a tool invocation for a developer, and never goes to a
+            // player: it names the API rather than anything in the fiction.
+            const hint = typeof result.hint === 'string' ? result.hint : null;
             return refused(name, action, factsForRefusal(
                 `${subject}: refused.`,
-                `${result.message}${hint}`
+                result.message,
+                `${result.error}${hint ? `. ${hint}` : ''}`
             ));
         }
 
@@ -1322,14 +1337,17 @@ export class GameService {
         if (cultivator.satiety >= SATIETY_MAX && cultivator.starvationTurns === 0) {
             return refused('cultivator.applyDeltas', 'eat', factsForRefusal(
                 'Already fed.',
-                'The belly is full. Nothing was bought and nothing was spent.'
+                'You are not hungry, and eating for the sake of it is a habit for people with more ' +
+                'stones than you have.',
+                `Satiety already ${cultivator.satiety}/${SATIETY_MAX}; no purchase made.`
             ));
         }
         if (cultivator.spiritStones < MEAL_COST_STONES) {
             return refused('cultivator.applyDeltas', 'eat', factsForRefusal(
                 'Nothing to buy it with.',
-                `A meal costs ${MEAL_COST_STONES} spirit stone and the purse holds ${cultivator.spiritStones}. ` +
-                'Half the deaths in this world are logistical.'
+                'You count what you are carrying twice, which does not change it. A bowl costs ' +
+                'more than that, and nobody here is in the business of charity.',
+                `Meal costs ${MEAL_COST_STONES}; purse holds ${cultivator.spiritStones}.`
             ));
         }
 
@@ -1487,11 +1505,57 @@ export class GameService {
     }
 
     /**
+     * The blank look, which is the answer.
+     *
+     * Somebody in the same place has never heard the words, or there is nobody
+     * to have not heard them. Either way the player learns the same thing - the
+     * name gets them nothing here - without being told that a rule was applied.
+     * Never confirms whether the thing exists, and never lists what would have
+     * worked.
+     */
+    private blankLook(cultivator: Cultivator): string {
+        const here = othersPresent(this.repos, cultivator);
+        const where = placeName(cultivator);
+        if (here.length === 0) {
+            return `You say it aloud in ${where} and ${where} carries on as it was. ` +
+                'Whatever you meant by it, there is nothing here that answers to it.';
+        }
+        const witness = here[0].name;
+        return `You put the words to ${witness}. They look at you the way people look at a ` +
+            'sentence with a hole in it, and then go back to what they were doing.';
+    }
+
+    /**
+     * What is actually about, briefly, when the player named nobody.
+     *
+     * Says what is there and stops. A list of who could be approached is a
+     * developer affordance wearing a sentence.
+     */
+    private whoIsAbout(cultivator: Cultivator): string {
+        const here = othersPresent(this.repos, cultivator);
+        const where = placeName(cultivator);
+        if (here.length === 0) {
+            return `There is nobody about in ${where} at all, and you had not settled on who you ` +
+                'were looking for before you noticed that.';
+        }
+        if (here.length === 1) {
+            return `${here[0].name} is the only person in ${where}, and you have not decided ` +
+                'whether it was them you wanted.';
+        }
+        return `There are people about in ${where}, and you get as far as opening your mouth ` +
+            'before realising you had not picked one.';
+    }
+
+    /**
      * What the player could have meant, drawn only from what they know.
      *
      * A refusal that listed every recruiting sect in the catalog would leak the
      * world through the error path, which is exactly the door discovery.md is
      * shutting. This lists people in the room and names already held.
+     *
+     * INSPECTOR ONLY. It used to be appended to the refusal the player reads,
+     * which made every dead end end in a list of valid targets - a developer
+     * affordance, and an invitation to play the parser instead of the game.
      */
     private knownNamesLine(cultivator: Cultivator, scope: KnowledgeScope): string {
         const names = nearbyNames(this.repos, cultivator, scope);
@@ -1830,7 +1894,15 @@ function refused(name: string, action: string, facts: EngineFacts): Execution {
         timeSkip: null,
         breakthrough: null,
         outcome: 'refused',
-        calls: [{ name, action, summary: facts.lines[0] ?? facts.headline, ok: false }]
+        // The inspector gets the mechanical account, not the scene. A developer
+        // reading this row wants to know exactly what failed to resolve; the
+        // player already got the version where somebody looked at them blankly.
+        calls: [{
+            name,
+            action,
+            summary: facts.structure[0] ?? facts.headline,
+            ok: false
+        }]
     };
 }
 
