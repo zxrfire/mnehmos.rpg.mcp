@@ -2,7 +2,7 @@
  * Perception-Assessment Repository (INSERT-only ledger).
  *
  * Phase-1 wiring of the §10.2 shadow ledger. Every assessment attempt
- * — commit, reject_inert, no_op_spoken, or unknown — writes exactly
+ * - commit, reject_inert, no_op_spoken, or unknown - writes exactly
  * one row here. No update, no delete. The ledger shape is the rule
  * (per A5): looking is auditable as a real event even when the
  * looking returned nothing.

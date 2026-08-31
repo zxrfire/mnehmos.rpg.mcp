@@ -1,5 +1,5 @@
 /**
- * Scene repository — DM-committed shared narrative frames.
+ * Scene repository - DM-committed shared narrative frames.
  *
  * A scene is the engine-side source of truth for "what is happening now"
  * across all participants. Agent invocations auto-inject the latest scene
@@ -95,7 +95,7 @@ export class SceneRepository {
     }
 
     /**
-     * Latest scene a given character participates in (across all worlds — characters
+     * Latest scene a given character participates in (across all worlds - characters
      * are typically bound to one world via party/region but we don't require it here).
      * Used by the prompt composer to inject the current scene as a system slice.
      * Returns null if the character has never been a participant.

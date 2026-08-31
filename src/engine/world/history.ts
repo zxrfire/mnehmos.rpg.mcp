@@ -317,10 +317,15 @@ export interface Era {
     /** Null while the era is still running. */
     endDay: number | null;
     /**
-     * Fraction of clean fall, 0..1. Ash degrades with every pass through a
-     * body, so this only ever falls. The present is thin because it is late.
+     * Qi density of the age, 0..1, against the richest ground the world has
+     * ever carried.
+     *
+     * It only ever falls. Veins that ran rich for a thousand years have been
+     * drawn down; what the old civilisations did not consume they monopolised;
+     * ancient wars killed whole regions outright and dead ground does not come
+     * back. The present is thin because most places have already been used.
      */
-    ashDensity: number;
+    qiDensity: number;
     note: string;
 }
 
@@ -787,8 +792,8 @@ export interface Ruin {
     sealedYear: number;
     originFactId: string;
     formerFactionId: string | null;
-    /** Ash density inside: a pocket nothing has breathed since the seal. */
-    ashDensity: number;
+    /** Qi density inside: a pocket nothing has drawn on since the seal. */
+    qiDensity: number;
     /** Realm ordinal the guardians and trials were calibrated for. */
     dangerOrdinal: number;
     techniqueIds: string[];
@@ -859,7 +864,7 @@ const PLACE_TAIL = [
 ] as const;
 
 const FACTION_ADJ = [
-    'Ninefold', 'Ash', 'Iron Pear', 'Cold Kiln', 'Long Lantern', 'Split Stone',
+    'Ninefold', 'Grey Vein', 'Iron Pear', 'Cold Kiln', 'Long Lantern', 'Split Stone',
     'Quiet Wheel', 'Falling Rope', 'Second Ledger', 'Bone Orchard', 'Grey Millet',
     'Hollow Reed', 'Wound Gate', 'Thousand Furrow', 'Salt Bell', 'Low Hearth'
 ] as const;
@@ -918,7 +923,7 @@ const DEFAULT_PRIOR_AGES: Required<PriorAgesOptions> = {
  * Generate several prior ages of real history.
  *
  * Everything a modern cultivator trips over - a wall someone else built, a
- * sealed door nobody can read, a patch of ground that will not hold ash - is
+ * sealed door nobody can read, dead ground where the qi does not return - is
  * produced here as the consequence of a dated event with names attached, so
  * that ruins are ordinary rather than special and the true cause of a place is
  * recoverable in principle.
@@ -943,9 +948,9 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
         const ageEnd = ageStart + o.yearsPerAge;
         const rng = forStream(seed, 'prior-age', ageIndex);
 
-        // Ash thins monotonically toward the present. The current age is not
-        // unlucky; it is late, breathing what the ancients already used.
-        const ashDensity = Number((0.95 - ageIndex * (0.65 / Math.max(1, o.ages))).toFixed(4));
+        // Qi thins monotonically toward the present. The current age is not
+        // unlucky; it is late. Most places have already been used.
+        const qiDensity = Number((0.95 - ageIndex * (0.65 / Math.max(1, o.ages))).toFixed(4));
         // The further back, the less survives.
         const fidelity: RecordFidelity =
             ageIndex === 0 ? 'lost' : ageIndex === 1 ? 'rumour' : 'partial';
@@ -956,9 +961,9 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
             name: eraName(rng),
             startDay: dayOfYear(ageStart),
             endDay: dayOfYear(ageEnd),
-            ashDensity,
+            qiDensity,
             note:
-                `Ash density ${ashDensity.toFixed(2)}. ` +
+                `Qi density ${qiDensity.toFixed(2)}. ` +
                 `${o.factionsPerAge} great powers held the region; none of them still stand.`
         };
         ledger.eras.push(era);
@@ -968,12 +973,14 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
             eraId: era.id,
             kind: 'era_opened',
             scale: 'world',
-            summary: `${era.name} began. Ambient ash stood at ${ashDensity.toFixed(2)} of clean fall.`,
+            summary:
+                `${era.name} began. Ambient qi stood at ${qiDensity.toFixed(2)} of the ` +
+                `richest ground the world has carried.`,
             visibility: 'public',
             fidelity,
             causeKnown,
             magnitude: 1,
-            data: { ashDensity }
+            data: { qiDensity }
         }));
 
         for (let s = 0; s < o.factionsPerAge; s++) {
@@ -1002,9 +1009,8 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                 data: { factionName: name }
             }));
 
-            // Somebody got out. That is where the age's ash came from, and it
-            // is remembered as a golden year by people whose great-grandparents
-            // were not born for it.
+            // Somebody got out. It is remembered as a golden year by people
+            // whose great-grandparents were not born for it.
             if (srng.chance(0.45)) {
                 const ascendedYear = foundedYear + srng.int(50, Math.floor(o.yearsPerAge * 0.4));
                 const who = personName(srng);
@@ -1032,8 +1038,8 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                     place: seat,
                     factionIds: [factionId],
                     summary:
-                        `A spirit tide fell across ${seat} for eleven days. ` +
-                        `A whole remembered life, coming down at once.`,
+                        `A spirit tide ran through ${seat} for eleven days. ` +
+                        `A vein shifting, or a seal failing; nobody agreed which.`,
                     causes: [ascFact.id],
                     visibility: 'public',
                     fidelity,
@@ -1043,7 +1049,7 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                 }));
             }
 
-            // Failed tribulations leave ground that will never hold ash again.
+            // Failed tribulations leave dead ground the qi never returns to.
             if (srng.chance(0.5)) {
                 const scarYear = foundedYear + srng.int(20, Math.floor(o.yearsPerAge * 0.5));
                 const failed = personName(srng);
@@ -1058,7 +1064,7 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                     factionIds: [factionId],
                     summary:
                         `${failed} failed heavenly tribulation at ${scarSite}. ` +
-                        `No body. The ground has not held ash since.`,
+                        `No body. The qi has not returned since.`,
                     causes: [foundFact.id],
                     visibility: 'public',
                     // A scar is physically obvious forever; the reason for it
@@ -1179,7 +1185,7 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                 sealedYear: fallYear,
                 originFactId: ruinFact.id,
                 formerFactionId: factionId,
-                ashDensity: Number(Math.min(1, ashDensity + 0.2).toFixed(4)),
+                qiDensity: Number(Math.min(1, qiDensity + 0.2).toFixed(4)),
                 dangerOrdinal: Math.max(4, 30 - ageIndex * 6 - srng.int(0, 6)),
                 techniqueIds: techIds,
                 treasureIds,

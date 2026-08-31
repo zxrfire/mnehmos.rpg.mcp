@@ -161,7 +161,7 @@ export class SectRepository {
 
     /**
      * Enrol a cultivator. Membership is exclusive (a unique index enforces
-     * it), so joining a second sect is a defection, not an addition — the old
+     * it), so joining a second sect is a defection, not an addition - the old
      * row is removed in the same transaction rather than left to collide.
      */
     addMember(sectId: string, cultivatorId: string, rankIndex = 0): SectMembership | null {

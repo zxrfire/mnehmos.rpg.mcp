@@ -23,8 +23,8 @@ import type Database from 'better-sqlite3';
  *    application-side scan instead of an indexed COUNT.
  *
  * 2. `cultivators.run_id` carries no FOREIGN KEY, while `runs.cultivator_id`
- *    does. The relationship is genuinely circular — a run belongs to a
- *    cultivator and a cultivator belongs to a run — and SQLite can only
+ *    does. The relationship is genuinely circular - a run belongs to a
+ *    cultivator and a cultivator belongs to a run - and SQLite can only
  *    satisfy a cycle with deferred constraints plus a mandatory transaction
  *    around every insert. Since a run is always started *for* an existing
  *    cultivator, the cultivator side is the safe one to enforce; the back
@@ -259,7 +259,7 @@ export function migrateCultivation(db: Database.Database): void {
     -- -- DURABLE PER-CULTIVATOR SCALARS ------------------------------------
     -- Small facts that are neither vitals nor rows of their own: a pill held
     -- for the next bottleneck, the day grain abstinence expires, accumulated
-    -- pill toxicity, the day the stipend was last drawn, whether the Vault has
+    -- pill toxicity, the day the stipend was last drawn, whether a crossing has
     -- already taken the name. Key/value rather than columns because these are
     -- sparse, independently written, and expected to come and go as pills and
     -- subsystems are added.
@@ -293,7 +293,7 @@ export function migrateCultivation(db: Database.Database): void {
     -- re-rolled, so reading a site twice cannot produce two different hauls.
     --
     -- run_id carries no FOREIGN KEY: a site outlives the run that turned it up.
-    -- The map of the Vault is pocked with other people's ambitions, and a scar
+    -- The map is pocked with other people's ambitions, and a scar
     -- does not stop existing because the cultivator who made it is dead.
     CREATE TABLE IF NOT EXISTS cultivation_sites (
       id TEXT PRIMARY KEY,
@@ -330,8 +330,8 @@ export function migrateCultivation(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_ambient_aliases_run ON ambient_aliases(run_id, location);
 
     -- -- THE TOLL LEDGER ----------------------------------------------------
-    -- The Vault charges an instalment at every realm boundary, and what it
-    -- takes is never a stat. "You can look at the ledger and see the shape of
+    -- The Price of Advancement is charged in instalments, one at every realm
+    -- boundary, and what it takes is never a stat. "You can look at the ledger and see the shape of
     -- who you used to be" is a design requirement, so every instalment is
     -- recorded with what went, why that one, and the odds it was charged at --
     -- including the crossings where nothing was taken.
@@ -367,7 +367,7 @@ export function migrateCultivation(db: Database.Database): void {
  *
  * CREATE TABLE IF NOT EXISTS is a no-op on a database that already has the
  * table, so a column added to the DDL above reaches new databases only. Every
- * post-release column therefore needs an explicit, guarded ALTER here — the
+ * post-release column therefore needs an explicit, guarded ALTER here - the
  * same shape runMigrations() in migrations.ts uses for the `characters` table.
  * Checking PRAGMA table_info rather than catching the duplicate-column error
  * keeps startup quiet on the overwhelmingly common already-migrated path.

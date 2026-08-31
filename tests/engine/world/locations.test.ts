@@ -374,6 +374,6 @@ describe('locations: built from the seeded past', () => {
         const scar = locations.find(l => l.kind === 'scar');
         expect(scar).toBeDefined();
         expect(scar!.ambient).toBe('thin');
-        expect(scar!.ashDensity).toBe(0);
+        expect(scar!.qiDensity).toBe(0);
     });
 });

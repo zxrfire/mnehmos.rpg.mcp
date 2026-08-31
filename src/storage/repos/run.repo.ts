@@ -31,7 +31,7 @@ export interface StartRunInput {
  * Run lifecycle and the death ledger.
  *
  * A run is the unit of permadeath. It carries the seed every stochastic system
- * derives from — reproducibility is a feature, not a debugging convenience —
+ * derives from - reproducibility is a feature, not a debugging convenience -
  * and once ended it is never reopened. `endRun` is the only writer of a
  * terminal status, and it is idempotent-by-refusal: a finished run cannot be
  * finished twice with a different cause.
@@ -139,7 +139,7 @@ export class RunRepository {
     }
 
     /**
-     * The live run — for a given cultivator when one is named, otherwise the
+     * The live run - for a given cultivator when one is named, otherwise the
      * most recently started live run in this database.
      */
     getActiveRun(cultivatorId?: string): Run | null {
@@ -175,7 +175,7 @@ export class RunRepository {
         return this.getById(runId);
     }
 
-    /** Raise the recorded peak. Never lowers it — the ledger remembers the best moment. */
+    /** Raise the recorded peak. Never lowers it - the ledger remembers the best moment. */
     updatePeakOrdinal(runId: string, ordinal: number): Run | null {
         const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.round(ordinal)));
         this.peakStmt.run({ id: runId, ordinal: clamped });
@@ -205,7 +205,7 @@ export class RunRepository {
     }
 
     /**
-     * Finished runs, newest first — the "how cultivators die" screen. Ordered
+     * Finished runs, newest first - the "how cultivators die" screen. Ordered
      * by ended_at so the ledger reads as a chronicle of endings rather than of
      * beginnings.
      */

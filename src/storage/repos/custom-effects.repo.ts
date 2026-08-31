@@ -145,7 +145,7 @@ export class CustomEffectsRepository {
 
         // Insert and read-back atomically. If the stored row fails to parse on read-back
         // (e.g. a constraint input validation didn't catch), the whole transaction rolls
-        // back — so an unreadable "poison" row can never persist and brick later retries
+        // back - so an unreadable "poison" row can never persist and brick later retries
         // on this name. The error then surfaces honestly on THIS call, not a future one.
         const insertAndRead = this.db.transaction((p: typeof params): CustomEffect => {
             const result = stmt.run(p);

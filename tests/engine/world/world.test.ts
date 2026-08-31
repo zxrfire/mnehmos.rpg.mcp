@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import Database from 'better-sqlite3';
 
+import { migrate } from '../../../src/storage/migrations.js';
 import { migrateWorld } from '../../../src/storage/migrations.world.js';
 import {
     addItem,
@@ -104,88 +105,286 @@ const YEAR = 365;
 // PERSISTENCE
 // ─────────────────────────────────────────────────────────────────────────
 
-describe('world persistence: the schema', () => {
+/**
+ * These run the FULL `migrate(db)`, not `migrateWorld(db)` alone.
+ *
+ * That distinction is the entire reason this block exists. Every statement in
+ * every migration is `CREATE TABLE IF NOT EXISTS`, so a table name that
+ * collides with one an earlier migration already created does not error - the
+ * second definition silently no-ops, the loser's columns never exist, and the
+ * failure surfaces hundreds of lines later as `no such column` on a table that
+ * looks perfectly fine.
+ *
+ * Testing `migrateWorld` standalone against a fresh database is exactly the
+ * arrangement in which that bug is invisible, and it shipped one: this module's
+ * `worlds` collided with the base schema's, and its `world_facts` collided with
+ * the social layer's. Both are renamed (`world_runtime`, `world_chronicle`) and
+ * the guard below is what keeps the next one from getting out.
+ */
+describe('world persistence: the full migration chain', () => {
     function migrated() {
         const db = new Database(':memory:');
-        migrateWorld(db);
+        migrate(db);
         return db;
     }
 
-    it('creates every world table and is idempotent', () => {
-        const db = migrated();
-        migrateWorld(db);
-        migrateWorld(db);
-
-        const tables = new Set(
+    function tablesOf(db: Database.Database): Set<string> {
+        return new Set(
             (db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[])
                 .map(r => r.name)
         );
-        for (const t of [
-            'worlds', 'world_eras', 'world_facts', 'world_fact_actors',
-            'world_locations', 'world_location_changes', 'world_factions',
-            'world_npcs', 'world_npc_goals', 'world_relationships',
-            'world_actors', 'world_actor_inventory', 'world_memories',
-            'world_memory_actors', 'world_scheduled_effects', 'world_processes',
-            'world_lineages', 'world_lineage_edges', 'world_opportunities',
-            'world_objects', 'world_object_claims', 'world_object_provenance'
-        ]) {
+    }
+
+    function columnsOf(db: Database.Database, table: string): Set<string> {
+        return new Set(
+            (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map(c => c.name)
+        );
+    }
+
+    const WORLD_TABLES = [
+        'world_runtime', 'world_eras', 'world_chronicle', 'world_chronicle_actors',
+        'world_locations', 'world_location_changes', 'world_factions',
+        'world_npcs', 'world_npc_goals', 'world_relationships',
+        'world_actors', 'world_actor_inventory', 'world_memories',
+        'world_memory_actors', 'world_scheduled_effects', 'world_processes',
+        'world_lineages', 'world_lineage_edges', 'world_opportunities',
+        'world_objects', 'world_object_claims', 'world_object_provenance'
+    ];
+
+    it('creates every world table when run after the whole chain', () => {
+        const db = migrated();
+        const tables = tablesOf(db);
+        for (const t of WORLD_TABLES) {
             expect(tables.has(t), `missing table ${t}`).toBe(true);
         }
         db.close();
     });
 
+    it('collides with nothing the other migrations create', () => {
+        // Everything this module owns must survive a full migrate with its own
+        // columns intact. A collision shows up here as a missing column rather
+        // than as a missing table, which is precisely how it hid last time.
+        const full = migrated();
+        const standalone = new Database(':memory:');
+        migrateWorld(standalone);
+
+        for (const table of WORLD_TABLES) {
+            const inChain = columnsOf(full, table);
+            const alone = columnsOf(standalone, table);
+            expect(
+                [...alone].filter(c => !inChain.has(c)),
+                `${table} lost columns when run after the other migrations`
+            ).toEqual([]);
+        }
+
+        // And the tables this module deliberately does NOT own are still the
+        // other owners' shape.
+        expect(columnsOf(full, 'worlds').has('width')).toBe(true);        // base schema
+        expect(columnsOf(full, 'worlds').has('current_day')).toBe(false);
+        expect(columnsOf(full, 'world_facts').has('claim_key')).toBe(true); // social layer
+        expect(columnsOf(full, 'world_facts').has('near_miss')).toBe(false);
+
+        full.close();
+        standalone.close();
+    });
+
+    it('is idempotent across repeated startups', () => {
+        const db = migrated();
+        migrate(db);
+        migrate(db);
+        const tables = tablesOf(db);
+        for (const t of WORLD_TABLES) expect(tables.has(t), `missing table ${t}`).toBe(true);
+        db.close();
+    });
+
     it('holds the columns the engine actually writes', () => {
         const db = migrated();
-        const cols = (t: string) =>
-            new Set((db.prepare(`PRAGMA table_info(${t})`).all() as { name: string }[]).map(c => c.name));
 
-        const facts = cols('world_facts');
+        const chronicle = columnsOf(db, 'world_chronicle');
         for (const c of ['truth', 'claimed_outcomes', 'near_miss', 'near_miss_note', 'fidelity', 'cause_known']) {
-            expect(facts.has(c), `world_facts.${c}`).toBe(true);
+            expect(chronicle.has(c), `world_chronicle.${c}`).toBe(true);
         }
-        const locations = cols('world_locations');
+        const eras = columnsOf(db, 'world_eras');
+        expect(eras.has('qi_density')).toBe(true);
+        expect(eras.has('ash_density')).toBe(false);
+
+        const locations = columnsOf(db, 'world_locations');
         for (const c of [
             'threshold_entry', 'threshold_survival', 'threshold_operational', 'threshold_mastery',
+            'qi_density', 'origin_qi_density',
             'env_spiritual_density', 'env_danger', 'env_special_rules', 'origin_environment'
         ]) {
             expect(locations.has(c), `world_locations.${c}`).toBe(true);
         }
-        const npcs = cols('world_npcs');
+        const npcs = columnsOf(db, 'world_npcs');
         for (const c of ['status', 'body_id', 'soul_state', 'identity_continuity', 'lifespan_ends_on_day']) {
             expect(npcs.has(c), `world_npcs.${c}`).toBe(true);
         }
-        const goals = cols('world_npc_goals');
+        const goals = columnsOf(db, 'world_npc_goals');
         for (const c of ['progress', 'obstacles', 'deadline_on_day', 'inherited_from_id', 'origin_holder_id', 'generation']) {
             expect(goals.has(c), `world_npc_goals.${c}`).toBe(true);
         }
         db.close();
     });
 
-    it('round-trips a fact and reads it back by day', () => {
+    /**
+     * The read/write exercise the coordinator asked for. There is no repository
+     * layer for these tables yet, so this drives the statements a repository
+     * would issue: the writes each table exists to take, and the indexed reads
+     * each index exists to serve.
+     */
+    it('takes the writes and serves the reads the engine will make', () => {
         const db = migrated();
-        db.prepare('INSERT INTO worlds (id, seed, current_day) VALUES (?, ?, ?)').run('w1', 'seed', 0);
+        db.pragma('foreign_keys = ON');
+
+        db.prepare('INSERT INTO world_runtime (id, seed, current_day) VALUES (?, ?, ?)')
+            .run('w1', 'seed', 1000 * YEAR);
+        db.prepare('INSERT INTO world_eras (id, world_id, name, start_day, qi_density) VALUES (?,?,?,?,?)')
+            .run('era-0', 'w1', 'the present age', 1000 * YEAR, 0.34);
+
+        // A chronicle row the engine itself cannot answer.
         db.prepare(
-            `INSERT INTO world_facts (id, world_id, day, kind, summary, truth, claimed_outcomes)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO world_chronicle (id, world_id, day, kind, summary, truth, claimed_outcomes, cause_known)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 0)`
         ).run('f1', 'w1', 430 * YEAR, 'faction_fallen', 'They stopped being there.', 'unresolved',
             JSON.stringify(['destroyed', 'ascended']));
+        db.prepare(
+            `INSERT INTO world_chronicle (id, world_id, day, kind, summary, near_miss, near_miss_note)
+             VALUES (?, ?, ?, ?, ?, 1, ?)`
+        ).run('f2', 'w1', 900 * YEAR, 'war', 'Nearly held the continent.', 'Their patriarch died.');
+        db.prepare('INSERT INTO world_chronicle_actors (world_id, fact_id, actor_id, role) VALUES (?,?,?,?)')
+            .run('w1', 'f1', 'npc-1', 'founder');
 
-        const row = db.prepare('SELECT * FROM world_facts WHERE world_id = ? AND day >= ?')
-            .get('w1', 400 * YEAR) as Record<string, unknown>;
-        expect(row.id).toBe('f1');
-        expect(row.truth).toBe('unresolved');
-        expect(JSON.parse(String(row.claimed_outcomes))).toHaveLength(2);
+        const unresolved = db
+            .prepare("SELECT id FROM world_chronicle WHERE world_id = ? AND truth = 'unresolved'")
+            .all('w1') as { id: string }[];
+        expect(unresolved.map(r => r.id)).toEqual(['f1']);
+        const nearMiss = db
+            .prepare('SELECT id FROM world_chronicle WHERE world_id = ? AND near_miss = 1')
+            .all('w1') as { id: string }[];
+        expect(nearMiss.map(r => r.id)).toEqual(['f2']);
+        const byActor = db
+            .prepare('SELECT fact_id FROM world_chronicle_actors WHERE world_id = ? AND actor_id = ?')
+            .all('w1', 'npc-1') as { fact_id: string }[];
+        expect(byActor.map(r => r.fact_id)).toEqual(['f1']);
+
+        // A place, its layered history, and the environment that decides what
+        // ten years here is worth.
+        db.prepare(
+            `INSERT INTO world_locations
+             (id, world_id, name, kind, qi_density, env_spiritual_density, threshold_survival, origin_qi_density)
+             VALUES (?,?,?,?,?,?,?,?)`
+        ).run('loc-1', 'w1', 'the sealed compound at Coldfall', 'ruin', 0.95, 0.05, 21, 0.4);
+        db.prepare(
+            `INSERT INTO world_location_changes
+             (id, world_id, location_id, on_day, kind, summary, cause_known)
+             VALUES (?,?,?,?,?,?,0)`
+        ).run('loc-1-c1', 'w1', 'loc-1', 800 * YEAR, 'sealed', 'Sealed from the inside.');
+        const unexplained = db
+            .prepare('SELECT id FROM world_location_changes WHERE world_id = ? AND location_id = ? AND cause_known = 0')
+            .all('w1', 'loc-1') as { id: string }[];
+        expect(unexplained.map(r => r.id)).toEqual(['loc-1-c1']);
+
+        // An NPC whose lifespan is a stored date, and a goal that outlives them.
+        db.prepare(
+            `INSERT INTO world_npcs
+             (id, world_id, name, born_on_day, spirit_root, lifespan_ends_on_day, status, soul_state)
+             VALUES (?,?,?,?,?,?,?,?)`
+        ).run('npc-1', 'w1', 'Yun Cishan', 940 * YEAR, 'single_fire', 1040 * YEAR, 'alive', 'intact');
+        db.prepare(
+            `INSERT INTO world_npc_goals
+             (id, world_id, npc_id, kind, text, priority, progress, obstacles, opened_on_day, origin_holder_id, generation)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+        ).run('npc-1-g1', 'w1', 'npc-1', 'revenge', 'Avenge a father.', 0.9,
+            "Has identified the killer's faction.", JSON.stringify(['Insufficient strength.']),
+            970 * YEAR, 'npc-1', 0);
+
+        // The indexed "who is due to die" scan the time advance runs.
+        const due = db
+            .prepare("SELECT id FROM world_npcs WHERE world_id = ? AND status = 'alive' AND lifespan_ends_on_day <= ?")
+            .all('w1', 1100 * YEAR) as { id: string }[];
+        expect(due.map(r => r.id)).toEqual(['npc-1']);
+
+        // Lineage, so the estate has somewhere to go.
+        db.prepare('INSERT INTO world_lineages (id, world_id, surname, founder_id, founded_on_day) VALUES (?,?,?,?,?)')
+            .run('lin-1', 'w1', 'Yun', 'npc-1', 940 * YEAR);
+        db.prepare(
+            `INSERT INTO world_lineage_edges (world_id, lineage_id, parent_id, child_id, relation, on_day)
+             VALUES (?,?,?,?,?,?)`
+        ).run('w1', 'lin-1', 'npc-1', 'npc-2', 'descendant', 990 * YEAR);
+        const heirs = db
+            .prepare('SELECT child_id FROM world_lineage_edges WHERE world_id = ? AND parent_id = ?')
+            .all('w1', 'npc-1') as { child_id: string }[];
+        expect(heirs.map(r => r.child_id)).toEqual(['npc-2']);
+
+        // The schedule, and the window query the advance actually issues.
+        db.prepare(
+            `INSERT INTO world_scheduled_effects (id, world_id, kind, due_on_day, summary, chance)
+             VALUES (?,?,?,?,?,?)`
+        ).run('e1', 'w1', 'debt_due', 1005 * YEAR, 'The debt fell due.', 1);
+        const pending = db
+            .prepare('SELECT id FROM world_scheduled_effects WHERE world_id = ? AND fired = 0 AND due_on_day > ? AND due_on_day <= ? ORDER BY due_on_day, id')
+            .all('w1', 1000 * YEAR, 1010 * YEAR) as { id: string }[];
+        expect(pending.map(r => r.id)).toEqual(['e1']);
+
+        // Memory, and the by-owner-by-salience read a prompt build issues.
+        db.prepare(
+            `INSERT INTO world_memories (id, world_id, owner_id, kind, summary, on_day, salience)
+             VALUES (?,?,?,?,?,?,?)`
+        ).run('m1', 'w1', 'npc-1', 'betrayal', 'Bai Shuqing opened the gate.', 980 * YEAR, 0.9);
+        db.prepare('INSERT INTO world_memory_actors (world_id, memory_id, actor_id) VALUES (?,?,?)')
+            .run('w1', 'm1', 'npc-2');
+        const recalled = db
+            .prepare('SELECT m.id FROM world_memories m JOIN world_memory_actors a ON a.memory_id = m.id WHERE m.world_id = ? AND m.owner_id = ? AND a.actor_id = ? ORDER BY m.salience DESC')
+            .all('w1', 'npc-1', 'npc-2') as { id: string }[];
+        expect(recalled.map(r => r.id)).toEqual(['m1']);
+
+        // An object whose possession, ownership, claim and provenance disagree.
+        db.prepare(
+            `INSERT INTO world_objects (id, world_id, name, kind, possessor_id, owner_id)
+             VALUES (?,?,?,?,?,?)`
+        ).run('obj-1', 'w1', 'the Ninefold sword', 'artifact', 'npc-2', 'npc-1');
+        db.prepare(
+            `INSERT INTO world_object_claims (id, world_id, object_id, claimant_id, basis, asserted_on_day)
+             VALUES (?,?,?,?,?,?)`
+        ).run('obj-1-cl1', 'w1', 'obj-1', 'npc-9', 'ancestral', 1000 * YEAR);
+        db.prepare(
+            `INSERT INTO world_object_provenance (world_id, object_id, seq, on_day, holder_id, how, source)
+             VALUES (?,?,?,?,?,?,?)`
+        ).run('w1', 'obj-1', 1, 995 * YEAR, 'npc-2', 'stolen', 'taken on the Coldfall road');
+        const stolen = db
+            .prepare("SELECT object_id FROM world_object_provenance WHERE world_id = ? AND how = 'stolen'")
+            .all('w1') as { object_id: string }[];
+        expect(stolen.map(r => r.object_id)).toEqual(['obj-1']);
+
+        // An opportunity nobody knows about, on an eighty-year cycle.
+        db.prepare(
+            `INSERT INTO world_opportunities (id, world_id, kind, name, opens_on_day, duration_days, recurrence_days)
+             VALUES (?,?,?,?,?,?,?)`
+        ).run('opp-1', 'w1', 'realm_opening', 'the seam under Stillshelf', 1010 * YEAR, 30, 80 * YEAR);
+        const live = db
+            .prepare('SELECT id FROM world_opportunities WHERE world_id = ? AND claimed = 0 ORDER BY opens_on_day')
+            .all('w1') as { id: string }[];
+        expect(live.map(r => r.id)).toEqual(['opp-1']);
+
         db.close();
     });
 
-    it('cascades a world delete through its children', () => {
+    it('cascades a world delete through every child table', () => {
         const db = migrated();
         db.pragma('foreign_keys = ON');
-        db.prepare('INSERT INTO worlds (id, seed) VALUES (?, ?)').run('w1', 'seed');
-        db.prepare('INSERT INTO world_facts (id, world_id, day, kind, summary) VALUES (?,?,?,?,?)')
+        db.prepare('INSERT INTO world_runtime (id, seed) VALUES (?, ?)').run('w1', 'seed');
+        db.prepare('INSERT INTO world_chronicle (id, world_id, day, kind, summary) VALUES (?,?,?,?,?)')
             .run('f1', 'w1', 1, 'death', 'x');
-        db.prepare('DELETE FROM worlds WHERE id = ?').run('w1');
-        expect(db.prepare('SELECT COUNT(*) AS n FROM world_facts').get()).toEqual({ n: 0 });
+        db.prepare('INSERT INTO world_memories (id, world_id, owner_id, kind, summary, on_day) VALUES (?,?,?,?,?,?)')
+            .run('m1', 'w1', 'npc-1', 'debt', 'x', 1);
+        db.prepare('INSERT INTO world_lineages (id, world_id, surname, founder_id, founded_on_day) VALUES (?,?,?,?,?)')
+            .run('lin-1', 'w1', 'Yun', 'npc-1', 0);
+
+        db.prepare('DELETE FROM world_runtime WHERE id = ?').run('w1');
+        expect(db.prepare('SELECT COUNT(*) AS n FROM world_chronicle').get()).toEqual({ n: 0 });
+        expect(db.prepare('SELECT COUNT(*) AS n FROM world_memories').get()).toEqual({ n: 0 });
+        expect(db.prepare('SELECT COUNT(*) AS n FROM world_lineages').get()).toEqual({ n: 0 });
         db.close();
     });
 });
@@ -1014,7 +1213,7 @@ describe('locations carry environment, not just a name', () => {
             id: 'loc-mountain', name: 'the Cold Kiln peak', kind: 'vein',
             ambient: 'dense',
             environment: {
-                spiritualDensity: 0.9, danger: 0.2, resources: ['ash', 'herbs'], climate: 'frozen',
+                spiritualDensity: 0.9, danger: 0.2, resources: ['qi', 'herbs'], climate: 'frozen',
                 politicalControl: 'the Cold Kiln Hall', specialRules: ['no flight above the third terrace'],
                 knownSecrets: [], historicalScars: []
             }
@@ -1039,19 +1238,19 @@ describe('locations carry environment, not just a name', () => {
         expect(cultivationContext(battlefield).specialRules).toContain('the dead do not stay down');
     });
 
-    it('reports a sealed ruin as holding ash nobody can reach', () => {
+    it('reports a sealed ruin as holding qi nobody can reach', () => {
         const ruin = makeLocation({
             id: 'loc-ruin', name: 'a sealed compound', kind: 'ruin',
-            ambient: 'dense', ashDensity: 0.95, sealed: true,
+            ambient: 'dense', qiDensity: 0.95, sealed: true,
             thresholds: makeThresholds(13, 21, 25, 30),
             environment: {
-                spiritualDensity: 0.05, danger: 0.8, resources: ['ash'], climate: 'sunless',
+                spiritualDensity: 0.05, danger: 0.8, resources: ['qi'], climate: 'sunless',
                 politicalControl: 'whoever gets in', specialRules: [], knownSecrets: [],
                 historicalScars: []
             }
         });
         const ctx = cultivationContext(ruin);
-        expect(ruin.ashDensity).toBeGreaterThan(0.9);
+        expect(ruin.qiDensity).toBeGreaterThan(0.9);
         expect(ctx.rateMultiplier).toBeLessThan(1);
         expect(ctx.factors.some(f => f.source === 'sealed')).toBe(true);
     });

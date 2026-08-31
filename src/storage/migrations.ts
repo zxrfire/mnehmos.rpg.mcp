@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { migrateClassProgression } from './migrations.class-progression.js';
 import { migrateCultivation } from './migrations.cultivation.js';
 import { migrateSocial } from './migrations.social.js';
+import { migrateWorld } from './migrations.world.js';
 
 export function migrate(db: Database.Database) {
   // First, create all tables (without indexes that depend on new columns)
@@ -651,9 +652,11 @@ export function migrate(db: Database.Database) {
   // Cultivation: cultivators, injuries, runs, techniques, alchemy, sects
   migrateCultivation(db);
   migrateSocial(db);
-  // migrateWorld(db); -- DISABLED: its `worlds` table collides with the base
-  // schema's `worlds`, so CREATE TABLE IF NOT EXISTS no-ops and every later
-  // statement expecting its columns fails. Re-enable once renamed.
+  // World: the date, locations and their layered history, factions, NPC
+  // records, lineage, opportunities, objects, memories and the schedule.
+  // Runs last, and every table it creates is `world_`-prefixed and checked
+  // against the names above - see the naming note in migrations.world.ts.
+  migrateWorld(db);
   widenAgentProviderCheck(db);
 }
 
@@ -970,7 +973,7 @@ function runMigrations(db: Database.Database) {
     db.exec(`ALTER TABLE characters ADD COLUMN resource_pools TEXT DEFAULT '{}';`);
   }
 
-  // BASTION: background + alignment were accepted by Zod but had no columns —
+  // BASTION: background + alignment were accepted by Zod but had no columns -
   // silently dropped on persistence. Add them. See
   // docs/bastion/05-world-brief-vs-tool-surface.md.
   const hasBackground = charColumns.some(col => col.name === 'background');
@@ -1131,7 +1134,7 @@ function runMigrations(db: Database.Database) {
       ON subsystem_bindings(subsystem_id);
 
     -- CONSTRAINT-PERCEPTION: Ledger of every assessment attempt.
-    -- INSERT-only — disposition encodes whether the row reflects a
+    -- INSERT-only - disposition encodes whether the row reflects a
     -- commit, a refused petition, a spent-but-empty looking, or fog.
     CREATE TABLE IF NOT EXISTS perception_assessments (
       id TEXT PRIMARY KEY,
@@ -1159,7 +1162,7 @@ function runMigrations(db: Database.Database) {
     -- SCENES: DM-committed shared narrative state.
     -- Each scene is the "current frame" for all participants. Agent invokes
     -- auto-inject the latest scene the character is a participant in.
-    -- Append-only in spirit — DM advances by calling set_scene again with
+    -- Append-only in spirit - DM advances by calling set_scene again with
     -- a new id; old scenes remain for transcript/audit.
     CREATE TABLE IF NOT EXISTS scenes (
       id TEXT PRIMARY KEY,

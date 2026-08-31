@@ -303,14 +303,14 @@ export interface OpeningCycle {
  */
 export interface LocationEnvironment {
     /**
-     * Usable qi here, 0..1, as distinct from `ashDensity`, which is how much
-     * unbreathed fall the ground holds. A sealed ruin has high ash and, until
-     * the seal is broken, no usable density at all.
+     * Usable qi here, 0..1, as distinct from `qiDensity`, which is what the
+     * vein under this place holds. A sealed ruin sits on a pocket nothing has
+     * drawn on and, until somebody gets the seal open, offers nobody any of it.
      */
     spiritualDensity: number;
     /** 0..1. How likely the place is to hurt somebody who belongs here. */
     danger: number;
-    /** What can be gathered: 'herbs', 'ore', 'beasts', 'ash', 'water'. */
+    /** What can be gathered: 'herbs', 'ore', 'beasts', 'qi', 'water'. */
     resources: string[];
     /** 'temperate', 'frozen', 'arid', 'sunless', 'stormbound'. Free text. */
     climate: string;
@@ -347,7 +347,7 @@ export interface LocationOrigin {
     name: string;
     description: string;
     ambient: AmbientQi;
-    ashDensity: number;
+    qiDensity: number;
     thresholds: LocationThresholds;
     hazards: string[];
     affinities: EnvironmentAffinity[];
@@ -398,7 +398,7 @@ export interface LocationPatch {
     kind?: LocationKind;
     description?: string;
     ambient?: AmbientQi;
-    ashDensity?: number;
+    qiDensity?: number;
     thresholds?: Partial<LocationThresholds>;
     addHazards?: string[];
     removeHazards?: string[];
@@ -453,12 +453,12 @@ export interface LocationRecord {
     description: string;
 
     ambient: AmbientQi;
-    /** Fraction of unbreathed fall, 0..1. Sealed pockets run high. */
-    ashDensity: number;
+    /** What the vein under this place holds, 0..1. Sealed pockets run high. */
+    qiDensity: number;
 
     thresholds: LocationThresholds;
     /**
-     * What is dangerous here: 'lightning', 'cold', 'thin_ash', 'formation',
+     * What is dangerous here: 'lightning', 'cold', 'thin_qi', 'formation',
      * 'pressure', 'illusion', 'sealed_qi', 'corrosive', 'beasts', 'guardian'.
      * Free-form tags, because a specialist's counter is matched by string and
      * the world's hazards are content rather than an enum the engine owns.
@@ -497,7 +497,7 @@ export function makeLocation(
         parentId: null,
         description: '',
         ambient: 'normal',
-        ashDensity: 0.35,
+        qiDensity: 0.35,
         thresholds: makeThresholds(),
         hazards: [],
         affinities: [],
@@ -523,7 +523,7 @@ export function makeLocation(
             name: base.name,
             description: base.description,
             ambient: base.ambient,
-            ashDensity: base.ashDensity,
+            qiDensity: base.qiDensity,
             thresholds: { ...base.thresholds },
             hazards: base.hazards.slice(),
             affinities: base.affinities.map(a => ({ ...a })),
@@ -617,7 +617,7 @@ function applyPatch(location: LocationRecord, patch: LocationPatch, onDay: numbe
     if (patch.kind !== undefined) next.kind = patch.kind;
     if (patch.description !== undefined) next.description = patch.description;
     if (patch.ambient !== undefined) next.ambient = patch.ambient;
-    if (patch.ashDensity !== undefined) next.ashDensity = clamp01(patch.ashDensity);
+    if (patch.qiDensity !== undefined) next.qiDensity = clamp01(patch.qiDensity);
     if (patch.thresholds) {
         for (const tier of THRESHOLD_TIERS) {
             const v = patch.thresholds[tier];
@@ -814,7 +814,7 @@ export function stateAsOfDay(location: LocationRecord, day: number): LocationRec
         parentId: location.parentId,
         description: origin.description,
         ambient: origin.ambient,
-        ashDensity: origin.ashDensity,
+        qiDensity: origin.qiDensity,
         thresholds: { ...origin.thresholds },
         hazards: origin.hazards.slice(),
         affinities: origin.affinities.map(a => ({ ...a })),
@@ -1082,7 +1082,7 @@ const AMBIENT_RATE: Record<AmbientQi, number> = {
  * where it lands.
  *
  * Sealed places are the interesting case: a ruin can hold enormous unbreathed
- * ash and still return a low multiplier, because until the seal is broken the
+ * qi and still return a low multiplier, because until the seal is broken the
  * density is not available to anybody standing outside it.
  */
 export function cultivationContext(
@@ -1094,7 +1094,7 @@ export function cultivationContext(
     factors.push({
         source: 'ambient_qi',
         multiplier: AMBIENT_RATE[location.ambient],
-        note: `Ambient ash: ${location.ambient}.`
+        note: `Ambient qi: ${location.ambient}.`
     });
     factors.push({
         source: 'spiritual_density',
@@ -1377,7 +1377,7 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
         kind: 'sect_seat',
         description: `The seat of a power that no longer exists.`,
         ambient: 'normal',
-        ashDensity: 0.4,
+        qiDensity: 0.4,
         thresholds: makeThresholds(0, 0, 0, danger),
         originFactId: ruin.originFactId
     });
@@ -1398,8 +1398,8 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
         patch: {
             kind: 'ruin',
             name: ruin.name,
-            ambient: ruin.ashDensity >= 0.8 ? 'dense' : 'normal',
-            ashDensity: ruin.ashDensity,
+            ambient: ruin.qiDensity >= 0.8 ? 'dense' : 'normal',
+            qiDensity: ruin.qiDensity,
             thresholds: {
                 entry: Math.max(0, danger - 10),
                 survival: Math.max(0, danger - 6),
@@ -1411,12 +1411,12 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
                 makeAffinity('formation', 1.35, 3, 'The array still answers to someone who can read it.')
             ],
             environment: {
-                // Ash it holds, versus ash anyone can reach. Until the seal is
-                // broken those are different numbers, and that gap is the whole
-                // economy of exploration.
-                spiritualDensity: ruin.opened ? ruin.ashDensity : 0.05,
+                // What the pocket holds, versus what anyone can reach. Until
+                // the seal is broken those are different numbers, and that gap
+                // is the whole economy of exploration.
+                spiritualDensity: ruin.opened ? ruin.qiDensity : 0.05,
                 danger: 0.8,
-                resources: ['ash', 'manuals', 'formation_nodes'],
+                resources: ['qi', 'manuals', 'formation_nodes'],
                 climate: 'sunless',
                 politicalControl: 'whoever gets in',
                 specialRules: ['guardian formations still run'],
@@ -1445,19 +1445,19 @@ export function locationFromScar(scar: Scar): LocationRecord {
         kind: 'wilds',
         description: 'Ordinary ground.',
         ambient: 'normal',
-        ashDensity: 0.4,
+        qiDensity: 0.4,
         originFactId: scar.originFactId
     });
     base.origin.fromDay = day - 365 * 500;
 
-    // Ground where a tribulation was failed. Ash will never settle here again:
-    // permanently thin, useless to everyone, forever. Mastery is set to the top
-    // of the ladder because there is nothing here to master.
+    // Dead ground. A tribulation was failed here and the qi has never come
+    // back: useless to everyone, forever. Mastery is set to the top of the
+    // ladder because there is nothing here to master.
     const { location } = applyLocationChange(base, {
         onDay: day,
         kind: 'spiritual_conditions_changed',
         summary:
-            `${scar.radiusLi} li of ground stopped holding ash` +
+            `${scar.radiusLi} li of ground stopped holding qi` +
             `${scar.failedName ? `, when ${scar.failedName} failed tribulation here` : ''}.`,
         causeFactId: scar.originFactId,
         causeKnown: scar.failedName != null,
@@ -1466,13 +1466,13 @@ export function locationFromScar(scar: Scar): LocationRecord {
         patch: {
             kind: 'scar',
             name: `the scar at ${scar.location}`,
-            description: `Permanently thin. Every scar was somebody's entire ambition.`,
+            description: `Dead ground. Every scar was somebody's entire ambition.`,
             ambient: 'thin',
-            ashDensity: 0,
+            qiDensity: 0,
             thresholds: { entry: 0, survival: 0, operational: 0, mastery: MAX_ORDINAL },
-            addHazards: ['thin_ash'],
+            addHazards: ['thin_qi'],
             addAffinities: [
-                makeAffinity('ash', 0.25, -4, 'There is nothing here to breathe.')
+                makeAffinity('qi', 0.25, -4, 'There is nothing here to draw on.')
             ],
             environment: {
                 spiritualDensity: 0,
@@ -1480,7 +1480,7 @@ export function locationFromScar(scar: Scar): LocationRecord {
                 resources: [],
                 climate: 'still',
                 politicalControl: 'nobody wants it',
-                specialRules: ['ash does not settle here'],
+                specialRules: ['the qi does not return here'],
                 knownSecrets: [],
                 historicalScars: ['tribulation scar']
             },
@@ -1504,7 +1504,7 @@ export function makeSecretRealm(
         hazards?: string[];
         affinities?: EnvironmentAffinity[];
         cycle: OpeningCycle;
-        ashDensity?: number;
+        qiDensity?: number;
         description?: string;
         originFactId?: string | null;
     }
@@ -1516,7 +1516,7 @@ export function makeSecretRealm(
         parentId: init.parentId ?? null,
         description: init.description ?? '',
         ambient: 'dense',
-        ashDensity: init.ashDensity ?? 0.8,
+        qiDensity: init.qiDensity ?? 0.8,
         thresholds: init.thresholds,
         hazards: init.hazards ?? ['sealed_qi'],
         affinities: init.affinities ?? [],

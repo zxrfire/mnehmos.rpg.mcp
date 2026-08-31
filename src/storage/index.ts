@@ -30,7 +30,7 @@ const MAX_OPEN_DATABASES = 64;
 
 /**
  * Campaign ids are UUIDs minted by the web host (reference-engine-adapter.ts).
- * The id becomes a path segment, so this is validated rather than sanitized —
+ * The id becomes a path segment, so this is validated rather than sanitized -
  * a rejected id is a bug or an attack, and neither should be repaired into
  * something that opens a file.
  */
@@ -154,8 +154,8 @@ export function campaignDbPath(campaignId: string): string {
 
 /**
  * Filenames the engine used before campaigns were split into their own files.
- * Both names existed across the deployment's history — RPG_MCP_DB_PATH pointed
- * at `rpg-mcp.db` while the tool helpers built `rpg.db` — so both are checked.
+ * Both names existed across the deployment's history - RPG_MCP_DB_PATH pointed
+ * at `rpg-mcp.db` while the tool helpers built `rpg.db` - so both are checked.
  */
 const LEGACY_DATABASE_NAMES = ['rpg-mcp.db', 'rpg.db'];
 
@@ -165,7 +165,7 @@ const LEGACY_DATABASE_NAMES = ['rpg-mcp.db', 'rpg.db'];
  * A leftover file means one of two things, and both are worth stopping for: a
  * cutover that never completed, or a rollback-forward where an older build
  * wrote every tenant back into one file. Starting anyway would serve empty
- * campaigns while real data sat in a file nothing reads — silent, and very
+ * campaigns while real data sat in a file nothing reads - silent, and very
  * confusing to diagnose. Failing loudly at boot is the cheaper outcome.
  */
 export function assertNoLegacyDatabase(): void {
@@ -187,7 +187,7 @@ export function assertNoLegacyDatabase(): void {
  * Campaign ids that have a database on disk.
  *
  * Walks the shard directories rather than tracking state, so it reflects what
- * is actually there — including campaigns whose handles are not currently open.
+ * is actually there - including campaigns whose handles are not currently open.
  */
 export function listCampaignDatabases(): string[] {
     const root = join(process.env.RPG_DATA_DIR || getAppDataDir(), 'campaigns');
@@ -282,8 +282,8 @@ function evictBeyondCap(): void {
  * Puts the process in single-user mode against one local database.
  *
  * Multi-tenancy is a property of the hosted HTTP server, where every request
- * carries a signed tenant context. The other transports — stdio, TCP, unix
- * socket, WebSocket — have nowhere to put one: they serve a single operator
+ * carries a signed tenant context. The other transports - stdio, TCP, unix
+ * socket, WebSocket - have nowhere to put one: they serve a single operator
  * running the engine locally, through the npm package, the standalone
  * binaries, or an MCP client config. Without this they would resolve no tenant
  * and every storage call would throw, which is a regression rather than a
