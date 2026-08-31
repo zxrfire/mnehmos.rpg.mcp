@@ -187,6 +187,46 @@ export interface Hearing {
     sourceKind: SourceKind;
 }
 
+// ────────────────────────────────────────────────────────────────────────
+// SAYING IT
+// ────────────────────────────────────────────────────────────────────────
+
+/**
+ * The hearing as engine prose, for the path with no model behind it.
+ *
+ * Authored here because the engine chose the names, and because the previous
+ * version - written at the call site - failed the doc in three ways at once. It
+ * DESCRIBED an overheard exchange rather than being one. It said "this
+ * cultivator", which is the engine talking about the player in the third
+ * person. And it explained the epistemics, telling the player that they could
+ * not ask without revealing where they had been standing, which is precisely
+ * the thing discovery.md wants them to feel and not be told.
+ *
+ * What is left says only what happened and what the player now has. It asserts
+ * no relationship between the names, on purpose: the engine has not established
+ * one, and inventing an implication here would be the deterministic narrator
+ * making up a fact about the world. The elliptical exchange discovery.md
+ * describes is a narrator's job, and the prompt already carries the rules for
+ * writing one - this is the floor, not the ceiling.
+ */
+export function hearingProse(hearing: Hearing): string {
+    const names = hearing.names.map(name => name.name);
+
+    if (hearing.mode === 'overheard') {
+        const said = names.length > 1
+            ? `One of them says ${names[0]}. A moment later the other says ${names[1]}.`
+            : `One of them says ${names[0]}.`;
+        return 'Past the wall, two voices, mid-conversation and not lowered for anybody. ' +
+            `${said} Neither stops to explain, and then it is the weather again. ` +
+            `You have no idea what ${names.length > 1 ? 'either of those was' : 'that was'}.`;
+    }
+
+    const speaker = hearing.speaker ?? 'Somebody';
+    return `${speaker} says ${names.join(', then ')} the way you would say a weekday, ` +
+        'and carries straight on. You do not know what that is, and it does not occur to ' +
+        'them that it might need saying.';
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT A PERSON COULD PLAUSIBLY NAME
 // ─────────────────────────────────────────────────────────────────────────

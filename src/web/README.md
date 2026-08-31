@@ -252,6 +252,31 @@ cannot ask about.
 `tests/web/lore.test.ts` holds the regression guard: every catalog must still be reachable
 by somebody on the player-facing path, so "written but unreachable" fails the build.
 
+### The other half: what a player sees
+
+`practices.ts` is the same problem with the opposite answer, and the two must not be
+confused. A **name** is told, and `discovery.md` gates it. A **practice** - what an
+outsider sees of a faction's people in the first ten minutes - is *seen*, names nothing,
+and is what NARRATOR-CORE means by:
+
+> Show the world, never explain it. Render these as behaviour and let the player infer.
+
+Every faction in `faction-character.ts` has one, and they are among the best writing in
+the project: disciples who stand when a sword is drawn anywhere in earshot, including in a
+kitchen; members who greet each other by naming a ford rather than by name. Because a
+practice identifies nobody, it is safe in the narrator's own voice for a player who cannot
+name a single thing in the world - being in the room is the whole qualification.
+
+The one gate is narrow and **computed rather than asserted**: eight of the thirty use
+their own faction's short name mid-sentence ("a Consortium negotiation", "the Office"),
+and those unlock only once the player holds the name. The detection reads the text, so a
+rewritten practice cannot silently start leaking a name nobody thought of as one. A
+capitalised word at a sentence start is a role and stays open - "Wardens carry paint"
+identifies nobody, and three separate factions open that way.
+
+At most one observation per scene, always. A scene listing what three factions do is a
+briefing with people standing in it.
+
 ## The standing register
 
 **The world reference sheet lives in [`register.ts`](register.ts). That is where to change

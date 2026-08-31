@@ -169,13 +169,22 @@ export interface HighPerson {
     /** acting | pinned | withdrawn | sealed | ascended | false immortal */
     state: string;
     /**
-     * Whether they are still in the world.
+     * Whether they still exist anywhere.
      *
-     * Sealed counts as alive: they are under a mountain and can be woken, which
-     * is a completely different fact from being gone. Ascended does not - they
-     * went through the Lid and nothing comes back that way, so they are on this
-     * sheet as provenance rather than as people. This is an operator's page, so
-     * it says which; a character in the world would frequently not know.
+     * The axis is existence, not location, which is the correction that matters:
+     * ascension is not an ending. Somebody who crossed is alive on the other
+     * side of the Lid, can in principle come back down for the ten or fifteen
+     * breaths that costs, and belongs in the living list. Somebody who crossed
+     * and then died up there does not - the Immortal Realm has dangers and
+     * politics of its own, and three thousand years is a long time to survive
+     * them.
+     *
+     * Sealed also counts as alive: under a mountain and wakeable is a completely
+     * different fact from gone.
+     *
+     * This is an operator's page, so it states which. Nobody below the Lid can
+     * establish it, and every sect claiming its ancestor still answers is making
+     * a claim it has no way to check.
      */
     alive: boolean;
     factionName: string;
@@ -518,11 +527,15 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                 named: true,
                 ordinal: a.realmOrdinal as number,
                 rank: rankName(a.realmOrdinal as number),
-                state: 'ascended',
-                alive: false,
+                state: a.afterCrossing === 'died_above' ? 'died above' : 'ascended',
+                alive: a.afterCrossing !== 'died_above',
                 factionName: nameOf(hostId),
                 factionOrdinal: getSect(hostId)?.powerOrdinal ?? 0,
-                note: a.yearsAgo.toLocaleString() + ' years ago. ' + a.rememberedFor
+                note: a.yearsAgo.toLocaleString() + ' years ago. '
+                    + (a.afterCrossing === 'died_above'
+                        ? 'Crossed, and did not survive what was up there. '
+                        : 'Crossed, and is still above. ')
+                    + a.rememberedFor
             });
         }
     }
@@ -1324,8 +1337,8 @@ export function renderRegisterHtml(
   <div class="sh"><h2>People at or above Grand Ascension</h2><span class="r">Ordinal 37+ · strongest first</span></div>
   <p class="note">Everyone in the band, from every catalog at once, with the faction they belong to. The named-member catalog stops well below this, so most of what is up here is seats, sealed ancestors and the crossed - and a row marked <em>unnamed</em> is a fact about the world rather than a gap in the data. Lesser people are listed under their faction in the next tab.</p>
   ${[
-      { label: 'Alive', hint: 'Can be reached, woken, or run into. Sealed counts - under a mountain is not gone.', alive: true },
-      { label: 'Deceased', hint: 'Off the board permanently. Ascension is not death, and from this side it makes no difference: nothing comes back through the Lid.', alive: false }
+      { label: 'Alive', hint: 'Still exists somewhere. Sealed counts - under a mountain is not gone - and so does ascended: somebody above the Lid is alive, and can come back down for the ten or fifteen breaths that costs.', alive: true },
+      { label: 'Deceased', hint: 'Gone. Includes the ascended who did not survive what was up there, because tribulation and old age stop being able to kill you and nothing else does.', alive: false }
   ].map(band => {
       const rows = reg.high.filter(p => p.alive === band.alive);
       if (!rows.length) return '';
