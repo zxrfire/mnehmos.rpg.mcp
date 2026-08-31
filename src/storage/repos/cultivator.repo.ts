@@ -25,6 +25,7 @@ interface CultivatorRow {
     name: string;
     kind: string;
     spirit_root: string;
+    origin_tier: string;
     tradition_id: string;
     attributes: string;
     realm_ordinal: number;
@@ -206,7 +207,7 @@ export class CultivatorRepository {
     constructor(private db: Database.Database) {
         this.insertStmt = db.prepare(`
             INSERT INTO cultivators (
-                id, run_id, name, kind, spirit_root, tradition_id, attributes,
+                id, run_id, name, kind, spirit_root, origin_tier, tradition_id, attributes,
                 realm_ordinal, cultivation_progress, foundation_quality, immortal_status,
                 hp, max_hp, qi, max_qi, satiety, starvation_turns,
                 age, years_at_current_realm,
@@ -216,7 +217,7 @@ export class CultivatorRepository {
                 alive, death_cause, died_on_turn,
                 created_at, updated_at
             ) VALUES (
-                @id, @runId, @name, @kind, @spiritRoot, @traditionId, @attributes,
+                @id, @runId, @name, @kind, @spiritRoot, @origin, @traditionId, @attributes,
                 @realmOrdinal, @cultivationProgress, @foundationQuality, @immortalStatus,
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns,
                 @age, @yearsAtCurrentRealm,
@@ -231,7 +232,8 @@ export class CultivatorRepository {
         this.updateStmt = db.prepare(`
             UPDATE cultivators SET
                 run_id = @runId, name = @name, kind = @kind,
-                spirit_root = @spiritRoot, tradition_id = @traditionId, attributes = @attributes,
+                spirit_root = @spiritRoot, origin_tier = @origin,
+                tradition_id = @traditionId, attributes = @attributes,
                 realm_ordinal = @realmOrdinal, cultivation_progress = @cultivationProgress,
                 foundation_quality = @foundationQuality, immortal_status = @immortalStatus,
                 hp = @hp, max_hp = @maxHp, qi = @qi, max_qi = @maxQi,
@@ -668,6 +670,7 @@ export class CultivatorRepository {
             name: c.name,
             kind: c.kind,
             spiritRoot: c.spiritRoot,
+            origin: c.origin,
             traditionId: c.traditionId,
             attributes: JSON.stringify(c.attributes),
             realmOrdinal: c.realmOrdinal,
@@ -729,6 +732,7 @@ export class CultivatorRepository {
             name: row.name,
             kind: row.kind,
             spiritRoot: row.spirit_root,
+            origin: row.origin_tier,
             traditionId: row.tradition_id,
             attributes: JSON.parse(row.attributes),
             realmOrdinal: row.realm_ordinal,

@@ -17,6 +17,7 @@ import type { ObjectRecord, OwnershipClaim, ProvenanceEntry } from '../../engine
 import type { WorldRun } from '../../engine/world/legacy.js';
 import { runSeedFor } from '../../engine/world/legacy.js';
 import { yearOfDay } from '../../engine/world/history.js';
+import { DEFAULT_ORIGIN, isOriginTierKey } from '../../engine/cultivation/origin.js';
 
 /**
  * Persistence for the world layer.
@@ -219,7 +220,7 @@ export class WorldStateRepository {
         this.insertNpcStmt = db.prepare(`
             INSERT OR REPLACE INTO world_npcs (
                 id, world_id, name,
-                born_on_day, occupation, titles, aliases, description,
+                born_on_day, origin_tier, occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
                 location_id, faction_id, faction_rank_index,
@@ -228,7 +229,7 @@ export class WorldStateRepository {
                 history_fact_ids, memory_ids
             ) VALUES (
                 @id, @worldId, @name,
-                @bornOnDay, @occupation, @titles, @aliases, @description,
+                @bornOnDay, @origin, @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
                 @locationId, @factionId, @factionRankIndex,
@@ -860,6 +861,7 @@ export class WorldStateRepository {
                 worldId: s.id,
                 name: npc.name,
                 bornOnDay: npc.identity.bornOnDay,
+                origin: npc.identity.origin,
                 occupation: npc.identity.occupation,
                 titles: JSON.stringify(npc.identity.titles),
                 aliases: JSON.stringify(npc.identity.aliases),
@@ -1374,6 +1376,7 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
         name: row.name,
         identity: {
             bornOnDay: row.born_on_day,
+            origin: isOriginTierKey(row.origin_tier) ? row.origin_tier : DEFAULT_ORIGIN,
             occupation: row.occupation,
             titles: parseArray(row.titles),
             aliases: parseArray(row.aliases),
@@ -1827,6 +1830,7 @@ interface NpcRow {
     id: string;
     name: string;
     born_on_day: number;
+    origin_tier: string;
     occupation: string;
     titles: string;
     aliases: string;

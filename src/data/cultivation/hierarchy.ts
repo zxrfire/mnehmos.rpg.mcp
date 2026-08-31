@@ -252,6 +252,19 @@ export const ApexInstitutionSchema = z.object({
         /** Why it cannot be replaced. Always the same reason, worth restating. */
         cannotRestock: z.string().min(60)
     }),
+    /**
+     * The realm of the next strongest after the pinned one, which is where
+     * heritage depth stops being a word and becomes a number.
+     *
+     * An ancient apex has a filled gradient underneath: centuries of people at
+     * every rung, so the institution survives losing anyone in particular. A
+     * recent one has a cliff - one person at the top and a gap below her,
+     * because the position was built by a single crossing and there has not
+     * been time to grow anything into the space. That gap is the honest
+     * measure of how new a power is, and it is not fixable with money.
+     */
+    secondStrongestOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    depthNote: z.string().min(80),
     /** What could take the position away. Never the same answer twice. */
     instability: z.string().min(80),
     lastRealm: z.object({
@@ -417,6 +430,9 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 'The person who made it went through the Lid. Nothing comes back that way, and no living hand can produce any of it.'
         },
         heritage: 'ancient',
+        secondStrongestOrdinal: 39,
+        depthNote:
+            'A filled ladder underneath, and the Survey does not publish where it thins because it does not thin anywhere anyone has been able to check. Losing the seated one would be a catastrophe of a specific kind - the Lamp becomes takeable - and would not be an institutional collapse. There is a great deal of Survey below the Survey.',
         instability:
             'Almost none, and the exception is specific: the position rests on one person not standing up. Anything large enough to require her attention elsewhere ends the arrangement in an afternoon, and the Survey has structured four hundred years of procedure around never producing such a thing. It is stable in the way a held breath is stable.',
         lastRealm: {
@@ -490,6 +506,9 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 'The founder drove the Nail through and did not come back. What is in the cases is what there is.'
         },
         heritage: 'ancient',
+        secondStrongestOrdinal: 38,
+        depthNote:
+            'Forty posted staff, and the top of them is much closer to the seat than anyone outside assumes. The Long Cut does everything itself, which over eleven hundred years has produced an unusually even distribution: no prodigies, no gaps, and nobody who has not done the work below them.',
         instability:
             'The Nail cannot be moved, so the Long Cut cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
         lastRealm: {
@@ -556,12 +575,15 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 'She is through the Lid. Every use is permanent, the stock only ever goes down, and the Pavilion is three hundred and eighty years into a resource that has no second source.'
         },
         heritage: 'recent',
+        secondStrongestOrdinal: 37,
+        depthNote:
+            'A cliff, and it is the signature of a young power. Ru Anjing is through the Lid, her younger sister holds the hall at the first rung of the last realm, and the next name after that is early Grand Ascension - three full stages down, with nobody in between. The Pavilion is not hiding this; it cannot. Any rival who counts the sect roster arrives at the same figure, and the figure says that the Pavilion is one person deep.',
         instability:
             'The other two are ancient and cannot be dated. This one can: three hundred and eighty years, one crossing, one person. Its position is real and it is young, and youth is the whole exposure - the Pavilion has a front gate, an outer courtyard, an admission standard and disciples, so it can be found, petitioned, joined, watched and counted in a way the other two never can. It is the brightest position in the region and the only apex that could be ended by something other than a fight.',
         lastRealm: {
             count: 1,
             pinned: true,
-            note: 'One, in the inner hall with the Edge, and the Pavilion does not say who. Ru Anjing spent her last decades making the sect independent rather than strong: settling what was outstanding, calling in what was owed, and leaving the cost of touching the Pavilion legible enough that nobody has since wanted to establish the figure. What she left behind is a position that holds without her, which is a harder thing to build than a disciple.'
+            note: 'One: Ru Anwei, younger sister of the woman who crossed, at the first rung of the last realm and no further after three hundred and eighty years. She sits in the inner hall with the Edge. Ru Anjing spent her last decades making the sect independent rather than strong - settling what was outstanding, calling in what was owed, and leaving the cost of touching the Pavilion legible enough that nobody has since wanted to establish the figure - and then left her sister to hold it. The province finds the arrangement touching. Every rival reads it as exactly what it is: an apex resting on one woman who is the weakest thing at her own tier.'
         },
         sentDown: {
             id: 'artifact-the-standing-edge',

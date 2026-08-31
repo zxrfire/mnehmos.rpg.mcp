@@ -48,10 +48,25 @@ import {
     lifespanForOrdinal,
     progressRequiredForOrdinal
 } from '../cultivation/realms.js';
-import { computeBreakthroughOdds, FAILURE_PROGRESS_LOSS } from '../cultivation/breakthrough.js';
+import {
+    computeBreakthroughOdds,
+    FAILURE_PROGRESS_LOSS,
+    MAX_PILL_BONUS
+} from '../cultivation/breakthrough.js';
 import { eraAmbientMultiplier } from '../cultivation/ambient.js';
-import { stagnationYearsForOrdinal, type AmbientQi } from '../../schema/cultivation.js';
+import {
+    AMBIENT_QI_RATE_MULTIPLIER,
+    stagnationYearsForOrdinal,
+    type AmbientQi
+} from '../../schema/cultivation.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
+import {
+    BREAKTHROUGH_PILL_STONES,
+    STONES_PER_YEAR_OF_SECLUSION,
+    affordablePillPotency,
+    getOrigin,
+    type OriginTierKey
+} from '../cultivation/origin.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
 import type { WorldCatalog, CatalogFaction, CatalogRegion } from './catalog.js';
@@ -454,6 +469,24 @@ export interface DeriveOrdinalOptions {
     eraQiDensity?: number;
     /** Retry ceiling per rank. A safety net; settling normally binds first. */
     maxAttemptsPerRank?: number;
+    /**
+     * Where this person was born.
+     *
+     * NPCs get an origin the same way the player does, and it is spent here the
+     * same way: it moves the ground under them, whether a house stands behind
+     * them, what the family can pay for in pills, and whether the province's own
+     * ceiling is theirs. It moves NOTHING else, and in particular it never adds
+     * a rank - a great house child who draws a muddled root lands where a
+     * muddled root lands, only better fed.
+     *
+     * Omitted reads as 'thin_county', which is nine births in ten.
+     */
+    origin?: OriginTierKey;
+}
+
+/** The denser of two bands. A house can improve the ground; it cannot find a vein. */
+function betterAmbient(a: AmbientQi, b: AmbientQi): AmbientQi {
+    return AMBIENT_QI_RATE_MULTIPLIER[b] > AMBIENT_QI_RATE_MULTIPLIER[a] ? b : a;
 }
 
 /**
@@ -497,23 +530,37 @@ export function deriveOrdinal(
     // Most people are not sitting in a cave. A wide, right-skewed draw that
     // stands for everything this layer does not model about a life.
     const effort = rng.float(0.08, 0.75) * (1 + attributes.insight * 0.08);
-    const ambient: AmbientQi = opts.ambient ?? 'normal';
+    const origin = getOrigin(opts.origin ?? 'thin_county');
+    // The family can improve the ground under a child. It cannot find them a
+    // sealed vein, which is why MAX_ORIGIN_AMBIENT stops at dense.
+    const ambient: AmbientQi = betterAmbient(opts.ambient ?? 'normal', origin.ground);
     const era = opts.eraQiDensity === undefined ? 1 : eraAmbientMultiplier(opts.eraQiDensity);
     const maxAttempts = Math.max(1, opts.maxAttemptsPerRank ?? 12);
 
     const rate = computeCultivationRate({ spiritRoot: root, injuries: [] }, ambient, {
         focusMultiplier: Math.min(1, effort),
         locationBonus: Math.max(0.1, regionRateMultiplier) * era,
-        techniqueBonus: 1 + attributes.insight * 0.06
+        techniqueBonus: 1 + attributes.insight * 0.06,
+        // Placement: arrays, elder guidance, and a stipend that means this
+        // person is not foraging. 1 for the nine births in ten that have none.
+        sectBonus: origin.placement.sectBonus
     }).perDay;
     if (rate <= 0) return 0;
 
     const perYear = rate * DAYS_PER_YEAR;
-    const cap = Math.min(clampOrdinal(ceiling), MAX_ORDINAL);
+    // A province's ceiling is what nobody HERE has passed. Somebody placed out
+    // of it as a child is not bound by it - which is the whole of what
+    // placement is worth, and is bounded by the house that took them.
+    const reachable = Math.max(clampOrdinal(ceiling), clampOrdinal(origin.placement.reach));
+    const cap = Math.min(reachable, MAX_ORDINAL);
 
     let ordinal = 0;
     let age = MIN_AGE;
     let spent = 0;
+    // Stones are finite and they are spent. A patriarch's fortune buys a great
+    // many pills and then it is gone, which is why this term flattens out
+    // rather than compounding.
+    let stones = origin.spiritStones;
 
     while (ordinal < cap) {
         const cost = progressRequiredForOrdinal(ordinal);
@@ -534,10 +581,23 @@ export function deriveOrdinal(
             yearsAtRank += yearsNeeded;
             age += yearsNeeded;
             spent += yearsNeeded;
+            // Upkeep first, and the stipend against it. A life spent at a rank
+            // costs stones whether or not anything comes of it.
+            stones = Math.max(
+                0,
+                stones + yearsNeeded * (origin.placement.stipendPerYear - STONES_PER_YEAR_OF_SECLUSION)
+            );
+
+            // One pill, bought if the holding covers it, and actually paid for.
+            const potency = affordablePillPotency(stones, BREAKTHROUGH_PILL_STONES);
+            const pill = potency > 0
+                ? { name: 'a breakthrough pill', potency: potency * MAX_PILL_BONUS }
+                : null;
+            stones = Math.max(0, stones - potency * BREAKTHROUGH_PILL_STONES);
 
             const odds = computeBreakthroughOdds(
                 { realmOrdinal: ordinal, spiritRoot: root, attributes, injuries: [] },
-                { ambient }
+                { ambient, pill }
             );
             if (rng.next() < odds.finalChance) {
                 crossed = true;
@@ -611,14 +671,19 @@ function seedPopulation(
                 tags: [`region:${region.id}`]
             });
 
-            // Derived, not assigned. Same inputs the player gets.
+            // Derived, not assigned. Same inputs the player gets, and that now
+            // includes where they were born - which is the honest explanation
+            // for why a great house has the members it does. Nobody is placed
+            // in one; the origin roll puts them there and the derivation spends
+            // what it supplied.
             const ordinal = deriveOrdinal(
                 npc.cultivation.spiritRoot,
                 npc.cultivation.attributes,
                 age,
                 region.ambientRateMultiplier,
                 region.localCeilingOrdinal,
-                rng
+                rng,
+                { origin: npc.identity.origin }
             );
             npc = setRealm(npc, ordinal, presentDay - years(rng.int(0, 8)));
             npc = {

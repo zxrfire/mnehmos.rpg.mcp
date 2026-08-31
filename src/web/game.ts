@@ -41,10 +41,14 @@ import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roo
 import { ACTIONS_PER_FULL_SATIETY, describeDeath } from '../engine/cultivation/survival.js';
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { rollHerb } from '../data/cultivation/index.js';
+import { findWorkForOrdinal } from '../data/cultivation/mortal-world.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
 import { setDb } from '../storage/index.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { handleRefine } from '../server/consolidated/alchemy-manage.js';
+import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
+import { handleMarket, handleWork } from '../server/consolidated/cultivation-mortal.js';
+import { handleAssess } from '../server/consolidated/cultivation-perception.js';
 import { handlePractise } from '../server/consolidated/technique-manage.js';
 import {
     FLAG_NAME_TAKEN,
@@ -63,6 +67,7 @@ import { applyTimeSkip, tollLine } from './apply.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
     DEFAULT_SECLUSION_DAYS,
+    DEFAULT_WORK_DAYS,
     GATHERING_DAYS,
     MAX_CULTIVATION_DAYS,
     TRAINING_DAYS,
@@ -149,6 +154,11 @@ export const SHORT_ACTION_DAYS = 1;
 export const TRAVEL_FOCUS = 0.15;
 export const GATHERING_FOCUS = 0.2;
 export const WAITING_FOCUS = 0.25;
+
+/** Market board categories the parser can narrow to. */
+const MARKET_CATEGORIES = [
+    'food', 'lodging', 'transport', 'medicine', 'land', 'service', 'tool', 'information'
+] as const;
 
 /** Engine event summaries appended to the log per action, at most. */
 const MAX_LOGGED_EVENTS = 40;
@@ -481,7 +491,7 @@ export class GameService {
         );
 
         // ── phase 2 ──
-        const execution = await this.execute(plan.action, run, cultivator, ambient);
+        const execution = await this.execute(plan.action, run, cultivator, ambient, trimmed);
 
         const after = this.currentRun();
         const scene = {
@@ -666,7 +676,8 @@ export class GameService {
         action: PlannedAction,
         run: Run,
         cultivator: Cultivator,
-        ambient: AmbientQi
+        ambient: AmbientQi,
+        rawInput = ''
     ): Promise<Execution> {
         switch (action.action) {
             case 'cultivate':
@@ -717,6 +728,36 @@ export class GameService {
                 return this.freeAction(run, 'status', factsForStatus(
                     cultivator, ambient, eligibility.progressRequired, eligibility.eligible
                 ));
+            }
+
+            case 'work':
+                return this.work(cultivator, action.days ?? DEFAULT_WORK_DAYS, action.target);
+
+            case 'market':
+                return this.market(cultivator, action.target);
+
+            case 'assess':
+                return this.assess(cultivator, action.target);
+
+            case 'unclear': {
+                // The cheapest action available, and the whole reason it is in
+                // the closed set: no time, no food, no roll, no death. A player
+                // may type something ambiguous a hundred times and lose nothing
+                // but a moment.
+                const unread = this.freeAction(run, 'unclear', factsForRefusal(
+                    'The thought does not resolve.',
+                    'You turn the thought over and it does not resolve into anything you could ' +
+                    'actually do standing here.'
+                ));
+                // The sentence itself goes to the inspector, where somebody
+                // tuning the parser can read exactly what it failed on.
+                unread.calls = [{
+                    name: 'engine.parseIntent',
+                    action: 'unclear',
+                    summary: `Intent not recognised; no action taken. Raw input: "${rawInput.slice(0, 160)}"`,
+                    ok: false
+                }];
+                return unread;
             }
 
             case 'look': {
@@ -998,6 +1039,84 @@ export class GameService {
     // ── logistics ────────────────────────────────────────────────────────
 
     /**
+     * Taking work, through the tool layer that owns the mortal economy.
+     *
+     * Half the deaths in this world are logistical, and this is the verb that
+     * answers that: it is how a cultivator with an empty purse buys the food
+     * that stops the starvation clock. It advances the run's own time, which is
+     * why `handleWork` owns the whole thing rather than this layer approximating
+     * it - the days, the wage, the rations bought and the qi not gathered while
+     * bent over somebody else's field are one calculation.
+     */
+    private async work(
+        cultivator: Cultivator,
+        days: number,
+        target: string | undefined
+    ): Promise<Execution> {
+        // A named trade has to become a catalog id, or the tool reads it as
+        // "no occupation named" and lists the board instead of doing the work.
+        // Matched against what is going HERE, at this realm: naming a trade the
+        // village does not offer should reach the tool's own refusal, which
+        // knows why, rather than being silently dropped here.
+        const wanted = (target ?? '').trim();
+        const occupation = wanted.length >= 3
+            ? findWorkForOrdinal(cultivator.realmOrdinal)
+                .find(o => wanted.toLowerCase().includes(o.name.toLowerCase())
+                    || o.name.toLowerCase().includes(wanted.toLowerCase()))
+            : undefined;
+
+        const result = await handleWork(
+            {
+                action: 'work',
+                cultivatorId: cultivator.id,
+                days,
+                ...(occupation ? { occupationId: occupation.id } : {})
+            },
+            // The same span `cultivate` runs, injected the same way the tool
+            // layer injects it: there is one time skip in the cultivation
+            // surface and `handleCultivate` owns it. Wiring a second one here
+            // would be a second answer to how a day costs a cultivator.
+            async args => await handleCultivate(args as never) as Record<string, unknown>
+        );
+        return this.fromToolResult('cultivation_mortal.work', 'work', result, 'The work');
+    }
+
+    /**
+     * What is for sale where they are standing.
+     *
+     * A read. Nothing is bought by looking at a board, no time passes, and a
+     * place with no market says so - which is most places, and is the reason
+     * getting out of a poor region is the first real goal anybody has.
+     */
+    private async market(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+        const category = MARKET_CATEGORIES.find(c => (target ?? '').toLowerCase().includes(c));
+        const result = await handleMarket({
+            action: 'market',
+            cultivatorId: cultivator.id,
+            ...(category ? { category } : {})
+        });
+        return this.fromToolResult('cultivation_mortal.market', 'market', result, 'The market');
+    }
+
+    /**
+     * What happens if they try.
+     *
+     * The capability predicates, asked rather than discovered by dying. It
+     * reports odds and never resolves anything: an attempt is always permitted,
+     * and this is the difference between a player who chose badly and one who
+     * was not told the ground was lethal.
+     */
+    private async assess(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+        const result = await handleAssess({
+            action: 'assess',
+            cultivatorId: cultivator.id,
+            against: 'place',
+            ...(target ? { place: target } : {})
+        });
+        return this.fromToolResult('cultivation_perception.assess', 'assess', result, 'The reckoning');
+    }
+
+    /**
      * Alchemy, through the same handler the MCP tool surface calls.
      *
      * Not reimplemented here. `alchemy_manage.refine` owns the odds, the
@@ -1173,14 +1292,19 @@ export class GameService {
 
         const body = result as Record<string, unknown>;
         const hint = typeof body.narrationHint === 'string' ? body.narrationHint : null;
-        const lines = [
-            `${subject}: the engine resolved it.`,
-            ...(hint ? [hint] : []),
-            ...summariseToolBody(body)
-        ];
+
+        // The handler's own `narrationHint` is written in the world's voice and
+        // is the whole account. What used to lead this list was
+        // "${subject}: the engine resolved it." - a sentence about the software,
+        // shipped to a player, which is the exact defect the refusal sweep was
+        // for and which no test caught because these verbs did not exist yet.
+        const detail = summariseToolBody(body);
+        const lines = hint
+            ? [hint, ...detail]
+            : detail.length > 0 ? detail : [`${subject} is done.`];
 
         return {
-            facts: factsForToolResult(hint ?? `${subject}: resolved.`, lines),
+            facts: factsForToolResult(hint ?? lines[0], lines),
             events: [],
             timeSkip: null,
             breakthrough: null,
@@ -1941,6 +2065,77 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     }
     const deviation = body.deviation as { deviated?: boolean; summary?: string } | undefined;
     if (deviation?.deviated && deviation.summary) lines.push(deviation.summary);
+
+    // ── the mortal economy ──
+    //
+    // `work` and `market` return figures rather than a narration hint, because
+    // the tool surface's caller is a model that will phrase them. Here they
+    // have to become sentences or a player gets "The work is done." and nothing
+    // else, which is how the first live check of this path read.
+    if (body.worked === true) {
+        const occupation = body.occupation as { name?: string } | undefined;
+        const days = typeof body.daysWorked === 'number' ? body.daysWorked : 0;
+        const paid = typeof body.spiritStonesEarned === 'number' ? body.spiritStonesEarned : 0;
+        const now = typeof body.spiritStonesNow === 'number' ? body.spiritStonesNow : null;
+
+        lines.push(
+            `${humanDays(days)} of ${occupation?.name ?? 'whatever was going'}, ` +
+            `and ${paid > 0 ? `${paid} spirit stones for it` : 'nothing to show for it'}` +
+            `${now === null ? '.' : `, which leaves ${now}.`}`
+        );
+        lines.push(
+            'Nothing was gathered in that time. That is what the money costs, and it is why a ' +
+            'sect stipend is worth more than the stipend.'
+        );
+        if (typeof body.unpaid === 'string') lines.push(body.unpaid);
+    }
+
+    const offered = body.work as Array<{ name?: string; cashPerMonth?: number; monthsLodgingItCovers?: number; risk?: string }> | undefined;
+    if (Array.isArray(offered)) {
+        if (offered.length === 0) {
+            lines.push(
+                'Nobody here is hiring anyone, for anything. Somewhere with more people in it ' +
+                'will have something.'
+            );
+        } else {
+            lines.push('What is going, for somebody standing where they are standing:');
+            for (const job of offered.slice(0, 6)) {
+                const keep = typeof job.monthsLodgingItCovers === 'number'
+                    ? `, and a month of it keeps them about ${job.monthsLodgingItCovers} months`
+                    : '';
+                lines.push(`  ${job.name ?? 'unnamed work'}${keep}${job.risk ? ` (${job.risk})` : ''}.`);
+            }
+            lines.push(
+                'A month spent earning is a month not spent cultivating. That is the whole of the choice.'
+            );
+        }
+    }
+
+    const prices = body.prices as Array<{ name?: string; spiritStones?: number; affordable?: boolean; unit?: string }> | undefined;
+    if (Array.isArray(prices)) {
+        if (prices.length === 0) {
+            lines.push(
+                'Nobody here is selling anything. It is a road, or a hillside, and the nearest ' +
+                'person with a stall is a long way off.'
+            );
+        } else {
+            lines.push('What is on offer, and what it costs here:');
+            for (const item of prices.slice(0, 8)) {
+                const cost = typeof item.spiritStones === 'number'
+                    ? `${item.spiritStones} spirit stones${item.unit ? ` the ${item.unit}` : ''}`
+                    : 'an unmarked price';
+                lines.push(`  ${item.name ?? 'unnamed'}, ${cost}${item.affordable === false ? ', which is out of reach' : ''}.`);
+            }
+        }
+        // Whether this ground can still take them anywhere is the one thing a
+        // price board actually decides, and it is why leaving is a goal.
+        if (body.groundHereStillGives === false) {
+            lines.push(
+                'Whatever else is true of this place, the ground here has nothing further to give ' +
+                'somebody at this rank.'
+            );
+        }
+    }
 
     return lines;
 }

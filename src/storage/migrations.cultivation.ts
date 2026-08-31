@@ -551,6 +551,21 @@ function addCultivationColumns(db: Database.Database): void {
         db.exec('ALTER TABLE cultivators ADD COLUMN battles_won INTEGER NOT NULL DEFAULT 0;');
     }
 
+    // Where they were born - the third thing dealt at creation, beside the
+    // spirit root and the attributes. NOT NULL with a default rather than
+    // nullable, because everyone was born somewhere and 'thin_county' is both
+    // the overwhelming majority of births and the honest reading of every row
+    // written before this axis existed: no teacher, no manual, no vein.
+    //
+    // The column exists because the field does. A schema default with no
+    // column behind it would have Zod filling `origin` on every read while the
+    // value never survived a save, which is this repository's most-repeated
+    // bug and is exactly the shape it takes.
+    if (!cultivatorColumns.includes('origin_tier')) {
+        console.error('[Migration] Adding origin_tier column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN origin_tier TEXT NOT NULL DEFAULT 'thin_county';");
+    }
+
     const runColumns = (
         db.prepare('PRAGMA table_info(runs)').all() as { name: string }[]
     ).map(col => col.name);

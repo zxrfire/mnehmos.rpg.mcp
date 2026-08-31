@@ -239,8 +239,10 @@ describe('the deterministic path is a first-class way to play', () => {
         expect(parseIntent('forage for herbs').action).toBe('gather');
         expect(parseIntent('brew a Meridian Knitting Pill in the cauldron').action).toBe('refine');
         expect(parseIntent('ten years').days).toBe(3650);
-        // An intent nobody can parse must never cost a year of anyone's life.
-        expect(parseIntent('asdkjhasd qqq')).toEqual({ action: 'look' });
+        // An intent nobody can parse must never cost a year of anyone's life,
+        // and it no longer resolves to `look` either: a scene description in
+        // answer to a sentence the game did not read looks like being ignored.
+        expect(parseIntent('asdkjhasd qqq')).toEqual({ action: 'unclear' });
     });
 
     it('folds the social and perceptual range into three semantic actions', () => {

@@ -353,9 +353,17 @@ train_technique  practise a specific art the cultivator already knows. "target" 
 refine           work the cauldron. "target" names the formula or the pill wanted.
 gather           forage for herbs and materials. "target" may name what is wanted.
 eat              buy and eat a meal.
+work             take an occupation for a span, for wages. "days" (default 90); "target" may
+                 name the kind of work. This is how somebody with no stones eats, and it is
+                 the right answer far more often than a model expects.
+market           what is for sale where they are standing, and at what price. Passes no time.
+assess           what would happen if they tried something: the odds, not the attempt.
+                 "target" names the place or the opponent.
 wait             let a day go by doing nothing in particular.
 look             observe the surroundings. Passes no time.
-status           report the cultivator's own condition. Passes no time.`;
+status           report the cultivator's own condition. Passes no time.
+unclear          DO NOT CHOOSE THIS. It is the deterministic parser's fallback for a sentence
+                 it could not read. If you are unsure, choose "look" or "investigate".`;
 
 /**
  * Phase 1 system prompt.
@@ -383,6 +391,9 @@ Actions:
 ${ACTION_GLOSSARY}
 
 Rules:
+- If the player is broke, hungry, or asking how to get money or food, "work" and "market"
+  are almost always what they meant. Never answer that with "cultivate": sitting still
+  burns the food they do not have, and it is the one action that can kill them for asking.
 - "action" MUST be one of the listed names. There is no other action. The list is short on
   purpose: nearly everything social is "interact" with an "intent", and nearly everything
   perceptual is "investigate". Reach for those before you settle for "look".

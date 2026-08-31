@@ -27,6 +27,8 @@ import { TRADITIONS } from './traditions.js';
 import { OCCUPATIONS, PRICES, SETTLEMENTS } from './mortal-world.js';
 import { FACTION_CHARACTER } from './faction-character.js';
 import { APEX_INSTITUTIONS, COURTS, FACTION_PARENTAGE, GUEST_ELDERS } from './hierarchy.js';
+import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from './immortal-items.js';
+import { WANDERERS } from './wanderers.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RE-EXPORTS
@@ -156,6 +158,8 @@ export * from './traditions.js';
 export * from './mortal-world.js';
 export * from './faction-character.js';
 export * from './hierarchy.js';
+export * from './immortal-items.js';
+export * from './wanderers.js';
 
 export {
     ENCOUNTERS,
@@ -221,6 +225,12 @@ export interface CultivationCatalogCounts {
     guestElders: number;
     /** Factions placed in the governance stack. Should equal `sects`. */
     placedInStack: number;
+    /** Consumables that came down from above. Tiny by construction. */
+    immortalItems: number;
+    /** Individual holdings of them, across every faction in the world. */
+    immortalHoldings: number;
+    /** Unattached figures worth asking. Vanishingly few. */
+    wanderers: number;
 }
 
 /** Catalog sizes, for tool responses and for the content smoke test. */
@@ -243,7 +253,10 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         apexInstitutions: APEX_INSTITUTIONS.length,
         courts: COURTS.length,
         guestElders: GUEST_ELDERS.length,
-        placedInStack: Object.keys(FACTION_PARENTAGE).length
+        placedInStack: Object.keys(FACTION_PARENTAGE).length,
+        immortalItems: IMMORTAL_ITEMS.length,
+        immortalHoldings: IMMORTAL_HOLDINGS.length,
+        wanderers: WANDERERS.length
     };
 }
 

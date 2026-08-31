@@ -941,6 +941,25 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['grave', 'technique', 'high-value', 'lethal', 'once']
     },
     {
+        // Rare, and deliberately not signposted. Nothing in this summary says
+        // he matters, because nothing about him says it at the time either.
+        // A cultivator with no knowledge record for him may not be told a
+        // name here - see `wanderers.ts` and the awareness rule.
+        id: 'enc-unremarkable-man-at-an-inn',
+        name: 'An Unremarkable Man, Talking',
+        kind: 'opportunity',
+        simEventKind: 'npc_event',
+        weight: 2,
+        minOrdinal: 0,
+        maxOrdinal: 44,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A man of no obvious age has been drinking in the cheap part of the inn at {place} for {days} days, answering questions from whoever sits down. He is not on the gate register and nobody has asked him to be. The innkeeper says he comes through every few years and is good company.',
+        tokens: ['place', 'days'],
+        tags: ['social', 'safe', 'avoidable', 'wanderer', 'unremarkable']
+    },
+    {
         id: 'enc-grave-reader-partnership',
         name: 'Grave-Reader Offers a Partnership',
         kind: 'grave',
