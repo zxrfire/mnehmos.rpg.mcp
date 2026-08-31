@@ -859,7 +859,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'Alone among the high factions, this one has not concluded that the road is shut - which reads as either the only clear sight in either province or the contract talking, and nobody outside the caldera can tell which.'
     },
     'sect-frostmirror-sect': {
-        highestOrdinal: 35,
+        highestOrdinal: 34,
         climbedYearsAgo: 400,
         climbedWhere: 'The cold vein under the glacier, forty spans deeper into the ice than the working face now reaches.',
         ageNote: 'Four centuries back, when the ice ran deep enough that the curriculum could be practised at the depth it was written for.',
@@ -875,7 +875,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         settledBelief: 'Taken as settled inside the house that a Standing Anchor was something the live containment produced and that the containment has finished producing. The published wake schedule for Xu Ci is, read closely, an admission that nobody expects to replace her.'
     },
     'sect-storm-tyrant-sect': {
-        highestOrdinal: 36,
+        highestOrdinal: 34,
         climbedYearsAgo: 300,
         climbedWhere: 'The floating stone, while the tether still drew and the vein under it could be reached at the bottom.',
         ageNote: 'Three centuries back, before Yan Kuo concealed that the tether was failing - the last window in which the road of the Court ran the whole way up.',
