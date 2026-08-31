@@ -2885,6 +2885,18 @@ export interface WithdrawnPower {
      * own mountain. It is busy rather than pinned, and busy is a decision.
      */
     count: number;
+    /**
+     * The seats themselves, in order, with the rung each stands on.
+     *
+     * Ordered by `SEAT_ORDER`: ordinal descending, then age ascending. Second
+     * and Third stand on the same rung, which is the tiebreak doing visible
+     * work rather than a rounding artefact - equal ordinals, and the younger
+     * holds the higher seat, so Second is younger than Third and takes first
+     * claim on everything the Court can supply.
+     *
+     * `count` must equal this length, and the catalog test asserts it.
+     */
+    seats: readonly { position: string; ordinal: number }[];
     /** What the attention is committed to instead. */
     occupiedBy: string;
     /** Roughly how often anyone sees one, in plain terms. */
@@ -2985,6 +2997,12 @@ export const SEAT_ORDER = {
 export const WITHDRAWN_POWERS: Record<string, WithdrawnPower> = {
     'sect-hollow-court': {
         count: 4,
+        seats: [
+            { position: 'First Seat', ordinal: 44 },
+            { position: 'Second Seat', ordinal: 43 },
+            { position: 'Third Seat', ordinal: 43 },
+            { position: 'Fourth Seat', ordinal: 42 }
+        ],
         occupiedBy:
             'Four Seats, First through Fourth, ordered by ordinal and then by youth. The crossing. Everyone seated is working on it continuously, and has been for long enough that the province measures their presence in decades of absence rather than in appearances.',
         seenAs:

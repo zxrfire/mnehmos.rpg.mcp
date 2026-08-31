@@ -472,48 +472,23 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
 
         if (row.ordinal >= HIGH_BAND_FLOOR) {
             if (withdrawn) {
-                // First Seat is the highest ordinal by the rule the Court itself
-                // uses, so this is not an approximation: powerOrdinal and First
-                // Seat are the same person. The ordinal is the strongest of them,
-                // which is what powerOrdinal
-                // means everywhere else and is all the catalog records. The other
-                // seats are in the last realm and the register does not say where,
-                // because nobody outside those mountains has ever been told.
-                out.push({
-                    name: 'First Seat',
-                    named: false,
-                    ordinal: row.ordinal,
-                    rank: row.rank,
-                    state: 'withdrawn',
-                    alive: true,
-                    ordinalNote: null,
-                    factionName: row.name,
-                    factionOrdinal: row.ordinal,
-                    note: withdrawn.occupiedBy
-                        + ' Seats run First to Fourth by ordinal and then by youth, so First Seat'
-                        + ' is this ordinal by construction. Where the other three stand is not recorded.'
-                });
-
-                // First Seat is the recorded ordinal; the other three are in the
-                // band and the catalog does not say where. They are listed
-                // because they exist and an operator needs to see four Seats,
-                // and they are unnamed because nobody outside the mountains has
-                // ever been given a name for any of them.
-                const BAND_FLOOR = 41;
-                for (const seat of ['Second Seat', 'Third Seat', 'Fourth Seat'].slice(0, Math.max(0, withdrawn.count - 1))) {
+                // Every seat, with the rung it actually stands on. Second and
+                // Third share one, which is the age tiebreak visible in the
+                // data: equal ordinals, younger seat first.
+                for (const seat of withdrawn.seats) {
                     out.push({
-                        name: seat,
+                        name: seat.position,
                         named: false,
-                        ordinal: BAND_FLOOR,
-                        ordinalNote: BAND_FLOOR + '-' + row.ordinal,
-                        rank: realmForOrdinal(BAND_FLOOR).name,
+                        ordinal: seat.ordinal,
+                        ordinalNote: null,
+                        rank: rankName(seat.ordinal),
                         state: 'withdrawn',
                         alive: true,
                         factionName: row.name,
                         factionOrdinal: row.ordinal,
-                        note: seat === 'Third Seat'
-                            ? 'Holds the north mountain. Seats run by ordinal and then by youth, so a rung is implied and not recorded.'
-                            : 'Somewhere in the last realm. Seats run by ordinal and then by youth, so a rung is implied and not recorded.'
+                        note: seat.position === 'Third Seat'
+                            ? 'Holds the north mountain. ' + withdrawn.occupiedBy
+                            : withdrawn.occupiedBy
                     });
                 }
             } else {
