@@ -17,7 +17,13 @@ import { handleSectManage } from '../../src/server/consolidated/sect-manage.js';
 import { closeDb, getDb } from '../../src/storage/index.js';
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support.js';
-import { resetCultivationWorlds } from '../../src/server/state/cultivation-world.js';
+import {
+    activeWorldId,
+    createWorld,
+    listWorlds,
+    resetCultivationWorlds
+} from '../../src/server/state/cultivation-world.js';
+import { runSeedFor } from '../../src/engine/world/legacy.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { CERTIFICATION_COST_STONES } from '../../src/server/consolidated/sect-politics.js';
 import { getSectsClaimingLivingAncestor, getSectAncestry } from '../../src/data/cultivation/sects.js';
@@ -35,11 +41,15 @@ const cultivation = async (args: Record<string, unknown>) =>
 const sect = async (args: Record<string, unknown>) =>
     payload(await handleSectManage(args, ctx as never));
 
-async function newRun(seed = 'wiring-seed', name = 'Ru Anjing') {
+/**
+ * Open a life. Pass `null` for the seed to let the run seed DERIVE from the
+ * world's, which is the ordinary path; pass one to replay a known run.
+ */
+async function newRun(seed: string | null = 'wiring-seed', name = 'Ru Anjing') {
     const created = await cultivation({
         action: 'create_cultivator',
         name,
-        seed,
+        ...(seed === null ? {} : { seed }),
         location: 'Scarwater'
     });
     expect(created.error).toBeUndefined();
@@ -97,7 +107,11 @@ describe('the wiring', () => {
             }
         });
 
-        it('is deterministic: the same seed and span produce the same digest', async () => {
+        it('is deterministic: the same WORLD seed and span produce the same digest', async () => {
+            // The seed that matters is the world's, not the run's. A run seed
+            // reproduces one life; a world seed reproduces the place it was
+            // lived in.
+            await createWorld({ seed: 'a-fixed-world' });
             const first = await newRun('replay-seed');
             const a = await cultivation({
                 action: 'cultivate', cultivatorId: first.cultivator.id, years: 15
@@ -107,6 +121,7 @@ describe('the wiring', () => {
             resetCultivationWorlds();
             db = getDb(':memory:');
 
+            await createWorld({ seed: 'a-fixed-world' });
             const second = await newRun('replay-seed');
             const b = await cultivation({
                 action: 'cultivate', cultivatorId: second.cultivator.id, years: 15
@@ -114,6 +129,74 @@ describe('the wiring', () => {
 
             expect(b.worldDigest.headline).toBe(a.worldDigest.headline);
             expect(b.worldDigest.unheard).toBe(a.worldDigest.unheard);
+        });
+    });
+
+    // ── THE WORLD IS THE OUTER OBJECT ────────────────────────────────────
+
+    describe('the world outlives its runs', () => {
+        it('derives a run seed from the world seed, never mints one beside it', async () => {
+            const world = await createWorld({ seed: 'derivation' });
+            const created = await newRun(null);
+
+            // Run zero of this world, and it is that seed and no other.
+            expect(created.run.seed).toBe(runSeedFor(world.seed, 0));
+            expect(created.world.id).toBe(world.id);
+        });
+
+        it('puts a second run in the SAME world, on the map the first one changed', async () => {
+            await createWorld({ seed: 'continuity' });
+            const first = await newRun(null, 'Wen Zhao');
+            await cultivation({
+                action: 'cultivate', cultivatorId: first.cultivator.id, years: 30
+            });
+            const dayAfterFirst = listWorlds()[0].currentDay;
+            expect(dayAfterFirst).toBeGreaterThan(0);
+
+            // End the life; the world keeps going.
+            const repos = ensureCultivationDb();
+            repos.runs.endRun(first.run.id, 'old_age', 'Lived it out.');
+
+            const second = await newRun(null, 'Wen Shu');
+            const worlds = listWorlds();
+            // One world, two lives. Not two worlds.
+            expect(worlds.length).toBe(1);
+            expect(worlds[0].runs).toBe(2);
+            // The second life starts in a world the first one already aged.
+            expect(worlds[0].currentDay).toBeGreaterThanOrEqual(dayAfterFirst);
+            expect(second.run.seed).toBe(runSeedFor(worlds[0].seed, 1));
+            expect(second.run.seed).not.toBe(first.run.seed);
+        });
+
+        it('creating a fresh world is deliberate, and leaves the old one standing', async () => {
+            const first = await createWorld({ seed: 'the-first' });
+            const second = await createWorld({ seed: 'the-second' });
+
+            const worlds = listWorlds();
+            expect(worlds.map(w => w.id)).toContain(first.id);
+            expect(worlds.map(w => w.id)).toContain(second.id);
+            // Nothing walks into two at once.
+            expect(worlds.filter(w => w.active).length).toBe(1);
+            expect(activeWorldId()).toBe(second.id);
+        });
+
+        it('survives a cold start by loading the world rather than reseeding it', async () => {
+            await createWorld({ seed: 'cold-start' });
+            const created = await newRun(null);
+            await cultivation({
+                action: 'cultivate', cultivatorId: created.cultivator.id, years: 25
+            });
+            const before = listWorlds()[0];
+
+            // Drop everything this process was holding. The database stays.
+            resetCultivationWorlds();
+
+            const after = listWorlds()[0];
+            expect(after.id).toBe(before.id);
+            expect(after.seed).toBe(before.seed);
+            // The clock is where the run left it, not back at the beginning.
+            expect(after.currentDay).toBe(before.currentDay);
+            expect(after.runs).toBe(before.runs);
         });
     });
 

@@ -148,7 +148,10 @@ export const FOUNDATION_AMBIENT_SCORE: Record<AmbientQi, number> = {
     thin: -2,
     normal: 0,
     dense: 2,
-    spirit_tide: 3
+    spirit_tide: 3,
+    // Laying a foundation inside an unopened vein is the best conditions the
+    // world still has. Almost nobody gets to.
+    sealed_vein: 4
 };
 
 /** How far the seeded sample may shift the score in either direction. */

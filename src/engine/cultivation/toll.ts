@@ -150,7 +150,8 @@ export const TOLL_AMBIENT_RISK: Record<AmbientQi, number> = {
     thin: 0.1,
     normal: 0,
     dense: -0.08,
-    spirit_tide: -0.12
+    spirit_tide: -0.12,
+    sealed_vein: -0.15
 };
 
 /**

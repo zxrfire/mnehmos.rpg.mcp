@@ -195,6 +195,17 @@ export interface DormantAncestor {
      * tell which sects have something under the mountain, because sects lie
      * about it in both directions. See `sealedCeiling`.
      *
+     * A seal is also an OFFENSIVE instrument, and the catalog should be read
+     * that way. What is under a mountain is a single use, so the standing
+     * question a sect carries is what would be worth spending it on - and
+     * there are exactly two objects in the world that answer it. Trading a
+     * one-off for a permanent advantage is a good trade, and every sect with
+     * something sealed has priced it at least once. See `sentDown` on the apex
+     * institutions in `hierarchy.ts`, and `partingGift` below: they are the
+     * same phenomenon at two ends of the ladder. An ascending cultivator
+     * divests downward, rarely but reliably, and what a sect gets is a gift
+     * while what an apex got is the reason it is an apex.
+     *
      * The band is Void Refinement to Tribulation Transcendence, and which end
      * depends on `sealGrade` rather than on the sect. Holding a body and a soul
      * intact costs a formation running continuously off a vein, so the floor is

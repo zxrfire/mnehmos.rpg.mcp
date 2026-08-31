@@ -48,6 +48,9 @@ import {
     lifespanForOrdinal,
     progressRequiredForOrdinal
 } from '../cultivation/realms.js';
+import { computeBreakthroughOdds, FAILURE_PROGRESS_LOSS } from '../cultivation/breakthrough.js';
+import { eraAmbientMultiplier } from '../cultivation/ambient.js';
+import { stagnationYearsForOrdinal, type AmbientQi } from '../../schema/cultivation.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
@@ -435,38 +438,128 @@ function seedFactions(
  * a decade lost to an injury, a patron, a war. It is drawn once per NPC from
  * their own stream and never re-rolled.
  */
+export interface DeriveOrdinalOptions {
+    /**
+     * Ambient band the climb happened in. Defaults to `normal`, which is the
+     * Late Age's open-world baseline.
+     */
+    ambient?: AmbientQi;
+    /**
+     * Qi density of the ERA this cultivator climbed in, 0..1, from
+     * `world_eras`. This is how an ancient is derived honestly: a Grand
+     * Ascension survivor is not an exemption in the maths, they are somebody
+     * who walked the same cost curve when the open air was richer. Omitted
+     * means the present day.
+     */
+    eraQiDensity?: number;
+    /** Retry ceiling per rank. A safety net; settling normally binds first. */
+    maxAttemptsPerRank?: number;
+}
+
+/**
+ * How far this life actually got.
+ *
+ * ── Why this is not a budget subtraction ─────────────────────────────────
+ *
+ * It used to be: accumulate `rate x years`, spend it down the cost curve, stop
+ * when it runs out. That made NPCs systematically luckier than the player,
+ * because the player pays for every rank with a breakthrough roll, a settling
+ * clock and a lifespan, and the NPC paid with none of them. It is the
+ * no-bias rule broken in the player's disfavour, which is the direction that
+ * is easiest to miss.
+ *
+ * So this now walks the SAME gates the player walks, rank by rank:
+ *
+ *   - accumulate at `computeCultivationRate`, the player's own function;
+ *   - refuse the rank if it would take longer than settling permits at that
+ *     ordinal (`stagnationYearsForOrdinal`, which scales with the realm);
+ *   - refuse it if the cultivator would die of old age first;
+ *   - roll it against `computeBreakthroughOdds`, the player's own odds, and
+ *     make failures cost real time by re-accumulating what they burned.
+ *
+ * The upper stratum thins sharply as a result, and that is the correct
+ * outcome: in the Late Age almost nobody climbs past Core Formation on ambient
+ * qi. The world's ancients are explained by `eraQiDensity` - they climbed when
+ * the air was richer - rather than by anybody being exempt from the arithmetic.
+ */
 export function deriveOrdinal(
     root: SpiritRootKey,
     attributes: InnateAttributes,
     ageYears: number,
     regionRateMultiplier: number,
     ceiling: number,
-    rng: CultivationRNG
+    rng: CultivationRNG,
+    opts: DeriveOrdinalOptions = {}
 ): number {
-    const years = Math.max(0, ageYears - MIN_AGE);
-    if (years <= 0) return 0;
+    const lifetime = Math.max(0, ageYears - MIN_AGE);
+    if (lifetime <= 0) return 0;
 
-    // Most people are not sitting in a cave. A wide, right-skewed draw.
+    // Most people are not sitting in a cave. A wide, right-skewed draw that
+    // stands for everything this layer does not model about a life.
     const effort = rng.float(0.08, 0.75) * (1 + attributes.insight * 0.08);
-    const rate = computeCultivationRate(
-        { spiritRoot: root, injuries: [] },
-        'normal',
-        {
-            focusMultiplier: Math.min(1, effort),
-            locationBonus: Math.max(0.1, regionRateMultiplier),
-            techniqueBonus: 1 + attributes.insight * 0.06
-        }
-    ).perDay;
+    const ambient: AmbientQi = opts.ambient ?? 'normal';
+    const era = opts.eraQiDensity === undefined ? 1 : eraAmbientMultiplier(opts.eraQiDensity);
+    const maxAttempts = Math.max(1, opts.maxAttemptsPerRank ?? 12);
 
-    let budget = rate * DAYS_PER_YEAR * years;
-    let ordinal = 0;
+    const rate = computeCultivationRate({ spiritRoot: root, injuries: [] }, ambient, {
+        focusMultiplier: Math.min(1, effort),
+        locationBonus: Math.max(0.1, regionRateMultiplier) * era,
+        techniqueBonus: 1 + attributes.insight * 0.06
+    }).perDay;
+    if (rate <= 0) return 0;
+
+    const perYear = rate * DAYS_PER_YEAR;
     const cap = Math.min(clampOrdinal(ceiling), MAX_ORDINAL);
+
+    let ordinal = 0;
+    let age = MIN_AGE;
+    let spent = 0;
+
     while (ordinal < cap) {
         const cost = progressRequiredForOrdinal(ordinal);
-        if (budget < cost) break;
-        budget -= cost;
+        const allowance = stagnationYearsForOrdinal(ordinal);
+        const lifespan = lifespanForOrdinal(ordinal);
+        let yearsAtRank = 0;
+        let crossed = false;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const yearsNeeded = cost / perYear;
+            // Settling: a plateau longer than the realm permits ends the life
+            // where it stands, exactly as it does for the player.
+            if (yearsAtRank + yearsNeeded >= allowance) break;
+            // Lifespan: the realm grants a span, and it runs out.
+            if (age + yearsNeeded >= lifespan) break;
+            if (spent + yearsNeeded >= lifetime) break;
+
+            yearsAtRank += yearsNeeded;
+            age += yearsNeeded;
+            spent += yearsNeeded;
+
+            const odds = computeBreakthroughOdds(
+                { realmOrdinal: ordinal, spiritRoot: root, attributes, injuries: [] },
+                { ambient }
+            );
+            if (rng.next() < odds.finalChance) {
+                crossed = true;
+                break;
+            }
+            // A failure burns part of what was accumulated, and the time to
+            // put it back is real. Averaged over the failure table rather than
+            // rolled, because this is a derivation and not a playthrough.
+            const burned =
+                (FAILURE_PROGRESS_LOSS.failure_stable +
+                    FAILURE_PROGRESS_LOSS.failure_injured +
+                    FAILURE_PROGRESS_LOSS.failure_deviation) / 3;
+            const recovery = (cost * burned) / perYear;
+            yearsAtRank += recovery;
+            age += recovery;
+            spent += recovery;
+        }
+
+        if (!crossed) break;
         ordinal++;
     }
+
     return ordinal;
 }
 

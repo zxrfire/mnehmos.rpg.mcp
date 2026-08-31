@@ -646,3 +646,57 @@ describe('fosterage: the door is not shut, it is just the same door', () => {
         expect(HOLLOW_COURT_FOSTERAGE.otherwise).toMatch(/elder|deference|reputable/i);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT THE PINNED ONE IS SITTING ON
+//
+// Each apex was founded by somebody who crossed, and each of them sent one
+// object back down. Those objects are the only thing in the world the Hollow
+// Court wants, and the only thing worth spending a sealed ancestor on.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the sent-down treasures', () => {
+    it('gives every apex exactly one, intact, and never used', () => {
+        for (const apex of APEX_INSTITUTIONS) {
+            const gift = apex.sentDown;
+            expect(gift.intact, apex.id).toBe(true);
+            expect(gift.reserveTerms.length, apex.id).toBeGreaterThan(60);
+            // Two uses, and both of them are the two things that cross the Lid:
+            // comprehension of the crossing, and a message upward.
+            expect(gift.uses.length).toBeGreaterThanOrEqual(2);
+            expect(gift.uses.join(' ')).toMatch(/comprehension/i);
+            expect(gift.uses.join(' ')).toMatch(/channel upward/i);
+        }
+    });
+
+    it('ties the object to the seat, so the pin has a reason', () => {
+        for (const apex of APEX_INSTITUTIONS) {
+            // The holder is pinned BECAUSE of the object. If these ever come
+            // apart, the apexes are just strong rather than stuck.
+            expect(apex.lastRealm.pinned).toBe(true);
+            expect(apex.sentDown.ifUncovered.length).toBeGreaterThan(80);
+            expect(apex.sentDown.ifUncovered).toMatch(/seat|sitting|elsewhere|vacated|reach/i);
+        }
+    });
+
+    it('names a contender set much wider than the Court', () => {
+        // The Court has the clearest motive. It is not the reason the seats are
+        // never left - the sealed ancestors are. A one-time asset traded for a
+        // permanent advantage is a good trade, and everyone can do that sum.
+        const uncovered = APEX_INSTITUTIONS.map(a => a.sentDown.ifUncovered).join(' ');
+        expect(uncovered).toMatch(/seal/i);
+        expect(uncovered).toMatch(/every sect|contenders/i);
+
+        // And the sealed ancestors that make that true actually exist.
+        const sealed = Object.values(SECT_ANCESTRY).filter(r => r.dormant != null);
+        expect(sealed.length).toBeGreaterThan(1);
+    });
+
+    it('keeps the two objects distinct in what they cost to take', () => {
+        const byId = Object.fromEntries(APEX_INSTITUTIONS.map(a => [a.id, a.sentDown]));
+        // One can be carried off. One cannot, and has to be used in place -
+        // which is a different heist and a different kind of siege.
+        expect(byId['apex-deep-survey'].ifUncovered).toMatch(/taken|carried/i);
+        expect(byId['apex-long-cut'].ifUncovered).toMatch(/cannot be carried|in place/i);
+    });
+});
