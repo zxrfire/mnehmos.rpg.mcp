@@ -15,26 +15,25 @@
  *   - Multi-write operations run inside one better-sqlite3 transaction, so a
  *     half-applied breakthrough cannot exist.
  *
- * TABLES CREATED HERE
- * -------------------
- * A handful of small tables the cultivation migration does not yet define are
- * created lazily, following the precedent set by `PoiRepository`, which builds
- * its own table in its constructor. These belong in
- * `src/storage/migrations.cultivation.ts` once that file's owner can take them:
+ * SCHEMA AND SEEDING
+ * ------------------
+ * Every table this module reads is declared in
+ * `src/storage/migrations.cultivation.ts` and created by `migrate()` when the
+ * database is opened: `cultivator_flags`, `cultivator_pouch`,
+ * `cultivation_sites`, `ambient_aliases` and `cultivation_tolls`, alongside the
+ * cultivator, run, injury, technique, alchemy and sect tables.
  *
- *   cultivator_flags     durable per-cultivator scalars (pending pill, grain
- *                        abstinence expiry, accumulated pill toxicity, ...)
- *   cultivator_pouch     pills and herbs a cultivator carries. `inventory_items`
- *                        cannot be reused: its character_id has a foreign key to
- *                        `characters`, and a cultivator is not a character.
- *   cultivation_sites    graves, caves and encounters the engine has instantiated
- *   ambient_aliases      admin ambient-qi gate lifts (see `aliasForAmbient`)
- *   cultivation_tolls    what the Vault took at each realm boundary, and why
+ * What this module does own is CONTENT SEEDING. The sect catalog is compiled-in
+ * data; the `sects` table is state. `ensureSectsSeeded` copies one into the
+ * other, idempotently, on first touch — so a fresh world has the nineteen sects
+ * of the Vault in it without anyone having to remember a setup step, and an
+ * existing world is refreshed rather than duplicated.
  */
 
 import Database from 'better-sqlite3';
 import { getDb } from '../../storage/index.js';
 import { AuditRepository } from '../../storage/audit.repo.js';
+import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
 import { CultivatorRepository } from '../../storage/repos/cultivator.repo.js';
 import { RunRepository } from '../../storage/repos/run.repo.js';
 import { SectRepository } from '../../storage/repos/sect.repo.js';
@@ -86,8 +85,7 @@ export interface CultivationRepos {
 
 export function ensureCultivationDb(): CultivationRepos {
     const db = getDb();
-    ensureAuxiliaryTables(db);
-    return {
+    const repos: CultivationRepos = {
         db,
         cultivators: new CultivatorRepository(db),
         runs: new RunRepository(db),
@@ -95,89 +93,34 @@ export function ensureCultivationDb(): CultivationRepos {
         techniques: new TechniqueRepository(db),
         audit: new AuditRepository(db)
     };
+    ensureSectsSeeded(repos);
+    return repos;
 }
 
-const ensuredDatabases = new WeakSet<Database.Database>();
-
-function ensureAuxiliaryTables(db: Database.Database): void {
-    if (ensuredDatabases.has(db)) return;
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS cultivator_flags (
-            cultivator_id TEXT NOT NULL,
-            key TEXT NOT NULL,
-            value TEXT NOT NULL,
-            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-            PRIMARY KEY (cultivator_id, key),
-            FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS cultivator_pouch (
-            cultivator_id TEXT NOT NULL,
-            item_id TEXT NOT NULL,
-            item_kind TEXT NOT NULL,
-            quantity INTEGER NOT NULL DEFAULT 0,
-            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-            PRIMARY KEY (cultivator_id, item_id),
-            FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS cultivation_sites (
-            id TEXT PRIMARY KEY,
-            run_id TEXT,
-            kind TEXT NOT NULL,
-            name TEXT NOT NULL,
-            ordinal INTEGER NOT NULL DEFAULT 0,
-            location TEXT,
-            contents TEXT NOT NULL DEFAULT '{}',
-            admin_spawned INTEGER NOT NULL DEFAULT 0,
-            discovered INTEGER NOT NULL DEFAULT 0,
-            created_on_day REAL NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_cultivation_sites_run ON cultivation_sites(run_id);
-
-        CREATE TABLE IF NOT EXISTS ambient_aliases (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            run_id TEXT NOT NULL,
-            location TEXT NOT NULL,
-            alias TEXT NOT NULL,
-            band TEXT NOT NULL,
-            from_day REAL NOT NULL,
-            to_day REAL NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_ambient_aliases_run ON ambient_aliases(run_id, location);
-
-        -- The toll ledger. "You can look at the ledger and see the shape of who
-        -- you used to be" is a design requirement, not a flourish: every
-        -- instalment the Vault charges is recorded here with what it took, why,
-        -- and the odds it was charged at.
-        CREATE TABLE IF NOT EXISTS cultivation_tolls (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            run_id TEXT NOT NULL,
-            cultivator_id TEXT NOT NULL,
-            from_ordinal INTEGER NOT NULL,
-            to_ordinal INTEGER NOT NULL,
-            boundary_index INTEGER NOT NULL,
-            outcome TEXT NOT NULL,
-            risk REAL NOT NULL,
-            roll REAL NOT NULL,
-            taken_kind TEXT,
-            taken_id TEXT,
-            taken_label TEXT,
-            taken_reason TEXT,
-            narration_hint TEXT NOT NULL DEFAULT '',
-            charged_on_day REAL NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_cultivation_tolls_cultivator
-            ON cultivation_tolls(cultivator_id);
-    `);
-    ensuredDatabases.add(db);
+/**
+ * Copy the compiled-in sect catalog into the `sects` table.
+ *
+ * Idempotent twice over: guarded per database handle so it runs once per
+ * process, and built on `SectRepository.upsert`, so running it again on a world
+ * that already has sects refreshes their rows rather than duplicating them. A
+ * disciple's membership survives, because `sect_members` keys on the sect id
+ * and the ids are stable catalog constants.
+ *
+ * `SectSchema.parse` inside `upsert` strips the content-side fields — what a
+ * sect teaches, who it feuds with, the state of its inherited compound — which
+ * stay in the catalog and are read from there at request time. The database
+ * holds what changes; the catalog holds what does not.
+ */
+export function ensureSectsSeeded(repos: CultivationRepos): void {
+    if (seededDatabases.has(repos.db)) return;
+    const seed = repos.db.transaction(() => {
+        for (const sect of SECTS) repos.sects.upsert(sect);
+    });
+    seed();
+    seededDatabases.add(repos.db);
 }
+
+const seededDatabases = new WeakSet<Database.Database>();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GUIDING ERRORS
@@ -300,17 +243,6 @@ export const FLAG_PENDING_PILL = 'pending_pill';
 export const FLAG_RANKS_THIS_TURN = 'ranks_this_turn';
 export const FLAG_PILL_TOXICITY = 'pill_toxicity';
 export const FLAG_STIPEND_PAID_DAY = 'stipend_paid_day';
-/**
- * The foundation laid at the 12 -> 13 crossing.
- *
- * `BreakthroughResult.foundationEstablished` is documented as something "the
- * caller must persist onto the cultivator", and `CultivatorSchema` has the
- * `foundationQuality` field — but `cultivators` has no column for it yet and
- * `CultivatorRepository` neither writes nor reads it. Held here so the engine's
- * decision is not silently dropped; move it to the column the moment the
- * storage layer grows one.
- */
-export const FLAG_FOUNDATION_QUALITY = 'foundation_quality';
 /** The Vault took the name. People have to be told it, every time. */
 export const FLAG_NAME_TAKEN = 'name_taken';
 
@@ -931,24 +863,19 @@ export function listTolls(db: Database.Database, cultivatorId: string): TollLedg
 }
 
 /**
- * Record the foundation the engine laid.
+ * Record the foundation the engine laid, on the cultivator row itself.
  *
- * Interim home: see FLAG_FOUNDATION_QUALITY. Written unconditionally so the
- * value is durable the moment the engine produces it.
+ * `BreakthroughResult.foundationEstablished` is documented as something the
+ * caller must persist, and this is that. `establishFoundation` refuses to
+ * overwrite an existing foundation, so a repeated or out-of-order write cannot
+ * upgrade a cracked foundation into a flawless one.
  */
 export function persistFoundation(
-    db: Database.Database,
+    repos: CultivationRepos,
     cultivatorId: string,
     quality: FoundationQuality
 ): void {
-    writeFlag(db, cultivatorId, FLAG_FOUNDATION_QUALITY, quality);
-}
-
-export function readFoundation(
-    db: Database.Database,
-    cultivatorId: string
-): FoundationQuality {
-    return (readFlag(db, cultivatorId, FLAG_FOUNDATION_QUALITY) ?? 'none') as FoundationQuality;
+    repos.cultivators.establishFoundation(cultivatorId, quality);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -964,38 +891,48 @@ export function readFoundation(
 
 export const ADMIN_AUDIT_PREFIX = 'admin_manage.';
 
+/**
+ * Record an admin action and flag its run.
+ *
+ * The audit row is written FIRST and is the authoritative justification: it
+ * says what was done, to what, with what arguments. `runs.admin` is then set as
+ * an index over that fact, so the ledger's exclusion is a single indexed read
+ * rather than a LIKE scan across every audit row in the campaign. Both happen
+ * in one transaction, so a flagged run always has the log entry that explains
+ * it, and a logged action always leaves its run flagged.
+ */
 export function writeAdminAudit(
     repos: CultivationRepos,
     action: string,
     runId: string | null,
     details: Record<string, unknown>
 ): void {
-    repos.audit.create({
-        action: `${ADMIN_AUDIT_PREFIX}${action}`,
-        actorId: 'admin',
-        targetId: runId,
-        details,
-        timestamp: new Date().toISOString()
+    const write = repos.db.transaction(() => {
+        repos.audit.create({
+            action: `${ADMIN_AUDIT_PREFIX}${action}`,
+            actorId: 'admin',
+            targetId: runId,
+            details,
+            timestamp: new Date().toISOString()
+        });
+        if (runId) {
+            // Deliberately not gated on status: a run that used admin stays
+            // flagged after it closes, which is the entire point.
+            repos.db.prepare('UPDATE runs SET admin = 1 WHERE id = ?').run(runId);
+        }
     });
+    write();
 }
 
 export function isAdminRun(db: Database.Database, runId: string): boolean {
-    const row = db
-        .prepare(`
-            SELECT 1 AS hit FROM audit_logs
-            WHERE target_id = ? AND action LIKE ? LIMIT 1
-        `)
-        .get(runId, `${ADMIN_AUDIT_PREFIX}%`) as { hit: number } | undefined;
-    return row !== undefined;
+    const row = db.prepare('SELECT admin FROM runs WHERE id = ?').get(runId) as
+        | { admin: number }
+        | undefined;
+    return row !== undefined && row.admin === 1;
 }
 
 export function adminRunIds(db: Database.Database): Set<string> {
-    const rows = db
-        .prepare(`
-            SELECT DISTINCT target_id AS id FROM audit_logs
-            WHERE action LIKE ? AND target_id IS NOT NULL
-        `)
-        .all(`${ADMIN_AUDIT_PREFIX}%`) as { id: string }[];
+    const rows = db.prepare('SELECT id FROM runs WHERE admin = 1').all() as { id: string }[];
     return new Set(rows.map(r => r.id));
 }
 
@@ -1078,6 +1015,7 @@ export function describeCultivator(
             attributes: cultivator.attributes,
             note: 'Rolled once from the run seed at creation. Permanent; no tool changes it.'
         },
+        foundation: cultivator.foundationQuality,
         progress: {
             current: round2(cultivator.cultivationProgress),
             required,
@@ -1146,6 +1084,48 @@ export function round2(n: number): number {
 
 export function round4(n: number): number {
     return Math.round(n * 10_000) / 10_000;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SECTS
+// The row is the state; the catalog is the world. Both are read at request
+// time and neither is copied into the other beyond the seeding step.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Catalog facts about a sect that the `sects` table does not store. */
+export function sectCatalogFacts(sectId: string): Record<string, unknown> | null {
+    const entry = getSect(sectId);
+    if (!entry) return null;
+    const admission = getSectAdmission(sectId);
+    const compound = entry.compound;
+
+    return {
+        territory: entry.territory,
+        recruits: entry.recruits,
+        specialities: entry.specialities,
+        teaches: entry.teaches,
+        signatureTechniqueId: entry.signatureTechniqueId,
+        rivals: entry.rivals,
+        compound: {
+            ...compound,
+            // The fraction of its own inheritance a sect can still operate.
+            // The clearest single number for how late this age is.
+            formationIntegrity:
+                compound.formationNodesTotal === 0
+                    ? 0
+                    : round4(compound.formationNodesLit / compound.formationNodesTotal)
+        },
+        admission: admission
+            ? {
+                minOrdinal: admission.minOrdinal,
+                minMight: admission.minMight ?? null,
+                minInsight: admission.minInsight ?? null,
+                minCharm: admission.minCharm ?? null,
+                preferredRoots: admission.preferredRoots,
+                requirement: admission.requirement
+            }
+            : null
+    };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

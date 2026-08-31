@@ -28,6 +28,7 @@ import { closeDb, getDb } from '../../src/storage/index.js';
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
 import { RunRepository } from '../../src/storage/repos/run.repo.js';
 import { SectRepository } from '../../src/storage/repos/sect.repo.js';
+import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import {
     addToPouch,
     ensureCultivationDb,
@@ -217,6 +218,13 @@ describe('cultivation MCP tool surface', () => {
             });
             expect(result.error).toBe('validation_error');
             expect(JSON.stringify(result.issues)).toContain(key);
+        });
+
+        it('starts every cultivator with no foundation laid', async () => {
+            const created = await newRun();
+            expect(created.cultivator.foundation).toBe('none');
+            const stored = new CultivatorRepository(db).getById(created.cultivator.id)!;
+            expect(stored.foundationQuality).toBe('none');
         });
 
         it('rolls talent from the run seed, identically for the same seed', async () => {
@@ -543,6 +551,19 @@ describe('cultivation MCP tool surface', () => {
                 const after = await cultivation({ action: 'status' });
                 expect(after.foundation).toBe(result.foundationEstablished);
                 expect(after.tollsPaid).toHaveLength(1);
+
+                // Persisted on the cultivator row, not in a side table.
+                const row = db
+                    .prepare('SELECT foundation_quality FROM cultivators WHERE id = ?')
+                    .get(created.cultivator.id) as { foundation_quality: string };
+                expect(row.foundation_quality).toBe(result.foundationEstablished);
+                expect(new CultivatorRepository(db).getById(created.cultivator.id)!.foundationQuality)
+                    .toBe(result.foundationEstablished);
+
+                // A foundation is laid once and never re-laid.
+                const relaid = new CultivatorRepository(db)
+                    .establishFoundation(created.cultivator.id, 'flawless');
+                expect(relaid).toBeNull();
             }
 
             expect(sawBoundaryCrossing).toBe(true);
@@ -785,33 +806,101 @@ describe('cultivation MCP tool surface', () => {
 
     // ─────────────────────────────────────────────────────────────────────
     describe('sect_manage', () => {
-        function makeSect(admissionOrdinal: number) {
-            const repo = new SectRepository(db);
-            return repo.upsert({
-                id: randomUUID(),
-                name: 'Lantern Hall',
-                alignment: 'righteous',
-                powerOrdinal: 21,
-                ranks: ['Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Elder'],
-                admissionOrdinal,
-                stipend: [5, 15, 40, 120],
-                description: 'Archivists. They catch what falls and write it down.'
-            });
+        /** A recruiting sect from the catalog whose admission this run can meet. */
+        function openDoorSect() {
+            return SECTS.find(entry =>
+                entry.recruits &&
+                entry.admissionOrdinal === 0 &&
+                getSect(entry.id)!.id === entry.id
+            )!;
         }
+
+        it('seeds the sects table from the catalog on first touch, idempotently', async () => {
+            await newRun();
+
+            const listed = await sect({ action: 'list' });
+            expect(listed.count).toBe(SECTS.length);
+            expect(listed.note).toBeUndefined();
+
+            const names = listed.sects.map((entry: any) => entry.name);
+            for (const canon of [
+                'Ashwright Consortium', 'Lantern Hall', 'The Severed',
+                'The Hollow Court', 'Kiln Wardens'
+            ]) {
+                expect(names).toContain(canon);
+            }
+
+            // Listing again must not duplicate rows.
+            await sect({ action: 'list' });
+            const stored = new SectRepository(db).list();
+            expect(stored).toHaveLength(SECTS.length);
+        });
+
+        it('carries the catalog facts the database does not store', async () => {
+            await newRun();
+            const listed = await sect({ action: 'list' });
+            const entry = listed.sects.find((s: any) => s.id === 'sect-lantern-hall');
+
+            expect(entry.territory).toBeTruthy();
+            expect(entry.compound.inherited).toBe(true);
+            expect(entry.compound.formationNodesLit)
+                .toBeLessThanOrEqual(entry.compound.formationNodesTotal);
+            expect(entry.compound.formationIntegrity).toBeLessThanOrEqual(1);
+            expect(Array.isArray(entry.teaches)).toBe(true);
+            expect(entry.admission.requirement).toBeTruthy();
+        });
+
+        it('refuses the two powers that take no applicants at all', async () => {
+            await newRun();
+            for (const sectId of ['sect-hollow-court', 'sect-kiln-wardens']) {
+                expect(getSect(sectId)!.recruits).toBe(false);
+                const result = await sect({ action: 'join', sectId });
+                expect(result.error).toBe('sect_does_not_recruit');
+                expect(result.hint).toContain('Not a gate that can be met');
+            }
+            expect(new SectRepository(db).getMembership(
+                (await run({ action: 'current' })).cultivator.id
+            )).toBeNull();
+        });
 
         it('enforces the admission ordinal', async () => {
             await newRun();
-            const target = makeSect(10);
-            const result = await sect({ action: 'join', sectId: target.id });
+            const gated = SECTS.find(entry => entry.recruits && entry.admissionOrdinal >= 6)!;
+            const result = await sect({ action: 'join', sectId: gated.id });
             expect(result.error).toBe('below_admission_ordinal');
-            expect(result.shortBy).toBe(10);
+            expect(result.shortBy).toBe(gated.admissionOrdinal);
+        });
+
+        it('enforces the catalog attribute minimums, which never rise', async () => {
+            // Sweptground Temple asks nothing; find a seed whose innate Insight
+            // is below Lantern Hall's minimum of 3 and try the Hall instead.
+            const hall = getSect('sect-lantern-hall')!;
+            expect(hall.admissionOrdinal).toBeGreaterThan(0);
+
+            let refused = false;
+            for (let i = 0; i < 60 && !refused; i++) {
+                closeDb();
+                db = getDb(':memory:');
+                process.env.ADMIN_MODE = 'true';
+                const created = await newRun(`admission-seed-${i}`, `Applicant ${i}`);
+                if (created.talentRoll.attributes.insight >= 3) continue;
+
+                await admin({ action: 'set_realm', ordinal: hall.admissionOrdinal });
+                const result = await sect({ action: 'join', sectId: hall.id });
+                expect(result.error).toBe('admission_requirements_unmet');
+                expect(result.unmet[0].attribute).toBe('insight');
+                expect(result.hint).toContain('never rise');
+                refused = true;
+            }
+            expect(refused).toBe(true);
         });
 
         it('admits, then refuses promotion until realm and contribution allow it', async () => {
             await newRun();
-            const target = makeSect(0);
+            const target = openDoorSect();
             const joined = await sect({ action: 'join', sectId: target.id });
             expect(joined.joined).toBe(true);
+            expect(joined.sect.territory).toBeTruthy();
 
             const promotion = await sect({ action: 'promote' });
             expect(promotion.error).toBe('promotion_requirements_unmet');
@@ -820,7 +909,7 @@ describe('cultivation MCP tool surface', () => {
 
         it('pays only the stipend that has accrued from the in-world clock', async () => {
             const created = await newRun();
-            const target = makeSect(0);
+            const target = openDoorSect();
             await sect({ action: 'join', sectId: target.id });
 
             const immediately = await sect({ action: 'stipend' });
@@ -836,7 +925,7 @@ describe('cultivation MCP tool surface', () => {
             const paid = await sect({ action: 'stipend' });
             expect(paid.paid).toBe(true);
             expect(paid.monthsPaid).toBe(3);
-            expect(paid.spiritStonesPaid).toBe(15);
+            expect(paid.spiritStonesPaid).toBe(3 * target.stipend[0]);
 
             const again = await sect({ action: 'stipend' });
             expect(again.error).toBe('nothing_accrued');
@@ -844,10 +933,11 @@ describe('cultivation MCP tool surface', () => {
 
         it('reports standing with the exact next-rank requirements', async () => {
             await newRun();
-            const target = makeSect(0);
+            const target = openDoorSect();
             await sect({ action: 'join', sectId: target.id });
             const standing = await sect({ action: 'standing' });
             expect(standing.member).toBe(true);
+            expect(standing.sect.compound).toBeDefined();
             expect(standing.nextRank.requiredContribution).toBeGreaterThan(0);
             expect(standing.nextRank.ordinalShortfall).toBeGreaterThan(0);
         });
@@ -982,6 +1072,12 @@ describe('cultivation MCP tool surface', () => {
                 .prepare("SELECT COUNT(*) AS n FROM audit_logs WHERE action LIKE 'admin_manage.%'")
                 .get() as { n: number };
             expect(rows.n).toBeGreaterThanOrEqual(2);
+
+            // The audit row justifies the flag; the column indexes it. Both.
+            const flag = db
+                .prepare('SELECT admin FROM runs WHERE id = ?')
+                .get((await run({ action: 'current' })).run.id) as { admin: number };
+            expect(flag.admin).toBe(1);
 
             const ended = await run({ action: 'end' });
             expect(ended.ended).toBe(true);

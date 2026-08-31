@@ -7,8 +7,17 @@
  *
  * AUTHORITY BOUNDARY
  * ------------------
- * - `join` enforces the sect's own `admissionOrdinal`. A caller cannot talk
- *   their way past a realm gate by asserting that the elders were impressed.
+ * - `join` enforces the sect's own `admissionOrdinal` and the catalog's
+ *   engine-checkable attribute minimums. A caller cannot talk their way past a
+ *   realm gate by asserting that the elders were impressed. Two of the Vault's
+ *   standing powers take no applicants at all (`recruits: false`); for those,
+ *   `join` refuses outright rather than negotiating.
+ *
+ * The `sects` table is seeded from `src/data/cultivation/sects.ts` on first
+ * touch. Membership, rank and contribution are STATE and live in the database;
+ * territory, what a sect teaches, who it feuds with and the condition of its
+ * inherited compound are WORLD and stay in the catalog. Both are read here and
+ * handed to the narrator together; neither is copied into the other.
  * - `promote` computes the requirement for the next rank from the sect's ladder
  *   and the cultivator's realm and contribution, and refuses when it is unmet.
  *   The rank index the caller wants is not an input.
@@ -22,6 +31,7 @@ import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
 import { rankName } from '../../engine/cultivation/index.js';
+import { getSect, getSectAdmission } from '../../data/cultivation/sects.js';
 import {
     FLAG_STIPEND_PAID_DAY,
     describeCultivator,
@@ -31,6 +41,7 @@ import {
     readNumberFlag,
     resolveActiveRun,
     round2,
+    sectCatalogFacts,
     writeFlag
 } from './cultivation-support.js';
 
@@ -109,29 +120,38 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
     let sects = repos.sects.list();
     if (args.alignment) sects = sects.filter(s => s.alignment === args.alignment);
     if ((args.admissibleOnly ?? false) && ordinal !== null) {
-        sects = sects.filter(s => s.admissionOrdinal <= ordinal);
+        sects = sects.filter(s => {
+            const facts = getSect(s.id);
+            return s.admissionOrdinal <= ordinal && (facts?.recruits ?? true);
+        });
     }
 
     return {
         count: sects.length,
         cultivatorOrdinal: ordinal,
-        sects: sects.map(sect => ({
-            id: sect.id,
-            name: sect.name,
-            alignment: sect.alignment,
-            powerOrdinal: sect.powerOrdinal,
-            powerRank: rankName(sect.powerOrdinal),
-            admissionOrdinal: sect.admissionOrdinal,
-            admissionRank: rankName(sect.admissionOrdinal),
-            admissible: ordinal === null ? null : ordinal >= sect.admissionOrdinal,
-            ranks: sect.ranks,
-            stipend: sect.stipend,
-            memberCount: repos.sects.listMembers(sect.id).length,
-            description: sect.description
-        })),
+        sects: sects.map(sect => {
+            const facts = sectCatalogFacts(sect.id);
+            const recruits = (facts?.recruits as boolean | undefined) ?? true;
+            return {
+                id: sect.id,
+                name: sect.name,
+                alignment: sect.alignment,
+                powerOrdinal: sect.powerOrdinal,
+                powerRank: rankName(sect.powerOrdinal),
+                admissionOrdinal: sect.admissionOrdinal,
+                admissionRank: rankName(sect.admissionOrdinal),
+                admissible:
+                    ordinal === null ? null : recruits && ordinal >= sect.admissionOrdinal,
+                ranks: sect.ranks,
+                stipend: sect.stipend,
+                memberCount: repos.sects.listMembers(sect.id).length,
+                description: sect.description,
+                ...(facts ?? {})
+            };
+        }),
         note:
             sects.length === 0
-                ? 'No sects exist in this campaign yet. Sects are world content; they are seeded by the world layer, not invented here.'
+                ? 'No sects in this campaign. The catalog seeds on first touch; an empty list means the sects table was cleared.'
                 : undefined
     };
 }
@@ -158,6 +178,24 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
         );
     }
 
+    const facts = getSect(sect.id);
+
+    // Two of the Vault's standing powers take no applicants: the Hollow Court,
+    // which has nothing left to want, and the Kiln Wardens, who do not explain
+    // themselves and do not recruit. This is not a threshold to be met, so
+    // there is no shortfall to report and nothing for the narrator to work on.
+    if (facts && !facts.recruits) {
+        return guidingError(
+            'sect_does_not_recruit',
+            `${sect.name} takes no applicants. There is no entrance requirement because there is no entrance.`,
+            {
+                sectId: sect.id,
+                territory: facts.territory,
+                hint: 'Not a gate that can be met. sect_manage({ action: "list", admissibleOnly: true }) shows the doors that open.'
+            }
+        );
+    }
+
     // The admission gate is the sect's, and it is not negotiable through this
     // tool. A Qi Condensation cultivator does not get into a Core Formation
     // sect by being narrated impressively.
@@ -171,6 +209,39 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
                 shortBy: sect.admissionOrdinal - cultivator.realmOrdinal
             }
         );
+    }
+
+    // The catalog's entrance examination, where it has one. Only the
+    // engine-checkable half is enforced here — a minimum in an innate attribute
+    // is a number the engine already owns. `preferredRoots` is deliberately NOT
+    // a gate: the catalog says the sect actively recruits those roots, not that
+    // it turns the others away, and reading it as a refusal would invent a
+    // policy the content does not state.
+    const admission = getSectAdmission(sect.id);
+    if (admission) {
+        const unmet: Array<{ attribute: string; required: number; actual: number }> = [];
+        const checks: Array<[string, number | undefined, number]> = [
+            ['might', admission.minMight, cultivator.attributes.might],
+            ['insight', admission.minInsight, cultivator.attributes.insight],
+            ['charm', admission.minCharm, cultivator.attributes.charm]
+        ];
+        for (const [attribute, required, actual] of checks) {
+            if (required !== undefined && actual < required) {
+                unmet.push({ attribute, required, actual });
+            }
+        }
+        if (unmet.length > 0) {
+            return guidingError(
+                'admission_requirements_unmet',
+                `${sect.name} turned ${cultivator.name} away: ${admission.requirement}`,
+                {
+                    sectId: sect.id,
+                    requirement: admission.requirement,
+                    unmet,
+                    hint: 'Innate attributes are rolled once and never rise. This door does not open later.'
+                }
+            );
+        }
     }
 
     const membership = repos.db.transaction(() => {
@@ -188,7 +259,12 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     return {
         joined: true,
         defectedFrom: existing ? existing.sectId : null,
-        sect: { id: sect.id, name: sect.name, alignment: sect.alignment },
+        sect: {
+            id: sect.id,
+            name: sect.name,
+            alignment: sect.alignment,
+            ...(sectCatalogFacts(sect.id) ?? {})
+        },
         membership,
         cultivator: describeCultivator(repos, after, runAfter)
     };
@@ -395,7 +471,8 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
             name: sect.name,
             alignment: sect.alignment,
             powerRank: rankName(sect.powerOrdinal),
-            memberCount: repos.sects.listMembers(sect.id).length
+            memberCount: repos.sects.listMembers(sect.id).length,
+            ...(sectCatalogFacts(sect.id) ?? {})
         },
         rank: {
             index: membership.rankIndex,
@@ -479,9 +556,11 @@ export const SectManageTool = {
     name: 'sect_manage',
     description: `Sect membership: admission, rank, contribution, stipend.
 
-- list      sects, their alignment, their admission ordinal, their stipend ladder
-- join      the sect's admission ordinal is enforced by the engine. Being narrated impressively
-            does not get a Qi Condensation disciple into a Core Formation sect.
+- list      sects, alignment, admission ordinal, stipend ladder, territory, what they teach, who
+            they feud with, and the state of the inherited compound they occupy
+- join      the admission ordinal AND the catalog's attribute minimums are enforced by the engine.
+            Being narrated impressively does not get a Qi Condensation disciple into a Core
+            Formation sect. The Hollow Court and the Kiln Wardens take no applicants at all.
 - leave     contribution is forfeited; it does not travel
 - promote   requires BOTH the realm ordinal and the contribution for the next rank; the
             contribution is spent, not merely met

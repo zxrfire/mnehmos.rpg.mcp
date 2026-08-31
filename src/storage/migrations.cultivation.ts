@@ -61,6 +61,10 @@ export function migrateCultivation(db: Database.Database): void {
       -- Position on the 45-rank ladder.
       realm_ordinal INTEGER NOT NULL DEFAULT 0,
       cultivation_progress REAL NOT NULL DEFAULT 0,
+      -- The foundation laid at the 12 -> 13 crossing. Set once, by the engine,
+      -- and never again: it is the quality of the thing every realm above it is
+      -- built on. 'none' until Foundation Establishment is actually reached.
+      foundation_quality TEXT NOT NULL DEFAULT 'none',
 
       -- Vitals. REAL is wrong for these; they are integer resources by schema.
       hp INTEGER NOT NULL,
@@ -115,11 +119,18 @@ export function migrateCultivation(db: Database.Database): void {
       death_cause TEXT,
       death_description TEXT,
       peak_ordinal INTEGER NOT NULL DEFAULT 0,       -- preserved for the ledger after death
+      -- Set the first time admin_manage touches this run. Admin lifts content
+      -- gates, so a run that used it is no longer evidence about how hard the
+      -- game is: the ledger and every balance statistic exclude it. The
+      -- audit_logs row is the authoritative justification; this is the index.
+      admin INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_runs_cultivator ON runs(cultivator_id);
     CREATE INDEX IF NOT EXISTS idx_runs_status ON runs(status);
+    -- The death ledger reads finished, non-admin runs. Index the exclusion.
+    CREATE INDEX IF NOT EXISTS idx_runs_admin ON runs(admin);
     -- The death-ledger screen reads finished runs newest-first; index the sort.
     CREATE INDEX IF NOT EXISTS idx_runs_ended ON runs(ended_at DESC);
     -- There is at most one live run per cultivator. Enforced, not assumed.
@@ -239,6 +250,108 @@ export function migrateCultivation(db: Database.Database): void {
     -- A cultivator belongs to at most one sect; the lookup is by cultivator.
     CREATE UNIQUE INDEX IF NOT EXISTS idx_sect_members_cultivator
       ON sect_members(cultivator_id);
+
+    -- -- DURABLE PER-CULTIVATOR SCALARS ------------------------------------
+    -- Small facts that are neither vitals nor rows of their own: a pill held
+    -- for the next bottleneck, the day grain abstinence expires, accumulated
+    -- pill toxicity, the day the stipend was last drawn, whether the Vault has
+    -- already taken the name. Key/value rather than columns because these are
+    -- sparse, independently written, and expected to come and go as pills and
+    -- subsystems are added.
+    CREATE TABLE IF NOT EXISTS cultivator_flags (
+      cultivator_id TEXT NOT NULL,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (cultivator_id, key),
+      FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
+    );
+
+    -- -- THE POUCH ---------------------------------------------------------
+    -- Pills and herbs a cultivator carries. Deliberately NOT inventory_items:
+    -- that table's character_id has a foreign key to characters, and a
+    -- cultivator is not a character. Sharing it would mean either dropping the
+    -- constraint for everyone or writing rows that violate it.
+    CREATE TABLE IF NOT EXISTS cultivator_pouch (
+      cultivator_id TEXT NOT NULL,
+      item_id TEXT NOT NULL,                         -- catalog pill or herb id
+      item_kind TEXT NOT NULL,                       -- pill | herb
+      quantity INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (cultivator_id, item_id),
+      FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
+    );
+
+    -- -- SITES AND ENCOUNTERS ----------------------------------------------
+    -- Graves, caves, ruins, scars, spirit veins and instantiated encounters.
+    -- The contents column is the engine's roll, written once at creation and never
+    -- re-rolled, so reading a site twice cannot produce two different hauls.
+    --
+    -- run_id carries no FOREIGN KEY: a site outlives the run that turned it up.
+    -- The map of the Vault is pocked with other people's ambitions, and a scar
+    -- does not stop existing because the cultivator who made it is dead.
+    CREATE TABLE IF NOT EXISTS cultivation_sites (
+      id TEXT PRIMARY KEY,
+      run_id TEXT,
+      kind TEXT NOT NULL,                            -- grave | cave | ruin | scar | vein | encounter
+      name TEXT NOT NULL,
+      ordinal INTEGER NOT NULL DEFAULT 0,            -- realm ordinal the site belongs to
+      location TEXT,
+      contents TEXT NOT NULL DEFAULT '{}',           -- JSON, rolled once by the engine
+      admin_spawned INTEGER NOT NULL DEFAULT 0,
+      discovered INTEGER NOT NULL DEFAULT 0,
+      created_on_day REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_cultivation_sites_run ON cultivation_sites(run_id);
+
+    -- -- AMBIENT GATE LIFTS -------------------------------------------------
+    -- Ambient qi is a pure function of (seed, place, day), so it cannot be set
+    -- without lying about it. ADMIN instead relocates to a place the engine
+    -- genuinely derives the requested band for, and records the substitution
+    -- here for the block it covers. The band stays the engine's number.
+    CREATE TABLE IF NOT EXISTS ambient_aliases (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      run_id TEXT NOT NULL,
+      location TEXT NOT NULL,                        -- the place the cultivator calls home
+      alias TEXT NOT NULL,                           -- the place the engine is actually asked about
+      band TEXT NOT NULL,                            -- thin | normal | dense | spirit_tide
+      from_day REAL NOT NULL,
+      to_day REAL NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ambient_aliases_run ON ambient_aliases(run_id, location);
+
+    -- -- THE TOLL LEDGER ----------------------------------------------------
+    -- The Vault charges an instalment at every realm boundary, and what it
+    -- takes is never a stat. "You can look at the ledger and see the shape of
+    -- who you used to be" is a design requirement, so every instalment is
+    -- recorded with what went, why that one, and the odds it was charged at --
+    -- including the crossings where nothing was taken.
+    CREATE TABLE IF NOT EXISTS cultivation_tolls (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      run_id TEXT NOT NULL,
+      cultivator_id TEXT NOT NULL,
+      from_ordinal INTEGER NOT NULL,
+      to_ordinal INTEGER NOT NULL,
+      boundary_index INTEGER NOT NULL,               -- 0 at the 12 -> 13 crossing
+      outcome TEXT NOT NULL,                         -- clean | prepaid | taken | nothing_left
+      risk REAL NOT NULL,
+      roll REAL NOT NULL,
+      taken_kind TEXT,                               -- bond | memory | technique | name
+      taken_id TEXT,                                 -- null for a taken name
+      taken_label TEXT,
+      taken_reason TEXT,
+      narration_hint TEXT NOT NULL DEFAULT '',
+      charged_on_day REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_cultivation_tolls_cultivator
+      ON cultivation_tolls(cultivator_id);
   `);
 
     addCultivationColumns(db);
@@ -265,5 +378,29 @@ function addCultivationColumns(db: Database.Database): void {
     if (!cultivatorColumns.includes('location')) {
         console.error('[Migration] Adding location column to cultivators table');
         db.exec('ALTER TABLE cultivators ADD COLUMN location TEXT;');
+    }
+
+    // The foundation laid at the 12 -> 13 crossing. NOT NULL with a default of
+    // 'none' rather than nullable: every cultivator has a foundation, and for
+    // the overwhelming majority of them - everyone still in Qi Condensation,
+    // which is most of the world - the honest value is that they have not laid
+    // one. NULL would mean "unknown", and the engine is never unsure.
+    if (!cultivatorColumns.includes('foundation_quality')) {
+        console.error('[Migration] Adding foundation_quality column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN foundation_quality TEXT NOT NULL DEFAULT 'none';");
+    }
+
+    const runColumns = (
+        db.prepare('PRAGMA table_info(runs)').all() as { name: string }[]
+    ).map(col => col.name);
+
+    // Admin-touched runs are excluded from the death ledger and from balance
+    // statistics. The audit_logs row written alongside is the authoritative
+    // justification for the flag; this column exists so the ledger's exclusion
+    // is an indexed read rather than a LIKE scan across every audit row.
+    if (!runColumns.includes('admin')) {
+        console.error('[Migration] Adding admin column to runs table');
+        db.exec('ALTER TABLE runs ADD COLUMN admin INTEGER NOT NULL DEFAULT 0;');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_runs_admin ON runs(admin);');
     }
 }
