@@ -445,6 +445,22 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
     // band. Listed as a seat rather than a name for the same reason as the rest:
     // the catalog stores a realm for the office and no identity for the holder.
     for (const court of COURTS) {
+        const hwm = court.highWaterMark;
+        if (hwm) {
+            out.push({
+                name: hwm.name,
+                named: true,
+                ordinal: hwm.ordinal,
+                ordinalNote: null,
+                rank: rankName(hwm.ordinal),
+                state: hwm.end === 'attempted' ? 'failed the crossing' : 'declined the crossing',
+                alive: false,
+                factionName: court.name,
+                factionOrdinal: court.powerOrdinal,
+                note: hwm.yearsAgo.toLocaleString() + ' years ago. ' + hwm.note
+            });
+        }
+
         if (court.powerOrdinal < HIGH_BAND_FLOOR) continue;
         out.push({
             name: 'the office holder',
@@ -1114,6 +1130,7 @@ padding:10px 16px;cursor:pointer;display:flex;gap:8px;align-items:center}
 .grps{display:flex;flex-direction:column;gap:12px}
 .grp h4{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:0 0 6px;display:flex;gap:8px;align-items:center}
 .grp h4 span{color:var(--datum)}
+.grp h4 .gap{color:var(--faint);font-weight:400;letter-spacing:.04em;text-transform:none}
 .grp.sealed h4,.grp.sealed .wo{color:var(--signal)}
 .grp.ascended .wo{color:var(--datum)}
 .who{display:grid;grid-template-columns:minmax(140px,auto) 34px minmax(120px,auto) 1fr;gap:4px 14px;padding:5px 0;border-top:1px solid var(--rule);align-items:baseline}
@@ -1169,7 +1186,12 @@ function dossier(d: SectDossier): string {
     const groups: string[] = [];
 
     if (d.people.active.length) {
-        groups.push(`<div class="grp healthy"><h4>Healthy protectors <span>${d.people.active.length}</span></h4>`
+        const topNamed = Math.max(...d.people.active.map(p => p.ordinal));
+        groups.push(`<div class="grp healthy"><h4>Members <span>${d.people.active.length}</span>`
+            + (topNamed < d.ordinal
+                ? `<span class="gap">strongest named ${topNamed}, faction stands at ${d.ordinal}</span>`
+                : '')
+            + '</h4>'
             + d.people.active.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span>`
                 + `<span class="wo">${p.ordinal}</span>`

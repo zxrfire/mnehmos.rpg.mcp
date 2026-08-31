@@ -2148,7 +2148,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
                 realmOrdinal: 45,
                 yearsAgo: 2_600,
                 afterCrossing: 'still_above',
-                rememberedFor: 'Crossed from the plain outside the wall, having given away everything beforehand to people rather than to the Temple, which is why the Temple has no gift and says so.'
+                rememberedFor: 'Crossed from the plain outside the wall, having given away everything beforehand to people rather than to the Temple, which is why the Temple has no gift and says so. He is still up there and has not answered in a very long time, because he is in meditation and has been for most of it. He might: it would take a coincidence of factors nobody can arrange on purpose, and the Temple has never tried to arrange one. It does not know any of this and says it does not.'
             },
             {
                 name: 'Abbot Sheng',
@@ -2160,6 +2160,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             }
         ],
         claimsLivingAncestor: true,
+        // Correct, and held with no more evidence than the Court has for being
+        // wrong. Both are guessing; only one happens to be right.
         claimIsTrue: true,
         recency: 'ancient',
         dormant: null,
@@ -2230,8 +2232,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
                 fate: 'ascended',
                 realmOrdinal: 45,
                 yearsAgo: 3_400,
-                afterCrossing: 'died_above',
-                rememberedFor: 'Crossed from the floating stone, and left the Court the manual that is still the world\'s only working lightning curriculum. Three thousand four hundred years is a long time to be a Tyrant somewhere with its own politics, and he is not there any more. Nobody below the Lid knows that, and the Court would not believe it if told.'
+                afterCrossing: 'still_above',
+                rememberedFor: 'Crossed from the floating stone, and left the Court the manual that is still the world\'s only working lightning curriculum. Three thousand four hundred years is a long time to be a Tyrant somewhere with its own politics, and he has not answered in nine hundred years. He is still up there. The Court reads the silence as the ordinary indifference of somebody with better things to do, which is both the reading that costs it nothing and, as it happens, correct - and it has no way whatsoever to establish that.'
             },
             {
                 name: 'Yan Kuo, ninth Storm Tyrant',
@@ -2541,16 +2543,29 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-hollow-bell-wanderers': {
         ancestors: [
-            { name: 'Whoever hung the first bell', fate: 'lost', realmOrdinal: null, yearsAgo: 200, afterCrossing: null, rememberedFor: 'Nothing. There is a bell at a crossroads and a practice of hanging more.' }
-        ],
+            { name: 'Whoever hung the first bell', fate: 'lost', realmOrdinal: null, yearsAgo: 200, afterCrossing: null, rememberedFor: 'Nothing. There is a bell at a crossroads and a practice of hanging more.' },
+       ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
         recency: 'none',
         dormant: null,
-        partingGift: null,
+        partingGift: {
+            id: 'artifact-the-rung-bell',
+            name: 'The Rung Bell',
+            description:
+                'Not a treasure sent down from anywhere. It is what Shen Guyi left, and what he left is the whole estate of somebody who stood at forty-four: manuals in grades the Wanderers cannot read, materials from ground that is now thin, and a bell he cast himself in the last year, which is the only part of it they have ever used. It hangs at the crossroads with the others and is not marked.',
+            reserveTerms:
+                'There are no terms. He attached none, the Wanderers have never written any, and the estate sits in a shed behind the crossroads under a roof that gets repaired when somebody notices. They are not hoarding it. They have no vein to work it on, nobody who can read the manuals, and no idea what most of it is for.',
+            intact: true
+        },
         lastOffering: null,
-        discoverableTraces: [],
-        standingNote: 'No hall, no tablets, no ancestors worth the word. The Wanderers point out that this also means nobody inherits their debts.'
+        discoverableTraces: [
+            'A divestment sequence recorded in the Ninefold Ledger in full, opened as a lineage audit a hundred and sixty years ago and closed unresolved, because the estate went somewhere that could not possibly have earned it and no transfer of consideration was ever found',
+            'Manuals in the shed at grades no living teacher in either province teaches',
+            'A scar nobody can attribute is NOT among these, which is the part the Ledger keeps returning to: he divested like a man about to cross and then there is no crossing and no scar, only a grave'
+        ],
+        standingNote:
+            'No hall, no tablets, and one ancestor who does not fit. The Wanderers tell the story plainly when asked and are not believed, because a sect at Core Formation obviously does not have that - which has protected the estate more reliably than any formation could. Whether Shen Guyi understood that when he chose them is the question the Ledger cannot close.'
     },
     'sect-kiln-wardens': {
         ancestors: [
