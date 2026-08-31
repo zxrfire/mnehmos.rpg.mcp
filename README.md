@@ -198,8 +198,8 @@ engine. The substrate — dice, SQLite persistence, action-routed MCP tools, spa
 worldgen, NPC agent runtime — is theirs and is retained; the game-facing surface has been
 replaced with cultivation mechanics.
 
-Game design inspired by the xianxia genre's take on the
-cultivation roguelike, and by the tone of the genre's xianxia. The setting, mechanics, and
-text here are original.
+Game design is an amalgamation drawn from across the xianxia genre - its progression
+ladders, talent systems and survival pressures - rather than from any single source. The
+setting, mechanics, and text here are original.
 
 MIT licensed.

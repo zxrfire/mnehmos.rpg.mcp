@@ -6,10 +6,13 @@ A **deterministic cultivation (xianxia) RPG engine** exposed over MCP, designed 
 driven by an LLM runtime agent that narrates but never decides.
 
 This repo was forked from a D&D 5e MCP game engine and is being transformed into a
-cultivation game in the spirit of the xianxia genre: a
-text-first cultivation roguelike with permanent death, a 45-rank realm ladder, fixed
-innate talent, and a survival layer (satiety, meridian injuries, lifespan, qi
-deviation) that makes most runs end badly.
+cultivation game in the spirit of the xianxia genre: a text-first cultivation roguelike
+with permanent death, a 45-rank realm ladder, fixed innate talent, and a survival layer
+(satiety, meridian injuries, lifespan, qi deviation) that makes most runs end badly.
+
+The design is an amalgamation drawn from across the genre - progression ladders,
+talent systems, survival pressures and tone are synthesised from many sources rather
+than modelled on any single one, and the setting, mechanics and text are original.
 
 The D&D *substrate* — dice, SQLite persistence, action-routed MCP tools, spatial grid,
 worldgen, NPC agent runtime — is sound engineering and is retained. What is replaced is
@@ -179,9 +182,10 @@ reason the mechanics feel like they mean something. The systems in this engine a
 generic fantasy stats wearing Chinese names — each one is an expression of the world's
 central cruelty.
 
-The register to aim for is the genre's: plain declarative sentences that turn cruel without
-raising their voice; obsession as the engine of a life; cosmic scale undercut by one
-small intimate loss. Not grandiosity. Grandiosity is what the *characters* believe.
+The register to aim for is the bleak end of the genre: plain declarative sentences that
+turn cruel without raising their voice; obsession as the engine of a life; cosmic scale
+undercut by one small intimate loss. Not grandiosity. Grandiosity is what the
+*characters* believe.
 
 ## The Vault
 

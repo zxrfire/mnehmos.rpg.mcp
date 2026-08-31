@@ -79,6 +79,7 @@ export function migrateCultivation(db: Database.Database): void {
       spirit_stones INTEGER NOT NULL DEFAULT 30,
       sect_id TEXT,
       sect_rank TEXT,
+      location TEXT,                                 -- free-text place name; geography here is narrative
       feuds TEXT NOT NULL DEFAULT '[]',              -- JSON array of ids/names holding a grudge
       known_techniques TEXT NOT NULL DEFAULT '[]',   -- JSON array, denormalised mirror of cultivator_techniques
 
@@ -239,4 +240,30 @@ export function migrateCultivation(db: Database.Database): void {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_sect_members_cultivator
       ON sect_members(cultivator_id);
   `);
+
+    addCultivationColumns(db);
+}
+
+/**
+ * Columns added to cultivation tables after their first release.
+ *
+ * CREATE TABLE IF NOT EXISTS is a no-op on a database that already has the
+ * table, so a column added to the DDL above reaches new databases only. Every
+ * post-release column therefore needs an explicit, guarded ALTER here — the
+ * same shape runMigrations() in migrations.ts uses for the `characters` table.
+ * Checking PRAGMA table_info rather than catching the duplicate-column error
+ * keeps startup quiet on the overwhelmingly common already-migrated path.
+ */
+function addCultivationColumns(db: Database.Database): void {
+    const cultivatorColumns = (
+        db.prepare('PRAGMA table_info(cultivators)').all() as { name: string }[]
+    ).map(col => col.name);
+
+    // Where the cultivator is. Nullable with no default: an existing world has
+    // no recorded locations, and inventing one for every legacy row would be
+    // the engine asserting geography it never simulated.
+    if (!cultivatorColumns.includes('location')) {
+        console.error('[Migration] Adding location column to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN location TEXT;');
+    }
 }
