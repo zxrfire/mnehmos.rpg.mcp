@@ -230,20 +230,101 @@ The toll is never a stat. It is always something that *mattered*:
 - a technique you had mastered, gone as if never learned
 - in the worst cases, your name — and thereafter people have to be told it, every time
 
-**The cultivator does not choose what is taken.** The engine chooses, deterministically,
-from what the run has actually accumulated: real bonds with real NPCs, real memories,
-real techniques in the database. Then the player is *told* what was taken. The horror is
-that it is legible: you can look at the ledger and see the shape of who you used to be.
+**The toll is not certain, and it is not fair.** It is rolled. Crossing a boundary puts
+you at risk of losing something, not under a guarantee of it — and the odds move:
 
-This is why the powerful are hollow. A Void Refinement cultivator has crossed five
-boundaries. They have paid five times. Whatever they were climbing *for* was almost
-certainly among the things the climb took. Ask one what their mother's name was and
-watch the pause.
+- **Fortune** shifts them. The attribute that can legally come up zero is the one that
+  decides whether the Vault notices you on the way past.
+- **Sect elders can stand between you and it.** A sect that has decided you are worth
+  protecting will spend real resources shielding a disciple's crossing — formations,
+  elders holding the qi steady, pills nobody at your realm could afford. This is most of
+  why anyone tolerates a sect. It is also why sects let you know, precisely, what the
+  protection cost them.
+- **Preparation matters.** The right pill, a stable site, dense ash, an unhurried
+  crossing. Cultivators who break through in a cave they chose live differently from
+  cultivators who break through in a ditch because something was chasing them.
+- **The Severed pay in advance**, on their own terms, and cross clean. That is the whole
+  argument of their path, and it works.
+
+So some cultivators climb four realms and lose nothing, and know they were lucky, and are
+insufferable about it. Others lose a brother at Foundation Establishment and never get
+another thing taken again. The path is soaked in blood, but it is not evenly distributed
+blood — and the ones who got through clean rarely believe luck had anything to do with it.
+
+**What is taken is never chosen by the cultivator.** When the roll goes against you, the
+engine selects from what the run has actually accumulated: real bonds with real NPCs, real
+memories, real techniques in the database. Then you are *told*. The horror is that it is
+legible — you can read the ledger and see the shape of who you used to be.
+
+This is why the powerful tend toward hollow. A Void Refinement cultivator has crossed five
+boundaries and rolled five times. Some of them still have a family. Most do not. Ask one
+what their mother's name was and watch which kind you're talking to.
 
 The Hollow Court — Grand Ascension cultivators who reached the top and then refused to
 step through — are the logical end of this. They have nothing left worth taking, which
 makes them nearly invincible and almost entirely inert. They sit in their mountains like
 furniture with opinions.
+
+## The Late Age
+
+The world is old, and it is not what it was.
+
+This is not a fresh world with its great age ahead of it. The great ages are behind it.
+Cultivators today walk through the wreckage of civilisations that were categorically
+stronger than anything now living, and they walk through it *constantly* — you cannot
+cross a province without passing a collapsed sect mountain, a battlefield where the
+craters are still too regular to be natural, or a sealed door with a formation on it that
+nobody alive knows how to read.
+
+The reason is mechanical, and it is the same ash.
+
+**Ash degrades each time it is breathed.** Every pass through a body takes something out
+of it. The ash falling now has been through a hundred thousand cultivators already,
+across ages nobody kept a record of, and what is left is thin stuff — which is exactly
+why the world is thin half the time. The current age is not unlucky. It is *late*. It is
+breathing the same air the ancients already used.
+
+This is why the ladder has a practical ceiling now that it did not used to have. Ordinals
+in the upper realms exist, and the manuals describing them exist, and the people who
+wrote those manuals were real. But nobody has ascended in living memory. The last
+confirmed ascension is centuries back, and it is remembered because of the spirit tide it
+caused — a whole life falling at once across half a continent, which is now spoken of as
+a golden year by people whose great-grandparents weren't born for it.
+
+### What ruins are for
+
+A sealed ruin is a pocket of ash that has not been breathed.
+
+That is the entire economy of exploration. A cave that was closed two ages ago holds
+deposits at a density the open world cannot produce any more, along with the things its
+owner did not get to take: technique manuals in grades that are no longer taught,
+because there is no living teacher; pills refined by methods that are no longer known;
+formations still drawing power off a vein that was rich when it was tapped.
+
+It is also the only realistic path upward for someone born without talent. You will not
+out-cultivate a single-root prodigy on ambient ash in the Late Age. You might out-*dig*
+them.
+
+The obvious problem: ruins were sealed by people who were much stronger than you, usually
+for a reason, and the seals are frequently still working. Guardian formations still run.
+Corpses in some of those caves are still cultivating — slowly, badly, and for a very long
+time. Inheritance trials left by the last generation of a dead sect were calibrated for
+disciples of that sect, and the calibration was not gentle.
+
+### The texture to aim for
+
+- **Ruins are ordinary, not special.** A village builds its granary against a wall it did
+  not make. Farmers plough up fragments and sell them by weight. A child's toy is a
+  spirit-tool with the qi long gone out of it. Nobody finds this remarkable.
+- **The past outranks the present, and everyone knows it.** The strongest sect in a
+  region is squatting in a compound it did not build, using nine of the forty-one
+  formation nodes, having lost the manual for the rest.
+- **Knowledge is recovered, not invented.** Progress in this world means finding
+  something, not discovering something. A breakthrough in alchemy is a recipe dug out of
+  a tomb.
+- **Scale down what survives.** The remnant should be legible and small — a doorway with
+  handprints burned into it at a height too tall for a person; a courtyard of stone seats
+  arranged for an audience of two hundred, in a sect that now has eleven disciples.
 
 ## Ash, Read Mechanically
 
