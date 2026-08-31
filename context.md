@@ -1487,6 +1487,63 @@ ground where the ash will never settle again, permanently thin, useless to every
 forever. The map of the world is pocked with them. Every scar was somebody's entire
 ambition.
 
+## The Last Crossing: True Immortal and False Immortal
+
+Tribulation Transcendence is not the summit. It is the approach to it.
+
+At the end of that realm sits one final attempt - the crossing that actually goes through
+the Lid - and it resolves three ways rather than two.
+
+### True Immortal
+
+The hole is punched, and the cultivator goes through it. This is the top of the ladder and
+the end of a run in the only way that is not a death. Lifespan stops being a number that
+means anything.
+
+It is also, structurally, the moment the Vault collects in full. Everything the Toll had
+been taking in instalments comes due at once: whatever the cultivator still had, they do
+not take with them. What falls back is the spirit tide that a whole region will remember as
+a golden year, and which the cultivator will never know they caused.
+
+Nobody currently alive has done this. The last confirmed crossing is centuries back, and it
+is remembered for the tide rather than the person.
+
+### False Immortal
+
+The half-failure, and the more interesting outcome.
+
+The tribulation is survived. The hole is opened. But the crossing does not complete - the
+seam closes early, or the body will not follow the soul, or something on the other side
+declines to take them. What is left stays on this side of the Lid, permanently.
+
+A False Immortal is:
+
+- **Enormously powerful.** Stronger than anything at Tribulation Transcendence, because
+  part of the transformation did happen.
+- **Permanently barred.** The Lid has already been opened once against their name and will
+  not open again for them. They cannot re-attempt, and everyone who understands what they
+  are knows it.
+- **Not immortal.** Their lifespan is vast and it is finite, and they can count it. They
+  will die on this side, having been most of the way through.
+- **Incomplete in a way that shows.** Something did not come back. What is missing varies
+  and it is never nothing.
+
+This is the Hollow Court's real membership. Those who "reached the top and refused to step
+through" is the polite version of the story, and some of them did choose it - but a good
+number of the oldest and quietest ones tried, and are what came back. They do not correct
+the polite version.
+
+A False Immortal is therefore one of the most dangerous things in the world and one of the
+most stuck. They have nothing left to lose, no way forward, and a great deal of time to
+think about it. They make excellent patrons, excellent enemies, and the most reliable
+sources of true history in existence, because they were there.
+
+### Failure
+
+The third outcome is the ordinary one. Cultivators who fail the last crossing leave a scar
+and nothing else.
+
+
 ## Graves and Grave-Readers
 
 When the Vault takes the toll, what it takes has to go somewhere.
