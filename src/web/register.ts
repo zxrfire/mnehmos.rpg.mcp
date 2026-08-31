@@ -160,8 +160,8 @@ export const HIGH_BAND_FLOOR = 37;
  *
  * Assembled across every catalog at once, because nothing above thirty-six is
  * an ordinary member: the named-member catalog tops out well below it. What is
- * up there is seats, sealed ancestors and the crossed, and most of them have
- * no name anybody outside their own walls has been given. `named: false` is a fact
+ * up there is lordships, sealed ancestors and the crossed, and most of them
+ * have no name anybody outside their own walls has been given. `named: false` is a fact
  * about the world rather than a hole in the data.
  */
 export interface HighPerson {
@@ -810,7 +810,7 @@ function buildDossiers(
             people: {
                 active: [
                     {
-                        name: a.lastRealm.holderName ?? 'the seated one',
+                        name: a.lastRealm.holderName ?? leaderTitleOf(a),
                         rank: rankName(a.powerOrdinal),
                         ordinal: a.powerOrdinal,
                         role: 'pinned',
@@ -818,11 +818,11 @@ function buildDossiers(
                         detail: a.lastRealm.note
                     },
                     {
-                        name: 'second seat',
+                        name: secondTitleOf(a),
                         rank: rankName(a.secondStrongestOrdinal),
                         ordinal: a.secondStrongestOrdinal,
                         role: 'senior',
-                        wants: 'the position to hold without the seat being tested',
+                        wants: 'the position to hold without anybody testing what is behind it',
                         detail: a.depthNote
                     }
                 ],
@@ -970,7 +970,7 @@ export function buildRegister(): WorldRegister {
                 note: 'administers an arterial vein for ' + (getApexInstitution(c.apexId)?.name ?? c.apexId)
             })).filter(c => c.ordinal >= 37 && c.ordinal <= 40),
             ...APEX_INSTITUTIONS.map(a => ({
-                name: a.name + ' - second seat',
+                name: secondTitleOf(a),
                 ordinal: a.secondStrongestOrdinal,
                 kind: 'apex second',
                 note: 'the strongest at ' + a.name + ' after the one who does not stand up'
@@ -1278,11 +1278,11 @@ function dossier(d: SectDossier): string {
       ['sent down', d.apex?.giftName ?? ''],
       ['heritage', d.apex?.heritage ?? ''],
       ['stock', d.apex ? d.apex.stock.replace(/_/g, ' ') : ''],
-      ['second seat', d.apex ? String(d.apex.secondSeat) : ''],
+      ['second', d.apex ? String(d.apex.secondSeat) : ''],
       ['channel', d.channel ? `${d.channel.kind.replace(/_/g, ' ')} · ${d.channel.crossings} crossing${d.channel.crossings === 1 ? '' : 's'} · ${d.channel.depletion ?? '-'}` : '']
   ])}
   ${d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : ''}
-  ${d.apex ? `<p class="terr"><b>The seat.</b> ${esc(d.apex.seatNote)}</p>
+  ${d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>
   <p class="terr"><b>What could end it.</b> ${esc(d.apex.instability)}</p>` : ''}
   <div class="grps">${groups.join('')}</div>
 </article>`;
@@ -1420,7 +1420,7 @@ export function renderRegisterHtml(
 <div class="pane" data-pane="people">
 <section>
   <div class="sh"><h2>People at or above Grand Ascension</h2><span class="r">Ordinal 37+ · strongest first</span></div>
-  <p class="note">Everyone in the band, from every catalog at once, with the faction they belong to. The named-member catalog stops well below this, so most of what is up here is seats, sealed ancestors and the crossed - and a row marked <em>unnamed</em> is a fact about the world rather than a gap in the data. Lesser people are listed under their faction in the next tab.</p>
+  <p class="note">Everyone in the band, from every catalog at once, with the faction they belong to. The named-member catalog stops well below this, so most of what is up here is lordships, sealed ancestors and the crossed - and a row marked <em>unnamed</em> is a fact about the world rather than a gap in the data. Lesser people are listed under their faction in the next tab.</p>
   ${[
       { label: 'Alive', hint: 'Still exists somewhere. Sealed counts - under a mountain is not gone - and so does ascended: somebody above the Lid is alive, and can come back down for the ten or fifteen breaths that costs.', alive: true },
       { label: 'Deceased', hint: 'Gone. Includes the ascended who did not survive what was up there, because tribulation and old age stop being able to kill you and nothing else does.', alive: false }
