@@ -253,3 +253,46 @@ Useful because it gives a sect access to power it does not own, and gives a stro
 individual a patron without a lifetime of obligation. Both sides know it is transactional.
 Both sides are usually right to be slightly nervous about it, and a guest elder walking out
 during a crisis is not a betrayal in any way anyone can formally object to.
+
+## The unbacked
+
+Not everyone is in the stack. Some sects hold no vein from anyone, answer to nobody, and
+pay for it continuously.
+
+What being unbacked actually costs:
+
+- **Nobody arbitrates for you.** Inside the pyramid a dispute goes upward and somebody
+  rules on it, usually badly and usually late, but it gets ruled on. Outside it, a
+  disagreement is settled by whoever is stronger, immediately.
+- **Your talents have no route up.** No parent means no selection, so a genuinely gifted
+  disciple either stays and wastes it, or is poached - and poaching an unbacked sect's
+  best disciple costs the poacher nothing, because there is no patron to offend.
+- **You are the obvious thing to absorb.** When a backed sect needs to show growth, it
+  takes from the people with no one to complain to.
+- **Your qi is whatever you can hold.** No granted vein, so: a poor one nobody wants, a
+  contested one you defend continuously, or none, and you buy stones like everyone else.
+
+How they survive anyway, and each of these should exist somewhere:
+
+- **Too poor to be worth taking.** Absorption costs something; being not worth the cost is
+  a defence, and a humiliating one to rely on.
+- **Too remote.** Distance still works in a world where travel is slow and most powers are
+  administering a river, not a map.
+- **Useful to everyone and aligned with no one.** A sect that repairs formations, ferries
+  goods, or treats injuries can be worth more unowned than owned - and knows it, and
+  trades on it carefully.
+- **Holding something.** A dormant ancestor, a unique art, a site nobody else can operate.
+  Nothing deters absorption like an unknown quantity under the mountain.
+- **Under an arrangement that is not patronage.** A standing agreement with a Dao house, a
+  guest elder who would be annoyed, an old oath somebody still honours.
+- **Simply not worth the trouble yet.** The most common answer, and the least comforting.
+
+**Independence is a real value and a real vanity.** Some unbacked sects are proud of it,
+say so, and are respected for it in a slightly pitying way. Others are unbacked because
+they were thrown out, or because their patron was destroyed and nobody picked up the
+lease, and would take a backer tomorrow if one were offered.
+
+For a player, an unbacked sect is the most *available* institution - lower admission bar,
+faster advancement, genuine responsibility early - and the ceiling arrives sooner and
+harder than anywhere else. Rising fast in a sect with nowhere to send you is its own kind
+of trap.
