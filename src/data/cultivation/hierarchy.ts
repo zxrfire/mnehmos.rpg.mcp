@@ -270,6 +270,13 @@ export const ApexInstitutionSchema = z.object({
     lastRealm: z.object({
         count: z.literal(1),
         pinned: z.literal(true),
+        /**
+         * The name, where anybody has it. Null is the ordinary case and is a
+         * fact rather than a gap: two of the three seats are held by somebody
+         * no outsider has ever been given a name for, and a register that
+         * invented one would be worse than a register that says so.
+         */
+        holderName: z.string().nullable(),
         note: z.string().min(80)
     }),
     /**
@@ -470,6 +477,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         lastRealm: {
             count: 1,
             pinned: true,
+            holderName: null,
             note: 'One, seated under the datum vault and cultivating without interruption, on top of what the founder sent down. The Survey administers a vein system across a province on the strength of a single person who has not left a room in four hundred years, and its entire posture - the couriers, the unappealable arbitration, the letters that do not wait for an answer - is built to make sure nobody ever needs to test whether that person would come out.'
         },
         sentDown: {
@@ -577,6 +585,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         lastRealm: {
             count: 1,
             pinned: true,
+            holderName: null,
             note: 'One, and the Long Cut is more honest about it than the Survey is: the posted staff of forty exists precisely because the one who could settle anything permanently is sitting on the thing that must not be left. Legalism is what an institution does when its strongest member cannot be spent.'
         },
         sentDown: {
@@ -647,6 +656,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         lastRealm: {
             count: 1,
             pinned: true,
+            holderName: 'Ru Anwei',
             note: 'One: Ru Anwei, younger sister of the woman who crossed, at the first rung of the last realm and no further after three hundred and eighty years. She sits in the inner hall with the Edge. Ru Anjing spent her last decades making the sect independent rather than strong - settling what was outstanding, calling in what was owed, and leaving the cost of touching the Pavilion legible enough that nobody has since wanted to establish the figure - and then left her sister to hold it. The province finds the arrangement touching. Every rival reads it as exactly what it is: an apex resting on one woman who is the weakest thing at her own tier.'
         },
         sentDown: {
@@ -1405,6 +1415,154 @@ export const DIRECT_RULE = {
         'There is no local sect to belong to, no familiar hierarchy, and nobody nearby to petition. Petitioning means addressing a clerk. Joining a federated power means joining a sect; joining a direct ruler means being processed.',
     noSkim:
         'Nothing is taken by an intermediate tier, and the reports the Long Cut reads are its own rather than what a subsidiary wanted it to hear - which is exactly the trade it made in exchange for doing all of the work itself.'
+} as const;
+
+// -------------------------------------------------------------------------
+// BUYING PEOPLE
+// The other intake model, and the only one in the world that takes people
+// who have never cultivated at all. It is not charity and it is not a quirk:
+// it is the one rational move available to an institution that is thin on
+// members and rich in resources, and no other apex is in that position.
+// -------------------------------------------------------------------------
+
+export const AZURE_CLOUD_INTAKE = {
+    apexId: 'apex-azure-cloud',
+    factionId: 'sect-azure-cloud-pavilion',
+    intakeModel: 'tests and takes uncultivated mortals' as const,
+
+    theTrade:
+        'Two facts about the Pavilion are already established and they answer each other. It is one person deep, with about ninety disciples and six at Core Formation, and it is the richest institution in the region because a woman on the other side of the Lid loves her sister and sends what she can every nine to fourteen years. Thin on members, rich in resources. There is exactly one rational move available to an institution in that position, and the Pavilion has been making it for a century: spend the thing you have in surplus to buy the thing you lack. They are converting medicine, materials and stones into people.',
+    whyNobodyElseCanDoIt:
+        'And nobody else can copy it, which is why it reads as the sharpest difference between the apexes rather than as a house style. The Hollow Court will not look at anybody below a Void Refinement floor with evidence they could cross, and nothing else counts toward it. The Deep Survey and the Long Cut are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Unearned Step for a promising second would be told no, in writing, with the standing stock cited. None of the three could fund a heavy loss rate on unproven mortals even if it wanted to.',
+    itIsCircumstanceNotValues:
+        'Nothing here is a difference of principle. Put the Deep Survey in the Pavilion\'s position - one benefactor, an income, ninety disciples and a stock it cannot spend - and the Survey would run the same programme inside a decade, with better records. Put the Pavilion on the Survey\'s footing and it would ration exactly as hard. The programme is a consequence of a sister, and it would end the year the sending stopped.',
+    theOtherReason:
+        'There is a second motive and it is patient. The Pavilion holds nine lower Unearned Steps it cannot spend, because the instructions require somebody standing at an early boundary who has done the accumulation and been stopped by something outside their control, and the sect does not produce such people fast enough. An intake taken young, taught properly and pushed hard is a way of manufacturing candidates for a stock that is otherwise dead weight. That payoff is twenty to forty years out, everybody senior knows it, and it is written in no document.',
+
+    // ── the test ──────────────────────────────────────────────────────
+    whatTheyTest: [
+        'Root: grade, count and conflict, measured properly with instruments most sects cannot afford to keep.',
+        'The physical and perceptual measures: what the body will take, how fast the senses settle, whether the qi in the room registers at all.',
+        'Temperament under pressure, tested rather than interviewed, over days, by people who have done it a great many times.',
+        'Whether the person can be taught, which is the measure the assessors weight most heavily and the one they trust least to a single sitting.'
+    ],
+    theTestIsRigorous:
+        'This is not a formality and it is not kind. Candidates are held for eight to twelve days, measured continuously, and told nothing about how they are doing. The Pavilion runs it seriously because the whole programme depends on the selection being better than chance, and it takes the best it finds rather than the ones it likes.',
+    whatTheyCannotTest:
+        'And they cannot test for affinity, which is the honest part. Affinity is rolled at creation, is never shown, and is discoverable only by exposure - nothing warns anybody beforehand, and no instrument, root reading or interview reveals it. That is not a limitation of the Pavilion. Nobody in the world can see it, and the Pavilion is one of the very few institutions that knows this clearly enough to say so internally.',
+    soTheAssessmentIs:
+        'Good, insufficient, and known by them to be insufficient. They can tell you who has the root, the body, the nerve and the capacity to learn, and they cannot tell you which of those people will ever stand in a room where their own Dao is being practised. So the assessment narrows the field and does not decide the outcome, and everyone running it understands that.',
+    soTheyBuyTimeInstead:
+        'Which is why nobody is admitted. They are taken on probation, and the probation is the answer to the thing the test cannot reach: if affinity surfaces only on exposure, then buy exposure, apply it repeatedly for years, and watch. See `probation` below. It is the only instrument in the world that actually detects the thing, and the people who built it cannot say what it is that it detects.',
+    theGambleIsThePoint:
+        'Which makes the programme a wager rather than a recruitment pipeline, and the Pavilion accepts it in those terms. Most of what it takes will not come to much. It pays for that, absorbs it, and keeps going, because the occasional person who comes out of the far end justifies the entire century of expenditure - and because the Pavilion is the only institution in the world that can currently afford to be wrong this often.',
+    theLossRate: {
+        testedEachYear: 'Two to three thousand, across the Low Fall and four provinces beyond it.',
+        takenOnProbationEachYear: 'Between nine and fourteen. The number is set by what the Pavilion can house, feed and walk through the round rather than by how many pass.',
+        confirmedEachYear: 'Three or four. Everybody else is carried for years first and then sent home.',
+        stillThereAtTwenty: 'Two, on average, counting the ones who were kept for reasons other than promise.',
+        producedInACentury: 'Eleven people the Pavilion considers the programme to have produced. Two of them are Sword Elders.',
+        howTheyRegardIt: 'A return of eleven in a hundred years would be a catastrophe for any other institution and is a bargain for this one, because the alternative use of the resource was a shelf.'
+    },
+
+    // ── probation ─────────────────────────────────────────────────────
+    probation: {
+        theModel:
+            'Nobody is admitted. Everybody is taken on probation, for years, and the decision is deferred the entire time. The Pavilion presents this as prudence and it is prudence, but it is also the answer to the problem the entrance test cannot solve, and it is a better answer than anybody there can articulate.',
+        whatItActuallyIs:
+            'It is the affinity test, run empirically instead of measured. Affinity is invisible to every instrument, and surfaces only on exposure to the thing itself - and first exposure to a Dao somebody has strong affinity for is unmistakable to that person, while everybody else sees only that they went quiet. So a probationary period inside an apex sect is a person being walked past everything the institution practises, over and over, for years, while trained people watch for exactly that. The Pavilion has built the only working instrument in the world for detecting affinity, out of time and attention, and it cannot name what the instrument detects.',
+        whatTheyThinkTheyAreTesting:
+            'Their own account is about character. They will tell you probation measures whether the teaching takes, whether a person settles, whether they hold up over years rather than over days, and whether they can be around cultivators without either curdling or inflating - all of which is sensible, and all of which they could test in eighteen months. The document says four to seven years and gives no reason, and nobody has ever formally asked why the number is that.',
+        whyThatExplanationIsWrong:
+            'Because the thing they actually select on is not a virtue. Their assessors have a standing note, passed down and never justified, that the candidates who come to something are usually the ones who go quiet first - who stop in a yard they were only being walked through, who ask an out-of-order question about a practice that has nothing to do with their assignment, who are found the following week doing badly and repeatedly something nobody set them. The Pavilion reads that as unusual dedication and rewards it. It is not dedication. It is recognition, and they are the only institution in the world reliably catching it, for a reason they have written down incorrectly for a century.',
+        theRound:
+            'The mechanism, and it is deliberate breadth: a probationer is rotated past the sword yard, the formation floor, the pill rooms, the array works, the archive, the beast pens and the outer edge of the inner hall, in a cycle that repeats with variations for as long as they are held. The stated reason is that the sect does not want narrow servants. The working reason is that a probationer who has only ever been shown one thing has only ever been offered one chance, and the Pavilion learned that the hard way long enough ago that the lesson is now just the schedule.',
+        stagedCommitment:
+            'And this is the concrete affordability mechanism, which is the whole reason the programme exists at their resource level and not at anybody else. Probation is cheap: a bed, food, a share of a teacher who is teaching a room anyway, and time. Full admission is expensive: a sponsor who stakes their standing, a place on the disciple list every rival reads the week it changes, a share of the stock, and medicine that comes off a shelf that only ever goes down. So the sect commits nothing scarce until exposure has done its work, and it can be wrong nine times out of ten at the cheap stage. The Deep Survey and the Long Cut could not run even the cheap stage, because for them the bed and the teacher are the scarce things.',
+        theLength:
+            'Four to seven years, occasionally nine, and the length is not padding. Exposure needs repetition and chance, so the instrument only works if it runs long, which means the Pavilion is carrying a dozen people at any time it has not decided about and may never keep. That is a real and continuous cost, it is visible to every rival who counts the compound, and it is a large part of why this programme is unique to them rather than obvious to everybody.',
+        notAllForPromise:
+            'And not everybody who is kept is kept for promise. Some are retained because they turned out to be useful, some because they are liked, and one or two because somebody senior has a reason of their own that is nobody else\'s business. This is true, it is not written anywhere, and nobody involved would confirm it.',
+        howDisciplesRegardThem:
+            'Probationers are a class of their own: not disciples, not outsiders, not servants, and treated as none of the three. They eat separately, are not on any list, and hold a position that can end on a decision nobody is obliged to explain. The kinder disciples are patient with them in the way one is patient with a guest. The rest are not, and the reason is specific rather than snobbery: a probationer is somebody who might turn out to be better than you, and who got in without a family, a sponsor or twenty years of contribution. Some of it is ugly. There is a standing joke about how long the current intake will last, and there are inner disciples who make a point of learning no names until year four.',
+        failingProbationIsTheWorseWound:
+            'Failing the entrance test is being told you were not worth taking. Failing probation is worse by a long way, because you were inside. You lived there, you walked the round, you were taught things, you saw what the top of the world actually looks like from the floor of it - and then people who had watched you for five years decided, and you were walked back out through the gate you came in by. The entrance test tells somebody they were not measured highly. Probation tells them they were given the thing everybody in their province would trade a decade for, and it did not take.',
+        theWashoutIsNotAMortal:
+            'But a washout is not a villager who never left. They had years of real exposure inside an apex: they may have comprehended something, they certainly learned names, forms, practices and the shape of the place, and they understood at least one true thing about how cultivation actually works. A former Azure Cloud probationer in a market town knows more about the top of the world than anybody else within four counties, is worth far more as a source than their standing suggests, and will usually talk - which is the `asking.md` principle exactly: the useful person is often two rungs below the one who really knows, and is very much easier to get an hour with.'
+    },
+
+    // ── the door ──────────────────────────────────────────────────────
+    theSecondDoor:
+        'And it is a real door for the poor, which almost nothing in this world is. A child in a thin county with a good root and nothing else has no placement, no teacher, no readable manual and nobody outside the valley who knows the family name, and the only door that opens for them opens on nerve: go into a ruin, which does not check who your parents were. This is the second one. It opens on being found and measured, it requires no nerve and no money, and it is the single largest piece of good luck available to somebody born with nothing.',
+    originTiers: ['thin_county', 'market_town'] as readonly string[],
+    itIsRare:
+        'It must stay rare to be worth anything. Nine to fourteen people a year out of five provinces means most people in a thin province have never met anyone it happened to, have never met anyone who was even tested, and know it as a thing that is said to happen somewhere else. A player who is approached should have no framework for what is being offered, and the villagers around them should not be able to supply one.',
+
+    rejectionIsAWound:
+        'Most of the people who are tested fail, and failing is not nothing. They were measured by an apex institution, at length, by people who do this for a living, and found wanting - which is a specific, permanent and public social fact, and it is a completely different thing from never having been looked at. A person who was never tested can believe anything about themselves. A person who was tested for eleven days and sent home cannot, and neither can the county they go back to.',
+    whatRejectionProduces: [
+        'The ones who never say it, and are described locally as having gone away for a season and come back quiet.',
+        'The ones who say it constantly, and are the least believed people in the county precisely because the claim is unfalsifiable and enormous.',
+        'The ones who go into a ruin the following spring, because the other door is still open and they now have a reason.',
+        'The ones who hate the Pavilion with a specificity that lasts fifty years, and who will help anybody who is working against it.',
+        'And the occasional one who was measured accurately and rejected correctly, and who then found their own Dao at forty by accident, which the Pavilion has no mechanism for hearing about.'
+    ],
+    itIsInTheWorldAlready:
+        'Some of these people are alive right now and it shaped them. Treat a rejected candidate as an available piece of backstory for any adult from a thin province, and treat the Pavilion as genuinely not knowing what it produced: it keeps the register of who it took and has never once looked at the far larger register of who it did not.',
+
+    // ── the scouts ────────────────────────────────────────────────────
+    theScouts: {
+        howMany: 'Six, standing, plus whoever a Sword Elder is currently borrowing.',
+        whoTheyAre: 'Inner Disciples at Foundation Establishment or a little above, chosen for patience and an ordinary face rather than for strength. It is a posting of eight to twelve years and it is not considered a promotion.',
+        theRoute: 'A fixed circuit of markets, festivals, hiring fairs, temple days and mine gates, walked on a schedule that repeats every fourteen months, so the same scout sees the same county at the same time of year and can tell what has changed in it.',
+        theMethod: 'Watching, mostly. Then a conversation that is not about cultivation, then a small thing to carry, or lift, or listen for, that measures something without the subject knowing they were measured. A scout who has found somebody makes an offer with a date on it and does not explain what it is for.',
+        theQuota: 'Two put forward a year, and a scout who puts forward nobody for three years is rotated out without prejudice. The quota is why a scout who has found nothing by autumn starts taking chances, and why the worst candidates in any given intake arrive in the last two months of the year.',
+        theCover: 'They travel as buyers of ordinary things - hides, dye, seed stock, salvage - and the cover is real, because a buyer who never buys is remembered. Several of them are locally believed to be poor merchants with an odd habit of asking after other people\'s children.',
+        whatItIsLikeToMeetOne:
+            'A player should be able to meet one, be looked at, be asked three mild questions and be handed something to hold, and never learn what happened. The scene works best when nothing is explained and the offer, if it comes, comes months later through somebody else.'
+    },
+
+    // ── wide intake, narrow conversion ────────────────────────────────
+    theFunnel:
+        'And here is the thing the whole programme is most often misread as, so it is stated flatly: the bar at the narrow end has not moved. Becoming an actual disciple of the Azure Cloud Pavilion is exactly as hard as it has always been, and an Azure Cloud disciple is precisely as impressive as anybody the Hollow Court or the Deep Survey keeps. There is no discount anywhere in this. What is wide is the mouth of the funnel, not its throat.',
+    notTheSoftApex:
+        'So do not read them as the charitable apex, the easy apex or the kind one. They are the apex that can afford to look at everybody, which is an entirely different thing from admitting them, and the people they eventually keep have been through a longer and more searching filter than anybody at the other two. Washing out is the ordinary outcome. Being kept is the remarkable one, and the sect behaves accordingly.',
+
+    // ── the name ──────────────────────────────────────────────────────
+    theNameIsWithheld:
+        'A probationer does not get to say they are of the Azure Cloud Pavilion. They are not a member; the claim is not theirs to make; and everybody inside the sect knows precisely where that line sits. This is the same fact as the paragraph above rather than a second rule: the name is withheld from unproven people exactly because the standard behind it is high, and letting probationers carry it would spend the one thing the Pavilion guards most carefully.',
+    theBestNameYouCannotSpend:
+        'Which puts a probationer in a much more interesting position than a member. Naming a sect is one of the levers that opens a door anywhere in the world, and this person is holding the best possible name and is forbidden to spend it. All of the exposure, none of the standing. They are seeing things almost nobody alive will ever see, and at a gate, in a market, in front of a magistrate, they are nobody.',
+    noProtectionOutside:
+        'And it is a real vulnerability rather than an embarrassment. A probationer on the road is an unaffiliated cultivator, whatever they are on the inside, with no sect behind the answer they give and no party who will come and ask about them. Travelling during probation is a materially different risk from travelling as a disciple, the sect does not pretend otherwise, and the ones who are sent out on errands know exactly what they are carrying and what they are not.',
+    claimingItFalsely:
+        'Claiming it anyway is a serious offence to the sect and a serious mistake socially, and it is detectable: an apex has few enough actual disciples that they are known, the list is published and read, and the wrong answer in the wrong room is far worse than no answer. It has been done. A probationer in his fifth year, two provinces out and cornered by a toll party at a river crossing, said the name to get across, and it worked - and it was repeated, in a report, to a Sword Elder inside the season. The Pavilion did not punish him with anything dramatic. It sent him home, in year five, with the decision on his probation left formally unmade, which is the most complete answer available to them and is understood by everybody who hears the story.',
+    whatTheWashoutMaySay:
+        'And it cleans up the washout, which is the part that lasts. They were never Azure Cloud, so they cannot say they were. The only true sentence available is that they were tested by the Pavilion - which is a boast and an admission of failure in the same breath, and how a person delivers that sentence tells you almost everything worth knowing about them.',
+    theRank: {
+        title: 'Probationer',
+        sitsBelow: 'Sword Servant, which is rank index 0 and the lowest actual rank of the sect.',
+        note: 'A probationer holds a place in the compound and no rung on the ladder. They are fed, taught and rotated, and they are not on the list.',
+        notSplicedIntoTheRankArray:
+            'Deliberately not inserted into `sect.ranks` for the Pavilion. Those indices are a contract: `members.ts` pins every member to a `rankIndex`, the stipend array is parallel to them, and `rankRealmBand` derives its bands from position in that array. Adding a rung at the bottom would silently move every Azure Cloud member down one and change every band. So the probationary standing is expressed here and in `SECT_ADMISSION.probationOrdinal`, and it wants lifting into the schema as a proper rank below index 0 by whoever owns that.'
+    },
+
+    // ── the anomaly ───────────────────────────────────────────────────
+    theAnomaly:
+        'Read as a table, the Pavilion is the strangest row in the world: power ordinal 41, and a door that opens at the very bottom of the ladder. The Hollow Court will not look below 29. The other high sects sit at 13, 21 and 29. Nothing else in the catalog combines that much power with that low a door, and the anomaly is the single most legible expression of everything else about them - thin on members, rich on resources, and gambling because they are the only ones who can afford the losses.',
+    whoWouldNoticeIt:
+        'Almost nobody, because almost nobody reads the world as a table. A farmer knows the Pavilion tests people. A well-informed cultivator who has dealt with two or three apexes would see it immediately and find it strange, and is exactly the sort of person who would remark on it over a drink and expect you to already understand why it matters.',
+    theSameNumberForOppositeReasons:
+        'And the one other body in the catalog whose door sits at the bottom is the Hollow Bell Wanderers, whose entire ceremony is showing up and ringing the bell. Same number, opposite reasons. The Wanderers take anybody because they are a loose league with nothing to protect and no capacity to assess. The Pavilion takes anybody in because it can afford to test them for years and send most of them home. A number is not a policy, and these two are the proof.',
+
+    // ── handoff ───────────────────────────────────────────────────────
+    engineHandoff:
+        'This is the content-side statement of a placement channel that does not exist in the engine yet. `thin_county` and `market_town` both carry `placement.reach: 0` in `src/engine/cultivation/origin.ts`, which is correct for every other route and wrong for this one: the Pavilion reaches into exactly those two tiers, on its own initiative, at no cost to the candidate. Wiring it needs a reach that is granted by an institution rather than owned by the origin, a low probability, an age band, and entry below the lowest rank rather than at it. No engine file is edited here.',
+    engineGaps: [
+        'PROBATIONARY RANK. A probationer carries the sect id and is not a member. Anything that gates social effect on membership must test the rank rather than the presence of a `sectId`, and if the engine currently reads "has a sectId" as "may claim the sect", this rule is what turns that into a live bug. The name claim, gate access, sect-backed reputation and any protection a faction extends to its own all need to check the rank.',
+        'PROBATION FLOOR. `admissionOrdinal` is a single number and `rankRealmBand` in `members.ts` derives every band from it, so it cannot express a door at 0 and a disciple bar at 3 at the same time. Held here as `SECT_ADMISSION.probationOrdinal` on the content side; lifting it into the schema as a second floor is the clean fix, and until then `admissionOrdinal` must stay at the membership bar or the whole ladder slides down.',
+        'PLACEMENT BY INSTITUTION. Reach that belongs to the reaching party rather than to the origin tier, which is the general shape of this and would also serve any other body that goes looking.'
+    ]
 } as const;
 
 // -------------------------------------------------------------------------

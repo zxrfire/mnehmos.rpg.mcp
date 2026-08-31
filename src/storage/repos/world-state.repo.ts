@@ -223,7 +223,7 @@ export class WorldStateRepository {
                 born_on_day, origin_tier, occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
-                location_id, faction_id, faction_rank_index,
+                location_id, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
                 history_fact_ids, memory_ids
@@ -232,7 +232,7 @@ export class WorldStateRepository {
                 @bornOnDay, @origin, @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
-                @locationId, @factionId, @factionRankIndex,
+                @locationId, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
                 @historyFactIds, @memoryIds
@@ -878,6 +878,7 @@ export class WorldStateRepository {
                 locationId: npc.locationId,
                 factionId: npc.factionId,
                 factionRankIndex: npc.factionRankIndex,
+                spiritStones: npc.spiritStones,
                 status: npc.status,
                 bodyId: npc.bodyId,
                 soulState: npc.soulState,
@@ -1396,6 +1397,7 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
         locationId: row.location_id,
         factionId: row.faction_id,
         factionRankIndex: row.faction_rank_index,
+        spiritStones: row.spirit_stones ?? 0,
         goals,
         relationships,
         historyFactIds: parseArray(row.history_fact_ids),
@@ -1847,6 +1849,7 @@ interface NpcRow {
     location_id: string | null;
     faction_id: string | null;
     faction_rank_index: number;
+    spirit_stones: number;
     status: string;
     body_id: string | null;
     soul_state: string;

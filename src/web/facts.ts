@@ -308,7 +308,7 @@ function timeSkipProse(
 
     if (skip.events.length === 0) {
         paragraphs.push(
-            `Nothing found you. ${humanDays(skip.simulatedDays)} went by in the ordinary way, which in this world is the good outcome and almost never the interesting one.`
+            `Nothing found you. ${humanDays(skip.simulatedDays)} went by in the ordinary way.`
         );
     } else {
         const beats = skip.events.map(e => `${dayStamp(e)} - ${e.summary}`);
@@ -325,7 +325,10 @@ function timeSkipProse(
     const closing: string[] = [];
     closing.push(`You stand at ${rankName(after.realmOrdinal)}, ${Math.floor(after.age)} years old.`);
     if (skip.deltas.realmOrdinal > 0) {
-        closing.push(`${skip.deltas.realmOrdinal} rank${skip.deltas.realmOrdinal === 1 ? '' : 's'} were gained in that stretch.`);
+        closing.push(
+            `${skip.deltas.realmOrdinal} rank${skip.deltas.realmOrdinal === 1 ? ' was' : 's were'} ` +
+            'gained in that stretch.'
+        );
     }
     if (untreated > 0) {
         closing.push(`${untreated} meridian injur${untreated === 1 ? 'y is' : 'ies are'} still untreated, and nothing heals them on its own.`);
@@ -468,16 +471,27 @@ function breakthroughProse(before: Cultivator, after: Cultivator, result: Breakt
 export function factsForLook(
     cultivator: Cultivator,
     ambient: AmbientQi,
-    company: Company = { named: [], strangers: [], total: 0 }
+    company: Company = { named: [], strangers: [], total: 0 },
+    /**
+     * What belonging to something looks like from where they are standing.
+     *
+     * A player who has sworn to an order and walks into its seat was being
+     * told the same thing a stranger would be told. Membership is the most
+     * consequential thing a low cultivator can acquire and the world never
+     * mentioned it again.
+     */
+    standing: string | null = null
 ): EngineFacts {
     const lines = standingLines(cultivator, ambient);
     const where = placeName(cultivator);
     const who = describeCompany(company, cultivator.realmOrdinal);
 
+    if (standing) lines.push(standing);
     if (who) lines.push(who);
 
     const prose = [
         `${where}. ${describeAmbientPerceived(ambient)}`,
+        ...(standing ? [standing] : []),
         ...(who ? [who] : []),
         selfNoticing(cultivator)
     ].join('\n\n');
@@ -486,6 +500,35 @@ export function factsForLook(
         ...standingStructure(cultivator, ambient),
         `present=${company.total} (named ${company.named.length}, unnamed ${company.strangers.length}).`
     ]);
+}
+
+
+/**
+ * Who is about, asked directly.
+ *
+ * `look` and this used to return the same paragraph, which made asking the
+ * narrower question pointless. Someone scanning a square for a face does not
+ * want the weather: the people come first and the room is dropped entirely.
+ * The discovery gate is the same one - being in the square is permission to
+ * see somebody, never to know their name.
+ */
+export function factsForCompany(
+    cultivator: Cultivator,
+    company: Company,
+    standing: string | null = null
+): EngineFacts {
+    const where = placeName(cultivator);
+    const who = describeCompany(company, cultivator.realmOrdinal)
+        ?? 'Nobody is about. Whatever this place does with its people, it is not doing it here.';
+
+    const lines = [who, ...(standing ? [standing] : [])];
+
+    return observable(
+        company.total === 0 ? `${where}, empty.` : `${company.total} about in ${where}.`,
+        lines,
+        lines.join('\n\n'),
+        [`present=${company.total} (named ${company.named.length}, unnamed ${company.strangers.length}).`]
+    );
 }
 
 /**
@@ -612,9 +655,36 @@ function selfNoticing(cultivator: Cultivator): string {
         notes.push('Whatever happened last has not been slept off.');
     }
 
-    return notes.length > 0
-        ? notes.join(' ')
-        : 'Nothing about the day is urgent, which in this world is worth noticing on its own.';
+    if (notes.length > 0) return notes.join(' ');
+
+    // Nothing is wrong, which still has to be said differently in different
+    // places. This line is a constant on a quiet day, so a player walking
+    // from one town to the next read the identical sentence twice and the
+    // world stopped being two places. Keyed on where they are standing: the
+    // same square on the same day reads the same, which is right, and two
+    // squares do not.
+    return QUIET_DAY[stableIndex(cultivator.location ?? '', QUIET_DAY.length)];
+}
+
+/**
+ * Ways of saying that nothing is wrong.
+ *
+ * Not randomised - asking.md's rule about stable habits applies to the
+ * whole world, not only to people. The same place always gets the same one.
+ */
+const QUIET_DAY: readonly string[] = [
+    'Nothing about the day is urgent.',
+    'The day asks nothing in particular.',
+    'Nothing here is going wrong at any speed worth watching.',
+    'It is an ordinary day and it intends to stay one.',
+    'Nothing is pressing. That will not last, and it is not pressing yet.'
+];
+
+/** A stable index from a string. Same input, same answer, every run. */
+function stableIndex(key: string, modulo: number): number {
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) % 100_003;
+    return Math.abs(hash) % Math.max(1, modulo);
 }
 
 export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progressRequired: number, ready: boolean): EngineFacts {

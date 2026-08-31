@@ -60,8 +60,36 @@ export interface ProductionTier {
     note: string;
 }
 
+/**
+ * The outside view, and the gap between it and the inside one.
+ *
+ * Reputation is not a summary of capability. It fixes on whatever is most
+ * legible from the road - a mannerism, a shopfront, a price, a quarrel - and
+ * then stops updating, so what a faction is known for is reliably not what it
+ * is actually best at. The gap is usable in both directions: a player who
+ * hires the reputation gets the wrong thing, and a player who has worked out
+ * the reality is holding something almost nobody else has bothered to learn.
+ */
+export interface KnownFor {
+    /** What people two provinces away would say they are. */
+    outside: string;
+    /** What they are actually best at, which is rarely the same. */
+    actuallyGoodAt: string;
+    /** Why the two came apart, and stayed apart. */
+    theGap: string;
+}
+
 export interface FactionCharacter {
     practice: string;
+    /** Reputation versus capability. See {@link KnownFor}. */
+    knownFor: KnownFor;
+    /**
+     * Present only where the faction has quietly stopped doing the thing it is
+     * defined by, and has not noticed or will not say. Not a failure state:
+     * an institution coasting on a practice it no longer performs is one of
+     * the more honest shapes in this catalog.
+     */
+    quietlyStopped?: string;
     grievance: string;
     fear: string;
     lateness: string;
@@ -77,6 +105,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     // LOW FALL - RIGHTEOUS
     // ═══════════════════════════════════════════════════════════════════
     'sect-azure-cloud-pavilion': {
+        knownFor: {
+            outside: 'The sword sect. Flying blades, the tournament, an admission day worth travelling for, and being condescended to by somebody of nineteen.',
+            actuallyGoodAt: 'Two things nobody outside sees. It can certify that a person is who they say they are, permanently and without appeal, which is why every ledger and court in the region has to deal with it - and it runs the only programme in the world that takes uncultivated mortals and spends years finding out what they are.',
+            theGap: 'Both of its real capabilities happen indoors. The courtyard is where the swords are, so the swords are what the province talks about.'
+        },
         practice: 'Disciples stand when a sword is drawn anywhere in earshot, including in a kitchen, and their right forearms are visibly heavier than their left from flying on the blade.',
         grievance: 'That the province treats its deference as owed to a dead woman rather than earned by the Pavilion, and repeats the joke about renting her.',
         fear: 'That the Standing Edge is a finite object, and that the year it is spent is the year the Pavilion becomes an ordinary sect with an unusually good gorge.',
@@ -91,6 +124,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'The only institution in the world holding a parting gift from the last confirmed crossing, and it has refused itself permission to draw it nine times.'
     },
     'sect-verdant-spring-hall': {
+        knownFor: {
+            outside: 'Medicine. The place you are carried to, the only sect that will look at you without asking whose side you were on.',
+            actuallyGoodAt: 'Collections. The Hall holds the largest book of unpaid obligations in the province, never writes one off, and can call on a startling number of people who would rather not be reminded why.',
+            theGap: 'Nobody thinks of a physician as a creditor until the bill arrives, and by then they are already the sort of person who owes them.'
+        },
         practice: 'Physicians keep their fingernails cut to the quick and their sleeves pinned back at all times, and will treat an enemy on the floor of a fight before asking who started it.',
         grievance: 'That it was a hermitage of nine people once, holding its valley by respect and nothing else, and chose to grow - and that the Standing Grove, which refused the same choice, is spoken of the way the Hall used to be.',
         fear: 'That the Bone Lantern Cult is right that the dead are a resource, and that the Hall\'s objection is sentiment rather than medicine.',
@@ -105,6 +143,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'The only sect that treats its enemies on the floor where they fell and then bills them, and has outlived four sects that thought this was weakness.'
     },
     'sect-nine-peaks-ascetic-order': {
+        knownFor: {
+            outside: 'The stone. Three counties tell the same joke about ascetics setting rocks down on tables, and the joke is affectionate and slightly contemptuous.',
+            actuallyGoodAt: 'The best pipeline in the province, because the deepest vein anybody has kept is under them and they have refused for two centuries to lease a foot of it.',
+            theGap: 'The stone is visible from the road and the vein is not. It is very hard to be frightened of somebody carrying a rock.'
+        },
         practice: 'Ascetics carry a stone at all times, of a size chosen at admission and never changed, and set it down only to sleep - so a conversation with one includes the sound of a rock being placed on a table.',
         grievance: 'That every other institution in the province regards their vein as an accident of geography rather than a two-century refusal to lease it.',
         fear: 'That Meng Da is still alive somewhere in the workings, and that the Order has spent eight hundred years not sealing the entrance because it does not want to find out.',
@@ -119,6 +162,12 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Sits on the richest vein in the province and has refused for two centuries to lease a foot of it, while maintaining forty formation nodes it cannot light and will not remove.'
     },
     'sect-clear-river-alliance': {
+        knownFor: {
+            outside: 'Boats. The people who will get anything across anything, and who probably know where the smuggling routes are because several of them are the smuggling routes.',
+            actuallyGoodAt: 'Knowing who went where and when. A ferryman is told things nobody would tell a magistrate, and the Alliance has a hundred and forty years of it, distributed across every landing on the water.',
+            theGap: 'The Alliance has never once thought of this as intelligence. It is simply what everybody at a crossing already knows, and nobody has ever tried to sell it.'
+        },
+        quietlyStopped: 'Surveying. Half its river-charts are copies of a survey two ages old, the copies are still better than anything the Alliance has produced since, and at some point in the last century it stopped attempting new ones. Nobody decided this. The last man who could take a proper sounding died, his apprentice took a landing instead, and the charts have been getting copied rather than made ever since.',
         practice: 'Members are recognisable by the tar on their palms from boat rope, and greet each other by naming a ford - "Third, this spring" - rather than by name.',
         grievance: 'That the Thousand Treasure Pavilion prices tolls on routes the Alliance keeps open, and calls this commerce.',
         fear: 'That the ferry trade is what the Alliance is, and that a Measured Span station at Scarwater would end it in a decade.',
@@ -133,6 +182,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'A federation of ferrymen who learned to fight, who settle internal debts in river crossings rather than stones, and whose oldest asset is a pier they did not build.'
     },
     'sect-sweptground-temple': {
+        knownFor: {
+            outside: 'Charity. The place that takes beggars and muddled roots, spoken of warmly by people who have never sent it anything and used as a byword for hopelessness by three of the richer sects.',
+            actuallyGoodAt: 'Producing working cultivators out of intake every other institution has already refused, on thin ground, with six nodes and no vein. Measured as a return on what it is given, it is the most effective sect in the province by a distance nobody has calculated.',
+            theGap: 'It keeps no accounts at all, so nobody has ever seen the figure - including the Temple.'
+        },
         practice: 'Monks eat standing, from a single bowl, and will not accept a gift of ground - four separate sects have tried to endow them and all four endowments were returned intact.',
         grievance: 'None stated, which the province finds unnerving; pressed, the Abbot says the Temple was given the thing it needed two and a half thousand years ago and has no further claim on anybody.',
         fear: 'That the First Abbot\'s crossing is not true, and that four centuries of poor people have been told a comfortable thing.',
@@ -147,6 +201,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'The poorest institution in the province, sitting on ground it chose for having no vein, holding a true claim to an ancestor that nobody believes and that buys it nothing.'
     },
     'sect-lantern-hall': {
+        knownFor: {
+            outside: 'Bad news. The ones who write down what a crossing took from you and then publish it, and who will do this whether or not anybody asked.',
+            actuallyGoodAt: 'The only systematic record in the world of what boundaries actually take. If you want to know what you are likely to lose before you reach a boundary, they are the only party alive who can tell you, and they will do it for free.',
+            theGap: 'Being right in an unwelcome way is socially indistinguishable from being morbid, and the Hall has never once tried to be liked.'
+        },
         practice: 'Keepers carry a wax tablet and write during conversations without asking, and they will read a cultivator their own crossing ledger unprompted, which is why they are rarely invited twice.',
         grievance: 'That the world calls what the crossings take "the price" and considers the matter closed.',
         fear: 'That the counter-register is a comfort rather than a remedy, and that writing a name down does not in fact keep it.',
@@ -162,6 +221,12 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     },
 
     'sect-standing-grove': {
+        knownFor: {
+            outside: 'Six harmless recluses in a valley who settle arguments for nothing, and who are talked about the way one talks about a pleasant local custom.',
+            actuallyGoodAt: 'Deterrence with no infrastructure at all. Eleven days of country stays quiet on nothing but a belief, and the belief has been checked twice in two hundred years and was correct both times.',
+            theGap: 'Both occasions ended inside nine days, in front of witnesses who were not asked to be there, and a thing that ends quickly does not become a story.'
+        },
+        quietlyStopped: 'Recruiting. The Grove has taken nobody in forty-one years and does not describe itself as closed - it simply has not admitted anyone since the last test, and the six who hold eleven days of country are the six who held it then. Ask and they will say the question has not come up.',
         practice: 'They answer questions and do not ask them. A disciple of the Grove meeting a stranger on the road gives their own name first, waits, and accepts whatever is offered back without comment, including a lie.',
         grievance: 'None they will state, which visitors find unnerving; the Grove holds that a grievance is a claim, and it makes no claims.',
         fear: 'A small test at the edge that is deniable enough to be awkward to answer and public enough that not answering ends the zone. It has been forty-one years and everybody in the hermitage can feel the clock.',
@@ -179,6 +244,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     // LOW FALL - NEUTRAL
     // ═══════════════════════════════════════════════════════════════════
     'sect-stonewright-consortium': {
+        knownFor: {
+            outside: 'The rate. Stones, assay, the price of everything, and a reputation as the least romantic body in the world.',
+            actuallyGoodAt: 'Recruitment. About half of its Core Formation members were bought mid-career off other sects, which makes it the largest employer of finished cultivators in the region and the reason three smaller sects have no seniors left.',
+            theGap: 'It looks like a counting house and behaves like a hiring hall, and it has never advertised the second thing because the first thing is what makes it cheap.'
+        },
         practice: 'Factors weigh everything, visibly, including food and correspondence, and will not agree to a figure without putting it on a balance first - a Consortium negotiation begins with somebody unpacking scales.',
         grievance: 'That every institution in the province depends on its rate and every one of them describes the Consortium as parasitic while doing so.',
         fear: 'That the presses are irreplaceable. It repairs them constantly, has never built a new one, and does not publish how many are still working.',
@@ -193,6 +263,12 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Sets the price of a vein, a pill and a life in the same ledger, and maintains presses of a design it has never once managed to rebuild.'
     },
     'sect-thousand-treasure-pavilion': {
+        knownFor: {
+            outside: 'The floor. Where you sell what you dug up, at a commission everybody grumbles about and nobody refuses.',
+            actuallyGoodAt: 'Grave-reading. Its appraisers can tell you which era a thing came out of, which kind of hole, and frequently which province, and there is no better body of that skill anywhere that is not doing it illegally.',
+            theGap: 'The skill has no name that the Pavilion could say aloud, because naming it would describe the trade.'
+        },
+        quietlyStopped: 'Appraising its own claim. The Pavilion bought its ancestors at an estate sale, and the one thing its appraisers - the best grave-readers in the region - have never been asked to examine is the provenance of the lot the sect itself bought.',
         practice: 'Appraisers wear gloves indoors and take them off only to touch merchandise, so an outsider can tell exactly when a Pavilion member has started valuing them.',
         grievance: 'That the Consortium sets the rate it must sell at, and that saying so aloud would cost it the Consortium\'s underwriting.',
         fear: 'A Ledger audit of the tablet hall. The Pavilion has priced that risk internally and the figure is kept by three people.',
@@ -207,6 +283,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Bought its ancestors at an estate sale the Ninefold Ledger brokered, and is now the Ledger\'s largest client for exactly that reason.'
     },
     'sect-cinnabar-crucible-guild': {
+        knownFor: {
+            outside: 'Pills. The queue, the price list, the failed heaven-grade batches everybody has an opinion about.',
+            actuallyGoodAt: 'Teaching. The Guild is a school with a shopfront: it admits by examination rather than combat, and it turns careful people with no talent for violence into professionals with a trade, which is a door that exists almost nowhere else.',
+            theGap: 'Everybody sees the counter. Almost nobody sees the examination hall behind it, and the Guild finds the confusion useful at the price list.'
+        },
         practice: 'Alchemists keep one hand permanently bandaged, by rule rather than injury, so that a burn to the working hand never costs a batch; guild members shake with the left.',
         grievance: 'That the Thousand Treasure Pavilion prices medicine the Guild makes and takes the margin on it.',
         fear: 'That the missing steps in the wall script are not missing but deliberately omitted, and that the batches which fail are failing for a reason somebody understood.',
@@ -221,6 +302,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Built a monopoly on the third of a wall it can read, and still teaches a step that killed the man who proved it was not one.'
     },
     'sect-ashen-forge-clan': {
+        knownFor: {
+            outside: 'The quarrel. Whatever the Ashen Forge is actually for, the province knows it mostly as the clan that fell out with the Azure Cloud Pavilion over how its swords were being used.',
+            actuallyGoodAt: 'Reading a fragment. They can identify what a ploughed-up shard was, which age it is from and what it will tolerate, and then reforge it - and half the region is armed off that skill without knowing whose it is.',
+            theGap: 'A quarrel is repeatable at dinner and metallurgy is not.'
+        },
         practice: 'Everyone in the compound, including children and the clan chief, feeds the furnace on a rota; refusing a turn is how a person leaves the clan, and it has happened twice.',
         grievance: 'That the Azure Cloud Pavilion accepted its swords for two hundred years and now accepts its deference to somebody else.',
         fear: 'That the furnace will go out. Nobody knows the starting method, so it has not been allowed to cool in eleven generations and the rota is a religion with a duty roster.',
@@ -235,6 +321,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'A clan whose entire religion is a duty rota for a fire they inherited, cannot relight, and have not let go out in eleven generations.'
     },
     'sect-hollow-bell-wanderers': {
+        knownFor: {
+            outside: 'Nothing much. A league of diggers and nobodies who ring a bell, taken seriously by no institution in the region.',
+            actuallyGoodAt: 'Knowing where everybody has been. The bells are a map, four generations deep, of every crossroads any Wanderer has passed - and the league contains the only people alive who have walked the whole province without a sect telling them where to go.',
+            theGap: 'Nobody asks a Wanderer anything, so the map has never once been read by anybody who could use it.'
+        },
         practice: 'Members hang a small bell at any crossroads they pass and never at one they intend to return to, so the bells map where the Wanderers have been and never where they are.',
         grievance: 'That every sect in the province refused them first, and that several now recruit from them.',
         fear: 'That the league is a waiting room - that everyone good enough leaves, which is the arithmetic and nobody says it.',
@@ -249,6 +340,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'A league whose members mark where they have been rather than where they are, and which loses every promising member to the sects that refused them first.'
     },
     'sect-frostmirror-court': {
+        knownFor: {
+            outside: 'Refusal. Cold, arrogant, turns away everybody, leaves its floors unswept, and is unpleasant about all three.',
+            actuallyGoodAt: 'Triage. It holds the only complete curriculum for a root that kills its bearers, and every applicant it refuses is somebody the arts would have killed. The refusal is the service.',
+            theGap: 'A door that closes looks the same from outside whatever the reason, and the Court has never considered explaining itself to be part of the work.'
+        },
         practice: 'Nobody sweeps. The floors of the cold hall are left exactly as they are on doctrine, and a visitor who tidies is not corrected but is not admitted again.',
         grievance: 'That the Storm Tyrant Court has raided them twice and the province regards the Frostmirror as the curiosity in that relationship.',
         fear: 'That the ice curriculum is finite - it was dug out, not written, and there is no more glacier to dig.',
@@ -263,6 +359,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Refuses every applicant in the world except the one root in a hundred that its curriculum will not kill, and leaves its own floors unswept as doctrine.'
     },
     'sect-kiln-wardens': {
+        knownFor: {
+            outside: 'The gate. Wardens who answer in numbers, turn you around politely, and are frightening in a way nobody can articulate afterwards.',
+            actuallyGoodAt: 'Formation work. Every node they hold is lit, which no other institution in the world can say, and the network under that ground is the only complete one anybody has.',
+            theGap: 'The reputation is built entirely on the doorstep, because the doorstep is the only part anybody has seen for nine hundred years.'
+        },
         practice: 'Wardens speak to outsiders in numbers only - distances, dates, quantities - and turn applicants around at the gate once, politely, with a figure for how far the nearest inn is.',
         grievance: 'None expressed in nine hundred years of outside records, which is itself the most remarked-upon fact about them.',
         fear: 'Unknown, and the absence is what alarms the other powers: an institution with nothing to lose and everything lit is not a shape anyone can price.',
@@ -277,6 +378,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Sits on the richest ground in the world drawing nothing from it, lights every node it holds, and has never in nine hundred years been recorded making an exchange.'
     },
     'sect-hollow-court': {
+        knownFor: {
+            outside: 'Stillness. Four beings who reached the top, sat down, and have not got up - holy ground, and inert.',
+            actuallyGoodAt: 'Standing guard. They are the only body at that altitude that can protect a crossing, which is the reason six of them have crossed and the reason they work at a published address instead of hiding.',
+            theGap: 'The world reads stillness as inertia. Sitting is what protecting looks like when it is being done properly.'
+        },
         practice: 'The four seated do not stand. A visitor is answered honestly, at length, without anybody getting up, and the answer usually concerns something the visitor did not ask about.',
         grievance: 'That the world calls them cowards for declining the crossing, when what they declined was paying for it.',
         fear: 'Nothing left to be afraid of, which is precisely the condition, and is why they are useless in a crisis.',
@@ -295,6 +401,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     // LOW FALL - DEMONIC
     // ═══════════════════════════════════════════════════════════════════
     'sect-the-severed': {
+        knownFor: {
+            outside: 'Horror. The ones who cut away their families on purpose, and the itemised list they hand to applicants.',
+            actuallyGoodAt: 'Crossing. Their reasoning is sound and their record proves it: pre-paying the price makes boundaries survivable, and they climb faster than anybody in the catalog.',
+            theGap: 'The method is unbearable to look at and the results are in the ledger, so the province has settled on discussing the method.'
+        },
         practice: 'Members introduce themselves by what they have already cut - "two bonds, a name" - before giving anything you could call a name, and the ledger is shown to applicants before anything else.',
         grievance: 'That Lantern Hall calls them thieves of themselves while charging nothing to write down what the crossings steal from everyone else.',
         fear: 'That the doctrine works and produces something that cannot be argued with afterwards, including about whether it was worth it.',
@@ -309,6 +420,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'The only faction that shows applicants an itemised list of what its members have already amputated from themselves, and considers it a recruitment document.'
     },
     'sect-crimson-abyss-hall': {
+        knownFor: {
+            outside: 'The cash box. Predators who set up outside other sects\' admission days and pay in advance, which everybody agrees is sinister.',
+            actuallyGoodAt: 'Training. It produces more Foundation Establishment cultivators annually than any righteous sect in the province, from people who were refused that morning, and it does it by actually teaching them.',
+            theGap: 'Paying a stranger a month up front looks like a trap and is in fact a wage, and the Hall would rather be thought sinister than cheap.'
+        },
         practice: 'Recruiters wait outside other sects\' admission days with a table and a cash box, and pay the first month in advance to anyone who was refused inside.',
         grievance: 'That the righteous sects create its intake by refusing people and then condemn the Hall for taking them.',
         fear: 'That the tithe has to come from somewhere, and that the Hall\'s own membership is the only supply that has never run short.',
@@ -323,6 +439,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Sets up a table with a cash box outside other sects\' admission days and pays the first month in advance to everyone they turned away.'
     },
     'sect-bone-lantern-cult': {
+        knownFor: {
+            outside: 'Graves. The worst company in the region, hunted on principle by one sect and over supply by another.',
+            actuallyGoodAt: 'Ground-reading. They are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to.',
+            theGap: 'An unpleasant trade is a complete explanation to everybody outside it, so the science underneath has never been examined by anyone who was not doing it.'
+        },
         practice: 'Members work in silence at a site and talk continuously away from one, and every one of them can date a battlefield to the season by what is flowering on it.',
         grievance: 'That the Verdant Spring Hall hunts them for handling the dead while buying its crimson marrow fungus from a supply chain with exactly one source.',
         fear: 'The Crimson Abyss Hall, which hunts them over supply rather than principle and is much better funded.',
@@ -337,6 +458,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Follows wars at a respectful distance on a hundred-and-forty-year rotation, and can date a battlefield to the season by which flowers are on it.'
     },
     'sect-nine-abyss-flame-sect': {
+        knownFor: {
+            outside: 'Monstrousness. The caldera, the elders who have stopped being human in one specific way each, and the contract.',
+            actuallyGoodAt: 'Disclosure. It is the only faction in the catalog that hands an applicant the full terms before they sign, and its pipeline is the strongest live one in the province precisely because nothing is hidden.',
+            theGap: 'Total honesty about a monstrous bargain reads as recruitment rather than as candour, and the sect has stopped expecting otherwise.'
+        },
         practice: 'Elders are visibly not human any more in one specific way each - a hand, an eye, a voice - and the sect neither hides this nor comments on it, and applicants are shown the contract in full.',
         grievance: 'That the Sweptground Temple takes in the people the contract ruins and calls the sect a predator, while turning nobody away itself.',
         fear: 'That the Kindler wakes for a reason nobody chose, and that the caldera is the collateral.',
@@ -351,6 +477,12 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Hands every applicant the full text of a transformation contract whose counterparty its own scripture does not name, and lights nineteen nodes in an alternating ring because it can read every other line.'
     },
     'sect-storm-tyrant-court': {
+        knownFor: {
+            outside: 'Collection. A court that takes cultivators and treats refusal as a scheduling matter, which is the only fact most people in the province hold about it.',
+            actuallyGoodAt: 'Instruction. It has the world\'s only working lightning curriculum and teaches it properly, which is why the ones it collected mostly stay.',
+            theGap: 'Taking somebody is visible from the road and teaching them is not, so the Court is known for the worst ten minutes of a relationship that usually lasts a century.'
+        },
+        quietlyStopped: 'Opening the vault. It is described at successions, in order, from the record, and it has not been opened in four hundred years. The description is now the ceremony, and at least two Storm Elders privately doubt that everything in the list is still in the room.',
         practice: 'Court members do not sit down indoors during a storm and are audibly uncomfortable in still air; a Storm Servant meeting an outsider will check the sky first, every time.',
         grievance: 'That the world thinks the tether is a trophy when it is a maintenance liability the Court cannot repair and cannot abandon.',
         fear: 'A Ledger certification of its vault inventory, which would establish that the Standing Storm Rod is gone.',
@@ -369,6 +501,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     // LOW FALL - DAO HOUSES
     // ═══════════════════════════════════════════════════════════════════
     'house-ninefold-ledger': {
+        knownFor: {
+            outside: 'Audits. Joyless, unavoidable, and the reason nobody can settle an inheritance without paying for a cup of tea the auditor will refuse.',
+            actuallyGoodAt: 'The graph. Four thousand years of every connection anybody has had, which is why a house with no war doctrine has never been attacked twice by the same sect.',
+            theGap: 'The tea is memorable and the graph is not, and the Ledger has never once corrected anybody about which of the two makes it untouchable.'
+        },
         practice: 'Auditors write in front of you and read the entry back before leaving, and they will not accept hospitality of any kind - a Ledger auditor pays for their own tea, in a region where that is close to an insult.',
         grievance: 'That the Tally Court is remembered as corrupt on the strength of an account the Ledger wrote.',
         fear: 'The nine sealed volumes. Three factions inside the house want them opened and the Keeper has never given a reason for refusing.',
@@ -383,6 +520,12 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Can name the debt your great-grandmother incurred, will not accept a cup of tea while telling you, and destroyed the house it grew out of and wrote the account of why.'
     },
     'house-narrow-hour': {
+        knownFor: {
+            outside: 'Prophecy. Four thrones keep a reader, so the region has concluded the House knows what is going to happen.',
+            actuallyGoodAt: 'Pruning. It does not claim to know the future and never has; it can tell you which two of this month\'s decisions are load-bearing, which is a smaller and far more useful thing.',
+            theGap: 'Clients want prophecy, pay for pruning, and go away satisfied, and the House has taken three thousand years of retainers without ever once correcting the misunderstanding.'
+        },
+        quietlyStopped: 'Training. Intake has not kept pace with deaths for three centuries and the House has never formally stopped taking readers; it has simply not replaced one faster than it lost one since anybody currently alive was born. Eleven advisers, nineteen retainers a century ago, and no decision anywhere in the record.',
         practice: 'Readers sit facing away from whoever is speaking to them, on the doctrine that a face is a possibility already collapsing, and the hall has no walls.',
         grievance: 'That its advisers are treated as furniture by the thrones they keep, and consulted last in the crises they predicted.',
         fear: 'The year of the scar, and Cao Yin\'s sealed account, which does not match what happened and which the house has never explained.',
@@ -397,6 +540,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Advises four thrones from a hall with no walls, sits facing away from whoever is talking, and cannot say which of its own two contradictory records of the scar year is true.'
     },
     'house-bound-word': {
+        knownFor: {
+            outside: 'Ceremony. The witnesses at a signing, the ones who make a succession feel official.',
+            actuallyGoodAt: 'Enforcement. A broken oath is structural rather than punitive - removing it removes some of the person - and no ruler in the region has found a way to hold a border without them.',
+            theGap: 'They look like a formality because the enforcement has never had to be demonstrated in public, which is exactly what a working deterrent looks like.'
+        },
         practice: 'Oathwrights never say "I promise" in casual speech, will not answer a yes-or-no question without qualifying it, and a witness signs their own name last, after every party, always.',
         grievance: 'That a founding oath forbids them witnessing for the Severed, and is costing them a fortune they can see and cannot touch.',
         fear: 'The unpublished treaty of nine hundred years ago in its own vault, which permitted two traditions to work one vein simultaneously and is the likeliest explanation for the Quiet Marches.',
@@ -411,6 +559,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Cannot say "I promise" in conversation, signs every document last, and is forbidden by its own founding oath from witnessing for the one faction that would pay most.'
     },
     'house-quiet-cut': {
+        knownFor: {
+            outside: 'Villainy. Everybody knows what they sell, everybody says they should be destroyed, and the saying of it is a social obligation.',
+            actuallyGoodAt: 'Being busy. Every institution that has publicly called for their destruction has privately used them, and the house is one of the most productive in the catalog.',
+            theGap: 'The denunciation and the commission are performed by the same people, and the Quiet Cut has built its entire pricing around the fact that neither side will ever mention the other.'
+        },
         practice: 'No member gives a name, a face is never seen twice on the same commission, and work is taken and delivered exclusively through third parties who are paid not to remember.',
         grievance: 'That every institution which publicly wants them destroyed has privately used them, and that the Severed get called philosophers for doing it badly to themselves.',
         fear: 'The register of absences. The House of Held Names cannot say what was removed, but it can say when, and that has been enough to ruin four clients.',
@@ -425,6 +578,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Sells the permanent removal of a relationship, cuts its own records as doctrine, and consequently keeps redoing work it has already been paid for.'
     },
     'house-held-names': {
+        knownFor: {
+            outside: 'Extortion. The ones who sell you your own name back, slowly, at a price set by what you can be made to pay.',
+            actuallyGoodAt: 'Holding. The register survived what the boundary took, which no other body managed, and twenty thousand names exist in the world only because somebody recites them every morning.',
+            theGap: 'Nobody separates the price from the service, and the House has never given anybody a reason to.'
+        },
         practice: 'Holders recite the names they carry every morning, aloud, in order, and a holder who stumbles is relieved of that name the same day and never told which one it was.',
         grievance: 'That Lantern Hall gives away for nothing what the House charges for, and is applauded for it while doing worse work.',
         fear: 'Erasure at the source. Four times the House has been left holding an entry for somebody nobody remembers, and it does not know how many more it is holding.',
@@ -439,6 +597,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Recites twenty thousand names every morning and relieves any holder who stumbles of a name without telling them which one they dropped.'
     },
     'house-measured-span': {
+        knownFor: {
+            outside: 'Couriers. A very large, very useful guild that moves things and rents storage.',
+            actuallyGoodAt: 'Denomination. Every long contract, barrier, route and ring in the region is priced off figures only the House can produce, which makes it a quiet input to arrangements it is not party to.',
+            theGap: 'Being universally useful is the most effective way in the world to be taken for scenery.'
+        },
         practice: 'Surveyors pace distances compulsively, including indoors, and will interrupt a negotiation to write down a figure; a Span member gives directions in two numbers, walked and true.',
         grievance: 'That the Anchorhold nails ground shut and calls it public safety, and that the world agrees with them.',
         fear: 'That the closed terminals are closed from the other side, and that Fu Zhen is still on it.',
@@ -453,6 +616,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Quotes every price in a distance only it can measure, and keeps a gateless frame swept at a station where it has been failing to reopen the same span for six hundred years.'
     },
     'house-anchorhold': {
+        knownFor: {
+            outside: 'Weights. Standards, the survey of record, and a reputation for being the dullest institution anybody has to deal with.',
+            actuallyGoodAt: 'Containment. Four catastrophe sites are not spreading, and that is a thing the Anchorhold does continuously rather than a fact about the sites.',
+            theGap: 'Their entire product is nothing happening, which is unimprovable as work and hopeless as reputation.'
+        },
         practice: 'Wardens stand rather than sit through meetings, on the doctrine that a thing that has settled is doing its job; and they will not be moved from a spot they have taken, which makes them exhausting guests.',
         grievance: 'That the Girdle descendants at the perimeter treat the house as usurpers, and are right, and cannot be told so.',
         fear: 'Two perimeters lost in one season - the condition that wakes Xu Ci, published in the survey standard as a schedule.',
@@ -471,6 +639,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     // THE QUIET MARCHES
     // ═══════════════════════════════════════════════════════════════════
     'sect-weir-office': {
+        knownFor: {
+            outside: 'Power. In the Marches the Office is simply what authority looks like: the grant book, the price of a day, and the man who can refuse you.',
+            actuallyGoodAt: 'Nothing anybody outside would recognise as strength. Three people at Standing Cut, no chisels, no arts worth the name, and a Weir Master who would be a mid-ranking elder nobody sends for in the Low Fall.',
+            theGap: 'This is the one entry where reputation runs ahead of capability rather than behind it. Everything the Office has is positional, everybody local knows it, and nobody local can do anything about it.'
+        },
         practice: 'Everything is a form. Office members carry the grant book\'s current page on their person, will read your entry aloud at you in the street, and never touch a chisel - the Office cultivates by holding faces, not working them.',
         grievance: 'That the region calls it a parasite while queuing at its door, and that the Low Fall calls its Keystone a Core Formation as if the two roads were the same walk.',
         fear: 'That the Gapwater face is finite. The Office has surveyed how much workable stone is left and has never published the figure.',
@@ -485,6 +658,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Rents the only two workable stone faces in a province by the day, prices them by a rank table it has never dared submit for certification, and none of its members have ever held a chisel.'
     },
     'sect-sixmile-wardens': {
+        knownFor: {
+            outside: 'Paint. Stake-painters, mildly comic, greeted with the affection reserved for people doing a job nobody wants.',
+            actuallyGoodAt: 'The map. They own the only complete record of where it is safe to walk in a province full of ground that kills, and they keep it current at a cost of two or three lives a year.',
+            theGap: 'A public good is invisible while it is working, and a painted stake does not look like an asset until you are standing at one in the dark.'
+        },
         practice: 'Wardens carry paint and a brush at all times and stop mid-conversation to repaint a stake; they greet strangers by pointing at the nearest marker rather than speaking.',
         grievance: 'That the Weir Office charges for grants and contributes nothing to the roads its grantees walk in on.',
         fear: 'That the burn edge is accelerating. Three Wardens have said so; the survey shed has the figures; nobody has recalculated them because nobody wants the answer.',
@@ -499,6 +677,11 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'A militia that measures its dead in painted stakes, greets strangers by pointing at the nearest one, and owns the only complete map of where it is safe to walk.'
     },
     'sect-gleaners-company': {
+        knownFor: {
+            outside: 'Dying. The best-paid work available in the Marches, understood locally as a way of dying slightly later than the alternative.',
+            actuallyGoodAt: 'Keeping its word. A dead digger\'s share goes to their family, without exception, and the Company has never defaulted once - which in a region administered by a bureau with eleven staff is the only reliable institution anybody deals with.',
+            theGap: 'The pay is the thing everybody repeats, so the promise underneath it is treated as a detail of the pay.'
+        },
         practice: 'Gleaners rinse their mouths with vinegar on a fixed schedule and spit before speaking, and they will not enter a sealed door in the first hour of a shift on the grounds that nobody is careful yet.',
         grievance: 'That the Bone Lantern Cult undercuts them across a border neither region polices, using finds the Company located.',
         fear: 'The sealed part of their own sorting yard. Xun went in on a wager thirty years ago and the Company sealed it again and raised the wager, and nobody has taken it.',

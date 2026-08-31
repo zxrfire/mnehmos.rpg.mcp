@@ -25,6 +25,15 @@
  * that is picked is recorded whether or not the narration uses it well. Both of
  * those are the correct failure mode.
  *
+ * ── Where the names come from ─────────────────────────────────────────────
+ * `lore.ts`, which is the whole world rather than the sect catalog. This module
+ * used to draw from `SECTS` alone, which meant a player could run a lifetime
+ * and never hear that there were ages before this one, that something is sealed
+ * under a hall two valleys over, or that the road is shut for reasons with a
+ * name. That material existed and was unreachable. It is reachable now by being
+ * ACQUIRABLE - said by somebody who assumes you know it - and never by being
+ * printed.
+ *
  * ── Hearing grants the name, not the meaning ──────────────────────────────
  * Everything recorded here lands at the lowest positive stance - `suspects` -
  * with the source attached. The player has the word and nothing else, from one
@@ -34,35 +43,33 @@
 
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { forStream } from '../engine/cultivation/rng.js';
-import { SECTS } from '../data/cultivation/index.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
 import { worldLocationFor } from './entities.js';
 import { worldRosterRow } from './view.js';
 import type { KnowledgeGate, KnownEntityKind } from './knowledge.js';
+import {
+    COMMON_CURRENCY_ORDINAL,
+    OVERHEARD_BAND_WEIGHTS,
+    TOLD_BAND_WEIGHTS,
+    WORKING_KNOWLEDGE_MARGIN,
+    mentionableFor,
+    pickWeighted,
+    regionOfPlace,
+    type Locale,
+    type Mentionable
+} from './lore.js';
 
 /**
- * How far above their own standing a person's working knowledge reaches.
+ * Re-exported rather than redefined.
  *
- * A cultivator deals with, competes against and is bullied by things within
- * roughly two realms of themselves, and can name them the way anyone names
- * their own trade.
+ * Both thresholds now live beside the table they filter, in `lore.ts`. They are
+ * still surfaced here because this is where the rest of the layer has always
+ * read them from - `asked.ts` reads the margin through this module - and moving
+ * a constant is not a reason to move a call site.
  */
-export const WORKING_KNOWLEDGE_MARGIN = 8;
-
-/**
- * Power at which a thing becomes common currency regardless of who is
- * speaking.
- *
- * This is what makes the register work. A carter has no business knowing
- * anything about Body Integration politics, and still says "Hollow Court
- * business" the way you would say a bank holiday, because some names are simply
- * in the air. The mundane and the enormous sound identical when both are
- * assumed knowledge, and the speaker's tone cannot distinguish them - because
- * to them both are ordinary.
- */
-export const COMMON_CURRENCY_ORDINAL = 33;
+export { WORKING_KNOWLEDGE_MARGIN, COMMON_CURRENCY_ORDINAL };
 
 /** Chance a qualifying scene actually produces a dropped name. */
 export const SPOKEN_NAME_CHANCE = 0.3;
@@ -86,10 +93,19 @@ export interface Hearing {
     mode: 'told' | 'overheard';
     /** Who said it. Null when overheard from behind a wall. */
     speaker: string | null;
-    /** What may be said. Small by design; usually one name. */
+    /**
+     * What may be said. Small by design.
+     *
+     * One name when somebody is talking to the player. Up to two when they are
+     * talking to each other, because that is what makes an overheard exchange a
+     * fragment rather than a name-drop: two names, a relationship implied
+     * between them, and no way to place either.
+     */
     names: SpeakableName[];
     /** Engine-authored provenance, recorded and shown to the narrator. */
     note: string;
+    /** How much of a fact this is, for the record. Never reaches a prompt. */
+    confidence: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -97,19 +113,24 @@ export interface Hearing {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Every faction this speaker could drop into a sentence without thinking.
+ * Every name this speaker could drop into a sentence without thinking.
  *
- * Two sources, and the second is the interesting one: what they deal with, and
- * what everyone deals with. Nothing here consults the PLAYER's knowledge -
- * that is the whole point. The speaker is not adjusting for their audience,
- * because it has not occurred to them that they need to.
+ * Kept at one argument, and the argument is the SPEAKER's standing. Nothing
+ * here consults the player's knowledge - that is the whole point. The speaker
+ * is not adjusting for their audience, because it has not occurred to them that
+ * they need to.
+ *
+ * What has changed is the source. This used to be a filter over `SECTS`; it is
+ * now a filter over the whole speakable world, with the same rule doing the
+ * same work - your own working range, plus whatever is large enough to be in
+ * the air regardless of who is speaking.
  */
 export function speakableFor(speakerOrdinal: number): SpeakableName[] {
-    return SECTS
-        .filter(sect =>
-            sect.powerOrdinal <= speakerOrdinal + WORKING_KNOWLEDGE_MARGIN ||
-            sect.powerOrdinal >= COMMON_CURRENCY_ORDINAL)
-        .map(sect => ({ kind: 'sect' as const, id: sect.id, name: sect.name }));
+    return mentionableFor({ ordinal: speakerOrdinal, factionId: null }).map(toSpeakable);
+}
+
+function toSpeakable(entry: Mentionable): SpeakableName {
+    return { kind: entry.kind, id: entry.id, name: entry.name };
 }
 
 /**
@@ -178,6 +199,7 @@ export function offerHearing(input: HearingInput): Hearing | null {
     const { repos, gate, cultivator, run, occasion } = input;
     const day = Math.floor(run.elapsedDays);
     const rng = forStream(run.seed, 'web_hearsay', day, occasion, cultivator.id);
+    const locale: Locale = { regionId: regionOfPlace(cultivator.location) };
 
     const present = othersPresent(repos, cultivator, input.world);
     const addressed = input.addressing ?? null;
@@ -185,13 +207,15 @@ export function offerHearing(input: HearingInput): Hearing | null {
     // ── Somebody talking to the player ──
     if (addressed) {
         if (!rng.chance(SPOKEN_NAME_CHANCE)) return null;
-        const name = pickUnknown(gate, cultivator.id, speakableFor(addressed.realmOrdinal), rng);
+        const candidates = unknownTo(gate, cultivator.id, heldBy(addressed));
+        const name = pickWeighted(candidates, locale, TOLD_BAND_WEIGHTS, rng);
         if (!name) return null;
         return {
             mode: 'told',
             speaker: addressed.name,
-            names: [name],
-            note: `${addressed.name} said it in passing, assuming it needed no explaining.`
+            names: [toSpeakable(name)],
+            note: toldNote(addressed),
+            confidence: toldConfidence(addressed)
         };
     }
 
@@ -202,30 +226,83 @@ export function offerHearing(input: HearingInput): Hearing | null {
     if (present.length < 2) return null;
     if (!rng.chance(OVERHEARD_CHANCE)) return null;
 
-    const speaker = present[rng.int(0, present.length - 1)];
-    const name = pickUnknown(gate, cultivator.id, speakableFor(speaker.realmOrdinal), rng);
-    if (!name) return null;
+    const first = present[rng.int(0, present.length - 1)];
+    const others = present.filter(row => row.id !== first.id);
+    const second = others[rng.int(0, others.length - 1)];
+
+    // Both speakers' vocabularies, because they are talking to each other and
+    // each assumes the other knows. A shared history neither is going to
+    // summarise is exactly the thing that produces an unresolvable fragment.
+    const candidates = unknownTo(gate, cultivator.id, [...heldBy(first), ...heldBy(second)]);
+    const one = pickWeighted(candidates, locale, OVERHEARD_BAND_WEIGHTS, rng);
+    if (!one) return null;
+
+    // A second name, from a different catalog where there is one, so the
+    // fragment implies a relationship between two things the player cannot
+    // place rather than simply handing over a proper noun. Optional: an
+    // exchange that yields one name is still an exchange.
+    const rest = candidates.filter(entry => entry.id !== one.id && entry.catalog !== one.catalog);
+    const two = pickWeighted(rest, locale, OVERHEARD_BAND_WEIGHTS, rng);
 
     return {
         mode: 'overheard',
         speaker: null,
-        names: [name],
+        names: two ? [toSpeakable(one), toSpeakable(two)] : [toSpeakable(one)],
         note:
             'Overheard from people who did not know they were heard. Acting on it would ' +
-            'reveal where this cultivator was standing.'
+            'reveal where this cultivator was standing.',
+        confidence: 0.2
     };
 }
 
-/** A name the speaker holds and the player does not. Null when there is none. */
-function pickUnknown(
+/** What this speaker holds, given their standing and whatever they belong to. */
+function heldBy(speaker: RosterEntry): Mentionable[] {
+    return mentionableFor({ ordinal: speaker.realmOrdinal, factionId: speaker.sectId });
+}
+
+/** The subset the player has no record of. Ids are unique across the table. */
+function unknownTo(
     gate: KnowledgeGate,
     holderId: string,
-    candidates: readonly SpeakableName[],
-    rng: { int(min: number, max: number): number }
-): SpeakableName | null {
-    const unknown = candidates.filter(c => !gate.isAwareOf(holderId, c.kind, c.id));
-    if (unknown.length === 0) return null;
-    return unknown[rng.int(0, unknown.length - 1)];
+    candidates: readonly Mentionable[]
+): Mentionable[] {
+    const seen = new Set<string>();
+    const out: Mentionable[] = [];
+    for (const entry of candidates) {
+        if (seen.has(entry.id)) continue;
+        seen.add(entry.id);
+        if (gate.isAwareOf(holderId, entry.kind, entry.id)) continue;
+        out.push(entry);
+    }
+    return out;
+}
+
+/**
+ * Who said it, honestly.
+ *
+ * discovery.md: a name from a drunk carter and a name from a sect archivist are
+ * different facts, and the carter's may still be the true one. So the stance is
+ * the same for both and this sentence is what separates them - a note the
+ * player's own record carries, and which reads differently a hundred turns
+ * later when they finally hear the name from somewhere else.
+ */
+function toldNote(speaker: RosterEntry): string {
+    const placed = speaker.sectId
+        ? `${speaker.sectName ?? 'a sect'}, as ${speaker.sectRank ?? 'a member'}`
+        : 'attached to nothing anybody could point at';
+    return `${speaker.name} said it in passing, assuming it needed no explaining. ` +
+        `They are ${placed}.`;
+}
+
+/**
+ * How much of a fact this is.
+ *
+ * Never a gate on anything. It is on the record so that two rows for the same
+ * name, acquired from two people, can be told apart later by something other
+ * than the day they landed.
+ */
+function toldConfidence(speaker: RosterEntry): number {
+    return speaker.sectId ? 0.35 : 0.25;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -260,7 +337,7 @@ export function recordHearing(
             sourceKind: hearing.mode === 'overheard' ? 'overheard' : 'told',
             sourceNote: hearing.note,
             stance: 'suspects',
-            confidence: hearing.mode === 'overheard' ? 0.2 : 0.3,
+            confidence: hearing.confidence,
             statement: `${name.name} is a name that got said. What it is remains unknown.`
         });
         if (isNew) learned.push(name);

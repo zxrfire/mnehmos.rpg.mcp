@@ -54,6 +54,17 @@ import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 export interface SectAdmission {
     /** Mirrors `admissionOrdinal`; kept beside the prose so both are visible. */
     minOrdinal: number;
+    /**
+     * The floor for being taken in WITHOUT being admitted, where a sect has
+     * such a thing. Only the Azure Cloud Pavilion does, and for it this is the
+     * real door: `minOrdinal` is the bar for actual membership and has not
+     * moved, while this is the rung at which the sect will take somebody onto
+     * probation and start spending on them. Kept separate on purpose - see
+     * `AZURE_CLOUD_INTAKE.engineGaps` in `hierarchy.ts`, because
+     * `rankRealmBand` derives every rank band from `admissionOrdinal` and
+     * collapsing the two would slide the whole ladder downward.
+     */
+    probationOrdinal?: number;
     /** Engine-checkable minimums. Undefined means the sect does not care. */
     minInsight?: number;
     minMight?: number;
@@ -403,6 +414,11 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // The third apex, and the only one with a front gate. See APEX_INSTITUTIONS.
         powerOrdinal: 41,
         ranks: ['Sword Servant', 'Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Sword Elder', 'Pavilion Master'],
+        // The membership bar, and it is not the door. The Pavilion takes
+        // uncultivated mortals onto probation at ordinal 0 and converts almost
+        // none of them; `SECT_ADMISSION.probationOrdinal` carries that floor,
+        // because `rankRealmBand` derives every band here from this number and
+        // moving it to 0 would demote the entire ladder. See AZURE_CLOUD_INTAKE.
         admissionOrdinal: 3,
         stipend: [4, 12, 35, 110, 380, 1_100],
         teaches: [
@@ -1819,9 +1835,11 @@ export const DAO_HOUSE_DISPUTES: readonly DaoHouseDispute[] = [
 export const SECT_ADMISSION: Record<string, SectAdmission> = {
     'sect-azure-cloud-pavilion': {
         minOrdinal: 3,
+        probationOrdinal: 0,
         minMight: 2,
         preferredRoots: ['single_metal', 'dual_metal_wood'],
-        requirement: 'Qi Condensation Layer 4 or better, and one clean strike shown to a Sword Elder.'
+        requirement:
+            'To be a disciple: Qi Condensation Layer 4 or better, and one clean strike shown to a Sword Elder. That bar has never moved and is not the door most people come through. The Pavilion also tests uncultivated mortals, takes the best of them onto probation at the very bottom of the ladder, and carries them for years before deciding - wide intake, narrow conversion, and the requirement above still waiting at the far end. See `AZURE_CLOUD_INTAKE` in `hierarchy.ts`.'
     },
     'sect-verdant-spring-hall': {
         minOrdinal: 2,

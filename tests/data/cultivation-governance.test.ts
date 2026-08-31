@@ -41,6 +41,7 @@ import {
     FEEDER,
     ARRIVAL_RULES,
     DIRECT_RULE,
+    AZURE_CLOUD_INTAKE,
     DEFERENCE_HOLDINGS,
     BORDER_KINDS,
     REGION_GOVERNANCE,
@@ -849,5 +850,175 @@ describe('why the Court cannot be robbed', () => {
         for (const apex of APEX_INSTITUTIONS) {
             expect(apex.lastRealm.count - 1).toBe(0);
         }
+    });
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────
+// BUYING PEOPLE
+// The third intake model. Wide mouth, unchanged throat, and a probation that
+// is really an affinity test nobody involved can name.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the Azure Cloud intake', () => {
+    const sect = getSect(AZURE_CLOUD_INTAKE.factionId)!;
+    const admission = getSectAdmission(AZURE_CLOUD_INTAKE.factionId)!;
+
+    it('belongs to a real apex and a real sect', () => {
+        expect(getApexInstitution(AZURE_CLOUD_INTAKE.apexId)).toBeDefined();
+        expect(sect).toBeDefined();
+    });
+
+    it('follows from the two things already established about them', () => {
+        expect(AZURE_CLOUD_INTAKE.theTrade).toMatch(/thin on members, rich in resources/i);
+        expect(AZURE_CLOUD_INTAKE.theTrade).toMatch(/sister/i);
+        expect(AZURE_CLOUD_INTAKE.theTrade).toMatch(/into people/i);
+        // Circumstance, not values, and it would end with the sending.
+        expect(AZURE_CLOUD_INTAKE.itIsCircumstanceNotValues).toMatch(/would run the same programme/i);
+        expect(AZURE_CLOUD_INTAKE.itIsCircumstanceNotValues).toMatch(/end the year the sending stopped/i);
+    });
+
+    it('explains why no other apex can copy it, in their own terms', () => {
+        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Hollow Court/);
+        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Void Refinement/);
+        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Deep Survey/);
+        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Long Cut/);
+        // And it does not contradict the Long Cut, which tests everybody already.
+        expect(DIRECT_RULE.intakeModel).toBe('tests everyone');
+        expect(AZURE_CLOUD_INTAKE.intakeModel).not.toBe(DIRECT_RULE.intakeModel);
+    });
+
+    it('tests what is testable and says plainly what it cannot reach', () => {
+        expect(AZURE_CLOUD_INTAKE.whatTheyTest.length).toBeGreaterThanOrEqual(4);
+        const all = AZURE_CLOUD_INTAKE.whatTheyTest.join(' ');
+        expect(all).toMatch(/root/i);
+        expect(all).toMatch(/temperament/i);
+        expect(all).toMatch(/taught/i);
+        expect(AZURE_CLOUD_INTAKE.whatTheyCannotTest).toMatch(/affinity/i);
+        expect(AZURE_CLOUD_INTAKE.whatTheyCannotTest).toMatch(/rolled at creation|never shown|only by exposure/i);
+        expect(AZURE_CLOUD_INTAKE.whatTheyCannotTest).toMatch(/nobody in the world/i);
+        expect(AZURE_CLOUD_INTAKE.soTheAssessmentIs).toMatch(/insufficient/i);
+        expect(AZURE_CLOUD_INTAKE.theGambleIsThePoint).toMatch(/wager/i);
+    });
+
+    it('makes probation the empirical answer to the thing no instrument reaches', () => {
+        const pr = AZURE_CLOUD_INTAKE.probation;
+        expect(AZURE_CLOUD_INTAKE.soTheyBuyTimeInstead).toMatch(/probation/i);
+        expect(pr.theModel).toMatch(/Nobody is admitted/i);
+        expect(pr.whatItActuallyIs).toMatch(/affinity test, run empirically/i);
+        expect(pr.whatItActuallyIs).toMatch(/went quiet/i);
+        expect(pr.whatItActuallyIs).toMatch(/cannot name what the instrument detects/i);
+    });
+
+    it('gives them an explanation of their own that is wrong in an interesting way', () => {
+        const pr = AZURE_CLOUD_INTAKE.probation;
+        expect(pr.whatTheyThinkTheyAreTesting).toMatch(/character/i);
+        expect(pr.whatTheyThinkTheyAreTesting).toMatch(/eighteen months/i);
+        expect(pr.whyThatExplanationIsWrong).toMatch(/not dedication/i);
+        expect(pr.whyThatExplanationIsWrong).toMatch(/recognition/i);
+        // And the mechanism that makes it work is breadth of exposure.
+        expect(pr.theRound).toMatch(/only ever been offered one chance/i);
+    });
+
+    it('stages the commitment, which is what makes the gamble affordable', () => {
+        const pr = AZURE_CLOUD_INTAKE.probation;
+        expect(pr.stagedCommitment).toMatch(/Probation is cheap/i);
+        expect(pr.stagedCommitment).toMatch(/Full admission is expensive/i);
+        expect(pr.stagedCommitment).toMatch(/Deep Survey and the Long Cut could not/i);
+        expect(pr.theLength).toMatch(/four to seven years/i);
+        expect(pr.theLength).toMatch(/continuous cost/i);
+    });
+
+    it('keeps the throat of the funnel exactly as narrow as it was', () => {
+        expect(AZURE_CLOUD_INTAKE.theFunnel).toMatch(/bar at the narrow end has not moved/i);
+        expect(AZURE_CLOUD_INTAKE.theFunnel).toMatch(/no discount/i);
+        expect(AZURE_CLOUD_INTAKE.notTheSoftApex).toMatch(/Washing out is the ordinary outcome/i);
+        // And the numbers agree with the prose.
+        expect(AZURE_CLOUD_INTAKE.theLossRate.testedEachYear).toMatch(/thousand/i);
+        expect(AZURE_CLOUD_INTAKE.theLossRate.confirmedEachYear).toMatch(/three or four/i);
+        expect(AZURE_CLOUD_INTAKE.theLossRate.producedInACentury).toMatch(/eleven/i);
+    });
+
+    it('withholds the name, and for the same reason the bar is high', () => {
+        expect(AZURE_CLOUD_INTAKE.theNameIsWithheld).toMatch(/does not get to say/i);
+        expect(AZURE_CLOUD_INTAKE.theNameIsWithheld).toMatch(/same fact/i);
+        expect(AZURE_CLOUD_INTAKE.theBestNameYouCannotSpend).toMatch(/forbidden to spend it/i);
+        expect(AZURE_CLOUD_INTAKE.noProtectionOutside).toMatch(/unaffiliated/i);
+        expect(AZURE_CLOUD_INTAKE.claimingItFalsely).toMatch(/detectable/i);
+        // Somebody did it, and what happened is written down.
+        expect(AZURE_CLOUD_INTAKE.claimingItFalsely).toMatch(/sent him home/i);
+        expect(AZURE_CLOUD_INTAKE.whatTheWashoutMaySay).toMatch(/were tested/i);
+    });
+
+    it('has a probationary rank that is expressible and deliberately not spliced in', () => {
+        expect(AZURE_CLOUD_INTAKE.theRank.title).toBe('Probationer');
+        expect(AZURE_CLOUD_INTAKE.theRank.notSplicedIntoTheRankArray).toMatch(/rankRealmBand/);
+        // The sect ladder is untouched, which is the whole point of that note.
+        expect(sect.ranks[0]).toBe('Sword Servant');
+        expect(sect.ranks.length).toBe(6);
+    });
+
+    it('keeps the door at the bottom without moving the membership bar', () => {
+        expect(admission.probationOrdinal).toBe(0);
+        expect(admission.minOrdinal).toBe(3);
+        expect(admission.minOrdinal).toBe(sect.admissionOrdinal);
+        expect(admission.requirement).toMatch(/never moved/i);
+        expect(admission.requirement).toMatch(/wide intake, narrow conversion/i);
+        // Nobody else in the catalog has a probation floor.
+        const withProbation = SECTS.filter(x => getSectAdmission(x.id)?.probationOrdinal !== undefined);
+        expect(withProbation.map(x => x.id)).toEqual([AZURE_CLOUD_INTAKE.factionId]);
+    });
+
+    it('is the only apex whose door sits at the bottom of the ladder', () => {
+        expect(sect.powerOrdinal).toBe(41);
+        expect(AZURE_CLOUD_INTAKE.theAnomaly).toMatch(/41/);
+        expect(AZURE_CLOUD_INTAKE.whoWouldNoticeIt).toMatch(/almost nobody/i);
+        // The Hollow Bell Wanderers reach the same number for the opposite reason.
+        const bell = getSectAdmission('sect-hollow-bell-wanderers')!;
+        expect(bell.minOrdinal).toBe(0);
+        expect(AZURE_CLOUD_INTAKE.theSameNumberForOppositeReasons).toMatch(/Hollow Bell/);
+        expect(AZURE_CLOUD_INTAKE.theSameNumberForOppositeReasons).toMatch(/opposite reasons/i);
+    });
+
+    it('opens a second door for the tiers that have no placement at all', () => {
+        expect(AZURE_CLOUD_INTAKE.originTiers).toEqual(['thin_county', 'market_town']);
+        expect(AZURE_CLOUD_INTAKE.theSecondDoor).toMatch(/nerve/i);
+        expect(AZURE_CLOUD_INTAKE.theSecondDoor).toMatch(/found and measured/i);
+        expect(AZURE_CLOUD_INTAKE.itIsRare).toMatch(/never met anyone/i);
+    });
+
+    it('makes rejection a wound, and failing probation the worse one', () => {
+        expect(AZURE_CLOUD_INTAKE.rejectionIsAWound).toMatch(/found wanting/i);
+        expect(AZURE_CLOUD_INTAKE.rejectionIsAWound).toMatch(/never having been looked at/i);
+        expect(AZURE_CLOUD_INTAKE.whatRejectionProduces.length).toBeGreaterThanOrEqual(4);
+        const pr = AZURE_CLOUD_INTAKE.probation;
+        expect(pr.failingProbationIsTheWorseWound).toMatch(/you were inside/i);
+        expect(pr.theWashoutIsNotAMortal).toMatch(/asking\.md/);
+        expect(pr.theWashoutIsNotAMortal).toMatch(/two rungs below/i);
+        // And some are kept for reasons that are not promise.
+        expect(pr.notAllForPromise).toMatch(/useful|liked/i);
+        expect(pr.howDisciplesRegardThem).toMatch(/ugly/i);
+    });
+
+    it('describes a finder with a route, a method and a quota', () => {
+        const sc = AZURE_CLOUD_INTAKE.theScouts;
+        expect(sc.howMany).toMatch(/six/i);
+        expect(sc.theRoute).toMatch(/fourteen months|circuit/i);
+        expect(sc.theMethod).toMatch(/without the subject knowing/i);
+        expect(sc.theQuota).toMatch(/two put forward/i);
+        // The quota has a consequence, which is the point of writing one.
+        expect(sc.theQuota).toMatch(/last two months of the year/i);
+        expect(sc.whatItIsLikeToMeetOne).toMatch(/never learn what happened/i);
+    });
+
+    it('hands the engine work off without doing any of it', () => {
+        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/origin\.ts/);
+        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/placement\.reach/);
+        expect(AZURE_CLOUD_INTAKE.engineHandoff).toMatch(/No engine file is edited here/i);
+        expect(AZURE_CLOUD_INTAKE.engineGaps.length).toBeGreaterThanOrEqual(3);
+        const gaps = AZURE_CLOUD_INTAKE.engineGaps.join(' ');
+        expect(gaps).toMatch(/sectId/);
+        expect(gaps).toMatch(/rank rather than the presence/i);
+        expect(gaps).toMatch(/admissionOrdinal/);
     });
 });

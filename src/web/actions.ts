@@ -80,6 +80,18 @@ export const ACTION_NAMES = [
     'investigate',
     'move',
     // World-facing operations: distinct engine routines, distinct state effects.
+    /**
+     * Hitting somebody, which for a long time had no route at all.
+     *
+     * The engine has carried a full confrontation model the whole time -
+     * power assessment, edges, vectors, obligations, wounds that persist -
+     * and the only thing a player could do with it was assess. Meanwhile
+     * "I attack the nearest cultivator" fell through the entire table and
+     * was caught by the cultivation branch, which sat them down to breathe
+     * for a month. An enum member that plain English cannot reach is bad;
+     * a missing one that lets another verb eat the sentence is worse.
+     */
+    'attack',
     'cultivate',
     'seclude',
     'breakthrough',
@@ -87,6 +99,22 @@ export const ACTION_NAMES = [
     'refine',
     'gather',
     'eat',
+    /**
+     * Laying in food before it is needed.
+     *
+     * The engine has modelled provisions the whole time - the time skip
+     * consumes rations, `provisions_exhausted` fires when they run out, the
+     * price of a month of them is in the catalog and on the market board -
+     * and the only food verb a player could reach was `eat`, which buys one
+     * meal and refuses when they are not already hungry. So the interrupt
+     * was warning them about a resource they had no way to acquire, and the
+     * correct opening move in this game was unavailable.
+     *
+     * Satiety burns about two a day against a hundred, so a character
+     * starves at about fifty days and the default seclusion is thirty. Two
+     * cultivations and a death was the likeliest first session.
+     */
+    'provision',
     'wait',
     // The mortal economy. Half the deaths in this world are logistical, and
     // these are the two verbs that answer that - so they must be reachable
@@ -138,14 +166,17 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
  */
 export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
     'cultivate', 'seclude', 'breakthrough', 'train_technique',
-    'move', 'gather', 'wait', 'work', 'refine', 'eat'
+    'move', 'gather', 'wait', 'work', 'refine', 'eat',
+    // Not because it spends days. Because it can end the run inside one
+    // turn, which is the thing this list is actually protecting against.
+    'attack'
 ] as const;
 
 /** What an unparseable sentence resolves to. Inert, by construction. */
 export const FALLBACK_ACTION: ActionName = 'unclear';
 
 /** Actions that take a duration in days. Every other action ignores one. */
-export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'work'] as const;
+export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'work', 'provision'] as const;
 
 /**
  * Actions that take a subject. The subject must resolve to a real entity - a
@@ -154,11 +185,11 @@ export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'wo
  */
 export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
-    'work', 'market', 'assess', 'sect'
+    'work', 'market', 'assess', 'sect', 'attack'
 ] as const;
 
 /** Actions that carry a free-text intent. Never branched on for an outcome. */
-export const INTENT_ACTIONS: readonly ActionName[] = ['interact', 'move'] as const;
+export const INTENT_ACTIONS: readonly ActionName[] = ['interact', 'move', 'attack'] as const;
 
 /**
  * Intents the prompt suggests for `move`. Suggestions, not a schema: the field
@@ -202,6 +233,17 @@ export const PlannedActionSchema = z.object({
      * a turn for no gain.
      */
     intent: z.string().trim().min(1).max(400).optional(),
+    /**
+     * What an approach is ABOUT, when the player asked about something.
+     *
+     * Separate from `target`, which is who they asked. Both are needed and
+     * neither substitutes: who you ask decides what you get, so the engine
+     * has to know both before it can say what came back. Like `intent`,
+     * nothing branches on it to produce an outcome - it selects which facts
+     * the person in front of the player could plausibly hold, and the
+     * holding is read off state.
+     */
+    topic: z.string().trim().min(1).max(120).optional(),
     /** The model's one-line justification. Logged for transparency, never executed. */
     reason: z.string().trim().max(200).optional()
 });
@@ -334,8 +376,10 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['enter', /\b(?:enter|go inside|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
     ['approach', /\b(?:approach|draw near|walk up to|close on|come to)\b/],
     ['follow', /\b(?:follow|shadow|trail|tail)\b/],
-    ['travel', /\b(?:travel|go to|head (?:to|for|out)|walk to|journey|set out|depart|move to|leave for|make (?:my|his|her) way)\b/]
+    ['travel', /\b(?:travel|go to|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b/]
 ];
+
+const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|cut down|draw on|swing at|go for|set upon|set on|jump|ambush|assault|take on|put down|finish/;
 
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move/;
 
@@ -350,6 +394,46 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['apologise', /\b(?:apologi[sz]e|make amends|beg (?:his|her|their) pardon)\b/],
     ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself)\b/]
 ];
+
+/**
+ * Generic ways of saying "a person", which are not names.
+ *
+ * "someone" resolved against the roster and came back with a specific
+ * cultivator, which handed the player a name they had not earned off a word
+ * that named nobody. A generic person means whoever is at hand, and who that
+ * turns out to be is the engine's to decide.
+ */
+const ANYBODY = /^(?:around|about|someone|somebody|anyone|anybody|people|folk|the locals|the people|a passerby|a stranger|a local|them|him|her|somebody else)$/i;
+
+/** Where a question stops naming who and starts naming what. */
+const ASK_PIVOT = /\s+(?:about|after|regarding|concerning|whether|if|what|where|who|how|why|for)\s+/i;
+
+/** The verbs that put a question to a person. */
+const ASK_VERB = /\b(?:ask|asking|asks|enquire of|inquire of|put it to|question|press)\b\s*/i;
+
+/**
+ * Split "ask the old woman about the ruins" into who and what about.
+ *
+ * Returns null when nothing was asked of anybody. Either half may come back
+ * empty and that is meaningful: "I ask around about the sects" names no
+ * individual, "I ask the gate steward" names no topic, and both still reach a
+ * person, which is the whole point of routing them here.
+ */
+export function parseAsk(input: string): { person?: string; topic?: string } | null {
+    const verb = ASK_VERB.exec(input);
+    if (!verb) return null;
+
+    const rest = input.slice(verb.index + verb[0].length).replace(/[.!?]+$/, '').trim();
+    if (rest.length === 0) return {};
+
+    const pivot = ASK_PIVOT.exec(rest);
+    const who = (pivot ? rest.slice(0, pivot.index) : rest).trim();
+    const about = pivot ? rest.slice(pivot.index + pivot[0].length).trim() : '';
+
+    const person = who.length >= 2 && !ANYBODY.test(who) ? cleanPlace(who) : undefined;
+    const topic = about.length >= 2 ? cleanPlace(about) : undefined;
+    return { ...(person ? { person } : {}), ...(topic ? { topic } : {}) };
+}
 
 const INTERACT_SUBJECT_VERBS = /interact with|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell/;
 
@@ -375,14 +459,76 @@ function extractSubject(input: string, verbs: RegExp): string | undefined {
  * Order is significance-first, not frequency-first: "break through" contains
  * "through", "train" appears in both technique practice and cultivation,
  * "gather qi" is cultivating while "gather herbs" is foraging, and the specific
- * reading must win in each case. Anything unrecognised resolves to `look`,
+ * reading must win in each case. Anything unrecognised resolves to `unclear`,
  * which passes no time and changes nothing - an intent the engine did not
- * understand must never cost the player a year of their life.
+ * understand must never cost the player a year of their life. It used to
+ * say `look` here, and it used to be true; a fallthrough that quietly
+ * became `cultivate` is what this comment was describing when it was
+ * wrong.
  */
+
+/**
+ * Whether one of these verbs was USED, rather than merely mentioned.
+ *
+ * This exists because of the worst bug this parser has produced. The
+ * cultivation branch matched `cultivat\w*`, and "cultivator" is one of the
+ * most common nouns in the setting - so "I attack the nearest cultivator" was
+ * answered by sitting the player down to meditate for a month. They had asked
+ * to hit somebody. It burned satiety, it passed time, and it killed a
+ * character during testing.
+ *
+ * The general defect is matching bare substrings against player prose in a
+ * world whose core vocabulary - cultivator, cultivation, sect, elder, market,
+ * work - appears far more often as the OBJECT of a sentence than as the thing
+ * being asked for. So position has to matter: a verb counts when it opens the
+ * sentence, or follows a subject or a modal, and does not count when it is
+ * sitting behind an article or a preposition where only a noun can be.
+ *
+ * Deliberately permissive about what may precede the verb and strict about
+ * what may not. Missing a real command costs a turn; acting on a noun costs a
+ * month of a life.
+ */
+export function usedAsVerb(text: string, verbs: string): boolean {
+    return new RegExp(
+        // sentence start, or a subject, or a modal, or a conjunction - the
+        // places an English verb actually goes
+        '(?:^|[.;,]\\s*|\\b(?:i|we|you|they|lets|let me|then|and|so|now|will|shall|must|'
+        + 'want to|wish to|need to|try to|going to|about to|decide to|intend to|hope to|'
+        + 'would like to|had better|am going to|set out to|mean to)\\s+)'
+        + '(?:just |now |quietly |carefully |instead )?'
+        + '(?:' + verbs + ')' + '\\b',
+        'i'
+    ).test(text);
+}
+
 export function parseIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
 
-    if (/\b(?:break\s*through|breakthrough|strike the barrier|push (?:past|through) the (?:barrier|bottleneck)|attempt the (?:next )?rank|advance a rank)\b/.test(text)) {
+    // -- attacking somebody, which had no route at all --
+    //
+    // The engine has had combat the whole time: `resolveExchange`,
+    // `resolveConfrontation`, `battlesSurvived` on the row. The parser had no
+    // way to reach any of it, so "I attack the nearest cultivator" fell
+    // through the whole table until the cultivation branch caught the noun.
+    // First, because every sentence about a fight is full of other verbs' nouns.
+    if (usedAsVerb(text, 'attack|attacks|strike|strikes|hit|hits|fight|fights|kill|kills|'
+        + 'cut down|draw on|swing at|go for|set (?:on|upon)|jump|ambush|assault|'
+        + 'take (?:him|her|them) on|put (?:him|her|them) down|finish (?:him|her|them)')
+        || /\bstrike (?:at )?(?:him|her|them|the [a-z])/.test(text)) {
+        return {
+            action: 'attack',
+            target: extractSubject(input, ATTACK_SUBJECT_VERBS),
+            intent: /\b(?:kill|finish|cut down|put (?:him|her|them) down)\b/.test(text)
+                ? 'kill'
+                : /\b(?:subdue|pin|restrain|capture|take alive)\b/.test(text)
+                    ? 'subdue'
+                    : /\b(?:humiliate|shame|embarrass|make an example)\b/.test(text)
+                        ? 'humiliate'
+                        : 'drive_off'
+        };
+    }
+
+    if (/\b(?:break\s*through|breakthrough|strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|(?:try|attempt) (?:to |for )?(?:the )?(?:next realm|advancement))\b/.test(text)) {
         return { action: 'breakthrough' };
     }
 
@@ -398,8 +544,10 @@ export function parseIntent(input: string): PlannedAction {
     // Deliberately ahead of `eat`, `trade` and `cultivate`. A player with no
     // stones who types "take work for a season" is asking for the only action
     // that saves them, and every slower reading of that sentence is fatal.
-    if (/\b(?:take work|find work|look for work|hire (?:myself|on|out)|take a job|odd jobs?|day labour|day labor|earn (?:some |a few |my )?(?:stones?|keep|coin|money|living)|work (?:for|in|at|the|a|as)|labour|labor|make myself useful|work off)\b/.test(text)
-        || /^\s*(?:i\s+)?works?\b/.test(text)) {
+    if (/\b(?:take (?:any |whatever |some )?work|(?:look|looking|hunt|hunting|cast about|casting about|ask|asking) (?:around )?for (?:any |some |paid )?(?:work|a job|jobs|employment|hire)|find (?:me |myself |a |some )?(?:work|job|employment)|hire (?:myself|on|out)|take a job|get a job|odd jobs?|day labour|day labor|earn (?:some |a few |my )?(?:stones?|keep|coin|money|living|wages?)|work (?:for|in|at|the|a|as)|labour|labor|make myself useful|work off)\b/.test(text)
+        // `work on` is practice, not employment. Without this guard
+        // "I work on my technique" was answered with a season of hauling.
+        || /^\s*(?:i\s+)?works?\b(?!\s+on\b)/.test(text)) {
         return {
             action: 'work',
             days: parseDuration(text) ?? DEFAULT_WORK_DAYS,
@@ -407,8 +555,38 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
-    if (/\b(?:market|marketplace|bazaar|stalls?|what(?:'s| is) (?:for sale|on offer)|prices?|price of|going rate|cost of|what can i buy)\b/.test(text)) {
+    // -- asking somebody, which is not the same as consulting a register --
+    //
+    // Requires a person: `someone`, `the old woman`, `around`, `the locals`.
+    // Without one the sentence is a query about the world rather than a
+    // question put to anybody, and the surfaces below answer it.
+    const asked = /\b(?:ask|asking|asks|enquire|inquire|put it to|question|press)\b/.test(text)
+        ? parseAsk(input)
+        : null;
+    if (asked && !/\bjoin(?:ing)?\b/.test(text)) {
+        return {
+            action: 'interact',
+            intent: matchIntent(text, INTERACT_INTENT_PATTERNS) ?? 'talk',
+            ...(asked.person ? { target: asked.person } : {}),
+            ...(asked.topic ? { topic: asked.topic } : {})
+        };
+    }
+
+    // The noun `market` is a place people stand in and steal from and talk
+    // about. Asking to SEE the board is a different sentence, and it is
+    // either a question about what things cost or a verb aimed at a stall.
+    if (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices?)\b/.test(text)
+        || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|find|go to|look at|look over|head to|walk to')
+            && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(text))) {
         return { action: 'market', target: extractSubject(input, /market for|price of|cost of|buy|sell/) };
+    }
+
+    // Stocking up comes before eating, because "buy food" is ambiguous and
+    // the expensive reading of getting it wrong is one-directional: a
+    // player who meant one meal and got a month of rations has lost some
+    // stones, and a player who meant a month and got one meal starves.
+    if (/\b(?:stock up|lay in|load up|provision myself|buy provisions|buy (?:some |a |my )?(?:rations?|supplies|provisions)|(?:buy|get|pick up|purchase) (?:a |one |two |three |[0-9]+ )?(?:months?|weeks?|days?|years?|seasons?) (?:of |worth of )?(?:food|rations?|provisions|supplies)|provisions? for|rations? for|food for the (?:road|trip|journey|way))\b/.test(text)) {
+        return { action: 'provision', days: parseDuration(text) ?? undefined };
     }
 
     if (/\b(?:eat|meal|dine|breakfast|supper|feed myself|buy food)\b/.test(text)
@@ -421,7 +599,9 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'refine', target: extractSubject(input, /refine|concoct|brew|distil|distill|make/) };
     }
 
-    if (/\b(?:gather|forage|harvest|pick|collect|dig up)\b/.test(text)
+    if ((/\b(?:gather|forage|harvest|pick|collect|dig up)\b/.test(text)
+            || (/\b(?:look|looking|hunt|hunting|search|searching|out) for\b/.test(text)
+                && /\b(?:herbs?|roots?|plants?|ingredients?|reagents?|flowers?|mushrooms?|grasses|moss)\b/.test(text)))
         && !/\bgather (?:qi|energy|my qi)\b/.test(text)) {
         return { action: 'gather', target: extractSubject(input, /gather|forage|harvest|pick|collect|dig up/) };
     }
@@ -437,9 +617,26 @@ export function parseIntent(input: string): PlannedAction {
     // ── move: one action, several ways of going ──
     const moveIntent = matchIntent(text, MOVE_INTENT_PATTERNS);
     if (moveIntent) {
+        const destination = extractDestination(input);
+
+        // Following and approaching take a PERSON. "I follow the cultivator"
+        // used to hand `cultivator` to the mover as a destination, and the
+        // engine dutifully spent the travel days, wrote the location, and then
+        // described the ambient qi of a place called `cultivator`. A verb
+        // whose object is a person must not produce a place, so when no
+        // destination preposition was used these go to the person instead -
+        // where they cost nothing and can be refused honestly.
+        if (!destination && (moveIntent === 'follow' || moveIntent === 'approach')) {
+            return {
+                action: 'interact',
+                target: extractSubject(input, MOVE_SUBJECT_VERBS),
+                intent: moveIntent
+            };
+        }
+
         return {
             action: 'move',
-            target: extractDestination(input) ?? extractSubject(input, MOVE_SUBJECT_VERBS),
+            target: destination ?? extractSubject(input, MOVE_SUBJECT_VERBS),
             intent: moveIntent
         };
     }
@@ -458,10 +655,10 @@ export function parseIntent(input: string): PlannedAction {
     }
 
     // ── investigate: examining, reading, searching a place ──
-    if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read the|check the)\b/.test(text)) {
+    if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read the|check the|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look (?:over|through)|go through|walk the|climb (?:into|down into)|venture into|case the|scavenge|loot|salvage)\b/.test(text)) {
         return {
             action: 'investigate',
-            target: extractSubject(input, /investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read|check/)
+            target: extractSubject(input, /investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read|check|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look over|look through|go through|walk|climb into|venture into|case|scavenge|loot|salvage/)
         };
     }
 
@@ -475,12 +672,20 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
-    if (/\b(?:cultivat\w*|meditat\w*|seclusion|secluded|circulat\w*|gather qi|refine qi|sits?\b|sat\b|absorb\w*|breathe|breathing)\b/.test(text)) {
-        return { action: 'cultivate', days: parseDuration(text) ?? DEFAULT_CULTIVATION_DAYS };
+    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation)|check myself|where do i stand)\b/.test(text)) {
+        return { action: 'status' };
     }
 
-    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation)|check myself)\b/.test(text)) {
-        return { action: 'status' };
+    // `cultivat\\w*` used to be the pattern here, and it matched
+    // "cultivator" - the commonest noun in the setting. Any sentence about
+    // another person became a month of seclusion. The verb forms are
+    // enumerated now, and they must be in verb position; the noun forms
+    // (`cultivator`, `cultivators`) are deliberately absent from the list.
+    if (usedAsVerb(text, 'cultivate|cultivates|cultivating|meditate|meditates|meditating|'
+        + 'seclude|secludes|circulate|circulates|circulating|absorb|absorbs|absorbing|'
+        + 'breathe|breathes|breathing|sit|sits|settle|settles')
+        || /\b(?:in seclusion|into seclusion|gather qi|refine qi|closed[- ]?door cultivation|my cultivation practice)\b/.test(text)) {
+        return { action: 'cultivate', days: parseDuration(text) ?? DEFAULT_CULTIVATION_DAYS };
     }
 
     if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger)\b/.test(text)) {
@@ -493,7 +698,16 @@ export function parseIntent(input: string): PlannedAction {
     // fallthrough, so the moment the fallback became inert, "I look around"
     // stopped working. A verb that is only reachable by accident is a verb
     // waiting to be deleted by an unrelated change.
-    if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|where am i|what do i see|what is (?:here|around)|who(?:'s| is| are)? (?:here|around|about|nearby)|is (?:anyone|anybody|somebody) (?:here|about|around)|look for (?:someone|somebody|anyone))\b/.test(text)
+    //
+    // Two questions, one action, and they must not return the same
+    // paragraph. Somebody scanning a square for a face is not asking about
+    // the weather, and answering both with the room made the narrower
+    // question pointless to ask.
+    if (/\b(?:who(?:'s| is| are)? (?:here|around|about|nearby)|is (?:anyone|anybody|somebody) (?:here|about|around)|look for (?:someone|somebody|anyone)|who else is|anybody about|see (?:anyone|anybody|who is here))\b/.test(text)) {
+        return { action: 'look', intent: 'company' };
+    }
+
+    if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|where am i|what do i see|what is (?:here|around))\b/.test(text)
         || /^\s*(?:i\s+)?looks?\b/.test(text)) {
         return { action: 'look' };
     }

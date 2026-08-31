@@ -1,5 +1,5 @@
 /**
- * The Standing Register: every body in the world, on the one ladder.
+ * The Standing Register: every faction in the world, on the one ladder.
  *
  * This is a VIEW, and the distinction matters more here than usual. Nothing in
  * this file authors anything - it reads the catalogs and arranges them, so
@@ -38,6 +38,8 @@ import {
 import { IMMORTAL_CHANNELS, LINEAGE_STANDINGS } from '../data/cultivation/crossings.js';
 import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from '../data/cultivation/immortal-items.js';
 import { WANDERERS } from '../data/cultivation/wanderers.js';
+import { MEMBERS } from '../data/cultivation/members.js';
+import { glossaryGroups } from './register-glossary.js';
 import { REALM_TIERS, rankName, realmForOrdinal } from '../engine/cultivation/realms.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -57,7 +59,7 @@ export interface RegisterRow {
     governance: string;
     standing: string;
     parentId: string | null;
-    /** Set only where something sealed raises what the body could field once. */
+    /** Set only where something sealed raises what the faction could field once. */
     sealedCeiling: number | null;
     isDaoHouse: boolean;
 }
@@ -85,6 +87,86 @@ export interface RegisterSealed {
     publiclyKnown: boolean;
     dormantYears: number;
     wakeCondition: string;
+}
+
+/**
+ * One faction, and everybody attached to it.
+ *
+ * The register used to be a set of cross-cutting tables - all factions here,
+ * all sealed ancestors there - which answers "who is strongest" well and
+ * "what am I dealing with" badly. A person reading about the Frostmirror Court
+ * had to find it in four places. This is the other arrangement: the sect is the
+ * unit, and everything that belongs to it is underneath it.
+ *
+ * The four states a person can be in are kept separate because they are not
+ * degrees of the same thing:
+ *
+ *   active     alive, in the sect, and can be met
+ *   sealed     alive, cannot act without being spent
+ *   ascended   through the Lid, and gone
+ *   terminal   dead or lost, and the line stops there
+ */
+export interface SectDossier {
+    id: string;
+    name: string;
+    /** Strongest ACTING member, which is what orders this list. */
+    ordinal: number;
+    rank: string;
+    alignment: string;
+    admissionOrdinal: number;
+    recruits: boolean;
+    governance: string;
+    standing: string;
+    parentName: string | null;
+    territory: string;
+    /** What it could field once, at cost. Null where that is just its ordinal. */
+    ceiling: number | null;
+    apex: {
+        giftName: string;
+        heritage: string;
+        stock: string;
+        secondSeat: number;
+        seatNote: string;
+    } | null;
+    channel: {
+        kind: string;
+        crossings: number;
+        tier: string | null;
+        depletion: string | null;
+    } | null;
+    withdrawn: { count: number; occupiedBy: string } | null;
+    holdings: { item: string; count: number }[];
+    partingGift: { name: string; intact: boolean } | null;
+    people: {
+        active: { name: string; rank: string; ordinal: number; role: string; wants: string; detail: string }[];
+        sealed: { name: string; ordinal: number; grade: string; publiclyKnown: boolean; years: number; wakeCondition: string } | null;
+        ascended: { name: string; ordinal: number | null; yearsAgo: number; rememberedFor: string }[];
+        terminal: { name: string; fate: string; ordinal: number | null; yearsAgo: number; rememberedFor: string }[];
+    };
+}
+
+/** The floor for the first tab. Grand Ascension begins here. */
+export const HIGH_BAND_FLOOR = 37;
+
+/**
+ * One person at or above Grand Ascension.
+ *
+ * Assembled across every catalog at once, because nothing above thirty-six is
+ * an ordinary member: the named-member catalog tops out well below it. What is
+ * up there is seats, sleepers and the crossed, and most of them have no name
+ * anybody outside their own walls has been given. `named: false` is a fact
+ * about the world rather than a hole in the data.
+ */
+export interface HighPerson {
+    name: string;
+    named: boolean;
+    ordinal: number;
+    rank: string;
+    /** acting | pinned | withdrawn | sealed | ascended | false immortal */
+    state: string;
+    factionName: string;
+    factionOrdinal: number;
+    note: string;
 }
 
 export interface WorldRegister {
@@ -130,6 +212,10 @@ export interface WorldRegister {
      * not an institution, and a sealed sleeper is not an acting member. Read the
      * catalogs one at a time and the band looks nearly empty. It is not.
      */
+    /** Everybody at or above Grand Ascension, strongest first. */
+    high: HighPerson[];
+    /** Every faction with everything attached to it, strongest acting member first. */
+    dossiers: SectDossier[];
     grandAscension: {
         name: string;
         ordinal: number;
@@ -144,6 +230,308 @@ export interface WorldRegister {
 
 function nameOf(id: string): string {
     return getSect(id)?.name ?? getApexInstitution(id)?.name ?? getCourt(id)?.name ?? id;
+}
+
+/**
+ * Everybody at or above Grand Ascension, from every catalog at once.
+ *
+ * A faction whose acting ordinal sits in the band contributes a seat rather
+ * than a name, unless an apex records one. That is not a shortcut: the sect
+ * catalog stores a number for its strongest member and no identity for them,
+ * and the honest rendering of that is a row which says so.
+ */
+function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighPerson[] {
+    const out: HighPerson[] = [];
+
+    for (const row of rows) {
+        const apex = APEX_INSTITUTIONS.find(a => a.name === row.name);
+        const withdrawn = WITHDRAWN_POWERS[row.id];
+
+        if (row.ordinal >= HIGH_BAND_FLOOR) {
+            if (withdrawn) {
+                // Four seats, one ordinal, no names. Rendered as the count it is.
+                out.push({
+                    name: withdrawn.count + ' seated',
+                    named: false,
+                    ordinal: row.ordinal,
+                    rank: row.rank,
+                    state: 'withdrawn',
+                    factionName: row.name,
+                    factionOrdinal: row.ordinal,
+                    note: withdrawn.occupiedBy
+                });
+            } else if (apex) {
+                out.push({
+                    name: apex.lastRealm.holderName ?? 'the seated one',
+                    named: apex.lastRealm.holderName !== null,
+                    ordinal: row.ordinal,
+                    rank: row.rank,
+                    state: 'pinned',
+                    factionName: row.name,
+                    factionOrdinal: row.ordinal,
+                    note: apex.lastRealm.note
+                });
+            } else {
+                out.push({
+                    name: 'strongest member',
+                    named: false,
+                    ordinal: row.ordinal,
+                    rank: row.rank,
+                    state: 'acting',
+                    factionName: row.name,
+                    factionOrdinal: row.ordinal,
+                    note: 'The catalog records the realm and not the person. Whoever holds it answers for the faction.'
+                });
+            }
+        }
+
+        if (apex && apex.secondStrongestOrdinal >= HIGH_BAND_FLOOR) {
+            out.push({
+                name: 'second seat',
+                named: false,
+                ordinal: apex.secondStrongestOrdinal,
+                rank: rankName(apex.secondStrongestOrdinal),
+                state: 'acting',
+                factionName: row.name,
+                factionOrdinal: row.ordinal,
+                note: apex.depthNote
+            });
+        }
+    }
+
+    for (const sl of sealedList) {
+        if (sl.ordinal < HIGH_BAND_FLOOR) continue;
+        out.push({
+            name: sl.name,
+            named: true,
+            ordinal: sl.ordinal,
+            rank: rankName(sl.ordinal),
+            state: 'sealed',
+            factionName: sl.hostName,
+            factionOrdinal: sl.hostOrdinal,
+            note: sl.sealGrade + ' seal, ' + sl.dormantYears.toLocaleString() + ' years. '
+                + (sl.publiclyKnown ? 'Known.' : 'Not publicly known.')
+                + ' Wakes on: ' + sl.wakeCondition
+        });
+    }
+
+    for (const [hostId, record] of Object.entries(SECT_ANCESTRY)) {
+        for (const a of record.ancestors) {
+            if (a.fate !== 'ascended') continue;
+            if ((a.realmOrdinal ?? 0) < HIGH_BAND_FLOOR) continue;
+            out.push({
+                name: a.name,
+                named: true,
+                ordinal: a.realmOrdinal as number,
+                rank: rankName(a.realmOrdinal as number),
+                state: 'ascended',
+                factionName: nameOf(hostId),
+                factionOrdinal: getSect(hostId)?.powerOrdinal ?? 0,
+                note: a.yearsAgo.toLocaleString() + ' years ago. ' + a.rememberedFor
+            });
+        }
+    }
+
+    for (const w of WANDERERS) {
+        if (w.lastOrdinal < HIGH_BAND_FLOOR) continue;
+        out.push({
+            name: w.recordName,
+            named: true,
+            ordinal: w.lastOrdinal,
+            rank: rankName(w.lastOrdinal),
+            state: w.crossingOutcome.replace(/_/g, ' '),
+            factionName: w.affiliation ? nameOf(w.affiliation.factionId) : 'none',
+            factionOrdinal: w.affiliation ? getSect(w.affiliation.factionId)?.powerOrdinal ?? 0 : 0,
+            note: 'Called ' + w.commonName + '. Crossed ' + w.crossingYearsAgo.toLocaleString()
+                + ' years ago and did not complete it.'
+        });
+    }
+
+    return out.sort((a, b) => b.ordinal - a.ordinal || a.factionName.localeCompare(b.factionName));
+}
+
+/**
+ * Attach every person and object in the world to the faction that holds them.
+ *
+ * Sorted by acting ordinal because that is the order somebody reads a register
+ * in: strongest first, and everything about that faction before the next one
+ * starts. Factions with nobody named and nothing buried still get an entry - an
+ * empty dossier is a fact about a sect, and omitting it would quietly make the
+ * world look better staffed than it is.
+ */
+function buildDossiers(
+    rows: RegisterRow[],
+    sealed: RegisterSealed[],
+    channels: WorldRegister['channels']
+): SectDossier[] {
+    const fromSects = rows.map(row => {
+        const sect = getSect(row.id);
+        const record = SECT_ANCESTRY[row.id];
+        const ancestors = record?.ancestors ?? [];
+        // Matched on the object rather than the name: the sect catalog and the
+        // hierarchy catalog spell the Pavilion differently, and the thing that
+        // actually ties an apex to a faction is what it is sitting on.
+        const apex = APEX_INSTITUTIONS.find(
+            a => a.sentDown.id === record?.partingGift?.id
+                || a.name === row.name
+                || a.name.replace(/^The /, '') === row.name.replace(/^The /, '')
+        );
+        const channel = channels.find(c => c.factionId === row.id) ?? null;
+        const withdrawn = WITHDRAWN_POWERS[row.id] ?? null;
+        const mine = sealed.find(x => x.hostId === row.id) ?? null;
+
+        return {
+            id: row.id,
+            name: row.name,
+            ordinal: row.ordinal,
+            rank: row.rank,
+            alignment: row.alignment,
+            admissionOrdinal: row.admissionOrdinal,
+            recruits: row.recruits,
+            governance: row.governance,
+            standing: row.standing,
+            parentName: row.parentId ? nameOf(row.parentId) : null,
+            territory: sect?.territory ?? '',
+            ceiling: row.sealedCeiling,
+            apex: apex
+                ? {
+                    giftName: apex.sentDown.name,
+                    heritage: apex.heritage,
+                    stock: apex.stock.remaining,
+                    secondSeat: apex.secondStrongestOrdinal,
+                    seatNote: apex.lastRealm.note
+                }
+                : null,
+            channel: channel
+                ? {
+                    kind: channel.kind,
+                    crossings: channel.crossings,
+                    tier: channel.tier,
+                    depletion: channel.depletion
+                }
+                : null,
+            withdrawn: withdrawn
+                ? { count: withdrawn.count, occupiedBy: withdrawn.occupiedBy }
+                : null,
+            holdings: IMMORTAL_HOLDINGS
+                .filter(h => h.factionId === row.id)
+                .map(h => ({
+                    item: IMMORTAL_ITEMS.find(i => i.id === h.itemId)?.name ?? h.itemId,
+                    count: h.count
+                })),
+            partingGift: record?.partingGift
+                ? { name: record.partingGift.name, intact: record.partingGift.intact }
+                : null,
+            people: {
+                active: MEMBERS
+                    .filter(m => m.factionId === row.id)
+                    .sort((a, b) => b.realmOrdinal - a.realmOrdinal)
+                    .map(m => ({
+                        name: m.name,
+                        rank: m.rank,
+                        ordinal: m.realmOrdinal,
+                        role: m.role,
+                        wants: m.wants,
+                        detail: m.detail
+                    })),
+                sealed: mine
+                    ? {
+                        name: mine.name,
+                        ordinal: mine.ordinal,
+                        grade: mine.sealGrade,
+                        publiclyKnown: mine.publiclyKnown,
+                        years: mine.dormantYears,
+                        wakeCondition: mine.wakeCondition
+                    }
+                    : null,
+                ascended: ancestors
+                    .filter(a => a.fate === 'ascended')
+                    .map(a => ({
+                        name: a.name,
+                        ordinal: a.realmOrdinal,
+                        yearsAgo: a.yearsAgo,
+                        rememberedFor: a.rememberedFor
+                    })),
+                terminal: ancestors
+                    .filter(a => a.fate === 'dead' || a.fate === 'lost')
+                    .map(a => ({
+                        name: a.name,
+                        fate: a.fate,
+                        ordinal: a.realmOrdinal,
+                        yearsAgo: a.yearsAgo,
+                        rememberedFor: a.rememberedFor
+                    }))
+            }
+        };
+    });
+
+    // The Deep Survey and the Long Cut hold no sect row because they are not
+    // sects. Synthesising an entry for them is not padding: they are the first
+    // and second factions on this list, and a register whose top two entries are
+    // missing describes a different world.
+    const covered = new Set(fromSects.map(d => d.name.replace(/^The /, '')));
+    const apexOnly: SectDossier[] = APEX_INSTITUTIONS
+        .filter(a => !covered.has(a.name.replace(/^The /, '')))
+        .map(a => ({
+            id: a.id,
+            name: a.name,
+            ordinal: a.powerOrdinal,
+            rank: rankName(a.powerOrdinal),
+            alignment: 'neutral',
+            admissionOrdinal: 0,
+            recruits: false,
+            governance: 'apex',
+            standing: 'not_applicable',
+            parentName: null,
+            territory: a.holds,
+            ceiling: null,
+            apex: {
+                giftName: a.sentDown.name,
+                heritage: a.heritage,
+                stock: a.stock.remaining,
+                secondSeat: a.secondStrongestOrdinal,
+                seatNote: a.lastRealm.note
+            },
+            channel: (channels.find(c => c.factionId === a.id) ?? null) && {
+                kind: channels.find(c => c.factionId === a.id)!.kind,
+                crossings: channels.find(c => c.factionId === a.id)!.crossings,
+                tier: channels.find(c => c.factionId === a.id)!.tier,
+                depletion: channels.find(c => c.factionId === a.id)!.depletion
+            },
+            withdrawn: null,
+            holdings: IMMORTAL_HOLDINGS
+                .filter(h => h.factionId === a.id)
+                .map(h => ({
+                    item: IMMORTAL_ITEMS.find(i => i.id === h.itemId)?.name ?? h.itemId,
+                    count: h.count
+                })),
+            partingGift: null,
+            people: {
+                active: [
+                    {
+                        name: a.lastRealm.holderName ?? 'the seated one',
+                        rank: rankName(a.powerOrdinal),
+                        ordinal: a.powerOrdinal,
+                        role: 'pinned',
+                        wants: 'not to be required elsewhere',
+                        detail: a.lastRealm.note
+                    },
+                    {
+                        name: 'second seat',
+                        rank: rankName(a.secondStrongestOrdinal),
+                        ordinal: a.secondStrongestOrdinal,
+                        role: 'senior',
+                        wants: 'the position to hold without the seat being tested',
+                        detail: a.depthNote
+                    }
+                ],
+                sealed: null,
+                ascended: [],
+                terminal: []
+            }
+        }));
+
+    return [...fromSects, ...apexOnly].sort((a, b) => b.ordinal - a.ordinal || a.name.localeCompare(b.name));
 }
 
 /**
@@ -257,6 +645,8 @@ export function buildRegister(): WorldRegister {
         withdrawn: Object.entries(WITHDRAWN_POWERS).map(([factionId, w]) => ({
             factionId, name: nameOf(factionId), count: w.count, occupiedBy: w.occupiedBy
         })),
+        high: buildHighBand(rows, sealed),
+        dossiers: buildDossiers(rows, sealed, channels),
         grandAscension: [
             ...rows
                 .filter(r => r.ordinal >= 37 && r.ordinal <= 40)
@@ -363,22 +753,51 @@ color:var(--faint);margin:0 0 3px}
 .met dd{margin:0;font:500 15px "IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
 .prose{border-left:3px solid var(--datum);background:var(--datum-soft);padding:14px 18px;margin:0 0 14px;max-width:70ch;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .prose p{margin:0;font-size:15.5px;line-height:1.62;color:var(--ink);font-style:italic}
+.tabs{display:flex;gap:2px;margin-top:clamp(22px,3vw,32px);border-bottom:2px solid var(--ink)}
+.tab{appearance:none;background:transparent;border:1px solid var(--rule);border-bottom:none;color:var(--quiet);
+font:600 12px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;
+padding:10px 16px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tab span{color:var(--faint);font-weight:400}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.tab[aria-selected="true"] span{color:var(--ground);opacity:.65}
+.tab:focus-visible{outline:2px solid var(--datum);outline-offset:2px}
+.dim{font:12px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--faint)}
+.grp.weapons h4,.grp.weapons .wo{color:var(--signal)}
+.grp.terminal h4{color:var(--faint)}
+.legend{padding-top:clamp(28px,4vw,44px)}
+.keys{display:grid;gap:1px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));background:var(--rule);border:1px solid var(--rule)}
+.key{background:var(--panel);padding:14px 16px}
+.key h4{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--datum);margin:0 0 9px}
+.key dl{margin:0;display:flex;flex-direction:column;gap:7px}
+.key dt{font:500 13.5px Archivo,"Helvetica Neue",Arial,sans-serif;color:var(--ink)}
+.key dd{margin:1px 0 0;font-size:13.5px;line-height:1.5;color:var(--quiet)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.dos{border:1px solid var(--rule);border-left:3px solid var(--faint);background:var(--panel);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.dos.apex{border-left-color:var(--datum)}
+.dos header{display:flex;gap:16px;align-items:flex-start}
+.dos .ord{font:500 30px "IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--datum);line-height:1;min-width:46px}
+.dos h3{font:600 19px Archivo,"Helvetica Neue",Arial,sans-serif;margin:0 0 3px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.dos .terr{margin:0;font-size:14.5px;color:var(--quiet);max-width:70ch}
+.meta{display:flex;flex-wrap:wrap;gap:4px 20px;font:12px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--quiet);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:8px 0}
+.meta b{font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;font-size:10px;margin-right:5px}
+.grps{display:flex;flex-direction:column;gap:12px}
+.grp h4{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:0 0 6px;display:flex;gap:8px;align-items:center}
+.grp h4 span{color:var(--datum)}
+.grp.sealed h4,.grp.sealed .wo{color:var(--signal)}
+.grp.ascended .wo{color:var(--datum)}
+.who{display:grid;grid-template-columns:minmax(140px,auto) 34px minmax(120px,auto) 1fr;gap:4px 14px;padding:5px 0;border-top:1px solid var(--rule);align-items:baseline}
+.who:first-of-type{border-top:none}
+.wn{font:500 15px Archivo,"Helvetica Neue",Arial,sans-serif}
+.wo{font:500 14px "IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--quiet);text-align:right}
+.wr{font:11.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--faint)}
+.wd{font-size:14px;color:var(--quiet)}
+.none{margin:0;font-size:14px;color:var(--faint);font-style:italic}
+@media (max-width:720px){.who{grid-template-columns:1fr 34px;gap:2px 10px}.wr,.wd{grid-column:1 / -1}}
 foot,footer{margin-top:clamp(48px,7vw,80px);border-top:2px solid var(--ink);padding-top:16px;
 font:11px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.06em;color:var(--faint);
 display:flex;flex-wrap:wrap;gap:8px 26px}
 `;
 
-function row(r: RegisterRow): string {
-    const ceiling = r.sealedCeiling === null
-        ? ''
-        : ` <span class="chip sl">ceiling ${r.sealedCeiling}</span>`;
-    const gate = r.recruits ? String(r.admissionOrdinal) : 'closed';
-    return `<tr><td class="n">${r.ordinal}</td>`
-        + `<td class="nm"><span class="dot ${esc(r.alignment)}"></span>${esc(r.name)}${ceiling}</td>`
-        + `<td class="m">${gate}</td><td class="m">${esc(r.governance)}</td>`
-        + `<td class="m">${esc(r.standing)}</td>`
-        + `<td class="q">${esc(r.rank)}${r.isDaoHouse ? ' · Dao house' : ''}</td></tr>`;
-}
 
 /**
  * Render one curated paragraph, where there is one.
@@ -396,6 +815,113 @@ function prose(blocks: Record<string, { text: string; stale?: boolean }> | undef
         ? '<span class="chip ex">behind the catalog</span>'
         : '';
     return `<aside class="prose">${flag}<p>${esc(block.text)}</p></aside>`;
+}
+
+/** A row of small labelled facts under a dossier heading. */
+function metaRow(pairs: [string, string][]): string {
+    return `<div class="meta">${pairs
+        .filter(([, v]) => v !== '' && v !== null && v !== undefined)
+        .map(([k, v]) => `<span><b>${esc(k)}</b> ${esc(v)}</span>`)
+        .join('')}</div>`;
+}
+
+/**
+ * One faction and everyone attached to it.
+ *
+ * The four people-groups are rendered as separate labelled lists rather than
+ * one table with a status column, because they are not comparable: an active
+ * member is somebody you can meet, a sealed one is an event waiting for a
+ * trigger, and the other two are history. A single sortable table would invite
+ * exactly the comparison the register exists to prevent.
+ */
+function dossier(d: SectDossier): string {
+    const groups: string[] = [];
+
+    if (d.people.active.length) {
+        groups.push(`<div class="grp healthy"><h4>Healthy protectors <span>${d.people.active.length}</span></h4>`
+            + d.people.active.map(p =>
+                `<div class="who"><span class="wn">${esc(p.name)}</span>`
+                + `<span class="wo">${p.ordinal}</span>`
+                + `<span class="wr">${esc(p.rank)} · ${esc(p.role)}</span>`
+                + `<span class="wd">wants ${esc(p.wants)}</span></div>`).join('')
+            + '</div>');
+    }
+
+    if (d.people.sealed) {
+        const sl = d.people.sealed;
+        groups.push(`<div class="grp sealed"><h4>Sealed <span>1</span></h4>`
+            + `<div class="who"><span class="wn">${esc(sl.name)}</span>`
+            + `<span class="wo">${sl.ordinal}</span>`
+            + `<span class="wr">${esc(sl.grade)} seal · ${sl.years.toLocaleString()} yr · ${sl.publiclyKnown ? 'known' : 'hidden'}</span>`
+            + `<span class="wd">${esc(sl.wakeCondition)}</span></div></div>`);
+    }
+
+    if (d.people.ascended.length) {
+        groups.push(`<div class="grp ascended"><h4>Ascended <span>${d.people.ascended.length}</span></h4>`
+            + d.people.ascended.map(p =>
+                `<div class="who"><span class="wn">${esc(p.name)}</span>`
+                + `<span class="wo">${p.ordinal ?? '-'}</span>`
+                + `<span class="wr">${p.yearsAgo.toLocaleString()} yr ago</span>`
+                + `<span class="wd">${esc(p.rememberedFor)}</span></div>`).join('')
+            + '</div>');
+    }
+
+    if (d.people.terminal.length) {
+        groups.push(`<div class="grp terminal"><h4>Terminal <span>${d.people.terminal.length}</span></h4>`
+            + d.people.terminal.map(p =>
+                `<div class="who"><span class="wn">${esc(p.name)}</span>`
+                + `<span class="wo">${p.ordinal ?? '-'}</span>`
+                + `<span class="wr">${esc(p.fate)} · ${p.yearsAgo.toLocaleString()} yr ago</span>`
+                + `<span class="wd">${esc(p.rememberedFor)}</span></div>`).join('')
+            + '</div>');
+    }
+
+
+
+    // Weapons are a group rather than a meta field: an object that came down
+    // through the Lid is closer to a member of the faction than to a statistic
+    // about it, and the sheet should not bury it in a strip of small print.
+    const weapons: string[] = [];
+    if (d.apex) weapons.push(`<div class="who"><span class="wn">${esc(d.apex.giftName)}</span><span class="wo">-</span><span class="wr">sent down</span><span class="wd">Permanent, unreproducible, and the reason this faction is an apex.</span></div>`);
+    if (d.partingGift) weapons.push(`<div class="who"><span class="wn">${esc(d.partingGift.name)}</span><span class="wo">-</span><span class="wr">parting gift${d.partingGift.intact ? '' : ' · spent'}</span><span class="wd">Left on the way out by somebody who crossed.</span></div>`);
+    for (const h of d.holdings) {
+        weapons.push(`<div class="who"><span class="wn">${esc(h.item)}</span><span class="wo">${h.count}</span><span class="wr">consumable</span><span class="wd">Came down. Cannot be made or reordered here; every use is permanent.</span></div>`);
+    }
+    if (weapons.length) {
+        groups.unshift(`<div class="grp weapons"><h4>Immortal weapons <span>${weapons.length}</span></h4>${weapons.join('')}</div>`);
+    }
+
+    if (!groups.length) {
+        groups.push('<div class="grp"><p class="none">Nobody recorded and nothing held. The faction exists; the register has no names for it.</p></div>');
+    }
+
+    return `<article class="dos${d.apex ? ' apex' : ''}">
+  <header>
+    <span class="ord">${d.ordinal}</span>
+    <div>
+      <h3><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}
+        ${d.apex ? '<span class="chip pin">apex</span>' : ''}
+        ${d.withdrawn ? `<span class="chip wd">withdrawn x${d.withdrawn.count}</span>` : ''}
+        ${d.ceiling ? `<span class="chip sl">ceiling ${d.ceiling}</span>` : ''}
+      </h3>
+      <p class="terr">${esc(d.territory)}</p>
+    </div>
+  </header>
+  ${metaRow([
+      ['rank', d.rank],
+      ['gate', d.recruits ? String(d.admissionOrdinal) : 'closed'],
+      ['governance', d.governance],
+      ['standing', d.standing === 'not_applicable' ? '' : d.standing],
+      ['holds from', d.parentName ?? 'nobody'],
+      ['gift', d.partingGift ? d.partingGift.name + (d.partingGift.intact ? '' : ' (spent)') : ''],
+      ['sent down', d.apex?.giftName ?? ''],
+      ['stock', d.apex ? d.apex.stock.replace(/_/g, ' ') : ''],
+      ['second seat', d.apex ? String(d.apex.secondSeat) : ''],
+      ['channel', d.channel ? `${d.channel.kind.replace(/_/g, ' ')} · ${d.channel.crossings} crossing${d.channel.crossings === 1 ? '' : 's'} · ${d.channel.depletion ?? '-'}` : '']
+  ])}
+  ${d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : ''}
+  <div class="grps">${groups.join('')}</div>
+</article>`;
 }
 
 /** The whole sheet as one self-contained document. */
@@ -422,13 +948,6 @@ export function renderRegisterHtml(
         <p>${esc(a.instability)}</p>
       </article>`).join('');
 
-    const bands = REALM_TIERS.slice().reverse()
-        .map(t => {
-            const inBand = reg.rows.filter(r => r.ordinal >= t.ordinalStart && r.ordinal <= t.ordinalEnd);
-            if (inBand.length === 0) return '';
-            return `<tr class="brk"><td class="m" colspan="6">${esc(t.name)} · ${t.ordinalStart}-${t.ordinalEnd}</td></tr>`
-                + inBand.map(row).join('');
-        }).join('');
 
     return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -447,8 +966,33 @@ export function renderRegisterHtml(
     <span>${esc(stamp)}</span>
   </div>
   <h1>The Standing Register</h1>
-  <p class="stand">Every body in the world, placed on the one ladder. Ordinal is the realm of the strongest <em>acting</em> member - the person who answers a challenge, walks a border, sits at a negotiation. It is not what a body could field once, at cost, and that distinction is the whole of the register.</p>
+  <p class="stand">Every faction in the world, placed on the one ladder. Ordinal is the realm of the strongest <em>acting</em> member - the person who answers a challenge, walks a border, sits at a negotiation. It is not what a faction could field once, at cost, and that distinction is the whole of the register.</p>
 </header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" data-tab="people" aria-selected="true">People &ge; Grand Ascension <span>${reg.high.length}</span></button>
+  <button class="tab" role="tab" data-tab="factions" aria-selected="false">Factions <span>${c.factions}</span></button>
+  <button class="tab" role="tab" data-tab="key" aria-selected="false">Key</button>
+</nav>
+
+<div class="pane" data-pane="people">
+<section>
+  <div class="sh"><h2>People at or above Grand Ascension</h2><span class="r">Ordinal 37+ · strongest first</span></div>
+  <p class="note">Everyone in the band, from every catalog at once, with the faction they belong to. The named-member catalog stops well below this, so most of what is up here is seats, sleepers and the crossed - and a row marked <em>unnamed</em> is a fact about the world rather than a gap in the data. Lesser people are listed under their faction in the next tab.</p>
+  <div class="scroll"><table><caption>Every person at 37 and above</caption>
+  <thead><tr><th>Ord</th><th>Who</th><th>State</th><th>Faction</th><th>Detail</th></tr></thead><tbody>
+  ${reg.high.map(p => `<tr><td class="n">${p.ordinal}</td>`
+        + `<td class="nm">${esc(p.name)}${p.named ? '' : ' <span class="chip">unnamed</span>'}</td>`
+        + `<td class="m">${esc(p.state)}</td>`
+        + `<td class="q">${esc(p.factionName)} <span class="dim">${p.factionOrdinal || ''}</span></td>`
+        + `<td class="q">${esc(p.note)}</td></tr>`).join('')}
+  </tbody></table></div>
+  ${prose(blocks, 'grandascension')}
+</section>
+</div>
+
+<div class="pane" data-pane="factions" hidden>
+
 
 <section>
   <div class="sh"><h2>The apexes</h2><span class="r">Founded by a crossing · holds what was sent down</span></div>
@@ -459,9 +1003,9 @@ export function renderRegisterHtml(
 
 <section>
   <div class="sh"><h2>Who is still answering</h2><span class="r">The real hierarchy</span></div>
-  <p class="note">Immortal-realm consumables come down and cannot be made or reordered here, so a body holding them has a channel - and a channel means somebody above the Lid still picks up. That, not vein wealth or realm distribution, is the actual ranking.</p>
+  <p class="note">Immortal-realm consumables come down and cannot be made or reordered here, so a faction holding them has a channel - and a channel means somebody above the Lid still picks up. That, not vein wealth or realm distribution, is the actual ranking.</p>
   <div class="scroll"><table><caption>Crossings produced · channel · depletion</caption>
-  <thead><tr><th>Crossings</th><th>Body</th><th>Tier</th><th>Most recent</th><th>Channel</th><th>Depletion</th></tr></thead><tbody>
+  <thead><tr><th>Crossings</th><th>Faction</th><th>Tier</th><th>Most recent</th><th>Channel</th><th>Depletion</th></tr></thead><tbody>
   ${reg.channels.map(ch => `<tr><td class="n">${ch.crossings}</td><td class="nm">${esc(ch.name)}</td>`
         + `<td class="q">${esc((ch.tier ?? '-').replace(/_/g, ' '))}</td>`
         + `<td class="m">${ch.mostRecentCrossingYearsAgo === null ? '-' : ch.mostRecentCrossingYearsAgo.toLocaleString() + ' yr'}</td>`
@@ -472,35 +1016,22 @@ export function renderRegisterHtml(
 </section>
 
 <section>
-  <div class="sh"><h2>Full register</h2><span class="r">${c.factions} factions · by band</span></div>
-  <p class="note">Alignment: <span class="dot righteous"></span>righteous <span class="dot neutral"></span>neutral <span class="dot demonic"></span>demonic. <strong>Gate</strong> is the minimum ordinal to be considered at all. A dashed <span class="chip sl">ceiling</span> marks a body holding something sealed that is stronger than anything it can field day to day.</p>
-  <div class="scroll"><table><caption>Ordinal = strongest acting member</caption>
-  <thead><tr><th>Ord</th><th>Faction</th><th>Gate</th><th>Governance</th><th>Standing</th><th>Rank</th></tr></thead>
-  <tbody>${bands}</tbody></table></div>
+  <div class="sh"><h2>The factions</h2><span class="r">${c.factions} · strongest acting member first</span></div>
+  <p class="note">One entry per faction, everything it holds underneath it. The four groups are kept apart because they are not degrees of one thing: <strong>active</strong> can be met, <strong>sealed</strong> is an event waiting for a trigger, <strong>ascended</strong> is through the Lid, and <strong>terminal</strong> is where a line stopped. Alignment: <span class="dot righteous"></span>righteous <span class="dot neutral"></span>neutral <span class="dot demonic"></span>demonic.</p>
   ${prose(blocks, 'register')}
+  <div class="stack">${reg.dossiers.map(dossier).join('')}</div>
+  ${prose(blocks, 'sealed')}
 </section>
 
 <section>
-  <div class="sh"><h2>Grand Ascension</h2><span class="r">Ordinal 37-40 · the top of the visible world</span></div>
-  <p class="note">The band the faction table hides, because the people in it are not factions. Courts are offices, an apex second is a person rather than an institution, and a sleeper is not an acting member - so reading the catalogs one at a time makes this band look nearly empty. It is not. This is the highest anyone can be and still be met.</p>
-  <div class="scroll"><table><caption>Every kind of entity at once</caption>
+  <div class="sh"><h2>Grand Ascension</h2><span class="r">Ordinal 37-40 · across every kind of entity</span></div>
+  <p class="note">A cross-cut, because this band is spread across factions rather than held by one. Courts are offices, an apex second is a person the dossiers list under an institution, and three of these are asleep.</p>
+  <div class="scroll"><table><caption>Everyone at 37-40</caption>
   <thead><tr><th>Ord</th><th>Who</th><th>Kind</th><th>Standing</th></tr></thead><tbody>
   ${reg.grandAscension.map(g => `<tr><td class="n">${g.ordinal}</td><td class="nm">${esc(g.name)}</td>`
         + `<td class="m">${esc(g.kind)}</td><td class="q">${esc(g.note)}</td></tr>`).join('')}
   </tbody></table></div>
   ${prose(blocks, 'grandascension')}
-</section>
-
-<section>
-  <div class="sh"><h2>What is under the mountains</h2><span class="r">Sealed · ${c.sealed} known</span></div>
-  <p class="note">A seal cuts both ways. <strong>Defensively</strong> it is the last card and every wake condition is a disaster clause. <strong>Offensively</strong> it is a single use looking for something worth spending it on - and a sect that has quietly reclassified its last card as an opening move looks exactly like one that has not.</p>
-  <div class="scroll"><table><caption>Grade decides the band, and grade is a tell - a crude seal cannot be hidden</caption>
-  <thead><tr><th>Ord</th><th>Sleeper</th><th>Host</th><th>Seal</th><th>Public</th><th>Wakes on</th></tr></thead><tbody>
-  ${reg.sealed.map(s => `<tr><td class="n">${s.ordinal}</td><td class="nm">${esc(s.name)}</td>`
-        + `<td class="q">${esc(s.hostName)} · ${s.hostOrdinal}</td><td class="m">${esc(s.sealGrade)}</td>`
-        + `<td class="m">${s.publiclyKnown ? 'yes' : 'no'}</td><td class="q">${esc(s.wakeCondition)}</td></tr>`).join('')}
-  </tbody></table></div>
-  ${prose(blocks, 'sealed')}
 </section>
 
 <section>
@@ -536,6 +1067,18 @@ export function renderRegisterHtml(
   <p class="note">Redundancy is what buys reach. An apex holds one, pinned: sending them out uncovers the vault, so they are never sent. More than one means the ground stays covered while somebody leaves.</p>
 </section>
 
+</div>
+
+<div class="pane" data-pane="key" hidden>
+<section class="legend">
+  <div class="sh"><h2>How to read this</h2><span class="r">Column meanings</span></div>
+  <div class="keys">${glossaryGroups().map(g => `<div class="key">
+    <h4>${esc(g.group)}</h4>
+    <dl>${g.entries.map(e => `<dt>${esc(e.term)}</dt><dd>${esc(e.meaning)}</dd>`).join('')}</dl>
+  </div>`).join('')}</div>
+</section>
+</div>
+
 <footer>
   <span>Ordinal = strongest acting member</span>
   <span>Ceiling is not availability</span>
@@ -543,7 +1086,25 @@ export function renderRegisterHtml(
   <span>${esc(stamp)}</span>
 </footer>
 
-</div></body></html>`;
+</div>
+<script>
+// Tabs, and nothing else. Three panes, one visible, state in the DOM - an
+// admin panel that needed a framework to switch a tab would be the wrong
+// trade for a page served straight out of the engine.
+document.querySelectorAll('.tab').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    var want = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.setAttribute('aria-selected', String(t.dataset.tab === want));
+    });
+    document.querySelectorAll('.pane').forEach(function (p) {
+      p.hidden = p.dataset.pane !== want;
+    });
+    window.scrollTo({ top: 0 });
+  });
+});
+</script>
+</body></html>`;
 }
 
 /** One call: read the catalogs, return the sheet. */

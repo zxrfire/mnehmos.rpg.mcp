@@ -14,6 +14,7 @@
  */
 
 import type { Cultivator, Run } from '../schema/cultivation.js';
+import { getSect } from '../data/cultivation/sects.js';
 import {
     MAX_ORDINAL,
     effectiveLifespanYears,
@@ -276,6 +277,39 @@ export function ledgerRowView(run: Run, name: string): LedgerRowView {
  * one on demand. Both go in the same list because an operator looking at "who
  * is in this world" does not care which table somebody came out of.
  */
+/** The faction's own name for itself, when the catalog knows the id. */
+function factionNameFor(factionId: string | null): string | null {
+    if (!factionId) return null;
+    return getSect(factionId)?.name ?? null;
+}
+
+/**
+ * The title a faction gives that rung, rather than the rung's number.
+ *
+ * Falls back to the index only when the catalog has no ladder for the id, so a
+ * missing entry reads as missing rather than silently as rank zero.
+ */
+function factionRankTitle(factionId: string | null, index: number): string | null {
+    if (!factionId || index < 0) return null;
+    const ranks = getSect(factionId)?.ranks;
+    if (!ranks || ranks.length === 0) return `rank ${index}`;
+    return ranks[Math.min(index, ranks.length - 1)] ?? `rank ${index}`;
+}
+
+/**
+ * The people this one has a standing grievance with.
+ *
+ * Read off the relationships that already exist rather than stored twice: a
+ * `rival` or an `enemy` with negative standing is a feud by any reading, and
+ * the tie already carries when it opened, what it is about and whether it was
+ * inherited.
+ */
+function feudsFrom(npc: NpcRecord): string[] {
+    return npc.relationships
+        .filter(r => (r.kind === 'rival' || r.kind === 'enemy') && r.standing < 0)
+        .map(r => r.targetName);
+}
+
 export function worldRosterRow(npc: NpcRecord, presentDay: number): RosterRowView {
     const ordinal = npc.cultivation.realmOrdinal;
     const age = Math.max(0, Math.floor((presentDay - npc.identity.bornOnDay) / 365));
@@ -293,14 +327,25 @@ export function worldRosterRow(npc: NpcRecord, presentDay: number): RosterRowVie
         lifespanYears: lifespanForOrdinal(ordinal),
         location: npc.locationId,
         sectId: npc.factionId,
-        sectName: null,
-        sectRank: npc.factionRankIndex >= 0 ? String(npc.factionRankIndex) : null,
+        // Resolved, not blanked. The roster showed ninety-six members of a
+        // sect whose name it declined to print, while carrying a perfectly
+        // good id for it.
+        sectName: factionNameFor(npc.factionId),
+        // The faction's OWN title for the rank, not the index into its ladder.
+        // The roster was printing raw integers beside the player's real title,
+        // so one column held `5` and `Barrow Hand` and meant the same thing.
+        sectRank: factionRankTitle(npc.factionId, npc.factionRankIndex),
         age,
         alive: npc.status === 'alive',
         deathCause: npc.status === 'alive' ? null : npc.status,
-        spiritStones: 0,
+        // What the life walk actually left them. Zero was a placeholder that
+        // had quietly become a fact about the whole world.
+        spiritStones: npc.spiritStones,
         untreatedInjuries: npc.cultivation.untreatedInjuries,
-        feuds: [],
+        // Grudges were already modelled and simply never surfaced: a rival or
+        // an enemy IS a feud, and `standing` is how badly. Inherited ties come
+        // through the same way, which is what makes a grudge outlive its owner.
+        feuds: feudsFrom(npc),
         // The world models what is left of somebody in more detail than the
         // cultivator table does: a projection, a remnant and a corpse are
         // different states, and `identityContinuity` is how much of the

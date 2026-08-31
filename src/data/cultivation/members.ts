@@ -321,6 +321,24 @@ export const MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: null
     },
+    // The Pavilion sends six of these out and does not consider it a promotion.
+    // See AZURE_CLOUD_INTAKE.theScouts in `hierarchy.ts`: the practice implies
+    // the post, so the post has somebody standing in it.
+    {
+        id: 'member-cai-ruzhen',
+        name: 'Cai Ruzhen',
+        factionId: 'sect-azure-cloud-pavilion',
+        rankIndex: 2,
+        rank: 'Inner Disciple',
+        realmOrdinal: 14,
+        role: 'peer',
+        wants: 'to put forward two people this year who are still there in ten, which she has managed once in nine years',
+        fears: 'that the two she has already sent home were the ones, and that she will find out from somebody else',
+        detail: 'Travels as a buyer of dye and does actually buy it, badly, at a small annual loss the Pavilion covers without comment; asks strangers three mild questions and hands them something to hold, and will not say what she is measuring even when the answer would cost her nothing.',
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
     {
         id: 'member-shi-weiran',
         name: 'Shi Weiran',

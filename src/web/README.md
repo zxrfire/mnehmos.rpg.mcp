@@ -206,6 +206,52 @@ Selection is configuration, resolved once in `server.ts` by
 `resolveRuntimeProviderConfig()`. `Narrator.providerName` exists for diagnostics only. See
 [`../agent/provider/README.md`](../agent/provider/README.md).
 
+---
+
+## Names enter through people, never through the narrator
+
+Three files, and the split between them is the contract:
+
+| | |
+|---|---|
+| `knowledge.ts` | what this cultivator has ever heard of. The gate the whole rule rests on |
+| `lore.ts` | the **speakable world**: every name anybody could say, and the terms for saying it |
+| `hearsay.ts` | whether a name gets said in this scene, which, and by whom |
+
+`docs/world/discovery.md` is the constitution: **never reference an entity the player has
+no knowledge record for.** That rule governs the narrator's own voice and it must not gag
+the people in the world - a cultivator says a name flatly because *of course* you know it.
+So content becomes reachable by being **acquirable**, never by being printed:
+
+1. `lore.ts` decides which names a present speaker plausibly holds.
+2. `hearsay.ts` picks one, and the engine writes the knowledge record itself.
+3. Only then is the narrator handed a licence to have somebody say it.
+
+Inverting those steps - letting the model drop a name and reading it back out of the prose
+- is the forbidden move, because it takes state out of a model response.
+
+`lore.ts` draws on **every** catalog under `data/cultivation/`, not the sect list: the
+courts, the members, the guest elders, the venues, the ages, the dead civilisations, the
+readings of the Lid, the sealed ancestors, the channels upward, the wanderers and the
+legends that circulate about them. Three gates decide who can say what, and none of them
+consult the player, because a speaker is not adjusting for their audience:
+
+- **floor** - the standing at which the name is in a person's working vocabulary
+- **insider** - a faction's own people hold their own names whatever their standing
+- **locality** - used for **weight only**, never for exclusion. Names do travel, rarely,
+  and often wrong
+
+Weighting is by band rather than by row, so a catalog's size cannot buy it airtime. The
+deep material is weighted six times higher in the **overheard** channel than in the told
+one, which is the texture `discovery.md` asks for: fragments the player cannot resolve and
+cannot ask about.
+
+> If a change here makes somebody helpfully explain the Late Age, it is wrong. The measure
+> is that a player accumulates fragments they cannot yet place.
+
+`tests/web/lore.test.ts` holds the regression guard: every catalog must still be reachable
+by somebody on the player-facing path, so "written but unreachable" fails the build.
+
 ## The standing register
 
 **The world reference sheet lives in [`register.ts`](register.ts). That is where to change

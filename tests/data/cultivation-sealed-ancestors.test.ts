@@ -22,6 +22,14 @@ import {
     UNOWNED_ANCESTORS,
     UnownedAncestorSchema,
     SEALED_ANCESTOR_PATTERN,
+    SealedAncestorKindSchema,
+    THE_BINDING_CONSTRAINT,
+    AGE_IS_NOT_MENACE,
+    SEALING_LAW,
+    THE_LINEAGE_CLAIM,
+    WHAT_SHE_DOES_WITH_THE_TIME,
+    WHEN_ONE_WAKES,
+    LOST_RECORDS,
     getHeldInstrument,
     instrumentHeldBy,
     bluffs,
@@ -266,5 +274,241 @@ describe('the worked contingency', () => {
         const all = OTHERS_WHO_NOTICED.map(o => o.whatTheyDoWithIt).join(' ');
         expect(all).toMatch(/discretion/i);
         expect(all).toMatch(/inns|joke|repeat/i);
+    });
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────
+// THEY ARE PEOPLE
+// The catalog is written by institutions that call them instruments. These
+// assertions are the corrective, and they are the reason the file exists in
+// the shape it does.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('age is not menace', () => {
+    it('states the default reading once, and it is not threat', () => {
+        expect(AGE_IS_NOT_MENACE.principle).toMatch(/not menace/i);
+        expect(AGE_IS_NOT_MENACE.principle).toMatch(/young once/i);
+        expect(AGE_IS_NOT_MENACE.whereThreatIsReal).toMatch(/specific/i);
+        // The institutional vocabulary is named as the holders speaking.
+        expect(AGE_IS_NOT_MENACE.theTest).toMatch(/holders speaking/i);
+    });
+
+    it('carries the correction into the pattern block', () => {
+        expect(SEALED_ANCESTOR_PATTERN.theyArePeople).toMatch(/AGE_IS_NOT_MENACE/);
+        expect(SEALED_ANCESTOR_PATTERN.theyArePeople).toMatch(/other two are better/i);
+    });
+
+    it('gives every unowned one a person rather than only a hazard', () => {
+        for (const u of UNOWNED_ANCESTORS) {
+            expect(u.ifSheWakes.length, `${u.id} has no person in it`).toBeGreaterThan(200);
+        }
+        // And at least two of them do something kind with the hours.
+        const generous = UNOWNED_ANCESTORS.filter(u => /teach|hand down|give|generous/i.test(u.ifSheWakes));
+        expect(generous.length, 'no woken ancestor in the catalog does anything kind').toBeGreaterThanOrEqual(2);
+    });
+
+    it('keeps at least one waking that goes badly for reasons of character', () => {
+        const bad = UNOWNED_ANCESTORS.filter(u => /vain|grievance|dangerous/i.test(u.ifSheWakes));
+        expect(bad.length, 'they cannot all be kind, or the selection effect is doing no work').toBeGreaterThanOrEqual(1);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theyVary).toMatch(/sealed-the-sorting-yard/);
+        // And the skew is explained rather than assumed.
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theSelectionEffect).toMatch(/does not trust/i);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theSelectionEffect).toMatch(/can simply have been wrong/i);
+    });
+});
+
+describe('the binding constraint', () => {
+    it('is about presence rather than power, at every scale', () => {
+        expect(THE_BINDING_CONSTRAINT.principle).toMatch(/who is standing there/i);
+        expect(THE_BINDING_CONSTRAINT.atEveryScale.length).toBe(3);
+        // The seated defender needs no capability at all, which is the point.
+        expect(THE_BINDING_CONSTRAINT.atEveryScale[2]).toMatch(/no capability/i);
+    });
+});
+
+describe('the law of sealing', () => {
+    it('borrows the node law: keepable, repairable, never remakeable', () => {
+        expect(SEALING_LAW.theLaw).toMatch(/cannot make a new seal/i);
+        expect(SEALING_LAW.theLaw).toMatch(/maintain, repair and read/i);
+        expect(SEALING_LAW.theLaw).toMatch(/history/);
+    });
+
+    it('leaves no lost-key dead end anywhere in the catalog', () => {
+        expect(SEALING_LAW.wakingIsAlwaysPossible).toMatch(/no lost-key dead end/i);
+        expect(SEALING_LAW.theConstraintIsKnowledge).toMatch(/knowledge/i);
+        // And the catalog obeys it: nobody is unable to open their own chamber.
+        const corpus = [
+            ...HELD_INSTRUMENTS.map(h => `${h.wakeCost} ${h.strategyNote} ${h.conditionNote}`),
+            ...UNOWNED_ANCESTORS.map(u => `${u.hazard} ${u.opportunity} ${u.ifSheWakes}`)
+        ].join(' ');
+        expect(corpus).not.toMatch(/cannot be opened|cannot wake|lost art of/i);
+    });
+
+    it('makes reading a seal the scarce skill, and decay the likeliest event', () => {
+        expect(SEALING_LAW.readingIsAScarceSkill).toMatch(/Anchorhold/);
+        expect(SEALING_LAW.readingIsAScarceSkill).toMatch(/Deep Survey/);
+        expect(SEALING_LAW.sealsDoNotCheckWhoIsStanding).toMatch(/outsider/i);
+        expect(SEALING_LAW.unmaintainedSealsDecay).toMatch(/erodes|degrades/i);
+        // Every unowned one is under that decay, by construction.
+        expect(unmaintainedSeals().length).toBe(UNOWNED_ANCESTORS.length);
+    });
+});
+
+describe('what she does with the time', () => {
+    it('offers three outcomes of equal standing', () => {
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theThreeOutcomes.length).toBe(3);
+        const [does, gives, leaves] = WHAT_SHE_DOES_WITH_THE_TIME.theThreeOutcomes;
+        expect(does).toMatch(/one of three/i);
+        expect(gives).toMatch(/hand down|world has lost/i);
+        expect(leaves).toMatch(/sun go down|see the sky/i);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theyAreEqual).toMatch(/assumed an answer/i);
+    });
+
+    it('makes the gift the mechanism by which a Dao re-enters the world', () => {
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theGift).toMatch(/living teacher/i);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theGift).toMatch(/exposure/i);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.aDaoCanReEnterTheWorld).toMatch(/accident/i);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.itMayBeAPersonRatherThanTheInstitution).toMatch(/wanderers/);
+    });
+
+    it('treats the refusal as a refusal rather than a rejection', () => {
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theRefusalThatIsNotARejection).toMatch(/nobody did anything wrong/i);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theRefusalThatIsNotARejection).toMatch(/allowed to want it/i);
+    });
+
+    it('rates the free gift above the discharged duty', () => {
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.andSheMayHelpAnyway).toMatch(/no obligation is not the same as no kindness/i);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.andSheMayHelpAnyway).toMatch(/worth more than the obligated version/i);
+        // And the two categories are not a safe one and a dangerous one.
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.andSheMayHelpAnyway)
+            .toMatch(/unowned case is not the dangerous case/i);
+    });
+
+    it('routes the duty question to the claim rather than to drift', () => {
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theClaimDecidesTheDuty).toMatch(/THE_LINEAGE_CLAIM/);
+        expect(WHAT_SHE_DOES_WITH_THE_TIME.theClaimDecidesTheDuty).toMatch(/drift is expected/i);
+        expect(WHEN_ONE_WAKES.andSheMayNotDoIt).toMatch(/WHAT_SHE_DOES_WITH_THE_TIME/);
+    });
+});
+
+describe('the lineage claim', () => {
+    it('frames the relationship as a claim, with the properties a claim has', () => {
+        expect(THE_LINEAGE_CLAIM.thePrinciple).toMatch(/by what right/i);
+        expect(THE_LINEAGE_CLAIM.whatAClaimIs.length).toBeGreaterThanOrEqual(4);
+        const all = THE_LINEAGE_CLAIM.whatAClaimIs.join(' ');
+        expect(all).toMatch(/disputed/i);
+        expect(all).toMatch(/possession is not legitimacy/i);
+        expect(all).toMatch(/unfalsifiable/i);
+    });
+
+    it('makes her the only authority who can settle it', () => {
+        expect(THE_LINEAGE_CLAIM.sheIsTheOnlyAuthority).toMatch(/single adjudicator/i);
+        expect(THE_LINEAGE_CLAIM.sheIsTheOnlyAuthority).toMatch(/Ninefold Ledger/);
+        expect(THE_LINEAGE_CLAIM.theVerdictMayBeNeither).toMatch(/neither|nobody expected/i);
+    });
+
+    it('gives a second reason instruments go unspent, separate from the arithmetic', () => {
+        expect(THE_LINEAGE_CLAIM.theSecondReasonInstrumentsGoUnspent).toMatch(/not cost, not risk/i);
+        expect(THE_LINEAGE_CLAIM.theSecondReasonInstrumentsGoUnspent).toMatch(/probably is not good enough/i);
+        expect(SEALED_ANCESTOR_PATTERN.theSecondReasonNobodyWakes).toMatch(/THE_LINEAGE_CLAIM/);
+    });
+
+    it('prices the lie: viable, and annihilating if she sees it', () => {
+        expect(THE_LINEAGE_CLAIM.theLieIsViable).toMatch(/cannot go and check/i);
+        expect(THE_LINEAGE_CLAIM.andIfSheWorksItOut).toMatch(/kills them all/i);
+        expect(THE_LINEAGE_CLAIM.andIfSheWorksItOut).toMatch(/defraud/i);
+        expect(THE_LINEAGE_CLAIM.theTwoQuestions.length).toBe(2);
+        expect(THE_LINEAGE_CLAIM.theTwoQuestions[0]).toMatch(/know this ancestor/i);
+        expect(THE_LINEAGE_CLAIM.theTwoQuestions[1]).toMatch(/should be defending/i);
+        expect(THE_LINEAGE_CLAIM.theTwoQuestionsNote).toMatch(/not the hall, the sect/i);
+    });
+
+    it('keeps the gamble live rather than suicidal', () => {
+        expect(THE_LINEAGE_CLAIM.theCruelAsymmetry).toMatch(/liars know they are lying/i);
+        expect(THE_LINEAGE_CLAIM.sheMayNotCare).toMatch(/helps anyway|leaves without comment/i);
+        expect(THE_LINEAGE_CLAIM.preparationIsVisible).toMatch(/rehearse/i);
+        expect(THE_LINEAGE_CLAIM.theSabotage).toMatch(/believed for one sentence/i);
+        expect(THE_LINEAGE_CLAIM.whichAssetYouActuallyHold).toMatch(/only as a fraud/i);
+    });
+
+    it('names cases the claim already bites, and they are real sects', () => {
+        expect(THE_LINEAGE_CLAIM.whereItAlreadyBites.length).toBeGreaterThanOrEqual(3);
+        for (const line of THE_LINEAGE_CLAIM.whereItAlreadyBites) {
+            const id = line.split(':')[0]!;
+            expect(getSect(id), `${id} is unknown`).toBeDefined();
+        }
+    });
+});
+
+describe('the two kinds', () => {
+    it('offers terminal, protector and unknown', () => {
+        expect(SealedAncestorKindSchema.options).toEqual(['terminal', 'protector', 'unknown']);
+    });
+
+    it('holds one of each correctly and one wrongly', () => {
+        const kinds = HELD_INSTRUMENTS.map(h => h.kind);
+        expect(kinds).toContain('terminal');
+        expect(kinds).toContain('protector');
+        const wrong = HELD_INSTRUMENTS.filter(h => h.kind !== h.holderBelievesKind);
+        expect(wrong.length, 'exactly one holder should be wrong about the kind').toBe(1);
+        // And it is the worst possible direction: they think they have a keeper.
+        expect(wrong[0]!.holderBelievesKind).toBe('protector');
+        expect(wrong[0]!.kind).toBe('terminal');
+        expect(wrong[0]!.kindNote).toMatch(/good faith/i);
+    });
+
+    it('explains the protector as a position rather than a grave', () => {
+        const protector = HELD_INSTRUMENTS.find(h => h.kind === 'protector')!;
+        expect(protector.kindNote).toMatch(/at strength|position/i);
+        expect(protector.kindNote).toMatch(/real time|future/i);
+        // A protector does not burn out, so its holder is genuinely hard to attack.
+        expect(SEALED_ANCESTOR_PATTERN.theTwoKinds).toMatch(/does not burn out/i);
+    });
+
+    it('ties the wrong kind to the one that is already dead', () => {
+        const wrong = HELD_INSTRUMENTS.find(h => h.kind !== h.holderBelievesKind)!;
+        expect(wrong.condition).toBe('dead');
+        expect(wrong.kindNote).toMatch(/A protector keeps/i);
+    });
+});
+
+describe('when the record is lost', () => {
+    it('separates every losable part, and opening is not one of them', () => {
+        expect(LOST_RECORDS.whatIsLosableSeparately.length).toBeGreaterThanOrEqual(5);
+        const all = LOST_RECORDS.whatIsLosableSeparately.join(' ');
+        expect(all).toMatch(/terminal or protector/i);
+        expect(all).toMatch(/occupied one from an empty one/i);
+        expect(all).toMatch(/lineage/i);
+        // The wake condition is a trigger, not a key.
+        expect(all).toMatch(/never lost and never at issue/i);
+    });
+
+    it('turns lost records into a lost claim rather than a lost asset', () => {
+        expect(LOST_RECORDS.theClaimProblem).toMatch(/no claim/i);
+        expect(LOST_RECORDS.theClaimProblem).toMatch(/gift rather than a duty/i);
+        expect(LOST_RECORDS.theClaimProblem).not.toMatch(/hostile to them/i);
+    });
+
+    it('lets an outsider know more than the holder, by archives rather than power', () => {
+        expect(LOST_RECORDS.somebodyElseMayKnow).toMatch(/Deep Survey/);
+        expect(LOST_RECORDS.somebodyElseMayKnow).toMatch(/no strength at all/i);
+    });
+
+    it('merges the two categories for a forgotten one', () => {
+        expect(LOST_RECORDS.categoryCollapse).toMatch(/not a held instrument/i);
+        expect(LOST_RECORDS.categoryCollapse).toMatch(/inhabited building|congregation/i);
+        const forgotten = UNOWNED_ANCESTORS.filter(u => u.awareness === 'forgotten');
+        expect(forgotten.length, 'the merged category needs an instance').toBe(1);
+        expect(forgotten[0]!.sealMaintained).toBe(false);
+    });
+
+    it('writes the accidental waking as a gift rather than a horror', () => {
+        expect(LOST_RECORDS.theAccidentalWaking).toMatch(/reasonable people doing competent work/i);
+        expect(LOST_RECORDS.theAccidentalWaking).toMatch(/not a disaster released/i);
+        expect(LOST_RECORDS.theAccidentalWaking).toMatch(/give something away/i);
+        const hall = UNOWNED_ANCESTORS.find(u => u.id === 'unowned-under-the-spring-hall')!;
+        expect(hall.hazard).toMatch(/no malice/i);
+        expect(hall.ifSheWakes).toMatch(/teaching/i);
     });
 });

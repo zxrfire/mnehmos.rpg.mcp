@@ -48,6 +48,21 @@ import {
  * them already gate on real possession (`train_technique` needs the art
  * learned, `refine` needs the ingredients in the pouch). Gating them a second
  * time here would buy nothing and cost the alchemy surface entirely.
+ *
+ * ── Four is the whole list, and `event` is the catch-all ──────────────────
+ * discovery.md names exactly four things the rule covers: "an ancient sect's
+ * name, a famous cultivator, a distant city, a historical event". These are
+ * GATES rather than a taxonomy, so everything `lore.ts` draws from files under
+ * one of them - the ages, the dead civilisations, the readings of the Lid, the
+ * accounts of where cultivation came from and the objects that came down from
+ * above all gate as `event`, because they are things that happened or were
+ * made and they gate identically.
+ *
+ * Do not add a fifth. A player who has heard one of these names cannot tell
+ * which category it belongs to, which is the point rather than a compromise -
+ * whether the Hollow Court is a sect, a court, a person or a joke is not
+ * conveyed by having heard of it - and a new kind would have to be taught to
+ * every reader of this table, several of which are outside this package.
  */
 export type KnownEntityKind = 'cultivator' | 'sect' | 'place' | 'event';
 

@@ -45,12 +45,14 @@ import { findWorkForOrdinal } from '../data/cultivation/mortal-world.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
 import { round2 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
+import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { handleRefine } from '../server/consolidated/alchemy-manage.js';
 import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
 import { handleMarket, handleWork } from '../server/consolidated/cultivation-mortal.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
 import { handleJoin, handleList } from '../server/consolidated/sect-manage.js';
+import { handleResolve } from '../server/consolidated/combat-manage.js';
 import { handlePractise } from '../server/consolidated/technique-manage.js';
 import {
     FLAG_NAME_TAKEN,
@@ -61,6 +63,7 @@ import {
     persistFoundation,
     persistToll,
     readFlag,
+    writeFlag,
     tollConditionsFor,
     type CultivationRepos,
     type TollLedgerEntry
@@ -82,6 +85,8 @@ import {
     nearbyNames,
     pouchNames,
     resolveAnything,
+    resolveCultivator,
+    worldLocationFor,
     resolveHerb,
     resolveParty,
     resolvePlace,
@@ -90,7 +95,8 @@ import {
     resolveTechnique,
     type KnowledgeScope
 } from './entities.js';
-import { KnowledgeGate, type AwarenessRow } from './knowledge.js';
+import { KnowledgeGate, placeKey, type AwarenessRow } from './knowledge.js';
+import { askedAbout } from './asked.js';
 import { offerHearing, othersPresent, recordHearing, type Hearing } from './hearsay.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { advanceWorldForCultivator, worldForRun } from '../server/state/cultivation-world.js';
@@ -102,6 +108,7 @@ import {
     factsForEat,
     factsForGather,
     factsForInteraction,
+    factsForCompany,
     factsForInvestigation,
     factsForLook,
     factsForMove,
@@ -149,7 +156,27 @@ export const BASE_QI = 10;
 export const QI_PER_INSIGHT = 5;
 
 /** Spirit stones for one ration. A ration refills the belly to full: 50 days. */
+/**
+ * Whose database is currently the ambient one.
+ *
+ * `setDb` installs a PROCESS-global handle, and so do the world caches
+ * downstream of it. One service per process is the deployment and never
+ * notices; two in one process silently share whichever was built last,
+ * which is how a run in one database ended up standing in a crowd of a
+ * hundred and forty-three people from another.
+ */
+let ambientDb: Database.Database | null = null;
+
 export const PROVISION_COST_STONES = 2;
+
+/**
+ * Where rations bought ahead of time are kept.
+ *
+ * A per-cultivator counter rather than a new table: the engine already owns
+ * a flag store keyed exactly this way, and a schema change to hold one
+ * integer would be a migration this layer has no business writing.
+ */
+const FLAG_RATIONS_HELD = 'rations_held';
 /** Spirit stones for one meal at `eat`. */
 export const MEAL_COST_STONES = 1;
 
@@ -187,6 +214,15 @@ interface MarketPrice {
 const MORTAL_CATEGORIES = new Set(['food', 'lodging', 'transport', 'medicine', 'service']);
 
 /** What a thing costs, in whichever currency it is actually sold in. */
+/**
+ * How many lines of a price board get read out.
+ *
+ * Every count in the paragraph underneath is taken against this same
+ * slice. A board that lists eight and reasons about twenty-five is telling
+ * the player about goods they cannot see.
+ */
+const MARKET_LINES = 8;
+
 function priceOf(item: MarketPrice): string {
     const unit = item.unit ? ` the ${item.unit}` : '';
     const mortal = item.category === undefined || MORTAL_CATEGORIES.has(item.category);
@@ -293,11 +329,22 @@ export interface ActResult {
 export interface CultivateResult {
     timeSkip: TimeSkipResult;
     state: StateView;
+    /**
+     * The same prose a typed command would have produced.
+     *
+     * This was always being written - narrated, and appended to the log -
+     * and then dropped on the floor before the response was built, so a
+     * player who clicked got a table of deltas and a player who typed got
+     * the game. One design, two front doors, and only one of them had it.
+     */
+    narration: string;
 }
 
 export interface BreakthroughApiResult {
     result: BreakthroughResult;
     state: StateView;
+    /** As above: the click path narrates the same way the typed path does. */
+    narration: string;
 }
 
 export interface GameServiceOptions {
@@ -404,7 +451,31 @@ export class GameService {
      * cannot be improved, and is not negotiable - that is the genre, and it is
      * also why the client is not trusted with it.
      */
+    /**
+     * Point the ambient handle at this service's database.
+     *
+     * Called at the top of every public entry point rather than once in the
+     * constructor. Production has one service and never notices; two in one
+     * process silently share whichever was built last, which is how three
+     * separate suite runs produced three different sets of failures from
+     * the same code.
+     */
+    private useOwnDb(): void {
+        if (ambientDb === this.db) return;
+        setDb(this.db);
+        // The world layer holds process-global caches - which world is the
+        // active one, which world a run belongs to, the catalog - and none of
+        // them are keyed by database. Swapping the handle underneath them
+        // without saying so means the next run joins whichever world was
+        // created first in this process, from whichever database that was.
+        // `resetCultivationWorlds` exists for exactly this and says so; the
+        // worlds are in SQLite and come back on the next touch.
+        resetCultivationWorlds();
+        ambientDb = this.db;
+    }
+
     async newRun(name: string): Promise<{ run: RunView; cultivator: Cultivator }> {
+        this.useOwnDb();
         const trimmed = name.trim();
         if (trimmed.length === 0) throw new GameError('A cultivator needs a name.');
         if (trimmed.length > 60) throw new GameError('That name is too long; sixty characters at most.');
@@ -522,6 +593,7 @@ export class GameService {
 
     /** The current run, whether it is still live or already in the ledger. */
     state(): StateView {
+        this.useOwnDb();
         const { run, cultivator } = this.currentRun();
         return this.stateView(run, cultivator);
     }
@@ -539,6 +611,7 @@ export class GameService {
      * phase 2 and is not touched by phase 3.
      */
     async act(input: string): Promise<ActResult> {
+        this.useOwnDb();
         const trimmed = input.trim();
         if (trimmed.length === 0) throw new GameError('Say something.');
         if (trimmed.length > 2000) throw new GameError('That is too long. Two thousand characters at most.');
@@ -598,6 +671,7 @@ export class GameService {
 
     /** Seclusion, requested directly by the UI rather than through free text. */
     async cultivate(days: number): Promise<CultivateResult> {
+        this.useOwnDb();
         const requested = Math.floor(Number(days));
         if (!Number.isFinite(requested) || requested < 1) {
             throw new GameError('Cultivation needs a whole number of days, at least one.');
@@ -624,11 +698,16 @@ export class GameService {
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
-        return { timeSkip: execution.timeSkip, state: this.stateView(after.run, after.cultivator) };
+        return {
+            timeSkip: execution.timeSkip,
+            state: this.stateView(after.run, after.cultivator),
+            narration: narration.text
+        };
     }
 
     /** Strike the barrier now. Refuses loudly when the engine says it is not legal. */
     async breakthrough(): Promise<BreakthroughApiResult> {
+        this.useOwnDb();
         const { run, cultivator } = this.requireLiveRun();
         const eligibility = canAttemptBreakthrough(cultivator);
         if (!eligibility.eligible) {
@@ -652,7 +731,11 @@ export class GameService {
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
-        return { result: execution.breakthrough, state: this.stateView(after.run, after.cultivator) };
+        return {
+            result: execution.breakthrough,
+            state: this.stateView(after.run, after.cultivator),
+            narration: narration.text
+        };
     }
 
     // ── read-only surfaces ───────────────────────────────────────────────
@@ -688,6 +771,7 @@ export class GameService {
      * with.
      */
     async roster(): Promise<{ roster: RosterRowView[] }> {
+        this.useOwnDb();
         if (!this.adminMode) {
             throw new GameError('Admin mode is off. Set ADMIN_MODE=true to enable the roster.', 403);
         }
@@ -721,6 +805,7 @@ export class GameService {
      * nothing a player would ever ask.
      */
     async ladderOdds(): Promise<LadderOddsReport> {
+        this.useOwnDb();
         if (!this.adminMode) {
             throw new GameError('Admin mode is off. Set ADMIN_MODE=true to read the ladder odds.', 403);
         }
@@ -736,6 +821,7 @@ export class GameService {
      * one. Null when there is no run yet, or when the world is switched off.
      */
     async loadWorld(): Promise<WorldState | null> {
+        this.useOwnDb();
         if (!this.worldEnabled) return null;
         const run = this.repos.runs.getActiveRun() ?? this.repos.runs.deathLedger(1)[0] ?? null;
         return run ? worldForRun(run) : null;
@@ -789,8 +875,13 @@ export class GameService {
             case 'investigate':
                 return this.investigate(run, cultivator, ambient, action.target);
 
+            case 'attack':
+                return this.attack(run, cultivator, action.target, action.intent ?? 'drive_off');
+
             case 'interact':
-                return this.interact(run, cultivator, action.target, action.intent ?? 'talk');
+                return this.interact(
+                    run, cultivator, action.target, action.intent ?? 'talk', action.topic
+                );
 
             case 'train_technique':
                 return this.train(cultivator, action.target);
@@ -806,6 +897,9 @@ export class GameService {
 
             case 'eat':
                 return this.eat(run, cultivator);
+
+            case 'provision':
+                return this.provision(run, cultivator, action.days);
 
             case 'status': {
                 const eligibility = canAttemptBreakthrough(cultivator);
@@ -848,9 +942,13 @@ export class GameService {
             }
 
             case 'look': {
+                const company = this.company(cultivator);
+                const standing = this.standingHere(cultivator);
                 const looking = this.freeAction(
                     run, 'look',
-                    factsForLook(cultivator, ambient, this.company(cultivator))
+                    action.intent === 'company'
+                        ? factsForCompany(cultivator, company, standing)
+                        : factsForLook(cultivator, ambient, company, standing)
                 );
                 // Two people talking on the far side of a wall, who were having
                 // the conversation anyway. Nothing here is staged for the
@@ -904,6 +1002,38 @@ export class GameService {
                 'that you have not decided where you are going, and there is nothing out there ' +
                 'obliging enough to decide it for you.',
                 'No destination named; location unchanged and no time passed.'
+            ));
+        }
+
+        // A destination has to be somewhere.
+        //
+        // `resolvePlace` accepts any string, because a place in this engine
+        // is free text and always has been. That is fine for describing one
+        // and catastrophic for travelling to one: "I follow the cultivator"
+        // parsed the trailing noun as a destination and the engine dutifully
+        // moved the player to a location called `cultivator`, spent the
+        // travel days, and then described its ambient qi. A name the world
+        // has never heard of is not a place; it is a misparse with a
+        // location row behind it.
+        //
+        // Checked against three registers, any of which is enough: the
+        // world's own locations, anywhere a person is standing, and
+        // anywhere this cultivator has heard of. The third is what keeps
+        // this from being a discovery leak in reverse - the player may go
+        // where they have been told about, and the refusal below never says
+        // where that is.
+        // Only where there is a register to check against. With the world
+        // driver off, places in this engine are documented free text and
+        // there is nothing that could say a name is wrong; refusing then
+        // would make travel impossible rather than safe.
+        if (this.atHand && !this.somewhereReal(place.name, cultivator)) {
+            return refused('engine.resolvePlace', 'move', factsForRefusal(
+                'No road goes there.',
+                `You ask after ${place.name} and get the look people give a name that is not a ` +
+                'place. Nobody sets you right, because nobody is sure what you meant.',
+                `Unresolved destination "${place.name}": matches no world location, no ` +
+                'occupied place and nothing this cultivator has heard of. Location unchanged, ' +
+                'no time passed.'
             ));
         }
 
@@ -1037,6 +1167,78 @@ export class GameService {
         return execution;
     }
 
+
+    /**
+     * Hitting somebody.
+     *
+     * Routed to `combat_manage.resolve`, which owns power assessment, edges,
+     * the exchange, the wounds and the obligations that come out the far side.
+     * Nothing about the outcome is decided here, and nothing about it may be:
+     * this is the single most consequential thing a player can do in one turn
+     * and a second opinion about who wins would be the drift the whole design
+     * is built to prevent.
+     *
+     * The target must resolve to a real person who is actually present. A
+     * confrontation with somebody the player cannot see is not a scene, and
+     * fuzzy-matching a description into a name would pick the fight for them.
+     */
+    private async attack(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        goal: string
+    ): Promise<Execution> {
+        const scope = this.scopeFor(cultivator);
+        const query = (target ?? '').trim();
+
+        if (query.length < 2) {
+            return refused('engine.resolveParty', 'attack', factsForRefusal(
+                'Nobody in particular.',
+                this.whoIsAbout(cultivator),
+                'Unresolved party: no subject named for a confrontation. Nothing was resolved and ' +
+                'no exchange was run.'
+            ));
+        }
+
+        const party = resolveCultivator(
+            this.repos, query, cultivator.id, scope, cultivator.realmOrdinal
+        );
+        const present = party ? this.present(cultivator).some(row => row.id === party.id) : false;
+        if (!party || !present) {
+            return refused('engine.resolveParty', 'attack', factsForRefusal(
+                'Not here.',
+                this.blankLook(cultivator),
+                `Unresolved party "${query}" for a confrontation` +
+                `${party ? ', resolved but not co-located' : ''}. No exchange was run.`
+            ));
+        }
+
+        // `goal` decides which endings the engine will reach for. It is passed
+        // straight through; nothing in this layer reads it to pick a winner.
+        const intent = goal === 'kill' || goal === 'subdue' || goal === 'humiliate'
+            ? goal
+            : 'drive_off';
+
+        const result = await handleResolve({
+            action: 'resolve',
+            cultivatorId: cultivator.id,
+            opponent: { cultivatorId: party.id },
+            goal: intent,
+            vector: 'body',
+            edges: [],
+            opponentEdges: [],
+            fightToTheEnd: false
+        });
+
+        // Seeing somebody well enough to fight them is seeing them.
+        this.noteEncounter(
+            cultivator, run, party, 'witnessed',
+            `Fought at ${placeName(cultivator)}.`
+        );
+
+        return this.fromToolResult('combat_manage.resolve', 'attack', result, party.name);
+    }
+
     /**
      * Approaching a person or a faction.
      *
@@ -1054,19 +1256,43 @@ export class GameService {
         run: Run,
         cultivator: Cultivator,
         target: string | undefined,
-        intent: string
+        intent: string,
+        topic?: string
     ): Execution {
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
+
+        // A question put to nobody in particular is still put to somebody:
+        // asking around a village means asking whoever is at hand. Only
+        // when a question was actually asked, though - an approach with no
+        // subject and no topic is the player not having said who.
+        if (query.length < 2 && topic && topic.length >= 2) {
+            const atHand = this.present(cultivator);
+            if (atHand.length > 0) {
+                return this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope);
+            }
+        }
+
         if (query.length < 2) {
             return refused('engine.resolveParty', 'interact', factsForRefusal(
                 'Nobody in particular.',
                 this.whoIsAbout(cultivator),
-                `No party named; nobody approached. ${this.knownNamesLine(cultivator, scope)}`
+                'Unresolved party: no subject named, and nobody is co-located to have meant. ' +
+                `${this.knownNamesLine(cultivator, scope)}`
             ));
         }
 
         const party = resolveParty(this.repos, query, cultivator, scope);
+        if (!party && topic && topic.length >= 2) {
+            // A description is not a name. "The old woman" resolves to
+            // nobody in the roster and should not be fuzzy-matched into
+            // one; what it does mean is that there is a person in front of
+            // the player, and a person can be asked something.
+            const atHand = this.present(cultivator);
+            if (atHand.length > 0) {
+                return this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope);
+            }
+        }
         if (!party) {
             return refused('engine.resolveParty', 'interact', factsForRefusal(
                 'Nobody by that name.',
@@ -1079,6 +1305,14 @@ export class GameService {
         this.noteEncounter(
             cultivator, run, party, 'witnessed', `Approached at ${placeName(cultivator)}.`
         );
+
+        // A question was asked of a person, so a person answers it. This
+        // used to reach the sect register instead, which replied with a
+        // list and a policy note and called the player "this cultivator".
+        if (topic && topic.length >= 2 && party.kind === 'cultivator') {
+            const who = this.present(cultivator).find(row => row.id === party.id);
+            if (who) return this.askAround(run, cultivator, who, topic, scope);
+        }
 
         // They may say something they assume the player already knows. The
         // engine picks it and writes it down; the narrator only gets a licence
@@ -1174,6 +1408,124 @@ export class GameService {
         return this.fromToolResult('cultivation_mortal.work', 'work', result, 'The work');
     }
 
+
+    /**
+     * Somebody was asked something, and answers.
+     *
+     * The engine's part is small and strictly bounded: work out what this
+     * person could know, what they are placed to say, and what saying it would
+     * cost - three separate limits, all read off rows - and then hand the
+     * narrator observable behaviour. `asked.ts` holds that reasoning; this
+     * method is the wiring, plus the one consequential bit: when something is
+     * actually said, the knowledge record is written HERE, before the prose
+     * exists. A name the player was told is a name they have, whether or not
+     * the sentence describing it ever gets written.
+     */
+    private askAround(
+        run: Run,
+        cultivator: Cultivator,
+        asked: RosterEntry,
+        topic: string,
+        scope: KnowledgeScope
+    ): Execution {
+        // What the question was about, resolved against the same catalogs
+        // everything else uses. Unresolvable is a real outcome, not an error:
+        // people are asked about things that do not exist all the time.
+        const subject = resolveAnything(this.repos, topic, cultivator, scope);
+
+        // Whether the player can put a name to the person they are talking
+        // to, decided BEFORE the answer, so a stranger stays a stranger
+        // through the part where they decline to help.
+        const knownAlready = this.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
+
+        const answer = askedAbout({
+            asker: cultivator,
+            asked,
+            speakerName: knownAlready ? asked.name : null,
+            subject,
+            rawTopic: topic,
+            holdsIt: subject !== null
+                && (subject.kind === 'cultivator' || subject.kind === 'sect' || subject.kind === 'place')
+                && this.knowledge.isAwareOf(asked.id, subject.kind, subject.id),
+            priorDealings: this.dealingsWith(cultivator, asked.id)
+        });
+
+        // Written before narration, deliberately. The alternative is a name
+        // that exists only inside a paragraph, which is the failure mode the
+        // whole knowledge layer is here to prevent.
+        // Somebody who answers you has told you who they are. Somebody who
+        // hears you out and goes back to work has not, and that asymmetry is
+        // the cheapest introduction in the game: it costs a question.
+        const met = answer.introduces && !knownAlready
+            ? this.noteEncounter(
+                cultivator, run,
+                { kind: 'cultivator', id: asked.id, name: asked.name },
+                'told',
+                `Answered a question at ${placeName(cultivator)}, and gave a name doing it.`)
+            : false;
+
+        const learned = answer.teaches && subject
+            ? this.noteEncounter(
+                cultivator, run, subject, 'told',
+                `${asked.name} said it at ${placeName(cultivator)}.`)
+            : false;
+
+        const facts = factsForToolResult(
+            `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
+            answer.lines
+        );
+        facts.structure.push(...answer.structure);
+
+        const execution = this.freeAction(run, 'interact', facts);
+        execution.calls = [
+            {
+                name: 'engine.askedAbout',
+                action: 'talk',
+                summary:
+                    `Asked ${asked.name} about "${topic}"` +
+                    `${subject ? ` (resolved to ${subject.kind} ${subject.id})` : ' (unresolved)'}. ` +
+                    `Reach: ${answer.reach}.`,
+                ok: answer.reach === 'answers' || answer.reach === 'partial'
+            }
+        ];
+        if (met) {
+            execution.calls.push({
+                name: 'knowledge.learn',
+                action: 'name_given',
+                summary:
+                    `${asked.name} recorded as believed, source told: they answered, and answering ` +
+                    'is how a stranger stops being one. A shrug would not have written this row.',
+                ok: true
+            });
+        }
+        if (learned && subject) {
+            execution.calls.push({
+                name: 'knowledge.learn',
+                action: 'name_told',
+                summary:
+                    `${subject.name} recorded as believed, source told, from ${asked.name}. ` +
+                    'The player earned this one by asking somebody who would say it.',
+                ok: true
+            });
+        }
+        return execution;
+    }
+
+    /**
+     * How many times this cultivator has dealt with somebody before.
+     *
+     * Counted off the knowledge table rather than a relationship stat, because
+     * there is no relationship stat and inventing one here would put a number
+     * on something the design is explicit should stay a judgement. Turning up
+     * twice leaves two rows; that is the whole of it.
+     */
+    private dealingsWith(cultivator: Cultivator, otherId: string): number {
+        return this.knowledge
+            .awareness(cultivator.id, 'cultivator')
+            .filter(row => row.id === otherId)
+            .length;
+    }
+
     /**
      * Sects: which ones would take them, and joining one.
      *
@@ -1223,9 +1575,19 @@ export class GameService {
             : factsForToolResult(
                 `${heard.length} order${heard.length === 1 ? '' : 's'} you could put yourself in front of.`,
                 [
-                    'Orders this cultivator has heard of, and could plausibly present themselves to:',
-                    ...heard.map(s => `  ${s.name}${s.admissible === false ? ', which would not have them as they stand' : ''}.`),
-                    'Being taken is not the same as applying, and nobody here arranges either on their behalf.'
+                    // This used to be a register with a policy note attached,
+                    // addressed to an operator and calling the player "this
+                    // cultivator" in the third person. Nobody in the world
+                    // speaks like that, and nothing in the world is a list.
+                    heard.length === 1
+                        ? `There is one name you have for this: ${heard[0].name}.`
+                        : `The names you have for this are ${heard.slice(0, -1).map(x => x.name).join(', ')} ` +
+                          `and ${heard[heard.length - 1].name}.`,
+                    ...heard
+                        .filter(x => x.admissible === false)
+                        .map(x => `${x.name} would not take you as you stand.`),
+                    'Knowing a name is not an introduction. Somebody would have to put you in front of them, ' +
+                    'or you would have to walk up on your own.'
                 ]);
 
         facts.structure.push(
@@ -1816,14 +2178,112 @@ export class GameService {
         };
     }
 
+
+    /**
+     * Buying food before it is needed, and carrying it.
+     *
+     * The stock is held on the cultivator rather than reconstructed at the
+     * moment of seclusion, which is the whole difference. Rations bought here
+     * survive travel, survive a change of mind about how long to sit, and are
+     * spent by the time skip - so `provisions_exhausted` becomes a fact about
+     * a decision the player made rather than a warning about a resource they
+     * were never allowed to hold.
+     *
+     * Priced off the same catalog entry the market board quotes, so the number
+     * on the board and the number charged here cannot drift.
+     */
+    private provision(run: Run, cultivator: Cultivator, days?: number): Execution {
+        // No span named means "as much as I can carry sensibly": enough for the
+        // default seclusion, which is the thing they are about to do.
+        const wanted = Math.max(
+            1,
+            Math.ceil((days ?? DEFAULT_CULTIVATION_DAYS) / ACTIONS_PER_FULL_SATIETY)
+        );
+        const affordable = Math.floor(cultivator.spiritStones / PROVISION_COST_STONES);
+        const bought = Math.min(wanted, affordable);
+
+        if (bought === 0) {
+            return refused('cultivator.applyDeltas', 'provision', factsForRefusal(
+                'Not for what you have.',
+                'You price a month of dry rations and put it back. The seller does not comment, ' +
+                'which is its own kind of comment.',
+                `Provisions: ${PROVISION_COST_STONES} spirit stones per ration; purse holds ` +
+                `${cultivator.spiritStones}. Nothing bought, nothing spent.`
+            ));
+        }
+
+        const cost = bought * PROVISION_COST_STONES;
+        const updated = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -cost });
+        if (!updated) throw new GameError('Cultivator vanished while buying provisions.', 500);
+
+        const held = this.rationsHeld(cultivator) + bought;
+        this.setRationsHeld(cultivator, held);
+        this.repos.runs.incrementTurn(run.id, 1);
+
+        const covers = held * ACTIONS_PER_FULL_SATIETY;
+        const facts = factsForToolResult(
+            `${bought} ration${bought === 1 ? '' : 's'} bought.`,
+            [
+                `${bought} ration${bought === 1 ? '' : 's'} of dry food, ${cost} spirit stones, ` +
+                `and ${updated.spiritStones} left in the purse.`,
+                `That is ${humanDays(covers)} of eating in the pack` +
+                `${bought < wanted ? ', which is less than you went in for' : ''}.`,
+                // Said plainly once, because it is the thing the whole early
+                // game turns on and no interrupt can teach it in time.
+                'Food does not come to a cave. Whatever is in the pack when the door shuts is ' +
+                'the whole of what there is.'
+            ]
+        );
+        facts.structure.push(
+            `provision: bought ${bought} of ${wanted} wanted at ${PROVISION_COST_STONES} stones each; ` +
+            `held now ${held} (${covers} days).`
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'cultivator.applyDeltas',
+                action: 'provision',
+                summary:
+                    `${bought} ration(s) for ${cost} spirit stones. Held: ${held}. ` +
+                    'Carried on the cultivator and spent by the time skip.',
+                ok: true
+            }]
+        };
+    }
+
+    /** Rations in the pack. Carried across turns, travel and changes of mind. */
+    private rationsHeld(cultivator: Pick<Cultivator, 'id'>): number {
+        const raw = readFlag(this.db, cultivator.id, FLAG_RATIONS_HELD);
+        const held = raw === null ? 0 : Number(raw);
+        return Number.isFinite(held) && held > 0 ? Math.floor(held) : 0;
+    }
+
+    private setRationsHeld(cultivator: Pick<Cultivator, 'id'>, held: number): void {
+        writeFlag(this.db, cultivator.id, FLAG_RATIONS_HELD, String(Math.max(0, Math.floor(held))));
+    }
+
     private buyProvisions(
         cultivator: Cultivator,
         days: number
     ): { cultivator: Cultivator; rations: number; covered: number; line: string } {
         const wanted = Math.ceil(days / ACTIONS_PER_FULL_SATIETY);
+
+        // What is already in the pack comes first. A player who stocked up
+        // deliberately must not be charged again at the cave mouth for food
+        // they are carrying, and the ones they carried in are the ones the
+        // time skip eats.
+        const carried = Math.min(wanted, this.rationsHeld(cultivator));
+        const short = wanted - carried;
         const affordable = Math.floor(cultivator.spiritStones / PROVISION_COST_STONES);
-        const rations = Math.max(0, Math.min(wanted, affordable));
-        const cost = rations * PROVISION_COST_STONES;
+        const topUp = Math.max(0, Math.min(short, affordable));
+        const rations = carried + topUp;
+        const cost = topUp * PROVISION_COST_STONES;
+        if (carried > 0) this.setRationsHeld(cultivator, this.rationsHeld(cultivator) - carried);
 
         if (rations === 0) {
             return {
@@ -1831,12 +2291,16 @@ export class GameService {
                 rations: 0,
                 covered: Math.floor(cultivator.satiety / 2),
                 line:
-                    `No provisions were bought (${cultivator.spiritStones} spirit stones, ` +
-                    `${PROVISION_COST_STONES} per ration). The belly covers ${Math.floor(cultivator.satiety / 2)} days and then starvation begins.`
+                    'Nothing in the pack and nothing the purse will buy: ' +
+                    `${cultivator.spiritStones} spirit stones against ${PROVISION_COST_STONES} ` +
+                    `per ration. The belly covers ${Math.floor(cultivator.satiety / 2)} days ` +
+                    'and then starvation begins.'
             };
         }
 
-        const updated = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -cost });
+        const updated = cost > 0
+            ? this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -cost })
+            : cultivator;
         if (!updated) throw new GameError('Cultivator vanished while buying provisions.', 500);
 
         const covered = rations * ACTIONS_PER_FULL_SATIETY + Math.floor(cultivator.satiety / 2);
@@ -1844,9 +2308,14 @@ export class GameService {
             cultivator: updated,
             rations,
             covered,
-            line: covered >= days
-                ? `Provisions bought: ${rations} ration${rations === 1 ? '' : 's'} for ${cost} spirit stones, covering the whole stretch. ${updated.spiritStones} stones left.`
-                : `Provisions bought: ${rations} ration${rations === 1 ? '' : 's'} for ${cost} spirit stones - food for about ${humanDays(covered)} of the ${humanDays(days)} asked for. After that the belly is empty and five turns later it is fatal.`
+            line: (carried > 0
+                ? `${carried} ration${carried === 1 ? '' : 's'} came out of the pack` +
+                  `${topUp > 0 ? `, and ${topUp} more was bought for ${cost} spirit stones` : ' and nothing had to be bought'}. `
+                : `${rations} ration${rations === 1 ? '' : 's'} bought for ${cost} spirit stones. `)
+                + (covered >= days
+                    ? `That covers the whole stretch. ${updated.spiritStones} stones left.`
+                    : `That is food for about ${humanDays(covered)} of the ${humanDays(days)} asked for. ` +
+                      'After that the belly is empty and five turns later it is fatal.')
         };
     }
 
@@ -1890,6 +2359,68 @@ export class GameService {
      * dead-ended, because the only population anybody asked about was the
      * `cultivators` table and the world's people were not in it.
      */
+
+    /**
+     * What the player's membership looks like from where they are standing.
+     *
+     * Joining an order is the most consequential thing a low cultivator can
+     * do, and until this existed the world never mentioned it again: the seat
+     * of your own sect read exactly like a strange town. Two facts, both off
+     * rows - whether they belong to anything, and whether this is its ground.
+     */
+    private standingHere(cultivator: Cultivator): string | null {
+        if (!cultivator.sectId) return null;
+        const sect = this.repos.sects.getById(cultivator.sectId);
+        if (!sect) return null;
+
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const rank = membership?.rankTitle ?? 'a member';
+
+        // Deliberately NOT "you are at your sect's headquarters". The catalog
+        // records a territory in prose - "no fixed seat", "cutting houses at
+        // the edge of six cities, all of them rented" - and matching a free
+        // text location against that would be inventing a fact the content
+        // does not state. What is certain is the membership and what it is
+        // worth, and what it is worth is local.
+        const territory = getSect(sect.id)?.territory ?? null;
+
+        return `${sect.name} has you down as ${rank}. ` +
+            (territory
+                ? `${territory} Whether that means anything where you are standing depends on who is ` +
+                  'standing in front of you.'
+                : 'Whether that means anything where you are standing depends on who is standing in ' +
+                  'front of you.');
+    }
+
+
+    /**
+     * Whether a name is anywhere the world would recognise.
+     *
+     * Three registers, and any one of them is enough. The world's own location
+     * table is authoritative where it is populated; the roster covers places
+     * that have people in them but no record yet; and the cultivator's own
+     * knowledge covers everywhere they have been told about, which is how a
+     * player reaches somewhere they have only heard named.
+     *
+     * Where they are already standing counts too - "I go back to Sweptground"
+     * from Sweptground is a no-op, not a refusal.
+     */
+    private somewhereReal(name: string, cultivator: Cultivator): boolean {
+        const wanted = placeKey(name);
+        if (wanted.length === 0) return false;
+        if (placeKey(cultivator.location ?? '') === wanted) return true;
+
+        if (this.atHand && worldLocationFor(this.atHand, name)) return true;
+
+        const occupied = this.repos.cultivators.roster()
+            .some(row => row.location && placeKey(row.location) === wanted);
+        if (occupied) return true;
+
+        return this.knowledge
+            .awareness(cultivator.id, 'place')
+            .some(row => placeKey(row.name) === wanted || placeKey(row.id) === wanted);
+    }
+
     private present(cultivator: Cultivator): RosterEntry[] {
         return othersPresent(this.repos, cultivator, this.atHand);
     }
@@ -2313,8 +2844,14 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
         const joinedSect = body.sect as { name?: string } | undefined;
         const membership = body.membership as { rankTitle?: string } | undefined;
         lines.push(
+            // "at ${rankTitle}" read as a place. Barrow Hand is the lowest
+            // rank in the Gleaners' Company and it is also a town, so the line
+            // told a player standing in Sweptground that they were somewhere
+            // else. A rank has to be named as a rank.
             `Taken on by ${joinedSect?.name ?? 'the sect'}` +
-            `${membership?.rankTitle ? `, at ${membership.rankTitle}` : ''}.`
+            `${membership?.rankTitle ? `, ranked ${membership.rankTitle}` : ''}. ` +
+            'No journey was involved and none is implied: being on their roll and being on their ' +
+            'ground are two different things.'
         );
         if (typeof body.defectedFrom === 'string' && body.defectedFrom.length > 0) {
             lines.push(
@@ -2363,8 +2900,19 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
                 'person with a stall is a long way off.'
             );
         } else {
-            lines.push('What is on offer, and what it costs here:');
-            for (const item of prices.slice(0, 8)) {
+            // The board is read out in full or it is not read out at all.
+            //
+            // It used to list eight and then count against twenty-five, so the
+            // sentence underneath compared the purse to seventeen things the
+            // player could not see. Either number can be right; having both on
+            // screen cannot be.
+            const shown = prices.slice(0, MARKET_LINES);
+            lines.push(
+                shown.length === prices.length
+                    ? 'What is on offer, and what it costs here:'
+                    : `What is nearest to hand, of ${prices.length} things on offer:`
+            );
+            for (const item of shown) {
                 lines.push(`  ${item.name ?? 'unnamed'}, ${priceOf(item)}.`);
             }
 
@@ -2373,14 +2921,14 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
             // the player, and repeating it on every line turns a market board
             // into a wall of the same sentence.
             const purse = body.purse as { cash?: number; spiritStones?: number } | undefined;
-            const afford = prices.filter(item => item.affordable !== false).length;
+            const afford = shown.filter(item => item.affordable !== false).length;
             if (purse) {
                 lines.push(
                     afford === 0
-                        ? `The purse holds ${describePurseCash(purse)}, which is not enough for anything on the board.`
-                        : afford === prices.length
-                            ? `The purse holds ${describePurseCash(purse)}, which covers all of it.`
-                            : `The purse holds ${describePurseCash(purse)}: ${afford} of those ${prices.length} are within it.`
+                        ? `The purse holds ${describePurseCash(purse)}, which is not enough for anything here.`
+                        : afford === shown.length
+                            ? `The purse holds ${describePurseCash(purse)}, which covers all of that.`
+                            : `The purse holds ${describePurseCash(purse)}: ${afford} of those ${shown.length} are within it.`
                 );
             }
         }

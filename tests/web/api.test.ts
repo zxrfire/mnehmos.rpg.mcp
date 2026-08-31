@@ -229,7 +229,13 @@ describe('POST /api/cultivate', () => {
 
         const res = await http.post('/api/cultivate', { days: 30 });
         expect(res.status).toBe(200);
-        expect(Object.keys(res.body).sort()).toEqual(['state', 'timeSkip']);
+        // `narration` is the fix for a real split: the button called this
+        // endpoint, got a structure back, and rendered a table of deltas,
+        // while a player who typed the same thing got prose. One design,
+        // two front doors, and only one of them had the narrator.
+        expect(Object.keys(res.body).sort()).toEqual(['narration', 'state', 'timeSkip']);
+        expect(res.body.narration).toEqual(expect.any(String));
+        expect(res.body.narration.length).toBeGreaterThan(0);
 
         expect(res.body.timeSkip).toMatchObject({ requestedDays: 30, interrupted: expect.any(Boolean) });
         expect(Array.isArray(res.body.timeSkip.events)).toBe(true);
@@ -273,7 +279,8 @@ describe('POST /api/breakthrough', () => {
 
         const res = await http.post('/api/breakthrough');
         expect(res.status).toBe(200);
-        expect(Object.keys(res.body).sort()).toEqual(['result', 'state']);
+        expect(Object.keys(res.body).sort()).toEqual(['narration', 'result', 'state']);
+        expect(res.body.narration).toEqual(expect.any(String));
         expect(res.body.result).toMatchObject({
             fromOrdinal: 0,
             finalChance: expect.any(Number),
