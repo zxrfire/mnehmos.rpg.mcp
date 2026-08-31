@@ -81,7 +81,8 @@ const AMBIENT_IN_WORLD: Record<AmbientQi, string> = {
     thin: 'Qi density thin: half cultivation rate, and a penalty to breakthrough odds. Drawn down long ago, or never rich.',
     normal: 'Qi density ordinary: no modifier either way. Inhabited land.',
     dense: 'Qi density dense: double cultivation rate, and a bonus to breakthrough odds. A vein near the surface, or ground nobody has worked.',
-    spirit_tide: 'Qi density spirit tide: triple cultivation rate and the largest breakthrough bonus in the table. A vein shifting, a seal failing, a season turning over. Temporary.'
+    spirit_tide: 'Qi density spirit tide: triple cultivation rate and the largest breakthrough bonus in the table. A vein shifting, a seal failing, a season turning over. Temporary.',
+    sealed_vein: 'Qi density sealed vein: quadruple cultivation rate and a substantial breakthrough bonus. Never drawn on. Weight zero in the ambient roll - this is found, not encountered.'
 };
 
 /**
@@ -97,7 +98,11 @@ const AMBIENT_PERCEIVED: Record<AmbientQi, string> = {
     thin: 'The air here gives very little back. A long sitting yields what a short one should, and everybody local has stopped remarking on it.',
     normal: 'The air here is unremarkable. It neither helps nor gets in the way, which is most places.',
     dense: 'The air here is thick enough to notice on the first breath. Whatever is under this ground is close to the surface, and the ground shows signs of being worked.',
-    spirit_tide: 'The hair lifts on the arms. Breathing is easier than it was an hour ago, and it will not stay that way. Somewhere out of sight people are already moving.'
+    spirit_tide: 'The hair lifts on the arms. Breathing is easier than it was an hour ago, and it will not stay that way. Somewhere out of sight people are already moving.',
+    // The whole economy of exploration, in one sensation. Nothing has breathed
+    // this. It is the only air in the Late Age that is not second-hand, which
+    // is why people die getting into rooms like this one.
+    sealed_vein: 'The air in here has not been breathed. It is thicker than anything outside and it does not move, and the first lungful is enough to understand why people die getting into rooms like this.'
 };
 
 const DEATH_IN_WORLD: Record<DeathCause, string> = {

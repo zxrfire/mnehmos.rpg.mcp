@@ -63,7 +63,13 @@ import {
     type CultivationOptions
 } from '../../engine/cultivation/index.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
-import { advanceWorldForCultivator } from '../state/cultivation-world.js';
+import {
+    advanceWorldForCultivator,
+    beginRunInWorld,
+    listWorlds,
+    seedForNextRun,
+    type WorldSummary
+} from '../state/cultivation-world.js';
 import {
     AssessSchema,
     UnderstandingSchema,
@@ -342,7 +348,13 @@ export async function handleCreateCultivator(
             seed = run.seed;
             runIdToAttach = run.id;
         } else {
-            seed = args.seed ?? randomUUID();
+            // A run is a life lived inside a world that was already running, so
+            // its seed hangs off the WORLD's rather than being minted beside
+            // it. That is what makes run three of a world always the same run
+            // three, and what stops opening a new life perturbing any stream
+            // the world has already drawn from. A caller-supplied seed is a
+            // deliberate replay of one specific run and is honoured as-is.
+            seed = args.seed ?? (await seedForNextRun()).seed;
             openRun = true;
         }
     } else {
@@ -392,8 +404,28 @@ export async function handleCreateCultivator(
     const run = created.run ?? (runIdToAttach ? repos.runs.getById(runIdToAttach) : null);
     const stored = repos.cultivators.getById(id)!;
 
+    // The world records that this life is being lived here, and on what day it
+    // began. That start day is what joins the two clocks afterwards - a run's
+    // elapsed days are measured from it - and it is what makes the NEXT life
+    // start in a world this one has already changed.
+    let world: WorldSummary | null = null;
+    if (run && kind === 'pc') {
+        try {
+            await beginRunInWorld(run, stored);
+            world = listWorlds().find(w => w.active) ?? null;
+        } catch {
+            // A world that cannot be opened must not stop a life from starting.
+            // The cultivator exists and is committed; the join can be made on
+            // the first cultivate instead.
+            world = null;
+        }
+    }
+
     return {
         created: true,
+        // The outer object. Runs are its children, and their seeds derive from
+        // its own - which is why the previous cultivator's grave is on this map.
+        world,
         cultivator: describeCultivator(repos, stored, run),
         talentRoll: {
             seedStream: `spirit_root / attributes, nonce ${nonce}`,

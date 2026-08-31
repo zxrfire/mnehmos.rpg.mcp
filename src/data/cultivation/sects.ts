@@ -1874,7 +1874,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
     'sect-hollow-court': {
         minOrdinal: 29,
         preferredRoots: [],
-        requirement: 'Void Refinement at the floor, and evidence - not ambition, evidence - that the last realm is reachable from where you stand. Nothing else is considered, and the exclusion is enforced downward as hard as upward: the children of the seated are fostered out to allied sects as a matter of course, at whatever rank they happen to be, and are not reconsidered later. In a world that runs on lineage, patronage and inherited claim, this is the only door where none of it is worth anything, which is most of why the Court is spoken of the way it is.'
+        requirement: 'Void Refinement at the floor, and evidence - not ambition, evidence - that the last realm is reachable from where you stand. Nothing else is considered, and the exclusion is enforced downward as hard as upward: the children of the seated are fostered out to allied sects as a matter of course, at whatever rank they happen to be. They are not barred, and that distinction matters - they may come back, on the same terms as a stranger, if they reach the floor young enough that the rest of the road is still in front of them. Most do not, and are not disgraced by it. In a world that runs on lineage, patronage and inherited claim, this is the only door where none of it is worth anything, which is most of why the Court is spoken of the way it is.'
     },
     'sect-the-severed': {
         minOrdinal: 5,
@@ -2680,6 +2680,20 @@ const SECTS_BY_TAUGHT_TECHNIQUE: ReadonlyMap<string, readonly SectEntry[]> = (()
  * it will not, and that nothing anyone does makes the second part a promise.
  */
 export interface WithdrawnPower {
+    /**
+     * How many the faction holds above Grand Ascension.
+     *
+     * The number is the whole difference between this and an apex. An apex has
+     * exactly one, pinned to the seat: sending them out uncovers the vault, so
+     * they are never sent, and the institution is unassailable at home and
+     * absent everywhere else. More than one means the ground stays covered
+     * while somebody leaves, and REDUNDANCY IS WHAT BUYS REACH.
+     *
+     * This is the only faction in the world with a count above one, which makes
+     * it the only faction that can put the last realm somewhere that is not its
+     * own mountain. It is busy rather than pinned, and busy is a decision.
+     */
+    count: number;
     /** What the attention is committed to instead. */
     occupiedBy: string;
     /** Roughly how often anyone sees one, in plain terms. */
@@ -2693,8 +2707,62 @@ export interface WithdrawnPower {
  * several factions hold an unreachable ceiling is a world where the ceiling
  * stops meaning anything.
  */
+// ──────────────────────────────────────────────────────────────────────
+// FOSTERAGE
+//
+// What happens to the children of people who joined the only institution in
+// the world that does not care whose child you are.
+//
+// The rule is not cruelty and it is not a test. It is the same bar applied to
+// somebody who happens to be related to a seat, and the reason it has to be
+// stated separately is that every other faction in the catalog would have
+// bent it. A Court child arrives at an allied sect as a genuinely valuable
+// person - the sect gains standing by holding them, teaches them properly,
+// and has every reason to want them to succeed - and then the age gate
+// decides, once, and everybody involved knows the date.
+//
+// Both outcomes are real outcomes. Returning is extraordinary and has happened.
+// Not returning leaves someone senior, respected, well-placed and permanently
+// half a step outside the institution that raised them, which is a life rather
+// than a punishment.
+// ──────────────────────────────────────────────────────────────────────
+
+export interface Fosterage {
+    /** Sects that take them. Holding one is a mark of standing, not a chore. */
+    fosteredTo: readonly string[];
+    /** The floor they have to reach to be considered at all. */
+    returnOrdinal: number;
+    /**
+     * And by what age. The gate is age rather than rank because the Court is
+     * not asking whether they are strong; it is asking whether the rest of the
+     * road fits in the life they have left. Reaching Void Refinement at four
+     * hundred is a magnificent career and answers the wrong question.
+     */
+    returnByAge: number;
+    /** Assessed the same way an outsider is, by the same people, once. */
+    assessment: string;
+    /** What the life looks like for the many who do not go back. */
+    otherwise: string;
+}
+
+export const HOLLOW_COURT_FOSTERAGE: Fosterage = {
+    fosteredTo: [
+        'sect-azure-cloud-pavilion',
+        'sect-nine-peaks-ascetic-order',
+        'sect-sweptground-temple',
+        'sect-lantern-hall'
+    ],
+    returnOrdinal: 29,
+    returnByAge: 250,
+    assessment:
+        'The same assessment a stranger gets, conducted by the same seated member, on the same afternoon it would have been given to a stranger. Nobody has ever been told the result gently.',
+    otherwise:
+        'They stay where they were raised, at or near the top of it. A fostered Court child who does not go back is typically an elder somewhere reputable by the middle of their life, is treated with a deference the sect cannot quite account for, and is the single most reliable source in the province on what the Court is actually like - which is worth a great deal to people who will never get closer than that.'
+};
+
 export const WITHDRAWN_POWERS: Record<string, WithdrawnPower> = {
     'sect-hollow-court': {
+        count: 4,
         occupiedBy:
             'The crossing. Everyone seated is working on it continuously, and has been for long enough that the province measures their presence in decades of absence rather than in appearances.',
         seenAs:
@@ -2749,6 +2817,19 @@ export function sectThreat(id: string): SectThreat | undefined {
         sealedIsPublic: sealed?.publiclyKnown ?? false,
         withdrawn: WITHDRAWN_POWERS[id] ?? null
     };
+}
+
+/**
+ * Whether a faction can put a last-realm cultivator anywhere but home.
+ *
+ * Almost nothing can. An apex holds one and cannot spare them; every other
+ * holder at this ordinal is sealed and cannot be spared at all without being
+ * spent. A faction answers true here only by holding more than one awake, and
+ * exactly one faction does.
+ */
+export function canProjectLastRealm(id: string): boolean {
+    const withdrawn = WITHDRAWN_POWERS[id];
+    return withdrawn != null && withdrawn.count > 1;
 }
 
 /** Sects whose one-off ceiling is above what they can field day to day. */

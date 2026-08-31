@@ -201,6 +201,25 @@ export const ApexInstitutionSchema = z.object({
      * it - not that the band is unoccupied, but that its occupants do not act.
      */
     powerOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    /**
+     * How many the institution has above Grand Ascension, and whether that
+     * person can go anywhere.
+     *
+     * An apex has exactly one, and one is a different thing from two. The
+     * single holder is the reason the institution is unassailable AT HOME and
+     * the reason it is nearly powerless anywhere else: they sit, they cultivate,
+     * and they are the last formation on the vault. Sending them out uncovers
+     * the one thing that cannot be uncovered, so they are never sent, and every
+     * institution in the world that matters knows this about every other one.
+     *
+     * This is what stops `powerOrdinal` at the top of the table from meaning
+     * that a last-realm cultivator can be dispatched. Almost nowhere can.
+     */
+    lastRealm: z.object({
+        count: z.literal(1),
+        pinned: z.literal(true),
+        note: z.string().min(80)
+    }),
     /** What it holds, which is never a single vein. */
     holds: z.string().min(80),
     /** Its courts, by id. */
@@ -280,6 +299,11 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         // it - the Survey can end a four-hundred-year sect by declining to sign,
         // and this is the number that says the sect could not answer.
         powerOrdinal: 43,
+        lastRealm: {
+            count: 1,
+            pinned: true,
+            note: 'One, seated under the datum vault and cultivating without interruption. The Survey administers a vein system across a province on the strength of a single person who has not left a room in four hundred years, and its entire posture - the couriers, the unappealable arbitration, the letters that do not wait for an answer - is built to make sure nobody ever needs to test whether that person would come out.'
+        },
         holds:
             'The arterial system: not the eleven veins of the Low Fall but the four beneath them that the eleven branch from, and the datum every survey in the province is ultimately measured against without knowing whose datum it is.',
         courtIds: ['court-third-sill', 'court-root-sill'],
@@ -319,6 +343,11 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         // administers everything itself, so its floor is not what its tenants
         // can field - it has none - but what it must be able to walk into.
         powerOrdinal: 42,
+        lastRealm: {
+            count: 1,
+            pinned: true,
+            note: 'One, and the Long Cut is more honest about it than the Survey is: the posted staff of forty exists precisely because the one who could settle anything permanently is not available to settle anything. Legalism is what an institution does when its strongest member cannot be spent.'
+        },
         holds:
             'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Quiet Marches is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
         courtIds: ['court-ninth-face'],

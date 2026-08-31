@@ -84,12 +84,10 @@ import {
 } from './entities.js';
 import { KnowledgeGate, type AwarenessRow } from './knowledge.js';
 import { offerHearing, othersPresent, recordHearing, type Hearing } from './hearsay.js';
-import {
-    advanceWorldForCultivator,
-    worldForRun,
-    type WorldAdvance
-} from '../server/state/cultivation-world.js';
+import { advanceWorldForCultivator, worldForRun } from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
+import type { PlayerDigest } from '../engine/world/digest.js';
+import type { WorldState } from '../engine/world/world-state.js';
 import {
     factsForBreakthrough,
     factsForEat,
@@ -345,8 +343,14 @@ export class GameService {
         // inside this world rather than a world of its own - which is what
         // makes the ruins the new cultivator digs through the previous
         // cultivator's. When there is no world, the seed factory stands in.
-        const plan = this.world
-            ? this.world.planNext(this.world.lastRun(), this.world.runCount)
+        const previousRun = this.repos.runs.deathLedger(1)[0] ?? null;
+        const world = this.worldEnabled && previousRun ? await worldForRun(previousRun) : null;
+        const plan = world
+            ? planNextRun(world, {
+                index: world.runs.length,
+                onDay: world.currentDay,
+                previous: lastFinishedRun(world)
+            })
             : null;
         const seed = plan ? plan.seed : this.seedFactory();
 
@@ -404,14 +408,14 @@ export class GameService {
 
         // What the world contributes to this life, in the world's own words.
         // A stranger is told they are a stranger; a descendant is told whose.
-        if (plan) {
-            this.world?.record({
+        if (plan && world) {
+            recordRun(world, {
                 id: created.run.id,
                 seed,
                 index: plan.index,
                 cultivatorId: created.cultivator.id,
                 cultivatorName: created.cultivator.name,
-                startedOnDay: this.world.day,
+                startedOnDay: world.currentDay,
                 endedOnDay: null,
                 outcome: 'active',
                 peakOrdinal: 0,
@@ -524,7 +528,7 @@ export class GameService {
 
         const { run, cultivator } = this.requireLiveRun();
         const ambient = this.ambientFor(cultivator, run);
-        const execution = this.runSeclusion(run, cultivator, ambient, requested);
+        const execution = await this.runSeclusion(run, cultivator, ambient, requested);
         if (!execution.timeSkip) throw new GameError('The simulation produced no result.', 500);
 
         const after = this.currentRun();
@@ -1609,7 +1613,10 @@ export class GameService {
      */
     private async advanceWorld(days: number, cultivator: Cultivator, run: Run): Promise<WorldReport> {
         if (!this.worldEnabled || days <= 0) return { lines: [], structure: [] };
-        return reportFromDigest(await advanceWorldForCultivator(run, cultivator, days));
+
+        const advance = await advanceWorldForCultivator(run, cultivator, days);
+        if (advance) this.cachedWorld = advance.result.state;
+        return reportFromDigest(advance?.result.digest ?? null);
     }
 
     /**
@@ -2004,6 +2011,48 @@ function hearingFact(hearing: Hearing): string {
           'without revealing where they were standing, and has no way to place it.'
         : `${hearing.speaker ?? 'Somebody'} said ${names} in passing, as though it needed no ` +
           'explaining. This cultivator does not know what that is and was not told.';
+}
+
+export interface WorldReport {
+    /** Narratable. Every line is already safe to name what it names. */
+    lines: string[];
+    /** Inspector only: the shape of what was withheld. */
+    structure: string[];
+}
+
+/**
+ * Turn a digest into the two channels the rest of this layer uses.
+ *
+ * The lines go to the narrator verbatim, because the world layer has already
+ * done the redaction on its own side and doing it twice would only risk
+ * disagreeing with it. The counts go to the inspector: how much of a span the
+ * player never heard about is a fact about the simulation, and a curious player
+ * can go and look, but it must not become a sentence in the prose. The moment
+ * it does, "the world is mostly none of your business" becomes a status line.
+ */
+export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
+    if (!digest || digest.lines.length === 0) {
+        return {
+            lines: [],
+            structure: digest
+                ? [`World digest: nothing reached this cultivator. ${digest.unheard} event(s) passed unheard.`]
+                : []
+        };
+    }
+
+    return {
+        lines: digest.lines.map(line => {
+            const many = line.occurrences > 1 ? ` (${line.occurrences} times over the span)` : '';
+            return `Year ${line.year}: ${line.text}${many}`;
+        }),
+        structure: [
+            `World digest: ${digest.lines.length} line(s) reached this cultivator; ` +
+            `${digest.unheard} event(s) reached them by no channel at all.`,
+            ...digest.lines.map(line =>
+                `  ${line.kind} via ${line.channel}, form=${line.form}, ` +
+                `magnitude=${line.magnitude}, occurrences=${line.occurrences}.`)
+        ]
+    };
 }
 
 /**
