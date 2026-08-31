@@ -37,6 +37,9 @@ import { forStream } from '../engine/cultivation/rng.js';
 import { SECTS } from '../data/cultivation/index.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
+import { npcsAt, type WorldState } from '../engine/world/world-state.js';
+import { worldLocationFor } from './entities.js';
+import { worldRosterRow } from './view.js';
 import type { KnowledgeGate, KnownEntityKind } from './knowledge.js';
 
 /**
@@ -109,14 +112,40 @@ export function speakableFor(speakerOrdinal: number): SpeakableName[] {
         .map(sect => ({ kind: 'sect' as const, id: sect.id, name: sect.name }));
 }
 
-/** People standing in the same place as the cultivator, alive, not themselves. */
-export function othersPresent(repos: CultivationRepos, cultivator: Cultivator): RosterEntry[] {
+/**
+ * People standing in the same place as the cultivator, alive, not themselves.
+ *
+ * Two populations, and forgetting the second one is what made a village of
+ * nineteen people read as empty. The `cultivators` table holds the player and
+ * whoever a run wrote down; the WORLD holds everybody who was already here, and
+ * they are the ones a player standing in a square actually sees. A social layer
+ * that only knows about the first population has nobody to be social with.
+ *
+ * The two are keyed differently on purpose and joined here: a cultivator's
+ * `location` is free text by design, and a world NPC's is a location id. See
+ * `worldLocationFor` for the join, which is by name because the name is what
+ * both sides actually agree on.
+ */
+export function othersPresent(
+    repos: CultivationRepos,
+    cultivator: Cultivator,
+    world?: WorldState | null
+): RosterEntry[] {
     const here = (cultivator.location ?? '').trim().toLowerCase();
     if (here.length === 0) return [];
-    return repos.cultivators.roster().filter(row =>
+
+    const stored = repos.cultivators.roster().filter(row =>
         row.id !== cultivator.id &&
         row.alive &&
         (row.location ?? '').trim().toLowerCase() === here);
+
+    if (!world) return stored;
+
+    const place = worldLocationFor(world, cultivator.location);
+    if (!place) return stored;
+
+    const inWorld = npcsAt(world, place.id).map(npc => worldRosterRow(npc, world.currentDay));
+    return [...stored, ...inWorld];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -132,6 +161,8 @@ export interface HearingInput {
     addressing?: RosterEntry | null;
     /** Stream discriminator so two different actions on one day differ. */
     occasion: string;
+    /** The world, so the people who can speak include the ones who live here. */
+    world?: WorldState | null;
 }
 
 /**
@@ -148,7 +179,7 @@ export function offerHearing(input: HearingInput): Hearing | null {
     const day = Math.floor(run.elapsedDays);
     const rng = forStream(run.seed, 'web_hearsay', day, occasion, cultivator.id);
 
-    const present = othersPresent(repos, cultivator);
+    const present = othersPresent(repos, cultivator, input.world);
     const addressed = input.addressing ?? null;
 
     // ── Somebody talking to the player ──

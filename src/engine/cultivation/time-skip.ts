@@ -77,7 +77,7 @@ import {
 } from '../../schema/cultivation.js';
 import { lifespanForOrdinal, rankName } from './realms.js';
 import { getSpiritRoot } from './spirit-roots.js';
-import { AMBIENT_REFRESH_DAYS, ambientForBlock } from './ambient.js';
+import { AMBIENT_REFRESH_DAYS, ambientForBlock, impliedDensityFor } from './ambient.js';
 import {
     DAYS_PER_YEAR,
     computeCultivationRate,
@@ -215,6 +215,18 @@ export interface TimeSkipContext {
     seed: string;
     /** Where the cultivator is sitting. Drives location-stable ambient qi. */
     locationId: string;
+    /**
+     * USABLE qi at that location, 0..1 - the world layer's `spiritualDensity`.
+     * The month's ambient varies AROUND this rather than being drawn from a
+     * global distribution, which is what keeps a thin province thin and stops
+     * a decade of seclusion quietly becoming a decade somewhere else.
+     *
+     * Omitted falls back to the old unanchored draw, which is the
+     * unknown-location path and should not be taken by anyone who has a map.
+     */
+    locationDensity?: number;
+    /** The location is a sealed pocket nothing has drawn on. */
+    sealed?: boolean;
     /** Turn number the skip begins on, stamped onto injuries. */
     turn?: number;
     /** Absolute in-world day the skip begins on, so grids line up across skips. */
@@ -314,6 +326,15 @@ export function simulateTimeSkip(
     let daysSinceAdvance = 0;
     /** Years-at-realm at the last advance; reset to 0 when a rank is gained. */
     let realmClockBase = startYearsAtRealm;
+
+    /**
+     * The ground under this place, resolved once.
+     *
+     * Geology does not change during a seclusion, and re-deriving it on every
+     * chunk meant seeding a fresh PRNG a hundred-odd times per simulated
+     * decade - which tripled the cost of a skip for a value that is constant.
+     */
+    const groundDensity = ctx.locationDensity ?? impliedDensityFor(ctx.seed, ctx.locationId);
 
     const events: SimEvent[] = [];
     let interrupted = false;
@@ -478,7 +499,10 @@ export function simulateTimeSkip(
             ranksOnDayFor = absDay;
             ranksOnDay = 0;
         }
-        const ambient = ambientForBlock(ctx.seed, ctx.locationId, absDay);
+        const ambient = ambientForBlock(ctx.seed, ctx.locationId, absDay, {
+            density: groundDensity,
+            sealed: ctx.sealed
+        });
 
         if (autoBreakthrough) {
             const eligibility = canAttemptBreakthrough(
@@ -1196,5 +1220,8 @@ export function skipInjury(
 
 /** Ambient band governing a given absolute day of a skip. For UI preview. */
 export function ambientDuringSkip(ctx: TimeSkipContext, absDay: number): AmbientQi {
-    return ambientForBlock(ctx.seed, ctx.locationId, absDay);
+    return ambientForBlock(ctx.seed, ctx.locationId, absDay, {
+        density: ctx.locationDensity,
+        sealed: ctx.sealed
+    });
 }

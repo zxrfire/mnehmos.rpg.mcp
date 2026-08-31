@@ -138,9 +138,12 @@ describe('the ceiling on his behaviour', () => {
         const r = getWanderer(LU_SHENG)!.restraint;
         // He took one of four, which is why the catalog says three.
         expect(r.theOccasion.what).toMatch(/four/i);
+        // He took one of four that day. The count has risen since, because the
+        // channel keeps sending - which is why the theft cannot be read off it.
         const holding = getHoldingsOf('sect-azure-cloud-pavilion')
             .find(h => h.itemId === 'immortal-unearned-step')!;
-        expect(holding.count, 'the Pavilion should hold three after the theft').toBe(3);
+        expect(holding.count).toBeGreaterThan(3);
+        expect(r.theOccasion.what).toMatch(/holds seven now|keeps arriving/i);
         expect(getImmortalItem('immortal-unearned-step')).toBeDefined();
     });
 

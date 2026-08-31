@@ -10,6 +10,7 @@ build/
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
 *.sqlite
 *.sqlite3
 
@@ -73,3 +74,10 @@ Agents/
 # Vendored agent skill packs (installed by `npx skills add`, machine-local)
 .agents/
 skills-lock.json
+
+# Agent measurement scratch - probes and sweep output, never part of the build
+tests/_probe/
+*-probe.txt
+wall*.txt
+origin-report.txt
+*-report.txt

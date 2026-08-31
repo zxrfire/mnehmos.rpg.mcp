@@ -1974,6 +1974,22 @@ const ROSTER_COLUMNS = [
   { key: 'existenceState', label: 'Existence', type: 'text', cls: 'wrap' }
 ];
 
+/**
+ * The standing register, in its own tab.
+ *
+ * Deliberately not an overlay. It is a long reference sheet an operator reads
+ * *beside* a run rather than instead of it, and the server already renders it
+ * as a complete document - so the browser is a better viewer than anything
+ * this file would reimplement. Regenerating is a reload: the endpoint rebuilds
+ * from the catalogs on every request.
+ */
+function openRegister(refresh) {
+  const url = refresh ? '/api/admin/register.html?refresh=1' : '/api/admin/register.html';
+  const win = window.open(url, 'standing-register');
+  if (!win) toast('Popup blocked', 'Allow popups, or open /api/admin/register.html directly.');
+  else if (refresh) toast('Rewriting the register', 'The prose is being regenerated; the tab will take a moment.');
+}
+
 async function openRoster() {
   openOverlay({
     title: 'World roster',
@@ -2381,6 +2397,9 @@ function wire() {
       if (what === 'ladder') openLadder();
       else if (what === 'ledger') openLedger();
       else if (what === 'roster') openRoster();
+      // Shift-click rewrites the prose. Regenerating costs provider calls, so
+      // it is deliberately not the thing an ordinary click does.
+      else if (what === 'register') openRegister(e.shiftKey);
     }
   });
 
@@ -2437,6 +2456,7 @@ async function boot() {
     if (health.data.adminMode) {
       $('#admin-badge').hidden = false;
       $('#btn-roster').hidden = false;   // read-only observability view
+      $('#btn-register').hidden = false; // the world reference sheet
     }
   } else {
     toast('Engine unreachable', health.error);

@@ -465,15 +465,108 @@ function breakthroughProse(before: Cultivator, after: Cultivator, result: Breakt
 // FREE AND MINOR ACTIONS
 // ─────────────────────────────────────────────────────────────────────────
 
-export function factsForLook(cultivator: Cultivator, ambient: AmbientQi): EngineFacts {
+export function factsForLook(
+    cultivator: Cultivator,
+    ambient: AmbientQi,
+    company: Company = { named: [], strangers: [], total: 0 }
+): EngineFacts {
     const lines = standingLines(cultivator, ambient);
     const where = placeName(cultivator);
+    const who = describeCompany(company, cultivator.realmOrdinal);
+
+    if (who) lines.push(who);
+
     const prose = [
         `${where}. ${describeAmbientPerceived(ambient)}`,
+        ...(who ? [who] : []),
         selfNoticing(cultivator)
     ].join('\n\n');
 
-    return observable(`${where}.`, lines, prose, standingStructure(cultivator, ambient));
+    return observable(`${where}.`, lines, prose, [
+        ...standingStructure(cultivator, ambient),
+        `present=${company.total} (named ${company.named.length}, unnamed ${company.strangers.length}).`
+    ]);
+}
+
+/**
+ * Who is standing here, split by whether the player can put a name to them.
+ *
+ * The split is the discovery rule applied to people rather than to factions.
+ * Nineteen people present does not mean nineteen names: being in the room is
+ * permission to SEE somebody, not to know who they are, and a village square
+ * that hands over a cast list has spent nineteen introductions at once.
+ */
+export interface Company {
+    /** People the player has a knowledge record for. Nameable. */
+    named: { name: string; ordinal: number }[];
+    /** People they can see and cannot name. Described by standing only. */
+    strangers: { ordinal: number }[];
+    /** Everybody present, including whoever did not fit in the two lists. */
+    total: number;
+}
+
+/** The most people a look names individually. A square, not a census. */
+export const COMPANY_SHOWN = 4;
+
+/**
+ * How far above the player somebody has to stand to be worth singling out.
+ *
+ * Below this everybody in a square reads the same, and describing five
+ * strangers one at a time produces five identical clauses - which is what the
+ * first version of this did. A crowd is a crowd; the person worth a sentence is
+ * the one the others are being careful around.
+ */
+const NOTABLE_GAP = 4;
+
+/** "a dozen", "twenty-odd" - the way somebody actually counts a square. */
+function roughly(n: number): string {
+    if (n === 1) return 'one other person';
+    if (n === 2) return 'two other people';
+    if (n === 3) return 'three others';
+    if (n <= 5) return 'a handful of people';
+    if (n <= 9) return 'half a dozen people';
+    if (n <= 14) return 'a dozen or so people';
+    if (n <= 25) return 'twenty-odd people';
+    return `${n} people`;
+}
+
+function describeCompany(company: Company, observerOrdinal = 0): string | null {
+    if (company.total === 0) return null;
+
+    const sentences: string[] = [];
+
+    // Named first: these are the people the player has earned.
+    const named = company.named.slice(0, COMPANY_SHOWN);
+    if (named.length === 1) {
+        sentences.push(`${named[0].name} is here.`);
+    } else if (named.length > 1) {
+        const last = named[named.length - 1].name;
+        const rest = named.slice(0, -1).map(p => p.name).join(', ');
+        sentences.push(`${rest} and ${last} are here.`);
+    }
+
+    // Everybody else is a crowd, with at most one figure lifted out of it -
+    // and only when they are far enough above to be noticeable as such.
+    const strangers = company.strangers;
+    if (strangers.length > 0) {
+        const deepest = strangers[0];
+        const standsOut = deepest.ordinal - observerOrdinal >= NOTABLE_GAP;
+        const others = standsOut ? strangers.length - 1 : strangers.length;
+
+        if (others > 0) {
+            sentences.push(
+                `${roughly(others)} are about, none of whom are looking at you.`
+            );
+        }
+        if (standsOut) {
+            sentences.push(
+                `One of them is ${describeStanding(observerOrdinal, deepest.ordinal)}, ` +
+                'and the way the others move around them is the part worth noticing.'
+            );
+        }
+    }
+
+    return sentences.length > 0 ? sentences.join(' ') : null;
 }
 
 /**

@@ -38,6 +38,7 @@
 
 import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
+import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { describeStanding } from './facts.js';
 import {
@@ -48,7 +49,9 @@ import {
     TECHNIQUES
 } from '../data/cultivation/index.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
-import type { KnowledgeGate } from './knowledge.js';
+import { placeKey, type KnowledgeGate } from './knowledge.js';
+import type { LocationRecord } from '../engine/world/locations.js';
+import type { WorldState } from '../engine/world/world-state.js';
 
 export type EntityKind =
     | 'cultivator'
@@ -72,6 +75,43 @@ export interface KnowledgeScope {
     holderId: string;
     /** Where the holder is standing. Anyone else here is perceivable. */
     here: string | null;
+    /**
+     * Everybody standing in the same place, from both populations.
+     *
+     * Supplied rather than looked up because resolving it needs the world, and
+     * the world is loaded once per action rather than once per lookup. An empty
+     * list means nobody is about; an absent list means nobody asked.
+     */
+    present?: readonly RosterEntry[];
+}
+
+/**
+ * The world location a free-text place name refers to.
+ *
+ * A cultivator's `location` is free text by design - the schema says the engine
+ * stores it and never computes with it - while world NPCs stand at location
+ * ids like `loc-region-low-fall-sweptground`. Nineteen people were standing in
+ * Sweptground and the player could not see one of them, because "Sweptground"
+ * and that id never compared equal.
+ *
+ * The join is by NAME, because the name is the one thing both sides genuinely
+ * agree on: the world's locations carry the display names the content authored,
+ * and the display name is what the player typed. An unmatched name is not an
+ * error - it is a road, or a hillside, or somewhere the gazetteer does not
+ * name, and the honest answer is that there is nobody there.
+ */
+export function worldLocationFor(world: WorldState, place: string | null): LocationRecord | null {
+    const wanted = (place ?? '').trim().toLowerCase();
+    if (wanted.length === 0) return null;
+
+    const exact = world.locations.find(l => l.name.trim().toLowerCase() === wanted);
+    if (exact) return exact;
+
+    // "the Low Fall" against "Low Fall", and the id form for anything that
+    // reached us already keyed.
+    const key = placeKey(wanted);
+    return world.locations.find(l =>
+        placeKey(l.name) === key || l.id === wanted || l.id.endsWith(`-${key}`)) ?? null;
 }
 
 export interface ResolvedEntity {
@@ -225,12 +265,20 @@ export function resolveCultivator(
     observerOrdinal = 0
 ): ResolvedEntity | null {
     const here = scope?.here?.trim().toLowerCase() ?? null;
-    const rows = repos.cultivators.roster().filter(entry => {
-        if (entry.id === selfId) return false;
+
+    // Everybody the holder could be talking about: the table, plus whoever is
+    // standing in front of them. The second half is where the world's people
+    // come in, and without it a populated square resolves to nobody.
+    const candidates = [...repos.cultivators.roster(), ...(scope?.present ?? [])];
+    const seen = new Set<string>();
+    const rows = candidates.filter(entry => {
+        if (entry.id === selfId || seen.has(entry.id)) return false;
+        seen.add(entry.id);
         if (!scope) return true;
         // Standing in the same place counts: you do not need to have been told
         // a stranger's name to see that they are there.
         if (here !== null && (entry.location ?? '').trim().toLowerCase() === here) return true;
+        if ((scope.present ?? []).some(p => p.id === entry.id)) return true;
         return scope.gate.isAwareOf(scope.holderId, 'cultivator', entry.id);
     });
 

@@ -35,11 +35,29 @@
  * and the Stonewright Consortium declines to assay them, on the stated grounds
  * that an assay implies a rate.
  *
+ * THREE GRADES, AND THE COMPARISON THEY MAKE POSSIBLE
+ * ---------------------------------------------------
+ * Both medicines come in higher, middle and lower, and grade tracks what an
+ * ancestor can afford to send. Ancient ancestors answer rarely and send well.
+ * A fresh one answers constantly and sends what she can, which is the bottom
+ * grade, because three hundred and eighty years across is nothing.
+ *
+ *   Azure Cloud   most in total by a distance, all of it lower, and RISING
+ *   Deep Survey   fewer, one higher, some middle and lower: rare and good
+ *   Long Cut      fewer, one higher, differing middle and lower: rare and good
+ *
+ * So the four cannot be put in a single order at all, which is the point. The
+ * Pavilion is rich in quantity and poor in quality; the apexes are the exact
+ * inverse; and each of them would find the other position alarming for
+ * completely different reasons.
+ *
  * THREE HOLDERS, TWO KINDS OF OBSTACLE
  * ------------------------------------
- * The Azure Cloud Pavilion holds three, under written instructions from the
- * woman who left them, and can therefore act. There is somebody to convince,
- * and getting one is a social and political problem rather than a heist.
+ * The Azure Cloud Pavilion holds more than anybody, under written instructions
+ * from the woman who left them, and can therefore act. There is somebody to
+ * convince, and getting one is a social and political problem rather than a
+ * heist. It is also the only holder whose stock goes UP, for a reason that is
+ * a person rather than an institution - see `crossings.ts`.
  *
  * The Deep Survey and the Long Cut are a different kind of obstacle entirely,
  * and the difference is the point. These are the administrators of the world:
@@ -81,6 +99,24 @@ export type ImmortalItemEffect = z.infer<typeof ImmortalItemEffectSchema>;
 export const ImmortalItemFormSchema = z.enum(['golden_pill', 'talisman']);
 export type ImmortalItemForm = z.infer<typeof ImmortalItemFormSchema>;
 
+/**
+ * Both medicines come in three grades, and the grade is a property of the
+ * object rather than of the effect: a lower Unearned Step and a higher one are
+ * the same kind of thing, made by the same means, and one of them does far
+ * less. Grade is what an ancestor can afford to send, which is why it maps so
+ * cleanly onto how long they have been across.
+ */
+export const ImmortalGradeSchema = z.enum(['higher', 'middle', 'lower']);
+export type ImmortalGrade = z.infer<typeof ImmortalGradeSchema>;
+
+/** Counts by grade. The four holders are directly comparable on this shape. */
+export const GradeCountsSchema = z.object({
+    higher: z.number().int().min(0),
+    middle: z.number().int().min(0),
+    lower: z.number().int().min(0)
+});
+export type GradeCounts = z.infer<typeof GradeCountsSchema>;
+
 /** How a holder decides to part with one, which differs sharply by holder. */
 export const ReleaseModeSchema = z.enum([
     'written_instruction',  // somebody left terms, so somebody can act on them
@@ -106,8 +142,10 @@ export type RecordedRefusal = z.infer<typeof RecordedRefusalSchema>;
 export const HoldingSchema = z.object({
     factionId: z.string(),
     itemId: z.string(),
-    /** The count. Never "a few": everyone senior knows the number. */
+    /** The total. Never "a few": everyone senior knows the number. */
     count: z.number().int().min(0),
+    /** The same total broken out by grade, which is the real comparison. */
+    byGrade: GradeCountsSchema,
     countIsKnownTo: z.string().min(60),
     releaseMode: ReleaseModeSchema,
     /** The body or office that decides. For collective holders, a body. */
@@ -154,6 +192,14 @@ export const ImmortalItemSchema = z.object({
     notForSale: z.string().min(120),
     /** What it does, in world terms rather than engine terms. */
     effectNote: z.string().min(120),
+    /** What each grade of this object actually accomplishes. */
+    grades: z.object({
+        higher: z.string().min(120),
+        middle: z.string().min(120),
+        lower: z.string().min(120)
+    }),
+    /** World counts by grade, summing to `knownCount`. */
+    knownByGrade: GradeCountsSchema,
     /** What happens to the person afterwards, socially. The interesting part. */
     socialConsequence: z.string().min(200),
     /** Whether a ruin could hold one, and under exactly what circumstance. */
@@ -172,16 +218,22 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         name: 'The Unearned Step',
         form: 'golden_pill',
         effect: 'promote_realm',
-        knownCount: 6,
-        everKnown: 11,
+        knownCount: 13,
+        everKnown: 24,
+        knownByGrade: { higher: 1, middle: 3, lower: 9 },
         provenance:
             'It came down. That is the whole of the provenance and there is no competing account: every one in the world arrived with somebody who had crossed and then came back down, or was left behind by somebody who crossed and did not. Nothing in either province has ever produced one, and no record anywhere describes an attempt that got further than an ingredient list.',
         cannotBeMade:
             'The Cinnabar Crucible Guild has tried it four times across three centuries, published every failure in full, and states plainly that it cannot identify the method, the materials, or in two cases even the direction of the error. What is left of a failed attempt is inert and does not resemble the original in any measurable way. No alchemist at any grade has produced anything closer.',
         notForSale:
             'It has never appeared in a Thousand Treasure catalogue, and the Stonewright Consortium declines to assay one on the stated grounds that an assay implies a rate. There is no price, there has never been a price, and a party who opens with an offer of stones has told the room something about themselves.',
+        grades: {
+            higher: 'Moves a cultivator up a small realm outright, from anywhere on the ladder, including the crossings that kill people. One is known to exist, it is held by the Deep Survey, and it is the object every account of these things is actually describing.',
+            middle: 'Moves a cultivator up a small realm below the upper reaches, and does nothing whatever above them - it will carry somebody into Core Formation and will not touch a Void Refinement boundary. Three are known. The limit is not a matter of dosage and nobody below can explain it.',
+            lower: 'Carries somebody across one of the early boundaries and no further: it is a Foundation Establishment or a Core Formation that arrives without the accumulation, and above that it does nothing at all. Nine are known, all of them in one place, and it is the grade everybody has actually seen.'
+        },
         effectNote:
-            'It moves a cultivator up a small realm outright, without the accumulation. What would have been forty years of sitting, or a century, or a lifetime that ran out first, is simply done - and the body arrives at the new realm without having built the road to it, which is a thing every physician who has examined a recipient has remarked on and none of them can quantify.',
+            'It moves a cultivator up a small realm outright, without the accumulation, to the extent its grade permits. What would have been forty years of sitting, or a century, or a lifetime that ran out first, is simply done - and the body arrives at the new realm without having built the road to it, which is a thing every physician who has examined a recipient has remarked on and none of them can quantify.',
         socialConsequence:
             'The arithmetic is public. Anybody who has watched a cultivator for a decade can see that the accumulation was not there, and the conclusion arrives in a week. The Ninefold Ledger opens a lineage audit without being asked, because an unexplained jump is exactly what an unrecorded transfer looks like and the Ledger does not distinguish. Rivals stop treating the person as an individual and start treating them as the instrument of whoever gave it, which is usually correct. And the giver becomes publicly known to hold one fewer, which invites the only question that matters about a finite supply: how many are left. The recipient is not admired. What gets remarked on is the part that could not be given.',
         ruinAvailability:
@@ -194,16 +246,22 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         name: 'The Second Dealing',
         form: 'talisman',
         effect: 'change_spirit_root',
-        knownCount: 2,
-        everKnown: 3,
+        knownCount: 4,
+        everKnown: 7,
+        knownByGrade: { higher: 1, middle: 1, lower: 2 },
         provenance:
             'The same and no other: it came down. Two are known to be in the world, one was spent nine hundred years ago in a case the Ninefold Ledger still holds the file on, and there is no fourth in any record anywhere. Whether more exist above is not a question anyone below can put to anybody.',
         cannotBeMade:
             'Nothing in the world approaches it, and unlike the golden pill there is no history of attempts, because there is no theory to attempt. A spirit root is the aperture a person draws qi through and it is settled before birth; there is no discipline anywhere that treats it as a thing with a mechanism, and the alchemists who tried the pill will say flatly that this is a different kind of object and they would not know where to begin.',
         notForSale:
             'No price, no catalogue, no assay, and no broker who will carry an approach. The Thousand Treasure Pavilion, which will handle almost anything, has twice declined to pass a message about one and did not explain why either time.',
+        grades: {
+            higher: 'Rewrites the root outright, to anything, including the mutated roots that no institution in the world can supply by any other means. Exactly one is known to exist. This is the object that should not exist, and everything alarming ever said about the Second Dealing is about this grade.',
+            middle: 'Cleans rather than replaces. It will resolve a dual conflicting root into one of its two elements, or settle a muddled root onto the one it leans toward, and it cannot produce anything the person was not already partly made of. One is known. It is life-changing and it is not world-historic, and the distinction matters enormously to exactly four institutions.',
+            lower: 'Widens the aperture without changing what comes through it: a muddled root draws its five a little less badly, a conflicting root fights itself a little less. The person is the same person with the same ceiling, and for somebody who has spent forty years getting nowhere it is still the best thing that has ever happened to them. Two are known, both at the Azure Cloud Pavilion.'
+        },
         effectNote:
-            'It changes the root. The thing that was dealt once and could not be redrawn is redrawn, and a cultivator who was muddled is not muddled any more. Every rule in the world says this is impossible - the manuals say it, the physicians say it, the Frostmirror Court has four centuries of records saying it - and the rule is correct in every case but this one, which is precisely what a world-historic exception is.',
+            'It changes the root, to the extent its grade permits. The thing that was dealt once and could not be redrawn is redrawn, and a cultivator who was muddled is not muddled any more. Every rule in the world says this is impossible - the manuals say it, the physicians say it, the Frostmirror Court has four centuries of records saying it - and the rule is correct in every case but this one, which is precisely what a world-historic exception is.',
         socialConsequence:
             'There is no version of this that stays quiet. The House of Held Names holds a register entry describing a person who no longer matches it, and an entry that has stopped matching its holder is the single loudest signal that register can produce - it is what the register is for. The Quiet Cut will take a commission to make the discrepancy go away and will not be able to, which has happened once and did not improve their reputation. The House of the Narrow Hour cannot sight the person correctly for some years afterwards, because every reading it holds was cast on a root that is no longer there. And two institutions in particular want to know: the Frostmirror Court and the Storm Tyrant Court both survive on an intake of one root in a hundred, and a manufactured mutated root would end that problem permanently, which makes them the least safe parties in the world to be recognised by.',
         ruinAvailability:
@@ -219,13 +277,17 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export const IMMORTAL_HOLDINGS: readonly Holding[] = [
-    // ── the Azure Cloud Pavilion: there is somebody to convince ────────
+    // ── the Azure Cloud Pavilion: the deepest stock in the world ───────
+    // Most of anything, all of it lower grade, and rising. There is somebody
+    // to convince, and what she sends arrives faster than the Pavilion can
+    // find people to spend it on.
     {
         factionId: 'sect-azure-cloud-pavilion',
         itemId: 'immortal-unearned-step',
-        count: 3,
+        count: 7,
+        byGrade: { higher: 0, middle: 0, lower: 7 },
         countIsKnownTo:
-            'The Pavilion Master, the four Sword Elders, and the grant book, which records the number openly. The Pavilion does not treat the count as a secret and never has.',
+            'The Pavilion Master, the four Sword Elders, and the grant book, which records the number openly and has been revised upward four times in a hundred years. It is seven. The Pavilion does not treat the count as a secret and never has.',
         releaseMode: 'written_instruction',
         decidedBy:
             'The Pavilion Master, with four Sword Elders consenting in the same room - the same instrument that governs drawing the Standing Edge, which is not a coincidence and is how Ru Anjing wrote it.',
@@ -233,7 +295,26 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         sufficientReason:
             'Ru Anjing left instructions rather than a prohibition, and they are specific: one goes to a cultivator who has done the accumulation and is being stopped by something outside their control. A documented injury that will not close. A bottleneck the Pavilion physicians have recorded over years. A lifespan that will run out before the road does. Ambition is not a reason. Usefulness to the Pavilion is explicitly not a reason, and she wrote that part twice.',
         costOfSayingYes:
-            'One of three becomes one of two, and the Master who authorised it is named in the grant book beside the entry, permanently. Two of the last four Masters spent none at all. Worse than the count is what follows: after the last one was given, eleven disciples petitioned formally inside a year, and the Pavilion had to write a refusal doctrine it did not previously need and now cannot un-write.',
+            'Less than it used to, and this is the change nobody outside has priced. Seven becomes six, and six will very probably be seven again inside a decade. The Master who authorises it is still named in the grant book beside the entry, permanently - but the entry that used to read as spending the sect down now reads as spending an income, and two Sword Elders have said so out loud.',
+        theForm: null,
+        recordedRefusal: null,
+        savingTheSect: null
+    },
+    {
+        factionId: 'sect-azure-cloud-pavilion',
+        itemId: 'immortal-second-dealing',
+        count: 2,
+        byGrade: { higher: 0, middle: 0, lower: 2 },
+        countIsKnownTo:
+            'The Pavilion Master and the four Sword Elders know it is two. The grant book records these separately from the pills and in less detail, which is the only thing about the Pavilion holdings that could be called cautious.',
+        releaseMode: 'written_instruction',
+        decidedBy:
+            'The Pavilion Master with four Sword Elders, exactly as with the pills, and the instructions do not distinguish the two objects because Ru Anjing had never held one of these and wrote nothing specific about them.',
+        anyoneMayRefuse: false,
+        sufficientReason:
+            'Undecided, which is a real institutional problem rather than a mystery. The instructions cover a cultivator stopped by something outside their control, and a muddled root is exactly that - so the Pavilion has been arguing for forty years about whether a root is a circumstance or a person, and has not given one away while the argument continues.',
+        costOfSayingYes:
+            'Two becomes one, against a flow that has never yet produced a second one of these in the same decade. The pills arrive often enough to be treated as income; these do not, and everybody senior is quietly aware that the sister may simply never manage another.',
         theForm: null,
         recordedRefusal: null,
         savingTheSect: null
@@ -243,9 +324,10 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
     {
         factionId: 'apex-deep-survey',
         itemId: 'immortal-unearned-step',
-        count: 2,
+        count: 3,
+        byGrade: { higher: 1, middle: 1, lower: 1 },
         countIsKnownTo:
-            'The four Surveyors, the standing stock register, and the annual minute that confirms the register. It is two. It has been two for a hundred and forty years, and the figure is written down in a place four people can read.',
+            'The four Surveyors, the standing stock register, and the annual minute that confirms the register. It is three, and the register states the grade of each: one higher, one middle, one lower. It has read that way for a hundred and forty years, and the higher one is the only object of its kind anybody in the world can point to.',
         releaseMode: 'collective_consent',
         decidedBy:
             'All four Surveyors, unanimously, against a minuted request. There is no office above them to appeal to and no post that can act alone: a Surveyor who wants one released is one voice of four, and the other three can refuse without giving a reason and have.',
@@ -253,7 +335,7 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         sufficientReason:
             'The register describes the stock as unreorderable and the standing instruction is that it is spent only where the arterial system itself is at stake. Nothing about individual merit enters it. A cultivator of enormous promise is not a reason under the instruction, and the Survey does not consider that harsh so much as simply not what the line item is for.',
         costOfSayingYes:
-            'Two becomes one, permanently, in a register that has never been revised upward and never will be. Every Surveyor who consents is minuted by name, and the minute outlives them. There is no institution above to authorise it and therefore nobody to share the entry with.',
+            'Three becomes two, permanently, in a register that has never once been revised upward. Every Surveyor who consents is minuted by name, and the minute outlives them. There is no institution above to authorise it and therefore nobody to share the entry with - and if the object released were the higher one, the Survey would be spending the only one of its kind in existence.',
         theForm:
             'A Requisition Against Standing Stock, which exists, has a number, and requires the applicant to state what is at stake in terms of the arterial system rather than in terms of themselves. It has been submitted eleven times in four hundred years. It has been granted once, in a year the Survey does not discuss, and refused ten times, and the refusals are filed with the same care as the grant.',
         recordedRefusal: {
@@ -276,8 +358,9 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         factionId: 'apex-deep-survey',
         itemId: 'immortal-second-dealing',
         count: 1,
+        byGrade: { higher: 0, middle: 1, lower: 0 },
         countIsKnownTo:
-            'The four Surveyors and the standing stock register, where it is a single line with no annotation. It is one. The register has never carried a second.',
+            'The four Surveyors and the standing stock register, where it is a single line annotated only with the grade. It is one, and it is a middle: it will clean a root rather than rewrite one, which the Survey knows and has never seen a reason to say.',
         releaseMode: 'collective_consent',
         decidedBy:
             'All four Surveyors, unanimously, and no requisition against this line has ever been submitted - not refused, submitted. The form permits it and nobody has ever filled it in.',
@@ -297,9 +380,10 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
     {
         factionId: 'apex-long-cut',
         itemId: 'immortal-unearned-step',
-        count: 1,
+        count: 3,
+        byGrade: { higher: 0, middle: 2, lower: 1 },
         countIsKnownTo:
-            'The Course Keepers, and the schedule, where it appears as an entry with no date against it. It is one, everybody senior can say so, and the entry is read aloud at every schedule revision.',
+            'The Course Keepers, and the schedule, where the three appear as entries with no dates against them and their grades stated. It is three: two middle and one lower, everybody senior knows the number, and the entries are read aloud at every schedule revision.',
         releaseMode: 'collective_consent',
         decidedBy:
             'The Course Keepers together, unanimously, at a schedule revision rather than on request - which means the body that would decide is not assembled when anybody asks and cannot be assembled early. A petition arriving between revisions is receipted, logged, and waits.',
@@ -307,7 +391,7 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         sufficientReason:
             'Nothing in the schedule provides for it. The Long Cut administers driven ground on a horizon measured in centuries and treats a human career as a rounding error, so a case that turns on one person having very little time is not a case the instrument can read at all.',
         costOfSayingYes:
-            'One becomes none, and the Long Cut is the holder least able to justify it: it owns every act by name, has no vassal to attribute anything to, and would have to minute the decision as its own. The administration is legalistic precisely because it cannot deflect, and this is the largest thing it could do without being able to deflect.',
+            'Three becomes two, and the Long Cut is the holder least able to justify any of it: it owns every act by name, has no vassal to attribute anything to, and would have to minute the decision as its own. The administration is legalistic precisely because it cannot deflect, and this is among the largest things it could do without being able to deflect.',
         theForm:
             'A schedule amendment, receipted on submission and answered at the next revision, which is up to twenty years away. Three have been submitted. All three were answered with the original entry restated and no reasoning, which is the standard form of a refusal here and is not intended as contempt.',
         recordedRefusal: {
@@ -330,8 +414,9 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         factionId: 'apex-long-cut',
         itemId: 'immortal-second-dealing',
         count: 1,
+        byGrade: { higher: 1, middle: 0, lower: 0 },
         countIsKnownTo:
-            'The Course Keepers. Outside the administration it is not known at all, and the Deep Survey does not know the Long Cut holds one, which is the single largest gap in either register.',
+            'The Course Keepers. Outside the administration it is not known at all, and the Deep Survey does not know the Long Cut holds the only higher-grade one in existence, which is the single largest gap in either register.',
         releaseMode: 'collective_consent',
         decidedBy:
             'The Course Keepers together, unanimously, at a revision, exactly as with the pill - the Long Cut draws no procedural distinction between the two objects, which outsiders find either admirable or alarming depending on what they came for.',
@@ -339,7 +424,7 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         sufficientReason:
             'Never described and never petitioned for. It sits on the schedule as an entry with no date, and every Keeper for three centuries has read it aloud at revisions without any of them proposing anything about it.',
         costOfSayingYes:
-            'It would take the world from two of these to one, minuted, by name, in an administration that owns every act it takes. Nobody has been willing to be the Keeper whose name is against that line.',
+            'It would end the higher grade entirely: there is one, this is it, and there is no prospect of another from an ancestor who answers at intervals measured in ages. Minuted, by name, in an administration that owns every act it takes. Nobody has been willing to be the Keeper whose name is against that line.',
         theForm:
             'The same schedule amendment, which does not distinguish the two entries and has never been submitted against this one. The Keepers are aware that it could be, and have never discussed what they would do.',
         recordedRefusal: null,
@@ -396,6 +481,34 @@ export function getHoldersOf(itemId: string): Holding[] {
 /** The count in the world right now, summed from the holdings. */
 export function worldCountOf(itemId: string): number {
     return getHoldersOf(itemId).reduce((sum, h) => sum + h.count, 0);
+}
+
+/** The same, broken out by grade, which is the comparison that matters. */
+export function worldCountByGrade(itemId: string): GradeCounts {
+    return getHoldersOf(itemId).reduce<GradeCounts>((acc, h) => ({
+        higher: acc.higher + h.byGrade.higher,
+        middle: acc.middle + h.byGrade.middle,
+        lower: acc.lower + h.byGrade.lower
+    }), { higher: 0, middle: 0, lower: 0 });
+}
+
+/** What a faction holds in total, across both medicines. */
+export function totalHeldBy(factionId: string): GradeCounts & { total: number } {
+    const counts = getHoldingsOf(factionId).reduce<GradeCounts>((acc, h) => ({
+        higher: acc.higher + h.byGrade.higher,
+        middle: acc.middle + h.byGrade.middle,
+        lower: acc.lower + h.byGrade.lower
+    }), { higher: 0, middle: 0, lower: 0 });
+    return { ...counts, total: counts.higher + counts.middle + counts.lower };
+}
+
+/** The best grade a holder can reach for, which is not the same as depth. */
+export function gradeCeilingOf(factionId: string): 'higher' | 'middle' | 'lower' | 'none' {
+    const held = totalHeldBy(factionId);
+    if (held.higher > 0) return 'higher';
+    if (held.middle > 0) return 'middle';
+    if (held.lower > 0) return 'lower';
+    return 'none';
 }
 
 /**

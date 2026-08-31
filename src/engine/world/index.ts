@@ -100,6 +100,13 @@
  *                    constants IMPLY, and what a seeded sweep through the real
  *                    breakthrough engine MEASURES. Admin sees all three.
  *
+ *   origin-odds.ts   the same discipline applied to the third dealt thing:
+ *                    whole lives run through the real engine, once per origin
+ *                    tier, to measure whether being well-born is visible in the
+ *                    outcome distribution or only in the opening position. It
+ *                    is the test that is supposed to fail if an origin ever
+ *                    becomes a difficulty setting.
+ *
  *   driver.ts        `advanceWorldForPlay(state, {days, access})`. One call:
  *                    clock, then pressure, then the filtered digest. This is
  *                    what the play loop wires to.
@@ -139,3 +146,4 @@ export * from './digest.js';
 export * from './driver.js';
 export * from './legacy.js';
 export * from './ladder-odds.js';
+export * from './origin-odds.js';

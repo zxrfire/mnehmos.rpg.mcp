@@ -743,7 +743,7 @@ export const WANDERERS: readonly Wanderer[] = [
             theOccasion: {
                 yearsAgo: 40,
                 what:
-                    'He walked into the Azure Cloud Pavilion in daylight, past four Sword Elders who understood exactly what was happening and did nothing because there was nothing to do, and took one of the four Unearned Steps out of the reserve. He did not hurry and he did not explain. The Pavilion has held three ever since, which is the number in every catalogue that lists them, and the count is not a coincidence.',
+                    'He walked into the Azure Cloud Pavilion in daylight, past four Sword Elders who understood exactly what was happening and did nothing because there was nothing to do, and took one of the four Unearned Steps out of the reserve. He did not hurry and he did not explain. The Pavilion held four that morning and three that evening. It holds seven now, because what the sister sends keeps arriving, and the rising count is the reason nobody outside has ever been able to reconcile the story with the ledger.',
                 whereHeStopped:
                     'The Standing Edge was in the floor of the inner hall, ten paces further on, and he looked at it and left it there. On the way out he said - to nobody, and one Sword Elder wrote it down - that the pill was the Pavilion\'s and the sword was not.',
                 whoNoticed:

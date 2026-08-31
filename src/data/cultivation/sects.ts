@@ -159,8 +159,8 @@ export interface MillennialOffering {
  * would pay for it, and above it nothing in the Late Age has been built.
  *
  *   crude       cheap to raise and expensive to keep. Burns vein output
- *               continuously, degrades measurably within a lifetime, and the
- *               sleeper thins inside it. Holds the bottom of the band.
+ *               continuously, degrades measurably within a lifetime, and anything
+ *               sealed inside it thins. Holds the bottom of the band.
  *   sound       the ordinary standard, and the ordinary reason a sect is poor.
  *   masterwork  built by somebody who is not available any more. Draws almost
  *               nothing, has not been serviced in centuries, and is the reason
@@ -2060,7 +2060,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         },
         discoverableTraces: [],
         standingNote:
-            'Everyone defers, and several rivals resent it openly. The Ashen Forge Clan calls the deference "renting a dead woman", and a faction inside the Stonewright Consortium is quietly modelling what the region looks like the year the Edge is finally spent - a document that would end several careers if it were read aloud.'
+            'Everyone defers, and several rivals resent it openly. The Ashen Forge Clan calls the deference "renting a dead woman", and a faction inside the Stonewright Consortium is quietly modelling what the region looks like the year the Edge is finally spent - a document that would end several careers if it were read aloud. What none of them has worked out is that the Pavilion is not living on what she left. She still answers, every nine to fourteen years, because her younger sister Ru Anxi is alive in the Pavilion at four hundred and forty-seven years old - so the stock rises rather than falls, all of it at the bottom of the range, and the clock under the strongest institution in the world is a Core Formation cultivator with perhaps fifty years left. Everybody senior has done that arithmetic. Nobody discusses it. See `crossings.ts`.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -2160,12 +2160,30 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
                 realmOrdinal: null,
                 yearsAgo: 700,
                 rememberedFor: 'Held the tether through the century it began to fail, and did not report that it was failing.'
+            },
+            {
+                name: 'The Standing Storm, the second of that name',
+                fate: 'dormant',
+                realmOrdinal: 40,
+                yearsAgo: 900,
+                rememberedFor: 'Went into the floating stone rather than let it be brought down, and has been inside it ever since. The Court does not discuss him and has never landed the stone.'
             }
         ],
         claimsLivingAncestor: true,
         claimIsTrue: true,
         recency: 'several_ages',
-        dormant: null,
+        dormant: {
+            name: 'The Standing Storm, the second of that name',
+            restingPlace: 'Inside the floating stone itself, which the Court has never landed and never explains.',
+            dormantYears: 900,
+            realmOrdinal: 40,
+            sealGrade: 'masterwork',
+            wakeCondition:
+                'The lightning curriculum is taken out of the Court by force, or the floating stone is brought down. Both have been attempted; neither got far enough to find out.',
+            wakeCost:
+                'He comes down with the stone and neither goes back up. The Court would keep the curriculum and stop being a Court, which the Sovereigns consider an acceptable trade and have said so in front of witnesses.',
+            publiclyKnown: false
+        },
         partingGift: {
             id: 'artifact-the-standing-storm-rod',
             name: 'The Standing Storm Rod',
@@ -2337,12 +2355,23 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-nine-peaks-ascetic-order': {
         ancestors: [
             { name: 'The Stone Bearer', fate: 'dead', realmOrdinal: null, yearsAgo: 1_600, rememberedFor: 'Carried the founding stone over all nine peaks and never said why, which is now the admission requirement.' },
-            { name: 'Patriarch Meng Da', fate: 'lost', realmOrdinal: null, yearsAgo: 800, rememberedFor: 'Walked into the vein workings to survey them and did not come out. The Order has never sealed the entrance.' }
+            { name: 'Patriarch Meng Da', fate: 'dormant', realmOrdinal: 31, yearsAgo: 800, rememberedFor: 'Walked into the vein workings to survey them and did not come out. He is still down there, which the Order has surveyed to the depth of and has never accepted in words: the entrance has never been sealed and the ascetics tell it as a story.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
         recency: 'none',
-        dormant: null,
+        dormant: {
+            name: 'Patriarch Meng Da',
+            restingPlace: 'In the vein workings he walked into and did not come out of, at a depth the Order has surveyed and never opened.',
+            dormantYears: 800,
+            realmOrdinal: 31,
+            sealGrade: 'crude',
+            wakeCondition:
+                'The vein is taken, or the workings are entered by anybody the Order did not send. The Order has never sealed the entrance, which outsiders read as confidence and is in fact the seal needing the airflow.',
+            wakeCost:
+                'He comes up, and the workings close behind him permanently. The Order would keep its mountain and lose the deepest vein in the province, which is the whole of what the Order is.',
+            publiclyKnown: true
+        },
         partingGift: null,
         lastOffering: null,
         discoverableTraces: [],
@@ -2433,12 +2462,24 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-kiln-wardens': {
         ancestors: [
-            { name: 'The First Keeper of the Kiln', fate: 'lost', realmOrdinal: null, yearsAgo: 4_000, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' }
+            { name: 'The First Keeper of the Kiln', fate: 'lost', realmOrdinal: null, yearsAgo: 4_000, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' },
+            { name: 'The First Warden', fate: 'dormant', realmOrdinal: 44, yearsAgo: 3_100, rememberedFor: 'Took the position at the world-heart and has not left it, which is why the watches are shaped the way they are and why every node the Wardens hold is lit. The Wardens state this in numbers when asked and have never elaborated.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
         recency: 'none',
-        dormant: null,
+        dormant: {
+            name: 'The First Warden',
+            restingPlace: 'At the world-heart, in the position the Wardens still stand their watches around, which is why the watches are shaped the way they are.',
+            dormantYears: 3_100,
+            realmOrdinal: 44,
+            sealGrade: 'masterwork',
+            wakeCondition:
+                'The fire is found to have gone out, or to be going out. Nothing else, and the Wardens have never described what either would look like to somebody who was not one of them.',
+            wakeCost:
+                'Unstated. The Wardens do not explain themselves and have never been pressed on this by anybody in a position to insist.',
+            publiclyKnown: false
+        },
         partingGift: null,
         lastOffering: null,
         discoverableTraces: [
@@ -2637,12 +2678,24 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'house-measured-span': {
         ancestors: [
             { name: 'The Long Measure', fate: 'dead', realmOrdinal: null, yearsAgo: 4_900, rememberedFor: 'Wrote both distances for the first time, walked and true, and the survey has been argued from ever since.' },
-            { name: 'Keeper Fu Zhen', fate: 'lost', realmOrdinal: null, yearsAgo: 1_400, rememberedFor: 'Went through a terminal in the year the gates closed and has not been reported since. Four terminals open somewhere breathable.' }
+            { name: 'Keeper Fu Zhen', fate: 'lost', realmOrdinal: null, yearsAgo: 1_400, rememberedFor: 'Went through a terminal in the year the gates closed and has not been reported since. Four terminals open somewhere breathable.' },
+            { name: 'Ke Yuan, who set the datum', fate: 'dormant', realmOrdinal: 39, yearsAgo: 2_400, rememberedFor: 'Set the first survey marker the house ever drove and then lay down under it, on the reasoning that a datum somebody is holding does not drift. The shed above him has a tiled roof that is repaired on a schedule and nobody outside the house has ever asked why.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
         recency: 'none',
-        dormant: null,
+        dormant: {
+            name: 'Ke Yuan, who set the datum',
+            restingPlace: 'Under the first survey marker the house ever drove, in a shed with a tiled roof that is repaired on a schedule.',
+            dormantYears: 2_400,
+            realmOrdinal: 39,
+            sealGrade: 'sound',
+            wakeCondition:
+                'The datum itself is moved, or is proved to have moved. The house maintains that the second is impossible and audits for it quarterly anyway.',
+            wakeCost:
+                'He re-sets the datum once and does not survive doing it. Every measurement the house holds would then be referred to a mark nobody living watched him place, which the house regards as the worse half of the loss.',
+            publiclyKnown: true
+        },
         partingGift: null,
         lastOffering: null,
         discoverableTraces: [

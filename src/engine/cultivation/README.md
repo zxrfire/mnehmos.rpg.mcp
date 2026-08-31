@@ -85,6 +85,37 @@ real experience of this world.
 The scarcity of manuals for mutated elements is made true in the technique catalog, not
 in this directory - see [`../../data/cultivation/README.md`](../../data/cultivation/README.md).
 
+### Origin: the third dealt thing
+
+A cultivator is dealt a spirit root, four attributes, and **a place to have been born
+into**. `origin.ts` owns the third, on the same terms as the first two: rolled once from
+the run seed, permanent, and with no tool anywhere that changes it. Nine births in ten are
+a farm in a thin county - no teacher, no manual, no vein, and nobody to vouch for you -
+and roughly one in twenty-five thousand is a child of a great house.
+
+The hard rule is that **an origin buys inputs and never rank**. There is deliberately no
+field on `OriginTier` that could confer a realm, progress, admission, or a rank inside an
+institution, and the Hollow Court's own admission text is the statement of it: a Void
+Refinement floor and evidence you could cross, and nothing else counts, which explicitly
+includes being somebody's child. What it buys instead:
+
+| Input | What it actually is |
+|---|---|
+| **Resources** | Stones, and therefore pills, and therefore a seclusion that is a plan rather than a way to starve. Priced at `PRICE_GROWTH_PER_ORDINAL`, which is set to the ladder's own 1.35 rank-cost growth on purpose: a fortune then buys a fixed number of rungs rather than a fixed fraction of the road, and it is gone by the low twenties. |
+| **Placement** | A sect that will take you at an age when it matters. `entryRankIndex` is 0 for every tier, and `placementsWithinReach` never waives an institution's own `admissionOrdinal`. |
+| **Access** | Which comprehensions exist for this person at all - expressed as `DiscoveryContext` rows through the `AccessSource` set in `understanding.ts`, never through a mechanism of origin's own. A thin-county birth reaches its own root and nothing else. |
+| **Standing** | Somebody's word. A capacity, spent rather than kept. |
+| **Survivable risk** | A bounded, exhaustible addition to the odds of surviving somewhere lethal. It never touches what is in the ruin. |
+
+`MAX_ORIGIN_AMBIENT` is `normal`, and that ceiling is load-bearing: thin to dense is a
+fourfold multiplier on cultivation rate, larger than the gap between the best spirit root
+and the worst, so an origin that handed out dense ground would outweigh talent. A family
+removes the *risk* of a thin hillside. A sealed vein is found, not given.
+
+The claim that this axis lives or dies on - **visible in the opening position, and not in
+the outcome distribution except at the very top** - is measured rather than asserted, in
+[`../world/origin-odds.ts`](../world/origin-odds.ts).
+
 ### The four innate attributes, in-world
 
 | Attribute | What it actually is |
@@ -689,6 +720,7 @@ and nothing else.
 ```text
 realms.ts        the ladder every other system is a function of; owns MAX_ORDINAL
 spirit-roots.ts  the talent you are dealt once and never redraw
+origin.ts        the third dealt thing: where you were born, and what it supplies
 rng.ts           seeded named sub-streams; why replays are stable
 ambient.ts       where you cultivate, and why the world does not shimmer
 cultivation.ts   progress accrual - an itemised rate, applied per day
