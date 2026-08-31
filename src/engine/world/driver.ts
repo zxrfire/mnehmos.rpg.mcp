@@ -12,17 +12,19 @@
  *
  * ── The order, and why it is that order ──────────────────────────────────
  *
- *  1. `advanceTime` moves the clock, fires what was already on the books, and
- *     may TRUNCATE the span at an interrupt. It runs first precisely so that
- *     the span the rest of the pass works on is the span the player actually
- *     lived through - a seclusion broken in year three does not get seven more
- *     years of consequences.
+ * The clock and the world's own affairs advance TOGETHER, a year at a time,
+ * and then the digest is built once over everything that happened.
  *
- *  2. `applyPressure` runs over exactly that span, making new things happen and
- *     writing real state.
+ * Advancing the clock the whole way first and running pressure afterwards is
+ * the obvious shape and it is wrong: it does all of a century's dying before
+ * any of its politics, and pressure binds to whoever is alive when it fires. It
+ * also breaks decomposability - ten years then thirty stops equalling forty -
+ * which is the property this entire layer rests on. Interleaving costs nothing,
+ * because `advanceTime` is a function of what is on the books rather than of
+ * how many days are in the step.
  *
- *  3. The digest is built last, over the union of both, and filtered through
- *     the player's knowledge.
+ * An interrupt stops the loop, so a seclusion broken in year three gets three
+ * years of consequences and not forty.
  *
  * ── In place ─────────────────────────────────────────────────────────────
  *
@@ -85,6 +87,8 @@ export interface PlayAdvanceResult {
     events: HistoricalFact[];
     /** The subset the pressure layer generated, with what each one touched. */
     pressure: PressureEvent[];
+    /** People born across the span. */
+    born: number;
     time: TimeAdvanceResult;
     deaths: DeathHandoff[];
 
@@ -105,40 +109,81 @@ export function advanceWorldForPlay(
 ): PlayAdvanceResult {
     const fromDay = state.currentDay;
     const factsBefore = state.history.facts.length;
+    const requested = Math.max(0, Math.floor(opts.days));
 
-    // 1. The clock, and whatever was already due. May truncate.
-    const time = advanceTime(state, opts.days, {
-        inPlace: true,
-        observer: opts.observer,
-        interruptPolicy: opts.interruptPolicy,
-        stopOnInterrupt: opts.stopOnInterrupt,
-        onDeath: opts.onDeath
-    });
+    // ── Why this is a loop and not two calls ─────────────────────────────
+    //
+    // The obvious shape is: move the clock the whole way, then run pressure
+    // over the whole span. It is wrong, and subtly: doing all of a century's
+    // dying before any of its politics is a different world from interleaving
+    // them, because pressure binds to whoever is alive when it fires. That also
+    // makes the pass non-decomposable - ten years then thirty stops equalling
+    // forty, which is the property the whole layer is built on.
+    //
+    // So the two advance together, a year at a time. `advanceTime` is O(what is
+    // on the books) rather than O(days), so five hundred one-year steps cost
+    // about what one five-hundred-year step costs, and the result is
+    // order-independent.
+    const STEP = DAYS_PER_YEAR;
+    const pressureEvents: PressureEvent[] = [];
+    const timeSlices: TimeAdvanceResult[] = [];
+    let born = 0;
+    let remaining = requested;
+    let interrupted = false;
+    let interruptReason: string | null = null;
 
-    // 2. New things, over exactly the span that was lived through.
-    const pressure = applyPressure(time.state, fromDay, time.toDay, opts.pressure);
-    for (const event of pressure.events) {
-        for (const handoff of event.deaths) opts.onDeath?.(handoff);
+    while (remaining > 0) {
+        const slice = Math.min(STEP, remaining);
+        const before = state.currentDay;
+        const time = advanceTime(state, slice, {
+            inPlace: true,
+            observer: opts.observer,
+            interruptPolicy: opts.interruptPolicy,
+            stopOnInterrupt: opts.stopOnInterrupt,
+            onDeath: opts.onDeath
+        });
+        timeSlices.push(time);
+
+        const pressure = applyPressure(state, before, time.toDay, opts.pressure);
+        pressureEvents.push(...pressure.events);
+        born += pressure.born;
+        for (const event of pressure.events) {
+            for (const handoff of event.deaths) opts.onDeath?.(handoff);
+        }
+
+        remaining -= time.daysAdvanced;
+        if (time.interrupted) {
+            interrupted = true;
+            interruptReason = time.interruptReason;
+            break;
+        }
+        // A slice that advanced nothing would spin forever.
+        if (time.daysAdvanced <= 0) break;
     }
 
-    const events = time.state.history.facts.slice(factsBefore);
-    const deaths = time.deathHandoffs.concat(pressure.events.flatMap(e => e.deaths));
+    const last = timeSlices[timeSlices.length - 1];
+    const time: TimeAdvanceResult = last ?? advanceTime(state, 0, { inPlace: true });
+    const events = state.history.facts.slice(factsBefore);
+    const deaths = timeSlices.flatMap(t => t.deathHandoffs)
+        .concat(pressureEvents.flatMap(e => e.deaths));
+    const pressure = { events: pressureEvents, born };
 
-    // 3. What of it reached the player.
+    // What of it reached the player.
     const digest = opts.access
-        ? buildPlayerDigest(events, opts.access, fromDay, time.toDay, opts.digest)
+        ? buildPlayerDigest(events, opts.access, fromDay, state.currentDay, opts.digest)
         : null;
 
     return {
-        state: time.state,
+        state,
         fromDay,
-        toDay: time.toDay,
-        daysRequested: time.daysRequested,
-        daysAdvanced: time.daysAdvanced,
-        interrupted: time.interrupted,
-        interruptReason: time.interruptReason,
+        toDay: state.currentDay,
+        daysRequested: requested,
+        daysAdvanced: state.currentDay - fromDay,
+        interrupted,
+        interruptReason,
         events,
         pressure: pressure.events,
+        born,
         time,
         deaths,
         digest

@@ -5,34 +5,34 @@
  * errors. The D&D-era combat, spellcasting and character-sheet tools were
  * retired with the engines behind them; combat is now `combat_manage` over the
  * cultivation layer.
+ *
+ * A second pass removed six more that were registered and unreachable:
+ * `quest_manage`, `party_manage`, `strategy_manage`, `theft_manage`,
+ * `corpse_manage` and `improvisation_manage`. Each was imported by this file
+ * and by nothing else. `quest_manage` was worse than unused - the design is
+ * explicit that this world generates situations rather than quests, and a
+ * registered tool for tracked objectives with rewards is an invitation to do
+ * the one thing the charter forbids.
  */
 
 // Batch 1 - Simple CRUD
 export { SecretManageTool, handleSecretManage } from './secret-manage.js';
 export { NarrativeManageTool, handleNarrativeManage } from './narrative-manage.js';
 
-// Batch 2 - Party
-export { PartyManageTool, handlePartyManage } from './party-manage.js';
-
-// Batch 3 - Inventory/Loot
+// Batch 3 - Inventory
 export { ItemManageTool, handleItemManage } from './item-manage.js';
 export { InventoryManageTool, handleInventoryManage } from './inventory-manage.js';
-export { CorpseManageTool, handleCorpseManage } from './corpse-manage.js';
 
 // Batch 5 - World/Spatial
 export { WorldManageTool, handleWorldManage } from './world-manage.js';
 export { WorldMapTool, handleWorldMap } from './world-map.js';
 export { SpatialManageTool, handleSpatialManage } from './spatial-manage.js';
 
-// Batch 6a - NPC/Quest/Social
-export { QuestManageTool, handleQuestManage } from './quest-manage.js';
+// Batch 6a - NPC/Social
 export { NpcManageTool, handleNpcManage } from './npc-manage.js';
-export { TheftManageTool, handleTheftManage } from './theft-manage.js';
 
 // Batch 6b - Utility
-export { ImprovisationManageTool, handleImprovisationManage } from './improvisation-manage.js';
 export { MathManageTool, handleMathManage } from './math-manage.js';
-export { StrategyManageTool, handleStrategyManage } from './strategy-manage.js';
 export { TurnManageTool, handleTurnManage } from './turn-manage.js';
 
 // Batch 6c - Session/Travel/Batch
@@ -63,19 +63,13 @@ export { CombatManageTool, handleCombatManage } from './combat-manage.js';
  */
 import { SecretManageTool, handleSecretManage } from './secret-manage.js';
 import { NarrativeManageTool, handleNarrativeManage } from './narrative-manage.js';
-import { PartyManageTool, handlePartyManage } from './party-manage.js';
 import { ItemManageTool, handleItemManage } from './item-manage.js';
 import { InventoryManageTool, handleInventoryManage } from './inventory-manage.js';
-import { CorpseManageTool, handleCorpseManage } from './corpse-manage.js';
 import { WorldManageTool, handleWorldManage } from './world-manage.js';
 import { WorldMapTool, handleWorldMap } from './world-map.js';
 import { SpatialManageTool, handleSpatialManage } from './spatial-manage.js';
-import { QuestManageTool, handleQuestManage } from './quest-manage.js';
 import { NpcManageTool, handleNpcManage } from './npc-manage.js';
-import { TheftManageTool, handleTheftManage } from './theft-manage.js';
-import { ImprovisationManageTool, handleImprovisationManage } from './improvisation-manage.js';
 import { MathManageTool, handleMathManage } from './math-manage.js';
-import { StrategyManageTool, handleStrategyManage } from './strategy-manage.js';
 import { TurnManageTool, handleTurnManage } from './turn-manage.js';
 import { SessionManageTool, handleSessionManage } from './session-manage.js';
 import { TravelManageTool, handleTravelManage } from './travel-manage.js';
@@ -97,19 +91,13 @@ import type { ToolContract } from '../tool-metadata.js';
 export const ConsolidatedTools: ToolContract[] = [
     defineToolContract(SecretManageTool, handleSecretManage),
     defineToolContract(NarrativeManageTool, handleNarrativeManage),
-    defineToolContract(PartyManageTool, handlePartyManage),
     defineToolContract(ItemManageTool, handleItemManage),
     defineToolContract(InventoryManageTool, handleInventoryManage),
-    defineToolContract(CorpseManageTool, handleCorpseManage),
     defineToolContract(WorldManageTool, handleWorldManage),
     defineToolContract(WorldMapTool, handleWorldMap),
     defineToolContract(SpatialManageTool, handleSpatialManage),
-    defineToolContract(QuestManageTool, handleQuestManage),
     defineToolContract(NpcManageTool, handleNpcManage),
-    defineToolContract(TheftManageTool, handleTheftManage),
-    defineToolContract(ImprovisationManageTool, handleImprovisationManage),
     defineToolContract(MathManageTool, handleMathManage),
-    defineToolContract(StrategyManageTool, handleStrategyManage),
     defineToolContract(TurnManageTool, handleTurnManage),
     defineToolContract(SessionManageTool, handleSessionManage),
     defineToolContract(TravelManageTool, handleTravelManage),

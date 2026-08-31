@@ -601,6 +601,44 @@ export function migrateWorld(db: Database.Database): void {
       FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
+    -- ── RUNS: LIVES LIVED INSIDE THIS WORLD ──────────────────────────────
+    -- Permadeath is enforced on the cultivator, not on the world. The world
+    -- outlives its runs, so this is a join rather than an ownership: the
+    -- cultivation schema's own runs table holds the life, and this holds the
+    -- fact that the life happened here and what it left behind.
+    --
+    -- A run seed is DERIVED from the world seed and the index, never stored
+    -- independently, so the same world always produces the same third run and
+    -- starting a new one cannot perturb anything the world already decided.
+    CREATE TABLE IF NOT EXISTS world_runs (
+      id TEXT NOT NULL,
+      world_id TEXT NOT NULL,
+      run_index INTEGER NOT NULL,                    -- run one, run two, run three
+      seed TEXT NOT NULL,                            -- derived from worlds.seed + index
+      cultivator_id TEXT NOT NULL,
+      cultivator_name TEXT NOT NULL DEFAULT '',
+      started_on_day INTEGER NOT NULL,
+      ended_on_day INTEGER,                          -- NULL while the life is being lived
+      outcome TEXT NOT NULL DEFAULT 'active',        -- active|died|ascended|abandoned
+      peak_ordinal INTEGER NOT NULL DEFAULT 0,
+      -- Their grave, when they left one. It is an ordinary location row: the
+      -- ruins a new character digs through are the previous character's.
+      grave_location_id TEXT,
+      -- How the NEXT run stands to this one. Most often 'stranger', because
+      -- most people who dig up a grave are not related to whoever is in it.
+      successor_relation TEXT,                       -- descendant|disciple|stranger
+      PRIMARY KEY (world_id, id),
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_world_runs_order
+      ON world_runs(world_id, run_index);
+    CREATE INDEX IF NOT EXISTS idx_world_runs_cultivator
+      ON world_runs(world_id, cultivator_id);
+    -- The query the next run opens with: what did the last life leave.
+    CREATE INDEX IF NOT EXISTS idx_world_runs_finished
+      ON world_runs(world_id, ended_on_day) WHERE outcome != 'active';
+
     -- The edge itself. Its own table because it is walked from both ends:
     -- "who are this person's descendants" and "whose descendant is this".
     CREATE TABLE IF NOT EXISTS world_lineage_edges (

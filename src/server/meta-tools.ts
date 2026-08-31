@@ -14,9 +14,9 @@ import { ToolMetadata } from './tool-metadata.js';
 export const SearchToolsSchema = z.object({
   query: z.string().optional().describe('Natural language or keyword query to search for tools'),
   category: z.enum([
-    'world', 'inventory', 'quest', 'party',
-    'math', 'strategy', 'secret',
-    'npc', 'spatial', 'theft', 'corpse', 'improvisation',
+    'world', 'inventory', 'party',
+    'math', 'secret',
+    'npc', 'spatial',
     'turn-management', 'meta', 'agent',
     'cultivation', 'run', 'technique', 'alchemy', 'sect', 'admin', 'combat'
   ]).optional().describe('Filter by category'),

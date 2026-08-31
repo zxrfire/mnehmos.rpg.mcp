@@ -85,7 +85,7 @@ function detectRoomBlindSpots(roomId: string, deps: ScanDeps): BlindSpot[] {
                 'No creatures or props are committed to this room. If the scene-text implied any, ' +
                 'they need to be spawned for the lens to see them.',
             suggestedQuery:
-                'spawn_manage action:"spawn_character" roomId:"' + roomId + '"',
+                'npc_manage action:"create" roomId:"' + roomId + '"',
         });
     }
     if (!room.base_description || room.base_description.trim().length < 10) {
@@ -122,7 +122,7 @@ function detectEncounterBlindSpots(encId: string, deps: ScanDeps): BlindSpot[] {
             whyItMatters:
                 'Without grid bounds the engineering-tier controls (interpose a wall, withdraw to range) ' +
                 'cannot be reasoned about geometrically.',
-            suggestedQuery: 'combat_map action:"set_grid_bounds" encounterId:"' + encId + '"',
+            suggestedQuery: 'spatial_manage action:"set_grid_bounds" encounterId:"' + encId + '"',
         });
     }
     return blind;
@@ -155,7 +155,7 @@ function detectSceneBlindSpots(noteId: string, deps: ScanDeps): BlindSpot[] {
             whyItMatters:
                 'Narration hints at a creature ("something moves in the shadow") but no creature row ' +
                 'backs the narration. The engine stays mute rather than invent.',
-            suggestedQuery: 'spawn_manage action:"spawn_character" or npc_manage action:"create"',
+            suggestedQuery: 'npc_manage action:"create"',
         });
     }
 

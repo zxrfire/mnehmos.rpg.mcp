@@ -18,6 +18,8 @@ import { ConsolidatedTools } from '../../../src/server/consolidated/index.js';
 import { closeDb, getDb } from '../../../src/storage/index.js';
 import { CultivatorRepository } from '../../../src/storage/repos/cultivator.repo.js';
 import { CombatRepository } from '../../../src/storage/repos/combat.repo.js';
+import { TechniqueRepository } from '../../../src/storage/repos/technique.repo.js';
+import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
 import { REAL_OPTIONS } from '../../../src/engine/cultivation/combat.js';
 import { REALM_TIERS } from '../../../src/engine/cultivation/realms.js';
 
@@ -206,10 +208,17 @@ describe('combat_manage', () => {
         it('will not aim an elemental art at a soul', async () => {
             const created = await newCultivator();
             const id = created.cultivator.id;
-            const available = await technique({ action: 'list_available', cultivatorId: id });
-            const elemental = available.compatible.find((t: any) => t.element !== null);
+
+            // Elemental qi has to travel through flesh to arrive, so the art is
+            // chosen for its element rather than for the root that holds it.
+            const elemental = [...TECHNIQUES]
+                .filter(t => t.element !== null)
+                .sort((a, b) => a.requiredOrdinal - b.requiredOrdinal)[0];
             expect(elemental).toBeDefined();
-            await technique({ action: 'learn', techniqueId: elemental.id, cultivatorId: id });
+            setRank(db, id, Math.max(elemental.requiredOrdinal, 1));
+            const techniques = new TechniqueRepository(db);
+            techniques.upsert(elemental);
+            techniques.learn(id, elemental.id, 0.5);
 
             const result = await combat({
                 action: 'strike',

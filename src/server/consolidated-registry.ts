@@ -32,9 +32,9 @@ export function getAllConsolidatedToolMetadata(): ToolMetadata[] {
 
 export function getConsolidatedToolCategories(): ToolCategory[] {
     return [
-        'world', 'inventory', 'quest', 'party',
-        'math', 'strategy', 'secret',
-        'npc', 'spatial', 'theft', 'corpse', 'improvisation',
+        'world', 'inventory', 'party',
+        'math', 'secret',
+        'npc', 'spatial',
         'turn-management', 'meta', 'narrative', 'agent',
         'cultivation', 'run', 'technique', 'alchemy', 'sect', 'admin', 'combat'
     ];

@@ -320,7 +320,7 @@ describe('batch_manage consolidated tool', () => {
                 templateId: 'start_campaign',
                 params: {
                     worldName: 'Faerun',
-                    partyName: 'Heroes of Neverwinter'
+                    cultivatorName: 'Shen Yue'
                 }
             }, ctx);
 
@@ -348,13 +348,13 @@ describe('batch_manage consolidated tool', () => {
                 templateId: 'start_campaign',
                 params: {
                     worldName: 'Test'
-                    // Missing partyName
+                    // Missing cultivatorName
                 }
             }, ctx);
 
             const data = parseResult(result);
             expect(data.error).toBe(true);
-            expect(data.missingParams).toContain('partyName');
+            expect(data.missingParams).toContain('cultivatorName');
         });
 
         it('should return error for missing templateId', async () => {

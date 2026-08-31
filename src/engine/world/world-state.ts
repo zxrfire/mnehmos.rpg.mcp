@@ -67,6 +67,7 @@ import {
 import { createMemoryStore, type MemoryStore } from './memory.js';
 import type { NpcRecord, NpcRelationship } from './npc-state.js';
 import type { LineageRecord } from './lineage.js';
+import type { WorldRun } from './legacy.js';
 import type { OpportunityWindow } from './opportunities.js';
 import type { ObjectRecord } from './possessions.js';
 
@@ -298,9 +299,29 @@ export interface WorldState {
     opportunities: OpportunityWindow[];
     /** Things worth arguing about: possession, ownership, claim, provenance. */
     objects: ObjectRecord[];
+    /**
+     * Lives that have been played in this world, oldest first.
+     *
+     * The world outlives its runs. Permadeath is enforced on the cultivator -
+     * a life is played once - and resetting the world with them was the wrong
+     * half: the ruins a new character digs through should be the previous
+     * character's. A run is a life lived inside this world, and this is the
+     * world's record that it happened.
+     */
+    runs: WorldRun[];
 
     history: HistoryLedger;
     memories: MemoryStore;
+
+    /**
+     * Living NPCs the world drifts back toward.
+     *
+     * A population that only dies is not a world: run five centuries without
+     * this and the roster empties, the factions fold for want of members, and
+     * the simulation reports a collapse that is an artefact of the model rather
+     * than anything that happened. Demography closes the gap each year.
+     */
+    populationTarget: number;
 
     nextNpcSeq: number;
     nextEffectSeq: number;
@@ -383,6 +404,8 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
         lineages: [],
         opportunities: [],
         objects: [],
+        runs: [],
+        populationTarget: 0,
         history,
         memories: createMemoryStore(),
         nextNpcSeq: 1,
@@ -1029,6 +1052,7 @@ export function cloneWorld(state: WorldState): WorldState {
             tags: o.tags.slice(),
             data: { ...o.data }
         })),
+        runs: state.runs.map(r => ({ ...r })),
         objects: state.objects.map(o => ({
             ...o,
             claims: o.claims.map(c => ({

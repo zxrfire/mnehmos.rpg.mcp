@@ -184,7 +184,7 @@ function rankForHazard(hazard: Hazard, state: CommittedState): ApplicableControl
         if (skippedLevel === 'elimination' && state.targetKind === 'room' && !state.roomExitsCommitted) {
             highestMissing = 'room_exits_not_committed; assess again after spatial_manage.get_exits commits this room\'s adjacencies';
         } else if (skippedLevel === 'elimination' && state.targetKind === 'encounter' && !state.encounterGridCommitted) {
-            highestMissing = 'encounter_grid_not_committed; assess again after combat_map.set_grid_bounds';
+            highestMissing = 'encounter_grid_not_committed; assess again after spatial_manage.set_grid_bounds';
         } else if (skippedLevel === 'elimination') {
             highestMissing = 'elimination_prerequisites_not_committed; commit hazard source row metadata';
         }

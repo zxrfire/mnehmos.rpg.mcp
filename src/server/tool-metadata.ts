@@ -4,9 +4,9 @@
  */
 
 export type ToolCategory =
-  | 'world' | 'inventory' | 'quest' | 'party'
-  | 'math' | 'strategy' | 'secret'
-  | 'npc' | 'spatial' | 'theft' | 'corpse' | 'improvisation'
+  | 'world' | 'inventory' | 'party'
+  | 'math' | 'secret'
+  | 'npc' | 'spatial'
   | 'turn-management' | 'meta' | 'batch' | 'context' | 'narrative' | 'composite'
   | 'agent'
   // Cultivation (xianxia) surface

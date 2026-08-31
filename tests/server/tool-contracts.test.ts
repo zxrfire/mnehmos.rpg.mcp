@@ -3,11 +3,13 @@ import { buildConsolidatedRegistry } from '../../src/server/consolidated-registr
 
 describe('consolidated tool contracts', () => {
     it('keeps metadata, schemas, action docs, and handlers in one contract per tool', () => {
-        // 29 after the D&D surface was retired: the spellcasting, character
-        // sheet and three combat tools went with the engines behind them, and
-        // one cultivation-facing combat_manage replaced the three.
-        expect(ConsolidatedTools).toHaveLength(29);
-        expect(new Set(ConsolidatedTools.map(contract => contract.name)).size).toBe(29);
+        // 23, down from 37. The spellcasting, character-sheet and three combat
+        // tools went with the engines behind them and one cultivation-facing
+        // combat_manage replaced the three; a second pass then removed six that
+        // were registered here and imported nowhere else - quest, party,
+        // strategy, theft, corpse and improvisation.
+        expect(ConsolidatedTools).toHaveLength(23);
+        expect(new Set(ConsolidatedTools.map(contract => contract.name)).size).toBe(23);
 
         for (const contract of ConsolidatedTools) {
             expect(contract.metadata.name).toBe(contract.name);

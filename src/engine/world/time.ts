@@ -61,6 +61,7 @@ import {
     inheritGoals,
     legacyGoals,
     markDead,
+    upsertRelationship,
     type NpcGoal,
     type NpcRecord
 } from './npc-state.js';
@@ -698,13 +699,61 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
 
     const goals = legacyGoals(deceased);
     let inherited: NpcGoal[] = [];
-    if (primary && goals.length > 0) {
+    if (primary) {
         const at = state.npcs.findIndex(n => n.id === primary.id);
         if (at >= 0) {
-            const before = state.npcs[at].goals.length;
-            state.npcs[at] = inheritGoals(state.npcs[at], goals, deceased.id, onDay);
-            inherited = state.npcs[at].goals.slice(before);
+            if (goals.length > 0) {
+                const before = state.npcs[at].goals.length;
+                state.npcs[at] = inheritGoals(state.npcs[at], goals, deceased.id, onDay);
+                inherited = state.npcs[at].goals.slice(before);
+            }
+            // And the accounts. A grudge outlives its owner: the charter is
+            // explicit that they are inherited, and an heir who took the
+            // holdings and the unfinished business but not the enemies would
+            // be inheriting the easy half.
+            for (const account of deceased.relationships) {
+                if (account.standing > -0.4) continue;
+                if (account.targetId === primary.id) continue;
+                state.npcs[at] = upsertRelationship(state.npcs[at], {
+                    targetId: account.targetId,
+                    targetName: account.targetName,
+                    kind: account.kind,
+                    // It thins by a generation, and it does not go away.
+                    standing: Math.max(-1, account.standing * 0.85),
+                    note: account.note,
+                    factIds: account.factIds,
+                    inheritedFromId: deceased.id
+                }, onDay);
+            }
         }
+    }
+
+    // An estate that went somewhere is a fact about the world, and it is the
+    // one a descendant three centuries later is standing on.
+    if (primary && (inherited.length > 0 || heirs.length > 0)) {
+        const heir = state.npcs.find(n => n.id === primary.id);
+        appendFact(state.history, makeFact({
+            day: onDay,
+            kind: 'inheritance',
+            scale: 'personal',
+            actors: [
+                { id: deceased.id, name: deceased.name, role: 'deceased' },
+                { id: primary.id, name: heir?.name ?? primary.id, role: 'heir' }
+            ],
+            locationId: deceased.locationId,
+            factionIds: deceased.factionId ? [deceased.factionId] : [],
+            summary:
+                `${heir?.name ?? primary.id} took what ${deceased.name} left` +
+                (inherited.length > 0
+                    ? `, including ${inherited.length} unfinished piece${inherited.length === 1 ? '' : 's'} of business`
+                    : '') + '.',
+            visibility: 'faction',
+            magnitude: 0.2,
+            data: {
+                unattributed: 'A holding up the valley has changed hands within a family.',
+                goalsInherited: inherited.length
+            }
+        }));
     }
 
     return {

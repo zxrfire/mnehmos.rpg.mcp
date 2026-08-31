@@ -84,7 +84,7 @@ async function handleSet(args: z.infer<typeof SetSchema>): Promise<object> {
             error: true,
             code: 'PARTICIPANT_NOT_FOUND',
             message: `Participant characters not found: ${missing.join(', ')}`,
-            suggestion: 'Verify character IDs with character_manage action: "list" or "get".'
+            suggestion: 'Verify character IDs with npc_manage action: "get_full_context".'
         };
     }
 
