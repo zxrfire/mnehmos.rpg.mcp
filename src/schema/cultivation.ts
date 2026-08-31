@@ -182,6 +182,14 @@ export const CultivatorSchema = z.object({
     spiritStones: z.number().int().min(0).default(STARTING_SPIRIT_STONES),
     sectId: z.string().nullable().default(null),
     sectRank: z.string().nullable().default(null),
+    /**
+     * Where the cultivator currently is, as a free-text place name
+     * ("Azure Cloud Sect outer courtyard", "the Scorched Wastes"). Deliberately
+     * not an enum: this world's geography is narrative, invented by the agent
+     * as the run goes, and an enum would force the engine to own a map it does
+     * not simulate. The engine stores and lists it; it never reasons about it.
+     */
+    location: z.string().nullable().default(null),
     /** Names/ids of parties who have a standing grudge. Feuds get you killed. */
     feuds: z.array(z.string()).default([]),
 

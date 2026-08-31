@@ -58,6 +58,7 @@ import { buildConsolidatedRegistry } from './consolidated-registry.js';
 
 // PubSub and utilities
 import { PubSub } from '../engine/pubsub.js';
+import { PROVIDER_NAMES, PROVIDER_CONFIG_ENV, PROVIDER_REQUIRES_API_KEY } from '../agent/provider/config.js';
 import { registerEventInboxBridge, registerEventTools } from './events.js';
 import { AuditLogger } from './audit.js';
 import { withSession } from './types.js';
@@ -211,9 +212,14 @@ async function main() {
     if (providers.length > 0) {
       console.error(`[Agent]   providers ready:  ${providers.join(', ')}`);
     } else {
-      console.error('[Agent]   providers ready:  (none — set OPENAI_API_KEY and/or OPENROUTER_API_KEY)');
+      // Key names come from the provider config module so a newly added
+      // provider shows up here without anyone remembering to edit this string.
+      const keyNames = PROVIDER_NAMES
+        .filter(n => PROVIDER_REQUIRES_API_KEY[n])
+        .map(n => PROVIDER_CONFIG_ENV[n]);
+      console.error(`[Agent]   providers ready:  (none — set one of ${keyNames.join(', ')}, or run Ollama locally)`);
       // Show which key names exist in the process env (presence only, never values)
-      const visibleKeys = ['OPENAI_API_KEY', 'OPENROUTER_API_KEY', 'OPENAI_ORGANIZATION', 'OPENROUTER_REFERER']
+      const visibleKeys = [...keyNames, 'OPENAI_ORGANIZATION', 'OPENROUTER_REFERER']
         .filter(k => process.env[k] !== undefined);
       console.error(`[Agent]   env keys visible: ${visibleKeys.length > 0 ? visibleKeys.join(', ') : '(none of the expected keys)'}`);
     }
