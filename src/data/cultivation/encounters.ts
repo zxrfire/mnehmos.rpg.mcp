@@ -8,7 +8,7 @@
  * narration; it never invents the facts, and it never sees a sentence here that
  * was already trying to be a story.
  *
- * Compare `SimEventSchema.summary` in `src/schema/cultivation.ts` — a filled
+ * Compare `SimEventSchema.summary` in `src/schema/cultivation.ts` - a filled
  * template is exactly what belongs in that field.
  *
  * WEIGHTING
@@ -17,7 +17,7 @@
  * range contains the cultivator. Ranges overlap heavily on purpose: a Qi
  * Condensation cultivator meets bandits and untouched herb patches, a Nascent
  * Soul cultivator meets sect wars and sealed tombs, and the handful of entries
- * that span the whole ladder — qi deviation, being robbed in seclusion — are
+ * that span the whole ladder - qi deviation, being robbed in seclusion - are
  * the reminders that nothing is ever fully outgrown.
  *
  * `threatOrdinal` is the realm ordinal of whatever is hostile, or null when the
@@ -30,7 +30,7 @@
  * This is a late age. The ash falling now has been through a hundred thousand
  * cultivators already, and nobody has ascended in living memory. A sealed site
  * is a pocket of ash that has NOT been breathed, along with whatever its owner
- * did not get to take out — manuals in grades no living teacher can transmit,
+ * did not get to take out - manuals in grades no living teacher can transmit,
  * refining methods nobody alive devised, and formations still drawing on a vein
  * that was rich when it was tapped.
  *
@@ -50,6 +50,7 @@
 
 import { z } from 'zod';
 import { SimEventKindSchema, type SimEventKind } from '../../schema/cultivation.js';
+import { MAX_ORDINAL, TOTAL_RANKS } from '../../engine/cultivation/realms.js';
 
 /** Coarse classification, for filtering and for rumour/log grouping. */
 export const EncounterKindSchema = z.enum([
@@ -58,6 +59,7 @@ export const EncounterKindSchema = z.enum([
     'spirit_beast',
     'ruin',
     'grave',
+    'dao_house',
     'opportunity',
     'commerce',
     'sect_event',
@@ -74,14 +76,14 @@ export const EncounterEntrySchema = z.object({
     /** Relative draw weight among eligible entries. */
     weight: z.number().int().min(1),
     /** Inclusive realm-ordinal window in which this entry is appropriate. */
-    minOrdinal: z.number().int().min(0).max(44),
-    maxOrdinal: z.number().int().min(0).max(44),
+    minOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    maxOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** True when the entry should stop a time-skip and hand control back. */
     interrupts: z.boolean(),
     /** Realm ordinal of the hostile party, or null when nothing is hostile. */
-    threatOrdinal: z.number().int().min(0).max(44).nullable(),
+    threatOrdinal: z.number().int().min(0).max(MAX_ORDINAL).nullable(),
     /**
-     * Engine-authored factual summary with `{token}` slots. Facts only — no
+     * Engine-authored factual summary with `{token}` slots. Facts only - no
      * narration, no adjectives the engine cannot substantiate.
      */
     summaryTemplate: z.string().min(1),
@@ -759,7 +761,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         interrupts: true,
         threatOrdinal: 24,
         summaryTemplate:
-            'A body seated in the inner chamber at {place} is still cultivating — slowly, badly, and for roughly {years} years. Current output: {threatRank}. It has not registered the door being opened.',
+            'A body seated in the inner chamber at {place} is still cultivating - slowly, badly, and for roughly {years} years. Current output: {threatRank}. It has not registered the door being opened.',
         tokens: ['place', 'years', 'threatRank'],
         tags: ['ruin', 'hostile', 'avoidable', 'high-risk']
     },
@@ -964,6 +966,135 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
             'The deposit taken at {place} was being watched. {faction} has sent {count} to recover it, strongest at {threatRank}. They have not opened with a request for its return.',
         tokens: ['place', 'faction', 'count', 'threatRank'],
         tags: ['grave', 'hostile', 'feud-seed', 'unavoidable']
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DAO HOUSES
+    // The obstacle here is civil authority, not combat strength. Every one
+    // of these can be solved by killing somebody, and the summary is
+    // written so that the engine's real question is what happens
+    // afterwards. `threatOrdinal` is null on most of them on purpose: the
+    // party standing in the way is not the threat.
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'enc-ledger-audit-notice',
+        name: 'Audit Notice',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 40,
+        minOrdinal: 2,
+        maxOrdinal: 30,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'An auditor of {faction} serves notice at {place} of an obligation {generations} generations old, inherited and unsettled. Assessed at {stones} spirit stones or an equivalent service. The auditor is at {threatRank} and travels alone.',
+        tokens: ['faction', 'place', 'generations', 'stones', 'threatRank'],
+        tags: ['dao-house', 'civil', 'karma', 'negotiable', 'afterwards']
+    },
+    {
+        id: 'enc-oath-witness-required',
+        name: 'Witness Required',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 45,
+        minOrdinal: 3,
+        maxOrdinal: 32,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            'The agreement at {place} will not be recognised by any party to it without a witness of {faction}. Fee: {stones} spirit stones. Penalty clause on breach as written: {penalty}. Unwitnessed, the agreement binds nobody and both sides know it.',
+        tokens: ['place', 'faction', 'stones', 'penalty'],
+        tags: ['dao-house', 'civil', 'oaths', 'trade', 'safe']
+    },
+    {
+        id: 'enc-narrow-hour-summons',
+        name: 'Named in a Convergence',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 25,
+        minOrdinal: 6,
+        maxOrdinal: 36,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'An adviser of {faction} states at {place} that the cultivator appears in a convergence the house is managing, due in {days} days. The house will say which convergence for {stones} spirit stones. It has not said what the cultivator does in it.',
+        tokens: ['faction', 'place', 'days', 'stones'],
+        tags: ['dao-house', 'civil', 'fate', 'timed', 'avoidable']
+    },
+    {
+        id: 'enc-held-names-registration',
+        name: 'Registration at the Gate',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 50,
+        minOrdinal: 0,
+        maxOrdinal: 24,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'The gate at {place} admits nobody unregistered. {faction} takes the name, holds it, and charges {stones} spirit stones a year. Unregistered parties may not trade, testify, inherit or be buried inside the walls.',
+        tokens: ['place', 'faction', 'stones'],
+        tags: ['dao-house', 'civil', 'names', 'ordinary', 'avoidable']
+    },
+    {
+        id: 'enc-quiet-cut-offer',
+        name: 'An Offer to Cut',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 20,
+        minOrdinal: 7,
+        maxOrdinal: 38,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A third party at {place} conveys an offer from {faction}: one connection removed, permanently, for {stones} spirit stones. The connection named in the offer is {target}. Removal cannot be reversed by them or by anyone.',
+        tokens: ['place', 'faction', 'stones', 'target'],
+        tags: ['dao-house', 'severance', 'irreversible', 'avoidable', 'afterwards']
+    },
+    {
+        id: 'enc-anchorhold-perimeter-refusal',
+        name: 'Perimeter Refusal',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 30,
+        minOrdinal: 8,
+        maxOrdinal: 40,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A warden of {faction} refuses passage into the perimeter at {place}, which has been maintained {years} years. Behind it: {contained}. The warden is at {threatRank} and is not authorised to negotiate.',
+        tokens: ['faction', 'place', 'years', 'contained', 'threatRank'],
+        tags: ['dao-house', 'civil', 'fixity', 'forbidden-zone', 'afterwards']
+    },
+    {
+        id: 'enc-span-station-closed',
+        name: 'Station Closed to the Cultivator',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 28,
+        minOrdinal: 4,
+        maxOrdinal: 34,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            'The station at {place} will not carry the cultivator. {faction} gives the reason as {reason}. The walked distance to the destination is {days} days; the span is one hour, and every other route out is also theirs.',
+        tokens: ['place', 'faction', 'reason', 'days'],
+        tags: ['dao-house', 'civil', 'space', 'logistics', 'safe']
+    },
+    {
+        id: 'enc-house-member-killed',
+        name: 'What Happens Afterwards',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 18,
+        minOrdinal: 6,
+        maxOrdinal: 40,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A member of {faction} died at {place} {days} days ago, and the house has established who. It has sent nobody. What it has done instead: {consequence}. Parties who have withdrawn service since: {count}.',
+        tokens: ['faction', 'place', 'days', 'consequence', 'count'],
+        tags: ['dao-house', 'civil', 'afterwards', 'unavoidable', 'feud-seed']
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1273,7 +1404,7 @@ const ENCOUNTERS_BY_KIND: ReadonlyMap<EncounterKind, readonly EncounterEntry[]> 
  * catalog.
  */
 const ENCOUNTERS_BY_ORDINAL: readonly (readonly EncounterEntry[])[] = (() => {
-    const buckets: EncounterEntry[][] = Array.from({ length: 45 }, () => []);
+    const buckets: EncounterEntry[][] = Array.from({ length: TOTAL_RANKS }, () => []);
     for (const e of ENCOUNTERS) {
         for (let o = e.minOrdinal; o <= e.maxOrdinal; o++) buckets[o].push(e);
     }
@@ -1353,7 +1484,7 @@ function matches(e: EncounterEntry, ordinal: number, opts: EncounterQuery): bool
 
 function clampOrdinal(ordinal: number): number {
     if (!Number.isFinite(ordinal)) return 0;
-    return Math.max(0, Math.min(44, Math.floor(ordinal)));
+    return Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
 }
 
 /**

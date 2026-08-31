@@ -2,7 +2,7 @@
  * Alchemy recipes.
  *
  * One recipe per pill in `pills.ts`, keyed to ingredient ids in `herbs.ts`.
- * Nothing here decides whether a refinement succeeds — `baseSuccessRate` is the
+ * Nothing here decides whether a refinement succeeds - `baseSuccessRate` is the
  * floor the engine starts from before alchemy skill, cauldron quality, spirit
  * root and ambient qi are applied.
  *
@@ -15,7 +15,7 @@
  *    mortal-grade one is never as risky. The bands are the whole difficulty
  *    curve of alchemy in one table.
  * 4. `requiredOrdinal` is at least the pill grade's band floor, and at least
- *    the harvest ordinal of every ingredient — an alchemist who can refine the
+ *    the harvest ordinal of every ingredient - an alchemist who can refine the
  *    pill can, in principle, reach everything it needs.
  * 5. The combined market value of the ingredients is strictly less than the
  *    pill's market value. Refinement adds value; if it did not, no alchemist
@@ -23,10 +23,11 @@
  */
 
 import type { Recipe, TechniqueGrade } from '../../schema/cultivation.js';
+import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import type { Band } from './techniques.js';
 
 // ─────────────────────────────────────────────────────────────────────────
-// PROVENANCE — knowledge is recovered, not invented
+// PROVENANCE - knowledge is recovered, not invented
 // In the Late Age nobody develops a new heaven-grade method. The good recipes
 // are dug out of tombs, read off a wall in a sealed refining hall, or bought
 // from someone who did the digging. A guild's "secret formula" is usually a
@@ -49,13 +50,13 @@ export interface RecipeEntry extends Recipe {
 
 /** Recipes that exist only because somebody opened something that was sealed. */
 export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
-    // heaven — the methods the surviving guilds cannot reproduce from first principles
+    // heaven - the methods the surviving guilds cannot reproduce from first principles
     'recipe-meridian-rebirth',
     'recipe-condensed-decade',
     'recipe-nascent-soul-guiding',
     'recipe-century-lotus',
     'recipe-grain-abstinence',
-    // immortal — every one
+    // immortal - every one
     'recipe-void-source-return',
     'recipe-undying-flesh',
     'recipe-clear-mind-of-the-hollow-sky',
@@ -64,7 +65,7 @@ export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
     'recipe-void-refinement-guiding',
     'recipe-thousand-year-cypress',
     'recipe-perpetual-grain-abstinence',
-    // chaos — every one, and most are partial transcriptions at that
+    // chaos - every one, and most are partial transcriptions at that
     'recipe-kalpa-surviving',
     'recipe-primordial-qi-source',
     'recipe-heaven-mending',
@@ -94,7 +95,7 @@ export const RECIPE_SUCCESS_BANDS: Record<TechniqueGrade, Band> = {
 
 const RECIPE_DATA: readonly Recipe[] = [
     // ═══════════════════════════════════════════════════════════════════
-    // MORTAL — roadside reagents, a clay cauldron, and reasonable odds
+    // MORTAL - roadside reagents, a clay cauldron, and reasonable odds
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'recipe-minor-healing',
@@ -198,7 +199,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // EARTH — a proper cauldron, a spirit fire, and a real chance of loss
+    // EARTH - a proper cauldron, a spirit fire, and a real chance of loss
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'recipe-azure-qi-return',
@@ -295,7 +296,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // HEAVEN — half the batches are lost, and the reagents are irreplaceable
+    // HEAVEN - half the batches are lost, and the reagents are irreplaceable
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'recipe-boundless-source',
@@ -397,7 +398,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // IMMORTAL — four failures for every success, at reagent prices that
+    // IMMORTAL - four failures for every success, at reagent prices that
     // fund a sect for a decade
     // ═══════════════════════════════════════════════════════════════════
     {
@@ -497,7 +498,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // CHAOS — nine attempts in ten destroy reagents nobody can replace
+    // CHAOS - nine attempts in ten destroy reagents nobody can replace
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'recipe-kalpa-surviving',
@@ -642,7 +643,7 @@ export function getRecipesUsingHerb(herbId: string): readonly RecipeEntry[] {
 
 /** Every recipe an alchemist at this ordinal is permitted to attempt. */
 export function findRecipesForOrdinal(ordinal: number): RecipeEntry[] {
-    const cap = Math.max(0, Math.min(44, Math.floor(ordinal)));
+    const cap = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
     return RECIPES.filter(r => r.requiredOrdinal <= cap);
 }
 
