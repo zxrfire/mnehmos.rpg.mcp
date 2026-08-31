@@ -18,7 +18,7 @@
  *   skipEndState            absolute end state, including the two values the
  *                           digest does not return (`yearsAtCurrentRealm`,
  *                           `starvationTurns`)
- *   reconstructSkipInjuries the wounds, rebuilt from engine-written facts
+ *   (injuries come straight off the engine result now - see below)
  *   persistToll             the price of a crossing - and the delete behind it
  *
  * This module owns only the ordering and the transaction.
@@ -29,11 +29,10 @@ import { describeDeath } from '../engine/cultivation/survival.js';
 import {
     persistFoundation,
     persistToll,
-    reconstructSkipInjuries,
     skipEndState,
-    type CultivationRepos,
-    type ReconstructedInjury
+    type CultivationRepos
 } from '../server/consolidated/cultivation-support.js';
+import type { Injury } from '../schema/cultivation.js';
 
 export interface ApplySkipInput {
     before: Cultivator;
@@ -47,7 +46,7 @@ export interface ApplySkipResult {
     cultivator: Cultivator;
     run: Run;
     /** Injuries written to the database as a result of this skip. */
-    injuries: ReconstructedInjury[];
+    injuries: Injury[];
     /** Engine-authored lines for every price a crossing exacted. */
     tollLines: string[];
 }
@@ -63,7 +62,11 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
     const { before, run, skip } = input;
 
     const end = skipEndState(before, skip);
-    const injuries = reconstructSkipInjuries(skip, run.turn);
+    // The engine hands back the actual Injury records. This used to be
+    // reconstructed by parsing the engine's own narration strings, which was
+    // exact and one reworded sentence away from silently persisting the wrong
+    // wound.
+    const injuries = skip.injuriesSustained;
     const ranksGained = Math.max(0, end.realmOrdinal - before.realmOrdinal);
     const nextTurn = run.turn + 1;
     const tollLines: string[] = [];
