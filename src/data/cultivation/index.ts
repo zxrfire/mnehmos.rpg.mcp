@@ -1,11 +1,11 @@
 /**
- * Cultivation content catalog — barrel export and cross-catalog lookups.
+ * Cultivation content catalog - barrel export and cross-catalog lookups.
  *
  * Structured after `src/content/open5e-catalog.ts`: one typed entry point, all
  * lookups O(1) against prebuilt Maps, and explicit provenance so a caller can
  * always say where a piece of content came from. Unlike the Open5e catalog,
  * this content is first-party and compiled in rather than loaded from a JSON
- * pack, so there is no fetch, no cache and no schema-version negotiation — the
+ * pack, so there is no fetch, no cache and no schema-version negotiation - the
  * TypeScript types are the contract and the tests are the validator.
  *
  * Every catalog in this directory is inert data. The engine owns all decisions;
@@ -14,12 +14,13 @@
 
 import type { Element, Technique, TechniqueCategory, TechniqueGrade, Pill, PillEffect, Recipe } from '../../schema/cultivation.js';
 import { getSpiritRoot, conflictsWithRoot, type SpiritRootKey } from '../../engine/cultivation/spirit-roots.js';
+import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 
 import { TECHNIQUES, findTechniquesForOrdinal, getTechnique, type TechniqueEntry, type TechniqueQuery } from './techniques.js';
 import { PILLS, getPill } from './pills.js';
 import { RECIPES, getRecipesForPill, type RecipeEntry } from './recipes.js';
 import { HERBS, getHerb } from './herbs.js';
-import { SECTS } from './sects.js';
+import { SECTS, DAO_HOUSES, DESTROYED_DAO_HOUSES } from './sects.js';
 import { ENCOUNTERS } from './encounters.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -40,6 +41,8 @@ export {
     getTechniquesByElement,
     getTechniquesByProvenance,
     getRecoveredTechniques,
+    getFragmentTechniques,
+    FRAGMENT_TECHNIQUE_ORIGINS,
     findTechniquesForOrdinal,
     findBestTechniquesForOrdinal,
     RUIN_ONLY_TECHNIQUE_IDS,
@@ -107,9 +110,26 @@ export {
     findSectsForOrdinal,
     stipendForRank,
     formationIntegrity,
+    DAO_HOUSES,
+    DESTROYED_DAO_HOUSES,
+    DAO_HOUSE_DISPUTES,
+    getDaoHouse,
+    requireDaoHouse,
+    getDaoHouseByPrinciple,
+    getDestroyedDaoHouse,
+    getCounterHouse,
+    getDisputesFor,
+    getSuccessionAccounts,
+    isDaoHouse,
     type SectEntry,
     type SectAdmission,
-    type SectCompound
+    type SectCompound,
+    type DaoHouseEntry,
+    type DaoHouseCounter,
+    type DaoHouseSuccession,
+    type DaoHouseDispute,
+    type DaoPrinciple,
+    type DestroyedDaoHouse
 } from './sects.js';
 
 export {
@@ -158,6 +178,10 @@ export interface CultivationCatalogCounts {
     recipes: number;
     herbs: number;
     sects: number;
+    /** Subset of `sects`: the ancient houses, which are sects to the engine. */
+    daoHouses: number;
+    /** Houses that no longer exist and are still load-bearing. */
+    destroyedDaoHouses: number;
     encounters: number;
 }
 
@@ -169,6 +193,8 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         recipes: RECIPES.length,
         herbs: HERBS.length,
         sects: SECTS.length,
+        daoHouses: DAO_HOUSES.length,
+        destroyedDaoHouses: DESTROYED_DAO_HOUSES.length,
         encounters: ENCOUNTERS.length
     };
 }
@@ -180,8 +206,8 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
  * almost nothing safe to learn.
  *
  * `includeConflicting` returns the dangerous ones too, flagged, because
- * choosing to cultivate a conflicting art is a legitimate — and frequently
- * fatal — player decision, not something content should hide.
+ * choosing to cultivate a conflicting art is a legitimate - and frequently
+ * fatal - player decision, not something content should hide.
  */
 export interface RootTechniqueMatch {
     technique: TechniqueEntry;
@@ -295,7 +321,7 @@ export function getCultivationOptions(
     spiritRoot: SpiritRootKey,
     opts: { category?: TechniqueCategory; grade?: TechniqueGrade; excludeForbidden?: boolean } = {}
 ): CultivationOptions {
-    const clamped = Math.max(0, Math.min(44, Math.floor(ordinal)));
+    const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
     return {
         ordinal: clamped,
         spiritRoot,
@@ -313,7 +339,7 @@ export function getCultivationOptions(
 /**
  * What a sealed site at this ordinal can plausibly be holding: the arts and
  * methods the living world cannot supply at all. This is the payoff half of
- * the exploration loop — the reason a cultivator without talent digs instead
+ * the exploration loop - the reason a cultivator without talent digs instead
  * of cultivating, since ambient ash in this age will not close the gap to a
  * single-root prodigy and a recovered chaos-grade manual might.
  */
@@ -321,7 +347,7 @@ export function getRuinLootTable(ordinal: number): {
     techniques: TechniqueEntry[];
     recipes: RecipeEntry[];
 } {
-    const clamped = Math.max(0, Math.min(44, Math.floor(ordinal)));
+    const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
     return {
         techniques: TECHNIQUES.filter(t => t.provenance !== 'taught' && t.requiredOrdinal <= clamped),
         recipes: RECIPES.filter(r => r.provenance === 'recovered' && r.requiredOrdinal <= clamped)
@@ -347,7 +373,7 @@ export function findPillsForProblem(effect: PillEffect): Pill[] {
 
 /** Sect ids that would take this cultivator, split by alignment. */
 export function findAdmissibleSects(ordinal: number): { righteous: string[]; neutral: string[]; demonic: string[] } {
-    const clamped = Math.max(0, Math.min(44, Math.floor(ordinal)));
+    const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
     const out = { righteous: [] as string[], neutral: [] as string[], demonic: [] as string[] };
     for (const sect of SECTS) {
         // Powers that take no applicants are facts about the world, not doors.

@@ -5,7 +5,7 @@
  * the schemas in `src/schema/cultivation.ts`. It walks every entry in every
  * catalog, parses it against its Zod schema, and then asserts the balance
  * invariants the content commits to in its own header comments. If an invariant
- * here fails, either the content is wrong or the invariant was a lie — both are
+ * here fails, either the content is wrong or the invariant was a lie - both are
  * bugs worth failing a build over.
  */
 
@@ -36,6 +36,7 @@ import {
     findTechniquesForOrdinal,
     findBestTechniquesForOrdinal,
     gradeForOrdinal,
+    CONTENT_MAX_ORDINAL,
     getTechniquesByProvenance,
     getRecoveredTechniques,
     RUIN_ONLY_TECHNIQUE_IDS,
@@ -76,7 +77,16 @@ import {
     getSectsByAlignment,
     getSectsTeaching,
     stipendForRank,
-    formationIntegrity
+    formationIntegrity,
+    DAO_HOUSES,
+    DESTROYED_DAO_HOUSES,
+    DAO_HOUSE_DISPUTES,
+    getDaoHouse,
+    getDestroyedDaoHouse,
+    getCounterHouse,
+    getDisputesFor,
+    getSuccessionAccounts,
+    isDaoHouse
 } from '../../src/data/cultivation/sects.js';
 import {
     ENCOUNTERS,
@@ -199,9 +209,12 @@ describe('techniques', () => {
     });
 
     // ── balance invariants ────────────────────────────────────────────
-    it('grade ordinal bands are disjoint, ascending and cover the ladder', () => {
+    it('grade ordinal bands are disjoint, ascending and cover the playable ladder', () => {
         expect(GRADE_ORDINAL_BANDS.mortal.min).toBe(0);
-        expect(GRADE_ORDINAL_BANDS.chaos.max).toBe(MAX_ORDINAL);
+        // Content stops at the last crossing. True Immortal is not a rank
+        // anyone reads a manual at, and MAX_ORDINAL may move again.
+        expect(GRADE_ORDINAL_BANDS.chaos.max).toBe(CONTENT_MAX_ORDINAL);
+        expect(CONTENT_MAX_ORDINAL).toBeLessThanOrEqual(MAX_ORDINAL);
         for (let i = 1; i < GRADES.length; i++) {
             const prev = GRADE_ORDINAL_BANDS[GRADES[i - 1]];
             const next = GRADE_ORDINAL_BANDS[GRADES[i]];
@@ -270,7 +283,9 @@ describe('techniques', () => {
     });
 
     it('there is always something to strive for: every ordinal has a higher-tier art ahead', () => {
-        for (let o = 0; o < MAX_ORDINAL; o++) {
+        // Up to the last crossing. At the crossing itself what is ahead is not
+        // a manual, it is the Lid.
+        for (let o = 0; o < CONTENT_MAX_ORDINAL; o++) {
             const ahead = TECHNIQUES.filter(t => t.requiredOrdinal > o);
             expect(ahead.length, `nothing left to learn above ordinal ${o}`).toBeGreaterThan(0);
         }
@@ -314,11 +329,13 @@ describe('techniques', () => {
     });
 
     it('gradeForOrdinal agrees with the band table', () => {
-        for (let o = 0; o <= MAX_ORDINAL; o++) {
+        for (let o = 0; o <= CONTENT_MAX_ORDINAL; o++) {
             const band = GRADE_ORDINAL_BANDS[gradeForOrdinal(o)];
             expect(o).toBeGreaterThanOrEqual(band.min);
             expect(o).toBeLessThanOrEqual(band.max);
         }
+        // Above the last crossing there are no manuals; report the top band.
+        expect(gradeForOrdinal(MAX_ORDINAL)).toBe('chaos');
     });
 });
 
@@ -741,8 +758,8 @@ describe('encounters', () => {
         }
     });
 
-    it('covers the whole ladder with something at every ordinal', () => {
-        for (let o = 0; o <= MAX_ORDINAL; o++) {
+    it('covers the whole playable ladder with something at every ordinal', () => {
+        for (let o = 0; o <= CONTENT_MAX_ORDINAL; o++) {
             expect(getEncountersForOrdinal(o).length, `no encounter available at ordinal ${o}`)
                 .toBeGreaterThan(0);
         }
@@ -757,7 +774,7 @@ describe('encounters', () => {
     });
 
     it('rollEncounter is deterministic, in-range, and filterable', () => {
-        for (let o = 0; o <= MAX_ORDINAL; o++) {
+        for (let o = 0; o <= CONTENT_MAX_ORDINAL; o++) {
             for (const sample of [0, 0.33, 0.66, 0.999999]) {
                 const drawn = rollEncounter(o, sample);
                 expect(drawn, `ordinal ${o} sample ${sample}`).toBeDefined();
@@ -942,6 +959,173 @@ describe('the Late Age: provenance and the exploration loop', () => {
         }
         expect(inherited / SECTS.length, 'most sects inherited their ground').toBeGreaterThan(0.7);
         expect(incomplete, 'most sects cannot run their whole inheritance').toBeGreaterThan(SECTS.length / 2);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+describe('Dao houses', () => {
+    it('carries six to eight houses, each on a distinct principle', () => {
+        expect(DAO_HOUSES.length).toBeGreaterThanOrEqual(6);
+        expect(DAO_HOUSES.length).toBeLessThanOrEqual(8);
+        const principles = new Set(DAO_HOUSES.map(h => h.principle));
+        expect(principles.size, 'two houses share a principle').toBe(DAO_HOUSES.length);
+    });
+
+    it('every house is also a valid sect', () => {
+        for (const h of DAO_HOUSES) {
+            expect(() => SectSchema.parse(h), `house ${h.id}`).not.toThrow();
+            expect(SECTS.includes(h), `${h.id} missing from SECTS`).toBe(true);
+            expect(isDaoHouse(h.id)).toBe(true);
+            expect(getDaoHouse(h.id)).toBe(h);
+        }
+        for (const s of SECTS) {
+            if (!DAO_HOUSES.includes(s as never)) expect(isDaoHouse(s.id)).toBe(false);
+        }
+    });
+
+    it('is ancient, which is the entire point', () => {
+        for (const h of DAO_HOUSES) {
+            expect(h.foundedYearsAgo, `${h.id} is not old enough to be a house`)
+                .toBeGreaterThanOrEqual(1_000);
+        }
+    });
+
+    it('reaches into civilisation outside combat, and names who depends on it', () => {
+        for (const h of DAO_HOUSES) {
+            expect(h.principleDescription.length, `${h.id} principle`).toBeGreaterThan(120);
+            expect(h.civilReach.length, `${h.id} civil reach`).toBeGreaterThanOrEqual(4);
+            expect(h.services.length, `${h.id} services`).toBeGreaterThanOrEqual(2);
+            expect(h.dependents.length, `${h.id} dependents`).toBeGreaterThanOrEqual(2);
+            expect(h.afterwardsClause.length, `${h.id} afterwards clause`).toBeGreaterThan(80);
+            // Civil authority is stated in specifics, not as a power level.
+            for (const line of [...h.civilReach, ...h.services, ...h.dependents]) {
+                expect(line.length).toBeGreaterThan(20);
+            }
+        }
+    });
+
+    it('is not martially dominant: no house teaches mostly attack arts', () => {
+        for (const h of DAO_HOUSES) {
+            const taught = h.teaches.map(id => getTechnique(id)!);
+            const attacks = taught.filter(t => t.category === 'attack').length;
+            expect(attacks / taught.length, `${h.id} is a war sect wearing a robe`)
+                .toBeLessThan(0.5);
+        }
+    });
+
+    it('every house has a named counter, mostly held by a rival house', () => {
+        let heldByRival = 0;
+        for (const h of DAO_HOUSES) {
+            expect(h.counter.name.length, `${h.id} counter`).toBeGreaterThan(4);
+            expect(h.counter.description.length).toBeGreaterThan(80);
+            expect(h.counter.heldBy, `${h.id} counters itself`).not.toBe(h.id);
+            if (h.counter.heldBy === null) continue;
+            const holder = getDaoHouse(h.counter.heldBy);
+            expect(holder, `${h.id} counter held by unknown ${h.counter.heldBy}`).toBeDefined();
+            expect(getCounterHouse(h.id)).toBe(holder);
+            if (h.rivals.includes(holder!.id)) heldByRival++;
+        }
+        expect(heldByRival, 'counters should mostly sit with a rival')
+            .toBeGreaterThanOrEqual(DAO_HOUSES.length - 1);
+    });
+
+    it('every house is genuinely bad at things and genuinely troubled', () => {
+        for (const h of DAO_HOUSES) {
+            expect(h.blindSpots.length, `${h.id} blind spots`).toBeGreaterThanOrEqual(4);
+            expect(h.internalFactions.length, `${h.id} internal factions`).toBeGreaterThanOrEqual(2);
+            expect(h.weaknesses.length, `${h.id} weaknesses`).toBeGreaterThanOrEqual(3);
+            for (const line of [...h.blindSpots, ...h.weaknesses]) {
+                expect(line.length).toBeGreaterThan(25);
+            }
+        }
+    });
+
+    it('has at least two houses standing on a predecessor, with a rewritten record', () => {
+        const withSuccession = DAO_HOUSES.filter(h => h.succession !== null);
+        expect(withSuccession.length).toBeGreaterThanOrEqual(2);
+        for (const h of withSuccession) {
+            const s = h.succession!;
+            expect(getDestroyedDaoHouse(s.predecessorId), `${h.id} predecessor unknown`).toBeDefined();
+            expect(s.officialVersion.length).toBeGreaterThan(80);
+            expect(s.trueVersion.length).toBeGreaterThan(80);
+            expect(s.officialVersion, `${h.id} record was not rewritten`).not.toBe(s.trueVersion);
+            expect(s.discoverableTraces.length, `${h.id} truth is unreachable`).toBeGreaterThanOrEqual(2);
+            expect(s.yearsAgo).toBeGreaterThan(0);
+
+            const accounts = getSuccessionAccounts(h.id)!;
+            expect(accounts.official).toBe(s.officialVersion);
+            expect(accounts.truth).toBe(s.trueVersion);
+            expect(accounts.predecessor!.id).toBe(s.predecessorId);
+        }
+        // At least one succession where nobody alive knows what happened.
+        expect(DESTROYED_DAO_HOUSES.some(d => d.destroyedBy === null)).toBe(true);
+    });
+
+    it('leaves destroyed houses that are still load-bearing', () => {
+        expect(DESTROYED_DAO_HOUSES.length).toBeGreaterThanOrEqual(1);
+        expectUniqueIds(DESTROYED_DAO_HOUSES, 'destroyed house');
+        for (const d of DESTROYED_DAO_HOUSES) {
+            expect(d.destroyedYearsAgo).toBeGreaterThan(0);
+            expect(d.officialVersion).not.toBe(d.trueVersion);
+            expect(d.traces.length, `${d.id} left no traces`).toBeGreaterThanOrEqual(3);
+            for (const trace of d.traces) expect(trace.length).toBeGreaterThan(25);
+            if (d.destroyedBy !== null) {
+                expect(getSect(d.destroyedBy), `${d.id} destroyed by unknown faction`).toBeDefined();
+            }
+            expect(d.fragmentTechniqueIds.length, `${d.id} left no discipline`).toBeGreaterThan(0);
+            for (const id of d.fragmentTechniqueIds) {
+                const technique = getTechnique(id);
+                expect(technique, `${d.id} fragment ${id} does not exist`).toBeDefined();
+                // A dead house has no living teacher, by definition.
+                expect(technique!.provenance, `${id} must be recovered`).not.toBe('taught');
+                expect(technique!.fragmentOf, `${id} is not attributed to ${d.id}`).toBe(d.id);
+                expect(getSectsTeaching(id).length, `${id} is taught by a living sect`).toBe(0);
+            }
+        }
+    });
+
+    it('attributes every fragment technique to a house that actually existed', () => {
+        const fragments = TECHNIQUES.filter(t => t.fragmentOf !== null);
+        expect(fragments.length).toBeGreaterThanOrEqual(5);
+        for (const t of fragments) {
+            expect(getDestroyedDaoHouse(t.fragmentOf!), `${t.id} names unknown house ${t.fragmentOf}`)
+                .toBeDefined();
+            expect(getDestroyedDaoHouse(t.fragmentOf!)!.fragmentTechniqueIds).toContain(t.id);
+        }
+    });
+
+    it('records disagreements about reality, including a three-way one', () => {
+        expect(DAO_HOUSE_DISPUTES.length).toBeGreaterThanOrEqual(2);
+        expectUniqueIds(DAO_HOUSE_DISPUTES, 'dispute');
+        for (const d of DAO_HOUSE_DISPUTES) {
+            expect(d.subject.length).toBeGreaterThan(20);
+            expect(d.consequence.length, `${d.id} disagreement does nothing`).toBeGreaterThan(80);
+            expect(d.positions.length).toBeGreaterThanOrEqual(2);
+            const seen = new Set<string>();
+            for (const p of d.positions) {
+                expect(getSect(p.houseId), `${d.id} names unknown faction ${p.houseId}`).toBeDefined();
+                expect(p.position.length, `${d.id} position for ${p.houseId}`).toBeGreaterThan(80);
+                expect(seen.has(p.houseId), `${d.id} lists ${p.houseId} twice`).toBe(false);
+                seen.add(p.houseId);
+            }
+        }
+        const threeWay = DAO_HOUSE_DISPUTES.find(d => d.positions.length >= 3);
+        expect(threeWay, 'fate against karma against neither is absolute').toBeDefined();
+        for (const p of threeWay!.positions) {
+            expect(getDisputesFor(p.houseId)).toContain(threeWay);
+        }
+    });
+
+    it('puts the houses in the encounter tables as civil obstacles, not fights', () => {
+        const houseEncounters = ENCOUNTERS.filter(e => e.kind === 'dao_house');
+        expect(houseEncounters.length).toBeGreaterThanOrEqual(6);
+        for (const e of houseEncounters) {
+            expect(e.threatOrdinal, `${e.id} solves itself as a fight`).toBeNull();
+            expect(e.tags).toContain('dao-house');
+        }
+        // The frightening part is what happens afterwards, and it is in the table.
+        expect(houseEncounters.some(e => e.tags.includes('afterwards'))).toBe(true);
+        expect(getEncounter('enc-house-member-killed')).toBeDefined();
     });
 });
 

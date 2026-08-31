@@ -22,7 +22,7 @@
  *
  * The two mutated elements (lightning, ice) are deliberately starved. A mutated
  * root cultivates faster and hits harder than anyone, and then discovers that
- * the world contains almost no manuals it can use — see
+ * the world contains almost no manuals it can use - see
  * `techniqueAvailability` on the mutated roots in `spirit-roots.ts`. This file
  * is where that scarcity is actually made true: every wuxing element has
  * strictly more arts than either mutated element does.
@@ -33,14 +33,15 @@
  * (`src/math/dice.ts`): `NdX`, with an optional flat modifier and an optional
  * trailing `!` for exploding dice. Compound expressions such as "2d6+1d4" are
  * NOT parseable and must never appear here. Healing arts express their
- * magnitude in the same field — the engine reads the category to know whether
+ * magnitude in the same field - the engine reads the category to know whether
  * the rolled number is taken off a target or put back into one.
  */
 
 import type { Technique, TechniqueGrade, TechniqueCategory, Element } from '../../schema/cultivation.js';
+import { MAX_ORDINAL, TOTAL_RANKS, LAST_CROSSING_ORDINAL } from '../../engine/cultivation/realms.js';
 
 // ─────────────────────────────────────────────────────────────────────────
-// PROVENANCE — the Late Age rule
+// PROVENANCE - the Late Age rule
 // The world is spent. Ash degrades every time it is breathed, nobody has
 // ascended in living memory, and the manuals that describe the upper realms
 // were written by people who are no longer available to explain them.
@@ -66,7 +67,29 @@ export interface TechniqueEntry extends Technique {
     provenance: TechniqueProvenance;
     /** One factual line on where a copy is actually obtained. */
     sourceNote: string;
+    /**
+     * Id of the destroyed Dao house whose discipline this art is a fragment of,
+     * or null. Cross-checked against `DESTROYED_DAO_HOUSES` in `sects.ts` by the
+     * catalog test rather than by an import, so the technique catalog stays free
+     * of any dependency on the faction catalog.
+     */
+    fragmentOf: string | null;
 }
+
+/**
+ * Arts that are pieces of a discipline whose house no longer exists. A house
+ * dies; the thing that made it dangerous does not. These survive as partial
+ * manuals in the ruins of the seat that was burned, and they are partial in
+ * ways their finders do not discover until later.
+ */
+export const FRAGMENT_TECHNIQUE_ORIGINS: Readonly<Record<string, string>> = {
+    'severed-thread-audit': 'house-tally-court',
+    'unpayable-tally-brand': 'house-tally-court',
+    'debt-collection-in-arrears': 'house-tally-court',
+    'anchor-nail-of-the-broken-girdle': 'house-girdle-of-nine-stones',
+    'nameless-witness-stance': 'house-girdle-of-nine-stones',
+    'gate-that-was-closed': 'house-unlit-gate'
+} as const;
 
 /**
  * Arts no living institution can transmit. Every chaos-grade art is here by
@@ -74,9 +97,15 @@ export interface TechniqueEntry extends Technique {
  * surviving sects lost the manual for.
  */
 export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
-    // heaven — the sects held these once and cannot read their own copies now
+    // fragments of destroyed Dao houses - see FRAGMENT_TECHNIQUE_ORIGINS
+    'severed-thread-audit',
+    'unpayable-tally-brand',
+    'nameless-witness-stance',
+    'anchor-nail-of-the-broken-girdle',
+    'gate-that-was-closed',
+    // heaven - the sects held these once and cannot read their own copies now
     'worldroot-strangling-vine',
-    // immortal — a handful of sects still transmit theirs; these are not among them
+    // immortal - a handful of sects still transmit theirs; these are not among them
     'star-quenching-blade-domain',
     'abyssal-gate-torrent',
     'ash-of-the-first-sun',
@@ -84,7 +113,7 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'lifespring-of-the-jade-pool',
     'severed-fate-mending-art',
     'void-tide-breathing-canon',
-    // chaos — nobody alive has ever seen one of these used correctly
+    // chaos - nobody alive has ever seen one of these used correctly
     'calamity-word-of-the-open-sky',
     'dragonbone-severing-decree',
     'kalpa-fire-that-eats-heaven',
@@ -100,13 +129,14 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
 /** Arts that only ever surface in a grave deposit. */
 export const GRAVE_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'heart-of-the-ten-thousand-corpses',
-    'lifespan-devouring-heaven-theft'
+    'lifespan-devouring-heaven-theft',
+    'debt-collection-in-arrears'
 ]);
 
 const SOURCE_NOTES: Record<TechniqueProvenance, string> = {
     taught: 'Transmitted by at least one living sect. A teacher exists and can be paid, joined, or robbed.',
     ruin: 'Recovered, not taught. Copies survive only in sealed sites, and no living cultivator learned it from a person.',
-    grave: 'Found in a grave deposit — the settled remainder of what a realm boundary took off somebody. Taking it takes what someone else already paid for.'
+    grave: 'Found in a grave deposit - the settled remainder of what a realm boundary took off somebody. Taking it takes what someone else already paid for.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -121,6 +151,17 @@ export interface Band {
 }
 
 /**
+ * The highest ordinal this catalog authors content for.
+ *
+ * The ladder's true top is `MAX_ORDINAL` (True Immortal), but that rank is
+ * reached only by completing the last crossing, and a cultivator who has gone
+ * through the Lid is not in the world any more to read a manual, join a sect
+ * or dig a ruin. Content therefore covers 0 through the last crossing, and the
+ * chaos band's ceiling is that ordinal rather than the ladder's.
+ */
+export const CONTENT_MAX_ORDINAL = LAST_CROSSING_ORDINAL;
+
+/**
  * Realm-ordinal window in which each grade is learnable. Aligned to realm
  * boundaries: mortal manuals are Qi Condensation, earth manuals carry you
  * through Foundation and Core, heaven through Nascent Soul and Deity
@@ -132,7 +173,7 @@ export const GRADE_ORDINAL_BANDS: Record<TechniqueGrade, Band> = {
     earth: { min: 13, max: 20 },
     heaven: { min: 21, max: 28 },
     immortal: { min: 29, max: 36 },
-    chaos: { min: 37, max: 44 }
+    chaos: { min: 37, max: CONTENT_MAX_ORDINAL }
 } as const;
 
 /**
@@ -173,12 +214,18 @@ function art(t: Omit<Technique, 'mastery'>): TechniqueEntry {
         : RUIN_ONLY_TECHNIQUE_IDS.has(t.id)
             ? 'ruin'
             : 'taught';
-    return { ...t, mastery: 0, provenance, sourceNote: SOURCE_NOTES[provenance] };
+    return {
+        ...t,
+        mastery: 0,
+        provenance,
+        sourceNote: SOURCE_NOTES[provenance],
+        fragmentOf: FRAGMENT_TECHNIQUE_ORIGINS[t.id] ?? null
+    };
 }
 
 export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
-    // ATTACK — MORTAL (Qi Condensation)
+    // ATTACK - MORTAL (Qi Condensation)
     // Cheap, small dice, and the only thing standing between a new
     // cultivator and a roadside knife.
     // ═══════════════════════════════════════════════════════════════════
@@ -314,7 +361,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // ATTACK — EARTH (Foundation Establishment / Core Formation)
+    // ATTACK - EARTH (Foundation Establishment / Core Formation)
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'nine-rivers-sword-chant',
@@ -422,7 +469,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // ATTACK — HEAVEN (Nascent Soul / Deity Transformation)
+    // ATTACK - HEAVEN (Nascent Soul / Deity Transformation)
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'void-piercing-sword-domain',
@@ -504,7 +551,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // ATTACK — IMMORTAL (Void Refinement / Body Integration)
+    // ATTACK - IMMORTAL (Void Refinement / Body Integration)
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'star-quenching-blade-domain',
@@ -560,7 +607,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // ATTACK — CHAOS (Grand Ascension / Tribulation Transcendence)
+    // ATTACK - CHAOS (Grand Ascension / Tribulation Transcendence)
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'calamity-word-of-the-open-sky',
@@ -603,7 +650,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // DEFENSE — body-tempering, shrouds, wards
+    // DEFENSE - body-tempering, shrouds, wards
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'iron-shirt-tempering',
@@ -763,7 +810,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // MOVEMENT — qinggong and, eventually, worse things
+    // MOVEMENT - qinggong and, eventually, worse things
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'swallow-skimming-step',
@@ -910,7 +957,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // SUPPORT — healing, meridian repair, buffs
+    // SUPPORT - healing, meridian repair, buffs
     // `damage` on these entries is the healing magnitude.
     // ═══════════════════════════════════════════════════════════════════
     art({
@@ -937,7 +984,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: null,
         cooldown: 2,
         description:
-            'The user\'s own qi is fed into an ally\'s meridians at a loss of roughly a third in transit. Elementless, so it will not conflict with the recipient\'s root — which is the entire reason it is taught.'
+            'The user\'s own qi is fed into an ally\'s meridians at a loss of roughly a third in transit. Elementless, so it will not conflict with the recipient\'s root - which is the entire reason it is taught.'
     }),
     art({
         id: 'clear-spring-detoxification',
@@ -1071,7 +1118,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // CULTIVATION — qi-gathering manuals that raise cultivation rate
+    // CULTIVATION - qi-gathering manuals that raise cultivation rate
     // The real progression currency. These are what a run is actually
     // shopping for.
     // ═══════════════════════════════════════════════════════════════════
@@ -1233,7 +1280,191 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // FORBIDDEN — powerful, and every one of them costs something the
+    // DAO HOUSE DISCIPLINES
+    // What the ancient houses actually teach. None of these is a good
+    // way to win a fight; every one of them is a good way to make a fight
+    // pointless, expensive, or impossible to walk away from. A house's
+    // strength is thousands of years of one principle, and the strength
+    // is legible here as reach rather than damage.
+    // ═══════════════════════════════════════════════════════════════════
+    art({
+        id: 'thread-reading-stance',
+        name: 'Thread-Reading Stance',
+        category: 'support',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 14,
+        qiCost: 22,
+        damage: null,
+        cooldown: 3,
+        description:
+            'Holds still and reads what a person is attached to: who is owed, who is owed by, what was inherited and from whom. It resolves nothing and proves nothing in law. It is simply that the reader now knows, and the read party can tell they know.'
+    }),
+    art({
+        id: 'convergence-sighting',
+        name: 'Convergence Sighting',
+        category: 'support',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 17,
+        qiCost: 30,
+        damage: null,
+        cooldown: 4,
+        description:
+            'Not prophecy. The practitioner sights along the possibilities already in motion and picks out which two or three of them are load-bearing. Useless where nothing has been set in motion yet, and worse than useless where somebody is deliberately setting things in motion to be seen.'
+    }),
+    art({
+        id: 'name-holding-recitation',
+        name: 'Name-Holding Recitation',
+        category: 'support',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 15,
+        qiCost: 24,
+        damage: null,
+        cooldown: 3,
+        description:
+            'A name is spoken into the register and held there by someone other than its owner. When the Vault takes a name at a realm boundary, the register still has it, and the holder can give it back - slowly, incompletely, and at whatever price the house has decided that year.'
+    }),
+    art({
+        id: 'anchor-stance-of-fixed-ground',
+        name: 'Anchor Stance of Fixed Ground',
+        category: 'defense',
+        grade: 'earth',
+        element: 'earth',
+        requiredOrdinal: 16,
+        qiCost: 27,
+        damage: null,
+        cooldown: 3,
+        description:
+            'Fixes a patch of ground to itself so that nothing folds into it and nothing folds out. Against a sword it is nearly worthless. Against anyone whose whole doctrine is arriving somewhere else, it is the end of the argument.'
+    }),
+    art({
+        id: 'span-folding-survey',
+        name: 'Span-Folding Survey',
+        category: 'movement',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 19,
+        qiCost: 38,
+        damage: null,
+        cooldown: 2,
+        description:
+            'Measures the true distance between two places rather than the walked one, and then takes the shorter figure. Surveyors of this house are the reason a courier route exists at all, and the reason nobody can price one without asking them.'
+    }),
+    art({
+        id: 'binding-word-seal',
+        name: 'Binding Word Seal',
+        category: 'support',
+        grade: 'heaven',
+        element: null,
+        requiredOrdinal: 21,
+        qiCost: 52,
+        damage: null,
+        cooldown: 5,
+        description:
+            'Witnesses an oath so that breaking it is not a moral event but a structural one. The seal does not punish; it simply means the promise is now part of how the sworn party is put together, and removing it removes some of them with it.'
+    }),
+    art({
+        id: 'quiet-cut-severing-stroke',
+        name: 'Quiet Cut Severing Stroke',
+        category: 'forbidden',
+        grade: 'heaven',
+        element: null,
+        requiredOrdinal: 23,
+        qiCost: 70,
+        damage: '6d10+16',
+        cooldown: 4,
+        description:
+            'Cuts the connection rather than the person: the debt, the oath, the inheritance, the fact that two people ever met. The body it is used on usually survives. What does not survive is whatever was holding that person to anyone else, and the practitioner cannot put it back, and neither can anyone else.'
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FRAGMENTS OF DESTROYED HOUSES
+    // A house dies and its discipline does not. These are partial manuals
+    // out of burned seats, and the parts that are missing are not marked.
+    // ═══════════════════════════════════════════════════════════════════
+    art({
+        id: 'severed-thread-audit',
+        name: 'Severed Thread Audit',
+        category: 'support',
+        grade: 'heaven',
+        element: null,
+        requiredOrdinal: 22,
+        qiCost: 58,
+        damage: null,
+        cooldown: 5,
+        description:
+            'Reads the place where a connection used to be. A cut thread leaves an edge, and the edge keeps the shape of what was removed, so the auditor can describe a debt that no longer legally exists and name who benefited from its removal. Three quarters of the surviving manual is a procedure for not being noticed doing this.'
+    }),
+    art({
+        id: 'nameless-witness-stance',
+        name: 'Nameless Witness Stance',
+        category: 'defense',
+        grade: 'heaven',
+        element: null,
+        requiredOrdinal: 24,
+        qiCost: 76,
+        damage: null,
+        cooldown: 5,
+        description:
+            'The practitioner stands present, acts, and is not entered anywhere: no register takes them, no divination sights them, no oath finds a party to bind. The recovered pages do not mention what it costs to be nobody for an afternoon, because the pages that mentioned it did not survive the fire.'
+    }),
+    art({
+        id: 'unpayable-tally-brand',
+        name: 'Unpayable Tally Brand',
+        category: 'forbidden',
+        grade: 'heaven',
+        element: null,
+        requiredOrdinal: 26,
+        qiCost: 96,
+        damage: '7d10+18',
+        cooldown: 5,
+        description:
+            'Writes a debt onto someone that no amount of anything will settle, and then lets the ordinary machinery of consequence do the rest. The house that developed it was dissolved for selling it. Every recovered copy is missing the closing procedure, so the brand is also written, faintly, onto whoever applies it.'
+    }),
+    art({
+        id: 'anchor-nail-of-the-broken-girdle',
+        name: 'Anchor Nail of the Broken Girdle',
+        category: 'defense',
+        grade: 'immortal',
+        element: 'earth',
+        requiredOrdinal: 31,
+        qiCost: 180,
+        damage: null,
+        cooldown: 5,
+        description:
+            'Drives a fixed point into a region and holds it there against every force that would move, fold, open or relocate it. It was made for containment, by people whose containment was working when it was broken. The nail holds. The recovered method for drawing it back out does not.'
+    }),
+    art({
+        id: 'gate-that-was-closed',
+        name: 'The Gate That Was Closed',
+        category: 'movement',
+        grade: 'immortal',
+        element: null,
+        requiredOrdinal: 33,
+        qiCost: 230,
+        damage: null,
+        cooldown: 6,
+        description:
+            'Opens one of the gates that were shut when their house ended. Travel is instantaneous and the destination is one of the old terminals rather than anywhere the traveller chose. Nine terminals are known to survive. Four of them are known to be somewhere a person can breathe.'
+    }),
+    art({
+        id: 'debt-collection-in-arrears',
+        name: 'Collection in Arrears',
+        category: 'forbidden',
+        grade: 'immortal',
+        element: null,
+        requiredOrdinal: 34,
+        qiCost: 260,
+        damage: '12d12+50',
+        cooldown: 7,
+        description:
+            'Collects an inherited debt from whoever currently stands at the end of the thread, in full, at once, regardless of whether that person has ever heard of the original transaction. It is recovered from grave deposits rather than ruins, because the last people who could use it were made to pay for it themselves.'
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FORBIDDEN - powerful, and every one of them costs something the
     // cultivator will miss later. Never taught; only inherited, stolen,
     // or found somewhere they should have left it.
     // ═══════════════════════════════════════════════════════════════════
@@ -1349,7 +1580,7 @@ function buildGroups<K>(key: (t: TechniqueEntry) => K): ReadonlyMap<K, readonly 
  * filtering the whole catalog.
  */
 const TECHNIQUES_BY_REQUIRED_ORDINAL: readonly (readonly TechniqueEntry[])[] = (() => {
-    const buckets: TechniqueEntry[][] = Array.from({ length: 45 }, () => []);
+    const buckets: TechniqueEntry[][] = Array.from({ length: TOTAL_RANKS }, () => []);
     for (const t of TECHNIQUES) buckets[t.requiredOrdinal].push(t);
     return buckets;
 })();
@@ -1384,10 +1615,19 @@ export function getTechniquesByElement(element: Element | null): readonly Techni
 
 /**
  * Arts by how they are obtained. `getTechniquesByProvenance('ruin')` is the
- * loot table for sealed sites — the reason a talentless cultivator digs.
+ * loot table for sealed sites - the reason a talentless cultivator digs.
  */
 export function getTechniquesByProvenance(provenance: TechniqueProvenance): readonly TechniqueEntry[] {
     return TECHNIQUES_BY_PROVENANCE.get(provenance) ?? [];
+}
+
+/**
+ * Fragments of a destroyed house's discipline. Pass a house id to get just
+ * that house's remains, or omit it for every fragment in the catalog.
+ */
+export function getFragmentTechniques(destroyedHouseId?: string): TechniqueEntry[] {
+    return TECHNIQUES.filter(t => t.fragmentOf !== null
+        && (destroyedHouseId === undefined || t.fragmentOf === destroyedHouseId));
 }
 
 /** Everything no living teacher can transmit: ruin and grave sources together. */
@@ -1414,7 +1654,7 @@ export interface TechniqueQuery {
  * than to the size of the catalog.
  */
 export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery = {}): TechniqueEntry[] {
-    const cap = Math.max(0, Math.min(44, Math.floor(ordinal)));
+    const cap = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
     const out: TechniqueEntry[] = [];
     for (let i = 0; i <= cap; i++) {
         for (const t of TECHNIQUES_BY_REQUIRED_ORDINAL[i]) {
@@ -1443,10 +1683,12 @@ export function findBestTechniquesForOrdinal(ordinal: number, opts: TechniqueQue
 
 /** Grade band a given ordinal currently sits in. */
 export function gradeForOrdinal(ordinal: number): TechniqueGrade {
-    const clamped = Math.max(0, Math.min(44, Math.floor(ordinal)));
+    const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
     for (const grade of GRADE_ORDER) {
         const band = GRADE_ORDINAL_BANDS[grade];
         if (clamped >= band.min && clamped <= band.max) return grade;
     }
+    // Only reachable at True Immortal, which is above every content band. A
+    // cultivator who completed the crossing is past manuals; report the top.
     return 'chaos';
 }

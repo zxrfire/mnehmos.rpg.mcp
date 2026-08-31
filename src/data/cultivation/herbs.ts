@@ -1,13 +1,13 @@
 /**
- * Spirit herbs — the ingredient layer under alchemy.
+ * Spirit herbs - the ingredient layer under alchemy.
  *
  * A pill is only ever as obtainable as its rarest ingredient, so this file is
  * where the real cost of the alchemy system lives. `recipes.ts` references
  * these ids and nothing else; if a herb is not in this catalog, no recipe may
  * name it.
  *
- * There is no herb schema in `src/schema/cultivation.ts` — herbs are content
- * with no engine-side persistence contract yet — so the Zod schema is declared
+ * There is no herb schema in `src/schema/cultivation.ts` - herbs are content
+ * with no engine-side persistence contract yet - so the Zod schema is declared
  * here and exported, ready to be lifted into the shared schema module if and
  * when storage needs it.
  *
@@ -23,6 +23,7 @@
 
 import { z } from 'zod';
 import { TechniqueGradeSchema, type TechniqueGrade } from '../../schema/cultivation.js';
+import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import type { Band } from './techniques.js';
 
 /**
@@ -62,7 +63,7 @@ export const HerbSchema = z.object({
     /** Base market value in spirit stones. */
     value: z.number().int().min(1),
     /** Realm ordinal below which the place it grows will simply kill you. */
-    harvestOrdinal: z.number().int().min(0).max(44),
+    harvestOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     description: z.string().min(1)
 });
 export type Herb = z.infer<typeof HerbSchema>;
@@ -87,7 +88,7 @@ export const HERB_RARITY_CEILING: Record<TechniqueGrade, number> = {
 
 export const HERBS: readonly Herb[] = [
     // ═══════════════════════════════════════════════════════════════════
-    // MORTAL — pickable by anyone with a knife and a free afternoon
+    // MORTAL - pickable by anyone with a knife and a free afternoon
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'herb-qi-grass',
@@ -223,7 +224,7 @@ export const HERBS: readonly Herb[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // EARTH — Foundation and Core alchemy
+    // EARTH - Foundation and Core alchemy
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'herb-goldvein-ginseng',
@@ -337,7 +338,7 @@ export const HERBS: readonly Herb[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // HEAVEN — Nascent Soul and above
+    // HEAVEN - Nascent Soul and above
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'herb-purple-cloud-fruit',
@@ -429,7 +430,7 @@ export const HERBS: readonly Herb[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // IMMORTAL — the reagents wars are fought over
+    // IMMORTAL - the reagents wars are fought over
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'herb-jade-pool-spring-lotus',
@@ -499,7 +500,7 @@ export const HERBS: readonly Herb[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // CHAOS — one of each is a plot, not a purchase
+    // CHAOS - one of each is a plot, not a purchase
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'herb-kalpa-surviving-branch',
@@ -593,7 +594,7 @@ export function getHerbsByGrade(grade: TechniqueGrade): readonly Herb[] {
 
 /** Everything a cultivator at this ordinal can reach the growing site of. */
 export function findHerbsForOrdinal(ordinal: number, biome?: HerbBiome): Herb[] {
-    const cap = Math.max(0, Math.min(44, Math.floor(ordinal)));
+    const cap = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
     const pool = biome ? getHerbsByBiome(biome) : HERBS;
     return pool.filter(h => h.harvestOrdinal <= cap);
 }

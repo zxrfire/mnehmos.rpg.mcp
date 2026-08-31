@@ -1,5 +1,5 @@
 /**
- * Alchemy — the pill catalog.
+ * Alchemy - the pill catalog.
  *
  * Pills are the only reliable way to undo damage in this game, and the reason
  * a run's economy exists. Every entry satisfies `PillSchema`.
@@ -26,8 +26,8 @@
  * more expensive (disjoint, ascending value bands) and may be strictly more
  * poisonous (rising toxicity ceilings), so spamming heaven-grade medicine at
  * Foundation Establishment is a way to die of the cure. Within a grade, the
- * pills that touch progression — breakthrough odds, cultivation progress,
- * lifespan — sit at the top of both the value and toxicity ranges, because
+ * pills that touch progression - breakthrough odds, cultivation progress,
+ * lifespan - sit at the top of both the value and toxicity ranges, because
  * buying advancement should always cost more than buying survival.
  *
  * THE TWO THE GAME NAMES DIRECTLY
@@ -35,8 +35,8 @@
  * `MINOR_HEALING_PILL_ID` is in every starting inventory: one pill, twelve HP,
  * and then the player is on their own.
  *
- * `GRAIN_ABSTINENCE_PILL_ID` is the answer to the hunger logistics problem —
- * ten years without eating — and it is priced at the very top of heaven grade
+ * `GRAIN_ABSTINENCE_PILL_ID` is the answer to the hunger logistics problem -
+ * ten years without eating - and it is priced at the very top of heaven grade
  * on purpose. Acquiring it is a mid-game goal, not a shopping trip: nine
  * thousand spirit stones is three hundred times the starting purse.
  */
@@ -89,7 +89,7 @@ export const PERPETUAL_GRAIN_ABSTINENCE_DAYS = 36_500;
 
 export const PILLS: readonly Pill[] = [
     // ═══════════════════════════════════════════════════════════════════
-    // MORTAL — what a Qi Condensation cultivator can actually afford
+    // MORTAL - what a Qi Condensation cultivator can actually afford
     // ═══════════════════════════════════════════════════════════════════
     {
         id: MINOR_HEALING_PILL_ID,
@@ -192,7 +192,7 @@ export const PILLS: readonly Pill[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // EARTH — Foundation Establishment and Core Formation
+    // EARTH - Foundation Establishment and Core Formation
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'pill-jade-mending',
@@ -284,7 +284,7 @@ export const PILLS: readonly Pill[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // HEAVEN — Nascent Soul and Deity Transformation
+    // HEAVEN - Nascent Soul and Deity Transformation
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'pill-boundless-source',
@@ -376,7 +376,7 @@ export const PILLS: readonly Pill[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // IMMORTAL — Void Refinement and Body Integration
+    // IMMORTAL - Void Refinement and Body Integration
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'pill-void-source-return',
@@ -468,7 +468,7 @@ export const PILLS: readonly Pill[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // CHAOS — Grand Ascension and the tribulation
+    // CHAOS - Grand Ascension and the tribulation
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'pill-primordial-qi-source',
