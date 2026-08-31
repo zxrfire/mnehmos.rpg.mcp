@@ -1022,3 +1022,33 @@ describe('the Azure Cloud intake', () => {
         expect(gaps).toMatch(/admissionOrdinal/);
     });
 });
+
+describe('the seats stand on recorded rungs', () => {
+    it('records one seat per count, ordered by the rule the Court uses', () => {
+        for (const [factionId, w] of Object.entries(WITHDRAWN_POWERS)) {
+            expect(w.seats.length, factionId + ' count disagrees with its seats').toBe(w.count);
+            // Ordinal descending. Ties are legal and are where age decides.
+            for (let i = 1; i < w.seats.length; i++) {
+                expect(w.seats[i].ordinal, factionId + ' seat ' + i + ' outranks the one above it')
+                    .toBeLessThanOrEqual(w.seats[i - 1].ordinal);
+            }
+        }
+    });
+
+    it('puts First Seat on the faction ordinal, which is what the rule says', () => {
+        for (const [factionId, w] of Object.entries(WITHDRAWN_POWERS)) {
+            const sect = getSect(factionId);
+            if (!sect) continue;
+            expect(w.seats[0].ordinal, factionId + ': First Seat is not the strongest member')
+                .toBe(sect.powerOrdinal);
+        }
+    });
+
+    it('keeps at least one tie, because the tiebreak has to do visible work', () => {
+        // Second and Third on the same rung is the age rule showing up in the
+        // data. If every seat had a distinct ordinal the rule would be inert.
+        const court = WITHDRAWN_POWERS['sect-hollow-court'];
+        const ordinals = court.seats.map(s => s.ordinal);
+        expect(new Set(ordinals).size).toBeLessThan(ordinals.length);
+    });
+});
