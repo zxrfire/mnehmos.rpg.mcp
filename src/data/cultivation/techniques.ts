@@ -6,7 +6,7 @@
  *
  * TIERING CONTRACT
  * ----------------
- * The five technique grades map onto disjoint, ordered bands of the 45-rank
+ * The five technique grades map onto disjoint, ordered bands of the 47-rank
  * ladder (see `GRADE_ORDINAL_BANDS`). A manual is never learnable before its
  * band opens, so at every point on the ladder there is a visible next tier the
  * cultivator cannot yet touch. Qi costs are banded the same way, so grade is a
@@ -37,8 +37,20 @@
  * the rolled number is taken off a target or put back into one.
  */
 
-import type { Technique, TechniqueGrade, TechniqueCategory, Element } from '../../schema/cultivation.js';
-import { MAX_ORDINAL, TOTAL_RANKS, LAST_CROSSING_ORDINAL } from '../../engine/cultivation/realms.js';
+import type {
+    Technique,
+    TechniqueClass,
+    TechniqueGrade,
+    TechniqueCategory,
+    Element
+} from '../../schema/cultivation.js';
+import {
+    FALSE_IMMORTAL_ORDINAL,
+    MAX_ORDINAL,
+    TOTAL_RANKS,
+    TRUE_IMMORTAL_ORDINAL,
+    realmForOrdinal
+} from '../../engine/cultivation/realms.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PROVENANCE - the Late Age rule
@@ -67,8 +79,131 @@ import { MAX_ORDINAL, TOTAL_RANKS, LAST_CROSSING_ORDINAL } from '../../engine/cu
 
 export type TechniqueProvenance = 'taught' | 'ruin' | 'grave';
 
+// ─────────────────────────────────────────────────────────────────────────
+// SHOWN OR READ - the rule underneath provenance
+//
+// This applies to every art in the catalog, at every grade, from the first
+// mortal breathing method to whatever is above the Lid. There are two ways an
+// art gets into somebody, and they are not two speeds of one thing:
+//
+//   shown - a master performs it in front of you. They answer the question you
+//           did not know to ask, they correct the hand before the error sets,
+//           and they can repeat the half-second the whole art turns on until
+//           you have it. Most of what a teacher transmits was never in any
+//           manual, because most of it is not language.
+//
+//   read  - the manual is the teacher. It cannot answer, cannot correct, and
+//           cannot repeat anything; the reader rebuilds the missing half-second
+//           themselves, out of a description written by somebody who was not
+//           imagining them. It works. It takes far longer, it fails in ways
+//           that leave no explanation, and the failures are usually discovered
+//           at the point of use.
+//
+// `provenance` decides which one a given copy of an art offers: `taught` is a
+// shown art, `ruin` and `grave` are read ones. That is the real reason the
+// upper grades are harder to acquire than their ordinal band suggests, and the
+// reason a poor cultivator with a dug-up manual stays behind a sect disciple
+// holding the same art even after both of them have it.
+//
+// It is also the rule the ten-to-fifteen breath exception is a limiting case
+// of. Seeing an immortal act is the shown channel operating at a rung that has
+// no teachers, and it is worth what it is worth for the ordinary reason - not
+// because immortals are special, but because being shown always beats reading,
+// and that is the only demonstration anyone up there will ever give.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Which of the two channels a copy of an art offers its holder. */
+export type TransmissionMode = 'shown' | 'read';
+
+/** Shown or read, from where the art came from. */
+export function transmissionModeOf(provenance: TechniqueProvenance): TransmissionMode {
+    return provenance === 'taught' ? 'shown' : 'read';
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// OPACITY - and why the two channels do not differ by a fixed amount
+//
+// Arts are not equally hard to understand, and the difference is not their
+// grade. A blunt art with one idea in it can be taken off a page by a competent
+// reader with very little lost. An art whose whole content is timing, or
+// intent, or a relationship between two things the writer could only gesture
+// at, loses most of itself on the way onto the page and has to be rebuilt by
+// the reader out of almost nothing.
+//
+// So opacity is what decides how much the read channel actually costs. A plain
+// art is nearly as good read as shown. An opaque one is barely transmissible in
+// writing at all, which is why some famous manuals have been held for centuries
+// by houses full of people who can recite them and cannot perform them.
+//
+// This runs across the grades rather than with them. Most upper-grade arts are
+// opaque, which is the baseline below - but the interesting entries are the
+// ones that are not: a mortal-grade art nobody can read their way into, and a
+// chaos-grade art that turns out to be shockingly plain once somebody finally
+// sees the trick done. Those are set per entry.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How much of an art fails to survive being written down, 0..1.
+ *
+ * 0 is an art that loses nothing on the page. 1 is an art that is functionally
+ * untransmissible in writing - the manual is real, complete, honest, and will
+ * not get a reader there.
+ */
+export type Opacity = number;
+
+/**
+ * What an art of this grade is usually like, absent a reason to say otherwise.
+ *
+ * Higher grades are generally more opaque because more of what they contain is
+ * the part that is not language. A baseline, not a rule: an entry that says
+ * otherwise overrides it, and those entries are the ones worth writing.
+ */
+export const GRADE_BASELINE_OPACITY: Record<TechniqueGrade, Opacity> = {
+    mortal: 0.15,
+    earth: 0.3,
+    heaven: 0.45,
+    immortal: 0.6,
+    chaos: 0.75
+} as const;
+
+/** The entry's own figure where it has one, otherwise its grade's baseline. */
+export function opacityOf(entry: { grade: TechniqueGrade; opacity?: Opacity }): Opacity {
+    return entry.opacity ?? GRADE_BASELINE_OPACITY[entry.grade];
+}
+
+/**
+ * How much longer this copy of this art takes to learn than the same art shown
+ * by a master who has it.
+ *
+ * A shown art is the reference: 1. A read art pays its opacity - a perfectly
+ * plain art read is barely slower than shown, and a fully opaque one takes
+ * three times as long and may not land at all.
+ */
+export function learningCostMultiplier(
+    entry: { grade: TechniqueGrade; opacity?: Opacity },
+    mode: TransmissionMode
+): number {
+    if (mode === 'shown') return 1;
+    return 1 + opacityOf(entry) * 2;
+}
+
 export interface TechniqueEntry extends Technique {
+    /**
+     * How much of this art fails to survive being written down, 0..1. Omitted
+     * on entries that are ordinary for their grade; set explicitly where the
+     * art is notably plainer or notably more opaque than its grade suggests,
+     * because that is the fact worth knowing before buying a manual.
+     */
+    opacity?: Opacity;
     provenance: TechniqueProvenance;
+    /**
+     * Whether a copy of this art is anywhere in the world at all.
+     *
+     * True for all but a handful. `provenance` answers how a copy would reach
+     * somebody if one reached them; this answers the prior question, which the
+     * catalog used to leave to silence. See `NO_SURVIVING_COPY_TECHNIQUE_IDS`.
+     */
+    survivingCopy: boolean;
     /** One factual line on where a copy is actually obtained. */
     sourceNote: string;
     /**
@@ -125,6 +260,22 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'immovable-heaven-pillar',
     'one-thought-ten-thousand-li',
     'rebirth-in-the-lotus-furnace',
+    // Above the Lid, and here for the same reason everything else in this list
+    // is: no living institution transmits them. The two rungs differ in where
+    // the copy is rather than in what kind of thing it is - three faces one man
+    // cut where he had been lecturing, and three sets of writings an ascended
+    // founder sent back down to a house that cannot read them. Both are the
+    // read channel, both are ordinary rows, and neither is taught by anybody.
+    'the-seam-that-did-not-close',
+    'what-came-back-instead',
+    'the-second-question',
+    'one-crossing-of-a-courtyard',
+    'canon-of-the-unwritten-span',
+    'the-fifteenth-breath',
+    // Ruin by classification and unobtainable in fact: no living institution
+    // transmits it and no site holds it either. See
+    // `NO_SURVIVING_COPY_TECHNIQUE_IDS`, which is the half of the statement
+    // this list cannot make.
     'word-of-continuance',
     'heaven-conversing-primordial-canon',
     'chaos-origin-scripture'
@@ -136,6 +287,36 @@ export const GRAVE_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'lifespan-devouring-heaven-theft',
     'debt-collection-in-arrears'
 ]);
+
+/**
+ * Arts the record attests and no copy of which is anywhere in the world.
+ *
+ * The three provenances above all assume a copy exists somewhere and argue
+ * about how it would reach a reader. This set is the case they cannot state:
+ * an art the world can name, date and describe the effect of, and cannot
+ * produce, because every party who held the working died holding it and none
+ * of them wrote it out. Nothing anywhere hands one of these over, and the
+ * catalog says so here rather than by leaving the entry unreferenced and
+ * hoping somebody notices - which is exactly how it went wrong before.
+ *
+ * Keep it small and keep the reason specific. An art belongs here only where
+ * the entry's own description already says the transmission is gone; an art
+ * that is merely hard to find belongs in a sealed site, and the audit will
+ * make that argument for it if nobody else does.
+ */
+export const NO_SURVIVING_COPY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
+    'word-of-continuance'
+]);
+
+/**
+ * Why, per art. One entry per id in the set above, asserted by the catalog
+ * test, because a marker with no reason attached is the same silence in a
+ * different place.
+ */
+export const NO_SURVIVING_COPY_NOTES: Readonly<Record<string, string>> = {
+    'word-of-continuance':
+        'Attested and unobtainable. What survives is the outcome record and nothing else: a short list of occasions on which somebody standing at the last crossing argued for a death that had already been decided, kept by the parties who were watching rather than by the parties who spoke. Everyone who could perform it was at the top of the ladder with their own crossing still ahead of them, and not one of them wrote the working out, because at that rung the reader they would have been writing for does not exist. There is no manual, no fragment and no site, and a cultivator who reaches the rung the art asks for will find nothing there to read.'
+} as const;
 
 const SOURCE_NOTES: Record<TechniqueProvenance, string> = {
     taught: 'Transmitted by at least one living sect. A teacher exists and can be paid, joined, or robbed.',
@@ -157,13 +338,94 @@ export interface Band {
 /**
  * The highest ordinal this catalog authors content for.
  *
- * The ladder's true top is `MAX_ORDINAL` (True Immortal), but that rank is
- * reached only by completing the last crossing, and a cultivator who has gone
- * through the Lid is not in the world any more to read a manual, join a sect
- * or dig a ruin. Content therefore covers 0 through the last crossing, and the
- * chaos band's ceiling is that ordinal rather than the ladder's.
+ * It used to be the last crossing, on the reasoning that above it nothing
+ * circulates. That reasoning was half right and the half it got wrong is the
+ * interesting one. Nothing circulates up there in the ordinary sense - no sect
+ * teaches these, no ruin was stocked with them and nobody is walking around
+ * with one on a body - but each of the two rungs above the Lid has exactly one
+ * channel, both channels are real, and both now have entries at the far end of
+ * them. So the ceiling is the ladder's own top and the scarcity is carried by
+ * how few arts sit up there and how narrow the way to them is, rather than by
+ * the catalog declining to write them down.
+ *
+ * What has NOT changed is why this constant is separate from the Lid. A manual
+ * is paper: `MANUALS_MAY_EXCEED_THE_LID` is true, an art may sit anywhere on
+ * the ladder and still be handed over down here, and the reader is exactly the
+ * rung they were afterwards - see `WHAT_AN_ART_BUYS`. The ceiling on what can
+ * be HELD is `OBJECT_CEILING_BELOW_THE_LID` and it is a different number about
+ * a different kind of thing. This one is a statement about authoring and
+ * nothing else.
+ *
+ * It is also not the bound on anything but arts. Encounters, sites and the
+ * rest cover the playable ladder, which stops at `LAST_CROSSING_ORDINAL`,
+ * because nobody above the Lid is rolling for what they meet on the road.
+ *
+ * See `ABOVE_THE_LID_TRANSMISSION` for the two channels.
  */
-export const CONTENT_MAX_ORDINAL = LAST_CROSSING_ORDINAL;
+export const CONTENT_MAX_ORDINAL = MAX_ORDINAL;
+
+/**
+ * The two rungs above the Lid, one per channel.
+ *
+ * Nothing new is invented here. Both entries are the shown-or-read rule applied
+ * to a rung where only one of the two channels exists at all, which is why they
+ * are worth stating: 45 is shown and never read, 46 is read and almost never
+ * shown, and what those two produce is the rule's clearest demonstration
+ * anywhere in the world.
+ */
+export const ABOVE_THE_LID_TRANSMISSION = {
+    falseImmortal: {
+        ordinal: FALSE_IMMORTAL_ORDINAL,
+        mode: 'shown' as TransmissionMode,
+        soleTeacher: 'wanderer-lu-sheng',
+        howItExists:
+            'He built these himself, over six centuries, out of what came back rather than out of anything he was taught. Nobody trained him at this rung because there was nobody at it, and there is no manual because he never had a reason to write one for a reader who does not exist.',
+        /**
+         * The constraint that keeps him the sole source rather than merely the
+         * first: he cannot take another False Immortal's work, so the art at
+         * this rung never pools into a body anybody could inherit.
+         */
+        cannotReceive:
+            'He cannot learn another False Immortal\'s arts and has never seriously tried. They are not his path - they came out of somebody else\'s crossing failing in somebody else\'s specific way, and the part of him that would have to hold them is the part that did not come back. So this rung has no canon. It is one man\'s, it ends with him, and all of it that ever gets out gets out through a student.',
+        howAStudentGets:
+            'By being his student, and there is no substitute - not a manual, not a sect, not money. He shows it, which is the fast channel, and it is the only art above the Lid anybody can get without somebody on the far side of it taking an interest in them. It is also the narrowest supply in the world: one man\'s attention, spent out of a finite number of years.',
+        /**
+         * The one thing a later reader can walk up to, and why it does not make
+         * this rung a read one.
+         *
+         * `mode` above is a statement about the transmission and it stands. What
+         * the faces are is the residue of it: a lecture needs a surface, he does
+         * not take the stone away with him afterwards, and what is left is
+         * legible in the ordinary hand of the province because it was cut for
+         * the people who were in the room. That is a different act from the
+         * durable carving in `CARVING`, which is what path three does when there
+         * is nobody left to hand anything to, and he has not done that one.
+         */
+        andTheFacesHeLeavesBehind:
+            'Where he lectures he cuts, and the stone stays. It is not the durable form and he is not writing for posterity - it is the surface an afternoon was worked out on, left where the afternoon happened, in a hand anybody can read. Which is why a face of his is worth something and worth much less than the afternoon: whoever finds it is reading, at this rung, without the half-second, from somebody who is still alive and could simply have been asked. The opacity figures on his entries are what that costs, and they are the highest in the catalog.',
+        /**
+         * And the fact the arts are actually load-bearing for, which is a fact
+         * about what he does NOT have. See `THE_ARTS_ARE_THE_WHOLE_INVENTORY`
+         * in `false-immortals.ts`, where it is stated against the measurement.
+         */
+        heCarriesNothing:
+            'He holds no object at all, which is the reason these entries matter more than a strong man\'s arts usually would. Everybody else at the top of the world is a person plus something they were given; he was close to the Hollow Court once and is not now, nothing of theirs is his to carry, and nothing else in the world would be handed to him. So the arts are the whole account of him, and the one apex head who can fight him to a draw does it on an object rather than on a rung.'
+    },
+    trueImmortal: {
+        ordinal: TRUE_IMMORTAL_ORDINAL,
+        mode: 'read' as TransmissionMode,
+        howItExists:
+            'A True Immortal can send writings down. That is the whole of the channel, and it is not a small thing - every sect that has ever received one has built four centuries of curriculum on top of it.',
+        /**
+         * The ordinary penalty of the read channel, at the one rung where there
+         * is no shown alternative to compare it against.
+         */
+        readingNotShowing:
+            'It arrives as reading, so it arrives slowly, and it arrives with the half-second missing the way every read art does. Nobody can ask the author. Houses that hold one describe the wait as reverence; it is not reverence, it is the format, and four hundred years is what the format costs at this grade.',
+        theExceptionStillApplies:
+            'Unless the immortal comes down and acts, and is seen doing it. Ten to fifteen breaths of an immortal acting is worth more than the manual a house took four centuries to work through - not because the breaths are magic, but because being shown always beats reading and this is the only demonstration that rung will ever give. See `crossings.ts` for what those breaths cost the immortal, which is why so few have ever been spent.'
+    }
+} as const;
 
 /**
  * Realm-ordinal window in which each grade is learnable. Aligned to realm
@@ -171,6 +433,12 @@ export const CONTENT_MAX_ORDINAL = LAST_CROSSING_ORDINAL;
  * through Foundation and Core, heaven through Nascent Soul and Deity
  * Transformation, immortal through Void Refinement and Body Integration, and
  * chaos manuals only exist for Grand Ascension and above.
+ *
+ * The chaos band runs to the top of the ladder rather than to the last
+ * crossing, which is a consequence of `CONTENT_MAX_ORDINAL` and not a sixth
+ * grade: the arts above the Lid are ordinary rows with large numbers in them,
+ * in the same band as everything else at the top, and nothing anywhere reads
+ * their ordinal to decide anything.
  */
 export const GRADE_ORDINAL_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 0, max: 12 },
@@ -184,13 +452,22 @@ export const GRADE_ORDINAL_BANDS: Record<TechniqueGrade, Band> = {
  * Qi cost window per grade. Bands do not overlap, so a chaos art is never
  * cheaper than an immortal one, and the qi pool a cultivator has at a given
  * realm is what gates how often the art is usable.
+ *
+ * The chaos ceiling was 900, which was the whole band when the band stopped at
+ * the last crossing. It was widened rather than reused when the catalog took in
+ * the two rungs above the Lid, for the ordinary reason the bands exist at all:
+ * an art nine rungs up from the bottom of its band should not cost what the art
+ * at the bottom of it costs. Nothing above the Lid pays in this currency in any
+ * case - `progressRequiredForOrdinal` returns null up there and says why - so
+ * the figures on those entries are the band being honest about ordering rather
+ * than a price anybody settles.
  */
 export const GRADE_QI_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 2, max: 14 },
     earth: { min: 15, max: 49 },
     heaven: { min: 50, max: 129 },
     immortal: { min: 130, max: 349 },
-    chaos: { min: 350, max: 900 }
+    chaos: { min: 350, max: 1500 }
 } as const;
 
 /** Grades in ascending order. Used by lookups and by the balance tests. */
@@ -205,25 +482,119 @@ export function gradeRank(grade: TechniqueGrade): number {
 // CATALOG
 // ─────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────
+// THE TWO KINDS OF ART, AND THE CEILING ON ONE OF THEM
+//
+// A cultivation manual is what you PRACTISE to rank up. A dao art is what you
+// USE to fight. The catalog had been conflating them under `category`, which
+// answers a different question - what the art does mechanically - and only one
+// of the two kinds carries a ceiling.
+//
+// ── Why the cap belongs to the book ──────────────────────────────────────
+//
+// The faction catalog already says what each house can produce:
+// `production.reliableOrdinal`, on 38 factions, and `members.ts` already
+// generates their rosters against it. So the NPCs obey the ceiling and only
+// the player was exempt - climbing to ordinal 44 on the roll of a house whose
+// catalog reads `reliableOrdinal: 14`.
+//
+// The fix is NOT a per-house rule. It is that a low-tier house teaches a
+// low-tier manual, and the manual stops. Nothing anywhere branches on the
+// sect; the cap is a fact about the paper in your hands, and it is the same
+// fact whoever handed it over - a teacher, a corpse, a tomb, or a False
+// Immortal's leavings.
+//
+// That also disposes of the Hollow Court, which reads `reliableOrdinal: 0`
+// while sitting at power ordinal 40. Its own note says why: "Produces nobody,
+// by construction: it takes no disciples." Zero is a statement about INTAKE,
+// not about the quality of anything it could teach, and a cap derived from the
+// house would have handed the strongest institution in the world a ceiling of
+// zero. Deriving from the manual instead means the question never arises.
+//
+// ── One realm per book ───────────────────────────────────────────────────
+//
+// The cap is the end of the realm the manual is pitched at, plus one - so a
+// manual carries a cultivator through its realm, one step over the boundary,
+// and then stops dead. The ordinary progression is therefore a SUCCESSION of
+// manuals, each needing to be replaced at a realm boundary, which is what
+// sends a player looking for the next volume.
+//
+// Independent of suitability, deliberately. A manual has both a cap and a fit
+// to a spirit root, and they do not interact: a perfectly suited manual still
+// runs out, and an ill-suited one teaches nothing at any height.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Arts that raise a rank despite not being filed under `cultivation`.
+ *
+ * The override exists because `category` and `class` are genuinely different
+ * axes and a demonic qi-gathering method is both forbidden AND a manual you
+ * practise to climb. Everything not named here follows its category.
+ */
+const CULTIVATION_CLASS_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
+    // Forbidden methods that ARE progression: they raise a rank, by means the
+    // orthodox road does not use and at prices it will not pay.
+    'nine-abyss-demon-transformation',
+    'heart-of-the-ten-thousand-corpses',
+    'lifespan-devouring-heaven-theft',
+    'meridian-devouring-art'
+]);
+
+/** Which of the two kinds an art is. One rule, plus a named override set. */
+export function classOf(t: Pick<Technique, 'id' | 'category'>): TechniqueClass {
+    if (CULTIVATION_CLASS_TECHNIQUE_IDS.has(t.id)) return 'cultivation';
+    return t.category === 'cultivation' ? 'cultivation' : 'dao';
+}
+
+/**
+ * The rung a manual stops at, or null when it stops at nothing.
+ *
+ * Null is reserved for a manual whose realm band runs to the top of the
+ * ladder. `MANUALS_MAY_EXCEED_THE_LID` is true in `realms.ts` - a manual is
+ * paper, it may be rated anywhere, and studying one to full mastery leaves the
+ * reader exactly the rung they were - so a book that carries somebody the
+ * whole way is legal where no OBJECT below ordinal 45 is. It is the top prize
+ * in the setting and there is exactly one route to each such book, all of them
+ * `ruin` or `grave`. Nobody teaches these.
+ */
+export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>): number | null {
+    if (classOf(t) !== 'cultivation') return null;
+    const band = realmForOrdinal(t.requiredOrdinal);
+    const cap = band.ordinalEnd + 1;
+    return cap > MAX_ORDINAL ? null : cap;
+}
+
 /**
  * Authoring helper. Mastery is per-cultivator state, never catalog state, so
  * every entry starts at zero and the factory keeps that out of the literals.
- * Provenance is resolved from the two id sets above rather than repeated on
- * every entry, so the Late Age rule reads as one block instead of eighty-odd
- * scattered flags.
+ * Provenance is resolved from the id sets above rather than repeated on every
+ * entry, so the Late Age rule reads as one block instead of eighty-odd
+ * scattered flags. Whether a copy exists at all is resolved the same way, and
+ * an art with none carries its own reason in place of the generic note.
  */
-function art(t: Omit<Technique, 'mastery'>): TechniqueEntry {
+function art(
+    t: Omit<Technique, 'mastery' | 'class' | 'cap'>
+        & { opacity?: Opacity; class?: TechniqueClass; cap?: number | null }
+): TechniqueEntry {
     const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
         ? 'grave'
         : RUIN_ONLY_TECHNIQUE_IDS.has(t.id)
             ? 'ruin'
             : 'taught';
+    const survivingCopy = !NO_SURVIVING_COPY_TECHNIQUE_IDS.has(t.id);
     return {
         ...t,
         mastery: 0,
         provenance,
-        sourceNote: SOURCE_NOTES[provenance],
-        fragmentOf: FRAGMENT_TECHNIQUE_ORIGINS[t.id] ?? null
+        survivingCopy,
+        sourceNote: survivingCopy ? SOURCE_NOTES[provenance] : NO_SURVIVING_COPY_NOTES[t.id],
+        fragmentOf: FRAGMENT_TECHNIQUE_ORIGINS[t.id] ?? null,
+        // Resolved here rather than repeated on every entry, exactly as
+        // provenance is: the split between the two kinds of art, and the
+        // ceiling on one of them, read as one block instead of a hundred
+        // scattered flags that a new entry could forget.
+        class: t.class ?? classOf(t),
+        cap: t.cap !== undefined ? t.cap : capOf(t)
     };
 }
 
@@ -316,6 +687,11 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         name: 'Hundred-Cut Flying Blade',
         category: 'attack',
         grade: 'mortal',
+        // Opaque far past its grade. The manual is four pages and they are
+        // accurate; what they cannot carry is the interval between the cuts, which
+        // is the entire art. Readers arrive at a hundred separate strikes and never
+        // at the one thing that makes them a hundred cuts.
+        opacity: 0.62,
         element: 'metal',
         requiredOrdinal: 7,
         qiCost: 9,
@@ -339,6 +715,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'drumming-thunder-clap',
+        // Two palms struck together hard enough that the air between them tears - a thing that happens to a space, not to a person.
+        reach: 'several',
         name: 'Drumming Thunder Clap',
         category: 'attack',
         grade: 'mortal',
@@ -352,6 +730,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'ashfall-crescent',
+        // A low arc swept along the ground. The arc is the art; anybody standing in it is in it.
+        reach: 'several',
         name: 'Ashfall Crescent',
         category: 'attack',
         grade: 'mortal',
@@ -437,6 +817,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         name: 'Formless Severing Intent',
         category: 'attack',
         grade: 'earth',
+        // Almost untransmissible on a page. Intent is the whole content and intent
+        // is what writing is worst at - houses that hold only a copy produce people
+        // who can describe it at length and cannot do it once.
+        opacity: 0.78,
         element: null,
         requiredOrdinal: 18,
         qiCost: 30,
@@ -529,6 +913,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'hollow-mountain-decree',
+        // The one the catalog says people have politely asked its holders not to use where anybody lives, which is a sentence about area and nothing else.
+        reach: 'field',
         name: 'Hollow Mountain Decree',
         category: 'attack',
         grade: 'heaven',
@@ -545,6 +931,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         name: 'Severed Name Finger',
         category: 'attack',
         grade: 'heaven',
+        // The technique operates on something the reader has to already believe is
+        // a real object. Shown, it is obvious within an afternoon. Read, most people
+        // never get past deciding the text is a metaphor.
+        opacity: 0.8,
         element: null,
         requiredOrdinal: 28,
         qiCost: 120,
@@ -559,6 +949,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'star-quenching-blade-domain',
+        // A domain that comes down as a lattice of falling edges. It is named for the volume it occupies.
+        reach: 'field',
         name: 'Star-Quenching Blade Domain',
         category: 'attack',
         grade: 'immortal',
@@ -572,6 +964,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'abyssal-gate-torrent',
+        // A gate onto deep water held open for four breaths. What comes through does not choose.
+        reach: 'field',
         name: 'Abyssal Gate Torrent',
         category: 'attack',
         grade: 'immortal',
@@ -585,6 +979,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'nine-heaven-scourging-bolt',
+        // Its own text: the heavens are not required to stop at one.
+        reach: 'several',
         name: 'Nine-Heaven Scourging Bolt',
         category: 'attack',
         grade: 'immortal',
@@ -615,6 +1011,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'calamity-word-of-the-open-sky',
+        // One syllable, spoken outdoors. The qualifier is the mechanic.
+        reach: 'field',
         name: 'Calamity Word of the Open Sky',
         category: 'attack',
         grade: 'chaos',
@@ -641,6 +1039,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'kalpa-fire-that-eats-heaven',
+        // Its own text: it does not stop when the target does.
+        reach: 'field',
         name: 'Kalpa Fire That Eats Heaven',
         category: 'attack',
         grade: 'chaos',
@@ -739,6 +1139,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         name: 'Unyielding Mountain Body',
         category: 'defense',
         grade: 'heaven',
+        // A body art that is exactly what it says. There is no half-second to miss
+        // and nothing behind the words, which is why it is the one heaven-grade art
+        // a dug-up copy is nearly as good as a teacher for.
+        opacity: 0.2,
         element: 'earth',
         requiredOrdinal: 22,
         qiCost: 70,
@@ -804,6 +1208,11 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         name: 'Immovable Heaven Pillar',
         category: 'defense',
         grade: 'chaos',
+        // The famous exception, and the reason the readable third of a False
+        // Immortal's yard carving was worth anything: it is one idea, stated once,
+        // and the idea does not need a demonstration to land. Chaos grade and
+        // plainer on the page than most earth-grade attack forms.
+        opacity: 0.22,
         element: 'earth',
         requiredOrdinal: 42,
         qiCost: 700,
@@ -925,6 +1334,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         name: 'Lightning Gate Transposition',
         category: 'movement',
         grade: 'immortal',
+        // Terrifying to use and simple to understand, which are not the same axis.
+        // The manual is honest, complete, and short; the reason few hold it is that
+        // few survive practising it, not that few can read it.
+        opacity: 0.3,
         element: 'lightning',
         requiredOrdinal: 30,
         qiCost: 170,
@@ -1197,7 +1610,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'earth',
         element: 'fire',
-        requiredOrdinal: 19,
+        // 19 -> 17, the first rung of Core Formation. A realm's manual has to
+        // be learnable ON that realm's first rung or the succession has a hole
+        // in it: the previous book caps at 17 and this one could not be opened
+        // until 19, so a cultivator arrived at the wall with nothing to turn
+        // to. Five realms had that hole. See THE TWO KINDS OF ART.
+        requiredOrdinal: 17,
         qiCost: 40,
         damage: null,
         cooldown: 0,
@@ -1223,7 +1641,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'heaven',
         element: 'earth',
-        requiredOrdinal: 26,
+        // 26 -> 25, the first rung of Deity Transformation. Same hole.
+        requiredOrdinal: 25,
         qiCost: 100,
         damage: null,
         cooldown: 0,
@@ -1249,7 +1668,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'immortal',
         element: 'ice',
-        requiredOrdinal: 34,
+        // 34 -> 33, the first rung of Body Integration. Same hole.
+        requiredOrdinal: 33,
         qiCost: 270,
         damage: null,
         cooldown: 0,
@@ -1275,7 +1695,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'chaos',
         element: null,
-        requiredOrdinal: 44,
+        // 44 -> 41, the first rung of Tribulation Transcendence. Same hole,
+        // and the most consequential one: it is the only book that bridges
+        // Grand Ascension to the last crossing, and it has to be dug up.
+        requiredOrdinal: 41,
         qiCost: 900,
         damage: null,
         cooldown: 0,
@@ -1549,6 +1972,178 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         cooldown: 10,
         description:
             'Spends years off the end of the user\'s own allotted lifespan as ammunition. At Tribulation Transcendence there is a great deal of lifespan to spend, and cultivators who reach the tribulation with this art rarely have enough left to survive it.'
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ABOVE THE LID
+    // Six rows with large numbers in them and nothing else different about
+    // them. They are chaos grade like everything at the top, they are read
+    // by the same lookups, and no code anywhere asks what rung they sit at
+    // before doing anything - which is the whole reason it is safe to have
+    // written them down. See `WHAT_AN_ART_BUYS`: the best art in the world
+    // at full mastery buys nothing across the Lid, so a manual up here is
+    // paper and an object up here is not, and only one of those two things
+    // is in this file.
+    //
+    // All six are elementless, and that is not a coincidence being dressed
+    // up as a rule. The wuxing is an account of how a body draws, both of
+    // these rungs are reached by a crossing rather than by drawing, and
+    // nobody who has been through one has ever written an elemental art
+    // afterwards. It also keeps the mutated-root scarcity where the catalog
+    // put it, which is a good check on the reasoning rather than the reason.
+    //
+    // REACH IS DECLARED ON EVERY ONE OF THEM, DELIBERATELY
+    // The harness is blunt about it: somebody at the top of the ladder
+    // holding a single-target art does not take a mobilised apex at all,
+    // and the same person holding a wide one takes it in about two rounds.
+    // So reach is what decides whether the top rungs mean anything, and an
+    // entry up here that left the field off would be quietly deciding that
+    // they do not.
+    // ═══════════════════════════════════════════════════════════════════
+
+    // ── 45: three faces, one man, and no object anywhere behind them ─────
+    // Everything at this rung is Lu Sheng's, because the rung is one person
+    // wide - see `ABOVE_THE_LID_TRANSMISSION.falseImmortal`. He built these
+    // out of what came back from a crossing that did not complete, he holds
+    // nothing else at all, and the opacity figures are the highest in the
+    // catalog because a face cut where a lecture happened is the read
+    // channel operating at a rung that has exactly one teacher who could
+    // simply have been asked.
+    art({
+        id: 'the-seam-that-did-not-close',
+        name: 'The Seam That Did Not Close',
+        category: 'attack',
+        grade: 'chaos',
+        // The one that makes him what the measurement says he is. A hole in
+        // the boundary is a thing that happens to a place; everybody standing
+        // in the place is standing in it.
+        reach: 'field',
+        // Barely transmissible. The art is a shape he only knows because the
+        // Lid made it against his own name and then shut, and a reader who has
+        // not been through a crossing is rebuilding it out of a description of
+        // somewhere they have never been.
+        opacity: 0.9,
+        element: null,
+        requiredOrdinal: 45,
+        qiCost: 1_020,
+        damage: '34d20+320!',
+        cooldown: 8,
+        description:
+            'The seam a crossing opens, made downward over ground instead of upward over a person, and held open rather than survived. He is the only being who has ever had a good look at one from underneath, which is the entire reason the art exists and the entire reason nobody else could have written it.'
+    }),
+    art({
+        id: 'what-came-back-instead',
+        name: 'What Came Back Instead',
+        category: 'defense',
+        grade: 'chaos',
+        // One person, and it is his own. A defence at this rung is not a wall
+        // over a place; it is the fact that the thing standing there is not
+        // going to be moved off it.
+        reach: 'single',
+        opacity: 0.88,
+        element: null,
+        requiredOrdinal: 45,
+        qiCost: 960,
+        damage: null,
+        cooldown: 7,
+        description:
+            'Half of a transformation completed and the rest of it did not, and the half that stays is the half that cannot be sent anywhere. Cultivated deliberately for six centuries by the only person the lower realm has ever declined to expel, it is a defence made out of being permitted to remain.'
+    }),
+    art({
+        id: 'the-second-question',
+        name: 'The Second Question',
+        category: 'attack',
+        grade: 'chaos',
+        // The man he meant and whoever is holding the position with him,
+        // because a position is rarely held by one person.
+        reach: 'several',
+        // The plainest thing he has, and still not plain. It is one idea,
+        // stated once, and the idea is a habit of mind rather than a working -
+        // which is exactly the sort of thing a face carries badly.
+        opacity: 0.72,
+        element: null,
+        requiredOrdinal: 45,
+        qiCost: 890,
+        damage: '28d20+240',
+        cooldown: 6,
+        description:
+            'The first strike is the question and the art is the second one, asked differently, arriving before the answer to the first. Anybody holding a position has to hold it twice, and the second time is the one that fails. His inheritors know him by the habit long before anybody tells them what he is.'
+    }),
+
+    // ── 46: three sets of writings, sent down, held by a house that cannot
+    // read them. What a True Immortal actually uses, at second hand and in
+    // the slow format - see `ABOVE_THE_LID_TRANSMISSION.trueImmortal`. The
+    // objects that go with these arts are not down here and never will be,
+    // which is `OBJECT_CEILING_BELOW_THE_LID` and the reason this file can
+    // carry the rung and `artifacts.ts` carries it differently.
+    art({
+        id: 'one-crossing-of-a-courtyard',
+        name: 'One Crossing of a Courtyard',
+        category: 'attack',
+        grade: 'chaos',
+        // A place, and it is the only reach that makes sense of the accounts:
+        // eleven witnesses, one traverse, and nothing left standing that had
+        // been standing.
+        reach: 'field',
+        opacity: 0.84,
+        element: null,
+        requiredOrdinal: 46,
+        qiCost: 1_460,
+        damage: '44d20+440!',
+        cooldown: 9,
+        description:
+            'Named from below, after the only occasion anybody down here has watched the rung work: something came down into a courtyard, crossed it, and the matter was finished. The writings are not an account of that afternoon and the sender has never been asked whether they are related. Three archives hold the incident and none of them holds this.'
+    }),
+    art({
+        id: 'canon-of-the-unwritten-span',
+        name: 'Canon of the Unwritten Span',
+        category: 'cultivation',
+        grade: 'chaos',
+        // A gathering canon lands on the person practising it, which is one
+        // person, and stays one person at every rung of the ladder.
+        reach: 'single',
+        // The plainest of the three and the most useless, because what it is
+        // plain about is a condition the reader is not in.
+        opacity: 0.55,
+        element: null,
+        // Left at 46, deliberately, and it is the one manual the succession
+        // rule does not apply to.
+        //
+        // Every other realm needs a manual learnable on its first rung or the
+        // chain of books dead-ends there. Above the Lid there is no chain:
+        // `progressRequiredForOrdinal` returns null from ordinal 45 upward, so
+        // there is no progress currency, nothing to accrue, and a gathering
+        // canon is not how anybody gets there. Rating this at 45 would also
+        // put it on Lu Sheng's rung, where the setting says an art can only
+        // have come off one of his faces - and this one came out of a ruin.
+        //
+        // It is still the one manual in the world with no cap: its band runs
+        // to the top of the ladder, so `capOf` returns null and it never runs
+        // out. Legal because `MANUALS_MAY_EXCEED_THE_LID` - paper may be rated
+        // anywhere, where no object below ordinal 45 may be.
+        requiredOrdinal: 46,
+        qiCost: 1_380,
+        damage: null,
+        cooldown: 0,
+        description:
+            'Accumulation written for somebody whose remaining years have stopped being a quantity anybody would bother recording. It is short, it is orderly, and every house that has worked through it has come out the far side agreeing that it is correct and that there is nothing in it they can do.'
+    }),
+    art({
+        id: 'the-fifteenth-breath',
+        name: 'The Fifteenth Breath',
+        category: 'movement',
+        grade: 'chaos',
+        // The traveller, and only the traveller. Nothing about the going up
+        // takes anybody else with it, which is most of what the entry is for.
+        reach: 'single',
+        opacity: 0.8,
+        element: null,
+        requiredOrdinal: 46,
+        qiCost: 1_300,
+        damage: null,
+        cooldown: 9,
+        description:
+            'Not the coming down, which needs no art and costs a great deal. This is the going back, taken deliberately and on the practitioner\'s own count rather than waiting to be taken, and it is why nothing from up there is ever left lying about afterwards - what a visitor is carrying goes with them, on the breath they chose, every time it has ever happened.'
     })
 ] as const;
 
@@ -1623,6 +2218,15 @@ export function getTechniquesByElement(element: Element | null): readonly Techni
  */
 export function getTechniquesByProvenance(provenance: TechniqueProvenance): readonly TechniqueEntry[] {
     return TECHNIQUES_BY_PROVENANCE.get(provenance) ?? [];
+}
+
+/**
+ * Arts the world can name and cannot produce. Nothing hands one of these over
+ * and nothing is supposed to: they are here so that an art with no route is a
+ * stated fact rather than a hole nobody has noticed yet.
+ */
+export function getTechniquesWithNoSurvivingCopy(): TechniqueEntry[] {
+    return TECHNIQUES.filter(t => !t.survivingCopy);
 }
 
 /**

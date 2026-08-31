@@ -21,7 +21,7 @@ import { PILLS, getPill } from './pills.js';
 import { RECIPES, getRecipesForPill, type RecipeEntry } from './recipes.js';
 import { HERBS, getHerb } from './herbs.js';
 import { BEASTS, BEAST_MATERIALS, BEAST_TIDES } from './beasts.js';
-import { SECTS, DAO_HOUSES, DESTROYED_DAO_HOUSES } from './sects.js';
+import { SECTS, DAO_HOUSES, DESTROYED_DAO_HOUSES, getSect } from './sects.js';
 import { ENCOUNTERS } from './encounters.js';
 import { REGIONS } from './regions.js';
 import { TRADITIONS } from './traditions.js';
@@ -30,11 +30,13 @@ import { FACTION_CHARACTER } from './faction-character.js';
 import { APEX_INSTITUTIONS, COURTS, FACTION_PARENTAGE, GUEST_ELDERS } from './hierarchy.js';
 import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from './immortal-items.js';
 import { WANDERERS } from './wanderers.js';
+import { FALSE_IMMORTALS, MADNESS_STAGES } from './false-immortals.js';
 import { MEMBERS } from './members.js';
 import { IMMORTAL_CHANNELS } from './crossings.js';
 import { AGES, DEAD_CIVILISATIONS, LID_THEORIES, ORIGIN_ACCOUNTS, CALENDARS } from './history.js';
 import { CONTINGENCIES } from './contingencies.js';
 import { HELD_INSTRUMENTS, UNOWNED_ANCESTORS } from './sealed-ancestors.js';
+import { INHERITANCE_TRIALS, GRAVES } from './inheritance-trials.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RE-EXPORTS
@@ -209,12 +211,14 @@ export * from './faction-character.js';
 export * from './hierarchy.js';
 export * from './immortal-items.js';
 export * from './wanderers.js';
+export * from './false-immortals.js';
 export * from './members.js';
 export * from './crossings.js';
 export * from './history.js';
 export * from './contingencies.js';
 export * from './sealed-ancestors.js';
 export * from './named-figures.js';
+export * from './inheritance-trials.js';
 
 export {
     ENCOUNTERS,
@@ -286,6 +290,13 @@ export interface CultivationCatalogCounts {
     immortalHoldings: number;
     /** Unattached figures worth asking. Vanishingly few. */
     wanderers: number;
+    /**
+     * Historical False Immortals the world remembers, every one of them with
+     * an end recorded. None is serving and none is resident.
+     */
+    falseImmortals: number;
+    /** Stages of the trajectory. Contiguous, ordered, covering the rung's span. */
+    madnessStages: number;
     /** The population that is not human, and is on the same ladder. */
     beasts: number;
     /** What comes off them, priced in the herb catalog's bands. */
@@ -299,6 +310,10 @@ export interface CultivationCatalogCounts {
     /** Sealed high-realm beings: held instruments and unowned hazards. */
     heldInstruments: number;
     unownedAncestors: number;
+    /** Doors somebody set on purpose. The interior of each is entry-gated. */
+    inheritanceTrials: number;
+    /** Sites nobody arranged. What is in one depends on how the occupant died. */
+    graves: number;
     /** Named people inside the factions, at the scale a player can know. */
     members: number;
     /** Named ages, including the present one. */
@@ -337,6 +352,8 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         immortalItems: IMMORTAL_ITEMS.length,
         immortalHoldings: IMMORTAL_HOLDINGS.length,
         wanderers: WANDERERS.length,
+        falseImmortals: FALSE_IMMORTALS.length,
+        madnessStages: MADNESS_STAGES.length,
         beasts: BEASTS.length,
         beastMaterials: BEAST_MATERIALS.length,
         beastTides: BEAST_TIDES.length,
@@ -344,6 +361,8 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         contingencies: CONTINGENCIES.length,
         heldInstruments: HELD_INSTRUMENTS.length,
         unownedAncestors: UNOWNED_ANCESTORS.length,
+        inheritanceTrials: INHERITANCE_TRIALS.length,
+        graves: GRAVES.length,
         members: MEMBERS.length,
         ages: AGES.length,
         deadCivilisations: DEAD_CIVILISATIONS.length,
@@ -401,6 +420,43 @@ export function findTechniquesForRoot(
  * `SECT_ADMISSION` this answers the question a player actually asks: "where do
  * I get this, and what will they want from me".
  */
+/**
+ * The highest rung a house's own books can carry one of its disciples to.
+ *
+ * The cross-catalog join that makes `production.reliableOrdinal` checkable.
+ * The cap belongs to the MANUAL, never to the house - nothing anywhere
+ * branches on a sect - so a house's ceiling is simply the best cap among the
+ * books it teaches, and the faction catalog's claim about what it can produce
+ * is either supported by that number or it is not.
+ *
+ * Null means it teaches no cultivation manual at all. For a closed house
+ * (`recruits: false`) that is correct and complete: the Hollow Court reads
+ * `reliableOrdinal: 0` while sitting at power ordinal 40, and its own note
+ * says why - "produces nobody, by construction: it takes no disciples". Zero
+ * there is a statement about INTAKE, not about the quality of anything it
+ * could teach. For a house that DOES recruit, null is a content gap: it takes
+ * disciples and hands them nothing to practise.
+ */
+export function houseTeachingCeiling(sectId: string): number | null {
+    const sect = getSect(sectId);
+    if (!sect) return null;
+    const taught = [
+        ...sect.teaches,
+        ...(sect.signatureTechniqueId ? [sect.signatureTechniqueId] : [])
+    ];
+    let ceiling: number | null = null;
+    for (const id of taught) {
+        const technique = getTechnique(id);
+        if (!technique || technique.class !== 'cultivation') continue;
+        // An uncapped manual carries somebody the whole way. No house teaches
+        // one - they are all ruin or grave - but if that ever changed, the
+        // ceiling is the top of the ladder rather than a missing number.
+        const cap = technique.cap ?? MAX_ORDINAL;
+        ceiling = ceiling === null ? cap : Math.max(ceiling, cap);
+    }
+    return ceiling;
+}
+
 export function whereToLearn(techniqueId: string): { sectId: string; sectName: string; admissionOrdinal: number }[] {
     const technique = getTechnique(techniqueId);
     if (!technique) return [];

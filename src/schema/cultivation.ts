@@ -1013,6 +1013,20 @@ export const APPROACH_PIERCING_AUDIENCES: readonly ApproachAudience[] = ['peers'
 // The cultivation replacement for spells. Tiered against the realm ladder.
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * The two kinds of art, which the catalog had been conflating.
+ *
+ * They are different things and the difference is the whole of the
+ * progression: one is what you PRACTISE to rank up, the other is what you USE
+ * to fight. `category` says what an art does mechanically; `class` says which
+ * of the two kinds it is, and only one of them carries a ceiling.
+ */
+export const TechniqueClassSchema = z.enum([
+    'cultivation', // a manual you practise to raise your rank. Carries a `cap`
+    'dao'          // an art you use. No cap: what you can DO is not what you ARE
+]);
+export type TechniqueClass = z.infer<typeof TechniqueClassSchema>;
+
 export const TechniqueCategorySchema = z.enum([
     'attack',      // offensive arts
     'defense',     // shields, body-tempering
@@ -1080,7 +1094,37 @@ export const TechniqueSchema = z.object({
      * which is what an art is pitched at. A manual that keeps being worth
      * teaching long past its band says so with `span` rather than with a rule.
      */
-    regard: RegardProfileSchema.optional()
+    regard: RegardProfileSchema.optional(),
+    /**
+     * Which kind of art this is. Resolved by the catalog's authoring helper
+     * rather than repeated on every entry, so the split reads as one block.
+     */
+    class: TechniqueClassSchema.default('dao'),
+    /**
+     * THE CEILING. The rung past which this manual cannot take anybody,
+     * however long they practise.
+     *
+     * Only ever set on `class: 'cultivation'`. Null means uncapped, which is
+     * reserved for the handful of manuals that carry a cultivator the whole
+     * way - the top prize in the setting, and vanishingly rare.
+     *
+     * This is what makes the faction catalog's `reliableOrdinal` true BY
+     * CONSTRUCTION rather than by assertion. A low-tier house teaches a
+     * low-tier manual, so it structurally cannot produce a high-realm
+     * cultivator. Nothing branches on the sect; the manual is the manual, and
+     * the cap belongs to the book rather than to whoever handed it over.
+     *
+     * INDEPENDENT OF SUITABILITY. A manual has both a cap and a fit to a
+     * spirit root, and they do not interact: a perfectly suited manual still
+     * runs out, and an ill-suited one teaches nothing at any height. Do not
+     * fold one into the other.
+     *
+     * Read by `techniqueExhausted` in `engine/cultivation/cultivation.ts`,
+     * which stops dead at the cap rather than tapering toward it - a ceiling
+     * that gets gradually stickier reads as bad luck, and one that stops dead
+     * reads as a fact about the book in your hands.
+     */
+    cap: z.number().int().min(0).max(MAX_ORDINAL).nullable().default(null)
 });
 export type Technique = z.infer<typeof TechniqueSchema>;
 
