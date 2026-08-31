@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════
-   The Cultivation Ladder — ink & jade
+   The Cultivation Ladder - ink & jade
    No build step, no external assets, no network fonts. System stacks only.
    ══════════════════════════════════════════════════════════════════════ */
 
@@ -19,7 +19,7 @@
   --paper-mut: #7d8781;
   --paper-far: #5a635e;
 
-  /* Jade — the living accent */
+  /* Jade - the living accent */
   --jade-300: #a8e6d0;
   --jade-400: #7fd1b9;
   --jade-500: #4fb494;
@@ -27,7 +27,7 @@
   --jade-700: #1d5b48;
   --jade-glow: rgba(127, 209, 185, 0.14);
 
-  /* Engine voice — brass, not jade. Mechanical, not alive. */
+  /* Engine voice - brass, not jade. Mechanical, not alive. */
   --brass-300: #e3c78d;
   --brass-400: #cfa95f;
   --brass-600: #8a6f34;
@@ -42,7 +42,7 @@
   --amber-400: #e0a44a;
   --amber-dim: rgba(224, 164, 74, 0.13);
 
-  /* Tribulation — heavenly lightning */
+  /* Tribulation - heavenly lightning */
   --violet-300: #cbb6f5;
   --violet-400: #a58ae8;
   --violet-dim: rgba(165, 138, 232, 0.14);
@@ -96,7 +96,7 @@ body {
   overflow: hidden;
 }
 
-/* A faint vertical wash — the sense of a room lit by one lamp. */
+/* A faint vertical wash - the sense of a room lit by one lamp. */
 body::before {
   content: "";
   position: fixed;
@@ -727,6 +727,7 @@ kbd {
 .meter.is-warn .meter__val { color: var(--amber-400); }
 .meter__note { font-size: 11.5px; color: var(--paper-far); }
 .meter__note.is-ready { color: var(--brass-300); }
+.meter__note.is-barred { color: var(--violet-300); }
 
 .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 13px; }
 .kv dt { color: var(--paper-far); }
@@ -856,9 +857,291 @@ kbd {
 }
 .death__actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
-.death--ascended { }
-.death--ascended .death__mark, .death--ascended .death__cause { color: var(--jade-300); }
-.death--ascended .death__cause { border-left-color: var(--jade-600); }
+
+/* ─────────────────────── THE ENGINE INSPECTOR ─────────────────────── */
+
+.entry--inspect { margin-top: -8px; }
+
+.inspect {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+.inspect[open] { border-color: var(--brass-600); background: rgba(207, 169, 95, 0.05); }
+
+.inspect__toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-mut);
+  border-radius: var(--r-md);
+  user-select: none;
+}
+.inspect__toggle::-webkit-details-marker { display: none; }
+.inspect__toggle:hover { color: var(--brass-300); }
+.inspect[open] .inspect__toggle { color: var(--brass-300); border-bottom: 1px solid var(--line); border-radius: var(--r-md) var(--r-md) 0 0; }
+
+.inspect__chev { display: inline-block; transition: transform var(--dur); font-size: 10px; }
+.inspect[open] .inspect__chev { transform: rotate(90deg); }
+.inspect__label { flex: 1; min-width: 0; }
+.inspect__count { color: var(--paper-far); letter-spacing: 0.06em; text-transform: none; font-size: 10.5px; }
+
+.inspect__body { padding: 12px; }
+.inspect__blurb {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--paper-far);
+  margin-bottom: 12px;
+  max-width: 68ch;
+}
+
+.inspect__list { display: grid; gap: 1px; counter-reset: tc; }
+
+.tc {
+  display: grid;
+  gap: 3px;
+  padding: 8px 10px 8px 12px;
+  border-left: 2px solid var(--brass-600);
+  background: rgba(255, 255, 255, 0.022);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.tc + .tc { margin-top: 3px; }
+
+/* Authority vs decoration. The distinction is the point of the panel. */
+.tc--authority { border-left-color: var(--brass-400); }
+.tc--decoration {
+  border-left-color: var(--jade-700);
+  border-left-style: dashed;
+  background: rgba(255, 255, 255, 0.012);
+}
+.tc--declined { border-left-color: var(--blood-500); background: var(--blood-dim); }
+
+.tc__head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.tc__name { font-family: var(--font-mono); font-size: 11.5px; color: var(--paper-dim); }
+.tc__action {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--paper-far);
+}
+.tc__flag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.tc__flag--authority { color: var(--brass-400); background: var(--brass-dim); }
+.tc__flag--decoration { color: var(--jade-600); }
+.tc__flag--declined { color: var(--blood-300); background: var(--blood-dim); margin-left: 0; }
+.tc__source { font-family: var(--font-mono); font-size: 10px; color: var(--paper-far); }
+
+.tc__summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--brass-300);
+  word-break: break-word;
+}
+.tc--decoration .tc__summary { color: var(--paper-mut); font-family: var(--font-read); font-size: 13.5px; font-style: italic; }
+.tc--declined .tc__summary { color: var(--blood-300); }
+.tc__note { font-family: var(--font-mono); font-size: 10.5px; color: var(--paper-far); }
+
+/* ─────────────────────── THE VAULT'S LEDGER ─────────────────────── */
+
+.toll__summary {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--paper-far);
+  margin-bottom: 8px;
+}
+
+.tolls { display: grid; gap: 6px; }
+
+.toll {
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  padding: 9px 11px;
+  display: grid;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.018);
+}
+.toll--clean { border-left-color: var(--jade-700); }
+.toll--prepaid { border-left-color: var(--paper-far); }
+.toll--nothing_left { border-left-color: var(--paper-far); }
+.toll--taken { border-left-color: var(--violet-400); background: var(--violet-dim); }
+
+.toll__head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.toll__idx {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--ink-900);
+  background: var(--paper-far);
+  border-radius: 3px;
+  padding: 0 5px;
+}
+.toll--taken .toll__idx { background: var(--violet-400); }
+.toll__crossing { font-size: 12px; color: var(--paper-dim); }
+.toll__arrow { color: var(--paper-far); font-family: var(--font-mono); }
+.toll__outcome {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-far);
+  margin-left: auto;
+}
+.toll--taken .toll__outcome { color: var(--violet-300); }
+
+.toll__taken { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.toll__kind {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--violet-400);
+}
+.toll__label { font-family: var(--font-read); font-size: 15px; color: var(--violet-300); }
+.toll__reason { font-family: var(--font-read); font-size: 13px; line-height: 1.55; color: var(--paper-mut); }
+.toll__meta { font-family: var(--font-mono); font-size: 10px; color: var(--paper-far); }
+
+/* ─────────────────────── FOUNDATION + STATUS FLAGS ─────────────────────── */
+
+.foundation {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  display: grid;
+  gap: 3px;
+}
+.foundation__top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 12.5px; }
+.foundation__val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+.foundation__val.is-good { color: var(--jade-300); }
+.foundation__val.is-warn { color: var(--amber-400); }
+.foundation__val.is-bad { color: var(--blood-300); }
+.foundation__note { font-size: 11.5px; line-height: 1.5; color: var(--paper-far); }
+.foundation--none { opacity: 0.75; }
+
+.taken-name {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--violet-300);
+  border-left: 2px solid var(--violet-400);
+  background: var(--violet-dim);
+  padding: 6px 10px;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+.statusflag {
+  border: 1px solid currentColor;
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+.statusflag--false { color: var(--violet-400); background: var(--violet-dim); }
+.statusflag__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.statusflag__body { font-size: 12px; line-height: 1.55; color: var(--paper-dim); }
+
+.btn--barred:disabled { border-color: var(--violet-400); color: var(--violet-300); opacity: 0.62; }
+.btn--barred:disabled .btn__hint { color: var(--violet-400); }
+
+/* ─────────────────────── TRUE IMMORTAL ENDING ─────────────────────── */
+
+.screen--death:has(.death--immortal) {
+  background: radial-gradient(900px 560px at 50% 0%, rgba(127, 209, 185, 0.09), transparent 72%);
+}
+
+.death--immortal { position: relative; }
+.death--immortal .death__mark--immortal { color: var(--jade-300); }
+.death--immortal .death__cause--immortal {
+  color: var(--jade-300);
+  border-left-color: var(--jade-400);
+}
+.death--immortal .death__name {
+  background: linear-gradient(160deg, var(--paper) 20%, var(--jade-300));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The tide falling back. Six slow columns of light, and nothing else. */
+.tide {
+  position: absolute;
+  inset: -40px 0 auto 0;
+  height: 260px;
+  display: flex;
+  justify-content: space-around;
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: -1;
+}
+.tide i {
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--jade-400), transparent);
+  animation: tide 7s ease-in-out infinite;
+}
+.tide i:nth-child(2) { animation-delay: 0.9s; }
+.tide i:nth-child(3) { animation-delay: 1.9s; }
+.tide i:nth-child(4) { animation-delay: 2.6s; }
+.tide i:nth-child(5) { animation-delay: 3.8s; }
+.tide i:nth-child(6) { animation-delay: 4.7s; }
+@keyframes tide {
+  0%, 100% { opacity: 0; transform: scaleY(0.5); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+@media (prefers-reduced-motion: reduce) { .tide { display: none; } }
+
+.collected {
+  border: 1px solid var(--jade-600);
+  background: var(--jade-glow);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  display: grid;
+  gap: 10px;
+}
+.collected__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--jade-300);
+}
+.collected__body {
+  font-family: var(--font-read);
+  font-size: 16px;
+  line-height: 1.72;
+  color: var(--paper-dim);
+}
+.collected__body--quiet { font-size: 14.5px; color: var(--paper-far); }
+
+.ending-tolls { display: grid; gap: 4px; }
+.ending-tolls__blurb { font-size: 13px; color: var(--paper-far); margin-bottom: 8px; line-height: 1.55; }
 
 /* ────────────────────────────── OVERLAY ────────────────────────────── */
 
@@ -896,6 +1179,7 @@ kbd {
 .overlay__panel[data-tone="danger"]      { border-color: var(--blood-500); }
 .overlay__panel[data-tone="success"]     { border-color: var(--jade-600); }
 .overlay__panel[data-wide="1"]           { width: min(940px, 100%); }
+.overlay__panel[data-wide="2"]           { width: min(1340px, 100%); }
 
 .overlay__head {
   display: flex;
@@ -1252,6 +1536,156 @@ kbd {
 .ledger__desc { font-size: 12.5px; color: var(--paper-far); font-family: var(--font-read); font-style: italic; margin-top: 3px; line-height: 1.5; }
 .ledger__meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--paper-far); text-align: right; white-space: nowrap; }
 
+/* ─── Admin roster ─── */
+
+.roster { display: grid; gap: 14px; min-height: 0; }
+
+.roster__note {
+  font-size: 12.5px;
+  color: var(--paper-far);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.roster__readonly {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-400);
+  border: 1px solid var(--brass-600);
+  background: var(--brass-dim);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+.roster__controls {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.6fr) repeat(3, minmax(110px, 1fr));
+  gap: 8px;
+}
+.roster__controls .input,
+.roster__controls select {
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--paper);
+  background: var(--ink-850);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  padding: 7px 9px;
+  width: 100%;
+}
+.roster__controls select:focus,
+.roster__controls .input:focus {
+  outline: none;
+  border-color: var(--jade-600);
+  box-shadow: 0 0 0 3px var(--jade-glow);
+}
+
+.roster__scroll {
+  overflow: auto;
+  max-height: min(58vh, 620px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.rtable { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+.rtable th, .rtable td { padding: 6px 8px; text-align: left; white-space: nowrap; }
+.rtable td.col-root { max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
+.rtable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--ink-750);
+  border-bottom: 1px solid var(--line-strong);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--paper-mut);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+.rtable thead th:hover { color: var(--paper); background: var(--ink-700); }
+.rtable thead th[aria-sort="ascending"],
+.rtable thead th[aria-sort="descending"] { color: var(--jade-300); }
+.rtable thead th .sortmark { opacity: 0.45; margin-left: 5px; }
+.rtable thead th[aria-sort] .sortmark { opacity: 1; }
+
+.rtable tbody tr { border-bottom: 1px solid var(--line); }
+.rtable tbody tr:hover td { background: rgba(255, 255, 255, 0.028); }
+.rtable td { border-bottom: 1px solid var(--line); color: var(--paper-dim); }
+.rtable td.num { text-align: right; font-family: var(--font-mono); font-size: 12px; }
+.rtable td.rname { color: var(--paper); font-weight: 550; }
+.rtable td.wrap { white-space: normal; min-width: 130px; }
+
+.rtable tr.is-dead td { opacity: 0.52; }
+.rtable tr.is-dead td.rname { text-decoration: line-through; text-decoration-color: var(--blood-500); }
+.rtable th:last-child, .rtable td:last-child { min-width: 148px; }
+.rtable td .cause {
+  display: block;
+  line-height: 1.35;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--blood-300);
+  letter-spacing: 0.04em;
+  white-space: normal;
+}
+.rtable td .sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-far);
+  white-space: normal;
+}
+.rtable td .hurt { color: var(--blood-300); font-weight: 650; }
+
+.rtable tr.is-player {
+  position: sticky;
+  top: 27px;
+  z-index: 1;
+}
+.rtable tr.is-player td {
+  background: linear-gradient(to bottom, rgba(79, 180, 148, 0.16), rgba(79, 180, 148, 0.09));
+  border-bottom: 1px solid var(--jade-600);
+  border-top: 1px solid var(--jade-600);
+  color: var(--jade-300);
+}
+.rtable tr.is-player td.rname { color: var(--jade-300); }
+.rtable tr.is-player:hover td { background: rgba(79, 180, 148, 0.2); }
+.you-tag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #04120e;
+  background: var(--jade-400);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 7px;
+  vertical-align: middle;
+}
+
+.kind-tag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-left: 6px;
+  color: var(--paper-far);
+}
+.kind-enemy { color: var(--blood-300); }
+.kind-npc { color: var(--paper-mut); }
+.kind-neutral { color: var(--paper-far); }
+
+.roster__count { font-family: var(--font-mono); font-size: 11.5px; color: var(--paper-far); }
+.roster__hint { display: none; font-family: var(--font-mono); font-size: 10.5px; color: var(--paper-far); }
+
 /* ─── Cultivate picker ─── */
 
 .pick { display: grid; gap: 20px; }
@@ -1361,9 +1795,13 @@ kbd {
 @media (max-width: 860px) {
   body { font-size: 15px; }
 
+  .topbar { gap: 6px; padding: 0 10px; }
   .topbar__sheet-toggle { display: inline-block; }
   .topbar__title { font-size: 14px; }
-  .topbar__actions .btn--sm { padding: 5px 8px; font-size: 12.5px; }
+  .topbar__actions { gap: 4px; min-width: 0; }
+  .topbar__actions .btn--sm { padding: 5px 7px; font-size: 12.5px; }
+  .badge__long, .btn__long { display: none; }
+  .badge { font-size: 9px; letter-spacing: 0.1em; padding: 3px 5px; }
 
   .play { grid-template-columns: minmax(0, 1fr); }
   .play__narrative { border-right: none; }
@@ -1391,6 +1829,10 @@ kbd {
     z-index: 39;
   }
 
+  /* Warnings stay loud, but must not swallow the whole narrative on a phone. */
+  .warnings { max-height: 38vh; overflow-y: auto; }
+  .warn { padding: 10px 16px; }
+
   .entries, .scroll__pending { padding: 0 18px; }
   .commandbar { padding: 10px 18px 12px; }
   .entry--narrator .entry__text { font-size: 16.5px; }
@@ -1408,13 +1850,54 @@ kbd {
     border-radius: 0;
     border: none;
   }
+  .roster__controls { grid-template-columns: 1fr 1fr; }
+  .roster__scroll { max-height: none; }
+  .rtable th.col-loc, .rtable td.col-loc,
+  .rtable th.col-stones, .rtable td.col-stones,
+  .rtable th.col-realm, .rtable td.col-realm,
+  .rtable th.col-root, .rtable td.col-root { display: none; }
+  .rtable tr.is-player { position: static; }
+
+  /* Six columns cannot fit a phone. The table scrolls sideways inside its own
+     box (never the page), and the name column stays pinned so a row is always
+     attributable to someone. */
+  .rtable th:first-child,
+  .rtable td.rname {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--ink-800);
+    box-shadow: 1px 0 0 var(--line);
+  }
+  .rtable thead th:first-child { z-index: 3; background: var(--ink-750); }
+  .rtable tr.is-player td.rname { background: #14231e; }
+  .rtable tbody tr:hover td.rname { background: #141b19; }
+  .rtable td.rname { max-width: 150px; white-space: normal; }
+  .roster__hint { display: block; }
+
   .rung { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; }
   .rung__prog { display: none; }
   .ledger__row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .ledger__meta { text-align: left; }
   .tl { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .death { padding: 40px 18px 70px; }
+
+  .inspect__body { padding: 10px; }
+  .inspect__label { flex: 0 1 auto; }
+  .inspect__count { flex-basis: 100%; margin-left: 19px; }
+  .tc__flag { margin-left: 0; }
+  .tc__summary { font-size: 11.5px; }
+  .toll__outcome { margin-left: 0; }
+  .collected { padding: 14px 15px; }
+  .collected__body { font-size: 15px; }
+  .tide { height: 180px; }
   .toasts { right: 10px; left: 10px; max-width: none; }
+}
+
+@media (max-width: 560px) {
+  /* The wordmark is the first thing to go; the controls have to stay reachable. */
+  .topbar__title { display: none; }
+  .topbar__actions .btn--sm { padding: 5px 6px; font-size: 12px; }
 }
 
 @media (max-width: 420px) {

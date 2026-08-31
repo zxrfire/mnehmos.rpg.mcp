@@ -28,13 +28,14 @@
 
     <div class="topbar__actions">
       <span class="badge badge--admin" id="admin-badge" hidden title="The server is running with admin tooling exposed.">
-        ADMIN MODE
+        ADMIN<span class="badge__long"> MODE</span>
       </span>
       <span class="badge badge--mock" id="mock-badge" hidden title="Responses are served by the local mock, not the engine.">
-        MOCK DATA
+        MOCK<span class="badge__long"> DATA</span>
       </span>
+      <button class="btn btn--ghost btn--sm btn--adminonly" type="button" data-open="roster" id="btn-roster" hidden>Roster</button>
       <button class="btn btn--ghost btn--sm" type="button" data-open="ladder">Ladder</button>
-      <button class="btn btn--ghost btn--sm" type="button" data-open="ledger">Death Ledger</button>
+      <button class="btn btn--ghost btn--sm" type="button" data-open="ledger"><span class="btn__long">Death </span>Ledger</button>
       <button class="btn btn--ghost btn--sm topbar__sheet-toggle" type="button" id="sheet-toggle" aria-expanded="false" aria-controls="sheet">
         Sheet
       </button>
@@ -179,9 +180,9 @@
   </main>
 
   <footer class="statusbar" id="statusbar">
-    <span class="statusbar__item" id="status-run">—</span>
+    <span class="statusbar__item" id="status-run">-</span>
     <span class="statusbar__spacer"></span>
-    <span class="statusbar__item" id="status-provider">—</span>
+    <span class="statusbar__item" id="status-provider">-</span>
   </footer>
 </div>
 
@@ -190,7 +191,7 @@
   <div class="overlay__scrim" data-overlay-close></div>
   <div class="overlay__panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title" tabindex="-1" id="overlay-panel">
     <header class="overlay__head">
-      <h2 class="overlay__title" id="overlay-title">—</h2>
+      <h2 class="overlay__title" id="overlay-title">-</h2>
       <button class="btn btn--ghost btn--icon" type="button" data-overlay-close aria-label="Close">✕</button>
     </header>
     <div class="overlay__body" id="overlay-body"></div>
