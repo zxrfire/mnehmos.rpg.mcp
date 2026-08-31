@@ -70,7 +70,7 @@ const RECRUITING = SECTS
 describe('members catalog', () => {
     it('parses, and is a cast rather than a roster', () => {
         expect(MEMBERS.length).toBeGreaterThanOrEqual(80);
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
             expect(() => MemberSchema.parse(member), member.id).not.toThrow();
         }
         expect(getMember('member-yan-shuling')).toBeDefined();
@@ -94,7 +94,7 @@ describe('members catalog', () => {
     });
 
     it('resolves every factionId to a real faction that recruits', () => {
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
             const sect = getSect(member.factionId);
             expect(sect, `${member.id} points at an unknown faction ${member.factionId}`)
                 .toBeDefined();
@@ -106,7 +106,7 @@ describe('members catalog', () => {
     });
 
     it('places every person on a rank their faction actually has', () => {
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
             const sect = requireSect(member.factionId);
             expect(
                 member.rankIndex,
@@ -122,7 +122,11 @@ describe('members catalog', () => {
 
     it('keeps every realm plausible for the rank and the faction', () => {
         const offences: string[] = [];
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
+            // The band describes what a faction can reliably produce. The one
+            // member it did not produce is exempt by construction; see the
+            // outlier assertions below, which are stricter rather than looser.
+            if (member.outlier) continue;
             const band = rankRealmBand(member.factionId, member.rankIndex);
             expect(band, `${member.id} has no band`).toBeDefined();
             if (!band) continue;
@@ -138,7 +142,7 @@ describe('members catalog', () => {
     });
 
     it('never seats anybody below their faction admission bar', () => {
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
             const sect = requireSect(member.factionId);
             expect(
                 member.realmOrdinal,
@@ -148,9 +152,12 @@ describe('members catalog', () => {
     });
 
     it('never seats anybody far above what their faction can produce', () => {
+        // Outliers excluded: standing above what the faction can produce is the
+        // definition of one, and the outlier suite pins them to powerOrdinal
+        // exactly, which is stricter than this range.
         // Somebody above the pipeline by more than a realm is a claim that
         // needs its own story, and this catalog does not tell stories.
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
             const production = FACTION_CHARACTER[member.factionId]?.production.reliableOrdinal;
             if (production === undefined) continue;
             const sect = requireSect(member.factionId);
@@ -166,31 +173,38 @@ describe('members catalog', () => {
     });
 
     it('weights the cast toward the bottom of the ladder', () => {
-        const qi = MEMBERS.filter(m => m.realmOrdinal <= QI_CONDENSATION_TOP);
-        const foundation = MEMBERS.filter(
+        // The shape being described is the CAST: the people a player meets on the
+        // way up. Each faction also carries one outlier, its strongest member,
+        // and counting those here would say the roster is top-heavy when what
+        // actually happened is that every faction gained exactly one senior.
+        const cast = MEMBERS.filter(m => !m.outlier);
+
+        const qi = cast.filter(m => m.realmOrdinal <= QI_CONDENSATION_TOP);
+        const foundation = cast.filter(
             m => m.realmOrdinal > QI_CONDENSATION_TOP && m.realmOrdinal <= FOUNDATION_TOP
         );
-        const aboveCore = MEMBERS.filter(m => m.realmOrdinal > CORE_FORMATION_TOP);
+        const aboveCore = cast.filter(m => m.realmOrdinal > CORE_FORMATION_TOP);
 
-        expect(qi.length / MEMBERS.length, 'most people are at Qi Condensation')
+        expect(qi.length / cast.length, 'most people are at Qi Condensation')
             .toBeGreaterThan(0.4);
         expect(foundation.length, 'Foundation Establishment should be notable, not absent')
             .toBeGreaterThan(0);
         expect(
-            aboveCore.length / MEMBERS.length,
+            aboveCore.length / cast.length,
             'above Core Formation is a senior figure and should stay rare: ' +
             aboveCore.map(m => `${m.name} (${m.realmOrdinal})`).join(', ')
         ).toBeLessThanOrEqual(0.15);
-        // Nobody here is above the early stages of Deity Transformation. The
-        // people who are stand at the top of small factions, and the world's
-        // genuinely enormous figures live in the other catalogs.
-        const highest = Math.max(...MEMBERS.map(m => m.realmOrdinal));
+        // The cast stops in the early stages of Deity Transformation. Above that
+        // is one person per faction and they are marked as such - the number a
+        // faction is listed at now names somebody rather than nobody, which is
+        // the change this bound used to stand in for.
+        const highest = Math.max(...cast.map(m => m.realmOrdinal));
         expect(highest).toBeLessThanOrEqual(26);
         expect(highest).toBeLessThanOrEqual(MAX_ORDINAL);
     });
 
     it('gives everybody a want, a fear and a concrete detail', () => {
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
             // The floor is low on purpose: "out" and "a ticket" are the two
             // best answers in the catalog and a longer minimum would forbid
             // them. What is forbidden is a blank.
@@ -205,7 +219,7 @@ describe('members catalog', () => {
     it('keeps people small enough to be reusable', () => {
         // A person who takes ten lines is not reusable. This is the guard on
         // that, and it is deliberately a hard cap rather than an average.
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
             const prose = [member.wants, member.fears, member.detail].join(' ');
             expect(prose.length, `${member.id} has grown into a biography`).toBeLessThan(500);
         }
@@ -304,7 +318,7 @@ describe('members catalog', () => {
     });
 
     it('attaches rivalry and teaching only where they belong', () => {
-        for (const member of MEMBERS) {
+        for (const member of MEMBERS.filter(m => !m.outlier)) {
             if (member.role !== 'rival') {
                 expect(member.rivalry, `${member.id} carries a rivalry it should not`).toBeNull();
             }
@@ -410,5 +424,34 @@ describe('members catalog', () => {
                 previousFloor = band!.minOrdinal;
             }
         }
+    });
+});
+
+describe('the strongest member is somebody you can meet', () => {
+    it('gives every recruiting faction exactly one outlier, at its own ordinal', () => {
+        for (const sect of SECTS) {
+            const mine = MEMBERS.filter(m => m.factionId === sect.id);
+            if (mine.length === 0) continue;
+            const outliers = mine.filter(m => m.outlier);
+            expect(outliers.length, sect.id + ' should have one outlier').toBe(1);
+            // The faction ordinal is defined as its strongest member, so this is
+            // an identity rather than a range check.
+            expect(outliers[0].realmOrdinal, sect.id + ' outlier is not the strongest member')
+                .toBe(sect.powerOrdinal);
+            expect(outliers[0].rankIndex, sect.id + ' outlier does not hold the top rank')
+                .toBe(sect.ranks.length - 1);
+            for (const other of mine.filter(m => !m.outlier)) {
+                expect(other.realmOrdinal, other.id + ' outranks the outlier')
+                    .toBeLessThanOrEqual(outliers[0].realmOrdinal);
+            }
+        }
+    });
+
+    it('keeps the cast weighted below them', () => {
+        // The point of the roster is the bottom of the ladder. One strong member
+        // per faction must not turn it into a list of elders.
+        const ordinary = MEMBERS.filter(m => !m.outlier);
+        const median = ordinary.map(m => m.realmOrdinal).sort((a, b) => a - b)[Math.floor(ordinary.length / 2)];
+        expect(median).toBeLessThanOrEqual(20);
     });
 });

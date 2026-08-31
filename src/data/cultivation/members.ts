@@ -152,6 +152,22 @@ export const MemberSchema = z.object({
     /** One specific concrete thing: a habit, a possession, an injury, a line. */
     detail: z.string().min(30),
     /** Whether they are pleasant to be around. A fact about manner. */
+    /**
+     * The faction's strongest member, and not a product of its pipeline.
+     *
+     * `rankRealmBand` caps a rank at what the faction can reliably produce,
+     * which is the right rule for everybody the faction actually made. It is the
+     * wrong rule for the one person it did not: an inherited elder, somebody who
+     * arrived already formed, or the last survivor of a richer age. On most of
+     * this catalog the two figures are far apart - a faction standing at 33
+     * whose pipeline tops out near 28 - and that distance is the Late Age, not
+     * a data error.
+     *
+     * So an outlier is exempt from the band and asserted to sit exactly on the
+     * faction's `powerOrdinal`, because that number is defined as this person.
+     * At most one per faction.
+     */
+    outlier: z.boolean(),
     goodCompany: z.boolean(),
     rivalry: RivalrySchema.nullable(),
     teaching: TeachingSchema.nullable()
@@ -269,6 +285,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a sword name before her twentieth year, because her mother had one at nineteen',
         fears: 'that the armoury sergeant is right and her wrists are wrong for the blade',
         detail: 'Sharpens the whole servants\' dormitory\'s blades on rest days, badly, for the company rather than the coppers.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -284,6 +301,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'for his uncle to stop introducing him to people as his uncle',
         fears: 'being posted to the lower gate, where nobody of consequence walks past',
         detail: 'Keeps a written list of everyone who has beaten him in the yard, with dates, and has never crossed a name off it.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'Somebody arrived the same year he did, is doing better on less, and has not once mentioned an uncle.',
@@ -302,6 +320,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the same courtyard, the same duty roster, and another thirty years of both',
         fears: 'promotion, which would move him off the east terrace',
         detail: 'Thirty-one years an outer disciple, and knows the position of every flagstone worn through in the practice yard - two hundred and ten of them - and will recite the count to a visitor.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -317,6 +336,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'selection upward at the next inter-sect competition, which is in four years',
         fears: 'that she is the one everyone assumes will rise, and that the assumption has been doing the work',
         detail: 'Flies the blade barefoot because boots cost her a half-beat on the mount, and has ruined four sets of feet doing it.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -335,6 +355,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to put forward two people this year who are still there in ten, which she has managed once in nine years',
         fears: 'that the two she has already sent home were the ones, and that she will find out from somebody else',
         detail: 'Travels as a buyer of dye and does actually buy it, badly, at a small annual loss the Pavilion covers without comment; asks strangers three mild questions and hands them something to hold, and will not say what she is measuring even when the answer would cost her nothing.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -350,6 +371,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to demonstrate the second form correctly once more before he stops being able to demonstrate it',
         fears: 'that he is an elder because the Pavilion has nobody else to be one',
         detail: 'Right forearm visibly heavier than the left, like every Pavilion sword, and a tremor in it he hides by keeping that hand on the scabbard throughout a conversation.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -372,6 +394,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a decision, in either direction, from four people who have not been able to reach one in eleven years',
         fears: 'that she will be asked to keep holding until she is old enough that the arithmetic answers itself',
         detail: 'Made a Sword Elder at thirty-one, which the province read as the fastest rise in four centuries and the hall read correctly: she is standing at the top of her realm under a standing instruction not to break through, and the seat arrived the same season the instruction did.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -389,6 +412,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be allowed to touch a patient, once, under supervision',
         fears: 'the ledger of unpaid bills, on which his family appears twice',
         detail: 'Names a herb from the smell of the cut end with his eyes shut, and does it as a party trick at the ford market for coppers.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -404,6 +428,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a ford posting where she would be the only physician for nine li',
         fears: 'being the only physician for nine li',
         detail: 'Carries the needle roll her teacher gave her with one needle missing, and has never replaced it, and will not explain which one.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -419,6 +444,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Hall to charge an enemy on the floor exactly what it charges anyone else',
         fears: 'that she argues about billing because she has not advanced in nine years',
         detail: 'Keeps a tally of patients treated free in the back of the dispensary book, where the billing faction has now found it twice.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -434,6 +460,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to finish a working index of which formulae in the Hall\'s book came out of the valley ruin',
         fears: 'that the answer is most of them',
         detail: 'Pins his sleeves back even at meals, and has been unable to stop for nineteen years, and eats alone because of it.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -453,6 +480,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'somebody, anybody, to tell her what the ceremonial duty at the springs is for',
         fears: 'that she has been performing it wrongly for sixty years',
         detail: 'Goes alone to the ninth spring at dawn on the first of each month and pours out a measure of water, which nobody in the Hall including her can explain.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -470,6 +498,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a smaller stone, and will die before he asks for one',
         fears: 'admitting he chose the stone to impress somebody who left the Order the following spring',
         detail: 'His stone is the largest in living memory, he has carried it eleven years, and the sound of him putting it down is how the refectory knows he has arrived.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -485,6 +514,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be first up the ninth peak once, in front of the whole intake',
         fears: 'the workings, and will not walk the fourth peak path at all',
         detail: 'Counts her steps aloud on the climb, which the entire Order finds unbearable and nobody has ever told her.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -500,6 +530,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the workings surveyed and the question of Meng Da settled in writing',
         fears: 'what a survey would find, which is a different thing from not wanting one',
         detail: 'Has the workings entrance measured, staked and roped to a standard nobody asked for, and has never gone in past the rope.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -519,6 +550,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to die before anybody opens the workings',
         fears: 'that Meng Da is alive in them',
         detail: 'Has personally swept and maintained the forty unlit formation nodes for fifty years, and cannot say what a single one of them does.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -536,6 +568,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'her own boat, which is eleven years of wages at the rate she is paid',
         fears: 'the third ford in spring, where she lost a pole and nearly the rest',
         detail: 'Introduces herself to everyone by ford and season - "Third, this spring" - including to paying customers, who find it baffling.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -551,6 +584,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be taken on the border road run to Scarwater once, to see it',
         fears: 'land, which he says as though it were an ordinary thing to be afraid of',
         detail: 'Has never slept more than one night away from water in his life and offers this as a qualification.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -566,6 +600,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Ford Master\'s seat at Scarwater, which is the only seat on the border road',
         fears: 'that the River Elders are right and he cannot read water',
         detail: 'Has twice reported another disciple\'s smuggling to the Ford Master, been thanked both times, and promoted neither.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'Somebody the Ford Master likes is going to get Scarwater, and Fang Lianzhou has decided in advance who it is.',
@@ -584,6 +619,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to federate the border road and be remembered as the man who did it',
         fears: 'drowning on land, which is what the River Elders say will happen and which he repeats as a joke',
         detail: 'Keeps the two-age-old survey copy in oilcloth and will unwrap it for anybody who asks, at length, and then again on the way out.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: {
@@ -603,6 +639,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Alliance to stay river people and stop talking about the road',
         fears: 'being the last one who thinks so',
         detail: 'Has not been on land longer than a market day in forty years, and declines invitations by letter, in a hand that is famously bad.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -620,6 +657,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to find out whether he has a spirit root at all, which nobody has told him',
         fears: 'being told',
         detail: 'Has swept the same corridor for two years and can name whoever is coming from the sound of the footstep, at forty paces, every time.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -635,6 +673,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'eleven days\' cart fare back to Kettle, to fetch her brother',
         fears: 'that the cough is the thing that decides it and not the fare',
         detail: 'Rinses her mouth with vinegar before every meal, which no Low Fall native does and which nobody at the Temple has asked her about.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -650,6 +689,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to learn one art that is not elementless, just to know what it is like',
         fears: 'that the Temple takes people like him because nobody else will, and that this is the whole of it',
         detail: 'Has memorised the Lesser Qi-Gathering Manual so completely that he recites it in his sleep, to the dormitory\'s continuing distress.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -665,6 +705,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a posting to the Kettle Mission, eleven days away',
         fears: 'that he wants it because it is eleven days from his family\'s creditors',
         detail: 'Cuts his own hair rather than let anybody do it, badly, in front of a polished pan, on the first of the month.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -680,6 +721,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to get one more disciple past Foundation Establishment before his hands go',
         fears: 'the Abbot accepting a vein grant',
         detail: 'Teaches with his hands inside his sleeves and corrects a stance by describing it rather than touching it, having been struck once as a novice and never got over it.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: {
@@ -699,6 +741,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'nothing that he will say out loud',
         fears: 'that refusing the grant twice was pride wearing the clothes of principle',
         detail: 'Has twice written the letter accepting a vein grant, and both drafts are in the desk drawer of an office nobody at the Temple has ever been told not to enter.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -716,6 +759,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be allowed down into the stack room, which is larger than the hall above it',
         fears: 'copying out a name he knows',
         detail: 'Copies faster with his left hand than his right, has been told four times to stop, and has not stopped.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -731,6 +775,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the ford towns circuit, where nobody important has to be read their own ledger',
         fears: 'having been right, in public, to a Pavilion disciple, at a market, in front of his friends',
         detail: 'Carries a folded page of a ledger that is not hers and will not say whose it is.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -746,6 +791,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the nine cities\' indices reconciled before he dies, which he calculates as eleven more years of work',
         fears: 'the Stonewright Consortium buying up the Hall\'s paper supply, which it has begun to',
         detail: 'Has an index of the indices, in his own hand, which he has never copied and will not allow out of the room.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -765,6 +811,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to stop being the one sent to funerals',
         fears: 'forgetting one of them',
         detail: 'Writes the name on the inside of her wrist in ink before she goes, every time, and has done it something over a thousand times.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -782,6 +829,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be told whether she has been accepted, which nobody has said in four years',
         fears: 'asking',
         detail: 'Was given a bed, a bowl and no duties whatsoever, and has invented a full day of duties and keeps to them.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -797,6 +845,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'an argument with somebody who disagrees with him about anything at all',
         fears: 'being the nearest Grove disciple on the day the boundary is tested',
         detail: 'Settles disputes in the four settlements, refuses payment, accepts food, and has become very fat.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: {
@@ -816,6 +865,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to take no disciples this decade either',
         fears: 'being tested somewhere small and deniable at the edge, which is how it would come',
         detail: 'Walks the whole claim on foot once a year, eleven days, and has done so for two centuries; it is the only patrol the Grove has ever had.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -837,6 +887,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a Refiner\'s ticket, which is four years and an examination away',
         fears: 'her hands, which have started shaking on the fine scale',
         detail: 'Calls the weight of a stone to within a grain by hand, and has never been asked to prove it in a way that counted.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -852,6 +903,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to watch a press taken apart, once, by anybody',
         fears: 'being on shift when one stops',
         detail: 'Talks to the presses out loud and by name, and the whole hall has now adopted her names for them, including the House Factor.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -867,6 +919,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Scarwater rate desk, which decides what the entire border road pays',
         fears: 'an audit of the nineteen percent',
         detail: 'Keeps a private book of who has bought below rate and from whom, and it is more accurate than the Consortium\'s own.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'Anybody trading across the border road without going through him is, in his reading, stealing from him personally.',
@@ -885,6 +938,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a transfer to anywhere that is not the head of a vein',
         fears: 'that she is very good at this',
         detail: 'Prices a valley in her head on the walk in, involuntarily, and stopped saying the number out loud about ten years ago.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -906,6 +960,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to stand on the auction floor during a sale instead of outside the door',
         fears: 'the consignor whose lot she carried last spring, who has since been ruined and knows her face',
         detail: 'Recites the catalogue of any auction she has run for, in order, including the withdrawn lots, on request and often without one.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -921,6 +976,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'an appraiser\'s ticket',
         fears: 'that his eye is ordinary and that everybody except him has worked this out',
         detail: 'Buys cheap dug fragments out of his own wages to practise on, and owns a box of two hundred worthless ones he can date to the season.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -936,6 +992,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'one week in which nobody asks him where a piece came from',
         fears: 'signing a forgery',
         detail: 'Says "out of the ground" the way other men say "from a workshop", and is the best grave-reader in the province who does not call himself one.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: {
@@ -955,6 +1012,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Council Seat that has stood vacant for nine years',
         fears: 'that it is vacant because the Grand Steward prefers it vacant',
         detail: 'Has been running the Low Fall floor for nine years and signs every document "acting", including his own correspondence.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -972,6 +1030,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to sit the apprentice examination, which costs twelve stones to enter',
         fears: 'failing it twice, which bars a candidate permanently',
         detail: 'Has burned off both eyebrows and draws them back on with charcoal every morning, in a different mood each time.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -987,6 +1046,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'permission to read the fourth line of the method-script on the refining hall wall',
         fears: 'that she has already read it and that it made no sense',
         detail: 'Keeps a tally of failed batches on the inside of her cupboard door. It stands at four hundred and eleven.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1002,6 +1062,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Cauldron Master\'s furnace, which is allocated on results and nothing else',
         fears: 'a public examination',
         detail: 'Has twice reported another journeyman\'s batch as contaminated, was correct twice, and is disliked for it by people who agree with him.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'Somebody else\'s batches are holding, and he has decided the reason is favouritism rather than method.',
@@ -1020,6 +1081,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to establish, one way or the other, whether the fourth line is a step in the method',
         fears: 'proving it the way the Furnace Elder proved it',
         detail: 'Refines with the door propped open and a bucket of sand by her right foot, which is why she still has both hands.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1039,6 +1101,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to see one heaven-grade batch hold, in his lifetime, by any hand',
         fears: 'that the missing steps were removed on purpose',
         detail: 'Has kept every failed heaven-grade crucible for thirty years, numbered, in a locked room, and cannot say what he is looking for in them.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1056,6 +1119,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be told, by anybody at the family table, that she is clan',
         fears: 'the answer being polite',
         detail: 'Married in six years ago and has fed the great furnace on the night shift ever since, because nobody born to it will take that shift.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1071,6 +1135,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to leave',
         fears: 'what leaving costs a blood clan\'s son, which he has watched once already',
         detail: 'Carries a Clear River Alliance boat token in his belt that he has had for three years and never used.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1086,6 +1151,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to learn how the great furnace was originally lit',
         fears: 'it going out on his watch',
         detail: 'Has written down every method of lighting a cold furnace he has ever heard of, forty-one of them, and has tried none.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1105,6 +1171,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the quarrel with the Azure Cloud Pavilion settled before she dies',
         fears: 'that the clan enjoys the quarrel more than it wants the trade',
         detail: 'Keeps the tally of Pavilion swords the clan has refused to repair. It stands at ninety-one and she has stopped saying it aloud.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1122,6 +1189,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to eat twice a day',
         fears: 'winter',
         detail: 'Carries a bell he has not earned the right to hang, and hangs it at crossroads where he judges nobody will check.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1137,6 +1205,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Sweptground Temple to have said yes, which it did not, for reasons nobody explained',
         fears: 'the Crimson Abyss Hall, which keeps a list of who was refused where and has her on it',
         detail: 'Keeps her four refusal chits in a wallet and produces them to strangers as credentials.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1152,6 +1221,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'nothing much, and says so with a sincerity people find irritating',
         fears: 'a sect offering him a place',
         detail: 'Knows where nine crossroads bells hang and has re-hung all of them at least twice out of his own pocket.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1167,6 +1237,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be the one who brings the Thousand Treasure Pavilion something worth a floor lot',
         fears: 'dying in a hole for a fragment worth eleven stones',
         detail: 'Has robbed two members of his own league and is still in it, because the Wanderers have no mechanism for expelling anybody.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'He has decided that anybody digging the same ground is taking a find that was going to be his.',
@@ -1185,6 +1256,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to teach one person to dig without dying of it',
         fears: 'that anyone she trains to Foundation Establishment is recruited away within the year, because they always are',
         detail: 'Prices her instruction by the hour in food rather than stones, and has never once been paid in stones.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: {
@@ -1204,6 +1276,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'ground, quietly, and would deny wanting it',
         fears: 'the league finding out he has been asking the Clear River Alliance about a hillside',
         detail: 'Presents the league\'s having no ground as a philosophy, and carries a survey map of an abandoned hillside in his pack.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1221,6 +1294,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to stop being grateful, which is the only thing anyone at the Court has ever asked of her',
         fears: 'leaving, and finding that the arts kill her outside the cold hall',
         detail: 'Has not been warm in four years, has stopped noticing, and other people notice within a minute of meeting her.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1236,6 +1310,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be sent out to look for another mutated ice root, which the Court does once a decade',
         fears: 'finding one and being wrong about it',
         detail: 'Keeps a list of eleven names of people rumoured to have the root. Nine of them are dead and she has not crossed them off.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1251,6 +1326,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the curriculum copied out in full before the glacier moves again',
         fears: 'that it was never complete and that the Court has been teaching a fragment for four hundred years',
         detail: 'Teaches in a hall cold enough to crack a cup, and provides the cups.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: {
@@ -1276,6 +1352,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to stop being frightened of a ledger she has already signed',
         fears: 'the second cut, which is scheduled for the spring',
         detail: 'Has cut nothing yet, and introduces herself with her full name every time, twice, as though testing that it is still there.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1291,6 +1368,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be told that the arithmetic is right',
         fears: 'meeting his sister at a market, which is why he takes no work north of the gorge',
         detail: 'Still writes the two characters of his surname on scrap paper and burns them, weekly. The Severed regard this as failure and do not forbid it.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1306,6 +1384,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the cutting house at Low Fall, which is four times the size of his',
         fears: 'nothing he will name, which is the doctrine and is also not true',
         detail: 'Recites what he has given up to applicants, in order, as a sales pitch. The fourth item is a daughter.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'He recruits from the refused and the desperate, and somebody has begun getting to them first, which he takes as theft.',
@@ -1324,6 +1403,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'applicants to understand the terms before they sign, and is entirely sincere about it',
         fears: 'nothing available to him, which he states as an achievement rather than a boast',
         detail: 'Shows the ledger of what each member has given up before anything else, and will read it aloud, slowly, if asked.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1345,6 +1425,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the stipend, which is four times what she was offered anywhere else',
         fears: 'finding out where the tithe comes from',
         detail: 'Refused by the Pavilion in spring, took the Hall\'s money in autumn, and has spent none of it: eleven months\' worth in a bag under a floorboard.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1360,6 +1441,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'any posting that is not the lower hall',
         fears: 'the drain in the floor of the lower hall',
         detail: 'Is the funniest man in the Hall, has six jokes, and has told them so often that the Hall Master can prompt him into any of them by clearing his throat.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1375,6 +1457,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be Left Envoy inside twenty years',
         fears: 'being spent, which is what the Chosen are for',
         detail: 'Keeps the Hall\'s list of who was refused where, updates it herself in a fair hand, and recruits off it in person.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'Somebody she approached said no, in front of two other people she was recruiting, and both of them then also said no.',
@@ -1393,6 +1476,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the supply quarrel with the Bone Lantern Cult settled by purchase rather than by killing',
         fears: 'the town above deciding that it does know',
         detail: 'Pays the town\'s night-soil contractor four times the going rate, personally, in cash, and has done for twenty years.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1412,6 +1496,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Abyss Lord to die',
         fears: 'the Abyss Lord not dying',
         detail: 'Has stopped eating anything the Hall\'s kitchen prepares and brings her own food in a covered box, which everyone has noticed and nobody mentions.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1429,6 +1514,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be moved off the sorting wall and onto the carts',
         fears: 'the third year after an engagement, which is when the Cult goes in',
         detail: 'Sorts fragments by weight as instructed, and has begun secretly sorting one corner of the field wall by what the pieces used to be.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1444,6 +1530,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'out',
         fears: 'the Verdant Spring Hall, which hunts the Cult on principle and does not check rank first',
         detail: 'Has a Verdant Spring herb boy\'s token she took off a body four years ago and has never dared sell.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1459,6 +1546,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Gleaners\' Company driven off the border sites entirely',
         fears: 'the Company\'s factor at Scarwater, personally and by name',
         detail: 'Has killed two Gleaners in six years, can name them both, and does, at length, when drinking.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'Sixty years of two outfits robbing each other across a border, narrowed down to whichever face he saw last.',
@@ -1477,6 +1565,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'an apprentice who does not flinch in the first week',
         fears: 'the Pale Ancestor\'s tomb being opened by anybody, the Cult included',
         detail: 'The best grave-reader in the region, will say so, is right, and holds a farmer\'s hardcore contract to prove she is also a legitimate supplier.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1498,6 +1587,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the first transformation stage, which is nine years off at his rate',
         fears: 'reading the contract again',
         detail: 'Keeps his copy of the contract terms folded in his boot and has read it eleven times since signing.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1513,6 +1603,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the bridge repaired',
         fears: 'the bridge repaired, which would mean visitors',
         detail: 'Runs a book on how long each year\'s intake lasts, quotes odds on individuals to their faces, and pays out honestly.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1528,6 +1619,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a Flame Hall of his own before the transformation takes his face',
         fears: 'mirrors, which the sect does not keep',
         detail: 'Has begun to be recognisable, late on, by what has stopped being human about him, and has taken to a scarf.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'He has decided that somebody else is going to be given the hall he has been promised twice.',
@@ -1546,6 +1638,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'an intake that has actually read the terms before arriving',
         fears: 'that the caldera vein is falling, which the last survey suggests and which he has not passed on',
         detail: 'Provides the contract terms in full, in writing, and makes every applicant read them aloud in front of two witnesses.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1567,6 +1660,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to write to his family, which is not forbidden and is not delivered',
         fears: 'the tether',
         detail: 'Was taken off a road at fifteen, has never been told he may leave, and has never asked.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1582,6 +1676,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to work out how the tether chain was made',
         fears: 'the annual inspection, at which somebody might notice the marks',
         detail: 'Has climbed the tether chain twice at night, further the second time, and has told exactly one person.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1597,6 +1692,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Thunder Warden\'s post at the tether',
         fears: 'the Frostmirror Court, one of whose disciples beat her once in front of witnesses',
         detail: 'Has challenged the same Frostmirror Rime Disciple three times by letter and been ignored three times, and keeps the unanswered letters.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'She was beaten in public and has been assigning the blame outward, in widening circles, for six years.',
@@ -1615,6 +1711,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the tether understood before it fails',
         fears: 'it failing in his lifetime, which he has calculated is more likely than not',
         detail: 'Inspects the chain annually, writes the same report, and has now filed twenty-six identical reports.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1642,6 +1739,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a circuit posting, which means travel, a per diem, and being out of the building',
         fears: 'the published error rate, which is one in six and includes hers',
         detail: 'Has memorised the house\'s published error rate and quotes it to clients before they ask, which her superiors have twice asked her to stop doing.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1657,6 +1755,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be moved off placement work and onto debt arbitration',
         fears: 'placing a Marches carver low and reading about the outcome',
         detail: 'Has one placement she got wrong four years ago; the man who relied on it is dead, and she keeps the case note in her own desk.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1672,6 +1771,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Weir Office to submit its rank table for certification, which it has never done',
         fears: 'being asked to certify an ancestral claim he cannot actually check',
         detail: 'Carries the certified border table on a single folded sheet and produces it in arguments the way other men produce a weapon.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1693,6 +1793,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to see one convergence resolve, all the way through, once',
         fears: 'the count of advisers, which is eleven and has been falling for three centuries',
         detail: 'Sleeps in the afternoon so as to be awake for the hours the house considers narrow, and has not eaten a meal with anybody in a year.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1708,6 +1809,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a straight answer from anybody in the house about anything at all',
         fears: 'becoming the sort of person who does not give one',
         detail: 'Answers direct questions directly, and has been formally told twice that this is not the house\'s manner.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1723,6 +1825,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'an apprentice who will still be here in forty years',
         fears: 'the discipline dying with the eleven',
         detail: 'Is the house\'s only reader in the Quiet Marches, has refused to publish a rank table eleven times, and can list the eleven occasions in order.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1744,6 +1847,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to witness something that matters',
         fears: 'witnessing something that matters',
         detail: 'Has stood witness to four hundred and six contracts, all of them about grain, and recites the grain clause from memory in two dialects for entertainment.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1759,6 +1863,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to begin the forty years of oathwright training, which starts at thirty and he is twenty-nine',
         fears: 'the intake being cancelled, which it has been twice in his lifetime',
         detail: 'Has already bought the ink and the case, and keeps them on the shelf above his bed where visitors can see them.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1774,6 +1879,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the training shortened, and argues for it annually, and loses annually',
         fears: 'a shortened oathwright writing a bad term',
         detail: 'Writes terms in a hand so plain it has become legally distinctive, and refuses to use the house\'s ceremonial script at all.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1795,6 +1901,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to know what the house has already had her do',
         fears: 'the answer',
         detail: 'Keeps a private diary in a cipher of her own invention, which is the one thing the house has not cut out of her, because it does not know it exists.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1810,6 +1917,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a posting with paperwork in it',
         fears: 'being recut',
         detail: 'Is extremely funny about the house\'s filing system, which is the only subject anybody in it jokes about, and he has an audience of nine.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1825,6 +1933,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'an audit of the house\'s own work, which he has now formally requested four times',
         fears: 'that the house has recut the same work six times and would have no way of knowing',
         detail: 'Keeps a tally of jobs he is certain he has done twice. It stands at nine, and he can prove none of them.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1846,6 +1955,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be allowed to hold a name for a single day',
         fears: 'the register room, which she has been inside exactly once',
         detail: 'Knows the register\'s index by shelf and box number and has never been permitted to open one.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1861,6 +1971,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a transfer to the ford office, where nobody argues',
         fears: 'Lantern Hall readers, who argue with him at markets and are better at it',
         detail: 'Has lost the same argument to the same Lantern Hall reader four times and goes back to the same market every season.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1876,6 +1987,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'one clean handover of a name, done properly, in her career',
         fears: 'Lantern Hall publishing what the house holds',
         detail: 'Is an administrator rather than a cultivator, cannot fight at all, and says so within the first minute of meeting anyone.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1897,6 +2009,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a span of her own to hold',
         fears: 'the Scarwater station never opening, which is nine years late',
         detail: 'Walks everywhere at a measured pace and counts, cannot stop, and has stopped apologising for it.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1912,6 +2025,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the border road courier run, which is four days rather than eleven',
         fears: 'the last forty li before Kettle, which are on nobody\'s survey',
         detail: 'Has walked the unsurveyed forty li twice, will not do it a third time, and will not say why.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1927,6 +2041,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Scarwater station opened in his lifetime',
         fears: 'that the Clear River Alliance is right that it would end them, because he thinks it would',
         detail: 'Carries the chain itself on every journey, physically, and it weighs eleven catties.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -1948,6 +2063,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to finish the year\'s perimeter watch, which is the admission requirement and the cultivation method at once',
         fears: 'the eastern perimeter, where the barred lineage lives and nobody explains anything',
         detail: 'Has stood the watch eight months, goes six weeks at a stretch without speaking to a person, and has begun talking to the markers.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -1963,6 +2079,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a posting with other people in it',
         fears: 'being good at solitude',
         detail: 'Has an entire repertoire of perimeter jokes that only work if you have stood a watch, and tells them to everybody regardless.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -1978,6 +2095,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the last forty li surveyed and certified',
         fears: 'surveying them and finding out why nobody has',
         detail: 'Has the burn-edge survey drawn to the foot and a blank space after it, and shows the blank space to anybody who asks about the border.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -2005,6 +2123,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a ticket',
         fears: 'the appeal form, which is logged and answered in years',
         detail: 'Has held the same place in the grant queue for two years and refuses on principle to sell it, and mentions the principle often.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -2020,6 +2139,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'forty days at the Gapwater face instead of eleven',
         fears: 'the dust-lung, which took her father at forty-one',
         detail: 'Rinses with vinegar four times a day rather than the usual two, and it has taken the enamel off her front teeth.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -2035,6 +2155,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Under-Warden\'s post, which allocates grant days',
         fears: 'losing the grant, which is the whole of what he is',
         detail: 'Holds a standing grant and sublets half his days at a markup, which is not permitted and is not policed.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'Anybody new on the book is, in his arithmetic, holding days that were going to be his.',
@@ -2053,6 +2174,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the grant book made non-discretionary, and has drafted the rule twice',
         fears: 'the Weir Master reading the drafts',
         detail: 'Is the clerk who is not empowered to make an exception and says so pleasantly, and means the pleasantly.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -2072,6 +2194,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'nothing to change',
         fears: 'the Low Fall working out what the two faces are worth',
         detail: 'Is the strongest thing anybody in the Marches has seen, has never left the region, and has been told what he would count for outside it and did not believe it.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -2089,6 +2212,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a proper name, and will not choose one',
         fears: 'nothing, visibly, which the older Wardens find alarming',
         detail: 'Fifteen years old, carries forty stakes and a paint pot, and has never been further out than the third marker.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -2104,6 +2228,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to be allowed onto the burn edge',
         fears: 'her mother finding out that she already has been',
         detail: 'Mixes the paint too thin to make it go further and has been told about it twice, by name, at the shed.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -2119,6 +2244,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'to get through the year, having lost two friends to ground that moved',
         fears: 'wet winters, after which the edge moves faster',
         detail: 'Repaints the ninth marker twice a season though it does not need it, and the shed has stopped charging him for the paint.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -2134,6 +2260,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the survey copied, so that it stops being one shed and one map',
         fears: 'the shed',
         detail: 'Keeps the only complete map of safe ground in the region in an unlocked shed at Sixmile, explains this once, free, and is visibly tired of explaining it.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: {
@@ -2153,6 +2280,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Weir Office to pay for the paint its grantees walk in on',
         fears: 'dying and taking the uncopied parts of the survey with him',
         detail: 'Is the strongest Warden in the region and would be an outer disciple in the Low Fall, has been told so, and now says it first, as a joke.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -2170,6 +2298,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'one season without a loss in her crew',
         fears: 'the odds, which are one in nine a season and which she has done the arithmetic on',
         detail: 'Numbers her crews rather than naming them, because names turned out to be worse.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -2185,6 +2314,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'never to go into a hole again',
         fears: 'being sent back down when the yard is quiet',
         detail: 'Prices salvage faster than the Factor does and says the numbers out loud uninvited, which the Factor tolerates because he is right.',
+        outlier: false,
         goodCompany: true,
         rivalry: null,
         teaching: null
@@ -2200,6 +2330,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'eleven days\' cart fare to Scarwater and a start on the other side',
         fears: 'arriving there and being read one rank low by the insurance table',
         detail: 'Has the fare, in imported stones, and has had it for three years.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: null
@@ -2215,6 +2346,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the Bone Lantern Cult off the border sites for a single season',
         fears: 'Yu Ziyan, by name, and says the name',
         detail: 'Has been robbed twice by the Cult, and has begun going armed and going first.',
+        outlier: false,
         goodCompany: false,
         rivalry: {
             grievance: 'Two robberies, one of which cost a crew member, and a sixty-year feud he has decided to settle personally.',
@@ -2233,6 +2365,7 @@ export const MEMBERS: readonly Member[] = [
         wants: 'the sealed part of the sorting-yard ruin opened, and argues himself out of it weekly',
         fears: 'that it was sealed for a reason',
         detail: 'Sorts, prices and buys in a yard he refuses to walk further into, and has drawn the line on the floor in the same paint the Wardens use.',
+        outlier: false,
         goodCompany: false,
         rivalry: null,
         teaching: {
@@ -2240,6 +2373,467 @@ export const MEMBERS: readonly Member[] = [
             mayNotSay: 'The layout of the three worked nodes at the front of the ruin, because being the ones who know the way in is the Company\'s only advantage.',
             costsThem: 'Every gleaner he trains properly is one who survives long enough to buy a cart fare to Scarwater, and eleven have.'
         }
+    },
+
+    // ══════════════════════════════════════════════════════════════════
+    // THE STRONGEST MEMBER OF EACH FACTION
+    //
+    // One per recruiting faction, at that faction's own ordinal, holding its
+    // top rank. These are the people `powerOrdinal` has always been referring
+    // to; until now the number named nobody and the cast stopped well short of
+    // it, so a reader took the roster for the faction.
+    //
+    // Marked `outlier` because none of them came out of the pipeline that
+    // produced everybody above: see the field comment on `MemberSchema`.
+    // ══════════════════════════════════════════════════════════════════
+
+    {
+        id: 'member-ru-anwei',
+        name: 'Ru Anwei',
+        factionId: 'sect-azure-cloud-pavilion',
+        rankIndex: 5,
+        rank: 'Pavilion Master',
+        realmOrdinal: 41,
+        role: 'senior',
+        wants: 'to be asked about something other than her sister, once',
+        fears: 'that the Pavilion has confused holding the position with being the position, and that she is the confusion',
+        detail: 'The younger sister, and the whole of the Pavilion above Nascent Soul. Sits in the inner hall with the Edge and has not left the peaks in ninety years.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-ji-wanniang',
+        name: 'Ji Wanniang',
+        factionId: 'sect-verdant-spring-hall',
+        rankIndex: 5,
+        rank: 'Hall Sovereign',
+        realmOrdinal: 26,
+        role: 'senior',
+        wants: 'the day back when it was nine people and a valley',
+        fears: 'that the Hall has become large enough that somebody will be turned away and she will not hear about it',
+        detail: 'Treats nine patients a day at a table by the third spring, in rotation, without regard to who they are, and has refused every request to stop.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-duan-shiyin',
+        name: 'Duan Shiyin',
+        factionId: 'sect-nine-peaks-ascetic-order',
+        rankIndex: 5,
+        rank: 'Order Patriarch',
+        realmOrdinal: 28,
+        role: 'senior',
+        wants: 'to be told the workings are empty',
+        fears: 'Meng Da, awake and eight hundred years angry, which the Order has decided is not a fear because it cannot be acted on',
+        detail: 'Carries the largest stone in the Order and has carried it since admission, which the younger ascetics take as doctrine and is in fact a wager she lost.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-old-ge-of-the-ninth-ford',
+        name: 'Old Ge of the Ninth Ford',
+        factionId: 'sect-clear-river-alliance',
+        rankIndex: 5,
+        rank: 'Alliance Head',
+        realmOrdinal: 24,
+        role: 'senior',
+        wants: 'the fords kept open',
+        fears: 'a Measured Span station at Scarwater, which would make every ford on the river a formality',
+        detail: 'Still runs a boat, personally, on the least profitable crossing the Alliance keeps, and will not say why the Alliance keeps it.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-the-abbot',
+        name: 'The Abbot',
+        factionId: 'sect-sweptground-temple',
+        rankIndex: 5,
+        rank: 'Abbot',
+        realmOrdinal: 30,
+        role: 'senior',
+        wants: 'nothing, stated plainly and believed by everyone who has asked',
+        fears: 'that the First Abbot never crossed, and that four centuries of poor people have swept a yard for a story',
+        detail: 'Sweeps the yard at dawn with the novices and eats standing from the same bowl, and has answered to no other name in forty years.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-warden-general-mo-ai',
+        name: 'Warden-General Mo Ai',
+        factionId: 'sect-lantern-hall',
+        rankIndex: 5,
+        rank: 'Hall Warden-General',
+        realmOrdinal: 31,
+        role: 'senior',
+        wants: 'the register consulted rather than admired',
+        fears: 'that writing a name down is a comfort to the Hall and nothing whatever to the person it belonged to',
+        detail: 'Has personally written down eleven thousand names taken at crossings and can recite any of them on request, which she does, in full, when asked to justify the Hall.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-principal-hou-sanyi',
+        name: 'Principal Hou Sanyi',
+        factionId: 'sect-stonewright-consortium',
+        rankIndex: 5,
+        rank: 'Consortium Principal',
+        realmOrdinal: 33,
+        role: 'senior',
+        wants: 'one more press, built rather than repaired',
+        fears: 'that the presses are irreplaceable, which he has established privately and never written down',
+        detail: 'Sets the rate personally every ninth day and has never delegated it, and weighs his own correspondence in front of whoever brought it.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-grand-steward-lei-fu',
+        name: 'Grand Steward Lei Fu',
+        factionId: 'sect-thousand-treasure-pavilion',
+        rankIndex: 5,
+        rank: 'Grand Steward',
+        realmOrdinal: 27,
+        role: 'senior',
+        wants: 'a season without a Ledger auditor in the building',
+        fears: 'the tablet hall, and what an audit of it would establish about forty years of provenance',
+        detail: 'Appraises with gloves off and hands visibly shaking, which he has never explained and which has never once been wrong.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-grandmaster-xie-ruo',
+        name: 'Grandmaster Xie Ruo',
+        factionId: 'sect-cinnabar-crucible-guild',
+        rankIndex: 5,
+        rank: 'Guild Grandmaster',
+        realmOrdinal: 25,
+        role: 'senior',
+        wants: 'the missing steps, in any form, from any source',
+        fears: 'that they are not missing but withheld, and that the Guild has spent nine hundred years being permitted to fail',
+        detail: 'Keeps both hands bandaged rather than the required one, and has done since the year she read the fourth line of the wall script aloud.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-clan-chief-duan-wu',
+        name: 'Clan Chief Duan Wu',
+        factionId: 'sect-ashen-forge-clan',
+        rankIndex: 5,
+        rank: 'Clan Chief',
+        realmOrdinal: 23,
+        role: 'senior',
+        wants: 'a written record of the starting method',
+        fears: 'the furnace going out on his rota, which is the only version of the fear anybody in the clan actually holds',
+        detail: 'Takes his turn on the furnace rota like everyone else and has never once traded the shift, including the night his father died.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-bell-keeper-ji',
+        name: 'Bell Keeper Ji',
+        factionId: 'sect-hollow-bell-wanderers',
+        rankIndex: 4,
+        rank: 'Bell Keeper',
+        realmOrdinal: 20,
+        role: 'senior',
+        wants: 'somebody to stay',
+        fears: 'that the league is a waiting room, which he has worked out and has decided not to say to anybody who is still in it',
+        detail: 'Hangs a bell at every crossroads he passes and has never returned to one, so nobody including him knows how many there are.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-court-sovereign-yan-shu',
+        name: 'Court Sovereign Yan Shu',
+        factionId: 'sect-frostmirror-court',
+        rankIndex: 5,
+        rank: 'Court Sovereign',
+        realmOrdinal: 35,
+        role: 'senior',
+        wants: 'more glacier',
+        fears: 'that the curriculum is finite and that she is the one spending the last of it',
+        detail: 'Holds the cold hall and does not sweep it, and can name the year each layer of dust arrived, which she does, unprompted, to visitors.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-the-one-who-introduces-herself-as-four-bonds-and-a-name',
+        name: 'The one who introduces herself as four bonds and a name',
+        factionId: 'sect-the-severed',
+        rankIndex: 5,
+        rank: 'The Severed Themselves',
+        realmOrdinal: 38,
+        role: 'senior',
+        wants: 'the doctrine tested by somebody who is not already committed to it',
+        fears: 'that it works, and that what arrives at the end will not be able to tell',
+        detail: 'Gives the count and nothing else, and has given the same count for sixty years, which the Severed regard as either discipline or a lie.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-abyss-lord-wen-qiao',
+        name: 'Abyss Lord Wen Qiao',
+        factionId: 'sect-crimson-abyss-hall',
+        rankIndex: 5,
+        rank: 'Abyss Lord',
+        realmOrdinal: 29,
+        role: 'senior',
+        wants: 'the righteous sects to keep refusing people',
+        fears: 'that the tithe has to come from somewhere, and that the Hall is the nearest somewhere',
+        detail: 'Sits at the recruiting table personally on admission days outside other sects, with the cash box, and pays out in coin she counts herself.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-the-cult-ancestor',
+        name: 'The Cult Ancestor',
+        factionId: 'sect-bone-lantern-cult',
+        rankIndex: 5,
+        rank: 'Cult Ancestor',
+        realmOrdinal: 26,
+        role: 'senior',
+        wants: 'to be left to work',
+        fears: 'the Crimson Abyss Hall, which hunts them over supply rather than principle and is much better at it',
+        detail: 'Works battlefields in silence and talks continuously on the road back, and has never given a name to anybody outside the cult.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-flame-sovereign-rong-yi',
+        name: 'Flame Sovereign Rong Yi',
+        factionId: 'sect-nine-abyss-flame-sect',
+        rankIndex: 5,
+        rank: 'Flame Sovereign',
+        realmOrdinal: 34,
+        role: 'senior',
+        wants: 'a successor named before the contract asks for one',
+        fears: 'the Kindler waking for a reason nobody chose, with the caldera as the collateral',
+        detail: 'Has no left hand and will not say what it went into, and signs with the right in front of witnesses to make the point that she can.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-the-storm-tyrant',
+        name: 'The Storm Tyrant',
+        factionId: 'sect-storm-tyrant-court',
+        rankIndex: 5,
+        rank: 'Storm Tyrant',
+        realmOrdinal: 36,
+        role: 'senior',
+        wants: 'the tether to hold one more century',
+        fears: 'a Ledger certification of the vault, which would establish exactly what the Court has and what it does not',
+        detail: 'Stands through every audience, indoors and out, and is audibly uncomfortable in still air - which visitors read as menace and is a tell.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-keeper-shen-muyan',
+        name: 'Keeper Shen Muyan',
+        factionId: 'sect-standing-grove',
+        rankIndex: 3,
+        rank: 'Keeper of the Grove',
+        realmOrdinal: 27,
+        role: 'senior',
+        wants: 'to be asked rather than tested',
+        fears: 'a small deniable test at the edge, public enough that not answering it becomes the answer',
+        detail: 'Answers questions and asks none, including of people who have plainly come to test the zone, and has never once been the first to speak.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-weir-master-tan-zhu',
+        name: 'Weir Master Tan Zhu',
+        factionId: 'sect-weir-office',
+        rankIndex: 5,
+        rank: 'Weir Master',
+        realmOrdinal: 21,
+        role: 'senior',
+        wants: 'the Gapwater survey to come back wrong in the good direction',
+        fears: 'that the face is finite and that he has the figure, which he has not circulated',
+        detail: 'Carries the current page of the grant book on his person at all times and will produce it mid-sentence, including at meals.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-warden-ai-sanniang',
+        name: 'Warden Ai Sanniang',
+        factionId: 'sect-sixmile-wardens',
+        rankIndex: 3,
+        rank: 'Warden of the Six Mile',
+        realmOrdinal: 14,
+        role: 'senior',
+        wants: 'six more miles held',
+        fears: 'the burn edge accelerating, which three Wardens have said aloud and the survey shed can prove',
+        detail: 'Carries paint and a brush and stops mid-sentence to repaint a stake, which she has done in the middle of a negotiation twice.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-company-master-xun-erlang',
+        name: 'Company Master Xun Erlang',
+        factionId: 'sect-gleaners-company',
+        rankIndex: 4,
+        rank: 'Company Master',
+        realmOrdinal: 17,
+        role: 'senior',
+        wants: 'a season without a death on the yard',
+        fears: 'the sealed part of the sorting yard, and his brother, who went in on a wager thirty years ago',
+        detail: 'Rinses with vinegar on the schedule and spits before speaking, including to his own people, including indoors.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-keeper-cao-duan',
+        name: 'Keeper Cao Duan',
+        factionId: 'house-ninefold-ledger',
+        rankIndex: 5,
+        rank: 'Keeper of the Ninefold Book',
+        realmOrdinal: 32,
+        role: 'senior',
+        wants: 'the nine sealed volumes to stay sealed for one more Keeper',
+        fears: 'that the Tally Court was not corrupt, and that the Ledger wrote the account that says otherwise',
+        detail: 'Writes in front of whoever is speaking and reads the entry back before leaving, and has never left an entry unread in fifty years.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-first-sighting-yu-lian',
+        name: 'First Sighting Yu Lian',
+        factionId: 'house-narrow-hour',
+        rankIndex: 5,
+        rank: 'First Sighting',
+        realmOrdinal: 30,
+        role: 'senior',
+        wants: 'a reading she does not have to hedge',
+        fears: 'Cao Yin\u2019s sealed account of the year of the scar, which does not match what happened',
+        detail: 'Sits facing away from whoever is speaking, on doctrine, and has never in her tenure turned around during a reading.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-keeper-shi-anren',
+        name: 'Keeper Shi Anren',
+        factionId: 'house-bound-word',
+        rankIndex: 5,
+        rank: 'Keeper of the Standing Word',
+        realmOrdinal: 31,
+        role: 'senior',
+        wants: 'the founding oath revisited by somebody with standing to revisit it',
+        fears: 'the unpublished treaty in the house vault, and the two transfers it permitted',
+        detail: 'Will not answer a yes-or-no question with either word, and has held that through two arbitrations where it cost the house money.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-the-last-cut',
+        name: 'The Last Cut',
+        factionId: 'house-quiet-cut',
+        rankIndex: 5,
+        rank: 'The Last Cut',
+        realmOrdinal: 33,
+        role: 'senior',
+        wants: 'the commissions to keep coming from the people who condemn them',
+        fears: 'the register of absences, which cannot say what was removed and can say that something was',
+        detail: 'Gives no name, is never seen twice with the same face, and takes work only through third parties, including from the houses that want the Cut destroyed.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-first-register-bai-yun',
+        name: 'First Register Bai Yun',
+        factionId: 'house-held-names',
+        rankIndex: 5,
+        rank: 'First Register',
+        realmOrdinal: 29,
+        role: 'senior',
+        wants: 'to be paid for what Lantern Hall gives away',
+        fears: 'erasure at the source, which has happened four times and left her holding an entry for nobody',
+        detail: 'Recites the names she carries every morning, aloud, in order, and has not stumbled in thirty-one years.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-keeper-fu-nianzhi',
+        name: 'Keeper Fu Nianzhi',
+        factionId: 'house-measured-span',
+        rankIndex: 5,
+        rank: 'Keeper of the Long Measure',
+        realmOrdinal: 34,
+        role: 'senior',
+        wants: 'the closed terminals opened from this side',
+        fears: 'that they are closed from the other side, and that Fu Zhen is still on it',
+        detail: 'Paces distances compulsively, indoors included, and has interrupted a negotiation to pace the room it was held in.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-the-standing-anchor',
+        name: 'The Standing Anchor',
+        factionId: 'house-anchorhold',
+        rankIndex: 5,
+        rank: 'The Standing Anchor',
+        realmOrdinal: 35,
+        role: 'senior',
+        wants: 'the perimeters to hold',
+        fears: 'two lost in one season, which is the published condition that wakes Xu Ci',
+        detail: 'Stands through every meeting on doctrine, and has not sat down in the presence of another house in twenty years.',
+        outlier: true,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
     }
 ];
 
