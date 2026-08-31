@@ -32,7 +32,7 @@ interface KnownTechniqueRow extends TechniqueRow {
  * A technique as *this* cultivator holds it: the catalog art, overlaid with
  * the mastery they have actually earned and the cooldown they are actually
  * sitting on. `mastery` is the per-cultivator value, not the catalog baseline
- * — callers reason about the cultivator's copy, so that is what wins the name.
+ * - callers reason about the cultivator's copy, so that is what wins the name.
  */
 export interface KnownTechnique extends Technique {
     cooldownRemaining: number;

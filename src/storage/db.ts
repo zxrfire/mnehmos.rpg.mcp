@@ -88,7 +88,7 @@ export function initDB(path: string): Database.Database {
     db.pragma('foreign_keys = ON');
     // BUSY-TIMEOUT FIX: better-sqlite3 is synchronous; without an explicit
     // busy_timeout, any write-lock contention either fails instantly with
-    // SQLITE_BUSY or — with a hot WAL/-shm being recovered — stalls the entire
+    // SQLITE_BUSY or - with a hot WAL/-shm being recovered - stalls the entire
     // Node event loop, freezing the stdio MCP transport until the client times
     // out. A bounded wait lets a contended write retry instead of hanging.
     db.pragma('busy_timeout = 5000');

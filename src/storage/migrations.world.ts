@@ -14,6 +14,29 @@ import type Database from 'better-sqlite3';
  *   // ...at the end of migrate():
  *   migrateWorld(db);
  *
+ * ── NAMING: EVERY TABLE HERE IS PREFIXED, AND THAT IS LOAD-BEARING ────────
+ *
+ * This module runs LAST in migrate(), after the base schema, the cultivation
+ * schema and the social schema. Every statement is CREATE TABLE IF NOT EXISTS,
+ * so a name collision does not error - the second definition silently no-ops
+ * and the loser's columns simply never exist. The failure then surfaces
+ * hundreds of lines away as `no such column`, on a table that looks fine.
+ *
+ * Two collisions were found and fixed this way:
+ *
+ *   worlds       the base schema's worlds(id, name, seed, width, height, ...).
+ *                This module's runtime row is `world_runtime`.
+ *   world_facts  the social layer's claim-keyed objective-reality table, which
+ *                beliefs file against. This module's dated event log is
+ *                `world_chronicle`; the social layer keeps `world_facts`, and
+ *                a chronicle row is referenced from there by id.
+ *
+ * So: every table added here MUST carry the `world_` prefix AND must be
+ * checked against the ~65 tables the other four migrations create. The
+ * full-migrate test in tests/engine/world/world.test.ts is what enforces it -
+ * it runs migrate(db), not migrateWorld(db) alone, because standalone is
+ * exactly the arrangement in which this class of bug is invisible.
+ *
  * Five shape decisions worth stating up front, because they are load-bearing:
  *
  * 1. LOCATION HISTORY IS ITS OWN TABLE, not a JSON blob on `world_locations`.
@@ -38,7 +61,7 @@ import type Database from 'better-sqlite3';
  * 4. BELIEF IS NOT HERE. These tables hold ground truth and the surviving
  *    record - `fidelity` and `cause_known`. What an NPC knows, believes or
  *    suspects, and what the public believes, live in the social layer's
- *    knowledge tables and reference `world_facts.id`. One place to be wrong
+ *    knowledge tables and reference `world_chronicle.id`. One place to be wrong
  *    about who thinks what.
  *
  * 5. MEMORY COMPRESSION IS LOSSY BY DESIGN AND AUDITED ANYWAY.
@@ -53,7 +76,7 @@ export function migrateWorld(db: Database.Database): void {
     -- ── WORLDS ───────────────────────────────────────────────────────────
     -- One row per world. "current_day" is the only clock; years are derived
     -- everywhere and never stored, so nothing can drift out of agreement.
-    CREATE TABLE IF NOT EXISTS worlds (
+    CREATE TABLE IF NOT EXISTS world_runtime (
       id TEXT PRIMARY KEY,
       seed TEXT NOT NULL,                            -- every stochastic system derives from this
       current_day INTEGER NOT NULL DEFAULT 0,        -- absolute day
@@ -68,18 +91,22 @@ export function migrateWorld(db: Database.Database): void {
     );
 
     -- ── ERAS ─────────────────────────────────────────────────────────────
-    -- Ash degrades with every pass through a body, so "ash_density" only ever
-    -- falls. The present age is thin because it is late, not unlucky.
+    -- Qi pools in spiritual veins, and "qi_density" only ever falls: veins that
+    -- ran rich for a thousand years have been drawn down, what the old
+    -- civilisations did not consume they monopolised, and ancient wars killed
+    -- whole regions outright. Dead ground does not recover. The present age is
+    -- thin because most places have already been used, not because it is
+    -- unlucky. It is late.
     CREATE TABLE IF NOT EXISTS world_eras (
       id TEXT NOT NULL,
       world_id TEXT NOT NULL,
       name TEXT NOT NULL,
       start_day INTEGER NOT NULL,
       end_day INTEGER,                               -- NULL while the era is running
-      ash_density REAL NOT NULL DEFAULT 1,
+      qi_density REAL NOT NULL DEFAULT 1,
       note TEXT NOT NULL DEFAULT '',
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_eras_span ON world_eras(world_id, start_day);
@@ -89,7 +116,7 @@ export function migrateWorld(db: Database.Database): void {
     -- and nothing legible remains, which is the normal condition of this
     -- world's past. "cause_known = 0" is "nobody knows why", stored as a real
     -- state - right up until someone finds out and it is updated.
-    CREATE TABLE IF NOT EXISTS world_facts (
+    CREATE TABLE IF NOT EXISTS world_chronicle (
       id TEXT NOT NULL,                              -- sequential: f1, f2, ... see header note 3
       world_id TEXT NOT NULL,
       day INTEGER NOT NULL,                          -- absolute day; "year" is derived in code
@@ -122,37 +149,37 @@ export function migrateWorld(db: Database.Database): void {
       consequences TEXT,                             -- JSON: the ten-question block, or NULL
       data TEXT NOT NULL DEFAULT '{}',
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     -- The chronicle reads a date window; every other access is by subject.
-    CREATE INDEX IF NOT EXISTS idx_world_facts_day ON world_facts(world_id, day);
-    CREATE INDEX IF NOT EXISTS idx_world_facts_kind ON world_facts(world_id, kind);
-    CREATE INDEX IF NOT EXISTS idx_world_facts_location ON world_facts(world_id, location_id);
+    CREATE INDEX IF NOT EXISTS idx_world_chronicle_day ON world_chronicle(world_id, day);
+    CREATE INDEX IF NOT EXISTS idx_world_chronicle_kind ON world_chronicle(world_id, kind);
+    CREATE INDEX IF NOT EXISTS idx_world_chronicle_location ON world_chronicle(world_id, location_id);
     -- "What does nobody know?" is a real query a scholar or grave-reader runs.
-    CREATE INDEX IF NOT EXISTS idx_world_facts_unexplained
-      ON world_facts(world_id) WHERE cause_known = 0;
+    CREATE INDEX IF NOT EXISTS idx_world_chronicle_unexplained
+      ON world_chronicle(world_id) WHERE cause_known = 0;
     -- "What does the engine itself not know?" is a different, smaller list.
-    CREATE INDEX IF NOT EXISTS idx_world_facts_unresolved
-      ON world_facts(world_id) WHERE truth = 'unresolved';
-    CREATE INDEX IF NOT EXISTS idx_world_facts_near_miss
-      ON world_facts(world_id) WHERE near_miss = 1;
+    CREATE INDEX IF NOT EXISTS idx_world_chronicle_unresolved
+      ON world_chronicle(world_id) WHERE truth = 'unresolved';
+    CREATE INDEX IF NOT EXISTS idx_world_chronicle_near_miss
+      ON world_chronicle(world_id) WHERE near_miss = 1;
 
     -- Actor participation is many-to-many and is queried from both ends
     -- ("what happened to her", "who was involved in that"), so it is a join
     -- table rather than only the JSON mirror on the fact row.
-    CREATE TABLE IF NOT EXISTS world_fact_actors (
+    CREATE TABLE IF NOT EXISTS world_chronicle_actors (
       world_id TEXT NOT NULL,
       fact_id TEXT NOT NULL,
       actor_id TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'involved',
       witnessed INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (world_id, fact_id, actor_id, role),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
-    CREATE INDEX IF NOT EXISTS idx_world_fact_actors_actor
-      ON world_fact_actors(world_id, actor_id);
+    CREATE INDEX IF NOT EXISTS idx_world_chronicle_actors_actor
+      ON world_chronicle_actors(world_id, actor_id);
 
     -- ── LOCATIONS: CURRENT STATE PLUS ORIGIN ─────────────────────────────
     -- The four thresholds are stored separately because they fail differently:
@@ -167,7 +194,7 @@ export function migrateWorld(db: Database.Database): void {
       description TEXT NOT NULL DEFAULT '',
 
       ambient TEXT NOT NULL DEFAULT 'normal',        -- thin|normal|dense|spirit_tide
-      ash_density REAL NOT NULL DEFAULT 0.35,
+      qi_density REAL NOT NULL DEFAULT 0.35,
 
       threshold_entry INTEGER NOT NULL DEFAULT 0,
       threshold_survival INTEGER NOT NULL DEFAULT 0,
@@ -180,9 +207,11 @@ export function migrateWorld(db: Database.Database): void {
       -- A location is an environmental modifier, not just a name. These are
       -- what make "cultivate for ten years" resolve differently in a city, on a
       -- spirit mountain, and on a poisoned battlefield.
-      -- spiritual_density is usable qi NOW; ash_density is unbreathed fall the
-      -- ground holds. A sealed ruin runs high on one and zero on the other, and
-      -- that gap is the entire economy of exploration.
+      -- Two different numbers, and the gap between them is the entire economy
+      -- of exploration. qi_density is what the vein under this place holds;
+      -- env_spiritual_density is what anybody can actually draw on today. A
+      -- sealed ruin is a pocket nothing has drawn on: rich on the first, near
+      -- zero on the second, until somebody gets the seal open.
       env_spiritual_density REAL NOT NULL DEFAULT 0.35,
       env_danger REAL NOT NULL DEFAULT 0.2,
       env_resources TEXT NOT NULL DEFAULT '[]',      -- JSON
@@ -214,7 +243,7 @@ export function migrateWorld(db: Database.Database): void {
       origin_name TEXT NOT NULL DEFAULT '',
       origin_description TEXT NOT NULL DEFAULT '',
       origin_ambient TEXT NOT NULL DEFAULT 'normal',
-      origin_ash_density REAL NOT NULL DEFAULT 0.35,
+      origin_qi_density REAL NOT NULL DEFAULT 0.35,
       origin_thresholds TEXT NOT NULL DEFAULT '{}',  -- JSON
       origin_hazards TEXT NOT NULL DEFAULT '[]',     -- JSON
       origin_affinities TEXT NOT NULL DEFAULT '[]',  -- JSON
@@ -227,7 +256,7 @@ export function migrateWorld(db: Database.Database): void {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
 
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_locations_kind ON world_locations(world_id, kind);
@@ -259,7 +288,7 @@ export function migrateWorld(db: Database.Database): void {
       witnessed INTEGER NOT NULL DEFAULT 0,
       patch TEXT NOT NULL DEFAULT '{}',              -- JSON; replayed by stateAsOfDay
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     -- Replay is a prefix scan in day order, so the index carries the sort.
@@ -285,7 +314,7 @@ export function migrateWorld(db: Database.Database): void {
       dissolved_on_day INTEGER,                      -- set rather than deleted; ruins outlive sects
       tags TEXT NOT NULL DEFAULT '[]',
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_factions_live
@@ -342,7 +371,7 @@ export function migrateWorld(db: Database.Database): void {
       tags TEXT NOT NULL DEFAULT '[]',
 
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_npcs_location ON world_npcs(world_id, location_id);
@@ -380,7 +409,7 @@ export function migrateWorld(db: Database.Database): void {
       origin_holder_id TEXT NOT NULL DEFAULT '',
       generation INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_npc_goals_open
@@ -403,7 +432,7 @@ export function migrateWorld(db: Database.Database): void {
       fact_ids TEXT NOT NULL DEFAULT '[]',           -- JSON: the causal chain
       inherited_from_id TEXT,                        -- grudges outlive their owners
       PRIMARY KEY (world_id, owner_id, target_id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_relationships_target
@@ -423,7 +452,7 @@ export function migrateWorld(db: Database.Database): void {
       key_ids TEXT NOT NULL DEFAULT '[]',            -- JSON; sealed doors and gated links
       updated_on_day INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (world_id, actor_id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_actors_location ON world_actors(world_id, location_id);
@@ -440,7 +469,7 @@ export function migrateWorld(db: Database.Database): void {
       quantity INTEGER NOT NULL DEFAULT 1,
       note TEXT NOT NULL DEFAULT '',
       PRIMARY KEY (world_id, actor_id, item_id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_inventory_item
@@ -472,7 +501,7 @@ export function migrateWorld(db: Database.Database): void {
       created_on_day INTEGER NOT NULL DEFAULT 0,
       updated_on_day INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     -- Retrieval is always scoped to an owner and ordered by salience.
@@ -491,7 +520,7 @@ export function migrateWorld(db: Database.Database): void {
       memory_id TEXT NOT NULL,
       actor_id TEXT NOT NULL,
       PRIMARY KEY (world_id, memory_id, actor_id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_memory_actors_actor
@@ -520,7 +549,7 @@ export function migrateWorld(db: Database.Database): void {
       fired_on_day INTEGER,
       data TEXT NOT NULL DEFAULT '{}',
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     -- The advance query: unfired rows in a date window, in fire order.
@@ -540,7 +569,7 @@ export function migrateWorld(db: Database.Database): void {
       per_day TEXT NOT NULL DEFAULT '{}',            -- JSON {resourceKey: ratePerDay}
       note TEXT NOT NULL DEFAULT '',
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_processes_actor
@@ -569,7 +598,7 @@ export function migrateWorld(db: Database.Database): void {
       extinct_on_day INTEGER,
       tags TEXT NOT NULL DEFAULT '[]',
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     -- The edge itself. Its own table because it is walked from both ends:
@@ -585,7 +614,7 @@ export function migrateWorld(db: Database.Database): void {
       on_day INTEGER NOT NULL,
       note TEXT NOT NULL DEFAULT '',
       PRIMARY KEY (world_id, parent_id, child_id, relation),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_lineage_edges_child
@@ -622,7 +651,7 @@ export function migrateWorld(db: Database.Database): void {
       tags TEXT NOT NULL DEFAULT '[]',
       data TEXT NOT NULL DEFAULT '{}',
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_opportunities_opens
@@ -656,7 +685,7 @@ export function migrateWorld(db: Database.Database): void {
       data TEXT NOT NULL DEFAULT '{}',
       next_claim_seq INTEGER NOT NULL DEFAULT 1,
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_objects_possessor
@@ -681,7 +710,7 @@ export function migrateWorld(db: Database.Database): void {
       note TEXT NOT NULL DEFAULT '',
       active INTEGER NOT NULL DEFAULT 1,             -- withdrawn claims are kept; old ones resurface
       PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_world_object_claims_object
@@ -706,7 +735,7 @@ export function migrateWorld(db: Database.Database): void {
       fact_id TEXT,
       note TEXT NOT NULL DEFAULT '',
       PRIMARY KEY (world_id, object_id, seq),
-      FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE CASCADE
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
     );
 
     -- "Has this ever been stolen" is the query an investigation opens with.

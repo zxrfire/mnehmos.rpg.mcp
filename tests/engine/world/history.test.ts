@@ -29,7 +29,7 @@ import {
 
 function ledgerWithEra(): HistoryLedger {
     const ledger = createLedger();
-    openEra(ledger, { id: 'era-now', name: 'the present age', startDay: 0, ashDensity: 0.3, note: '' });
+    openEra(ledger, { id: 'era-now', name: 'the present age', startDay: 0, qiDensity: 0.3, note: '' });
     return ledger;
 }
 
@@ -261,8 +261,8 @@ describe('history: seeding prior ages', () => {
         for (const scar of a.scars) expect(ids.has(scar.originFactId)).toBe(true);
     });
 
-    it('thins the ash monotonically toward the present', () => {
-        const densities = seedPriorAges('seed-alpha', { presentYear: 0 }).ledger.eras.map(e => e.ashDensity);
+    it('thins the qi monotonically toward the present', () => {
+        const densities = seedPriorAges('seed-alpha', { presentYear: 0 }).ledger.eras.map(e => e.qiDensity);
         for (let i = 1; i < densities.length; i++) {
             expect(densities[i]).toBeLessThan(densities[i - 1]);
         }

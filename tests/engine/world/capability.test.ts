@@ -119,7 +119,7 @@ describe('capability: the predicates come apart', () => {
     it('moves one predicate without moving the others', () => {
         const wardingRobe = makeCapabilityModifier({
             id: 'mod-robe', source: 'artifact', sourceId: 'item-robe',
-            label: 'ash-warding robe', offsets: { survive: 10 }
+            label: 'qi-warding robe', offsets: { survive: 10 }
         });
         const base = assessCapability(actor({ realmOrdinal: 13 }), subjectFromLocation(ruin));
         const robed = assessCapability(
@@ -198,7 +198,7 @@ describe('capability: realm classes are potential, not entitlement', () => {
         const scar = makeLocation({
             id: 'loc-scar', name: 'the scar at Scarwater', kind: 'scar',
             thresholds: makeThresholds(0, 29, 33, 44),
-            hazards: ['thin_ash', 'dead_zone']
+            hazards: ['thin_qi', 'dead_zone']
         });
         const subject = subjectFromLocation(scar);
 

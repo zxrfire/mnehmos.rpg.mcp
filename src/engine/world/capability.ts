@@ -115,9 +115,9 @@ export type CapabilityGrant =
      * Void Refinement: needs no ambient qi at all.
      *
      * The single most consequential grant on the ladder. In the Late Age
-     * everything is thin because it has all been breathed already, so a
-     * cultivator who no longer needs ash is decoupled from the scarcity the
-     * entire world is organised around.
+     * most ground has already been drawn down or taken, so a cultivator who
+     * no longer needs ambient qi is decoupled from the scarcity the entire
+     * world is organised around.
      */
     | 'no_ambient_needed'
     /** Void Refinement: dead zones, scars and voids become survivable. */
@@ -203,9 +203,9 @@ export function isGrantAvailableAt(ordinal: number, grant: CapabilityGrant): boo
  */
 const GRANT_NEUTRALISES: Partial<Record<CapabilityGrant, readonly string[]>> = {
     prepared_vessel: ['body_lethal', 'crushing', 'pressure'],
-    carries_own_ambient: ['thin_ash'],
-    no_ambient_needed: ['thin_ash', 'dead_zone', 'void', 'sealed_qi'],
-    enters_dead_zones: ['thin_ash', 'dead_zone', 'void', 'scar'],
+    carries_own_ambient: ['thin_qi'],
+    no_ambient_needed: ['thin_qi', 'dead_zone', 'void', 'sealed_qi'],
+    enters_dead_zones: ['thin_qi', 'dead_zone', 'void', 'scar'],
     no_seam: ['soul_pressure', 'soul_suppression'],
     immune_contamination: ['corrosive', 'contaminated', 'corrupted', 'poison', 'plague', 'forbidden']
 };
@@ -241,8 +241,8 @@ export function grantStatus(
  * Hazards this actor's grants make irrelevant, and which grant did it.
  *
  * Only hazards actually present on the subject are reported, so the result
- * doubles as the explanation: "the scar's thin ash is nothing to them, because
- * they no longer need ash" is one row.
+ * doubles as the explanation: "the scar's thin qi is nothing to them, because
+ * they no longer need ambient qi" is one row.
  */
 export function neutralisedHazards(
     actor: CapabilityActor,

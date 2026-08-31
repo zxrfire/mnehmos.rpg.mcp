@@ -36,7 +36,7 @@ interface AgentRow {
     status: string;
     auto_on_turn: number;
     // auto_on_legendary column exists in DB (defaults to 0) but is no longer
-    // exposed by the agent surface — it was never wired into the combat engine.
+    // exposed by the agent surface - it was never wired into the combat engine.
     temperature: number;
     max_tokens: number;
     budget_tokens: number | null;
@@ -202,7 +202,7 @@ export class AgentRepository {
         const now = new Date().toISOString();
 
         // auto_on_legendary column exists in DB (NOT NULL DEFAULT 0) but is not
-        // exposed by the agent surface — it was never wired into the combat engine.
+        // exposed by the agent surface - it was never wired into the combat engine.
         // The DB DEFAULT 0 fills it in automatically for new rows.
         const stmt = this.db.prepare(`
             INSERT INTO agents (

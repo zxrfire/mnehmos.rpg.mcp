@@ -108,8 +108,8 @@ export interface CultivatorDeltas {
  * listing screen, and returning full domain objects would mean loading every
  * injury of every cultivator to render a column that only needs a number.
  *
- * Display fields derived from these values — rankName, realmName,
- * spiritRootName, lifespanYears, isPlayer — are the web layer's job. The repo
+ * Display fields derived from these values - rankName, realmName,
+ * spiritRootName, lifespanYears, isPlayer - are the web layer's job. The repo
  * ships the facts; presentation is not persistence.
  */
 export interface RosterEntry {
@@ -263,7 +263,7 @@ export class CultivatorRepository {
         // GROUP BY join: grouping would require every selected column in the
         // GROUP BY clause, and the subquery hits idx_injuries_untreated
         // directly. LEFT JOIN on sects so unaffiliated (and orphaned)
-        // cultivators still appear — an admin view that hides rogue
+        // cultivators still appear - an admin view that hides rogue
         // cultivators is worse than useless.
         this.rosterStmt = db.prepare(`
             SELECT
@@ -344,7 +344,7 @@ export class CultivatorRepository {
     }
 
     /**
-     * Every cultivator in the world — player and NPCs alike, living and dead —
+     * Every cultivator in the world - player and NPCs alike, living and dead -
      * with rank, location, and sect standing, for the read-only admin panel.
      *
      * Alive first, then deepest cultivation, then by name: an operator scanning
@@ -373,7 +373,7 @@ export class CultivatorRepository {
 
     /**
      * Patch fields on an existing cultivator. Talent (spiritRoot, attributes)
-     * is accepted by the type but is permanent by design — the engine simply
+     * is accepted by the type but is permanent by design - the engine simply
      * never passes it.
      */
     update(id: string, updates: Partial<Cultivator>): Cultivator | null {
@@ -484,7 +484,7 @@ export class CultivatorRepository {
     }
 
     /**
-     * Move up the ladder. The repo owns only the bookkeeping — clamping to
+     * Move up the ladder. The repo owns only the bookkeeping - clamping to
      * MAX_ORDINAL, clearing accumulated progress, and restarting the
      * stagnation clock that kills cultivators who sit at one realm for fifty
      * years. Whether the breakthrough *succeeded* is the engine's call.
@@ -596,7 +596,7 @@ export class CultivatorRepository {
 
     /**
      * Treat one injury. Returns the treated injury, or null when the id is
-     * unknown or the injury was already treated — the caller consuming a pill
+     * unknown or the injury was already treated - the caller consuming a pill
      * needs to know the difference between "healed" and "wasted".
      */
     treatInjury(injuryId: string, treatedOnTurn?: number): Injury | null {
@@ -618,7 +618,7 @@ export class CultivatorRepository {
         return rows.map(rowToInjury);
     }
 
-    /** Untreated injury count — the number LETHAL_UNTREATED_INJURIES is compared against. */
+    /** Untreated injury count - the number LETHAL_UNTREATED_INJURIES is compared against. */
     countUntreatedInjuries(cultivatorId: string): number {
         const row = this.countUntreatedStmt.get(cultivatorId) as { n: number };
         return row.n;

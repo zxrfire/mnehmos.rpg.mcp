@@ -316,8 +316,8 @@ export interface CreateWorldOptions {
     seed: string;
     /** Year the present age begins. Prior ages are laid out behind it. */
     presentYear?: number;
-    /** Ash density of the present age. Low by default; the world is late. */
-    ashDensity?: number;
+    /** Qi density of the present age. Low by default; the world is late. */
+    qiDensity?: number;
     /** Ordinary inhabited regions to create alongside the seeded remnants. */
     regionCount?: number;
     priorAges?: PriorAgesOptions;
@@ -337,7 +337,7 @@ export interface CreateWorldOptions {
 export function createWorld(opts: CreateWorldOptions): WorldState {
     const presentYear = opts.presentYear ?? 0;
     const presentDay = dayOfYear(presentYear);
-    const ashDensity = opts.ashDensity ?? 0.34;
+    const qiDensity = opts.qiDensity ?? 0.34;
     const regionCount = opts.regionCount ?? 6;
 
     const prior = opts.skipPriorAges
@@ -349,10 +349,10 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
         id: `era-${history.eras.length}`,
         name: 'the present age',
         startDay: presentDay,
-        ashDensity,
+        qiDensity,
         note:
-            `Ambient ash stands at ${ashDensity.toFixed(2)} of clean fall. ` +
-            `No confirmed ascension in living memory.`
+            `Ambient qi stands at ${qiDensity.toFixed(2)} of the richest ground ` +
+            `the world has carried. No confirmed ascension in living memory.`
     });
 
     const locations: LocationRecord[] = prior ? locationsFromPriorAges(prior) : [];
@@ -365,7 +365,7 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
                 kind: 'region',
                 description: 'Inhabited ground. Somebody built the granary against a wall they did not make.',
                 ambient: rng.weighted({ thin: 55, normal: 35, dense: 8, spirit_tide: 2 }),
-                ashDensity
+                qiDensity
             })
         );
     }
@@ -415,8 +415,8 @@ export function dateOf(state: WorldState, day = state.currentDay): WorldDate {
     };
 }
 
-export function currentEraAshDensity(state: WorldState): number {
-    return eraForDay(state.history, state.currentDay)?.ashDensity ?? 1;
+export function currentEraQiDensity(state: WorldState): number {
+    return eraForDay(state.history, state.currentDay)?.qiDensity ?? 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
