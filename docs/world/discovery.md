@@ -118,7 +118,7 @@ A cultivator will say a name flatly, with no context, because *of course* you kn
 everyone they have ever spoken to knew it. They are not withholding. It does not occur to
 them that explanation is required, any more than you would explain what a road is.
 
-> "That road's shut. Hollow Court business."
+> "Road's shut past the ford. Sill business, so it'll be shut a while."
 >
 > He says it the way you would say a bank holiday, and moves on to the price of salt.
 
@@ -129,7 +129,7 @@ any deliberate revelation:
 - It goes into the knowledge layer at the lowest stage - *heard*, not *known*. They have
   the word and nothing else, from one interested source who may be wrong.
 - **The narrator still may not explain it.** A character said a name; that grants the name,
-  not the meaning. If the next paragraph tells the player what the Hollow Court is, the
+  not the meaning. If the next paragraph tells the player what the Sill is, the
   moment has been spent for nothing.
 - The player may **ask** - and asking is a real act with a real cost, because not knowing
   marks them. The answer depends entirely on who they asked: a shrug, a short correction, a
@@ -138,7 +138,7 @@ any deliberate revelation:
 
 Notes:
 
-- **Not knowing is legible to others.** Asking who the Hollow Court are, in the wrong room,
+- **Not knowing is legible to others.** Asking who the Sill are, in the wrong room,
   tells everyone present exactly how far you have come from. That is a social fact with
   consequences, not merely a missed opportunity.
 - **The mundane and the enormous sound identical** when both are assumed knowledge. The

@@ -345,8 +345,10 @@ describe('a permitted lookup does not leak the names inside it', () => {
             if (rival) expect(text).not.toContain(rival.name);
         }
         expect(text).toMatch(/none of whom this cultivator could name/i);
-        // The seat is a place the player has never heard of either.
-        expect(text).toContain('somewhere this cultivator could not name');
+        // The seat is a place the player has never heard of either, so it is
+        // reported as unlocatable rather than named.
+        expect(text).toMatch(/not something this cultivator could point to/i);
+        expect(text).not.toContain(withRivals.territory);
     });
 
     it('withholds the faction and whereabouts of somebody merely seen', async () => {

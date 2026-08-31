@@ -90,6 +90,23 @@ const CULTIVATION_TOOL_DESCRIPTORS: Readonly<Record<string, ToolDescriptor>> = {
         ],
         estimatedTokenCost: 'low'
     },
+    combat_manage: {
+        category: 'combat',
+        keywords: [
+            'combat', 'fight', 'duel', 'confront', 'attack', 'strike', 'kill', 'flee', 'escape',
+            'ambush', 'formation', 'poison', 'realm gap', 'upset', 'initiative', 'encounter',
+            'grudge', 'feud', 'capture', 'humiliate'
+        ],
+        capabilities: [
+            'Refuses a direct confrontation across two major realms and returns the options that work',
+            'Composite power priced as itemised, multiplicative factors that reproduce the total',
+            'Upsets gated behind earned edges, capped below a two-realm gap',
+            'Tradition-aware killing: soul arts do nothing to the Cut, a destroyed body does not end the Drawn',
+            'Outcomes beyond death - withdrawal, capture, humiliation, crippling, a standing feud',
+            'Multi-party encounters with a rank-dominated order of action'
+        ],
+        estimatedTokenCost: 'variable'
+    },
     admin_manage: {
         category: 'admin',
         keywords: [

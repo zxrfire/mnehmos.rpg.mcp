@@ -273,6 +273,20 @@ export interface AdvanceTimeOptions {
     /** What should hand control back to an in-progress long action. */
     interruptPolicy?: InterruptPolicy;
     /**
+     * Mutate the given state instead of deep-copying it first.
+     *
+     * The default is to clone, which is right for a caller that wants to keep
+     * the old world and is wrong for a driver that advances the same world
+     * hundreds of times. A five-century soak at one call per year clones a
+     * world of four hundred NPCs five hundred times, and the copying dominates
+     * everything the simulation actually does.
+     *
+     * Pass true only when the caller owns the state and does not need the
+     * previous version - which is the normal case inside a play loop, where
+     * the world is the world.
+     */
+    inPlace?: boolean;
+    /**
      * Called once per death, after heirs and goals have been resolved.
      *
      * This is the wiring point for the social layer's `inheritLedgerOnDeath`.
@@ -299,7 +313,7 @@ export function advanceTime(
     days: number,
     opts: AdvanceTimeOptions = {}
 ): TimeAdvanceResult {
-    const state = cloneWorld(stateIn);
+    const state = opts.inPlace ? stateIn : cloneWorld(stateIn);
     const fromDay = state.currentDay;
     const daysRequested = Math.max(0, Math.floor(Number.isFinite(days) ? days : 0));
     const requestedTarget = fromDay + daysRequested;
@@ -482,7 +496,7 @@ export function advanceTime(
             entity: 'npc', entityId: npc.id, field: 'status',
             from: 'alive', to: 'physically_dead'
         });
-        deathHandoffs.push(settleDeath(state, npc, onDay));
+        deathHandoffs.push(settleNpcDeath(state, npc, onDay));
     }
 
     // Deaths the caller caused elsewhere in the span still need settling, so the
@@ -673,7 +687,7 @@ function earliestOpportunityInterrupt(
  * A death with no lineage edge produces an empty handoff, which is correct: an
  * unattached person's unfinished business ends with them.
  */
-function settleDeath(state: WorldState, deceased: NpcRecord, onDay: number): DeathHandoff {
+export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: number): DeathHandoff {
     const lineage = lineageOf(state, deceased.id);
     const alive = (id: string) => {
         const npc = state.npcs.find(n => n.id === id);

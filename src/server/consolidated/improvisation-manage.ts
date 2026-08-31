@@ -527,7 +527,9 @@ async function handleSynthesize(args: z.infer<typeof SynthesizeSchema>): Promise
         const caster = charRepo.findById(args.casterId);
         if (caster) {
             casterName = caster.name;
-            knownSpells = caster.knownSpells || [];
+            // The character row no longer carries a spell list; improvisation
+            // is judged on the attempt, not on a prepared repertoire.
+            knownSpells = [];
             const stats = caster.stats as Record<string, number>;
             const intScore = stats.int ?? stats.intelligence ?? 10;
             spellcastingModifier = getAbilityModifier(intScore);

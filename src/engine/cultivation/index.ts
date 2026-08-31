@@ -21,11 +21,14 @@
  *   deviation.ts     cultivation going wrong inside the body
  *   toll.ts          the price of advancement, charged at every realm boundary
  *   breakthrough.ts  the centrepiece; the only routine way a run ends well
+ *   tradition.ts     the two roads, and their different answers to being killed
+ *   combat.ts        confrontation: the categorical gap, composite power, upsets
  *   survival.ts      the death engine; the ONLY place death is decided
  *   time-skip.ts     "I cultivate for ten years", resolved in one pass
  */
 
 export * from './realms.js';
+export * from './tradition.js';
 export * from './spirit-roots.js';
 export * from './rng.js';
 export * from './ambient.js';
@@ -38,5 +41,6 @@ export * from './injuries.js';
 export * from './deviation.js';
 export * from './toll.js';
 export * from './breakthrough.js';
+export * from './combat.js';
 export * from './survival.js';
 export * from './time-skip.js';

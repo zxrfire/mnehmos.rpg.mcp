@@ -1,23 +1,25 @@
 /**
- * Character state slice - the live mechanical sheet, auto-built every invoke.
+ * Character state slice - the live sheet, auto-built every invoke.
  *
- * Pulls the character row, concentration state, and inventory directly from the DB.
- * Format is terse and parseable so the LLM can reason about its options without
- * the DM typing it manually every turn.
+ * Pulls the character row and inventory directly from the DB. Format is terse
+ * and parseable so the LLM can reason about its options without the DM typing
+ * it out every turn.
  *
- * Position / action economy (per-turn state) is deliberately NOT included here -
- * the DM passes that via the `situation` string at invoke time. This slice covers
- * what's stable across the turn: HP/AC/slots/known spells/inventory.
+ * Position and action economy (per-turn state) are deliberately NOT included -
+ * the DM passes those via the `situation` string at invoke time. This slice
+ * covers what is stable across the turn.
+ *
+ * The spellcasting and legendary-action blocks were removed with the D&D magic
+ * and combat engines. An NPC's arts, qi and rank are cultivation state and are
+ * read from the cultivator row, not from here.
  */
 
 import { CharacterRepository } from '../../../storage/repos/character.repo.js';
-import { ConcentrationRepository } from '../../../storage/repos/concentration.repo.js';
 import { InventoryRepository } from '../../../storage/repos/inventory.repo.js';
 import { Character, NPC } from '../../../schema/character.js';
 
 const HEADER = '--- YOUR CHARACTER ---';
 const INV_LIMIT = 10; // notable items shown
-const SPELLS_LIMIT = 20;
 
 function modifier(score: number): string {
     const mod = Math.floor((score - 10) / 2);
@@ -34,30 +36,9 @@ function formatConditions(character: Character | NPC): string {
     if (!character.conditions || character.conditions.length === 0) return 'none';
     return character.conditions.map(c => {
         const dur = c.duration ? ` (${c.duration}r)` : '';
-        const src = c.source ? ` ← ${c.source}` : '';
+        const src = c.source ? ` <- ${c.source}` : '';
         return `${c.name}${dur}${src}`;
     }).join(', ');
-}
-
-function formatSpellSlots(character: Character | NPC): string | null {
-    const slots = character.spellSlots as Record<string, { current: number; max: number }> | undefined;
-    if (!slots) return null;
-
-    const parts: string[] = [];
-    for (let i = 1; i <= 9; i++) {
-        const key = `level${i}`;
-        const slot = slots[key];
-        if (!slot || !slot.max) continue;
-        parts.push(`L${i}[${slot.current}/${slot.max}]`);
-    }
-    if (parts.length === 0) return null;
-    return parts.join('  ');
-}
-
-function formatPactMagic(character: Character | NPC): string | null {
-    const pact = character.pactMagicSlots;
-    if (!pact || !pact.max) return null;
-    return `Pact L${pact.slotLevel}[${pact.current}/${pact.max}]`;
 }
 
 function formatStats(character: Character | NPC): string {
@@ -103,7 +84,6 @@ function formatInventory(items: ReturnType<InventoryRepository['getInventoryWith
 
 export interface CharacterStateSliceDeps {
     characterRepo: CharacterRepository;
-    concentrationRepo: ConcentrationRepository;
     inventoryRepo: InventoryRepository;
 }
 
@@ -117,13 +97,12 @@ export function buildCharacterStateSlice(
     const lines: string[] = [HEADER];
 
     // Identity line
-    const subclass = character.subclass && character.subclass !== 'none' ? ` ${character.subclass.replace(/_/g, ' ')}` : '';
-    lines.push(`${character.name} - ${character.race ?? 'Human'} ${character.characterClass ?? 'fighter'}${subclass}, level ${character.level}`);
+    lines.push(`${character.name} - ${character.race ?? 'Human'} ${character.characterClass ?? 'commoner'}, level ${character.level}`);
 
     // Vital stats line
     const bloodTag = bloodied(character.hp, character.maxHp);
     const blood = bloodTag ? `  [${bloodTag}]` : '';
-    lines.push(`HP: ${character.hp}/${character.maxHp}    AC: ${character.ac}${blood}`);
+    lines.push(`HP: ${character.hp}/${character.maxHp}${blood}`);
 
     // Conditions
     lines.push(`Conditions: ${formatConditions(character)}`);
@@ -151,47 +130,6 @@ export function buildCharacterStateSlice(
         lines.push(`Expertise: ${character.expertise.join(', ')}`);
     }
 
-    // Spellcasting section (only if spellcaster)
-    const slots = formatSpellSlots(character);
-    const pact = formatPactMagic(character);
-    if (slots || pact || (character.knownSpells && character.knownSpells.length > 0)) {
-        lines.push('');
-        lines.push('Spellcasting:');
-        if (character.spellcastingAbility) {
-            const dc = character.spellSaveDC ?? '?';
-            const atk = character.spellAttackBonus !== undefined
-                ? (character.spellAttackBonus >= 0 ? `+${character.spellAttackBonus}` : `${character.spellAttackBonus}`)
-                : '?';
-            // Schema stores full names ('wisdom'); display as 3-letter abbreviation
-            const abilShort = character.spellcastingAbility.slice(0, 3).toUpperCase();
-            lines.push(`  Ability: ${abilShort}    Save DC: ${dc}    Attack: ${atk}`);
-        }
-        if (slots) lines.push(`  Slots: ${slots}`);
-        if (pact) lines.push(`  ${pact}`);
-
-        const known = character.knownSpells ?? [];
-        const prepared = character.preparedSpells ?? [];
-        const cantrips = character.cantripsKnown ?? [];
-
-        if (cantrips.length > 0) {
-            lines.push(`  Cantrips: ${cantrips.join(', ')}`);
-        }
-        if (prepared.length > 0) {
-            const shown = prepared.slice(0, SPELLS_LIMIT).join(', ');
-            const extra = prepared.length > SPELLS_LIMIT ? ` (+${prepared.length - SPELLS_LIMIT} more)` : '';
-            lines.push(`  Prepared: ${shown}${extra}`);
-        } else if (known.length > 0) {
-            const shown = known.slice(0, SPELLS_LIMIT).join(', ');
-            const extra = known.length > SPELLS_LIMIT ? ` (+${known.length - SPELLS_LIMIT} more)` : '';
-            lines.push(`  Known: ${shown}${extra}`);
-        }
-
-        const concentration = deps.concentrationRepo.findByCharacterId(characterId);
-        if (concentration) {
-            lines.push(`  Concentrating on: ${concentration.activeSpell} (L${concentration.spellLevel})`);
-        }
-    }
-
     // Inventory (only if any items)
     try {
         const inv = deps.inventoryRepo.getInventoryWithDetails(characterId);
@@ -207,15 +145,6 @@ export function buildCharacterStateSlice(
         }
     } catch {
         // Inventory queries can fail on minimal test fixtures - silently skip
-    }
-
-    // Legendary creatures
-    if (character.legendaryActions && character.legendaryActions > 0) {
-        lines.push('');
-        lines.push(`Legendary actions: ${character.legendaryActionsRemaining ?? character.legendaryActions}/${character.legendaryActions} per round`);
-        if (character.legendaryResistances && character.legendaryResistances > 0) {
-            lines.push(`Legendary resistances: ${character.legendaryResistancesRemaining ?? character.legendaryResistances}/${character.legendaryResistances} per day`);
-        }
     }
 
     return lines.join('\n');

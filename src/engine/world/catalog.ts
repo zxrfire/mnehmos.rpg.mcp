@@ -1,0 +1,382 @@
+/**
+ * The narrow view of the content catalogs that seeding needs.
+ *
+ * `src/data/cultivation/` is large, richly authored, and under continuous edit
+ * by whoever owns content. The world engine needs perhaps a fifteenth of what
+ * is in there: enough to know that a faction exists, roughly how strong it is,
+ * where it sits, who it hates, what it holds and what it answers to.
+ *
+ * So the dependency is inverted. This module declares the shapes the world
+ * layer consumes, and `loadCultivationCatalog()` maps the real catalogs onto
+ * them in one auditable place. Three things fall out of that, all of which have
+ * already earned their keep:
+ *
+ *  1. A syntax error mid-edit in one content file does not take down the world
+ *     engine's compilation, only the adapter's.
+ *  2. `seedWorld` is testable against a fixture, so the soak test measures the
+ *     simulation rather than the current state of somebody else's prose.
+ *  3. The mapping from authored content to engine state is legible in one
+ *     file, instead of scattered through a seeding routine as field accesses.
+ *
+ * Nothing here interprets. It selects, renames and defaults; every judgement
+ * about what a faction is like stays in the content files where an author can
+ * see it.
+ */
+
+import type { AmbientQi } from '../../schema/cultivation.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// SHAPES
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How a faction holds what it holds.
+ *
+ * The four models from the hierarchy catalog, and they produce materially
+ * different worlds: a federated sect can lose its vein to a renewal it does not
+ * control, an unbacked one can only lose it to somebody who comes and takes it.
+ */
+export type GovernanceModel = 'federated' | 'administered' | 'deference' | 'unbacked';
+
+export interface CatalogFaction {
+    id: string;
+    name: string;
+    alignment: 'righteous' | 'neutral' | 'demonic';
+    /** Rank ladder, lowest first. */
+    ranks: string[];
+    /** Realm ordinal of its strongest member. Sets who it can bully. */
+    powerOrdinal: number;
+    /** Minimum ordinal it will look at. */
+    admissionOrdinal: number;
+    /** False for powers that take no applicants at all. */
+    recruits: boolean;
+    /** Coarse seat, matched against region ids and place names. */
+    territory: string;
+    /** Symmetric across the catalog. */
+    rivalIds: string[];
+    governance: GovernanceModel;
+    /** Who it answers to, when anyone. */
+    parentFactionId: string | null;
+    /** Whether it holds a vein at all, and on what terms. */
+    holdsVein: boolean;
+    tributeStonesPerYear: number;
+    /** Years between grant renewals. Zero when nothing is renewed. */
+    renewalYears: number;
+    /**
+     * How much it can make for itself, 0..1. The production tier from the
+     * faction-character catalog, flattened. Decides how fast a treasury
+     * recovers from a bad decade and whether losing a vein is fatal.
+     */
+    production: number;
+    /** Fraction of its inherited compound it can still operate, 0..1. */
+    formationIntegrity: number;
+    description: string;
+}
+
+export interface CatalogPlace {
+    name: string;
+    kind: 'hamlet' | 'village' | 'market_town' | 'sect_town' | 'city' | 'waystation' | 'site';
+    ambient: AmbientQi;
+    note: string;
+}
+
+export interface CatalogConnection {
+    otherRegionId: string;
+    kind: string;
+    travelDays: number;
+}
+
+export interface CatalogRegion {
+    id: string;
+    name: string;
+    /** The one region the player starts in. */
+    home: boolean;
+    summary: string;
+    ambient: AmbientQi;
+    /** 0..1, derived from the region's own ambient profile. */
+    qiDensity: number;
+    /** Nobody here has passed this in living memory. */
+    localCeilingOrdinal: number;
+    hazards: string[];
+    /** Multiplier on progress from ordinary drawing here. */
+    ambientRateMultiplier: number;
+    politics: 'competing_sects' | 'single_hegemon' | 'no_authority';
+    factionIds: string[];
+    places: CatalogPlace[];
+    connections: CatalogConnection[];
+    exports: string[];
+    /** Marks the land already carries. */
+    scars: string[];
+    /** Local laws of the place: what does not work here. */
+    specialRules: string[];
+    veinStatus: string;
+}
+
+export interface WorldCatalog {
+    factions: CatalogFaction[];
+    regions: CatalogRegion[];
+    /** Technique ids that exist at all, for loss and rediscovery. */
+    techniqueIds: string[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// LOADING THE REAL CATALOGS
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Heaviest band in an ambient profile. The region's ordinary condition. */
+export function dominantAmbient(profile: Partial<Record<AmbientQi, number>>): AmbientQi {
+    const order: AmbientQi[] = ['thin', 'normal', 'dense', 'spirit_tide'];
+    let best: AmbientQi = 'normal';
+    let bestWeight = -1;
+    for (const band of order) {
+        const w = profile[band] ?? 0;
+        if (w > bestWeight) {
+            bestWeight = w;
+            best = band;
+        }
+    }
+    return best;
+}
+
+/**
+ * Qi density from an ambient profile, 0..1.
+ *
+ * A weighted average over the bands rather than the dominant one alone, so a
+ * region that is mostly thin with a rich pocket reads richer than one that is
+ * uniformly thin - which is the difference between somewhere worth fighting
+ * over and somewhere nobody wants.
+ */
+export function densityFromProfile(profile: Partial<Record<AmbientQi, number>>): number {
+    const weights: Record<AmbientQi, number> = { thin: 0.15, normal: 0.45, dense: 0.85, spirit_tide: 1 };
+    let total = 0;
+    let sum = 0;
+    for (const band of ['thin', 'normal', 'dense', 'spirit_tide'] as AmbientQi[]) {
+        const w = profile[band] ?? 0;
+        total += w;
+        sum += w * weights[band];
+    }
+    return total > 0 ? Number((sum / total).toFixed(4)) : 0.35;
+}
+
+/**
+ * Map the authored catalogs onto the engine's view.
+ *
+ * Everything is defensive: a content file mid-edit that has dropped a field
+ * yields a default rather than an exception, because a missing tribute figure
+ * is not a reason for the world to fail to exist. What it will not do is
+ * invent a faction or a region that the content does not have.
+ */
+export async function loadCultivationCatalog(): Promise<WorldCatalog> {
+    const [sects, regions, character, hierarchy, techniques] = await Promise.all([
+        import('../../data/cultivation/sects.js'),
+        import('../../data/cultivation/regions.js'),
+        import('../../data/cultivation/faction-character.js').catch(() => null),
+        import('../../data/cultivation/hierarchy.js').catch(() => null),
+        import('../../data/cultivation/techniques.js').catch(() => null)
+    ]);
+
+    const parentage = (hierarchy as { FACTION_PARENTAGE?: Record<string, RawParentage> } | null)
+        ?.FACTION_PARENTAGE ?? {};
+    const characters = (character as { FACTION_CHARACTER?: Record<string, RawCharacter> } | null)
+        ?.FACTION_CHARACTER ?? {};
+
+    const factions: CatalogFaction[] = [];
+    for (const raw of (sects.SECTS ?? []) as unknown as RawSect[]) {
+        factions.push(mapFaction(raw, parentage[raw.id], characters[raw.id]));
+    }
+
+    const mapped: CatalogRegion[] = [];
+    for (const raw of (regions.REGIONS ?? []) as unknown as RawRegion[]) {
+        mapped.push(mapRegion(raw));
+    }
+
+    const techniqueIds = (((techniques as { TECHNIQUES?: { id: string }[] } | null)?.TECHNIQUES) ?? [])
+        .map(t => t.id);
+
+    return { factions, regions: mapped, techniqueIds };
+}
+
+interface RawSect {
+    id: string;
+    name: string;
+    alignment?: string;
+    ranks?: string[];
+    powerOrdinal?: number;
+    admissionOrdinal?: number;
+    recruits?: boolean;
+    territory?: string;
+    rivals?: readonly string[];
+    description?: string;
+    compound?: { formationNodesTotal?: number; formationNodesLit?: number };
+}
+
+interface RawParentage {
+    governance?: string;
+    parentFactionId?: string | null;
+    holds?: string | null;
+    terms?: { tributeStonesPerYear?: number; renewal?: string } | null;
+}
+
+interface RawCharacter {
+    production?: { selfSufficiency?: number; tier?: string } | string;
+}
+
+interface RawRegion {
+    id: string;
+    name: string;
+    role?: string;
+    summary?: string;
+    ambientProfile?: Partial<Record<AmbientQi, number>>;
+    localCeilingOrdinal?: number;
+    hazards?: string[];
+    cultivation?: {
+        ambientRateMultiplier?: number;
+        missingDisciplines?: { discipline: string; reason: string }[];
+    };
+    politics?: string;
+    factionIds?: string[];
+    places?: { name: string; kind: string; ambient: AmbientQi; note: string }[];
+    connections?: { otherRegionId: string; kind: string; travelDays: number }[];
+    exports?: string[];
+    veinStatus?: string;
+}
+
+function mapFaction(raw: RawSect, parent?: RawParentage, character?: RawCharacter): CatalogFaction {
+    const total = raw.compound?.formationNodesTotal ?? 0;
+    const lit = raw.compound?.formationNodesLit ?? 0;
+    return {
+        id: raw.id,
+        name: raw.name,
+        alignment: normaliseAlignment(raw.alignment),
+        ranks: raw.ranks && raw.ranks.length > 0
+            ? raw.ranks.slice()
+            : ['Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Elder', 'Grand Elder', 'Patriarch'],
+        powerOrdinal: clampOrdinal(raw.powerOrdinal ?? 17),
+        admissionOrdinal: clampOrdinal(raw.admissionOrdinal ?? 3),
+        recruits: raw.recruits ?? true,
+        territory: raw.territory ?? '',
+        rivalIds: (raw.rivals ?? []).slice(),
+        governance: normaliseGovernance(parent?.governance),
+        parentFactionId: parent?.parentFactionId ?? null,
+        holdsVein: Boolean(parent?.holds),
+        tributeStonesPerYear: parent?.terms?.tributeStonesPerYear ?? 0,
+        renewalYears: renewalYearsOf(parent?.terms?.renewal),
+        production: productionOf(character),
+        formationIntegrity: total > 0 ? Number((lit / total).toFixed(4)) : 1,
+        description: raw.description ?? ''
+    };
+}
+
+function mapRegion(raw: RawRegion): CatalogRegion {
+    const profile = raw.ambientProfile ?? {};
+    return {
+        id: raw.id,
+        name: raw.name,
+        home: raw.role === 'home',
+        summary: raw.summary ?? '',
+        ambient: dominantAmbient(profile),
+        qiDensity: densityFromProfile(profile),
+        localCeilingOrdinal: clampOrdinal(raw.localCeilingOrdinal ?? 20),
+        hazards: (raw.hazards ?? []).map(normaliseHazard),
+        ambientRateMultiplier: raw.cultivation?.ambientRateMultiplier ?? 1,
+        politics: normalisePolitics(raw.politics),
+        factionIds: (raw.factionIds ?? []).slice(),
+        places: (raw.places ?? []).map(p => ({
+            name: p.name,
+            kind: p.kind as CatalogPlace['kind'],
+            ambient: p.ambient,
+            note: p.note
+        })),
+        connections: (raw.connections ?? []).map(c => ({
+            otherRegionId: c.otherRegionId,
+            kind: c.kind,
+            travelDays: c.travelDays
+        })),
+        exports: (raw.exports ?? []).slice(),
+        // The region's own account of its veins is the closest thing the
+        // content has to a scar list, and it is usually literally about what an
+        // old war did to the ground.
+        scars: raw.veinStatus ? [raw.veinStatus] : [],
+        specialRules: (raw.cultivation?.missingDisciplines ?? []).map(m => `${m.discipline}: ${m.reason}`),
+        veinStatus: raw.veinStatus ?? ''
+    };
+}
+
+/**
+ * Hazard tags, normalised to the vocabulary the capability layer matches on.
+ *
+ * Content writes hazards as prose fragments; `capability.ts` matches them by
+ * string against what a technique claims to counter. Anything unrecognised is
+ * passed through lowercased rather than dropped, so a new hazard becomes
+ * matchable the moment somebody writes a counter for it.
+ */
+function normaliseHazard(raw: string): string {
+    const s = raw.toLowerCase();
+    if (s.includes('thin') || s.includes('poor')) return 'thin_qi';
+    if (s.includes('cold') || s.includes('frost') || s.includes('ice')) return 'cold';
+    if (s.includes('poison') || s.includes('corrupt') || s.includes('rot')) return 'corrosive';
+    if (s.includes('formation') || s.includes('array')) return 'formation';
+    if (s.includes('beast')) return 'beasts';
+    if (s.includes('storm') || s.includes('lightning')) return 'lightning';
+    if (s.includes('flood') || s.includes('water')) return 'flooding';
+    return s.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'unmarked';
+}
+
+function normaliseGovernance(raw: string | undefined): GovernanceModel {
+    if (raw === 'federated' || raw === 'administered' || raw === 'deference' || raw === 'unbacked') {
+        return raw;
+    }
+    // A faction the hierarchy catalog says nothing about answers to nobody,
+    // which is the honest default and the one that produces the fewest
+    // invented obligations.
+    return 'unbacked';
+}
+
+function normalisePolitics(raw: string | undefined): CatalogRegion['politics'] {
+    return raw === 'single_hegemon' || raw === 'no_authority' ? raw : 'competing_sects';
+}
+
+function normaliseAlignment(raw: string | undefined): CatalogFaction['alignment'] {
+    return raw === 'righteous' || raw === 'demonic' ? raw : 'neutral';
+}
+
+/** First year figure in a renewal clause, or zero when nothing is renewed. */
+function renewalYearsOf(renewal: string | undefined): number {
+    if (!renewal) return 0;
+    const m = /(\d+)[- ]?year|\b(twelve|ten|twenty|thirty|fifty|hundred)\b/i.exec(renewal);
+    if (!m) return 0;
+    if (m[1]) return Number(m[1]);
+    const words: Record<string, number> = {
+        twelve: 12, ten: 10, twenty: 20, thirty: 30, fifty: 50, hundred: 100
+    };
+    return words[m[2].toLowerCase()] ?? 0;
+}
+
+function productionOf(character: RawCharacter | undefined): number {
+    const p = character?.production;
+    if (typeof p === 'string') return tierToNumber(p);
+    if (p && typeof p === 'object') {
+        if (typeof p.selfSufficiency === 'number') return clamp01(p.selfSufficiency);
+        if (typeof p.tier === 'string') return tierToNumber(p.tier);
+    }
+    return 0.5;
+}
+
+function tierToNumber(tier: string): number {
+    const s = tier.toLowerCase();
+    if (s.includes('self') || s.includes('surplus') || s.includes('exports')) return 0.9;
+    if (s.includes('sufficient') || s.includes('adequate')) return 0.65;
+    if (s.includes('depend') || s.includes('import') || s.includes('deficit')) return 0.3;
+    if (s.includes('none') || s.includes('nothing')) return 0.1;
+    return 0.5;
+}
+
+function clampOrdinal(n: number): number {
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(44, Math.floor(n)));
+}
+
+function clamp01(n: number): number {
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(1, n));
+}

@@ -14,10 +14,11 @@ import { ToolMetadata } from './tool-metadata.js';
 export const SearchToolsSchema = z.object({
   query: z.string().optional().describe('Natural language or keyword query to search for tools'),
   category: z.enum([
-    'world', 'combat', 'character', 'inventory', 'quest', 'party',
-    'math', 'strategy', 'secret', 'concentration', 'rest', 'scroll',
-    'aura', 'npc', 'spatial', 'theft', 'corpse', 'improvisation',
-    'turn-management', 'meta', 'agent'
+    'world', 'inventory', 'quest', 'party',
+    'math', 'strategy', 'secret',
+    'npc', 'spatial', 'theft', 'corpse', 'improvisation',
+    'turn-management', 'meta', 'agent',
+    'cultivation', 'run', 'technique', 'alchemy', 'sect', 'admin', 'combat'
   ]).optional().describe('Filter by category'),
   maxResults: z.number().min(1).max(50).default(10).describe('Maximum results to return'),
   contextAwareOnly: z.boolean().optional().describe('Only return context-aware tools'),

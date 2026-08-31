@@ -41,6 +41,7 @@ import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { ACTION_NAMES, MAX_CULTIVATION_DAYS } from './actions.js';
 import { describeAmbientInWorld, placeName, type EngineFacts } from './facts.js';
 import type { AwarenessRow } from './knowledge.js';
+import type { Hearing, SpeakableName } from './hearsay.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // TIER 1 - THE NARRATOR'S CONSTITUTION
@@ -122,13 +123,56 @@ export function resetNarratorCore(): void {
  */
 export const DISCOVERY_RULE = `WHAT MAY BE NAMED - this is as binding as the authority rules.
 
-You may only name people, sects, places, factions and events the player has learned of. If
-you have not been given it, it does not exist as far as this scene is concerned. Do not
-name an ancient sect, a famous cultivator, a distant city or a historical event in
-narration - not as a fact, not in passing, not as colour, not in a simile - unless it
-appears in the facts or in the NAMES YOU MAY USE list below. There is no exception for
-atmosphere. The player is supposed to earn these names over a hundred turns, and one
-careless clause spends the whole revelation.
+This governs YOUR OWN DESCRIPTIVE VOICE. It does not gag the people in the world, and the
+distinction is the whole of it.
+
+In narration you may only name people, sects, places, factions and events the player has
+learned of. If you have not been given it, it does not exist as far as your own prose is
+concerned. Do not name an ancient sect, a famous cultivator, a distant city or a historical
+event in description - not as a fact, not in passing, not as colour, not in a simile -
+unless it appears in the facts or in the NAMES YOU MAY USE list below. There is no
+exception for atmosphere. The player is supposed to earn these names over a hundred turns,
+and one careless clause spends the whole revelation.
+
+CHARACTERS ARE DIFFERENT. A cultivator says a name flatly, with no context, because of
+course you know it - everyone they have ever spoken to did. They are not withholding; it
+does not occur to them that explanation is required, any more than you would explain what a
+road is. "That road's shut. Hollow Court business," said the way you would say a bank
+holiday, and then straight on to the price of salt. That is the best way for a name to
+enter this player's world, and it is better than any deliberate revelation.
+
+So: a name from the SPOKEN IN THIS SCENE list below may appear INSIDE DIALOGUE, unexplained.
+Not in your description, not in a gloss, and not in the sentence after. Rules for it:
+
+- Hearing a name grants the NAME, not the meaning. The player cannot place it, cannot act on
+  it, and cannot evaluate it. If your next paragraph says what the thing is, the moment has
+  been spent for nothing and you have written the exposition the whole design refuses.
+- The mundane and the enormous sound identical. The same flat register carries a local
+  ferryman and something not seen in nine hundred years, because to the speaker both are
+  ordinary. Do not signal which one you have just dropped - no weight, no pause, no "he said
+  it as though it should mean something to you".
+- The speaker is not adjusting for their audience. No helpful apposition, no "the Hollow
+  Court, who of course hold the northern passes". If they explain, the reason is that THEY
+  want something out of explaining.
+- Not knowing is legible. If the player asks, that is a real act with a real cost - asking
+  who the Hollow Court are, in the wrong room, tells everyone present exactly how far the
+  player has come from. Answer in character: a shrug, a short correction, a look, amusement,
+  suspicion about where they are from, a lie, or an honest answer two centuries out of date.
+
+OVERHEARD, when the facts say so, is the sharper form and has its own rules. Two people on
+the other side of a wall, not talking to the player and not moderating for an audience:
+
+- Write it as it would ACTUALLY be spoken - elliptical, mid-conversation, assuming
+  everything, starting mid-sentence if that is where the player came in. Never have a
+  speaker restate context for the benefit of a listener they do not know is there. That is
+  the entire failure mode this device exists to avoid, and it is what you will do by default.
+- Do not resolve it in the same scene, or ideally for a long time. An overheard fragment
+  explained a paragraph later is exposition wearing a costume.
+- The speakers were having this conversation anyway. If it exists to inform the player, it
+  is a briefing with a wall in front of it.
+- What the player is left holding is knowledge with compromising provenance: they know
+  something they cannot admit to knowing, because acting on it reveals where they were
+  standing. Do not have them resolve to use it. Let it sit.
 
 The world may still act on a player who cannot name what acted, and this is the preferred
 way for a higher stratum to make itself felt. Consequence without attribution: a road is
@@ -388,6 +432,34 @@ ${WORLD_BIBLE}
 
 ${TONE_RULES}
 
+SHOW THE WORLD, NEVER EXPLAIN IT.
+
+The facts below are OBSERVATIONS, not a briefing. They are what somebody in the room could
+see, hear or has been told, and they are deliberately missing the structure behind them:
+you are not told how a sect is governed, how its ranks correspond to anyone else's, who
+holds a province and by what means, or what sets a price. That is not an oversight to be
+filled in. There is no character whose job is to explain the world, because in the world
+there is no such job.
+
+- If a sentence you are about to write would teach the player a rule, cut it and write the
+  consequence instead. Not "the sect answers to someone above it", but the elder saying the
+  matter has been sent up and declining to say to whom. Not "this valley is held by
+  deference", but three carters refusing the shortcut and changing the subject.
+- Never state a mechanism, a rate, a threshold, a multiplier or a correspondence. Not "the
+  qi here is half rate", but a long sitting that yields what a short one should.
+- Never do power-level exposition. You are given how someone READS to this cultivator, not
+  what rank they hold. Write the reading. Let the player do the arithmetic.
+- Characters may explain things only when THEY would - which is when they are selling
+  something, boasting, warning, or wrong. All four are useful and none are reliable, so an
+  NPC explanation is an interested account, never a briefing, and should be shaped by what
+  the speaker wants out of it.
+- Nobody is a tutorial. An elder answering a direct question gives a partial, self-serving
+  answer and often changes the subject. That is not rudeness; it is the whole texture.
+- The player is allowed to be confused for a long time. Confusion that resolves into
+  understanding ten hours later is the good version of this game. Inference beats
+  exposition even when the player infers wrongly - a wrong model held confidently and then
+  broken is worth more than a correct one handed over.
+
 OPERATIONAL - this is not negotiable.
 
 The split is fixed. The DATABASE owns hard state: the date, where the cultivator is, their
@@ -479,6 +551,7 @@ export function describeAwareness(rows: readonly AwarenessRow[]): string[] {
     }
     return rows.map(row =>
         `  ${row.name} (${row.kind}; ${row.stance}, ${row.sourceKind}` +
+        `${row.sourceKind === 'overheard' ? ', CANNOT BE ADMITTED TO' : ''}` +
         `${row.sourceNote ? `: ${row.sourceNote}` : ''})`
     );
 }
@@ -506,18 +579,32 @@ export function composeIntentUser(input: string, stateSummary: string): string {
  * `facts.lines` is the complete factual payload. Nothing else about the world
  * is sent, which means there is nothing else for a model to elaborate from -
  * the boundary is enforced by omission as well as by instruction.
+ *
+ * Note what is deliberately absent: `facts.structure`. That channel holds the
+ * governance categories, rank ordinals, grades and thresholds, and it is never
+ * referenced in this function. It cannot be paraphrased into exposition because
+ * it never arrives. That omission is the enforcement; the instructions in the
+ * system prompt are the reminder.
  */
 export function composeNarrationUser(
     facts: EngineFacts,
-    scene: { place: string; ambient: AmbientQi; awareness?: readonly AwarenessRow[] }
+    scene: {
+        place: string;
+        ambient: AmbientQi;
+        awareness?: readonly AwarenessRow[];
+        /** Names the engine has decided a present character says this scene. */
+        hearing?: Hearing | null;
+    }
 ): string {
     const nameable = nameableNames(scene.awareness ?? []);
+    const hearing = scene.hearing ?? null;
 
     return [
         'SCENE',
         `Place: ${scene.place}`,
-        describeAmbientInWorld(scene.ambient),
+        describeAmbientPerceived(scene.ambient),
         '',
+        ...spokenBlock(hearing),
         // The whitelist, stated positively. A model follows "these are the only
         // names" far more reliably than "do not name anything you were not
         // told about", and the list is short because the player's world is.
@@ -534,6 +621,42 @@ export function composeNarrationUser(
         'Write two or three short paragraphs of second-person narration of exactly the above.',
         'Add no outcome that is not listed. Soften nothing that is. Name nothing that is not',
         'permitted above; if something acted and the player cannot name it, write the effect',
-        'and leave the cause unnamed.'
+        'and leave the cause unnamed. Explain no mechanism, rate, rank correspondence or',
+        'chain of command: the facts above are what was perceived, and the structure behind',
+        'them is not yours to supply.'
     ].join('\n');
+}
+
+/**
+ * The dialogue-only name licence.
+ *
+ * A separate, wider set from the narration whitelist, and separated in the
+ * prompt as well as in the code, because the two permissions are genuinely
+ * different: one is what the player knows, the other is what the people in
+ * front of them know. The engine has already written the knowledge record for
+ * anything listed here, so the name enters the player's world whether or not
+ * the prose uses it gracefully.
+ */
+function spokenBlock(hearing: Hearing | null): string[] {
+    if (!hearing || hearing.names.length === 0) return [];
+
+    const listed = hearing.names.map((name: SpeakableName) => `- ${name.name}`);
+
+    return hearing.mode === 'overheard'
+        ? [
+            'SPOKEN IN THIS SCENE - OVERHEARD. Two people on the other side of a wall, not',
+            'talking to the player and not aware of them. These names may appear ONLY inside',
+            'what they say, unexplained, mid-conversation, and must not be glossed by you',
+            'afterwards. The player cannot ask, and cannot later admit to having heard it:',
+            ...listed,
+            ''
+        ]
+        : [
+            `SPOKEN IN THIS SCENE - SAID ALOUD${hearing.speaker ? ` by ${hearing.speaker}` : ''}.`,
+            'These names may appear ONLY inside dialogue, said flatly, as though the player',
+            'obviously knows them. Never in your own description, never explained, and never',
+            'given weight that would tell the player how large the thing is:',
+            ...listed,
+            ''
+        ];
 }

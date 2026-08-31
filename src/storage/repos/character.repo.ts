@@ -12,22 +12,18 @@ export class CharacterRepository {
 
         const stmt = this.db.prepare(`
       INSERT INTO characters (id, name, stats, hp, max_hp, ac, level, xp, faction_id, behavior, character_type,
-                               character_class, race, spell_slots, pact_magic_slots, known_spells, prepared_spells,
-                               cantrips_known, max_spell_level, concentrating_on, conditions,
+                               character_class, race, conditions,
                                currency,
-                               legendary_actions, legendary_actions_remaining, legendary_resistances,
-                              legendary_resistances_remaining, has_lair_actions, resistances, vulnerabilities, immunities,
+                               resistances, vulnerabilities, immunities,
                                current_room_id, perception_bonus, stealth_bonus, resource_pools,
                                skill_proficiencies, save_proficiencies, expertise,
                                armor_proficiencies, weapon_proficiencies, tool_proficiencies, languages,
                                background, alignment, origin,
                               created_at, updated_at)
       VALUES (@id, @name, @stats, @hp, @maxHp, @ac, @level, @xp, @factionId, @behavior, @characterType,
-               @characterClass, @race, @spellSlots, @pactMagicSlots, @knownSpells, @preparedSpells,
-               @cantripsKnown, @maxSpellLevel, @concentratingOn, @conditions,
+               @characterClass, @race, @conditions,
                @currency,
-               @legendaryActions, @legendaryActionsRemaining, @legendaryResistances,
-              @legendaryResistancesRemaining, @hasLairActions, @resistances, @vulnerabilities, @immunities,
+               @resistances, @vulnerabilities, @immunities,
                @currentRoomId, @perceptionBonus, @stealthBonus, @resourcePools,
                @skillProficiencies, @saveProficiencies, @expertise,
                @armorProficiencies, @weaponProficiencies, @toolProficiencies, @languages,
@@ -47,24 +43,10 @@ export class CharacterRepository {
             factionId: (validChar as NPC).factionId || null,
             behavior: (validChar as NPC).behavior || null,
             characterType: validChar.characterType || 'pc',
-            // CRIT-002/006: Spellcasting fields
-            characterClass: validChar.characterClass || 'fighter',
+            characterClass: validChar.characterClass || 'commoner',
             race: validChar.race || 'Human',
-            spellSlots: validChar.spellSlots ? JSON.stringify(validChar.spellSlots) : null,
-            pactMagicSlots: validChar.pactMagicSlots ? JSON.stringify(validChar.pactMagicSlots) : null,
-            knownSpells: JSON.stringify(validChar.knownSpells || []),
-            preparedSpells: JSON.stringify(validChar.preparedSpells || []),
-            cantripsKnown: JSON.stringify(validChar.cantripsKnown || []),
-            maxSpellLevel: validChar.maxSpellLevel || 0,
-            concentratingOn: validChar.concentratingOn || null,
             conditions: JSON.stringify(validChar.conditions || []),
             currency: JSON.stringify(validChar.currency || { gold: 0, silver: 0, copper: 0 }),
-            // HIGH-007: Legendary creature fields
-            legendaryActions: validChar.legendaryActions ?? null,
-            legendaryActionsRemaining: validChar.legendaryActionsRemaining ?? null,
-            legendaryResistances: validChar.legendaryResistances ?? null,
-            legendaryResistancesRemaining: validChar.legendaryResistancesRemaining ?? null,
-            hasLairActions: validChar.hasLairActions ? 1 : 0,
             resistances: JSON.stringify(validChar.resistances || []),
             vulnerabilities: JSON.stringify(validChar.vulnerabilities || []),
             immunities: JSON.stringify(validChar.immunities || []),
@@ -137,13 +119,9 @@ export class CharacterRepository {
             UPDATE characters
             SET name = ?, stats = ?, hp = ?, max_hp = ?, ac = ?, level = ?, xp = ?,
                 faction_id = ?, behavior = ?, character_type = ?,
-                 character_class = ?, race = ?, spell_slots = ?, pact_magic_slots = ?,
-                 known_spells = ?, prepared_spells = ?, cantrips_known = ?,
-                 max_spell_level = ?, concentrating_on = ?, conditions = ?,
+                 character_class = ?, race = ?, conditions = ?,
                  currency = ?,
-                 legendary_actions = ?, legendary_actions_remaining = ?,
-                legendary_resistances = ?, legendary_resistances_remaining = ?,
-                 has_lair_actions = ?, resistances = ?, vulnerabilities = ?, immunities = ?,
+                 resistances = ?, vulnerabilities = ?, immunities = ?,
                  current_room_id = ?, perception_bonus = ?, stealth_bonus = ?,
                  resource_pools = ?,
                  skill_proficiencies = ?, save_proficiencies = ?, expertise = ?,
@@ -164,24 +142,10 @@ export class CharacterRepository {
             (validChar as NPC).factionId || null,
             (validChar as NPC).behavior || null,
             validChar.characterType || 'pc',
-            // CRIT-002/006: Spellcasting fields
-            validChar.characterClass || 'fighter',
+            validChar.characterClass || 'commoner',
             validChar.race || 'Human',
-            validChar.spellSlots ? JSON.stringify(validChar.spellSlots) : null,
-            validChar.pactMagicSlots ? JSON.stringify(validChar.pactMagicSlots) : null,
-            JSON.stringify(validChar.knownSpells || []),
-            JSON.stringify(validChar.preparedSpells || []),
-            JSON.stringify(validChar.cantripsKnown || []),
-            validChar.maxSpellLevel || 0,
-            validChar.concentratingOn || null,
             JSON.stringify(validChar.conditions || []),
             JSON.stringify(validChar.currency || { gold: 0, silver: 0, copper: 0 }),
-            // HIGH-007: Legendary creature fields
-            validChar.legendaryActions ?? null,
-            validChar.legendaryActionsRemaining ?? null,
-            validChar.legendaryResistances ?? null,
-            validChar.legendaryResistancesRemaining ?? null,
-            validChar.hasLairActions ? 1 : 0,
             JSON.stringify(validChar.resistances || []),
             JSON.stringify(validChar.vulnerabilities || []),
             JSON.stringify(validChar.immunities || []),
@@ -227,24 +191,10 @@ export class CharacterRepository {
             level: row.level,
             xp: row.xp ?? 0,
             characterType: (row.character_type as CharacterType) || 'pc',
-            // CRIT-002/006: Spellcasting fields
-            characterClass: row.character_class || 'fighter',
+            characterClass: row.character_class || 'commoner',
             race: row.race || 'Human',
-            spellSlots: row.spell_slots ? JSON.parse(row.spell_slots) : undefined,
-            pactMagicSlots: row.pact_magic_slots ? JSON.parse(row.pact_magic_slots) : undefined,
-            knownSpells: row.known_spells ? JSON.parse(row.known_spells) : [],
-            preparedSpells: row.prepared_spells ? JSON.parse(row.prepared_spells) : [],
-            cantripsKnown: row.cantrips_known ? JSON.parse(row.cantrips_known) : [],
-            maxSpellLevel: row.max_spell_level || 0,
-            concentratingOn: row.concentrating_on || null,
             conditions: row.conditions ? JSON.parse(row.conditions) : [],
             currency: row.currency ? JSON.parse(row.currency) : { gold: 0, silver: 0, copper: 0 },
-            // HIGH-007: Legendary creature fields
-            legendaryActions: row.legendary_actions ?? undefined,
-            legendaryActionsRemaining: row.legendary_actions_remaining ?? undefined,
-            legendaryResistances: row.legendary_resistances ?? undefined,
-            legendaryResistancesRemaining: row.legendary_resistances_remaining ?? undefined,
-            hasLairActions: row.has_lair_actions === 1,
             resistances: row.resistances ? JSON.parse(row.resistances) : [],
             vulnerabilities: row.vulnerabilities ? JSON.parse(row.vulnerabilities) : [],
             immunities: row.immunities ? JSON.parse(row.immunities) : [],
@@ -293,24 +243,10 @@ interface CharacterRow {
     faction_id: string | null;
     behavior: string | null;
     character_type: string | null;
-    // CRIT-002/006: Spellcasting columns
     character_class: string | null;
     race: string | null;
-    spell_slots: string | null;
-    pact_magic_slots: string | null;
-    known_spells: string | null;
-    prepared_spells: string | null;
-    cantrips_known: string | null;
-    max_spell_level: number | null;
-    concentrating_on: string | null;
     conditions: string | null;
     currency: string | null;
-    // HIGH-007: Legendary creature columns
-    legendary_actions: number | null;
-    legendary_actions_remaining: number | null;
-    legendary_resistances: number | null;
-    legendary_resistances_remaining: number | null;
-    has_lair_actions: number | null;
     resistances: string | null;
     vulnerabilities: string | null;
     immunities: string | null;

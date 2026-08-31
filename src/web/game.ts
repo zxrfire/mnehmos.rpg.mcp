@@ -736,7 +736,12 @@ export class GameService {
             cultivator, run, subject, 'witnessed', `Examined at ${placeName(cultivator)}.`
         );
 
+        // `subject.facts` is what was perceived and goes to the narrator.
+        // `subject.structure` is the schema behind it - governance, ordinals,
+        // grades - and goes only to the inspector below. A category handed to a
+        // narrator becomes a briefing, and there is no briefing in this world.
         const facts = factsForInvestigation(cultivator, ambient, subject.name, subject.facts);
+        facts.structure.push(...subject.structure);
         if (learned) {
             facts.lines.push(
                 `${subject.name} is now a name this cultivator holds, learned by looking at it.`
@@ -744,12 +749,15 @@ export class GameService {
         }
 
         const execution = this.freeAction(run, 'investigate', facts);
-        execution.calls = [{
-            name: 'engine.readState',
-            action: 'investigate',
-            summary: `Resolved "${query}" to ${subject.kind} ${subject.id}. Read only: no time passed, nothing changed.`,
-            ok: true
-        }];
+        execution.calls = [
+            {
+                name: 'engine.readState',
+                action: 'investigate',
+                summary: `Resolved "${query}" to ${subject.kind} ${subject.id}. Read only: no time passed, nothing changed.`,
+                ok: true
+            },
+            ...structureCalls(subject.structure)
+        ];
         if (learned) {
             execution.calls.push({
                 name: 'knowledge.learn',
@@ -823,6 +831,7 @@ export class GameService {
                 summary: `Resolved "${query}" to ${party.kind} ${party.id}. ${party.facts[0]}`,
                 ok: true
             },
+            ...structureCalls(party.structure),
             {
                 name: 'engine.resolveInteraction',
                 action: intent,
@@ -1505,9 +1514,19 @@ export class GameService {
         };
     }
 
-    /** Engine rulings, as log lines. Sourced only from facts.ts and SimEvents. */
+    /**
+     * Engine rulings, as log lines. Sourced only from facts.ts and SimEvents.
+     *
+     * The structure channel is included here and NOT in the narrator prompt.
+     * The log is the operator's record, where a rank ordinal and a governance
+     * category are exactly the right words; the prose is where they would
+     * become a briefing the world does not contain.
+     */
     private engineEntries(execution: Execution, turn: number): LogEntry[] {
         const entries: LogEntry[] = [{ role: 'engine', turn, text: execution.facts.headline }];
+        for (const line of execution.facts.structure) {
+            entries.push({ role: 'engine', turn, text: line });
+        }
         for (const event of execution.events.slice(0, MAX_LOGGED_EVENTS)) {
             entries.push({ role: 'engine', turn, text: `Day ${Math.round(event.dayOffset)}: ${event.summary}` });
         }
@@ -1661,6 +1680,22 @@ function localSect(): { id: string; name: string } | null {
             : best);
 
     return { id: chosen.id, name: chosen.name };
+}
+
+/**
+ * Structural truth, as inspectable rows.
+ *
+ * These are the categories the narrator is never shown: ordinals, grades,
+ * governance, rank ladders. They are precisely what an operator auditing a run
+ * wants, and precisely what would turn a scene into a lecture.
+ */
+function structureCalls(lines: readonly string[]): ToolCallRecord[] {
+    return lines.map(line => ({
+        name: 'engine.structure',
+        action: 'not_narrated',
+        summary: line,
+        ok: true
+    }));
 }
 
 /** What the crossings cut away, as inspectable rows. */
