@@ -1037,7 +1037,7 @@ describe('cultivation MCP tool surface', () => {
 
             const names = listed.sects.map((entry: any) => entry.name);
             for (const canon of [
-                'Ashwright Consortium', 'Lantern Hall', 'The Severed',
+                'Stonewright Consortium', 'Lantern Hall', 'The Severed',
                 'The Hollow Court', 'Kiln Wardens'
             ]) {
                 expect(names).toContain(canon);
