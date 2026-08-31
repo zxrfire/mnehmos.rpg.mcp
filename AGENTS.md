@@ -167,6 +167,20 @@ not in Markdown, not in code comments, not in commit messages, not in player-fac
 strings. They are hard to type, hard to grep, and they break exact-match edits against
 these files.
 
+### Never put a backtick inside a SQL template literal
+
+Migration files hold their DDL in JS template literals. A backtick anywhere inside - most
+easily in a SQL comment quoting an identifier, `` -- the count `assessPower` prices `` -
+**terminates the literal** and takes the whole module out at transform time, failing every
+test that imports storage with an error that points nowhere useful.
+
+This has now happened twice in `migrations.cultivation.ts`, which contains hundreds of
+backticks of which exactly two are load-bearing.
+
+In SQL comments inside a template literal, quote identifiers with single quotes or nothing
+at all. If you need a backtick in a comment, the comment is in the wrong place - put it
+above the literal as a normal `//` comment.
+
 ### Commit convention
 
 ```
