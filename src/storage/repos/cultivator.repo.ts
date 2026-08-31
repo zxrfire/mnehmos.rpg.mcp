@@ -38,6 +38,7 @@ interface CultivatorRow {
     spirit_stones: number;
     sect_id: string | null;
     sect_rank: string | null;
+    location: string | null;
     feuds: string;
     known_techniques: string;
     alive: number;
@@ -97,6 +98,54 @@ export interface CultivatorDeltas {
     yearsAtCurrentRealm?: number;
 }
 
+/**
+ * One row of the admin roster: every cultivator in the world, flattened
+ * against their sect and their injury count.
+ *
+ * Deliberately *not* a Cultivator. This is a read-only projection for a
+ * listing screen, and returning full domain objects would mean loading every
+ * injury of every cultivator to render a column that only needs a number.
+ *
+ * Display fields derived from these values — rankName, realmName,
+ * spiritRootName, lifespanYears, isPlayer — are the web layer's job. The repo
+ * ships the facts; presentation is not persistence.
+ */
+export interface RosterEntry {
+    id: string;
+    name: string;
+    kind: Cultivator['kind'];
+    spiritRoot: Cultivator['spiritRoot'];
+    realmOrdinal: number;
+    location: string | null;
+    sectId: string | null;
+    sectName: string | null;
+    sectRank: string | null;
+    age: number;
+    alive: boolean;
+    deathCause: string | null;
+    spiritStones: number;
+    untreatedInjuries: number;
+    feuds: string[];
+}
+
+interface RosterRow {
+    id: string;
+    name: string;
+    kind: string;
+    spirit_root: string;
+    realm_ordinal: number;
+    location: string | null;
+    sect_id: string | null;
+    sect_name: string | null;
+    sect_rank: string | null;
+    age: number;
+    alive: number;
+    death_cause: string | null;
+    spirit_stones: number;
+    untreated_injuries: number;
+    feuds: string;
+}
+
 export interface ListCultivatorsFilter {
     runId?: string;
     sectId?: string;
@@ -127,6 +176,7 @@ export class CultivatorRepository {
     private readonly countUntreatedStmt: Database.Statement;
     private readonly treatInjuryStmt: Database.Statement;
     private readonly selectInjuryByIdStmt: Database.Statement;
+    private readonly rosterStmt: Database.Statement;
 
     constructor(private db: Database.Database) {
         this.insertStmt = db.prepare(`
@@ -135,7 +185,7 @@ export class CultivatorRepository {
                 realm_ordinal, cultivation_progress,
                 hp, max_hp, qi, max_qi, satiety, starvation_turns,
                 age, years_at_current_realm,
-                spirit_stones, sect_id, sect_rank, feuds, known_techniques,
+                spirit_stones, sect_id, sect_rank, location, feuds, known_techniques,
                 alive, death_cause, died_on_turn,
                 created_at, updated_at
             ) VALUES (
@@ -143,7 +193,7 @@ export class CultivatorRepository {
                 @realmOrdinal, @cultivationProgress,
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns,
                 @age, @yearsAtCurrentRealm,
-                @spiritStones, @sectId, @sectRank, @feuds, @knownTechniques,
+                @spiritStones, @sectId, @sectRank, @location, @feuds, @knownTechniques,
                 @alive, @deathCause, @diedOnTurn,
                 @createdAt, @updatedAt
             )
@@ -158,7 +208,7 @@ export class CultivatorRepository {
                 satiety = @satiety, starvation_turns = @starvationTurns,
                 age = @age, years_at_current_realm = @yearsAtCurrentRealm,
                 spirit_stones = @spiritStones, sect_id = @sectId, sect_rank = @sectRank,
-                feuds = @feuds, known_techniques = @knownTechniques,
+                location = @location, feuds = @feuds, known_techniques = @knownTechniques,
                 alive = @alive, death_cause = @deathCause, died_on_turn = @diedOnTurn,
                 updated_at = @updatedAt
             WHERE id = @id
@@ -201,6 +251,30 @@ export class CultivatorRepository {
             WHERE id = @id AND treated = 0
         `);
         this.selectInjuryByIdStmt = db.prepare('SELECT * FROM cultivator_injuries WHERE id = ?');
+
+        // One query, no N+1. The admin panel renders a few hundred rows, and a
+        // per-cultivator sect lookup plus a per-cultivator injury count would
+        // be 2N+1 round trips for a screen that is pure listing.
+        //
+        // The injury count is a correlated subquery rather than a
+        // GROUP BY join: grouping would require every selected column in the
+        // GROUP BY clause, and the subquery hits idx_injuries_untreated
+        // directly. LEFT JOIN on sects so unaffiliated (and orphaned)
+        // cultivators still appear — an admin view that hides rogue
+        // cultivators is worse than useless.
+        this.rosterStmt = db.prepare(`
+            SELECT
+                c.id, c.name, c.kind, c.spirit_root, c.realm_ordinal, c.location,
+                c.sect_id, s.name AS sect_name, c.sect_rank,
+                c.age, c.alive, c.death_cause, c.spirit_stones, c.feuds,
+                (
+                    SELECT COUNT(*) FROM cultivator_injuries i
+                    WHERE i.cultivator_id = c.id AND i.treated = 0
+                ) AS untreated_injuries
+            FROM cultivators c
+            LEFT JOIN sects s ON s.id = c.sect_id
+            ORDER BY c.alive DESC, c.realm_ordinal DESC, c.name ASC
+        `);
     }
 
     // ── CRUD ─────────────────────────────────────────────────────────────
@@ -264,6 +338,34 @@ export class CultivatorRepository {
             .all(...params) as CultivatorRow[];
 
         return rows.map(row => this.rowToCultivator(row));
+    }
+
+    /**
+     * Every cultivator in the world — player and NPCs alike, living and dead —
+     * with rank, location, and sect standing, for the read-only admin panel.
+     *
+     * Alive first, then deepest cultivation, then by name: an operator scanning
+     * this list is looking for who currently matters, and the dead are history.
+     */
+    roster(): RosterEntry[] {
+        const rows = this.rosterStmt.all() as RosterRow[];
+        return rows.map(row => ({
+            id: row.id,
+            name: row.name,
+            kind: row.kind as Cultivator['kind'],
+            spiritRoot: row.spirit_root as Cultivator['spiritRoot'],
+            realmOrdinal: row.realm_ordinal,
+            location: row.location,
+            sectId: row.sect_id,
+            sectName: row.sect_name,
+            sectRank: row.sect_rank,
+            age: row.age,
+            alive: row.alive === 1,
+            deathCause: row.death_cause,
+            spiritStones: row.spirit_stones,
+            untreatedInjuries: row.untreated_injuries,
+            feuds: JSON.parse(row.feuds) as string[]
+        }));
     }
 
     /**
@@ -485,6 +587,7 @@ export class CultivatorRepository {
             spiritStones: c.spiritStones,
             sectId: c.sectId ?? null,
             sectRank: c.sectRank ?? null,
+            location: c.location ?? null,
             feuds: JSON.stringify(c.feuds),
             knownTechniques: JSON.stringify(c.knownTechniques),
             alive: c.alive ? 1 : 0,
@@ -535,6 +638,7 @@ export class CultivatorRepository {
             spiritStones: row.spirit_stones,
             sectId: row.sect_id,
             sectRank: row.sect_rank,
+            location: row.location,
             feuds: JSON.parse(row.feuds),
             knownTechniques: JSON.parse(row.known_techniques),
             alive: row.alive === 1,

@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { migrate } from '../../src/storage/migrations';
+import { migrateCultivation } from '../../src/storage/migrations.cultivation';
 import { CultivatorRepository, CreateCultivatorInput } from '../../src/storage/repos/cultivator.repo';
 import { RunRepository } from '../../src/storage/repos/run.repo';
 import { TechniqueRepository } from '../../src/storage/repos/technique.repo';
@@ -27,6 +28,11 @@ function makeDb(): Database.Database {
     return db;
 }
 
+function cultivatorColumns(db: Database.Database): string[] {
+    return (db.prepare('PRAGMA table_info(cultivators)').all() as { name: string }[])
+        .map(col => col.name);
+}
+
 const NOW = '2025-01-01T00:00:00.000Z';
 
 function sampleCultivator(overrides: Partial<CreateCultivatorInput> = {}): CreateCultivatorInput {
@@ -47,6 +53,7 @@ function sampleCultivator(overrides: Partial<CreateCultivatorInput> = {}): Creat
         age: 19.5,
         yearsAtCurrentRealm: 2.25,
         spiritStones: 145,
+        location: 'Azure Cloud Sect outer courtyard',
         feuds: ['Blackwater Pavilion', 'cult-9'],
         knownTechniques: [],
         createdAt: NOW,
@@ -103,6 +110,76 @@ describe('cultivation migration', () => {
             expect(tables).toContain(expected);
         }
 
+        // The guarded ALTER must not double-add on a second pass.
+        expect(cultivatorColumns(db).filter(c => c === 'location')).toHaveLength(1);
+
+        db.close();
+    });
+
+    it('adds the location column to a database created before it existed', () => {
+        const db = new Database(':memory:');
+        db.pragma('foreign_keys = ON');
+
+        // A pre-change database: the original cultivators DDL, verbatim minus
+        // `location`. CREATE TABLE IF NOT EXISTS will skip this table, so only
+        // the guarded ALTER can rescue it.
+        db.exec(`
+            CREATE TABLE cultivators (
+              id TEXT PRIMARY KEY,
+              run_id TEXT,
+              name TEXT NOT NULL,
+              kind TEXT NOT NULL DEFAULT 'pc',
+              spirit_root TEXT NOT NULL,
+              attributes TEXT NOT NULL DEFAULT '{}',
+              realm_ordinal INTEGER NOT NULL DEFAULT 0,
+              cultivation_progress REAL NOT NULL DEFAULT 0,
+              hp INTEGER NOT NULL,
+              max_hp INTEGER NOT NULL,
+              qi INTEGER NOT NULL DEFAULT 0,
+              max_qi INTEGER NOT NULL DEFAULT 0,
+              satiety INTEGER NOT NULL DEFAULT 100,
+              starvation_turns INTEGER NOT NULL DEFAULT 0,
+              age REAL NOT NULL DEFAULT 16,
+              years_at_current_realm REAL NOT NULL DEFAULT 0,
+              spirit_stones INTEGER NOT NULL DEFAULT 30,
+              sect_id TEXT,
+              sect_rank TEXT,
+              feuds TEXT NOT NULL DEFAULT '[]',
+              known_techniques TEXT NOT NULL DEFAULT '[]',
+              alive INTEGER NOT NULL DEFAULT 1,
+              death_cause TEXT,
+              died_on_turn INTEGER,
+              created_at TEXT NOT NULL DEFAULT (datetime('now')),
+              updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            INSERT INTO cultivators (id, name, spirit_root, attributes, hp, max_hp, qi, max_qi)
+            VALUES ('legacy-1', 'Old Ancestor', 'single_earth',
+                    '{"might":2,"insight":2,"fortune":1,"charm":1}', 10, 10, 0, 0);
+        `);
+
+        expect(cultivatorColumns(db)).not.toContain('location');
+
+        migrate(db);
+
+        expect(cultivatorColumns(db)).toContain('location');
+
+        // The legacy row survives the upgrade and reads back with a null
+        // location rather than an invented one.
+        const repo = new CultivatorRepository(db);
+        const legacy = repo.getById('legacy-1');
+        expect(legacy).not.toBeNull();
+        expect(legacy!.name).toBe('Old Ancestor');
+        expect(legacy!.location).toBeNull();
+
+        // And the upgraded database accepts writes to the new column.
+        expect(repo.update('legacy-1', { location: 'the Scorched Wastes' })!.location)
+            .toBe('the Scorched Wastes');
+
+        // Re-running the migration on the upgraded database is a no-op.
+        expect(() => migrateCultivation(db)).not.toThrow();
+        expect(cultivatorColumns(db).filter(c => c === 'location')).toHaveLength(1);
+        expect(repo.getById('legacy-1')!.location).toBe('the Scorched Wastes');
+
         db.close();
     });
 });
@@ -135,6 +212,7 @@ describe('CultivatorRepository', () => {
         expect(loaded!.alive).toBe(true);
         expect(loaded!.sectId).toBeNull();
         expect(loaded!.deathCause).toBeNull();
+        expect(loaded!.location).toBe('Azure Cloud Sect outer courtyard');
     });
 
     it('returns null for a missing id instead of throwing', () => {
@@ -146,6 +224,20 @@ describe('CultivatorRepository', () => {
         expect(repo.listInjuries('nobody')).toEqual([]);
         expect(repo.countUntreatedInjuries('nobody')).toBe(0);
         expect(repo.treatInjury('no-such-injury')).toBeNull();
+    });
+
+    it('round-trips a null location', () => {
+        repo.create(sampleCultivator({ location: null }));
+        expect(repo.getById('cult-1')!.location).toBeNull();
+
+        // And defaults to null when the caller never mentions a location.
+        const { location: _omitted, ...withoutLocation } = sampleCultivator({ id: 'cult-2' });
+        repo.create(withoutLocation as CreateCultivatorInput);
+        expect(repo.getById('cult-2')!.location).toBeNull();
+
+        expect(repo.update('cult-1', { location: 'a nameless valley' })!.location)
+            .toBe('a nameless valley');
+        expect(repo.update('cult-1', { location: null })!.location).toBeNull();
     });
 
     it('lists with filters', () => {
@@ -273,6 +365,114 @@ describe('CultivatorRepository', () => {
         const again = repo.markDead('cult-1', 'starvation', 99);
         expect(again!.deathCause).toBe('untreated_injuries');
         expect(again!.diedOnTurn).toBe(17);
+    });
+});
+
+describe('CultivatorRepository.roster', () => {
+    let db: Database.Database;
+    let repo: CultivatorRepository;
+    let sects: SectRepository;
+
+    beforeEach(() => {
+        db = makeDb();
+        repo = new CultivatorRepository(db);
+        sects = new SectRepository(db);
+    });
+
+    afterEach(() => db.close());
+
+    it('is empty on an empty world', () => {
+        expect(repo.roster()).toEqual([]);
+    });
+
+    it('returns the admin shape, joined to the sect', () => {
+        const sect = sects.upsert(sampleSect());
+        repo.create(sampleCultivator());
+        sects.addMember(sect.id, 'cult-1', 2);
+        repo.addInjury('cult-1', {
+            severity: 'serious', source: 'combat',
+            description: 'Cracked meridian.', sustainedOnTurn: 3
+        });
+        const treatable = repo.addInjury('cult-1', {
+            severity: 'minor', source: 'poison',
+            description: 'Lingering venom.', sustainedOnTurn: 4
+        });
+        repo.treatInjury(treatable.id, 5);
+
+        const [entry] = repo.roster();
+        expect(entry).toEqual({
+            id: 'cult-1',
+            name: 'Li Wei',
+            kind: 'pc',
+            spiritRoot: 'single_fire',
+            realmOrdinal: 4,
+            location: 'Azure Cloud Sect outer courtyard',
+            sectId: sect.id,
+            sectName: 'Azure Cloud Sect',
+            sectRank: 'Core Disciple',
+            age: 19.5,
+            alive: true,
+            deathCause: null,
+            spiritStones: 145,
+            untreatedInjuries: 1,
+            feuds: ['Blackwater Pavilion', 'cult-9']
+        });
+    });
+
+    it('includes unaffiliated cultivators with a null sect', () => {
+        repo.create(sampleCultivator({ location: null }));
+
+        const [entry] = repo.roster();
+        expect(entry.sectId).toBeNull();
+        expect(entry.sectName).toBeNull();
+        expect(entry.sectRank).toBeNull();
+        expect(entry.location).toBeNull();
+        expect(entry.untreatedInjuries).toBe(0);
+    });
+
+    it('orders alive before dead, then realm descending, then name', () => {
+        repo.create(sampleCultivator({ id: 'a', name: 'Zhao Min', realmOrdinal: 20 }));
+        repo.create(sampleCultivator({ id: 'b', name: 'An Ling', realmOrdinal: 20 }));
+        repo.create(sampleCultivator({ id: 'c', name: 'Peak Sovereign', realmOrdinal: 33 }));
+        repo.create(sampleCultivator({ id: 'd', name: 'Weakling', realmOrdinal: 1 }));
+        repo.create(sampleCultivator({ id: 'e', name: 'Fallen Elder', realmOrdinal: 41 }));
+
+        repo.markDead('e', 'qi_deviation', 8);
+
+        const roster = repo.roster();
+        // Highest living rank first; the ordinal-41 corpse sinks to the bottom
+        // despite outranking everyone.
+        expect(roster.map(r => r.id)).toEqual(['c', 'b', 'a', 'd', 'e']);
+        expect(roster.map(r => r.alive)).toEqual([true, true, true, true, false]);
+        expect(roster[4].deathCause).toBe('qi_deviation');
+    });
+
+    it('counts untreated injuries per cultivator without cross-contamination', () => {
+        repo.create(sampleCultivator({ id: 'hurt', name: 'Hurt', realmOrdinal: 9 }));
+        repo.create(sampleCultivator({ id: 'whole', name: 'Whole', realmOrdinal: 8 }));
+
+        for (const turn of [1, 2, 3]) {
+            repo.addInjury('hurt', {
+                severity: 'minor', source: 'combat',
+                description: `Wound ${turn}.`, sustainedOnTurn: turn
+            });
+        }
+        const treated = repo.addInjury('hurt', {
+            severity: 'crippling', source: 'backlash',
+            description: 'Shattered dantian.', sustainedOnTurn: 4
+        });
+        repo.treatInjury(treated.id, 5);
+
+        const byId = Object.fromEntries(repo.roster().map(r => [r.id, r.untreatedInjuries]));
+        expect(byId).toEqual({ hurt: 3, whole: 0 });
+    });
+
+    it('lists NPCs alongside the player', () => {
+        repo.create(sampleCultivator({ id: 'pc', name: 'Player', kind: 'pc', realmOrdinal: 5 }));
+        repo.create(sampleCultivator({ id: 'npc', name: 'Wandering Sword', kind: 'npc', realmOrdinal: 30 }));
+        repo.create(sampleCultivator({ id: 'foe', name: 'Blood Demon', kind: 'enemy', realmOrdinal: 12 }));
+
+        expect(repo.roster().map(r => r.kind)).toEqual(['npc', 'enemy', 'pc']);
     });
 });
 
