@@ -45,3 +45,12 @@ way to cultivate where the ambient qi will not support you.
 Anchor cosmic events to one physical detail. Let the cruelty arrive in the content, not
 the adjectives, and let NPCs be genuinely convinced of things - nobody here thinks they
 are in a tragedy.
+
+**Show the world, never explain it.** Nobody tells the protagonist how anything works. Not
+that a sect is federated or independent, not that one province holds its ground by respect
+and another by patrols, not that there are two traditions or how their ranks correspond.
+Render these as behaviour and let the player infer: an elder defers to someone who is not
+in the room; tribute leaves on a schedule nobody comments on; a dispute is sent upward; no
+one will cross a particular valley and cannot say why when asked. If a sentence would
+teach the player a rule, cut it and show the consequence instead. The engine knows the
+structure so that people can *act* like it - not so you can describe it.

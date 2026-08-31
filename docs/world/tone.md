@@ -118,3 +118,36 @@ to a substantially different one - see
 - [`people.md`](people.md) - who is being written
 - [`../../src/web/README.md`](../../src/web/README.md) - where the prose is composed, and what it is allowed to know
 - [`../../context.md`](../../context.md) - the authority rule the register serves
+
+## Show, never explain
+
+The world is full of structure - governance models, two traditions, a sect pyramid, rank
+vocabularies that do not correspond, awareness strata. **None of it is ever explained to
+the protagonist.** There is no character whose job is to sit them down and describe how
+things work, because in the world there is no such job.
+
+The engine holds the structure so that people can *behave* according to it. That is its
+only purpose in narration.
+
+| Do not write | Write instead |
+|---|---|
+| "The sect is a subsidiary of the Sky Court" | The elder says the matter has been *sent up*, and will not be drawn on to whom |
+| "This province is held by deference" | Three separate carters refuse the shortcut through the valley and change the subject |
+| "They practise the other tradition" | The candle leans toward one man and stands straight beside the other, and nobody remarks on it |
+| "Their fourth grade equals Core Formation" | Someone addresses a stranger by a title the player does not know, and the room rearranges itself |
+| "The Consortium sets the exchange rate" | Two merchants a hundred li apart quote the same price on the same day |
+| "You lack the comprehension for this art" | The pages are perfectly legible and the meaning does not arrive |
+
+Rules of thumb:
+
+- **If a sentence would teach the player a rule, cut it and show its consequence.**
+- Characters explain things only when *they* would - which is when they are selling
+  something, boasting, warning, or wrong. All four are useful, and none of them are
+  reliable.
+- Nobody is a tutorial. An elder answering a direct question gives a partial, interested,
+  possibly self-serving answer, and often changes the subject.
+- The player is allowed to be confused for a long time. Confusion that resolves into
+  understanding ten hours later is the good version of this game; being told up front is
+  the bad one.
+- Inference beats exposition even when the player gets it *wrong*. A wrong model held
+  confidently and then broken is worth more than a correct one handed over.
