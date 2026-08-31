@@ -33,9 +33,16 @@ Getting it wrong cuts the other way. Using a term you do not understand, to some
 does, tells them exactly what you are - usually someone repeating what they overheard,
 which is worse than knowing nothing.
 
-None of this should be a stat, an unlock, or a fixed phrase the world checks for. It is the
-LLM reading who this person is, what they know, what they owe, and what the player just
-said. The engine holds the facts; the judgement is narration.
+Charm still counts, because people do not all react the same. It is not a key to the
+information - it will not make someone say what they do not know or what they are forbidden
+to say - but it moves everything at the margin. How much benefit of the doubt you get. How
+warm the refusal is. Whether someone who was not going to help mentions one thing on the
+way out. A low-Charm cultivator asking well still gets somewhere; they just get there
+having been treated worse.
+
+None of this should be an unlock or a fixed phrase the world checks for. It is the LLM
+reading who this person is, what they know, what they owe, how they find the player, and
+what was just said. The engine holds the facts; the judgement is narration.
 
 ## Why it matters
 
