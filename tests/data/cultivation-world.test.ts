@@ -512,6 +512,6 @@ describe('survivors of a richer age', () => {
         // Content must not carry a second copy of a reachability measurement.
         expect(survivorsOfARicherAge().length).toBeGreaterThanOrEqual(2);
         expect(survivorsOfARicherAge(35).every(s => s.provenance.highestOrdinal > 35)).toBe(true);
-        expect(survivorsOfARicherAge(40)).toEqual([]);
+        expect(survivorsOfARicherAge(41)).toEqual([]);
     });
 });

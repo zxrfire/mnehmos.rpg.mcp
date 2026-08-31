@@ -400,7 +400,8 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         id: 'sect-azure-cloud-pavilion',
         name: 'Azure Cloud Pavilion',
         alignment: 'righteous',
-        powerOrdinal: 24,
+        // The third apex, and the only one with a front gate. See APEX_INSTITUTIONS.
+        powerOrdinal: 41,
         ranks: ['Sword Servant', 'Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Sword Elder', 'Pavilion Master'],
         admissionOrdinal: 3,
         stipend: [4, 12, 35, 110, 380, 1_100],

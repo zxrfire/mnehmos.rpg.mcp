@@ -137,9 +137,15 @@ describe('a ten-year seclusion', () => {
         // 30 stones buys 15 rations: 750 days of food out of 3650 asked for.
         const { timeSkip, state } = await game.cultivate(3650);
 
-        // 30 stones buys 15 rations; the belly runs out long before year ten.
+        // 30 stones buys 15 rations; the food runs out long before year ten,
+        // and the skip stops there to say so rather than narrating a death
+        // nobody was asked about. The cultivator is alive with a belly still
+        // on them and a decision to make.
         expect(timeSkip.simulatedDays).toBeLessThan(3650);
-        expect(state.cultivator.satiety).toBe(0);
+        expect(timeSkip.died).toBe(false);
+        expect(timeSkip.interruptReason).toBe('provisions_exhausted');
+        expect(state.cultivator.satiety).toBeGreaterThan(0);
+        expect(timeSkip.events.some(e => e.kind === 'resource_depleted' && e.interrupts)).toBe(true);
         const provisioning = state.log
             .filter(e => e.role === 'engine')
             .map(e => e.text)
