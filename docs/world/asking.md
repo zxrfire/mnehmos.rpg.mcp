@@ -51,6 +51,20 @@ more to lose by talking than he could gain, and no amount of goodwill changes th
 arithmetic - which is why the useful person is often two rungs below the one who actually
 knows.
 
+Which points at the real rule: **what closes a mouth is position, not power.** The most
+dangerous person in the room is often the most forthcoming, because nothing can be done to
+them and they owe nobody an account of themselves. A wandering expert with no sect, no
+title and no lease may simply tell you - not as a favour, and not because you asked well.
+Because it cost them nothing and they were already talking.
+
+So the player's instinct should drift from *find someone important* to *find someone
+unattached*, which is a better instinct and takes a while to learn.
+
+It is not a shortcut. They are rare, hard to recognise before they matter, and under no
+obligation to be accurate, current, serious or consistent. They may answer the first
+question and ignore the second. What they say may be two centuries out of date and
+delivered as though it were this morning.
+
 None of this should be an unlock or a fixed phrase the world checks for. It is the LLM
 reading who this person is, what they know, what they owe, how they find the player, and
 what was just said. The engine holds the facts; the judgement is narration.
