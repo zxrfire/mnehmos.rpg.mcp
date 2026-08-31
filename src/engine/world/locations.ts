@@ -89,6 +89,8 @@
 import type { AmbientQi } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, clampOrdinal, rankName } from '../cultivation/realms.js';
 import { yearOfDay, type PriorAges, type Ruin, type Scar } from './history.js';
+import { DEFAULT_LAYER, type LayerKey } from './layers.js';
+import { QI_DENSITY_DEFAULT, QI_DENSITY_MIN, clampQiDensity, qiFraction } from './qi-scale.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THRESHOLDS
@@ -254,6 +256,24 @@ export function environmentalCompatibility(
 // ─────────────────────────────────────────────────────────────────────────
 // LOCATIONS
 // ─────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE QI SCALE
+//
+// Lives in `qi-scale.ts` because `history.ts` needs it too and the two modules
+// already point at each other. Re-exported here so every existing importer of
+// the location module keeps working unchanged.
+// ─────────────────────────────────────────────────────────────────────────
+
+export {
+    QI_BAND_FLOORS,
+    QI_DENSITY_DEFAULT,
+    QI_DENSITY_MAX,
+    QI_DENSITY_MIN,
+    clampQiDensity,
+    ordinaryBandFor,
+    qiFraction
+} from './qi-scale.js';
 
 export type LocationKind =
     | 'region'
@@ -449,11 +469,25 @@ export interface LocationRecord {
     id: string;
     name: string;
     kind: LocationKind;
+    /**
+     * Which layer of the world this place is on.
+     *
+     * The one point where progression is geographic: the far side of the Lid is
+     * a place, and reaching ordinal 46 moves you there. A place never changes
+     * layer - there is no patch for it and none should be added, because a
+     * mountain that migrated across the Lid is not a thing that can happen.
+     * See `layers.ts`.
+     */
+    layer: LayerKey;
     parentId: string | null;
     description: string;
 
     ambient: AmbientQi;
-    /** What the vein under this place holds, 0..1. Sealed pockets run high. */
+    /**
+     * What the vein under this place holds, 1..100. Sealed pockets run high.
+     * See THE QI SCALE above. This is geology; usability is
+     * `environment.spiritualDensity`, and they are deliberately different.
+     */
     qiDensity: number;
 
     thresholds: LocationThresholds;
@@ -494,10 +528,11 @@ export function makeLocation(
     init: Partial<LocationRecord> & Pick<LocationRecord, 'id' | 'name' | 'kind'>
 ): LocationRecord {
     const base: Omit<LocationRecord, 'origin'> = {
+        layer: DEFAULT_LAYER,
         parentId: null,
         description: '',
         ambient: 'normal',
-        qiDensity: 0.35,
+        qiDensity: QI_DENSITY_DEFAULT,
         thresholds: makeThresholds(),
         hazards: [],
         affinities: [],
@@ -617,7 +652,7 @@ function applyPatch(location: LocationRecord, patch: LocationPatch, onDay: numbe
     if (patch.kind !== undefined) next.kind = patch.kind;
     if (patch.description !== undefined) next.description = patch.description;
     if (patch.ambient !== undefined) next.ambient = patch.ambient;
-    if (patch.qiDensity !== undefined) next.qiDensity = clamp01(patch.qiDensity);
+    if (patch.qiDensity !== undefined) next.qiDensity = clampQiDensity(patch.qiDensity);
     if (patch.thresholds) {
         for (const tier of THRESHOLD_TIERS) {
             const v = patch.thresholds[tier];
@@ -811,6 +846,9 @@ export function stateAsOfDay(location: LocationRecord, day: number): LocationRec
         id: location.id,
         name: origin.name,
         kind: origin.kind,
+        // A place does not move between layers, so the replay carries the
+        // current one rather than reconstructing an origin that never differed.
+        layer: location.layer,
         parentId: location.parentId,
         description: origin.description,
         ambient: origin.ambient,
@@ -1007,6 +1045,101 @@ export function evaluateAccess(location: LocationRecord, query: AccessQuery): Ac
         closed,
         reason: describeAccess(location, level, ordinal, effective, closed)
     };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT THE THRESHOLDS ACTUALLY DO
+//
+// The four bars have been calibrated across every place in the world for a
+// long time and NOTHING READ THEM at the point where somebody was standing
+// somewhere. Measured: an ordinal 0 cultivator was put inside a compound whose
+// bars read entry 15 / survival 19 / operational 23 / mastery 25. They walked
+// in, cultivated for seven months, gained a full rank, and were never touched.
+// The doc comment at the top of this file said "below survival you get in and
+// die" and there was no code path that could make that true.
+//
+// `evaluateAccess` answers "what level are they at". This answers "so what",
+// in the two currencies a span is actually paid in - HP per day and whether
+// progress accrues - so a caller can hand it straight to the time skip. It is
+// pure comparison arithmetic like everything else here; it kills nobody.
+// `survival.ts` remains the only place a run ends.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How much of a body the ground takes per day, per rung below its survival bar.
+ *
+ * Four rungs under and a season is fatal; one rung under and a determined
+ * cultivator can be dragged out. It is deliberately steep, because the whole
+ * point of the ladder of places is that the next one up is a decision with a
+ * price rather than a free upgrade.
+ */
+export const HOSTILE_GROUND_HP_PER_RUNG = 0.035;
+
+/** Ceiling, so nothing is instant. Even the worst ground takes a few days. */
+export const HOSTILE_GROUND_HP_CAP = 0.25;
+
+export interface StandingConsequence {
+    level: AccessLevel;
+    /** False when they are turned away at the door and nothing happens. */
+    admitted: boolean;
+    /** Fraction of max HP the place takes per day. Zero when survivable. */
+    dailyHpFraction: number;
+    /** False between the survival and operational bars: alive, and useless. */
+    canAct: boolean;
+    /** Rungs short of the survival bar. Zero when they are above it. */
+    shortOfSurvival: number;
+    /** Engine-authored, and written to teach the ladder of places. */
+    reason: string;
+    assessment: AccessAssessment;
+}
+
+/**
+ * What standing here does to this person, ready to hand to `simulateTimeSkip`.
+ *
+ * The three failures are different in kind and are reported as such:
+ *
+ *   barred      turned away. Nothing happens, no time passes, and the refusal
+ *               names both bars so the player learns the system exists.
+ *   lethal      admitted, and the ground is taking them apart by the day.
+ *   surviving   admitted, alive, and the ground gives up nothing.
+ */
+export function standingConsequence(
+    location: LocationRecord,
+    query: AccessQuery
+): StandingConsequence {
+    const assessment = evaluateAccess(location, query);
+    const ordinal = clampOrdinal(query.realmOrdinal);
+    const shortOfSurvival = Math.max(0, assessment.effective.survival - ordinal);
+
+    const admitted = assessment.level !== 'barred' && !assessment.closed;
+    const dailyHpFraction = assessment.level === 'lethal' && admitted
+        ? Math.min(HOSTILE_GROUND_HP_CAP, shortOfSurvival * HOSTILE_GROUND_HP_PER_RUNG)
+        : 0;
+    const canAct = admitted && assessment.level !== 'lethal' && assessment.level !== 'surviving';
+
+    return {
+        level: assessment.level,
+        admitted,
+        dailyHpFraction,
+        canAct,
+        shortOfSurvival,
+        reason: assessment.reason,
+        assessment
+    };
+}
+
+/**
+ * The line the time skip stamps on the damage.
+ *
+ * Separate from `reason` because that one is written for somebody deciding
+ * whether to go; this one is written for somebody who went.
+ */
+export function hostilityReasonFor(
+    location: LocationRecord,
+    consequence: StandingConsequence
+): string {
+    return `${location.name} is ${consequence.shortOfSurvival} rung`
+        + `${consequence.shortOfSurvival === 1 ? '' : 's'} above what this body survives, and it takes`;
 }
 
 function describeAccess(
@@ -1378,7 +1511,7 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
         kind: 'sect_seat',
         description: `The seat of a power that no longer exists.`,
         ambient: 'normal',
-        qiDensity: 0.4,
+        qiDensity: 40,
         thresholds: makeThresholds(0, 0, 0, danger),
         originFactId: ruin.originFactId
     });
@@ -1399,7 +1532,7 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
         patch: {
             kind: 'ruin',
             name: ruin.name,
-            ambient: ruin.qiDensity >= 0.8 ? 'dense' : 'normal',
+            ambient: ruin.qiDensity >= 80 ? 'dense' : 'normal',
             qiDensity: ruin.qiDensity,
             thresholds: {
                 entry: Math.max(0, danger - 10),
@@ -1415,7 +1548,7 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
                 // What the pocket holds, versus what anyone can reach. Until
                 // the seal is broken those are different numbers, and that gap
                 // is the whole economy of exploration.
-                spiritualDensity: ruin.opened ? ruin.qiDensity : 0.05,
+                spiritualDensity: ruin.opened ? qiFraction(ruin.qiDensity) : 0.05,
                 danger: 0.8,
                 resources: ['qi', 'manuals', 'formation_nodes'],
                 climate: 'sunless',
@@ -1446,7 +1579,7 @@ export function locationFromScar(scar: Scar): LocationRecord {
         kind: 'wilds',
         description: 'Ordinary ground.',
         ambient: 'normal',
-        qiDensity: 0.4,
+        qiDensity: 40,
         originFactId: scar.originFactId
     });
     base.origin.fromDay = day - 365 * 500;
@@ -1469,7 +1602,7 @@ export function locationFromScar(scar: Scar): LocationRecord {
             name: `the scar at ${scar.location}`,
             description: `Dead ground. Every scar was somebody's entire ambition.`,
             ambient: 'thin',
-            qiDensity: 0,
+            qiDensity: QI_DENSITY_MIN,
             thresholds: { entry: 0, survival: 0, operational: 0, mastery: MAX_ORDINAL },
             addHazards: ['thin_qi'],
             addAffinities: [
@@ -1517,7 +1650,7 @@ export function makeSecretRealm(
         parentId: init.parentId ?? null,
         description: init.description ?? '',
         ambient: 'dense',
-        qiDensity: init.qiDensity ?? 0.8,
+        qiDensity: init.qiDensity ?? 80,
         thresholds: init.thresholds,
         hazards: init.hazards ?? ['sealed_qi'],
         affinities: init.affinities ?? [],

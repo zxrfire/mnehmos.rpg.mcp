@@ -59,6 +59,7 @@
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import { QI_DENSITY_MAX, clampQiDensity } from './qi-scale.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // FACTS
@@ -792,7 +793,12 @@ export interface Ruin {
     sealedYear: number;
     originFactId: string;
     formerFactionId: string | null;
-    /** Qi density inside: a pocket nothing has drawn on since the seal. */
+    /**
+     * Qi density inside, 1..100 on the ground scale: a pocket nothing has
+     * drawn on since the seal. The best ground in the world is in here, and
+     * every bit of it is behind a survival threshold - which is the answer to
+     * why nobody has simply gone and taken it.
+     */
     qiDensity: number;
     /** Realm ordinal the guardians and trials were calibrated for. */
     dangerOrdinal: number;
@@ -876,8 +882,39 @@ const ERA_ADJ = [
     'Wide', 'Last', 'Middle', 'Broken', 'Waking'
 ] as const;
 
-export function personName(rng: CultivationRNG): string {
-    return `${rng.pick(SURNAMES)} ${rng.pick(GIVEN_HEAD)}${rng.pick(GIVEN_TAIL)}`;
+/**
+ * A person's name, unique within `taken` when one is supplied.
+ *
+ * Twenty surnames by twenty heads by twenty tails is eight thousand names, and
+ * a seeded world holds about four hundred people. By the birthday paradox that
+ * is around ten collisions every time, and it was reliably producing six - two
+ * different people, same name, in the same province.
+ *
+ * That is not a cosmetic problem here. The knowledge system is keyed by id but
+ * everything the player reads is keyed by NAME, so a duplicate quietly breaks
+ * the guarantee the whole system rests on: that a name you were told is a name
+ * you have. It surfaced as an intermittent test failure - the narrator would
+ * correctly name somebody the player knew, and a different person standing in
+ * the room happened to share it.
+ *
+ * The re-roll is bounded and the fallback widens the given name to two tails
+ * rather than looping forever: a hundred and sixty thousand names, still in the
+ * same style, and deterministic for the same stream.
+ */
+export function personName(rng: CultivationRNG, taken?: ReadonlySet<string>): string {
+    const base = `${rng.pick(SURNAMES)} ${rng.pick(GIVEN_HEAD)}${rng.pick(GIVEN_TAIL)}`;
+    if (!taken || !taken.has(base)) return base;
+
+    for (let attempt = 0; attempt < 24; attempt++) {
+        const retry = `${rng.pick(SURNAMES)} ${rng.pick(GIVEN_HEAD)}${rng.pick(GIVEN_TAIL)}`;
+        if (!taken.has(retry)) return retry;
+    }
+    for (let attempt = 0; attempt < 24; attempt++) {
+        const wider =
+            `${rng.pick(SURNAMES)} ${rng.pick(GIVEN_HEAD)}${rng.pick(GIVEN_TAIL)}${rng.pick(GIVEN_TAIL)}`;
+        if (!taken.has(wider)) return wider;
+    }
+    return base;
 }
 
 export function surnameOf(fullName: string): string {
@@ -1185,7 +1222,10 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                 sealedYear: fallYear,
                 originFactId: ruinFact.id,
                 formerFactionId: factionId,
-                qiDensity: Number(Math.min(1, qiDensity + 0.2).toFixed(4)),
+                // The era's open air plus what the seal has preserved, put on
+                // the 1..100 ground scale. An old seal over a rich age is the
+                // best ground anywhere below the Lid.
+                qiDensity: clampQiDensity((Math.min(1, qiDensity + 0.2)) * QI_DENSITY_MAX),
                 dangerOrdinal: Math.max(4, 30 - ageIndex * 6 - srng.int(0, 6)),
                 techniqueIds: techIds,
                 treasureIds,

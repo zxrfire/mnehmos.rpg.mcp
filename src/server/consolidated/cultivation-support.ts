@@ -42,6 +42,16 @@ import {
 import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import {
+    hostilityReasonFor,
+    ordinaryBandFor,
+    standingConsequence,
+    type LocationRecord,
+    type StandingConsequence
+} from '../../engine/world/locations.js';
+import type { WorldState } from '../../engine/world/world-state.js';
+import { worldForRun } from '../state/cultivation-world.js';
+import { placeKey } from '../../web/knowledge.js';
+import {
     DEGREE_NAMES,
     insightName,
     type DiscoveryContext,
@@ -52,6 +62,7 @@ import { RunRepository } from '../../storage/repos/run.repo.js';
 import { SectRepository } from '../../storage/repos/sect.repo.js';
 import { TechniqueRepository } from '../../storage/repos/technique.repo.js';
 import {
+    BLEED_OUT_TURNS,
     LETHAL_UNTREATED_INJURIES,
     SATIETY_MAX,
     type Achievement,
@@ -85,7 +96,9 @@ import {
     lifespanForOrdinal,
     isBreakthroughEligible,
     isRealmBoundary,
-    untreatedInjuryCount
+    untreatedInjuryCount,
+    bleedStateOf,
+    turnsUntilBleedOut
 } from '../../engine/cultivation/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -541,6 +554,111 @@ export function aliasForAmbient(
 export const AMBIENT_BLOCK_DAYS = AMBIENT_REFRESH_DAYS;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// THE GROUND THEY ARE STANDING ON
+//
+// `locations.ts` has carried four thresholds - entry, survival, operational,
+// mastery - since it was written, calibrated across every place in the world,
+// and nothing read them at the point where a cultivator was actually standing
+// somewhere. Measured: an ordinal 0 cultivator inside a compound whose survival
+// bar is 19 cultivated for seven months, gained a rank, and was never touched.
+//
+// This is the join. The engine holds no map, so the map layer prices the gap
+// and hands the time skip two numbers and a reason.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface GroundStanding {
+    location: LocationRecord;
+    consequence: StandingConsequence;
+    /** Ready to pass straight into `simulateTimeSkip`. Null when harmless. */
+    hostility: { dailyHpFraction: number; inert: boolean; reason: string } | null;
+}
+
+/**
+ * What the world says about the ground under this cultivator, if it knows the
+ * place at all.
+ *
+ * Null when the world is not running or the location is a road, a hillside or
+ * anywhere else the gazetteer does not name - which is the honest answer and
+ * exactly the behaviour every caller had before this existed.
+ */
+export async function groundStandingFor(
+    run: Run,
+    cultivator: Cultivator
+): Promise<GroundStanding | null> {
+    const needle = placeKey(cultivator.location ?? '');
+    if (needle.length === 0) return null;
+
+    let world: WorldState;
+    try {
+        world = await worldForRun(run);
+    } catch {
+        // A run with no world is a run in a game the world layer is not part
+        // of. Not an error, and not a reason to fail a seclusion.
+        return null;
+    }
+
+    const location = world.locations.find(
+        l => placeKey(l.name) === needle || l.id === (cultivator.location ?? '')
+    );
+    if (!location) return null;
+
+    const consequence = standingConsequence(location, {
+        realmOrdinal: cultivator.realmOrdinal,
+        profile: { specialties: getSpiritRoot(cultivator.spiritRoot).elements.slice() },
+        onDay: Math.floor(run.elapsedDays)
+    });
+
+    const hostile = consequence.dailyHpFraction > 0 || !consequence.canAct;
+    return {
+        location,
+        consequence,
+        hostility: hostile
+            ? {
+                dailyHpFraction: consequence.dailyHpFraction,
+                // Below the operational bar the ground gives up nothing. Alive,
+                // standing in the vault, unable to open anything.
+                inert: !consequence.canAct,
+                reason: hostilityReasonFor(location, consequence)
+            }
+            : null
+    };
+}
+
+/** The whole standing, flattened for a tool result. Facts, never a decision. */
+export function describeGround(standing: GroundStanding): Record<string, unknown> {
+    const { location, consequence } = standing;
+    return {
+        locationId: location.id,
+        name: location.name,
+        kind: location.kind,
+        qiDensity: location.qiDensity,
+        ordinaryBand: ordinaryBandFor(location.qiDensity),
+        usableDensity: round4(location.environment.spiritualDensity),
+        sealed: location.sealed,
+        controllingFactionId: location.controllingFactionId,
+        thresholds: consequence.assessment.base,
+        // What the bars are AFTER what this cultivator is and is carrying. The
+        // affinity system moves survival and operational, so a matching
+        // specialist genuinely stands where a generalist dies - and that is
+        // only worth having if somebody can see it happen.
+        effectiveThresholds: consequence.assessment.effective,
+        thresholdsMovedBy: consequence.assessment.applied.map(m => ({
+            label: m.label,
+            tier: m.tier,
+            ordinals: m.offset,
+            via: m.via
+        })),
+        level: consequence.level,
+        admitted: consequence.admitted,
+        canAct: consequence.canAct,
+        rungsShortOfSurvival: consequence.shortOfSurvival,
+        dailyHpFraction: round4(consequence.dailyHpFraction),
+        environmentMultiplier: round4(consequence.assessment.environmentMultiplier),
+        reason: consequence.reason
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // TIME-SKIP PERSISTENCE
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -548,12 +666,14 @@ export const AMBIENT_BLOCK_DAYS = AMBIENT_REFRESH_DAYS;
  * Absolute end-state the caller must write so that persistence and simulation
  * agree exactly.
  *
- * Two of these fields come from `result.endState` rather than from a delta, and
- * that distinction is load-bearing. `starvationTurns` and `yearsAtCurrentRealm`
- * both RESET mid-skip - the starvation clock clears the moment there is food
- * again, the stagnation clock returns to zero on any rank advance - so a delta
- * against the starting value is not merely imprecise, it is uninvertible. The
- * engine reports where they actually ended and this writes that straight down.
+ * Three of these fields come from `result.endState` rather than from a delta,
+ * and that distinction is load-bearing. `starvationTurns`, `bleedingTurns` and
+ * `yearsAtCurrentRealm` all RESET mid-skip - the starvation clock clears the
+ * moment there is food again, the bleed clock clears the moment the untreated
+ * count drops back under the lethal threshold, the stagnation clock returns to
+ * zero on any rank advance - so a delta against the starting value is not
+ * merely imprecise, it is uninvertible. The engine reports where they actually
+ * ended and this writes that straight down.
  *
  * Everything else is a genuine accumulation and is applied as a delta.
  */
@@ -562,6 +682,7 @@ export interface SkipEndState {
     qi: number;
     satiety: number;
     starvationTurns: number;
+    bleedingTurns: number;
     spiritStones: number;
     cultivationProgress: number;
     age: number;
@@ -582,6 +703,7 @@ export function skipEndState(before: Cultivator, result: TimeSkipResult): SkipEn
         realmOrdinal: before.realmOrdinal + d.realmOrdinal,
         // Absolute, from the engine. Not derived, not inferred.
         starvationTurns: Math.max(0, Math.round(result.endState.starvationTurns)),
+        bleedingTurns: Math.max(0, Math.round(result.endState.bleedingTurns)),
         yearsAtCurrentRealm: Math.max(0, roundYears(result.endState.yearsAtCurrentRealm))
     };
 }
@@ -1252,6 +1374,7 @@ export function describeCultivator(
     const required = progressRequiredForOrdinal(cultivator.realmOrdinal);
     const root = getSpiritRoot(cultivator.spiritRoot);
     const untreated = untreatedInjuryCount(cultivator.injuries);
+    const bleedOutTurns = turnsUntilBleedOut(bleedStateOf(cultivator));
     const day = run ? Math.floor(run.elapsedDays) : 0;
     const ambient = run
         ? currentAmbient(repos.db, run, cultivator.location, day)
@@ -1292,8 +1415,10 @@ export function describeCultivator(
         progress: {
             current: round2(cultivator.cultivationProgress),
             required,
-            remaining: round2(progressRemaining(cultivator)),
-            fraction: required > 0 ? round4(cultivator.cultivationProgress / required) : 1,
+            remaining: required === null ? null : round2(progressRemaining(cultivator)),
+            fraction: required !== null && required > 0
+                ? round4(cultivator.cultivationProgress / required)
+                : 1,
             breakthroughEligible: isBreakthroughEligible(cultivator)
         },
         vitals: {
@@ -1303,6 +1428,7 @@ export function describeCultivator(
             maxQi: cultivator.maxQi,
             satiety: cultivator.satiety,
             starvationTurns: cultivator.starvationTurns,
+            bleedingTurns: cultivator.bleedingTurns,
             onGrainAbstinence: isOnGrainAbstinence(repos.db, cultivator.id, day)
         },
         mortality: {
@@ -1313,7 +1439,14 @@ export function describeCultivator(
             yearsAtCurrentRealm: round2(cultivator.yearsAtCurrentRealm),
             untreatedInjuries: untreated,
             lethalInjuryThreshold: LETHAL_UNTREATED_INJURIES,
-            atLethalInjuryThreshold: untreated >= LETHAL_UNTREATED_INJURIES
+            atLethalInjuryThreshold: untreated >= LETHAL_UNTREATED_INJURIES,
+            // Turns left before the meridians give out on their own. Null
+            // rather than Infinity when not bleeding: this crosses a JSON
+            // boundary, and JSON.stringify(Infinity) is the literal `null`
+            // anyway - saying so explicitly beats shipping a value whose type
+            // changes on the wire.
+            turnsUntilBleedOut: Number.isFinite(bleedOutTurns) ? bleedOutTurns : null,
+            bleedOutThreshold: BLEED_OUT_TURNS
         },
         injuries: cultivator.injuries.map(summariseInjury),
         standing: {

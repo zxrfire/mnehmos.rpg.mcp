@@ -21,6 +21,7 @@ import {
     nextClosingDay,
     nextOpeningDay,
     openingsBetween,
+    QI_DENSITY_MIN,
     stateAsOfDay,
     transformOnDestruction,
     travelOptions,
@@ -374,6 +375,8 @@ describe('locations: built from the seeded past', () => {
         const scar = locations.find(l => l.kind === 'scar');
         expect(scar).toBeDefined();
         expect(scar!.ambient).toBe('thin');
-        expect(scar!.qiDensity).toBe(0);
+        // Dead ground is the floor of the 1..100 scale, not zero: zero would
+        // mean nobody measured it.
+        expect(scar!.qiDensity).toBe(QI_DENSITY_MIN);
     });
 });

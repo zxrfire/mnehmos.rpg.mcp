@@ -30,6 +30,7 @@ import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/a
 import { RichFormatter } from '../utils/formatter.js';
 import {
     AmbientQiSchema,
+    ApproachSchema,
     MAX_RANKS_PER_TURN,
     type Cultivator,
     type Element
@@ -78,14 +79,18 @@ import {
     handleUnderstanding
 } from './cultivation-perception.js';
 import {
+    ForageSchema,
     MarketSchema,
     WorkSchema,
+    handleForage,
     handleMarket,
     handleWork
 } from './cultivation-mortal.js';
 import {
     DEFAULT_LOCATION,
     FLAG_PENDING_PILL,
+    describeGround,
+    groundStandingFor,
     clearFlag,
     currentAmbient,
     describeCultivator,
@@ -129,7 +134,9 @@ const ACTIONS = [
     'assess', 'understanding',
     // The low-realm loop. Most cultivators are poor and most of a life is spent
     // paying for the next month of it.
-    'work', 'market'
+    'work', 'market',
+    // The ground, priced by who is standing on it.
+    'forage'
 ] as const;
 type CultivationAction = typeof ACTIONS[number];
 
@@ -578,6 +585,23 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         practisingTechniqueId: args.techniqueId ?? null
     });
 
+    // What the ground itself does to somebody who has no business on it. The
+    // four thresholds have been calibrated across every place in the world for
+    // a long time and until now nothing read them while a cultivator was
+    // standing there; this is the join, and it is what makes "better ground is
+    // a risk you choose" true rather than a comment.
+    const ground = await groundStandingFor(run, cultivator);
+
+    // Barred is a refusal, not a slow death: turned away at the door, no time
+    // passed, and the reason names both bars so the player learns that the
+    // ladder of places exists.
+    if (ground && !ground.consequence.admitted) {
+        return guidingError('turned_away_at_the_door', ground.consequence.reason, {
+            ...describeGround(ground),
+            hint: 'Somewhere lower first. Every place in the world has these four bars, and they are what a rank is FOR.'
+        });
+    }
+
     // ── THE SIMULATION. One call, however long the duration. ──
     const result = simulateTimeSkip(cultivator, days, {
         seed: run.seed,
@@ -586,6 +610,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         startDay,
         options,
         techniqueElement,
+        hostility: ground?.hostility ?? undefined,
         // The Price of Advancement is charged at every realm boundary crossed
         // during the skip, and what is cut away is chosen from what this run
         // has actually accumulated. Handing it real rows is what makes "you can
@@ -657,6 +682,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             qi: end.qi - mid.qi,
             satiety: end.satiety - mid.satiety,
             starvationTurns: end.starvationTurns - mid.starvationTurns,
+            bleedingTurns: end.bleedingTurns - mid.bleedingTurns,
             spiritStones: end.spiritStones - mid.spiritStones,
             cultivationProgress: end.cultivationProgress - mid.cultivationProgress,
             age: end.age - mid.age,
@@ -812,6 +838,10 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             data: e.data
         })),
         cultivator: describeCultivator(repos, after, runAfter),
+        // What the ground is, and what it did. Null when the world layer does
+        // not name this place - a road, a hillside - which is the honest answer
+        // rather than a fabricated set of bars.
+        ground: ground ? describeGround(ground) : null,
         run: {
             id: runAfter.id,
             status: runAfter.status,
@@ -847,9 +877,12 @@ export async function handleBreakthrough(
                 rank: rankName(cultivator.realmOrdinal),
                 progressAvailable: round2(eligibility.progressAvailable),
                 progressRequired: eligibility.progressRequired,
-                progressRemaining: round2(
-                    Math.max(0, eligibility.progressRequired - eligibility.progressAvailable)
-                ),
+                progressRemaining:
+                    eligibility.progressRequired === null
+                        ? null
+                        : round2(
+                              Math.max(0, eligibility.progressRequired - eligibility.progressAvailable)
+                          ),
                 maxRanksPerTurn: MAX_RANKS_PER_TURN,
                 hint:
                     eligibility.reason === 'insufficient_progress'
@@ -1022,16 +1055,24 @@ export async function handleBreakthrough(
 function eligibilityMessage(
     reason: string | null,
     cultivator: Cultivator,
-    eligibility: { progressAvailable: number; progressRequired: number }
+    eligibility: { progressAvailable: number; progressRequired: number | null }
 ): string {
     switch (reason) {
         case 'insufficient_progress':
+            // No figure above the Lid: the requirement is not in these units and
+            // there is no honest number to put in the sentence.
+            if (eligibility.progressRequired === null) {
+                return (
+                    `${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}. What is above ` +
+                    'that is not measured in qi, and no quantity of it is the missing piece.'
+                );
+            }
             return (
                 `${cultivator.name} holds ${eligibility.progressAvailable.toFixed(1)} of the ` +
                 `${eligibility.progressRequired} qi-units ${rankName(cultivator.realmOrdinal)} requires.`
             );
         case 'at_ladder_summit':
-            return `${cultivator.name} stands at ${rankName(MAX_ORDINAL)}. There is nothing above it but the Lid.`;
+            return `${cultivator.name} stands at ${rankName(MAX_ORDINAL)}. There is nothing above it at all.`;
         case 'rank_cap_reached_this_turn':
             return `Only ${MAX_RANKS_PER_TURN} rank may be gained per turn. Bottlenecks are meant to be lived through.`;
         case 'dead':
@@ -1199,6 +1240,16 @@ const definitions: Record<CultivationAction, ActionDefinition> = {
         handler: handleMarket,
         aliases: ['prices', 'shop', 'cost', 'settlement'],
         description: 'Local prices, what this settlement has, and how mortals here treat this cultivator'
+    },
+    forage: {
+        schema: ForageSchema,
+        handler: (args: unknown) =>
+            handleForage(args as z.infer<typeof ForageSchema>, runCultivate),
+        aliases: ['gather', 'herbs', 'pick', 'search_ground'],
+        description:
+            'Search the ground for spirit herbs. What comes back, how much of it, and how long it '
+            + 'takes are one measurement off the asker\'s rung - and ground they have outgrown stops '
+            + 'being searched at all.'
     }
 };
 
@@ -1250,8 +1301,27 @@ access a road is not harder, it is ABSENT. Never tell a player a Dao would suit 
 
 THE LOW REALMS: work takes a job for a span (wages for days actually worked; cultivation runs at
 zero for the whole of it), market shows local prices, what this settlement has and lacks, and how
-mortals here actually treat someone at this rank. Thirty stones is the starting purse and a decent
-cave is sixty a month. Most of a cultivating life is spent paying for the next month of it.
+mortals here actually treat someone at this rank, forage searches the ground for herbs. Thirty
+stones is the starting purse and a decent cave is sixty a month. Most of a cultivating life is
+spent paying for the next month of it.
+
+THE WORLD ANSWERS BY HEIGHT. Every one of those returns a regard block: the measured gap between
+the asker's rung and the rung the thing is pitched at, the band that gap falls in, and the
+multipliers that follow from it - how much comes back, how long it takes, what it costs, what a
+fight there does. The two refusals are both real answers and both come with reasons. unreachable
+means it is over their head and is not put in front of them. dismissed means it is beneath them
+and everyone present can see what they are. work with no occupationId also returns withheld:
+what is going here that is NOT being put to this person, and why. Narrate the reason. An empty list
+is never the whole story.
+
+APPROACH - WHAT YOU KNOW AND THE ENGINE CANNOT. Every action above accepts an optional approach:
+{ intent, tone, leverage, audience, concealed, presentedAs, patience, witnessOrdinal, note }. Put
+in it what the player is attempting, how they are putting it, what is actually behind the ask, who
+is watching, and what rung they are letting the room believe. The engine reduces all of it to two
+bounded numbers - an apparent rung, and a pressure of at most two rungs either way - and decides
+everything else. Concealment is the interesting one: the room meets the apparent rung, the ground
+meets the real one, so a disguised elder is offered a porter's job and does it in a tenth of the
+time. You supply context. You never supply an outcome, and the engine will not read one.
 
 PERMADEATH: when this tool reports a death, the run is closed in the same transaction. There is
 no revive, reload or rollback anywhere in this engine.
@@ -1287,7 +1357,9 @@ Aliases: create/new/roll->create_cultivator, seclusion/meditate/skip->cultivate,
         alertness: z.number().optional(),
         preparation: z.number().int().optional(),
         occupationId: z.string().optional(),
-        category: z.string().optional()
+        category: z.string().optional(),
+        biome: z.string().optional(),
+        approach: ApproachSchema.optional()
     })
 };
 
@@ -1370,12 +1442,17 @@ function decorate(response: McpResponse): McpResponse {
                 ['#', 'Rank', 'Lifespan', 'Progress', 'Base odds'],
                 data.ranks.map((r: {
                     ordinal: number; name: string; lifespanYears: number;
-                    progressRequired: number; baseBreakthroughChance: number; isBoundary: boolean;
+                    progressRequired: number | null; baseBreakthroughChance: number; isBoundary: boolean;
                 }) => [
                     String(r.ordinal),
                     r.isBoundary ? `${r.name} *` : r.name,
                     String(r.lifespanYears),
-                    String(r.progressRequired),
+                    // Null on the two rungs above the Lid, and it is a statement
+                    // rather than a missing value: immortal qi is not this
+                    // currency. `String(null)` printed the word "null" in the
+                    // player-facing table, which is a database artifact standing
+                    // where the engine had something to say.
+                    r.progressRequired === null ? 'not in this currency' : String(r.progressRequired),
                     r.baseBreakthroughChance.toFixed(3)
                 ])
             );

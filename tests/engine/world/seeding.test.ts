@@ -6,7 +6,11 @@ import { getSpiritRoot } from '../../../src/engine/cultivation/spirit-roots.js';
 import { isOriginTierKey } from '../../../src/engine/cultivation/origin.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { queryFacts } from '../../../src/engine/world/history.js';
-import { locationHistory } from '../../../src/engine/world/locations.js';
+import {
+    QI_DENSITY_DEFAULT,
+    QI_DENSITY_MAX,
+    locationHistory
+} from '../../../src/engine/world/locations.js';
 import { nextWindow } from '../../../src/engine/world/opportunities.js';
 
 const YEAR = 365;
@@ -23,6 +27,23 @@ describe('seeding: a world that is already running', () => {
         expect(JSON.stringify(seeded('seed-b').state)).not.toBe(JSON.stringify(a.state));
     });
 
+    it('gives every person in the world their own name', () => {
+        // Not cosmetic. Knowledge is keyed by id and everything the player ever
+        // READS is keyed by name, so two people called the same thing silently
+        // breaks the guarantee the whole knowledge system rests on - a name you
+        // were told is a name you have - because the wrong one standing in the
+        // room satisfies it. The name space is 20 x 20 x 20, so at a few hundred
+        // people the birthday paradox produced collisions on every seed.
+        for (const seed of ['seed-a', 'seed-b', 'seed-c']) {
+            const { state } = seeded(seed, 400);
+            const names = state.npcs.map(n => n.name);
+            const seen = new Set<string>();
+            const duplicates = names.filter(n => (seen.has(n) ? true : (seen.add(n), false)));
+            expect(duplicates, `${seed} produced duplicate names`).toEqual([]);
+            expect(seen.size).toBe(names.length);
+        }
+    });
+
     it('produces hundreds of NPCs, not tens of thousands', () => {
         const { state, stats } = seeded('seed-a', 300);
         expect(stats.npcs).toBeGreaterThan(250);
@@ -35,7 +56,15 @@ describe('seeding: a world that is already running', () => {
         expect(state.factions).toHaveLength(fixtureCatalog().factions.length);
 
         const azure = state.factions.find(f => f.id === 'sect-azure-cloud')!;
-        expect(azure.seatLocationId).toBe('loc-region-low-fall');
+        // A sect's seat is its OWN ground now, not the province it sits in.
+        // Being on the roll and being on the ground were two different things
+        // and only one of them existed; this is the other one.
+        expect(azure.seatLocationId).toBe('loc-sect-azure-cloud-ground');
+        const ground = state.locations.find(l => l.id === azure.seatLocationId)!;
+        expect(ground.kind).toBe('sect_seat');
+        expect(ground.controllingFactionId).toBe('sect-azure-cloud');
+        // A name you have to be given.
+        expect(ground.discovered).toBe(false);
         expect(azure.resources.spirit_stones).toBeGreaterThan(0);
         expect(azure.standing['sect-crimson-abyss']).toBeLessThan(0);
         // Federated: it answers to somebody, and the catalog says who.
@@ -261,6 +290,9 @@ describe('catalog adapter', () => {
         expect(dominantAmbient({ thin: 70, normal: 30 })).toBe('thin');
         expect(dominantAmbient({ thin: 10, dense: 60, normal: 30 })).toBe('dense');
         expect(densityFromProfile({ thin: 100 })).toBeLessThan(densityFromProfile({ dense: 100 }));
-        expect(densityFromProfile({})).toBeCloseTo(0.35, 5);
+        // The 1..100 ground scale. An empty profile is the Late Age's ordinary
+        // open air, which is where Sweptground sits.
+        expect(densityFromProfile({})).toBe(QI_DENSITY_DEFAULT);
+        expect(densityFromProfile({ dense: 100 })).toBeLessThanOrEqual(QI_DENSITY_MAX);
     });
 });

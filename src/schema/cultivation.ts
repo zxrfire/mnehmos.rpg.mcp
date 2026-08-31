@@ -28,6 +28,39 @@ export const STARVATION_TURNS = 5;
 /** Untreated meridian injuries at which forcing another fight becomes fatal. */
 export const LETHAL_UNTREATED_INJURIES = 3;
 /**
+ * Consecutive turns at or above LETHAL_UNTREATED_INJURIES before the meridians
+ * give out on their own. Ninety - a season.
+ *
+ * Sitting at the lethal threshold had exactly one exit, and it was a fight
+ * nobody in that state starts. Untreated injuries raise deviation risk, a
+ * deviation adds another wound, and the run became a loop that could not be
+ * won, lost or left. Bleeding out is the missing exit: standing still with
+ * your meridians open is a way to die.
+ *
+ * Ninety rather than a rounder number, for three reasons that are all about
+ * what the window has to contain:
+ *
+ *   - It is longer than a full belly (SATIETY_MAX / SATIETY_COST_PER_ACTION =
+ *     50 days), so a cultivator ejected from seclusion at the threshold can
+ *     cross to a settlement and eat on the way. Reaching a healer has to be a
+ *     real plan, not a coin flip, or this is just a slower version of the trap.
+ *   - It is exactly one encounter check (ENCOUNTER_CHECK_DAYS in time-skip.ts),
+ *     so the world gets precisely one chance to arrive while they are dying -
+ *     with help or without it.
+ *   - It is far shorter than anything cultivation is denominated in. A rank
+ *     costs years; three months does not buy one. So there is no seclusion
+ *     worth entering that a cultivator at the threshold survives, and
+ *     "treat it and then cultivate" is the only order that works.
+ *
+ * Deliberately NOT gated on realm. Hunger tapers to nothing by Deity
+ * Transformation because less and less of what sustains that body is food.
+ * Nothing on the ladder makes an open meridian less load-bearing - the higher
+ * the realm, the more qi is moving through the channel that is torn - so the
+ * same ninety days applies to a mortal at ordinal 0 and to anyone at 40. The
+ * only gate is having a body at all.
+ */
+export const BLEED_OUT_TURNS = 90;
+/**
  * Floor on the years a cultivator may plateau before settling kills them.
  *
  * The mortal-scale figure, and the only one that applies through Qi
@@ -113,6 +146,7 @@ export type Element = z.infer<typeof ElementSchema>;
 export const SpiritRootKeySchema = z.enum([
     'single_metal', 'single_wood', 'single_water', 'single_fire', 'single_earth',
     'dual_water_fire', 'dual_metal_wood',
+    'triple_metal_wood_earth', 'quad_metal_wood_earth_water',
     'muddled_five_element',
     'mutated_lightning', 'mutated_ice'
 ]);
@@ -460,7 +494,7 @@ export type SoulState = z.infer<typeof SoulStateSchema>;
 export const ImmortalStatusSchema = z.enum([
     'none',            // has not attempted the last crossing
     'false_immortal',  // survived it, did not complete it, permanently barred
-    'true_immortal'    // went through; ordinal 45
+    'true_immortal'    // went through; ordinal 46
 ]);
 export type ImmortalStatus = z.infer<typeof ImmortalStatusSchema>;
 
@@ -557,6 +591,16 @@ export const CultivatorSchema = z.object({
     satiety: z.number().int().min(0).max(SATIETY_MAX).default(SATIETY_MAX),
     /** Consecutive turns spent at zero satiety. Five is fatal. */
     starvationTurns: z.number().int().min(0).default(0),
+    /**
+     * Consecutive turns spent at or above LETHAL_UNTREATED_INJURIES untreated
+     * meridian injuries. Ninety is fatal.
+     *
+     * The sibling of `starvationTurns`, and persisted for the same reason: it
+     * is a clock the body is running, not a derived quantity. Clearing it is
+     * the business of treatment - it resets the moment the untreated count
+     * drops below the threshold, and never otherwise.
+     */
+    bleedingTurns: z.number().int().min(0).default(0),
 
     // Time and mortality.
     age: z.number().min(0).default(16).describe('Age in years'),
@@ -631,6 +675,340 @@ export const CultivatorSchema = z.object({
 export type Cultivator = z.infer<typeof CultivatorSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────
+// REGARD
+// How the world answers somebody, as a function of how far above or below
+// the ask they are standing.
+//
+// THE DEFECT THIS EXISTS TO FIX
+// -----------------------------
+// Every content catalog already carries exactly one number saying what rung
+// it is pitched at - `harvestOrdinal` on a herb, `minOrdinal` on a job or an
+// encounter, `requiredOrdinal` on a manual, `ordinal` on a beast. Every one
+// of them was being used as a floor and nothing else, so a False Immortal
+// asking the ground for herbs got the same seven days and the same single
+// stalk of qi grass a beginner got. The only thing that moved across
+// forty-five rungs was WHICH row came back.
+//
+// The fix is one generic quantity, read by every ordinary resolver:
+//
+//     gap = asker's ordinal - the rung the thing is pitched at
+//
+// and one table, below, that says what a given gap buys. Yields, durations,
+// prices and damage all come off the same seven rows. There is no per-catalog
+// rule anywhere and there must never be one: a catalog that wants a different
+// answer says so by moving its gate or by setting `span` on its own record,
+// never by growing a branch.
+//
+// BOTH DIRECTIONS, AND SILENCE IS NOT AN ANSWER
+// ---------------------------------------------
+// The table refuses at both ends and says why at both ends. Below
+// `unreachable` the ask is over the asker's head and is not put in front of
+// them. Above `dismissed` the ask is beneath them and is not put to them
+// either - not out of reverence, but because everyone present can see what
+// they are and nobody opens that conversation. Both refusals carry a reason.
+// An empty list with no reason attached is the bug this replaces.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The seven answers the world has. Ordered from "far above them" to "far
+ * below them"; the windows are disjoint and cover the whole integer line.
+ */
+export const RegardBandSchema = z.enum([
+    'unreachable',  // so far above them it is not shown, and asking does not produce it
+    'overmatched',  // above them; reachable, and the margin is against them
+    'stretch',      // just above them; can be had, at a price in time and risk
+    'matched',      // pitched at where they stand
+    'assured',      // below them; quicker, cheaper, more of it
+    'beneath',      // far below them; not treated as an ask, simply done
+    'dismissed'     // so far below them it is not put to them at all
+]);
+export type RegardBand = z.infer<typeof RegardBandSchema>;
+
+/**
+ * One row of the answer table.
+ *
+ * `minGap`/`maxGap` are inclusive and are expressed in rungs of the ladder.
+ * The multipliers are what the ordinary resolvers multiply their own base
+ * figure by - there is no second arithmetic anywhere.
+ */
+export interface RegardBandRow {
+    readonly band: RegardBand;
+    readonly minGap: number;
+    readonly maxGap: number;
+    /** Whether the world puts this forward unprompted. */
+    readonly offered: boolean;
+    /** Whether the world declines to transact even when asked directly. */
+    readonly refused: boolean;
+    /** How much comes back, against a base of one. */
+    readonly yieldMultiplier: number;
+    /** How long it takes, against the base duration. */
+    readonly durationMultiplier: number;
+    /** What it costs to buy, against the list price. */
+    readonly priceMultiplier: number;
+    /** What a fight or a hazard here costs, against the base damage. */
+    readonly damageMultiplier: number;
+    /**
+     * Engine-authored factual line with a `{gap}` slot. Facts only: it states
+     * the measured distance and what follows from it. The narrator phrases it;
+     * it never invents it.
+     */
+    readonly reaction: string;
+}
+
+/**
+ * THE TABLE. Seven rows, and every catalog in the game reads these and only
+ * these. Widening a window here changes the whole world at once, which is the
+ * point.
+ */
+export const REGARD_BANDS: readonly RegardBandRow[] = [
+    {
+        band: 'unreachable',
+        minGap: -Infinity,
+        maxGap: -9,
+        offered: false,
+        refused: true,
+        yieldMultiplier: 0,
+        durationMultiplier: 3,
+        priceMultiplier: 3,
+        damageMultiplier: 6,
+        reaction:
+            'Pitched {gap} rungs from where they stand, which is far enough above that it is not '
+            + 'put in front of them. Asking does not produce it, and being told so is the whole answer.'
+    },
+    {
+        band: 'overmatched',
+        minGap: -8,
+        maxGap: -4,
+        offered: false,
+        refused: false,
+        yieldMultiplier: 0.5,
+        durationMultiplier: 2,
+        priceMultiplier: 2,
+        damageMultiplier: 3,
+        reaction:
+            'Pitched {gap} rungs from where they stand. It is within reach of a hand and the margin '
+            + 'is against them; nobody offers it, and nobody stops them either.'
+    },
+    {
+        band: 'stretch',
+        minGap: -3,
+        maxGap: -1,
+        offered: true,
+        refused: false,
+        yieldMultiplier: 1,
+        durationMultiplier: 1.4,
+        priceMultiplier: 1.35,
+        damageMultiplier: 1.6,
+        reaction:
+            'Pitched {gap} rungs from where they stand: just above. It can be had, and it costs more '
+            + 'time and more risk than it would cost the person it was meant for.'
+    },
+    {
+        band: 'matched',
+        minGap: 0,
+        maxGap: 3,
+        offered: true,
+        refused: false,
+        yieldMultiplier: 1,
+        durationMultiplier: 1,
+        priceMultiplier: 1,
+        damageMultiplier: 1,
+        reaction:
+            'Pitched {gap} rungs from where they stand, which is to say at them. Ordinary terms, '
+            + 'ordinary price, ordinary risk.'
+    },
+    {
+        band: 'assured',
+        minGap: 4,
+        maxGap: 9,
+        offered: true,
+        refused: false,
+        yieldMultiplier: 3,
+        durationMultiplier: 0.55,
+        priceMultiplier: 0.8,
+        damageMultiplier: 0.45,
+        reaction:
+            'Pitched {gap} rungs below where they stand. It goes quickly, it goes well, and the '
+            + 'people involved adjust their terms without being asked to.'
+    },
+    {
+        band: 'beneath',
+        minGap: 10,
+        maxGap: 16,
+        offered: true,
+        refused: false,
+        yieldMultiplier: 7,
+        durationMultiplier: 0.25,
+        priceMultiplier: 0.55,
+        damageMultiplier: 0.12,
+        reaction:
+            'Pitched {gap} rungs below where they stand. Nobody present treats this as a thing being '
+            + 'attempted. It is simply done, and the room rearranges itself around that.'
+    },
+    {
+        band: 'dismissed',
+        minGap: 17,
+        maxGap: Infinity,
+        offered: false,
+        refused: true,
+        yieldMultiplier: 14,
+        durationMultiplier: 0.1,
+        priceMultiplier: 0.3,
+        damageMultiplier: 0,
+        reaction:
+            'Pitched {gap} rungs below where they stand. Nothing here is worth their time and '
+            + 'everyone can see what they are, so it is not put to them at all. If they take it '
+            + 'anyway it costs them nothing, and that is its own kind of answer.'
+    }
+] as const;
+
+/**
+ * The optional generic column every content record may carry.
+ *
+ * Absent on almost everything, which is correct: the default answer is the
+ * table above read against the record's own existing gate. A record sets this
+ * only when its gate is not one of the ordinary columns, or when it outlives
+ * its band (`span`), or when the generic reaction line is factually wrong for
+ * it.
+ */
+export const RegardProfileSchema = z.object({
+    /**
+     * The rung this record is pitched at. Omit to use the record's own gate
+     * column - `harvestOrdinal`, `minOrdinal`, `requiredOrdinal`, `ordinal`.
+     */
+    gate: z.number().int().min(0).max(MAX_ORDINAL).optional(),
+    /**
+     * How slowly the world stops caring, against an ordinary 1. A record at
+     * `span: 4` is still being taken seriously four times as far up the ladder,
+     * which is how "nothing is ever fully outgrown" is said in data rather than
+     * in a branch. Below 1 it goes stale faster than usual.
+     */
+    span: z.number().min(0.25).max(8).optional(),
+    /** Never put forward, whatever the gap says. A thing you must ask for. */
+    neverOffered: z.boolean().optional(),
+    /** Always put forward, at any gap. Use sparingly; it defeats the point. */
+    alwaysOffered: z.boolean().optional(),
+    /**
+     * Replaces the band's generic reaction line for this record. Facts only,
+     * never narration, and it may carry the same `{gap}` slot.
+     */
+    reaction: z.string().optional()
+});
+export type RegardProfile = z.infer<typeof RegardProfileSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────
+// APPROACH - the half of the situation the engine cannot infer from a row
+//
+// The narrator knows things no stored state contains: what the player is
+// actually attempting, in what tone, with what leverage, in front of whom,
+// and what rung they are letting the room believe they are. All of it is
+// optional and all of it is context. NONE of it is an outcome. The engine
+// turns an approach into two bounded numbers - an apparent ordinal and a
+// pressure in [-2, +2] - and decides everything else itself.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const ApproachToneSchema = z.enum([
+    'deferential',  // asking as a lesser. Costs standing, buys patience
+    'plain',        // no posture at all. The default
+    'firm',         // stating rather than asking
+    'imperious',    // as an order. Reads as absurd from below and as normal from above
+    'pleading',     // asking as a supplicant
+    'threatening'   // with the consequence of refusal made explicit
+]);
+export type ApproachTone = z.infer<typeof ApproachToneSchema>;
+
+export const ApproachLeverageSchema = z.enum([
+    'none',
+    'coin',    // money on the table
+    'favour',  // something done for them previously
+    'debt',    // something they owe and cannot deny
+    'name',    // the asker's own reputation
+    'sect',    // an affiliation standing behind the ask
+    'force',   // the credible ability to take it
+    'secret'   // something the other party would pay not to have said aloud
+]);
+export type ApproachLeverage = z.infer<typeof ApproachLeverageSchema>;
+
+export const ApproachAudienceSchema = z.enum([
+    'alone',       // nobody watching. Concealment holds
+    'few',         // a handful, none of them qualified to look closely
+    'crowd',       // a market, a road, a hall
+    'peers',       // people at the asker's own rung, who can read one another
+    'superiors',   // somebody above them is present
+    'enemies'      // people with a reason to look hard
+]);
+export type ApproachAudience = z.infer<typeof ApproachAudienceSchema>;
+
+export const ApproachPatienceSchema = z.enum(['hurried', 'normal', 'unhurried']);
+export type ApproachPatience = z.infer<typeof ApproachPatienceSchema>;
+
+/**
+ * What the narrator hands the engine about the attempt itself.
+ *
+ * Every field is optional and defaulted, so a caller that knows none of this
+ * gets exactly the behaviour it got before the field existed.
+ */
+export const ApproachSchema = z.object({
+    intent: z.string().max(400).optional()
+        .describe('What the player said they are attempting, in their own words. Recorded and echoed back; never parsed for an outcome.'),
+    tone: ApproachToneSchema.optional()
+        .describe('How it is being put. deferential | plain | firm | imperious | pleading | threatening. Defaults to plain.'),
+    leverage: ApproachLeverageSchema.optional()
+        .describe('What is actually behind the ask. none | coin | favour | debt | name | sect | force | secret. Defaults to none. Leverage the asker does not have is a lie the room will price.'),
+    audience: ApproachAudienceSchema.optional()
+        .describe('Who is watching. alone | few | crowd | peers | superiors | enemies. Decides whether a concealed rung holds.'),
+    concealed: z.boolean().optional()
+        .describe('True when the asker is deliberately not showing what they are. Pair with presentedAs.'),
+    presentedAs: z.number().int().min(0).max(MAX_ORDINAL).optional()
+        .describe('The rung they are letting the room believe. Only read when concealed is true, and only while the audience cannot see through it.'),
+    patience: ApproachPatienceSchema.optional()
+        .describe('hurried | normal | unhurried. Scales how long the attempt takes and how much comes out of it. Defaults to normal.'),
+    witnessOrdinal: z.number().int().min(0).max(MAX_ORDINAL).optional()
+        .describe('The highest rung present and paying attention, if the narrator knows it. A witness at or above the real rung sees through any concealment.'),
+    note: z.string().max(400).optional()
+        .describe('Anything else about the situation the engine has no column for. Carried through to the result; never acted on.')
+});
+export type Approach = z.infer<typeof ApproachSchema>;
+
+/** Pressure contributed by tone. Summed with leverage, then clamped. */
+export const APPROACH_TONE_PRESSURE: Record<ApproachTone, number> = {
+    deferential: -1,
+    plain: 0,
+    firm: 1,
+    imperious: 1,
+    pleading: -1,
+    threatening: 2
+} as const;
+
+/** Pressure contributed by what is actually behind the ask. */
+export const APPROACH_LEVERAGE_PRESSURE: Record<ApproachLeverage, number> = {
+    none: 0,
+    coin: 1,
+    favour: 1,
+    debt: 1,
+    name: 1,
+    sect: 2,
+    force: 2,
+    secret: 2
+} as const;
+
+/**
+ * The whole of what an approach can move, in rungs. Two. An approach changes
+ * how somebody is met; it never changes what they are.
+ */
+export const APPROACH_PRESSURE_LIMIT = 2;
+
+/** How long it takes and how much comes out, by how much time they gave it. */
+export const APPROACH_PATIENCE_EFFECT: Record<ApproachPatience, { duration: number; yield: number }> = {
+    hurried: { duration: 0.5, yield: 0.5 },
+    normal: { duration: 1, yield: 1 },
+    unhurried: { duration: 1.75, yield: 1.4 }
+} as const;
+
+/** Audiences that can see through a concealed rung on their own. */
+export const APPROACH_PIERCING_AUDIENCES: readonly ApproachAudience[] = ['peers', 'superiors', 'enemies'] as const;
+
+// ─────────────────────────────────────────────────────────────────────────
 // TECHNIQUES (ARTS)
 // The cultivation replacement for spells. Tiered against the realm ladder.
 // ─────────────────────────────────────────────────────────────────────────
@@ -649,6 +1027,31 @@ export type TechniqueCategory = z.infer<typeof TechniqueCategorySchema>;
 export const TechniqueGradeSchema = z.enum(['mortal', 'earth', 'heaven', 'immortal', 'chaos']);
 export type TechniqueGrade = z.infer<typeof TechniqueGradeSchema>;
 
+/**
+ * How many people one use of an art lands on.
+ *
+ * A property of the ART and never of the person holding it: the same word means
+ * the same thing for a bandit with a wide swing and for somebody at the top of
+ * the ladder. What makes one of them devastating is not this field, it is the
+ * ordinary power arithmetic applied once per person the art reached.
+ *
+ * The catalog already describes the distinction in prose - a finger that severs
+ * one name against a decree that drops a mountain on an inhabited place - so
+ * this only writes down what those descriptions have always said.
+ *
+ * Optional, and absent means `single`. Every art written before this existed is
+ * a single-target art, which is what it always was.
+ */
+export const TechniqueReachSchema = z.enum([
+    /** One person. The overwhelming majority of arts, and the default. */
+    'single',
+    /** The one you meant and the people either side of them. A wide swing, a lash, a spray. */
+    'several',
+    /** It lands on a PLACE rather than a person, and everyone in it is in it. */
+    'field'
+]);
+export type TechniqueReach = z.infer<typeof TechniqueReachSchema>;
+
 export const TechniqueSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -666,7 +1069,18 @@ export const TechniqueSchema = z.object({
     mastery: z.number().min(0).max(1).default(0),
     description: z.string().default(''),
     /** Turns before the art may be used again. */
-    cooldown: z.number().int().min(0).default(0)
+    cooldown: z.number().int().min(0).default(0),
+    /**
+     * How many people one use lands on. Absent means `single`, so every art in
+     * the catalog keeps exactly the behaviour it had before this field existed.
+     */
+    reach: TechniqueReachSchema.optional(),
+    /**
+     * The generic column. Absent means the ordinary bands read `requiredOrdinal`,
+     * which is what an art is pitched at. A manual that keeps being worth
+     * teaching long past its band says so with `span` rather than with a rule.
+     */
+    regard: RegardProfileSchema.optional()
 });
 export type Technique = z.infer<typeof TechniqueSchema>;
 
@@ -699,7 +1113,14 @@ export const PillSchema = z.object({
     toxicity: z.number().min(0).default(0),
     /** Base market value in spirit stones. */
     value: z.number().int().min(0).default(1),
-    description: z.string().default('')
+    description: z.string().default(''),
+    /**
+     * The generic column. A pill carries no rung column of its own, so this is
+     * where its gate lives when one matters - what realm the medicine is
+     * pitched at. Absent means it is met as `matched` by everybody, which is
+     * the identity answer and exactly the old behaviour.
+     */
+    regard: RegardProfileSchema.optional()
 });
 export type Pill = z.infer<typeof PillSchema>;
 
@@ -714,7 +1135,9 @@ export const RecipeSchema = z.object({
     })).default([]),
     /** Base success rate before alchemy skill and cauldron quality. */
     baseSuccessRate: z.number().min(0).max(1).default(0.5),
-    requiredOrdinal: z.number().int().min(0).max(MAX_ORDINAL).default(0)
+    requiredOrdinal: z.number().int().min(0).max(MAX_ORDINAL).default(0),
+    /** The generic column. Absent means the bands read `requiredOrdinal`. */
+    regard: RegardProfileSchema.optional()
 });
 export type Recipe = z.infer<typeof RecipeSchema>;
 
@@ -869,6 +1292,12 @@ export const SimEventKindSchema = z.enum([
     'npc_event',
     'resource_depleted',
     'starvation_warning',
+    /**
+     * The meridians are open and the clock on them has started. The sibling of
+     * 'starvation_warning', and a separate kind for the same reason: it is a
+     * countdown that can still be stopped, not a wound being taken.
+     */
+    'bleeding_warning',
     'lifespan_warning',
     'toll_charged',
     'foundation_established',
@@ -953,17 +1382,21 @@ export const TimeSkipResultSchema = z.object({
     /**
      * ABSOLUTE end-of-skip values, not deltas.
      *
-     * These two counters both RESET during a skip - starvation clears the
-     * moment there is food again, and years-at-realm returns to zero on any
-     * rank advance - so a delta against the starting value is meaningless and
-     * cannot be inverted. The caller writes these straight onto the cultivator.
+     * These three counters all RESET during a skip - starvation clears the
+     * moment there is food again, the bleed clock clears the moment the
+     * untreated count drops back under the lethal threshold, and years-at-realm
+     * returns to zero on any rank advance - so a delta against the starting
+     * value is meaningless and cannot be inverted. The caller writes these
+     * straight onto the cultivator.
      */
     endState: z.object({
         /** Consecutive turns at zero satiety as the skip ended. */
         starvationTurns: z.number().int().min(0).default(0),
+        /** Consecutive turns at the lethal untreated count as the skip ended. */
+        bleedingTurns: z.number().int().min(0).default(0),
         /** Years at the current realm as the skip ended. */
         yearsAtCurrentRealm: z.number().min(0).default(0)
-    }).default({ starvationTurns: 0, yearsAtCurrentRealm: 0 }),
+    }).default({ starvationTurns: 0, bleedingTurns: 0, yearsAtCurrentRealm: 0 }),
     /**
      * Set if the skip crossed 12 -> 13. The caller persists it onto the
      * cultivator; it is not derivable from the ordinal afterwards.

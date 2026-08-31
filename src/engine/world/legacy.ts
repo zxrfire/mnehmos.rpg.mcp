@@ -185,7 +185,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
                     `${deceased.name}, ${rankName(deceased.cultivation.realmOrdinal)}. ` +
                     input.causeNote,
                 ambient: site?.ambient ?? 'thin',
-                qiDensity: site?.qiDensity ?? 0.3,
+                qiDensity: site?.qiDensity ?? 30,
                 // A grave is easy to walk up to and not easy to rob: whatever
                 // they were is still, faintly, in the way.
                 thresholds: makeThresholds(

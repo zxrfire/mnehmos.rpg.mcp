@@ -33,16 +33,27 @@
 import { z } from 'zod';
 import { rankName } from '../../engine/cultivation/index.js';
 import {
+    regardFor,
+    regardOf,
+    type Regard,
+    type RegardAsker
+} from '../../engine/cultivation/regard.js';
+import { ApproachSchema } from '../../schema/cultivation.js';
+import {
     CASH_PER_STONE,
+    MORTAL_ECONOMY_REGARD,
     OCCUPATIONS,
     PRICES,
     SETTLEMENTS,
     cashToStones,
+    MORTAL_WORK_CEILING_ORDINAL,
     findWorkForOrdinal,
     getOccupation,
     getSettlement,
     monthsOfSurvival,
     mortalAttitudeFor,
+    workExistingFor,
+    workWithheldFrom,
     type Occupation,
     type Settlement
 } from '../../data/cultivation/mortal-world.js';
@@ -55,7 +66,17 @@ import {
     requireRegion
 } from '../../data/cultivation/regions.js';
 import {
+    FORAGE_BASE_DAYS,
+    HerbBiomeSchema,
+    forage,
+    findHerbsForOrdinal,
+    findOfferedHerbs,
+    type HerbBiome
+} from '../../data/cultivation/herbs.js';
+import { forStream } from '../../engine/cultivation/rng.js';
+import {
     DAYS_PER_MONTH,
+    addToPouch,
     ensureCultivationDb,
     guidingError,
     isGuidingErrorBody,
@@ -77,7 +98,9 @@ export const WorkSchema = z.object({
     days: z.number().min(0).max(3_650_000).optional(),
     months: z.number().min(0).max(120_000).optional(),
     years: z.number().min(0).max(10_000).optional(),
-    rations: z.number().int().min(0).max(10_000).optional()
+    rations: z.number().int().min(0).max(10_000).optional(),
+    approach: ApproachSchema.optional()
+        .describe('What the narrator knows and the row does not: how the ask is being put, what is behind it, who is watching, and what rung the asker is letting the room believe. Optional; omitting it is the old behaviour exactly.')
 });
 
 export const MarketSchema = z.object({
@@ -86,7 +109,21 @@ export const MarketSchema = z.object({
     category: z
         .enum(['food', 'lodging', 'transport', 'medicine', 'land', 'service', 'tool', 'information'])
         .optional()
-        .describe('Narrow to one category. Omit for the whole board.')
+        .describe('Narrow to one category. Omit for the whole board.'),
+    approach: ApproachSchema.optional()
+        .describe('Context for the counter: tone, leverage, audience, a concealed rung. It moves how the board is quoted by at most two rungs, and never what is on it.')
+});
+
+export const ForageSchema = z.object({
+    action: z.literal('forage'),
+    cultivatorId: z.string().optional(),
+    biome: HerbBiomeSchema.optional()
+        .describe('Where they are looking. Omit to search whatever is around them.'),
+    days: z.number().min(0).max(3_650).optional()
+        .describe('Days given to it. Omit for one ordinary pass; the engine decides how long that actually takes at this rung.'),
+    rations: z.number().int().min(0).max(10_000).optional(),
+    approach: ApproachSchema.optional()
+        .describe('How they are going about it. `patience` is the field that matters most here: hurried halves the time and the take, unhurried lengthens both.')
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -155,21 +192,38 @@ export async function handleWork(
 
     const { cultivator } = resolved;
     const standing = standingOf(cultivator);
-    const available = findWorkForOrdinal(
-        cultivator.realmOrdinal,
-        standing.settlementKind ?? undefined
-    );
+    const asker: RegardAsker = { ordinal: cultivator.realmOrdinal, approach: args.approach };
+    const settlement = standing.settlementKind ?? undefined;
+    const available = findWorkForOrdinal(asker, settlement);
+    const withheld = workWithheldFrom(asker, settlement);
+    const exists = workExistingFor(cultivator.realmOrdinal, settlement);
 
     // ── No job named: this is the query half, and it is the important one. ──
+    //
+    // What changed here: this used to hand back an empty array above the mortal
+    // ceiling and a sentence saying nobody was hiring anyone for anything,
+    // which read as unemployability. The board is now three separate facts -
+    // what is put to them, what exists here and is being withheld, and why -
+    // and above the ceiling the first of those is the commissions rather than
+    // nothing.
     if (!args.occupationId) {
         return {
             standing: describeStanding(cultivator, standing),
             purse: describePurse(cultivator),
-            work: available.map(o => describeOccupation(o, standing.regionId)),
-            note:
-                available.length === 0
-                    ? 'No work here that this cultivator could hold. Somewhere with more people in it will have some.'
-                    : 'A month spent earning is a month not spent cultivating. That is the whole of the choice.'
+            work: available.map(o => describeOccupation(o, standing.regionId, asker)),
+            // Silence is not an answer. Everything on the board here that is
+            // NOT being put to them, with the measured reason attached.
+            withheld: withheld.slice(0, 8).map(w => ({
+                id: w.occupation.id,
+                name: w.occupation.name,
+                band: w.band,
+                reason: w.reason
+            })),
+            withheldCount: withheld.length,
+            regard: describeRegard(
+                regardFor(MORTAL_ECONOMY_REGARD.gate, asker, MORTAL_ECONOMY_REGARD)
+            ),
+            note: workNote(available.length, withheld.length, exists.length)
         };
     }
 
@@ -178,6 +232,31 @@ export async function handleWork(
         return guidingError('unknown_occupation', `No occupation with id ${args.occupationId}.`, {
             hint: 'cultivation_manage({ action: "work" }) with no occupationId lists what exists here.'
         });
+    }
+
+    // The regard, before the floor. This is the general form of what used to be
+    // a hard ceiling check: a job the asker has outgrown is refused because it
+    // is beneath them, in the same call that refuses one pitched far over their
+    // head, out of the same table. The refusal states the measured gap rather
+    // than a constant, and the constant survives only as the documented rung
+    // where the mortal half of the board runs out.
+    const jobRegard = regardOf(occupation, asker);
+    if (jobRegard.refused) {
+        return guidingError(
+            'work_not_put_to_them',
+            `Nobody would put ${cultivator.name} on ${occupation.name}. ${jobRegard.reaction}`,
+            {
+                band: jobRegard.band,
+                gap: jobRegard.gap,
+                occupationOrdinal: occupation.minOrdinal,
+                currentOrdinal: cultivator.realmOrdinal,
+                apparentOrdinal: jobRegard.apparentOrdinal,
+                mortalCeilingOrdinal: MORTAL_WORK_CEILING_ORDINAL,
+                hint: jobRegard.band === 'dismissed'
+                    ? `The mortal half of the board runs out at ordinal ${MORTAL_WORK_CEILING_ORDINAL}. cultivation_manage({ action: "work" }) with no occupationId shows what IS being put to somebody at ${rankName(cultivator.realmOrdinal)}.`
+                    : 'Pitched too far above them to be offered. Something nearer their own rung will be on the same board.'
+            }
+        );
     }
 
     if (cultivator.realmOrdinal < occupation.minOrdinal) {
@@ -234,8 +313,14 @@ export async function handleWork(
     // Paid for the days the engine says were worked, never for the days asked
     // for. Cash is the mortal currency; stones are the cultivator's, and the
     // conversion is the one number the whole mortal economy rests on.
+    //
+    // The rate is the rate, and how much of it gets earned is the physical band
+    // - somebody ten rungs past what the work is pitched at moves seven times
+    // the crates in the same month and is paid for the crates. It is the
+    // ordinary `yieldMultiplier`, applied once, and it is the reason a season of
+    // labour is a different proposition at Foundation than at Qi Condensation.
     const monthsWorked = simulatedDays / DAYS_PER_MONTH;
-    const cashEarned = Math.floor(occupation.cashPerMonth * monthsWorked);
+    const cashEarned = Math.floor(occupation.cashPerMonth * monthsWorked * jobRegard.yieldMultiplier);
     const stonesEarned = Math.floor(cashToStones(cashEarned));
 
     let paid = 0;
@@ -248,7 +333,8 @@ export async function handleWork(
 
     return {
         worked: true,
-        occupation: describeOccupation(occupation, standing.regionId),
+        occupation: describeOccupation(occupation, standing.regionId, asker),
+        regard: describeRegard(jobRegard),
         standing: describeStanding(after, standing),
         daysWorked: simulatedDays,
         monthsWorked: round2(monthsWorked),
@@ -268,7 +354,57 @@ export async function handleWork(
     };
 }
 
-function describeOccupation(occupation: Occupation, regionId: string): Record<string, unknown> {
+/**
+ * The board's own sentence, built from what was measured rather than from a
+ * constant. Three different facts, three different sentences, and none of them
+ * is an unexplained empty list.
+ */
+function workNote(offered: number, withheld: number, exists: number): string {
+    if (offered > 0 && withheld > 0) {
+        return `${offered} of the ${exists} things going here are put to them; the other ${withheld} are not, `
+            + 'and the reasons are on each. A month spent earning is a month not spent cultivating - that is still the whole of the choice.';
+    }
+    if (offered > 0) {
+        return 'A month spent earning is a month not spent cultivating. That is the whole of the choice.';
+    }
+    if (withheld > 0) {
+        return `There are ${withheld} things going here and not one of them is put to this person. `
+            + 'Nothing here is worth their time and everyone present can see what they are. '
+            + 'That is a different fact from nobody hiring, and it is the one that applies.';
+    }
+    return 'Nothing at all is going here - not withheld, absent. Somewhere with more people in it will have some.';
+}
+
+/** The banded answer, flattened for the narrator. Facts, never a decision. */
+function describeRegard(regard: Regard): Record<string, unknown> {
+    return {
+        band: regard.band,
+        physicalBand: regard.physicalBand,
+        gap: regard.gap,
+        socialGap: regard.socialGap,
+        offered: regard.offered,
+        refused: regard.refused,
+        yieldMultiplier: round2(regard.yieldMultiplier),
+        durationMultiplier: round2(regard.durationMultiplier),
+        priceMultiplier: round2(regard.priceMultiplier),
+        damageMultiplier: round2(regard.damageMultiplier),
+        concealed: regard.concealed,
+        apparentOrdinal: regard.apparentOrdinal,
+        apparentRank: rankName(regard.apparentOrdinal),
+        actualOrdinal: regard.actualOrdinal,
+        pressure: regard.pressure,
+        reaction: regard.reaction,
+        intent: regard.intent,
+        note: regard.note
+    };
+}
+
+function describeOccupation(
+    occupation: Occupation,
+    regionId: string,
+    asker?: RegardAsker
+): Record<string, unknown> {
+    const regard = asker ? regardOf(occupation, asker) : null;
     return {
         id: occupation.id,
         name: occupation.name,
@@ -282,6 +418,12 @@ function describeOccupation(occupation: Occupation, regionId: string): Record<st
         monthsLodgingItCovers: round2(
             occupation.cashPerMonth / localPrice(regionId, 300)
         ),
+        // What a month of it is actually worth to THIS person, which is the
+        // figure that used to be missing entirely.
+        cashPerMonthForThem: regard
+            ? Math.floor(occupation.cashPerMonth * regard.yieldMultiplier)
+            : occupation.cashPerMonth,
+        band: regard?.band ?? null,
         risk: occupation.risk,
         settlements: occupation.settlements,
         note: occupation.note
@@ -322,6 +464,110 @@ function describeStanding(cultivator: Cultivator, standing: Standing): Record<st
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FORAGE
+//
+// The verb that made the defect visible. `I gather what herbs I can find` used
+// to be a fixed seven days for a single stalk at every one of the forty-five
+// rungs; the only thing that moved was which stalk. It is composed exactly the
+// way `work` is - one span through the ordinary time skip, and the draw priced
+// off the ordinary bands - so there is no second engine here either.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function handleForage(
+    args: z.infer<typeof ForageSchema>,
+    cultivate: CultivateRunner
+): Promise<object> {
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { run, cultivator } = resolved;
+    const asker: RegardAsker = { ordinal: cultivator.realmOrdinal, approach: args.approach };
+    const biome = args.biome as HerbBiome | undefined;
+
+    const reachable = findHerbsForOrdinal(cultivator.realmOrdinal, biome);
+    if (reachable.length === 0) {
+        return guidingError(
+            'nothing_reachable',
+            `Nothing that grows ${biome ? `in ${biome}` : 'here'} is within reach at ${rankName(cultivator.realmOrdinal)}.`,
+            {
+                currentOrdinal: cultivator.realmOrdinal,
+                hint: 'The ground where the next grade grows would kill them. Somewhere else, or later.'
+            }
+        );
+    }
+
+    // Draw first, then run the span it actually takes. The count and the
+    // duration come off the same regard, so they cannot drift apart.
+    const startDay = Math.floor(run.elapsedDays);
+    const rng = forStream(run.seed, 'forage', startDay, cultivator.location ?? '', biome ?? '');
+    const drawn = forage(asker, rng.next(), {
+        biome,
+        baseDays: args.days && args.days > 0 ? args.days : FORAGE_BASE_DAYS
+    });
+
+    if (!drawn.herb || !drawn.regard) {
+        return guidingError('nothing_found', 'The draw came back empty.', {
+            hint: 'This should not happen when anything is reachable; report it.'
+        });
+    }
+
+    const spanResult = await cultivate({
+        action: 'cultivate',
+        cultivatorId: cultivator.id,
+        days: drawn.days,
+        focus: 'travelling',
+        rations: args.rations ?? 0,
+        autoBreakthrough: true,
+        randomEvents: true
+    });
+    if (typeof spanResult.error === 'string') return spanResult;
+
+    const simulatedDays = Number(spanResult.simulatedDays ?? 0);
+    const died = spanResult.died === true;
+
+    // Paid for the days the engine says were spent, exactly as wages are. A
+    // pass cut short by a death or an interruption yields proportionally.
+    const fraction = drawn.days > 0 ? Math.min(1, simulatedDays / drawn.days) : 0;
+    const taken = died ? 0 : Math.floor(drawn.quantity * fraction);
+    if (taken > 0) addToPouch(repos.db, cultivator.id, drawn.herb.id, 'herb', taken);
+
+    const after = repos.cultivators.getById(cultivator.id)!;
+    const offered = findOfferedHerbs(asker, biome);
+
+    return {
+        foraged: true,
+        herb: {
+            id: drawn.herb.id,
+            name: drawn.herb.name,
+            grade: drawn.herb.grade,
+            biome: drawn.herb.biome,
+            harvestOrdinal: drawn.herb.harvestOrdinal,
+            unitValue: drawn.herb.value
+        },
+        quantityFound: drawn.quantity,
+        quantityTaken: taken,
+        valueTaken: taken * drawn.herb.value,
+        daysAsked: drawn.days,
+        daysSpent: simulatedDays,
+        regard: describeRegard(drawn.regard),
+        // What the ground still puts in front of them, and what it has stopped
+        // putting in front of them. The second half is the answer to "why did
+        // I not find any qi grass" at Nascent Soul, and it is a real answer.
+        offeredHere: offered.length,
+        reachableHere: reachable.length,
+        walkedPast: reachable.length - offered.length,
+        unpaid: died ? 'The pass ended in a death. Nothing was carried out.' : null,
+        purse: describePurse(after),
+        span: spanResult,
+        note:
+            'How much came back and how long it took are the same measurement, taken once. Ground '
+            + 'far below the person standing on it gives up more of itself in less time, and ground '
+            + 'they have outgrown entirely stops being searched at all.'
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MARKET
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -334,15 +580,26 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
     const standing = standingOf(cultivator);
     const region = requireRegion(standing.regionId);
 
+    // How this market meets this person, resolved once. A stall, an inn floor
+    // and a bowl of millet are all pitched at the same rung, so the board is one
+    // regard rather than one per line, and the quote moves with it: a counter
+    // does not put its usual price to somebody it can see is ten rungs past
+    // needing to ask. Tone and a purse move it by at most two rungs; nothing
+    // moves what is actually on the board.
+    const asker: RegardAsker = { ordinal: cultivator.realmOrdinal, approach: args.approach };
+    const boardRegard = regardFor(MORTAL_ECONOMY_REGARD.gate, asker, MORTAL_ECONOMY_REGARD);
+
     const prices = PRICES.filter(p => args.category === undefined || p.category === args.category)
         .map(p => {
-            const cash = localPrice(standing.regionId, p.cash);
+            const list = localPrice(standing.regionId, p.cash);
+            const cash = Math.max(1, Math.round(list * boardRegard.priceMultiplier));
             return {
                 id: p.id,
                 name: p.name,
                 category: p.category,
                 unit: p.unit,
                 cash,
+                listCash: list,
                 spiritStones: round2(cashToStones(cash)),
                 affordable: cultivator.spiritStones * CASH_PER_STONE >= cash,
                 note: p.note
@@ -353,6 +610,7 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
     return {
         standing: describeStanding(cultivator, standing),
         purse: describePurse(cultivator),
+        regard: describeRegard(boardRegard),
         prices,
         cashPerStone: CASH_PER_STONE,
         priceMultiplier: region.priceMultiplier,

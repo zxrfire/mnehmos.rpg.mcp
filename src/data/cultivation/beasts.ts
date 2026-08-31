@@ -62,8 +62,14 @@
  */
 
 import { z } from 'zod';
-import { TechniqueGradeSchema } from '../../schema/cultivation.js';
+import { RegardProfileSchema, TechniqueGradeSchema } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
+import {
+    narrowToOffered,
+    regardOf,
+    type Regard,
+    type RegardAskerInput
+} from '../../engine/cultivation/regard.js';
 import { HerbBiomeSchema, type HerbBiome } from './herbs.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -145,7 +151,13 @@ export const BeastSchema = z.object({
     /** Materials it yields, by id. Everything here resolves in this file. */
     materialIds: z.array(z.string()),
     /** One line of flavour. If it needs two, it is not doing its job. */
-    note: z.string().min(40)
+    note: z.string().min(40),
+    /**
+     * The generic column. Absent everywhere here: `ordinal` is already what a
+     * beast is pitched at, and it is the only measure of danger this catalog
+     * carries, so the ordinary bands read it unaided.
+     */
+    regard: RegardProfileSchema.optional()
 });
 export type Beast = z.infer<typeof BeastSchema>;
 
@@ -1038,6 +1050,22 @@ export function findThreatsAboveOrdinal(ordinal: number, biome?: HerbBiome): Bea
     return pool.filter(b => b.ordinal > floor);
 }
 
+/**
+ * What meeting this thing costs, against a base the caller owns.
+ *
+ * Same resolver as everything else; the beast's `ordinal` is its gate and the
+ * damage multiplier comes straight off the band. A four-rank gap is not a hard
+ * fight, it is a death, and this is the arithmetic that says so outside combat
+ * as well as inside it.
+ */
+export function beastRegard(beast: Beast, asker: RegardAskerInput): Regard {
+    return regardOf(beast, asker);
+}
+
+export function beastDamage(beast: Beast, baseDamage: number, asker: RegardAskerInput): number {
+    return Math.max(0, Math.round(baseDamage * beastRegard(beast, asker).damageMultiplier));
+}
+
 /** Things that are a competing draw on, or sitting on top of, a vein. */
 export function veinContenders(): Beast[] {
     return BEASTS.filter(b => b.veinRelation === 'holds' || b.veinRelation === 'drains');
@@ -1058,8 +1086,17 @@ export function negotiableBeasts(): Beast[] {
  * RNG so the caller owns seeding, matching `rollHerb` and `rollEncounter`.
  * Returns undefined when nothing in this biome is reachable at this ordinal.
  */
-export function rollBeast(ordinal: number, sample: number, biome?: HerbBiome): Beast | undefined {
-    const pool = findBeastsForOrdinal(ordinal, biome);
+export function rollBeast(
+    ordinal: RegardAskerInput,
+    sample: number,
+    biome?: HerbBiome
+): Beast | undefined {
+    const rung = typeof ordinal === 'number' ? ordinal : ordinal.ordinal;
+    // Reachable first, then narrowed to what is still worth meeting. A rat the
+    // asker is twenty rungs past does not get drawn as an encounter; it gets
+    // walked past. Where nothing survives the narrowing the reachable set comes
+    // back, because a ground with only rats on it still has rats on it.
+    const pool = narrowToOffered(findBeastsForOrdinal(rung, biome), ordinal);
     if (pool.length === 0) return undefined;
     const total = pool.reduce((sum, b) => sum + b.frequency, 0);
     let cursor = Math.max(0, Math.min(0.999999999, sample)) * total;

@@ -51,6 +51,12 @@
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { rankName } from '../cultivation/realms.js';
+// Pressure is the LOWER world's own affairs, and only its own. Every selection
+// in this file is filtered to the mortal layer, because politics above the Lid
+// has been running uninterrupted for a very long time and is not something this
+// module gets to reorganise on a fifty-five-events-per-century budget. The far
+// side is `advanceImmortalLayer`, which the driver runs on the same slice.
+import { isBelowTheLid } from './layers.js';
 import {
     appendFact,
     fillConsequences,
@@ -59,7 +65,7 @@ import {
     type EventConsequences,
     type HistoricalFact
 } from './history.js';
-import { applyLocationChange, forbidZone, type LocationRecord } from './locations.js';
+import { applyLocationChange, forbidZone, qiFraction, type LocationRecord } from './locations.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
 import {
     addGoal,
@@ -168,7 +174,7 @@ export function applyPressure(
     for (let year = firstYear; year <= lastYear && events.length < maxEvents; year++) {
         yearsStepped++;
         const rng = forStream(state.seed, 'pressure', year);
-        const live = state.factions.filter(f => f.dissolvedOnDay === null).length;
+        const live = state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f)).length;
         const rate = clamp(
             live * EVENTS_PER_FACTION_YEAR * intensity,
             MIN_EVENTS_PER_YEAR * intensity,
@@ -226,14 +232,14 @@ function applyDemography(
     if (target <= 0) return [];
 
     let living = 0;
-    for (const npc of state.npcs) if (npc.status === 'alive') living++;
+    for (const npc of state.npcs) if (npc.status === 'alive' && isBelowTheLid(npc)) living++;
     const deficit = target - living;
     if (deficit <= 0) return [];
 
     // A fraction of the gap each year, so a plague is felt for a generation
     // rather than papered over the following spring.
     const count = Math.min(24, Math.max(1, Math.round(deficit * 0.08)));
-    const regions = state.locations.filter(l => l.kind === 'region');
+    const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
     if (regions.length === 0) return [];
 
     const born: NpcRecord[] = [];
@@ -251,6 +257,9 @@ function applyDemography(
             onDay: day,
             locationId: region.id,
             occupation: 'unknown',
+            // Two people with one name breaks the knowledge system, which is
+            // keyed by id while everything the player reads is keyed by name.
+            takenNames: new Set(state.npcs.map(n => n.name)),
             tags: [`region:${String(region.data.catalogRegionId ?? region.id)}`]
         });
         const ordinal = deriveOrdinal(
@@ -272,7 +281,7 @@ function applyDemography(
         // A parent, where the world has one to offer: same region, old enough,
         // and alive. Lineage is what long time-skips land on.
         const candidates = state.npcs.filter(
-            n => n.status === 'alive' &&
+            n => n.status === 'alive' && isBelowTheLid(n) &&
                 n.locationId === region.id &&
                 day - n.identity.bornOnDay >= years(age + 18)
         );
@@ -306,7 +315,7 @@ function applyDemography(
         // centuries and nobody replaces them, and the institutions fold for a
         // reason that is arithmetic rather than history.
         const admitting = state.factions.filter(
-            f => f.dissolvedOnDay === null &&
+            f => f.dissolvedOnDay === null && isBelowTheLid(f) &&
                 f.tags.includes('recruits') &&
                 f.seatLocationId === region.id &&
                 ordinal >= Number(f.resources.admission_ordinal ?? 0)
@@ -341,7 +350,7 @@ function applyDemography(
 function applyAdvancement(state: WorldState, year: number, day: number): NpcRecord[] {
     const living: number[] = [];
     for (let i = 0; i < state.npcs.length; i++) {
-        if (state.npcs[i].status === 'alive') living.push(i);
+        if (state.npcs[i].status === 'alive' && isBelowTheLid(state.npcs[i])) living.push(i);
     }
     if (living.length === 0) return [];
 
@@ -356,7 +365,8 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
 
         const regionTag = npc.tags.find(t => t.startsWith('region:'))?.slice(7);
         const region = state.locations.find(
-            l => l.kind === 'region' && String(l.data.catalogRegionId ?? '') === regionTag
+            l => l.kind === 'region' && isBelowTheLid(l) &&
+                String(l.data.catalogRegionId ?? '') === regionTag
         ) ?? state.locations.find(l => l.id === npc.locationId);
         const ceiling = Number(region?.data.localCeilingOrdinal ?? 20);
         const rateMultiplier = Number(region?.data.ambientRateMultiplier ?? 1);
@@ -391,7 +401,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
  */
 function applyRecruitment(state: WorldState, year: number, day: number): number {
     const admitting = state.factions.filter(
-        f => f.dissolvedOnDay === null && f.tags.includes('recruits')
+        f => f.dissolvedOnDay === null && isBelowTheLid(f) && f.tags.includes('recruits')
     );
     if (admitting.length === 0) return 0;
 
@@ -403,7 +413,7 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
     const free: number[] = [];
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i];
-        if (npc.status === 'alive' && npc.factionId === null) free.push(i);
+        if (npc.status === 'alive' && isBelowTheLid(npc) && npc.factionId === null) free.push(i);
     }
     if (free.length === 0) return 0;
 
@@ -440,7 +450,7 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
  */
 function applyFactionEconomy(state: WorldState): void {
     for (const faction of state.factions) {
-        if (faction.dissolvedOnDay !== null) continue;
+        if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
         let members = 0;
         for (const npc of state.npcs) {
             if (npc.status === 'alive' && npc.factionId === faction.id) members++;
@@ -497,7 +507,7 @@ interface Template {
 // ─────────────────────────────────────────────────────────────────────────
 
 function liveFactions(state: WorldState): FactionRecord[] {
-    return state.factions.filter(f => f.dissolvedOnDay === null);
+    return state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f));
 }
 
 function pick<T>(rng: CultivationRNG, items: readonly T[]): T | null {
@@ -505,11 +515,15 @@ function pick<T>(rng: CultivationRNG, items: readonly T[]): T | null {
 }
 
 function membersOf(state: WorldState, factionId: string): NpcRecord[] {
-    return state.npcs.filter(n => n.factionId === factionId && n.status === 'alive');
+    return state.npcs.filter(
+        n => n.factionId === factionId && n.status === 'alive' && isBelowTheLid(n)
+    );
 }
 
 function veinsOf(state: WorldState, factionId: string): LocationRecord[] {
-    return state.locations.filter(l => l.kind === 'vein' && l.controllingFactionId === factionId);
+    return state.locations.filter(
+        l => l.kind === 'vein' && isBelowTheLid(l) && l.controllingFactionId === factionId
+    );
 }
 
 function replaceLocation(state: WorldState, next: LocationRecord): void {
@@ -712,7 +726,8 @@ const TEMPLATES: Template[] = [
         weight: 16,
         apply(state, day, rng) {
             const seniors = state.npcs.filter(
-                n => n.status === 'alive' && n.factionId != null && n.factionRankIndex >= 3
+                n => n.status === 'alive' && isBelowTheLid(n) &&
+                    n.factionId != null && n.factionRankIndex >= 3
             );
             const npc = pick(rng, seniors);
             if (!npc) return null;
@@ -769,7 +784,7 @@ const TEMPLATES: Template[] = [
         kind: 'killing',
         weight: 11,
         apply(state, day, rng) {
-            const living = state.npcs.filter(n => n.status === 'alive');
+            const living = state.npcs.filter(n => n.status === 'alive' && isBelowTheLid(n));
             const victim = pick(rng, living);
             if (!victim) return null;
 
@@ -844,11 +859,14 @@ const TEMPLATES: Template[] = [
         kind: 'ruin_opened',
         weight: 8,
         apply(state, day, rng) {
-            const sealed = state.locations.filter(l => l.kind === 'ruin' && l.sealed);
+            const sealed = state.locations.filter(
+                l => l.kind === 'ruin' && l.sealed && isBelowTheLid(l)
+            );
             const ruin = pick(rng, sealed);
             if (!ruin) return null;
             const opener = pick(rng, state.npcs.filter(
-                n => n.status === 'alive' && n.cultivation.realmOrdinal >= Math.max(0, ruin.thresholds.survival - 2)
+                n => n.status === 'alive' && isBelowTheLid(n) &&
+                    n.cultivation.realmOrdinal >= Math.max(0, ruin.thresholds.survival - 2)
             ));
 
             const changed = applyLocationChange(ruin, {
@@ -863,7 +881,7 @@ const TEMPLATES: Template[] = [
                     sealed: false,
                     discovered: true,
                     addTags: ['emptied'],
-                    environment: { spiritualDensity: Math.min(1, ruin.qiDensity) }
+                    environment: { spiritualDensity: qiFraction(ruin.qiDensity) }
                 }
             });
             replaceLocation(state, changed.location);
@@ -915,7 +933,7 @@ const TEMPLATES: Template[] = [
             });
             const opp = pick(rng, open);
             if (!opp) return null;
-            const taker = pick(rng, state.npcs.filter(n => n.status === 'alive'));
+            const taker = pick(rng, state.npcs.filter(n => n.status === 'alive' && isBelowTheLid(n)));
             if (!taker) return null;
 
             const claim = claimOpportunity(opp, taker.id, day);
@@ -951,7 +969,9 @@ const TEMPLATES: Template[] = [
         kind: 'border_moved',
         weight: 7,
         apply(state, day, rng) {
-            const settlements = state.locations.filter(l => l.kind === 'settlement');
+            const settlements = state.locations.filter(
+                l => l.kind === 'settlement' && isBelowTheLid(l)
+            );
             const place = pick(rng, settlements);
             if (!place) return null;
             const claimant = pick(rng, liveFactions(state));
@@ -1219,7 +1239,8 @@ const TEMPLATES: Template[] = [
         weight: 5,
         apply(state, day, rng) {
             const holders = state.npcs.filter(
-                n => n.status === 'alive' && n.cultivation.techniqueIds.length > 0
+                n => n.status === 'alive' && isBelowTheLid(n) &&
+                    n.cultivation.techniqueIds.length > 0
             );
             const npc = pick(rng, holders);
             if (!npc) return null;
@@ -1228,7 +1249,8 @@ const TEMPLATES: Template[] = [
 
             // Only lost if nobody else alive has it. That is the whole rule.
             const others = state.npcs.filter(
-                n => n.id !== npc.id && n.status === 'alive' && n.cultivation.techniqueIds.includes(techniqueId)
+                n => n.id !== npc.id && n.status === 'alive' && isBelowTheLid(n) &&
+                    n.cultivation.techniqueIds.includes(techniqueId)
             );
             if (others.length > 0) return null;
 
@@ -1266,7 +1288,7 @@ const TEMPLATES: Template[] = [
         kind: 'market_shifted',
         weight: 10,
         apply(state, day, rng) {
-            const regions = state.locations.filter(l => l.kind === 'region');
+            const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
             const region = pick(rng, regions);
             if (!region) return null;
             const up = rng.chance(0.5);
@@ -1371,7 +1393,8 @@ const TEMPLATES: Template[] = [
         weight: 2,
         apply(state, day, rng) {
             const candidates = state.locations.filter(
-                l => (l.kind === 'wilds' || l.kind === 'vein') && !l.tags.includes('forbidden')
+                l => (l.kind === 'wilds' || l.kind === 'vein') &&
+                    isBelowTheLid(l) && !l.tags.includes('forbidden')
             );
             const place = pick(rng, candidates);
             if (!place) return null;
@@ -1429,14 +1452,15 @@ const TEMPLATES: Template[] = [
         kind: 'migration',
         weight: 8,
         apply(state, day, rng) {
-            const regions = state.locations.filter(l => l.kind === 'region');
+            const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
             if (regions.length < 2) return null;
             const from = pick(rng, regions);
             const to = pick(rng, regions.filter(r => r.id !== from?.id));
             if (!from || !to) return null;
 
             const movers = state.npcs.filter(
-                n => n.status === 'alive' && n.locationId === from.id && n.factionId === null
+                n => n.status === 'alive' && isBelowTheLid(n) &&
+                    n.locationId === from.id && n.factionId === null
             ).slice(0, rng.int(3, 12));
             if (movers.length === 0) return null;
 
@@ -1469,7 +1493,7 @@ const TEMPLATES: Template[] = [
         weight: 6,
         apply(state, day, rng) {
             const candidates = state.npcs.filter(
-                n => n.status === 'alive' && n.cultivation.realmOrdinal >= 13
+                n => n.status === 'alive' && isBelowTheLid(n) && n.cultivation.realmOrdinal >= 13
             );
             const npc = pick(rng, candidates);
             if (!npc) return null;
