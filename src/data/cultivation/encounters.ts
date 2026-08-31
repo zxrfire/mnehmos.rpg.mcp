@@ -423,6 +423,150 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
+    // SPIRIT BEASTS: THE ROAD THEY ARE ON
+    // Beasts climb the same ladder, so they sit on the same veins, they
+    // suffer the same Late Age, and the ones in the sealed places have had
+    // no competition and no interruptions for two ages. `threatOrdinal`
+    // means for a beast exactly what it means for a person. The catalog
+    // behind these entries is `beasts.ts`.
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'enc-thin-district-beasts',
+        name: 'What a Poor District Has Instead of Monsters',
+        kind: 'spirit_beast',
+        simEventKind: 'encounter',
+        weight: 38,
+        minOrdinal: 0,
+        maxOrdinal: 12,
+        interrupts: false,
+        threatOrdinal: 1,
+        summaryTemplate:
+            'Ambient qi at {place} is {ambient} and the animals carry almost nothing. Largest thing taken in the district this year: {threatRank}. The culling contract pays {stones} spirit stones a head against {count} heads on the ledger, and the district record from two generations ago is for an animal twice the size.',
+        tokens: ['place', 'ambient', 'threatRank', 'stones', 'count'],
+        tags: ['beast', 'ordinary', 'late-age', 'trade', 'safe']
+    },
+    {
+        id: 'enc-culling-notice-mispriced',
+        name: 'A Culling Notice Written From an Old Survey',
+        kind: 'spirit_beast',
+        simEventKind: 'npc_event',
+        weight: 26,
+        minOrdinal: 2,
+        maxOrdinal: 16,
+        interrupts: true,
+        threatOrdinal: 9,
+        summaryTemplate:
+            'The culling notice at {place} was written from a survey {years} years old and prices the work at {stones} spirit stones a head. What is on the ground is at {threatRank}, {gap} ranks above the notice. {count} cullers have taken the contract this season and the village has not amended it.',
+        tokens: ['place', 'years', 'stones', 'threatRank', 'gap', 'count'],
+        tags: ['beast', 'hostile', 'trade', 'mispriced', 'avoidable']
+    },
+    {
+        id: 'enc-beast-hunting-cultivators',
+        name: 'Something Hunting Cultivators Specifically',
+        kind: 'spirit_beast',
+        simEventKind: 'encounter',
+        weight: 30,
+        minOrdinal: 4,
+        maxOrdinal: 24,
+        interrupts: true,
+        threatOrdinal: 13,
+        summaryTemplate:
+            '{count} cultivators have been found dead near {place} over {days} days, cores taken and storage pouches untouched. No mortal has been attacked. The thing doing it is at {threatRank}, and the village has declined to contribute to a hunt.',
+        tokens: ['count', 'place', 'days', 'threatRank'],
+        tags: ['beast', 'hostile', 'ambush', 'unavoidable']
+    },
+    {
+        id: 'enc-beast-holding-a-vein',
+        name: 'Something Is Already On the Vein',
+        kind: 'spirit_beast',
+        simEventKind: 'encounter',
+        weight: 22,
+        minOrdinal: 8,
+        maxOrdinal: 34,
+        interrupts: true,
+        threatOrdinal: 22,
+        summaryTemplate:
+            'A beast at {threatRank} has held the vein under {place} for {years} years. Measured output to {faction} has fallen {percent} percent over that period and the claim is still theirs on paper. It has not left the site and does not pursue beyond it.',
+        tokens: ['threatRank', 'place', 'years', 'faction', 'percent'],
+        tags: ['beast', 'hostile', 'contested-qi', 'spirit-vein', 'territory']
+    },
+    {
+        id: 'enc-beast-tide',
+        name: 'Beast Tide',
+        kind: 'spirit_beast',
+        simEventKind: 'encounter',
+        weight: 18,
+        minOrdinal: 2,
+        maxOrdinal: 30,
+        interrupts: true,
+        threatOrdinal: 14,
+        summaryTemplate:
+            'A tide of roughly {count} animals is moving off {place}, the strongest in it at {threatRank}. Recorded cause: {cause}. {faction} has recalled its ranked members to the compound; the {settlements} settlements on the line of it are not inside the recall.',
+        tokens: ['count', 'place', 'threatRank', 'cause', 'faction', 'settlements'],
+        tags: ['beast', 'hostile', 'tide', 'regional', 'timed']
+    },
+    {
+        id: 'enc-beast-that-speaks',
+        name: 'Something That Speaks',
+        kind: 'spirit_beast',
+        simEventKind: 'encounter',
+        weight: 10,
+        minOrdinal: 12,
+        maxOrdinal: 34,
+        interrupts: true,
+        threatOrdinal: 21,
+        summaryTemplate:
+            'Something at {place} has spoken rather than attacked. Nothing takes a shape or a voice below Core Formation, so the floor on it is known; measured output is {threatRank}. Terms stated: {terms}. It has held every arrangement it has made for {years} years and has not moved off the {feature}.',
+        tokens: ['place', 'threatRank', 'terms', 'years', 'feature'],
+        tags: ['beast', 'negotiable', 'social', 'avoidable', 'power-gap']
+    },
+    {
+        id: 'enc-beast-contract-offered',
+        name: 'Terms Offered by Something That Is Not a Person',
+        kind: 'spirit_beast',
+        simEventKind: 'npc_event',
+        weight: 5,
+        minOrdinal: 14,
+        maxOrdinal: 34,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A beast at {threatRank} at {place} proposes a standing contract: {terms} in exchange for {counterTerms}. It requires a witness of {faction} before it will consider itself bound. Standing cost to the cultivator while it holds: {percent} percent of their own draw, permanently, because the other party cultivates off the same ground.',
+        tokens: ['threatRank', 'place', 'terms', 'counterTerms', 'faction', 'percent'],
+        tags: ['beast', 'contract', 'social', 'costly', 'avoidable', 'once']
+    },
+    {
+        id: 'enc-old-thing-under-the-compound',
+        name: 'Something Under the Compound',
+        kind: 'spirit_beast',
+        simEventKind: 'encounter',
+        weight: 8,
+        minOrdinal: 18,
+        maxOrdinal: 44,
+        interrupts: true,
+        threatOrdinal: 33,
+        summaryTemplate:
+            'Something under the compound at {place} has been cultivating on undrawn qi since before {faction} was founded {years} years ago. Current output: {threatRank}. It has not surfaced. {count} of the site\'s formation nodes are lit and none of them are the ones over the lower chamber.',
+        tokens: ['place', 'faction', 'years', 'threatRank', 'count'],
+        tags: ['beast', 'ancient', 'ruin', 'sealed', 'high-risk', 'avoidable']
+    },
+    {
+        id: 'enc-beast-core-assay',
+        name: 'Assay House for Beast Cores',
+        kind: 'commerce',
+        simEventKind: 'opportunity',
+        weight: 28,
+        minOrdinal: 2,
+        maxOrdinal: 28,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            'An assay house at {place} run by {faction} grades beast cores by the realm they came off. Standing rate for a core at {threatRank}: {stones} spirit stones, less {percent} percent where the core was cut rather than taken whole. Shed and scavenged material is bought by weight at the back counter.',
+        tokens: ['place', 'faction', 'threatRank', 'stones', 'percent'],
+        tags: ['trade', 'beast', 'materials', 'safe']
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
     // RUINS, OPPORTUNITIES, INHERITANCES
     // ═══════════════════════════════════════════════════════════════════
     {
