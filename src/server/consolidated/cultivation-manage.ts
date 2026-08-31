@@ -89,7 +89,8 @@ import {
     tollConditionsFor,
     totalDays,
     type CultivationRepos,
-    type PendingPill
+    type PendingPill,
+    type TollApplication
 } from './cultivation-support.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -514,6 +515,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     const ranksGained = Math.max(0, end.realmOrdinal - before.realmOrdinal);
     const nextTurn = run.turn + 1;
 
+    const tollApplications: TollApplication[] = [];
+
     const persist = repos.db.transaction(() => {
         for (const injury of injuries) {
             repos.cultivators.addInjury(before.id, {
@@ -529,9 +532,11 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         }
 
         // Every instalment the Vault charged during the skip, in the same
-        // transaction as the ranks it charged them for.
+        // transaction as the ranks it charged them for. The application result
+        // is kept so the response can show that what the ledger names was
+        // genuinely removed, not merely recorded.
         for (const toll of result.tolls ?? []) {
-            persistToll(repos, run, before.id, toll);
+            tollApplications.push(persistToll(repos, run, before.id, toll));
         }
 
         // Deltas are computed against the row as it stands AFTER the advance,
@@ -613,7 +618,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             source: i.source,
             sustainedOnTurn: i.sustainedOnTurn
         })),
-        tolls: (result.tolls ?? []).map(toll => ({
+        tolls: (result.tolls ?? []).map((toll, index) => ({
             fromOrdinal: toll.fromOrdinal,
             toOrdinal: toll.toOrdinal,
             fromRank: rankName(toll.fromOrdinal),
@@ -624,6 +629,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             roll: round4(toll.roll),
             modifiers: toll.modifiers.map(m => ({ source: m.source, delta: round4(m.delta) })),
             taken: toll.taken,
+            applied: tollApplications[index]?.applied ?? false,
+            appliedDetail: tollApplications[index]?.detail ?? null,
             narrationHint: toll.narrationHint
         })),
         injuryReconciliation: {
@@ -705,6 +712,10 @@ export async function handleBreakthrough(
     });
 
     const nextTurn = run.turn + 1;
+    // An array rather than a nullable local: TypeScript does not track an
+    // assignment made inside the transaction closure, and would narrow a
+    // `let` back to null at the read site below.
+    const tollApplications: TollApplication[] = [];
     const died = result.outcome === 'death';
     const deathCause = died
         ? (result.tribulation ? 'heavenly_tribulation' as const : 'failed_breakthrough' as const)
@@ -735,7 +746,7 @@ export async function handleBreakthrough(
                 persistFoundation(repos, cultivator.id, result.foundationEstablished);
             }
             if (result.toll) {
-                persistToll(repos, run, cultivator.id, result.toll);
+                tollApplications.push(persistToll(repos, run, cultivator.id, result.toll));
             }
         } else {
             repos.cultivators.applyDeltas(cultivator.id, {
@@ -798,6 +809,9 @@ export async function handleBreakthrough(
                     delta: round4(m.delta)
                 })),
                 taken: result.toll.taken,
+                // Proof the ledger is not lying: what was named is gone.
+                applied: tollApplications[0]?.applied ?? false,
+                appliedDetail: tollApplications[0]?.detail ?? null,
                 narrationHint: result.toll.narrationHint
             }
             : null,

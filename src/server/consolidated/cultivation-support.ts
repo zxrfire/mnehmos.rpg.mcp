@@ -33,6 +33,11 @@
 import Database from 'better-sqlite3';
 import { getDb } from '../../storage/index.js';
 import { AuditRepository } from '../../storage/audit.repo.js';
+import {
+    endRelationship,
+    recordKnowledge,
+    type Relationship
+} from '../../engine/social/index.js';
 import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
 import { CultivatorRepository } from '../../storage/repos/cultivator.repo.js';
 import { RunRepository } from '../../storage/repos/run.repo.js';
@@ -549,8 +554,13 @@ const STRIKES_HOME = /(\d+)\s+struck home/i;
  * the strike count of a tribulation — so nothing here is the tool inventing a
  * wound. The count is reconciled against `injuriesGained` by the caller.
  *
- * (The clean fix is one line in the engine: have `TimeSkipResult` carry
- * `injuriesSustained: Injury[]`. Flagged to that module's owner.)
+ * TODO: DELETE THIS FUNCTION once `TimeSkipResult` carries
+ * `injuriesSustained: Injury[]`. That change is routed to the engine agent.
+ * When it lands, `handleCultivate` should read the field directly and drop the
+ * `injuryReconciliation` block with it — parsing the engine's own prose is
+ * exact today but only by accident, and it will break the first time a
+ * narration hint is reworded. `src/web/apply.ts` reconstructs the same way and
+ * should be cut over in the same pass.
  */
 export function reconstructSkipInjuries(
     result: TimeSkipResult,
@@ -710,11 +720,120 @@ function roundYears(years: number): number {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * The claim key a holder's knowledge ABOUT a cultivator is filed under.
+ *
+ * A convention rather than a schema constraint, because `claim_key` is free
+ * text by design. Anything filed here, plus anything whose underlying fact
+ * names the cultivator as a subject, is "what this person knows about you" —
+ * and that is exactly the set a taken bond removes.
+ */
+export function cultivatorClaimKey(cultivatorId: string): string {
+    return `person:${cultivatorId}`;
+}
+
+/** How much a tie mattered, from the stored significance. Never computed from stats. */
+const BOND_SIGNIFICANCE_WEIGHT: Record<string, number> = {
+    incidental: 1,
+    notable: 2,
+    defining: 3
+};
+
+interface BondRow {
+    id: string;
+    from_character_id: string;
+    to_character_id: string;
+    strength: number;
+    significance: string;
+    type: string;
+    label: string;
+    holder_name: string | null;
+}
+
+/**
+ * Everyone who currently knows this cultivator, as real `relationships` rows.
+ *
+ * Direction matters and is the whole point: these are ties held BY other people
+ * ABOUT the cultivator (`to_character_id = cultivator`). The world bible's
+ * phrasing is "a person who knew you stops knowing you", so what the Vault
+ * reaches for is somebody else's hold on you, not your feelings about them.
+ *
+ * The holder's display name is resolved across both `cultivators` and
+ * `characters`, because a bond may be held by either and the ledger has to be
+ * able to say whose it was.
+ */
+function bondCandidates(db: Database.Database, cultivatorId: string): TollCandidate[] {
+    const rows = db
+        .prepare(`
+            SELECT r.id, r.from_character_id, r.to_character_id, r.strength,
+                   r.significance, r.type, r.label,
+                   COALESCE(cu.name, ch.name) AS holder_name
+            FROM relationships r
+            LEFT JOIN cultivators cu ON cu.id = r.from_character_id
+            LEFT JOIN characters  ch ON ch.id = r.from_character_id
+            WHERE r.to_character_id = ? AND r.active = 1
+            ORDER BY r.id ASC
+        `)
+        .all(cultivatorId) as BondRow[];
+
+    return rows.map(row => ({
+        kind: 'bond' as const,
+        id: row.id,
+        label: `${row.holder_name ?? row.from_character_id}, ${row.label || row.type}`,
+        // Significance is a stored word; strength is how consequential the tie
+        // is. Both are written by whoever recorded the bond and neither is
+        // derived from anyone's realm.
+        weight: (BOND_SIGNIFICANCE_WEIGHT[row.significance] ?? 1) * (0.5 + row.strength)
+    }));
+}
+
+interface MemoryRow {
+    id: string;
+    statement: string;
+    confidence: number;
+    source_kind: string;
+    claim_key: string;
+}
+
+/**
+ * Memories the cultivator is actually holding, as real `knowledge_records`.
+ *
+ * Restricted to positive first-person stances held by a character: `ignorant`
+ * is the absence of a memory rather than one, and a `public` holder is a body
+ * of opinion, not somebody's recollection. A witnessed memory weighs more than
+ * a reported one because being there is what makes it yours.
+ */
+function memoryCandidates(db: Database.Database, cultivatorId: string): TollCandidate[] {
+    const rows = db
+        .prepare(`
+            SELECT id, statement, confidence, source_kind, claim_key
+            FROM knowledge_records
+            WHERE holder_id = ?
+              AND holder_kind = 'character'
+              AND superseded = 0
+              AND stance IN ('knows', 'believes')
+            ORDER BY id ASC
+        `)
+        .all(cultivatorId) as MemoryRow[];
+
+    return rows.map(row => ({
+        kind: 'memory' as const,
+        id: row.id,
+        label: row.statement.length > 120 ? `${row.statement.slice(0, 117)}...` : row.statement,
+        weight: 0.5 + row.confidence + (row.source_kind === 'witnessed' ? 0.5 : 0)
+    }));
+}
+
+/**
  * What this run has that the Vault could take.
  *
- * Everything here is a real row with a real id, so `persistToll` can delete
+ * Every candidate is a real row with a real id, so `persistToll` can act on
  * precisely what was named. Weights say how much a thing MATTERED — the Vault
  * takes what mattered, so higher is more likely to go.
+ *
+ * All three kinds are drawn from tables: `cultivator_techniques` for arts,
+ * `relationships` for bonds, `knowledge_records` for memories. A run that has
+ * accumulated none of them offers nothing, and the engine correctly returns
+ * `nothing_left` — the Hollow Court condition, arriving early.
  */
 export function tollCandidatesFor(
     repos: CultivationRepos,
@@ -733,22 +852,8 @@ export function tollCandidatesFor(
         });
     }
 
-    // Bonds: people in this run who know this cultivator. A sect brother is a
-    // real row; when the Vault takes one, they stop knowing you.
-    if (cultivator.runId) {
-        for (const other of repos.cultivators.list({ runId: cultivator.runId })) {
-            if (other.id === cultivator.id || !other.alive) continue;
-            if (other.kind === 'enemy') continue;
-            const sameSect =
-                cultivator.sectId !== null && other.sectId === cultivator.sectId;
-            candidates.push({
-                kind: 'bond',
-                id: other.id,
-                label: other.name,
-                weight: sameSect ? 2 : 1
-            });
-        }
-    }
+    candidates.push(...bondCandidates(repos.db, cultivator.id));
+    candidates.push(...memoryCandidates(repos.db, cultivator.id));
 
     return candidates;
 }
@@ -774,19 +879,198 @@ export function tollConditionsFor(
     };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// TAKING IT
+//
+// These are direct writes against the social layer's tables because that layer
+// has no repository yet. They belong in a `social.repo.ts` the moment one
+// exists; the SQL is kept small and the transitions are computed by the social
+// engine's own functions so the behaviour moves across unchanged.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Sever a bond: the person who knew this cultivator stops knowing them.
+ *
+ * Two writes, because the setting is specific about which half goes.
+ *
+ * 1. THE KNOWLEDGE IS DELETED. Every positive-stance thing the holder held
+ *    about the cultivator is removed, and a single `ignorant` row is written in
+ *    its place — the knowledge layer's own documented way to say "has no idea",
+ *    as distinct from having no record at all. This is the honest
+ *    representation of "a person who knew you stops knowing you": what the
+ *    Vault takes is their hold on you, and the row that used to carry it is
+ *    genuinely gone.
+ *
+ * 2. THE TIE IS ENDED, NOT DELETED, via the social engine's own
+ *    `endRelationship`. `relationships.ts` is explicit that ended ties are
+ *    kept — "a dead master is still a master" — and here that contract does
+ *    real work: the record stays, referring to somebody the holder can no
+ *    longer account for. That residue is the point. The bond itself is gone:
+ *    the row is inactive, reasoned `toll`, and no longer answers any live query.
+ *
+ * The world's `world_facts` are untouched throughout. The thing still happened;
+ * this person simply no longer holds it. The world remembers and they do not,
+ * which is the shape of the whole setting.
+ */
+export function severBond(
+    db: Database.Database,
+    cultivatorId: string,
+    cultivatorName: string,
+    relationshipId: string,
+    onDay: number
+): { holderId: string; knowledgeRowsDeleted: number; relationshipEnded: boolean } | null {
+    const row = db
+        .prepare(`
+            SELECT id, from_character_id, active, ended_reason, ended_on_day, last_updated_on_day
+            FROM relationships WHERE id = ?
+        `)
+        .get(relationshipId) as
+        | {
+            id: string;
+            from_character_id: string;
+            active: number;
+            ended_reason: string | null;
+            ended_on_day: number | null;
+            last_updated_on_day: number;
+        }
+        | undefined;
+    if (!row) return null;
+
+    const holderId = row.from_character_id;
+
+    // The transition is the social engine's to compute, not this layer's.
+    const ended = endRelationship(
+        {
+            active: row.active === 1,
+            endedReason: row.ended_reason,
+            endedOnDay: row.ended_on_day,
+            lastUpdatedOnDay: row.last_updated_on_day
+        } as Relationship,
+        'toll',
+        onDay
+    );
+
+    db.prepare(`
+        UPDATE relationships
+        SET active = ?, ended_reason = ?, ended_on_day = ?, last_updated_on_day = ?,
+            updated_at = datetime('now')
+        WHERE id = ?
+    `).run(
+        ended.active ? 1 : 0,
+        ended.endedReason,
+        ended.endedOnDay,
+        ended.lastUpdatedOnDay,
+        relationshipId
+    );
+
+    // Everything this holder held about the cultivator: filed under the
+    // person's claim key, or hanging off a fact that names them as a subject.
+    const deleted = db
+        .prepare(`
+            DELETE FROM knowledge_records
+            WHERE holder_id = @holderId
+              AND stance != 'ignorant'
+              AND (
+                claim_key = @claimKey
+                OR fact_id IN (
+                    SELECT fact_id FROM world_fact_subjects WHERE character_id = @subjectId
+                )
+              )
+        `)
+        .run({
+            holderId,
+            claimKey: cultivatorClaimKey(cultivatorId),
+            subjectId: cultivatorId
+        }).changes;
+
+    // The positive assertion that they no longer know, rather than a silent
+    // absence. `ignorant` exists precisely so this is writable.
+    const forgetting = recordKnowledge({
+        holderId,
+        claimKey: cultivatorClaimKey(cultivatorId),
+        stance: 'ignorant',
+        statement: `Does not know who ${cultivatorName} is.`,
+        onDay,
+        source: {
+            kind: 'assumed',
+            note: 'The Vault took this bond at a realm boundary. There is no memory of it to draw on.'
+        },
+        confidence: 1,
+        tags: ['toll', 'taken_bond']
+    });
+
+    db.prepare(`
+        INSERT INTO knowledge_records (
+            id, holder_id, holder_kind, claim_key, fact_id, stance, statement, detail,
+            source_kind, source_from_holder_id, source_via_record_id, source_note,
+            acquired_on_day, confidence, tags, superseded
+        ) VALUES (
+            @id, @holderId, @holderKind, @claimKey, NULL, @stance, @statement, @detail,
+            @sourceKind, NULL, NULL, @sourceNote,
+            @acquiredOnDay, @confidence, @tags, 0
+        )
+        ON CONFLICT(id) DO NOTHING
+    `).run({
+        id: forgetting.id,
+        holderId: forgetting.holderId,
+        holderKind: forgetting.holderKind,
+        claimKey: forgetting.claimKey,
+        stance: forgetting.stance,
+        statement: forgetting.statement,
+        detail: JSON.stringify(forgetting.detail),
+        sourceKind: forgetting.source.kind,
+        sourceNote: forgetting.source.note ?? '',
+        acquiredOnDay: forgetting.acquiredOnDay,
+        confidence: forgetting.confidence,
+        tags: JSON.stringify(forgetting.tags)
+    });
+
+    return { holderId, knowledgeRowsDeleted: deleted, relationshipEnded: true };
+}
+
+/**
+ * Take a memory: the record is deleted outright.
+ *
+ * No tombstone and no `superseded` flag, because superseding is for changing
+ * your mind and this is not that. The underlying `world_facts` row survives
+ * untouched — the thing still happened, and the cultivator simply no longer
+ * holds it. Anyone else who witnessed it still does, which is how the player
+ * finds out what they lost.
+ */
+export function forgetMemory(db: Database.Database, knowledgeRecordId: string): boolean {
+    const changes = db
+        .prepare('DELETE FROM knowledge_records WHERE id = ?')
+        .run(knowledgeRecordId).changes;
+    return changes > 0;
+}
+
 /**
  * Write down what the Vault took, and actually take it.
  *
- * MUST be called inside the caller's transaction: the rank advance and the toll
- * are one event, and a crossing that recorded the rank but not the price would
- * be exactly the drift this engine exists to prevent.
+ * THE INVARIANT: if the ledger says it was taken, it is gone from the database.
+ * A ledger entry claiming the Vault took somebody's brother while nothing was
+ * removed is an outcome asserted without a state change, which is the one
+ * thing this engine exists to make impossible. Every `taken` kind below
+ * therefore performs a real delete or a real transition, and
+ * `applied` reports which — an unapplied take is a bug, not a game outcome.
+ *
+ * MUST be called inside the caller's transaction: the rank advance and the
+ * price are one event, and a crossing that recorded the rank but not the cost
+ * would be exactly the drift this is guarding against.
  */
+export interface TollApplication {
+    /** True when the named thing was actually removed or ended. */
+    applied: boolean;
+    /** What was done, for the response and the tests. */
+    detail: Record<string, unknown> | null;
+}
+
 export function persistToll(
     repos: CultivationRepos,
     run: Run,
     cultivatorId: string,
     toll: TollResult
-): void {
+): TollApplication {
     repos.db.prepare(`
         INSERT INTO cultivation_tolls (
             run_id, cultivator_id, from_ordinal, to_ordinal, boundary_index,
@@ -801,24 +1085,58 @@ export function persistToll(
         toll.narrationHint, run.elapsedDays
     );
 
-    if (toll.outcome !== 'taken' || !toll.taken) return;
+    if (toll.outcome !== 'taken' || !toll.taken) {
+        return { applied: true, detail: null };
+    }
+
+    const onDay = Math.floor(run.elapsedDays);
 
     switch (toll.taken.kind) {
-        case 'technique':
+        case 'technique': {
             // Gone as if never learned. The join row is deleted and the
             // denormalised list on the cultivator is resynced with it.
-            if (toll.taken.id) repos.techniques.forget(cultivatorId, toll.taken.id);
-            break;
-        case 'name':
-            // The name is not a row that can be deleted, so it is marked taken.
-            // Thereafter people have to be told it, every time.
+            if (!toll.taken.id) return { applied: false, detail: null };
+            const forgotten = repos.techniques.forget(cultivatorId, toll.taken.id);
+            return {
+                applied: forgotten,
+                detail: { kind: 'technique', techniqueId: toll.taken.id, forgotten }
+            };
+        }
+
+        case 'bond': {
+            if (!toll.taken.id) return { applied: false, detail: null };
+            const subject = repos.cultivators.getById(cultivatorId);
+            const severed = severBond(
+                repos.db,
+                cultivatorId,
+                subject?.name ?? 'them',
+                toll.taken.id,
+                onDay
+            );
+            return {
+                applied: severed !== null,
+                detail: severed
+                    ? { kind: 'bond', relationshipId: toll.taken.id, ...severed }
+                    : { kind: 'bond', relationshipId: toll.taken.id, missing: true }
+            };
+        }
+
+        case 'memory': {
+            if (!toll.taken.id) return { applied: false, detail: null };
+            const removed = forgetMemory(repos.db, toll.taken.id);
+            return {
+                applied: removed,
+                detail: { kind: 'memory', knowledgeRecordId: toll.taken.id, removed }
+            };
+        }
+
+        case 'name': {
+            // A name is not a row that can be deleted, so it is marked taken.
+            // Thereafter people have to be told it, every time — and the engine
+            // will not charge it twice, because `nameAlreadyTaken` reads this.
             writeFlag(repos.db, cultivatorId, FLAG_NAME_TAKEN, '1');
-            break;
-        case 'bond':
-        case 'memory':
-            // Bonds and memories have no table of their own yet; the ledger row
-            // above is the record, and it names exactly which one went.
-            break;
+            return { applied: true, detail: { kind: 'name', nameTaken: true } };
+        }
     }
 }
 
