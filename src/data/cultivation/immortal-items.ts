@@ -332,6 +332,37 @@ export const THE_STEP_AND_THE_BOUNDARY = {
 } as const;
 
 // -------------------------------------------------------------------------
+// WHAT SERVICE ACTUALLY BUYS
+// Sects reward service generously and reliably. They will not spend an
+// immortal medicine on it. Those are two different statements and this file
+// keeps them apart.
+// -------------------------------------------------------------------------
+
+export const WHAT_SERVICE_ACTUALLY_BUYS = {
+    theyDoReward:
+        'Read nothing in this file as sects being ungrateful. A sect that owes somebody enormously pays enormously, publicly, and for a long time, and considers the debt genuinely honoured when it has - because it has. The refusal that runs through `THE_TWO_CLAIMS` is about one category of object and nothing else.',
+    theLine:
+        'Replaceability, and that is the whole of it. Everything else a sect has, it can get more of: it can promote, endow, teach, house, protect and vouch for people, and it can do all of that again next year. An immortal medicine does not come from the world. It comes down, rarely, at somebody else\'s discretion, and there is no supply, no method, and nobody to ask. So it sits outside the reward economy entirely - not because service is not worth it, but because nothing is worth it except the thing it was held for.',
+    whatIsOnOffer: [
+        'Rank, and quickly. Seats, titles, and the standing that goes with them.',
+        'A stipend that does not stop, and is not means-tested against what else the person has.',
+        'Resources: medicine, materials, a place in the queue for what the sect produces.',
+        'Technique access, including things the sect does not teach at that rank and makes an exception about.',
+        'A cave on a real vein, which is the largest material gift most cultivators will ever receive and is a decision about somebody\'s entire remaining career.',
+        'Protection, meaning the sect answers for you - which is worth more in this world than any object and is the thing an unaffiliated cultivator has no way to buy.',
+        'And a name that opens doors, permanently, in rooms the person could not otherwise enter.'
+    ],
+    theFamily:
+        'And the largest of them, which is easy to underrate from inside a cultivator-shaped view of the world: the sect looks after the family. Meritorious service buys generational security. The people of somebody who served are taken in, kept, placed, educated, fed and not forgotten - for decades, through deaths and successions, whether or not any of them can cultivate at all. It is honoured long after everybody who made the decision is gone, it costs the sect a great deal in the aggregate, and no institution in this catalog treats it as optional.',
+    whyItIsTheRealMotivation:
+        'Which is the actual reason a great many people cultivate, and the catalog should say so plainly. For somebody out of a thin county - no placement, no teacher, no readable manual, nobody outside the valley who knows the family name - the summit is an abstraction and glory is somebody else\'s word. What is not abstract is that if they serve well enough, their people stop being poor. Permanently. That is a clean, sufficient, entirely admirable motive, it has nothing to do with power, and it is available to somebody who will never see ordinal 20.',
+    theSameAtEveryScale:
+        'And it is not an apex practice. The Gleaners\' Company pays a dead digger\'s share to their family without exception and has never once defaulted, on a salvage contract, in the poorest province in the world - see `unitOfValue` in `faction-character.ts`. That is the same institution as an apex endowing an elder\'s grandchildren, at the only scale the Company has. An apex honouring it is not being kind; it is doing what every sect does, with more to spend.',
+    soTheRefusalIsNarrow:
+        'Which is what makes the refusal in `THE_TWO_CLAIMS` land where it does. Nobody deserving is turned away with nothing. They are given everything the sect can replace, sincerely and in full, and refused the single category it cannot - and being told no about one irreplaceable object by people who have just given you everything else is a much harder thing to be angry about than a snub would be.'
+} as const;
+
+// -------------------------------------------------------------------------
 // THE TWO CLAIMS
 // Potential and debt. Same object, two incompatible justifications, and no
 // institution holding one of these escapes the argument.
@@ -342,8 +373,10 @@ export const THE_TWO_CLAIMS = {
         'Saving the sect is necessary and it is not sufficient. To have a Step spent on you as an old servant you must have saved the institution AND your continued living must be of use to it, and the second term is the one that decides. The first only clears you to be considered.',
     theQuestionIsForwardLooking:
         'Because the sect is not settling accounts. It is asking what it gets for this, which is a question about the years ahead rather than the years behind, and gratitude is not an answer to it. Somebody who saved the institution forty years ago and has nothing further to offer does not get one. The debt is real, it is acknowledged, everybody agrees it exists, and it does not move the object.',
+    itIsNotThatServiceGoesUnrewarded:
+        'First, the thing this is not. Sects reward service generously, reliably, and at real cost to themselves, and they look after the families of the people who gave it - see `WHAT_SERVICE_ACTUALLY_BUYS`. What is being argued over here is one category of object that cannot be replaced at any price, and the argument would be exactly the same if everybody in the room adored the claimant, which they frequently do.',
     theEldersKnowThis:
-        'And this is the part that matters most: they are not deceived. Nobody senior is waiting in hope, nobody is owed an illusion, and nobody has to have it explained to them. They understand that they are being assessed on what remains rather than on what they did, and most of them hold that the assessment is the correct one for the sect to make. Being on the wrong side of a judgement you agree with is a specific and quiet kind of hard.',
+        'And this is the part that matters most: they are not deceived. Nobody senior is waiting in hope, nobody is owed an illusion, and nobody has to have it explained to them. They understand that they are being assessed on what remains rather than on what they did, they know precisely the difference between what a sect can give and what it cannot, and they are not bitter about a supply problem. Most of them hold that the assessment is the correct one for the sect to make. Being on the wrong side of a judgement you agree with is a specific and quiet kind of hard.',
     soMostOfThemDie:
         'Which should be stated plainly, because it is the ordinary outcome. The Step spent on an elder is rare even among the deserving - rarer than the founding acts that would qualify somebody for it. Most people who have earned it die at their realm on schedule, the sect grieves properly, and nobody opens the box. That is not a failure of the institution. It is the institution working as everybody inside it expects.',
     bothClaimsAreForwardLooking:
@@ -361,10 +394,12 @@ export const THE_TWO_CLAIMS = {
         who: 'A Sword Elder who held the lower gate through the second Crimson Abyss incursion and lost the use of an arm doing it, and who was refused sixty years later.',
         theReasoning:
             'Unanimous, correct on the instrument, and delivered to her face by people who had all been in the hall she saved. She had cleared the threshold and there was nothing further she could offer: the arm was gone, the seat was ceremonial by then, and the Pavilion could not name a single thing her next two thousand years would produce that its next two thousand years needed.',
+        whatSheWasGivenInstead:
+            'Everything else the Pavilion had, and none of it grudgingly. A Sword Elder seat and the stipend that goes with it, a cave on the gorge vein, access to two arts the sect does not teach at that rank, the sword name, and an undertaking on her family that the Pavilion has honoured for four generations without anybody having to ask: her people were taken in, placed, schooled and kept, and two of them who cannot cultivate at all still hold posts on the terraces. She was not refused. She was refused one object.',
         theGrievance:
-            'And this is the shape it actually takes, which is not what anybody assumes. Her people do not say she was ungratefully treated - they say the Pavilion was right, and they have never forgiven it. Watching an institution correctly conclude that the rest of your life is not worth an object, and having no argument against it, is far more corrosive than an injustice would be. An injustice can be disputed. This can only be agreed with.',
+            'And this is the shape it actually takes, which is not what anybody assumes. Her people do not say she was ungratefully treated - they know exactly what the Pavilion gave and are still living on some of it. They say the Pavilion was right, and they have never forgiven it. Watching an institution correctly conclude that the rest of your life is not worth the one thing it cannot replace, while it hands you everything it can, and having no argument against any of it, is far more corrosive than an injustice would be. An injustice can be disputed. This can only be agreed with.',
         howLongItHasLasted:
-            'Four generations. Her line is still at the Pavilion, still serves, and has declined every seat offered to it since, always politely, always with a reason that is not the reason.'
+            'Four generations. Her line is still at the Pavilion, still serves, still takes the stipend and the schooling because refusing those would be a gesture at the wrong people - and has declined every seat offered to it since, always politely, always with a reason that is not the reason. They are turning down real generosity, repeatedly, over a century, from an institution that keeps offering in good faith and has long since forgotten why the offers are refused.'
     },
     theOnesWhoDoNotAsk:
         'Which is why the good ones do not raise it. They can do the arithmetic themselves and they know the answer before anybody else in the room does. One of them declined to raise it at all, deliberately, and died at Nascent Soul Perfection with the sect holding an object it might well have spent on her. The hall found out afterwards, from somebody she had told and asked to stay quiet until it no longer mattered. Nobody at the Pavilion has been able to say what that did to the argument, and it has been running for sixty years since without anybody proposing a rule.',

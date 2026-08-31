@@ -273,6 +273,15 @@ export const WandererSchema = z.object({
     affiliation: z.object({
         factionId: z.string(),
         rankHeld: z.string().min(1),
+        /**
+         * A rank previously held, where the current one replaced something.
+         *
+         * Null is the ordinary case. It is set where the honorary rank is not a
+         * courtesy extended to an outsider but the residue of a real position
+         * somebody can no longer occupy, which is a different relationship and
+         * reads as one the moment it is stated.
+         */
+        formerRank: z.string().nullable(),
         whatItAmountsTo: z.string().min(150),
         /** What the faction gets out of it without doing anything. */
         whatTheFactionGets: z.string().min(80)
@@ -459,10 +468,11 @@ export const WANDERERS: readonly Wanderer[] = [
         affiliation: {
             factionId: 'sect-hollow-court',
             rankHeld: 'Guest of the Court',
+            formerRank: 'First Seat',
             whatItAmountsTo:
-                'It is real and it is empty. He holds the lowest of the four ranks, was entered on it without discussion, and has never used it for anything. No Seat has asked him for a service, he has never been to the mountains, and the last time any of the four saw him is not recorded. There is no obligation attached in either direction and neither party has ever proposed one.',
+                'It is real and it is empty, and it is what is left of something that was not. He held First Seat: at Tribulation Transcendence Perfection there was nobody above him, and he made the crossing from the top of the Court rather than from the edge of it. What came back could not hold a seat. Seats go by ordinal and then by remaining years, and a False Immortal has no ordinal and no attempts left at all, so he is not merely unranked - he is the one person the rule can never favour, and the Court had to invent somewhere to put him. Guest of the Court sits outside the four rungs rather than beneath them, he was entered on it without discussion, and has never used it for anything. No Seat has asked him for a service, he has never been to the mountains, and the last time any of the four saw him is not recorded. There is no obligation attached in either direction and neither party has ever proposed one - including the obvious one: if the mountains were attacked tomorrow nothing whatsoever compels him to come, and nobody can say whether he would. The tie is real for all that. He is on the roll, he has never asked to be taken off it, and the fact that no outsider can price what he would do is worth more to the Court as deterrence than a promise it could not enforce anyway.',
             whatTheFactionGets:
-                'Prestige, without having done anything to earn it: the Court has a False Immortal on its roll, everyone who knows anything knows it, and the Court has never once mentioned him.'
+                'Prestige, without having done anything to earn it: the Court has a False Immortal on its roll, everyone who knows anything knows it, and the Court has never once mentioned him. It also gets the only living account of what the crossing looks like from the top of that ladder, from somebody who went at it with every advantage the Court can supply. It has never asked, and the three who would benefit most are the three who have to sit with why not.'
         },
         whyNotWithThem:
             'The Hollow Court is four people working continuously on the crossing, and presence there is measured in decades of absence because that is what the work looks like. He is permanently barred from that crossing - it has been opened against his name and will not open again - so there is nothing at the Court for him to do. Everyone else on those mountains has the only thing he does not have, which is something left to attempt. So he left, and nobody argued.',
