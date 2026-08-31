@@ -462,7 +462,7 @@ export const REGIONS: readonly Region[] = [
             'Eleven surveyed veins, four of them rich, all claimed. The great sects are old because they hold veins and hold veins because they were old enough to take them.',
         politics: 'competing_sects',
         politicsNote:
-            'Rivalry. Twenty-six institutions, cross-cutting feuds, three Dao houses that arbitrate for a fee, and no party strong enough to stop the others. A newcomer with talent has options here.',
+            'Federated. Twenty-seven institutions holding single veins on twelve-year grants from something none of them names in public, competing for standing with whoever renews them rather than for the veins themselves - which is why the province argues constantly and burns rarely. A newcomer with talent has options here, and every one of them is somebody else\'s tenant.',
         factionIds: [
             'sect-azure-cloud-pavilion',
             'sect-verdant-spring-hall',
@@ -470,6 +470,7 @@ export const REGIONS: readonly Region[] = [
             'sect-clear-river-alliance',
             'sect-sweptground-temple',
             'sect-lantern-hall',
+            'sect-standing-grove',
             'sect-stonewright-consortium',
             'sect-thousand-treasure-pavilion',
             'sect-cinnabar-crucible-guild',
@@ -626,7 +627,7 @@ export const REGIONS: readonly Region[] = [
             'The veins are not drawn down, they are driven: whatever happened here forced the qi out of the air into the rock and killed the ground above it, and the dead ground has been spreading about a pace a year ever since.',
         politics: 'single_hegemon',
         politicsNote:
-            'The Weir Office holds both workable faces and rents them by the day against a grant book that is public, itemised and discretionary. There is no rival holding, so there is no rivalry - only application, refusal and appeal.',
+            'Direct rule. The province is administered by the institution that holds it, through a local bureau of eleven people at the weir, and there are no client sects anywhere in it - no leases, no vassals, no local hierarchy to belong to. The Weir Office looks like a hegemon and is a counter. There is no rivalry here because there is nobody to be rival with: only application, refusal, and an appeal form that is logged and answered years later.',
         factionIds: [
             'sect-weir-office',
             'sect-sixmile-wardens',
@@ -702,6 +703,7 @@ export const REGIONS: readonly Region[] = [
         ],
         trueHereFalseThere: [
             'Cultivation is a trade performed standing up with a tool in your hands, and a master carver has an apprentice rather than a disciple.',
+            'There is no sect to join. The province is administered directly, so there is no intermediate institution of any kind: a cultivator deals with the administration itself, at a counter, and joining means being processed rather than accepted.',
             'No pill can be made, only imported, so a treatable injury becomes an eleven-day problem or a permanent one.',
             'A cultivator\'s rank is stated in a vocabulary that three parties translate differently, and the commercial table is the one that gets visitors killed.'
         ],
@@ -711,6 +713,7 @@ export const REGIONS: readonly Region[] = [
             'Everything is grey. Dust on the roofs, on the animals, in the bread, and a pale ring around every local mouth.',
             'The road is staked in painted wood rather than paved, and leaving the stakes is how people die here. The Sixmile Wardens explain this once, free, and are visibly tired of explaining it.',
             'Nobody asks what realm you are. They ask whether you hold a grant, and the answer decides the rest of the conversation.',
+            'There are no sect patrols, no admission days and no gates with disciples on them - there is a counter, a register, a queue, and a clerk who is not empowered to make an exception and will say so pleasantly.',
             'Local ranks are trade titles - Chipping, Standing Cut, Keystone - and a visitor who hears "Standing Cut" as a labourer\'s grade has just misread a Foundation Establishment cultivator, which is the ordinary way outsiders get hurt here.',
             'No shop sells a pill above mortal grade, and no alchemist in the region can make one, because refinements do not set in air with nothing in it.',
             'Every carver has split white hands and a cough, including the rich ones, and a visitor with soft hands is assumed to be from the assay house or the mission.'

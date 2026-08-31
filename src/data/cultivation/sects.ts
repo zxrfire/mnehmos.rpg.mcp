@@ -868,6 +868,37 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'Holds the world\'s only working lightning curriculum, recovered whole from the fragment it lives on, and rules by the simple expedient of being the only place a mutated lightning root can learn anything. The Court does not recruit so much as collect, and treats refusal as a scheduling matter.'
     },
 
+    {
+        id: 'sect-standing-grove',
+        name: 'The Standing Grove',
+        alignment: 'righteous',
+        powerOrdinal: 27,
+        ranks: ['Guest of the Grove', 'Disciple', 'Elder Disciple', 'Keeper of the Grove'],
+        admissionOrdinal: 13,
+        stipend: [20, 90, 400, 1_600],
+        teaches: [
+            'cross-meridian-strike',
+            'iron-shirt-tempering',
+            'green-mercy-mending-palm',
+            'formless-severing-intent',
+            'unyielding-mountain-body',
+            'soul-anchoring-invocation'
+        ],
+        signatureTechniqueId: 'formless-severing-intent',
+        specialities: ['defense', 'support', 'attack'],
+        rivals: [],
+        territory: 'A valley of old trees, the mountain above it and four settlements - all of it within a day and a half\'s walk.',
+        recruits: true,
+        compound: {
+            inherited: false,
+            formationNodesTotal: 4,
+            formationNodesLit: 4,
+            remnant: 'Four nodes the Grove cut itself, holding a boundary wall that has never been tested, around a hermitage six people live in.'
+        },
+        description:
+            'Six disciples, a valley, and a region eleven days across that does not encroach. The Grove administers what it can comfortably walk and claims nothing beyond it; everyone for a great distance further out simply knows the ground is theirs and has never wanted to find out what happens otherwise. It keeps no patrols, no register, no lease and no clients. It settles disputes nobody asked it to settle, refuses payment for it, and has killed twice in two hundred years, both times within nine days of being tested and in front of witnesses who were not asked to be there.'
+    },
+
     // ═══════════════════════════════════════════════════════════════════
     // THE QUIET MARCHES
     // The adjacent region, and a different set of assumptions. Three
@@ -1836,6 +1867,13 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: [],
         requirement: 'A survey of any nine li of ground, walked and measured, submitted with the applicant\'s working.'
     },
+    'sect-standing-grove': {
+        minOrdinal: 13,
+        minInsight: 3,
+        preferredRoots: [],
+        requirement: 'There is no application. The Grove approaches perhaps one person a generation, having watched them for some years, and has approached nobody in forty-one.'
+    },
+
     // The Quiet Marches. Note how low the bars are, and that the binding
     // requirement everywhere is stones rather than talent.
     'sect-weir-office': {
@@ -2346,6 +2384,20 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         lastOffering: null,
         discoverableTraces: [],
         standingNote: 'The Cult keeps unusually good records of other people\'s dead and almost none of its own.'
+    },
+    'sect-standing-grove': {
+        ancestors: [
+            { name: 'The first Keeper, who planted nothing and cleared nothing', fate: 'dead', yearsAgo: 240, rememberedFor: 'Settled a border war between two granted sects by walking into the middle of it unarmed and staying there for eleven days.' },
+            { name: 'Keeper Wen Zhao', fate: 'dead', yearsAgo: 60, rememberedFor: 'Answered the last test of the deference zone in nine days, visibly, and then went home and never referred to it again.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'Two hundred and forty years, four Keepers, and a wall of names short enough to read aloud in a minute. The Grove is respected for people rather than for an institution, which is exactly why it cannot afford a disgrace.'
     },
     'sect-weir-office': {
         ancestors: [

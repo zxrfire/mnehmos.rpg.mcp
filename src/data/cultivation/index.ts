@@ -26,6 +26,7 @@ import { REGIONS } from './regions.js';
 import { TRADITIONS } from './traditions.js';
 import { OCCUPATIONS, PRICES, SETTLEMENTS } from './mortal-world.js';
 import { FACTION_CHARACTER } from './faction-character.js';
+import { APEX_INSTITUTIONS, COURTS, FACTION_PARENTAGE, GUEST_ELDERS } from './hierarchy.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RE-EXPORTS
@@ -154,6 +155,7 @@ export * from './regions.js';
 export * from './traditions.js';
 export * from './mortal-world.js';
 export * from './faction-character.js';
+export * from './hierarchy.js';
 
 export {
     ENCOUNTERS,
@@ -213,6 +215,12 @@ export interface CultivationCatalogCounts {
     settlements: number;
     /** Factions with a full distinctness record. Should equal `sects`. */
     charactered: number;
+    /** Institutions above the map. A starting cultivator knows of none. */
+    apexInstitutions: number;
+    courts: number;
+    guestElders: number;
+    /** Factions placed in the governance stack. Should equal `sects`. */
+    placedInStack: number;
 }
 
 /** Catalog sizes, for tool responses and for the content smoke test. */
@@ -231,7 +239,11 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         occupations: OCCUPATIONS.length,
         prices: PRICES.length,
         settlements: SETTLEMENTS.length,
-        charactered: Object.keys(FACTION_CHARACTER).length
+        charactered: Object.keys(FACTION_CHARACTER).length,
+        apexInstitutions: APEX_INSTITUTIONS.length,
+        courts: COURTS.length,
+        guestElders: GUEST_ELDERS.length,
+        placedInStack: Object.keys(FACTION_PARENTAGE).length
     };
 }
 

@@ -43,13 +43,37 @@
  *                 started it and both accounts are wrong in the same direction.
  *
  * Walking both roads is possible, catastrophic and rare. See `TWICE_WORKED`.
+ *
+ * WHAT LIVES HERE AND WHAT DOES NOT
+ * ---------------------------------
+ * This file is the prose: the method, the recognition cues, the war, the
+ * strengths and weaknesses, the things each tradition confidently believes
+ * about the other and gets people killed with. It is inert.
+ *
+ * The ID and the RESOLUTION RULE are not here. `TraditionIdSchema` and
+ * `killRequirement` live in `engine/cultivation/tradition.ts`, beside the
+ * combat code that consults them, and are re-exported below so callers can
+ * keep reaching them through the catalog. The rule decides fights, so it
+ * belongs to the engine; the account of why it is that way belongs here.
  */
 
 import { z } from 'zod';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import {
+    TraditionIdSchema,
+    type TraditionId,
+    killRequirement,
+    soulAttacksAffect,
+    TRADITION_DEATH_RULES
+} from '../../engine/cultivation/tradition.js';
 
-export const TraditionIdSchema = z.enum(['tradition-drawn', 'tradition-cut']);
-export type TraditionId = z.infer<typeof TraditionIdSchema>;
+export {
+    TraditionIdSchema,
+    killRequirement,
+    soulAttacksAffect,
+    TRADITION_DEATH_RULES
+};
+export type { TraditionId };
 
 /** What ends a practitioner of this tradition, and what does not. */
 export const DeathAnswerSchema = z.object({
@@ -113,7 +137,9 @@ export const TRADITIONS: readonly Tradition[] = [
             'They gesture when they cultivate, and their arts have a shape in the air that a Cut practitioner finds gaudy and legible.'
         ],
         death: {
-            persistsFromOrdinal: 21,
+            // Taken from the engine rule rather than restated, so the prose and
+            // the resolution cannot drift apart.
+            persistsFromOrdinal: TRADITION_DEATH_RULES['tradition-drawn'].persistsFromOrdinal,
             onBodyDestroyed:
                 'Below Nascent Soul, they die. At Nascent Soul and above the soul leaves intact and can persist without a body for a period measured in months, shortening with every day it stays out.',
             onSoulAttacked:
@@ -156,7 +182,7 @@ export const TRADITIONS: readonly Tradition[] = [
             'Split white hands, a permanent cough, and stillness while cultivating - a carver at work looks like somebody holding a heavy thing rather than performing.'
         ],
         death: {
-            persistsFromOrdinal: null,
+            persistsFromOrdinal: TRADITION_DEATH_RULES['tradition-cut'].persistsFromOrdinal,
             onBodyDestroyed:
                 'Usually final. There is no soul to leave. The exception is the seam: if a large enough seam-bearing piece survives intact, the carver can be regrown from it over years, and this is why the Marches walls its dead into the faces they were working.',
             onSoulAttacked:
@@ -252,35 +278,6 @@ export function requireTradition(id: TraditionId): Tradition {
 /** The tradition seated in a region. */
 export function traditionForRegion(regionId: string): Tradition | undefined {
     return TRADITIONS.find(t => t.seatRegionId === regionId);
-}
-
-/**
- * What ending this cultivator actually requires, given their tradition and
- * rank. The engine resolves the outcome; this supplies the shape of it, and
- * the shape differs between two people standing at the same ordinal.
- */
-export function killRequirement(traditionId: TraditionId, ordinal: number): {
-    bodyIsEnough: boolean;
-    soulAttackWorks: boolean;
-    note: string;
-} {
-    const tradition = requireTradition(traditionId);
-    if (tradition.id === 'tradition-cut') {
-        return {
-            bodyIsEnough: false,
-            soulAttackWorks: false,
-            note: 'Destroying the body kills a carver in the ordinary case and leaves the seam. Finishing one means quarrying the seam out and scattering it, and a party who does not know this will believe the job is done.'
-        };
-    }
-    const persists = tradition.death.persistsFromOrdinal !== null
-        && ordinal >= tradition.death.persistsFromOrdinal;
-    return {
-        bodyIsEnough: !persists,
-        soulAttackWorks: true,
-        note: persists
-            ? 'Above Nascent Soul the body is an expense rather than a life. Finishing one means ending the soul, and there are perhaps four arts in the catalog that do it.'
-            : 'Below Nascent Soul the body is the whole of the person, and an ordinary killing is an ordinary killing.'
-    };
 }
 
 /**

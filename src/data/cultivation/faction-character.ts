@@ -92,7 +92,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     },
     'sect-verdant-spring-hall': {
         practice: 'Physicians keep their fingernails cut to the quick and their sleeves pinned back at all times, and will treat an enemy on the floor of a fight before asking who started it.',
-        grievance: 'That four of its nine springs were plumbed by a predecessor whose method it cannot reproduce, so it is maintaining an inheritance it does not understand with fired clay.',
+        grievance: 'That it was a hermitage of nine people once, holding its valley by respect and nothing else, and chose to grow - and that the Standing Grove, which refused the same choice, is spoken of the way the Hall used to be.',
         fear: 'That the Bone Lantern Cult is right that the dead are a resource, and that the Hall\'s objection is sentiment rather than medicine.',
         lateness: 'Fourteen of twenty-two nodes lit; the stone irrigation channels are original and get patched with clay; and the rank of Life Elder retains a ceremonial duty at the springs that nobody can explain.',
         disagreement: 'The billing faction wants enemies treated and charged at triple. The physicians want them treated and charged the same, on the argument that a price is a diagnosis of who you think somebody is.',
@@ -161,6 +161,20 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         distinctSentence: 'Writes down what the crossings take from other people, publishes it against their wishes, and is correct in a way that has made it unwelcome in nine cities.'
     },
 
+    'sect-standing-grove': {
+        practice: 'They answer questions and do not ask them. A disciple of the Grove meeting a stranger on the road gives their own name first, waits, and accepts whatever is offered back without comment, including a lie.',
+        grievance: 'None they will state, which visitors find unnerving; the Grove holds that a grievance is a claim, and it makes no claims.',
+        fear: 'A small test at the edge that is deniable enough to be awkward to answer and public enough that not answering ends the zone. It has been forty-one years and everybody in the hermitage can feel the clock.',
+        lateness: 'Four nodes, all lit, all their own work, and a boundary wall that has never been tested - the Grove is the only institution in the province whose inheritance is nothing at all, which is why it has nothing it cannot operate.',
+        disagreement: 'Two of the six want a seventh disciple taken this decade. The Keeper holds that a seventh means a roster, a roster means administration, and administration means becoming a different kind of thing.',
+        wrongAbout: 'It believes its deference zone runs eleven days out because that is where the last test happened. Two granted sects have quietly moved leases inward on the northern side in the last twenty years and the Grove has not noticed, because nobody has told it and it does not patrol.',
+        unitOfValue: 'Occasions answered. The Grove counts its standing in the number of times it has been tested and responded, which is two, and both are known by name across the province.',
+        production: {
+            reliableOrdinal: 21, currentCount: 6, peakOrdinal: 27, peakCount: 2, yearsSinceLastPeak: 60,
+            note: 'Six disciples, all of them known individually across the province, and a pipeline that is deliberately not one - the Grove has taken nobody in forty-one years.'
+        },
+        distinctSentence: 'Holds a region eleven days across with six people, no patrols and no lease, on nothing but a belief about what would happen, which was last checked forty-one years ago.'
+    },
     // ═══════════════════════════════════════════════════════════════════
     // LOW FALL - NEUTRAL
     // ═══════════════════════════════════════════════════════════════════
