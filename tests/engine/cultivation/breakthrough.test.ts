@@ -11,8 +11,7 @@ import {
     MAX_ORDINAL,
     TOTAL_RANKS,
     isRealmBoundary,
-    progressRequiredForOrdinal,
-    realmForOrdinal
+    progressRequiredForOrdinal
 } from '../../../src/engine/cultivation/realms.js';
 import {
     MAX_BREAKTHROUGH_CHANCE,
@@ -25,6 +24,7 @@ import {
     tribulationStrikeSurvival
 } from '../../../src/engine/cultivation/breakthrough.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { MAX_TEMPERING } from '../../../src/engine/cultivation/injuries.js';
 import {
     MAX_RANKS_PER_TURN,
     type AmbientQi,
@@ -32,6 +32,9 @@ import {
     type SpiritRootKey
 } from '../../../src/schema/cultivation.js';
 import { makeCultivator, makeInjuries } from './fixtures.js';
+
+/** Local alias so the foundation helper below reads cleanly. */
+type AmbientBand = AmbientQi;
 
 const ALL_ORDINALS = Array.from({ length: TOTAL_RANKS }, (_, i) => i);
 const AMBIENT_BANDS: AmbientQi[] = ['thin', 'normal', 'dense', 'spirit_tide'];
@@ -318,15 +321,24 @@ describe('attempting', () => {
 });
 
 describe('heavenly tribulation', () => {
-    const TRIB_ORDINALS = [41, 42, 43];
+    // Every crossing INTO or WITHIN Tribulation Transcendence: 40 -> 41 is the
+    // lightest and 43 -> 44 the heaviest.
+    const TRIB_ORDINALS = [40, 41, 42, 43];
 
-    it('counts strikes escalating through the final realm', () => {
-        for (const ordinal of TRIB_ORDINALS) {
-            const tier = realmForOrdinal(ordinal);
-            expect(tribulationStrikeCount(ordinal)).toBe(3 + (ordinal - tier.ordinalStart));
+    it('counts strikes from the destination, lightest at the boundary crossing', () => {
+        expect(tribulationStrikeCount(40)).toBe(3);
+        expect(tribulationStrikeCount(41)).toBe(4);
+        expect(tribulationStrikeCount(42)).toBe(5);
+        expect(tribulationStrikeCount(43)).toBe(6);
+        // Strictly increasing, and zero wherever no lightning is summoned.
+        for (let i = 1; i < TRIB_ORDINALS.length; i++) {
+            expect(tribulationStrikeCount(TRIB_ORDINALS[i])).toBeGreaterThan(
+                tribulationStrikeCount(TRIB_ORDINALS[i - 1])
+            );
         }
-        expect(tribulationStrikeCount(41)).toBe(3);
-        expect(tribulationStrikeCount(43)).toBe(5);
+        for (const ordinal of [0, 12, 24, 36, 39, MAX_ORDINAL]) {
+            expect(tribulationStrikeCount(ordinal)).toBe(0);
+        }
     });
 
     it('keeps per-strike survival inside a sane band', () => {
@@ -376,8 +388,8 @@ describe('heavenly tribulation', () => {
         }
     });
 
-    it('does not summon lightning below Tribulation Transcendence', () => {
-        for (const ordinal of [0, 12, 24, 36, 40]) {
+    it('does not summon lightning below the Tribulation Transcendence crossing', () => {
+        for (const ordinal of [0, 12, 24, 36, 39]) {
             for (let i = 0; i < 40; i++) {
                 const result = attemptBreakthrough(ready(ordinal), {
                     rng: forStream(`no-trib-${i}`, 'breakthrough', i, ordinal),
@@ -387,5 +399,237 @@ describe('heavenly tribulation', () => {
                 expect(result.tribulation).toBeNull();
             }
         }
+    });
+
+    it('summons the lightest tribulation on the 40 to 41 crossing itself', () => {
+        let sawTribulation = 0;
+        let sawDeath = 0;
+        for (let i = 0; i < 1500; i++) {
+            const result = attemptBreakthrough(ready(40), {
+                rng: forStream(`crossing-${i}`, 'breakthrough', i, 40),
+                ambient: 'normal',
+                turn: 1
+            });
+            if (result.tribulation === null) {
+                expect(result.outcome).not.toBe('success');
+                continue;
+            }
+            sawTribulation++;
+            expect(result.tribulation.strikes).toBe(3);
+            if (result.outcome === 'death') sawDeath++;
+        }
+        expect(sawTribulation).toBeGreaterThan(0);
+        expect(sawDeath).toBeGreaterThan(0);
+    });
+
+    it('charges the toll on the tribulation crossing too - boundary AND lightning', () => {
+        let arrived = null;
+        for (let i = 0; i < 600 && arrived === null; i++) {
+            const result = attemptBreakthrough(ready(40), {
+                rng: forStream(`trib-toll-${i}`, 'breakthrough', i, 40),
+                ambient: 'normal',
+                turn: 1,
+                toll: {
+                    candidates: [
+                        { kind: 'bond', id: 'npc-1', label: 'their last student', weight: 2 }
+                    ]
+                }
+            });
+            if (result.outcome === 'success') arrived = result;
+        }
+        expect(arrived).not.toBeNull();
+        expect(arrived!.tribulation?.survived).toBe(true);
+        expect(arrived!.toll).not.toBeNull();
+        expect(arrived!.toll!.boundaryIndex).toBe(7);
+    });
+
+    it('charges nobody who did not arrive', () => {
+        for (let i = 0; i < 200; i++) {
+            const result = attemptBreakthrough(ready(40), {
+                rng: forStream(`no-arrival-${i}`, 'breakthrough', i, 40),
+                ambient: 'normal',
+                turn: 1,
+                toll: { candidates: [{ kind: 'bond', id: 'n', label: 'someone', weight: 1 }] }
+            });
+            if (result.outcome !== 'success') expect(result.toll).toBeNull();
+        }
+    });
+});
+
+describe('the toll, charged through a breakthrough', () => {
+    const POOL = [
+        { kind: 'bond' as const, id: 'npc-a', label: 'their brother', weight: 4 },
+        { kind: 'technique' as const, id: 'tech-a', label: 'Borrowed Breath', weight: 2 }
+    ];
+
+    function crossings(ordinal: number, n: number, toll = { candidates: POOL }) {
+        const results = [];
+        for (let i = 0; i < n; i++) {
+            results.push(
+                attemptBreakthrough(ready(ordinal), {
+                    rng: forStream(`cross-${i}`, 'breakthrough', i, ordinal),
+                    ambient: 'normal',
+                    turn: 1,
+                    toll
+                })
+            );
+        }
+        return results;
+    }
+
+    it('charges every successful realm-boundary crossing', () => {
+        for (const result of crossings(16, 300)) {
+            expect(result.toll !== null).toBe(result.outcome === 'success');
+        }
+    });
+
+    it('never charges a sub-rank step', () => {
+        for (const result of crossings(5, 300)) {
+            expect(result.toll).toBeNull();
+        }
+    });
+
+    it('can come up clean on a boundary the player actually crossed', () => {
+        const successes = crossings(16, 400).filter(r => r.outcome === 'success');
+        expect(successes.length).toBeGreaterThan(0);
+        const outcomes = new Set(successes.map(r => r.toll!.outcome));
+        expect(outcomes).toContain('clean');
+        expect(outcomes).toContain('taken');
+    });
+
+    it('reports the toll in the narration hint so it cannot be narrated away', () => {
+        const taken = crossings(16, 400).find(r => r.toll?.outcome === 'taken');
+        expect(taken).toBeDefined();
+        expect(taken!.narrationHint).toContain(taken!.toll!.taken!.label);
+    });
+
+    it('finds nothing to take when the caller supplies no candidates', () => {
+        // Deliberately visible rather than silent: the Vault does not wait for
+        // a caller to be ready, so a forgotten candidate list surfaces here.
+        const outcomes = new Set(
+            crossings(16, 300, { candidates: [] })
+                .filter(r => r.toll !== null)
+                .map(r => r.toll!.outcome)
+        );
+        expect(outcomes).toContain('nothing_left');
+        expect(outcomes).not.toContain('taken');
+    });
+});
+
+describe('foundation establishment', () => {
+    it('lays a foundation on the 12 to 13 crossing and nowhere else', () => {
+        const crossing = [];
+        for (let i = 0; i < 300; i++) {
+            crossing.push(
+                attemptBreakthrough(ready(12), {
+                    rng: forStream(`found-${i}`, 'breakthrough', i, 12),
+                    ambient: 'dense',
+                    turn: 1,
+                    foundation: { preparation: 0.8 }
+                })
+            );
+        }
+        const successes = crossing.filter(r => r.outcome === 'success');
+        expect(successes.length).toBeGreaterThan(0);
+        for (const result of crossing) {
+            expect(result.foundationEstablished !== null).toBe(result.outcome === 'success');
+        }
+
+        for (let i = 0; i < 50; i++) {
+            const elsewhere = attemptBreakthrough(ready(16), {
+                rng: forStream(`nofound-${i}`, 'breakthrough', i, 16),
+                ambient: 'normal',
+                turn: 1
+            });
+            expect(elsewhere.foundationEstablished).toBeNull();
+        }
+    });
+
+    it('lays better foundations for better-prepared crossings', () => {
+        const qualityOf = (conditions: { preparation?: number; hurried?: boolean }, ambient: AmbientBand) => {
+            const seen = new Set<string>();
+            for (let i = 0; i < 300; i++) {
+                const result = attemptBreakthrough(ready(12), {
+                    rng: forStream(`prep-${i}`, 'breakthrough', i, 12),
+                    ambient,
+                    turn: 1,
+                    foundation: conditions
+                });
+                if (result.foundationEstablished) seen.add(result.foundationEstablished);
+            }
+            return seen;
+        };
+        const prepared = qualityOf({ preparation: 1 }, 'dense');
+        const ditch = qualityOf({ hurried: true }, 'thin');
+        expect(prepared).toContain('exceptional');
+        expect(ditch).not.toContain('exceptional');
+        expect(ditch).toContain('damaged');
+    });
+
+    it('exposes the fresh foundation to the same crossing that laid it', () => {
+        // The foundation laid at 12 -> 13 is what the Vault reaches into on the
+        // way past, so it must be the new one and not the pre-crossing 'none'.
+        let seen = null;
+        for (let i = 0; i < 300 && seen === null; i++) {
+            const result = attemptBreakthrough(ready(12), {
+                rng: forStream(`fresh-${i}`, 'breakthrough', i, 12),
+                ambient: 'thin',
+                turn: 1,
+                foundation: { hurried: true },
+                toll: { candidates: [{ kind: 'bond', id: 'n', label: 'someone', weight: 1 }] }
+            });
+            if (result.outcome === 'success' && result.foundationEstablished === 'damaged') {
+                seen = result;
+            }
+        }
+        expect(seen).not.toBeNull();
+        expect(seen!.toll!.modifiers.some(m => m.source === 'foundation:damaged')).toBe(true);
+    });
+});
+
+describe('scar tempering', () => {
+    it('pays a capped bonus for wounds that were closed', () => {
+        const scarred = makeCultivator({
+            realmOrdinal: 5,
+            cultivationProgress: progressRequiredForOrdinal(5),
+            injuries: makeInjuries(3, 'serious').map(i => ({ ...i, treated: true }))
+        });
+        const untouched = ready(5);
+        const scarredOdds = computeBreakthroughOdds(scarred, { ambient: 'normal' });
+        const baseOdds = computeBreakthroughOdds(untouched, { ambient: 'normal' });
+
+        expect(scarredOdds.finalChance).toBeGreaterThan(baseOdds.finalChance);
+        expect(scarredOdds.modifiers.some(m => m.source.startsWith('tempering:'))).toBe(true);
+    });
+
+    it('never lets an OPEN wound pay anything - the ratchet is untouched', () => {
+        const open = makeCultivator({
+            realmOrdinal: 5,
+            cultivationProgress: progressRequiredForOrdinal(5),
+            injuries: makeInjuries(3, 'serious')
+        });
+        const odds = computeBreakthroughOdds(open, { ambient: 'normal' });
+        const baseOdds = computeBreakthroughOdds(ready(5), { ambient: 'normal' });
+        expect(odds.finalChance).toBeLessThan(baseOdds.finalChance);
+        expect(odds.modifiers.some(m => m.source.startsWith('tempering:'))).toBe(false);
+    });
+
+    it('can never out-earn the spirit root a cultivator was dealt', () => {
+        const veteran = makeCultivator({
+            realmOrdinal: 5,
+            spiritRoot: 'muddled_five_element',
+            cultivationProgress: progressRequiredForOrdinal(5),
+            injuries: makeInjuries(40, 'crippling').map(i => ({ ...i, treated: true }))
+        });
+        const prodigy = makeCultivator({
+            realmOrdinal: 5,
+            spiritRoot: 'single_fire',
+            cultivationProgress: progressRequiredForOrdinal(5)
+        });
+        const temperingDelta = computeBreakthroughOdds(veteran, { ambient: 'normal' })
+            .modifiers.find(m => m.source.startsWith('tempering:'))!.delta;
+        expect(temperingDelta).toBeLessThanOrEqual(MAX_TEMPERING);
+        expect(computeBreakthroughOdds(veteran, { ambient: 'normal' }).finalChance)
+            .toBeLessThan(computeBreakthroughOdds(prodigy, { ambient: 'normal' }).finalChance);
     });
 });

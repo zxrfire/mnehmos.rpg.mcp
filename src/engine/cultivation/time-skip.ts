@@ -43,10 +43,12 @@ import {
     type Cultivator,
     type DeathCause,
     type Element,
+    type FoundationQuality,
     type Injury,
     type SimEvent,
     type SimEventKind,
-    type TimeSkipResult
+    type TimeSkipResult,
+    type TollResult
 } from '../../schema/cultivation.js';
 import { lifespanForOrdinal, rankName } from './realms.js';
 import { AMBIENT_REFRESH_DAYS, ambientForBlock } from './ambient.js';
@@ -57,6 +59,8 @@ import {
     type CultivationOptions
 } from './cultivation.js';
 import { attemptBreakthrough, canAttemptBreakthrough } from './breakthrough.js';
+import type { FoundationConditions } from './foundation.js';
+import type { TollConditions } from './toll.js';
 import { resolveDeviation, rollDeviation } from './deviation.js';
 import { createInjury, untreatedInjuryCount } from './injuries.js';
 import { burnSatiety, eat, evaluateDeathConditions, turnsUntilStarvation } from './survival.js';
@@ -124,6 +128,19 @@ export interface TimeSkipContext {
     autoBreakthrough?: boolean;
     /** Roll encounters and opportunities. Default true. */
     randomEvents?: boolean;
+    /**
+     * Conditions for the Vault's toll at any realm boundary crossed during the
+     * skip. The candidate list must come from real rows - the engine holds no
+     * database - so a caller that omits it will see the Vault find nothing
+     * worth taking, which is a visible result rather than a silent skip.
+     */
+    toll?: TollConditions;
+    /**
+     * Conditions for the foundation, if the skip crosses 12 -> 13. A decade of
+     * unattended seclusion is by definition an unhurried crossing, but the
+     * caller still owns whether a site was chosen and a pill was bought.
+     */
+    foundation?: Omit<FoundationConditions, 'ambient'>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -161,6 +178,10 @@ export function simulateTimeSkip(
     let injuries: Injury[] = [...cultivator.injuries];
     let spiritStones = cultivator.spiritStones;
     let rations = Math.max(0, Math.floor(ctx.rations ?? 0));
+    /** May be set during the skip, if it crosses Foundation Establishment. */
+    let foundation: FoundationQuality = cultivator.foundationQuality ?? 'none';
+    /** Everything the Vault took during the skip, for the caller to apply. */
+    const tolls: TollResult[] = [];
 
     /** Integer day counters. Ages are derived from these, never accumulated,
      *  so a thousand chunks introduce no float drift. */
@@ -210,6 +231,8 @@ export function simulateTimeSkip(
         cultivationProgress: progress,
         spiritRoot: cultivator.spiritRoot,
         attributes: cultivator.attributes,
+        foundationQuality: foundation,
+        name: cultivator.name,
         injuries,
         hp,
         maxHp: cultivator.maxHp,
@@ -258,7 +281,9 @@ export function simulateTimeSkip(
                     rng: forStream(ctx.seed, 'breakthrough', absDay, ordinal),
                     ambient,
                     turn: turn + Math.floor(elapsed),
-                    ranksGainedThisTurn: ranksOnDay
+                    ranksGainedThisTurn: ranksOnDay,
+                    toll: ctx.toll,
+                    foundation: ctx.foundation
                 });
 
                 progress = Math.max(0, progress - result.progressConsumed);
@@ -272,12 +297,38 @@ export function simulateTimeSkip(
                     ranksOnDay++;
                     daysSinceAdvance = 0;
                     realmClockBase = 0;
+                    if (result.foundationEstablished !== null) {
+                        foundation = result.foundationEstablished;
+                    }
                     push('breakthrough_success', result.narrationHint, false, {
                         fromOrdinal: result.fromOrdinal,
                         toOrdinal: result.toOrdinal,
                         finalChance: result.finalChance,
-                        tribulation: result.tribulation
+                        tribulation: result.tribulation,
+                        foundationEstablished: result.foundationEstablished
                     });
+
+                    // The Vault's instalment gets its own line in the digest.
+                    // A crossing that cost someone a brother must not be a
+                    // footnote inside a success message.
+                    if (result.toll !== null) {
+                        tolls.push(result.toll);
+                        const took = result.toll.outcome === 'taken';
+                        push('toll_charged', result.toll.narrationHint, took, {
+                            outcome: result.toll.outcome,
+                            boundaryIndex: result.toll.boundaryIndex,
+                            risk: result.toll.risk,
+                            taken: result.toll.taken
+                        });
+                        if (took) {
+                            // Losing a person, a memory or an art is not
+                            // something a player should read about ten years
+                            // later in a list. Hand control back.
+                            interrupted = true;
+                            interruptReason = 'toll_charged';
+                            break;
+                        }
+                    }
                     continue;
                 }
 
@@ -482,7 +533,10 @@ export function simulateTimeSkip(
             injuriesGained
         },
         died,
-        deathCause
+        deathCause,
+        tolls,
+        foundationEstablished:
+            foundation === (cultivator.foundationQuality ?? 'none') ? null : foundation
     };
 }
 

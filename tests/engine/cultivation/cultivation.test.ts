@@ -29,6 +29,7 @@ import { makeCultivator, makeInjuries } from './fixtures.js';
 
 const EXPECTED_FACTOR_ORDER = [
     'spirit_root',
+    'foundation',
     'ambient_qi',
     'untreated_injuries',
     'technique',

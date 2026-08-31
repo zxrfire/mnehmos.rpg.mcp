@@ -42,16 +42,24 @@ import {
 } from '../../schema/cultivation.js';
 import {
     MAX_ORDINAL,
+    REALM_TIERS,
     baseBreakthroughChance,
     isRealmBoundary,
     progressRequiredForOrdinal,
     rankName,
-    triggersHeavenlyTribulation,
-    realmForOrdinal
+    triggersHeavenlyTribulation
 } from './realms.js';
 import { getSpiritRoot, type SpiritRootGrade } from './spirit-roots.js';
 import { ambientBreakthroughMod } from './ambient.js';
-import { aggregateInjuryPenalties, createInjury } from './injuries.js';
+import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
+import {
+    assessFoundation,
+    foundationEffect,
+    foundationOf,
+    laysFoundation,
+    type FoundationConditions
+} from './foundation.js';
+import { evaluateToll, isTolled, type TollConditions } from './toll.js';
 import type { CultivationRNG } from './rng.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -127,9 +135,19 @@ export const FAILURE_PROGRESS_LOSS: Record<Exclude<BreakthroughOutcome, 'success
 };
 
 /**
- * Heavenly tribulation: strikes escalate through the final realm. Early gets 3,
- * Perfection would get 6 - though ordinal 44 is the top of the ladder and never
- * attempts anything, so 41/42/43 give 3/4/5 in practice.
+ * Heavenly tribulation: strikes escalate as the cultivator climbs the final
+ * realm, indexed by the DESTINATION ordinal rather than the origin.
+ *
+ * The 40 -> 41 crossing INTO Tribulation Transcendence is the lightest
+ * tribulation at 3 strikes, then 4, 5 and 6 for the steps above it. Indexing
+ * on the destination is what puts the lightest tribulation on the boundary
+ * crossing, where it belongs: the Lid is deciding for the first time whether
+ * this cultivator is worth the ash it will cost to seal behind them, and it has
+ * not yet made up its mind.
+ *
+ * That crossing is consequently the single worst moment in a run - it is a
+ * realm boundary (0.45x base odds and the brutal boundary failure table), a
+ * heavenly tribulation, AND a toll, all at once.
  */
 export const TRIBULATION_BASE_STRIKES = 3;
 /** Failed strikes that kill outright. Two you can walk away from. */
@@ -163,6 +181,20 @@ export interface BreakthroughContext {
      * at a time. Bottlenecks are supposed to be lived through.
      */
     ranksGainedThisTurn?: number;
+    /**
+     * Conditions for the Vault's toll, charged on a SUCCESSFUL realm-boundary
+     * crossing. Omitting this does not skip the toll - the Vault does not wait
+     * for a caller to be ready - it charges with no candidates, which surfaces
+     * as `nothing_left` in the result. A caller that owns bonds, memories and
+     * techniques must supply them here.
+     */
+    toll?: TollConditions;
+    /**
+     * Conditions for the foundation laid by a successful 12 -> 13 crossing.
+     * Ignored at every other ordinal. Omitting it means an unprepared crossing,
+     * which is a real answer rather than a neutral one.
+     */
+    foundation?: Omit<FoundationConditions, 'ambient'>;
 }
 
 export interface EligibilityCheck {
@@ -224,13 +256,16 @@ export interface BreakthroughOdds {
  * permadeath game is the difference between a tragedy and a bug report.
  */
 export function computeBreakthroughOdds(
-    cultivator: Pick<Cultivator, 'realmOrdinal' | 'spiritRoot' | 'attributes' | 'injuries'>,
+    cultivator: Pick<Cultivator, 'realmOrdinal' | 'spiritRoot' | 'attributes' | 'injuries'> &
+        Partial<Pick<Cultivator, 'foundationQuality'>>,
     ctx: Pick<BreakthroughContext, 'ambient' | 'pill'>
 ): BreakthroughOdds {
     const ordinal = cultivator.realmOrdinal;
     const boundary = isRealmBoundary(ordinal);
     const root = getSpiritRoot(cultivator.spiritRoot);
     const injuries = aggregateInjuryPenalties(cultivator.injuries);
+    const foundation = foundationOf(cultivator);
+    const tempering = scarTempering(cultivator.injuries);
 
     const modifiers: BreakthroughModifier[] = [];
 
@@ -264,10 +299,27 @@ export function computeBreakthroughOdds(
         delta: ambientBreakthroughMod(ctx.ambient)
     });
 
+    if (foundation !== 'none') {
+        modifiers.push({
+            source: `foundation:${foundation}`,
+            delta: foundationEffect(foundation).breakthroughModifier
+        });
+    }
+
     if (injuries.untreatedCount > 0) {
         modifiers.push({
             source: `untreated_injuries:${injuries.untreatedCount}`,
             delta: -injuries.breakthroughPenalty
+        });
+    }
+
+    if (tempering.scars > 0) {
+        // Closed wounds. Not a reward for failing - a return on having paid to
+        // heal, which is a real cost that competed with everything else the
+        // pills could have bought. Capped at MAX_TEMPERING.
+        modifiers.push({
+            source: `tempering:${tempering.scars}_scars`,
+            delta: tempering.breakthroughBonus
         });
     }
 
@@ -309,11 +361,20 @@ export function computeBreakthroughOdds(
  * a throw here means a caller skipped its own gate, which is a bug, not a
  * game outcome.
  */
+/**
+ * `name` and `foundationQuality` are optional because most callers legitimately
+ * do not carry them - NPC stubs from the world layer, rows written before
+ * foundations existed, the time-skip's internal snapshot. A missing foundation
+ * reads as 'none'; a missing name means the Vault has nothing legible to take
+ * and simply cannot reach for one.
+ */
+export type BreakthroughSubject = Pick<
+    Cultivator,
+    'realmOrdinal' | 'cultivationProgress' | 'spiritRoot' | 'attributes' | 'injuries' | 'alive'
+> & Partial<Pick<Cultivator, 'foundationQuality' | 'name'>>;
+
 export function attemptBreakthrough(
-    cultivator: Pick<
-        Cultivator,
-        'realmOrdinal' | 'cultivationProgress' | 'spiritRoot' | 'attributes' | 'injuries' | 'alive'
-    >,
+    cultivator: BreakthroughSubject,
     ctx: BreakthroughContext
 ): BreakthroughResult {
     const eligibility = canAttemptBreakthrough(cultivator, ctx);
@@ -329,8 +390,9 @@ export function attemptBreakthrough(
     const required = eligibility.progressRequired;
     const odds = computeBreakthroughOdds(cultivator, ctx);
 
-    // Roll order is fixed: primary first, then severity/tribulation. A stream
-    // keyed to (seed, 'breakthrough', turn) therefore replays identically.
+    // Roll order is fixed: primary first, then severity/tribulation, then the
+    // foundation sample, then the toll's three. A stream keyed to
+    // (seed, 'breakthrough', turn) therefore replays identically.
     const roll = ctx.rng.next();
     const succeeded = roll < odds.finalChance;
 
@@ -343,20 +405,92 @@ export function attemptBreakthrough(
         return resolveTribulation(cultivator, ctx, { fromOrdinal, required, odds, roll });
     }
 
+    return finishSuccess(cultivator, ctx, {
+        fromOrdinal,
+        required,
+        odds,
+        roll,
+        injuries: [],
+        tribulation: null
+    });
+}
+
+interface SuccessFrame {
+    fromOrdinal: number;
+    required: number;
+    odds: BreakthroughOdds;
+    roll: number;
+    injuries: Injury[];
+    tribulation: { strikes: number; survived: boolean } | null;
+}
+
+/**
+ * The one place a successful crossing is assembled, so that the two things the
+ * world charges for a success - the foundation at 12 -> 13 and the Vault's toll
+ * at every realm boundary - cannot be forgotten on one path and applied on
+ * another. Both the ordinary success return and the survived-tribulation return
+ * come through here.
+ */
+function finishSuccess(
+    cultivator: BreakthroughSubject,
+    ctx: BreakthroughContext,
+    frame: SuccessFrame
+): BreakthroughResult {
+    const { fromOrdinal, odds } = frame;
+    const toOrdinal = fromOrdinal + 1;
+
+    // ── The foundation, if this is the crossing that lays one. ──
+    // Exactly one sample, always, on this path only.
+    let foundationEstablished: BreakthroughResult['foundationEstablished'] = null;
+    let foundationHint = '';
+    if (laysFoundation(fromOrdinal)) {
+        const assessment = assessFoundation(
+            cultivator,
+            { ...(ctx.foundation ?? {}), ambient: ctx.ambient },
+            ctx.rng.next()
+        );
+        foundationEstablished = assessment.quality;
+        foundationHint = ` ${assessment.narrationHint}`;
+    }
+
+    // ── The Vault's instalment, if this crossing is charged. ──
+    // Never on a sub-rank step. Always on a boundary, whether or not the caller
+    // remembered to supply candidates - the Vault does not wait to be ready.
+    let toll: BreakthroughResult['toll'] = null;
+    let tollHint = '';
+    if (isTolled(fromOrdinal)) {
+        toll = evaluateToll(
+            {
+                realmOrdinal: fromOrdinal,
+                attributes: cultivator.attributes,
+                name: cultivator.name,
+                // The foundation laid by THIS crossing is what the Vault reaches
+                // into on the way past, so a freshly assessed one counts.
+                foundationQuality: foundationEstablished ?? foundationOf(cultivator)
+            },
+            { ...(ctx.toll ?? {}), rng: ctx.rng, ambient: ctx.ambient }
+        );
+        tollHint = ` ${toll.narrationHint}`;
+    }
+
     return {
         outcome: 'success',
         fromOrdinal,
-        toOrdinal: fromOrdinal + 1,
+        toOrdinal,
         finalChance: odds.finalChance,
         modifiers: odds.modifiers,
-        roll,
-        injuriesSustained: [],
-        progressConsumed: required,
-        tribulation: null,
+        roll: frame.roll,
+        injuriesSustained: frame.injuries,
+        progressConsumed: frame.required,
+        tribulation: frame.tribulation,
+        toll,
+        foundationEstablished,
         narrationHint:
-            `Breakthrough succeeded: ${rankName(fromOrdinal)} to ${rankName(fromOrdinal + 1)}` +
+            `Breakthrough succeeded: ${rankName(fromOrdinal)} to ${rankName(toOrdinal)}` +
             `${odds.isBoundary ? ', crossing into a new realm' : ''}. ` +
-            `Odds were ${(odds.finalChance * 100).toFixed(1)}%.`
+            `Odds were ${(odds.finalChance * 100).toFixed(1)}%.` +
+            foundationHint +
+            tollHint
     };
 }
 
@@ -408,6 +542,10 @@ function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): Breakthr
         injuriesSustained: injuries,
         progressConsumed,
         tribulation: null,
+        // A failed crossing is not a crossing. The Vault charges for arriving,
+        // not for trying, and a foundation you did not lay has no quality.
+        toll: null,
+        foundationEstablished: null,
         narrationHint: failureNarration(outcome, frame, injuries)
     };
 }
@@ -458,10 +596,19 @@ function failureNarration(
 // Ordinals 41-44. The primary roll only earns the right to be struck at.
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Number of lightning strikes an attempt from this ordinal must weather. */
+/** First ordinal of Tribulation Transcendence: the destination of the 40 -> 41 crossing. */
+const TRIBULATION_REALM_START = REALM_TIERS[REALM_TIERS.length - 1].ordinalStart;
+
+/**
+ * Lightning strikes an attempt from this ordinal must weather.
+ *
+ * Counted from the destination: from 40 -> 3 strikes, 41 -> 4, 42 -> 5,
+ * 43 -> 6. Returns 0 for an attempt that summons no tribulation at all.
+ */
 export function tribulationStrikeCount(ordinal: number): number {
-    const tier = realmForOrdinal(ordinal);
-    return TRIBULATION_BASE_STRIKES + (ordinal - tier.ordinalStart);
+    if (!triggersHeavenlyTribulation(ordinal)) return 0;
+    const destination = ordinal + 1;
+    return TRIBULATION_BASE_STRIKES + (destination - TRIBULATION_REALM_START);
 }
 
 /** Per-strike survival probability, before any strike is rolled. */
@@ -480,7 +627,7 @@ export function tribulationStrikeSurvival(
 }
 
 function resolveTribulation(
-    cultivator: Pick<Cultivator, 'attributes' | 'injuries'>,
+    cultivator: BreakthroughSubject,
     ctx: BreakthroughContext,
     frame: AttemptFrame
 ): BreakthroughResult {
@@ -514,21 +661,45 @@ function resolveTribulation(
 
     const survived = failedStrikes < TRIBULATION_LETHAL_STRIKES;
 
-    return {
-        outcome: survived ? 'success' : 'death',
+    if (!survived) {
+        return {
+            outcome: 'death',
+            fromOrdinal: frame.fromOrdinal,
+            toOrdinal: frame.fromOrdinal,
+            finalChance: frame.odds.finalChance,
+            modifiers: frame.odds.modifiers,
+            roll: frame.roll,
+            injuriesSustained: injuries,
+            progressConsumed: frame.required,
+            tribulation: { strikes, survived: false },
+            // Nobody arrived, so nobody is charged. Cultivators who fail
+            // tribulation do not leave a body; they leave a scar on the ground.
+            toll: null,
+            foundationEstablished: null,
+            narrationHint:
+                `Heavenly tribulation was not survived: ${failedStrikes} of ${strikes} strikes struck home ` +
+                `(${(perStrike * 100).toFixed(0)}% survival per strike). The cultivator was destroyed by the lightning.`
+        };
+    }
+
+    // Survived. Route through the shared success path so the toll is charged
+    // exactly once, on every arriving crossing, including this one - the
+    // 40 -> 41 boundary is tribulation AND toll.
+    const result = finishSuccess(cultivator, ctx, {
         fromOrdinal: frame.fromOrdinal,
-        toOrdinal: survived ? frame.fromOrdinal + 1 : frame.fromOrdinal,
-        finalChance: frame.odds.finalChance,
-        modifiers: frame.odds.modifiers,
+        required: frame.required,
+        odds: frame.odds,
         roll: frame.roll,
-        injuriesSustained: injuries,
-        progressConsumed: frame.required,
-        tribulation: { strikes, survived },
-        narrationHint: survived
-            ? `Heavenly tribulation weathered: ${strikes} strikes, ${failedStrikes} struck home ` +
-              `(${(perStrike * 100).toFixed(0)}% survival per strike). ` +
-              `${rankName(frame.fromOrdinal)} to ${rankName(frame.fromOrdinal + 1)}.`
-            : `Heavenly tribulation was not survived: ${failedStrikes} of ${strikes} strikes struck home ` +
-              `(${(perStrike * 100).toFixed(0)}% survival per strike). The cultivator was destroyed by the lightning.`
+        injuries,
+        tribulation: { strikes, survived: true }
+    });
+
+    return {
+        ...result,
+        narrationHint:
+            `Heavenly tribulation weathered: ${strikes} strikes, ${failedStrikes} struck home ` +
+            `(${(perStrike * 100).toFixed(0)}% survival per strike). ` +
+            `${rankName(frame.fromOrdinal)} to ${rankName(frame.fromOrdinal + 1)}.` +
+            (result.toll ? ` ${result.toll.narrationHint}` : '')
     };
 }

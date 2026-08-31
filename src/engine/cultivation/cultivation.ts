@@ -28,6 +28,7 @@ import { getSpiritRoot } from './spirit-roots.js';
 import { progressRequiredForOrdinal } from './realms.js';
 import { ambientRateMultiplier } from './ambient.js';
 import { aggregateInjuryPenalties } from './injuries.js';
+import { foundationEffect, foundationOf } from './foundation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // BASE RATE
@@ -105,24 +106,39 @@ const DEFAULT_OPTIONS: Required<CultivationOptions> = {
 /**
  * The itemised per-day cultivation rate.
  *
- * Order of factors is fixed (root, ambient, injuries, technique, sect,
- * location, focus) so that two breakdowns from the same state compare equal
- * element-by-element - a property the determinism tests lean on.
+ * Order of factors is fixed (root, foundation, ambient, injuries, technique,
+ * sect, location, focus) so that two breakdowns from the same state compare
+ * equal element-by-element - a property the determinism tests lean on.
+ *
+ * `foundationQuality` is optional on the input because most callers - the
+ * time-skip's internal snapshot, NPC stubs, rows written before foundations
+ * existed - legitimately do not carry it. Missing reads as 'none', whose
+ * multiplier is 1.
  */
 export function computeCultivationRate(
-    cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries'>,
+    cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries'> &
+        Partial<Pick<Cultivator, 'foundationQuality'>>,
     ambient: AmbientQi,
     opts: CultivationOptions = {}
 ): CultivationRateBreakdown {
     const options = { ...DEFAULT_OPTIONS, ...opts };
     const root = getSpiritRoot(cultivator.spiritRoot);
     const injuries = aggregateInjuryPenalties(cultivator.injuries);
+    const foundation = foundationOf(cultivator);
 
     const factors: RateFactor[] = [
         {
             source: 'spirit_root',
             label: root.name,
             multiplier: root.cultivationSpeed
+        },
+        {
+            // Second only to the root, and unlike the root it was earned. This
+            // is the charter's "two cultivators at the same ordinal may have
+            // very different futures" expressed as a number.
+            source: 'foundation',
+            label: foundation === 'none' ? 'No foundation yet' : `${foundation} foundation`,
+            multiplier: foundationEffect(foundation).cultivationMultiplier
         },
         {
             source: 'ambient_qi',
@@ -202,7 +218,8 @@ export interface AccrualResult {
  * exactly what lets `simulateTimeSkip` resolve a decade in a hundred steps.
  */
 export function accrueProgress(
-    cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries' | 'cultivationProgress'>,
+    cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries' | 'cultivationProgress'> &
+        Partial<Pick<Cultivator, 'foundationQuality'>>,
     days: number,
     ctx: AccrualContext
 ): AccrualResult {

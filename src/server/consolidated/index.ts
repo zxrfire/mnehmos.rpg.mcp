@@ -1,7 +1,7 @@
 /**
  * Consolidated Tools Index
  *
- * Exports all 31 consolidated tools for the v1.0 clean-break release.
+ * Exports all 37 consolidated tools for the v1.0 clean-break release.
  * Each tool uses action-based routing with fuzzy matching and guiding errors.
  */
 
@@ -58,6 +58,14 @@ export { PerceptionManageTool, handlePerceptionManage } from './perception-manag
 // Batch 9 - Scene (DM-committed shared narrative state, auto-injected into agent prompts)
 export { SceneManageTool, handleSceneManage } from './scene-manage.js';
 
+// Batch 10 - Cultivation (xianxia surface: the LLM narrates, the engine decides)
+export { CultivationManageTool, handleCultivationManage } from './cultivation-manage.js';
+export { RunManageTool, handleRunManage } from './run-manage.js';
+export { TechniqueManageTool, handleTechniqueManage } from './technique-manage.js';
+export { AlchemyManageTool, handleAlchemyManage } from './alchemy-manage.js';
+export { SectManageTool, handleSectManage } from './sect-manage.js';
+export { AdminManageTool, handleAdminManage } from './admin-manage.js';
+
 /**
  * Array of all consolidated tool definitions for easy iteration
  */
@@ -92,7 +100,14 @@ import { BatchManageTool, handleBatchManage } from './batch-manage.js';
 import { AgentManageTool, handleAgentManage } from './agent-manage.js';
 import { PerceptionManageTool, handlePerceptionManage } from './perception-manage.js';
 import { SceneManageTool, handleSceneManage } from './scene-manage.js';
+import { CultivationManageTool, handleCultivationManage } from './cultivation-manage.js';
+import { RunManageTool, handleRunManage } from './run-manage.js';
+import { TechniqueManageTool, handleTechniqueManage } from './technique-manage.js';
+import { AlchemyManageTool, handleAlchemyManage } from './alchemy-manage.js';
+import { SectManageTool, handleSectManage } from './sect-manage.js';
+import { AdminManageTool, handleAdminManage } from './admin-manage.js';
 import { defineToolContract } from './contracts.js';
+import { defineCultivationToolContract } from './cultivation-contracts.js';
 import type { ToolContract } from '../tool-metadata.js';
 
 export const ConsolidatedTools: ToolContract[] = [
@@ -127,4 +142,12 @@ export const ConsolidatedTools: ToolContract[] = [
     defineToolContract(AgentManageTool, handleAgentManage),
     defineToolContract(PerceptionManageTool, handlePerceptionManage),
     defineToolContract(SceneManageTool, handleSceneManage),
+    // Cultivation surface. Registered through its own descriptor table so the
+    // D&D-era one stays untouched; the contract shape is identical.
+    defineCultivationToolContract(CultivationManageTool, handleCultivationManage),
+    defineCultivationToolContract(RunManageTool, handleRunManage),
+    defineCultivationToolContract(TechniqueManageTool, handleTechniqueManage),
+    defineCultivationToolContract(AlchemyManageTool, handleAlchemyManage),
+    defineCultivationToolContract(SectManageTool, handleSectManage),
+    defineCultivationToolContract(AdminManageTool, handleAdminManage),
 ];

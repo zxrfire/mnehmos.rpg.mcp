@@ -27,7 +27,7 @@ import {
     type InjurySeverity
 } from '../../schema/cultivation.js';
 import { conflictsWithRoot, getSpiritRoot } from './spirit-roots.js';
-import { createInjury, untreatedInjuryCount } from './injuries.js';
+import { createInjury, scarTempering, untreatedInjuryCount } from './injuries.js';
 import type { CultivationRNG } from './rng.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -146,6 +146,19 @@ export function deviationRisk(
             source: 'overfull_progress',
             label: 'Qi accumulated past the next bottleneck',
             delta: OVERFULL_PROGRESS_RISK
+        });
+    }
+
+    // Closed wounds. A cultivator who has been through deviation and paid to
+    // knit the meridians back recognises the onset and can break the
+    // circulation early. Half the value it carries at a breakthrough, and
+    // capped by MAX_TEMPERING - it never makes a conflicted build safe.
+    const tempering = scarTempering(cultivator.injuries);
+    if (tempering.scars > 0) {
+        sources.push({
+            source: 'tempering',
+            label: `${tempering.scars} closed wound${tempering.scars === 1 ? '' : 's'}`,
+            delta: -tempering.deviationRelief
         });
     }
 

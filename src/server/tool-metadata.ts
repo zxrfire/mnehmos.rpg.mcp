@@ -8,7 +8,9 @@ export type ToolCategory =
   | 'math' | 'strategy' | 'secret' | 'concentration' | 'rest' | 'scroll'
   | 'aura' | 'npc' | 'spatial' | 'theft' | 'corpse' | 'improvisation'
   | 'turn-management' | 'meta' | 'batch' | 'context' | 'narrative' | 'composite'
-  | 'agent';
+  | 'agent'
+  // Cultivation (xianxia) surface
+  | 'cultivation' | 'run' | 'technique' | 'alchemy' | 'sect' | 'admin';
 
 export type TokenCost = 'low' | 'medium' | 'high' | 'variable';
 

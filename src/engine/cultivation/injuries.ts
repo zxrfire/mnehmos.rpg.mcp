@@ -198,6 +198,82 @@ export function isLethalInjuryState(cultivator: Pick<Cultivator, 'injuries'>): b
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// TEMPERING - EXPERIENCE AS A FORM OF POWER
+//
+// The charter requires that surviving hardship produce a mechanical
+// consequence rather than being pure loss. The cleanest expression of that
+// inside this layer is already sitting in the data: a TREATED injury is a
+// wound that was taken, survived, and paid to close. That is scar tissue, and
+// it is worth something. A cultivator who has torn their meridians three times
+// and knitted them back knows exactly what the onset of a bad breakthrough
+// feels like. A cultivator who has never been hurt does not.
+//
+// Read carefully, because this is close to a rule the charter forbids:
+//
+//   - It is NOT rubber-banding. Nothing here fires because a run is going
+//     badly. It fires because the player spent scarce pills, spirit stones or
+//     months of seclusion closing wounds - a real cost, paid in advance, that
+//     could have been spent on something else.
+//   - It is symmetric. Any NPC with the same history gets the same benefit
+//     from the same function.
+//   - UNTREATED injuries still only ever hurt. The ratchet is untouched. The
+//     loop is get hurt -> pay to heal -> the scar is worth a little, which is
+//     the charter's "loss branches rather than subtracts" rather than a
+//     consolation prize for failing.
+//   - It is capped hard, at a few percentage points. It is judgement, not a
+//     second talent stat, and it can never out-earn the spirit root you were
+//     dealt.
+//
+// The broader charter items under "experience is power" - enemies made,
+// reputation, changed relationships, combat judgement - are not modelled here.
+// They belong to the social and combat layers, which own that state.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Tempering earned per closed wound, by how badly it went. */
+export const TEMPERING_PER_SCAR: Record<InjurySeverity, number> = {
+    minor: 0.005,
+    serious: 0.012,
+    crippling: 0.02
+};
+
+/** Hard ceiling on tempering, as a flat probability. Judgement, not talent. */
+export const MAX_TEMPERING = 0.06;
+
+export interface Tempering {
+    /** Number of treated injuries on the record. */
+    scars: number;
+    /** Flat bonus to breakthrough odds, in [0, MAX_TEMPERING]. */
+    breakthroughBonus: number;
+    /**
+     * Reduction in per-check qi-deviation risk. Half the breakthrough figure:
+     * recognising the onset is worth less than having been through it.
+     */
+    deviationRelief: number;
+}
+
+/**
+ * What a cultivator's closed wounds are worth.
+ *
+ * Counts only TREATED injuries. An open wound is not experience, it is an open
+ * wound, and it is priced by `aggregateInjuryPenalties` instead.
+ */
+export function scarTempering(injuries: readonly Injury[]): Tempering {
+    let scars = 0;
+    let raw = 0;
+    for (const injury of injuries) {
+        if (!injury.treated) continue;
+        scars++;
+        raw += TEMPERING_PER_SCAR[injury.severity];
+    }
+    const breakthroughBonus = Math.min(raw, MAX_TEMPERING);
+    return {
+        scars,
+        breakthroughBonus,
+        deviationRelief: breakthroughBonus / 2
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // TREATMENT
 // Pure: every function returns a new array; the input is never mutated.
 // ─────────────────────────────────────────────────────────────────────────

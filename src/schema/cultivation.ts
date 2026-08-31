@@ -129,6 +129,32 @@ export const INJURY_WEIGHTS: Record<InjurySeverity, { cultivationPenalty: number
 };
 
 // ─────────────────────────────────────────────────────────────────────────
+// FOUNDATION QUALITY
+// A rank says where a cultivator stands. It does not say what they are
+// standing on. Two people at Core Formation Early can have entirely different
+// futures, and the difference is usually the foundation they laid at ordinal
+// 12 -> 13 and what has happened to it since.
+//
+// Set once at the Foundation Establishment crossing from preparation, ambient
+// ash, injuries and pills; mutated afterwards only by events that genuinely
+// rework it (a body-refining inheritance, spending it, rebuilding it from
+// wreckage). It is the engine's answer to "why did those two diverge".
+// ─────────────────────────────────────────────────────────────────────────
+
+export const FoundationQualitySchema = z.enum([
+    'none',         // below Foundation Establishment; nothing laid yet
+    'exceptional',  // laid in dense ash, unhurried, with the right pill
+    'stable',       // the ordinary good outcome
+    'unstable',     // it holds, but it complains
+    'incomplete',   // rushed; part of the structure was never formed
+    'damaged',      // laid over untreated injuries, and it shows
+    'transformed',  // reworked by something inhuman; fast, and noticed
+    'rebuilt',      // destroyed and laid again; serviceable, never pristine
+    'sacrificed'    // spent deliberately for something else
+]);
+export type FoundationQuality = z.infer<typeof FoundationQualitySchema>;
+
+// ─────────────────────────────────────────────────────────────────────────
 // THE CULTIVATOR
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -161,6 +187,13 @@ export const CultivatorSchema = z.object({
     realmOrdinal: z.number().int().min(0).max(MAX_ORDINAL).default(0),
     /** Qi-units accumulated toward the next rank. */
     cultivationProgress: z.number().min(0).default(0),
+    /**
+     * What the rank is standing on. Defaults to 'none' so rows written before
+     * foundations existed still parse; set at the Foundation Establishment
+     * crossing and thereafter modifies cultivation rate, breakthrough odds and
+     * how visible the cultivator is to the Vault at a boundary.
+     */
+    foundationQuality: FoundationQualitySchema.default('none'),
 
     // Vitals.
     hp: z.number().int().min(0),
@@ -343,6 +376,74 @@ export const RunSchema = z.object({
 export type Run = z.infer<typeof RunSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────
+// THE TOLL
+// The Vault charges an instalment at every realm boundary - never at a
+// sub-rank step. It is rolled, not guaranteed, and what it takes is never a
+// stat: a bond, a memory, a mastered technique, or in the worst cases the
+// cultivator's name. The cultivator does not choose. They are told.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const TollKindSchema = z.enum(['bond', 'memory', 'technique', 'name']);
+export type TollKind = z.infer<typeof TollKindSchema>;
+
+export const TollOutcomeSchema = z.enum([
+    'clean',        // the roll passed; the Vault went past without noticing
+    'prepaid',      // the Severed already paid, on their own terms
+    'taken',        // the roll failed and something that mattered is gone
+    'nothing_left'  // the roll failed and there was nothing worth taking
+]);
+export type TollOutcome = z.infer<typeof TollOutcomeSchema>;
+
+/**
+ * Something the run actually accumulated, offered to the Vault as a candidate.
+ * The caller supplies these from real rows - real NPC bonds, real memories,
+ * real techniques - because the engine layer holds no database.
+ */
+export const TollCandidateSchema = z.object({
+    kind: z.enum(['bond', 'memory', 'technique']),
+    /** Stable id of the underlying row, so the caller can delete exactly it. */
+    id: z.string().min(1),
+    /** Human-facing label: an NPC's name, a memory's summary, a technique's name. */
+    label: z.string().min(1),
+    /**
+     * How much this mattered. The Vault takes what mattered, so a higher
+     * weight is MORE likely to be taken, not less. Defaults to 1.
+     */
+    weight: z.number().min(0).default(1)
+});
+export type TollCandidate = z.infer<typeof TollCandidateSchema>;
+
+export const TollTakenSchema = z.object({
+    kind: TollKindSchema,
+    /** Null for a taken name, which is not a row the caller stores. */
+    id: z.string().nullable().default(null),
+    label: z.string(),
+    /** Engine-authored statement of why this one, for the ledger. */
+    reason: z.string()
+});
+export type TollTaken = z.infer<typeof TollTakenSchema>;
+
+export const TollResultSchema = z.object({
+    outcome: TollOutcomeSchema,
+    fromOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    toOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    /** Which boundary this was, counting from 0 at 12 -> 13. */
+    boundaryIndex: z.number().int().min(0),
+    /** Final probability the Vault took something. */
+    risk: z.number().min(0).max(1),
+    /** Itemised, and sums exactly to `risk`. */
+    modifiers: z.array(z.object({
+        source: z.string(),
+        delta: z.number()
+    })).default([]),
+    roll: z.number().min(0).max(1),
+    /** Null unless `outcome` is 'taken'. */
+    taken: TollTakenSchema.nullable().default(null),
+    narrationHint: z.string().default('')
+});
+export type TollResult = z.infer<typeof TollResultSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────
 // TIME-SKIP SIMULATION
 // "I cultivate for ten years" must resolve in one deterministic pass and hand
 // back a digest the agent can narrate. It must never require per-day LLM calls.
@@ -361,6 +462,8 @@ export const SimEventKindSchema = z.enum([
     'resource_depleted',
     'starvation_warning',
     'lifespan_warning',
+    'toll_charged',
+    'foundation_established',
     'death'
 ]);
 export type SimEventKind = z.infer<typeof SimEventKindSchema>;
@@ -396,7 +499,18 @@ export const TimeSkipResultSchema = z.object({
         injuriesGained: z.number().int().default(0)
     }),
     died: z.boolean().default(false),
-    deathCause: DeathCauseSchema.nullable().default(null)
+    deathCause: DeathCauseSchema.nullable().default(null),
+    /**
+     * Every instalment the Vault charged during the skip, in order. The caller
+     * must apply these - delete the bond, the memory, the technique - because
+     * the engine holds no database and cannot.
+     */
+    tolls: z.array(TollResultSchema).default([]),
+    /**
+     * Set if the skip crossed 12 -> 13. The caller persists it onto the
+     * cultivator; it is not derivable from the ordinal afterwards.
+     */
+    foundationEstablished: FoundationQualitySchema.nullable().default(null)
 });
 export type TimeSkipResult = z.infer<typeof TimeSkipResultSchema>;
 
@@ -428,6 +542,17 @@ export const BreakthroughResultSchema = z.object({
         strikes: z.number().int().min(0),
         survived: z.boolean()
     }).nullable().default(null),
+    /**
+     * Present only on a SUCCESSFUL realm-boundary crossing, and only when the
+     * caller supplied a toll context. Null everywhere else - sub-rank steps are
+     * never charged.
+     */
+    toll: TollResultSchema.nullable().default(null),
+    /**
+     * Set only on the successful 12 -> 13 crossing: the foundation that was
+     * actually laid, which the caller must persist onto the cultivator.
+     */
+    foundationEstablished: FoundationQualitySchema.nullable().default(null),
     narrationHint: z.string().default('')
 });
 export type BreakthroughResult = z.infer<typeof BreakthroughResultSchema>;

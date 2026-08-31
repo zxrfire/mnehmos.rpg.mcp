@@ -242,11 +242,22 @@ export function baseBreakthroughChance(ordinal: number): number {
 }
 
 /**
- * Tribulation Transcendence breakthroughs summon heavenly lightning. Reports
- * whether an attempt at this ordinal triggers one.
+ * Whether an attempt FROM this ordinal summons heavenly lightning.
+ *
+ * The test is on the DESTINATION, not the origin: lightning is the Lid's seam
+ * discharging as it decides whether the hole you are about to punch is worth
+ * the ash it will cost to seal behind you, so it fires the moment you enter
+ * Tribulation Transcendence - the 40 -> 41 crossing - and at every step after.
+ *
+ * An earlier revision tested the origin, which had the absurd consequence that
+ * the one crossing named after tribulation was the only one in the realm that
+ * did not summon any. Attempts from 40, 41, 42 and 43 all trigger; 44 is the
+ * summit and never attempts anything.
  */
 export function triggersHeavenlyTribulation(ordinal: number): boolean {
-    return realmForOrdinal(ordinal).key === 'tribulation_transcendence';
+    const clamped = clampOrdinal(ordinal);
+    if (clamped >= MAX_ORDINAL) return false;
+    return realmForOrdinal(clamped + 1).key === 'tribulation_transcendence';
 }
 
 function clamp01(n: number): number {
