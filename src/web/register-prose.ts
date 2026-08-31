@@ -112,13 +112,6 @@ export const PROSE_SECTIONS: readonly ProseSection[] = [
             'One short paragraph orienting a reader to the faction list. Two things worth saying together: what the admission column reveals that the ordinal column does not, and the pattern across the sealed ancestors, whose grade, publicity and strength correlate in a way a reader would otherwise assemble by opening every card.'
     },
     {
-        id: 'grandascension',
-        heading: 'On Grand Ascension',
-        facts: reg => reg.grandAscension,
-        brief:
-            'One short paragraph on the band as a whole. The point is that it is populated by several different kinds of thing at once, and that only some of them can be met, so counting factions alone understates it.'
-    },
-    {
         id: 'items',
         heading: 'On what came down',
         facts: reg => ({ items: reg.items, holdings: reg.holdings }),

@@ -168,6 +168,16 @@ export interface HighPerson {
     rank: string;
     /** acting | pinned | withdrawn | sealed | ascended | false immortal */
     state: string;
+    /**
+     * Whether they are still in the world.
+     *
+     * Sealed counts as alive: they are under a mountain and can be woken, which
+     * is a completely different fact from being gone. Ascended does not - they
+     * went through the Lid and nothing comes back that way, so they are on this
+     * sheet as provenance rather than as people. This is an operator's page, so
+     * it says which; a character in the world would frequently not know.
+     */
+    alive: boolean;
     factionName: string;
     factionOrdinal: number;
     note: string;
@@ -394,6 +404,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             ordinal: apex.powerOrdinal,
             rank: rankName(apex.powerOrdinal),
             state: 'pinned',
+            alive: true,
             factionName: apex.name,
             factionOrdinal: apex.powerOrdinal,
             note: apex.lastRealm.note
@@ -405,6 +416,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                 ordinal: apex.secondStrongestOrdinal,
                 rank: rankName(apex.secondStrongestOrdinal),
                 state: 'acting',
+                alive: true,
                 factionName: apex.name,
                 factionOrdinal: apex.powerOrdinal,
                 note: apex.depthNote
@@ -423,6 +435,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             ordinal: court.powerOrdinal,
             rank: rankName(court.powerOrdinal),
             state: 'acting',
+            alive: true,
             factionName: court.name,
             factionOrdinal: court.powerOrdinal,
             note: 'Administers an arterial vein for '
@@ -454,6 +467,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                     ordinal: row.ordinal,
                     rank: row.rank,
                     state: 'withdrawn',
+                    alive: true,
                     factionName: row.name,
                     factionOrdinal: row.ordinal,
                     note: withdrawn.occupiedBy
@@ -467,6 +481,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                     ordinal: row.ordinal,
                     rank: row.rank,
                     state: 'acting',
+                    alive: true,
                     factionName: row.name,
                     factionOrdinal: row.ordinal,
                     note: 'The catalog records the realm and not the person. Whoever holds it answers for the faction.'
@@ -484,6 +499,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             ordinal: sl.ordinal,
             rank: rankName(sl.ordinal),
             state: 'sealed',
+            alive: true,
             factionName: sl.hostName,
             factionOrdinal: sl.hostOrdinal,
             note: sl.sealGrade + ' seal, sealed as a ' + sl.sealReason.replace(/_/g, ' ') + ', '
@@ -503,6 +519,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
                 ordinal: a.realmOrdinal as number,
                 rank: rankName(a.realmOrdinal as number),
                 state: 'ascended',
+                alive: false,
                 factionName: nameOf(hostId),
                 factionOrdinal: getSect(hostId)?.powerOrdinal ?? 0,
                 note: a.yearsAgo.toLocaleString() + ' years ago. ' + a.rememberedFor
@@ -518,6 +535,7 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
             ordinal: w.lastOrdinal,
             rank: rankName(w.lastOrdinal),
             state: w.crossingOutcome.replace(/_/g, ' '),
+            alive: true,
             factionName: w.affiliation ? nameOf(w.affiliation.factionId) : 'none',
             factionOrdinal: w.affiliation ? getSect(w.affiliation.factionId)?.powerOrdinal ?? 0 : 0,
             note: 'Called ' + w.commonName + '. Crossed ' + w.crossingYearsAgo.toLocaleString()
@@ -525,7 +543,10 @@ function buildHighBand(rows: RegisterRow[], sealedList: RegisterSealed[]): HighP
         });
     }
 
-    return out.sort((a, b) => b.ordinal - a.ordinal || a.factionName.localeCompare(b.factionName));
+    return out.sort((a, b) =>
+        Number(b.alive) - Number(a.alive)
+        || b.ordinal - a.ordinal
+        || a.factionName.localeCompare(b.factionName));
 }
 
 /**
@@ -948,6 +969,8 @@ color:var(--faint);margin:0 0 3px}
 .prose{border-left:3px solid var(--datum);background:var(--datum-soft);padding:14px 18px;margin:0 0 14px;max-width:70ch;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .prose p{margin:0;font-size:15.5px;line-height:1.62;color:var(--ink);font-style:italic}
 .govgrp{margin-bottom:26px}
+.bandhead{font:600 11px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--datum);margin:22px 0 8px;display:flex;gap:9px;align-items:baseline}
+.bandhead span{color:var(--faint);font-weight:400}
 .govhead{font:600 11px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;
 color:var(--datum);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--strong);display:flex;gap:9px;align-items:baseline}
 .govhead span{color:var(--faint);font-weight:400;letter-spacing:.06em}
@@ -1300,15 +1323,23 @@ export function renderRegisterHtml(
 <section>
   <div class="sh"><h2>People at or above Grand Ascension</h2><span class="r">Ordinal 37+ · strongest first</span></div>
   <p class="note">Everyone in the band, from every catalog at once, with the faction they belong to. The named-member catalog stops well below this, so most of what is up here is seats, sealed ancestors and the crossed - and a row marked <em>unnamed</em> is a fact about the world rather than a gap in the data. Lesser people are listed under their faction in the next tab.</p>
-  <div class="scroll"><table><caption>Every person at 37 and above</caption>
+  ${[
+      { label: 'Alive', hint: 'Can be reached, woken, or run into. Sealed counts - under a mountain is not gone.', alive: true },
+      { label: 'Deceased', hint: 'Off the board permanently. Ascension is not death, and from this side it makes no difference: nothing comes back through the Lid.', alive: false }
+  ].map(band => {
+      const rows = reg.high.filter(p => p.alive === band.alive);
+      if (!rows.length) return '';
+      return `<h3 class="bandhead">${band.label} <span>${rows.length}</span></h3>
+  <p class="note">${band.hint}</p>
+  <div class="scroll"><table>
   <thead><tr><th>Ord</th><th>Who</th><th>State</th><th>Faction</th><th>Detail</th></tr></thead><tbody>
-  ${reg.high.map(p => `<tr><td class="n">${p.ordinal}</td>`
+  ${rows.map(p => `<tr><td class="n">${p.ordinal}</td>`
         + `<td class="nm">${esc(p.name)}${p.named ? '' : ' <span class="chip">unnamed</span>'}</td>`
         + `<td class="m">${esc(p.state)}</td>`
         + `<td class="q">${esc(p.factionName)} <span class="dim">${p.factionOrdinal || ''}</span></td>`
         + `<td class="q">${esc(p.note)}</td></tr>`).join('')}
-  </tbody></table></div>
-  ${prose(blocks, 'grandascension')}
+  </tbody></table></div>`;
+  }).join('')}
 </section>
 </div>
 

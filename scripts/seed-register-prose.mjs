@@ -31,9 +31,6 @@ const TEXT = {
     register:
         'The admission column runs against the ordinal column: the strongest faction asks for twenty-nine, the weakest asks for nothing, and three others also take anyone who walks up. Exactly one door is shut. The seals run the same way. Grade tracks strength exactly, the masterworks holding the top of the band and the crude ones the bottom, while publicity runs precisely opposite - so what a province can find out about is reliably the least of what is buried in it.',
 
-    grandascension:
-        'Ten stand at this band and only one of them is a faction. The rest are offices, second seats and sealed ancestors: a court is not something anyone joins, an apex second is a person the register has no other row for, and three of the ten are asleep. Count factions alone and the band reads as a single name.',
-
 
     items:
         'Seventeen are held and thirty-one were ever known, so nearly half the supply is somewhere nobody is saying. Quantity and quality then part company. The Pavilion holds nine of the seventeen and every one of them is lower grade, while the only higher-grade Step sits with the Deep Survey and the only higher-grade Dealing with the Long Cut. Most of the supply and none of the ceiling.',
