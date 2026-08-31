@@ -1,0 +1,92 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Cultivation RPG — one command to play.
+#
+#   docker compose up
+#       → GUI at http://localhost:8787
+#
+#   docker compose --profile local-llm up
+#       → the same, plus a local Ollama so nothing leaves the machine
+#
+# Both services run the same image and share one SQLite volume. `web` serves the
+# GUI and the REST API in-process; `mcp` exposes the identical engine over MCP so
+# Claude Code, Claude Desktop, or any other MCP client can drive the same world.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  web:
+    build:
+      context: .
+    image: cultivation-rpg:local
+    container_name: cultivation-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8787}:8787"
+    volumes:
+      - cultivation-data:/data
+    environment:
+      PORT: "8787"
+      RPG_MCP_DB_PATH: /data/cultivation.db
+      # Which runtime agent narrates. `claude` is an alias for `anthropic`.
+      RUNTIME_PROVIDER: "${RUNTIME_PROVIDER:-ollama}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      ANTHROPIC_MODEL: "${ANTHROPIC_MODEL:-}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:14b}"
+      # Unlocks the audited admin_manage tool surface for exploratory testing.
+      ADMIN_MODE: "${ADMIN_MODE:-false}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  mcp:
+    build:
+      context: .
+    image: cultivation-rpg:local
+    container_name: cultivation-mcp
+    restart: unless-stopped
+    # WebSocket transport: single-operator mode against the same database file.
+    # PORT is deliberately unset here — setting it would select the multi-tenant
+    # HTTP transport, which expects signed tenant headers this deployment has no
+    # use for.
+    command:
+      - node
+      - dist/server/index.js
+      - --ws
+      - --port
+      - "8788"
+      - --host
+      - "0.0.0.0"
+      - --db-path
+      - /data/cultivation.db
+    ports:
+      - "${MCP_PORT:-8788}:8788"
+    volumes:
+      - cultivation-data:/data
+    environment:
+      RPG_MCP_DB_PATH: /data/cultivation.db
+      RUNTIME_PROVIDER: "${RUNTIME_PROVIDER:-ollama}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://ollama:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:14b}"
+      ADMIN_MODE: "${ADMIN_MODE:-false}"
+    depends_on:
+      - web
+
+  # Optional local model. Enabled with `--profile local-llm` so the default
+  # `docker compose up` stays small for people narrating with Claude.
+  ollama:
+    profiles: ["local-llm"]
+    image: ollama/ollama:latest
+    container_name: cultivation-ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+
+volumes:
+  cultivation-data:
+  ollama-models:
