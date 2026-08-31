@@ -809,6 +809,69 @@ const NO_TERMS = null;
 
 export const FACTION_PARENTAGE: Record<string, Parentage> = {
     // ── holders of a Low Fall vein, from the Third Sill ────────────────
+    // ── the two Azure feeders ──────────────────────────────────────────
+    // The Pavilion has no courts. It grants to these two and to nobody else,
+    // which makes its structure the smallest of the three apexes and the only
+    // one where the whole arrangement fits on a page.
+    //
+    // A feeder is not a court. A court administers an arterial vein on an apex's
+    // behalf and issues grants of its own; a feeder administers nothing and
+    // issues nothing. What it does is hold people - probationers, late
+    // admissions, the refused-but-not-disqualified - somewhere the terraces can
+    // still see them.
+    'sect-azure-mist-court': {
+        factionId: 'sect-azure-mist-court',
+        governance: 'federated',
+        relation: 'subsidiary',
+        parentFactionId: 'sect-azure-cloud-pavilion',
+        holds: 'The lower gorge, inside the Pavilion\'s own grant rather than under one of its own, on terms that have never been written down because both parties are the same institution.',
+        terms: {
+            tributeStonesPerYear: 0,
+            inKind: [
+                'every disciple the terraces ask for, on the day they ask',
+                'a probation roll, submitted quarterly, listing who was sent down and who is ready to go back up'
+            ],
+            disciplesPerCycle: 0,
+            buys: [
+                'the lower half of a vein the Pavilion was not using',
+                'the standing to teach the Pavilion\'s own forms, which no other body in the province has',
+                'nothing resembling independence, and Mist has never asked for any'
+            ],
+            renewal: 'There is no renewal because there is no grant document. The Mist holds what it holds because the Pavilion has not asked for it back, and both of them know that is the whole of it.'
+        },
+        standing: 'good',
+        awarenessOfApex: 'known',
+        costOfIndependence: null,
+        unbackedReason: null,
+        independenceStance: null,
+        note: 'Being sent down here is not a disgrace and the province does not read it as one. It reads it as the terraces deciding somebody is worth the cost of somewhere to put them, which is more than they decide about most people.'
+    },
+    'sect-azure-dew-sect': {
+        factionId: 'sect-azure-dew-sect',
+        governance: 'federated',
+        relation: 'subsidiary',
+        parentFactionId: 'sect-azure-mist-court',
+        holds: 'Four hill villages at the head of the gorge, where the vein runs shallow, held from the Mist rather than from the terraces - which is the only place in the Azure grant where anything is held at one remove.',
+        terms: {
+            tributeStonesPerYear: 0,
+            inKind: [
+                'anybody it finds who is worth sending up, which is two or three a decade',
+                'the village rolls, which the Pavilion has never once read'
+            ],
+            disciplesPerCycle: 0,
+            buys: [
+                'the shallow end of the vein and the right to be the only body teaching on it',
+                'the Pavilion\'s name at a village door, which opens it'
+            ],
+            renewal: 'None, same as the Mist. The difference is that the Dew built its own compound, which it mentions.'
+        },
+        standing: 'good',
+        awarenessOfApex: 'known',
+        costOfIndependence: null,
+        unbackedReason: null,
+        independenceStance: null,
+        note: 'The Dew is not where people are sent. It is where people are found, which is a different institution wearing a similar name, and the terraces have never been entirely sure what to do with it.'
+    },
     'sect-azure-cloud-pavilion': {
         factionId: 'sect-azure-cloud-pavilion',
         governance: 'unassailable',

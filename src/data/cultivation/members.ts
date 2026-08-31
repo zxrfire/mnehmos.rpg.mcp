@@ -3053,6 +3053,138 @@ export const MEMBERS: readonly Member[] = [
         goodCompany: false,
         rivalry: null,
         teaching: null
+    },
+
+    // ── the Azure feeders ──────────────────────────────────────────────
+    // Both Wardens are outliers marked `inherited`: neither pavilion produced
+    // them. Pei Hanzhang came down from the terraces and stayed, and Shu
+    // Wanping is descended from the woman the Dew counts its history by.
+    {
+        id: 'member-pei-hanzhang',
+        name: 'Pei Hanzhang',
+        factionId: 'sect-azure-mist-court',
+        rankIndex: 4,
+        rank: 'Court Warden',
+        realmOrdinal: 27,
+        role: 'senior',
+        wants: 'the recall rate put in front of somebody at the terraces who can read it',
+        fears: 'the day the Mist becomes interesting enough to be worth taking back',
+        detail: 'Came down on probation at nineteen, was recalled, went back up, and asked to return - which the terraces recorded as a placement because there is no other word on the form.',
+        outlier: true,
+        outlierReason: 'inherited',
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-yu-shenxing',
+        name: 'Yu Shenxing',
+        factionId: 'sect-azure-mist-court',
+        rankIndex: 3,
+        rank: 'Mist Elder',
+        realmOrdinal: 21,
+        role: 'master',
+        wants: 'one disciple who goes up and then writes',
+        fears: 'that he teaches better than the terraces and that it makes no difference to anybody',
+        detail: 'Keeps a list of every disciple he has sent back up, forty-one names, and has heard from four of them.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: {
+            knows: 'The first two Pavilion forms properly, slowly, to people who have already failed them once, which is the thing the terraces cannot do.',
+            mayNotSay: 'What the recall roll actually contains, because he has read it and it is not what the disciples are told.',
+            costsThem: 'Every hour spent teaching is an hour not spent on his own probation term, which is posted on the wall like everybody else and has not been struck through in eleven years.'
+        }
+    },
+    {
+        id: 'member-tan-liuyi',
+        name: 'Tan Liuyi',
+        factionId: 'sect-azure-mist-court',
+        rankIndex: 1,
+        rank: 'Outer Disciple',
+        realmOrdinal: 9,
+        role: 'peer',
+        wants: 'her term struck through',
+        fears: 'being recalled before she is ready and failing at the terraces twice',
+        detail: 'Wrote her probation term on the wall in a hand so small the Warden made her do it again, and has left the first one there underneath.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-kong-zhaoyu',
+        name: 'Kong Zhaoyu',
+        factionId: 'sect-azure-mist-court',
+        rankIndex: 0,
+        rank: 'Mist Servant',
+        realmOrdinal: 4,
+        role: 'peer',
+        wants: 'to be told what he was refused for',
+        fears: 'that the answer is nothing in particular',
+        detail: 'Refused at the terraces without a stated reason, which the Mist wrote down as such, and he has read that line on his own file more times than anybody knows.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-shu-wanping',
+        name: 'Shu Wanping',
+        factionId: 'sect-azure-dew-sect',
+        rankIndex: 4,
+        rank: 'Sect Warden',
+        realmOrdinal: 24,
+        role: 'senior',
+        wants: 'the four villages surveyed before anybody decides anything about them',
+        fears: 'that the shallow vein is why the villages are there and that nobody has checked how much is left',
+        detail: 'Descended from Shu Lianniang and mentions it only to explain why she will not leave, which she is asked roughly once a decade.',
+        outlier: true,
+        outlierReason: 'inherited',
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-ao-jinglu',
+        name: 'Ao Jinglu',
+        factionId: 'sect-azure-dew-sect',
+        rankIndex: 3,
+        rank: 'Dew Elder',
+        realmOrdinal: 19,
+        role: 'master',
+        wants: 'two more years in the third village before anybody is asked to join',
+        fears: 'sending somebody up who was not ready and having it counted anyway',
+        detail: 'Teaches in a village square rather than a hall, in all weather, and has never once held a class indoors.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: {
+            knows: 'The gathering manual to the bottom and the tempering scripture as far as anybody in a village will ever need it.',
+            mayNotSay: 'Which of the village children he has already decided about, because saying so changes them.',
+            costsThem: 'He is the only Dew Elder who has never asked to be posted up the gorge, and every year he does not ask makes the asking harder.'
+        }
+    },
+    {
+        id: 'member-huan-shiqing',
+        name: 'Huan Shiqing',
+        factionId: 'sect-azure-dew-sect',
+        rankIndex: 1,
+        rank: 'Outer Disciple',
+        realmOrdinal: 7,
+        role: 'peer',
+        wants: 'the Mist year skipped',
+        fears: 'arriving at the terraces as a Dew admission and being read as one',
+        detail: 'Was found at eleven and admitted at thirteen, and has been told the route up runs through the Mist so many times that she can recite the reasons and does, mockingly.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
     }
 ];
 

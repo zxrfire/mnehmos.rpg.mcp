@@ -374,7 +374,12 @@ function buildStack(dossierIds: ReadonlySet<string>): StackNode[] {
                     children: childrenOf(c.id)
                 })),
                 // Held direct, with no court in between. Rare, and worth seeing.
-                ...childrenOf(apex.id)
+                // Both ids, because an apex that is also a sect is granted from
+                // under its sect id and would otherwise lose its own tenants.
+                ...childrenOf(apex.id),
+                ...(linkFor(apex.id) && linkFor(apex.id) !== apex.id
+                    ? childrenOf(linkFor(apex.id) as string)
+                    : [])
             ].sort((a, b) => b.ordinal - a.ordinal)
         }));
 
