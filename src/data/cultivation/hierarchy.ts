@@ -215,6 +215,15 @@ export const ApexInstitutionSchema = z.object({
      * This is what stops `powerOrdinal` at the top of the table from meaning
      * that a last-realm cultivator can be dispatched. Almost nowhere can.
      */
+    /**
+     * How deep the position goes, which is the axis the three differ on.
+     * Ancient means the institution has held the last realm continuously for
+     * longer than anyone can check. Recent means it holds it because of one
+     * person and one event, and an event does not renew.
+     */
+    heritage: z.enum(['ancient', 'recent']),
+    /** What could take the position away. Never the same answer twice. */
+    instability: z.string().min(80),
     lastRealm: z.object({
         count: z.literal(1),
         pinned: z.literal(true),
@@ -299,7 +308,12 @@ export const ApexInstitutionSchema = z.object({
     ranksByRealmAboveOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     rankNote: z.string().min(120),
     /** Default awareness for a starting cultivator. Always 'unaware'. */
-    startingAwareness: z.literal('unaware'),
+    /**
+     * Two of the three are unnameable and start at `unaware`. The third is a
+     * sect with a front gate, and that difference is most of what makes it the
+     * least stable of them - it can be found, petitioned, joined and watched.
+     */
+    startingAwareness: AwarenessSchema,
     /** Where a name could legitimately come from, if it ever does. */
     awarenessSources: z.array(z.string().min(30)),
     /** How it reaches a player who cannot name it. */
@@ -363,6 +377,9 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         // it - the Survey can end a four-hundred-year sect by declining to sign,
         // and this is the number that says the sect could not answer.
         powerOrdinal: 43,
+        heritage: 'ancient',
+        instability:
+            'Almost none, and the exception is specific: the position rests on one person not standing up. Anything large enough to require her attention elsewhere ends the arrangement in an afternoon, and the Survey has structured four hundred years of procedure around never producing such a thing. It is stable in the way a held breath is stable.',
         lastRealm: {
             count: 1,
             pinned: true,
@@ -424,6 +441,9 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         // administers everything itself, so its floor is not what its tenants
         // can field - it has none - but what it must be able to walk into.
         powerOrdinal: 42,
+        heritage: 'ancient',
+        instability:
+            'The Nail cannot be moved, so the Long Cut cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
         lastRealm: {
             count: 1,
             pinned: true,
@@ -473,14 +493,87 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         description:
             'The other apex, over the other tradition, and it does not do any of this the way the Deep Survey does. The Long Cut grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Quiet Marches. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
     }
+    {
+        id: 'apex-azure-cloud',
+        name: 'The Azure Cloud Pavilion',
+        traditionId: 'tradition-drawn',
+        powerOrdinal: 41,
+        heritage: 'recent',
+        instability:
+            'The other two are ancient and cannot be dated. This one can: three hundred and eighty years, one crossing, one person. Its position is real and it is young, and youth is the whole exposure - the Pavilion has a front gate, an outer courtyard, an admission standard and disciples, so it can be found, petitioned, joined, watched and counted in a way the other two never can. It is the brightest position in the region and the only apex that could be ended by something other than a fight.',
+        lastRealm: {
+            count: 1,
+            pinned: true,
+            note: 'One, in the inner hall with the Edge, and the Pavilion does not say who. Ru Anjing spent her last decades making the sect independent rather than strong: settling what was outstanding, calling in what was owed, and leaving the cost of touching the Pavilion legible enough that nobody has since wanted to establish the figure. What she left behind is a position that holds without her, which is a harder thing to build than a disciple.'
+        },
+        sentDown: {
+            id: 'artifact-the-standing-edge',
+            name: 'The Standing Edge',
+            description:
+                'A sword left point-down in the floor of the inner hall, which no living smith can account for and no formation master can read. It does not need drawing to be measured: standing in the room with it is how the Pavilion certifies that a visitor is who they say they are. Twice in three hundred and eighty years it has been drawn, and both times the argument stopped.',
+            uses: [
+                'comprehension at the last realm - it is the only such object whose sender is still remembered by name, and the Pavilion holds the full record of her divestment, which is a map of what she thought mattered on the way out',
+                'a channel upward, which the Pavilion spent a hundred and eighty years ago and which returned two words. It has not been attempted again and the Pavilion will not say whether it could be'
+            ],
+            asAnArtifact:
+                'It settles the question of who somebody is, permanently and without appeal, in a world where identity is a thing people lose at realm boundaries and forge for a living. A sect that can certify a person is a sect every ledger, house and court in the region has to deal with, and the Pavilion has never had to advertise this.',
+            reserveTerms:
+                'Held in reserve, never carried. The Pavilion Master may draw it only with four Sword Elders consenting in the same room, and the Pavilion has refused itself permission at least nine times, including once during a siege.',
+            ifUncovered:
+                'Easily the most exposed of the three, and the Pavilion knows it. The hall is inside a working sect with a gate and a courtyard rather than under a mountain nobody can find, and the one who sits with it is the whole of the defence. Every party that has priced the other two has also priced this one, and it prices lower.',
+            intact: true
+        },
+        holds:
+            'The gorge vein at Low Fall and the terraced peaks above it, held outright and openly, on no grant from anyone, since the year Ru Anjing crossed.',
+        courtIds: [],
+        ranks: [
+            {
+                title: 'Pavilion Master',
+                decidedBy: 'The consent of the Sword Elders, and in practice by who is prepared to carry the sect rather than by who is strongest in it.',
+                note: 'The one apex rank in the world that a person outside the institution can name and often has met.'
+            },
+            {
+                title: 'Sword Elder',
+                decidedBy: 'Service, and a vote of the standing elders. Four seats, and they have been four since the divestment.',
+                note: 'Any one of them can refuse the drawing of the Edge, which makes the seat worth more than the realm behind it.'
+            }
+        ],
+        rankIsOrdinalDerived: false,
+        ranksByRealmAboveOrdinal: 37,
+        rankNote:
+            'Alone among the three, this ladder is public and the sect runs an ordinary outer courtyard beneath it. A Sword Servant swept the same stones as everyone else and can name the Pavilion Master on sight, which is precisely the exposure the other two apexes were built to avoid, and precisely why the province thinks of the Pavilion as reachable in a way the Survey and the Cut never are.',
+        startingAwareness: 'named',
+        awarenessSources: [
+            'Any market town in the Low Fall. The Pavilion is a place with a road to it and a recruitment cycle, and the crossing is the province's proudest story.'
+        ],
+        actsWithoutAttribution: [
+            'It does not need to. Alone among the three it acts in its own name, which is a luxury and, increasingly, a liability - every refusal it makes is attributable, dated and remembered by whoever was refused.'
+        ],
+        description:
+            'The third apex, the youngest by an order of magnitude, and the only one anybody can walk to. It holds the gorge outright on no grant, having been made independent by Ru Anjing in the decades before her crossing, and it holds the newest object in the world sent down from the other side of the Lid. Everything the Deep Survey and the Long Cut achieve through being unnameable, the Pavilion achieves through being unambiguous - and it is the one position of the three that can be lost without a fight, because prestige from a single event decays on a schedule nobody controls.'
+    }
 ];
 
 // ──────────────────────────────────────────────────────────────────────
 // APEX CANDIDACY
 //
-// An apex is not a rank and not a title. It is a body that received something
-// from an ascended founder AND can hold it, and the second half is the whole
-// test. Both existing apexes pass it with exactly one person, pinned.
+// The word does two jobs, and the Azure Cloud Pavilion is where they come
+// apart.
+//
+// STRUCTURALLY an apex is a body that received something from an ascended
+// founder AND can hold it, and the second half is the whole test. Both entries
+// in APEX_INSTITUTIONS pass it with exactly one person, pinned.
+//
+// IN STANDING an apex is whoever the world currently treats as one, and by
+// that measure the Pavilion is the third, unarguably. It has the only crossing
+// anyone alive remembers, the newest gift in existence, a claim that is true
+// and can be verified, and two words from above the Lid that nobody else has
+// received in centuries. Right now it is the sect in the sun and the older two
+// are rumours with couriers.
+//
+// Both readings are correct, and the distance between them is exactly what
+// makes it the least stable apex in the world. The Deep Survey and the Long
+// Cut stand on somebody sitting in a room. The Pavilion stands on an event.
 //
 // The Azure Cloud Pavilion is the case that shows what the test is for. Ru
 // Anjing made the last confirmed crossing in the world three hundred and
@@ -515,8 +608,17 @@ export const ApexCandidacySchema = z.object({
     cannotHold: z.string().min(80),
     /** What they did instead, and what it actually is. */
     arrangement: z.string().min(80),
-    /** What would have to change. Stated as a threshold, because it is one. */
-    wouldQualifyIf: z.string().min(60)
+    /** What would have to change structurally. A threshold, because it is one. */
+    wouldQualifyIf: z.string().min(60),
+    /** What the world calls them now, which is not nothing and not durable. */
+    recognisedAs: z.string().min(60),
+    /**
+     * Why this is the least stable position of the three, stated plainly.
+     * Heritage depth is the axis: the older two have somebody, and this one has
+     * a memory. Prestige from a single event decays on a schedule nobody
+     * controls, and every year without a second crossing is a year of it.
+     */
+    instability: z.string().min(80)
 });
 export type ApexCandidacy = z.infer<typeof ApexCandidacySchema>;
 
@@ -532,7 +634,11 @@ export const APEX_CANDIDATES: readonly ApexCandidacy[] = [
         arrangement:
             'A twelve-year grant from the Third Sill, renewed nineteen times, at forty thousand stones a year plus first refusal on anything recovered inside the grant. The Pavilion experiences this as a lease on a vein. It is a protection contract on the object in the hall, and the arbitration clause is why no dispute involving the Pavilion has ever been allowed to escalate.',
         wouldQualifyIf:
-            'It produced one cultivator at Tribulation Transcendence willing to sit down and stop, at which point the grant becomes optional and everyone would find out at the same time whether the Survey agrees.'
+            'It produced one cultivator at Tribulation Transcendence willing to sit down and stop, at which point the grant becomes optional and everyone would find out at the same time whether the Survey agrees.',
+        recognisedAs:
+            'The third apex, by everyone who is not counting carefully. The Pavilion holds the only crossing in living memory, the newest gift in the world, a verified claim, and two words from the far side of the Lid, and the province treats all of that as rank. It is not wrong to. Precedence at any gathering in the Low Fall goes to the Pavilion and nobody has tested why.',
+        instability:
+            'The other two stand on a person in a room. The Pavilion stands on an event three hundred and eighty years old, and an event does not renew. Every decade without a second crossing thins the claim, the offering of a hundred and eighty years ago returned Not yet rather than anything usable, and the Pavilion has been spending the ambiguity of those two words as though it were a resource - declining wars, refusing alliances, explaining nothing. That works until somebody calls it. It is the brightest position in the region and the only one that can end without a fight.'
     }
 ];
 

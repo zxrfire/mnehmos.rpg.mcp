@@ -76,7 +76,6 @@ import {
     survivorsOfARicherAge,
     HIGH_REALM_PROVENANCE,
     HIGH_REALM_THRESHOLD,
-    PRESENT_DAY_CEILING,
     PROVENANCE_PENDING
 } from '../../src/data/cultivation/faction-character.js';
 
@@ -454,24 +453,51 @@ describe('survivors of a richer age', () => {
                 .toBeGreaterThanOrEqual(100);
             expect(p!.climbedWhere.length).toBeGreaterThan(60);
             expect(p!.ageNote.length).toBeGreaterThan(60);
-            expect(p!.couldNotBeDoneNow.length, `${sect.id} does not say why it is unrepeatable`)
+            expect(p!.whyNobodyHasSince.length, `${sect.id} does not say what has happened since`)
                 .toBeGreaterThan(100);
+            expect(p!.settledBelief.length, `${sect.id} does not say what people believe`)
+                .toBeGreaterThan(60);
         }
     });
 
-    it('never claims a present-day climb above the measured ceiling', () => {
+    it('claims a long silence, never an impossibility', () => {
+        // The top of the ladder is reachable in the present day with
+        // extraordinary luck AND extraordinary talent - vanishingly rare, and
+        // genuinely possible. Every competent institution believes otherwise
+        // and is almost right. Nothing here may assert the stronger claim, or
+        // the world turns out to have been lying the day a player manages it.
+        const impossibility = [
+            /\bimpossible\b/i,
+            /cannot be done/i,
+            /could not be done/i,
+            /no longer possible/i,
+            /nothing available today/i,
+            /any ambient/i,
+            /anywhere in the world/i,
+            /ceiling is the world/i
+        ];
         for (const [factionId, p] of Object.entries(HIGH_REALM_PROVENANCE)) {
-            expect(getSect(factionId), `provenance for unknown faction ${factionId}`).toBeDefined();
-            // A faction at or above the ceiling must be explicit that the climb
-            // is not available now in any ambient band, not merely difficult.
-            if (p.highestOrdinal >= PRESENT_DAY_CEILING) {
-                expect(p.couldNotBeDoneNow, `${factionId} treats an impossible climb as merely hard`)
-                    .toMatch(/anywhere in the world|any ambient|nothing available today/i);
+            const claim = `${p.whyNobodyHasSince} ${p.settledBelief} ${p.ageNote}`;
+            for (const pattern of impossibility) {
+                expect(pattern.test(claim), `${factionId} asserts impossibility: ${pattern}`).toBe(false);
             }
         }
-        const survivors = survivorsOfARicherAge();
-        expect(survivors.length, 'somebody must embody the ceiling').toBeGreaterThanOrEqual(2);
-        for (const s of survivors) expect(s.provenance.highestOrdinal).toBeGreaterThanOrEqual(PRESENT_DAY_CEILING);
+    });
+
+    it('separates the record from the belief, which is where the gap lives', () => {
+        for (const [factionId, p] of Object.entries(HIGH_REALM_PROVENANCE)) {
+            expect(getSect(factionId), `provenance for unknown faction ${factionId}`).toBeDefined();
+            // The record is a duration or a count: how long it has been.
+            expect(p.whyNobodyHasSince, `${factionId} record states no elapsed time or symptom`)
+                .toMatch(/years|century|centuries|since|no longer|stall|closed|dead/i);
+            // The belief is attributed to somebody, not asserted by the catalog.
+            expect(p.settledBelief, `${factionId} states a belief with no believer`)
+                .toMatch(/believ|settled|holds|takes it|tell you|teaches|regard|conclud|presents/i);
+        }
+        // And at least one faction declines to correct the belief, or dissents
+        // from it - the gap has to be visible somewhere in the catalog.
+        const beliefs = Object.values(HIGH_REALM_PROVENANCE).map(p => p.settledBelief).join(' ');
+        expect(beliefs).toMatch(/decline to correct|does not|has not concluded|insisting otherwise/i);
     });
 
     it('keeps the pending list explicit and small', () => {
@@ -480,5 +506,12 @@ describe('survivors of a richer age', () => {
             expect(getSect(id), `pending provenance for unknown faction ${id}`).toBeDefined();
             expect(getSect(id)!.powerOrdinal).toBeGreaterThan(HIGH_REALM_THRESHOLD);
         }
+    });
+
+    it('takes its threshold as an argument rather than restating an engine number', () => {
+        // Content must not carry a second copy of a reachability measurement.
+        expect(survivorsOfARicherAge().length).toBeGreaterThanOrEqual(2);
+        expect(survivorsOfARicherAge(35).every(s => s.provenance.highestOrdinal > 35)).toBe(true);
+        expect(survivorsOfARicherAge(40)).toEqual([]);
     });
 });

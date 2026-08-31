@@ -746,7 +746,7 @@ function readSects(): string {
     return readFileSync('src/data/cultivation/sects.ts', 'utf-8');
 }
 
-describe('provenance is not capability', () => {
+describe('apex in standing, tenant in structure', () => {
     it('recognises the newest gift in the world without promoting its holder', () => {
         const candidacy = getApexCandidacy('sect-azure-cloud-pavilion')!;
         expect(candidacy).toBeDefined();
@@ -766,6 +766,28 @@ describe('provenance is not capability', () => {
         const parentage = getParentage('sect-azure-cloud-pavilion')!;
         expect(parentage.relation).toBe('subsidiary');
         expect(parentage.parentFactionId).toBe('court-third-sill');
+    });
+
+    it('is treated as an apex by the world and by nothing else', () => {
+        const c = getApexCandidacy('sect-azure-cloud-pavilion')!;
+        // Both readings have to survive. Drop the recognition and it becomes a
+        // provincial sect with a nice sword; drop the instability and it
+        // becomes a third apex, which it structurally is not.
+        expect(c.recognisedAs.length).toBeGreaterThan(60);
+        expect(c.instability.length).toBeGreaterThan(80);
+        expect(c.instability).toMatch(/event|renew|thins|decay/i);
+    });
+
+    it('rests on something that does not renew', () => {
+        // The older two stand on a person. This one stands on a date, and the
+        // offering that might have refreshed it came back unusable.
+        const record = ANCESTRY_FOR_CANDIDACY['sect-azure-cloud-pavilion'];
+        expect(record.lastOffering).not.toBeNull();
+        expect(record.lastOffering!.response).toBe('Not yet.');
+        for (const apex of APEX_INSTITUTIONS) {
+            expect(apex.lastRealm.count).toBe(1);
+        }
+        expect(getSect('sect-azure-cloud-pavilion')!.powerOrdinal).toBeLessThan(41);
     });
 
     it('leaves every candidate short by the same thing', () => {

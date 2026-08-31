@@ -215,22 +215,46 @@ describe('progress and advancement', () => {
 
 describe('survival during a skip', () => {
     it('starves to death on exactly the documented day without provisions', () => {
-        // Full belly buys 50 days; five more at zero satiety is fatal.
-        const expectedDeathDay = SATIETY_MAX / SATIETY_COST_PER_ACTION + STARVATION_TURNS;
-        const result = simulateTimeSkip(
+        // The skip no longer runs a cultivator into the ground unasked. A full
+        // belly buys 50 days, and the moment there is nothing left to eat the
+        // player gets control back with five days still in hand.
+        const belly = SATIETY_MAX / SATIETY_COST_PER_ACTION;
+        const asked = simulateTimeSkip(
             secluded(),
             TEN_YEARS,
             sealed({ grainAbstinence: false, rations: 0 })
         );
-        expect(result.died).toBe(true);
-        expect(result.deathCause).toBe('starvation');
-        expect(result.simulatedDays).toBe(expectedDeathDay);
-        expect(result.interrupted).toBe(true);
-        expect(result.interruptReason).toBe('death:starvation');
-        expect(result.events.at(-1)?.kind).toBe('death');
+        expect(asked.died).toBe(false);
+        expect(asked.interrupted).toBe(true);
+        expect(asked.interruptReason).toBe('starvation_begun');
+        expect(asked.simulatedDays).toBe(belly);
+        expect(asked.endState.starvationTurns).toBe(0);
+
+        // Told, and continuing anyway. NOW it kills, exactly on schedule.
+        const declined = simulateTimeSkip(
+            secluded({ satiety: 0, starvationTurns: 0 }),
+            TEN_YEARS,
+            sealed({ grainAbstinence: false, rations: 0 })
+        );
+        expect(declined.died).toBe(true);
+        expect(declined.deathCause).toBe('starvation');
+        expect(declined.simulatedDays).toBe(STARVATION_TURNS);
+        expect(declined.events.at(-1)?.kind).toBe('death');
     });
 
-    it('warns when the belly empties, before it kills', () => {
+    it('does not nag a cultivator who has already declined', () => {
+        // Being stopped every five days would mean nobody could ever actually
+        // starve, which turns a real consequence into a prompt.
+        const declined = simulateTimeSkip(
+            secluded({ satiety: 0 }),
+            TEN_YEARS,
+            sealed({ grainAbstinence: false, rations: 0 })
+        );
+        expect(declined.interruptReason).not.toBe('starvation_begun');
+        expect(declined.died).toBe(true);
+    });
+
+    it('hands control back when the belly empties, well before it kills', () => {
         const result = simulateTimeSkip(
             secluded(),
             TEN_YEARS,
@@ -238,23 +262,70 @@ describe('survival during a skip', () => {
         );
         const warning = result.events.find(e => e.kind === 'starvation_warning');
         expect(warning).toBeDefined();
+        expect(warning!.interrupts).toBe(true);
         expect(warning!.dayOffset).toBe(SATIETY_MAX / SATIETY_COST_PER_ACTION);
-        expect(warning!.dayOffset).toBeLessThan(result.simulatedDays);
+        // Said once, not once per chunk.
+        expect(result.events.filter(e => e.kind === 'starvation_warning')).toHaveLength(1);
+        expect(warning!.occurrences).toBe(1);
+        // And there are still days left to do something with.
+        expect(result.died).toBe(false);
     });
 
-    it('eats through provisions and reports when the last of them is gone', () => {
-        const rations = 3;
+    it('never warns while there is still food in the pack', () => {
+        // The belly touching zero at a chunk boundary with rations in hand is
+        // not news, and reporting it was what buried the line that mattered.
         const result = simulateTimeSkip(
             secluded(),
             TEN_YEARS,
-            sealed({ grainAbstinence: false, rations })
+            sealed({ grainAbstinence: false, rations: 20 })
         );
-        // Each ration buys another 50 days on top of the starting belly.
-        const expectedDeathDay =
-            (rations + 1) * (SATIETY_MAX / SATIETY_COST_PER_ACTION) + STARVATION_TURNS;
-        expect(result.simulatedDays).toBe(expectedDeathDay);
-        expect(result.deathCause).toBe('starvation');
-        expect(result.events.some(e => e.kind === 'resource_depleted')).toBe(true);
+        const before = result.events.filter(
+            e => e.kind === 'starvation_warning' && e.dayOffset < result.simulatedDays
+        );
+        expect(before).toHaveLength(0);
+    });
+
+    it('stops the moment the provisions run out, not when they kill', () => {
+        // The actionable interrupt, and the one that was missing: the player
+        // has stones, there is a settlement, and buying food is solved. They
+        // were simply never asked.
+        const result = simulateTimeSkip(
+            secluded(),
+            TEN_YEARS,
+            sealed({ grainAbstinence: false, rations: 3 })
+        );
+        expect(result.died).toBe(false);
+        expect(result.interruptReason).toBe('provisions_exhausted');
+
+        const depleted = result.events.find(e => e.kind === 'resource_depleted')!;
+        expect(depleted.interrupts).toBe(true);
+        expect(depleted.dayOffset).toBe(result.simulatedDays);
+        // It fires with a full belly, so there is real time to act.
+        expect(depleted.data.daysOfFoodLeft).toBeGreaterThan(STARVATION_TURNS);
+        expect(result.endState.starvationTurns).toBe(0);
+    });
+
+    it('still lets a cultivator starve to death if they press on', () => {
+        // Death by starvation stays entirely possible. It just has to be a
+        // choice that was declined rather than one nobody was offered.
+        let day = 0;
+        let state = secluded();
+        let rations = 3;
+        let died = false;
+        for (let leg = 0; leg < 6 && !died; leg++) {
+            const result = simulateTimeSkip(state, TEN_YEARS, sealed({
+                grainAbstinence: false, rations
+            }));
+            day += result.simulatedDays;
+            died = result.died;
+            rations = 0;
+            state = secluded({
+                satiety: state.satiety + result.deltas.satiety,
+                starvationTurns: result.endState.starvationTurns
+            });
+        }
+        expect(died).toBe(true);
+        expect(day).toBeGreaterThan(SATIETY_MAX / SATIETY_COST_PER_ACTION);
     });
 
     it('does not starve at all on grain abstinence', () => {
@@ -587,13 +658,13 @@ describe('injuriesSustained', () => {
 
 describe('endState', () => {
     it('reports starvation as an absolute count, not a delta', () => {
-        const result = simulateTimeSkip(
-            secluded(),
+        const declined = simulateTimeSkip(
+            secluded({ satiety: 0 }),
             TEN_YEARS,
             sealed({ grainAbstinence: false, rations: 0 })
         );
-        expect(result.deathCause).toBe('starvation');
-        expect(result.endState.starvationTurns).toBe(STARVATION_TURNS);
+        expect(declined.deathCause).toBe('starvation');
+        expect(declined.endState.starvationTurns).toBe(STARVATION_TURNS);
     });
 
     it('reports zero starvation for a well-fed skip', () => {
