@@ -40,6 +40,17 @@ warm the refusal is. Whether someone who was not going to help mentions one thin
 way out. A low-Charm cultivator asking well still gets somewhere; they just get there
 having been treated worse.
 
+What you have done for someone counts for more than either. A carter you bought a drink
+for last month talks more freely than an official ever will, and not because he likes you -
+because he has no position to protect and you are now someone he knows. Small, cheap,
+repeated things work: a round, a gift, a favour, turning up twice. This is the cheapest
+lever in the game and it is available to a cultivator with nothing.
+
+The inverse holds. An official is not being difficult; he is being an official. He has
+more to lose by talking than he could gain, and no amount of goodwill changes that
+arithmetic - which is why the useful person is often two rungs below the one who actually
+knows.
+
 None of this should be an unlock or a fixed phrase the world checks for. It is the LLM
 reading who this person is, what they know, what they owe, how they find the player, and
 what was just said. The engine holds the facts; the judgement is narration.
