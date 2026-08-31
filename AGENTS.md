@@ -190,6 +190,23 @@ outcome you did not get back from the engine.
 
 ---
 
+## The acceptance test
+
+The design is frozen. No new subsystems until this passes.
+
+The meaningful test is not "can a cultivator cultivate." It is:
+
+> **Start as a nobody, run 500 years, and confirm the resulting world is recognisably
+> descended from the world you started in.**
+
+Concretely, after a 500-year soak: factions have risen and fallen, people have died and
+been inherited from, grudges are still live and have passed to descendants, history has
+accumulated with discoverable causes, locations have changed and carry their scars, and
+nothing is incoherent or contradictory.
+
+If that holds, the thing works. Feature creep before that point is the main risk to the
+project.
+
 ## Git remotes
 
 | Remote | Points at | Use |
