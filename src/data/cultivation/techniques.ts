@@ -40,6 +40,76 @@
 import type { Technique, TechniqueGrade, TechniqueCategory, Element } from '../../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
+// PROVENANCE — the Late Age rule
+// The world is spent. Ash degrades every time it is breathed, nobody has
+// ascended in living memory, and the manuals that describe the upper realms
+// were written by people who are no longer available to explain them.
+//
+// So a technique is not simply "available at ordinal N". It has a source, and
+// above a certain grade that source is never a teacher:
+//
+//   taught → a living sect holds a working transmission of it.
+//   ruin   → recovered from a sealed site. No living teacher exists; the manual
+//            is the teacher, and it was not written for a reader like you.
+//   grave  → recovered from a grave deposit: the settled remainder of what the
+//            Vault took off someone at a realm boundary. Disreputable,
+//            extremely profitable, and it attracts attention.
+//
+// This is what makes digging a viable path for a cultivator born without
+// talent. You will not out-cultivate a single-root prodigy on ambient ash.
+// You might out-dig them.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type TechniqueProvenance = 'taught' | 'ruin' | 'grave';
+
+export interface TechniqueEntry extends Technique {
+    provenance: TechniqueProvenance;
+    /** One factual line on where a copy is actually obtained. */
+    sourceNote: string;
+}
+
+/**
+ * Arts no living institution can transmit. Every chaos-grade art is here by
+ * rule, along with most of immortal grade and the heaven-grade arts the
+ * surviving sects lost the manual for.
+ */
+export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
+    // heaven — the sects held these once and cannot read their own copies now
+    'worldroot-strangling-vine',
+    // immortal — a handful of sects still transmit theirs; these are not among them
+    'star-quenching-blade-domain',
+    'abyssal-gate-torrent',
+    'ash-of-the-first-sun',
+    'void-fold-pilgrimage',
+    'lifespring-of-the-jade-pool',
+    'severed-fate-mending-art',
+    'void-tide-breathing-canon',
+    // chaos — nobody alive has ever seen one of these used correctly
+    'calamity-word-of-the-open-sky',
+    'dragonbone-severing-decree',
+    'kalpa-fire-that-eats-heaven',
+    'undying-kalpa-body',
+    'immovable-heaven-pillar',
+    'one-thought-ten-thousand-li',
+    'rebirth-in-the-lotus-furnace',
+    'word-of-continuance',
+    'heaven-conversing-primordial-canon',
+    'chaos-origin-scripture'
+]);
+
+/** Arts that only ever surface in a grave deposit. */
+export const GRAVE_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
+    'heart-of-the-ten-thousand-corpses',
+    'lifespan-devouring-heaven-theft'
+]);
+
+const SOURCE_NOTES: Record<TechniqueProvenance, string> = {
+    taught: 'Transmitted by at least one living sect. A teacher exists and can be paid, joined, or robbed.',
+    ruin: 'Recovered, not taught. Copies survive only in sealed sites, and no living cultivator learned it from a person.',
+    grave: 'Found in a grave deposit — the settled remainder of what a realm boundary took off somebody. Taking it takes what someone else already paid for.'
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────
 // BANDS
 // The balance invariants this catalog commits to, expressed as data so the
 // tests assert against the same table the content was authored from.
@@ -93,12 +163,20 @@ export function gradeRank(grade: TechniqueGrade): number {
 /**
  * Authoring helper. Mastery is per-cultivator state, never catalog state, so
  * every entry starts at zero and the factory keeps that out of the literals.
+ * Provenance is resolved from the two id sets above rather than repeated on
+ * every entry, so the Late Age rule reads as one block instead of eighty-odd
+ * scattered flags.
  */
-function art(t: Omit<Technique, 'mastery'>): Technique {
-    return { ...t, mastery: 0 };
+function art(t: Omit<Technique, 'mastery'>): TechniqueEntry {
+    const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
+        ? 'grave'
+        : RUIN_ONLY_TECHNIQUE_IDS.has(t.id)
+            ? 'ruin'
+            : 'taught';
+    return { ...t, mastery: 0, provenance, sourceNote: SOURCE_NOTES[provenance] };
 }
 
-export const TECHNIQUES: readonly Technique[] = [
+export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     // ATTACK — MORTAL (Qi Condensation)
     // Cheap, small dice, and the only thing standing between a new
@@ -1008,7 +1086,7 @@ export const TECHNIQUES: readonly Technique[] = [
         damage: null,
         cooldown: 0,
         description:
-            'Six pages, block-printed, sold at every market town for the price of a meal. It teaches one to breathe in a way that accumulates rather than dissipates. Nine in ten cultivators never learn anything better.'
+            'Six pages, block-printed, sold at every market town for the price of a meal. It teaches one to breathe settled ash in a way that accumulates rather than dissipates. The ash is thin, the manual is old, and nine in ten cultivators never learn anything better.'
     }),
     art({
         id: 'five-breath-circulation-scripture',
@@ -1151,7 +1229,7 @@ export const TECHNIQUES: readonly Technique[] = [
         damage: null,
         cooldown: 0,
         description:
-            'One incomplete copy is known, and it is incomplete in the way a map of a coastline is incomplete. Cultivating from it at Tribulation Transcendence Perfection is the last thing anyone in this world can be said to be doing.'
+            'One incomplete copy is known. It came out of a sealed vault under a collapsed compound, in a grade nobody has been taught in living memory, and it is incomplete in the way a map of a coastline is incomplete. Cultivating from it at Tribulation Transcendence Perfection is the last thing anyone in this world can be said to be doing.'
     }),
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1244,16 +1322,18 @@ export const TECHNIQUES: readonly Technique[] = [
 // Prebuilt so lookups are O(1) and never re-scan the array.
 // ─────────────────────────────────────────────────────────────────────────
 
-const TECHNIQUE_BY_ID: ReadonlyMap<string, Technique> = new Map(TECHNIQUES.map(t => [t.id, t]));
+const TECHNIQUE_BY_ID: ReadonlyMap<string, TechniqueEntry> = new Map(TECHNIQUES.map(t => [t.id, t]));
 
-const TECHNIQUES_BY_CATEGORY: ReadonlyMap<TechniqueCategory, readonly Technique[]> = buildGroups(t => t.category);
-const TECHNIQUES_BY_GRADE: ReadonlyMap<TechniqueGrade, readonly Technique[]> = buildGroups(t => t.grade);
+const TECHNIQUES_BY_CATEGORY: ReadonlyMap<TechniqueCategory, readonly TechniqueEntry[]> = buildGroups(t => t.category);
+const TECHNIQUES_BY_GRADE: ReadonlyMap<TechniqueGrade, readonly TechniqueEntry[]> = buildGroups(t => t.grade);
+const TECHNIQUES_BY_PROVENANCE: ReadonlyMap<TechniqueProvenance, readonly TechniqueEntry[]> =
+    buildGroups(t => t.provenance);
 /** Key is the element name, or the literal string 'none' for elementless arts. */
-const TECHNIQUES_BY_ELEMENT: ReadonlyMap<Element | 'none', readonly Technique[]> =
+const TECHNIQUES_BY_ELEMENT: ReadonlyMap<Element | 'none', readonly TechniqueEntry[]> =
     buildGroups(t => (t.element ?? 'none') as Element | 'none');
 
-function buildGroups<K>(key: (t: Technique) => K): ReadonlyMap<K, readonly Technique[]> {
-    const map = new Map<K, Technique[]>();
+function buildGroups<K>(key: (t: TechniqueEntry) => K): ReadonlyMap<K, readonly TechniqueEntry[]> {
+    const map = new Map<K, TechniqueEntry[]>();
     for (const t of TECHNIQUES) {
         const k = key(t);
         const bucket = map.get(k);
@@ -1268,8 +1348,8 @@ function buildGroups<K>(key: (t: Technique) => K): ReadonlyMap<K, readonly Techn
  * 0..44. `findTechniquesForOrdinal` walks a prefix of this rather than
  * filtering the whole catalog.
  */
-const TECHNIQUES_BY_REQUIRED_ORDINAL: readonly (readonly Technique[])[] = (() => {
-    const buckets: Technique[][] = Array.from({ length: 45 }, () => []);
+const TECHNIQUES_BY_REQUIRED_ORDINAL: readonly (readonly TechniqueEntry[])[] = (() => {
+    const buckets: TechniqueEntry[][] = Array.from({ length: 45 }, () => []);
     for (const t of TECHNIQUES) buckets[t.requiredOrdinal].push(t);
     return buckets;
 })();
@@ -1278,28 +1358,41 @@ const TECHNIQUES_BY_REQUIRED_ORDINAL: readonly (readonly Technique[])[] = (() =>
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-export function getTechnique(id: string): Technique | undefined {
+export function getTechnique(id: string): TechniqueEntry | undefined {
     return TECHNIQUE_BY_ID.get(id);
 }
 
 /** Throwing variant, for engine paths where a missing id is a bug, not input. */
-export function requireTechnique(id: string): Technique {
+export function requireTechnique(id: string): TechniqueEntry {
     const t = TECHNIQUE_BY_ID.get(id);
     if (!t) throw new Error(`Unknown technique: ${id}`);
     return t;
 }
 
-export function getTechniquesByCategory(category: TechniqueCategory): readonly Technique[] {
+export function getTechniquesByCategory(category: TechniqueCategory): readonly TechniqueEntry[] {
     return TECHNIQUES_BY_CATEGORY.get(category) ?? [];
 }
 
-export function getTechniquesByGrade(grade: TechniqueGrade): readonly Technique[] {
+export function getTechniquesByGrade(grade: TechniqueGrade): readonly TechniqueEntry[] {
     return TECHNIQUES_BY_GRADE.get(grade) ?? [];
 }
 
 /** Pass null for the elementless arts every root may safely cultivate. */
-export function getTechniquesByElement(element: Element | null): readonly Technique[] {
+export function getTechniquesByElement(element: Element | null): readonly TechniqueEntry[] {
     return TECHNIQUES_BY_ELEMENT.get(element ?? 'none') ?? [];
+}
+
+/**
+ * Arts by how they are obtained. `getTechniquesByProvenance('ruin')` is the
+ * loot table for sealed sites — the reason a talentless cultivator digs.
+ */
+export function getTechniquesByProvenance(provenance: TechniqueProvenance): readonly TechniqueEntry[] {
+    return TECHNIQUES_BY_PROVENANCE.get(provenance) ?? [];
+}
+
+/** Everything no living teacher can transmit: ruin and grave sources together. */
+export function getRecoveredTechniques(): TechniqueEntry[] {
+    return [...getTechniquesByProvenance('ruin'), ...getTechniquesByProvenance('grave')];
 }
 
 export interface TechniqueQuery {
@@ -1311,6 +1404,8 @@ export interface TechniqueQuery {
     elementlessOnly?: boolean;
     /** Exclude forbidden arts, which are never legitimately taught. */
     excludeForbidden?: boolean;
+    /** Restrict to one source: what a sect can teach, or what must be dug up. */
+    provenance?: TechniqueProvenance;
 }
 
 /**
@@ -1318,13 +1413,14 @@ export interface TechniqueQuery {
  * Walks the prefix buckets, so cost is proportional to what is returned rather
  * than to the size of the catalog.
  */
-export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery = {}): Technique[] {
+export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery = {}): TechniqueEntry[] {
     const cap = Math.max(0, Math.min(44, Math.floor(ordinal)));
-    const out: Technique[] = [];
+    const out: TechniqueEntry[] = [];
     for (let i = 0; i <= cap; i++) {
         for (const t of TECHNIQUES_BY_REQUIRED_ORDINAL[i]) {
             if (opts.category && t.category !== opts.category) continue;
             if (opts.grade && t.grade !== opts.grade) continue;
+            if (opts.provenance && t.provenance !== opts.provenance) continue;
             if (opts.excludeForbidden && t.category === 'forbidden') continue;
             if (opts.elementlessOnly && t.element !== null) continue;
             if (opts.elements && t.element !== null && !opts.elements.includes(t.element)) continue;
@@ -1338,7 +1434,7 @@ export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery =
  * The highest-grade arts a cultivator can currently reach, which is what a
  * shop, a sect library, or an inheritance should actually be offering.
  */
-export function findBestTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery = {}): Technique[] {
+export function findBestTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery = {}): TechniqueEntry[] {
     const eligible = findTechniquesForOrdinal(ordinal, opts);
     if (eligible.length === 0) return [];
     const best = eligible.reduce((max, t) => Math.max(max, gradeRank(t.grade)), 0);

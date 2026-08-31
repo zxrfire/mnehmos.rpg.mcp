@@ -25,6 +25,60 @@
 import type { Recipe, TechniqueGrade } from '../../schema/cultivation.js';
 import type { Band } from './techniques.js';
 
+// ─────────────────────────────────────────────────────────────────────────
+// PROVENANCE — knowledge is recovered, not invented
+// In the Late Age nobody develops a new heaven-grade method. The good recipes
+// are dug out of tombs, read off a wall in a sealed refining hall, or bought
+// from someone who did the digging. A guild's "secret formula" is usually a
+// transcription of something two ages old with the difficult step missing.
+//
+//   known     → in circulation. A guild will sell it, or teach it for a bond.
+//   recovered → recovered from a sealed site or a grave deposit. Every
+//               immortal- and chaos-grade recipe is of this kind by rule, and
+//               so is the Grain Abstinence formula, which is why the pill that
+//               ends the hunger problem is a dig rather than a purchase.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type RecipeProvenance = 'known' | 'recovered';
+
+export interface RecipeEntry extends Recipe {
+    provenance: RecipeProvenance;
+    /** One factual line on where the method actually comes from. */
+    sourceNote: string;
+}
+
+/** Recipes that exist only because somebody opened something that was sealed. */
+export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
+    // heaven — the methods the surviving guilds cannot reproduce from first principles
+    'recipe-meridian-rebirth',
+    'recipe-condensed-decade',
+    'recipe-nascent-soul-guiding',
+    'recipe-century-lotus',
+    'recipe-grain-abstinence',
+    // immortal — every one
+    'recipe-void-source-return',
+    'recipe-undying-flesh',
+    'recipe-clear-mind-of-the-hollow-sky',
+    'recipe-severed-meridian-restoration',
+    'recipe-condensed-century',
+    'recipe-void-refinement-guiding',
+    'recipe-thousand-year-cypress',
+    'recipe-perpetual-grain-abstinence',
+    // chaos — every one, and most are partial transcriptions at that
+    'recipe-kalpa-surviving',
+    'recipe-primordial-qi-source',
+    'recipe-heaven-mending',
+    'recipe-soul-returning-clarity',
+    'recipe-millennium-condensation',
+    'recipe-tribulation-guiding',
+    'recipe-immortal-longevity'
+]);
+
+const RECIPE_SOURCE_NOTES: Record<RecipeProvenance, string> = {
+    known: 'In circulation. A guild will sell the method, or teach it against a bond.',
+    recovered: 'Recovered from a sealed site. No living alchemist worked it out; someone transcribed it off a wall or out of a tomb, and the transcription may not be complete.'
+} as const;
+
 /**
  * Base success-rate window per produced-pill grade. Disjoint and descending.
  * A mortal pill fails roughly one time in eight; a chaos pill succeeds roughly
@@ -38,7 +92,7 @@ export const RECIPE_SUCCESS_BANDS: Record<TechniqueGrade, Band> = {
     chaos: { min: 0.05, max: 0.15 }
 } as const;
 
-export const RECIPES: readonly Recipe[] = [
+const RECIPE_DATA: readonly Recipe[] = [
     // ═══════════════════════════════════════════════════════════════════
     // MORTAL — roadside reagents, a clay cauldron, and reasonable odds
     // ═══════════════════════════════════════════════════════════════════
@@ -530,14 +584,23 @@ export const RECIPES: readonly Recipe[] = [
     }
 ] as const;
 
+/**
+ * The catalog proper. Provenance is resolved from the id set above rather than
+ * repeated on every literal, so the Late Age rule stays legible as one block.
+ */
+export const RECIPES: readonly RecipeEntry[] = RECIPE_DATA.map(r => {
+    const provenance: RecipeProvenance = RECOVERED_RECIPE_IDS.has(r.id) ? 'recovered' : 'known';
+    return { ...r, provenance, sourceNote: RECIPE_SOURCE_NOTES[provenance] };
+});
+
 // ─────────────────────────────────────────────────────────────────────────
 // INDICES + LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-const RECIPE_BY_ID: ReadonlyMap<string, Recipe> = new Map(RECIPES.map(r => [r.id, r]));
+const RECIPE_BY_ID: ReadonlyMap<string, RecipeEntry> = new Map(RECIPES.map(r => [r.id, r]));
 
-const RECIPES_BY_PILL: ReadonlyMap<string, readonly Recipe[]> = (() => {
-    const map = new Map<string, Recipe[]>();
+const RECIPES_BY_PILL: ReadonlyMap<string, readonly RecipeEntry[]> = (() => {
+    const map = new Map<string, RecipeEntry[]>();
     for (const r of RECIPES) {
         const bucket = map.get(r.producesPillId);
         if (bucket) bucket.push(r);
@@ -547,8 +610,8 @@ const RECIPES_BY_PILL: ReadonlyMap<string, readonly Recipe[]> = (() => {
 })();
 
 /** Reverse index: which recipes consume a given herb. Drives "what is this for". */
-const RECIPES_BY_INGREDIENT: ReadonlyMap<string, readonly Recipe[]> = (() => {
-    const map = new Map<string, Recipe[]>();
+const RECIPES_BY_INGREDIENT: ReadonlyMap<string, readonly RecipeEntry[]> = (() => {
+    const map = new Map<string, RecipeEntry[]>();
     for (const r of RECIPES) {
         for (const ing of r.ingredients) {
             const bucket = map.get(ing.itemId);
@@ -559,26 +622,31 @@ const RECIPES_BY_INGREDIENT: ReadonlyMap<string, readonly Recipe[]> = (() => {
     return map;
 })();
 
-export function getRecipe(id: string): Recipe | undefined {
+export function getRecipe(id: string): RecipeEntry | undefined {
     return RECIPE_BY_ID.get(id);
 }
 
-export function requireRecipe(id: string): Recipe {
+export function requireRecipe(id: string): RecipeEntry {
     const r = RECIPE_BY_ID.get(id);
     if (!r) throw new Error(`Unknown recipe: ${id}`);
     return r;
 }
 
-export function getRecipesForPill(pillId: string): readonly Recipe[] {
+export function getRecipesForPill(pillId: string): readonly RecipeEntry[] {
     return RECIPES_BY_PILL.get(pillId) ?? [];
 }
 
-export function getRecipesUsingHerb(herbId: string): readonly Recipe[] {
+export function getRecipesUsingHerb(herbId: string): readonly RecipeEntry[] {
     return RECIPES_BY_INGREDIENT.get(herbId) ?? [];
 }
 
 /** Every recipe an alchemist at this ordinal is permitted to attempt. */
-export function findRecipesForOrdinal(ordinal: number): Recipe[] {
+export function findRecipesForOrdinal(ordinal: number): RecipeEntry[] {
     const cap = Math.max(0, Math.min(44, Math.floor(ordinal)));
     return RECIPES.filter(r => r.requiredOrdinal <= cap);
+}
+
+/** The recipes that only exist because somebody dug. A ruin loot table. */
+export function getRecoveredRecipes(): RecipeEntry[] {
+    return RECIPES.filter(r => r.provenance === 'recovered');
 }
