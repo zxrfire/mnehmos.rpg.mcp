@@ -71,7 +71,13 @@ import {
     getFactionCharacter,
     getProductionTier,
     inheritanceGap,
-    decliningFactions
+    decliningFactions,
+    getHighRealmProvenance,
+    survivorsOfARicherAge,
+    HIGH_REALM_PROVENANCE,
+    HIGH_REALM_THRESHOLD,
+    PRESENT_DAY_CEILING,
+    PROVENANCE_PENDING
 } from '../../src/data/cultivation/faction-character.js';
 
 function expectUniqueIds(entries: readonly { id: string }[], label: string): void {
@@ -429,5 +435,50 @@ describe('the mortal world', () => {
         expect(rough).toBeLessThan(40);
         expect(monthsOfSurvival(STARTING_SPIRIT_STONES, 'cave')).toBeLessThan(1);
         expect(pricesByCategory('food').length).toBeGreaterThanOrEqual(3);
+    });
+});
+
+// -------------------------------------------------------------------------
+describe('survivors of a richer age', () => {
+    it('makes every high-realm faction say which age it climbed in', () => {
+        const high = SECTS.filter(s => s.powerOrdinal > HIGH_REALM_THRESHOLD);
+        expect(high.length, 'nobody stands high enough to need an account').toBeGreaterThanOrEqual(6);
+        for (const sect of high) {
+            if (PROVENANCE_PENDING.has(sect.id)) continue;
+            const p = getHighRealmProvenance(sect.id);
+            expect(p, `${sect.id} stands at ${sect.powerOrdinal} and does not say when it climbed`)
+                .toBeDefined();
+            expect(p!.highestOrdinal, `${sect.id} provenance disagrees with its power ordinal`)
+                .toBe(sect.powerOrdinal);
+            expect(p!.climbedYearsAgo, `${sect.id} climbed too recently to be a survivor`)
+                .toBeGreaterThanOrEqual(100);
+            expect(p!.climbedWhere.length).toBeGreaterThan(60);
+            expect(p!.ageNote.length).toBeGreaterThan(60);
+            expect(p!.couldNotBeDoneNow.length, `${sect.id} does not say why it is unrepeatable`)
+                .toBeGreaterThan(100);
+        }
+    });
+
+    it('never claims a present-day climb above the measured ceiling', () => {
+        for (const [factionId, p] of Object.entries(HIGH_REALM_PROVENANCE)) {
+            expect(getSect(factionId), `provenance for unknown faction ${factionId}`).toBeDefined();
+            // A faction at or above the ceiling must be explicit that the climb
+            // is not available now in any ambient band, not merely difficult.
+            if (p.highestOrdinal >= PRESENT_DAY_CEILING) {
+                expect(p.couldNotBeDoneNow, `${factionId} treats an impossible climb as merely hard`)
+                    .toMatch(/anywhere in the world|any ambient|nothing available today/i);
+            }
+        }
+        const survivors = survivorsOfARicherAge();
+        expect(survivors.length, 'somebody must embody the ceiling').toBeGreaterThanOrEqual(2);
+        for (const s of survivors) expect(s.provenance.highestOrdinal).toBeGreaterThanOrEqual(PRESENT_DAY_CEILING);
+    });
+
+    it('keeps the pending list explicit and small', () => {
+        expect(PROVENANCE_PENDING.size).toBeLessThanOrEqual(2);
+        for (const id of PROVENANCE_PENDING) {
+            expect(getSect(id), `pending provenance for unknown faction ${id}`).toBeDefined();
+            expect(getSect(id)!.powerOrdinal).toBeGreaterThan(HIGH_REALM_THRESHOLD);
+        }
     });
 });

@@ -248,6 +248,12 @@ export const ApexInstitutionSchema = z.object({
      *
      * That is the actual reason the seats are never left. Not the Court.
      *
+     * And the sum works even for a sect with no interest in the crossing at
+     * all - see `asAnArtifact`. These are immortal-made objects, formidable
+     * before any question of the Lid comes into it, so the wanting is not
+     * confined to people with a realistic route upward. Most of the parties who
+     * would move on an empty seat have no such route and want it anyway.
+     *
      * `ifUncovered` is where the arrangement has slack. The holder is pinned,
      * not fixed: an emergency large enough to make an apex send its one out is
      * the single event that puts the object in reach, and everybody who
@@ -259,6 +265,19 @@ export const ApexInstitutionSchema = z.object({
         description: z.string().min(80),
         /** What it is good for, stated without mysticism. */
         uses: z.array(z.string().min(40)).min(2),
+        /**
+         * What it is worth to somebody who will never cross, and never intended
+         * to.
+         *
+         * These are immortal-made objects, and that is a statement about
+         * construction before it is a statement about the Lid. Strip out every
+         * question of ascension and each one is still the strongest artifact
+         * anyone in the region has heard described - which means the contender
+         * set is not only the parties chasing the crossing. It is also everyone
+         * who simply wants the best weapon in the world, and that is a much
+         * larger and much less patient group.
+         */
+        asAnArtifact: z.string().min(80),
         /** Why the holders never use it. */
         reserveTerms: z.string().min(60),
         /** What becomes possible the moment the seat is empty. */
@@ -358,6 +377,8 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 'comprehension at the last realm - it presents a structure from the far side of the Lid as something that can be studied rather than inferred, which is the difference between guessing at the crossing and reading about it',
                 'a channel upward, used four times in nine hundred years, each of which cost more than the Survey has ever explained'
             ],
+            asAnArtifact:
+                'Set the Lid aside and it is still an immortal-made instrument, and the practical effect is that its holder cannot be lied to about where anything is. Formations do not resolve against it, concealment does not hold in front of it, and a boundary dispute in its presence is over. The Survey has won four hundred years of arbitrations it never had to attend, and the reason is not procedural.',
             reserveTerms:
                 'Never carried, never lent, never demonstrated. The Survey does not deny that it exists and has never once described what it does.',
             ifUncovered:
@@ -417,6 +438,8 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 'comprehension at the last realm - it was driven through the Lid from above, so it is a worked example of the crossing that can be held in the hand, and the Cut tradition holds this to be worth more than any manual',
                 'a channel upward, in one direction only: things can be said along it, and nothing has ever been said back'
             ],
+            asAnArtifact:
+                'It is a fixed point in a world where nothing else is fixed, which sounds academic until somebody tries to move, fold or unmake ground near it and finds that they cannot. The Marches has never lost a perimeter within sight of it. Anyone holding it holds ground absolutely, which is worth having whether or not they ever intend to look upward.',
             reserveTerms:
                 'The Long Cut cannot move it and has stopped pretending that this is a policy. It is where it is. The seat was built around it afterwards.',
             ifUncovered:
@@ -451,6 +474,71 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             'The other apex, over the other tradition, and it does not do any of this the way the Deep Survey does. The Long Cut grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Quiet Marches. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
     }
 ];
+
+// ──────────────────────────────────────────────────────────────────────
+// APEX CANDIDACY
+//
+// An apex is not a rank and not a title. It is a body that received something
+// from an ascended founder AND can hold it, and the second half is the whole
+// test. Both existing apexes pass it with exactly one person, pinned.
+//
+// The Azure Cloud Pavilion is the case that shows what the test is for. Ru
+// Anjing made the last confirmed crossing in the world three hundred and
+// eighty years ago, spent eleven years divesting into the sect, and left the
+// Standing Edge in the floor of the inner hall. By provenance the Pavilion is
+// the newest apex in existence. By capability it is a Nascent Soul sect with
+// an object it could not keep for a season if anyone decided to take it.
+//
+// So it did the only thing available: it holds its vein from the Third Sill on
+// a twelve-year grant, renewed nineteen times, at forty thousand stones a year
+// plus first refusal on anything recovered within the grant. Read the lease
+// again knowing what is in the inner hall and it stops being a lease. The
+// tribute is protection money, the arbitration clause is why no dispute ever
+// gets far enough to become a siege, and the Deep Survey - which has a use for
+// the Edge and could presumably take it - instead collects rent on it forever.
+// That is a better deal for the Survey than owning it, because a treasure it
+// guards for somebody else does not have to be guarded by the one person it
+// cannot spare.
+//
+// Nobody involved says any of this. The Pavilion believes, sincerely, that it
+// is a proud old sect with a good grant.
+// ──────────────────────────────────────────────────────────────────────
+
+export const ApexCandidacySchema = z.object({
+    factionId: z.string(),
+    /** The crossing that qualifies them, and how long ago. */
+    ascendedFounder: z.string().min(40),
+    yearsAgo: z.number().int().min(0),
+    /** The object in `partingGift` on the sect side. Provenance is not in doubt. */
+    giftId: z.string(),
+    /** Why they are not an apex, which is always the same reason. */
+    cannotHold: z.string().min(80),
+    /** What they did instead, and what it actually is. */
+    arrangement: z.string().min(80),
+    /** What would have to change. Stated as a threshold, because it is one. */
+    wouldQualifyIf: z.string().min(60)
+});
+export type ApexCandidacy = z.infer<typeof ApexCandidacySchema>;
+
+export const APEX_CANDIDATES: readonly ApexCandidacy[] = [
+    {
+        factionId: 'sect-azure-cloud-pavilion',
+        ascendedFounder:
+            'Ru Anjing, Third Master of the Pavilion, whose crossing is the last confirmed one anywhere and the only one within living memory of anybody now alive.',
+        yearsAgo: 380,
+        giftId: 'artifact-the-standing-edge',
+        cannotHold:
+            'Nobody at the Pavilion is within four realms of the last one. The Edge sits point-down in the inner hall and is defended by a sect whose strongest member is at Nascent Soul, which is to say it is not defended, it is merely somewhere.',
+        arrangement:
+            'A twelve-year grant from the Third Sill, renewed nineteen times, at forty thousand stones a year plus first refusal on anything recovered inside the grant. The Pavilion experiences this as a lease on a vein. It is a protection contract on the object in the hall, and the arbitration clause is why no dispute involving the Pavilion has ever been allowed to escalate.',
+        wouldQualifyIf:
+            'It produced one cultivator at Tribulation Transcendence willing to sit down and stop, at which point the grant becomes optional and everyone would find out at the same time whether the Survey agrees.'
+    }
+];
+
+export function getApexCandidacy(factionId: string): ApexCandidacy | undefined {
+    return APEX_CANDIDATES.find(c => c.factionId === factionId);
+}
 
 /** The courts. Each administers one arterial vein on an apex's behalf. */
 export const COURTS: readonly Court[] = [

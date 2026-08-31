@@ -14,6 +14,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 import {
     SECTS,
@@ -24,7 +25,8 @@ import {
     sectsWithASealedCeiling,
     canProjectLastRealm,
     HOLLOW_COURT_FOSTERAGE,
-    WITHDRAWN_POWERS
+    WITHDRAWN_POWERS,
+    SECT_ANCESTRY as ANCESTRY_FOR_CANDIDACY
 } from '../../src/data/cultivation/sects.js';
 import { REGIONS, getRegion } from '../../src/data/cultivation/regions.js';
 import {
@@ -44,6 +46,8 @@ import {
     REGION_GOVERNANCE,
     UNBACKED_PLAYER_TRADE,
     getApexInstitution,
+    getApexCandidacy,
+    APEX_CANDIDATES,
     getCourt,
     getParentage,
     getSubsidiariesOf,
@@ -679,6 +683,21 @@ describe('the sent-down treasures', () => {
         }
     });
 
+    it('is a formidable artifact before it is anything to do with the Lid', () => {
+        // Immortal-made is a statement about construction first. Strip out
+        // ascension entirely and each is still the best object anyone has heard
+        // described, which is why the wanting is not confined to the few with a
+        // realistic route upward.
+        for (const apex of APEX_INSTITUTIONS) {
+            expect(apex.sentDown.asAnArtifact.length, apex.id).toBeGreaterThan(80);
+        }
+        const byId = Object.fromEntries(APEX_INSTITUTIONS.map(a => [a.id, a.sentDown]));
+        // And the two are good at different things, so they are not one prize
+        // described twice.
+        expect(byId['apex-deep-survey'].asAnArtifact).toMatch(/conceal|formation|arbitration|lied to/i);
+        expect(byId['apex-long-cut'].asAnArtifact).toMatch(/fixed|ground|perimeter/i);
+    });
+
     it('names a contender set much wider than the Court', () => {
         // The Court has the clearest motive. It is not the reason the seats are
         // never left - the sealed ancestors are. A one-time asset traded for a
@@ -698,5 +717,78 @@ describe('the sent-down treasures', () => {
         // which is a different heist and a different kind of siege.
         expect(byId['apex-deep-survey'].ifUncovered).toMatch(/taken|carried/i);
         expect(byId['apex-long-cut'].ifUncovered).toMatch(/cannot be carried|in place/i);
+    });
+});
+
+describe('a seal cuts both ways', () => {
+    it('carries a disaster clause as its stated purpose', () => {
+        // Defensive read: what the sect tells itself the seal is for, and it is
+        // true. Every wake condition in the catalog is somebody losing.
+        for (const [id, record] of Object.entries(SECT_ANCESTRY)) {
+            const sealed = record.dormant;
+            if (!sealed) continue;
+            expect(sealed.wakeCondition.length, id).toBeGreaterThan(40);
+            expect(sealed.wakeCost.length, id).toBeGreaterThan(40);
+        }
+    });
+
+    it('is spendable in the other direction, and the catalog says so', () => {
+        // Offensive read: the sect does not say this out loud, so the code has
+        // to. If this note goes, the sealed ancestors quietly become scenery.
+        const src = readSects();
+        expect(src).toMatch(/A SEAL CUTS BOTH WAYS/);
+        expect(src).toMatch(/opening move/i);
+    });
+});
+
+/** The doc comment IS the artefact here, so it is what gets asserted on. */
+function readSects(): string {
+    return readFileSync('src/data/cultivation/sects.ts', 'utf-8');
+}
+
+describe('provenance is not capability', () => {
+    it('recognises the newest gift in the world without promoting its holder', () => {
+        const candidacy = getApexCandidacy('sect-azure-cloud-pavilion')!;
+        expect(candidacy).toBeDefined();
+        expect(candidacy.yearsAgo).toBe(380);
+
+        // The provenance is real and the catalog agrees with itself about it.
+        const record = ANCESTRY_FOR_CANDIDACY['sect-azure-cloud-pavilion'];
+        expect(record.recency).toBe('recent');
+        expect(record.claimsLivingAncestor).toBe(true);
+        expect(record.claimIsTrue).toBe(true);
+        expect(record.partingGift!.id).toBe(candidacy.giftId);
+        expect(record.partingGift!.intact).toBe(true);
+        expect(record.ancestors.some(a => a.fate === 'ascended' && a.realmOrdinal === 45)).toBe(true);
+
+        // And it is still a tenant, because holding is the test.
+        expect(APEX_INSTITUTIONS.map(a => a.id)).not.toContain('sect-azure-cloud-pavilion');
+        const parentage = getParentage('sect-azure-cloud-pavilion')!;
+        expect(parentage.relation).toBe('subsidiary');
+        expect(parentage.parentFactionId).toBe('court-third-sill');
+    });
+
+    it('leaves every candidate short by the same thing', () => {
+        for (const c of APEX_CANDIDATES) {
+            const sect = getSect(c.factionId)!;
+            const strongestApex = Math.min(...APEX_INSTITUTIONS.map(a => a.powerOrdinal));
+            // Short of the last realm, which is the only qualification that counts.
+            expect(sect.powerOrdinal, c.factionId).toBeLessThan(strongestApex);
+            expect(c.cannotHold.length).toBeGreaterThan(80);
+            expect(c.wouldQualifyIf).toMatch(/tribulation transcendence/i);
+        }
+    });
+});
+
+describe('why the Court cannot be robbed', () => {
+    it('can dispatch and still hold the mountain, and no apex can', () => {
+        const court = WITHDRAWN_POWERS['sect-hollow-court'];
+        // Sending two still leaves the ground covered. One holder cannot both
+        // guard the object and pursue whoever took it, which is the correct
+        // play against an apex and no play at all against the Court.
+        expect(court.count - 2).toBeGreaterThanOrEqual(1);
+        for (const apex of APEX_INSTITUTIONS) {
+            expect(apex.lastRealm.count - 1).toBe(0);
+        }
     });
 });

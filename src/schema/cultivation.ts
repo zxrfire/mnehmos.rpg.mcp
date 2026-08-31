@@ -860,6 +860,16 @@ export const SimEventSchema = z.object({
     summary: z.string(),
     /** Whether this event should interrupt the skip and return control. */
     interrupts: z.boolean().default(false),
+    /**
+     * How many identical events this line stands for.
+     *
+     * A long skip repeats itself: the same warning, the same disturbance, the
+     * same nothing-in-particular. Printing it six times reads as a bug and
+     * buries whatever mattered, and dropping five of them loses the scale, so
+     * identical lines collapse into one that knows how many. `dayOffset` is
+     * the FIRST occurrence; `lastDayOffset` in `data` is the most recent.
+     */
+    occurrences: z.number().int().min(1).default(1),
     data: z.record(z.unknown()).default({})
 });
 export type SimEvent = z.infer<typeof SimEventSchema>;

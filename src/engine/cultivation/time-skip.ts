@@ -58,6 +58,7 @@ import {
     LETHAL_UNTREATED_INJURIES,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
+    STARVATION_TURNS,
     stagnationYearsForOrdinal,
     type AmbientQi,
     type Cultivator,
@@ -329,6 +330,15 @@ export function simulateTimeSkip(
     let ranksOnDay = 0;
     let ranksOnDayFor = -1;
     let depletionAnnounced = false;
+    /**
+     * Seeded from the entry state, not from false.
+     *
+     * The interrupt is for ENTERING starvation. A cultivator who begins a skip
+     * already starving has been told once and chose to continue, and stopping
+     * them again every five days would mean they could never actually die of
+     * it - which would turn a real consequence into a nag.
+     */
+    let starvationAnnounced = cultivator.satiety <= 0 && (ctx.rations ?? 0) <= 0;
 
     const push = (
         kind: SimEventKind,
@@ -336,7 +346,16 @@ export function simulateTimeSkip(
         interrupts: boolean,
         data: Record<string, unknown> = {}
     ): void => {
-        events.push({ kind, dayOffset: elapsed, summary, interrupts, data });
+        // Identical lines collapse. A forty-year seclusion that reports the
+        // same warning six times has buried whatever else it said, and the one
+        // thing a digest must not do is hide the line that mattered.
+        const existing = events.find(e => e.kind === kind && e.summary === summary);
+        if (existing) {
+            existing.occurrences++;
+            existing.data = { ...existing.data, lastDayOffset: elapsed };
+            return;
+        }
+        events.push({ kind, dayOffset: elapsed, summary, interrupts, occurrences: 1, data });
     };
 
     // Two flavours of the same clock, deliberately.
@@ -635,22 +654,57 @@ export function simulateTimeSkip(
         daysSinceAdvance += chunk;
 
         if (!grainAbstinence) {
-            const before = satiety;
             const fed = consumeFood(chunk, { satiety, starvationTurns, rations });
             satiety = fed.satiety;
             starvationTurns = fed.starvationTurns;
             rations = fed.rations;
+
+            // ── A resource is about to run out and something can still be
+            // done about it. ──
+            //
+            // This is its own category of interrupt, and it was missing. Every
+            // other interrupt is a thing that HAPPENED to the cultivator -
+            // death, a wound, someone arriving. This one is a thing that is
+            // ABOUT to happen and is trivially preventable: the player has
+            // stones, there is a settlement, and buying food is solved. They
+            // were simply never asked.
+            //
+            // The skip must not be the one place a player dies without a
+            // decision. Starving to death stays entirely possible - a player
+            // told the food is gone who presses on anyway has earned it - but
+            // it has to be a choice they declined rather than one they never
+            // got.
             if (rations === 0 && !depletionAnnounced && fed.rationsUsed > 0) {
                 depletionAnnounced = true;
-                push('resource_depleted', 'The last of the provisions is gone.', false, {});
+                interrupted = true;
+                interruptReason = 'provisions_exhausted';
+                push(
+                    'resource_depleted',
+                    'The last of the provisions is gone. ' +
+                    `There is food for about ${Math.floor(satiety / SATIETY_COST_PER_ACTION)} more days, ` +
+                    `and ${STARVATION_TURNS} days beyond that before it kills.`,
+                    true,
+                    { rations: 0, satiety, daysOfFoodLeft: Math.floor(satiety / SATIETY_COST_PER_ACTION) }
+                );
+                break;
             }
-            if (satiety === 0 && before > 0) {
+
+            // Entering starvation proper: no belly and nothing to put in it.
+            // Announced ONCE. Somebody on grain abstinence, or with rations in
+            // hand, is fine and is not stopped - and the belly touching zero at
+            // a chunk boundary with food still in the pack is not news at all,
+            // which is what produced six identical warnings in one digest.
+            if (satiety === 0 && rations === 0 && !starvationAnnounced) {
+                starvationAnnounced = true;
+                interrupted = true;
+                interruptReason = 'starvation_begun';
                 push(
                     'starvation_warning',
-                    'Satiety has reached zero. Five turns without food is fatal.',
-                    false,
+                    `Nothing left to eat. ${STARVATION_TURNS} days of this is fatal.`,
+                    true,
                     { starvationTurns }
                 );
+                break;
             }
         }
 

@@ -29,7 +29,15 @@ import {
 describe('ambient qi tables', () => {
     it('sums the declared weights to 100', () => {
         expect(AMBIENT_WEIGHT_TOTAL).toBe(100);
-        expect(AMBIENT_QI_ORDER).toHaveLength(Object.keys(AMBIENT_QI_WEIGHTS).length);
+        // Every ROLLABLE band is in the order, and the order is the only thing
+        // the roll walks. `sealed_vein` is deliberately absent: it carries
+        // weight 0 and exists only where a caller declares a sealed site, so
+        // no amount of travelling can produce one.
+        const rollable = (Object.keys(AMBIENT_QI_WEIGHTS) as AmbientQi[])
+            .filter(band => AMBIENT_QI_WEIGHTS[band] > 0);
+        expect([...AMBIENT_QI_ORDER].sort()).toEqual([...rollable].sort());
+        expect(AMBIENT_QI_ORDER).not.toContain('sealed_vein');
+        expect(AMBIENT_QI_WEIGHTS.sealed_vein).toBe(0);
     });
 
     it('reads its multipliers straight from the schema', () => {
