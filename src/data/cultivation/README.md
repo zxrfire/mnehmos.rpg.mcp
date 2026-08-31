@@ -29,6 +29,7 @@ contract and the tests are the validator.
 | `pills.ts` | Alchemy output | Grade drives value and toxicity together, in disjoint ascending bands |
 | `recipes.ts` | One recipe per pill | Ingredients resolve to real herbs; success rate falls as grade rises; refinement adds value |
 | `herbs.ts` | The ingredient layer under alchemy | Value rises with grade, availability falls, and the realm needed to survive where it grows rises |
+| `beasts.ts` | The population that is not human, its materials and its tides | One ladder: danger is a realm ordinal, never a stat block. Anything that speaks is at least Core Formation |
 | `sects.ts` | Sects, Dao houses, destroyed houses | Every sect is *late*: none of them built what they live in |
 | `encounters.ts` | The tables the time-skip draws from | `summaryTemplate` is an engine-authored factual summary, never prose |
 | `index.ts` | Barrel export and cross-catalog lookups | All lookups O(1) against prebuilt Maps; provenance always available |
@@ -177,6 +178,28 @@ in seclusion - are the reminders that nothing is ever fully outgrown.
 `threatOrdinal` is the realm ordinal of whatever is hostile, or null when the entry is not
 a fight. The engine compares it to the cultivator's own ordinal, and the power multipliers
 in `realms.ts` are steep enough that a four-rank gap is not a hard fight, it is a death.
+
+### Beasts are on the same ladder
+
+`beasts.ts` carries no combat statistics, because the ladder already answers the question.
+A beast's `ordinal` is read with `rankName` exactly as a cultivator's is, and everything
+else about an entry is the shape of the problem rather than its size: where it lives, what
+it does to a vein, whether it can be talked to, and one line on what specifically makes it
+hard.
+
+Three rules the catalog enforces, because they are world facts rather than flavour:
+
+- **Nothing speaks below Core Formation.** The change at `BEAST_CHANGE_ORDINAL` brings a
+  core, a shape and a voice together, so anything offering terms has a known floor under it
+  and is never the cheap option.
+- **They live where the qi is**, so the richest ground is contested before any sect arrives
+  and a beast on a vein is a competing draw on it - the same arithmetic as `enc-valley-overdrawn`.
+- **The Late Age applies to them.** Drawn-down ground has small, sparse populations and bad
+  culling rates; anything impressive is behind a seal, cultivating without interruption.
+
+Materials use the herb catalog's grades, value bands and rarity ceilings deliberately, so
+salvage and alchemy price off one ladder. A core is the condensed cultivation of something
+past the change, which is the whole reason beasts are hunted rather than avoided.
 
 ## Related
 

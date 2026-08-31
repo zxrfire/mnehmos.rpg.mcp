@@ -20,6 +20,7 @@ import { TECHNIQUES, findTechniquesForOrdinal, getTechnique, type TechniqueEntry
 import { PILLS, getPill } from './pills.js';
 import { RECIPES, getRecipesForPill, type RecipeEntry } from './recipes.js';
 import { HERBS, getHerb } from './herbs.js';
+import { BEASTS, BEAST_MATERIALS, BEAST_TIDES } from './beasts.js';
 import { SECTS, DAO_HOUSES, DESTROYED_DAO_HOUSES } from './sects.js';
 import { ENCOUNTERS } from './encounters.js';
 import { REGIONS } from './regions.js';
@@ -106,6 +107,49 @@ export {
     type Herb,
     type HerbBiome
 } from './herbs.js';
+
+export {
+    BEASTS,
+    BEAST_MATERIALS,
+    BEAST_TIDES,
+    BEAST_CHANGE_ORDINAL,
+    THE_BEAST_ROAD,
+    ESTIMATING_A_BEAST,
+    THE_CONTRACT,
+    CONTRACT_ENGINE_REQUIREMENTS,
+    BeastSchema,
+    BeastNatureSchema,
+    BeastPersistenceSchema,
+    BeastMaterialSchema,
+    BeastTideSchema,
+    MaterialTakingSchema,
+    VeinRelationSchema,
+    getBeast,
+    requireBeast,
+    getBeastsByBiome,
+    getBeastsByNature,
+    getBeastMaterial,
+    requireBeastMaterial,
+    materialsOf,
+    coreOf,
+    getBeastTide,
+    tidesInRegion,
+    beastsInTide,
+    describeBeastRealm,
+    findBeastsForOrdinal,
+    findThreatsAboveOrdinal,
+    veinContenders,
+    sealedOnlyBeasts,
+    negotiableBeasts,
+    rollBeast,
+    type Beast,
+    type BeastNature,
+    type BeastPersistence,
+    type BeastMaterial,
+    type BeastTide,
+    type MaterialTaking,
+    type VeinRelation
+} from './beasts.js';
 
 export {
     SECTS,
@@ -233,6 +277,12 @@ export interface CultivationCatalogCounts {
     immortalHoldings: number;
     /** Unattached figures worth asking. Vanishingly few. */
     wanderers: number;
+    /** The population that is not human, and is on the same ladder. */
+    beasts: number;
+    /** What comes off them, priced in the herb catalog's bands. */
+    beastMaterials: number;
+    /** Regional displacement events. Each one has a stated cause. */
+    beastTides: number;
     /** Institutions with somebody above the Lid still answering, plus gifts. */
     immortalChannels: number;
 }
@@ -261,6 +311,9 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         immortalItems: IMMORTAL_ITEMS.length,
         immortalHoldings: IMMORTAL_HOLDINGS.length,
         wanderers: WANDERERS.length,
+        beasts: BEASTS.length,
+        beastMaterials: BEAST_MATERIALS.length,
+        beastTides: BEAST_TIDES.length,
         immortalChannels: IMMORTAL_CHANNELS.length
     };
 }

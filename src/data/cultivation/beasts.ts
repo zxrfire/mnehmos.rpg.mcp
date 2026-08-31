@@ -1,0 +1,1076 @@
+/**
+ * Spirit beasts - the part of the world that is dangerous and is not a person.
+ *
+ * Everything else in this catalog directory is human: sects, disciples, rogues,
+ * auditors, grave-readers. This file is the other half of the population, and
+ * it is not a bestiary bolted onto the setting. Every entry here is generated
+ * by premises the world already had.
+ *
+ * THEY CULTIVATE TOO
+ * ------------------
+ * One ladder, always. A beast at ordinal 19 is Core Formation Late, is as
+ * dangerous as a cultivator at ordinal 19, and is described with the same
+ * vocabulary - which is also how a cultivator estimates one across a valley.
+ * `rankName(beast.ordinal)` is the only reading anybody gets, and it is the
+ * reading that matters.
+ *
+ * What differs is the road, not the rungs. A beast has no manual, no teacher,
+ * no sect and no pills. It sits on the best ground it can hold and does not
+ * die, for a very long time, and that is the whole method. This is NOT a third
+ * tradition: it has no transmission, no institutions and no quarrel with
+ * anybody, so it does not belong in `traditions.ts`. It is what the ladder
+ * looks like when nothing about it is taught.
+ *
+ * Two consequences the catalog leans on:
+ *
+ *   - A beast is slower per year than a Drawn cultivator on the same ground,
+ *     and it never stops. Time is the only resource it has, and it has all of
+ *     it. An old beast on a good vein is exactly as terrible as that sounds.
+ *   - At Core Formation a beast condenses a core, and with the core comes a
+ *     shape and a voice. So anything that speaks is at minimum ordinal 17, and
+ *     every cultivator alive knows that arithmetic. A talking beast is never
+ *     the easy option.
+ *
+ * THEY LIVE WHERE THE QI IS
+ * -------------------------
+ * Qi pools in veins, and a beast that wants to progress goes and sits on one.
+ * So the richest ground in the world is contested with something before any
+ * sect gets there, a vein is worth more and costs more than the survey says,
+ * and the map has places nobody holds for a reason that is alive.
+ *
+ * A beast on a vein is also a competing draw on it. That is the same
+ * arithmetic as `enc-valley-overdrawn`: qi taken by one is not available to
+ * another, and a sect whose output has quietly fallen eleven percent has
+ * either acquired disciples or acquired a neighbour.
+ *
+ * THE LATE AGE APPLIES TO THEM
+ * ----------------------------
+ * Drawn-down provinces have thin, degenerate populations. The culling
+ * contracts in a poor district pay badly because what is on the ground is
+ * barely worth taking, and the animals there are smaller than the ones in the
+ * old surveys. The impressive things are inside the sealed places, along with
+ * everything else that is impressive, which is one more reason sealed places
+ * kill people. Something has been in there cultivating with no competition and
+ * no interruptions since before the seal was cut.
+ *
+ * WHAT THIS FILE IS NOT
+ * ---------------------
+ * Inert data, like every catalog beside it. Nothing here rolls or resolves.
+ * There are no stat blocks: danger is a realm ordinal, a place, and one line
+ * saying what specifically makes the thing hard. If an entry needs a paragraph
+ * to be frightening, it is not frightening.
+ */
+
+import { z } from 'zod';
+import { TechniqueGradeSchema } from '../../schema/cultivation.js';
+import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
+import { HerbBiomeSchema, type HerbBiome } from './herbs.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// SCHEMA
+// No beast contract exists in `src/schema/cultivation.ts` yet - beasts are
+// content with no engine-side persistence contract - so the Zod schemas are
+// declared here and exported, ready to be lifted when storage needs them.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The ordinal at which a beast condenses a core, takes a shape and can speak.
+ * The same rung as Core Formation, because it IS Core Formation. Below it a
+ * beast is an animal with qi in it; at it, a beast is a party to a
+ * conversation, and cultivators who forget that are the ones who open with a
+ * sword.
+ */
+export const BEAST_CHANGE_ORDINAL = 17;
+
+/** What sort of problem this is, before anything about its strength. */
+export const BeastNatureSchema = z.enum([
+    /** An animal with a little qi in it. Most of the world's beasts. */
+    'ordinary',
+    /** Moves in numbers. Tides come out of these, never out of solitaries. */
+    'herd',
+    /** Hunts, and has worked out that cultivators are worth more than deer. */
+    'ambush',
+    /** Holds ground, and the ground it holds usually has a vein under it. */
+    'territorial',
+    /** Has made the change. Takes a shape, speaks, and can be dealt with. */
+    'intelligent',
+    /** Was here before the compound above it. Still going. Still asleep. */
+    'ancient'
+]);
+export type BeastNature = z.infer<typeof BeastNatureSchema>;
+
+/** Where the Late Age has left this thing. */
+export const BeastPersistenceSchema = z.enum([
+    /** Survives on ordinary ground, and is duller than the old records say. */
+    'open_world',
+    /** What a drawn-down province still has: small, sparse, barely worth it. */
+    'thin_remnant',
+    /** Only where the ground is still rich, so always somebody's problem. */
+    'vein_only',
+    /** Only inside places nothing has drawn on. The reason seals are cut. */
+    'sealed_only'
+]);
+export type BeastPersistence = z.infer<typeof BeastPersistenceSchema>;
+
+/** What it does to a spiritual vein, which is what makes it political. */
+export const VeinRelationSchema = z.enum([
+    'indifferent',
+    /** Moves to whatever ground is richest this decade, and arrives in numbers. */
+    'follows',
+    /** Territorial about one vein and will not be moved off it. */
+    'holds',
+    /** A competing draw. Measured output falls while it is there. */
+    'drains'
+]);
+export type VeinRelation = z.infer<typeof VeinRelationSchema>;
+
+export const BeastSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1),
+    nature: BeastNatureSchema,
+    /** Realm ordinal. The only measure of danger this catalog carries. */
+    ordinal: z.number().int().min(0).max(MAX_ORDINAL),
+    /** Same biome vocabulary the herb catalog uses, so ground resolves once. */
+    biome: HerbBiomeSchema,
+    persistence: BeastPersistenceSchema,
+    veinRelation: VeinRelationSchema,
+    /** Typical number encountered together. One means solitary. */
+    groupSize: z.number().int().min(1),
+    /** Has made the change and can be spoken to. Never true below ordinal 17. */
+    speaks: z.boolean(),
+    /** Draw weight when something is met. Larger is commoner. */
+    frequency: z.number().int().min(1),
+    /** What specifically makes it hard. Not power - the shape of the problem. */
+    hard: z.string().min(40),
+    /** Materials it yields, by id. Everything here resolves in this file. */
+    materialIds: z.array(z.string()),
+    /** One line of flavour. If it needs two, it is not doing its job. */
+    note: z.string().min(40)
+});
+export type Beast = z.infer<typeof BeastSchema>;
+
+/**
+ * How a material comes off. A core comes off a corpse and prices accordingly;
+ * a shed feather is what a poor cultivator can actually reach, which is the
+ * whole bottom of the beast trade.
+ */
+export const MaterialTakingSchema = z.enum(['kill', 'shed', 'scavenge']);
+export type MaterialTaking = z.infer<typeof MaterialTakingSchema>;
+
+/**
+ * Beast materials, in the herb catalog's idiom deliberately: same five grades,
+ * same value bands, same rarity ceilings, same `harvestOrdinal` meaning "the
+ * realm below which getting this will kill you". An alchemist buying a core
+ * and an alchemist buying a root are running the same arithmetic.
+ */
+export const BeastMaterialSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1),
+    grade: TechniqueGradeSchema,
+    sourceBeastId: z.string(),
+    taking: MaterialTakingSchema,
+    /**
+     * True for the condensed cultivation of a beast past the change. This is
+     * the single reason spirit beasts are hunted rather than avoided: a core
+     * is somebody else's centuries, in a form that can be eaten or sold.
+     */
+    core: z.boolean(),
+    /** Base market value in spirit stones. Same bands as herbs. */
+    value: z.number().int().min(1),
+    /** Draw weight on the salvage table. Larger is commoner. */
+    rarityWeight: z.number().int().min(1),
+    /** Realm ordinal below which taking this is not survivable. */
+    harvestOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    description: z.string().min(40)
+});
+export type BeastMaterial = z.infer<typeof BeastMaterialSchema>;
+
+/**
+ * A beast tide is a regional event with a cause, not a random encounter.
+ *
+ * Something changed - a vein moved, a seal failed, the ground dried - and a
+ * population that was living on the old arrangement had to be somewhere else.
+ * The tide is the symptom. Killing the front of it does not address the cause,
+ * and the sects that treat a tide as a monster problem rather than a survey
+ * problem are the ones it happens to twice.
+ */
+export const BeastTideSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1),
+    regionId: z.string(),
+    /** Why it is happening. Always a change to the ground or to a seal. */
+    cause: z.string().min(80),
+    /** Whether anybody local has worked the cause out. Often not. */
+    causeKnownLocally: z.boolean(),
+    /** What was observable beforehand, for anyone who reads ground. */
+    precursors: z.array(z.string().min(30)).min(2),
+    /** Ordinal window of what is actually in it. */
+    minOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    maxOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    /**
+     * The thing at the back of it, when there is one. A tide driven by a
+     * predator has one; a tide driven by dry ground does not, and the second
+     * kind is worse because there is nothing to kill.
+     */
+    driverBeastId: z.string().nullable(),
+    beastIds: z.array(z.string()).min(1),
+    /** Who pays for it, which is rarely who caused it. */
+    whoAbsorbsIt: z.string().min(60),
+    aftermath: z.string().min(60)
+});
+export type BeastTide = z.infer<typeof BeastTideSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ROAD THEY ARE ON
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The beast road, stated once so no entry has to restate it.
+ *
+ * Not a tradition. A tradition has transmission, institutions and an opinion
+ * about the other tradition; this has none of those. It is the same ladder
+ * with everything human taken off it.
+ */
+export const THE_BEAST_ROAD = {
+    method:
+        'Sit on the best ground you can hold and do not die. There is no manual, no teacher, no medicine and no crossing ceremony. Progress is time multiplied by the density of the air, and nothing else enters the calculation.',
+    rate:
+        'Slower per year than a Drawn cultivator on the same ground, by a wide margin, and it never stops. A cultivator sleeps, travels, argues with a sect and spends forty years on a feud. A beast on a vein does none of that.',
+    theChange:
+        `At ordinal ${BEAST_CHANGE_ORDINAL} a beast condenses a core, and a shape and a voice come with it. Below that it is an animal carrying qi. At and above it, it is a party who can be talked to, and who can decline.`,
+    whyTheyAreHunted:
+        'The core is the cultivation, condensed and portable. Killing an old beast is the only way to take centuries off something that will not sell them, which is why every province has a culling trade and why nothing above the change is naive about people.',
+    death:
+        'The body is the whole of them. No nascent soul leaves, no seam regrows, and nothing comes back. A beast that is killed is finished, which is a simplicity neither human tradition has.',
+    whatTheyLack: [
+        'alchemy, formations and any art that has to be written down or shown',
+        'allies, except the ones that share a herd and mostly do not help',
+        'any way to buy their way past a bottleneck, so a beast that stalls stalls for centuries'
+    ],
+    whatTheyHave: [
+        'time, in quantities no institution can match',
+        'no obligation to anybody, so nothing recalls them, taxes them or audits them',
+        'first claim on the good ground, because they were on it before the survey'
+    ]
+} as const;
+
+/**
+ * How a cultivator reads a beast in the field, and how the reading fails.
+ *
+ * The same problem as reading a foreign title one rank low, with the same
+ * outcome. `TITLE_TRANSLATIONS` in `regions.ts` is the human version of this.
+ */
+export const ESTIMATING_A_BEAST = {
+    tells: [
+        'What the air does around it. A beast past Foundation moves qi the way a Drawn cultivator does, and it is visible at distance in cold weather.',
+        'What else is living nearby. The reliable measure is absence: the ordinal is written in how far out the ordinary animals have gone.',
+        'Size, which is the tell everyone uses and the worst one. Growth stops early on most roads and an old beast is often not large.',
+        'Whether it has a shape or a voice, which puts a hard floor of Core Formation under it and admits of no argument.'
+    ],
+    standardError:
+        'Reading it a rank low, from size or from an old district survey. Culling notices are written from surveys and surveys are not redrawn when a beast has a good century, so the price on the notice is the price for what used to be there.',
+    whoGetsItRight:
+        'Gleaners, herb gatherers on guarded ground, and anybody who has been paid per head for long enough to have stopped guessing. Sect disciples are the worst at it, because they have never had to be right about it alone.'
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE CATALOG
+// Ordered by ordinal, which is the only ordering that means anything here.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const BEASTS: readonly Beast[] = [
+    // ═══════════════════════════════════════════════════════════════════
+    // ORDINARY - animals with a little qi in them. The whole bottom of
+    // the trade, and what a poor province has instead of monsters.
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'beast-stubble-hare',
+        name: 'Stubble Hare',
+        nature: 'ordinary',
+        ordinal: 0,
+        biome: 'farmland',
+        persistence: 'thin_remnant',
+        veinRelation: 'indifferent',
+        groupSize: 6,
+        speaks: false,
+        frequency: 300,
+        hard: 'Nothing about it is hard. It is here because a district with nothing better than this is a district with a ceiling, and the culling ledger says so in numbers.',
+        materialIds: ['mat-hare-pelt'],
+        note: 'Grey, fast, and faintly warm to hold. Two generations ago the district record was twice this size, and nobody has drawn the obvious conclusion out loud.'
+    },
+    {
+        id: 'beast-ironhide-boar',
+        name: 'Ironhide Boar',
+        nature: 'ordinary',
+        ordinal: 5,
+        biome: 'forest',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 140,
+        hard: 'It does not stop when hurt and it does not turn. A cultivator who has only fought people expects a fight to have a middle, and this one has a beginning and an end.',
+        materialIds: ['mat-boar-hide', 'mat-boar-tusk'],
+        note: 'Roots up herb ground for the qi in the roots, which is why gatherers and cullers are frequently the same person.'
+    },
+    {
+        id: 'beast-cave-drain-bat',
+        name: 'Drain Bat',
+        nature: 'herd',
+        ordinal: 6,
+        biome: 'cave',
+        persistence: 'open_world',
+        veinRelation: 'follows',
+        groupSize: 400,
+        speaks: false,
+        frequency: 120,
+        hard: 'Individually beneath notice, and they take qi rather than blood. A cultivator fights them at full strength for two minutes and at nothing for the rest of it.',
+        materialIds: ['mat-drain-bat-membrane'],
+        note: 'Roost wherever the rock is richest, so a colony is a survey result. Prospectors follow them and do not mention it at the assay house.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // HERDS - what a tide is made of, and what makes a vein crowded
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'beast-grey-wolf-pack',
+        name: 'Grey Spirit Wolf',
+        nature: 'herd',
+        ordinal: 3,
+        biome: 'forest',
+        persistence: 'open_world',
+        veinRelation: 'follows',
+        groupSize: 9,
+        speaks: false,
+        frequency: 200,
+        hard: 'They do not scatter when one falls, and they have learned which of a party is the alchemist. A pack that has hunted cultivators before is a different animal from one that has not.',
+        materialIds: ['mat-wolf-sinew'],
+        note: 'The commonest paid work in the province and the commonest way a Qi Condensation cultivator dies at twenty-six.'
+    },
+    {
+        id: 'beast-vein-deer',
+        name: 'Vein Deer',
+        nature: 'herd',
+        ordinal: 8,
+        biome: 'spirit_vein',
+        persistence: 'vein_only',
+        veinRelation: 'drains',
+        groupSize: 30,
+        speaks: false,
+        frequency: 70,
+        hard: 'They are not dangerous and they are not the problem. A herd of thirty on a vein draws it down like thirty disciples would, and a sect that culls them is doing arithmetic rather than pest control.',
+        materialIds: ['mat-vein-deer-antler'],
+        note: 'Move to whichever holding is richest and are counted, every season, by people who will not say what they are counting.'
+    },
+    {
+        id: 'beast-stone-ox',
+        name: 'Stone Ox',
+        nature: 'herd',
+        ordinal: 11,
+        biome: 'mountain',
+        persistence: 'thin_remnant',
+        veinRelation: 'follows',
+        groupSize: 20,
+        speaks: false,
+        frequency: 55,
+        hard: 'Nothing individually. Twenty of them moving in one direction is a landscape event, and the villages between are not a consideration to them.',
+        materialIds: ['mat-ox-horn'],
+        note: 'Placid for decades and then, once, not. Marches herds are half the size of the ones in the old Low Fall surveys and about as heavy, which nobody has explained.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // AMBUSH - these hunt cultivators specifically, because a cultivator
+    // is worth more than a deer and carries it in one place
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'beast-mist-serpent',
+        name: 'Mist Serpent',
+        nature: 'ambush',
+        ordinal: 10,
+        biome: 'marsh',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 60,
+        hard: 'Its breath is poison and it lingers where the fight was. Winning is routine; leaving the ground afterwards is what the pills are for.',
+        materialIds: ['mat-serpent-gland'],
+        note: 'Dens near roads rather than in deep marsh, because the roads are where people are.'
+    },
+    {
+        id: 'beast-core-taker',
+        name: 'Core-Taker',
+        nature: 'ambush',
+        ordinal: 13,
+        biome: 'deep_forest',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 30,
+        hard: 'It hunts cultivators and only cultivators, waits for the second day of a seclusion, and takes the core and nothing else. Every mortal in the district is safe and knows it, which is why no village will help.',
+        materialIds: ['mat-core-taker-jaw'],
+        note: 'Bodies are found unrobbed with the pouch still on the belt. Sects read that as a demonic cultivator for about a season, and then the fourth body arrives.'
+    },
+    {
+        id: 'beast-glacier-lynx',
+        name: 'Glacier Lynx',
+        nature: 'ambush',
+        ordinal: 19,
+        biome: 'glacier',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 18,
+        hard: 'It follows for days without closing and opens when the party is one member short of full strength. It is counting, and it is counting correctly.',
+        materialIds: ['mat-lynx-pelt', 'mat-lynx-core'],
+        note: 'The only thing in the ice field that ever hurries, and it does so twice a year.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // TERRITORIAL - what is already on the good ground, and why a vein
+    // costs more than the survey says
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'beast-thunder-hawk',
+        name: 'Thunder Hawk',
+        nature: 'territorial',
+        ordinal: 17,
+        biome: 'high_peak',
+        persistence: 'vein_only',
+        veinRelation: 'holds',
+        groupSize: 1,
+        speaks: false,
+        frequency: 22,
+        hard: 'It holds the air over a ledge and does not come down. Nothing that flies crosses its sight line, which closes the fast route between two of the province towns for anyone who cannot fight at its height.',
+        materialIds: ['mat-hawk-feather', 'mat-hawk-core'],
+        note: 'Nests on the one peak with a vein close to the surface, and has for longer than the sect below has held its charter.'
+    },
+    {
+        id: 'beast-earth-dragon',
+        name: 'Earth Dragon',
+        nature: 'territorial',
+        ordinal: 26,
+        biome: 'spirit_vein',
+        persistence: 'vein_only',
+        veinRelation: 'drains',
+        groupSize: 1,
+        speaks: false,
+        frequency: 8,
+        hard: 'It is inside the vein rather than on the ground above it, so it cannot be besieged, cannot be starved, and is drinking the thing that is being defended. Every month of delay is paid in the vein.',
+        materialIds: ['mat-dragon-scale', 'mat-dragon-core'],
+        note: 'A holding whose measured output has fallen eleven percent in a year has either taken on disciples or acquired one of these, and the sect will announce whichever answer is less embarrassing.'
+    },
+    {
+        id: 'beast-abyss-leviathan',
+        name: 'Abyssal Leviathan',
+        nature: 'territorial',
+        ordinal: 38,
+        biome: 'abyss',
+        persistence: 'sealed_only',
+        veinRelation: 'holds',
+        groupSize: 1,
+        speaks: false,
+        frequency: 2,
+        hard: 'It is four realms above anything a province can field, and the realm gap is not a hard fight but an evacuation order. What can be done about it is logistics, not combat.',
+        materialIds: ['mat-leviathan-core'],
+        note: 'Surfaces from the rift about twice a century, is recorded, and goes back down. The recording is the entire response.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // INTELLIGENT - past the change, and therefore a party rather than a
+    // problem. Cheaper to negotiate with, and it knows that too.
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'beast-white-ape-of-the-gorge',
+        name: 'White Ape of the Gorge',
+        nature: 'intelligent',
+        ordinal: 21,
+        biome: 'mountain',
+        persistence: 'vein_only',
+        veinRelation: 'holds',
+        groupSize: 1,
+        speaks: true,
+        frequency: 6,
+        hard: 'It will talk, and it is better at it than the disciples sent to do it. It knows what the gorge is worth, knows the sect cannot take it without losses it cannot explain upward, and has never once opened first.',
+        materialIds: [],
+        note: 'Holds the gorge above the Low Fall, charges passage in salt and in news, and has kept every arrangement it has made for a hundred and forty years.'
+    },
+    {
+        id: 'beast-nine-tailed-reader',
+        name: 'The Reader at Sweptground',
+        nature: 'intelligent',
+        ordinal: 24,
+        biome: 'ruins',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: true,
+        frequency: 3,
+        hard: 'It wants manuals it cannot read alone and will trade genuinely for them, which makes it the most useful thing in the province and the most expensive to be indebted to. It has never broken terms and has never once forgiven a breach.',
+        materialIds: [],
+        note: 'Takes a plain human shape badly, in the sense that everything is right and the hands are wrong. Sits in the temple ruin most evenings and is not, technically, trespassing.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ANCIENT - the sealed places, and why they kill people
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'beast-thing-under-nine-peaks',
+        name: 'The Thing Under Nine Peaks',
+        nature: 'ancient',
+        ordinal: 33,
+        biome: 'spirit_vein',
+        persistence: 'sealed_only',
+        veinRelation: 'drains',
+        groupSize: 1,
+        speaks: false,
+        frequency: 1,
+        hard: 'It has been cultivating on an undrawn vein since before the order above it was founded, it has never been interrupted, and nobody alive has established whether the seal was cut to keep it in or to keep the vein for it.',
+        materialIds: ['mat-ancient-core'],
+        note: 'The Ascetic Order lights nine of its forty-one nodes and has never applied to relight the four that sit over the lower chamber.'
+    },
+    {
+        id: 'beast-sleeper-in-the-cut-face',
+        name: 'The Sleeper in the Cut Face',
+        nature: 'ancient',
+        ordinal: 29,
+        biome: 'cave',
+        persistence: 'sealed_only',
+        veinRelation: 'holds',
+        groupSize: 1,
+        speaks: true,
+        frequency: 1,
+        hard: 'It is walled into a working face on the Marches side, it is past the change, and it has been awake for some of the nine hundred years. Carvers who have cut near it report the dust hanging wrong and stop taking that grant.',
+        materialIds: ['mat-sleeper-seam-core'],
+        note: 'The Weir Office has refused four applications to open the face and has not given a reason in writing, which is itself the longest entry in the grant ledger.'
+    }
+] as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// MATERIALS
+// Same five grades, same value bands and rarity ceilings as `herbs.ts`, so
+// the alchemy and salvage economies price off one ladder rather than two.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const BEAST_MATERIALS: readonly BeastMaterial[] = [
+    // ── mortal: the culling trade, which is most of the trade ─────────
+    {
+        id: 'mat-hare-pelt',
+        name: 'Stubble Hare Pelt',
+        grade: 'mortal',
+        sourceBeastId: 'beast-stubble-hare',
+        taking: 'kill',
+        core: false,
+        value: 3,
+        rarityWeight: 380,
+        harvestOrdinal: 0,
+        description: 'Sold by the dozen and bought by the dozen. The district clerk records the count and never the size, which is how the decline stayed invisible.'
+    },
+    {
+        id: 'mat-wolf-sinew',
+        name: 'Spirit Wolf Sinew',
+        grade: 'mortal',
+        sourceBeastId: 'beast-grey-wolf-pack',
+        taking: 'kill',
+        core: false,
+        value: 14,
+        rarityWeight: 190,
+        harvestOrdinal: 3,
+        description: 'Holds a bowstring or a formation cord without stretching. The standing rate has not moved in forty years and the cullers have noticed.'
+    },
+    {
+        id: 'mat-boar-hide',
+        name: 'Ironhide Plate',
+        grade: 'mortal',
+        sourceBeastId: 'beast-ironhide-boar',
+        taking: 'kill',
+        core: false,
+        value: 30,
+        rarityWeight: 130,
+        harvestOrdinal: 5,
+        description: 'Worth four times as much intact, which is why an ironhide boar is killed badly by everyone who needs the money.'
+    },
+    {
+        id: 'mat-boar-tusk',
+        name: 'Ironhide Tusk',
+        grade: 'mortal',
+        sourceBeastId: 'beast-ironhide-boar',
+        taking: 'scavenge',
+        core: false,
+        value: 8,
+        rarityWeight: 220,
+        harvestOrdinal: 2,
+        description: 'Found where something else finished the job. The commonest honest income of a hungry cultivator and the commonest thing a dishonest one claims to have hunted.'
+    },
+    {
+        id: 'mat-drain-bat-membrane',
+        name: 'Drain Bat Membrane',
+        grade: 'mortal',
+        sourceBeastId: 'beast-cave-drain-bat',
+        taking: 'scavenge',
+        core: false,
+        value: 20,
+        rarityWeight: 150,
+        harvestOrdinal: 3,
+        description: 'Swept off a roost floor by the sackful. Holds qi briefly and badly, which is exactly what a cheap talisman needs.'
+    },
+
+    // ── earth: guarded ground, and the first real money ────────────────
+    {
+        id: 'mat-serpent-gland',
+        name: 'Mist Serpent Gland',
+        grade: 'earth',
+        sourceBeastId: 'beast-mist-serpent',
+        taking: 'kill',
+        core: false,
+        value: 90,
+        rarityWeight: 70,
+        harvestOrdinal: 10,
+        description: 'Cut within the hour or it is worth nothing. Half of what a poison specialist uses and all of what kills the apprentices who cut it wrong.'
+    },
+    {
+        id: 'mat-vein-deer-antler',
+        name: 'Vein Deer Antler',
+        grade: 'earth',
+        sourceBeastId: 'beast-vein-deer',
+        taking: 'shed',
+        core: false,
+        value: 130,
+        rarityWeight: 60,
+        harvestOrdinal: 6,
+        description: 'Shed on the vein each spring, so it can be gathered without a cull - which is why sects that own a vein count the sheds and price them as a crop.'
+    },
+    {
+        id: 'mat-ox-horn',
+        name: 'Stone Ox Horn',
+        grade: 'earth',
+        sourceBeastId: 'beast-stone-ox',
+        taking: 'kill',
+        core: false,
+        value: 180,
+        rarityWeight: 48,
+        harvestOrdinal: 11,
+        description: 'The one beast material the Quiet Marches can supply in quantity, and the reason Kettle has a horn market at all.'
+    },
+    {
+        id: 'mat-core-taker-jaw',
+        name: 'Core-Taker Jaw',
+        grade: 'earth',
+        sourceBeastId: 'beast-core-taker',
+        taking: 'kill',
+        core: false,
+        value: 260,
+        rarityWeight: 30,
+        harvestOrdinal: 13,
+        description: 'Bought at a premium by anybody who has been paid to prove the thing is dead, and by a small number of people who wanted it for the other reason.'
+    },
+    {
+        id: 'mat-hawk-feather',
+        name: 'Thunder Hawk Feather',
+        grade: 'earth',
+        sourceBeastId: 'beast-thunder-hawk',
+        taking: 'shed',
+        core: false,
+        value: 400,
+        rarityWeight: 26,
+        harvestOrdinal: 12,
+        description: 'Gathered off the scree below the ledge by people who never go up it. The only lightning reagent in the province a Foundation cultivator can afford or reach.'
+    },
+    {
+        id: 'mat-lynx-pelt',
+        name: 'Glacier Lynx Pelt',
+        grade: 'earth',
+        sourceBeastId: 'beast-glacier-lynx',
+        taking: 'kill',
+        core: false,
+        value: 460,
+        rarityWeight: 22,
+        harvestOrdinal: 19,
+        description: 'Holds cold the way emberleaf holds heat, and is worn by exactly the people who do not need it.'
+    },
+
+    // ── heaven: cores. Somebody else's centuries, portable ─────────────
+    {
+        id: 'mat-hawk-core',
+        name: 'Thunder Hawk Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-thunder-hawk',
+        taking: 'kill',
+        core: true,
+        value: 1_400,
+        rarityWeight: 12,
+        harvestOrdinal: 17,
+        description: 'The first core most cultivators ever see priced. Assay houses grade it by the realm it came off and shave the price if it was cut rather than taken whole.'
+    },
+    {
+        id: 'mat-lynx-core',
+        name: 'Glacier Lynx Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-glacier-lynx',
+        taking: 'kill',
+        core: true,
+        value: 2_400,
+        rarityWeight: 9,
+        harvestOrdinal: 19,
+        description: 'Cold enough to burn a bare hand. Two centuries of an animal sitting still on an ice field, and it will be spent in one refinement.'
+    },
+    {
+        id: 'mat-dragon-scale',
+        name: 'Earth Dragon Scale',
+        grade: 'heaven',
+        sourceBeastId: 'beast-earth-dragon',
+        taking: 'scavenge',
+        core: false,
+        value: 3_600,
+        rarityWeight: 7,
+        harvestOrdinal: 21,
+        description: 'Sheared off inside the vein and washed out at the tap-head, which is how a holding finds out what it has. Nobody sells one without first being asked where it came from.'
+    },
+
+    // ── immortal: the ones wars are fought over ────────────────────────
+    {
+        id: 'mat-dragon-core',
+        name: 'Earth Dragon Core',
+        grade: 'immortal',
+        sourceBeastId: 'beast-earth-dragon',
+        taking: 'kill',
+        core: true,
+        value: 24_000,
+        rarityWeight: 3,
+        harvestOrdinal: 26,
+        description: 'Worth more than the vein it was drinking is worth in a decade, which is the argument the sect elders actually have.'
+    },
+    {
+        id: 'mat-leviathan-core',
+        name: 'Leviathan Core',
+        grade: 'immortal',
+        sourceBeastId: 'beast-abyss-leviathan',
+        taking: 'kill',
+        core: true,
+        value: 46_000,
+        rarityWeight: 2,
+        harvestOrdinal: 38,
+        description: 'No confirmed sale in the current records. The price is an estimate maintained by an auction house that has never had one and expects never to.'
+    },
+
+    // ── chaos: one of these is a plot, not a purchase ──────────────────
+    {
+        id: 'mat-ancient-core',
+        name: 'Core of Something Older Than the Sect Above It',
+        grade: 'chaos',
+        sourceBeastId: 'beast-thing-under-nine-peaks',
+        taking: 'kill',
+        core: true,
+        value: 200_000,
+        rarityWeight: 1,
+        harvestOrdinal: 33,
+        description: 'Uninterrupted cultivation on undrawn qi for longer than the current records run. Nothing alive has taken one, and the price is what the ledgers think it would fetch.'
+    },
+    {
+        id: 'mat-sleeper-seam-core',
+        name: 'Seam-Held Core',
+        grade: 'chaos',
+        sourceBeastId: 'beast-sleeper-in-the-cut-face',
+        taking: 'kill',
+        core: true,
+        value: 120_000,
+        rarityWeight: 1,
+        harvestOrdinal: 29,
+        description: 'A core that has grown into worked stone rather than sitting in a body, which no Low Fall alchemist has a method for and no Marches carver will sell. Both facts are the entire market.'
+    }
+] as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// TIDES
+// A regional event with a cause. The tide is the symptom.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const BEAST_TIDES: readonly BeastTide[] = [
+    {
+        id: 'tide-nine-peaks-displacement',
+        name: 'The Nine Peaks Displacement',
+        regionId: 'region-low-fall',
+        cause:
+            'Something at Deity Transformation moved into the deep vein under Nine Peaks and everything below it left the mountain in the same season. The tide is not an attack; it is a population that has been evicted and has nowhere above the gorge to go.',
+        causeKnownLocally: false,
+        precursors: [
+            'the ordinary animals went first and went far, which is the tell every gatherer knows and no sect records',
+            'measured output at the Ascetic Order fell before anything was seen, and was reported as a survey error',
+            'vein deer arrived on three neighbouring holdings at once, out of season, and were culled as pests'
+        ],
+        minOrdinal: 3,
+        maxOrdinal: 19,
+        driverBeastId: 'beast-thing-under-nine-peaks',
+        beastIds: ['beast-grey-wolf-pack', 'beast-vein-deer', 'beast-stone-ox', 'beast-thunder-hawk'],
+        whoAbsorbsIt:
+            'The river villages between the mountain and the province town, none of which are inside any sect recall order, and the Clear River Alliance, which counts the crossings and will call in the debt afterwards.',
+        aftermath:
+            'The front of it is killed within a month and the cause is not addressed, because addressing it means opening the lower chamber. The same tide is expected again and no date is offered.'
+    },
+    {
+        id: 'tide-failed-seal-upstream',
+        name: 'The Tide Out of a Broken Seal',
+        regionId: 'region-low-fall',
+        cause:
+            'A seal failed somewhere upstream and a pocket of qi nothing had drawn on began venting into the open world. Everything within a hundred li moved toward the surge, arrived together, and started competing over ground that will be ordinary again within the year.',
+        causeKnownLocally: true,
+        precursors: [
+            'a spirit tide was declared on the same watercourse and the sects mobilised for the qi rather than for what the qi would attract',
+            'herds that do not share ground were seen sharing it, moving in one direction, unbothered by people',
+            'two culling contracts in adjacent districts were filled in a week and then could not be filled at all'
+        ],
+        minOrdinal: 0,
+        maxOrdinal: 17,
+        driverBeastId: null,
+        beastIds: ['beast-cave-drain-bat', 'beast-grey-wolf-pack', 'beast-vein-deer', 'beast-mist-serpent'],
+        whoAbsorbsIt:
+            'Whoever holds ground under the surge, which in practice means two sects with a prior claim on the same water and a hired screen of unaffiliated cultivators between them and it.',
+        aftermath:
+            'The surge closes, the ground reverts to its old ambient, and the population that came for it starves in place across the following two seasons. The second year is worse than the first.'
+    },
+    {
+        id: 'tide-dead-verge-advance',
+        name: 'The Dead Verge Advance',
+        regionId: 'region-quiet-marches',
+        cause:
+            'The burn edge moved about nine hundred paces since the survey was drawn, and the thin population living behind it ran out of ground with anything in it at all. Nothing is driving them and there is nothing at the back of it to kill.',
+        causeKnownLocally: true,
+        precursors: [
+            'the Sixmile Wardens repainted the stakes twice in one year and the second repaint was not published',
+            'horn prices at Kettle fell, because everything arriving at market was undersized and everyone could see it',
+            'hares reached the sorting yard at Hollowmarket, which they have no business doing and had not done before'
+        ],
+        minOrdinal: 0,
+        maxOrdinal: 11,
+        driverBeastId: null,
+        beastIds: ['beast-stubble-hare', 'beast-stone-ox', 'beast-grey-wolf-pack'],
+        whoAbsorbsIt:
+            'Kettle, which has a grant queue and an assay house and no pill trade, so the injuries are treated the mortal way at a splint and a month per casualty.',
+        aftermath:
+            'Nothing in it is worth taking, everything in it has to be killed anyway, and the district ends the season poorer than it started. This is the tide the Marches actually gets, and it is not a story anybody tells.'
+    }
+] as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// CONTRACTS
+// Rare, costly and mutual. Not an acquisition, not a summon, not a pet.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What a contract with a beast actually is.
+ *
+ * Only something past the change can enter one, which puts a floor of Core
+ * Formation under the other party and means the cultivator is very rarely the
+ * senior partner. The beast is not being recruited. It is agreeing to
+ * something, for reasons of its own, at a price it named.
+ *
+ * The cost is the interesting half and it comes straight out of `qi.md`: a
+ * bonded beast is a second draw on whatever ground the cultivator holds. Two
+ * parties cultivating off one vein progress more slowly than one, and the
+ * contract does not exempt anybody from that arithmetic. A cultivator with a
+ * contract is measurably slower than the same cultivator without one, forever,
+ * and takes it anyway because of what the other party can do.
+ */
+export const THE_CONTRACT = {
+    whatItIsNot: [
+        'not a purchase, because nothing past the change is for sale and everything below it cannot agree to anything',
+        'not a summoning, because there is nowhere to summon from - the other party is somewhere specific, doing something, and has to travel',
+        'not obedience. A contract states what each side will do, and a beast that has kept terms for a century will still decline anything outside them'
+    ],
+    whatTheBeastWants: [
+        'ground it cannot hold alone, or passage across ground somebody else holds',
+        'not being hunted for its core by the sect whose charter covers its mountain',
+        'something it cannot do without hands: a manual read aloud, a seal examined, a message carried to somebody who will not meet it'
+    ],
+    whatTheCultivatorGives: [
+        'a permanent share of their own draw, because the other party cultivates too and cultivates off the same air',
+        'the standing obligation, which is enforceable and which their sect will treat as a competing loyalty',
+        'a witness fee to a Dao house, since an unwitnessed contract binds nobody and the beast knows the law better than most disciples do'
+    ],
+    witnessing:
+        'A contract of this kind is witnessed the way any other agreement is - a house of the Bound Word takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
+    whyItIsRare:
+        'Both sides must be able to talk, both must have something the other cannot get otherwise, and both must expect to be alive long enough for the terms to be worth writing. Most encounters fail the second condition and all of them fail it below Core Formation.',
+    howItBreaks: [
+        'the beast keeps cultivating and outgrows the terms, which it will, because it never stops',
+        'the cultivator loses the ground the contract was about, at which point there is nothing to share and nothing to hold',
+        'a sect treats the beast as an asset rather than a party, once, in writing'
+    ],
+    whatItIsWorth:
+        'A party who does not sleep, does not need feeding, cannot be audited, cannot be subpoenaed by a Dao house, and reads ground better than any surveyor. And a permanent tax on the cultivator\'s own progress for as long as it holds.'
+} as const;
+
+/**
+ * What the engine would need before a contract could resolve mechanically
+ * rather than being narrated. Stated here so the next implementer does not
+ * have to reconstruct it from the prose.
+ */
+export const CONTRACT_ENGINE_REQUIREMENTS: readonly string[] = [
+    'a cultivator-side draw share, so a bonded beast subtracts from the holder\'s cultivation rate the way an extra disciple subtracts from a valley - the arithmetic already exists in the ambient system and nothing currently spends it on a second party',
+    'a beast as a persistable actor with its own realmOrdinal and its own progress, since the whole point is that it keeps advancing while the cultivator does and can pass them',
+    'an oath record with a penalty clause and a witnessing faction, which is the Dao house contract shape rather than a new one',
+    'a termination path per break condition, with the state each leaves behind: outgrown terms, lost ground, a sect that wrote the wrong thing down',
+    'a location link, because a contracted beast is somewhere specific and travels at a stated speed rather than being carried'
+] as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// INDICES + LOOKUPS
+// ─────────────────────────────────────────────────────────────────────────
+
+const BEAST_BY_ID: ReadonlyMap<string, Beast> = new Map(BEASTS.map(b => [b.id, b]));
+const MATERIAL_BY_ID: ReadonlyMap<string, BeastMaterial> = new Map(BEAST_MATERIALS.map(m => [m.id, m]));
+const TIDE_BY_ID: ReadonlyMap<string, BeastTide> = new Map(BEAST_TIDES.map(t => [t.id, t]));
+
+const BEASTS_BY_BIOME: ReadonlyMap<HerbBiome, readonly Beast[]> = (() => {
+    const map = new Map<HerbBiome, Beast[]>();
+    for (const b of BEASTS) {
+        const bucket = map.get(b.biome);
+        if (bucket) bucket.push(b);
+        else map.set(b.biome, [b]);
+    }
+    return map;
+})();
+
+const BEASTS_BY_NATURE: ReadonlyMap<BeastNature, readonly Beast[]> = (() => {
+    const map = new Map<BeastNature, Beast[]>();
+    for (const b of BEASTS) {
+        const bucket = map.get(b.nature);
+        if (bucket) bucket.push(b);
+        else map.set(b.nature, [b]);
+    }
+    return map;
+})();
+
+export function getBeast(id: string): Beast | undefined {
+    return BEAST_BY_ID.get(id);
+}
+
+export function requireBeast(id: string): Beast {
+    const b = BEAST_BY_ID.get(id);
+    if (!b) throw new Error(`Unknown beast: ${id}`);
+    return b;
+}
+
+export function getBeastsByBiome(biome: HerbBiome): readonly Beast[] {
+    return BEASTS_BY_BIOME.get(biome) ?? [];
+}
+
+export function getBeastsByNature(nature: BeastNature): readonly Beast[] {
+    return BEASTS_BY_NATURE.get(nature) ?? [];
+}
+
+export function getBeastMaterial(id: string): BeastMaterial | undefined {
+    return MATERIAL_BY_ID.get(id);
+}
+
+export function requireBeastMaterial(id: string): BeastMaterial {
+    const m = MATERIAL_BY_ID.get(id);
+    if (!m) throw new Error(`Unknown beast material: ${id}`);
+    return m;
+}
+
+/** Everything that comes off one beast, resolved. */
+export function materialsOf(beastId: string): BeastMaterial[] {
+    const beast = getBeast(beastId);
+    if (!beast) return [];
+    return beast.materialIds
+        .map(id => MATERIAL_BY_ID.get(id))
+        .filter((m): m is BeastMaterial => m !== undefined);
+}
+
+/**
+ * The condensed cultivation of a beast past the change, when the catalog
+ * carries the material at all.
+ *
+ * Nothing below `BEAST_CHANGE_ORDINAL` has a core to take. Above it, the ones
+ * that can be talked to carry no material entry either, which is not an
+ * oversight: nobody has taken one, so there is no grade, no price and no
+ * assay standard, and a party proposing to establish one is proposing a
+ * specific and well-understood kind of afternoon.
+ */
+export function coreOf(beastId: string): BeastMaterial | undefined {
+    return materialsOf(beastId).find(m => m.core);
+}
+
+export function getBeastTide(id: string): BeastTide | undefined {
+    return TIDE_BY_ID.get(id);
+}
+
+export function tidesInRegion(regionId: string): BeastTide[] {
+    return BEAST_TIDES.filter(t => t.regionId === regionId);
+}
+
+/** What is actually in a tide, resolved. */
+export function beastsInTide(tideId: string): Beast[] {
+    const tide = getBeastTide(tideId);
+    if (!tide) return [];
+    return tide.beastIds
+        .map(id => BEAST_BY_ID.get(id))
+        .filter((b): b is Beast => b !== undefined);
+}
+
+/**
+ * The only reading of a beast anybody gets, and the reading a cultivator
+ * makes across a valley. One ladder, so the realm vocabulary applies to a
+ * boar exactly as it applies to a disciple.
+ */
+export function describeBeastRealm(beast: Beast): string {
+    return rankName(beast.ordinal);
+}
+
+/** Beasts a cultivator at this ordinal could take without a realm gap. */
+export function findBeastsForOrdinal(ordinal: number, biome?: HerbBiome): Beast[] {
+    const cap = clampOrdinal(ordinal);
+    const pool = biome ? getBeastsByBiome(biome) : BEASTS;
+    return pool.filter(b => b.ordinal <= cap);
+}
+
+/**
+ * What is on this ground and above the cultivator, which is the question that
+ * actually kills people. A four-rank gap is not a hard fight; it is a death,
+ * and the caller is entitled to know before walking in.
+ */
+export function findThreatsAboveOrdinal(ordinal: number, biome?: HerbBiome): Beast[] {
+    const floor = clampOrdinal(ordinal);
+    const pool = biome ? getBeastsByBiome(biome) : BEASTS;
+    return pool.filter(b => b.ordinal > floor);
+}
+
+/** Things that are a competing draw on, or sitting on top of, a vein. */
+export function veinContenders(): Beast[] {
+    return BEASTS.filter(b => b.veinRelation === 'holds' || b.veinRelation === 'drains');
+}
+
+/** What only exists behind a seal, which is most of what is impressive. */
+export function sealedOnlyBeasts(): Beast[] {
+    return BEASTS.filter(b => b.persistence === 'sealed_only');
+}
+
+/** Everything that can be talked to. Never anything below the change. */
+export function negotiableBeasts(): Beast[] {
+    return BEASTS.filter(b => b.speaks);
+}
+
+/**
+ * Weighted draw from a uniform [0,1) sample. Takes the sample rather than an
+ * RNG so the caller owns seeding, matching `rollHerb` and `rollEncounter`.
+ * Returns undefined when nothing in this biome is reachable at this ordinal.
+ */
+export function rollBeast(ordinal: number, sample: number, biome?: HerbBiome): Beast | undefined {
+    const pool = findBeastsForOrdinal(ordinal, biome);
+    if (pool.length === 0) return undefined;
+    const total = pool.reduce((sum, b) => sum + b.frequency, 0);
+    let cursor = Math.max(0, Math.min(0.999999999, sample)) * total;
+    for (const b of pool) {
+        cursor -= b.frequency;
+        if (cursor < 0) return b;
+    }
+    return pool[pool.length - 1];
+}
+
+function clampOrdinal(ordinal: number): number {
+    if (!Number.isFinite(ordinal)) return 0;
+    return Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
+}
