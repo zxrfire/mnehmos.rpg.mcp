@@ -34,6 +34,40 @@ Not the same map with bigger numbers. A genuinely different environment:
 - environmental dangers calibrated for immortals, which is a phrase worth taking seriously
 - politics that has been running, uninterrupted, for a very long time
 
+### They can still die
+
+Ascension removes two of the three things that kill a cultivator and none of the rest.
+
+**Heavenly tribulation is behind them.** It was the last crossing; there is not another
+one. **Lifespan has stopped being a number** - that is what the rank means, and it does not
+quietly run out later.
+
+Everything else on the list above still applies. Environmental dangers calibrated for
+immortals kill immortals. Politics that has been running uninterrupted for a very long
+time kills the people who lose at it. A newly arrived nobody with no standing, no
+protector and a lower-world accent is exactly the sort of person that happens to, and
+three thousand years is a long time to keep not losing.
+
+So **"ascended" is not a terminal state and must never be written as one.** Somebody who
+crossed four thousand years ago may be up there now, or may have been gone for most of
+that time. Both are ordinary.
+
+#### And nobody below can tell which
+
+There is no signal. The Lid does not report deaths, the crossing is one-way for people,
+and the few objects that carry information across carry what somebody chooses to send.
+A house whose channel still answers knows that *somebody* is picking up. A house whose
+channel has gone quiet knows nothing at all: the silence is equally consistent with death,
+with disinterest, with a war up there, and with an object down here that stopped working.
+
+This is why a sect's claim to a living ancestor is a claim rather than a fact, and why
+`claimsLivingAncestor` and `claimIsTrue` are separate fields. The sect is not necessarily
+lying. It frequently does not know.
+
+The engine records the truth - `afterCrossing` on a sect ancestor is `still_above` or
+`died_above` - because the engine is allowed to know things the world cannot. Every
+character in the world is guessing, including the ones who sound certain.
+
 ### A newly ascended immortal is a nobody
 
 This is the important part and the reason the layer exists.
