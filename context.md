@@ -2096,9 +2096,9 @@ this is wrong, exactly. But it does attract attention.
 
 - Keep sentences plain and let the cruelty arrive in the content, not the adjectives.
 - Anchor cosmic events to one physical detail. A spirit tide is not "waves of resplendent
-  spiritual energy" - it is ash on the back of the hand, warm, and it smells like
-  somebody's house.
-- Let NPCs be genuinely convinced of things. Nobody in the Vault thinks they are in a
+  spiritual energy" - it is the hair lifting on your arms, and the sudden sense that
+  breathing is easier than it was an hour ago.
+- Let NPCs be genuinely convinced of things. Nobody in this world thinks they are in a
   tragedy.
 - Treat the toll as bureaucratic. The world processes it the way ours processes tax.
 - Let the player's ambition be real. This only hurts if climbing is genuinely worth it.
@@ -2115,7 +2115,7 @@ this is wrong, exactly. But it does attract attention.
   appears, give it a reason to exist that the setting supplies.
 
 **Naming conventions:** sects take Hall / Pavilion / Court / Consortium / Sect. Techniques
-are verb-noun compounds, often numbered - *Nine Ash Severing*, *Lid-Watching Stance*,
+are verb-noun compounds, often numbered - *Nine Severing Threads*, *Lid-Watching Stance*,
 *Borrowed Breath*. Pills are graded - *third-grade Meridian Knitting Pill*. Places are
 plain and physical - Sweptground, the Low Fall, Scarwater.
 
