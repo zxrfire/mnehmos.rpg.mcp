@@ -154,8 +154,8 @@ export const HIGH_BAND_FLOOR = 37;
  *
  * Assembled across every catalog at once, because nothing above thirty-six is
  * an ordinary member: the named-member catalog tops out well below it. What is
- * up there is seats, sleepers and the crossed, and most of them have no name
- * anybody outside their own walls has been given. `named: false` is a fact
+ * up there is seats, sealed ancestors and the crossed, and most of them have
+ * no name anybody outside their own walls has been given. `named: false` is a fact
  * about the world rather than a hole in the data.
  */
 export interface HighPerson {
@@ -231,14 +231,6 @@ export interface WorldRegister {
         affiliationId: string | null;
     }[];
     withdrawn: { factionId: string; name: string; count: number; occupiedBy: string }[];
-    /**
-     * Everybody at Grand Ascension, drawn from every kind of entity at once.
-     *
-     * This band is the top of the world anyone can actually meet, and it is the
-     * one the faction table hides: courts are not factions, an apex second is
-     * not an institution, and a sealed sleeper is not an acting member. Read the
-     * catalogs one at a time and the band looks nearly empty. It is not.
-     */
     /** The reporting tree, one root per apex. */
     stack: StackNode[];
     /** Factions that hold from nobody, grouped by why. */
@@ -247,6 +239,14 @@ export interface WorldRegister {
     high: HighPerson[];
     /** Every faction with everything attached to it, strongest acting member first. */
     dossiers: SectDossier[];
+    /**
+     * Everybody at Grand Ascension, drawn from every kind of entity at once.
+     *
+     * This band is the top of the world anyone can actually meet, and it is the
+     * one the faction table hides: courts are not factions, an apex second is
+     * not an institution, and a sealed ancestor is not an acting member. Read
+     * the catalogs one at a time and the band looks nearly empty. It is not.
+     */
     grandAscension: {
         name: string;
         ordinal: number;
@@ -677,7 +677,7 @@ export function buildRegister(): WorldRegister {
             parentId: parentage?.parentFactionId ?? null,
             // Only report a ceiling that is genuinely higher. Not everything
             // sealed raises one, and claiming otherwise would overstate a host
-            // whose sleeper is weaker than its own elders.
+            // whose sealed ancestor is weaker than its own elders.
             sealedCeiling: threat && threat.ceiling > threat.acting ? threat.ceiling : null,
             isDaoHouse: sect.id.startsWith('house-')
         };
@@ -1161,7 +1161,7 @@ export function renderRegisterHtml(
 <div class="pane" data-pane="people">
 <section>
   <div class="sh"><h2>People at or above Grand Ascension</h2><span class="r">Ordinal 37+ · strongest first</span></div>
-  <p class="note">Everyone in the band, from every catalog at once, with the faction they belong to. The named-member catalog stops well below this, so most of what is up here is seats, sleepers and the crossed - and a row marked <em>unnamed</em> is a fact about the world rather than a gap in the data. Lesser people are listed under their faction in the next tab.</p>
+  <p class="note">Everyone in the band, from every catalog at once, with the faction they belong to. The named-member catalog stops well below this, so most of what is up here is seats, sealed ancestors and the crossed - and a row marked <em>unnamed</em> is a fact about the world rather than a gap in the data. Lesser people are listed under their faction in the next tab.</p>
   <div class="scroll"><table><caption>Every person at 37 and above</caption>
   <thead><tr><th>Ord</th><th>Who</th><th>State</th><th>Faction</th><th>Detail</th></tr></thead><tbody>
   ${reg.high.map(p => `<tr><td class="n">${p.ordinal}</td>`

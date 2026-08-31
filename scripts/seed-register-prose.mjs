@@ -34,10 +34,10 @@ const TEXT = {
         'The admission column runs against the ordinal column. The strongest faction on the sheet asks for twenty-nine; the weakest asks for nothing, and three others also take anyone who walks up. Exactly one door is shut. Six factions could field something stronger than anything they can put in a room, and eleven hold their vein on a grant, which leaves most of the register standing on ground nobody issued.',
 
     grandascension:
-        'Ten stand at this band and only one of them is a faction. The rest are offices, second seats and sleepers: a court is not something anyone joins, an apex second is a person the register has no other row for, and three of the ten are asleep. Count factions alone and the band reads as a single name.',
+        'Ten stand at this band and only one of them is a faction. The rest are offices, second seats and sealed ancestors: a court is not something anyone joins, an apex second is a person the register has no other row for, and three of the ten are asleep. Count factions alone and the band reads as a single name.',
 
     sealed:
-        'Grade tracks strength exactly. The three masterworks hold the top of the band, the two sound seals the middle, the two crude ones the bottom. Publicity runs precisely opposite: no masterwork is admitted to, and both crude seals are. What a province can find out about is reliably the least of what is buried in it. One sleeper of the seven stands below the house keeping her.',
+        'Grade tracks strength exactly. The three masterworks hold the top of the band, the two sound seals the middle, the two crude ones the bottom. Publicity runs precisely opposite: no masterwork is admitted to, and both crude seals are. What a province can find out about is reliably the least of what is buried in it. One of the seven stands below the house keeping her.',
 
     items:
         'Every object known to exist is in three hands, with nothing unaccounted for: thirteen Steps and four Dealings, all of them held. The Pavilion holds nine of the seventeen, more than the two older factions together. The youngest institution on the sheet is sitting on most of the supply, and none of it can be replaced.',
