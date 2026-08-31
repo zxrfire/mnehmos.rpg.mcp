@@ -1804,9 +1804,16 @@ export function leaderTitleOf(apex: ApexInstitution): string {
     return `the ${lastWord(apex.sentDown.name)} Lord`;
 }
 
-/** And the one below them, who does not hold it. */
+/**
+ * And the one below them, who does not hold the object.
+ *
+ * Grand Elder rather than a lesser lordship: a lordship here is over the thing
+ * the body stands on, and the second stands on nothing. Warden was the obvious
+ * alternative and is taken - three factions in the catalog are Wardens of
+ * something, and one of them guards the world-heart.
+ */
 export function secondTitleOf(apex: ApexInstitution): string {
-    return `the ${lastWord(apex.name)} Warden`;
+    return `the ${lastWord(apex.name)} Grand Elder`;
 }
 
 /** A court is distinguished from its siblings by its first word, not its last. */

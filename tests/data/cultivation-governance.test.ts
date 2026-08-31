@@ -1065,7 +1065,9 @@ describe('Seat is the Hollow Court vocabulary and nobody else uses it', () => {
             // Named for the object it sits on, and for the body respectively.
             expect(leader).toContain('Lord');
             expect(leader).toContain(a.sentDown.name.split(' ').pop()!);
-            expect(second).toContain('Warden');
+            // Grand Elder, not Warden: three factions in the catalog are Wardens
+            // of something, and one of them guards the world-heart.
+            expect(second).toContain('Grand Elder');
             expect(leader + second, a.id + ' borrows the Court vocabulary').not.toMatch(/Seat/i);
             // Distinct, or the titles would not identify anybody.
             expect(seen.has(leader), 'duplicate title ' + leader).toBe(false);
