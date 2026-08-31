@@ -813,7 +813,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Stone seats arranged for an audience of two hundred, occupied by four people who have not moved them.'
         },
         description:
-            'The holy ground of cultivation, and the only place in the world where the last realm is awake rather than sealed. Everyone here is working, continuously, on the crossing, which is why almost nobody has seen one of them: presence at the Court is measured in decades of absence. They hold the best vein in existence, they pay nobody for it, and no institution has ever found an instrument by which to raise the subject. What they are is not inertia. It is the only concentration of attention in the world pointed entirely at the Lid, and a cultivator admitted here has stopped participating in every other thing the world does.'
+            'The holy ground of cultivation, and the only place in the world where the last realm is awake rather than sealed. What they are is not inertia and not four beings who reached the top and sat down: they are a collaboration, and possibly the only functioning one at that altitude in the history of the world. A crossing needs a dao protector - the cultivator is helpless for its whole duration - and almost nobody can obtain one, which is why everybody else attempts it in a cave nobody was told about. The Court holds multiple Tribulation Transcenders and at points several at Perfection at once, so it can do the one thing nobody else can: one crosses while the others stand guard. That single fact explains the rest of them. It is why they work at a published address on four known mountains rather than in hiding, because they have the thing secrecy is a substitute for. It is why presence is measured in decades of absence, because a protector has to be there. It is why the bar is a Void Refinement floor and evidence you could cross - a member is either somebody who will need protecting or somebody who can provide it, and there is no third contribution. And it is why they hold the best vein in existence and draw nothing from it: the vein is not what the work runs on. Six of their members have crossed, which by the world\'s own reckoning is the top of the lineage tiers and is the one objective claim about them nobody disputes. They may do it again in this era, and nobody outside the four knows it is being considered.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -2449,16 +2449,25 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-hollow-court': {
         ancestors: [
-            { name: 'The four seated', fate: 'dead', realmOrdinal: null, yearsAgo: 0, rememberedFor: 'Nothing yet. They are still sitting there, and they are the ancestors of nobody, having taken no disciples.' }
+            { name: 'The one who went through first, whom the Court refers to only as that', fate: 'ascended', realmOrdinal: null, yearsAgo: 4_400, rememberedFor: 'Crossing from the north mountain and completing it, and being the reason there is anybody on the other side who answers when the Court calls.' },
+            { name: 'Five more in succession, named on no tablet outside the Court', fate: 'ascended', realmOrdinal: null, yearsAgo: 600, rememberedFor: 'Crossing, one at a time, with the others standing protector - which is the arrangement that made all six possible and which nobody else in the world has ever been able to reproduce.' },
+            { name: 'The four seated now', fate: 'dead', realmOrdinal: null, yearsAgo: 0, rememberedFor: 'Nothing yet. They are still working, and they are the ancestors of nobody, having taken almost no disciples in six hundred years.' }
         ],
-        claimsLivingAncestor: false,
-        claimIsTrue: false,
-        recency: 'none',
+        claimsLivingAncestor: true,
+        claimIsTrue: true,
+        recency: 'recent',
         dormant: null,
         partingGift: null,
-        lastOffering: null,
+        lastOffering: {
+            yearsAgo: 600,
+            cost: 'Not stones and not materials. The Court spends attention, which is the only thing it has and the only thing it is short of, and an offering costs one of the four a stretch of work measured in decades.',
+            response: 'Fragments about the approach.',
+            consequence:
+                'What comes back is knowledge of the crossing itself, from somebody who made it, and it is the only thing the Court wants and the one thing obtainable nowhere else. Very little of it is usable: answers from the far side of a boundary that strips everything arrive incomplete, oddly weighted, and sometimes plainly wrong in ways nobody below can check. That four beings have been working on it for four thousand years is the most accurate available statement about how good the information is.'
+        },
         discoverableTraces: [],
-        standingNote: 'The Court is what a sect gets instead of an ancestor when the ancestor declines to leave. It has no records because it has no succession.'
+        standingNote:
+            'Six crossings across four thousand four hundred years puts them at the top of the lineage tiers by the world\'s own count, and their depletion is middling rather than severe despite that age for one reason: they only accept the best, so their members disproportionately cross. They are the one institution in the world that converts admissions into ancestors. See `crossings.ts` for the channel, the protector arrangement and the comparative lineage standings.'
     },
     'sect-the-severed': {
         ancestors: [

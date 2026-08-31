@@ -107,18 +107,31 @@ describe('the ceiling on his behaviour', () => {
         expect(r.willNotDo.join(' ')).toMatch(/Ru Anjing|Standing Edge/);
     });
 
-    it('names the deterrent and prices it, rather than asserting restraint', () => {
+    it('is bounded by uncertainty rather than by a named enemy', () => {
         const r = getWanderer(LU_SHENG)!.restraint;
-        expect(r.theDeterrent).toMatch(/Ru Anjing|old immortal/i);
-        expect(r.theDeterrent).toMatch(/come down|descent|kill/i);
-        // It costs the enforcer enormously, which is what makes it real.
-        expect(r.deterrentPrice).toMatch(/cultivation condensed|ages|body|drop of blood|die/i);
-        expect(r.deterrentPrice).toMatch(/would still do it|still do it/i);
+        // Something would come down. He does not know who, what, or how many.
+        expect(r.theDeterrent).toMatch(/something would come down|not who|not what/i);
+        expect(r.theDeterrent).toMatch(/declined to find out|different thing from being afraid/i);
+        // He does not know what is above the Lid either.
+        expect(r.whatHeDoesNotKnow).toMatch(/does not know|no idea/i);
+        expect(r.whatHeDoesNotKnow).toMatch(/door/i);
+        // The price is real and paid by whoever comes, which is what binds him.
+        expect(r.deterrentPrice).toMatch(/cultivation condensed|ages|body|do not come back/i);
+        expect(r.deterrentPrice).toMatch(/willing to spend|does not wish to meet/i);
+        // Not a calculation against a known punishment: the naming is hedged.
+        expect(r.theDeterrent).toMatch(/does not know that she would come|not whether it would be/i);
         // He knows, and there is a dated occasion rather than a policy.
         expect(r.howHeKnows).toMatch(/\d|years ago|came down/i);
+        expect(r.howHeKnows).toMatch(/does not know what it was|did not understand/i);
         expect(r.theOccasion.yearsAgo).toBeGreaterThan(0);
         expect(r.theOccasion.whereHeStopped.length).toBeGreaterThan(100);
         expect(r.theOccasion.whoNoticed.length).toBeGreaterThan(60);
+    });
+
+    it('leaves the apex institutions alone for no reason at all', () => {
+        const r = getWanderer(LU_SHENG)!.restraint;
+        expect(r.noMotiveNote).toMatch(/no reason|nothing against|boring|not caution/i);
+        expect(r.willNotDo.join(' ')).toMatch(/Deep Survey|Long Cut/);
     });
 
     it('keeps the occasion consistent with the Pavilion holding three', () => {
@@ -254,5 +267,165 @@ describe('meeting him', () => {
         // And the summary must not name him or hint at what he is.
         expect(enc.summaryTemplate).not.toMatch(/Lu Sheng|Guest|immortal|Court/i);
         expect(enc.summaryTemplate).toMatch(/unremarkable|no obvious age|good company/i);
+    });
+});
+
+describe('a man who already settled his estate', () => {
+    it('divested completely before a crossing he did not complete', () => {
+        const e = getWanderer(LU_SHENG)!.estate;
+        expect(e.divestedYearsAgo).toBeGreaterThan(getWanderer(LU_SHENG)!.crossingYearsAgo - 20);
+        expect(e.whatHeDid).toMatch(/sold|gave away|buried|sealed|inheritances/i);
+        expect(e.whyObjectsDoNotRegister).toMatch(/finished|completed|before/i);
+        // Never written as pathos.
+        expect(e.notPathetic).toMatch(/does not experience|puzzled|pleased/i);
+        for (const banned of [/\bsad\b/i, /\bpitiful\b/i, /\bempty life\b/i]) {
+            expect(banned.test(`${e.whatHeDid} ${e.whyObjectsDoNotRegister} ${e.notPathetic}`)).toBe(false);
+        }
+    });
+
+    it('keeps inheritances that refill and cannot be mapped', () => {
+        const inheritances = getWanderer(LU_SHENG)!.inheritances;
+        expect(inheritances.length).toBeGreaterThanOrEqual(1);
+        for (const inh of inheritances) {
+            expect(inh.refills).toBe(true);
+            expect(inh.mobile).toBe(true);
+            expect(inh.refillNote).toMatch(/only category|restocks|maintained/i);
+            expect(inh.mobilityNote).toMatch(/not a place|not a site|worthless/i);
+            // Accounts contradict each other without anybody lying.
+            expect(inh.contradictoryAccounts.length).toBeGreaterThanOrEqual(3);
+        }
+        // And the contradiction is one of the circulating legends.
+        expect(legendsOf(LU_SHENG).some(l => /refills|moving/i.test(`${l.calledBy} ${l.version}`)))
+            .toBe(true);
+    });
+
+    it('picks inheritors by a fate that actually delivers', () => {
+        const inh = getWanderer(LU_SHENG)!.inheritors;
+        // Unpredictable from outside, and no method to build.
+        expect(inh.chosenBy).toMatch(/fate|whoever was standing|ran into/i);
+        expect(inh.noPatternToExploit).toMatch(/no method|cannot search|invisible in advance/i);
+        // But there is always something there.
+        expect(inh.fateDelivers).toMatch(/not a figure of speech|delivers/i);
+        expect(inh.whatTheyHave).toMatch(/every single one|something real/i);
+        expect(inh.notLegible).toMatch(/latent|not visible/i);
+        // The catalog must not claim they share nothing.
+        const prose = `${inh.whatTheyHave} ${inh.notLegible} ${inh.noPatternToExploit}`;
+        expect(/they share nothing|nothing there/i.test(prose)).toBe(false);
+        // The inheritance is exposure, which is what makes it matter.
+        expect(inh.inheritanceIsExposure).toMatch(/access|exposure|absent/i);
+        // Every named inheritor has a real latent thing, mostly unknown to them.
+        expect(inh.people.length).toBeGreaterThanOrEqual(2);
+        for (const person of inh.people) {
+            expect(person.latentThing.length).toBeGreaterThan(80);
+        }
+        expect(inh.people.some(x => !x.theyKnow), 'somebody should not know').toBe(true);
+        // And one is dead without his having noticed.
+        const dead = inh.people.find(x => x.status === 'dead')!;
+        expect(dead, 'one inheritor should have died').toBeDefined();
+        expect(dead.heKnows).toBe(false);
+    });
+
+    it('binds inheritors to silence, with nothing as the penalty', () => {
+        const sec = getWanderer(LU_SHENG)!.secrecy;
+        expect(sec.theOath).toMatch(/no ceremony|once|do not go telling/i);
+        expect(sec.permittedToTell.length).toBe(2);
+        expect(sec.permittedToTell.join(' ')).toMatch(/other inheritors/i);
+        expect(sec.permittedToTell.join(' ')).toMatch(/Court|Ledger/);
+        expect(sec.motive).toMatch(/not fear|gossip|preference/i);
+        // The breach costs nothing, which is the frightening part.
+        expect(sec.breachConsequence).toMatch(/Nothing\.|does not retaliate/i);
+        expect(sec.breachConsequence).toMatch(/simply does not come back|never restocked|never seen/i);
+        // One inheritor talked and nothing happened to them.
+        expect(sec.theOneWhoTalked.whatDidNotHappen).toMatch(/no retaliation|nothing taken back/i);
+        expect(sec.theOneWhoTalked.howLongTheyDidNotKnow).toMatch(/died not knowing|years/i);
+        // The permitted network barely functions.
+        expect(sec.networkBarelyFunctions).toMatch(/never introduced|pass each other|almost never/i);
+        // It uses the engine's own secret vocabulary rather than a new one.
+        for (const status of sec.outsiderStatuses) {
+            expect(['unknown', 'suspected', 'discovered', 'stolen', 'traded', 'leaked',
+                'suppressed', 'falsified', 'misunderstood']).toContain(status);
+        }
+        expect(sec.outsiderStatuses).toContain('suspected');
+        expect(sec.outsiderStatuses).toContain('misunderstood');
+    });
+
+    it('explains why the legends are incoherent by who is silent', () => {
+        const sec = getWanderer(LU_SHENG)!.secrecy;
+        expect(sec.whyLegendsAreIncoherent).toMatch(/accurate sources|not talking|outer ring/i);
+        // Every wrong version is from the outer ring, not from an insider.
+        for (const legend of legendsOf(LU_SHENG)) {
+            if (legend.accurate) continue;
+            expect(legend.toldAmong).not.toMatch(/inheritor/i);
+        }
+    });
+});
+
+describe('who knows what', () => {
+    it('keeps the full picture to the Court and the inheritors', () => {
+        const k = getWanderer(LU_SHENG)!.whoKnowsWhat;
+        expect(k.fullTruth.length).toBe(2);
+        expect(k.fullTruth.join(' ')).toMatch(/Hollow Court|Seats/);
+        expect(k.fullTruth.join(' ')).toMatch(/inheritors/);
+        expect(k.fragments).toMatch(/outer ring|incompatible/i);
+        expect(k.nothing).toMatch(/everybody else|no archive/i);
+        expect(k.whatItIsWorth).toMatch(/Deep Survey does not have|dangerous/i);
+    });
+
+    it('confirms the category and cannot resolve the instance', () => {
+        const blind = getWanderer(LU_SHENG)!.whoKnowsWhat.apexBlindSpot;
+        expect(blind.categoryConfirmed).toMatch(/know|not disputed|independently/i);
+        expect(blind.theOpenQuestion).toMatch(/same one|continuity|four, in sequence/i);
+        expect(blind.bothConcluded).toMatch(/cannot tell|not being incompetent|uncertainty/i);
+        expect(blind.theAnomaly).toMatch(/anomalous|sealed|does not usually produce/i);
+        // The candidate list is a real artefact with the right shape.
+        expect(blind.candidateNames.length).toBeGreaterThanOrEqual(4);
+        const dead = blind.candidateNames.filter(c => c.status === 'verifiably_dead');
+        expect(dead.length, 'at least two verifiably dead with scars').toBeGreaterThanOrEqual(2);
+        for (const d of dead) expect(d.whatTheRecordHas).toMatch(/scar/i);
+        expect(blind.candidateNames.some(c => c.status === 'never_a_person')).toBe(true);
+        const live = blind.candidateNames.filter(c => c.status === 'live');
+        expect(live.length, 'his name is on the list, exactly once').toBe(1);
+        expect(live[0].name).toBe('Lu Sheng');
+        // And nothing marks it out.
+        expect(live[0].whatTheRecordHas).toMatch(/nothing marks|indistinguishable/i);
+        expect(blind.candidateListNote).toMatch(/misfiled|indistinguishable|noise/i);
+    });
+
+    it('cannot settle identity because he does not hold still', () => {
+        const nf = getWanderer(LU_SHENG)!.notFixed;
+        // A property of what he is, not a listed capability.
+        expect(nf.howItReads).toMatch(/not a technique|no name|property/i);
+        expect(nf.casualNotTactical).toMatch(/not hiding|no scheme|suits him/i);
+        // Whim has no pattern, which is worse for a register than deception.
+        expect(nf.whyItDefeatsARegister).toMatch(/pattern/i);
+        expect(nf.whyItDefeatsARegister).toMatch(/nothing to model|neither be linked|cannot even say/i);
+        // His inheritors could tell, because they know him rather than his face.
+        expect(nf.whoCouldTell).toMatch(/inheritors/i);
+        // Somebody has met him repeatedly without knowing.
+        const innkeeper = getWanderer(LU_SHENG)!.isolation.regulars.find(r => r.yearsThere >= 40)!;
+        expect(innkeeper.note).toMatch(/different customers|nine different|does not know it is the same/i);
+    });
+
+    it('makes the four disagree about him, including one who cannot stand him', () => {
+        const opinions = getWanderer(LU_SHENG)!.courtOpinions;
+        expect(opinions.length).toBe(4);
+        const stances = new Set(opinions.map(o => o.stance));
+        expect(stances.size, 'four beings who have not moved should not agree')
+            .toBeGreaterThanOrEqual(3);
+        expect(stances.has('dislikes')).toBe(true);
+        for (const o of opinions) expect(o.note.length).toBeGreaterThan(100);
+        // The one who dislikes him is the one he avoids, and it is familiarity.
+        const dislikes = opinions.find(o => o.stance === 'dislikes')!;
+        expect(getWanderer(LU_SHENG)!.theOneHeAvoids.who).toContain('Third Seat');
+        expect(dislikes.who).toContain('Third Seat');
+        expect(dislikes.note).toMatch(/knows exactly|watched/i);
+    });
+
+    it('keeps the dislike trivial on the surface and familiar underneath', () => {
+        const d = getWanderer(LU_SHENG)!.theOneHeAvoids;
+        expect(d.theShapeUnderneath).toMatch(/familiarity|close range/i);
+        expect(d.theShapeUnderneath).toMatch(/not earned|would mean explaining/i);
+        // The surface stays a remark about a river.
+        expect(d.reason).toMatch(/river/i);
     });
 });

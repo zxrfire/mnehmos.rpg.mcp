@@ -1,0 +1,39 @@
+vein@0 o=33 age=1122 need=203 life=10000
+vein@0 o=34 age=1396 need=274 life=10000
+vein@0 o=35 age=1766 need=370 life=10000
+vein@0 o=36 age=3014 need=1248 life=10000
+vein@0 o=37 age=3688 need=674 life=30000
+vein@0 o=38 age=4598 need=910 life=30000
+vein@0 o=39 age=5826 need=1228 life=30000
+vein@0 o=40 age=9973 need=4146 life=30000
+vein@0 o=41 age=12211 need=2239 life=100000
+vein@0 o=42 age=15234 need=3022 life=100000
+vein@0 o=43 age=19314 need=4080 life=100000
+vein@0 o=44 age=33085 need=13771 life=100000
+vein@0 REACHED 45 at age 33085
+vein@15 o=33 age=1133 need=203 life=10000
+vein@15 o=34 age=1407 need=274 life=10000
+vein@15 o=35 age=1777 need=370 life=10000
+vein@15 o=36 age=3025 need=1248 life=10000
+vein@15 o=37 age=3699 need=674 life=30000
+vein@15 o=38 age=4609 need=910 life=30000
+vein@15 o=39 age=5837 need=1228 life=30000
+vein@15 o=40 age=9983 need=4146 life=30000
+vein@15 o=41 age=12222 need=2239 life=100000
+vein@15 o=42 age=15245 need=3022 life=100000
+vein@15 o=43 age=19325 need=4080 life=100000
+vein@15 o=44 age=33096 need=13771 life=100000
+vein@15 REACHED 45 at age 33096
+vein@25 o=33 age=1368 need=203 life=10000
+vein@25 o=34 age=1642 need=274 life=10000
+vein@25 o=35 age=2012 need=370 life=10000
+vein@25 o=36 age=3260 need=1248 life=10000
+vein@25 o=37 age=3935 need=674 life=30000
+vein@25 o=38 age=4845 need=910 life=30000
+vein@25 o=39 age=6073 need=1228 life=30000
+vein@25 o=40 age=10219 need=4146 life=30000
+vein@25 o=41 age=12458 need=2239 life=100000
+vein@25 o=42 age=15480 need=3022 life=100000
+vein@25 o=43 age=19561 need=4080 life=100000
+vein@25 o=44 age=33332 need=13771 life=100000
+vein@25 REACHED 45 at age 33332

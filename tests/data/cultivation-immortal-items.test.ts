@@ -16,6 +16,7 @@ import { describe, it, expect } from 'vitest';
 
 import { PillEffectSchema } from '../../src/schema/cultivation.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
+import { getApexInstitution } from '../../src/data/cultivation/hierarchy.js';
 import { PILLS } from '../../src/data/cultivation/pills.js';
 import { PRICES } from '../../src/data/cultivation/mortal-world.js';
 import {
@@ -96,7 +97,8 @@ describe('who holds them', () => {
     it('every holding resolves to a real faction and a real item', () => {
         for (const h of IMMORTAL_HOLDINGS) {
             expect(() => HoldingSchema.parse(h), `${h.factionId}/${h.itemId}`).not.toThrow();
-            expect(getSect(h.factionId), `holding by unknown faction ${h.factionId}`).toBeDefined();
+            const holder = getSect(h.factionId) ?? getApexInstitution(h.factionId);
+            expect(holder, `holding by unknown faction ${h.factionId}`).toBeDefined();
             expect(getImmortalItem(h.itemId), `holding of unknown item ${h.itemId}`).toBeDefined();
             expect(h.count).toBeGreaterThan(0);
             expect(h.count).toBeLessThanOrEqual(4);
@@ -105,6 +107,9 @@ describe('who holds them', () => {
         const holders = new Set(IMMORTAL_HOLDINGS.map(h => h.factionId));
         expect(holders.size).toBe(3);
         expect(holders.has('sect-azure-cloud-pavilion')).toBe(true);
+        // The other two are the administrators of the world, not sects.
+        expect(holders.has('apex-deep-survey')).toBe(true);
+        expect(holders.has('apex-long-cut')).toBe(true);
         // Nobody else holds anything.
         for (const sect of SECTS) {
             if (holders.has(sect.id)) continue;
@@ -148,14 +153,21 @@ describe('who holds them', () => {
             expect(h.anyoneMayRefuse, `${h.factionId} has a single decider`).toBe(true);
             expect(h.decidedBy.length).toBeGreaterThan(80);
             expect(h.decidedBy, `${h.factionId} names an office rather than a body`)
-                .toMatch(/all four|shift|unanimous|body|together with/i);
+                .toMatch(/all four|unanimous|body|together|Keepers/i);
             // Saving the institution is not a transaction.
             expect(h.savingTheSect, `${h.factionId} should say what saving it does`).not.toBeNull();
-            expect(h.savingTheSect!).toMatch(/does not buy|not a transaction|indefensible|acknowledg|different five/i);
+            expect(h.savingTheSect!).toMatch(/does not buy|not a transaction|indefensible|acknowledg|category error|receipt/i);
         }
         // The Hollow Court has no patriarch to appeal over.
-        const court = collective.find(h => h.factionId === 'sect-hollow-court')!;
-        expect(court.decidedBy).toMatch(/no patriarch|one voice/i);
+        // Rank does not help: a Surveyor asking is one voice among four.
+        const survey = collective.find(h => h.factionId === 'apex-deep-survey')!;
+        expect(survey.decidedBy).toMatch(/no office above|one voice/i);
+        // And the bureaucracies have a form, which has been submitted.
+        for (const h of collective) {
+            expect(h.theForm, `${h.factionId} has no instrument`).not.toBeNull();
+            expect(h.theForm!.length).toBeGreaterThan(120);
+        }
+        expect(collective.some(h => /submitted/i.test(h.theForm!))).toBe(true);
     });
 
     it('records a good case that was refused, and what refusing cost', () => {
@@ -170,7 +182,7 @@ describe('who holds them', () => {
             // A named refuser, and the reason given at the time.
             expect(refusal.refusedBy.length).toBeGreaterThan(60);
             // The sect was probably right, said without softening.
-            expect(refusal.probablyRight).toMatch(/right/i);
+            expect(refusal.probablyRight).toMatch(/right|correct/i);
             // And it cost them anyway, which is the point of recording it.
             expect(refusal.costAnyway.length).toBeGreaterThan(80);
         }
