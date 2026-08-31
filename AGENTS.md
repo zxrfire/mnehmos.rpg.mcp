@@ -216,6 +216,21 @@ project.
 
 Work happens on `feat/xianxia-cultivation`. Never push to `upstream`.
 
+### Preserve ancestry with upstream
+
+**Never wipe or re-root the history.** No orphan branches, no fresh `git init`, no
+squashing the whole branch to a single root commit.
+
+This fork must keep a common ancestor with `upstream/main` so that
+`git fetch upstream && git merge upstream/main` continues to work. Without a shared base,
+every upstream file looks like an unrelated add and reintegration becomes a manual
+conflict on effectively the entire tree.
+
+If history genuinely has to be edited - to remove something that should never have been
+committed - rewrite it **in place** (`git filter-branch` or `git filter-repo`) so commits
+are rewritten but the ancestry is kept. Then force-push the branch only, never `main`,
+and never to `upstream`.
+
 ---
 
 ## Boundaries when working in parallel
