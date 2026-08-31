@@ -665,6 +665,101 @@ The feeling to produce:
 > *"The world I knew is still here, but it isn't the same world any more."*
 
 
+## Catastrophe: the player lives in history, and does not own it
+
+Some history happens because of the player. Some happens around them. Some happens despite
+them. And some is so far beyond them that surviving long enough to see the outcome is the
+entire achievement.
+
+### Three kinds of world event
+
+| Kind | The player's position | How they encounter it |
+|---|---|---|
+| **Historical** | Not alive, or not yet involved | Ruins, survivors, records, scars, descendants, political consequences |
+| **Concurrent** | Alive, elsewhere | Rumour, messengers, refugees, sect announcements, merchants, shifted trade, changed borders |
+| **Witnessed** | Physically present | Directly — and usually far beyond their power to affect |
+
+All three must be able to occur. Only the third involves the player at all, and even then
+involvement is not the same as participation.
+
+### The player is not the centre of catastrophe
+
+A world-scale event can occur when the player did nothing, was pursuing something else,
+was in the wrong place, was far too weak to matter, or never learned it was coming. **The
+world does not wait for the protagonist**, and it does not schedule its disasters around
+their readiness.
+
+### Powerlessness is valid gameplay
+
+Witnessing a conflict between vastly stronger beings must not suddenly make a low
+cultivator capable of joining it. The honest shape of that encounter:
+
+```text
+a distant sound -> a mountain goes -> an aura that stops the body working
+  -> the understanding that something is very wrong -> flight
+    -> the terrain changing while you are still in it -> barely surviving
+```
+
+**That is a successful encounter.** Survival is sometimes the whole of it, and the engine
+must be willing to end an event with the player having achieved nothing but living.
+
+Do not guarantee a reward. A catastrophe *may* leave trauma, knowledge, rumours,
+reputation, opportunity, enemies, a cultivation insight, or a relationship with a
+survivor. It may also leave nothing but the fact that you are still breathing.
+
+### Observed is not understood
+
+The player may see the sky change, a mountain break, a city stop existing, a portal open,
+an aura arrive, an old formation wake, or a region turn — and have no idea what caused
+any of it. The truth should be recoverable *later*, sometimes much later, sometimes never.
+This is where mystery comes from, and it must not be spoiled by a narrator explaining the
+event as it happens.
+
+### Witnessed events write real state
+
+If the player watches a mountain be destroyed, the database records **the mountain is
+destroyed** — not "the player saw a dramatic scene." The location's state changes, its
+history gains an entry, and every downstream consequence follows from that record.
+
+This is the same authority rule as everywhere else: narration describes a state change
+that actually happened.
+
+### Lived memory and world record can diverge
+
+The player remembers: *"there used to be a mountain here."* A character born later says:
+*"there has never been a mountain here."*
+
+**Both are correct**, and the engine must be able to hold both at once — ground truth, the
+world's surviving record, and what any given person believes are separate layers. The
+player's lived history is real even when the world has forgotten it. Occasionally the
+player will be the only remaining witness to something, and that is a form of knowledge
+worth having.
+
+### One catastrophe seeds years of world activity
+
+```text
+powerful beings fight -> a mountain is destroyed -> an old ruin is exposed
+  -> factions find it -> treasure hunters arrive -> a town grows to serve them
+    -> a sect claims the territory -> conflict
+```
+
+A single witnessed disaster should be capable of generating months or years of subsequent
+world movement, none of which requires the player.
+
+### The long arc
+
+Over a very long run, the player's relationship to events of this scale should change:
+
+```text
+helpless witness -> survivor -> participant -> influential actor
+  -> someone capable of causing one
+```
+
+That progression is earned across a lifetime and is never promised. Most cultivators stop
+at the first step, having survived one bad afternoon that they will describe, inaccurately,
+for the rest of their lives.
+
+
 ## Power is composite, not a single number
 
 Realm is the spine, but it must never be the whole of a character's capability. Model
