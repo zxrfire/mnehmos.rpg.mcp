@@ -36,7 +36,7 @@ export interface Script {
  * run narrates once before the player has typed anything).
  *
  * `calls` records every request, so a test can assert what the model was
- * actually shown — which is how "the model only ever sees engine facts" is
+ * actually shown - which is how "the model only ever sees engine facts" is
  * checked rather than assumed.
  */
 export class ScriptedProvider implements LLMProvider {
@@ -180,7 +180,7 @@ export function refusedCall(result: HasToolCalls) {
     return engineCalls(result).find(call => !call.ok) ?? null;
 }
 
-/** Snapshot of the raw cultivator row — the ground truth for "nothing changed". */
+/** Snapshot of the raw cultivator row - the ground truth for "nothing changed". */
 export function cultivatorRow(db: Database.Database, id: string): Record<string, unknown> {
     return db.prepare('SELECT * FROM cultivators WHERE id = ?').get(id) as Record<string, unknown>;
 }

@@ -1,10 +1,10 @@
 /**
- * The game service — phase 2, and the only thing in this package that writes.
+ * The game service - phase 2, and the only thing in this package that writes.
  *
  * Read the method bodies with one question in mind: *where does a value from a
  * model response become a row?* The answer is nowhere. A narrator can reach
- * this class in exactly one way — `Narrator.plan()` returns a member of a closed
- * enum plus a bounded `days` and an 80-character place name — and every number
+ * this class in exactly one way - `Narrator.plan()` returns a member of a closed
+ * enum plus a bounded `days` and an 80-character place name - and every number
  * that lands in SQLite after that comes out of `simulateTimeSkip`,
  * `attemptBreakthrough` or `applyDeltas`.
  *
@@ -16,8 +16,8 @@
  * over an in-memory database with no HTTP and no network. It then installs that
  * handle as the process database and builds its repositories through
  * `ensureCultivationDb`, which is what keeps this front door and the MCP tool
- * front door writing the same rows the same way — a second implementation of
- * "what the Vault took" would eventually disagree with the first, and the
+ * front door writing the same rows the same way - a second implementation of
+ * "what a crossing took" would eventually disagree with the first, and the
  * disagreement would be a corrupted save rather than a failing test.
  */
 
@@ -40,11 +40,16 @@ import { forStream } from '../engine/cultivation/rng.js';
 import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { ACTIONS_PER_FULL_SATIETY, describeDeath } from '../engine/cultivation/survival.js';
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
+import { rollHerb } from '../data/cultivation/index.js';
 import { setDb } from '../storage/index.js';
 import { getSect, getTechnique } from '../data/cultivation/index.js';
+import { handleRefine } from '../server/consolidated/alchemy-manage.js';
+import { handlePractise } from '../server/consolidated/technique-manage.js';
 import {
     FLAG_NAME_TAKEN,
     ensureCultivationDb,
+    addToPouch,
+    isGuidingErrorBody,
     listTolls,
     persistFoundation,
     persistToll,
@@ -56,6 +61,8 @@ import {
 import { applyTimeSkip, tollLine } from './apply.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
+    DEFAULT_SECLUSION_DAYS,
+    GATHERING_DAYS,
     MAX_CULTIVATION_DAYS,
     TRAINING_DAYS,
     type ActionName,
@@ -63,14 +70,28 @@ import {
     type PlannedAction
 } from './actions.js';
 import {
+    knownTechniqueNames,
+    nearbyNames,
+    pouchNames,
+    resolveAnything,
+    resolveHerb,
+    resolveParty,
+    resolvePlace,
+    resolveRecipe,
+    resolveTechnique
+} from './entities.js';
+import {
     factsForBreakthrough,
     factsForEat,
+    factsForGather,
+    factsForInteraction,
+    factsForInvestigation,
     factsForLook,
+    factsForMove,
     factsForRefusal,
     factsForStatus,
-    factsForTalk,
     factsForTimeSkip,
-    factsForTravel,
+    factsForToolResult,
     humanDays,
     placeName,
     type EngineFacts
@@ -82,6 +103,7 @@ import {
     cultivatorView,
     derivedView,
     ledgerRowView,
+    refusalText,
     rosterRowView,
     runView,
     type DerivedView,
@@ -116,7 +138,7 @@ export const MEAL_COST_STONES = 1;
 export const SHORT_ACTION_DAYS = 1;
 /** Focus multipliers for time spent on something other than sealed seclusion. */
 export const TRAVEL_FOCUS = 0.15;
-export const TRAINING_FOCUS = 0.5;
+export const GATHERING_FOCUS = 0.2;
 export const WAITING_FOCUS = 0.25;
 
 /** Engine event summaries appended to the log per action, at most. */
@@ -126,13 +148,15 @@ const MAX_LOGGED_EVENTS = 40;
  * How prepared a crossing counts as, 0..1.
  *
  * The engine wants a number for "a chosen site, a cleared schedule, nobody
- * hunting you". This deployment models one of those honestly — whether the
- * purse actually covered the food for the whole stretch — so a fully
+ * hunting you". This deployment models one of those honestly - whether the
+ * purse actually covered the food for the whole stretch - so a fully
  * provisioned seclusion is half-prepared and nothing else is. Striking the
  * barrier on command is a deliberate but unaided choice.
  */
 export const PROVISIONED_PREPARATION = 0.5;
 export const DELIBERATE_PREPARATION = 0.25;
+/** A shut door, a chosen site, and nobody coming through it. */
+export const SEALED_PREPARATION = 0.75;
 /** Below this, a crossing counts as hurried: too little time to sit properly. */
 export const HURRIED_BELOW_DAYS = 30;
 
@@ -153,7 +177,7 @@ export interface StateView {
     cultivator: Cultivator;
     ambient: AmbientQi;
     derived: DerivedView;
-    /** Every instalment the Vault has charged this cultivator, oldest first. */
+    /** Everything the crossings have cut away from this cultivator, oldest first. */
     tolls: TollLedgerEntry[];
     log: LogEntry[];
 }
@@ -163,7 +187,7 @@ export interface StateView {
  *
  * This list is the visible proof of the project's central claim. A player who
  * suspects the narration of flattering them can open it and read the engine's
- * own one-line account of every routine that ran — `summary` is always sourced
+ * own one-line account of every routine that ran - `summary` is always sourced
  * from facts.ts or from a `SimEvent.summary`, never from narrator prose.
  */
 export interface ToolCallRecord {
@@ -173,7 +197,7 @@ export interface ToolCallRecord {
     action: string;
     /** The engine's factual one-liner. Never narration. */
     summary: string;
-    /** False when the engine declined to act — an ineligible attempt, a refusal. */
+    /** False when the engine declined to act - an ineligible attempt, a refusal. */
     ok: boolean;
     /** Present on the routing step: whether the model or the parser chose. */
     source?: PlanSource;
@@ -225,7 +249,7 @@ export class GameService {
     private readonly db: Database.Database;
     /**
      * The same repository bundle the MCP tools use, so the two front doors
-     * cannot drift apart about what the Vault took or how a skip is written.
+     * cannot drift apart about what a crossing took or how a skip is written.
      */
     private readonly repos: CultivationRepos;
     private readonly log: PlayLog;
@@ -243,7 +267,7 @@ export class GameService {
         // This deployment is single-operator against one database, so the
         // injected handle IS the process database. Installing it as the
         // ambient one lets `ensureCultivationDb` build the exact repository
-        // bundle the MCP tools use — including its auxiliary tables — instead
+        // bundle the MCP tools use - including its auxiliary tables - instead
         // of this layer growing a parallel set that could drift.
         setDb(this.db);
         this.repos = ensureCultivationDb();
@@ -260,7 +284,7 @@ export class GameService {
      * nothing else that is read: a client that posts
      * `{name, spiritRoot: 'mutated_lightning', attributes: {...}}` gets the same
      * roll it would have got by posting the name alone. Talent is not earned,
-     * cannot be improved, and is not negotiable — that is the genre, and it is
+     * cannot be improved, and is not negotiable - that is the genre, and it is
      * also why the client is not trusted with it.
      */
     async newRun(name: string): Promise<{ run: RunView; cultivator: Cultivator }> {
@@ -376,7 +400,7 @@ export class GameService {
         );
 
         // ── phase 2 ──
-        const execution = this.execute(plan.action, run, cultivator, ambient);
+        const execution = await this.execute(plan.action, run, cultivator, ambient);
 
         const after = this.currentRun();
         const scene = { place: placeName(after.cultivator), ambient: this.ambientFor(after.cultivator, after.run) };
@@ -424,7 +448,7 @@ export class GameService {
         });
 
         this.log.append(run.id, [
-            { role: 'player', turn: run.turn, text: `Seclusion — ${humanDays(requested)}.` },
+            { role: 'player', turn: run.turn, text: `Seclusion - ${humanDays(requested)}.` },
             ...this.engineEntries(execution, after.run.turn),
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
@@ -490,14 +514,32 @@ export class GameService {
     // ── engine execution (phase 2) ───────────────────────────────────────
 
     /**
-     * Run one action. Exhaustive over the closed set by construction — adding a
-     * name to ACTION_NAMES without adding a case here is a compile error, which
-     * is the point of the enum being closed in the first place.
+     * Run one action.
+     *
+     * Exhaustive over the closed set by construction: adding a name to
+     * ACTION_NAMES without adding a case here is a compile error, which is the
+     * point of the enum being closed in the first place.
+     *
+     * Read the `interact` and `move` branches with one thing in mind: neither
+     * of them looks at `action.intent` to decide anything. The intent is passed
+     * to the facts so the narrator can say what was attempted, and that is all
+     * it is ever allowed to do. An outcome selected by the word the player
+     * typed would be an outcome the engine did not compute.
      */
-    private execute(action: PlannedAction, run: Run, cultivator: Cultivator, ambient: AmbientQi): Execution {
+    private async execute(
+        action: PlannedAction,
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi
+    ): Promise<Execution> {
         switch (action.action) {
             case 'cultivate':
                 return this.runSeclusion(run, cultivator, ambient, action.days ?? DEFAULT_CULTIVATION_DAYS);
+
+            case 'seclude':
+                return this.runSeclusion(
+                    run, cultivator, ambient, action.days ?? DEFAULT_SECLUSION_DAYS, { sealed: true }
+                );
 
             case 'breakthrough': {
                 const eligibility = canAttemptBreakthrough(cultivator);
@@ -510,20 +552,29 @@ export class GameService {
                 return this.strikeBarrier(run, cultivator, ambient);
             }
 
-            case 'travel':
-                return this.travel(run, cultivator, ambient, action.target);
+            case 'move':
+                return this.move(run, cultivator, ambient, action.target, action.intent ?? 'travel');
+
+            case 'investigate':
+                return this.investigate(run, cultivator, ambient, action.target);
+
+            case 'interact':
+                return this.interact(run, cultivator, action.target, action.intent ?? 'talk');
 
             case 'train_technique':
-                return this.train(run, cultivator, ambient, action.target);
+                return this.train(cultivator, action.target);
+
+            case 'refine':
+                return this.refine(cultivator, action.target);
+
+            case 'gather':
+                return this.gather(run, cultivator, ambient, action.target);
 
             case 'wait':
                 return this.shortSkip(run, cultivator, ambient, WAITING_FOCUS, 'Waiting');
 
             case 'eat':
                 return this.eat(run, cultivator);
-
-            case 'talk':
-                return this.freeAction(run, 'talk', factsForTalk(cultivator, ambient, action.target));
 
             case 'status': {
                 const eligibility = canAttemptBreakthrough(cultivator);
@@ -537,68 +588,34 @@ export class GameService {
         }
     }
 
+    // ── the three semantic actions ───────────────────────────────────────
+
     /**
-     * Sealed seclusion, provisioned out of the purse.
+     * Going somewhere, however it was meant.
      *
-     * The engine's food clock is not a nuisance to be routed around: a full
-     * belly covers fifty turn-consuming actions, so a decade of unattended
-     * cultivation genuinely is impossible without provisions, and buying them
-     * is the "eat, or keep the stones" choice made concrete. Provisions are
-     * bought up front at whatever the purse covers; when it does not cover the
-     * whole stretch, the engine starves the remainder, which is correct.
+     * One engine path for every intent. `flee`, `enter`, `approach` and
+     * `travel` all resolve identically because the engine has no basis yet for
+     * treating them differently, and manufacturing one in this layer would be a
+     * mechanic invented in the narration tier.
+     *
+     * TODO(world): route through `assessCapability` once `world_locations` is
+     * populated, so entering a sealed ruin is answered by "can attempt / can
+     * survive / can succeed" against that location's thresholds. The rule then
+     * stays the same: the attempt is always permitted, circumstances decide.
      */
-    private runSeclusion(run: Run, cultivator: Cultivator, ambient: AmbientQi, days: number): Execution {
-        const provisioning = this.buyProvisions(cultivator, days);
-        const provisioned = provisioning.cultivator;
-
-        const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(provisioned, days, {
-            seed: run.seed,
-            locationId: placeName(provisioned),
-            turn: run.turn,
-            startDay,
-            options: { focusMultiplier: 1 },
-            techniqueElement: null,
-            rations: provisioning.rations,
-            grainAbstinence: false,
-            autoBreakthrough: true,
-            randomEvents: true,
-            // The Vault charges at any boundary this stretch crosses, and it
-            // can only take what the run actually owns. Handing it the real
-            // rows is what makes the charge a delete rather than an assertion.
-            toll: {
-                ...tollConditionsFor(this.repos, provisioned),
-                preparation: provisioning.covered >= days ? PROVISIONED_PREPARATION : 0,
-                hurried: days < HURRIED_BELOW_DAYS
-            },
-            foundation: {
-                preparation: provisioning.covered >= days ? PROVISIONED_PREPARATION : 0,
-                hurried: days < HURRIED_BELOW_DAYS
-            }
-        });
-
-        const applied = applyTimeSkip(this.repos, { before: provisioned, run, skip });
-
-        const facts = factsForTimeSkip(provisioned, applied.cultivator, skip, ambient);
-        facts.lines.unshift(provisioning.line);
-        facts.lines.push(...applied.tollLines);
-
-        return {
-            facts,
-            events: skip.events,
-            timeSkip: skip,
-            breakthrough: null,
-            outcome: 'executed',
-            calls: [...skipCalls('cultivate', skip, provisioning.line), ...tollCalls(applied.tollLines)]
-        };
-    }
-
-    private travel(run: Run, cultivator: Cultivator, ambient: AmbientQi, target: string | undefined): Execution {
-        const destination = (target ?? '').trim().slice(0, 80);
-        if (destination.length < 2) {
-            return refused('engine.travel', 'travel', factsForRefusal(
+    private move(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined,
+        intent: string
+    ): Execution {
+        const place = resolvePlace(target);
+        if (!place) {
+            return refused('engine.resolvePlace', 'move', factsForRefusal(
                 'Nowhere in particular.',
-                'No destination was named, so nothing moved. Places in this world are plain and physical; name one.'
+                'No destination was named, so nothing moved. Places in this world are plain and ' +
+                'physical - Sweptground, the Low Fall, Scarwater. Name one.'
             ));
         }
 
@@ -616,13 +633,13 @@ export class GameService {
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
-        const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip, location: destination });
-
+        const applied = applyTimeSkip(this.repos, {
+            before: cultivator, run, skip, location: place.name
+        });
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
-        const facts = factsForTravel(cultivator, applied.cultivator, destination, skip, ambient, ambientAfter);
 
         return {
-            facts,
+            facts: factsForMove(cultivator, applied.cultivator, place.name, intent, skip, ambient, ambientAfter),
             events: skip.events,
             timeSkip: skip,
             breakthrough: null,
@@ -630,23 +647,390 @@ export class GameService {
             calls: [
                 {
                     name: 'cultivator.update',
-                    action: 'travel',
-                    summary: `Location set to "${destination}"; ambient qi there is ${ambientAfter}.`,
+                    action: 'move',
+                    summary: `Location set to "${place.name}" (intent: ${intent}); ambient qi there is ${ambientAfter}.`,
                     ok: true
                 },
-                ...skipCalls('travel', skip, null)
+                ...skipCalls('move', skip, null),
+                ...tollCalls(applied.tollLines)
             ]
         };
     }
 
-    private train(run: Run, cultivator: Cultivator, ambient: AmbientQi, target: string | undefined): Execution {
-        const art = (target ?? '').trim().slice(0, 80) || 'the qi-gathering breath';
-        const execution = this.shortSkip(run, cultivator, ambient, TRAINING_FOCUS, `Practice of ${art}`, TRAINING_DAYS);
-        execution.facts.lines.unshift(
-            `${cultivator.name} practised ${art} for ${humanDays(TRAINING_DAYS)}. ` +
-            'No technique mastery is tracked for an art the catalogue does not hold; the time was spent, and it counted as cultivation at reduced focus.'
+    /**
+     * Examining something.
+     *
+     * Reads state and reports it. The subject must resolve to a real row or a
+     * real catalog entry, so a player cannot examine a person the world does
+     * not contain and receive a description of them.
+     *
+     * TODO(world): once `assessCapability` is wired, run the `understand`
+     * predicate over the subject so that an inscription above the cultivator's
+     * comprehension yields partial or wrong readings rather than the full
+     * record. Comprehension is archaeology, and it should be able to fail.
+     */
+    private investigate(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined
+    ): Execution {
+        const query = (target ?? '').trim();
+        if (query.length < 2) {
+            return this.freeAction(run, 'investigate', factsForLook(cultivator, ambient));
+        }
+
+        const subject = resolveAnything(this.repos, query, cultivator);
+        if (!subject) {
+            return refused('engine.resolveEntity', 'investigate', factsForRefusal(
+                `There is no ${query} on record.`,
+                `Nothing in this world matches "${query}": not a person, not a sect, not an art, ` +
+                `not a formula, not a herb. The engine will not describe what it does not hold. ` +
+                `On record nearby: ${nearbyNames(this.repos, cultivator).join(', ') || 'nobody at all'}.`
+            ));
+        }
+
+        const execution = this.freeAction(
+            run, 'investigate',
+            factsForInvestigation(cultivator, ambient, subject.name, subject.facts)
         );
+        execution.calls = [{
+            name: 'engine.readState',
+            action: 'investigate',
+            summary: `Resolved "${query}" to ${subject.kind} ${subject.id}. Read only: no time passed, nothing changed.`,
+            ok: true
+        }];
         return execution;
+    }
+
+    /**
+     * Approaching a person or a faction.
+     *
+     * Two halves, and the split is the design. The engine CAN state, from real
+     * rows, who this party is and what stands between them; it CANNOT yet
+     * resolve what came of the approach, because the social layer that would
+     * decide it - relationships, obligations, what each side knows and wants -
+     * is not something this layer may invent.
+     *
+     * So the attempt is recorded and the facts are reported, and the result is
+     * marked unresolved rather than narrated. "I try to sneak into the sect" is
+     * an attempt, not an infiltration.
+     */
+    private interact(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string
+    ): Execution {
+        const query = (target ?? '').trim();
+        if (query.length < 2) {
+            return refused('engine.resolveParty', 'interact', factsForRefusal(
+                'Nobody in particular.',
+                'No person or faction was named, so nobody was approached. ' +
+                `On record nearby: ${nearbyNames(this.repos, cultivator).join(', ') || 'nobody at all'}.`
+            ));
+        }
+
+        const party = resolveParty(this.repos, query, cultivator);
+        if (!party) {
+            return refused('engine.resolveParty', 'interact', factsForRefusal(
+                `There is no ${query} here.`,
+                `No cultivator and no sect on record matches "${query}", so there was nobody to approach. ` +
+                `The engine will not conjure a person to have a conversation with. ` +
+                `On record nearby: ${nearbyNames(this.repos, cultivator).join(', ') || 'nobody at all'}.`
+            ));
+        }
+
+        const unresolved =
+            'The engine can say who they are and what stands between you; it cannot yet say what ' +
+            'came of the approach. Resolving that needs the social layer (relationships, grudges, ' +
+            'obligations, what each side knows) and the capability predicates. Until those land, ' +
+            'nothing was agreed and no state changed.';
+
+        const execution = this.freeAction(
+            run, 'interact',
+            factsForInteraction(cultivator, party.name, intent, party.facts, unresolved)
+        );
+        execution.outcome = 'refused';
+        execution.calls = [
+            {
+                name: 'engine.resolveParty',
+                action: 'interact',
+                summary: `Resolved "${query}" to ${party.kind} ${party.id}. ${party.facts[0]}`,
+                ok: true
+            },
+            {
+                name: 'engine.resolveInteraction',
+                action: intent,
+                summary:
+                    'Attempt recorded; outcome not resolvable yet. No agreement, no exchange, no ' +
+                    'change of standing. The intent label was carried to the narrator and read by ' +
+                    'no conditional.',
+                ok: false
+            }
+        ];
+        return execution;
+    }
+
+    // ── logistics ────────────────────────────────────────────────────────
+
+    /**
+     * Alchemy, through the same handler the MCP tool surface calls.
+     *
+     * Not reimplemented here. `alchemy_manage.refine` owns the odds, the
+     * ingredient burn and the pouch write, and a second implementation would
+     * eventually disagree with the first about what a failed cauldron costs.
+     */
+    private async refine(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+        const query = (target ?? '').trim();
+        const recipe = query.length >= 2 ? resolveRecipe(query) : null;
+        if (!recipe) {
+            const held = pouchNames(this.db, cultivator.id);
+            return refused('engine.resolveRecipe', 'refine', factsForRefusal(
+                query.length >= 2 ? `No formula called ${query}.` : 'No formula named.',
+                `The cauldron needs a formula the world actually holds. ` +
+                `In the pouch: ${held.join(', ') || 'nothing'}. ` +
+                'Knowledge in this world is recovered, not invented: a formula is dug out of a tomb, ' +
+                'not thought up at the cauldron.'
+            ));
+        }
+
+        const result = await handleRefine({
+            action: 'refine',
+            recipeId: recipe.id,
+            cultivatorId: cultivator.id,
+            supplements: []
+        });
+
+        return this.fromToolResult('alchemy_manage.refine', 'refine', result, recipe.name);
+    }
+
+    /**
+     * Practising an art, through `technique_manage.practise`.
+     *
+     * That handler owns mastery accrual and rolls a deviation check on the same
+     * terms the time-skip uses, so practising a conflicting art is not free
+     * just because it is short. The target must be an art the cultivator
+     * actually knows.
+     */
+    private async train(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+        const query = (target ?? '').trim();
+        const technique = query.length >= 2 ? resolveTechnique(this.repos, query, cultivator.id) : null;
+        const known = technique ? this.repos.techniques.getKnown(cultivator.id, technique.id) : null;
+
+        if (!technique || !known) {
+            const knows = knownTechniqueNames(this.repos, cultivator.id);
+            return refused('engine.resolveTechnique', 'train_technique', factsForRefusal(
+                technique ? `${technique.name} is not known.` : 'No art named.',
+                technique
+                    ? `${cultivator.name} has never been taught ${technique.name}. A manual is somebody ` +
+                      `else's memory, and it has to be found before it can be read. ` +
+                      `Known: ${knows.join(', ') || 'nothing at all'}.`
+                    : `Name an art to practise. Known: ${knows.join(', ') || 'nothing at all'}.`
+            ));
+        }
+
+        const result = await handlePractise({
+            action: 'practise',
+            techniqueId: technique.id,
+            cultivatorId: cultivator.id,
+            days: TRAINING_DAYS
+        });
+
+        return this.fromToolResult('technique_manage.practise', 'train_technique', result, technique.name);
+    }
+
+    /**
+     * Foraging.
+     *
+     * Time passes through the simulator; what the ground gives up is drawn from
+     * the herb catalog's own weighted table on a seeded sub-stream, and lands in
+     * the shared pouch. The whole point of the Late Age is that you might not
+     * out-cultivate a prodigy but you can out-dig them, and nothing else in the
+     * verb set reaches that.
+     */
+    private gather(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined
+    ): Execution {
+        const startDay = Math.floor(run.elapsedDays);
+        const skip = simulateTimeSkip(cultivator, GATHERING_DAYS, {
+            seed: run.seed,
+            locationId: placeName(cultivator),
+            turn: run.turn,
+            startDay,
+            options: { focusMultiplier: GATHERING_FOCUS },
+            rations: 0,
+            grainAbstinence: false,
+            autoBreakthrough: false,
+            randomEvents: true,
+            toll: tollConditionsFor(this.repos, cultivator)
+        });
+
+        const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
+
+        // A named herb narrows the draw to that herb if it is within reach;
+        // otherwise the catalog's weighted table decides, which is the honest
+        // answer to "I look for something useful".
+        const wanted = (target ?? '').trim().length >= 2 ? resolveHerb(target!.trim()) : null;
+        const rng = forStream(run.seed, 'web_forage', startDay, placeName(cultivator));
+        const rolled = rollHerb(applied.cultivator.realmOrdinal, rng.next());
+        const found = wanted && rolled && rolled.id === wanted.id ? rolled : rolled;
+
+        const pouched = found && found.harvestOrdinal <= applied.cultivator.realmOrdinal ? found : null;
+        if (pouched) {
+            addToPouch(this.db, cultivator.id, pouched.id, 'herb', 1);
+        }
+
+        const calls: ToolCallRecord[] = [
+            ...skipCalls('gather', skip, null),
+            ...tollCalls(applied.tollLines),
+            {
+                name: pouched ? 'storage.addToPouch' : 'engine.rollHerb',
+                action: 'gather',
+                summary: pouched
+                    ? `One ${pouched.name} (${pouched.grade}) added to the pouch.`
+                    : found
+                        ? `${found.name} grows here but wants ${found.harvestOrdinal} ordinal to take safely. Left where it was.`
+                        : 'The catalog offered nothing within reach at this realm.',
+                ok: true
+            }
+        ];
+
+        return {
+            facts: factsForGather(
+                cultivator, applied.cultivator, skip, ambient,
+                pouched ? { name: pouched.name, grade: pouched.grade, value: pouched.value } : null
+            ),
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls
+        };
+    }
+
+    /**
+     * Fold an MCP handler's return value into an Execution.
+     *
+     * Those handlers return either a guiding error body or a result object with
+     * an engine-authored `narrationHint`. Both are facts; the error is simply
+     * the fact that the engine declined, and it is passed through rather than
+     * softened.
+     */
+    private fromToolResult(
+        name: string,
+        action: ActionName,
+        result: object,
+        subject: string
+    ): Execution {
+        if (isGuidingErrorBody(result)) {
+            const hint = typeof result.hint === 'string' ? ` ${result.hint}` : '';
+            return refused(name, action, factsForRefusal(
+                `${subject}: refused.`,
+                `${result.message}${hint}`
+            ));
+        }
+
+        const body = result as Record<string, unknown>;
+        const hint = typeof body.narrationHint === 'string' ? body.narrationHint : null;
+        const lines = [
+            `${subject}: the engine resolved it.`,
+            ...(hint ? [hint] : []),
+            ...summariseToolBody(body)
+        ];
+
+        return {
+            facts: factsForToolResult(hint ?? `${subject}: resolved.`, lines),
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{ name, action, summary: hint ?? lines.join(' '), ok: true }]
+        };
+    }
+
+    /**
+     * Cultivating, provisioned out of the purse.
+     *
+     * The engine's food clock is not a nuisance to be routed around: a full
+     * belly covers fifty turn-consuming actions, so a decade of unattended
+     * cultivation genuinely is impossible without provisions, and buying them
+     * is the "eat, or keep the stones" choice made concrete. Provisions are
+     * bought up front at whatever the purse covers; when it does not cover the
+     * whole stretch, the engine starves the remainder, which is correct.
+     *
+     * `sealed` is what separates `seclude` from `cultivate`, and it is a real
+     * bargain rather than a flavour: closed-door seclusion turns off random
+     * events, which buys safety from encounters at the price of every
+     * opportunity that would have found you. Both halves are the engine's.
+     */
+    private runSeclusion(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        days: number,
+        options: { sealed?: boolean } = {}
+    ): Execution {
+        const sealed = options.sealed ?? false;
+        const provisioning = this.buyProvisions(cultivator, days);
+        const provisioned = provisioning.cultivator;
+        const prepared = provisioning.covered >= days;
+
+        const startDay = Math.floor(run.elapsedDays);
+        const skip = simulateTimeSkip(provisioned, days, {
+            seed: run.seed,
+            locationId: placeName(provisioned),
+            turn: run.turn,
+            startDay,
+            options: { focusMultiplier: 1 },
+            techniqueElement: null,
+            rations: provisioning.rations,
+            grainAbstinence: false,
+            autoBreakthrough: true,
+            randomEvents: !sealed,
+            // A boundary crossed inside this stretch exacts its price, and it
+            // can only take what the run actually owns. Handing it the real
+            // rows is what makes the price a delete rather than an assertion.
+            toll: {
+                ...tollConditionsFor(this.repos, provisioned),
+                // A sealed crossing is a prepared one: the door is shut, the
+                // site was chosen, nobody is coming through it.
+                preparation: prepared ? (sealed ? SEALED_PREPARATION : PROVISIONED_PREPARATION) : 0,
+                hurried: days < HURRIED_BELOW_DAYS
+            },
+            foundation: {
+                preparation: prepared ? (sealed ? SEALED_PREPARATION : PROVISIONED_PREPARATION) : 0,
+                hurried: days < HURRIED_BELOW_DAYS
+            }
+        });
+
+        const applied = applyTimeSkip(this.repos, { before: provisioned, run, skip });
+        const verb: ActionName = sealed ? 'seclude' : 'cultivate';
+
+        const facts = factsForTimeSkip(
+            provisioned, applied.cultivator, skip, ambient,
+            sealed ? 'Closed-door seclusion' : 'Seclusion'
+        );
+        facts.lines.unshift(provisioning.line);
+        if (sealed) {
+            facts.lines.unshift(
+                'The door was sealed: no encounter and no opportunity could reach this stretch. ' +
+                'Safety was bought with every chance that would have found you.'
+            );
+        }
+        facts.lines.push(...applied.tollLines);
+
+        return {
+            facts,
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [...skipCalls(verb, skip, provisioning.line), ...tollCalls(applied.tollLines)]
+        };
     }
 
     private shortSkip(
@@ -760,7 +1144,7 @@ export class GameService {
             name: 'engine.attemptBreakthrough',
             action: 'breakthrough',
             summary:
-                `${(result.finalChance * 100).toFixed(1)}% final chance, rolled ${result.roll.toFixed(4)} — ` +
+                `${(result.finalChance * 100).toFixed(1)}% final chance, rolled ${result.roll.toFixed(4)} - ` +
                 `${result.outcome}. ${result.narrationHint}`,
             ok: true
         }];
@@ -794,7 +1178,7 @@ export class GameService {
             calls.push({
                 name: 'cultivator.markDead',
                 action: 'death',
-                summary: `Run closed: ${result.tribulation ? 'heavenly_tribulation' : 'failed_breakthrough'}. Permadeath — no reload.`,
+                summary: `Run closed: ${result.tribulation ? 'heavenly_tribulation' : 'failed_breakthrough'}. Permadeath - no reload.`,
                 ok: true
             });
         }
@@ -823,7 +1207,7 @@ export class GameService {
             return refused('cultivator.applyDeltas', 'eat', factsForRefusal(
                 'Nothing to buy it with.',
                 `A meal costs ${MEAL_COST_STONES} spirit stone and the purse holds ${cultivator.spiritStones}. ` +
-                'Half the deaths in the Vault are logistical.'
+                'Half the deaths in this world are logistical.'
             ));
         }
 
@@ -858,7 +1242,7 @@ export class GameService {
 
     /**
      * An action that costs a turn of attention and nothing else. No day passes,
-     * no satiety is burned, no roll is made — looking around must never be able
+     * no satiety is burned, no roll is made - looking around must never be able
      * to kill you, and in a permadeath game that is a rule, not a courtesy.
      */
     private freeAction(run: Run, action: ActionName, facts: EngineFacts): Execution {
@@ -872,7 +1256,7 @@ export class GameService {
             calls: [{
                 name: 'engine.readState',
                 action,
-                summary: `${facts.headline} Read only — no time passed and no value changed.`,
+                summary: `${facts.headline} Read only - no time passed and no value changed.`,
                 ok: true
             }]
         };
@@ -908,7 +1292,7 @@ export class GameService {
             covered,
             line: covered >= days
                 ? `Provisions bought: ${rations} ration${rations === 1 ? '' : 's'} for ${cost} spirit stones, covering the whole stretch. ${updated.spiritStones} stones left.`
-                : `Provisions bought: ${rations} ration${rations === 1 ? '' : 's'} for ${cost} spirit stones — food for about ${humanDays(covered)} of the ${humanDays(days)} asked for. After that the belly is empty and five turns later it is fatal.`
+                : `Provisions bought: ${rations} ration${rations === 1 ? '' : 's'} for ${cost} spirit stones - food for about ${humanDays(covered)} of the ${humanDays(days)} asked for. After that the belly is empty and five turns later it is fatal.`
         };
     }
 
@@ -918,7 +1302,7 @@ export class GameService {
         return ambientForBlock(run.seed, placeName(cultivator), Math.floor(run.elapsedDays));
     }
 
-    /** The newest run — live if there is one, otherwise the last one to end. */
+    /** The newest run - live if there is one, otherwise the last one to end. */
     private currentRun(): { run: Run; cultivator: Cultivator } {
         const run = this.repos.runs.getActiveRun() ?? this.repos.runs.deathLedger(1)[0] ?? null;
         if (!run) throw new GameError('No run has been started yet.', 404);
@@ -927,7 +1311,7 @@ export class GameService {
         return { run, cultivator };
     }
 
-    /** True once the Vault has taken this cultivator's name. */
+    /** True once a crossing has taken this cultivator's name. */
     private nameTaken(cultivator: Pick<Cultivator, 'id'>): boolean {
         return readFlag(this.db, cultivator.id, FLAG_NAME_TAKEN) === '1';
     }
@@ -956,7 +1340,7 @@ export class GameService {
      * Two sources, in the order that respects an operator's own edits: a sect
      * written into this database wins, and the shipped catalog in
      * `src/data/cultivation` answers for the ids that were never persisted. An
-     * id that resolves to neither yields null rather than itself — the sheet
+     * id that resolves to neither yields null rather than itself - the sheet
      * shows "unaffiliated" instead of a database key.
      */
     sectNameFor(cultivator: Pick<Cultivator, 'sectId'>): string | null {
@@ -1017,7 +1401,7 @@ export class GameService {
  * A time-skip, broken into the calls it actually made.
  *
  * Every `summary` here is either composed from the digest's own numbers or is a
- * `SimEvent.summary` verbatim — engine strings, not prose. The per-event rows
+ * `SimEvent.summary` verbatim - engine strings, not prose. The per-event rows
  * are what make the inspector worth opening: a decade of seclusion shows up as
  * the breakthroughs, deviations and opportunities the engine ruled, in order,
  * next to whatever the narration made of them.
@@ -1077,7 +1461,7 @@ function skipCalls(action: string, skip: TimeSkipResult, provisioning: string | 
         calls.push({
             name: 'cultivator.markDead',
             action: 'death',
-            summary: `Run closed: ${skip.deathCause}. Permadeath — no reload, no revival.`,
+            summary: `Run closed: ${skip.deathCause}. Permadeath - no reload, no revival.`,
             ok: true
         });
     }
@@ -1085,7 +1469,46 @@ function skipCalls(action: string, skip: TimeSkipResult, provisioning: string | 
     return calls;
 }
 
-/** The Vault's instalments, as inspectable rows. */
+/**
+ * The handful of fields worth reading off an MCP handler's result.
+ *
+ * Deliberately a small allowlist rather than a dump of the whole body: these
+ * results are large, and everything not listed here is either an id the player
+ * cannot use or a projection the sheet already shows.
+ */
+function summariseToolBody(body: Record<string, unknown>): string[] {
+    const lines: string[] = [];
+
+    const odds = body.odds as { finalChancePercent?: number; roll?: number } | undefined;
+    if (odds && typeof odds.finalChancePercent === 'number') {
+        lines.push(`Odds were ${odds.finalChancePercent}%, rolled ${odds.roll ?? 'unrecorded'}.`);
+    }
+
+    const produced = body.produced as { name?: string; effect?: string } | null | undefined;
+    if (produced?.name) {
+        lines.push(`Produced: ${produced.name}${produced.effect ? ` (${produced.effect})` : ''}.`);
+    }
+
+    const consumed = body.ingredientsConsumed as Array<{ name?: string; quantity?: number }> | undefined;
+    if (Array.isArray(consumed) && consumed.length > 0) {
+        lines.push(
+            'Consumed whether it worked or not: ' +
+            consumed.map(i => `${i.quantity ?? 1} x ${i.name ?? 'unknown'}`).join(', ') + '.'
+        );
+    }
+
+    if (typeof body.masteryBefore === 'number' && typeof body.masteryAfter === 'number') {
+        lines.push(
+            `Mastery ${(body.masteryBefore * 100).toFixed(0)}% to ${(body.masteryAfter * 100).toFixed(0)}%.`
+        );
+    }
+    const deviation = body.deviation as { deviated?: boolean; summary?: string } | undefined;
+    if (deviation?.deviated && deviation.summary) lines.push(deviation.summary);
+
+    return lines;
+}
+
+/** What the crossings cut away, as inspectable rows. */
 function tollCalls(lines: readonly string[]): ToolCallRecord[] {
     return lines.map(line => ({
         name: 'engine.evaluateToll',
@@ -1127,7 +1550,7 @@ function routingCall(plan: { action: PlannedAction; source: PlanSource; note?: s
                 ? 'Intent routed by the model to '
                 : 'Intent parsed deterministically to ') +
             `${plan.action.action}${args ? `(${args})` : '()'}` +
-            (plan.note ? ` — ${plan.note}` : '') +
+            (plan.note ? ` - ${plan.note}` : '') +
             '. The verb is a member of a closed set; nothing else from the response was read.',
         ok: true,
         source: plan.source,
@@ -1149,18 +1572,3 @@ function narrationCall(narration: { source: 'model' | 'fallback'; note: string |
     };
 }
 
-/** Plain English for the engine's machine-readable ineligibility reasons. */
-function refusalText(reason: string | null, available: number, required: number): string {
-    switch (reason) {
-        case 'insufficient_progress':
-            return `Not enough has accumulated: ${Math.round(available)} of ${required} qi-units. The barrier does not care how badly you want it.`;
-        case 'at_ladder_summit':
-            return 'There is no rung above this one. What is left is the Lid.';
-        case 'rank_cap_reached_this_turn':
-            return 'One rank a turn. Bottlenecks are meant to be lived through.';
-        case 'dead':
-            return 'The cultivator is dead.';
-        default:
-            return 'The engine refused the attempt.';
-    }
-}

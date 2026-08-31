@@ -1,5 +1,5 @@
 /**
- * The closed action set — phase 1 of the narrator loop.
+ * The closed action set - phase 1 of the narrator loop.
  *
  * The model is never asked "what happens?". It is asked exactly one question:
  * *which of these nine verbs did the player mean, and with what duration?* The
@@ -33,27 +33,92 @@ export const DEFAULT_CULTIVATION_DAYS = 30;
 /** Days a stretch of technique practice consumes. */
 export const TRAINING_DAYS = 7;
 
+/** Days a stretch of foraging consumes. */
+export const GATHERING_DAYS = 7;
+
+/** Days sealed closed-door seclusion runs for when no duration is named. */
+export const DEFAULT_SECLUSION_DAYS = 365;
+
 /**
- * Every verb the engine can execute. Adding one here is a deliberate act that
- * requires a matching deterministic implementation in game.ts; the model can
- * never widen this list at runtime.
+ * Every action the engine can execute. Closed, and short on purpose.
+ *
+ * ── Why it is not a verb list ─────────────────────────────────────────────
+ * A flat taxonomy of verbs only grows. `negotiate, deceive, trade, flee`
+ * becomes `bribe, threaten, spy, interrogate, steal, sabotage, recruit,
+ * intimidate`, and every social nuance ends up as an engine mechanic. So the
+ * expressive range lives in PARAMETERS instead:
+ *
+ *   interact      target + intent   dealing with a person or a faction
+ *   investigate   target            examining a place, record, object, person
+ *   move          target + intent   going somewhere, by whatever means
+ *
+ * alongside the world-facing operations that genuinely are distinct engine
+ * routines with distinct state effects.
+ *
+ * `intent` is a free-ish label, and it is safe precisely because NOTHING in
+ * the engine branches on it to decide an outcome. It is carried for the
+ * narrator to reason about and for the log to record. The moment a line of
+ * code reads `if (intent === 'bribe')` to pick a result, the design has
+ * failed: the outcome must come from state - who these people are, what they
+ * want, what they know, what is owed - not from the word the player used.
+ *
+ * The closed enum is the protection that stays. A model cannot widen this list
+ * at runtime, so it cannot invent an action; adding a member is a deliberate
+ * act that the compiler forces into `GameService.execute`.
  */
 export const ACTION_NAMES = [
+    // Semantic actions. The expressive surface, held open by parameters.
+    'interact',
+    'investigate',
+    'move',
+    // World-facing operations: distinct engine routines, distinct state effects.
     'cultivate',
+    'seclude',
     'breakthrough',
-    'travel',
-    'eat',
     'train_technique',
-    'talk',
+    'refine',
+    'gather',
+    'eat',
+    'wait',
+    // Pure reads.
     'look',
-    'status',
-    'wait'
+    'status'
 ] as const;
 
 export type ActionName = typeof ACTION_NAMES[number];
 
 /** Actions that pass no in-world time and change no cultivator state. */
-export const READ_ONLY_ACTIONS: readonly ActionName[] = ['look', 'status', 'talk'] as const;
+export const READ_ONLY_ACTIONS: readonly ActionName[] = [
+    'look', 'status', 'investigate', 'interact'
+] as const;
+
+/** Actions that take a duration in days. Every other action ignores one. */
+export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude'] as const;
+
+/**
+ * Actions that take a subject. The subject must resolve to a real entity - a
+ * cultivator row, a sect, a catalogued art, formula or herb, a place - or the
+ * action fails. An unresolvable target is never narrated as though it worked.
+ */
+export const TARGETED_ACTIONS: readonly ActionName[] = [
+    'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather'
+] as const;
+
+/** Actions that carry a free-text intent. Never branched on for an outcome. */
+export const INTENT_ACTIONS: readonly ActionName[] = ['interact', 'move'] as const;
+
+/**
+ * Intents the prompt suggests for `move`. Suggestions, not a schema: the field
+ * accepts any short label, because the engine resolves movement from state and
+ * reads the label only to describe what was attempted.
+ */
+export const MOVE_INTENTS = ['travel', 'flee', 'approach', 'enter', 'follow'] as const;
+
+/** Intents the prompt suggests for `interact`. Open by design; see above. */
+export const INTERACT_INTENTS = [
+    'talk', 'negotiate', 'trade', 'deceive', 'interrogate',
+    'threaten', 'bribe', 'recruit', 'petition', 'apologise'
+] as const;
 
 export const PlannedActionSchema = z.object({
     action: z.enum(ACTION_NAMES),
@@ -65,12 +130,25 @@ export const PlannedActionSchema = z.object({
      */
     days: z.number().int().min(1).max(MAX_CULTIVATION_DAYS).optional(),
     /**
-     * Free text: a destination for `travel`, a person for `talk`, an art for
-     * `train_technique`. Never a number, never a stat, never persisted anywhere
-     * the engine reasons about — `Cultivator.location` is explicitly a name the
-     * engine stores and lists but never computes with.
+     * Free text: a destination for `travel`, a person for `talk`, a thing for
+     * `investigate` or `search`, an art for `train_technique`, a formula for
+     * `refine`. Never a number, never a stat, never persisted anywhere the
+     * engine reasons about - `Cultivator.location` is explicitly a name the
+     * engine stores and lists but never computes with, and everything else is
+     * matched against a catalog before it can reach a repository.
      */
     target: z.string().trim().min(1).max(80).optional(),
+    /**
+     * What the player was trying to do: `negotiate`, `deceive`, `flee`,
+     * `interrogate`, anything. An open string, and it is only safe as an open
+     * string because no engine path reads it to decide an outcome. It reaches
+     * the log and the narrator; it never reaches a conditional that produces a
+     * result. Truncated to a label in `validatePlan` rather than rejected on
+     * length: a model that writes a sentence here has not done anything
+     * dangerous, and throwing the whole plan away over it would cost the player
+     * a turn for no gain.
+     */
+    intent: z.string().trim().min(1).max(400).optional(),
     /** The model's one-line justification. Logged for transparency, never executed. */
     reason: z.string().trim().max(200).optional()
 });
@@ -155,14 +233,14 @@ export function parseDuration(input: string): number | null {
  *
  * Returns undefined rather than guessing. "I set out." names no destination,
  * and a parser that answers "I set out." to the question *where to?* would send
- * the cultivator to a place called "I set out." — the engine would dutifully
+ * the cultivator to a place called "I set out." - the engine would dutifully
  * store it, and the run would be quietly nonsense from then on.
  */
 function extractDestination(input: string): string | undefined {
     const prepositional = /\b(?:to|towards?|into|for)\s+(.{2,80}?)\s*[.!?]?$/i.exec(input);
     if (prepositional) return cleanPlace(prepositional[1]);
 
-    // "travel Scarwater" — a bare destination straight after the verb.
+    // "travel Scarwater" - a bare destination straight after the verb.
     const bare = /^\s*(?:i\s+)?(?:travel|go|walk|head|journey|move|depart|leave|set out)\s+(.{2,80}?)\s*[.!?]?$/i
         .exec(input);
     return bare ? cleanPlace(bare[1]) : undefined;
@@ -181,12 +259,71 @@ function extractTarget(input: string): string | undefined {
 }
 
 /**
+ * The subject of a transitive verb: whatever follows it, or whatever follows a
+ * preposition after it.
+ *
+ * "search the ruin", "look into the inscription", "haggle with the broker",
+ * "refine a Meridian Knitting Pill" all reduce to the noun phrase. Undefined
+ * when there is no noun phrase, which every caller treats as a refusal rather
+ * than a guess.
+ */
+/**
+ * Intent tables for the deterministic parser.
+ *
+ * Note carefully what these do and do not do. They label what the player was
+ * trying to do so the narrator can describe it; they never select an engine
+ * path. Every `move` resolves through the same movement routine and every
+ * `interact` through the same interaction routine, whichever label matched -
+ * which is the whole reason the label is allowed to be an open string.
+ */
+const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
+    ['flee', /\b(?:flee|escape|run away|get away|disengage|retreat|break off|withdraw|hide from)\b/],
+    ['enter', /\b(?:enter|go inside|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
+    ['approach', /\b(?:approach|draw near|walk up to|close on|come to)\b/],
+    ['follow', /\b(?:follow|shadow|trail|tail)\b/],
+    ['travel', /\b(?:travel|go to|head (?:to|for|out)|walk to|journey|set out|depart|move to|leave for|make (?:my|his|her) way)\b/]
+];
+
+const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move/;
+
+const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
+    ['deceive', /\b(?:lie to|deceive|mislead|misdirect|bluff|pretend|disguise|pose as|feign|trick)\b/],
+    ['threaten', /\b(?:threaten|intimidate|menace|warn (?:him|her|them)|make (?:him|her|them) afraid)\b/],
+    ['bribe', /\b(?:bribe|pay off|grease|buy (?:his|her|their) silence)\b/],
+    ['interrogate', /\b(?:interrogate|question|press (?:him|her|them)|demand to know|grill)\b/],
+    ['trade', /\b(?:trade|buy|sell|purchase|barter|haggle|market|shop|price)\b/],
+    ['negotiate', /\b(?:negotiate|bargain|make terms|come to terms|strike a deal|petition|ally|alliance|swear|join|apply to|seek protection|beg)\b/],
+    ['recruit', /\b(?:recruit|hire|take on|enlist|bring (?:him|her|them) in)\b/],
+    ['apologise', /\b(?:apologi[sz]e|make amends|beg (?:his|her|their) pardon)\b/],
+    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself)\b/]
+];
+
+const INTERACT_SUBJECT_VERBS = /interact with|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell/;
+
+function matchIntent(text: string, table: ReadonlyArray<[string, RegExp]>): string | undefined {
+    for (const [label, pattern] of table) {
+        if (pattern.test(text)) return label;
+    }
+    return undefined;
+}
+
+function extractSubject(input: string, verbs: RegExp): string | undefined {
+    const afterVerb = new RegExp(
+        `\\b(?:${verbs.source})\\b\\s*(?:the|a|an|for|into|at|with|about|to|on|through|around)?\\s+(.{2,80}?)\\s*[.!?]?$`,
+        'i'
+    ).exec(input);
+    if (afterVerb) return cleanPlace(afterVerb[1]);
+    return extractTarget(input);
+}
+
+/**
  * Turn free text into one action, with no model involved.
  *
  * Order is significance-first, not frequency-first: "break through" contains
- * "through", "train" appears in both technique practice and cultivation, and
- * the specific reading must win. Anything unrecognised resolves to `look`,
- * which passes no time and changes nothing — an intent the engine did not
+ * "through", "train" appears in both technique practice and cultivation,
+ * "gather qi" is cultivating while "gather herbs" is foraging, and the specific
+ * reading must win in each case. Anything unrecognised resolves to `look`,
+ * which passes no time and changes nothing - an intent the engine did not
  * understand must never cost the player a year of their life.
  */
 export function parseIntent(input: string): PlannedAction {
@@ -196,21 +333,62 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'breakthrough' };
     }
 
-    if (/\b(?:eat|food|meal|dine|rations?|breakfast|supper|feed myself|buy food)\b/.test(text)) {
+    // Closed-door seclusion before ordinary cultivation: it is the more
+    // specific reading of the same sentence, and it is a different bargain -
+    // sealed against encounters, and against opportunities with them.
+    if (/\b(?:closed[- ]?door|seal (?:myself|the (?:cave|door))|sealed seclusion|enter seclusion|go into seclusion|shut myself)\b/.test(text)) {
+        return { action: 'seclude', days: parseDuration(text) ?? DEFAULT_SECLUSION_DAYS };
+    }
+
+    if (/\b(?:eat|meal|dine|breakfast|supper|feed myself|buy food)\b/.test(text)
+        || /\b(?:food|rations?)\b/.test(text)) {
         return { action: 'eat' };
     }
 
-    if (/\b(?:travel|go to|head (?:to|for|out)|walk to|journey|set out|depart|move to|leave for|make (?:my|his|her) way)\b/.test(text)) {
-        return { action: 'travel', target: extractDestination(input) };
+    if (/\b(?:refine|concoct|brew|distil|distill|alchemy|cauldron)\b/.test(text)
+        && /\b(?:pill|elixir|medicine|formula|recipe|cauldron|alchemy)\b/.test(text)) {
+        return { action: 'refine', target: extractSubject(input, /refine|concoct|brew|distil|distill|make/) };
     }
 
-    if (/\b(?:practi[cs]e|drill|rehearse|work on|refine)\b.*\b(?:art|technique|manual|stance|form)\b/.test(text)
+    if (/\b(?:gather|forage|harvest|pick|collect|dig up)\b/.test(text)
+        && !/\bgather (?:qi|energy|my qi)\b/.test(text)) {
+        return { action: 'gather', target: extractSubject(input, /gather|forage|harvest|pick|collect|dig up/) };
+    }
+
+    if (/\b(?:practi[cs]e|drill|rehearse|work on)\b.*\b(?:art|technique|manual|stance|form)\b/.test(text)
         || /\b(?:train|practi[cs]e)\s+(?:the\s+)?[a-z-]+\s+(?:art|technique|manual|stance)\b/.test(text)) {
-        return { action: 'train_technique', target: extractTarget(input) };
+        return {
+            action: 'train_technique',
+            target: extractSubject(input, /practi[cs]e|train|drill|rehearse|work on/)
+        };
     }
 
-    if (/\b(?:talk|speak|ask|greet|converse|say|tell|bargain|haggle|negotiate)\b/.test(text)) {
-        return { action: 'talk', target: extractTarget(input) };
+    // ── move: one action, several ways of going ──
+    const moveIntent = matchIntent(text, MOVE_INTENT_PATTERNS);
+    if (moveIntent) {
+        return {
+            action: 'move',
+            target: extractDestination(input) ?? extractSubject(input, MOVE_SUBJECT_VERBS),
+            intent: moveIntent
+        };
+    }
+
+    // ── investigate: examining, reading, searching a place ──
+    if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read the|check the)\b/.test(text)) {
+        return {
+            action: 'investigate',
+            target: extractSubject(input, /investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read|check/)
+        };
+    }
+
+    // ── interact: everything done to or with a person or a faction ──
+    const interactIntent = matchIntent(text, INTERACT_INTENT_PATTERNS);
+    if (interactIntent) {
+        return {
+            action: 'interact',
+            target: extractSubject(input, INTERACT_SUBJECT_VERBS),
+            intent: interactIntent
+        };
     }
 
     if (/\b(?:cultivat|meditat|seclusion|secluded|circulate|gather qi|refine qi|sit\b|sits\b|sat\b|absorb)\b/.test(text)) {
@@ -225,7 +403,7 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'wait' };
     }
 
-    // A duration with no verb — "ten years" — is a request for seclusion. It is
+    // A duration with no verb - "ten years" - is a request for seclusion. It is
     // the single most common thing a player types in this genre.
     const bareDuration = parseDuration(text);
     if (bareDuration !== null) return { action: 'cultivate', days: bareDuration };
@@ -287,16 +465,25 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
         return { ok: false, reason: `${path}: ${issue?.message ?? 'did not validate'}` };
     }
 
-    // `days` is meaningless on any verb but seclusion, and letting it ride along
-    // would make a `look` action look like it consumed a decade in the log.
-    const action: PlannedAction = { action: parsed.data.action };
-    if (parsed.data.action === 'cultivate') {
-        action.days = parsed.data.days ?? DEFAULT_CULTIVATION_DAYS;
+    // Fields are kept only on the actions that own them. Letting `days` ride
+    // along on a `look` would make an examination read, in the log, as though
+    // it had consumed a decade.
+    const { action: name, days, target, intent, reason } = parsed.data;
+    const action: PlannedAction = { action: name };
+
+    if (TIMED_ACTIONS.includes(name)) {
+        action.days = days ?? (name === 'seclude' ? DEFAULT_SECLUSION_DAYS : DEFAULT_CULTIVATION_DAYS);
     }
-    if (parsed.data.target && (parsed.data.action === 'travel' || parsed.data.action === 'talk' || parsed.data.action === 'train_technique')) {
-        action.target = parsed.data.target;
+    if (target && TARGETED_ACTIONS.includes(name)) {
+        action.target = target;
     }
-    if (parsed.data.reason) action.reason = parsed.data.reason;
+    if (intent && INTENT_ACTIONS.includes(name)) {
+        // Normalised to a bare label. It is going into a log line and a prompt,
+        // never into a conditional, so the only thing that matters is that it
+        // stays short and unpunctuated.
+        action.intent = intent.toLowerCase().replace(/[^a-z0-9 _-]/g, '').trim().slice(0, 40) || undefined;
+    }
+    if (reason) action.reason = reason;
 
     return { ok: true, action };
 }

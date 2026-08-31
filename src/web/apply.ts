@@ -3,13 +3,13 @@
  *
  * `simulateTimeSkip` is pure: it mutates nothing and hands back deltas plus a
  * digest. Somebody has to turn that into rows, and this is the only place in
- * `src/web` that does — which makes it the one function to read when asking
+ * `src/web` that does - which makes it the one function to read when asking
  * "can a narrator's output reach the database?". The signature answers it: this
  * takes a `TimeSkipResult` and no prose.
  *
  * ── Why almost nothing is implemented here ────────────────────────────────
  * The MCP tool layer already persists skips, and it writes to the SAME database
- * this server does. Two implementations of "what the Vault took" or "how many
+ * this server does. Two implementations of "what a crossing took" or "how many
  * years at this realm" would eventually disagree, and the disagreement would be
  * a corrupted save rather than a failing test. So the derivations, the injury
  * reconstruction and the toll are all taken from
@@ -19,7 +19,7 @@
  *                           digest does not return (`yearsAtCurrentRealm`,
  *                           `starvationTurns`)
  *   reconstructSkipInjuries the wounds, rebuilt from engine-written facts
- *   persistToll             the Vault's instalment — and the delete behind it
+ *   persistToll             the price of a crossing - and the delete behind it
  *
  * This module owns only the ordering and the transaction.
  */
@@ -48,7 +48,7 @@ export interface ApplySkipResult {
     run: Run;
     /** Injuries written to the database as a result of this skip. */
     injuries: ReconstructedInjury[];
-    /** Engine-authored lines for every instalment the Vault charged. */
+    /** Engine-authored lines for every price a crossing exacted. */
     tollLines: string[];
 }
 
@@ -56,8 +56,8 @@ export interface ApplySkipResult {
  * Persist a skip.
  *
  * One transaction, because a save that has the injuries but not the aging, the
- * death but not the peak rank, or the boundary crossing but not the toll the
- * Vault charged for it, is worse than a save that has neither.
+ * death but not the peak rank, or the boundary crossing but not the price it
+ * exacted, is worse than a save that has neither.
  */
 export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): ApplySkipResult {
     const { before, run, skip } = input;
@@ -82,9 +82,9 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
             repos.cultivators.advanceRealm(before.id, ranksGained);
         }
 
-        // Every instalment the Vault charged, in the same transaction as the
-        // ranks it charged them for. `persistToll` is what turns "the Vault took
-        // your Nine Ash Severing" from an assertion into a delete.
+        // Every price a crossing exacted, in the same transaction as the rank it
+        // was exacted for. `persistToll` is what turns "the crossing took your
+        // Nine Severing Threads" from an assertion into a delete.
         for (const toll of skip.tolls ?? []) {
             persistToll(repos, run, before.id, toll);
             tollLines.push(tollLine(toll));
@@ -151,10 +151,10 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
 /** The engine's own account of an instalment, for the log and the inspector. */
 export function tollLine(toll: TimeSkipResult['tolls'][number]): string {
     if (toll.outcome !== 'taken' || !toll.taken) {
-        return toll.narrationHint || `The Vault charged nothing at this boundary (${toll.outcome}).`;
+        return toll.narrationHint || `Nothing was cut away at this boundary (${toll.outcome}).`;
     }
     return (
-        `${toll.narrationHint} The Vault took ${toll.taken.label} (${toll.taken.kind}). ` +
+        `${toll.narrationHint} The crossing took ${toll.taken.label} (${toll.taken.kind}). ` +
         `${toll.taken.reason} It is gone from the record, not merely marked.`
     );
 }

@@ -3,9 +3,9 @@
  *
  * The browser is a display, not a second engine, so nothing here computes a
  * game value. Every field is either copied from a domain object or derived by
- * calling the engine's own function for it — `rankName`, `lifespanForOrdinal`,
- * `progressRequiredForOrdinal`, `canAttemptBreakthrough`. If a number appears
- * on the wire that this module invented, that number is a bug.
+ * calling the engine's own function for it - `rankName`,
+ * `effectiveLifespanYears`, `canAttemptBreakthrough`. If a number appears on
+ * the wire that this module invented, that number is a bug.
  *
  * The one thing this layer does own is *omission*: `run.seed` is not sent. It
  * is not a secret in a single-operator deployment, but nothing in the client
@@ -16,9 +16,9 @@
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import {
     MAX_ORDINAL,
+    effectiveLifespanYears,
     fullLadder,
     lifespanForOrdinal,
-    progressRequiredForOrdinal,
     rankName,
     realmForOrdinal,
     type LadderEntry
@@ -142,7 +142,16 @@ export interface DerivedView {
     realmName: string;
     progressRequired: number;
     breakthroughReady: boolean;
-    /** May be negative for a cultivator living past the realm's ceiling. */
+    /**
+     * Years left before the ceiling, which may be negative for a cultivator
+     * living past it.
+     *
+     * Read through `effectiveLifespanYears` rather than `lifespanForOrdinal`,
+     * because a False Immortal sits at ordinal 44 and does NOT carry
+     * Tribulation Transcendence's ceiling: they carry the False Immortal one.
+     * That number is the whole point of the state - vast, finite, and
+     * countable - so it has to be right here rather than corrected downstream.
+     */
     lifespanRemaining: number;
     untreatedInjuries: number;
     /**
@@ -153,9 +162,21 @@ export interface DerivedView {
      * database key, and a missing name is a smaller lie than a raw identifier.
      */
     sectName: string | null;
+    /**
+     * Why the engine will not permit an attempt right now, in plain English,
+     * or null when it will.
+     *
+     * `canAttemptBreakthrough` returns a machine-readable `reason` and only
+     * `eligible` used to reach the client, so every refusal rendered as a
+     * generic "progress incomplete" and the control could not state its own
+     * case. A refused breakthrough that explains itself is the difference
+     * between a game that feels arbitrary and one that feels rule-bound, and
+     * the explanation is the engine's, not the interface's.
+     */
+    breakthroughBlockedReason: string | null;
     /** What the rank is standing on. 'none' below Foundation Establishment. */
     foundationQuality: Cultivator['foundationQuality'];
-    /** True once the Vault has taken the name. People have to be told it. */
+    /** True once a crossing has taken the name. People have to be told it. */
     nameTaken: boolean;
 }
 
@@ -167,18 +188,52 @@ export interface DerivedContext {
 /** Everything the sheet needs that is a function of the cultivator, not a field of it. */
 export function derivedView(cultivator: Cultivator, context: DerivedContext = {}): DerivedView {
     const ordinal = cultivator.realmOrdinal;
+    const eligibility = canAttemptBreakthrough(cultivator);
+
     return {
         rankName: rankName(ordinal),
         nextRankName: ordinal >= MAX_ORDINAL ? null : rankName(ordinal + 1),
         realmName: realmForOrdinal(ordinal).name,
-        progressRequired: progressRequiredForOrdinal(ordinal),
-        breakthroughReady: canAttemptBreakthrough(cultivator).eligible,
-        lifespanRemaining: lifespanForOrdinal(ordinal) - cultivator.age,
+        progressRequired: eligibility.progressRequired,
+        breakthroughReady: eligibility.eligible,
+        breakthroughBlockedReason: eligibility.eligible
+            ? null
+            : refusalText(eligibility.reason, eligibility.progressAvailable, eligibility.progressRequired),
+        lifespanRemaining:
+            effectiveLifespanYears(ordinal, cultivator.immortalStatus) - cultivator.age,
         untreatedInjuries: untreatedInjuryCount(cultivator.injuries),
         sectName: context.sectName ?? null,
         foundationQuality: cultivator.foundationQuality,
         nameTaken: context.nameTaken ?? false
     };
+}
+
+/**
+ * Plain English for the engine's machine-readable ineligibility reasons.
+ *
+ * Lives here rather than in game.ts because both the refusal a player gets from
+ * `POST /api/breakthrough` and the reason the disabled control shows have to be
+ * the same sentence. Two wordings for one engine verdict is how a UI starts
+ * disagreeing with the rules it is displaying.
+ */
+export function refusalText(reason: string | null, available: number, required: number): string {
+    switch (reason) {
+        case 'insufficient_progress':
+            return `Not enough has accumulated: ${Math.round(available)} of ${required} qi-units. ` +
+                'The barrier does not care how badly you want it.';
+        case 'barred:the_lid_opened_once':
+            return 'The Lid does not open twice for the same name. This crossing was survived and ' +
+                'not completed, and there is no second attempt: what is left is a very long time ' +
+                'to think about it.';
+        case 'at_ladder_summit':
+            return 'There is no rung above this one.';
+        case 'rank_cap_reached_this_turn':
+            return 'One rank a turn. Bottlenecks are meant to be lived through.';
+        case 'dead':
+            return 'The cultivator is dead.';
+        default:
+            return 'The engine refused the attempt.';
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────

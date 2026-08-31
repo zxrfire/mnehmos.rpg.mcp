@@ -7,12 +7,19 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { STARTING_SPIRIT_STONES, SATIETY_MAX } from '../../src/schema/cultivation';
+import {
+    CultivatorSchema,
+    SATIETY_MAX,
+    STARTING_SPIRIT_STONES,
+    type Cultivator
+} from '../../src/schema/cultivation';
 import { DAYS_PER_YEAR } from '../../src/engine/cultivation/cultivation';
 import { rollSpiritRoot, rollAttributes } from '../../src/engine/cultivation/spirit-roots';
 import { forStream } from '../../src/engine/cultivation/rng';
-import { TECHNIQUES } from '../../src/data/cultivation/index';
+import { effectiveLifespanYears, lifespanForOrdinal } from '../../src/engine/cultivation/realms';
+import { TECHNIQUES, RECIPES, HERBS } from '../../src/data/cultivation/index';
 import { GameError } from '../../src/web/game';
+import { derivedView } from '../../src/web/view';
 import { STARTING_AGE, STARTING_LOCATION, PROVISION_COST_STONES } from '../../src/web/game';
 import { makeGame, injuryCount, planned, engineCalls, refusedCall } from './harness';
 
@@ -89,7 +96,7 @@ describe('a ten-year seclusion', () => {
 
         // The stagnation clock is the reconstruction most likely to drift.
         // Either the run never advanced (clock ran the whole skip) or it did
-        // (clock restarted at the last advance) — never more than the skip.
+        // (clock restarted at the last advance) - never more than the skip.
         expect(state.cultivator.yearsAtCurrentRealm)
             .toBeLessThanOrEqual(timeSkip.simulatedDays / DAYS_PER_YEAR + 1e-6);
     });
@@ -249,13 +256,13 @@ describe('eating', () => {
     });
 });
 
-describe('travel', () => {
+describe('move', () => {
     it('moves the cultivator and re-reads the ambient qi at the destination', async () => {
         const { game } = makeGame();
         await game.newRun('Walker');
 
         const result = await game.act('I travel to Scarwater.');
-        expect(planned(result).action).toBe('travel');
+        expect(planned(result).action).toBe('move');
         expect(refusedCall(result)).toBeNull();
         expect(result.state.cultivator.location).toBe('Scarwater');
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(result.state.ambient);
@@ -268,6 +275,186 @@ describe('travel', () => {
         const result = await game.act('I set out.');
         expect(refusedCall(result)).not.toBeNull();
         expect(result.state.cultivator.location).toBe(STARTING_LOCATION);
+    });
+
+    it('resolves every intent through the same engine path', async () => {
+        // The label changes; the routine does not. Nothing branches on intent.
+        const paths: string[][] = [];
+        for (const text of ['I travel to Scarwater.', 'I flee to Scarwater.', 'I sneak into Scarwater.']) {
+            const { game } = makeGame({ seed: 'same' });
+            await game.newRun('Walker');
+            const result = await game.act(text);
+            expect(planned(result).action).toBe('move');
+            paths.push(engineCalls(result).map(c => c.name));
+        }
+        expect(paths[1]).toEqual(paths[0]);
+        expect(paths[2]).toEqual(paths[0]);
+    });
+});
+
+describe('interact', () => {
+    it('refuses when the target is not a person or faction on record', async () => {
+        const { game } = makeGame();
+        await game.newRun('Talker');
+
+        const result = await game.act('I bribe the gate steward.');
+        expect(planned(result).action).toBe('interact');
+        const refusal = refusedCall(result);
+        expect(refusal).not.toBeNull();
+        expect(refusal.summary).toMatch(/no cultivator and no sect on record/i);
+    });
+
+    it('reports real facts about a real party, and refuses to resolve the outcome', async () => {
+        const { game } = makeGame();
+        await game.newRun('Talker');
+
+        // Lantern Hall is in the shipped catalog, so it is a real faction.
+        const result = await game.act('I negotiate with Lantern Hall.');
+        expect(planned(result).action).toBe('interact');
+
+        const calls = engineCalls(result);
+        expect(calls[0]).toMatchObject({ name: 'engine.resolveParty', ok: true });
+        expect(calls[0].summary).toMatch(/Lantern Hall/);
+
+        // The attempt is recorded; the outcome is explicitly not.
+        const outcome = calls.find(c => c.name === 'engine.resolveInteraction');
+        expect(outcome).toBeDefined();
+        expect(outcome.ok).toBe(false);
+        expect(outcome.summary).toMatch(/outcome not resolvable yet/i);
+        expect(outcome.action).toBe('negotiate');
+    });
+
+    it('is an attempt, never an accomplishment: no state moves', async () => {
+        const { db, game } = makeGame();
+        const { cultivator } = await game.newRun('Talker');
+        const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
+
+        await game.act('I threaten Lantern Hall into taking me as an elder.');
+
+        expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
+        expect(db.prepare('SELECT * FROM sect_members').all()).toEqual([]);
+    });
+});
+
+describe('investigate', () => {
+    it('reports engine facts about something the world actually holds', async () => {
+        const { game } = makeGame();
+        await game.newRun('Reader');
+
+        const result = await game.act('I examine Lantern Hall.');
+        expect(planned(result).action).toBe('investigate');
+        expect(refusedCall(result)).toBeNull();
+        expect(result.narration).toMatch(/Lantern Hall/);
+        expect(engineCalls(result)[0].summary).toMatch(/Resolved .Lantern Hall. to sect/);
+    });
+
+    it('refuses to describe what the world does not hold', async () => {
+        const { game } = makeGame();
+        await game.newRun('Reader');
+
+        const result = await game.act('I examine the Sword of Infinite Nonsense.');
+        const refusal = refusedCall(result);
+        expect(refusal).not.toBeNull();
+        expect(refusal.summary).toMatch(/will not describe what it does not hold/i);
+    });
+
+    it('costs a turn and nothing else', async () => {
+        const { db, game } = makeGame();
+        const { cultivator } = await game.newRun('Reader');
+        const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
+
+        const result = await game.act('I examine Lantern Hall.');
+        expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
+        expect(result.state.run.elapsedDays).toBe(0);
+        expect(result.state.run.turn).toBe(1);
+    });
+});
+
+describe('seclude', () => {
+    it('is sealed: no encounters and no opportunities reach it', async () => {
+        const { db, game } = makeGame({ seed: 'sealed' });
+        const { cultivator } = await game.newRun('Shut-In');
+        db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+
+        const result = await game.act('I seal the cave for ten years.');
+        expect(planned(result).action).toBe('seclude');
+
+        const kinds = result.events.map(e => e.kind);
+        expect(kinds).not.toContain('encounter');
+        expect(kinds).not.toContain('opportunity');
+    });
+});
+
+describe('gather and refine', () => {
+    it('forages through the herb catalog and writes the shared pouch', async () => {
+        const { db, game } = makeGame({ seed: 'forage' });
+        const { cultivator } = await game.newRun('Digger');
+
+        const result = await game.act('I forage for herbs.');
+        expect(planned(result).action).toBe('gather');
+
+        const pouch = db
+            .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE cultivator_id = ?')
+            .all(cultivator.id) as Array<{ item_id: string; quantity: number }>;
+        const call = engineCalls(result)[engineCalls(result).length - 1];
+
+        if (call.name === 'storage.addToPouch') {
+            expect(pouch.length).toBeGreaterThan(0);
+            expect(HERBS.some(h => h.id === pouch[0].item_id)).toBe(true);
+        } else {
+            // Nothing within reach is a legitimate outcome, and it must not have
+            // quietly written a row anyway.
+            expect(pouch).toEqual([]);
+        }
+    });
+
+    it('refuses a formula the world does not hold, and names what is in the pouch', async () => {
+        const { game } = makeGame();
+        await game.newRun('Alchemist');
+
+        const result = await game.act('I brew an Elixir of Infinite Nonsense in the cauldron.');
+        expect(planned(result).action).toBe('refine');
+        const refusal = refusedCall(result);
+        expect(refusal).not.toBeNull();
+        expect(refusal.summary).toMatch(/In the pouch: nothing/);
+    });
+
+    it('routes a real formula through alchemy_manage rather than reimplementing it', async () => {
+        const { game } = makeGame();
+        await game.newRun('Alchemist');
+
+        const recipe = RECIPES[0];
+        const result = await game.act('I refine the ' + recipe.name + ' in the cauldron.');
+        expect(planned(result).action).toBe('refine');
+        // Either the handler ran, or it refused for a state reason it owns
+        // (realm too low, ingredients missing). Both are the handler's answer.
+        const names = engineCalls(result).map(c => c.name);
+        expect(names.some(n => n === 'alchemy_manage.refine' || n === 'engine.resolveRecipe')).toBe(true);
+    });
+});
+
+describe('train_technique', () => {
+    it('refuses an art the cultivator has never been taught', async () => {
+        const { game } = makeGame();
+        await game.newRun('Student');
+
+        const result = await game.act('I practise the ' + TECHNIQUES[0].name + ' technique.');
+        expect(planned(result).action).toBe('train_technique');
+        const refusal = refusedCall(result);
+        expect(refusal).not.toBeNull();
+        expect(refusal.summary).toMatch(/never been taught|Name an art/);
+    });
+
+    it('routes a known art through technique_manage.practise', async () => {
+        const { game, repos } = makeGame();
+        const { cultivator } = await game.newRun('Student');
+
+        const art = TECHNIQUES.filter(t => t.requiredOrdinal === 0)[0];
+        repos.techniques.upsert(art);
+        repos.techniques.learn(cultivator.id, art.id, 0.1);
+
+        const result = await game.act('I practise the ' + art.name + ' technique.');
+        expect(engineCalls(result).map(c => c.name)).toContain('technique_manage.practise');
     });
 });
 
@@ -349,7 +536,7 @@ describe('no run yet', () => {
     });
 });
 
-describe('the Vault charges a toll at a realm boundary', () => {
+describe('a realm boundary exacts its price', () => {
     /**
      * Set a cultivator on the lip of Foundation Establishment with real
      * techniques and a real logged history, so the engine has something to take.
@@ -365,7 +552,7 @@ describe('the Vault charges a toll at a realm boundary', () => {
             WHERE id = ?
         `).run(JSON.stringify(arts), cultivator.id);
 
-        // The Vault can only take rows that exist, so seed the catalog and the
+        // A crossing can only take rows that exist, so seed the catalog and the
         // join table rather than only the denormalised list on the cultivator.
         for (const entry of TECHNIQUES.slice(0, 4)) {
             harness.repos.techniques.upsert(entry);
@@ -391,7 +578,7 @@ describe('the Vault charges a toll at a realm boundary', () => {
         throw new Error('no seed produced a successful boundary crossing');
     });
 
-    it('deletes what it says it took — the engine never asserts without a write', async () => {
+    it('deletes what it says it took - the engine never asserts without a write', async () => {
         let observedTaken = 0;
 
         const seeds = Array.from({ length: 60 }, (_, i) => `t${i}`);
@@ -446,5 +633,72 @@ describe('the Vault charges a toll at a realm boundary', () => {
         expect(result.toll).toBeNull();
         expect(result.foundationEstablished).toBeNull();
         expect(db.prepare('SELECT * FROM cultivation_tolls').all()).toHaveLength(0);
+    });
+});
+
+describe('derived: the sheet reads the engine, not an approximation of it', () => {
+    /** A cultivator shaped for the view, without needing a row for it. */
+    function subject(overrides: Partial<Cultivator> = {}): Cultivator {
+        return CultivatorSchema.parse({
+            id: 'view-subject',
+            name: 'Subject',
+            spiritRoot: 'single_fire',
+            attributes: { might: 2, insight: 2, fortune: 1, charm: 2 },
+            hp: 50, maxHp: 50, qi: 20, maxQi: 20,
+            age: 16,
+            ...overrides
+        });
+    }
+
+    it('counts a False Immortal lifespan, not the Tribulation Transcendence one', () => {
+        // Ordinal 44 with the last crossing survived but not completed. The
+        // ceiling is the False Immortal one, and the whole point of that state
+        // is that it is vast, finite and countable - so the number has to be
+        // right on the wire rather than corrected in the browser.
+        const barred = subject({
+            realmOrdinal: 44,
+            immortalStatus: 'false_immortal',
+            age: 1000
+        });
+
+        const derived = derivedView(barred);
+        expect(derived.lifespanRemaining)
+            .toBe(effectiveLifespanYears(44, 'false_immortal') - 1000);
+        expect(derived.lifespanRemaining).not.toBe(lifespanForOrdinal(44) - 1000);
+    });
+
+    it('uses the plain realm ceiling for everyone else', () => {
+        const ordinary = subject({ realmOrdinal: 44, age: 1000 });
+        expect(derivedView(ordinary).lifespanRemaining).toBe(lifespanForOrdinal(44) - 1000);
+        expect(derivedView(subject()).lifespanRemaining).toBe(lifespanForOrdinal(0) - 16);
+    });
+
+    it('carries the engine own refusal text while a breakthrough is blocked', () => {
+        const blocked = derivedView(subject());
+        expect(blocked.breakthroughReady).toBe(false);
+        expect(blocked.breakthroughBlockedReason).toMatch(/Not enough has accumulated/);
+
+        const barred = derivedView(subject({
+            realmOrdinal: 44,
+            immortalStatus: 'false_immortal',
+            cultivationProgress: 1e9
+        }));
+        expect(barred.breakthroughReady).toBe(false);
+        expect(barred.breakthroughBlockedReason).toMatch(/does not open twice/);
+    });
+
+    it('is null once the engine will actually permit an attempt', () => {
+        const ready = derivedView(subject({ cultivationProgress: 100_000 }));
+        expect(ready.breakthroughReady).toBe(true);
+        expect(ready.breakthroughBlockedReason).toBeNull();
+    });
+
+    it('says the same sentence the endpoint refuses with', async () => {
+        const { game } = makeGame();
+        await game.newRun('Impatient');
+        const reason = game.state().derived.breakthroughBlockedReason;
+
+        expect(reason).toBeTruthy();
+        await expect(game.breakthrough()).rejects.toMatchObject({ message: reason });
     });
 });

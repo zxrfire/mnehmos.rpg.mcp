@@ -7,7 +7,7 @@
  *   player    what the operator typed. Verbatim.
  *   engine    a factual ruling. Always sourced from facts.ts, which is always
  *             sourced from an engine result.
- *   narrator  prose. Decorative by construction — nothing reads it back.
+ *   narrator  prose. Decorative by construction - nothing reads it back.
  *
  * A reader scrolling the log can therefore always tell which lines are load
  * bearing. When the narrator and the engine disagree, the engine line is the

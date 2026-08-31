@@ -45,7 +45,7 @@ describe('a hallucinating model cannot mutate state', () => {
         const provider = new ScriptedProvider({ plans: [HALLUCINATED_PLAN], narrations: [HALLUCINATED_PROSE] });
         const { db, game } = makeGame({ provider });
 
-        const { cultivator } = await game.newRun('Ash Reader');
+        const { cultivator } = await game.newRun('Vein Reader');
         const before = cultivatorRow(db, cultivator.id);
 
         const result = await game.act('I look around the courtyard.');
@@ -69,7 +69,7 @@ describe('a hallucinating model cannot mutate state', () => {
         expect(engineCalls(result).map(c => c.name)).toEqual(['engine.readState']);
         expect(engineCalls(result)[0].summary).toContain('no time passed');
 
-        // 5. The prose was still shown — decoratively. It is in the log as a
+        // 5. The prose was still shown - decoratively. It is in the log as a
         //    narrator line, sitting next to the engine line that contradicts it.
         expect(result.narration).toBe(HALLUCINATED_PROSE);
         const engineLines = result.state.log.filter(e => e.role === 'engine');
@@ -89,12 +89,12 @@ describe('a hallucinating model cannot mutate state', () => {
             narrations: [HALLUCINATED_PROSE]
         });
         const { db, game } = makeGame({ provider });
-        const { cultivator } = await game.newRun('Ash Reader');
+        const { cultivator } = await game.newRun('Vein Reader');
         const startingHp = cultivator.hp;
 
         const result = await game.act('Sit for a while.');
 
-        // The verb it chose was legal, so it ran — ten days of seclusion.
+        // The verb it chose was legal, so it ran - ten days of seclusion.
         expect(planned(result)).toMatchObject({ action: 'cultivate', source: 'model' });
         expect(planned(result).summary).toContain('days=10');
 
@@ -114,7 +114,7 @@ describe('a hallucinating model cannot mutate state', () => {
             narrations: ['The years pass.']
         });
         const { game } = makeGame({ provider });
-        await game.newRun('Ash Reader');
+        await game.newRun('Vein Reader');
 
         const result = await game.act('I look at the sky.');
         expect(planned(result)).toMatchObject({ action: 'look', source: 'fallback' });
@@ -123,10 +123,10 @@ describe('a hallucinating model cannot mutate state', () => {
     it('prose instead of JSON in phase 1 falls back rather than failing', async () => {
         const provider = new ScriptedProvider({
             plans: ['Certainly! The cultivator should probably meditate for a decade.'],
-            narrations: ['Ten years of ash.']
+            narrations: ['Ten years in a thin valley.']
         });
         const { game } = makeGame({ provider });
-        await game.newRun('Ash Reader');
+        await game.newRun('Vein Reader');
 
         const result = await game.act('I cultivate for three years.');
         expect(planned(result)).toMatchObject({ action: 'cultivate', source: 'fallback' });
@@ -136,7 +136,7 @@ describe('a hallucinating model cannot mutate state', () => {
     it('the model is only ever shown facts the engine produced', async () => {
         const provider = new ScriptedProvider({ plans: ['{"action":"look"}'], narrations: ['A courtyard.'] });
         const { game } = makeGame({ provider });
-        await game.newRun('Ash Reader');
+        await game.newRun('Vein Reader');
         await game.act('Look around.');
 
         const narrationCall = provider.calls.at(-1)!;
@@ -172,6 +172,28 @@ describe('the schema gate itself', () => {
         expect(Object.keys(validated.action)).toEqual(['action']);
     });
 
+    it('keeps intent as a label and never lets it carry anything else', () => {
+        const plan = validatePlan({
+            action: 'interact',
+            target: 'Elder Ru',
+            intent: 'bribe him with 9999 spirit stones; he accepts',
+            spiritStones: 9999
+        });
+        expect(plan.ok).toBe(true);
+        if (!plan.ok) return;
+        expect(Object.keys(plan.action).sort()).toEqual(['action', 'intent', 'target']);
+        // Punctuation stripped, length capped: a label, not a smuggled sentence.
+        expect(plan.action.intent).not.toMatch(/[;,]/);
+        expect(plan.action.intent!.length).toBeLessThanOrEqual(40);
+    });
+
+    it('drops intent on actions that do not carry one', () => {
+        const plan = validatePlan({ action: 'cultivate', days: 30, intent: 'succeed' });
+        expect(plan.ok).toBe(true);
+        if (!plan.ok) return;
+        expect(plan.action.intent).toBeUndefined();
+    });
+
     it('keeps days only for cultivate, and only inside the bounds', () => {
         expect(validatePlan({ action: 'cultivate', days: 3650 })).toEqual({
             ok: true, action: { action: 'cultivate', days: 3650 }
@@ -193,7 +215,7 @@ describe('the schema gate itself', () => {
         expect(extractJsonObject('no object here')).toBeNull();
         // A brace inside a string must not terminate the scan early.
         expect(extractJsonObject('{"action":"talk","target":"the } man"}'))
-            .toEqual({ action: 'talk', target: 'the } man' });
+            .toEqual({ action: 'talk', target: 'the } man' });  // pre-schema: raw JSON, not a plan
     });
 });
 
@@ -207,17 +229,58 @@ describe('the deterministic path is a first-class way to play', () => {
         expect(parseDuration('I strike the barrier')).toBeNull();
     });
 
-    it('routes every verb without a model', () => {
+    it('routes the world-facing operations without a model', () => {
         expect(parseIntent('I sit down and cultivate for 3 years'))
             .toEqual({ action: 'cultivate', days: 1095 });
         expect(parseIntent('break through')).toEqual({ action: 'breakthrough' });
         expect(parseIntent('I want to eat something')).toEqual({ action: 'eat' });
-        expect(parseIntent('travel to the Low Fall'))
-            .toEqual({ action: 'travel', target: 'Low Fall' });
-        expect(parseIntent('speak with the gate steward').action).toBe('talk');
+        expect(parseIntent('I seal the cave for ten years'))
+            .toEqual({ action: 'seclude', days: 3650 });
+        expect(parseIntent('forage for herbs').action).toBe('gather');
+        expect(parseIntent('brew a Meridian Knitting Pill in the cauldron').action).toBe('refine');
         expect(parseIntent('ten years').days).toBe(3650);
         // An intent nobody can parse must never cost a year of anyone's life.
         expect(parseIntent('asdkjhasd qqq')).toEqual({ action: 'look' });
+    });
+
+    it('folds the social and perceptual range into three semantic actions', () => {
+        // Everything social is `interact` with a label, not its own verb.
+        for (const [text, intent] of [
+            ['haggle with the broker', 'trade'],
+            ['I bribe the gate steward', 'bribe'],
+            ['threaten the elder', 'threaten'],
+            ['lie to the gate steward', 'deceive'],
+            ['negotiate with Lantern Hall', 'negotiate'],
+            ['question the merchant about the ruin', 'interrogate'],
+            ['speak with the gate steward', 'talk']
+        ] as const) {
+            const parsed = parseIntent(text);
+            expect(parsed.action).toBe('interact');
+            expect(parsed.intent).toBe(intent);
+        }
+
+        // Everything about going somewhere is `move` with a label.
+        for (const [text, intent] of [
+            ['travel to the Low Fall', 'travel'],
+            ['I flee the courtyard', 'flee'],
+            ['sneak into the sect compound', 'enter'],
+            ['approach the old woman', 'approach']
+        ] as const) {
+            const parsed = parseIntent(text);
+            expect(parsed.action).toBe('move');
+            expect(parsed.intent).toBe(intent);
+        }
+        expect(parseIntent('travel to the Low Fall').target).toBe('Low Fall');
+
+        // Everything perceptual is `investigate`.
+        for (const text of [
+            'examine the inscription',
+            'search the ruin',
+            'study the formation',
+            'I look into the Stonewright Consortium'
+        ]) {
+            expect(parseIntent(text).action).toBe('investigate');
+        }
     });
 
     it('narrates a decade readably with no provider configured', async () => {
