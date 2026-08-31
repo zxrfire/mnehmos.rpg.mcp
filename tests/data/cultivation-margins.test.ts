@@ -27,6 +27,7 @@ import {
     OCCUPATIONS,
     PRICES,
     CASH_PER_STONE,
+    MORTAL_WORK_CEILING_ORDINAL,
     getOccupation,
     getPrice,
     stonesToCash
@@ -84,8 +85,17 @@ const PLACES_BY_REGION: ReadonlyMap<string, Set<string>> = new Map(
     REGIONS.map(r => [r.id, new Set(r.places.map(p => p.name))])
 );
 
-const MIN_OCCUPATION_WAGE = Math.min(...OCCUPATIONS.map(o => o.cashPerMonth));
-const MAX_OCCUPATION_WAGE = Math.max(...OCCUPATIONS.map(o => o.cashPerMonth));
+// The WAGE economy, which is what a rogue trade competes against.
+//
+// `OCCUPATIONS` now runs the whole ladder: the commissions above the mortal
+// ceiling are the same rows in the same table, and one of them pays five
+// million cash a month. Measuring "a season of wage work" against that would
+// compare a ruin diver's share to a False Immortal's retainer, which is not
+// what any of these assertions is about. The wage economy is the half of the
+// table at or below the ceiling, and it is the half a rogue can actually reach.
+const WAGE_ECONOMY = OCCUPATIONS.filter(o => o.minOrdinal <= MORTAL_WORK_CEILING_ORDINAL);
+const MIN_OCCUPATION_WAGE = Math.min(...WAGE_ECONOMY.map(o => o.cashPerMonth));
+const MAX_OCCUPATION_WAGE = Math.max(...WAGE_ECONOMY.map(o => o.cashPerMonth));
 
 function expectFactionsResolve(ids: readonly string[], label: string): void {
     for (const id of ids) {

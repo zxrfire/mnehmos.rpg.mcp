@@ -1165,7 +1165,15 @@ describe('cultivation MCP tool surface', () => {
             const names = listed.sects.map((entry: any) => entry.name);
             for (const canon of [
                 'Stonewright Consortium', 'Lantern Hall', 'The Severed',
-                'The Hollow Court', 'Kiln Wardens'
+                'The Hollow Court',
+                // Was 'The Kiln Court', and the change is THE_KILN_SCHISM
+                // rather than a rename. The house split; each half kept one of
+                // its two names. The half that kept the GROUND is the Kiln
+                // Court and is a court record, not a sect - so it is correctly
+                // absent from this list. What is in `SECTS` is the half that
+                // WALKED, which took the Deep Survey's own administrative word
+                // for the posting with it.
+                'The Root Sill Court'
             ]) {
                 expect(names).toContain(canon);
             }

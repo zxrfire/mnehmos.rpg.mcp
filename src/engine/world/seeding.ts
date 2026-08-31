@@ -77,6 +77,10 @@ import {
     makeEnvironment,
     makeLocation,
     makeThresholds,
+    ordinaryBandFor,
+    QI_DENSITY_MAX,
+    clampQiDensity,
+    qiFraction,
     type LocationRecord
 } from './locations.js';
 import { addGoal, createNpc, setRealm, upsertRelationship, type NpcRecord } from './npc-state.js';
@@ -283,7 +287,7 @@ function seedRegions(
             thresholds: makeThresholds(0, 0, Math.max(0, Math.floor(ceiling / 3)), ceiling),
             hazards: region.hazards.slice(),
             environment: makeEnvironment({
-                spiritualDensity: region.qiDensity,
+                spiritualDensity: qiFraction(region.qiDensity),
                 danger: Math.min(1, region.hazards.length * 0.15),
                 resources: region.exports.slice(),
                 climate: 'temperate',
@@ -317,7 +321,7 @@ function seedRegions(
                 thresholds: makeThresholds(0, 0, 0, Math.max(0, ceiling - 4)),
                 hazards: region.hazards.slice(),
                 environment: makeEnvironment({
-                    spiritualDensity: region.qiDensity,
+                    spiritualDensity: qiFraction(region.qiDensity),
                     danger: place.kind === 'site' ? 0.5 : 0.1,
                     resources: region.exports.slice(0, 2),
                     politicalControl: politicalControlOf(region),
@@ -337,12 +341,12 @@ function seedRegions(
                 kind: 'vein',
                 parentId: location.id,
                 description: region.veinStatus,
-                ambient: region.qiDensity > 0.6 ? 'dense' : region.ambient,
-                qiDensity: Math.min(1, region.qiDensity + 0.3),
+                ambient: region.qiDensity > 60 ? 'dense' : region.ambient,
+                qiDensity: clampQiDensity(region.qiDensity + 30),
                 thresholds: makeThresholds(0, 0, Math.max(0, ceiling - 6), ceiling),
                 hazards: ['formation'],
                 environment: makeEnvironment({
-                    spiritualDensity: Math.min(1, region.qiDensity + 0.3),
+                    spiritualDensity: qiFraction(region.qiDensity + 30),
                     danger: 0.4,
                     resources: ['qi'],
                     politicalControl: politicalControlOf(region)
@@ -403,6 +407,131 @@ function politicalControlOf(region: CatalogRegion): string {
  * closer to the line than an unbacked one that pays nobody, which is exactly
  * the pressure the governance models exist to create.
  */
+/** Stable id for a faction's ground, so a caller can go from one to the other. */
+export function sectGroundId(factionId: string): string {
+    return `loc-${factionId}-ground`;
+}
+
+/**
+ * How steeply held ground improves with the standing that holds it.
+ *
+ * Above 1, so the top of the ladder holds disproportionately better ground -
+ * which is the same shape as everything else in this engine, where a realm is
+ * four times over and the gaps widen going up.
+ */
+const SECT_GROUND_CURVE = 1.6;
+
+/**
+ * What ground a sect of this standing holds, 1..100.
+ *
+ * Measured against the strongest faction IN THE CATALOG rather than against a
+ * named house, which is the whole of why this is not bespoke: the top of the
+ * scale belongs to whoever is actually at the top, and today that is the Hollow
+ * Court at ordinal 44. Rename it, unseat it, or write something stronger, and
+ * the 100 moves with the arithmetic instead of being left behind pointing at a
+ * house that no longer deserves it.
+ *
+ * Floored at the region's own ground: a weak sect sitting in a thin province
+ * offers a disciple nothing the province did not already offer, and a stipend
+ * is then honestly the whole of what joining bought them.
+ */
+export function sectGroundDensity(
+    powerOrdinal: number,
+    apexPowerOrdinal: number,
+    regionDensity: number
+): number {
+    const apex = Math.max(1, apexPowerOrdinal);
+    const reach = Math.max(0, Math.min(1, powerOrdinal / apex));
+    const held = QI_DENSITY_MAX * Math.pow(reach, SECT_GROUND_CURVE);
+    return clampQiDensity(Math.max(regionDensity, held));
+}
+
+/**
+ * The ground a sect actually holds.
+ *
+ * Why a sect must be a place, in one paragraph: a sect's whole value to a
+ * disciple is what standing on its mountain does to a cultivation rate. The
+ * home region runs thin - Sweptground sits at 0.35, which is "half rate and a
+ * penalty to breakthrough odds" - and fifty years of that stops climbing the
+ * ladder somewhere around ordinal 16. A sect that is only a row in
+ * `sect_members` gives a disciple nothing that a rogue does not already have.
+ *
+ * Everything about this location is derived from columns the faction already
+ * carries, so there is no sect-specific rule anywhere:
+ *
+ *   qiDensity      the region's ground, plus what the sect's own standing has
+ *                  bought it. A sect took the best ground it could hold, and
+ *                  `powerOrdinal` is exactly how much it could hold.
+ *   thresholds     entry is 0 - anyone may walk up to a gate. `operational` is
+ *                  the admission bar, which is what makes the gate mean
+ *                  something: a rogue can stand in the forecourt and cannot
+ *                  work there. `mastery` is the sect's own power.
+ *   discovered     false. A sect's ground is a name you have to be given, and
+ *                  the knowledge gate does the rest.
+ */
+function seedSectGround(
+    state: WorldState,
+    cf: CatalogFaction,
+    region: LocationRecord,
+    apexPowerOrdinal: number,
+    presentDay: number
+): LocationRecord {
+    const density = sectGroundDensity(cf.powerOrdinal, apexPowerOrdinal, region.qiDensity);
+
+    const ground = makeLocation({
+        id: sectGroundId(cf.id),
+        name: `${cf.name} grounds`,
+        kind: 'sect_seat',
+        parentId: region.id,
+        description:
+            `The ground the ${cf.name} holds: gate, forecourt, halls, and whatever vein `
+            + 'the compound was built on top of.',
+        ambient: ordinaryBandFor(density) === 'thin' ? region.ambient : ordinaryBandFor(density),
+        qiDensity: density,
+        // Anyone may walk to a gate and anyone may survive standing at it. What
+        // the gate gates is working there, and that bar is the admission bar.
+        thresholds: makeThresholds(0, 0, cf.admissionOrdinal, cf.powerOrdinal),
+        hazards: cf.holdsVein ? ['formation'] : [],
+        // A compound that still runs its own formations answers to somebody who
+        // can read them. Read off `formationIntegrity`, which is already the
+        // column for how much of the inherited compound still works.
+        affinities: cf.formationIntegrity >= 0.5
+            ? [makeAffinity(
+                'formation',
+                1 + cf.formationIntegrity * 0.3,
+                2,
+                'The compound\'s own arrays are still running and answer to somebody who can read them.'
+            )]
+            : [],
+        environment: makeEnvironment({
+            spiritualDensity: qiFraction(density),
+            danger: 0.15,
+            resources: ['qi', 'teaching', 'medicine'],
+            politicalControl: cf.name,
+            specialRules: cf.recruits
+                ? [`admits at ${cf.admissionOrdinal}`]
+                : ['takes no applicants'],
+            historicalScars: []
+        }),
+        controllingFactionId: cf.id,
+        // A name you have to be given. Joining gives it; being told gives it;
+        // asking in the region gives it. Nothing else does, which is the gate
+        // working rather than the gate being missing.
+        discovered: false,
+        tags: ['sect_ground', cf.recruits ? 'recruits' : 'closed'],
+        data: {
+            factionId: cf.id,
+            admissionOrdinal: cf.admissionOrdinal,
+            catalogRegionId: region.data.catalogRegionId as string ?? ''
+        }
+    });
+    ground.origin.fromDay = presentDay - years(300);
+    state.locations.push(ground);
+    // The road from the province to the gate. Ordinary link, ordinary travel.
+    linkLocations(region, ground, 'road', 2);
+    return ground;
+}
+
 function seedFactions(
     state: WorldState,
     catalog: WorldCatalog,
@@ -410,6 +539,8 @@ function seedFactions(
     presentDay: number
 ): FactionRecord[] {
     const out: FactionRecord[] = [];
+    // The top of the ground scale belongs to whoever is actually strongest.
+    const apexPowerOrdinal = catalog.factions.reduce((max, f) => Math.max(max, f.powerOrdinal), 1);
     const regionForFaction = new Map<string, string>();
     for (const region of catalog.regions) {
         for (const id of region.factionIds) regionForFaction.set(id, region.id);
@@ -418,7 +549,13 @@ function seedFactions(
     for (const cf of catalog.factions) {
         const rng = forStream(state.seed, 'seed-faction', cf.id);
         const regionId = regionForFaction.get(cf.id) ?? catalog.regions[0]?.id ?? null;
-        const seat = regionId ? regions.get(regionId) ?? null : null;
+        const region = regionId ? regions.get(regionId) ?? null : null;
+        // A sect is a PLACE. Its seat used to be the region location, which
+        // meant a disciple could be on the roll and had nowhere to walk to -
+        // the engine said "being on their roll and being on their ground are
+        // two different things" and then modelled only the roll. `sect_seat`
+        // was already in `LocationKind`; nothing here is a new category.
+        const seat = region ? seedSectGround(state, cf, region, apexPowerOrdinal, presentDay) : null;
 
         // A year of upkeep, scaled by what it can produce and what it owes.
         const baseTreasury = Math.round(
@@ -457,13 +594,17 @@ function seedFactions(
 
         // A federated sect holds its vein from somebody. An unbacked one holds
         // it because nobody has taken it yet. Both are recorded as control.
-        if (cf.holdsVein && seat) {
-            const vein = state.locations.find(l => l.id === `${seat.id}-vein`);
+        if (cf.holdsVein && region) {
+            const vein = state.locations.find(l => l.id === `${region.id}-vein`);
             if (vein && !vein.controllingFactionId) {
                 vein.controllingFactionId = cf.id;
                 faction.controlledLocationIds.push(vein.id);
+                // Held ground is linked to the ground that holds it, so the
+                // ordinary travel path reaches it from the gate.
+                if (seat) linkLocations(seat, vein, 'path', 1);
             }
         }
+        if (seat) seat.controllingFactionId = cf.id;
 
         state.factions.push(faction);
         out.push(faction);
@@ -630,6 +771,8 @@ export function deriveLife(
 
     while (ordinal < cap) {
         const cost = progressRequiredForOrdinal(ordinal);
+        // Above the Lid nothing is priced in qi, so the walk stops here.
+        if (cost === null) break;
         const allowance = stagnationYearsForOrdinal(ordinal);
         const lifespan = lifespanForOrdinal(ordinal);
         let yearsAtRank = 0;
@@ -740,10 +883,28 @@ function seedPopulation(
     const catalogById = new Map(catalog.factions.map(f => [f.id, f]));
     const created: NpcRecord[] = [];
 
+    // ── Names have to be unique, and nothing else in the engine enforces it ──
+    //
+    // Knowledge is keyed by id; everything the player ever READS is keyed by
+    // name. Two people called Shen Wuyou in one province therefore does not
+    // read as a coincidence, it silently breaks the guarantee the knowledge
+    // system rests on - a name you were told is a name you have - because the
+    // wrong one standing in the room satisfies it.
+    //
+    // The name space is 20 x 20 x 20, so at a few hundred people the birthday
+    // paradox produces collisions every single seed. Carried as ONE mutable
+    // set for the whole pass rather than rebuilt per NPC, which would be
+    // quadratic over a few hundred creations for no gain, and pre-charged with
+    // the catalog's names: those figures are created later and are ASSIGNED
+    // their names, so a procedural roll that lands on one would never be seen
+    // to collide until a player met both.
+    const taken = new Set<string>(state.npcs.map(n => n.name));
+    for (const member of MEMBERS) taken.add(member.name);
+
     // Spread the population over regions by how much qi they can support. A
     // thin province carries fewer cultivators, which is the setting's own
     // arithmetic and not a balance knob.
-    const weights = regions.map(r => 0.25 + r.qiDensity);
+    const weights = regions.map(r => 0.25 + qiFraction(r.qiDensity));
     const total = weights.reduce((a, b) => a + b, 0);
 
     let seq = 0;
@@ -767,8 +928,10 @@ function seedPopulation(
                 onDay: presentDay,
                 locationId: placeIds[rng.int(0, placeIds.length - 1)],
                 occupation: 'unknown',
+                takenNames: taken,
                 tags: [`region:${region.id}`]
             });
+            taken.add(npc.name);
 
             // Derived, not assigned. Same inputs the player gets, and that now
             // includes where they were born - which is the honest explanation
@@ -816,7 +979,7 @@ function seedPopulation(
     // Instantiate them before roles are handed out, so a faction's curated
     // seniors are in the room when the pyramid is built.
     created.push(...seedNamedFigures(state, catalog, presentDay));
-    created.push(...seedFactionApex(state, catalog, presentDay));
+    created.push(...seedFactionApex(state, catalog, presentDay, taken));
 
     assignFactionRoles(state, catalogById, presentDay);
     return created;
@@ -916,7 +1079,9 @@ function seedNamedFigures(
 function seedFactionApex(
     state: WorldState,
     catalog: WorldCatalog,
-    presentDay: number
+    presentDay: number,
+    /** Names already spoken for in this world. See the note in `seedPopulation`. */
+    taken: Set<string>
 ): NpcRecord[] {
     const created: NpcRecord[] = [];
 
@@ -946,8 +1111,10 @@ function seedFactionApex(
             onDay: presentDay,
             locationId: seatLocationId(catalog, faction),
             occupation: 'unknown',
+            takenNames: taken,
             tags: ['catalog:apex', `faction:${faction.id}`]
         });
+        taken.add(npc.name);
 
         npc = setRealm(npc, declared, presentDay - years(rng.int(20, 400)));
         npc = {

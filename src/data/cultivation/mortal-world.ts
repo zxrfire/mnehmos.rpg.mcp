@@ -32,6 +32,9 @@
  */
 
 import { z } from 'zod';
+import { RegardProfileSchema } from '../../schema/cultivation.js';
+import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import { offeredTo, regardOf, type RegardAskerInput } from '../../engine/cultivation/regard.js';
 
 /** Cash to the spirit stone. The one conversion the whole file rests on. */
 export const CASH_PER_STONE = 100;
@@ -56,7 +59,7 @@ export const OccupationSchema = z.object({
     /** Who can actually hold it. */
     kind: z.enum(['mortal', 'cultivator', 'either']),
     /** Minimum realm ordinal. Zero means a mortal can do it. */
-    minOrdinal: z.number().int().min(0).max(45),
+    minOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** Typical earnings in cash per month, before food and lodging. */
     cashPerMonth: z.number().int().min(0),
     /** Where the work exists. */
@@ -64,11 +67,43 @@ export const OccupationSchema = z.object({
     /** How likely it is to hurt you, in plain terms. */
     risk: z.enum(['none', 'low', 'moderate', 'high', 'lethal']),
     /** Why a cultivator would or would not take it. */
-    note: z.string().min(40)
+    note: z.string().min(40),
+    /**
+     * The generic column. Filled uniformly below rather than per entry: work
+     * is offered a little further up the ladder than most things, because a
+     * wage is a relationship and relationships are slower to become absurd
+     * than transactions are.
+     */
+    regard: RegardProfileSchema.optional()
 });
 export type Occupation = z.infer<typeof OccupationSchema>;
 
-export const OCCUPATIONS: readonly Occupation[] = [
+/**
+ * How much longer than usual a job keeps being put to somebody.
+ *
+ * This one number is what makes `MORTAL_WORK_CEILING_ORDINAL` true. With the
+ * ordinary bands a gate-zero job stops being offered at ordinal 17; the mortal
+ * economy in fact keeps offering into the high teens, because a town that has
+ * seen three cultivators this year still asks the fourth if he wants a day's
+ * work. 1.2 stretches `dismissed` to open at ordinal 21, which is exactly where
+ * `MORTAL_ATTITUDES` turns to fear-dressed-as-ceremony. The ceiling is now a
+ * consequence of a generic column instead of a branch, and the test asserts the
+ * two still agree.
+ */
+export const OCCUPATION_REGARD_SPAN = 1.2;
+
+/**
+ * The mortal economy, as one gate.
+ *
+ * A market stall, an inn floor and a bowl of millet are all pitched at the same
+ * rung - the bottom one - and how a market treats somebody is one fact about
+ * that person and that market rather than a fact about each item on the board.
+ * Handlers read this profile instead of inventing a gate, so the board and the
+ * jobs answer with the same arithmetic.
+ */
+export const MORTAL_ECONOMY_REGARD = { gate: 0, span: OCCUPATION_REGARD_SPAN } as const;
+
+const OCCUPATION_DATA: readonly Occupation[] = [
     // ── mortal work, which is most work ───────────────────────────────
     { id: 'job-farmhand', name: 'Farmhand', kind: 'mortal', minOrdinal: 0, cashPerMonth: 180, settlements: ['hamlet', 'village'], risk: 'low', note: 'Board and a corner to sleep in are usually included, which is most of the pay. A cultivator who takes this is either hiding or finished.' },
     { id: 'job-porter', name: 'Porter', kind: 'either', minOrdinal: 0, cashPerMonth: 240, settlements: ['village', 'market_town', 'sect_town', 'city'], risk: 'low', note: 'The commonest first job for a Qi Condensation cultivator with no connections: the body is better than a mortal\'s and nobody asks questions.' },
@@ -95,8 +130,42 @@ export const OCCUPATIONS: readonly Occupation[] = [
     { id: 'job-tutor', name: 'Tutor to a merchant family', kind: 'cultivator', minOrdinal: 5, cashPerMonth: 900, settlements: ['market_town', 'city'], risk: 'none', note: 'Teaching a merchant\'s child the Lesser Qi-Gathering Manual. Humiliating, safe, and the fastest way for a low-realm cultivator to meet people with money.' },
     { id: 'job-gleaner', name: 'Gleaner (burn zone)', kind: 'cultivator', minOrdinal: 4, cashPerMonth: 3_000, settlements: ['village', 'market_town'], risk: 'lethal', note: 'Quiet Marches only. The best-paid work available to a Qi Condensation cultivator anywhere, and it kills about one in nine a season.' },
     { id: 'job-face-labour', name: 'Face labour (carving)', kind: 'cultivator', minOrdinal: 0, cashPerMonth: 700, settlements: ['market_town'], risk: 'high', note: 'Quiet Marches only. Cutting a face on somebody else\'s grant for a share of what comes out, and inhaling the reason carvers die at forty.' },
-    { id: 'job-placer-runner', name: 'Placer\'s runner', kind: 'either', minOrdinal: 0, cashPerMonth: 550, settlements: ['village', 'market_town'], risk: 'low', note: 'Border-road work: finding foreign cultivators willing to be assessed, for a placer who charges more than a month of cave rent to do it.' }
+    { id: 'job-placer-runner', name: 'Placer\'s runner', kind: 'either', minOrdinal: 0, cashPerMonth: 550, settlements: ['village', 'market_town'], risk: 'low', note: 'Border-road work: finding foreign cultivators willing to be assessed, for a placer who charges more than a month of cave rent to do it.' },
+
+    // ── commissions ──────────────────────────────────────────────────
+    //
+    // Not a second catalog and not a second system: the same rows, the same
+    // schema, the same `findWorkForOrdinal`. What changes above the mortal
+    // ceiling is only which entries the bands still put forward, which is the
+    // whole point of the mechanism.
+    //
+    // The old behaviour was that everything from ordinal 21 upward got an
+    // empty list and the sentence "nobody here is hiring anyone, for
+    // anything", which said a Tribulation Transcendence cultivator was
+    // unemployable. They are not unemployable. They are asked for entirely
+    // different things, at prices that are not on the same scale, and the
+    // asking is done by sects and cities rather than by a foreman with a
+    // board. These are those things.
+    { id: 'job-vein-warden', name: 'Vein warden', kind: 'cultivator', minOrdinal: 21, cashPerMonth: 12_000, settlements: ['sect_town', 'city'], risk: 'moderate', note: 'Sitting on somebody else\'s vein so that nothing else draws on it. The wage is nominal; what is actually being paid is the right to cultivate on the ground you are guarding.' },
+    { id: 'job-convoy-escort', name: 'Pill convoy escort', kind: 'cultivator', minOrdinal: 23, cashPerMonth: 20_000, settlements: ['market_town', 'sect_town', 'city'], risk: 'high', note: 'The Cinnabar Crucible Guild moves finished heaven-grade medicine four times a year and will not move it without somebody who can survive being ambushed by the people who want it.' },
+    { id: 'job-tide-breaker', name: 'Tide breaker', kind: 'cultivator', minOrdinal: 25, cashPerMonth: 45_000, settlements: ['village', 'market_town', 'sect_town'], risk: 'lethal', note: 'A beast tide is coming and a county has raised what it can. Paid on the count of what is standing afterwards, which is a payment structure with an obvious defect.' },
+    { id: 'job-formation-keeper', name: 'Formation keeper', kind: 'cultivator', minOrdinal: 27, cashPerMonth: 60_000, settlements: ['sect_town', 'city'], risk: 'low', note: 'Holding a great formation steady across a season. Dull, safe, extremely well paid, and the standard way a sect finds out what an unaffiliated cultivator actually knows.' },
+    { id: 'job-boundary-arbiter', name: 'Boundary arbiter', kind: 'cultivator', minOrdinal: 29, cashPerMonth: 120_000, settlements: ['sect_town', 'city'], risk: 'none', note: 'Two houses disagree about a vein and neither will accept the other\'s survey. What is being bought is somebody both sides would rather not argue with.' },
+    { id: 'job-retained-deterrent', name: 'Retained deterrent', kind: 'cultivator', minOrdinal: 31, cashPerMonth: 250_000, settlements: ['sect_town', 'city'], risk: 'none', note: 'Paid to be resident and visible and to do nothing at all. The contract specifies attendance and says nothing about work, because the work is the attendance.' },
+    { id: 'job-tribulation-watch', name: 'Tribulation watch', kind: 'cultivator', minOrdinal: 33, cashPerMonth: 400_000, settlements: ['sect_town'], risk: 'high', note: 'Standing off a crossing so nothing interferes with it, and being close enough to the lightning that a bad crossing takes the watcher with it. Sects pay this without haggling.' },
+    { id: 'job-seal-inspection', name: 'Seal inspection', kind: 'cultivator', minOrdinal: 35, cashPerMonth: 700_000, settlements: ['sect_town', 'city'], risk: 'lethal', note: 'Going down to a seal that has held for two ages and reporting whether it still does. The fee is large because the reporting half is not reliably included.' },
+    { id: 'job-house-guest', name: 'House guest', kind: 'cultivator', minOrdinal: 37, cashPerMonth: 1_200_000, settlements: ['city'], risk: 'none', note: 'A great house pays for the fact of your presence under its roof for a season, and expects nothing whatever in return. Everyone involved knows what is being purchased.' },
+    { id: 'job-sky-survey', name: 'Sky survey', kind: 'cultivator', minOrdinal: 39, cashPerMonth: 2_000_000, settlements: ['city'], risk: 'moderate', note: 'Walking the upper air over a region and saying what is up there. Almost nobody can go and look, so almost nobody can check the answer, which is priced in.' },
+    { id: 'job-lid-assay', name: 'Assay beneath the Lid', kind: 'cultivator', minOrdinal: 42, cashPerMonth: 5_000_000, settlements: ['city'], risk: 'high', note: 'Reading how much of the ceiling is left over a place, for people who have a reason to want the number and no way at all to take it themselves.' }
 ];
+
+/**
+ * The catalog as everything reads it: the authored rows, each carrying the
+ * generic column, filled in one uniform pass so no entry can forget it and no
+ * resolver has to guess.
+ */
+export const OCCUPATIONS: readonly Occupation[] = OCCUPATION_DATA.map(o =>
+    o.regard ? o : { ...o, regard: { span: OCCUPATION_REGARD_SPAN } });
 
 // ─────────────────────────────────────────────────────────────────────────
 // PRICES
@@ -225,8 +294,8 @@ export const SETTLEMENTS: readonly Settlement[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export const MortalAttitudeSchema = z.object({
-    fromOrdinal: z.number().int().min(0).max(45),
-    toOrdinal: z.number().int().min(0).max(45),
+    fromOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    toOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     lowFall: z.string().min(60),
     quietMarches: z.string().min(60)
 });
@@ -254,7 +323,7 @@ export const MORTAL_ATTITUDES: readonly MortalAttitude[] = [
         quietMarches: 'No frame of reference. The Marches has produced two people at this height in nine hundred years and both left, so the reaction is closer to how a mortal reacts to weather.'
     },
     {
-        fromOrdinal: 29, toOrdinal: 45,
+        fromOrdinal: 29, toOrdinal: MAX_ORDINAL,
         lowFall: 'Not really a social category. Mortals who have been in a room with one describe the room rather than the person, and most of the province considers them rumour until one arrives.',
         quietMarches: 'Regarded as stories, in the specific sense that the local understanding of the upper realms is that they are stories. A visitor at this height would not be disbelieved so much as not understood.'
     }
@@ -286,10 +355,91 @@ export function getSettlement(kind: Settlement['kind']): Settlement | undefined 
  * ordinal 0 to 6 is the important one, because that is where a run spends most
  * of its life and there is otherwise nothing to do between breakthroughs.
  */
-export function findWorkForOrdinal(ordinal: number, settlement?: Settlement['kind']): Occupation[] {
+/**
+ * The last ordinal at which anybody offers a cultivator work.
+ *
+ * Read straight off `MORTAL_ATTITUDES`: at 21 the attitude turns to "fear,
+ * dressed as ceremony", where a town sends somebody out to meet the cultivator
+ * rather than let them arrive. Nobody puts a day rate to a person they are
+ * sending a delegation to meet, and by 29 they are "not really a social
+ * category" at all.
+ *
+ * So this is not a rule about what a cultivator is willing to do. A Nascent
+ * Soul who wanted to haul crates for the afternoon would find nobody prepared
+ * to hire them, and a True Immortal asking after a porter's job is asking a
+ * question the world has no answer to.
+ */
+export const MORTAL_WORK_CEILING_ORDINAL = 20;
+
+/**
+ * Everything reachable and still in place, before regard narrows it.
+ *
+ * `minOrdinal` is a survival floor and the settlement list is a fact about
+ * geography; neither is a judgement about the asker. This is the honest
+ * "what exists here" answer, and `findWorkForOrdinal` is the "what is put to
+ * them" answer built on top of it.
+ */
+export function workExistingFor(ordinal: number, settlement?: Settlement['kind']): Occupation[] {
     return OCCUPATIONS.filter(o =>
         o.minOrdinal <= ordinal
         && (settlement === undefined || (o.settlements as readonly string[]).includes(settlement)));
+}
+
+/**
+ * What is actually put to somebody standing here.
+ *
+ * There is no ceiling branch any more. The old one returned an empty list for
+ * every ordinal above 20 and told a Tribulation Transcendence cultivator that
+ * nobody was hiring anyone for anything, which read as unemployability rather
+ * than as what it was. Now the ordinary bands do it: a job whose gate is far
+ * enough below the asker stops being offered and says why, and the commissions
+ * further up the catalog start being offered instead. The mortal ceiling
+ * survives as a measured consequence - see `OCCUPATION_REGARD_SPAN` - rather
+ * than as a rule.
+ */
+export function findWorkForOrdinal(
+    ordinal: RegardAskerInput,
+    settlement?: Settlement['kind']
+): Occupation[] {
+    const rung = typeof ordinal === 'number' ? ordinal : ordinal.ordinal;
+    return offeredTo(workExistingFor(rung, settlement), ordinal);
+}
+
+/**
+ * Work that exists here and is not being put to them, each with the reason.
+ *
+ * This is the half that stops silence being an answer. "Nobody is hiring" and
+ * "there are eleven jobs on that board and every one of them is beneath you"
+ * are different facts, and the second one is the one the world usually means.
+ */
+export function workWithheldFrom(
+    ordinal: RegardAskerInput,
+    settlement?: Settlement['kind']
+): { occupation: Occupation; reason: string; band: string }[] {
+    const rung = typeof ordinal === 'number' ? ordinal : ordinal.ordinal;
+    const out: { occupation: Occupation; reason: string; band: string }[] = [];
+    for (const occupation of workExistingFor(rung, settlement)) {
+        const regard = regardOf(occupation, ordinal);
+        if (regard.offered) continue;
+        out.push({ occupation, reason: regard.reaction, band: regard.band });
+    }
+    return out;
+}
+
+/**
+ * The highest ordinal at which any mortal-economy job is still put to somebody.
+ *
+ * Measured off the catalog and the bands rather than asserted, so the prose
+ * above cannot go stale against the data. The test pins it equal to
+ * `MORTAL_WORK_CEILING_ORDINAL`; if a future edit moves it, the constant is
+ * what changes, and the paragraph with it.
+ */
+export function measuredMortalWorkCeiling(): number {
+    const mortalWork = OCCUPATIONS.filter(o => o.kind !== 'cultivator');
+    for (let ordinal = MAX_ORDINAL; ordinal >= 0; ordinal--) {
+        if (offeredTo(mortalWork, ordinal).some(o => o.minOrdinal <= ordinal)) return ordinal;
+    }
+    return 0;
 }
 
 /** Prices in a category, cheapest first. */

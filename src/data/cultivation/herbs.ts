@@ -22,8 +22,18 @@
  */
 
 import { z } from 'zod';
-import { TechniqueGradeSchema, type TechniqueGrade } from '../../schema/cultivation.js';
+import {
+    RegardProfileSchema,
+    TechniqueGradeSchema,
+    type TechniqueGrade
+} from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import {
+    narrowToOffered,
+    regardOf,
+    type Regard,
+    type RegardAskerInput
+} from '../../engine/cultivation/regard.js';
 import type { Band } from './techniques.js';
 
 /**
@@ -64,7 +74,14 @@ export const HerbSchema = z.object({
     value: z.number().int().min(1),
     /** Realm ordinal below which the place it grows will simply kill you. */
     harvestOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
-    description: z.string().min(1)
+    description: z.string().min(1),
+    /**
+     * The generic column. Absent on every herb here, because `harvestOrdinal`
+     * already says what rung the ground is pitched at and the ordinary bands
+     * read it. Present only where a herb outlives its band or is never put
+     * forward.
+     */
+    regard: RegardProfileSchema.optional()
 });
 export type Herb = z.infer<typeof HerbSchema>;
 
@@ -600,12 +617,44 @@ export function findHerbsForOrdinal(ordinal: number, biome?: HerbBiome): Herb[] 
 }
 
 /**
+ * Everything the world would actually put in front of this asker.
+ *
+ * `findHerbsForOrdinal` answers a question about survival: can they stand where
+ * it grows. This answers a different one: is it still worth their bending down.
+ * A cultivator at Nascent Soul walks past qi grass the way anybody walks past a
+ * weed, and the draw should walk past it too. The narrowing is the ordinary
+ * `offeredTo` rule and nothing herb-specific: a herb whose gap has reached
+ * `dismissed` is not offered.
+ *
+ * If nothing survives the narrowing - a biome where the only reachable herbs
+ * are all far below them - the reachable set comes back rather than nothing,
+ * because refusing to answer would be a worse lie than answering with a weed.
+ */
+export function findOfferedHerbs(
+    asker: RegardAskerInput,
+    biome?: HerbBiome
+): readonly Herb[] {
+    const ordinal = typeof asker === 'number' ? asker : asker.ordinal;
+    const reachable = findHerbsForOrdinal(ordinal, biome);
+    return narrowToOffered(reachable, asker);
+}
+
+/**
  * Weighted forage draw from a uniform [0,1) sample. Takes the sample rather
  * than an RNG so the caller owns seeding, matching `rollSpiritRoot`.
  * Returns undefined when nothing in this biome is reachable at this ordinal.
+ *
+ * The pool is what the world offers, not merely what the asker can survive.
+ * That single change is what makes forty-five rungs of ladder visible in a
+ * verb that used to hand a False Immortal the same stalk of qi grass it handed
+ * a beginner.
  */
-export function rollHerb(ordinal: number, sample: number, biome?: HerbBiome): Herb | undefined {
-    const pool = findHerbsForOrdinal(ordinal, biome);
+export function rollHerb(
+    ordinal: RegardAskerInput,
+    sample: number,
+    biome?: HerbBiome
+): Herb | undefined {
+    const pool = findOfferedHerbs(ordinal, biome);
     if (pool.length === 0) return undefined;
     const total = pool.reduce((sum, h) => sum + h.rarityWeight, 0);
     let cursor = Math.max(0, Math.min(0.999999999, sample)) * total;
@@ -614,4 +663,46 @@ export function rollHerb(ordinal: number, sample: number, biome?: HerbBiome): He
         if (cursor < 0) return h;
     }
     return pool[pool.length - 1];
+}
+
+/** Days a foraging pass takes for somebody the ground is pitched at. */
+export const FORAGE_BASE_DAYS = 7;
+
+export interface ForageResult {
+    /** What the ground gave up, or null when nothing here is reachable. */
+    readonly herb: Herb | null;
+    /** How many of it. One for somebody the ground is pitched at. */
+    readonly quantity: number;
+    /** How long it took, in days. Never below one. */
+    readonly days: number;
+    /** The whole banded answer, including the reaction line and the gap. */
+    readonly regard: Regard | null;
+}
+
+/**
+ * One foraging pass, priced.
+ *
+ * The draw, the count and the duration all come off the same regard, so the
+ * three move together and none of them is a separate arithmetic. A beginner
+ * gets one common stalk over a full week. Somebody ten rungs past what the
+ * ground is pitched at strips it in under two days and comes back with an
+ * armful, because that is what ten rungs means everywhere else in this engine
+ * and there is no reason for the ground to be the exception.
+ */
+export function forage(
+    asker: RegardAskerInput,
+    sample: number,
+    options: { biome?: HerbBiome; baseDays?: number } = {}
+): ForageResult {
+    const herb = rollHerb(asker, sample, options.biome);
+    if (!herb) return { herb: null, quantity: 0, days: options.baseDays ?? FORAGE_BASE_DAYS, regard: null };
+
+    const regard = regardOf(herb, asker);
+    const baseDays = options.baseDays ?? FORAGE_BASE_DAYS;
+    return {
+        herb,
+        quantity: Math.max(1, Math.round(regard.yieldMultiplier)),
+        days: Math.max(1, Math.round(baseDays * regard.durationMultiplier)),
+        regard
+    };
 }

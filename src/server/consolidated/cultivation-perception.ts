@@ -67,7 +67,8 @@ import {
     type CapabilitySubject,
     type PredicateVerdict
 } from '../../engine/world/index.js';
-import type { Cultivator, TechniqueGrade } from '../../schema/cultivation.js';
+import { ApproachSchema, type Cultivator, type TechniqueGrade } from '../../schema/cultivation.js';
+import { regardFor, type RegardAsker } from '../../engine/cultivation/regard.js';
 import { worldForRun } from '../state/cultivation-world.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
 import {
@@ -98,7 +99,9 @@ export const AssessSchema = z.object({
     alertness: z.number().min(0).max(1).optional()
         .describe('How much attention the other party is paying. Circumstance, not outcome.'),
     preparation: z.number().int().min(0).max(8).optional()
-        .describe('Ordinals of advantage arranged in advance. The engine prices it; it does not grant it.')
+        .describe('Ordinals of advantage arranged in advance. The engine prices it; it does not grant it.'),
+    approach: ApproachSchema.optional()
+        .describe('The half of the situation no stored row contains: what is being attempted, in what tone, with what leverage, in front of whom, and what rung the asker is letting the room believe. Optional, and omitting it is exactly the old behaviour. The engine reduces it to an apparent rung and a pressure of at most two rungs; it never reads an outcome out of it.')
 });
 
 export const UnderstandingSchema = z.object({
@@ -165,6 +168,9 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
 
     let subject: CapabilitySubject;
     let context: Record<string, unknown>;
+    // The rung the thing being assessed is pitched at. Null when the subject
+    // does not have one, which is a legitimate answer and comes back `matched`.
+    let gate: number | null = null;
 
     if (against === 'opponent') {
         if (!args.opponentId) {
@@ -186,6 +192,7 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
             alertness: args.alertness,
             preparation: args.preparation
         });
+        gate = opponent.realmOrdinal;
         context = {
             opponent: {
                 id: opponent.id,
@@ -214,6 +221,7 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
             name: site.name,
             requirements: requirementsFromInscription(site.ordinal)
         });
+        gate = site.ordinal;
         context = { site: { id: site.id, name: site.name, kind: site.kind } };
     } else {
         const world = await worldForRun(run);
@@ -245,6 +253,15 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
 
     const assessment = assessCapability(capabilityActorFor(cultivator), subject, onDay);
 
+    // A place has no rung column, so its gate is what surviving it requires -
+    // which IS the rung it is pitched at, measured rather than authored.
+    if (gate === null && typeof assessment.survive.baseRequirement === 'number') {
+        gate = assessment.survive.baseRequirement;
+    }
+
+    const asker: RegardAsker = { ordinal: cultivator.realmOrdinal, approach: args.approach };
+    const regard = regardFor(gate, asker);
+
     return {
         assessed: true,
         cultivator: {
@@ -266,11 +283,35 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
             force: describeVerdict(assessment.force)
         },
         environmentMultiplier: round4(assessment.environmentMultiplier),
+        // The sixth answer, and the one that is about how the situation MEETS
+        // them rather than about whether they can do it. Same table the ground
+        // and the boards read.
+        regard: {
+            gate: regard.gate,
+            gap: regard.gap,
+            band: regard.band,
+            physicalBand: regard.physicalBand,
+            offered: regard.offered,
+            refused: regard.refused,
+            damageMultiplier: round4(regard.damageMultiplier),
+            durationMultiplier: round4(regard.durationMultiplier),
+            priceMultiplier: round4(regard.priceMultiplier),
+            concealed: regard.concealed,
+            apparentOrdinal: regard.apparentOrdinal,
+            apparentRank: rankName(regard.apparentOrdinal),
+            pressure: regard.pressure,
+            reaction: regard.reaction,
+            intent: regard.intent,
+            note: regard.note
+        },
         summary: assessment.summary,
         note:
             'Five separate answers, and they come apart. A cultivator who can attempt this may not ' +
             'survive it, and one who survives it may not understand what they found. Nothing here ' +
-            'refuses an action for being unwise - only `attempt` refuses, and only for physical reasons.'
+            'refuses an action for being unwise - only `attempt` refuses, and only for physical reasons. ' +
+            '`regard` is the separate question of how far above or below this they are standing, and ' +
+            'what follows from that: what it costs them, how long it takes, and whether it is put to ' +
+            'them at all.'
     };
 }
 

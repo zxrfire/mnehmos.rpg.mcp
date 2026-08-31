@@ -187,6 +187,18 @@ export type ApexRank = z.infer<typeof ApexRankSchema>;
 
 export const ApexInstitutionSchema = z.object({
     id: z.string(),
+    /**
+     * The same house's row in `SECTS`, where it has one.
+     *
+     * Two of the three apexes exist only here, because nobody can join them and
+     * they have no roster, no admission bar and no stipend. The Azure Cloud
+     * Pavilion is the exception and it is not an accident: it is the one apex a
+     * player can walk into, so it needs a sect row as well - and for a while it
+     * had one under a different id with nothing joining them, which is how it
+     * came to own an immortal artifact that queries against the apex could not
+     * see. This field is that join. Null where the house is apex-only.
+     */
+    factionId: z.string().nullable(),
     name: z.string().min(1),
     traditionId: TraditionIdSchema,
     /**
@@ -268,7 +280,15 @@ export const ApexInstitutionSchema = z.object({
     /** What could take the position away. Never the same answer twice. */
     instability: z.string().min(80),
     lastRealm: z.object({
-        count: z.literal(1),
+        /**
+         * How many the house has at the last realm. Was a literal 1, which
+         * was a claim about the world enforced by the type system, and it was
+         * wrong: the Azure Cloud Pavilion has two and every power reading in
+         * the setting was taking its number from here. One is still the
+         * common case and `pinned` is still about one person - the one on the
+         * object - however many the house has up there.
+         */
+        count: z.number().int().min(1),
         pinned: z.literal(true),
         /**
          * The name, where anybody has it. Null is the ordinary case and is a
@@ -404,6 +424,58 @@ export const ApexInstitutionSchema = z.object({
 });
 export type ApexInstitution = z.infer<typeof ApexInstitutionSchema>;
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT A COURT CALLS ITS PEOPLE
+//
+// Not a disciple ladder, and this is the whole difference between a court and
+// a sect. A sect ranks people by how far along its own road they have walked,
+// so its ladder is a curriculum with titles on it. A court does not teach and
+// does not admit: it administers an arterial vein for something above it, and
+// the only questions it ever has to answer are which tenant draws what, who
+// signed for it, and whether the figure was true. So its titles are the pieces
+// of that job, held by one person each, and a court with nobody in an office
+// has a piece of the arterial nobody is doing.
+//
+// Two consequences worth writing down, because both look like errors:
+//
+//   - THE TITLES DO NOT SORT. The Sill Courier stands four realms below the
+//     Keeper of the Eleven and is not junior to her; she carries the grants and
+//     he apportions them, and neither office contains the other. A court roster
+//     read as a ladder reads as nonsense, which is the correct reading.
+//
+//   - EVERY OFFICER HOLDS TWO STANDINGS. The court office is what they do, and
+//     `apexRank` is where they stand inside the institution that posted them -
+//     a title from that apex's own `ranks`. That is what a posting means. The
+//     Deep Survey's ladder says outright that Sill-Sworn is an appointment to a
+//     court rather than an honour, and this field is the other end of that
+//     sentence: the people in these rosters are Survey and Long Cut staff on a
+//     posting, not a local body that grew where it stands.
+//
+// The Root Sill is the case that proves the rule and is written to. Its offices
+// are the Kiln Warden ranks the province has been looking at for nine hundred
+// years, because the Wardens ARE the Root Sill; the reveal is not a new set of
+// titles, it is the second column.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const CourtOfficerSchema = z.object({
+    id: z.string().min(1),
+    name: z.string().min(2),
+    /** The office. Named for a piece of the work, never for a rung. */
+    title: z.string().min(3),
+    /** What that office actually does, stated as a task rather than a status. */
+    office: z.string().min(60),
+    /** Same scale as everywhere else, and capped by the court's own ordinal. */
+    realmOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+    /** Their standing inside the apex that posted them. A title from its ranks. */
+    apexRank: z.string().min(1),
+    /** One thing. The floor is deliberately tiny; the best answers are short. */
+    wants: z.string().min(3),
+    fears: z.string().min(3),
+    /** One concrete thing: a habit, a possession, a record, a refusal. */
+    detail: z.string().min(30)
+});
+export type CourtOfficer = z.infer<typeof CourtOfficerSchema>;
+
 export const CourtSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -440,6 +512,41 @@ export const CourtSchema = z.object({
     grantsInRegionId: z.string(),
     /** A faction in the sect catalog that IS this court, where one is. */
     embodiedByFactionId: z.string().nullable(),
+    /**
+     * Why this court's offices are named the way they are, derived from what it
+     * administers rather than from anybody's ladder. See the section comment
+     * above `CourtOfficerSchema`.
+     */
+    officesNote: z.string().min(120),
+    /**
+     * Set only where the court has changed patrons, which has happened once.
+     *
+     * A court that moves takes its ground, its clients and its people, and its
+     * people arrive holding titles from a ladder that no longer applies. The
+     * conversion is never clean and the places it is not clean are where the
+     * grievances live, so they are written down rather than smoothed over.
+     */
+    transferNote: z.string().min(120).optional(),
+    /**
+     * The court's own name for its top office, where it has one.
+     *
+     * `leaderTitleOfCourt` derives "the Ninth Lord" from "The Ninth Face
+     * Court", which is right for a court the apex posted and named. It is
+     * wrong for one that grew and was re-described afterwards: the Kiln has
+     * called its senior a Keeper of the Kiln for nine hundred years and did
+     * not stop when the Survey started calling the posting something else.
+     * Set this where the house names its own; leave it out where the apex does.
+     */
+    leaderTitle: z.string().min(3).optional(),
+    /**
+     * The people actually standing in those offices.
+     *
+     * A court is not a wall of names and a dead high-water mark. It is between
+     * three and six people doing a job on somebody else's vein, and the first
+     * of them is the `powerOrdinal`: that number is defined as the strongest
+     * member who will answer, so somebody in this array has to be at it.
+     */
+    roster: z.array(CourtOfficerSchema).min(3),
     startingAwareness: AwarenessSchema,
     description: z.string().min(120)
 });
@@ -473,6 +580,7 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
     {
         id: 'apex-deep-survey',
+        factionId: null,
         name: 'The Deep Survey',
         traditionId: 'tradition-drawn',
         // Tribulation Transcendence Late. Above the Hollow Court, which is the
@@ -494,7 +602,14 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         depthNote:
             'A filled ladder underneath, and the Survey does not publish where it thins because it does not thin anywhere anyone has been able to check. Losing the seated one would be a catastrophe of a specific kind - the Lamp becomes takeable - and would not be an institutional collapse. There is a great deal of Survey below the Survey.',
         instability:
-            'Almost none, and the exception is specific: the position rests on one person not standing up. Anything large enough to require her attention elsewhere ends the arrangement in an afternoon, and the Survey has structured four hundred years of procedure around never producing such a thing. It is stable in the way a held breath is stable.',
+            // Written to stand alone. It used to open "Almost none, and the
+            // exception is specific:", which is an answer to an unstated
+            // question, and the Standing Register concatenates these fields
+            // into one paragraph without their labels - so it landed mid-page
+            // as a non-sequitur. Every field in this record has to read as a
+            // sentence somebody could have said, not as the second half of an
+            // exchange.
+            'The Survey is almost entirely stable, and its one exposure is specific: the position rests on one person not standing up. Anything large enough to require her attention elsewhere ends the arrangement in an afternoon, and the Survey has structured four hundred years of procedure around never producing such a thing. It is stable in the way a held breath is stable.',
         lastRealm: {
             count: 1,
             pinned: true,
@@ -551,7 +666,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         },
         holds:
             'The arterial system: not the eleven veins of the Low Fall but the four beneath them that the eleven branch from, and the datum every survey in the province is ultimately measured against without knowing whose datum it is.',
-        courtIds: ['court-third-sill', 'court-root-sill'],
+        courtIds: ['court-kiln'],
         ranks: [
             { title: 'Unplaced', decidedBy: 'arrival, and nothing else. Everyone begins here and most people stay.', note: 'The class that contains almost everybody, at every realm from Qi Condensation to Deity Transformation.' },
             { title: 'Marked', decidedBy: 'a sponsor willing to attach their own standing to yours', note: 'The first mark is somebody else\'s risk taken on your behalf, and it can be withdrawn.' },
@@ -582,6 +697,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
     },
     {
         id: 'apex-long-cut',
+        factionId: null,
         name: 'The Long Cut',
         traditionId: 'tradition-cut',
         // One rung below the Deep Survey and by the same logic. The Long Cut
@@ -629,7 +745,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         },
         holds:
             'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Quiet Marches is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
-        courtIds: ['court-ninth-face'],
+        courtIds: ['court-ninth-face', 'court-third-sill'],
         ranks: [
             { title: 'Hand', decidedBy: 'being present on a face and working it, and nothing else whatsoever', note: 'Everyone below the top, at every realm, and the Long Cut sees no reason to subdivide people by how much qi they hold.' },
             { title: 'Set Hand', decidedBy: 'a face worked to completion without a death on it, recorded by date', note: 'The first distinction, and it is a record of work rather than a rank of person.' },
@@ -656,6 +772,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
     },
     {
         id: 'apex-azure-cloud',
+        factionId: 'sect-azure-cloud-pavilion',
         name: 'The Azure Cloud Pavilion',
         traditionId: 'tradition-drawn',
         powerOrdinal: 41,
@@ -678,7 +795,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             count: 1,
             pinned: true,
             holderName: 'Ru Anwei',
-            note: 'One: Ru Anwei, younger sister of the woman who crossed, at the first rung of the last realm and no further after three hundred and eighty years. She sits in the inner hall with the Edge. Ru Anjing spent her last decades making the sect independent rather than strong - settling what was outstanding, calling in what was owed, and leaving the cost of touching the Pavilion legible enough that nobody has since wanted to establish the figure - and then left her sister to hold it. The province finds the arrangement touching. Every rival reads it as exactly what it is: an apex resting on one woman who is the weakest thing at her own tier.'
+            note: 'One: Ru Anwei, younger sister of the woman who crossed, at the first rung of the last realm and no further after three hundred and eighty years. She sits in the inner hall with the Edge. Ru Anjing spent her last decades making the sect independent rather than strong - settling what was outstanding, calling in what was owed, and leaving the cost of touching the Pavilion legible enough that nobody has since wanted to establish the figure - and then left her sister to hold it. The province finds the arrangement touching. Every rival reads it as exactly what it is: an apex resting on one woman who is the weakest thing at her own tier - one woman, one object, and nothing behind either of them. What that reading leaves out is what she is holding and what she would do with it, which is the whole of why nobody has tested it: she cannot hold a province and does not have to. She has to reach one man once.'
         },
         sentDown: {
             id: 'artifact-the-standing-edge',
@@ -700,7 +817,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         },
         holds:
             'The gorge vein at Low Fall and the terraced peaks above it, held outright and openly, on no grant from anyone, since the year Ru Anjing crossed.',
-        courtIds: [],
+        courtIds: ['court-azure-mist'],
         ranks: [
             {
                 title: 'Pavilion Master',
@@ -744,7 +861,18 @@ export const COURTS: readonly Court[] = [
     {
         id: 'court-third-sill',
         name: 'The Third Sill Court',
-        apexId: 'apex-deep-survey',
+        // Transferred. The Third Sill administered the third arterial under
+        // the Deep Survey for nine hundred years and does not any more, and the
+        // reason is in this catalog rather than in a chronicle: three of its
+        // own clients - the Frostmirror, the Storm Tyrant and the Nine Abyss -
+        // have been contesting the third arterial's grant book for two
+        // centuries (see `contestedClaimsOf`), the Survey declined to settle it
+        // on the standing ground that a grant dispute among clients is the
+        // court's own business, and the Long Cut offered to settle it. That is
+        // the whole of it. No fighting, no betrayal, no announcement - an
+        // administration went where its problem could be solved, which is the
+        // only thing an administration has ever done.
+        apexId: 'apex-long-cut',
         // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Court at
         // Body Integration Perfection, and a court that could not answer its own
         // tenant would be issuing suggestions rather than grants.
@@ -759,22 +887,223 @@ export const COURTS: readonly Court[] = [
         administers: 'The third arterial vein, which the eleven surveyed veins of the Low Fall branch from.',
         grantsInRegionId: 'region-low-fall',
         embodiedByFactionId: null,
+        officesNote:
+            'Four things happen to a grant and the Sill has one person for each: it is measured, it is apportioned, it is drafted, and it is carried. Nobody here is anybody\'s disciple and nobody here teaches, so there is no ladder and never has been - an Assessor does not become a Keeper of the Eleven by being good at assessing, he becomes one because the office fell vacant and somebody had to hold it. Inside the Deep Survey the same five people are a Surveyor, a Sill-Sworn, two First Marks and a Second Mark, which is the standing that would decide a room if they were ever all in one, and they have not been in one in ninety years. The two columns do not agree and the Survey does not expect them to: the courier stands a mark above the man who measures the vein and eight rungs below him on the ladder, which is exactly what a body that ranks by service rather than by realm looks like from close up.',
+        transferNote:
+            'Every officer here holds a Long Cut rank now, and the conversion was not clean. The Survey ladder had a rung for a posting to a court and the Long Cut ladder has no such thing, so the Sill-Sworn came out a Set Hand, which is two removes from what the title meant and is the sort of thing a career notices. The Sill Courier came out a Face Master, one rung above the Assessor she has always been eight ordinals beneath, because the Long Cut counts what a person does on a course rather than where they stand on the ladder - which is the same quirk the Survey had, arrived at for a different reason, and is the only part of the transfer nobody has complained about.',
+        roster: [
+            {
+                id: 'court-officer-ruan-kezhen',
+                name: 'Ruan Kezhen',
+                title: 'the Third Lord',
+                office: 'Signs the eleven grants and, four times in the last century, the non-renewals. He has never been to the Low Fall and has never had to be.',
+                realmOrdinal: 38,
+                apexRank: 'Course Keeper',
+                wants: 'to hand the third arterial on to whoever comes next without having been made to answer the Frostmirror in person',
+                fears: 'a question that can only be settled by attending it',
+                detail: 'Reads every draft his Sill-Sworn puts in front of him, signs about two thirds, and returns the rest with a single word in the margin and no explanation of it.'
+            },
+            {
+                id: 'court-officer-bai-zhensu',
+                name: 'Bai Zhensu',
+                title: 'the Sill-Sworn',
+                office: 'Drafts everything the Third Lord signs, and keeps the twelve-year book in which every grant in the province has a page and a date.',
+                realmOrdinal: 33,
+                apexRank: 'Set Hand',
+                wants: 'the Frostmirror correspondence answered, in writing, by somebody',
+                fears: 'that the correct answer is the one the Sill is giving, and that she has been wrong about it for eleven years',
+                detail: 'Seconded the proposal to send the Lamp out of its chamber two hundred and forty years ago, in writing, and has drafted four replies to the Frostmirror Court in the last eleven and filed all four unsent.'
+            },
+            {
+                id: 'court-officer-gu-mianzhi',
+                name: 'Gu Mianzhi',
+                title: 'Keeper of the Eleven',
+                office: 'Decides what share of the third arterial each of the eleven surveyed veins beneath it may draw, and revises the figures on the same twelve-year cycle as the grants.',
+                realmOrdinal: 30,
+                apexRank: 'Face Master',
+                wants: 'the eleventh vein struck off the apportionment, because it has not drawn its share in sixty years and somebody is drawing it',
+                fears: 'being right about that',
+                detail: 'Keeps the apportionment on eleven separate sheets rather than one, so that no visitor who sees a figure ever sees what it is a share of.'
+            },
+            {
+                id: 'court-officer-tang-qishan',
+                name: 'Tang Qishan',
+                title: 'Assessor of the Third',
+                office: 'Walks the arterial itself, measures what is in it, and reports a figure the whole apportionment is then calculated from.',
+                realmOrdinal: 29,
+                apexRank: 'Hand',
+                wants: 'his own cold-arterial figures read next to the Frostmirror\'s, once, by anybody at all',
+                fears: 'that the two sets agree',
+                detail: 'Walks the arterial end to end every fourth year on foot rather than flying it, on the grounds that a figure taken at height is a figure taken from a distance, and has done it nineteen times; he has been a Second Mark for all nineteen, because his figures keep disagreeing with the apportionment that is calculated off them.'
+            },
+            {
+                id: 'court-officer-yin-cha',
+                name: 'Yin Cha',
+                title: 'the Sill Courier',
+                office: 'Carries the grants to the eleven gates, hands them over, and does not stay for an answer. She is the only part of the Third Sill anybody in the province has ever seen.',
+                realmOrdinal: 21,
+                apexRank: 'Face Master',
+                wants: 'to be allowed to take the chair once',
+                fears: 'the gate that does not open on the day',
+                detail: 'Ninety years on the same circuit. She is greeted by name at four of the eleven gates and by title at none, has been offered a chair at seven of them, and refuses every time because she is instructed to - and she stands a full mark above the Assessor inside the Survey while standing eight rungs below him on the ladder, which neither of them has ever mentioned to the other.'
+            }
+        ],
         startingAwareness: 'unaware',
         description:
             'The office the Low Fall actually holds from, though no sect in the province would put it that way and most would deny the framing. Grants are issued in writing, renewed on a twelve-year cycle, and delivered by a courier who does not stay for an answer. The Sill has never been to the province. It has never needed to.'
     },
     {
-        id: 'court-root-sill',
-        name: 'The Root Sill Court',
+        id: 'court-kiln',
+        // The id used to be `court-root-sill`, which was the name the OTHER
+        // half walked off with. The row was calling itself by its sibling's
+        // name in its own id and in its own officesNote while being named the
+        // Kiln Court, which is the schism written down wrong rather than the
+        // schism.
+        //
+        // The old name, kept by the half that stayed. For nine hundred years
+        // this court had two of them - the Survey called it the Root Sill and
+        // the province called it the Kiln - and nobody had to choose, because
+        // a Keeper of the Kiln was a Sill-Sworn of the Deep Survey and both
+        // sentences described one person. When the house split, each half took
+        // one of the names, and the one that kept the ground kept the older.
+        // See `THE_KILN_SCHISM`.
+        name: 'The Kiln Court',
         apexId: 'apex-deep-survey',
         powerOrdinal: 37,
         highWaterMark: null,
         administers: 'The datum itself: the deep vein at the world\'s root that the arterial system is measured from.',
         grantsInRegionId: 'region-low-fall',
-        embodiedByFactionId: 'sect-kiln-wardens',
+        // Null on purpose, and this is the change. It used to point at
+        // `sect-kiln-wardens`, because they were the same people. They are two
+        // bodies now and the join would be a lie.
+        embodiedByFactionId: null,
+        leaderTitle: 'Keeper of the Kiln',
+        officesNote:
+            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Kiln issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Kiln was a Sill-Sworn of the Deep Survey, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it. Ji Wanluo is Keeper of the Kiln and there is another Keeper of the Kiln four provinces away who says she is not.',
+        roster: [
+            {
+                id: 'court-officer-ji-wanluo',
+                name: 'Ji Wanluo',
+                title: 'Keeper of the Kiln',
+                office: 'Holds the datum, reports one figure upward once a year, and answers nothing downward. The figure has not changed in her tenure and she submits it anyway.',
+                realmOrdinal: 37,
+                apexRank: 'Sill-Sworn',
+                wants: 'nothing she has ever stated to anyone outside the perimeter',
+                fears: 'the figure changing',
+                detail: 'Holds the original posting order, which is nine hundred years old, names the first four Wardens, and is the only document at the kiln that is not a number.'
+            },
+            {
+                id: 'court-officer-che-yuan',
+                name: 'Che Yuan',
+                title: 'Gate Warden',
+                office: 'Turns applicants around. Once, politely, with the distance to the nearest inn given in li and the walking time given in hours, and then he closes the gate.',
+                realmOrdinal: 31,
+                apexRank: 'First Mark',
+                wants: 'to be permitted to give the second figure, which is how far it is to a sect that would take them',
+                fears: 'the day a figure does not work and somebody keeps standing there',
+                detail: 'Has turned away something over four thousand people and can name the eleven who came back a second time, which is not a list he has been asked for and is not written down anywhere.'
+            },
+            {
+                id: 'court-officer-lou-tinghe',
+                name: 'Lou Tinghe',
+                title: 'Second Warden',
+                office: 'Holds the node rota: nine hundred lit nodes walked and checked on a cycle, which is the only reason the world\'s one complete formation network is still complete.',
+                realmOrdinal: 29,
+                apexRank: 'First Mark',
+                wants: 'the rota shortened by one day, which she has requested four times in sixty years',
+                fears: 'a node that goes out between passes',
+                detail: 'Carries the rota as a knotted cord rather than a book, because a book gets wet and the cord tells her where she is by touch in the dark.'
+            },
+            {
+                id: 'court-officer-xie-bo',
+                name: 'Xie Bo',
+                title: 'Warden',
+                office: 'Walks the perimeter, which is nine days out in every direction, and reports what crossed it. Most years the answer is nothing.',
+                realmOrdinal: 25,
+                apexRank: 'Second Mark',
+                wants: 'a season on the node rota instead, for a change of ground',
+                fears: 'nothing he can name, which the other three have noticed',
+                detail: 'The only Warden in living memory to have spoken a sentence to an outsider that was not a number, and he has never been told whether it was held against him.'
+            }
+        ],
         startingAwareness: 'unaware',
         description:
-            'The court nobody in the province has recognised as a court. The Kiln Wardens hold every node lit, draw nothing from the richest ground in the world, make no ancestral claim, refuse all applicants, have no grievance in nine hundred years of outside record, and have never been observed making an exchange of any kind - because they are not a faction with strange habits. They are staff, posted, doing an assigned job on someone else\'s datum, and every single thing the province finds inexplicable about them is explained by that sentence.'
+            'The court nobody in the province has recognised as a court, and which the province has called the Kiln Wardens for nine hundred years without being corrected. The Kiln Court holds every node lit, draw nothing from the richest ground in the world, make no ancestral claim, refuse all applicants, have no grievance in nine hundred years of outside record, and have never been observed making an exchange of any kind - because they are not a faction with strange habits. They are staff, posted, doing an assigned job on someone else\'s datum, and every single thing the province finds inexplicable about them is explained by that sentence.'
+    },
+    {
+        id: 'court-azure-mist',
+        name: 'The Azure Mist Court',
+        apexId: 'apex-azure-cloud',
+        startingAwareness: 'named',
+        description:
+            'The Azure Cloud Pavilion\'s own court, on the mist terraces below the gorge, running the runoff of the vein Ru Anjing worked and teaching the Pavilion\'s forms to the people the terraces sent back. It is the youngest court in the world by nine centuries and the only one that was never posted: it grew, on water nobody wanted, and was re-described afterwards. Four people hold it - a Court Warden one rung under Grand Ascension whose own register entry still reads placement, an elder who has quietly taught nineteen students the terraces later took back, a disciple keeping channel figures nobody else can read, and a servant who knows the walking time to every sect in the province because he gives it to everybody the Mist cannot take. The Low Fall calls it a feeder and has not revised the figure in a hundred and fifty years.',
+        // The youngest court in the world by nine hundred years, and the only
+        // one whose apex did not appoint it: the Mist became a court the way
+        // the Pavilion became an apex, by one person going further than the
+        // institution around her and the institution being re-described
+        // afterwards. It was filed as a feeder for three centuries on the
+        // strength of a power figure that stopped being true in the second one.
+        powerOrdinal: 37,
+        // Null on purpose: a high-water mark is somebody the house is past.
+        // The Mist has never been past anybody - its strongest is alive, in
+        // post, and still the reason the figure moved.
+        highWaterMark: null,
+        administers: 'The mist terraces below the gorge and the runoff of the Pavilion\'s own vein, which is water nobody else wanted and which turns out to have carried two people to the top of the world in one lifetime.',
+        grantsInRegionId: 'region-low-fall',
+        embodiedByFactionId: 'sect-azure-mist-court',
+        transferNote:
+            'Not a transfer - a promotion, and the only one in the catalog. The Mist was a feeder sect under the Azure Cloud Pavilion and is now the Pavilion\'s court, on the same ground, with the same four people, doing the same work. Nothing about it changed except the figure everybody was using for it, which had been wrong for a hundred and fifty years. The Low Fall has not adjusted and still calls it a feeder.',
+        officesNote:
+            'Four offices for four people, and they were invented in an afternoon, which shows. The Mist ran on the Pavilion\'s own disciple ladder for three centuries - Court Warden, Mist Elder, Outer Disciple, Mist Servant - because it was a feeder and a feeder does not need office names. A court does, so it has them now, and every one of them is a flat description of the task: the person who keeps the roll, the person who teaches the second attempt, the person who walks the channels, the person who answers the gate. Nobody at the Mist uses them. The old titles are what everybody still says out loud, including in correspondence with the Pavilion, and correcting it has never been anybody\'s job.',
+        roster: [
+            {
+                id: 'court-officer-pei-hanzhang',
+                name: 'Pei Hanzhang',
+                // The embodied court keeps its sect's own top rank, the same
+                // way the Kiln does: the province has been reading the real
+                // title for three centuries without knowing it was one.
+                title: 'Court Warden',
+                office: 'Holds the recall roll: every disciple the terraces sent down, what they failed at, and what happened to them after. It is the only such record in the Low Fall and the Pavilion has never asked to see it.',
+                realmOrdinal: 37,
+                apexRank: 'Sword Elder',
+                wants: 'the recall rate put in front of somebody at the terraces who can read it',
+                fears: 'the day the Mist becomes interesting enough to be worth taking back',
+                detail: 'Her entry in the Pavilion\'s register still reads placement. She has never asked for it to be corrected and has been asked why twice, and gave a different answer both times.'
+            },
+            {
+                id: 'court-officer-yu-shenxing',
+                name: 'Yu Shenxing',
+                title: 'Master of the Second Attempt',
+                office: 'Teaches the Pavilion\'s forms to people who failed at them once, which is the entire trade of the house and the one thing the terraces cannot do.',
+                realmOrdinal: 21,
+                apexRank: 'Inner Disciple',
+                wants: 'to be allowed to say out loud that the Mist teaches better',
+                fears: 'being right about it in front of the wrong person',
+                detail: 'Keeps a tally of which of his students the terraces later took back. It is nineteen, over sixty years, and he has never shown it to anybody at the Pavilion.'
+            },
+            {
+                id: 'court-officer-tan-liuyi',
+                name: 'Tan Liuyi',
+                title: 'Walker of the Channels',
+                office: 'Walks the terrace channels and keeps the runoff moving, which is the whole of the Mist\'s income and takes one person eleven days a month.',
+                realmOrdinal: 9,
+                apexRank: 'Inner Disciple',
+                wants: 'a second pair of hands on the channels before the winter',
+                fears: 'the runoff thinning, which she has measured and not reported',
+                detail: 'Has three years of channel figures in her own notation that nobody else can read, including the year the flow dropped and came back.'
+            },
+            {
+                id: 'court-officer-kong-zhaoyu',
+                name: 'Kong Zhaoyu',
+                title: 'Keeper of the Terrace Gate',
+                office: 'Answers the gate. The Mist is the one door in the Low Fall that has never turned anybody away for standing, and he is the reason people know that.',
+                realmOrdinal: 4,
+                apexRank: 'Inner Disciple',
+                wants: 'to be sent up to the terraces once, to see them',
+                fears: 'being sent up and recalled, like everybody else here',
+                detail: 'Knows the walking time to every sect in the Low Fall in hours, because he gives the figure to everybody the Mist cannot take.'
+            }
+        ]
     },
     {
         id: 'court-ninth-face',
@@ -794,6 +1123,54 @@ export const COURTS: readonly Court[] = [
         administers: 'The driven ground of the Quiet Marches and four provinces beyond it that the Marches has never heard named.',
         grantsInRegionId: 'region-quiet-marches',
         embodiedByFactionId: null,
+        officesNote:
+            'The Long Cut ranks by work and its court does the same, so every office here is a face: one person holds the course, one holds the schedule that is countersigned into the Weir Office book, one assesses faces across the four provinces, and one holds a face that cannot be worked and never will be. Nothing is decided by realm and it shows - the man who signs the only document the Quiet Marches has ever been governed by stands eleven rungs below the woman who walks eleven li of dead ground four times a year and records that it is unchanged. Neither office contains the other and the Long Cut has never seen why one would.',
+        roster: [
+            {
+                id: 'court-officer-qiao-shendu',
+                name: 'Qiao Shendu',
+                title: 'the Ninth Lord',
+                office: 'Holds the course: what is cut, in what order, across the ninth face and the four provinces beyond it, on a schedule written a century at a time.',
+                realmOrdinal: 37,
+                apexRank: 'Course Keeper',
+                wants: 'to finish his course without putting a second name forward',
+                fears: 'being asked for one',
+                detail: 'Authorised Yun Baiheng ninety years ago, in four lines, and has authorised nobody since; the four lines are still the last entry on that page of the course book and he has left the rest of the page blank.'
+            },
+            {
+                id: 'court-officer-chi-yuanru',
+                name: 'Chi Yuanru',
+                title: 'Assessor of the Four Faces',
+                office: 'Rates driven ground across the four provinces the Marches has never heard named, and decides which faces enter the course at all.',
+                realmOrdinal: 33,
+                apexRank: 'Face Master',
+                wants: 'the Marches promoted out of the schedule\'s bottom band, where it has sat for two hundred years',
+                fears: 'that the Gapwater figure she has is the right one',
+                detail: 'Has the Weir Office\'s own unpublished survey of how much workable stone is left at Gapwater, obtained by asking for it, and the Office does not know she kept the copy.'
+            },
+            {
+                id: 'court-officer-mo-xingzhi',
+                name: 'Mo Xingzhi',
+                title: 'Face Master of the Eleven Li',
+                office: 'Holds a face that cannot be worked: eleven li of high Marches that has not held qi in ninety years. She walks it four times a year and records that it is unchanged.',
+                realmOrdinal: 30,
+                apexRank: 'Face Master',
+                wants: 'the face struck off the course, which she has never requested',
+                fears: 'that it will be struck off, and that the record will stop',
+                detail: 'Was Yun Baiheng\'s Set Hand for forty years and asked for the posting the season after; her quarterly return has said unchanged three hundred and sixty times and she writes the word out in full every time. She is a Face Master who was never made a Set Hand of the Long Cut, because the one face she worked to completion had a death on it.'
+            },
+            {
+                id: 'court-officer-shao-kang',
+                name: 'Shao Kang',
+                title: 'the Twenty-Year Hand',
+                office: 'Walks into Kettle once every twenty years, countersigns the Weir Office grant book, adjusts the schedule, and is gone inside a day.',
+                realmOrdinal: 26,
+                apexRank: 'Set Hand',
+                wants: 'to be asked once what the countersignature is for',
+                fears: 'nothing about the errand, which he has now run four times',
+                detail: 'Has never been offered lodging in Kettle, has never corrected a Weir Master who described the countersignature as an internal formality of the Office\'s own devising, and has written a note about it in the margin of the schedule on all four visits.'
+            }
+        ],
         startingAwareness: 'unaware',
         description:
             'Countersigns the Weir Office grant book once every twenty years, adjusts the schedule, and leaves. The Office presents the countersignature as a formality of its own devising, which is the single most successful piece of institutional theatre in either province.'
@@ -1093,7 +1470,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         factionId: 'sect-kiln-wardens',
         governance: 'federated',
         relation: 'court',
-        parentFactionId: 'apex-deep-survey',
+        // The half that walked, under the Survey's own name for the posting,
+        // which is the part the Survey finds hardest to answer. It is the
+        // second administration the Long Cut has taken from the Deep Survey in
+        // living memory and the second that walked rather than fought - and it
+        // now stands directly against the first. See `THE_KILN_SCHISM`.
+        parentFactionId: 'apex-long-cut',
         holds: 'The datum: the root vein, held on nobody\'s behalf but the Survey\'s, and drawn on by nobody at all.',
         terms: NO_TERMS,
         standing: 'not_applicable',
@@ -1532,7 +1914,7 @@ export const AZURE_CLOUD_INTAKE = {
     theTrade:
         'Two facts about the Pavilion are already established and they answer each other. It is one person deep, with about ninety disciples and six at Core Formation, and it is the richest institution in the region because a woman on the other side of the Lid loves her sister and sends what she can every nine to fourteen years. Thin on members, rich in resources. There is exactly one rational move available to an institution in that position, and the Pavilion has been making it for a century: spend the thing you have in surplus to buy the thing you lack. They are converting medicine, materials and stones into people.',
     whyNobodyElseCanDoIt:
-        'And nobody else can copy it, which is why it reads as the sharpest difference between the apexes rather than as a house style. The Hollow Court will not look at anybody below a Void Refinement floor with evidence they could cross, and nothing else counts toward it. The Deep Survey and the Long Cut are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Unearned Step for a promising second would be told no, in writing, with the standing stock cited. None of the three could fund a heavy loss rate on unproven mortals even if it wanted to.',
+        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Hollow Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Refinement floor with evidence they could cross, and nothing else counts toward it. The Deep Survey and the Long Cut are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Unearned Step for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
     itIsCircumstanceNotValues:
         'Nothing here is a difference of principle. Put the Deep Survey in the Pavilion\'s position - one benefactor, an income, ninety disciples and a stock it cannot spend - and the Survey would run the same programme inside a decade, with better records. Put the Pavilion on the Survey\'s footing and it would ration exactly as hard. The programme is a consequence of a sister, and it would end the year the sending stopped.',
     theOtherReason:
@@ -1881,7 +2263,7 @@ export function secondTitleOf(apex: ApexInstitution): string {
 
 /** A court is distinguished from its siblings by its first word, not its last. */
 export function leaderTitleOfCourt(court: Court): string {
-    return `the ${firstWord(court.name)} Lord`;
+    return court.leaderTitle ?? `the ${firstWord(court.name)} Lord`;
 }
 
 export function getApexInstitution(id: string): ApexInstitution | undefined {
@@ -1892,11 +2274,54 @@ export function getCourt(id: string): Court | undefined {
     return COURT_BY_ID.get(id);
 }
 
+/** Everybody standing in an office at this court, strongest first. */
+export function courtOfficers(courtId: string): CourtOfficer[] {
+    const court = COURT_BY_ID.get(courtId);
+    if (!court) return [];
+    return [...court.roster].sort((a, b) => b.realmOrdinal - a.realmOrdinal);
+}
+
+/**
+ * The officer a court's `powerOrdinal` is actually referring to.
+ *
+ * The number is defined as the strongest member who will answer, so it is a
+ * person rather than a rating, and this is the way to reach them.
+ */
+export function strongestOfficerOf(court: Court): CourtOfficer {
+    return court.roster.reduce((best, o) => (o.realmOrdinal > best.realmOrdinal ? o : best));
+}
+
+/** One officer, by id, from any court. */
+export function getCourtOfficer(officerId: string): CourtOfficer | undefined {
+    for (const court of COURTS) {
+        const found = court.roster.find(o => o.id === officerId);
+        if (found) return found;
+    }
+    return undefined;
+}
+
 export function getParentage(factionId: string): Parentage | undefined {
     return FACTION_PARENTAGE[factionId];
 }
 
-/** Everything holding directly from this faction, court or apex. */
+/**
+ * Everything holding directly from this faction, court or apex.
+ *
+ * A COUNT TAKEN THROUGH HERE IS NOT A ROSTER, and this is the one warning the
+ * function needs. Walking down from an apex and totalling what turns up crosses
+ * three catalogs that count three different kinds of thing: the apex's own posted
+ * staff, the officers it has posted into courts, and the clients underneath it,
+ * whose ceilings include sealed ancestors that are single-use and are not
+ * members of anything. A figure summed across those reads as a headcount, is
+ * reported as one, and then surprises the person who wrote it - the Long Cut
+ * has forty posted staff and exactly one person above ordinal 41, and any
+ * larger number said about it is a mobilisation rather than a roll.
+ *
+ * So say which was summed wherever such a figure is quoted. `powerOrdinal` is
+ * the strongest single body that will answer and is the only figure here that
+ * needs no qualification; everything else assembled from this function is a
+ * sum, and a sum that does not name its parts is the whole of the confusion.
+ */
 export function getSubsidiariesOf(parentId: string): Parentage[] {
     return Object.values(FACTION_PARENTAGE).filter(p => p.parentFactionId === parentId);
 }
@@ -1946,3 +2371,62 @@ export function mayBeNamed(awareness: Awareness): boolean {
 export function unattributedEffectsOf(apexId: string): readonly string[] {
     return APEX_BY_ID.get(apexId)?.actsWithoutAttribution ?? [];
 }
+
+/**
+ * Every id one house answers to.
+ *
+ * Callers holding a faction id should not have to know whether it came from
+ * `SECTS` or `APEX_INSTITUTIONS`. The Azure Cloud Pavilion is one house with a
+ * row in each; anything keyed by faction - artifacts, members, grants - can be
+ * filed under either and found through here.
+ */
+export function idsForFaction(id: string): string[] {
+    const apex = APEX_INSTITUTIONS.find(a => a.id === id || a.factionId === id);
+    if (apex) return apex.factionId === null ? [apex.id] : [apex.id, apex.factionId];
+
+    // A court can be the same body as a sect too, and for the same reason: the
+    // Kiln and the Azure Mist are institutions with a row in each catalog. This
+    // case was missing, so anything that drew the pyramid from both tables drew
+    // those houses twice, at two different ordinals, as though they were
+    // neighbours rather than one another.
+    const court = COURTS.find(c => c.id === id || c.embodiedByFactionId === id);
+    if (court) {
+        return court.embodiedByFactionId === null
+            ? [court.id]
+            : [court.id, court.embodiedByFactionId];
+    }
+
+    return [id];
+}
+
+/**
+ * The Kiln schism: one house, two names, two patrons, and no instrument that
+ * can settle which is which.
+ *
+ * The oldest arrangement in the region was that the court on the datum had two
+ * names and one body. The Deep Survey posted it and called it the Root Sill;
+ * the province had been calling those people the Kiln Wardens for longer than
+ * the Survey had existed and went on doing so; and for nine hundred years the
+ * duplication cost nothing, because a Keeper of the Kiln was a Sill-Sworn of
+ * the Deep Survey and both sentences described the same person.
+ *
+ * The Survey reposted the court. Most of the Wardens declined the reposting.
+ * Each half kept one of the names, and the one that walked was taken in by the
+ * Long Cut - which is now holding two of the Deep Survey's former
+ * administrations, and has arranged, without saying anything, for them to be
+ * standing opposite each other.
+ */
+export const THE_KILN_SCHISM = {
+    whoIsWhere:
+        'The Kiln Court holds the datum, the nine hundred formation nodes and the perimeter, under the Deep Survey, keeping the older of the two names. The Root Sill Court is four provinces away under the Long Cut, keeping the Survey\'s own administrative name for a posting it no longer holds - which everybody involved understands as the sharper of the two choices, and nobody has ever said so aloud.',
+    andBothClaimTheLineage:
+        'Each says it is the house. The Kiln Court has the ground, the datum and the work, and can point out that the Kiln was never anything but where those things are. The Root Sill Court has the roll, most of the people, the founding posting order naming the first four Wardens, and the sealed ancestor - and can point out that a house is who is in it. Neither argument is weak, both are nine hundred years old, and there is no instrument anywhere that decides it.',
+    andItIsNowTheKilnAgainstTheThirdSill:
+        'Which makes the live quarrel not Survey against Long Cut but court against court. The Third Sill was the first administration to leave the Deep Survey for the Long Cut, and it is the body the Root Sill now sits beside and is measured against - two defectors under one patron, one of whom left over a grant book and one of whom left over a name, each privately of the view that the other\'s reason was the lesser one. They are the two halves of the Long Cut\'s answer to the Survey and they do not like each other.',
+    andTheSealIsTheReasonItMatters:
+        'Nobody would treat a naming dispute as a regional question. What is asleep under the kiln is the strongest sealed thing in the world at forty-four, and it has not moved, because it never does - the argument is about whose it is. The Long Cut has acquired a claim on the best single weapon in the region by taking in some disaffected administrators, and did not have to say a word to do it.',
+    whatTheSurveyDidAboutIt:
+        'Nothing in public, which is consistent with everything else it does. It lists the Kiln Court as its court on the datum, receives one figure a year from Ji Wanluo, and has never referred to the Root Sill Court in correspondence - a body wearing a name the Survey invented. It has lost two administrations to the Long Cut in living memory and acknowledged neither, and there is a reading of that as composure and a reading of it as having no answer.',
+    howToRunIt:
+        'Both entries are real and both are in the catalog. A player who deals with either should be able to deal with the other, get a different account of the same nine hundred years, and find that nothing in the world can tell them which one is the house. That is not a plot waiting to resolve. It is the answer.'
+} as const;

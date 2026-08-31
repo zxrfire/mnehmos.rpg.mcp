@@ -267,7 +267,17 @@ describe('above the map', () => {
         for (const c of COURTS) {
             expect(() => CourtSchema.parse(c), c.id).not.toThrow();
             expect(getApexInstitution(c.apexId), `${c.id} serves unknown apex`).toBeDefined();
-            expect(mayBeNamed(c.startingAwareness)).toBe(false);
+            // A court is as nameable as the apex above it, which is the same
+            // trade this test already makes for the apexes themselves. The two
+            // ancient ones buy unreachability with unnameability and their
+            // courts inherit both; the Azure Cloud Pavilion has a front gate,
+            // a public ladder and a recruitment cycle, so its court is a place
+            // in the Low Fall that people can name and walk to. Requiring
+            // every court to be unnameable was requiring every apex to be
+            // hidden, one level down, without saying so.
+            const above = getApexInstitution(c.apexId)!;
+            expect(mayBeNamed(c.startingAwareness), c.id)
+                .toBe(mayBeNamed(above.startingAwareness));
         }
         // Whisper is still not enough to speak a name.
         expect(mayBeNamed('whisper')).toBe(false);
@@ -293,9 +303,14 @@ describe('above the map', () => {
     });
 
     it('recontextualises a faction the player already knows', () => {
-        const rootSill = getCourt('court-root-sill')!;
-        expect(rootSill.embodiedByFactionId).toBe('sect-kiln-wardens');
+        // The house split, so the court on the datum and the sect that walked
+        // are two bodies rather than one under two names. Each kept one of the
+        // names: the ground kept the older, the people took the newer.
+        const onTheDatum = getCourt('court-kiln')!;
+        expect(onTheDatum.name).toBe('The Kiln Court');
+        expect(onTheDatum.embodiedByFactionId).toBeNull();
         expect(getParentage('sect-kiln-wardens')!.relation).toBe('court');
+        expect(getParentage('sect-kiln-wardens')!.parentFactionId).toBe('apex-long-cut');
         // The Wardens' oddities in the sect catalog are what the reveal explains.
         expect(getSect('sect-kiln-wardens')!.recruits).toBe(false);
     });
@@ -485,8 +500,19 @@ describe('what a sect can field, versus what it can spend once', () => {
             if (!sealed) continue;
             const sect = getSect(sectId);
             if (!sect) continue;
-            expect(sect.powerOrdinal, `${sectId} absorbed its sealed ancestor`)
-                .not.toBe(sealed.realmOrdinal);
+            // This used to assert the two ordinals differ, which was a claim
+            // about the world smuggled in as a claim about bookkeeping: it
+            // made a sealed ancestor level with - or below - the house that
+            // holds one impossible, and there is no reason it should be. A
+            // house can perfectly well have put somebody under who was its
+            // equal, or who has thinned since, or who was never the strongest
+            // thing it had. What must never happen is the sealed one showing
+            // up in the figure outsiders read, and that is what is checked.
+            const threat = sectThreat(sectId)!;
+            expect(threat.acting, `${sectId} folded its sealed ancestor into public strength`)
+                .toBe(sect.powerOrdinal);
+            expect(threat.ceiling, `${sectId} ceiling must cover the sealed one`)
+                .toBeGreaterThanOrEqual(sealed.realmOrdinal);
         }
     });
 
@@ -596,7 +622,12 @@ describe('holding ground by being unanswerable', () => {
 describe('who can actually put the last realm somewhere else', () => {
     it('gives each apex exactly one, and pins them to the seat', () => {
         for (const apex of APEX_INSTITUTIONS) {
-            expect(apex.lastRealm.count, apex.id).toBe(1);
+            // One PIN per house, not one person. The Pavilion has two at
+            // the last realm and only one of them is on the object; the two
+            // were conflated for a long time and the conflation was costing
+            // the Pavilion its second in every power reading in the setting.
+            expect(apex.lastRealm.pinned, apex.id).toBe(true);
+            expect(apex.lastRealm.count, apex.id).toBeGreaterThanOrEqual(1);
             expect(apex.lastRealm.pinned, apex.id).toBe(true);
             // The ordinal is real; the availability is not.
             expect(apex.powerOrdinal).toBeGreaterThanOrEqual(41);
@@ -775,6 +806,7 @@ describe('the third apex: young, visible, and holding outright', () => {
         expect(apex!.heritage).toBe('recent');
         expect(apex!.lastRealm.count).toBe(1);
         expect(apex!.lastRealm.pinned).toBe(true);
+        expect(apex!.lastRealm.pinned).toBe(true);
         expect(apex!.sentDown.id).toBe('artifact-the-standing-edge');
         // The catalog and the structure agree about the same object.
         const gift = SECT_ANCESTRY[AZURE].partingGift!;
@@ -854,7 +886,9 @@ describe('why the Court cannot be robbed', () => {
         // play against an apex and no play at all against the Court.
         expect(court.count - 2).toBeGreaterThanOrEqual(1);
         for (const apex of APEX_INSTITUTIONS) {
-            expect(apex.lastRealm.count - 1).toBe(0);
+            // The Court fields more than any apex has at the last realm,
+            // which is still true now that one of them has two.
+            expect(court.count).toBeGreaterThan(apex.lastRealm.count);
         }
     });
 });
@@ -1078,7 +1112,15 @@ describe('Seat is the Hollow Court vocabulary and nobody else uses it', () => {
         }
         for (const c of COURTS) {
             const t = leaderTitleOfCourt(c);
-            expect(t).toContain('Lord');
+            // A court the apex posted and named derives its title from its own
+            // name - the Ninth Face Court has a Ninth Lord. A court that grew
+            // and was re-described afterwards names its own senior, and the
+            // Kiln has called hers a Keeper of the Kiln for nine hundred years
+            // without stopping when the Survey renamed the posting. Both are
+            // legitimate; what matters is that the title belongs to the body
+            // rather than to a convention imposed on it.
+            if (c.leaderTitle === undefined) expect(t).toContain('Lord');
+            else expect(t).toBe(c.leaderTitle);
             expect(t, c.id + ' borrows the Court vocabulary').not.toMatch(/Seat/i);
             expect(seen.has(t), 'duplicate title ' + t).toBe(false);
             seen.add(t);

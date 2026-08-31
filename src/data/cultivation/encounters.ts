@@ -49,9 +49,19 @@
  * and the summaries here should not either.
  */
 
-import { z } from 'zod';
-import { SimEventKindSchema, type SimEventKind } from '../../schema/cultivation.js';
+import {
+    RegardProfileSchema,
+    SimEventKindSchema,
+    type SimEventKind
+} from '../../schema/cultivation.js';
 import { MAX_ORDINAL, TOTAL_RANKS } from '../../engine/cultivation/realms.js';
+import {
+    regardFor,
+    regardOf,
+    type Regard,
+    type RegardAskerInput
+} from '../../engine/cultivation/regard.js';
+import { z } from 'zod';
 
 /** Coarse classification, for filtering and for rumour/log grouping. */
 export const EncounterKindSchema = z.enum([
@@ -90,7 +100,17 @@ export const EncounterEntrySchema = z.object({
     summaryTemplate: z.string().min(1),
     /** Every token appearing in the template, declared so the engine can fill it. */
     tokens: z.array(z.string()),
-    tags: z.array(z.string())
+    tags: z.array(z.string()),
+    /**
+     * The generic column.
+     *
+     * Absent on nearly every entry: the bands read `minOrdinal`, which is what
+     * the entry is pitched at, and `threatOrdinal` is what an entry's damage is
+     * priced off separately. Present on the handful of entries that are never
+     * outgrown - qi deviation, being robbed in seclusion - where `span` is how
+     * "nothing is ever fully outgrown" is said in data rather than in a branch.
+     */
+    regard: RegardProfileSchema.optional()
 });
 export type EncounterEntry = z.infer<typeof EncounterEntrySchema>;
 
@@ -1536,7 +1556,13 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         summaryTemplate:
             'Circulating qi reverses during cultivation on day {days}. Severity: {severity}. Cause: {cause}. Cultivation is halted until the deviation is cleansed.',
         tokens: ['days', 'severity', 'cause'],
-        tags: ['injury', 'unavoidable', 'pill-solvable']
+        tags: ['injury', 'unavoidable', 'pill-solvable'],
+        // Never outgrown, and this is where that is said. A gate of zero would
+        // otherwise put a Nascent Soul cultivator seventeen rungs past it and
+        // the bands would stop treating it as anything. The whole ladder is
+        // inside one span of four, so it reads as a live problem at every rung
+        // it can fire at - which is all of them.
+        regard: { span: 4 }
     },
     {
         id: 'enc-heart-demon-whisper',
@@ -1611,7 +1637,10 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         summaryTemplate:
             'Ambient qi at {place} has fallen to {ambient}. Cultivation over the last {years} years produced no measurable progress. Remaining lifespan at this realm: {remainingYears} years.',
         tokens: ['place', 'ambient', 'years', 'remainingYears'],
-        tags: ['stagnation', 'lifespan', 'relocate']
+        tags: ['stagnation', 'lifespan', 'relocate'],
+        // The other one nothing outgrows: thin ground is thin ground whether
+        // you are Nascent Soul or past the last crossing.
+        regard: { span: 4 }
     },
     {
         id: 'enc-sect-betrayal',
@@ -1642,6 +1671,151 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
             'A tribulation cloud gathers over {place} {days} days before the attempt was planned. Estimated strikes: {count}. Current injuries untreated: {untreated}.',
         tokens: ['place', 'days', 'count', 'untreated'],
         tags: ['tribulation', 'unavoidable', 'lethal']
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ABOVE THE LID
+    // Two bands the rest of this table's assumptions do not survive, and
+    // the honest fix is different KINDS of entry rather than bigger
+    // numbers. `threatOrdinal` is null on every one of them, which is not
+    // an oversight: nothing below the Lid meaningfully threatens either
+    // rung, and an entry that pretended otherwise would be the table
+    // arguing with the resolver.
+    //
+    // AT 45 THE WORLD IS STILL REACHABLE
+    // Somebody here lives in it permanently - holds an office, lectures,
+    // leaves faces behind, is met in inns. So the encounters are people:
+    // somebody wants something from them, somebody has found something
+    // they put down, or a house would like them to be its. The one at this
+    // rung holds no object of any kind, which is why nothing here is a
+    // thing that could be taken off him.
+    //
+    // AT 46 THE WORLD IS A STOPWATCH
+    // `isExpelledFromBelow` is true up there and
+    // `BREATHS_IN_THE_LOWER_REALM` is ten to fifteen, so anything at this
+    // rung is being expelled for the whole of the time it is here. These
+    // are not meetings. They are errands with a fuse, and most of them are
+    // shaped by the fact that the errand cannot be finished.
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'enc-a-house-makes-an-approach',
+        name: 'A House Makes an Approach',
+        kind: 'sect_event',
+        simEventKind: 'sect_event',
+        weight: 40,
+        minOrdinal: 45,
+        maxOrdinal: 45,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A senior member of {faction} has travelled to {place} in person and stated what the house is and what it is working on. The reserved post has stood empty {years} years. No question was asked and no answer was requested.',
+        tokens: ['faction', 'place', 'years'],
+        tags: ['social', 'office', 'no-ask', 'declinable-by-silence']
+    },
+    {
+        id: 'enc-a-face-has-been-found',
+        name: 'A Face Has Been Found',
+        kind: 'ruin',
+        simEventKind: 'npc_event',
+        weight: 30,
+        minOrdinal: 45,
+        maxOrdinal: 45,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            'Cutting left at {place} has been read by {name}, who has been working from it for {years} years and has attributed it to nobody. {faction} has begun building on the reading.',
+        tokens: ['place', 'name', 'years', 'faction'],
+        tags: ['carving', 'transmission', 'attribution', 'unlooked-for']
+    },
+    {
+        id: 'enc-an-inheritor-has-talked',
+        name: 'An Inheritor Has Talked',
+        kind: 'misfortune',
+        simEventKind: 'npc_event',
+        weight: 22,
+        minOrdinal: 45,
+        maxOrdinal: 45,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            '{name}, an inheritor of {years} years standing, has told {faction} where the cache came from. The account was believed. The cache at {place} has not been restocked since.',
+        tokens: ['name', 'years', 'faction', 'place'],
+        tags: ['social', 'secrecy', 'no-retaliation', 'quiet-consequence']
+    },
+    {
+        id: 'enc-a-line-on-the-register',
+        name: 'A Line on the Register',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 18,
+        minOrdinal: 45,
+        maxOrdinal: 45,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            '{faction} has entered a line against a name admitted {years} years ago, carrying one word and no date, circumstance or account. Lines on that register currently number {count}. None has ever been struck or confirmed.',
+        tokens: ['faction', 'years', 'count'],
+        tags: ['dao-house', 'record', 'unresolvable', 'never-acted-on']
+    },
+    {
+        id: 'enc-fifteen-breaths',
+        name: 'Fifteen Breaths',
+        kind: 'misfortune',
+        simEventKind: 'encounter',
+        weight: 40,
+        minOrdinal: 46,
+        maxOrdinal: 46,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A descent has been made to {place} and the count has started. Allowance at this rung: {count} breaths. Witnesses present: {witnesses}. Nothing carried may be set down here and nothing set down here would remain.',
+        tokens: ['place', 'count', 'witnesses'],
+        tags: ['expulsion', 'timed', 'unavoidable', 'above-the-lid']
+    },
+    {
+        id: 'enc-the-errand-that-cannot-be-finished',
+        name: 'The Errand That Cannot Be Finished',
+        kind: 'misfortune',
+        simEventKind: 'encounter',
+        weight: 30,
+        minOrdinal: 46,
+        maxOrdinal: 46,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'The matter at {place} required {years} years of attention and {count} breaths were available. It was left at the point the count reached its end. No party below has been informed that it was unfinished.',
+        tokens: ['place', 'years', 'count'],
+        tags: ['expulsion', 'timed', 'incomplete', 'above-the-lid']
+    },
+    {
+        id: 'enc-one-clause-in-reply',
+        name: 'One Clause in Reply',
+        kind: 'dao_house',
+        simEventKind: 'npc_event',
+        weight: 24,
+        minOrdinal: 46,
+        maxOrdinal: 46,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            'An offering from {faction} arrived, costing {years} years of the house output, and carried {count} questions. What went back was one clause, answering the first of them exactly and nothing else.',
+        tokens: ['faction', 'years', 'count'],
+        tags: ['dao-house', 'channel', 'offering', 'terse', 'above-the-lid']
+    },
+    {
+        id: 'enc-writings-sent-down',
+        name: 'Writings Sent Down',
+        kind: 'opportunity',
+        simEventKind: 'opportunity',
+        weight: 20,
+        minOrdinal: 46,
+        maxOrdinal: 46,
+        interrupts: false,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A set of writings has gone down to {faction}, which stands at {rank} and holds nothing else of the kind. Working time before any of it is usable, by the house own estimate: {years} years.',
+        tokens: ['faction', 'rank', 'years'],
+        tags: ['transmission', 'read-channel', 'slow', 'above-the-lid']
     }
 ] as const;
 
@@ -1662,7 +1836,7 @@ const ENCOUNTERS_BY_KIND: ReadonlyMap<EncounterKind, readonly EncounterEntry[]> 
 })();
 
 /**
- * Eligible entries per ordinal, precomputed for all 45 ranks. The time-skip
+ * Eligible entries per ordinal, precomputed for every rank. The time-skip
  * simulation may draw thousands of times in one call, so the per-draw cost is
  * a weighted walk over an already-filtered list rather than a scan of the
  * catalog.
@@ -1756,6 +1930,54 @@ function clampOrdinal(ordinal: number): number {
  * rather than blanked, so a missing fact is loud in the log instead of quietly
  * becoming an empty string the agent then narrates around.
  */
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT AN ENCOUNTER COSTS
+//
+// Two different questions, both answered by the same generic resolver.
+//
+//   "is this entry pitched at me"    -> gate is `minOrdinal`
+//   "what does the thing in it cost" -> gate is `threatOrdinal`
+//
+// The second is the one that was missing. `minOrdinal`/`maxOrdinal` already
+// decided WHICH entries could fire, so the draw moved with the ladder; what
+// never moved was the price of the fight once it fired. Roadside bandits cost
+// a Qi Condensation cultivator a real wound and cost a False Immortal nothing,
+// and until now the engine had no way to say the second half.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** How the entry itself is pitched: is it still being drawn for this asker. */
+export function encounterRegard(entry: EncounterEntry, asker: RegardAskerInput): Regard {
+    return regardOf(entry, asker);
+}
+
+/**
+ * How the hostile half is pitched. Null when the entry is not a fight, which
+ * is the honest answer rather than a damage multiplier of one.
+ */
+export function encounterThreatRegard(
+    entry: EncounterEntry,
+    asker: RegardAskerInput
+): Regard | null {
+    if (entry.threatOrdinal === null) return null;
+    return regardFor(entry.threatOrdinal, asker, entry.regard);
+}
+
+/**
+ * What this encounter actually takes out of somebody, against a base figure
+ * the caller owns. Rounded, never negative, and zero is a legitimate result:
+ * a thing far enough below you does not cost you anything at all, and saying
+ * so is the point of the mechanism.
+ */
+export function encounterDamage(
+    entry: EncounterEntry,
+    baseDamage: number,
+    asker: RegardAskerInput
+): number {
+    const regard = encounterThreatRegard(entry, asker);
+    if (!regard) return Math.max(0, Math.round(baseDamage));
+    return Math.max(0, Math.round(baseDamage * regard.damageMultiplier));
+}
+
 export function fillSummary(entry: EncounterEntry, values: Record<string, string | number>): string {
     return entry.summaryTemplate.replace(/\{(\w+)\}/gu, (whole, token: string) => {
         const value = values[token];

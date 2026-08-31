@@ -32,6 +32,11 @@ contract and the tests are the validator.
 | `beasts.ts` | The population that is not human, its materials and its tides | One ladder: danger is a realm ordinal, never a stat block. Anything that speaks is at least Core Formation |
 | `sects.ts` | Sects, Dao houses, destroyed houses | Every sect is *late*: none of them built what they live in |
 | `encounters.ts` | The tables the time-skip draws from | `summaryTemplate` is an engine-authored factual summary, never prose |
+| `false-immortals.ts` | Ordinal 45: the three legacy paths, the trajectory, the vacant dao protector post, and the faces the living one leaves where he lectures | Rank is shut and the dao is not. No sealed ancestor anywhere may sit at or above ordinal 45, no house has a serving False Immortal protector, and the post is vacant rather than abolished. The one who is still alive holds no object of any rung, and nothing may quietly give him one |
+| `inheritance-trials.ts` | Trials and graves: what is behind the door | The interior is unreachable through `outsideViewOf`, by type. Three gate kinds, different in kind. What a grave holds is decided by how the occupant died |
+| `catastrophe.ts` | What a disaster can end, who answers it, and who pays | A catastrophe destroys a sect or a court and cannot reach an apex head. What it costs is paid by the people with the least, and the elders walk out |
+| `standoff.ts` | The top of the world, and whether it can be moved | One argument in several parts: the margin, the stall, the conspiracy, the revolt, and why none of it happens. Nothing here decides a fight - every figure is measured by the resolver and the prose yields when it disagrees |
+| `crossings.ts` | Who crossed, who still answers, and what comes back down | `count` is not a roster: every crossing is on a `roll`, titled, even where the name is withheld. An ascended ancestor who might answer is a deterrent whose willingness nobody can verify |
 | `index.ts` | Barrel export and cross-catalog lookups | All lookups O(1) against prebuilt Maps; provenance always available |
 
 Do not hardcode entry counts anywhere. The catalogs grow, and a number written into prose
@@ -70,6 +75,40 @@ mortal-grade one is never as risky.
 The bands are expressed **as data**, so the tests assert against the same table the
 content was authored from. Change the band, and the tests tell you which entries no longer
 fit.
+
+### Regard: the one generic column that answers by height
+
+Grade says what a thing *is*. `regard` says how the world answers the person asking for it, and
+it is the second axis every catalog in this directory now carries.
+
+The mechanism lives in [`../../engine/cultivation/regard.ts`](../../engine/cultivation/regard.ts)
+and the table lives in `src/schema/cultivation.ts`. What this directory owes it is one thing: an
+honest gate. Every record already has one - `harvestOrdinal`, `minOrdinal`, `requiredOrdinal`,
+`ordinal` - and the resolver reads whichever of those the record happens to name. The gap between
+the asker's rung and that gate is looked up in seven bands, and the band carries the yield, the
+duration, the price, the damage and whether the thing is put forward at all.
+
+`RegardProfileSchema` is the optional column, and it should stay rare:
+
+| Field | When to use it |
+|---|---|
+| `gate` | The record's rung is not in any of the ordinary columns. A pill, for instance |
+| `span` | The record is not outgrown at the ordinary rate. `span: 4` on qi deviation is how "nothing is ever fully outgrown" is said in data rather than in a branch |
+| `neverOffered` / `alwaysOffered` | The record is a thing you must ask for, or one nobody stops offering |
+| `reaction` | The generic band line is factually wrong for this record |
+
+Two rules that are the whole point:
+
+- **The refusal at the top is as real as the one at the bottom.** A record the asker has outgrown
+  is not offered, and the reason is reported. "Nothing here is worth your time and everyone can
+  see what you are" is an answer. An empty array is not.
+- **A resolver that narrows a pool must be able to say what it dropped.** `offeredTo` has
+  `refusalsFor` beside it, and `findWorkForOrdinal` has `workWithheldFrom`, for exactly this.
+
+`OCCUPATIONS` is the worked example of the whole idea: the commissions a Deity Transformation
+cultivator is offered are rows in the same array, under the same schema, read by the same
+`findWorkForOrdinal`. An "immortal work" table beside the occupation table would be the same
+mistake as an "immortal weapons" table beside the artifact table.
 
 ### Elements, and the starved ones
 
@@ -113,6 +152,56 @@ Consequences the catalogs enforce:
 
 The economic and narrative consequences of a grave versus a deliberate inheritance are in
 [`../../../docs/world/economy.md`](../../../docs/world/economy.md).
+
+### Every art has a route, and an art with none says so
+
+Provenance answers *how* a copy would reach a reader. It does not answer whether one is
+anywhere, and for a long time nothing did: `scripts/audit-lore.ts` found fifteen arts that
+no sect taught, no trial awarded, no grave held, no False Immortal's carving had yielded
+and no parting gift carried. None of them was deliberately unobtainable. They were
+unreferenced, which reads identically from inside the data.
+
+The routes are five, they are closed, and they are different in kind:
+
+| Route | Field | What it is |
+|---|---|---|
+| taught | `SectEntry.teaches` / `signatureTechniqueId` | A teacher, who can be paid, joined or robbed |
+| trial | `InheritanceTrial.interior.prize.techniqueIds` | A door, calibrated for somebody who is not you |
+| grave | `Grave.interior.contents[].techniqueId` | A body, and nothing on it was the right size for the finder |
+| carving | `DaoCarving.yieldedTechniqueIds` in `false-immortals.ts`, reached through `allDaoCarvings()` | A face somebody cut, usually for a reader who never came |
+| parting gift | `SECT_ANCESTRY[...].partingGift.techniqueIds` | An estate put down on the way out of the world |
+
+And one non-route, which is the point of the rule: `NO_SURVIVING_COPY_TECHNIQUE_IDS`
+marks an art the world can name and cannot produce, and `NO_SURVIVING_COPY_NOTES` gives
+the reason for each. It sets `survivingCopy: false` on the entry and replaces the generic
+`sourceNote` with that reason. Keep the set small: an art that is merely hard to find
+belongs in a sealed site.
+
+`tests/data/cultivation-technique-routes.test.ts` asserts every entry has a route or the
+marker, that the marker and the routes never both apply, that a parting gift is held
+rather than taught, and that a route never quietly raises a sect's power. The audit
+reports a marked art as a stated absence rather than an ORPHAN, and reports a marked art
+that something hands over as a CONTRADICTION.
+
+**Ask `allDaoCarvings()` rather than walking `FALSE_IMMORTALS`.** The carving route is the
+kind of thing - a face somebody cut - and not the array it happens to hang off. Seven of
+those faces are attached to a record in the catalog of endings because their authors are
+gone. Three are not, because their author is still walking around and does not belong in
+that catalog. Anything asking what a face can hand somebody must go through the accessor,
+or it quietly answers for two thirds of the faces in the world; the routes suite and
+`scripts/audit-lore.ts` both read it.
+
+Note what does *not* bound a route: the Lid. `OBJECT_CEILING_BELOW_THE_LID` in
+`realms.ts` caps objects, because an object rated at a rung lets its holder strike at that
+rung and one from above the Lid goes back up inside fifteen breaths rather than being
+left, looted or inherited. A manual is paper. It can be studied to full mastery and the
+reader is still exactly the rung they were, so `MANUALS_MAY_EXCEED_THE_LID` is true and an
+art may sit anywhere on the ladder and still be handed over down here. What bounds the
+routes is `CONTENT_MAX_ORDINAL`, which is this catalog's own decision about what it
+authors - and that decision is now the top of the ladder rather than the last crossing,
+because both rungs above the Lid have exactly one channel each and both channels have
+something at the far end of them. The scarcity up there is carried by how few arts there
+are and how narrow the way to them is, not by the catalog declining to write them down.
 
 ---
 
@@ -207,3 +296,4 @@ past the change, which is the whole reason beasts are hunted rather than avoided
 - [`../../../docs/world/the-late-age.md`](../../../docs/world/the-late-age.md) - why nothing here is invented
 - [`../../../docs/world/sects.md`](../../../docs/world/sects.md) - what the sect catalog is a model of
 - [`../../../docs/world/economy.md`](../../../docs/world/economy.md) - what things cost and why
+- [`../../../docs/world/immortals.md`](../../../docs/world/immortals.md) - what `false-immortals.ts` is a model of

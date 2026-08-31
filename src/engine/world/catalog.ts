@@ -24,6 +24,7 @@
  */
 
 import type { AmbientQi } from '../../schema/cultivation.js';
+import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX, clampQiDensity } from './qi-scale.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SHAPES
@@ -93,7 +94,7 @@ export interface CatalogRegion {
     home: boolean;
     summary: string;
     ambient: AmbientQi;
-    /** 0..1, derived from the region's own ambient profile. */
+    /** 1..100, derived from the region's own ambient profile. */
     qiDensity: number;
     /** Nobody here has passed this in living memory. */
     localCeilingOrdinal: number;
@@ -139,7 +140,7 @@ export function dominantAmbient(profile: Partial<Record<AmbientQi, number>>): Am
 }
 
 /**
- * Qi density from an ambient profile, 0..1.
+ * Qi density from an ambient profile, on the 1..100 ground scale.
  *
  * A weighted average over the bands rather than the dominant one alone, so a
  * region that is mostly thin with a rich pocket reads richer than one that is
@@ -160,7 +161,11 @@ export function densityFromProfile(profile: Partial<Record<AmbientQi, number>>):
         total += w;
         sum += w * weights[band];
     }
-    return total > 0 ? Number((sum / total).toFixed(4)) : 0.35;
+    // On the 1..100 ground scale. The band weights above are still the 0..1
+    // shares they always were; this is the one place they become the scale.
+    return total > 0
+        ? clampQiDensity((sum / total) * QI_DENSITY_MAX)
+        : QI_DENSITY_DEFAULT;
 }
 
 /**

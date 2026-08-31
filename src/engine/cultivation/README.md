@@ -70,10 +70,19 @@ born, unchangeable, and worth more than any effort you will ever make.
 - **Dual conflicting roots** (water-fire, metal-wood) draw two energies that fight each
   other on the way in. This is qi deviation: not a rare accident but a standing condition,
   a low fever that never resolves.
+- **The triple root** (metal-wood-earth) holds three links of the overcoming cycle in a
+  row. Metal cuts wood, wood breaks earth, and the chain never closes - so exactly one of
+  its three elements, earth, can be cultivated cleanly. Most people who hold it spend
+  years finding out which one that is.
+- **The quad root** (metal-wood-earth-water) is the same chain one link longer, with fire
+  absent. The absence is worth nothing. A root is judged by what it holds, and this one
+  holds four things at once.
 - **The five-element muddled root** draws everything and keeps almost none of it. It is
-  the single most common draw in the world. The overwhelming majority of people who ever
-  try to cultivate have this root, get nowhere, and die at eighty having spent their lives
-  on it anyway.
+  the single most common draw in the world.
+
+  Counted together, the mixed roots - three, four and five elements - are better than a
+  third of all births. The overwhelming majority of people who ever try to cultivate hold
+  one of them, get nowhere, and die at eighty having spent their lives on it anyway.
 - **Mutated roots** draw something that should not be there at all. **Lightning** is
   devastating, and there are almost no manuals for it because almost nobody who had it
   lived long enough to write one. **Ice** takes as readily as it gives.
@@ -303,6 +312,37 @@ This is why the hunger clock exists mechanically and why the Grain Abstinence Pi
 genuine mid-game goal rather than a convenience item. Half the deaths in this world are
 logistical.
 
+### The pantry is priced before the door shuts, not after
+
+`assessProvisioning` in `survival.ts` answers "what will this stretch of days do to them"
+using the same constants `consumeFood` in `time-skip.ts` will later burn. Any caller
+about to run a long skip is expected to ask it first, and to refuse in its own voice when
+the answer is bad - the way `attemptBreakthrough` refuses insufficient progress *before*
+the attempt rather than reporting it afterwards.
+
+There are **three** outcomes, not two, and conflating the middle one is how this was
+missed for a while:
+
+| Outcome | When | What the skip does |
+|---|---|---|
+| `fed` | belly + pack cover the whole stretch | runs its length |
+| `ejected` | food runs out partway, and there is a belly or a ration at the door | stops on the day it runs out, alive; the rest of the request is thrown away |
+| `fatal` | entered with an empty belly **and** an empty pack | no interrupt is left to fire - dead on day `STARVATION_TURNS` whatever duration was asked for |
+
+The third row is deliberate and stays deliberate. `simulateTimeSkip` seeds
+`starvationAnnounced` from the entry state, on the grounds that somebody already starving
+has been told once; the consequence is that the second command of a pair is the lethal
+one, and the second command is the obvious one to type after being ejected. This is not a
+bug in the skip. It is the reason callers must price the stretch first.
+
+`assessProvisioning` is **not** a rescue. It never shortens a seclusion, never feeds
+anybody, and never caps what may be asked for. Starving in a sealed cave stays reachable.
+What it removes is walking into it with no figure attached.
+
+`tests/engine/cultivation/provisioning.test.ts` checks every projection against a real
+`simulateTimeSkip` run, because a projection validated against a restatement of the code
+it projects is worth nothing.
+
 ## Settling: death by standing still
 
 Refining never finishes. A cultivator who stops advancing does not merely stagnate - the
@@ -327,7 +367,7 @@ combat_defeat       hp reaches 0
 starvation          STARVATION_TURNS consecutive turns at 0 satiety
 lifespan_exhausted  age reaches the realm's lifespanYears
 stagnation_aging    STAGNATION_YEARS without advancing a rank
-untreated_injuries  LETHAL_UNTREATED_INJURIES untreated, and you fight anyway
+untreated_injuries  LETHAL_UNTREATED_INJURIES untreated - fight, or simply wait
 ```
 
 Injuries do not heal on their own. There is no long rest and no overnight recovery: an
@@ -336,6 +376,36 @@ untreated it drags on both cultivation rate and breakthrough odds. That is the r
 run does not end because one bad roll killed you; it ends because five months ago you took
 a torn meridian, kept cultivating anyway, and every roll since has been worse than the
 last.
+
+### Bleeding out, and why the last death has two routes
+
+`untreated_injuries` is the only cause on that list reachable two ways, and it needs both.
+
+Forcing a fight at LETHAL_UNTREATED_INJURIES open wounds kills at once - that is the
+choice, and the caller declares it with `forcingCombat`. Doing nothing at all kills in
+BLEED_OUT_TURNS, on a persisted counter (`bleedingTurns`) that advances every turn spent at
+or above the threshold and resets to zero the moment one wound is closed. It is deliberately
+built as the sibling of starvation: same shape of constant, same persisted counter, same
+pure advance-or-reset function, same clause in the same gate.
+
+The second route exists because the first one alone made the state a trap with no exit. A
+cultivator at three open meridians could not advance - untreated injuries raise deviation
+risk, so every seclusion produced another wound and another ejection - could not heal,
+because nothing heals meridian damage on its own, and could not die either, because the
+only door was a fight the engine had just told them was fatal. The run was neither winnable
+nor loseable. Standing still with your meridians open has to be a way to die.
+
+BLEED_OUT_TURNS is ninety days, and the window is sized rather than picked: longer than a
+full belly, so crossing to a settlement is a real plan; exactly one encounter check, so the
+world gets one chance to arrive while you are dying; and far shorter than the years a rank
+costs, so no seclusion worth entering survives it.
+
+It is **not gated on realm.** Hunger tapers to nothing by Deity Transformation because a
+body that takes nothing from the world takes no meals from it. Nothing on the ladder makes
+an open meridian less load-bearing - the higher the realm, the more qi is being pushed
+through the channel that is torn - so a mortal at ordinal 0 and a Body Integration
+cultivator at 40 bleed on the same clock. The only gate is `hasBody`: a soul persisting
+without a body has no meridians to bleed from.
 
 ### Lifespan is not a straight line
 
@@ -455,7 +525,7 @@ enterable at all.
 | Body Integration | Stops having a seam to attack |
 | Grand Ascension | Can read and handle the Lid |
 | Tribulation Transcendence | The Lid answers back |
-| True Immortal | Through |
+| Immortal | Over the Lid, or through it |
 
 ### Core Formation - the reference point
 
@@ -545,11 +615,16 @@ complete they are nearly the person.
 
 Their deaths leave permanent geography. The failure scars on the map are mostly theirs.
 
-### True Immortal - through
+### Immortal - over the Lid, or through it
 
-The top of the ladder and the end of the run. Outside the simulation, and outside the
-reach of everything in it - which is why the world's opinion of them is entirely
-posthumous rumour.
+The only realm nobody climbs into. It has two rungs, ordinals 45 and 46, and the single
+attempt made from Tribulation Transcendence Perfection lands on one of them: False
+Immortal at 45, True Immortal at 46. Neither rung leads to the other.
+
+True Immortal is the top of the ladder and the end of the run - outside the simulation,
+and outside the reach of everything in it, which is why the world's opinion of them is
+entirely posthumous rumour. False Immortal is on the ladder and very much inside the
+world's reach, which is the whole difficulty it presents.
 
 ## Two rules that keep this from becoming a power fantasy
 
@@ -660,6 +735,70 @@ At the end of that realm sits one final attempt - the crossing that actually goe
 the Lid - and it resolves three ways rather than two. `immortal_status` records which:
 `none`, `false_immortal`, or `true_immortal`.
 
+Two of those three outcomes move the ordinal, and they move it to adjacent rungs of the
+same realm:
+
+| Outcome | Ordinal | Rank name |
+|---|---|---|
+| Attempt made from | 44 | Tribulation Transcendence Perfection |
+| Survived, incomplete | 45 | False Immortal |
+| Completed | 46 | True Immortal |
+| Struck down | - | dead, and a scar on the map |
+
+`immortal_status` is kept alongside the ordinal rather than replaced by it, because the
+rank says where somebody stands and the status says the Lid has already been opened
+against their name. It is the status, not the ordinal, that bars the re-attempt.
+
+### The price, and why most people at the last rung never summon anything
+
+The crossing is priced by `LAST_CROSSING_TAX` in `realms.ts` at **three times** the untaxed
+rung, against **2.5** for every other realm boundary. That is not a wall being made harder;
+it is a different kind of obstacle.
+
+At every other boundary the tax buys a wall: a rung that costs several times the one below
+it, which a cultivator either gets through or does not, and can strike at again next
+century. Ordinal 44 is not a wall. The price is a sum of qi so large that gathering it
+consumes roughly **seven eighths of the settling clock the rung grants** - for a cultivator
+in perfect condition, with the best root the world deals, standing on a sealed vein. Anyone
+who arrived worn cannot pay it at all.
+
+Two consequences follow, and they are the whole shape of the top of the ladder:
+
+- **Reaching the last rung is not the same as attempting the crossing.** A great many
+  people stand at Tribulation Transcendence Perfection for a hundred thousand years and
+  never summon anything, because the arithmetic never comes out. They are not failing.
+- **It is one shot.** `LAST_CROSSING_PROGRESS_LOSS` is 1: a failed crossing burns the
+  entire accumulation, not a quarter of it. The qi was not dispersed, it was thrown at the
+  Lid and kept. A cultivator who survives a failed crossing is standing on the same rung
+  with nothing in them and no clock left to gather it again.
+
+So there is a fourth ending, and the world is full of it: **stranded**. Alive at 44, the
+price spent, the Lid unopened, and no prospect of another attempt. A good number of the
+people the world politely describes as having "reached the top and refused to step through"
+are in that state.
+
+### Declining
+
+Standing at the last rung is a **question**, and `assessLastCrossing` in `breakthrough.ts`
+is the engine answering it without deciding it.
+
+It is roll-free and read-only. It returns the summon odds, the strike count and per-strike
+survival, the completion chance, and the four end-to-end probabilities - True Immortal,
+False Immortal, dead, stranded - which sum to one, plus the years the cultivator has left
+and the whole itemised modifier list. A caller can put that in front of a player, or use it
+to drive an NPC, and the answer will be the same arithmetic the mountain is about to use.
+
+The engine does not decide. A decision the engine makes for you is not a decision you made,
+and this is the one moment in a run where that matters most. What the engine does is make
+sure the choice is informed, and make declining a real position rather than a failure of
+nerve: a cultivator who is old, worn, and looking at a one-in-five chance of going through
+is choosing between a hundred thousand years as the most powerful thing in a province and a
+coin flip against a scar in the ground. Plenty of them sit down.
+
+`hierarchy.ts` has recorded that distinction in its courts all along - `highWaterMark.end`
+is `attempted` or `declined`, Yun Baiheng against Shen Guyi - and until this existed nothing
+in the engine could produce either.
+
 ### True Immortal
 
 The hole is punched, and the cultivator goes through it. This is the top of the ladder and
@@ -689,10 +828,12 @@ declines to take them. What is left stays on this side of the Lid, permanently.
 A False Immortal is:
 
 - **Enormously powerful.** Stronger than anything at Tribulation Transcendence, because
-  part of the transformation did happen.
+  part of the transformation did happen - and ranked accordingly, at ordinal 45. They sort
+  into the ordinary power table above every cultivator still under the Lid; there is no
+  separate accounting for them and there should not be.
 - **Permanently barred.** The Lid has already been opened once against their name and will
-  not open again for them. They cannot re-attempt, and everyone who understands what they
-  are knows it.
+  not open again for them. Ordinal 46 is one rung up, legal, and shut. They cannot
+  re-attempt, and everyone who understands what they are knows it.
 - **Not immortal.** Their lifespan is vast and it is finite, and they can count it. They
   will die on this side, having been most of the way through.
 - **Incomplete in a way that shows.** Something did not come back. What is missing varies
@@ -708,10 +849,62 @@ most stuck. They have nothing left to lose, no way forward, and a great deal of 
 think about it. They make excellent patrons, excellent enemies, and the most reliable
 sources of true history in existence, because they were there.
 
-### Failure
+**And they do not stay.** Three hundred thousand years with the one thing you were built
+for permanently shut against you is not a retirement, it is a sentence, and almost none of
+them serve it sitting still. They go looking - down old seams, past the edge of anywhere
+with a name, at whatever might be an answer - and going looking is what kills them. Their
+span is not what ends them; the search is.
 
-The third outcome is the ordinary one. Cultivators who fail the last crossing leave a scar
-and nothing else.
+This is why the world holds one of them and not a crowd. The crossing produces False
+Immortals at a perfectly ordinary rate; **residence** is production times how long they
+stay, and they stay on the order of five centuries out of three hundred millennia. Lu Sheng
+is not the only one the world ever made. He is the one who is still here, which is the most
+interesting fact about him and the reason he is worth writing down. The arithmetic is
+`immortalStock` in [`../world/ladder-odds.ts`](../world/ladder-odds.ts), and the setting
+side of it is [`../../../docs/world/immortals.md`](../../../docs/world/immortals.md).
+
+### Failure, and the near-miss beside it
+
+The remaining outcomes are the ordinary ones. Cultivators killed by the last crossing leave
+a scar and nothing else - `FAILURE_TABLE.lastCrossing` is the most lethal column in the
+game, because a tribulation you summoned and cannot hold does not simply disperse. And
+those who survive it are stranded at 44 with the price gone, which is described above and
+is the commonest of the four endings for anyone who was not in perfect condition when they
+went up.
+
+### What the numbers actually are
+
+Measured over 3,000 whole lives at the very best conditions the schema can express - a clean
+single root, the maximum draw, a sealed vein, an exceptional foundation, three deep
+insights, a pill on every attempt and every wound treated:
+
+| Ending | Share |
+|---|---|
+| False Immortal | 38.6% |
+| True Immortal | 12.7% |
+| Struck down somewhere on the ladder | 26.1% |
+| Alive, stopped short | 22.6% |
+
+One thing the table does not contain, and cannot: **it never bleeds.** "Every wound treated"
+is one of the stated conditions, so the population being measured is precisely the one the
+bleed clock never reaches. Untreated meridian injuries at the lethal threshold now kill on
+their own in ninety days (`BLEED_OUT_TURNS`), and the harness behind this table treats every
+wound the moment stones allow - which, at the maximum draw, is always. The figures are
+therefore still correct for what they claim and still silent about the runs that cannot
+afford a healer, which is most of them. Nobody has measured that population.
+
+Two things about that table matter more than the numbers in it.
+
+**It is a conditional distribution.** It is P(outcome | everything went right), and
+everything going right is the rarest thing in the setting. Roughly a third of all spirit
+roots are dealt with a hard ceiling at ordinal 32; a sealed vein cannot be found by looking;
+comprehension needs a teacher or a text that most provinces do not contain. The rarity of
+an immortal lives in the conjunction, not in the roll, and it is supposed to.
+
+**False Immortals outnumber True ones three to one.** That is `MAX_COMPLETION_CHANCE = 0.25`
+doing exactly one job: of the crossings that survive the lightning, three in four do not go
+through. The Hollow Court is three times the size of the company on the far side, and it is
+that way because the seam closes, not because those people were worse.
 
 ---
 
@@ -732,9 +925,53 @@ toll.ts          the price of advancement, charged at every realm boundary
 breakthrough.ts  the centrepiece; the only routine way a run ends well
 tradition.ts     the two roads, and their opposite answers to being killed
 combat.ts        confrontation: the categorical gap, composite power, earned upsets
+regard.ts        the same ladder, outside a fight: how the world answers, by how
+                 far above or below the ask somebody is standing
 survival.ts      the death engine; the ONLY place death is decided
 time-skip.ts     the long-simulation primitive
 ```
+
+## Regard: the ladder outside combat
+
+`combat.ts` had been reading the ladder correctly for a long time and nothing else was. Measured
+across a sixteen-position by thirty-ask sweep, twenty-three of the thirty asks returned an
+identical answer at every rung: `I gather what herbs I can find` gave a False Immortal at ordinal
+45 exactly what it gave a beginner at ordinal 0 - seven days bent over the ground, one stalk - and
+`I take any work I can get` was strictly *worse* at height, because above the mortal ceiling the
+answer was an empty list with no reason attached.
+
+The cause was uniform. Every content catalog already carries exactly one number saying what rung
+it is pitched at - `harvestOrdinal` on a herb, `minOrdinal` on a job or an encounter,
+`requiredOrdinal` on a manual, `ordinal` on a beast - and every one of them was being used as a
+floor and for nothing else. So the fix is one quantity and one table:
+
+```text
+gap  = asker's ordinal - the rung the record is pitched at
+band = the row of REGARD_BANDS whose window contains gap
+```
+
+Seven rows, in `src/schema/cultivation.ts`, carrying every multiplier an ordinary resolver needs:
+how much comes back, how long it takes, what it costs, and what a fight there does. There is no
+per-catalog rule and there must never be one. A record that wants a different answer moves its
+gate or sets `span` on its own optional `regard` column; it never grows a branch.
+
+**It refuses at both ends, and gives a reason at both.** `unreachable` is the ask being over their
+head. `dismissed` is the ask being beneath them - nothing here is worth their time, everyone
+present can see what they are, and nobody opens that conversation. An empty list with no reason
+attached is the bug this replaces, so any resolver that narrows a pool is expected to report what
+it dropped and why (`refusalsFor`, `workWithheldFrom`).
+
+**Two bands, because there are two answerers.** The world meets you as your apparent rung; the
+ground meets you as your real one. So `offered`, `refused`, `priceMultiplier` and the reaction
+come off the *social* band (apparent ordinal plus approach pressure), and `yieldMultiplier`,
+`durationMultiplier` and `damageMultiplier` come off the *physical* band (real ordinal, no
+pressure at all). A disguised elder is offered a porter's job like anybody else and carries the
+load in a tenth of the time, because the sacks do not care what the room believes.
+
+**What the narrator may supply.** An `Approach` - intent, tone, leverage, audience, a concealed
+rung, patience, a witness - is context, never an outcome. The engine reduces the whole of it to
+two bounded numbers: an apparent ordinal, and a pressure clamped to `APPROACH_PRESSURE_LIMIT`
+rungs either way. Threatening a herbalist does not make the mountain give up a better flower.
 
 `combat.ts` is where the two rules at the top of this page - "large realm gaps must remain
 nearly insurmountable" and "upsets must be possible and exceptional" - stop being prose. Two

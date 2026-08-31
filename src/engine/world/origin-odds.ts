@@ -244,8 +244,19 @@ const MAX_COMPREHENSION_DRAWS = 400;
  */
 const MAX_YEARS = 250_000;
 
-/** The rungs worth reporting a share for. */
-export const REPORTED_THRESHOLDS: readonly number[] = [13, 21, 25, 29, 33, 37, 41, 45];
+/**
+ * The rungs worth reporting a share for.
+ *
+ * `MAX_ORDINAL` must be the last entry, and this list has been wrong about
+ * that. It stopped at 45 while the ladder tops out at 46, so
+ * `reachedAtLeast[MAX_ORDINAL]` was `undefined`, `privilegeLift.topLift` was
+ * `NaN` on every run - serialising as `null` - and `wellBornShareOfSummits` was
+ * a hard zero. Those two are the report's headline numbers and they are exactly
+ * the ones that check the design constraint in `docs/world/origin.md`: that
+ * origin is not visible in the outcome distribution EXCEPT AT THE VERY TOP.
+ * The exception clause had therefore never been measured at all.
+ */
+export const REPORTED_THRESHOLDS: readonly number[] = [13, 21, 25, 29, 33, 37, 41, 45, MAX_ORDINAL];
 
 /** First ordinal of Foundation Establishment. Where an origin actually bites. */
 const FOUNDATION_ORDINAL = 13;
@@ -397,6 +408,8 @@ export function simulateLife(
             alive: true
         });
         const required = progressRequiredForOrdinal(ordinal);
+        // Above the Lid nothing is priced in qi, so the walk stops here.
+        if (required === null) break;
         const need = Math.max(0, required - eligibility.progressSubstituted - progress);
         const yearsNeeded = Math.max(1 / DAYS_PER_YEAR, need / (rate * DAYS_PER_YEAR));
 

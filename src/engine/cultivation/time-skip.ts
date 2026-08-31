@@ -39,14 +39,15 @@
  *   tolls              what each boundary crossing took
  *   foundationEstablished  the foundation laid, if 12 -> 13 was crossed
  *   deltas             net change for the values where a delta is meaningful
- *   endState           absolute values for the two counters that RESET
+ *   endState           absolute values for the three counters that RESET
  *   events             the digest, for the narrator and only for the narrator
  *
  * The split between `deltas` and `endState` is not cosmetic. Starvation turns
- * clear the moment there is food, and years-at-realm returns to zero on any
- * advance, so "before plus delta" is not merely imprecise for those two, it is
- * wrong. They are reported absolute. Everything in `deltas` is a true net
- * change that inverts correctly.
+ * clear the moment there is food, the bleed clock clears the moment a wound is
+ * closed, and years-at-realm returns to zero on any advance, so "before plus
+ * delta" is not merely imprecise for those three, it is wrong. They are
+ * reported absolute. Everything in `deltas` is a true net change that inverts
+ * correctly.
  *
  * `events` are engine-authored summaries for a narrator to render. They are
  * NOT a data channel: a caller that parses a summary string to decide what to
@@ -55,6 +56,7 @@
  */
 
 import {
+    BLEED_OUT_TURNS,
     LETHAL_UNTREATED_INJURIES,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
@@ -111,7 +113,16 @@ import {
 } from './dao.js';
 import { resolveDeviation, rollDeviation } from './deviation.js';
 import { createInjury, untreatedInjuryCount } from './injuries.js';
-import { burnSatiety, eat, evaluateDeathConditions, turnsUntilStarvation } from './survival.js';
+import {
+    bleedOut,
+    burnSatiety,
+    eat,
+    evaluateDeathConditions,
+    satietyBurnMultiplier,
+    stillNeedsToEat,
+    turnsUntilBleedOut,
+    turnsUntilStarvation
+} from './survival.js';
 import { forStream } from './rng.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -270,6 +281,39 @@ export interface TimeSkipContext {
      * particular", for which the insight chance is exactly zero.
      */
     understanding?: Omit<DiscoveryContext, 'survived'>;
+    /**
+     * What standing here does to a body that has no business being here.
+     *
+     * The four location thresholds - entry, survival, operational, mastery -
+     * have existed and been calibrated across every place in the world for a
+     * long time, and nothing read them at the point where somebody was
+     * actually standing somewhere. Measured: an ordinal 0 cultivator was put
+     * inside a compound whose survival bar is 19, cultivated for seven months,
+     * gained a full rank, and was never touched. The bars said "below survival
+     * you get in and die" and the simulation had no way to make that true.
+     *
+     * This is that way. The caller - which is the only layer with a map - reads
+     * the location, prices the gap, and hands the result down as two numbers
+     * and a reason. The engine holds no map and still does not.
+     *
+     * Death is NOT decided here. Damage lands on HP like any other damage and
+     * `survival.ts` remains the only place a run ends.
+     */
+    hostility?: {
+        /**
+         * Fraction of max HP the place takes per day, 0..1. Zero for ground
+         * they can survive; large for ground rungs above their survival bar.
+         */
+        dailyHpFraction: number;
+        /**
+         * The ground is above what they can work in: alive, and useless.
+         * Progress does not accrue while this is true - which is the
+         * `survival <= x < operational` band, stated as arithmetic.
+         */
+        inert: boolean;
+        /** Engine-authored reason, stamped on the event the damage raises. */
+        reason: string;
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -293,6 +337,7 @@ export function simulateTimeSkip(
     const autoBreakthrough = ctx.autoBreakthrough ?? true;
     const randomEvents = ctx.randomEvents ?? true;
     const grainAbstinence = ctx.grainAbstinence ?? false;
+    const hostility = ctx.hostility;
 
     // ── Working state. A shallow copy; the input is never touched. ──
     const startAge = cultivator.age;
@@ -304,6 +349,7 @@ export function simulateTimeSkip(
     const qi = cultivator.qi;
     let satiety = cultivator.satiety;
     let starvationTurns = cultivator.starvationTurns;
+    let bleedingTurns = cultivator.bleedingTurns;
     let injuries: Injury[] = [...cultivator.injuries];
     let spiritStones = cultivator.spiritStones;
     let rations = Math.max(0, Math.floor(ctx.rations ?? 0));
@@ -359,7 +405,18 @@ export function simulateTimeSkip(
      * them again every five days would mean they could never actually die of
      * it - which would turn a real consequence into a nag.
      */
-    let starvationAnnounced = cultivator.satiety <= 0 && (ctx.rations ?? 0) <= 0;
+    let starvationAnnounced =
+        !stillNeedsToEat(cultivator.realmOrdinal) ||
+        (cultivator.satiety <= 0 && (ctx.rations ?? 0) <= 0);
+    /**
+     * Seeded from the entry state, exactly as starvation is.
+     *
+     * The interrupt is for ENTERING the bleed. Somebody who began the skip
+     * already at the lethal untreated count has been told, and chose to sit
+     * down anyway; stopping them every chunk would mean they could never
+     * actually bleed out, which is the trap this whole clock exists to open.
+     */
+    let bleedAnnounced = untreatedInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES;
 
     const push = (
         kind: SimEventKind,
@@ -409,6 +466,7 @@ export function simulateTimeSkip(
         maxHp: cultivator.maxHp,
         satiety,
         starvationTurns,
+        bleedingTurns,
         age: currentAge(),
         yearsAtCurrentRealm: currentYearsAtRealm(),
         alive: true as const
@@ -669,16 +727,59 @@ export function simulateTimeSkip(
                 grainAbstinence || rations > 0
                     ? Infinity
                     : Math.floor(satiety / SATIETY_COST_PER_ACTION),
+            bleedOutDays: turnsUntilBleedOut({
+                untreatedInjuries: untreatedInjuryCount(injuries),
+                bleedingTurns
+            }),
             randomEvents
         });
 
         // ── 3. Apply the chunk. ──
-        progress += rate.perDay * chunk;
+        //
+        // Ground they cannot work in gives up nothing, however long they sit in
+        // it. That is the `survival <= x < operational` band from `locations.ts`
+        // - alive, standing in the vault, unable to open anything - and it is
+        // the reason better ground is a decision rather than a free upgrade.
+        progress += (hostility?.inert ? 0 : rate.perDay) * chunk;
         elapsed += chunk;
         daysSinceAdvance += chunk;
 
+        // What the place itself takes. Applied on the same days everything else
+        // is, before the food and bleed clocks resolve, so a chunk that ends in
+        // death ends in death from the first cause that reaches zero.
+        if (hostility && hostility.dailyHpFraction > 0 && hp > 0) {
+            const taken = Math.min(
+                hp,
+                Math.max(1, Math.round(cultivator.maxHp * hostility.dailyHpFraction * chunk))
+            );
+            hp -= taken;
+            interrupted = true;
+            interruptReason = 'hostile_ground';
+            push(
+                'injury_sustained',
+                `${hostility.reason} ${taken} HP over ${chunk} day${chunk === 1 ? '' : 's'}, `
+                + `and it does not stop while they stay. ${hp} HP left.`,
+                true,
+                { environmental: true, damage: taken, hpRemaining: hp }
+            );
+            if (hp <= 0) break;
+        }
+
+        // The bleed clock runs on the same days everything else does, and it
+        // runs unconditionally - before the food block, which can break out of
+        // the loop, and with no grain-abstinence escape, because a pill that
+        // means you need not eat does not close a torn meridian.
+        //
+        // One call for the whole stretch is exact: the untreated count cannot
+        // change inside a chunk, since injuries are only minted by the grid
+        // checks below and those land on chunk boundaries.
+        bleedingTurns = bleedOut(
+            { untreatedInjuries: untreatedInjuryCount(injuries), bleedingTurns },
+            chunk
+        ).bleedingTurns;
+
         if (!grainAbstinence) {
-            const fed = consumeFood(chunk, { satiety, starvationTurns, rations });
+            const fed = consumeFood(chunk, { satiety, starvationTurns, rations }, cultivator.realmOrdinal);
             satiety = fed.satiety;
             starvationTurns = fed.starvationTurns;
             rations = fed.rations;
@@ -784,16 +885,26 @@ export function simulateTimeSkip(
                 }
 
                 // Reaching the lethal untreated-injury threshold is not itself
-                // death, but it is the last moment at which the player can
-                // still do something about it. Hand control back.
-                if (untreatedInjuryCount(injuries) >= LETHAL_UNTREATED_INJURIES) {
+                // death, but it starts the clock that is, and it is the last
+                // moment at which the player can still do something about it.
+                // Hand control back - once. A cultivator who was already at
+                // the threshold when the skip began has been told, and being
+                // stopped every chunk would mean they could never bleed out.
+                if (untreatedInjuryCount(injuries) >= LETHAL_UNTREATED_INJURIES && !bleedAnnounced) {
+                    bleedAnnounced = true;
                     interrupted = true;
                     interruptReason = 'lethal_injury_threshold';
                     push(
-                        'injury_sustained',
-                        `${untreatedInjuryCount(injuries)} untreated meridian injuries. Any further combat is fatal.`,
+                        'bleeding_warning',
+                        `${untreatedInjuryCount(injuries)} untreated meridian injuries. Any further combat is fatal, ` +
+                        `and nothing heals them on their own: ${BLEED_OUT_TURNS - bleedingTurns} days of this ` +
+                        'and the meridians give out on their own.',
                         true,
-                        { untreated: untreatedInjuryCount(injuries) }
+                        {
+                            untreated: untreatedInjuryCount(injuries),
+                            bleedingTurns,
+                            daysUntilBleedOut: BLEED_OUT_TURNS - bleedingTurns
+                        }
                     );
                 }
             }
@@ -1045,6 +1156,7 @@ export function simulateTimeSkip(
         tolls,
         endState: {
             starvationTurns,
+            bleedingTurns,
             yearsAtCurrentRealm: currentYearsAtRealm()
         },
         foundationEstablished:
@@ -1071,6 +1183,7 @@ interface ChunkInputs {
     stagnationDays: number;
     starvationDays: number;
     emptyBellyDays: number;
+    bleedOutDays: number;
     randomEvents: boolean;
 }
 
@@ -1101,7 +1214,8 @@ function nextChunk(input: ChunkInputs): number {
         input.lifespanDays,
         input.stagnationDays,
         input.starvationDays,
-        input.emptyBellyDays
+        input.emptyBellyDays,
+        input.bleedOutDays
     ]) {
         if (Number.isFinite(candidate) && candidate > 0) candidates.push(candidate);
     }
@@ -1139,16 +1253,25 @@ interface FoodState {
  * The loop is bounded, not O(days): a chunk is at most AMBIENT_REFRESH_DAYS
  * (30) days and one ration covers 50, so it runs at most twice.
  */
-function consumeFood(days: number, state: FoodState): FoodState & { rationsUsed: number } {
+function consumeFood(
+    days: number,
+    state: FoodState,
+    realmOrdinal = 0
+): FoodState & { rationsUsed: number } {
     let { satiety, starvationTurns, rations } = state;
     let remaining = days;
     let rationsUsed = 0;
 
+    // Above the point where hunger stops, a seclusion of any length costs
+    // nothing to eat through and no rations are opened.
+    const perDay = SATIETY_COST_PER_ACTION * satietyBurnMultiplier(realmOrdinal);
+    if (perDay <= 0) return { satiety, starvationTurns: 0, rations, rationsUsed: 0 };
+
     while (remaining > 0) {
-        const fedActions = Math.floor(satiety / SATIETY_COST_PER_ACTION);
+        const fedActions = Math.floor(satiety / perDay);
         const step = Math.min(remaining, fedActions);
         if (step > 0) {
-            const burned = burnSatiety({ satiety, starvationTurns }, step);
+            const burned = burnSatiety({ satiety, starvationTurns }, step, realmOrdinal);
             satiety = burned.satiety;
             starvationTurns = burned.starvationTurns;
             remaining -= step;
@@ -1165,10 +1288,26 @@ function consumeFood(days: number, state: FoodState): FoodState & { rationsUsed:
         }
 
         // No food left: the rest of the stretch is spent starving.
-        const starved = burnSatiety({ satiety, starvationTurns }, remaining);
+        const starved = burnSatiety({ satiety, starvationTurns }, remaining, realmOrdinal);
         satiety = starved.satiety;
         starvationTurns = starved.starvationTurns;
         remaining = 0;
+    }
+
+    // Finish on a meal if there is one to eat.
+    //
+    // The loop only opens a ration when there are days left to cover, so a
+    // stretch that ends exactly as the belly empties - fifty days of work on a
+    // full stomach, which is the commonest thing a new player does - used to
+    // end at zero with food still in the pack. The next action then started
+    // already starving. Nobody finishes a season of hauling, sits down next to
+    // their own rations, and does not eat.
+    if (satiety <= 0 && rations > 0) {
+        rations--;
+        rationsUsed++;
+        const fed = eat({ satiety, starvationTurns }, SATIETY_MAX);
+        satiety = fed.satiety;
+        starvationTurns = fed.starvationTurns;
     }
 
     return { satiety, starvationTurns, rations, rationsUsed };

@@ -80,6 +80,127 @@ What the player should feel, repeatedly:
 And then, still: *"the people I knew before still matter."* The protagonist does not
 become the centre of reality. They become one of the people capable of shaping it.
 
+### The one exception: ordinal 46 is a place
+
+There is exactly one point where progression is also *geographic*, and it is the
+top of the ladder. Reaching True Immortal does not make somebody a louder version
+of themselves in their starting province - it **moves them**, through the Lid,
+onto a second layer of the same world.
+
+That is a layer, not a bigger map, and the distinction is the one this section is
+about: nobody up there has a higher ordinal, because 46 is the highest ordinal
+there is. The far side is a different **environment** and a different **society**,
+not a higher tier of the same ladder.
+
+```text
+layers.ts          two layers, ordered, and the single statement of what crosses
+                   the Lid - for people, objects, manuals and information, in
+                   both directions
+immortal-world.ts  the far side: materialised on contact, ascension as a
+                   transition, standing, what still kills, and its clock
+```
+
+`layer` is a stored field on locations, factions, NPCs and actors, defaulting to
+`mortal`. Everything else stays in one place: one roster, one history ledger, one
+lineage graph, one object table, one clock. Splitting the immortal world into its
+own containers would have been the hard reset the design forbids, because
+descendants, grudges, debts and provenance chains are all keyed by id and half of
+them would stop resolving the moment somebody crossed.
+
+**What changes is access.** Nothing below True Immortal can exist above the Lid;
+nothing goes up with an ascending cultivator, which is what fills the world with
+deliberately built inheritances behind deliberately calibrated doors; and coming
+back down buys `BREATHS_IN_THE_LOWER_REALM` and draws the heaviest tribulation in
+the game, which is why nobody above the Lid rules anything below it. The object
+ceiling is the same rule applied to things: `OBJECT_CEILING_BELOW_THE_LID`, with
+manuals exempt because paper does not let anybody strike at the rung it is rated
+for.
+
+#### The landing is not where anybody stays
+
+`ensureImmortalLayer` materialises a seam, a landing that "nobody owns and everybody arrives
+at", and five houses. For a long time that was the whole of the far side for a newcomer,
+which made ascension read as an ending with a field attached. It is not: somebody who comes
+through **settles**, quickly, and `settleAbode` is that.
+
+An abode is an ordinary location - `kind: 'cave'`, the genre's own word for a cultivator's
+dwelling and a kind with no faction implication, rather than a new member of `LocationKind`,
+because a type widened for one case is the bespoke rule this design forbids. It hangs off the
+landing, its id is keyed on the resident so settling twice is settling once, and what it is
+FOR falls out of the generic systems: objects have a `locationId`, people have a
+`locationId`, and being findable is `evaluateAccess` against thresholds like anywhere else.
+What it is *worth* is that it is theirs, on a layer where `immortalStanding` scores a
+newcomer zero on every axis and holdings is one of them.
+
+#### The parting gift is the line
+
+`sendAcross` requires a channel object carrying `LID_CHANNEL_TAG`, and nothing in the
+codebase created one - so the only reliable connection between the layers was written,
+tested and impossible to open. `ascend` now marks the parting gift as one on the way out,
+which is what the setting has always said a channel is made of: a house that holds something
+left by the one who crossed is a house that receives, and a house that holds nothing hears
+nothing. It is a property of the OBJECT rather than of the house, which is why it is set
+there and not on the faction - and it cuts both ways, because the gift is also what a rival
+would have to take to cut the line.
+
+#### Both readings of an immortal have to be true at once
+
+The reason the layer exists. Measured against the world they left, a newly
+ascended immortal is beyond comprehension. Measured against the world they
+arrived in, they are a newcomer with no lineage, no standing, no allies and
+unremarkable cultivation. `readTwoWays` computes both rather than asserting
+either: the lower reading is a division over the living roster, and the upper is
+a rank among residents.
+
+The second half works because **the ladder ends**. Everybody above the Lid stands
+at 46, so cultivation is not a differentiator up there at all - it is the entry
+ticket, and a newcomer's is identical to a founder's. Standing is made of axes
+this layer already stores for the world below: tenure, ancestry, a house, allies
+and holdings. A newcomer scores zero on every one. No second power ladder was
+invented, and none may be.
+
+#### Two things still kill, and no more were added
+
+Ascension removes exactly two: heavenly tribulation is behind them, and lifespan
+stops being a number. Everything else applies. `advanceImmortalLayer` draws
+against two hazard rates - environment and politics, the two the setting names -
+at absolute fifty-year intervals, so the pass is decomposable and costs one draw
+per resident per interval. Standing buys relief and never buys safety
+(`MAX_PERIL_RELIEF` is deliberately short of 1), because a permanent apex nothing
+can remove is the one thing this layer must not produce.
+
+Death above is written as a secret fact and settles nothing below. There is no
+signal across the boundary: the engine records `afterCrossing` because it is
+allowed to know things the world cannot, and nothing that renders to a player may
+read it. A house whose channel has gone quiet knows exactly as much as one whose
+ancestor is standing up there ignoring it.
+
+#### Immortal-era play stays thin, and pressure stays below
+
+There is no second progression system, no second economy and no second survival
+layer up there, and there must not be. `pressure.ts` is filtered to the mortal
+layer at every selection site for the same reason: politics above the Lid has
+been running uninterrupted for a very long time and is not something a
+fifty-five-events-per-century budget gets to reorganise.
+
+#### A measurement that corrected the prose
+
+"Qi at densities the lower world cannot produce" cannot mean a bigger number. The
+density scale runs 0..1 *by definition* - 1.0 is the richest ground the world has
+ever carried - and a sealed ruin and a worked vein below both already reach it.
+What is true is where the figure sits and how much of the map holds it: the age
+below runs about a third and only ever falls, the places at the ceiling are a
+small minority, and every one of them is sealed or contested. Above, the ceiling
+is the floor, over the whole layer, unguarded. `immortalWorldShape` reports both
+halves.
+
+#### Higher layers, later or never
+
+`WORLD_LAYERS` is an ordered array and every function is written against its
+index rather than the literal keys, so a third layer would be a data change.
+**Do not make one.** One mortal world plus one immortal world is sufficient, and
+scale is not what this design is short of.
+
 ### Expansion is earned by events, never granted by rank
 
 If the world ever grows beyond the planet, it grows because something happened:
@@ -185,6 +306,89 @@ mastery      can manipulate the environment itself
 Crucially, **specialised techniques, artifacts, physiques or knowledge modify these
 thresholds.** A lower-realm specialist may survive somewhere a stronger generalist cannot.
 That is what keeps specialisation valuable and stops realm from being the only axis.
+
+#### The bars have to bite, and for a long time they did not
+
+`evaluateAccess` answers "what level are they at". Nothing answered "so what", and the
+result was that the whole system was decoration. Measured in a live run: an ordinal 0
+cultivator inside a compound whose bars read entry 15 / survival 19 / operational 23 /
+mastery 25 walked in, cultivated for seven months, gained a full rank and was never
+touched. The paragraph above said "below survival you get in and die" and there was no
+code path that could make it true.
+
+`standingConsequence` is that path. It turns an assessment into the two currencies a span
+is actually paid in - HP per day, and whether progress accrues - and the caller hands
+those straight to `simulateTimeSkip` through its `hostility` field. Three distinct
+failures, and they read differently on purpose:
+
+| Level | What happens |
+|---|---|
+| `barred` | Turned away. No time passes, and the refusal names both bars, because that sentence is how a player learns the ladder of places exists |
+| `lethal` | Admitted, and the ground takes `HOSTILE_GROUND_HP_PER_RUNG` of max HP per day per rung below the survival bar, capped so nothing is instant. Control comes back rather than a run quietly ending in a hole |
+| `surviving` | Admitted, alive, and the ground gives up nothing at all. Progress is zero for the whole span |
+
+The engine holds no map, so the map layer prices the gap and passes down two numbers and a
+reason; `survival.ts` remains the only place a death is decided. And the affinity system's
+`thresholdOffset` finally does something observable: a water root stands on ice that kills
+a generalist at the same rung, and `AccessAssessment.applied` itemises why.
+
+### The qi scale: 1 to 100, and the Hollow Court holds the 100
+
+`qiDensity` on a location is an integer 1..100 (`qi-scale.ts`). It used to be a 0..1
+fraction, which is the same information at a tenth of the resolution: the default
+birthplace read 0.3475 and the best ruins read 1.0, so almost every difference a player
+could act on lived in a decimal place nobody was ever shown.
+
+That mattered because of what thin ground does to the ladder. Rank 16 costs 30,803
+qi-units; fifty years of unbroken seclusion at half rate produces about 25,429. On thin
+ground the ladder becomes unclimbable somewhere around ordinal 16, permanently, for every
+run - so "go somewhere better" is the whole of the middle game and the scale it is decided
+on should be legible.
+
+Two numbers, deliberately different, and one conversion between them:
+
+| Field | Range | Means |
+|---|---|---|
+| `qiDensity` | 1..100 | GEOLOGY. What the vein holds |
+| `environment.spiritualDensity` | 0..1 | USABILITY. What somebody standing there can draw |
+
+A sealed ruin is 100 and 0.05 at the same time, and that gap is the whole economy of
+exploration. `qiFraction` is the only conversion; nothing else may divide by 100.
+
+The four ambient bands are unchanged and are still **drawn per window from the usable
+density** rather than read off it, so a rich vein still sometimes reads thin. That
+variance is weather over fixed geology and must not be flattened.
+
+Nothing below the Lid exceeds 100, and the 100 is **derived rather than named**:
+`sectGroundDensity` measures a faction against the strongest faction in the catalog, which
+today is the Hollow Court at ordinal 44. Unseat it, rename it, or write something stronger
+and the top of the scale moves with the arithmetic instead of being left pointing at a
+house that no longer deserves it.
+
+### A sect is a place
+
+Every seated faction holds a `sect_seat` location of its own (`sectGroundId`), a child of
+its region and linked to it by an ordinary road. This closed a gap that made membership
+nearly worthless: the engine would tell a new disciple that "being on their roll and being
+on their ground are two different things" and then provide no way to ever reach the
+ground, because a sect was a row in `sect_members` and nothing else.
+
+Everything about the ground is derived from columns the faction already carries, so there
+is no sect-specific rule anywhere:
+
+- **`qiDensity`** from `powerOrdinal` against the catalog's apex. A sect holds the best
+  ground it can hold, and `powerOrdinal` is exactly how much it can hold. Floored at the
+  region's own density, so a weak sect in a thin province honestly offers a disciple
+  nothing but a stipend.
+- **thresholds** `entry` and `survival` are 0 - anyone may walk up to a gate and stand in
+  the forecourt. `operational` is the admission bar, which is what makes the gate mean
+  something: a rogue can stand there and cannot work there. `mastery` is the sect's own
+  power.
+- **`discovered: false`** A sect's ground is a name you have to be given. The knowledge
+  gate does the rest, and it is the right gate - it was never broken, it was only never
+  opened.
+- **`affinities`** from `formationIntegrity`: a compound still running its own arrays
+  answers to somebody who can read them.
 
 ### Secret realms and portals
 
@@ -673,6 +877,7 @@ time-skip primitive in [`../cultivation/README.md`](../cultivation/README.md).
 ## Reading order
 
 ```text
+layers.ts        two layers, ordered; what crosses the Lid in either direction
 history.ts       ground truth and what survives of it; near-misses; unresolved
 locations.ts     origin -> changes -> current state, separately queryable
 capability.ts    the five predicates, answered together, with reasons
@@ -683,6 +888,7 @@ npc-state.ts     NPCs as small durable records; goals outlive their holder
 memory.ts        durable memories, search, and the LLM-driven compression write path
 world-state.ts   the authoritative store; plain serialisable data, pure mutations
 time.ts          advanceTime: what fell due, what was running, what was missed
+immortal-world.ts the far side: arrival, standing, perils, and its own clock
 ```
 
 ## Related
