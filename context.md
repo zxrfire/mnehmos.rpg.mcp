@@ -389,6 +389,219 @@ Avoid constant melodrama. Avoid telling the player they are special. Avoid guara
 that every action produces an event. The world is sometimes mundane, and that is what buys
 the extraordinary its weight.
 
+## The five pillars
+
+The charter above governs *what the simulation must be capable of*. These five pillars
+say what each part of it is **for**. They pull in different directions on purpose, and a
+design decision that serves one at the total expense of another is usually wrong.
+
+| Pillar | The question it answers |
+|---|---|
+| **Cost** | What cultivation does to a *person* — what it takes out of them to climb |
+| **Scale** | What cultivation does to the *universe* — how the world keeps getting bigger |
+| **Survival** | What it *feels like* to live inside it day to day — logistics, scarcity, fear |
+| **Strategy** | Why people behave *strategically* inside it — incentives, schemes, preparation |
+| **Attachment** | Why relationships stay load-bearing despite all of the above |
+
+Cost and Survival are already expressed in the Toll, the injury ratchet, satiety,
+stagnation and permadeath. Attachment is expressed in grudges, gratitude and inherited
+consequence. Strategy is expressed in incentive-scored betrayal, imperfect information
+and sect politics. **Scale is the pillar the rest of this section is about**, because it
+is the one a realm ladder alone does not deliver.
+
+---
+
+## Escalation: every gain in power enlarges the world
+
+The single most important structural property to reproduce:
+
+> A character does not merely become stronger *inside* the same environment. They become
+> stronger and discover that the environment they thought was enormous was a small corner
+> of something much larger.
+
+The arc is not `level 1 → level 2 → level 3`. It is:
+
+```text
+weak individual -> local cultivator -> regional power -> major faction member
+    -> world-level existence -> higher-world existence -> cosmic existence
+```
+
+Each transition should feel like entering a fundamentally larger world, and each should
+retroactively shrink the previous one. Early: *"the strongest person in my valley is a
+Foundation cultivator."* Later: *"the strongest person in this region is a minor
+figure."* Later still: *"this entire world is a spent corner of something that does not
+know it exists."*
+
+This is why the setting is a sealed **Vault** with a **Lid** rather than an open sky. The
+Lid is not a metaphor for a level cap — it is a floor of the next world. What ascension
+*is*, structurally, is discovering the next layer.
+
+**Discipline required:** do not expose the scale up front, and do not do the cheap
+version of it. Constant "actually there is an even stronger person" is not escalation, it
+is deflation. Escalation happens at meaningful points, and each revealed layer must be
+coherent and worth having discovered.
+
+### Layers have different rules, not just bigger numbers
+
+Entering a higher layer must change the assumptions a character lives under, not merely
+the map: ambient energy density, environmental lethality, available resources, viable
+cultivation methods, native beings, political structures, the local realm ceiling, and
+which phenomena are even possible. A region that was lethal below the Lid may be
+trivially survivable above it, and vice versa.
+
+### Realm gaps are qualitative, not linear
+
+Distinguish minor rank differences, major realm differences, and **qualitative
+transformations**. A breakthrough should sometimes make a previously impossible thing
+trivial:
+
+```text
+before: cannot survive this environment      after: the environment is harmless
+before: must flee this faction               after: that faction cannot threaten you
+```
+
+A slightly stronger cultivator does not reliably beat someone several major realms above
+them. That gap should feel categorical — and it is what makes an upset, won through
+preparation and terrain and poison, worth a story.
+
+---
+
+## Power is composite, not a single number
+
+Realm is the spine, but it must never be the whole of a character's capability. Model
+power as a composite of at least: energy/cultivation base, **physical body**, **soul**,
+**comprehension**, techniques and secret techniques, artifacts, weapons and armour,
+bloodline or physique, innate abilities, **battle experience**, movement and defensive
+capability, and environmental compatibility.
+
+**Two cultivators at the same realm must be able to differ enormously in what they can
+actually do**, and the engine must be able to say exactly why.
+
+### The body is a real path
+
+Body cultivation is a legitimate route to power, not a passive defence stat. It can raise
+strength, durability, speed, regeneration, senses, resistance, longevity, and the ability
+to survive hostile environments — and a specialised body should fundamentally change what
+combat and exploration look like, not just add armour.
+
+### Comprehension is separate from accumulation
+
+Keep three quantities distinct:
+
+```text
+cultivation quantity   (how much you have accumulated)
+cultivation quality    (how good your foundation is)
+understanding          (what you actually comprehend)
+```
+
+A character with enormous accumulated energy and poor understanding hits a wall that no
+amount of further accumulation clears. A character with extraordinary comprehension
+advances rapidly the moment they find the right insight. Understanding must unlock
+*qualitatively different* abilities — never be a second experience bar with a different
+name.
+
+Progression through knowledge is therefore real progression: learning that what you
+believed about cultivation was incomplete can unlock techniques, paths, regions,
+factions, and explanations for things that already happened to you.
+
+### Bloodlines and physiques: potential, not destiny
+
+Inherited gifts create meaningful differences between characters. They also routinely
+come to nothing: a character with an extraordinary physique can still die, lack the
+resources to use it, choose the wrong path, become politically isolated, or never
+understand what they have. Conversely an ordinary character can reach extraordinary
+heights through persistence, comprehension, opportunity, and unconventional methods.
+
+### Battle experience is tracked
+
+A veteran and a novice at identical cultivation must not fight identically. Track combat
+experience, tactical knowledge, familiarity with specific techniques and opponents, and
+the ability to exploit a weakness.
+
+---
+
+## Techniques are developed, not selected
+
+A technique is not a spell chosen from a menu. Over time a cultivator can learn it,
+practise it, master it, *understand* it, modify it, combine it with other insights,
+derive something new, find its flaws, discover higher applications, teach it, or abandon
+it.
+
+```text
+basic technique -> mastery -> understanding -> modification -> personalised technique
+```
+
+Two characters who begin from the same manual must be able to end up with genuinely
+different arts. High comprehension is what makes that possible.
+
+**Specialisation matters.** Sword, body, soul, elemental, formations, alchemy, artifact
+refinement, movement, assassination, defence, domain. No character should need to be good
+at everything; specialisation is what makes characters asymmetrical, and a chosen path
+should shape identity and opportunity, not just damage type.
+
+**Unconventional paths must be viable.** A character should be able to find or build a
+route that is not the standard one — a body-focused road, an unusual energy system, a
+self-created method. Non-standard paths carry real trade-offs: slower at first, harder to
+understand, resource-hungry, politically unsupported. And potentially exceptional.
+
+---
+
+## Inheritances and opportunities
+
+An inheritance is never "a chest containing experience." It is a mechanism for
+transmitting power and knowledge across ages, and it should be capable of changing a
+cultivator's entire trajectory. It may carry techniques, treasures, bloodline alteration,
+knowledge, trials, a cultivation environment, restrictions, or legacy obligations.
+
+It should also carry friction: compatibility requirements, hidden costs, incomplete
+information, traps, guardians, time limits, and **competing claimants**.
+
+Extraordinary opportunities — a rare treasure, a secret realm, an unusual cultivation
+environment, an expert encountered at the right moment, a bloodline awakening — must be
+capable of enormous trajectory changes, and must stay **rare**. Most cultivators live
+ordinary cultivation lives and never receive one. That is precisely what makes them
+extraordinary when they land.
+
+**Exploration is how they are found**, and it must carry risk, preparation, information,
+navigation, environmental hazard and competition. Even a powerful character should still
+encounter things they do not understand.
+
+---
+
+## Scale never erases the personal
+
+At every level of power, the problems change in *kind*:
+
+```text
+"How do I survive?" -> "How do I get resources?" -> "Which faction do I join?"
+    -> "How do I protect my people?" -> "How do I survive beings on another level?"
+    -> "What does cultivation actually mean?"
+```
+
+But cosmic scale must never flatten human-scale consequence. Friends, family, disciples,
+sects, promises, enemies and losses stay load-bearing at every tier. A being who can
+break a region should still be reachable through the person they failed to protect three
+hundred years ago.
+
+---
+
+## And none of it is promised to the player
+
+The simulation must be *capable* of the full escalation. It must never steer anyone
+toward it. A run may end with the player as a mediocre cultivator, a respected local
+figure, a sect elder, a merchant, a wandering expert, the founder of a family, someone
+who found an unconventional path — or a corpse at twenty-two.
+
+**NPCs must be capable of the identical arc**, independently. An NPC can rise from
+nothing through opportunity, cultivation, breakthrough, a new faction, new resources, new
+enemies, and regional influence — and the player may meet them before their rise, during
+it, after it, after their fall, or only as a name on a grave. That trajectory exists
+whether or not the player is there to see it.
+
+The objective is never to write the journey. It is to create the conditions under which
+such a journey can occur — to anyone, including no one.
+
+
 ## The core emotional principle
 
 The simulation should repeatedly produce, without anyone authoring it:
