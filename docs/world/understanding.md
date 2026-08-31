@@ -99,3 +99,42 @@ mechanic anyone can rely on.
 - Not guaranteed. Most runs end with no insights at all.
 - Not the player's alone: NPCs acquire understanding the same way, which is part of why a
   weaker-ranked cultivator can be genuinely dangerous.
+
+## Your Dao
+
+Ask a cultivator what they are and the honest answer is not their realm. It is **what dao
+they cultivate**.
+
+A Dao is not chosen from a list at creation and it is not bought. It is **what you turn
+out to have been doing.** The engine derives it from the insight set: the subject a
+cultivator has gone deepest and widest in becomes their Dao, and at sufficient depth it
+stops being a description and becomes an identity.
+
+```text
+a few shallow insights, scattered   ->  no dao. Most cultivators, most of the time.
+depth in one subject                ->  a leaning. Others start to notice.
+heart or dao degree, reinforced     ->  a Dao. He walks the Dao of the Sword.
+```
+
+Consequences worth having:
+
+- **It is socially legible.** Other cultivators can tell, and it changes how they treat
+  you before you have done anything. A dao of severance walking into a debt court is a
+  fact everyone in the room adjusts around.
+- **It gates the highest arts.** The top-grade techniques are not learnable by anyone with
+  the qi to spare; they require a matching Dao, which is why they sit in ruins unread.
+  Someone can hold the manual for a century and never open it.
+- **It narrows as it deepens.** A cultivator far along one Dao finds others harder, not
+  easier - not forbidden, just increasingly foreign. What you comprehend deeply, you
+  comprehend at the cost of comprehending otherwise.
+- **It can be wrong for you.** A cultivator can spend two centuries on a Dao their root,
+  their tradition or their circumstances never suited, and be genuinely good at something
+  that will never take them past a boundary. Nothing warns them. The realisation, when it
+  arrives, is one of the worse things that happens to people here.
+- **It is not exclusive to the player.** An NPC with a Dao is dangerous in a way their
+  rank does not predict, and the mismatch is exactly why a lower-realm specialist beats a
+  better-supplied generalist.
+
+**No dao is the default and the common case.** Most people cultivate, accumulate, break
+through where they can, and comprehend nothing anyone would name. A Dao is what makes a
+cultivator worth a story, and the world contains very few of them.
