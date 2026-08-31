@@ -177,3 +177,59 @@ This is the quiet cruelty in the setting, and it is where most lives are actuall
 
 So access is a resource, it is owned, it is sold, and it is inherited - and it is
 distributed as unfairly as the veins are.
+
+### Affinity, and finding out too late
+
+Talent for a Dao is **rolled at creation, never shown, and only discoverable by exposure.**
+
+Every cultivator has predispositions - most of them ordinary, a few extraordinary - toward
+Daos they may never encounter. Nothing surfaces this. There is no aptitude test, no elder
+who can see it, no field on the character sheet. It is not withheld information the player
+could go and look up; the world does not know either.
+
+Which produces the situation the whole system exists for:
+
+> You are the most gifted karma cultivator of your generation. You were taken in by a body
+> sect at eleven, because that is the sect whose recruiter came through your village. You
+> are competent. You are not remarkable. You have been told, kindly and accurately, that
+> you are about average.
+>
+> You are twenty-nine years into a body path when you attend an inter-sect competition and
+> watch someone work karma for the first time in your life.
+>
+> And something in it is *obvious* to you.
+
+Requirements this places on the engine:
+
+- **The gift is real and was always there.** It is not granted by the moment of exposure;
+  the roll happened at creation. What the moment provides is *access*, which was the only
+  thing missing.
+- **Nothing warns them beforehand.** No hint in a return value, no "you seem suited to",
+  no advisory flag. The engine simply never had the chance to reward a thing it was never
+  offered.
+- **Recognition is an event.** First exposure to a Dao a cultivator has strong affinity for
+  should be unmistakable to *them* - an achievement in its own right, comprehension
+  arriving at a speed nothing in their experience prepares them for. Others may see only
+  that they went quiet.
+- **Most people never find out.** The overwhelming majority of cultivators die never having
+  been in a room where their own Dao was being practised. This is the ordinary outcome and
+  must stay the ordinary outcome.
+
+### What happens next is the story
+
+Discovery is not a reward. It is a **problem**, and everything downstream is already
+modelled:
+
+- Twenty-nine years of contribution are in a body sect's ledger and **do not travel**.
+- Their techniques, their foundation, and their comprehension so far were all built for
+  something else. Switching is not free and may not be fully possible.
+- The sect has invested in them and will not be pleased. Sects have views about defection,
+  and grudges persist for decades and are inherited.
+- Somebody has to *let them in* - which means a karma house or a karma sect, on terms that
+  will be expensive, and which may involve being useful to people they do not like.
+- A rival institution may be delighted to acquire them, for reasons of its own.
+
+So the arc writes itself out of existing systems: exposure, recognition, the arithmetic of
+what leaving costs, negotiation from a weak position, an obligation incurred to get in, and
+a former sect that remembers. **No new machinery is required** - only that affinity exists,
+that access gates comprehension, and that nobody tells you.
