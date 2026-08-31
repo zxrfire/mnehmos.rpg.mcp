@@ -335,3 +335,44 @@ means being processed.
 Both models should exist in the world, ideally adjacent, and the difference should be
 visible the moment a border is crossed - a province of squabbling client sects on one
 side, and on the other a single administration with a register and a schedule.
+
+### Direct rule by deference
+
+Direct rule does not have to mean administration. It can mean **respect**, and this is the
+form that fits a sect people are glad to have nearby.
+
+Such a sect rules directly only what it can comfortably walk: a valley, a mountain and its
+approaches, a few settlements. It takes **very few disciples** - only the exceptional, and
+often none for years at a stretch. It keeps no bureaucracy, no patrols, no register, no
+lease.
+
+And for a great distance beyond that small administered core, everyone simply knows the
+region is theirs. Nobody encroaches. Not because it is enforced, but because it is not
+worth finding out - and because, mostly, people are glad they are there.
+
+What this buys and what it costs:
+
+- **The claim is nearly free to hold** while it is uncontested. No garrisons, no clerks,
+  no client sects taking a cut, no politics.
+- **It is worth exactly as much as the last time it was tested.** Deference is a belief
+  about what would happen, and beliefs decay. A sect that has not been probed in ninety
+  years holds a zone whose real extent nobody knows, including them.
+- **So they must answer when tested**, immediately and visibly, or the entire zone
+  evaporates at once - not gradually, and not only where the test happened. Everyone
+  hears. This is the single most dangerous thing in their existence, and it usually
+  arrives as something small and deniable at the edge.
+- **Selectivity is load-bearing, not vanity.** Few disciples means each is known, means the
+  sect's reputation is a handful of specific people rather than an institution - which is
+  exactly why the deference works, and exactly why one disgrace costs so much.
+- **They cannot grow without changing kind.** Taking more disciples means administration,
+  which means becoming something else. Some have made that choice and regret it; some
+  refuse it and are slowly outlasted.
+
+The comparison worth drawing in play: a federated power's border is a line on a lease. An
+administered direct ruler's border is where its patrols stop. **A deference border is
+wherever people stop being willing to find out**, which no one can point to on a map and
+everyone can feel.
+
+For the player this is the most pleasant institution in the world to live near and the
+hardest to join - and if they ever do join, they will be one of six people, all of whom
+are watched.
