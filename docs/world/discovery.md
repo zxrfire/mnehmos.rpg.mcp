@@ -108,3 +108,43 @@ And the sequence should keep going long enough to be humbling more than once:
 ```
 
 Each rung should arrive rarely, be earned, and cost the player a comfortable belief.
+
+## Characters assume you know
+
+The rule above governs the **narrator's own voice**. It does not gag the people in the
+world, and it must not.
+
+A cultivator will say a name flatly, with no context, because *of course* you know it -
+everyone they have ever spoken to knew it. They are not withholding. It does not occur to
+them that explanation is required, any more than you would explain what a road is.
+
+> "That road's shut. Hollow Court business."
+>
+> He says it the way you would say a bank holiday, and moves on to the price of salt.
+
+This is the **primary way names should enter the player's world**, and it is better than
+any deliberate revelation:
+
+- The player hears a name they cannot place, cannot act on, and cannot evaluate.
+- It goes into the knowledge layer at the lowest stage - *heard*, not *known*. They have
+  the word and nothing else, from one interested source who may be wrong.
+- **The narrator still may not explain it.** A character said a name; that grants the name,
+  not the meaning. If the next paragraph tells the player what the Hollow Court is, the
+  moment has been spent for nothing.
+- The player may **ask** - and asking is a real act with a real cost, because not knowing
+  marks them. The answer depends entirely on who they asked: a shrug, a short correction, a
+  look, amusement, suspicion about where they are from, a lie, or an honest answer that is
+  out of date by two centuries.
+
+Notes:
+
+- **Not knowing is legible to others.** Asking who the Hollow Court are, in the wrong room,
+  tells everyone present exactly how far you have come from. That is a social fact with
+  consequences, not merely a missed opportunity.
+- **The mundane and the enormous sound identical** when both are assumed knowledge. The
+  same flat register carries the name of a local ferryman and the name of something that
+  has not been seen in nine hundred years. The player cannot tell which is which, and
+  neither can the speaker's tone - because to *them* both are ordinary.
+- **A name heard is not a name understood.** Record the source. A name from a drunk carter
+  and a name from a sect archivist are different facts, and the carter's may still be the
+  true one.
