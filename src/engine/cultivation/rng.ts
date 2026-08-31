@@ -1,0 +1,173 @@
+/**
+ * Seeded RNG for the cultivation engine.
+ *
+ * Every stochastic system in a run - spirit roots, ambient qi, deviation,
+ * breakthroughs, tribulation lightning, encounters - draws from here, and all
+ * of it must be reproducible from the run seed. Permadeath only means anything
+ * if the player cannot reroll, and "cannot reroll" is enforced by the engine
+ * being a pure function of (seed, state, action).
+ *
+ * The important idea is NAMED SUB-STREAMS. A single sequential PRNG couples
+ * every system to every other system's call order: add one extra deviation
+ * check and every subsequent breakthrough in the run changes. That makes
+ * balance work impossible and replays fragile. Instead each system derives its
+ * own stream from the run seed plus a coordinate (usually the absolute day or
+ * turn), so:
+ *
+ *   - systems never consume each other's entropy;
+ *   - a roll for day 900 is the same number whether the simulation reached it
+ *     in one chunk or three hundred;
+ *   - adding a new system does not invalidate old replays.
+ *
+ * Built on `seedrandom`, the same dependency the combat RNG uses, and mirrors
+ * its constructor-takes-a-seed-string shape.
+ */
+
+import seedrandom from 'seedrandom';
+
+// ─────────────────────────────────────────────────────────────────────────
+// STREAM DERIVATION
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Separator between seed components. A control character rather than ':' so a
+ * location id containing punctuation can never collide with a different
+ * (stream, coordinate) pair - `('a:b', 1)` and `('a', 'b:1')` must not derive
+ * the same stream.
+ */
+const STREAM_SEPARATOR = '\u001f';
+
+/** A stream coordinate: a name, an ordinal, a day index, a turn number. */
+export type StreamPart = string | number;
+
+/**
+ * Build the derived seed string for a named sub-stream.
+ *
+ * Exposed separately from {@link forStream} because storage and audit layers
+ * sometimes want to record *which* stream produced a roll without instantiating
+ * a PRNG for it.
+ */
+export function deriveSeed(runSeed: string, stream: string, ...parts: StreamPart[]): string {
+    const tail = parts.map(normalizePart).join(STREAM_SEPARATOR);
+    return parts.length === 0
+        ? `${runSeed}${STREAM_SEPARATOR}${stream}`
+        : `${runSeed}${STREAM_SEPARATOR}${stream}${STREAM_SEPARATOR}${tail}`;
+}
+
+/**
+ * Numbers are normalised so that `1` and `1.0` and `'1'` all produce the same
+ * stream - day indices arrive from arithmetic and must not depend on whether a
+ * caller happened to hand us an integer-valued float.
+ */
+function normalizePart(part: StreamPart): string {
+    if (typeof part === 'number') {
+        if (!Number.isFinite(part)) return 'nan';
+        // Normalise -0 to 0 so `-0` and `0` cannot derive different streams.
+        return String(part === 0 ? 0 : part);
+    }
+    return part;
+}
+
+/**
+ * Get a fresh, independent RNG for a named sub-stream of a run.
+ *
+ * @example
+ *   const rng = forStream(run.seed, 'breakthrough', turn, ordinal);
+ */
+export function forStream(runSeed: string, stream: string, ...parts: StreamPart[]): CultivationRNG {
+    return new CultivationRNG(deriveSeed(runSeed, stream, ...parts));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE RNG
+// ─────────────────────────────────────────────────────────────────────────
+
+export class CultivationRNG {
+    /** The exact seed string this stream was built from. Useful in audit logs. */
+    readonly seed: string;
+    private readonly rng: seedrandom.PRNG;
+
+    constructor(seed: string) {
+        this.seed = seed;
+        this.rng = seedrandom(seed);
+    }
+
+    /** Uniform sample in [0, 1). The primitive everything else is built on. */
+    next(): number {
+        return this.rng();
+    }
+
+    /** Uniform float in [min, max). */
+    float(min: number, max: number): number {
+        return min + this.rng() * (max - min);
+    }
+
+    /** Uniform integer in [min, max], inclusive on both ends. */
+    int(min: number, max: number): number {
+        if (max < min) throw new Error(`int(${min}, ${max}): max is below min`);
+        return min + Math.floor(this.rng() * (max - min + 1));
+    }
+
+    /**
+     * True with probability `p`. Uses strict `<` so `chance(0)` is never true
+     * and `chance(1)` is always true - the boundary behaviour breakthrough
+     * clamping relies on.
+     */
+    chance(p: number): boolean {
+        return this.rng() < p;
+    }
+
+    /** Uniform choice from a non-empty list. */
+    pick<T>(items: readonly T[]): T {
+        if (items.length === 0) throw new Error('pick() from an empty list');
+        return items[Math.floor(this.rng() * items.length)];
+    }
+
+    /**
+     * Weighted choice over a record of key -> weight.
+     *
+     * Iterates the record in its own key order, which for string keys is
+     * insertion order and therefore stable for the frozen constant tables this
+     * engine draws from (e.g. AMBIENT_QI_WEIGHTS). Do not hand this a record
+     * built by iterating a Set or a Map with runtime-varying insertion order.
+     */
+    weighted<K extends string>(weights: Record<K, number>): K {
+        const keys = Object.keys(weights) as K[];
+        if (keys.length === 0) throw new Error('weighted() over an empty table');
+        const total = keys.reduce((sum, k) => sum + Math.max(0, weights[k]), 0);
+        if (total <= 0) throw new Error('weighted() over a table with no positive weight');
+        let cursor = this.rng() * total;
+        for (const key of keys) {
+            cursor -= Math.max(0, weights[key]);
+            if (cursor < 0) return key;
+        }
+        // Float drift at the very top of the range; the last key is correct.
+        return keys[keys.length - 1];
+    }
+
+    /**
+     * A v4-shaped UUID drawn from this stream.
+     *
+     * Deliberately NOT `crypto.randomUUID`: injury ids end up inside
+     * BreakthroughResult and TimeSkipResult, and those must be byte-identical
+     * across replays of the same seed. A real random id would make every
+     * result object non-comparable and quietly destroy reproducibility tests.
+     */
+    uuid(): string {
+        const bytes = new Uint8Array(16);
+        for (let i = 0; i < 16; i++) {
+            bytes[i] = Math.floor(this.rng() * 256);
+        }
+        // RFC 4122 version 4 / variant 10xx.
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+        return [
+            hex.slice(0, 8),
+            hex.slice(8, 12),
+            hex.slice(12, 16),
+            hex.slice(16, 20),
+            hex.slice(20, 32)
+        ].join('-');
+    }
+}

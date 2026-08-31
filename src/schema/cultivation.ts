@@ -132,6 +132,19 @@ export const INJURY_WEIGHTS: Record<InjurySeverity, { cultivationPenalty: number
 // THE CULTIVATOR
 // ─────────────────────────────────────────────────────────────────────────
 
+export const DeathCauseSchema = z.enum([
+    'combat_defeat',
+    'obviously_fatal_choice',
+    'lifespan_exhausted',
+    'stagnation_aging',
+    'untreated_injuries',
+    'starvation',
+    'failed_breakthrough',
+    'qi_deviation',
+    'heavenly_tribulation'
+]);
+export type DeathCause = z.infer<typeof DeathCauseSchema>;
+
 export const CultivatorKindSchema = z.enum(['pc', 'npc', 'enemy', 'neutral']);
 
 export const CultivatorSchema = z.object({
@@ -176,7 +189,7 @@ export const CultivatorSchema = z.object({
 
     /** Set the moment a death condition resolves. A dead cultivator is immutable. */
     alive: z.boolean().default(true),
-    deathCause: z.string().nullable().default(null),
+    deathCause: DeathCauseSchema.nullable().default(null),
     diedOnTurn: z.number().int().min(0).nullable().default(null),
 
     createdAt: z.string().optional(),
@@ -299,19 +312,6 @@ export type Sect = z.infer<typeof SectSchema>;
 // ─────────────────────────────────────────────────────────────────────────
 // PERMADEATH RUN + DEATH LEDGER
 // ─────────────────────────────────────────────────────────────────────────
-
-export const DeathCauseSchema = z.enum([
-    'combat_defeat',
-    'obviously_fatal_choice',
-    'lifespan_exhausted',
-    'stagnation_aging',
-    'untreated_injuries',
-    'starvation',
-    'failed_breakthrough',
-    'qi_deviation',
-    'heavenly_tribulation'
-]);
-export type DeathCause = z.infer<typeof DeathCauseSchema>;
 
 export const RunStatusSchema = z.enum(['active', 'dead', 'ascended']);
 

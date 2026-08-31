@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="ink">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<title>The Cultivation Ladder</title>
+<meta name="description" content="A text-first cultivation roguelike. The engine decides; the narrator describes." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0f0e'/%3E%3Cpath d='M16 5l3.2 6.6L26 12.6l-5 4.9 1.2 7-6.2-3.3L9.8 24.5l1.2-7-5-4.9 6.8-1z' fill='%237fd1b9'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<div id="app" class="app" data-screen="boot">
+
+  <!-- ───────────────────────────── TOP BAR ───────────────────────────── -->
+  <header class="topbar" id="topbar">
+    <div class="topbar__brand">
+      <span class="sigil" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
+          <path d="M12 2.5l2.6 5.6 6 .9-4.4 4.3 1.1 6.2L12 16.6 6.7 19.5l1.1-6.2L3.4 9l6-.9z"/>
+        </svg>
+      </span>
+      <span class="topbar__title">The Cultivation Ladder</span>
+    </div>
+
+    <div class="topbar__actions">
+      <span class="badge badge--admin" id="admin-badge" hidden title="The server is running with admin tooling exposed.">
+        ADMIN MODE
+      </span>
+      <span class="badge badge--mock" id="mock-badge" hidden title="Responses are served by the local mock, not the engine.">
+        MOCK DATA
+      </span>
+      <button class="btn btn--ghost btn--sm" type="button" data-open="ladder">Ladder</button>
+      <button class="btn btn--ghost btn--sm" type="button" data-open="ledger">Death Ledger</button>
+      <button class="btn btn--ghost btn--sm topbar__sheet-toggle" type="button" id="sheet-toggle" aria-expanded="false" aria-controls="sheet">
+        Sheet
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="screens">
+
+    <!-- ───────────────────────────── BOOT ───────────────────────────── -->
+    <section class="screen screen--boot" data-screen-id="boot" aria-busy="true">
+      <div class="boot">
+        <div class="boot__pulse" aria-hidden="true"></div>
+        <p class="boot__text">Reading the ledger…</p>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── OPENING ─────────────────────────── -->
+    <section class="screen screen--opening" data-screen-id="opening" hidden>
+      <div class="opening">
+
+        <div class="opening__hero">
+          <p class="opening__eyebrow">A cultivation roguelike</p>
+          <h1 class="opening__title">The Cultivation Ladder</h1>
+          <p class="opening__lede">
+            Forty-five ranks stand between a mortal with a party trick and something the
+            heavens must answer for. Almost no one climbs past the first thirteen.
+          </p>
+
+          <div class="rules">
+            <div class="rules__item">
+              <h3>Death is permanent</h3>
+              <p>There is no reload, no revival, no continue. When a run ends it goes into the ledger and stays there.</p>
+            </div>
+            <div class="rules__item">
+              <h3>Talent is dealt, not chosen</h3>
+              <p>Your spirit root and four innate attributes are rolled once by the engine and locked for the whole run.</p>
+            </div>
+            <div class="rules__item">
+              <h3>The engine decides</h3>
+              <p>The narrator describes what happened. It never rules on it. Every number below is the engine's, shown as it was computed.</p>
+            </div>
+          </div>
+
+          <form class="begin" id="begin-form" autocomplete="off">
+            <label class="begin__label" for="begin-name">Name your cultivator</label>
+            <div class="begin__row">
+              <input class="input begin__input" id="begin-name" name="name" type="text"
+                     maxlength="100" placeholder="e.g. Shen Wuyou" required />
+              <button class="btn btn--primary" type="submit" id="begin-submit">Begin Cultivation</button>
+            </div>
+            <p class="begin__note">
+              Your spirit root is rolled the instant you press this. You will not be shown a choice, because there isn't one.
+            </p>
+            <p class="form-error" id="begin-error" role="alert" hidden></p>
+          </form>
+        </div>
+
+        <div class="opening__odds">
+          <div class="panel">
+            <div class="panel__head">
+              <h2 class="panel__title">The odds you are about to be dealt</h2>
+              <p class="panel__sub">Live from <code>/api/reference/spirit-roots</code>. This is the real distribution.</p>
+            </div>
+            <div class="panel__body" id="roots-table">
+              <p class="muted">Loading the spirit-root table…</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head">
+              <h2 class="panel__title">Innate attributes</h2>
+              <p class="panel__sub">Rolled once within these bounds. There is no training montage.</p>
+            </div>
+            <div class="panel__body" id="attrs-table">
+              <p class="muted">Loading…</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ───────────────────────────── PLAY ───────────────────────────── -->
+    <section class="screen screen--play" data-screen-id="play" hidden>
+
+      <div class="play">
+
+        <!-- Narrative column -->
+        <div class="play__narrative">
+          <div class="warnings" id="warnings" role="status" aria-live="polite"></div>
+
+          <div class="scroll" id="scroll" tabindex="0" role="log" aria-label="Narrative log" aria-live="polite">
+            <ol class="entries" id="entries"></ol>
+            <div class="scroll__pending" id="pending" hidden>
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span id="pending-text">The narrator considers…</span>
+            </div>
+          </div>
+
+          <div class="commandbar">
+            <div class="quick" id="quick">
+              <button class="btn btn--quick" type="button" id="btn-cultivate">
+                <span class="btn__key">Cultivate</span>
+                <span class="btn__hint">seclusion &amp; time skip</span>
+              </button>
+              <button class="btn btn--quick btn--breakthrough" type="button" id="btn-breakthrough" disabled
+                      title="Available only when the engine reports breakthroughReady.">
+                <span class="btn__key">Attempt Breakthrough</span>
+                <span class="btn__hint" id="btn-breakthrough-hint">progress incomplete</span>
+              </button>
+            </div>
+
+            <form class="command" id="command-form" autocomplete="off">
+              <span class="command__caret" aria-hidden="true">›</span>
+              <input class="command__input" id="command-input" name="input" type="text"
+                     placeholder="What do you do?" maxlength="1000"
+                     aria-label="Your action" autocapitalize="sentences" />
+              <button class="btn btn--primary btn--send" type="submit" id="command-send" aria-label="Submit action">
+                Act
+              </button>
+            </form>
+            <p class="command__hint">
+              Free text. The narrator interprets, the engine rules. <kbd>Enter</kbd> to act.
+            </p>
+          </div>
+        </div>
+
+        <!-- Cultivator sheet -->
+        <aside class="play__sheet" id="sheet" aria-label="Cultivator sheet">
+          <div class="sheet" id="sheet-body"></div>
+        </aside>
+
+        <div class="sheet-scrim" id="sheet-scrim" hidden></div>
+      </div>
+    </section>
+
+    <!-- ───────────────────────────── DEATH ───────────────────────────── -->
+    <section class="screen screen--death" data-screen-id="death" hidden>
+      <div class="death" id="death-body"></div>
+    </section>
+
+  </main>
+
+  <footer class="statusbar" id="statusbar">
+    <span class="statusbar__item" id="status-run">—</span>
+    <span class="statusbar__spacer"></span>
+    <span class="statusbar__item" id="status-provider">—</span>
+  </footer>
+</div>
+
+<!-- Overlay + toast hosts -->
+<div class="overlay" id="overlay" hidden>
+  <div class="overlay__scrim" data-overlay-close></div>
+  <div class="overlay__panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title" tabindex="-1" id="overlay-panel">
+    <header class="overlay__head">
+      <h2 class="overlay__title" id="overlay-title">—</h2>
+      <button class="btn btn--ghost btn--icon" type="button" data-overlay-close aria-label="Close">✕</button>
+    </header>
+    <div class="overlay__body" id="overlay-body"></div>
+    <footer class="overlay__foot" id="overlay-foot" hidden></footer>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
