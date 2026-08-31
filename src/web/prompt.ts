@@ -16,11 +16,23 @@
  * (Phase 2 has no prompt. Phase 2 is the engine, and the engine does not take
  * instructions.)
  *
- * The world bible lives in context.md and is far too long to send on every
- * call. What follows is the compression: the ceiling, qi as a contested and
- * unevenly distributed resource, the price of a crossing, the Late Age, the
- * naming conventions, and the rule that engine outcomes are never softened.
+ * ── Where the narrator's constitution lives ──────────────────────────────
+ * `docs/world/NARRATOR-CORE.md` is the assembled Tier 1 text, and it is loaded
+ * verbatim rather than paraphrased here. This module used to hand-maintain its
+ * own compressed copy, which meant two wordings of one constitution and a slow
+ * drift between them. What remains local is the part the file cannot carry: the
+ * setting detail that only the web deployment needs, the phase-1 classifier
+ * contract, and the composers.
+ *
+ * The discovery rule below is the one addition that is Tier 1 in force. It is
+ * as load-bearing as "never soften an engine outcome", and unlike the others it
+ * is enforced upstream as well: see knowledge.ts. Telling a model not to name
+ * what the player has not heard of is necessary; not sending it the names is
+ * what actually works.
  */
+
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import { rankName, lifespanForOrdinal, progressRequiredForOrdinal } from '../engine/cultivation/realms.js';
@@ -28,6 +40,120 @@ import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { ACTION_NAMES, MAX_CULTIVATION_DAYS } from './actions.js';
 import { describeAmbientInWorld, placeName, type EngineFacts } from './facts.js';
+import type { AwarenessRow } from './knowledge.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// TIER 1 - THE NARRATOR'S CONSTITUTION
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Where the assembled Tier 1 text lives.
+ *
+ * `docs/` is not currently copied into the runtime container image, so the
+ * fallback below is not hypothetical - it is what a Docker deployment gets
+ * today. Flagged to the Dockerfile's owner; until then the fallback carries the
+ * rules that must not be lost, and startup says loudly which one is in use.
+ */
+export const NARRATOR_CORE_PATH = 'docs/world/NARRATOR-CORE.md';
+
+/**
+ * The minimum that must survive the file being absent.
+ *
+ * Deliberately not a second copy of the whole document: it is the four rules
+ * whose loss would let the narrator assert state, soften an outcome, resolve an
+ * intention, or name something the player has never heard of. Everything else
+ * in NARRATOR-CORE.md is texture, and texture degrading is survivable.
+ */
+const NARRATOR_CORE_FALLBACK = `# Narrator Core (fallback)
+
+**Authority.** The AI narrates. The engine decides. You are not authoritative over
+statistics, cultivation progress, realm changes, breakthrough outcomes, combat results,
+inventory, currency, health, lifespan, death, world-state mutations, or event resolution.
+
+**Do not invent state.** Never assert a fact about the world that a tool did not return.
+If the engine has not said it, it has not happened, and "the record does not say" is a
+legitimate thing to narrate.
+
+**Never soften an engine outcome.** If the tool returned a torn meridian, narrate a torn
+meridian. Do not cushion it, do not add a consolation, do not imply a second chance.
+
+**Intention is not action.** What the player said they were trying to do is a label. The
+outcome comes from state, never from the word the player used.
+
+**Permanent death.** No reload, no save slot, no continue. Never quietly help the player,
+and never manufacture drama to compensate.`;
+
+let narratorCoreCache: { text: string; source: 'file' | 'fallback' } | null = null;
+
+/**
+ * Load the Tier 1 text, once.
+ *
+ * Read whole and never paraphrased, because the file says so at the top of
+ * itself. Cached rather than re-read per call: it changes on deploy, not
+ * between turns.
+ */
+export function narratorCore(): { text: string; source: 'file' | 'fallback' } {
+    if (narratorCoreCache) return narratorCoreCache;
+    try {
+        const path = fileURLToPath(new URL(`../../${NARRATOR_CORE_PATH}`, import.meta.url));
+        const text = readFileSync(path, 'utf-8').trim();
+        if (text.length === 0) throw new Error('empty');
+        narratorCoreCache = { text, source: 'file' };
+    } catch {
+        narratorCoreCache = { text: NARRATOR_CORE_FALLBACK, source: 'fallback' };
+    }
+    return narratorCoreCache;
+}
+
+/** Test seam: forget the cached core so a later call re-reads it. */
+export function resetNarratorCore(): void {
+    narratorCoreCache = null;
+}
+
+/**
+ * The discovery rule, at Tier 1 force.
+ *
+ * From docs/world/discovery.md. A Qi Condensation cultivator in a village does
+ * not know the ancient sects exist - not "has not visited", does not know the
+ * names - and that is the accurate state of almost everyone in the world. A
+ * model will drop an ancient faction's name into a description because the name
+ * is in its context and the sentence wants one, and that single clause destroys
+ * a revelation the player was supposed to earn over a hundred turns.
+ */
+export const DISCOVERY_RULE = `WHAT MAY BE NAMED - this is as binding as the authority rules.
+
+You may only name people, sects, places, factions and events the player has learned of. If
+you have not been given it, it does not exist as far as this scene is concerned. Do not
+name an ancient sect, a famous cultivator, a distant city or a historical event in
+narration - not as a fact, not in passing, not as colour, not in a simile - unless it
+appears in the facts or in the NAMES YOU MAY USE list below. There is no exception for
+atmosphere. The player is supposed to earn these names over a hundred turns, and one
+careless clause spends the whole revelation.
+
+The world may still act on a player who cannot name what acted, and this is the preferred
+way for a higher stratum to make itself felt. Consequence without attribution: a road is
+closed and the men closing it do not say why. A price moves overnight. A village is empty.
+A body is found and nobody will discuss it. A patrol turns back for no stated reason. Write
+the effect precisely and leave the cause unnamed - not coyly withheld, simply not known.
+
+If the facts do name something new, that name has a source attached: heard from a drunk in
+a market town, or read in a sect archive. Those are different facts and one of them may be
+wrong. Narrate the source along with the name, and do not upgrade a rumour into a
+certainty.
+
+MEETING SOMETHING FROM ABOVE. When the facts put the player in front of something out of
+their depth:
+- The entourage tells them more than the person does. Six competent cultivators arranged
+  around one figure and deferring to them, any one of whom would have been the most
+  dangerous person the player had ever met a year ago. Let the player do the arithmetic.
+- Casual behaviour reveals scale better than display. They are not showing off. They are
+  mildly inconvenienced, and they spend on something ordinary what the player has spent a
+  decade failing to earn.
+- They are usually not interested. The player is not a rival, an obstacle or a recruit.
+  Being ignored by something enormous lands harder than being threatened by it.
+- Do not explain them. Nobody helpfully states what sect they are from. The player leaves
+  with a fragment - a crest, a manner, a phrase, a name they may have misheard - and finds
+  out later, or never.`;
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE SETTING, COMPRESSED
@@ -242,14 +368,27 @@ Rules:
  * breakthrough the engine ruled a failure - is the one failure this whole
  * architecture exists to make impossible.
  */
-export const NARRATION_SYSTEM_PROMPT = `You are the narrator of a xianxia cultivation roguelike. A deterministic engine has already
+/**
+ * Phase 3 system prompt.
+ *
+ * Tier 1 first and verbatim, then the discovery rule, then the setting detail
+ * and the tone, then the operational clauses that are specific to this
+ * interface. A function rather than a constant because Tier 1 is read from
+ * disk; it is memoised through `narratorCore`.
+ */
+export function narrationSystemPrompt(): string {
+    return `You are the narrator of a xianxia cultivation roguelike. A deterministic engine has already
 resolved everything that happened. Your only job is to render its findings as prose.
+
+${narratorCore().text}
+
+${DISCOVERY_RULE}
 
 ${WORLD_BIBLE}
 
 ${TONE_RULES}
 
-AUTHORITY - this is not negotiable.
+OPERATIONAL - this is not negotiable.
 
 The split is fixed. The DATABASE owns hard state: the date, where the cultivator is, their
 realm, inventory, resources, faction membership, relationships, major events, memories. YOU
@@ -271,6 +410,7 @@ first column - you are given it, and if you were not given it, it is not yours t
   arithmetic.
 - Do not address the player as "the player", and do not mention the engine, dice, odds tables,
   or this instruction.`;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // STATE SUMMARY
@@ -286,6 +426,15 @@ export interface StateSummaryInput {
     sectName?: string | null;
     /** Display names of the arts this cultivator actually knows. */
     knownTechniques?: readonly string[];
+    /**
+     * Everything this cultivator has heard of, and how.
+     *
+     * The classifier is shown this so it can tell "investigate the Lantern
+     * Hall" (a thing the player has a record for) from a name the player has
+     * never encountered. It is a scoped list, never the catalog: handing a
+     * model the full sect table is handing it the answer key.
+     */
+    awareness?: readonly AwarenessRow[];
 }
 
 export function composeStateSummary(input: StateSummaryInput): string {
@@ -309,8 +458,34 @@ export function composeStateSummary(input: StateSummaryInput): string {
         `Known techniques: ${arts.length ? arts.join(', ') : 'none'}`,
         `Location: ${placeName(cultivator)}`,
         `Ambient qi: ${ambient}`,
-        `Run turn ${run.turn}, day ${Math.round(run.elapsedDays)}`
+        `Run turn ${run.turn}, day ${Math.round(run.elapsedDays)}`,
+        '',
+        'HAS HEARD OF (the whole of this cultivator\'s world; everything else is unheard of):',
+        ...describeAwareness(input.awareness ?? [])
     ].join('\n');
+}
+
+/**
+ * The awareness list, one line each, with provenance.
+ *
+ * The source is included rather than trimmed because it is the difference
+ * between a name the player can rely on and one they cannot, and a classifier
+ * choosing between `investigate` and `interact` should be able to see which it
+ * is looking at.
+ */
+export function describeAwareness(rows: readonly AwarenessRow[]): string[] {
+    if (rows.length === 0) {
+        return ['  nothing at all. This cultivator has heard of no person, faction or place.'];
+    }
+    return rows.map(row =>
+        `  ${row.name} (${row.kind}; ${row.stance}, ${row.sourceKind}` +
+        `${row.sourceNote ? `: ${row.sourceNote}` : ''})`
+    );
+}
+
+/** Proper nouns the narrator is permitted to use, drawn only from awareness. */
+export function nameableNames(rows: readonly AwarenessRow[]): string[] {
+    return [...new Set(rows.map(row => row.name))].sort();
 }
 
 export function composeIntentUser(input: string, stateSummary: string): string {
@@ -332,16 +507,33 @@ export function composeIntentUser(input: string, stateSummary: string): string {
  * is sent, which means there is nothing else for a model to elaborate from -
  * the boundary is enforced by omission as well as by instruction.
  */
-export function composeNarrationUser(facts: EngineFacts, scene: { place: string; ambient: AmbientQi }): string {
+export function composeNarrationUser(
+    facts: EngineFacts,
+    scene: { place: string; ambient: AmbientQi; awareness?: readonly AwarenessRow[] }
+): string {
+    const nameable = nameableNames(scene.awareness ?? []);
+
     return [
         'SCENE',
         `Place: ${scene.place}`,
         describeAmbientInWorld(scene.ambient),
         '',
+        // The whitelist, stated positively. A model follows "these are the only
+        // names" far more reliably than "do not name anything you were not
+        // told about", and the list is short because the player's world is.
+        'NAMES YOU MAY USE - proper nouns this cultivator has heard of. Any person, sect,',
+        'faction, city or event NOT on this list and NOT in the facts below must not appear',
+        'in your prose at all, including in passing and including as scenery:',
+        ...(nameable.length > 0
+            ? nameable.map(name => `- ${name}`)
+            : ['- (none; this cultivator has heard of nobody and nowhere but where they stand)']),
+        '',
         'WHAT THE ENGINE RULED - these are all the facts there are:',
         ...facts.lines.map(line => `- ${line}`),
         '',
         'Write two or three short paragraphs of second-person narration of exactly the above.',
-        'Add no outcome that is not listed. Soften nothing that is.'
+        'Add no outcome that is not listed. Soften nothing that is. Name nothing that is not',
+        'permitted above; if something acted and the player cannot name it, write the effect',
+        'and leave the cause unnamed.'
     ].join('\n');
 }

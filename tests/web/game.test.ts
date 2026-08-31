@@ -17,7 +17,20 @@ import { DAYS_PER_YEAR } from '../../src/engine/cultivation/cultivation';
 import { rollSpiritRoot, rollAttributes } from '../../src/engine/cultivation/spirit-roots';
 import { forStream } from '../../src/engine/cultivation/rng';
 import { effectiveLifespanYears, lifespanForOrdinal } from '../../src/engine/cultivation/realms';
-import { TECHNIQUES, RECIPES, HERBS } from '../../src/data/cultivation/index';
+import { TECHNIQUES, RECIPES, HERBS, SECTS } from '../../src/data/cultivation/index';
+
+/**
+ * The one sect a new cultivator has heard of.
+ *
+ * discovery.md gates entity resolution on knowledge, so a test that wants a
+ * faction the player can actually name has to use the seeded local one. Naming
+ * any other sect is a discovery test, and lives in discovery.test.ts.
+ */
+const LOCAL_SECT = SECTS
+    .filter(sect => sect.recruits)
+    .reduce((best, sect) =>
+        sect.admissionOrdinal < best.admissionOrdinal ||
+        (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id) ? sect : best);
 import { GameError } from '../../src/web/game';
 import { derivedView } from '../../src/web/view';
 import { STARTING_AGE, STARTING_LOCATION, PROVISION_COST_STONES } from '../../src/web/game';
@@ -301,20 +314,20 @@ describe('interact', () => {
         expect(planned(result).action).toBe('interact');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/no cultivator and no sect on record/i);
+        expect(refusal.summary).toMatch(/nobody this cultivator has heard of/i);
     });
 
     it('reports real facts about a real party, and refuses to resolve the outcome', async () => {
         const { game } = makeGame();
         await game.newRun('Talker');
 
-        // Lantern Hall is in the shipped catalog, so it is a real faction.
-        const result = await game.act('I negotiate with Lantern Hall.');
+        // The seeded local sect: a real faction this cultivator can name.
+        const result = await game.act(`I negotiate with ${LOCAL_SECT.name}.`);
         expect(planned(result).action).toBe('interact');
 
         const calls = engineCalls(result);
         expect(calls[0]).toMatchObject({ name: 'engine.resolveParty', ok: true });
-        expect(calls[0].summary).toMatch(/Lantern Hall/);
+        expect(calls[0].summary).toContain(LOCAL_SECT.name);
 
         // The attempt is recorded; the outcome is explicitly not.
         const outcome = calls.find(c => c.name === 'engine.resolveInteraction');
@@ -329,7 +342,7 @@ describe('interact', () => {
         const { cultivator } = await game.newRun('Talker');
         const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
 
-        await game.act('I threaten Lantern Hall into taking me as an elder.');
+        await game.act(`I threaten ${LOCAL_SECT.name} into taking me as an elder.`);
 
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
         expect(db.prepare('SELECT * FROM sect_members').all()).toEqual([]);
@@ -341,11 +354,11 @@ describe('investigate', () => {
         const { game } = makeGame();
         await game.newRun('Reader');
 
-        const result = await game.act('I examine Lantern Hall.');
+        const result = await game.act(`I examine ${LOCAL_SECT.name}.`);
         expect(planned(result).action).toBe('investigate');
         expect(refusedCall(result)).toBeNull();
-        expect(result.narration).toMatch(/Lantern Hall/);
-        expect(engineCalls(result)[0].summary).toMatch(/Resolved .Lantern Hall. to sect/);
+        expect(result.narration).toContain(LOCAL_SECT.name);
+        expect(engineCalls(result)[0].summary).toContain(`to sect ${LOCAL_SECT.id}`);
     });
 
     it('refuses to describe what the world does not hold', async () => {
@@ -355,7 +368,7 @@ describe('investigate', () => {
         const result = await game.act('I examine the Sword of Infinite Nonsense.');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/will not describe what it does not hold/i);
+        expect(refusal.summary).toMatch(/will not describe what the player has no knowledge of/i);
     });
 
     it('costs a turn and nothing else', async () => {
@@ -363,7 +376,7 @@ describe('investigate', () => {
         const { cultivator } = await game.newRun('Reader');
         const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
 
-        const result = await game.act('I examine Lantern Hall.');
+        const result = await game.act(`I examine ${LOCAL_SECT.name}.`);
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
         expect(result.state.run.elapsedDays).toBe(0);
         expect(result.state.run.turn).toBe(1);

@@ -42,7 +42,7 @@ import { ACTIONS_PER_FULL_SATIETY, describeDeath } from '../engine/cultivation/s
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { rollHerb } from '../data/cultivation/index.js';
 import { setDb } from '../storage/index.js';
-import { getSect, getTechnique } from '../data/cultivation/index.js';
+import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { handleRefine } from '../server/consolidated/alchemy-manage.js';
 import { handlePractise } from '../server/consolidated/technique-manage.js';
 import {
@@ -78,8 +78,10 @@ import {
     resolveParty,
     resolvePlace,
     resolveRecipe,
-    resolveTechnique
+    resolveTechnique,
+    type KnowledgeScope
 } from './entities.js';
+import { KnowledgeGate, type AwarenessRow } from './knowledge.js';
 import {
     factsForBreakthrough,
     factsForEat,
@@ -253,6 +255,14 @@ export class GameService {
      */
     private readonly repos: CultivationRepos;
     private readonly log: PlayLog;
+    /**
+     * What each cultivator has heard of.
+     *
+     * The enforcement behind docs/world/discovery.md: everything that reaches a
+     * prompt or an entity resolver is filtered through this first, so the
+     * narrator is never handed a name the player has not earned.
+     */
+    private readonly knowledge: KnowledgeGate;
     private readonly narrator: Narrator;
     private readonly seedFactory: () => string;
 
@@ -272,6 +282,7 @@ export class GameService {
         setDb(this.db);
         this.repos = ensureCultivationDb();
         this.log = new PlayLog(this.db);
+        this.knowledge = new KnowledgeGate(this.db);
     }
 
     // ── run lifecycle ────────────────────────────────────────────────────
@@ -338,11 +349,19 @@ export class GameService {
             return { cultivator: this.repos.cultivators.getById(cultivator.id)!, run };
         })();
 
+        // The world a villager starts with: where they stand, and the one sect
+        // anybody in the county could name. Everything else in the world is
+        // unheard of and has to be learned from a source they can point at.
+        const awareness = this.knowledge.seedStartingAwareness(
+            created.cultivator.id, 0, STARTING_LOCATION, localSect()
+        );
+
         const ambient = this.ambientFor(created.cultivator, created.run);
         const facts = factsForLook(created.cultivator, ambient);
         const opening = await this.narrator.narrate(facts, {
             place: placeName(created.cultivator),
-            ambient
+            ambient,
+            awareness
         });
 
         this.log.append(created.run.id, [
@@ -395,7 +414,8 @@ export class GameService {
                 run,
                 ambient,
                 sectName: this.sectNameFor(cultivator),
-                knownTechniques: this.knownTechniqueNames(cultivator)
+                knownTechniques: this.knownTechniqueNames(cultivator),
+                awareness: this.awarenessOf(cultivator)
             })
         );
 
@@ -403,7 +423,11 @@ export class GameService {
         const execution = await this.execute(plan.action, run, cultivator, ambient);
 
         const after = this.currentRun();
-        const scene = { place: placeName(after.cultivator), ambient: this.ambientFor(after.cultivator, after.run) };
+        const scene = {
+            place: placeName(after.cultivator),
+            ambient: this.ambientFor(after.cultivator, after.run),
+            awareness: this.awarenessOf(after.cultivator)
+        };
 
         // ── phase 3 ──
         const narration = await this.narrator.narrate(execution.facts, scene);
@@ -444,7 +468,8 @@ export class GameService {
         const after = this.currentRun();
         const narration = await this.narrator.narrate(execution.facts, {
             place: placeName(after.cultivator),
-            ambient: this.ambientFor(after.cultivator, after.run)
+            ambient: this.ambientFor(after.cultivator, after.run),
+            awareness: this.awarenessOf(after.cultivator)
         });
 
         this.log.append(run.id, [
@@ -471,7 +496,8 @@ export class GameService {
         const after = this.currentRun();
         const narration = await this.narrator.narrate(execution.facts, {
             place: placeName(after.cultivator),
-            ambient: this.ambientFor(after.cultivator, after.run)
+            ambient: this.ambientFor(after.cultivator, after.run),
+            awareness: this.awarenessOf(after.cultivator)
         });
 
         this.log.append(run.id, [
@@ -636,6 +662,15 @@ export class GameService {
         const applied = applyTimeSkip(this.repos, {
             before: cultivator, run, skip, location: place.name
         });
+
+        // Standing somewhere is how a place stops being a rumour. Recorded with
+        // its source so a place walked to and a place read about stay different
+        // facts.
+        this.noteEncounter(
+            applied.cultivator, run, { kind: 'place', id: place.name, name: place.name },
+            'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
+        );
+
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
 
         return {
@@ -680,26 +715,49 @@ export class GameService {
             return this.freeAction(run, 'investigate', factsForLook(cultivator, ambient));
         }
 
-        const subject = resolveAnything(this.repos, query, cultivator);
+        const scope = this.scopeFor(cultivator);
+        const subject = resolveAnything(this.repos, query, cultivator, scope);
         if (!subject) {
+            // Worded so that it does not confirm existence either. "You have
+            // never heard of it" and "it is not there" have to look the same
+            // from inside, or the refusal itself becomes the answer key.
             return refused('engine.resolveEntity', 'investigate', factsForRefusal(
-                `There is no ${query} on record.`,
-                `Nothing in this world matches "${query}": not a person, not a sect, not an art, ` +
-                `not a formula, not a herb. The engine will not describe what it does not hold. ` +
-                `On record nearby: ${nearbyNames(this.repos, cultivator).join(', ') || 'nobody at all'}.`
+                `Nothing you know of by that name.`,
+                `"${query}" is not something this cultivator has heard of, and nothing they can ` +
+                `see answers to it. The engine will not describe what the player has no ` +
+                `knowledge of, and it will not confirm whether such a thing exists. ` +
+                `${this.knownNamesLine(cultivator, scope)}`
             ));
         }
 
-        const execution = this.freeAction(
-            run, 'investigate',
-            factsForInvestigation(cultivator, ambient, subject.name, subject.facts)
+        // Examining a thing is a source. Record it with its provenance rather
+        // than letting the knowledge exist only in the transcript.
+        const learned = this.noteEncounter(
+            cultivator, run, subject, 'witnessed', `Examined at ${placeName(cultivator)}.`
         );
+
+        const facts = factsForInvestigation(cultivator, ambient, subject.name, subject.facts);
+        if (learned) {
+            facts.lines.push(
+                `${subject.name} is now a name this cultivator holds, learned by looking at it.`
+            );
+        }
+
+        const execution = this.freeAction(run, 'investigate', facts);
         execution.calls = [{
             name: 'engine.readState',
             action: 'investigate',
             summary: `Resolved "${query}" to ${subject.kind} ${subject.id}. Read only: no time passed, nothing changed.`,
             ok: true
         }];
+        if (learned) {
+            execution.calls.push({
+                name: 'knowledge.learn',
+                action: 'name_surfaced',
+                summary: `${subject.name} recorded as known (source: witnessed, at ${placeName(cultivator)}).`,
+                ok: true
+            });
+        }
         return execution;
     }
 
@@ -722,24 +780,30 @@ export class GameService {
         target: string | undefined,
         intent: string
     ): Execution {
+        const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
         if (query.length < 2) {
             return refused('engine.resolveParty', 'interact', factsForRefusal(
                 'Nobody in particular.',
                 'No person or faction was named, so nobody was approached. ' +
-                `On record nearby: ${nearbyNames(this.repos, cultivator).join(', ') || 'nobody at all'}.`
+                `${this.knownNamesLine(cultivator, scope)}`
             ));
         }
 
-        const party = resolveParty(this.repos, query, cultivator);
+        const party = resolveParty(this.repos, query, cultivator, scope);
         if (!party) {
             return refused('engine.resolveParty', 'interact', factsForRefusal(
-                `There is no ${query} here.`,
-                `No cultivator and no sect on record matches "${query}", so there was nobody to approach. ` +
-                `The engine will not conjure a person to have a conversation with. ` +
-                `On record nearby: ${nearbyNames(this.repos, cultivator).join(', ') || 'nobody at all'}.`
+                `Nobody you know of by that name.`,
+                `"${query}" is nobody this cultivator has heard of and nobody standing in front of ` +
+                `them, so there was nobody to approach. The engine will not conjure a person to ` +
+                `have a conversation with, and it will not say whether such a person exists. ` +
+                `${this.knownNamesLine(cultivator, scope)}`
             ));
         }
+
+        this.noteEncounter(
+            cultivator, run, party, 'witnessed', `Approached at ${placeName(cultivator)}.`
+        );
 
         const unresolved =
             'The engine can say who they are and what stands between you; it cannot yet say what ' +
@@ -1311,6 +1375,71 @@ export class GameService {
         return { run, cultivator };
     }
 
+    /**
+     * Who is asking, and what they have heard of.
+     *
+     * Passed to every entity resolver so that a sect the player has never heard
+     * named simply does not resolve. `here` lets anyone standing in the same
+     * place resolve regardless, which is the `encountered` stage of
+     * discovery.md: you can see who is in the room without being told a name.
+     */
+    private scopeFor(cultivator: Cultivator): KnowledgeScope {
+        return {
+            gate: this.knowledge,
+            holderId: cultivator.id,
+            here: cultivator.location
+        };
+    }
+
+    /** Everything this cultivator has heard of. The narrator's whitelist. */
+    private awarenessOf(cultivator: Cultivator): AwarenessRow[] {
+        return this.knowledge.awareness(cultivator.id);
+    }
+
+    /**
+     * What the player could have meant, drawn only from what they know.
+     *
+     * A refusal that listed every recruiting sect in the catalog would leak the
+     * world through the error path, which is exactly the door discovery.md is
+     * shutting. This lists people in the room and names already held.
+     */
+    private knownNamesLine(cultivator: Cultivator, scope: KnowledgeScope): string {
+        const names = nearbyNames(this.repos, cultivator, scope);
+        return names.length > 0
+            ? `Known to this cultivator, or standing here: ${names.join(', ')}.`
+            : 'This cultivator has heard of nobody and nowhere but the ground under them.';
+    }
+
+    /**
+     * Record that the player has now encountered something.
+     *
+     * discovery.md is explicit that each step up the ladder of knowing needs a
+     * source, and that a name learned from a drunk and a name read in an
+     * archive are different facts. So awareness is written with its provenance
+     * rather than left to exist only in the transcript, which is where it would
+     * be unauditable and unrevisable.
+     */
+    private noteEncounter(
+        cultivator: Cultivator,
+        run: Run,
+        entity: { kind: string; id: string; name: string },
+        sourceKind: 'witnessed' | 'told' | 'read',
+        note: string
+    ): boolean {
+        const kind = entity.kind;
+        if (kind !== 'cultivator' && kind !== 'sect' && kind !== 'place') return false;
+        return this.knowledge.learnIfNew({
+            holderId: cultivator.id,
+            kind,
+            id: entity.id,
+            name: entity.name,
+            onDay: Math.floor(run.elapsedDays),
+            sourceKind,
+            sourceNote: note,
+            stance: sourceKind === 'witnessed' ? 'knows' : 'believes'
+        });
+    }
+
     /** True once a crossing has taken this cultivator's name. */
     private nameTaken(cultivator: Pick<Cultivator, 'id'>): boolean {
         return readFlag(this.db, cultivator.id, FLAG_NAME_TAKEN) === '1';
@@ -1506,6 +1635,32 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     if (deviation?.deviated && deviation.summary) lines.push(deviation.summary);
 
     return lines;
+}
+
+/**
+ * The one sect a villager could name.
+ *
+ * discovery.md: a new cultivator's world is "the county, the local sect that
+ * takes disciples, the market town, and whatever their grandmother believed".
+ * There is no locality model yet, so the nearest honest stand-in is the
+ * catalog's lowest-admission body that takes applicants at all - the one a
+ * person with no cultivation would plausibly have heard mentioned. Exactly one,
+ * because the point is that the list is almost empty.
+ *
+ * TODO(world): once regions exist, this should be the sect whose territory
+ * contains the starting location, not the softest entry in the catalog.
+ */
+function localSect(): { id: string; name: string } | null {
+    const candidates = SECTS.filter(sect => sect.recruits);
+    if (candidates.length === 0) return null;
+
+    const chosen = candidates.reduce((best, sect) =>
+        sect.admissionOrdinal < best.admissionOrdinal ||
+        (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id)
+            ? sect
+            : best);
+
+    return { id: chosen.id, name: chosen.name };
 }
 
 /** What the crossings cut away, as inspectable rows. */
