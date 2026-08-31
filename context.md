@@ -1535,202 +1535,223 @@ turn cruel without raising their voice; obsession as the engine of a life; cosmi
 undercut by one small intimate loss. Not grandiosity. Grandiosity is what the
 *characters* believe.
 
-## The Vault
+## The World and the Ceiling
 
-The sky is not a sky. It is a lid.
+The world is one enormous planet, and above it there is a ceiling.
 
-The world sits at the bottom of a sealed vessel called **the Vault**, and what mortals
-call heaven is the underside of its **Lid** - a ceiling of nine seals, close enough that
-on clear nights at high altitude you can see the seams. Nobody living knows who fired
-the Vault or what it was firing. The Lid has one property everyone agrees on: things can
-leave through it, and nothing has ever come back.
+Cultivators call it different things depending on who taught them, but everyone who gets
+high enough agrees on the shape of it: there is a limit to how far the world will let a
+person rise, and past that limit is somewhere else. Ascending means going through. Almost
+nobody does.
 
-To **ascend** is to punch a hole in the Lid and go through. That is the summit of the
-ladder and the ambition of every cultivator in the world.
+Below the ceiling, everything runs on **qi**.
 
-## Ascension Is Subtraction
+## Qi is a resource, and it is not evenly distributed
 
-Here is the rule the world is built on, and it is not a metaphor:
+Qi is the ambient spiritual energy cultivators draw in, refine and store. It is not
+metaphorical and it is not infinite. It pools in **spiritual veins** - features of the land
+the way ore bodies are - and its density varies enormously from place to place.
 
-> **The Vault charges a toll, and the toll is paid downward.**
+This single fact organises the entire world.
 
-When a cultivator ascends, they do not take their life with them. The Vault strips it
-out - the remembered life, the people, the years, the name - and that remainder falls
-back into the world as **ash**.
+| Density | What it means to live there |
+|---|---|
+| **Rich** | A vein beneath you. Cultivation is fast, breakthroughs are survivable, and somebody already owns it |
+| **Ordinary** | Progress is possible and slow. Most inhabited land |
+| **Thin** | Progress is agonising, and there is a hard ceiling on how far anyone here will ever get |
+| **Dead** | Nothing. Old battlefields, tribulation scars, places something drained |
 
-The ash does not disperse. It settles. It is drawn into stone and root and lung. And it
-is *spiritual energy*: the qi that every cultivator in the world breathes, gathers,
-condenses, and burns.
+**The great sects are old because they sit on rich veins, and they sit on rich veins
+because they are old enough to have taken them.** That is the whole of their history in
+one sentence, and it is why sect territory is the most fought-over property in the world.
+A sect that loses its vein does not decline gracefully; it stops producing cultivators
+within a generation and is absorbed by whoever took it.
 
-So the mechanics are literal. To cultivate is to inhale the discarded lives of
-strangers. Every cultivator alive is climbing on the ash of everyone who left.
+### Thin regions have a ceiling
 
-### The Toll
+In a genuinely qi-poor region, a cultivator does not merely progress slowly. They
+**stop**. There is not enough ambient qi to condense, and no amount of talent, discipline
+or years will manufacture it. Whole provinces exist where nobody has passed Qi
+Condensation in living memory and the local understanding of cultivation is that the
+higher realms are stories.
 
-The Vault does not wait for ascension to start collecting. It takes an instalment at
-every **realm boundary** - each time a cultivator crosses from one realm into the next,
-not on the small steps between sub-ranks.
+This is the single most common reason a life goes nowhere, and it has nothing to do with
+the person. Getting *out* of a poor region - to a sect, a city, a rented cave on a decent
+vein - is the first real goal of most cultivators who ever amount to anything.
 
-The toll is never a stat. It is always something that *mattered*:
+### And qi is contested
 
-- a person who knew you stops knowing you
-- a memory you were using to stay yourself
-- a technique you had mastered, gone as if never learned
-- in the worst cases, your name - and thereafter people have to be told it, every time
+Here is the part everyone knows and nobody says at dinner: **a region supports only so
+many cultivators.** Qi drawn by one person is not available to another. A valley that
+comfortably carries thirty cultivators carries three hundred badly, and everyone in it
+progresses more slowly for every additional person.
 
-**The toll is not certain, and it is not fair.** It is rolled. Crossing a boundary puts
-you at risk of losing something, not under a guarantee of it - and the odds move:
+Which means the arithmetic is available to anyone who looks at it. Fewer competitors is
+more qi. A sect that quietly limits its own intake is being prudent. A sect that culls a
+rival's outer disciples is being efficient. And every so often somebody works out that a
+massacre is an investment, and does it, and it *works* - the qi is genuinely freer
+afterwards.
 
-- **Fortune** shifts them. The attribute that can legally come up zero is the one that
-  decides whether the Vault notices you on the way past.
-- **Sect elders can stand between you and it.** A sect that has decided you are worth
-  protecting will spend real resources shielding a disciple's crossing - formations,
-  elders holding the qi steady, pills nobody at your realm could afford. This is most of
-  why anyone tolerates a sect. It is also why sects let you know, precisely, what the
-  protection cost them.
-- **Preparation matters.** The right pill, a stable site, dense ash, an unhurried
-  crossing. Cultivators who break through in a cave they chose live differently from
-  cultivators who break through in a ditch because something was chasing them.
-- **The Severed pay in advance**, on their own terms, and cross clean. That is the whole
-  argument of their path, and it works.
+Nobody defends this out loud. The Dao houses have language for it, the righteous sects
+have prohibitions against it, and the practice is old, well understood, and never quite
+stamped out. Some of the richest ground in the world is rich because of what happened on
+it.
 
-So some cultivators climb four realms and lose nothing, and know they were lucky, and are
-insufferable about it. Others lose a brother at Foundation Establishment and never get
-another thing taken again. The path is soaked in blood, but it is not evenly distributed
-blood - and the ones who got through clean rarely believe luck had anything to do with it.
+## The Price of Advancement
 
-**What is taken is never chosen by the cultivator.** When the roll goes against you, the
-engine selects from what the run has actually accumulated: real bonds with real NPCs, real
-memories, real techniques in the database. Then you are *told*. The horror is that it is
-legible - you can read the ledger and see the shape of who you used to be.
+Crossing from one realm into the next is not only a matter of accumulated qi. At every
+**realm boundary** - never on the small steps between sub-ranks - the crossing demands
+that something be cut away.
 
-This is why the powerful tend toward hollow. A Void Refinement cultivator has crossed five
+Every tradition explains it differently. Some call it the heart demon, some call it
+severance, some simply say a person cannot carry everything they were into what they are
+becoming. What it means in practice is the same: at a boundary, a cultivator may lose
+something that mattered.
+
+- a person who knew them stops knowing them
+- a memory they were using to stay themselves
+- a technique they had mastered, gone as if never learned
+- at the highest crossings, their name
+
+**It is rolled, not certain, and it is not fair.** The odds move:
+
+- **Fortune** shifts them. The attribute that can legally come up zero decides whether the
+  crossing takes an interest in you.
+- **Sect elders can stand between you and it.** A sect that has decided a disciple is worth
+  protecting spends real resources on their crossing - formations, elders holding them
+  steady, pills nobody at that realm could afford. This is most of why anyone tolerates a
+  sect, and the sect will tell you exactly what it cost.
+- **Preparation matters.** The right pill, a stable site, dense qi, an unhurried crossing.
+  People who break through in a cave they chose live differently from people who break
+  through in a ditch because something was chasing them.
+- **Some pay in advance.** There are paths whose entire argument is that the price will be
+  taken eventually, so it is better taken deliberately, on your own terms, at a time you
+  choose. They climb fast. What arrives at the top is not really a person, and does not
+  pretend to be.
+
+So some cultivators cross four realms and lose nothing, and know they were lucky, and are
+insufferable about it. Others lose a brother at Foundation Establishment and are never
+touched again. The path is soaked in blood, but it is not evenly distributed blood - and
+the ones who got through clean rarely believe luck had anything to do with it.
+
+**What is taken is never chosen by the cultivator.** The engine selects from what the run
+actually accumulated: real bonds with real people, real memories, real techniques. Then
+they are told. The horror is that it is legible - you can read the ledger and see the
+shape of who you used to be.
+
+This is why the powerful tend toward hollow. Someone at Void Refinement has crossed five
 boundaries and rolled five times. Some of them still have a family. Most do not. Ask one
-what their mother's name was and watch which kind you're talking to.
-
-The Hollow Court - Grand Ascension cultivators who reached the top and then refused to
-step through - are the logical end of this. They have nothing left worth taking, which
-makes them nearly invincible and almost entirely inert. They sit in their mountains like
-furniture with opinions.
+what their mother's name was and watch which kind you are talking to.
 
 ## The Late Age
 
 The world is old, and it is not what it was.
 
 This is not a fresh world with its great age ahead of it. The great ages are behind it.
-Cultivators today walk through the wreckage of civilisations that were categorically
-stronger than anything now living, and they walk through it *constantly* - you cannot
-cross a province without passing a collapsed sect mountain, a battlefield where the
-craters are still too regular to be natural, or a sealed door with a formation on it that
-nobody alive knows how to read.
+Cultivators walk through the wreckage of civilisations that were categorically stronger
+than anything now living, and they walk through it *constantly* - you cannot cross a
+province without passing a collapsed sect mountain, a battlefield where the craters are
+too regular to be natural, or a sealed door with a formation on it nobody alive can read.
 
-The reason is mechanical, and it is the same ash.
+And the world is **poorer** than it was. Veins that ran rich for a thousand years have
+been drawn down. Ancient wars killed whole regions outright, and the scars have never
+recovered - dead ground where the qi does not return. What the old civilisations did not
+consume, they monopolised, and when they fell their holdings were fought over, split,
+drained and abandoned.
 
-**Ash degrades each time it is breathed.** Every pass through a body takes something out
-of it. The ash falling now has been through a hundred thousand cultivators already,
-across ages nobody kept a record of, and what is left is thin stuff - which is exactly
-why the world is thin half the time. The current age is not unlucky. It is *late*. It is
-breathing the same air the ancients already used.
+So the qi is thin in most places now because most places have already been used. The
+current age is not unlucky. It is *late*.
 
-This is why the ladder has a practical ceiling now that it did not used to have. Ordinals
-in the upper realms exist, and the manuals describing them exist, and the people who
-wrote those manuals were real. But nobody has ascended in living memory. The last
-confirmed ascension is centuries back, and it is remembered because of the spirit tide it
-caused - a whole life falling at once across half a continent, which is now spoken of as
-a golden year by people whose great-grandparents weren't born for it.
+This is why the ladder has a practical ceiling it did not used to have. The upper realms
+exist, and the manuals describing them exist, and the people who wrote them were real. But
+nobody has ascended in living memory. The last confirmed crossing is centuries back.
 
 ### What ruins are for
 
-A sealed ruin is a pocket of ash that has not been breathed.
+A sealed ruin is a pocket of qi that nothing has drawn on.
 
-That is the entire economy of exploration. A cave that was closed two ages ago holds
-deposits at a density the open world cannot produce any more, along with the things its
-owner did not get to take: technique manuals in grades that are no longer taught,
-because there is no living teacher; pills refined by methods that are no longer known;
-formations still drawing power off a vein that was rich when it was tapped.
+That is the entire economy of exploration. A cave closed two ages ago holds density the
+open world cannot produce any more, along with what its owner did not take: manuals in
+grades that are no longer taught because there is no living teacher; pills refined by
+methods nobody remembers; formations still drawing on a vein that was rich when it was
+tapped.
 
-It is also the only realistic path upward for someone born without talent. You will not
-out-cultivate a single-root prodigy on ambient ash in the Late Age. You might out-*dig*
-them.
+It is also the only realistic path upward for someone born without talent, or born
+somewhere poor. You will not out-cultivate a single-root prodigy on ambient qi in the Late
+Age. You might out-*dig* them.
 
-The obvious problem: ruins were sealed by people who were much stronger than you, usually
-for a reason, and the seals are frequently still working. Guardian formations still run.
-Corpses in some of those caves are still cultivating - slowly, badly, and for a very long
-time. Inheritance trials left by the last generation of a dead sect were calibrated for
-disciples of that sect, and the calibration was not gentle.
+The obvious problem: ruins were sealed by people much stronger than you, usually for a
+reason, and the seals frequently still work. Guardian formations still run. Some of the
+things in those caves are still, slowly, cultivating. Inheritance trials left by the last
+generation of a dead sect were calibrated for that sect's disciples, and the calibration
+was not gentle.
 
 ### The texture to aim for
 
 - **Ruins are ordinary, not special.** A village builds its granary against a wall it did
-  not make. Farmers plough up fragments and sell them by weight. A child's toy is a
-  spirit-tool with the qi long gone out of it. Nobody finds this remarkable.
-- **The past outranks the present, and everyone knows it.** The strongest sect in a
-  region is squatting in a compound it did not build, using nine of the forty-one
-  formation nodes, having lost the manual for the rest.
-- **Knowledge is recovered, not invented.** Progress in this world means finding
-  something, not discovering something. A breakthrough in alchemy is a recipe dug out of
-  a tomb.
-- **Scale down what survives.** The remnant should be legible and small - a doorway with
-  handprints burned into it at a height too tall for a person; a courtyard of stone seats
-  arranged for an audience of two hundred, in a sect that now has eleven disciples.
+  not make. Farmers plough up fragments and sell them by weight. A child's toy is a spirit
+  tool with the qi long gone out of it. Nobody finds this remarkable.
+- **The past outranks the present, and everyone knows it.** The strongest sect in a region
+  squats in a compound it did not build, using nine of the forty-one formation nodes,
+  having lost the manual for the rest.
+- **Knowledge is recovered, not invented.** Progress means finding something, not
+  discovering it. A breakthrough in alchemy is a recipe dug out of a tomb.
+- **Scale down what survives.** A doorway with handprints burned into it at a height too
+  tall for a person. A courtyard of stone seats arranged for an audience of two hundred,
+  in a sect that now has eleven disciples.
 
-## Ash, Read Mechanically
+## Qi Density, Read Mechanically
 
-The ambient-qi system is the ash system. When the engine reports an ambient state, this
-is what it means in the world, and the narrator should describe it this way:
+The ambient system is the qi system. When the engine reports an ambient state, this is
+what it means, and the narrator should describe it this way:
 
 | Engine state | The world |
 |---|---|
-| **thin** | Swept ground. Little has fallen here, or something already drank it. Cultivating in thin ash is chewing on nothing - half rate, and breakthroughs suffer. Most of the world is thin. |
-| **normal** | Ordinary settled fall. The baseline of an inhabited region. |
-| **dense** | A recent or heavy fall. Someone ascended nearby, or died with a great deal still in them. Ash pools in low ground like snow that will not melt. |
-| **spirit_tide** | **Someone has just ascended.** An entire life is coming down at once, over hours, and everyone within a hundred li can feel it on their skin. Sects mobilise. Wars pause. This is the single best thing that can happen to a cultivator and it happens because someone else finished. |
+| **thin** | Drawn down, or never rich. Cultivating here is chewing on nothing - half rate, and breakthroughs suffer. Most of the world is thin, and some of it is hopeless |
+| **normal** | Ordinary inhabited land. Progress is possible and unhurried |
+| **dense** | A vein close to the surface, or ground nobody has worked. Somebody owns this, or somebody is about to |
+| **spirit_tide** | A surge - a vein shifting, a seal failing, a season turning over. Everyone within a hundred li feels it, sects mobilise, and it does not last |
 
-A spirit tide is other people's grief falling as opportunity. Nobody in this world finds
-that strange. That is the horror - it is *normal*.
+**Spirit stones** are qi compressed until it holds its shape. They are money, they are
+fuel, and they are the only way to cultivate somewhere the ambient qi will not support
+you - which is why a poor cultivator's stones are never savings. They are the difference
+between progressing and not.
 
-**Spirit stones** are ash compressed under pressure until it holds. They are money. A
-person's whole remembered life, refined, is worth perhaps two or three thousand stones.
-Everyone knows this figure. Nobody says it out loud in polite company.
+## Spirit Roots: How Your Body Takes Qi
 
-## Spirit Roots: How Your Body Drinks Ash
+A spirit root is the shape of the aperture you draw qi through - decided before you were
+born, unchangeable, and worth more than any effort you will ever make.
 
-A spirit root is not an elemental affinity in the elemental-magic sense. It is the shape
-of the aperture you breathe ash through - decided before you were born, unchangeable,
-and worth more than any effort you will ever make.
-
-- **Single roots** (metal, wood, water, fire, earth) drink one flavour cleanly and waste
+- **Single roots** (metal, wood, water, fire, earth) draw one flavour cleanly and waste
   nothing. Roughly two people in five are born to one, and every one of them knows what
   they are worth.
-- **Dual conflicting roots** (water-fire, metal-wood) drink two ashes that fight each
-  other on the way down. This is qi deviation: not a rare accident but a standing
-  condition, a low fever that never resolves.
-- **The five-element muddled root** drinks everything and keeps almost none of it. It is
+- **Dual conflicting roots** (water-fire, metal-wood) draw two energies that fight each
+  other on the way in. This is qi deviation: not a rare accident but a standing condition,
+  a low fever that never resolves.
+- **The five-element muddled root** draws everything and keeps almost none of it. It is
   the single most common draw in the world. The overwhelming majority of people who ever
-  try to cultivate have this root, get nowhere, and die at eighty having spent their
-  lives on it anyway.
-- **Mutated roots** drink something that should not be falling at all. **Lightning** is
-  the Lid's own charge, bled through the seams - devastating, and there are almost no
-  manuals for it because almost nobody who had it lived long enough to write one.
-  **Ice** is ash from before the Kiln was lit, older than the Vault's own fire, and it
-  takes as readily as it gives.
+  try to cultivate have this root, get nowhere, and die at eighty having spent their lives
+  on it anyway.
+- **Mutated roots** draw something that should not be there at all. **Lightning** is
+  devastating, and there are almost no manuals for it because almost nobody who had it
+  lived long enough to write one. **Ice** takes as readily as it gives.
 
-Talent is not earned, cannot be improved, and decides nearly everything. The engine
-rolls it once and locks it. A player who draws a muddled root has drawn the real
-experience of this world.
+Talent is not earned, cannot be improved, and decides nearly everything. The engine rolls
+it once and locks it. A player who draws a muddled root in a poor region has drawn the
+real experience of this world.
 
 ## The Four Innate Attributes, In-World
 
 | Attribute | What it actually is |
 |---|---|
-| **Might** | How much ash your body can hold before it starts holding you. |
+| **Might** | How much qi your body can hold before it starts holding you. |
 | **Insight** | How quickly you can read a life you did not live. Manuals are other people's memories; comprehension is archaeology. |
-| **Fortune** | Whether the ash that lands on you belonged to anyone who mattered. It can be zero, and for most people it is. |
-| **Charm** | Whether people see you, or see the ash on you. |
+| **Fortune** | Whether the chances that come your way are worth anything. It can be zero, and for most people it is. |
+| **Charm** | Whether people see you, or see where you came from. |
 
 ## Why You Still Have to Eat
 
-Ash feeds the meridians. It does not feed the body.
+Qi feeds the meridians. It does not feed the body.
 
 Until a cultivator obtains a **Grain Abstinence Pill**, the flesh keeps its mortal
 arithmetic: it wants food, it starves without it, and it dies on schedule. A Qi
@@ -1743,8 +1764,9 @@ logistical.
 
 ## Settling: Death By Standing Still
 
-Ash taken in is ash owed. A cultivator who stops advancing does not merely stagnate -
-the ash they have already absorbed begins, slowly, to absorb *them*. The body greys. The
+Refining never finishes. A cultivator who stops advancing does not merely stagnate -
+the qi already inside them keeps working, and with nowhere left to go it begins working
+on *them*. The body greys. The
 memory thins in the same way an ascended one's does, but with nothing gained for it.
 
 Fifty years at one realm, and the process finishes. This is called **settling**, and it
@@ -1756,13 +1778,12 @@ about it. The engine calls it death by aging. The world calls it becoming furnit
 At the last realm, the Lid stops ignoring you.
 
 Heavenly tribulation is not a divine judgement on virtue. It is structural: the Vault
-testing whether the hole you are about to punch is worth the ash it will cost to seal
-behind you. The lightning is the seam discharging. It is not personal, and it is not
+testing whether the hole you are about to punch is worth the cost of sealing it behind
+you. The lightning is the seam discharging. It is not personal, and it is not
 survivable by being a good person.
 
 Cultivators who fail tribulation do not leave bodies. They leave a **scar** - a patch of
-ground where the ash will never settle again, permanently thin, useless to everyone
-forever. The map of the world is pocked with them. Every scar was somebody's entire
+ground where the qi never returns, permanently dead, useless to everyone forever. The map of the world is pocked with them. Every scar was somebody's entire
 ambition.
 
 ## What each realm actually makes possible
@@ -1784,8 +1805,8 @@ environments are enterable at all.
 |---|---|
 | Core Formation | The reference point: a complete cultivator, mortal in kind |
 | Nascent Soul | The soul persists without the body |
-| Deity Transformation | Stops drinking ash and starts displacing it |
-| Void Refinement | Stops needing ash at all |
+| Deity Transformation | Stops drawing qi in and starts displacing it |
+| Void Refinement | Stops needing ambient qi at all |
 | Body Integration | Stops having a seam to attack |
 | Grand Ascension | Can read and handle the Lid |
 | Tribulation Transcendence | The Lid answers back |
@@ -1811,7 +1832,7 @@ die, because they had not arranged otherwise.
 **Environmentally:** can enter places that kill the body, provided the soul has somewhere
 to go.
 
-### Deity Transformation - displacing ash instead of drinking it
+### Deity Transformation - displacing qi instead of drawing it
 
 Body and soul merge. The cultivator stops being a thing that *draws* ambient qi and
 becomes a thing that *moves* it. Consequences:
@@ -1825,7 +1846,7 @@ becomes a thing that *moves* it. Consequences:
 
 **Environmentally:** thin regions cease to matter. They carry their own conditions.
 
-### Void Refinement - no longer dependent on ash
+### Void Refinement - no longer dependent on ambient qi
 
 Refining the self against emptiness, which produces the single most consequential change
 on the ladder: **they no longer need ambient spiritual energy to sustain cultivation.**
@@ -2047,14 +2068,15 @@ this is wrong, exactly. But it does attract attention.
 
 ## The Powers
 
-- **The Ashwright Consortium** - neutral, mercantile, and the closest thing the Vault has
-  to a functioning state. They refine ash into spirit stones and set the exchange rate,
-  which means they set the price of everything. Not evil; simply incapable of seeing a
-  falling life as anything but throughput.
-- **Lantern Hall** - righteous. Archivists. They catch what falls and write it down: the
-  names, the faces, the lives of people who no longer possess them. Their position is
-  that ascension is theft and that a world running on stolen memory is a world eating
-  itself. They are correct, and it has made them very unpopular.
+- **The Stonewright Consortium** - neutral, mercantile, and the closest thing the world
+  has to a functioning state. They refine raw qi into spirit stones and set the exchange
+  rate, which means they set the price of everything, including the price of a vein. Not
+  evil; simply incapable of seeing a region as anything but yield.
+- **Lantern Hall** - righteous. Archivists. They record what the crossings take: the
+  names, the faces, the people who are no longer remembered by anyone who knew them.
+  Their position is that a world which requires its best to cut away everything they
+  loved is a world eating itself. They are hard to argue with, and it has made them very
+  unpopular.
 - **The Severed** - demonic path, and the most coherent argument in the setting. Their
   reasoning: the Vault will take everything eventually, so take it yourself first, on
   your own terms, at a time of your choosing. They cut their own bonds, memories and
@@ -2064,8 +2086,8 @@ this is wrong, exactly. But it does attract attention.
   go through. Nothing left to take, therefore nothing left to threaten. Functionally
   immortal, functionally inert, and the only beings in the Vault who can afford to be
   honest.
-- **The Kiln Wardens** - they guard the world-heart, where the fire that fired the Vault
-  is either still burning or has not been checked in a long time. They do not explain
+- **The Kiln Wardens** - they guard the deep vein at the world's root, which is either
+  still running or has not been checked in a very long time. They do not explain
   themselves and they do not recruit.
 
 ## Tone Guidance for the Narrator
