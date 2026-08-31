@@ -43,6 +43,39 @@ Mechanically all of this is expressed as **modifiers over the shared ordinals**:
 rate curves, different deviation risks, different bottlenecks, different insight
 opportunities, different costs. Never a second ladder.
 
+### Two traditions, one ladder
+
+Stronger than local vocabulary, and the thing worth building toward: a world can hold
+**two genuinely different cultivation traditions at once**, and the difference between
+them can be the oldest quarrel in it.
+
+The constraint is unchanged - **one ordinal ladder**. Both traditions climb the same
+rungs and a fourth-stage practitioner of either is Core Formation. What differs is not
+the scale but the **affordances**:
+
+- **Different method**, so different bottlenecks, different deviation risks, different
+  costs. Same ranks, arrived at sideways.
+- **Different metaphysical properties**, which is the part with real mechanical teeth.
+  The existence states are not uniformly available: one tradition may be unable to take
+  another body but able to rebuild its own from an intact soul, while the other can do
+  the reverse. Two cultivators at the same rank can therefore have *entirely different
+  answers to being killed*, and knowing which you are facing is worth more than knowing
+  their rank.
+- **Recognisable on sight.** A practitioner of one tradition should be identifiable to a
+  practitioner of the other immediately - bearing, presence, what their qi does in a
+  room. No investigation required; it is the first thing anyone notices.
+- **A war behind it.** The two traditions are not neighbours who differ politely. One
+  arrived, or one was here first, and the conflict reshaped the map - a coastline, a
+  scattering of continents, a border that is a scar. The geography still records it, and
+  both sides teach a different account of who started it.
+
+**Walking both is exceptional.** It should require something unusual - an artifact, an
+inheritance, a physical peculiarity, an accident - and be rare enough that most
+practitioners of either tradition have never met someone who did. A dual practitioner is
+not simply stronger; they are *strange*, and both traditions have opinions about them.
+
+Do not build a third tradition. Two is a quarrel; three is a taxonomy.
+
 ### One governing fact
 
 Give a region a single physical fact that everything else follows from, and derive the
