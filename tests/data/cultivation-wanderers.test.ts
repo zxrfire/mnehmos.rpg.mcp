@@ -1,0 +1,258 @@
+/**
+ * Validation for the wandering figures.
+ *
+ * The assertions that matter are the ones that stop him becoming a shortcut or
+ * a plot device:
+ *
+ *   - unknown to exist, so his name may not be spoken to a starting cultivator
+ *   - unreliable in enumerated ways, on the record
+ *   - bounded by an interest above the Lid rather than by anything below it,
+ *     and the boundary is drawn by whose interest an act crosses
+ *   - his gifts have ruined somebody, and he did not find out
+ *   - the isolation is logistical, and nowhere does the catalog call him lonely
+ */
+
+import { describe, it, expect } from 'vitest';
+
+import { getSect } from '../../src/data/cultivation/sects.js';
+import { getEncounter } from '../../src/data/cultivation/encounters.js';
+import { getImmortalItem, getHoldingsOf } from '../../src/data/cultivation/immortal-items.js';
+import { mayBeNamed } from '../../src/data/cultivation/hierarchy.js';
+import {
+    WANDERERS,
+    WandererSchema,
+    getWanderer,
+    getWanderersAffiliatedWith,
+    legendsOf,
+    accurateLegendOf,
+    mayBeNamedTo
+} from '../../src/data/cultivation/wanderers.js';
+
+const LU_SHENG = 'wanderer-lu-sheng';
+
+describe('wandering figures', () => {
+    it('parses, and there are almost none of them', () => {
+        expect(WANDERERS.length).toBeGreaterThanOrEqual(1);
+        expect(WANDERERS.length, 'a wanderer stops being rare if there is a roster')
+            .toBeLessThanOrEqual(3);
+        for (const w of WANDERERS) {
+            expect(() => WandererSchema.parse(w), w.id).not.toThrow();
+        }
+        expect(getWanderer(LU_SHENG)).toBeDefined();
+        expect(getWanderer('wanderer-nobody')).toBeUndefined();
+    });
+
+    it('is unknown to exist, not merely hard to find', () => {
+        for (const w of WANDERERS) {
+            expect(w.startingAwareness).toBe('unaware');
+            expect(mayBeNamedTo(w.startingAwareness), `${w.id} may not be named to a beginner`)
+                .toBe(false);
+            expect(mayBeNamedTo('whisper')).toBe(false);
+            expect(mayBeNamedTo('named')).toBe(true);
+            // Same rule the apex institutions use, so narration cannot leak.
+            expect(mayBeNamedTo(w.startingAwareness)).toBe(mayBeNamed(w.startingAwareness));
+            expect(w.awarenessSources.length, `${w.id} is unlearnable`).toBeGreaterThanOrEqual(3);
+        }
+    });
+
+    it('is a False Immortal, permanently barred, with a countable lifespan', () => {
+        const w = getWanderer(LU_SHENG)!;
+        expect(w.crossingOutcome).toBe('false_immortal');
+        expect(w.lastOrdinal).toBe(44);
+        expect(w.crossingYearsAgo).toBeGreaterThan(100);
+        // Vast, finite, and he knows the number.
+        expect(w.lifespanYearsRemaining).toBeGreaterThan(1_000);
+        expect(w.lifespanNote).toMatch(/finite|knows the number|to the year/i);
+        // Incomplete in one specific way, and never explained.
+        expect(w.incompleteIsUnexplained).toBe(true);
+        expect(w.incomplete.length).toBeGreaterThan(80);
+        expect(`${w.incomplete} ${w.whatHappened}`).not.toMatch(/because|the reason is|which is why/i);
+    });
+
+    it('is affiliated with the Court in a way that amounts to nothing', () => {
+        const w = getWanderer(LU_SHENG)!;
+        expect(getSect(w.affiliation.factionId), 'affiliated with an unknown faction').toBeDefined();
+        expect(w.affiliation.factionId).toBe('sect-hollow-court');
+        // The rank he holds is a real rank of that faction.
+        expect(getSect(w.affiliation.factionId)!.ranks).toContain(w.affiliation.rankHeld);
+        expect(w.affiliation.whatItAmountsTo).toMatch(/empty|never used|no obligation/i);
+        expect(getWanderersAffiliatedWith('sect-hollow-court').map(x => x.id)).toContain(LU_SHENG);
+        expect(getWanderersAffiliatedWith('sect-azure-cloud-pavilion')).toEqual([]);
+        // And the logic of why he is not there.
+        expect(w.whyNotWithThem).toMatch(/barred|nothing.*to do|permanently/i);
+    });
+
+    it('is honest because of position, not virtue, and is not a shortcut', () => {
+        const w = getWanderer(LU_SHENG)!;
+        expect(w.whyHeIsHonest).toMatch(/not virtue|nothing.*can do|no sect|no title/i);
+        expect(w.unreliability.length, 'he must be unreliable in stated ways')
+            .toBeGreaterThanOrEqual(4);
+        const unreliability = w.unreliability.join(' ');
+        expect(unreliability).toMatch(/out of date|centuries/i);
+        expect(unreliability).toMatch(/wrong/i);
+        expect(unreliability).toMatch(/ignore|second question/i);
+        // What he wants cannot be supplied by anybody below.
+        expect(w.wants).toMatch(/nobody below|cannot|no arrangement/i);
+    });
+});
+
+describe('the ceiling on his behaviour', () => {
+    it('draws the line by whose interest an act crosses, not by damage', () => {
+        const r = getWanderer(LU_SHENG)!.restraint;
+        expect(r.principle).toMatch(/whose interest|never by the size|not by how much/i);
+        expect(r.willDo.length).toBeGreaterThanOrEqual(3);
+        expect(r.willNotDo.length).toBeGreaterThanOrEqual(3);
+        // The pill is the Pavilion's problem; collapsing it is hers.
+        expect(r.willDo.join(' ')).toMatch(/take something irreplaceable|sect.s problem|no recourse|can do nothing/i);
+        expect(r.willNotDo.join(' ')).toMatch(/Ru Anjing|Standing Edge/);
+    });
+
+    it('names the deterrent and prices it, rather than asserting restraint', () => {
+        const r = getWanderer(LU_SHENG)!.restraint;
+        expect(r.theDeterrent).toMatch(/Ru Anjing|old immortal/i);
+        expect(r.theDeterrent).toMatch(/come down|descent|kill/i);
+        // It costs the enforcer enormously, which is what makes it real.
+        expect(r.deterrentPrice).toMatch(/cultivation condensed|ages|body|drop of blood|die/i);
+        expect(r.deterrentPrice).toMatch(/would still do it|still do it/i);
+        // He knows, and there is a dated occasion rather than a policy.
+        expect(r.howHeKnows).toMatch(/\d|years ago|came down/i);
+        expect(r.theOccasion.yearsAgo).toBeGreaterThan(0);
+        expect(r.theOccasion.whereHeStopped.length).toBeGreaterThan(100);
+        expect(r.theOccasion.whoNoticed.length).toBeGreaterThan(60);
+    });
+
+    it('keeps the occasion consistent with the Pavilion holding three', () => {
+        const r = getWanderer(LU_SHENG)!.restraint;
+        // He took one of four, which is why the catalog says three.
+        expect(r.theOccasion.what).toMatch(/four/i);
+        const holding = getHoldingsOf('sect-azure-cloud-pavilion')
+            .find(h => h.itemId === 'immortal-unearned-step')!;
+        expect(holding.count, 'the Pavilion should hold three after the theft').toBe(3);
+        expect(getImmortalItem('immortal-unearned-step')).toBeDefined();
+    });
+
+    it('looks arbitrary from below and is readable from above', () => {
+        const r = getWanderer(LU_SHENG)!.restraint;
+        expect(r.looksArbitraryFromBelow).toMatch(/arbitrar|mad|cannot|none of them/i);
+        expect(r.readableBy).toMatch(/above the Lid|constituency/i);
+        // And the player is explicitly not covered by any of it.
+        expect(r.playerIsNotProtected).toMatch(/stolen|knows precisely who|wandered off/i);
+    });
+});
+
+describe('what his attention costs other people', () => {
+    it('has ruined somebody with a gift, and he never found out', () => {
+        const w = getWanderer(LU_SHENG)!;
+        expect(w.incidents.length).toBeGreaterThanOrEqual(3);
+        const unlearned = w.incidents.filter(i => i.heNeverLearned);
+        expect(unlearned.length, 'nothing has escaped his notice').toBeGreaterThanOrEqual(2);
+        // One of them is a gift that cost the recipient badly.
+        const gift = w.incidents.find(i => /gave it to her|gave it to him|handed/i.test(i.what));
+        expect(gift, 'no gift incident on record').toBeDefined();
+        expect(gift!.heNeverLearned, 'he should not have found out').toBe(true);
+        expect(gift!.consequence.length).toBeGreaterThan(200);
+        expect(gift!.consequence).toMatch(/stolen|audit|refused her|ruin/i);
+    });
+
+    it('states the consequence of being noticed, which he does not track', () => {
+        const w = getWanderer(LU_SHENG)!;
+        expect(w.attentionConsequence).toMatch(/does not intend|does not track|not there/i);
+        expect(w.attentionConsequence).toMatch(/weather|reorganis/i);
+        // Incidents are small: nothing here is a deed.
+        for (const i of w.incidents) {
+            expect(i.what.length).toBeGreaterThan(100);
+            expect(i.consequence.length).toBeGreaterThan(80);
+        }
+    });
+
+    it('circulates in incompatible versions, mostly wrong', () => {
+        const legends = legendsOf(LU_SHENG);
+        expect(legends.length).toBeGreaterThanOrEqual(3);
+        const wrong = legends.filter(l => !l.accurate);
+        expect(wrong.length, 'most versions must be wrong').toBeGreaterThanOrEqual(2);
+        for (const l of wrong) expect(l.whatIsWrong.length).toBeGreaterThan(40);
+        // Exactly one is right, and it is the least circulated.
+        const right = legends.filter(l => l.accurate);
+        expect(right.length).toBe(1);
+        expect(accurateLegendOf(LU_SHENG)!.calledBy).toBe(right[0].calledBy);
+        // The names disagree with each other, which is the point.
+        expect(new Set(legends.map(l => l.calledBy)).size).toBe(legends.length);
+    });
+});
+
+describe('why he is wandering', () => {
+    it('is logistical rather than tragic, and never says so', () => {
+        const iso = getWanderer(LU_SHENG)!.isolation;
+        // Enemies dead of unrelated things; friends merely unavailable.
+        expect(iso.enemies).toMatch(/outlived|dead|nothing to do with him/i);
+        expect(iso.friendsInSeclusion.expectedOutInYears).toBeGreaterThanOrEqual(10);
+        expect(iso.friendsInSeclusion.note).toMatch(/not available|seclusion|fallen out/i);
+        expect(iso.whyHeTalksToStrangers).toMatch(/only conversation|nobody else/i);
+        // The catalog must not editorialise him as lonely or sad.
+        const w = getWanderer(LU_SHENG)!;
+        const prose = [
+            w.before, w.whatHappened, w.wants, w.whyHeIsHonest, w.firstImpression,
+            iso.enemies, iso.whyHeTalksToStrangers, iso.theAsymmetry
+        ].join(' ');
+        for (const banned of [/\blonely\b/i, /\btragic\b/i, /\bbrooding\b/i, /\bcursed\b/i, /\bbitter\b/i]) {
+            expect(banned.test(prose), `the catalog calls him ${banned}`).toBe(false);
+        }
+    });
+
+    it('names a specific last friend and a specific last conversation', () => {
+        const iso = getWanderer(LU_SHENG)!.isolation;
+        expect(iso.lastFriendWhoDied.name.length).toBeGreaterThan(2);
+        expect(iso.lastFriendWhoDied.yearsAgo).toBeGreaterThan(0);
+        expect(iso.lastFriendWhoDied.yearsAgo).toBeLessThan(200);
+        // Not a great figure: the specificity is what matters.
+        expect(iso.lastFriendWhoDied.whatTheyWere).toMatch(/not a cultivator|boatman|never asked/i);
+        expect(iso.friendsInSeclusion.lastSpokeYearsAgo).toBeGreaterThan(0);
+    });
+
+    it('turns up in the same few places, unrecognised', () => {
+        const regulars = getWanderer(LU_SHENG)!.isolation.regulars;
+        expect(regulars.length).toBeGreaterThanOrEqual(1);
+        const innkeeper = regulars.find(r => r.yearsThere >= 40)!;
+        expect(innkeeper, 'somebody should have served him for decades').toBeDefined();
+        expect(innkeeper.timesServed).toBeGreaterThanOrEqual(5);
+        expect(innkeeper.timesServed).toBeLessThan(innkeeper.yearsThere);
+        expect(innkeeper.whatTheyThinkHeIs).not.toMatch(/immortal|cultivator of|Court/i);
+        expect(innkeeper.note).toMatch(/no idea|would not believe|good company|looks forward/i);
+    });
+
+    it('dislikes one of the four, pettily, and it has stayed petty', () => {
+        const d = getWanderer(LU_SHENG)!.theOneHeAvoids;
+        expect(d.reasonYearsAgo).toBeGreaterThanOrEqual(500);
+        // Trivial, and it would sound absurd said aloud.
+        expect(d.reason).toMatch(/corrected|pronunciation|river/i);
+        expect(d.forgottenPart).toMatch(/not entirely certain|vague|not worth/i);
+        expect(d.mutual).toBe('unknown');
+        expect(d.mutualNote).toMatch(/never asked|possibly/i);
+        // Consequences no larger than the pettiness deserves.
+        expect(d.consequences.length).toBeGreaterThanOrEqual(3);
+        expect(d.consequences.join(' ')).toMatch(/does not go|times.*visits|somewhere else/i);
+        expect(d.consequences.join(' ')).toMatch(/nothing else|nothing has escalated/i);
+        expect(d.whyNeitherExplains).toMatch(/how small|not secrecy|admitting/i);
+        // Explicitly not a feud, and explicitly not about the refusal.
+        expect(d.whatItIsNot).toMatch(/not a feud/i);
+        expect(d.whatItIsNot).toMatch(/refusal/i);
+    });
+});
+
+describe('meeting him', () => {
+    it('is reachable as a rare encounter that does not announce itself', () => {
+        const enc = getEncounter('enc-unremarkable-man-at-an-inn')!;
+        expect(enc, 'he must be reachable in play').toBeDefined();
+        // Rare.
+        expect(enc.weight).toBeLessThanOrEqual(4);
+        // Available at any realm, because recognising him is the hard part.
+        expect(enc.minOrdinal).toBe(0);
+        expect(enc.maxOrdinal).toBe(44);
+        // Not obviously important at the time: no interrupt, no threat.
+        expect(enc.interrupts).toBe(false);
+        expect(enc.threatOrdinal).toBeNull();
+        // And the summary must not name him or hint at what he is.
+        expect(enc.summaryTemplate).not.toMatch(/Lu Sheng|Guest|immortal|Court/i);
+        expect(enc.summaryTemplate).toMatch(/unremarkable|no obvious age|good company/i);
+    });
+});

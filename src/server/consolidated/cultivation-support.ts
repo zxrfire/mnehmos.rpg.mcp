@@ -74,6 +74,8 @@ import {
     ambientBlockStart,
     AMBIENT_REFRESH_DAYS,
     getSpiritRoot,
+    openingPosition,
+    provisionedYears,
     progressRequiredForOrdinal,
     progressRemaining,
     rankName,
@@ -1275,6 +1277,13 @@ export function describeCultivator(
             cultivationSpeed: root.cultivationSpeed,
             attributes: cultivator.attributes,
             note: 'Rolled once from the run seed at creation. Permanent; no tool changes it.'
+        },
+        // The third dealt thing. What the family put behind this life, stated
+        // as a position rather than an assessment of it.
+        origin: {
+            ...openingPosition(cultivator.origin),
+            provisionedYears: round2(provisionedYears(cultivator.spiritStones)),
+            note: 'Where this life started. It confers no realm, no rank, no admission and no progress.'
         },
         foundation: cultivator.foundationQuality,
         immortalStatus: cultivator.immortalStatus,

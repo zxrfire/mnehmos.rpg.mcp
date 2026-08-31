@@ -40,6 +40,14 @@ export const GATHERING_DAYS = 7;
 export const DEFAULT_SECLUSION_DAYS = 365;
 
 /**
+ * Days of work assumed when the player says "take work" with no duration.
+ *
+ * A season. Long enough to be worth the walk and short enough that a hungry
+ * cultivator is not committing the rest of their life to a granary.
+ */
+export const DEFAULT_WORK_DAYS = 90;
+
+/**
  * Every action the engine can execute. Closed, and short on purpose.
  *
  * ── Why it is not a verb list ─────────────────────────────────────────────
@@ -80,20 +88,52 @@ export const ACTION_NAMES = [
     'gather',
     'eat',
     'wait',
+    // The mortal economy. Half the deaths in this world are logistical, and
+    // these are the two verbs that answer that - so they must be reachable
+    // from plain English or the logistics layer might as well not exist.
+    'work',
+    'market',
     // Pure reads.
     'look',
-    'status'
+    'status',
+    'assess',
+    /**
+     * The parser did not understand, and nothing happens.
+     *
+     * A member of the closed set rather than a special case, so the exhaustive
+     * switch in `GameService.execute` is forced to handle it and no future verb
+     * can quietly become the fallback again. The model should never CHOOSE it -
+     * the glossary says so - but a model that does costs the player nothing,
+     * which is the entire point of it being here.
+     */
+    'unclear'
 ] as const;
 
 export type ActionName = typeof ACTION_NAMES[number];
 
 /** Actions that pass no in-world time and change no cultivator state. */
 export const READ_ONLY_ACTIONS: readonly ActionName[] = [
-    'look', 'status', 'investigate', 'interact'
+    'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear'
 ] as const;
 
+/**
+ * Actions that spend in-world time, and can therefore kill.
+ *
+ * The list exists to be asserted against. An intent the engine did not
+ * understand must never resolve to anything in it: a misparse that costs a
+ * season costs a starving cultivator their run, and a player should be able to
+ * type something ambiguous a hundred times and lose nothing but a moment.
+ */
+export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
+    'cultivate', 'seclude', 'breakthrough', 'train_technique',
+    'move', 'gather', 'wait', 'work', 'refine', 'eat'
+] as const;
+
+/** What an unparseable sentence resolves to. Inert, by construction. */
+export const FALLBACK_ACTION: ActionName = 'unclear';
+
 /** Actions that take a duration in days. Every other action ignores one. */
-export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude'] as const;
+export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'work'] as const;
 
 /**
  * Actions that take a subject. The subject must resolve to a real entity - a
@@ -101,7 +141,8 @@ export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude'] as 
  * action fails. An unresolvable target is never narrated as though it worked.
  */
 export const TARGETED_ACTIONS: readonly ActionName[] = [
-    'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather'
+    'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
+    'work', 'market', 'assess'
 ] as const;
 
 /** Actions that carry a free-text intent. Never branched on for an outcome. */
@@ -340,6 +381,24 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'seclude', days: parseDuration(text) ?? DEFAULT_SECLUSION_DAYS };
     }
 
+    // ── the mortal economy, before anything that spends time ──
+    //
+    // Deliberately ahead of `eat`, `trade` and `cultivate`. A player with no
+    // stones who types "take work for a season" is asking for the only action
+    // that saves them, and every slower reading of that sentence is fatal.
+    if (/\b(?:take work|find work|look for work|hire (?:myself|on|out)|take a job|odd jobs?|day labour|day labor|earn (?:some |a few |my )?(?:stones?|keep|coin|money|living)|work (?:for|in|at|the|a|as)|labour|labor|make myself useful|work off)\b/.test(text)
+        || /^\s*(?:i\s+)?works?\b/.test(text)) {
+        return {
+            action: 'work',
+            days: parseDuration(text) ?? DEFAULT_WORK_DAYS,
+            target: extractSubject(input, /work as|hire (?:myself )?(?:out )?as|take work as|job as/)
+        };
+    }
+
+    if (/\b(?:market|marketplace|bazaar|stalls?|what(?:'s| is) (?:for sale|on offer)|prices?|price of|going rate|cost of|what can i buy)\b/.test(text)) {
+        return { action: 'market', target: extractSubject(input, /market for|price of|cost of|buy|sell/) };
+    }
+
     if (/\b(?:eat|meal|dine|breakfast|supper|feed myself|buy food)\b/.test(text)
         || /\b(?:food|rations?)\b/.test(text)) {
         return { action: 'eat' };
@@ -373,6 +432,14 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
+    // ── assess: what happens if I try, which is not the same as looking ──
+    if (/\b(?:size up|weigh (?:my|the) chances|assess|how dangerous|could i (?:survive|take|handle|manage)|what (?:would|will) happen if i|am i (?:strong|ready) enough|is it safe|do i stand a chance|judge the odds)\b/.test(text)) {
+        return {
+            action: 'assess',
+            target: extractSubject(input, /assess|size up|survive|take|handle|manage|against|enough for/)
+        };
+    }
+
     // ── investigate: examining, reading, searching a place ──
     if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read the|check the)\b/.test(text)) {
         return {
@@ -391,7 +458,7 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
-    if (/\b(?:cultivat|meditat|seclusion|secluded|circulate|gather qi|refine qi|sit\b|sits\b|sat\b|absorb)\b/.test(text)) {
+    if (/\b(?:cultivat\w*|meditat\w*|seclusion|secluded|circulat\w*|gather qi|refine qi|sits?\b|sat\b|absorb\w*|breathe|breathing)\b/.test(text)) {
         return { action: 'cultivate', days: parseDuration(text) ?? DEFAULT_CULTIVATION_DAYS };
     }
 
@@ -403,12 +470,73 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'wait' };
     }
 
-    // A duration with no verb - "ten years" - is a request for seclusion. It is
-    // the single most common thing a player types in this genre.
-    const bareDuration = parseDuration(text);
-    if (bareDuration !== null) return { action: 'cultivate', days: bareDuration };
+    // ── look ──
+    //
+    // This branch used to not exist: `look` was reachable only as the
+    // fallthrough, so the moment the fallback became inert, "I look around"
+    // stopped working. A verb that is only reachable by accident is a verb
+    // waiting to be deleted by an unrelated change.
+    if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|where am i|what do i see|what is (?:here|around))\b/.test(text)
+        || /^\s*(?:i\s+)?looks?\b/.test(text)) {
+        return { action: 'look' };
+    }
 
-    return { action: 'look' };
+    // A duration and NOTHING ELSE - "ten years" - is a request for seclusion,
+    // and it is the single most common thing a player types in this genre.
+    //
+    // The `nothing else` is load-bearing and was learned the hard way. This
+    // used to fire on any sentence containing a duration, so "I take whatever
+    // work the village will give me for a season" matched on "a season" and
+    // became three months of cultivation. The player was five days from
+    // starving, asked for the one action that earns food money, and was given
+    // the one action that kills. The run closed permanently.
+    if (isBareDuration(text)) {
+        const bare = parseDuration(text);
+        if (bare !== null) return { action: 'cultivate', days: bare };
+    }
+
+    // Nothing matched. The fallback is inert BY RULE: an action the engine is
+    // not confident about must be the cheapest one available, never the most
+    // expensive. No time passes, no food is eaten, nothing dies.
+    return { action: FALLBACK_ACTION };
+}
+
+/**
+ * Words that can surround a bare duration without making it a sentence.
+ *
+ * Everything else means the duration was a subordinate clause of some larger
+ * intention, and the larger intention is the thing that did not parse.
+ */
+const DURATION_FILLER = new Set([
+    'i', 'ill', 'me', 'my', 'we', 'for', 'the', 'a', 'an', 'and', 'then', 'next',
+    'about', 'roughly', 'around', 'another', 'more', 'spend', 'spending', 'take',
+    'takes', 'taking', 'pass', 'go', 'last', 'lasting', 'half', 'over', 'in', 'of'
+]);
+
+/**
+ * Whether the input is a duration and essentially nothing else.
+ *
+ * Strips the number words, the unit words and the filler above; if anything
+ * substantive is left, the sentence was about something other than the passage
+ * of time and must not be read as a request to sit still for it.
+ */
+export function isBareDuration(input: string): boolean {
+    const tokens = input
+        .toLowerCase()
+        .replace(/[^a-z0-9. ]+/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean);
+
+    if (tokens.length === 0) return false;
+
+    for (const token of tokens) {
+        if (DURATION_FILLER.has(token)) continue;
+        if (/^[0-9]+(\.[0-9]+)?$/.test(token)) continue;
+        if (token in WORD_NUMBERS) continue;
+        if (DURATION_UNITS.some(([pattern]) => pattern.test(token))) continue;
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -472,7 +600,10 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     const action: PlannedAction = { action: name };
 
     if (TIMED_ACTIONS.includes(name)) {
-        action.days = days ?? (name === 'seclude' ? DEFAULT_SECLUSION_DAYS : DEFAULT_CULTIVATION_DAYS);
+        action.days = days ?? (
+            name === 'seclude' ? DEFAULT_SECLUSION_DAYS
+                : name === 'work' ? DEFAULT_WORK_DAYS
+                    : DEFAULT_CULTIVATION_DAYS);
     }
     if (target && TARGETED_ACTIONS.includes(name)) {
         action.target = target;

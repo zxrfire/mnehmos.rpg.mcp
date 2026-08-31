@@ -83,7 +83,14 @@ describe('refusals read as the world declining', () => {
         ['a formula that does not exist', 'I brew an Elixir of Infinite Nonsense in the cauldron.'],
         ['an art never taught', 'I practise the Nine Severing Threads technique.'],
         ['a barrier that will not move', 'I break through.'],
-        ['a meal with an empty purse', 'I buy a meal.']
+        ['a meal with an empty purse', 'I buy a meal.'],
+        // The economy verbs, added after the sweep and immediately guilty of
+        // the same thing: "The work: the engine resolved it." reached a player
+        // because nothing was reading these paths.
+        ['taking work', 'I take whatever work the village will give me for a season'],
+        ['the market board', 'what is for sale here'],
+        ['sizing something up', 'could I survive that cave'],
+        ['a sentence nothing understood', 'I ponder the nature of the Lid for a while']
     ];
 
     for (const [label, input] of refusals) {
@@ -190,6 +197,10 @@ describe('no system voice anywhere a player can reach', () => {
         'I travel to Scarwater.',
         'I wait.',
         'I forage for herbs.',
+        'I take work for a season',
+        'what is for sale here',
+        'could I survive that cave',
+        'I do the thing with the thing',
         'status'
     ];
 

@@ -42,6 +42,7 @@ import {
     type InnateAttributes,
     type SpiritRootKey
 } from '../cultivation/spirit-roots.js';
+import { rollOrigin, type OriginTierKey } from '../cultivation/origin.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { personName } from './history.js';
 
@@ -223,6 +224,16 @@ export function isUnadjudicated(state: ExistenceState): boolean {
 export interface NpcIdentity {
     /** Absolute day of birth. Age is a subtraction, never a stored field. */
     bornOnDay: number;
+    /**
+     * Where they were born, drawn from the run seed exactly as the player's is.
+     *
+     * This is also the honest explanation for why a great house has the members
+     * it does: nobody is assigned to one. Origins are rolled, the weights are
+     * the same weights, and the derivation that follows spends what the birth
+     * actually supplied. It carries no rank - a great-house NPC still has to
+     * have walked the ladder to be anywhere on it.
+     */
+    origin: OriginTierKey;
     /** What they do when they are not cultivating. The economy is made of these. */
     occupation: string;
     /** Titles, sect ranks, epithets. Free text; the LLM writes them. */
@@ -320,6 +331,12 @@ export interface CreateNpcOptions {
     description?: string;
     /** Override the rolled talent. Used when importing an existing character. */
     cultivation?: Partial<NpcCultivation>;
+    /**
+     * Override the rolled origin. For importing an existing character only;
+     * seeding never supplies it, because deciding where somebody was born is
+     * the same act as deciding they matter.
+     */
+    origin?: OriginTierKey;
     tags?: string[];
 }
 
@@ -337,6 +354,9 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
     const rootRng = forStream(seed, 'npc-root', opts.id);
     const attrRng = forStream(seed, 'npc-attrs', opts.id);
     const nameRng = forStream(seed, 'npc-name', opts.id);
+    // Its own named stream, so adding the axis did not perturb the root or the
+    // attributes of any world that had already been seeded.
+    const originRng = forStream(seed, 'npc-origin', opts.id);
 
     const root = rollSpiritRoot(rootRng.next());
     const attributes = rollAttributes([
@@ -367,6 +387,7 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         name: opts.name ?? personName(nameRng),
         identity: {
             bornOnDay: opts.bornOnDay,
+            origin: opts.origin ?? rollOrigin(originRng.next()).key,
             occupation: opts.occupation ?? 'unknown',
             titles: [],
             aliases: [],

@@ -804,6 +804,34 @@ describe('the third apex: young, visible, and holding outright', () => {
         expect(azure.powerOrdinal).toBeLessThan(getSect('sect-hollow-court')!.powerOrdinal);
     });
 
+    it('is one person deep, which is what shallow heritage measures', () => {
+        const azure = getApexInstitution('apex-azure-cloud')!;
+        // Top of the last realm ladder by a hair, then a cliff. Three stages
+        // of nothing is not a secret - any rival counting the roster finds it.
+        expect(azure.powerOrdinal).toBe(41);
+        expect(azure.powerOrdinal - azure.secondStrongestOrdinal).toBeGreaterThanOrEqual(3);
+        expect(azure.depthNote).toMatch(/cliff|one person deep|nobody in between/i);
+
+        // The ancient two are filled in underneath and survive losing anyone.
+        for (const a of APEX_INSTITUTIONS.filter(x => x.heritage === 'ancient')) {
+            expect(a.powerOrdinal - a.secondStrongestOrdinal, a.id).toBeLessThanOrEqual(4);
+        }
+    });
+
+    it('is not weak, because it is the only one with anything left to spend', () => {
+        // Age runs backwards for consumables. The inversion is the whole reason
+        // the lowest ordinal of the three is not the weakest position of the
+        // three in a short exchange.
+        const byId = Object.fromEntries(APEX_INSTITUTIONS.map(a => [a.id, a]));
+        expect(byId['apex-azure-cloud'].stock.remaining).toBe('nearly_intact');
+        expect(byId['apex-deep-survey'].stock.remaining).toBe('spent');
+        expect(byId['apex-long-cut'].stock.remaining).toBe('depleted');
+        // And nobody can restock, for the same reason every time.
+        for (const a of APEX_INSTITUTIONS) {
+            expect(a.stock.cannotRestock, a.id).toMatch(/Lid|through|come back|second source/i);
+        }
+    });
+
     it('gives all three a distinct way to lose the position', () => {
         const reasons = APEX_INSTITUTIONS.map(a => a.instability);
         expect(new Set(reasons).size).toBe(reasons.length);

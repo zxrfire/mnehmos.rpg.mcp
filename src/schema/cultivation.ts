@@ -118,6 +118,29 @@ export const SpiritRootKeySchema = z.enum([
 ]);
 export type SpiritRootKey = z.infer<typeof SpiritRootKeySchema>;
 
+/**
+ * Where a cultivator was born, which is the third thing they are dealt.
+ *
+ * Restated here rather than imported from `engine/cultivation/origin.ts` for
+ * the same reason `SpiritRootKeySchema` is: this file is the wire contract and
+ * must not depend on engine values at module-evaluation time. The two lists
+ * agreeing is asserted in `tests/engine/cultivation/origin.test.ts`.
+ *
+ * It carries NO rank. An origin decides what a cultivator was handed on the
+ * day they were born - stones, placement, access, standing, and what a family
+ * will fund somebody walking into somewhere lethal - and never where they
+ * stand on the ladder.
+ */
+export const OriginTierKeySchema = z.enum([
+    'thin_county',
+    'market_town',
+    'minor_clan',
+    'sect_retainer',
+    'established_clan',
+    'great_house'
+]);
+export type OriginTierKey = z.infer<typeof OriginTierKeySchema>;
+
 export const InnateAttributesSchema = z.object({
     might: z.number().int().min(1).max(3).describe('Physical force. Locked at creation.'),
     insight: z.number().int().min(1).max(4).describe('Comprehension. Locked at creation.'),
@@ -469,6 +492,21 @@ export const CultivatorSchema = z.object({
     // Talent - rolled once, permanent, never editable after creation.
     spiritRoot: SpiritRootKeySchema,
     attributes: InnateAttributesSchema,
+    /**
+     * Where they were born. Dealt at creation from the run seed, alongside the
+     * root and the attributes, and permanent for the same reason.
+     *
+     * Backed by the `origin_tier` column. It defaults to 'thin_county', which
+     * is both the overwhelming majority of births and the honest reading of
+     * every row written before this axis existed: no teacher, no manual, no
+     * vein, and nobody to vouch for them.
+     *
+     * Everything the tier is worth - stones, placement reach, access, vouchers,
+     * supplied expeditions - is derived from the frozen table in
+     * `engine/cultivation/origin.ts` rather than stored per row, so there is
+     * exactly one persisted fact here and nothing that can drift from it.
+     */
+    origin: OriginTierKeySchema.default('thin_county'),
     /**
      * Which of the two roads this cultivator walks.
      *

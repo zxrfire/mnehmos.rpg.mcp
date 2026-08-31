@@ -1,0 +1,630 @@
+/**
+ * What being born somewhere is actually worth, measured.
+ *
+ * `docs/world/origin.md` makes a claim the design lives or dies on:
+ *
+ *   > A privileged origin should be VISIBLE IN THE RUN'S OPENING POSITION and
+ *   > NOT VISIBLE IN ITS OUTCOME DISTRIBUTION, except at the very top where it
+ *   > is one required term among several. If being well-born reliably produces
+ *   > high-realm cultivators, the axis has been implemented wrong.
+ *
+ * That is a measurable statement, so it is measured here rather than asserted
+ * in a comment. This module runs whole lives through the real engine -
+ * `computeCultivationRate`, `attemptBreakthrough`, `assessFoundation`, the real
+ * settling and lifespan clocks - once per origin tier, and reports where they
+ * stopped.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * WHAT THE HARNESS SPENDS AN ORIGIN ON
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * Exactly the five things the axis confers, and nothing else:
+ *
+ *   ground        the best band the family can put them on, capped at dense.
+ *                 A sealed vein is never conferred; it has to be walked into.
+ *   stones        spent, and gone. Upkeep every year, a pill at every attempt,
+ *                 a healer for every torn meridian. A patriarch's fortune runs
+ *                 out over a thousand-year climb like everyone else's, later.
+ *   placement     a rate multiplier and a ceiling that is the house's rather
+ *                 than the province's. Never a rank, never admission.
+ *   access        which comprehensions are in reach AT ALL, through
+ *                 `discoverableInsights`. With none, a life reaches its own
+ *                 root and nothing else however long it sits.
+ *   supplied      a bounded addition to the survival odds of walking into
+ *   risk          somewhere lethal, and a count that runs out.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * AND WHAT IT DOES NOT
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * No origin touches the spirit root, the attributes, the breakthrough roll
+ * directly, whether a ruin contains anything, or whether this person is
+ * willing to walk into it. Willingness is drawn per life from its own stream
+ * and is the same draw for a farmer and a patriarch's son - which is most of
+ * why the outcome distributions converge, and it is deliberate: declining the
+ * ruin is the rational choice, and the reason the ones who went are talked
+ * about.
+ *
+ * Nothing here feeds back into the simulation. It measures and it reports.
+ */
+
+import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
+import {
+    MAX_ORDINAL,
+    lifespanForOrdinal,
+    progressRequiredForOrdinal
+} from '../cultivation/realms.js';
+import {
+    MAX_PILL_BONUS,
+    attemptBreakthrough,
+    canAttemptBreakthrough
+} from '../cultivation/breakthrough.js';
+import { treatWorstInjuries } from '../cultivation/injuries.js';
+import { rollAttributes, rollSpiritRoot } from '../cultivation/spirit-roots.js';
+import {
+    discoverableInsights,
+    formInsight,
+    recordAchievement
+} from '../cultivation/understanding.js';
+import {
+    FOUNDATION_PILL_STONES,
+    ORIGIN_TIERS,
+    STONES_PER_YEAR_OF_SECLUSION,
+    affordablePillPotency,
+    breakthroughPillPrice,
+    expeditionSurvival,
+    injuryTreatmentPrice,
+    getOrigin,
+    originProbability,
+    withOriginAccess,
+    type OriginTierKey
+} from '../cultivation/origin.js';
+import {
+    AMBIENT_QI_RATE_MULTIPLIER,
+    AMBIENT_QI_WEIGHTS,
+    stagnationYearsForOrdinal,
+    type AmbientQi,
+    type FoundationQuality,
+    type Injury,
+    type Insight
+} from '../../schema/cultivation.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE MODEL OF A LIFE
+//
+// Every constant below is a property of the WORLD, not of an origin. They are
+// identical for every tier, and that is what makes the comparison honest.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Where a life happens to be, drawn per life from the world's own distribution.
+ *
+ * This is the correction that stops the comparison lying. Pinning every
+ * unplaced life to thin ground would hand the well-born a permanent fourfold
+ * rate advantage that the world does not actually give them: half the world is
+ * thin, but a third of it is ordinary and one life in twenty is born standing
+ * on something good. What an origin buys is a FLOOR under that draw, not a
+ * band nobody else can reach.
+ */
+const WORLD_AMBIENT_WEIGHTS: Record<AmbientQi, number> = AMBIENT_QI_WEIGHTS;
+
+/** Fraction of the day that actually goes into it, while the holding lasts. */
+const FUNDED_FOCUS = 0.7;
+
+/** What focus drops to once a cultivator has to come out and earn. */
+const UNFUNDED_FOCUS = 0.45;
+
+/**
+ * Stones a year a cultivator at this rank can make for themselves.
+ *
+ * Everyone earns. A poor cultivator is not locked out of the pill market
+ * forever, they arrive at it late and buy less - which is the difference
+ * between a road being long and a road being closed, and is the whole of what
+ * this axis is trying to be.
+ */
+function earningsPerYear(ordinal: number): number {
+    return 14 * Math.pow(1.22, Math.max(0, ordinal));
+}
+
+/**
+ * Ordinal from which a sect recruits on what you have reached rather than on
+ * whose child you are.
+ *
+ * Above it, placement is worth nothing at all: the poor cultivator who got
+ * here on their own is admitted on the same terms and draws the same support.
+ * This is what confines the value of being placed to the years when it
+ * actually mattered, and it is the mechanical form of the Hollow Court's rule
+ * one ladder down.
+ */
+const MERIT_ADMISSION_ORDINAL = 5;
+
+/** Support a sect gives anyone it admitted on merit. */
+const MERIT_SECT_BONUS = 1.2;
+
+/**
+ * Ordinal from which a ruin is a thing a person could survive walking into.
+ * Below Foundation Establishment it is simply a way to die.
+ */
+const RUIN_FLOOR = 13;
+
+/**
+ * Share of cultivators who are ever willing to walk into somewhere lethal.
+ *
+ * Drawn per life, identical across tiers. Declining is the rational choice and
+ * most people make it - which is exactly why the ones who went are the ones
+ * anybody has heard of.
+ */
+const RUIN_WILLINGNESS = 0.18;
+
+/** Base survival of one attempt, before anything supplied is added. */
+const RUIN_BASE_SURVIVAL = 0.45;
+
+/** Chance a survived attempt turns up a pocket nothing has drawn on. */
+const RUIN_VEIN_CHANCE = 0.05;
+
+/** Chance a survived attempt turns up an inheritance worth comprehending. */
+const RUIN_INHERITANCE_CHANCE = 0.18;
+
+/** Stones a survived attempt is worth. The poor road's actual economics. */
+const RUIN_STONES = 2_200;
+
+/**
+ * Per-rank chance a reachable comprehension is actually comprehended.
+ *
+ * Small on purpose. Most cultivators live and die having comprehended nothing
+ * anyone would record, and access decides WHICH things are on the table rather
+ * than how many come off it.
+ */
+const COMPREHENSION_BASE = 0.012;
+
+/** How much Insight moves that. Still a chance, never a schedule. */
+const COMPREHENSION_PER_INSIGHT = 0.006;
+
+/** Hard stop, so a sweep cannot run away. */
+const MAX_YEARS = 6_000;
+
+/** The rungs worth reporting a share for. */
+export const REPORTED_THRESHOLDS: readonly number[] = [13, 21, 25, 29, 33, 37, 41, 45];
+
+function betterAmbient(a: AmbientQi, b: AmbientQi): AmbientQi {
+    return AMBIENT_QI_RATE_MULTIPLIER[b] > AMBIENT_QI_RATE_MULTIPLIER[a] ? b : a;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ONE LIFE
+// ─────────────────────────────────────────────────────────────────────────
+
+export type LifeEnd =
+    | 'died_in_breakthrough'
+    | 'died_in_a_ruin'
+    | 'lifespan'
+    | 'settling'
+    | 'summit';
+
+export interface LifeResult {
+    peakOrdinal: number;
+    end: LifeEnd;
+    /** Whether this life ever stood on a sealed vein. */
+    foundVein: boolean;
+    /** Ruins entered. Zero for the overwhelming majority. */
+    ruinsEntered: number;
+    /** Comprehensions formed. Zero is the ordinary case. */
+    insightCount: number;
+}
+
+/**
+ * Run one whole life and report where it stopped.
+ *
+ * Deterministic in (seed, index, origin). The origin is a parameter rather
+ * than a draw so a tier can be measured at a usable sample size; the run-level
+ * number is composed from the tier weights afterwards, which is exact rather
+ * than sampled.
+ */
+export function simulateLife(
+    seed: string,
+    index: number,
+    originKey: OriginTierKey
+): LifeResult {
+    const origin = getOrigin(originKey);
+    const stream = (name: string, ...parts: (string | number)[]): CultivationRNG =>
+        forStream(seed, name, originKey, index, ...parts);
+
+    const rootRng = stream('origin-sweep-root');
+    const attrRng = stream('origin-sweep-attrs');
+    const root = rollSpiritRoot(rootRng.next());
+    const attributes = rollAttributes([
+        attrRng.next(), attrRng.next(), attrRng.next(), attrRng.next()
+    ]);
+
+    // Willingness to walk into somewhere lethal. Its own stream, and the same
+    // distribution for every tier: nerve is not inherited.
+    const nerveRng = stream('origin-sweep-nerve');
+    const willing = nerveRng.next() < RUIN_WILLINGNESS;
+
+    // Where this life happens to be, drawn from the world's own distribution,
+    // with the family's holding as a floor under it and nothing more.
+    const groundRng = stream('origin-sweep-ground');
+    let ambient = betterAmbient(groundRng.weighted(WORLD_AMBIENT_WEIGHTS), origin.ground);
+    let stones = origin.spiritStones;
+    let suppliedLeft = origin.expeditions.supplied;
+    let ruinsEntered = 0;
+    let foundVein = false;
+
+    // Access. Everything the birth put within reach, plus whatever a ruin
+    // later adds. An origin with none contributes nothing and the cultivator
+    // reaches their own root, which is the ordinary case.
+    const inheritances: { subject: string; label: string }[] = [];
+    const insights: Insight[] = [];
+    const held = new Set<string>();
+
+    let ordinal = 0;
+    let peak = 0;
+    let progress = 0;
+    let age = 16;
+    let yearsAtRank = 0;
+    let attempt = 0;
+    let foundation: FoundationQuality = 'none';
+    const injuries: Injury[] = [];
+    let end: LifeEnd = 'lifespan';
+
+    while (age < MAX_YEARS) {
+        // ── What a year costs, and whether it is funded ──────────────────
+        const funded = stones > 0;
+        const focus = funded ? FUNDED_FOCUS : UNFUNDED_FOCUS;
+
+        // Placement is worth something only while it is the ONLY way in. Once a
+        // cultivator has reached what a sect recruits at, the poor one who got
+        // there alone draws the same support, and the well-born one's head
+        // start has finished being a head start.
+        const sectBonus =
+            ordinal >= MERIT_ADMISSION_ORDINAL
+                ? Math.max(MERIT_SECT_BONUS, 1)
+                : origin.placement.sectBonus;
+
+        const rate = computeCultivationRate(
+            {
+                spiritRoot: root.key,
+                injuries,
+                insights,
+                foundationQuality: foundation
+            },
+            ambient,
+            {
+                focusMultiplier: focus,
+                techniqueBonus: 1 + attributes.insight * 0.06,
+                sectBonus
+            }
+        ).perDay;
+        if (rate <= 0) {
+            end = 'settling';
+            break;
+        }
+
+        const eligibility = canAttemptBreakthrough({
+            realmOrdinal: ordinal,
+            cultivationProgress: progress,
+            spiritRoot: root.key,
+            insights,
+            alive: true
+        });
+        const required = progressRequiredForOrdinal(ordinal);
+        const need = Math.max(0, required - eligibility.progressSubstituted - progress);
+        const yearsNeeded = Math.max(1 / DAYS_PER_YEAR, need / (rate * DAYS_PER_YEAR));
+
+        if (yearsAtRank + yearsNeeded >= stagnationYearsForOrdinal(ordinal)) {
+            end = 'settling';
+            break;
+        }
+        if (age + yearsNeeded >= lifespanForOrdinal(ordinal)) {
+            end = 'lifespan';
+            break;
+        }
+
+        age += yearsNeeded;
+        yearsAtRank += yearsNeeded;
+        progress += need;
+        // Upkeep, the stipend, and what this person can make for themselves.
+        // Everybody earns; the well-born simply start with a holding as well.
+        const stipend = ordinal >= MERIT_ADMISSION_ORDINAL ? 0 : origin.placement.stipendPerYear;
+        stones = Math.max(
+            0,
+            stones +
+                yearsNeeded *
+                    (stipend + earningsPerYear(ordinal) * focus - STONES_PER_YEAR_OF_SECLUSION)
+        );
+
+        // ── Comprehension, gated by access and by nothing else ───────────
+        // Every candidate here names a real AccessSource. A life with no
+        // teacher, no manual and nothing underfoot has only its own root in
+        // the candidate set, and effort does not widen it.
+        const ctx = withOriginAccess(originKey, {
+            inheritances: inheritances.slice(),
+            locationTags: foundVein ? ['deep_cave'] : []
+        });
+        const candidates = discoverableInsights({ spiritRoot: root.key }, ctx);
+        const comprehendRng = stream('origin-sweep-comprehend', ordinal, attempt);
+        const chance = COMPREHENSION_BASE + attributes.insight * COMPREHENSION_PER_INSIGHT;
+        for (const candidate of candidates) {
+            const key = `${candidate.domain}:${candidate.subject}`;
+            if (held.has(key)) continue;
+            if (!comprehendRng.chance(chance)) continue;
+            const achievement = recordAchievement(
+                {
+                    kind: 'profound_principle',
+                    onDay: Math.floor(age * DAYS_PER_YEAR),
+                    turn: attempt,
+                    summary: `Comprehended something of ${candidate.subject}.`
+                },
+                comprehendRng
+            );
+            insights.push(formInsight(candidate, 3, achievement));
+            held.add(key);
+        }
+
+        // ── The ruin ─────────────────────────────────────────────────────
+        // Where the ceiling is actually broken, and the only door in the world
+        // that opens on nerve rather than on standing.
+        if (willing && ordinal >= RUIN_FLOOR && !foundVein) {
+            const ruinRng = stream('origin-sweep-ruin', ordinal, attempt);
+            const supplied = suppliedLeft > 0;
+            if (supplied) suppliedLeft--;
+            ruinsEntered++;
+            const survival = expeditionSurvival(originKey, RUIN_BASE_SURVIVAL, supplied);
+            if (!ruinRng.chance(survival)) {
+                end = 'died_in_a_ruin';
+                break;
+            }
+            stones += RUIN_STONES;
+            if (ruinRng.chance(RUIN_VEIN_CHANCE)) {
+                // A pocket nothing has drawn on. Not conferred by anybody.
+                ambient = 'sealed_vein';
+                foundVein = true;
+            }
+            if (ruinRng.chance(RUIN_INHERITANCE_CHANCE)) {
+                inheritances.push({
+                    subject: 'mortality',
+                    label: 'what was left behind in a sealed place'
+                });
+            }
+        }
+
+        // ── The crossing ─────────────────────────────────────────────────
+        const gate = canAttemptBreakthrough({
+            realmOrdinal: ordinal,
+            cultivationProgress: progress,
+            spiritRoot: root.key,
+            insights,
+            alive: true
+        });
+        if (!gate.eligible) break;
+
+        // Priced against the rank it is for. This is what stops a fortune
+        // compounding: the pill that carries somebody through ordinal 24 is not
+        // the object that carried them through ordinal 4, and is not priced
+        // like one.
+        const pillPrice = breakthroughPillPrice(ordinal);
+        const potency = affordablePillPotency(stones, pillPrice);
+        stones = Math.max(0, stones - potency * pillPrice);
+        const foundationPotency =
+            ordinal + 1 === RUIN_FLOOR ? affordablePillPotency(stones, FOUNDATION_PILL_STONES) : 0;
+        stones = Math.max(0, stones - foundationPotency * FOUNDATION_PILL_STONES);
+
+        const result = attemptBreakthrough(
+            {
+                realmOrdinal: ordinal,
+                cultivationProgress: progress,
+                spiritRoot: root.key,
+                attributes,
+                injuries,
+                insights,
+                foundationQuality: foundation,
+                alive: true
+            },
+            {
+                rng: forStream(seed, 'origin-sweep-bt', originKey, index, attempt++),
+                ambient,
+                turn: Math.floor(age),
+                pill: potency > 0 ? { name: 'a pill', potency: potency * MAX_PILL_BONUS } : null,
+                // Preparation is what the holding pays for: a chosen site, a
+                // cleared schedule, nobody hunting you.
+                foundation: {
+                    preparation: Math.min(1, stones / (STONES_PER_YEAR_OF_SECLUSION * 40)),
+                    pillPotency: foundationPotency
+                },
+                toll: { candidates: [] }
+            }
+        );
+
+        progress = Math.max(0, progress - result.progressConsumed);
+        for (const injury of result.injuriesSustained) injuries.push(injury);
+        if (result.foundationEstablished) foundation = result.foundationEstablished;
+
+        // Torn meridians are the ratchet, and a healer costs stones. This is
+        // the single largest thing a holding buys, and it is why a poor run
+        // stalls in the low thirties on damage rather than on the clock.
+        const treatmentPrice = injuryTreatmentPrice(ordinal);
+        const affordable = Math.floor(stones / treatmentPrice);
+        if (affordable > 0 && injuries.some(i => !i.treated)) {
+            const healed = treatWorstInjuries(injuries, affordable);
+            stones = Math.max(0, stones - healed.treatedCount * treatmentPrice);
+            injuries.length = 0;
+            injuries.push(...healed.injuries);
+        }
+
+        if (result.outcome === 'death') {
+            end = 'died_in_breakthrough';
+            break;
+        }
+        if (result.outcome === 'success') {
+            ordinal = result.toOrdinal;
+            peak = Math.max(peak, ordinal);
+            yearsAtRank = 0;
+            if (ordinal >= MAX_ORDINAL) {
+                end = 'summit';
+                break;
+            }
+        }
+    }
+
+    return {
+        peakOrdinal: peak,
+        end,
+        foundVein,
+        ruinsEntered,
+        insightCount: insights.length
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE REPORT
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface OriginOutcomeRow {
+    origin: OriginTierKey;
+    name: string;
+    /** Share of births that land here. */
+    birthShare: number;
+    sampleSize: number;
+    /** Mean peak ordinal across the sample. */
+    meanPeakOrdinal: number;
+    /** Median peak ordinal. The number the mean hides. */
+    medianPeakOrdinal: number;
+    /** Share reaching each of {@link REPORTED_THRESHOLDS}, conditional on the tier. */
+    reachedAtLeast: Record<number, number>;
+    /** How the lives ended. */
+    ends: Record<LifeEnd, number>;
+    /** Share that ever stood on a sealed vein. */
+    veinShare: number;
+    /** Share that ever walked into somewhere lethal. */
+    ruinShare: number;
+    /** Share that ever comprehended anything at all. */
+    comprehendedShare: number;
+}
+
+export interface OriginOutcomeReport {
+    seed: string;
+    perTierSampleSize: number;
+    rows: OriginOutcomeRow[];
+    /**
+     * Run-level share reaching each threshold, weighted by the birth
+     * distribution. Exact in the weights and sampled only in the conditionals,
+     * which is the only way a 1-in-25,000 birth is measurable at all.
+     */
+    runLevel: Record<number, number>;
+    /**
+     * The whole point of the exercise: how much of the outcome distribution
+     * privilege actually explains.
+     *
+     * `medianLift` is the difference in median peak ordinal between the most
+     * and least privileged tiers. `topLift` is the ratio of their shares at
+     * the last realm. The design wants the first near zero and the second
+     * large, which is "visible at the top and nowhere else" stated as two
+     * numbers.
+     */
+    privilegeLift: {
+        medianLift: number;
+        meanLift: number;
+        topLift: number;
+        /** Share of ALL runs reaching the last realm that were well-born. */
+        wellBornShareOfSummits: number;
+    };
+}
+
+export interface OriginSweepOptions {
+    /** Lives per tier. The last realm wants a large one. */
+    perTierSampleSize?: number;
+}
+
+/**
+ * Measure every tier at the same sample size and report the comparison.
+ *
+ * Equal N per tier rather than a weighted draw: a 1-in-25,000 birth would
+ * otherwise contribute a handful of lives to any tractable sweep and the
+ * conditional would be pure noise. The weights are then applied exactly, in
+ * `runLevel`, which is both cheaper and more accurate than sampling them.
+ */
+export function measureOriginOutcomes(
+    seed: string,
+    opts: OriginSweepOptions = {}
+): OriginOutcomeReport {
+    const n = Math.max(1, opts.perTierSampleSize ?? 2_000);
+    const rows: OriginOutcomeRow[] = [];
+
+    for (const tier of ORIGIN_TIERS) {
+        const peaks: number[] = [];
+        const ends: Record<LifeEnd, number> = {
+            died_in_breakthrough: 0,
+            died_in_a_ruin: 0,
+            lifespan: 0,
+            settling: 0,
+            summit: 0
+        };
+        let veins = 0;
+        let ruins = 0;
+        let comprehended = 0;
+
+        for (let i = 0; i < n; i++) {
+            const life = simulateLife(seed, i, tier.key);
+            peaks.push(life.peakOrdinal);
+            ends[life.end]++;
+            if (life.foundVein) veins++;
+            if (life.ruinsEntered > 0) ruins++;
+            if (life.insightCount > 0) comprehended++;
+        }
+
+        const sorted = [...peaks].sort((a, b) => a - b);
+        const reachedAtLeast: Record<number, number> = {};
+        for (const threshold of REPORTED_THRESHOLDS) {
+            reachedAtLeast[threshold] = peaks.filter(p => p >= threshold).length / n;
+        }
+
+        rows.push({
+            origin: tier.key,
+            name: tier.name,
+            birthShare: originProbability(tier.key),
+            sampleSize: n,
+            meanPeakOrdinal: peaks.reduce((a, b) => a + b, 0) / n,
+            medianPeakOrdinal: sorted[Math.floor(n / 2)],
+            reachedAtLeast,
+            ends,
+            veinShare: veins / n,
+            ruinShare: ruins / n,
+            comprehendedShare: comprehended / n
+        });
+    }
+
+    const runLevel: Record<number, number> = {};
+    for (const threshold of REPORTED_THRESHOLDS) {
+        runLevel[threshold] = rows.reduce(
+            (sum, r) => sum + r.birthShare * r.reachedAtLeast[threshold],
+            0
+        );
+    }
+
+    const poorest = rows[0];
+    const richest = rows[rows.length - 1];
+    const summitTotal = runLevel[MAX_ORDINAL] || 0;
+    // "Well-born" here means anything a family placed: minor_clan and above.
+    const wellBornSummits = rows
+        .slice(2)
+        .reduce((sum, r) => sum + r.birthShare * r.reachedAtLeast[MAX_ORDINAL], 0);
+
+    return {
+        seed,
+        perTierSampleSize: n,
+        rows,
+        runLevel,
+        privilegeLift: {
+            medianLift: richest.medianPeakOrdinal - poorest.medianPeakOrdinal,
+            meanLift: richest.meanPeakOrdinal - poorest.meanPeakOrdinal,
+            topLift:
+                poorest.reachedAtLeast[MAX_ORDINAL] > 0
+                    ? richest.reachedAtLeast[MAX_ORDINAL] / poorest.reachedAtLeast[MAX_ORDINAL]
+                    : richest.reachedAtLeast[MAX_ORDINAL] > 0
+                        ? Number.POSITIVE_INFINITY
+                        : 0,
+            wellBornShareOfSummits: summitTotal > 0 ? wellBornSummits / summitTotal : 0
+        }
+    };
+}

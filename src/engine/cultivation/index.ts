@@ -10,6 +10,7 @@
  *
  *   realms.ts        the 45-rank ladder every other system is a function of
  *   spirit-roots.ts  the talent you are dealt once and never redraw
+ *   origin.ts        the third dealt thing: where you were born, and what it supplies
  *   rng.ts           seeded named sub-streams; why replays are stable
  *   ambient.ts       where you cultivate, and why the world does not shimmer
  *   cultivation.ts   progress accrual - an itemised rate, applied per day
@@ -31,6 +32,7 @@ export * from './realms.js';
 export * from './tradition.js';
 export * from './spirit-roots.js';
 export * from './rng.js';
+export * from './origin.js';
 export * from './ambient.js';
 export * from './foundation.js';
 export * from './existence.js';

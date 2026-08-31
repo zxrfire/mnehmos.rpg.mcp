@@ -821,6 +821,17 @@ function addWorldColumns(db: Database.Database): void {
     // ActorWorldState. JSON arrays rather than join tables: they are read
     // whole, with the record, and never queried from the far end - the far-end
     // queries already have world_chronicle_actors and world_memory_actors.
+    // Where an NPC was born. Rolled from the run seed like everyone else's and
+    // stored, because deriving it again on load would need the seed and the id
+    // and would silently disagree the moment either changed. NOT NULL with a
+    // default: 'thin_county' is nine births in ten and is the honest reading of
+    // every row written before the axis existed.
+    const npcColumns = columnsOf('world_npcs');
+    if (!npcColumns.includes('origin_tier')) {
+        console.error('[Migration] Adding origin_tier column to world_npcs table');
+        db.exec("ALTER TABLE world_npcs ADD COLUMN origin_tier TEXT NOT NULL DEFAULT 'thin_county';");
+    }
+
     for (const table of ['world_npcs', 'world_actors']) {
         const columns = columnsOf(table);
         if (!columns.includes('history_fact_ids')) {

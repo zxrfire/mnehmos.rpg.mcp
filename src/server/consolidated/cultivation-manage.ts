@@ -31,7 +31,6 @@ import { RichFormatter } from '../utils/formatter.js';
 import {
     AmbientQiSchema,
     MAX_RANKS_PER_TURN,
-    STARTING_SPIRIT_STONES,
     type Cultivator,
     type Element
 } from '../../schema/cultivation.js';
@@ -52,8 +51,12 @@ import {
     isRealmBoundary,
     lifespanForOrdinal,
     progressRequiredForOrdinal,
+    openingPosition,
+    originProbability,
+    provisionedYears,
     rankName,
     rollAttributes,
+    rollOrigin,
     rollSpiritRoot,
     simulateTimeSkip,
     triggersHeavenlyTribulation,
@@ -251,20 +254,28 @@ const LadderSchema = z.object({
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Roll talent from a seeded sub-stream.
+ * Roll everything a cultivator is dealt, from seeded sub-streams.
  *
- * The stream coordinate includes a nonce so two cultivators created in the same
- * run do not share a draw, and excludes anything the caller controls beyond the
- * name - there is no input that biases the result toward a better root.
+ * Three things, not two: a spirit root, four attributes, and a place to have
+ * been born into. The stream coordinate includes a nonce so two cultivators
+ * created in the same run do not share a draw, and excludes anything the caller
+ * controls beyond the name - there is no input that biases the result toward a
+ * better root or a better birth.
+ *
+ * `origin` gets its own named stream rather than consuming from the root's, so
+ * adding it does not perturb the root or the attributes of any seed that has
+ * already been played. An existing run replays to the same talent it always had.
  */
 function rollTalent(seed: string, nonce: number) {
     const rootRng = forStream(seed, 'spirit_root', nonce);
     const attrRng = forStream(seed, 'attributes', nonce);
+    const originRng = forStream(seed, 'origin', nonce);
     const spiritRoot = rollSpiritRoot(rootRng.next());
     const attributes = rollAttributes([
         attrRng.next(), attrRng.next(), attrRng.next(), attrRng.next()
     ]);
-    return { spiritRoot, attributes };
+    const origin = rollOrigin(originRng.next());
+    return { spiritRoot, attributes, origin };
 }
 
 /** Rate options assembled from persisted state only. No caller-supplied bonuses. */
@@ -373,7 +384,7 @@ export async function handleCreateCultivator(
     // Nonce keyed to how many cultivators this seed has already produced, so
     // repeated creation is deterministic yet never repeats a draw.
     const nonce = repos.cultivators.list().length;
-    const { spiritRoot, attributes } = rollTalent(seed, nonce);
+    const { spiritRoot, attributes, origin } = rollTalent(seed, nonce);
 
     const id = randomUUID();
     const maxHp = maxHpFor(attributes.might, 0);
@@ -395,7 +406,10 @@ export async function handleCreateCultivator(
             maxQi,
             age: args.age ?? 16,
             location: args.location ?? DEFAULT_LOCATION,
-            spiritStones: STARTING_SPIRIT_STONES
+            origin: origin.key,
+            // What the family put behind them, not a starting bonus. For nine
+            // births in ten this is STARTING_SPIRIT_STONES and nothing else.
+            spiritStones: origin.spiritStones
         });
         const run = openRun ? repos.runs.startRun({ cultivatorId: id, seed }) : null;
         return { cultivator, run };
@@ -437,6 +451,17 @@ export async function handleCreateCultivator(
             attributes,
             locked: true,
             note: 'Rolled by the engine from the run seed. There is no tool anywhere that changes it.'
+        },
+        // The third dealt thing. Reported as a position, never as an
+        // assessment: nothing here says whether it is a good place to be born,
+        // and nothing recommends a path from it.
+        originRoll: {
+            seedStream: `origin, nonce ${nonce}`,
+            ...openingPosition(origin.key),
+            probability: round4(originProbability(origin.key)),
+            provisionedYears: round4(provisionedYears(origin.spiritStones)),
+            locked: true,
+            note: 'Where this life started. It confers stones, placement, access, standing and supplied risk. It confers no realm, no rank, no admission and no progress.'
         },
         run: run
             ? { id: run.id, seed: run.seed, status: run.status, turn: run.turn, elapsedDays: run.elapsedDays }
