@@ -698,9 +698,19 @@ existence.ts     what happens when "body destroyed = dead" stops holding
 deviation.ts     cultivation going wrong inside the body
 toll.ts          the price of advancement, charged at every realm boundary
 breakthrough.ts  the centrepiece; the only routine way a run ends well
+tradition.ts     the two roads, and their opposite answers to being killed
+combat.ts        confrontation: the categorical gap, composite power, earned upsets
 survival.ts      the death engine; the ONLY place death is decided
 time-skip.ts     the long-simulation primitive
 ```
+
+`combat.ts` is where the two rules at the top of this page - "large realm gaps must remain
+nearly insurmountable" and "upsets must be possible and exceptional" - stop being prose. Two
+major realms apart it returns `no_contest` and the list of things that would actually work; one
+realm apart it can be overturned only by an `Edge` the cultivator genuinely brought, and the
+product of everything they brought is capped strictly below a two-realm ratio. It never declares
+anyone dead: it reports damage, injuries and whether the finishing requirement for that person
+was met, and hands the resulting state to `survival.ts`.
 
 ## Related
 

@@ -77,18 +77,18 @@ const WORKFLOW_TEMPLATES: Record<string, {
         description: 'Create a new world, party, and starting location',
         steps: [
             { tool: 'world_manage', args: { action: 'generate', name: '{{worldName}}', seed: '{{seed}}' } },
-            { tool: 'party_manage', args: { action: 'create', name: '{{partyName}}' } },
-            { tool: 'spawn_manage', args: { action: 'spawn_preset_location', preset: 'generic_tavern' } }
+            { tool: 'cultivation_manage', args: { action: 'create_cultivator', name: '{{cultivatorName}}' } },
+            { tool: 'spatial_manage', args: { action: 'generate_room', name: 'a wine shop off the market' } }
         ],
-        requiredParams: ['worldName', 'partyName']
+        requiredParams: ['worldName', 'cultivatorName']
     },
     'setup_encounter': {
         name: 'Setup Encounter',
-        description: 'Create an encounter with enemies and position party',
+        description: 'Open a confrontation and roll the order of action',
         steps: [
-            { tool: 'spawn_manage', args: { action: 'spawn_encounter', preset: '{{encounterPreset}}', partyId: '{{partyId}}' } }
+            { tool: 'combat_manage', args: { action: 'create', participants: '{{participants}}' } }
         ],
-        requiredParams: ['encounterPreset', 'partyId']
+        requiredParams: ['participants']
     },
     'end_session': {
         name: 'End Session',
@@ -156,7 +156,7 @@ const BatchManageInputSchema = z.object({
 
     // execute_sequence fields
     steps: z.array(z.object({
-        tool: z.string().describe('Tool name (e.g., "character_manage", "item_manage")'),
+        tool: z.string().describe('Tool name (e.g., "npc_manage", "item_manage")'),
         args: z.record(z.any()).describe('Tool arguments'),
         id: z.string().optional().describe('Step ID for referencing results in later steps')
     })).max(10).optional().describe('Sequence of tools to execute (1-10)'),
@@ -220,7 +220,7 @@ const BatchManageActionSchemas = {
         schema: BatchManageInputSchema.extend({
             action: z.literal('execute_sequence'),
             steps: z.array(z.object({
-                tool: z.string().describe('Tool name (e.g., "character_manage", "item_manage")'),
+                tool: z.string().describe('Tool name (e.g., "npc_manage", "item_manage")'),
                 args: z.record(z.any()).describe('Tool arguments'),
                 id: z.string().optional().describe('Step ID for referencing results in later steps')
             })).min(1).max(10)

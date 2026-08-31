@@ -84,6 +84,15 @@ export type ReportForm = 'named' | 'partial' | 'unattributed';
 
 export interface DigestLine {
     factId: string;
+    /**
+     * How many events of the same kind this line stands for.
+     *
+     * Unattributed consequences repeat: five sects losing five veins over a
+     * century all reach a nobody as the same closed road. Reporting the line
+     * five times is noise that reads as a bug, and dropping four of them loses
+     * the scale, so they collapse into one line that knows how many.
+     */
+    occurrences: number;
     day: number;
     year: number;
     kind: HistoricalEventKind;
@@ -199,6 +208,7 @@ export function buildPlayerDigest(
 
         lines.push({
             factId: fact.id,
+            occurrences: 1,
             day: fact.day,
             year: fact.year,
             kind: fact.kind,
@@ -214,6 +224,7 @@ export function buildPlayerDigest(
     }
 
     lines.sort((a, b) => a.day - b.day || (a.factId < b.factId ? -1 : 1));
+    collapseRepeats(lines);
     const limited = opts.limit != null
         ? lines.slice().sort((a, b) => b.magnitude - a.magnitude).slice(0, opts.limit)
             .sort((a, b) => a.day - b.day || (a.factId < b.factId ? -1 : 1))
@@ -273,6 +284,35 @@ function channelFor(
     return null;
 }
 
+/**
+ * Fold consecutive identical unattributed lines together.
+ *
+ * Only the nameless ones, and only when the text matches exactly: a named
+ * report is about a specific thing and must never be merged with another. The
+ * first line keeps its date, which is when the player first noticed, and the
+ * count says how often it kept happening.
+ */
+function collapseRepeats(lines: DigestLine[]): void {
+    let write = 0;
+    for (let read = 0; read < lines.length; read++) {
+        const line = lines[read];
+        const prev = write > 0 ? lines[write - 1] : null;
+        if (
+            prev &&
+            prev.form !== 'named' &&
+            line.form !== 'named' &&
+            prev.text === line.text &&
+            prev.channel === line.channel
+        ) {
+            prev.occurrences++;
+            prev.magnitude = Math.max(prev.magnitude, line.magnitude);
+            continue;
+        }
+        lines[write++] = line;
+    }
+    lines.length = write;
+}
+
 function sectThreshold(opts: DigestOptions): number {
     const rank = opts.factionRankIndex ?? 0;
     // An elder is told the awkward things; an outer disciple hears the notices.
@@ -319,9 +359,15 @@ function headlineFor(
 ): string {
     const years = Math.round((toDay - fromDay) / DAYS_PER_YEAR);
     if (lines.length === 0) {
-        return years >= 1
+        // Still say how much went past. A player who missed forty things is in
+        // a different position from one who missed none, even though neither
+        // can name any of them.
+        const missed = unheard > 0
+            ? ` ${unheard} thing${unheard === 1 ? '' : 's'} did not reach you at all.`
+            : '';
+        return (years >= 1
             ? `${years} years passed and nothing reached you.`
-            : 'Nothing reached you.';
+            : 'Nothing reached you.') + missed;
     }
     const named = lines.filter(l => l.form === 'named').length;
     const vague = lines.length - named;

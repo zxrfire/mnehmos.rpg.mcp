@@ -86,6 +86,20 @@
  *                    never heard of reaches them as a closed road, never as a
  *                    named report.
  *
+ *   legacy.ts        the world outlives the run. A dead cultivator leaves a
+ *                    grave on the map with what they carried, a sect that
+ *                    remembers what the crossing cost, an unfinished goal that
+ *                    is now somebody's active goal, and inherited accounts. The
+ *                    next run starts in that world - descendant, disciple, or
+ *                    most often a stranger who finds the bones. Nothing
+ *                    resurrects.
+ *
+ *   ladder-odds.ts   how many people ever get this far, in three numbers that
+ *                    are allowed to disagree: what the world BELIEVES (vague,
+ *                    in-world, and all the player ever sees), what the
+ *                    constants IMPLY, and what a seeded sweep through the real
+ *                    breakthrough engine MEASURES. Admin sees all three.
+ *
  *   driver.ts        `advanceWorldForPlay(state, {days, access})`. One call:
  *                    clock, then pressure, then the filtered digest. This is
  *                    what the play loop wires to.
@@ -123,3 +137,5 @@ export * from './seeding.js';
 export * from './pressure.js';
 export * from './digest.js';
 export * from './driver.js';
+export * from './legacy.js';
+export * from './ladder-odds.js';

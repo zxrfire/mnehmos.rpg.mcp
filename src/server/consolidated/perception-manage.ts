@@ -602,7 +602,7 @@ async function handleRecover(args: z.infer<typeof RecoverSchema>): Promise<objec
 
     const disposition: Disposition = result.mutated ? 'commit' : 'no_op_spoken';
 
-    // Audit row - write even on no-op so rest-manage can trace the call.
+    // Audit row - write even on no-op so a caller can trace the call.
     assessmentRepo.create({
         observerId,
         intentId,

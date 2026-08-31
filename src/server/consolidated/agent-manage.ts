@@ -728,7 +728,7 @@ export const AgentManageTool = {
     name: 'agent_manage',
     description: `Manage LLM-driven NPCs ("agents") bound to characters.
 
-Each agent owns a private mind state - modular system-prompt slices (persona, directive, secrets, narrative_feed, recent, character_state), a first-person journal, and audit-logged LLM calls. The LLM emits plain-text intent declarations; the DM dispatches downstream tools (combat_action, npc_manage, math_manage, etc.).
+Each agent owns a private mind state - modular system-prompt slices (persona, directive, secrets, narrative_feed, recent, character_state), a first-person journal, and audit-logged LLM calls. The LLM emits plain-text intent declarations; the DM dispatches downstream tools (combat_manage, npc_manage, math_manage, etc.).
 
 🧠 LIFECYCLE
   create / get / list / update / delete / resume / health / budget

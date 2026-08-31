@@ -147,8 +147,6 @@ Where each currently lives:
 | `cultivation/` | The realm ladder, talent, progress, breakthrough, the price of advancement, existence states, death | [README](cultivation/README.md) |
 | `world/` | Places, capability predicates, opportunity windows, history, lineage, possessions, time | [README](world/README.md) |
 | `social/` | Relationships, obligations, knowledge and belief, secrets | [README](social/README.md) |
-| `combat/` | Encounters, initiative, damage | retained substrate |
-| `magic/` | Spells, concentration, scrolls, auras | retained substrate |
 | `spatial/` | Grid, collision, movement | retained substrate |
 | `worldgen/` | Procedural generation | retained substrate |
 | `strategy/` | Nation simulation | retained substrate |
@@ -156,3 +154,8 @@ Where each currently lives:
 
 The retained substrate came from the D&D 5e engine this repo was forked from. It is sound
 engineering and is kept; the game-facing surface above it is what has been replaced.
+
+`combat/` and `magic/` are gone. Spellcasting, spell slots, concentration, scrolls and auras
+described a game this engine no longer runs, and the D&D combat engine went with them. Combat is
+now `cultivation/combat.ts` - the categorical realm gap, composite power, upsets that have to be
+paid for, and the two traditions' different answers to being killed.

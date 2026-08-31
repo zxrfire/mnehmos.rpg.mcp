@@ -298,12 +298,15 @@ export const MathManageTool = {
     description: `Mathematical operations for RPG mechanics.
 
 ⚠️ REDIRECT - DO NOT USE FOR:
-- Attack rolls → Use combat_action { action: "attack" }
-- Spell damage → Use combat_action { action: "cast_spell" }
-- Ability or skill checks → Use improvisation_manage { action: "stunt", actorId, skill, dc, effectType: "none" }
-- Saving throws → Use the combat/effect tool that requires the save; there is no standalone roll_saving_throw tool on this MCP surface
+- Strikes in a fight → Use combat_manage { action: "strike" }
+- A whole confrontation → Use combat_manage { action: "resolve" }
+- Whether a cultivator can reach an opponent at all → Use combat_manage { action: "assess" }
+- Breakthrough odds, deviation, the price of a crossing → Use cultivation_manage
 
-The DM chooses the appropriate skill and DC, and the stunt action rolls the d20 and applies the character's skill modifier automatically. Do not invent or call roll_skill_check, roll_ability_check, or roll_saving_throw; those tools are not registered here.
+There are no ability checks, skill checks or saving throws on this surface, and no tool that
+performs one. What a cultivator can do is decided by rank, technique mastery, understanding and
+what they were carrying, and the tool that owns that decision resolves it. Do not invent or call
+roll_skill_check, roll_ability_check or roll_saving_throw; they are not registered here.
 
 🎲 DICE ROLLING (roll) - Use ONLY for:
 - Stat generation (4d6dl1)

@@ -146,6 +146,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const regionLocations = seedRegions(state, opts.catalog, presentDay);
     const factions = seedFactions(state, opts.catalog, regionLocations, presentDay);
     const npcs = seedPopulation(state, opts.catalog, factions, population, presentDay);
+    state.populationTarget = npcs.length;
     const lineages = seedLineages(state, npcs, presentDay);
     const opportunities = seedOpportunities(state, opts.catalog, regionLocations, presentDay);
     const effects = seedGrantSchedule(state, opts.catalog, presentDay);
@@ -365,7 +366,12 @@ function seedFactions(
             resources: {
                 spirit_stones: Math.max(200, baseTreasury + rng.int(-400, 1200)),
                 veins: cf.holdsVein ? 1 : 0,
-                tribute_owed_per_year: cf.tributeStonesPerYear
+                tribute_owed_per_year: cf.tributeStonesPerYear,
+                // Read back by the yearly economy and by admissions. Kept on
+                // the record rather than looked up, so the world stays
+                // self-contained once the catalog is out of the picture.
+                production: cf.production,
+                admission_ordinal: cf.admissionOrdinal
             },
             description: cf.description,
             foundedOnDay: presentDay - years(rng.int(60, 900)),

@@ -61,7 +61,17 @@ import {
 } from './history.js';
 import { applyLocationChange, forbidZone, type LocationRecord } from './locations.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
-import { markDead, markMissing, type NpcRecord } from './npc-state.js';
+import {
+    addGoal,
+    createNpc,
+    markDead,
+    markMissing,
+    setRealm,
+    upsertRelationship,
+    type NpcRecord
+} from './npc-state.js';
+import { addLineageEdge, createLineageRecord } from './lineage.js';
+import { deriveOrdinal } from './seeding.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
     makeFaction,
@@ -104,6 +114,8 @@ export interface PressureResult {
     events: PressureEvent[];
     /** Years actually stepped. Zero when the span held no whole year. */
     yearsStepped: number;
+    /** People born into the world across the span. */
+    born: number;
 }
 
 /**
@@ -150,6 +162,7 @@ export function applyPressure(
     const firstYear = yearOfDay(fromDay) + 1;
     const lastYear = yearOfDay(toDay);
     let yearsStepped = 0;
+    let born = 0;
 
     for (let year = firstYear; year <= lastYear && events.length < maxEvents; year++) {
         yearsStepped++;
@@ -167,13 +180,229 @@ export function applyPressure(
         if (rng.chance(rate - count)) count++;
 
         for (let i = 0; i < count && events.length < maxEvents; i++) {
-            const day = year * 365 + rng.int(0, 364);
+            // The draw is unconditional so the stream does not depend on where
+            // the span happens to end; the DATE is clamped, because a fact
+            // dated after the world's own clock is incoherent and the soak
+            // rightly refuses it.
+            const day = withinSpan(year * 365 + rng.int(0, 364), fromDay, toDay);
             const event = fireOne(state, day, forStream(state.seed, 'pressure-event', year, i));
             if (event) events.push(event);
         }
+
+        // Then the parts of a year that are arithmetic rather than incident:
+        // people advance, institutions pay their bills, and children are born.
+        // Births last, so a year's dead are counted before its replacements.
+        applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
+        applyFactionEconomy(state);
+        born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
     }
 
-    return { events, yearsStepped };
+    return { events, yearsStepped, born };
+}
+
+/**
+ * People keep being born.
+ *
+ * Not a weighted event - a steady demographic floor, run every year, closing
+ * the gap between the living population and what the world can carry. Without
+ * it five centuries produce an empty province and a set of factions that folded
+ * for want of members, which is a modelling artefact rather than history.
+ *
+ * Newcomers are generated exactly the way everybody else is: root and
+ * attributes rolled from the world seed, realm DERIVED from those inputs over
+ * the years they have lived, capped by the province they were born in. Where a
+ * living parent is available they are attached to that lineage, which is what
+ * makes a descendant three centuries later something the world can point at.
+ */
+function applyDemography(
+    state: WorldState,
+    year: number,
+    day: number,
+    rng: CultivationRNG
+): NpcRecord[] {
+    const target = state.populationTarget;
+    if (target <= 0) return [];
+
+    let living = 0;
+    for (const npc of state.npcs) if (npc.status === 'alive') living++;
+    const deficit = target - living;
+    if (deficit <= 0) return [];
+
+    // A fraction of the gap each year, so a plague is felt for a generation
+    // rather than papered over the following spring.
+    const count = Math.min(24, Math.max(1, Math.round(deficit * 0.08)));
+    const regions = state.locations.filter(l => l.kind === 'region');
+    if (regions.length === 0) return [];
+
+    const born: NpcRecord[] = [];
+    for (let i = 0; i < count; i++) {
+        const id = `npc-${state.nextNpcSeq++}`;
+        const own = forStream(state.seed, 'birth', id);
+        const region = regions[own.int(0, regions.length - 1)];
+        const ceiling = Number(region.data.localCeilingOrdinal ?? 20);
+        const rateMultiplier = Number(region.data.ambientRateMultiplier ?? 1);
+        const age = own.int(16, 22);
+
+        let npc = createNpc(state.seed, {
+            id,
+            bornOnDay: day - years(age),
+            onDay: day,
+            locationId: region.id,
+            occupation: 'unknown',
+            tags: [`region:${String(region.data.catalogRegionId ?? region.id)}`]
+        });
+        const ordinal = deriveOrdinal(
+            npc.cultivation.spiritRoot,
+            npc.cultivation.attributes,
+            age,
+            rateMultiplier,
+            ceiling,
+            own
+        );
+        npc = setRealm(npc, ordinal, day);
+        npc = addGoal(npc, {
+            kind: 'cultivation',
+            text: 'Get somewhere. Anywhere.',
+            priority: 0.5,
+            obstacles: ['Born here.']
+        }, day);
+
+        // A parent, where the world has one to offer: same region, old enough,
+        // and alive. Lineage is what long time-skips land on.
+        const candidates = state.npcs.filter(
+            n => n.status === 'alive' &&
+                n.locationId === region.id &&
+                day - n.identity.bornOnDay >= years(age + 18)
+        );
+        if (candidates.length > 0) {
+            const parent = candidates[own.int(0, candidates.length - 1)];
+            const surname = parent.name.split(' ')[0];
+            npc = { ...npc, name: `${surname} ${npc.name.split(' ').slice(1).join(' ')}`.trim() };
+            const lineageId = `lin-${surname.toLowerCase()}`;
+            let lineage = state.lineages.find(l => l.id === lineageId);
+            if (!lineage) {
+                lineage = createLineageRecord({
+                    id: lineageId,
+                    surname,
+                    founderId: parent.id,
+                    foundedOnDay: parent.identity.bornOnDay
+                });
+                state.lineages.push(lineage);
+            }
+            const next = addLineageEdge(lineage, {
+                parentId: parent.id,
+                childId: npc.id,
+                relation: 'descendant',
+                onDay: npc.identity.bornOnDay
+            });
+            const at = state.lineages.findIndex(l => l.id === lineageId);
+            if (at >= 0) state.lineages[at] = next;
+        }
+
+        // A faction that takes applicants takes applicants. Without this the
+        // rolls only ever shrink: every founding member dies inside two
+        // centuries and nobody replaces them, and the institutions fold for a
+        // reason that is arithmetic rather than history.
+        const admitting = state.factions.filter(
+            f => f.dissolvedOnDay === null &&
+                f.tags.includes('recruits') &&
+                f.seatLocationId === region.id &&
+                ordinal >= Number(f.resources.admission_ordinal ?? 0)
+        );
+        if (admitting.length > 0 && own.chance(0.45)) {
+            const joined = admitting[own.int(0, admitting.length - 1)];
+            npc = { ...npc, factionId: joined.id, factionRankIndex: 0 };
+        }
+
+        state.npcs.push(npc);
+        born.push(npc);
+    }
+    void rng;
+    void year;
+    return born;
+}
+
+/**
+ * People keep cultivating.
+ *
+ * Not a behaviour model - the same closed-form derivation seeding uses, run
+ * again against the age they have now. Without it the population's realms are
+ * frozen at the moment of seeding: elders never emerge, the factions' power
+ * never moves, and after five centuries every cultivator in the world is
+ * exactly as strong as the day they were born.
+ *
+ * A sample per year rather than the whole roster, keyed per NPC and year, so
+ * the cost is a constant and the outcome is decomposable. A realm only ever
+ * goes up here; losing one is the cultivation engine's business, not this
+ * module's.
+ */
+function applyAdvancement(state: WorldState, year: number, day: number): NpcRecord[] {
+    const living: number[] = [];
+    for (let i = 0; i < state.npcs.length; i++) {
+        if (state.npcs[i].status === 'alive') living.push(i);
+    }
+    if (living.length === 0) return [];
+
+    const sample = Math.max(1, Math.round(living.length / 40));
+    const advanced: NpcRecord[] = [];
+    const rng = forStream(state.seed, 'advancement', year);
+
+    for (let s = 0; s < sample; s++) {
+        const at = living[rng.int(0, living.length - 1)];
+        const npc = state.npcs[at];
+        if (npc.status !== 'alive') continue;
+
+        const regionTag = npc.tags.find(t => t.startsWith('region:'))?.slice(7);
+        const region = state.locations.find(
+            l => l.kind === 'region' && String(l.data.catalogRegionId ?? '') === regionTag
+        ) ?? state.locations.find(l => l.id === npc.locationId);
+        const ceiling = Number(region?.data.localCeilingOrdinal ?? 20);
+        const rateMultiplier = Number(region?.data.ambientRateMultiplier ?? 1);
+        const age = Math.floor((day - npc.identity.bornOnDay) / 365);
+
+        const derived = deriveOrdinal(
+            npc.cultivation.spiritRoot,
+            npc.cultivation.attributes,
+            age,
+            rateMultiplier,
+            ceiling,
+            forStream(state.seed, 'advance-npc', npc.id)
+        );
+        if (derived <= npc.cultivation.realmOrdinal) continue;
+
+        state.npcs[at] = setRealm(npc, derived, day);
+        advanced.push(state.npcs[at]);
+    }
+    return advanced;
+}
+
+/**
+ * Factions pay for themselves, or they do not.
+ *
+ * A vein is income; members and tribute are cost. That is the whole model, and
+ * it is enough: a sect holding a vein it can work stays solvent, one that has
+ * lost its vein starts dying immediately, and one that pays a large tribute
+ * upward lives closer to the line than one that answers to nobody. The
+ * `faction_fell` template then binds to whoever the arithmetic has already
+ * ruined, rather than picking a victim.
+ */
+function applyFactionEconomy(state: WorldState): void {
+    for (const faction of state.factions) {
+        if (faction.dissolvedOnDay !== null) continue;
+        let members = 0;
+        for (const npc of state.npcs) {
+            if (npc.status === 'alive' && npc.factionId === faction.id) members++;
+        }
+        const veins = faction.resources.veins ?? 0;
+        const production = Number(faction.resources.production ?? 0.5);
+        const income = veins * 5_000 * (0.5 + production) + members * 30;
+        const upkeep = members * 45 + (faction.resources.tribute_owed_per_year ?? 0) * 0.1;
+        faction.resources.spirit_stones = Math.max(
+            0,
+            Math.round((faction.resources.spirit_stones ?? 0) + income - upkeep)
+        );
+        faction.resources.members = members;
+    }
 }
 
 /**
@@ -241,6 +470,41 @@ function replaceNpc(state: WorldState, next: NpcRecord): void {
     if (at >= 0) state.npcs[at] = next;
 }
 
+/**
+ * Somebody takes it personally.
+ *
+ * Institutions hold positions; people hold accounts, and only the personal row
+ * is inheritable - a faction's hostility dies with the faction, whereas a
+ * grudge outlives its owner and lands on an heir. So whenever one faction takes
+ * something from another, one named member of each side ends up in a row
+ * together. Which two is a draw; that it happens at all is not.
+ *
+ * This is a state update, not a decision model: nobody here reasons about
+ * whether to be aggrieved.
+ */
+function openPersonalAccount(
+    state: WorldState,
+    loserId: string,
+    winnerId: string,
+    day: number,
+    note: string,
+    rng: CultivationRNG
+): string[] {
+    const aggrieved = pick(rng, membersOf(state, loserId));
+    const taker = pick(rng, membersOf(state, winnerId));
+    if (!aggrieved || !taker) return [];
+    const at = state.npcs.findIndex(n => n.id === aggrieved.id);
+    if (at < 0) return [];
+    state.npcs[at] = upsertRelationship(state.npcs[at], {
+        targetId: taker.id,
+        targetName: taker.name,
+        kind: 'enemy',
+        standing: -0.75,
+        note
+    }, day);
+    return [aggrieved.id, taker.id];
+}
+
 function adjustStandingBetween(a: FactionRecord, b: FactionRecord, delta: number): void {
     a.standing[b.id] = clamp((a.standing[b.id] ?? 0) + delta, -1, 1);
     b.standing[a.id] = clamp((b.standing[a.id] ?? 0) + delta, -1, 1);
@@ -286,6 +550,18 @@ function emit(
         },
         deaths
     };
+}
+
+/**
+ * Keep a generated date inside the span that was actually advanced.
+ *
+ * A year is stepped as a whole even when the caller asked for part of one, so
+ * an event drawn late in the year can fall past the clock. Clamping the date
+ * rather than skipping the event keeps the year's content intact and the
+ * ledger coherent - nothing is ever dated after the day the world has reached.
+ */
+function withinSpan(day: number, fromDay: number, toDay: number): number {
+    return Math.max(fromDay, Math.min(toDay, day));
 }
 
 function clamp(n: number, lo: number, hi: number): number {
@@ -340,6 +616,8 @@ const TEMPLATES: Template[] = [
                 winner.controlledLocationIds.push(vein.id);
                 winner.resources.veins = (winner.resources.veins ?? 0) + 1;
                 adjustStandingBetween(loser, winner, -0.3);
+
+                openPersonalAccount(state, loser.id, winner.id, day, `Took ${vein.name}.`, rng);
             }
 
             return emit(state, 'vein_lost', day, {
@@ -563,6 +841,10 @@ const TEMPLATES: Template[] = [
             if (previous) {
                 previous.controlledLocationIds = previous.controlledLocationIds.filter(id => id !== place.id);
                 adjustStandingBetween(previous, claimant, -0.2);
+                openPersonalAccount(
+                    state, previous.id, claimant.id, day,
+                    `Was collecting at ${place.name} until they were not.`, rng
+                );
             }
 
             return emit(state, 'border_moved', day, {
@@ -611,6 +893,10 @@ const TEMPLATES: Template[] = [
             if (!holds) {
                 held.tags = Array.from(new Set(held.tags.concat('zone_shrunk')));
                 held.resources.spirit_stones = Math.round((held.resources.spirit_stones ?? 0) * 0.85);
+                openPersonalAccount(
+                    state, held.id, tester.id, day,
+                    'Moved a marker in and was not made to move it back.', rng
+                );
             }
 
             return emit(state, 'deference_tested', day, {
@@ -641,8 +927,13 @@ const TEMPLATES: Template[] = [
         kind: 'faction_fell',
         weight: 3,
         apply(state, day, rng) {
+            // Bind to whoever the economy has already ruined. Nobody is
+            // chosen: a faction is here because it cannot pay, or because it
+            // lost the vein that was its whole ability to produce cultivators
+            // and has nobody left.
             const failing = liveFactions(state).filter(f =>
                 (f.resources.spirit_stones ?? 0) < 400 ||
+                membersOf(state, f.id).length < 3 ||
                 (f.tags.includes('lost_vein') && membersOf(state, f.id).length < 6)
             );
             const faction = pick(rng, failing);

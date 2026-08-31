@@ -39,6 +39,13 @@ import {
     type Relationship
 } from '../../engine/social/index.js';
 import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
+import { getTechnique } from '../../data/cultivation/techniques.js';
+import {
+    DEGREE_NAMES,
+    insightName,
+    type DiscoveryContext,
+    type ExposureInput
+} from '../../engine/cultivation/understanding.js';
 import { CultivatorRepository } from '../../storage/repos/cultivator.repo.js';
 import { RunRepository } from '../../storage/repos/run.repo.js';
 import { SectRepository } from '../../storage/repos/sect.repo.js';
@@ -46,8 +53,10 @@ import { TechniqueRepository } from '../../storage/repos/technique.repo.js';
 import {
     LETHAL_UNTREATED_INJURIES,
     SATIETY_MAX,
+    type Achievement,
     type AmbientQi,
     type Cultivator,
+    type Insight,
     type FoundationQuality,
     type ImmortalStatus,
     type Injury,
@@ -55,7 +64,8 @@ import {
     type TimeSkipResult,
     type TollCandidate,
     type TollResult,
-    type TollTaken
+    type TollTaken,
+    type VisionSeed
 } from '../../schema/cultivation.js';
 import {
     DAYS_PER_YEAR,
@@ -1376,6 +1386,254 @@ export function sectCatalogFacts(sectId: string): Record<string, unknown> | null
                 requirement: admission.requirement
             }
             : null
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UNDERSTANDING: ACCESS ASSEMBLED FROM REAL ROWS
+//
+// `discoverableInsights` is a hard filter, not a modifier: a comprehension with
+// no access behind it never enters the candidate set, so it can never be
+// rolled. The engine holds no library and no map, which means the whole of that
+// filter is decided HERE, by what the database actually shows. A caller that
+// omits the context gets a cultivator who can reach their own root and nothing
+// else - which is correct for a hermit and wrong for an inner disciple, so the
+// assembly has to be shared rather than repeated per tool.
+//
+// Nothing in this section consults affinity. Affinity is the slope and access
+// is the filter; see `dao.ts` for why the two must never be joined.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Site kinds that have something to teach, and what they open.
+ *
+ * The keys on the right are `understanding.ts`'s own LOCATION_OPENINGS tags.
+ * Mapping is one-way and explicit rather than free-text, so a site kind that
+ * teaches nothing teaches nothing rather than quietly matching a tag.
+ */
+const SITE_KIND_TAGS: Readonly<Record<string, string>> = {
+    grave: 'sealed_tomb',
+    cave: 'deep_cave',
+    ruin: 'ancient_battlefield',
+    scar: 'tribulation_scar'
+};
+
+/**
+ * Tags on the ground the cultivator is standing on.
+ *
+ * Only DISCOVERED sites count. A ruin nobody has found is not something you are
+ * standing near enough to comprehend; it is a ruin nobody has found.
+ */
+export function siteTagsAt(
+    db: Database.Database,
+    runId: string | null,
+    location: string | null
+): string[] {
+    if (!location) return [];
+    const rows = db
+        .prepare(`
+            SELECT DISTINCT kind FROM cultivation_sites
+            WHERE discovered = 1 AND location = ?
+              AND (run_id IS NULL OR run_id = ?)
+        `)
+        .all(location, runId ?? null) as { kind: string }[];
+
+    const tags: string[] = [];
+    for (const row of rows) {
+        const tag = SITE_KIND_TAGS[row.kind];
+        if (tag && !tags.includes(tag)) tags.push(tag);
+    }
+    return tags;
+}
+
+export interface DiscoveryAssembly {
+    /** Shaped for `simulateTimeSkip`'s `understanding` context. */
+    context: UnderstandingContext;
+    /** What each source is, so a tool can say where a comprehension came from. */
+    sources: { kind: string; label: string; id: string | null }[];
+}
+
+/** The subset of `DiscoveryContext` a time skip accepts. */
+type UnderstandingContext = Omit<DiscoveryContext, 'survived'>;
+
+/**
+ * Everything this cultivator is currently near enough to comprehend, assembled
+ * from rows that exist.
+ *
+ * Manuals are the arts they have actually learned - a text on the shelf they
+ * cannot read is not listed here and grants nothing. A teacher is a sect that
+ * has admitted them and has a signature art to pass on. A site is ground
+ * somebody has already found.
+ */
+export function discoveryContextFor(
+    repos: CultivationRepos,
+    cultivator: Cultivator,
+    options: { runId?: string | null; practisingTechniqueId?: string | null } = {}
+): DiscoveryAssembly {
+    const sources: DiscoveryAssembly['sources'] = [];
+
+    const readableManuals: ExposureInput[] = [];
+    for (const techniqueId of cultivator.knownTechniques) {
+        const catalog = getTechnique(techniqueId);
+        if (!catalog || catalog.element === null) continue;
+        readableManuals.push({
+            element: catalog.element,
+            label: catalog.name,
+            id: catalog.id
+        });
+        sources.push({ kind: 'manual', label: catalog.name, id: catalog.id });
+    }
+
+    const teachers: ExposureInput[] = [];
+    const membership = repos.sects.getMembership(cultivator.id);
+    if (membership) {
+        const entry = getSect(membership.sectId);
+        const signature = entry?.signatureTechniqueId
+            ? getTechnique(entry.signatureTechniqueId)
+            : undefined;
+        if (entry && signature && signature.element !== null) {
+            const label = `${entry.name}, ${membership.rankTitle}`;
+            teachers.push({ element: signature.element, label, id: entry.id });
+            sources.push({ kind: 'teacher', label, id: entry.id });
+        }
+    }
+
+    const locationTags = siteTagsAt(
+        repos.db,
+        options.runId ?? cultivator.runId ?? null,
+        cultivator.location
+    );
+    for (const tag of locationTags) {
+        sources.push({ kind: 'site', label: tag.replace(/_/g, ' '), id: tag });
+    }
+
+    const practised = options.practisingTechniqueId
+        ? getTechnique(options.practisingTechniqueId)
+        : undefined;
+
+    return {
+        context: {
+            readableManuals,
+            teachers,
+            locationTags,
+            techniqueElement: practised?.element ?? null
+        },
+        sources
+    };
+}
+
+/**
+ * Write comprehension back.
+ *
+ * The one place understanding is persisted. `insights` and `achievements` are
+ * whole-array columns on the cultivator row, so the caller hands the merged
+ * arrays the engine produced rather than a delta - and the schema's provenance
+ * requirement fails loudly at this boundary if anything untraceable got in.
+ */
+export function persistUnderstanding(
+    repos: CultivationRepos,
+    cultivatorId: string,
+    gained: readonly Insight[],
+    achievements: readonly Achievement[]
+): { insights: number; achievements: number } {
+    if (gained.length === 0 && achievements.length === 0) {
+        return { insights: 0, achievements: 0 };
+    }
+    const existing = repos.cultivators.getById(cultivatorId);
+    if (!existing) return { insights: 0, achievements: 0 };
+
+    // Keyed by (domain, subject): a repeat is a deepening, not a duplicate.
+    // The engine already merged them; this only has to reconcile the row it
+    // was handed against the row as it stands now.
+    const merged = [...existing.insights];
+    for (const insight of gained) {
+        const index = merged.findIndex(
+            i => i.domain === insight.domain && i.subject === insight.subject
+        );
+        if (index === -1) merged.push(insight);
+        else merged[index] = insight;
+    }
+
+    const knownAchievements = new Set(existing.achievements.map(a => a.id));
+    const mergedAchievements = [
+        ...existing.achievements,
+        ...achievements.filter(a => !knownAchievements.has(a.id))
+    ];
+
+    repos.cultivators.update(cultivatorId, {
+        insights: merged,
+        achievements: mergedAchievements
+    });
+
+    return {
+        insights: merged.length - existing.insights.length,
+        achievements: mergedAchievements.length - existing.achievements.length
+    };
+}
+
+/**
+ * File a temporal phenomenon as a belief.
+ *
+ * A vision has no fact behind it and may never have one, so it is written to
+ * the knowledge layer with `fact_id` NULL and a `divined` source. Nothing reads
+ * these back as a bonus: they grant information and never capability, so
+ * dropping them would silently delete content rather than silently grant it -
+ * which is why they are written here rather than left to the caller.
+ */
+export function persistVisions(
+    db: Database.Database,
+    visions: readonly VisionSeed[]
+): number {
+    if (visions.length === 0) return 0;
+    const insert = db.prepare(`
+        INSERT INTO knowledge_records (
+            id, holder_id, holder_kind, claim_key, fact_id, stance, statement, detail,
+            source_kind, source_from_holder_id, source_via_record_id, source_note,
+            acquired_on_day, confidence, tags, superseded
+        ) VALUES (
+            @id, @holderId, @holderKind, @claimKey, NULL, @stance, @statement, @detail,
+            @sourceKind, NULL, NULL, @sourceNote,
+            @acquiredOnDay, @confidence, @tags, 0
+        )
+        ON CONFLICT(id) DO NOTHING
+    `);
+
+    let written = 0;
+    for (const seed of visions) {
+        const record = recordKnowledge(seed);
+        const result = insert.run({
+            id: record.id,
+            holderId: record.holderId,
+            holderKind: record.holderKind,
+            claimKey: record.claimKey,
+            stance: record.stance,
+            statement: record.statement,
+            detail: JSON.stringify(record.detail),
+            sourceKind: record.source.kind,
+            sourceNote: record.source.note ?? '',
+            acquiredOnDay: record.acquiredOnDay,
+            confidence: record.confidence,
+            tags: JSON.stringify(record.tags)
+        });
+        written += result.changes;
+    }
+    return written;
+}
+
+/** Compact, narrator-facing view of one comprehension. */
+export function summariseInsight(insight: Insight): Record<string, unknown> {
+    return {
+        id: insight.id,
+        name: insightName(insight),
+        domain: insight.domain,
+        subject: insight.subject,
+        degree: insight.degree,
+        degreeName: DEGREE_NAMES[insight.degree],
+        // Provenance is the point: a comprehension that cannot say where it
+        // came from is not supposed to be representable.
+        account: insight.provenance.account,
+        onDay: insight.provenance.onDay,
+        deepenedBy: insight.provenance.deepenedBy.length
     };
 }
 

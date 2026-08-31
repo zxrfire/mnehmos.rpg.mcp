@@ -479,7 +479,6 @@ when ALL nations call mark_ready. Use get_status to see who's waiting.
 - trade_request: Resource exchange
 
 🔄 INTEGRATION:
-- Use strategy_manage for nation state queries
 - Use world_manage for world creation
 - Each turn triggers economy/conflict resolution
 

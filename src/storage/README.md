@@ -19,10 +19,10 @@ The runtime agent reasons **from** these rows and never asserts them. See
 db.ts                        opening a handle, integrity checks
 index.ts                     the per-campaign connection pool and test override
 migrations.ts                the root migration; calls every subsystem migration
-migrations.cultivation.ts    cultivator, injuries, techniques, alchemy, sects, run ledger
+migrations.cultivation.ts    cultivator, injuries, techniques, alchemy, sects, run ledger,
+                             confrontations and the record of what was survived
 migrations.world.ts          date, locations and their history, factions, NPCs, facts
 migrations.social.ts         relationships, obligations, knowledge, secrets
-migrations.class-progression.ts  retained substrate
 repos/                       one module per table family
 tenant-context.ts            the verified tenant a request resolves against
 ```

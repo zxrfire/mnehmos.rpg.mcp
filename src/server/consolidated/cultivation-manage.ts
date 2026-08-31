@@ -63,12 +63,26 @@ import {
     type CultivationOptions
 } from '../../engine/cultivation/index.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
+import { advanceWorldForCultivator } from '../state/cultivation-world.js';
+import {
+    AssessSchema,
+    UnderstandingSchema,
+    handleAssess,
+    handleUnderstanding
+} from './cultivation-perception.js';
+import {
+    MarketSchema,
+    WorkSchema,
+    handleMarket,
+    handleWork
+} from './cultivation-mortal.js';
 import {
     DEFAULT_LOCATION,
     FLAG_PENDING_PILL,
     clearFlag,
     currentAmbient,
     describeCultivator,
+    discoveryContextFor,
     effectiveLocationId,
     ensureCultivationDb,
     guidingError,
@@ -79,6 +93,8 @@ import {
     persistFoundation,
     persistImmortalStatus,
     persistToll,
+    persistUnderstanding,
+    persistVisions,
     ranksGainedThisTurn,
     readJsonFlag,
     recordRankGained,
@@ -87,6 +103,7 @@ import {
     round4,
     skipEndState,
     summariseInjury,
+    summariseInsight,
     tollConditionsFor,
     totalDays,
     type CultivationRepos,
@@ -99,7 +116,13 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const ACTIONS = [
-    'create_cultivator', 'get', 'list', 'cultivate', 'breakthrough', 'status', 'ladder'
+    'create_cultivator', 'get', 'list', 'cultivate', 'breakthrough', 'status', 'ladder',
+    // The narrator's two standing questions, answered by the engine rather than
+    // guessed at: what happens if they try, and what have they comprehended.
+    'assess', 'understanding',
+    // The low-realm loop. Most cultivators are poor and most of a life is spent
+    // paying for the next month of it.
+    'work', 'market'
 ] as const;
 type CultivationAction = typeof ACTIONS[number];
 
@@ -490,6 +513,16 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     );
     const locationId = effectiveLocationId(repos.db, run.id, cultivator.location, startDay);
 
+    // What this cultivator is near enough to comprehend, assembled from rows
+    // that exist: arts they can actually read, a sect that will teach, ground
+    // somebody has already found. Omitting it is not neutral - it is the
+    // difference between an inner disciple and a hermit, and the engine has no
+    // library of its own to fall back on.
+    const discovery = discoveryContextFor(repos, cultivator, {
+        runId: run.id,
+        practisingTechniqueId: args.techniqueId ?? null
+    });
+
     // ── THE SIMULATION. One call, however long the duration. ──
     const result = simulateTimeSkip(cultivator, days, {
         seed: run.seed,
@@ -507,7 +540,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         rations,
         grainAbstinence: isOnGrainAbstinence(repos.db, cultivator.id, startDay),
         autoBreakthrough: args.autoBreakthrough ?? true,
-        randomEvents: args.randomEvents ?? true
+        randomEvents: args.randomEvents ?? true,
+        understanding: discovery.context
     });
 
     // ── PERSISTENCE. Everything the simulation decided, or nothing at all. ──
@@ -574,6 +608,17 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             yearsAtCurrentRealm: end.yearsAtCurrentRealm - mid.yearsAtCurrentRealm
         });
 
+        // Comprehension, and the events that produced it. Written in the same
+        // transaction as the rest of the skip: an insight the engine formed
+        // that the row does not show is the same failure as a breakthrough the
+        // narrator invented, and this write path was missing entirely - the
+        // column existed, the engine filled the field, and nothing carried it
+        // to rest.
+        persistUnderstanding(repos, before.id, result.insightsGained, result.achievements);
+        // Visions are beliefs with no fact behind them. They go to the
+        // knowledge layer, never to the cultivator's capability.
+        persistVisions(repos.db, result.visions);
+
         repos.techniques.tickCooldowns(before.id, Math.floor(result.simulatedDays));
 
         // The run clock must be advanced BEFORE the run is closed: advanceDays
@@ -600,6 +645,15 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
 
     const after = repos.cultivators.getById(before.id)!;
     const runAfter = repos.runs.getById(run.id)!;
+
+    // ── THE WORLD MOVED TOO. ──
+    // A ten-year seclusion is ten years of somebody else's decisions. The world
+    // advances by exactly the span that was LIVED, not the span that was asked
+    // for, and what comes back is filtered through what this cultivator has a
+    // knowledge record for - so a faction they have never heard of arrives as a
+    // closed road rather than as a named report.
+    const world = await advanceWorldForCultivator(runAfter, after, result.simulatedDays);
+
     const rate = computeCultivationRate(
         before,
         currentAmbient(repos.db, run, before.location, startDay),
@@ -650,6 +704,36 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         })),
         foundationEstablished: result.foundationEstablished,
         immortalStatusGained: result.immortalStatusGained,
+        // What was comprehended, and what produced it. Empty is the ordinary
+        // result and the honest one: most cultivators finish a run with none.
+        understanding: {
+            insightsGained: result.insightsGained.map(summariseInsight),
+            achievements: result.achievements.map(a => ({
+                id: a.id,
+                kind: a.kind,
+                onDay: a.onDay,
+                summary: a.summary
+            })),
+            visionsFiled: result.visions.length,
+            // Not a hint about what to pursue. It is the list of things that
+            // were within reach at all, which is what decides whether any of
+            // this could have happened.
+            accessHeld: discovery.sources
+        },
+        // The world, over the same span, as it actually reached them.
+        worldDigest: world
+            ? {
+                fromDay: world.result.digest?.fromDay ?? world.fromDay,
+                toDay: world.result.digest?.toDay ?? world.toDay,
+                headline: world.result.digest?.headline ?? null,
+                heard: world.result.digest?.lines ?? [],
+                unheard: world.result.digest?.unheard ?? 0,
+                unattributed: world.result.digest?.unattributed ?? 0,
+                note:
+                    'Filtered through this cultivator\'s knowledge records. Anything named here ' +
+                    'is a name they hold; anything unattributed must stay unattributed in narration.'
+            }
+            : null,
         events: result.events.map(e => ({
             kind: e.kind,
             dayOffset: e.dayOffset,
@@ -1019,8 +1103,47 @@ const definitions: Record<CultivationAction, ActionDefinition> = {
         handler: handleLadder,
         aliases: ['ranks', 'realms', 'table'],
         description: 'The 45-rank reference table'
+    },
+    assess: {
+        schema: AssessSchema,
+        handler: handleAssess,
+        aliases: ['can', 'capability', 'predicates', 'try'],
+        description:
+            'What happens if they try: attempt / survive / succeed / understand / force, ' +
+            'each with the arithmetic and a stated reason'
+    },
+    understanding: {
+        schema: UnderstandingSchema,
+        handler: handleUnderstanding,
+        aliases: ['insights', 'dao', 'comprehension', 'road'],
+        description: 'Comprehensions held, the Dao they add up to, and what that road opens and closes'
+    },
+    work: {
+        schema: WorkSchema,
+        handler: (args: unknown) =>
+            handleWork(args as z.infer<typeof WorkSchema>, runCultivate),
+        aliases: ['job', 'labour', 'labor', 'earn', 'hire'],
+        description: 'Take an occupation for a span. Wages paid for days actually worked; cultivation runs at zero.'
+    },
+    market: {
+        schema: MarketSchema,
+        handler: handleMarket,
+        aliases: ['prices', 'shop', 'cost', 'settlement'],
+        description: 'Local prices, what this settlement has, and how mortals here treat this cultivator'
     }
 };
+
+/**
+ * `work` runs the same span `cultivate` does, and adds a wage.
+ *
+ * Injected rather than imported so the mortal-world module never reaches back
+ * into this file: there is one time skip in the cultivation surface, and this
+ * is the function that owns it.
+ */
+async function runCultivate(args: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const parsed = CultivateSchema.parse(args);
+    return (await handleCultivate(parsed)) as Record<string, unknown>;
+}
 
 const router = createActionRouter({ actions: ACTIONS, definitions, threshold: 0.6 });
 
@@ -1044,6 +1167,22 @@ LIFECYCLE:
 3. breakthrough - one attempt at the next rank. Returns every modifier and the raw roll.
    Do not soften them: a torn meridian is a torn meridian.
 4. status / get / list - read state. ladder - the 45-rank reference table.
+
+BEFORE YOU NARRATE A RISK: assess. Five separate answers - can they attempt it, survive it,
+succeed at it, understand what they found, force it over resistance - each with the arithmetic
+and a stated reason. The engine never says "unavailable"; it says what happens when you try, and
+only attempt refuses, and only for physical reasons (a sealed door, a shut window, not being
+there). Never decide for yourself that something is possible.
+
+UNDERSTANDING: understanding returns the comprehensions this cultivator holds, where each came
+from, the Dao they add up to, and what that road opens and closes. Comprehension needs something
+to comprehend FROM - a teacher, a readable manual, ground that has something to teach. Without
+access a road is not harder, it is ABSENT. Never tell a player a Dao would suit them.
+
+THE LOW REALMS: work takes a job for a span (wages for days actually worked; cultivation runs at
+zero for the whole of it), market shows local prices, what this settlement has and lacks, and how
+mortals here actually treat someone at this rank. Thirty stones is the starting purse and a decent
+cave is sixty a month. Most of a cultivating life is spent paying for the next month of it.
 
 PERMADEATH: when this tool reports a death, the run is closed in the same transaction. There is
 no revive, reload or rollback anywhere in this engine.
@@ -1071,7 +1210,15 @@ Aliases: create/new/roll->create_cultivator, seclusion/meditate/skip->cultivate,
         alive: z.boolean().optional(),
         fromOrdinal: z.number().int().optional(),
         toOrdinal: z.number().int().optional(),
-        ambient: AmbientQiSchema.optional()
+        ambient: AmbientQiSchema.optional(),
+        against: z.enum(['place', 'opponent', 'inscription']).optional(),
+        place: z.string().optional(),
+        opponentId: z.string().optional(),
+        siteId: z.string().optional(),
+        alertness: z.number().optional(),
+        preparation: z.number().int().optional(),
+        occupationId: z.string().optional(),
+        category: z.string().optional()
     })
 };
 

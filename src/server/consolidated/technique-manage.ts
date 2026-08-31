@@ -660,7 +660,7 @@ export async function handleUse(args: z.infer<typeof UseSchema>): Promise<object
         cooldown: technique.cooldown,
         note:
             'The engine rolled this from the run seed. Narrate the number it returned; do not invent a different one. ' +
-            'Combat resolution against a specific opponent belongs to combat_action.'
+            'Combat resolution against a specific opponent belongs to combat_manage.'
     };
 }
 
