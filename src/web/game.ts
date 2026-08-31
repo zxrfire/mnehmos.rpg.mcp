@@ -35,13 +35,32 @@ import {
 } from '../schema/cultivation.js';
 import { ambientForBlock } from '../engine/cultivation/ambient.js';
 import { attemptBreakthrough, canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
-import { rankName } from '../engine/cultivation/realms.js';
+import { MAX_ORDINAL, rankName } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roots.js';
-import { ACTIONS_PER_FULL_SATIETY, describeDeath } from '../engine/cultivation/survival.js';
+import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
+ import {
+    ACTIONS_PER_FULL_SATIETY,
+    describeDeath,
+    evaluateDeathConditions,
+    satietyBurnMultiplier,
+    stillNeedsToEat
+} from '../engine/cultivation/survival.js';
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { rollHerb } from '../data/cultivation/index.js';
-import { findWorkForOrdinal } from '../data/cultivation/mortal-world.js';
+import {
+    PRICES,
+    cashToStones,
+    findWorkForOrdinal,
+    getPrice
+} from '../data/cultivation/mortal-world.js';
+import { localPrice } from '../data/cultivation/regions.js';
+import {
+    treatWorstInjuries,
+    untreatedInjuries,
+    untreatedInjuryCount
+} from '../engine/cultivation/injuries.js';
+import type { Injury } from '../schema/cultivation.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
 import { round2 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
@@ -49,11 +68,26 @@ import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { handleRefine } from '../server/consolidated/alchemy-manage.js';
 import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
-import { handleMarket, handleWork } from '../server/consolidated/cultivation-mortal.js';
+import { handleMarket, handleWork, standingOf } from '../server/consolidated/cultivation-mortal.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
-import { handleJoin, handleList } from '../server/consolidated/sect-manage.js';
+import {
+    handleJoin,
+    handleLeave,
+    handleSiphon,
+    handleList,
+    handlePromote,
+    handleStanding,
+    handleStipend
+} from '../server/consolidated/sect-manage.js';
+import {
+    handleAdmission,
+    handleCurriculum,
+    handleExpel,
+    handleOrder,
+    handleRecruit
+} from '../server/consolidated/sect-leadership.js';
 import { handleResolve } from '../server/consolidated/combat-manage.js';
-import { handlePractise } from '../server/consolidated/technique-manage.js';
+import { handleLearn, handlePractise } from '../server/consolidated/technique-manage.js';
 import {
     FLAG_NAME_TAKEN,
     ensureCultivationDb,
@@ -71,14 +105,22 @@ import {
 import { applyTimeSkip, tollLine } from './apply.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
+    DEFAULT_ERRAND,
     DEFAULT_SECLUSION_DAYS,
     DEFAULT_WORK_DAYS,
     GATHERING_DAYS,
     MAX_CULTIVATION_DAYS,
     TRAINING_DAYS,
+    DEFAULT_RECALL_INTENT,
+    DEFAULT_SITE_INTENT,
+    RECALL_INTENTS,
+    SITE_INTENTS,
+    parseCount,
     type ActionName,
     type PlanSource,
-    type PlannedAction
+    type PlannedAction,
+    type RecallIntent,
+    type SiteIntent
 } from './actions.js';
 import {
     knownTechniqueNames,
@@ -90,13 +132,35 @@ import {
     type ResolvedEntity,
     resolveHerb,
     resolveParty,
+    resolvePill,
     resolvePlace,
+    resolvePrice,
     resolveRecipe,
     resolveSect,
     resolveTechnique,
+    matchScore,
+    MATCH_THRESHOLD,
     type KnowledgeScope
 } from './entities.js';
 import { KnowledgeGate, placeKey, type AwarenessRow } from './knowledge.js';
+import {
+    SiteLedger,
+    awarenessOfSite,
+    claimantOf,
+    faceOf,
+    forceAt,
+    forceOrdinalOf,
+    nameableSites,
+    prizeImmortalItemIds,
+    prizeOther,
+    prizeTechniqueIds,
+    readGates,
+    resolveSite,
+    type FateEvidence,
+    type GateVerdict
+} from './trials.js';
+import { SITES, enterSite, type Site } from '../data/cultivation/inheritance-trials.js';
+import { assessPower, resolveExchange } from '../engine/cultivation/combat.js';
 import { askedAbout } from './asked.js';
 import {
     hearingProse,
@@ -113,6 +177,7 @@ import { advanceWorldForCultivator, worldForRun } from '../server/state/cultivat
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
 import type { PlayerDigest } from '../engine/world/digest.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { locationHistory } from '../engine/world/locations.js';
 import {
     factsForBreakthrough,
     factsForEat,
@@ -122,7 +187,19 @@ import {
     factsForInvestigation,
     factsForLook,
     factsForMove,
+    factsForPlaceHistory,
+    factsForGateRefused,
+    factsForSiteFace,
+    factsForSiteInterior,
+    factsForSiteListing,
+    factsForDao,
+    factsForHolding,
+    factsForRecall,
+    factsForSiteTaken,
+    factsForTreatment,
+    factsForUnsupported,
     type Company,
+    type SiteFace,
     factsForRefusal,
     factsForStatus,
     factsForTimeSkip,
@@ -131,9 +208,12 @@ import {
     placeName,
     type EngineFacts
 } from './facts.js';
+import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
+import { daoOf } from '../engine/cultivation/dao.js';
 import { PlayLog, type LogEntry } from './log.js';
 import type { Narrator } from './narrator.js';
 import { composeStateSummary } from './prompt.js';
+import { handleAdminManage, isAdminModeEnabled } from '../server/consolidated/admin-manage.js';
 import {
     cultivatorView,
     derivedView,
@@ -142,6 +222,7 @@ import {
     rosterRowView,
     runView,
     worldRosterRow,
+    daoView,
     type DerivedView,
     type LedgerRowView,
     type RosterRowView,
@@ -201,10 +282,40 @@ export const MEAL_COST_STONES = 1;
 
 /** Days a `travel` or `wait` action consumes. */
 export const SHORT_ACTION_DAYS = 1;
+/**
+ * Days spent going into an inheritance ground.
+ *
+ * A deployment choice like `SHORT_ACTION_DAYS`, not an engine constant: the
+ * engine has no opinion about how long a shaft is. What it buys is that going
+ * in is never free - the food clock runs, the world moves, and a cultivator
+ * who walks into a grave on their last ration can die of the walk rather than
+ * of the grave, through exactly the survival layer everything else dies
+ * through.
+ */
+export const ENTERING_DAYS = 3;
+/**
+ * A course of mortal care, in days.
+ *
+ * The catalog names it: `price-splint-and-month` is "Splint and a month of
+ * care", and its note says it is the mortal alternative to a healing pill -
+ * slower, cheaper, and it leaves you out of the fight for a season. The month
+ * is the catalog's number; the season is what it feels like after two of them.
+ */
+export const TREATMENT_DAYS = 30;
 /** Focus multipliers for time spent on something other than sealed seclusion. */
 export const TRAVEL_FOCUS = 0.15;
 export const GATHERING_FOCUS = 0.2;
 export const WAITING_FOCUS = 0.25;
+/** Nobody gathers qi while climbing down a lined shaft in the dark. */
+export const ENTERING_FOCUS = 0.05;
+/**
+ * Lying still with a torn meridian is not seclusion.
+ *
+ * Not zero: the month passes and the body is doing something with it. Low
+ * enough that nobody treats an infirmary as a cheap cave, which they would at
+ * five stones a month if it cultivated.
+ */
+export const TREATMENT_FOCUS = 0.1;
 
 /**
  * A price as the mortal-economy tool reports it.
@@ -298,6 +409,103 @@ export const HURRIED_BELOW_DAYS = 30;
 // ─────────────────────────────────────────────────────────────────────────
 
 /** A refusal with an HTTP status. The message is safe to show a player. */
+/**
+ * The actions that only mean anything among mortals.
+ *
+ * Everything left out is still legal above the Lid: looking at where you are,
+ * reading your own sheet, sitting down to cultivate, weighing an attempt. What
+ * is here is the mortal economy and mortal society, neither of which a True
+ * Immortal is standing in.
+ */
+const MORTAL_WORLD_ACTIONS: readonly ActionName[] = [
+    'work', 'market', 'provision', 'eat', 'gather', 'interact', 'sect', 'move',
+    // An inheritance ground is a hole in a hillside in the province. A True
+    // Immortal is not standing near one, and the trip back down costs nine
+    // strikes of the heaviest tribulation there is.
+    'site'
+] as const;
+
+/**
+ * The words that mean "the library" rather than naming anything in it.
+ *
+ * A curriculum sentence carries the noun phrase the parser found after the
+ * verb, and for the commonest phrasing that phrase IS the question - "what the
+ * sect teaches". Refusing to resolve it is what keeps a request to see the
+ * shelf from becoming a generational decree about an art nobody named.
+ */
+const GENERIC_LIBRARY_PHRASE =
+    /\b(?:what|which|curriculum|curricula|library|shelf|taught|teach|teaches|teaching|methods|list|everything|anything|else)\b/i;
+
+/**
+ * How many things done to a place are read out at once.
+ *
+ * A place that has been fought over for three thousand years has a long log,
+ * and a wall of them is a chronicle rather than an answer. The most recent
+ * changes are the ones that made it what it is now.
+ */
+const PLACE_CHANGES_SHOWN = 3;
+
+/** The ways of saying "here" that are not the name of anywhere. */
+const HERE_ITSELF =
+    /^(?:this|that|the)?\s*(?:place|ground|village|town|city|region|area|spot|here|it|ruin|ruins)$/i;
+
+/**
+ * The words that mean "the site in front of me" rather than naming one.
+ *
+ * The same defect `GENERIC_LIBRARY_PHRASE` exists for, and the same fix. The
+ * parser hands over the noun phrase it found after the verb, and for the
+ * commonest phrasings that phrase is generic - "the door", "the grave", "what
+ * is behind the plate". Handing one of those to a fuzzy matcher resolves it:
+ * "door" is contained in "The Door That Wants Somebody Not In the Record" and
+ * scores over the threshold, so "I study the door" would open a specific
+ * fate-gated trial three provinces away that the player has never heard of.
+ * A generic phrase names nothing and falls through to the site at hand.
+ */
+const GENERIC_SITE_PHRASE =
+    /^(?:the |a |an |this |that |it |what |whatever )*(?:door|doorway|gate|gateway|gate frame|threshold|marker|headstone|entrance|shaft|plate|standing stone|site|sites|place|trial|trials|grave|graves|tomb|tombs|crypt|crypts|barrow|barrows|undercroft|interment|inheritance|inheritance ground|inheritance grounds|grave goods?|prize|contents|manuals?|is behind.*|is inside.*|is in there|is left|behind.*|inside.*)$/i;
+
+/**
+ * Which elder a sentence meant, out of the ones the house actually holds.
+ *
+ * Matched against the roster the tool just returned rather than against
+ * anything the player asserted, and a query that names nobody resolves to
+ * nobody so the listing stands. Names are tried before rank titles and never
+ * mixed with them: every elder in a house shares a title, so scoring the two
+ * together lets "Elder Fang" match the word "Elder" on somebody else and
+ * dismiss a person the player never named. This is the one leadership act that
+ * lands the day it is spoken, and it takes the elder's whole line out with
+ * them - a near miss here is not a near miss, it is the wrong person gone.
+ */
+function elderNamed(listing: object, query: string | undefined): string | null {
+    const wanted = (query ?? '').trim();
+    if (wanted.length < 3 || ANY_ELDER_AT_ALL.test(wanted)) return null;
+
+    const elders = (listing as {
+        elders?: Array<{ elderId?: string; name?: string | null; rankTitle?: string | null }>;
+    }).elders ?? [];
+
+    const pick = (nameOf: (e: { name?: string | null; rankTitle?: string | null }) => string | null) => {
+        let winner: string | null = null;
+        let winningScore = 0;
+        for (const elder of elders) {
+            const candidate = elder.elderId ? nameOf(elder) : null;
+            if (!candidate) continue;
+            const score = matchScore(wanted, candidate);
+            if (score >= MATCH_THRESHOLD && score > winningScore) {
+                winner = elder.elderId!;
+                winningScore = score;
+            }
+        }
+        return winner;
+    };
+
+    return pick(e => e.name ?? null) ?? pick(e => e.rankTitle ?? null);
+}
+
+/** "an elder", "one of the elders" - a rung, not a person. */
+const ANY_ELDER_AT_ALL =
+    /^(?:one of\s+)?(?:the|an?|any|some|my|our)?\s*elders?$/i;
+
 export class GameError extends Error {
     constructor(message: string, readonly status = 400) {
         super(message);
@@ -337,6 +545,19 @@ export interface ToolCallRecord {
     /** Present when a fallback ran, saying why. */
     note?: string;
 }
+
+/**
+ * ADMIN, spoken in play. Matched at the head of the input only, so a sentence
+ * that merely contains the word is an ordinary turn - "the admin of the sect
+ * refused me" must not open a tool surface.
+ */
+const ADMIN_PREFIX = /^admin(?![a-z])[:\s-]*/i;
+
+/** Mirrors `admin_manage`'s own action list, for the guiding error only. */
+const ADMIN_ACTIONS = [
+    'roster', 'spawn_encounter', 'spawn_site', 'grant_item',
+    'set_ambient', 'set_location', 'advance_days', 'set_realm', 'audit_log'
+] as const;
 
 export interface ActResult {
     narration: string;
@@ -422,6 +643,15 @@ export class GameService {
      * narrator is never handed a name the player has not earned.
      */
     private readonly knowledge: KnowledgeGate;
+    /**
+     * What this run has done to the inheritance grounds it has found.
+     *
+     * Over `cultivation_sites`, which the schema already keeps for exactly
+     * this and whose own comment says a site outlives the run that turned it
+     * up. Same posture as `KnowledgeGate` over `knowledge_records`: a narrow
+     * reader and writer, not a second table.
+     */
+    private readonly sites: SiteLedger;
     /** Whether time passing for the cultivator also passes for everyone else. */
     readonly worldEnabled: boolean;
     /**
@@ -454,6 +684,7 @@ export class GameService {
         this.repos = ensureCultivationDb();
         this.log = new PlayLog(this.db);
         this.knowledge = new KnowledgeGate(this.db);
+        this.sites = new SiteLedger(this.db);
         this.worldEnabled = options.worldEnabled ?? true;
     }
 
@@ -636,6 +867,14 @@ export class GameService {
         if (trimmed.length > 2000) throw new GameError('That is too long. Two thousand characters at most.');
 
         const { run, cultivator } = this.requireLiveRun();
+
+        // ADMIN is an operator surface, not a game action, so it is answered
+        // before the narrator ever sees the input. context.md: it lifts content
+        // gates and never the authority rule - every action below performs a
+        // real audited mutation and returns what the engine actually did.
+        const admin = ADMIN_PREFIX.exec(trimmed);
+        if (admin) return await this.adminAct(trimmed.slice(admin[0].length), run, cultivator);
+
         const ambient = this.ambientFor(cultivator, run);
         this.atHand = await this.loadWorld();
 
@@ -868,6 +1107,28 @@ export class GameService {
         ambient: AmbientQi,
         rawInput = ''
     ): Promise<Execution> {
+        // A True Immortal is not standing in the province any more.
+        //
+        // `existence.ts` has modelled this the whole time - `canExistBeyondTheLid`
+        // and `evaluateLidTransit`, which prices a descent at nine tribulation
+        // strikes - but nothing in this layer consulted it, so a True Immortal
+        // could look over a market stall and hire themselves out as a porter for
+        // twenty-nine spirit stones. The mortal world is not somewhere they are.
+        // Coming down is possible and it is the most expensive thing they can
+        // do; it is not the default state of the run.
+        if (canExistBeyondTheLid(cultivator) && MORTAL_WORLD_ACTIONS.includes(action.action)) {
+            return this.freeAction(run, action.action, factsForRefusal(
+                'Not from here.',
+                'That is a thing done among people, and there are no people here. What is around ' +
+                `${cultivator.name} now is the far side of the Lid, and the province they came ` +
+                'from is on the other side of a hole they had to punch to leave through. Reaching ' +
+                'back down is possible. It costs nine strikes of the heaviest tribulation there is, ' +
+                'and it buys ten or fifteen breaths.',
+                `existence.canExistBeyondTheLid = true; '${action.action}' is a mortal-world action ` +
+                'and is not offered above the Lid. See evaluateLidTransit(down).'
+            ));
+        }
+
         switch (action.action) {
             case 'cultivate':
                 return this.runSeclusion(run, cultivator, ambient, action.days ?? DEFAULT_CULTIVATION_DAYS);
@@ -956,7 +1217,19 @@ ${noticedWaiting}`;
                 return this.market(cultivator, action.target);
 
             case 'sect':
-                return this.sect(cultivator, action.target);
+                return this.sect(cultivator, action.target, action.intent, action.topic, action.days);
+
+            case 'recall':
+                return this.recall(run, cultivator, action.target, action.intent);
+
+            case 'treat':
+                return this.treat(run, cultivator, ambient);
+
+            case 'buy':
+                return this.buy(run, cultivator, ambient, action.target);
+
+            case 'site':
+                return this.site(run, cultivator, ambient, action.target, action.intent);
 
             case 'assess':
                 return this.assess(cultivator, action.target);
@@ -983,6 +1256,14 @@ ${noticedWaiting}`;
             }
 
             case 'look': {
+                // Why the ground is like this, which is a different read from
+                // what is standing on it. Answered out of the location's own
+                // change log, and gated: what the place is and when it changed
+                // are physical, and the cause is knowledge.
+                if (action.intent === 'history') {
+                    return this.placeHistory(run, cultivator, action.target);
+                }
+
                 const company = this.company(cultivator);
                 const standing = this.standingHere(cultivator);
                 const looking = this.freeAction(
@@ -1092,7 +1373,9 @@ ${noticed}`;
             turn: run.turn,
             startDay,
             options: { focusMultiplier: TRAVEL_FOCUS },
-            rations: 0,
+            // What is in the pack feeds them here too. Only seclusion tops the
+            // pack up from the purse; this eats what is already carried.
+            rations: this.drawFromPack(cultivator, SHORT_ACTION_DAYS),
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
@@ -1483,6 +1766,12 @@ ${noticed}`;
                     || o.name.toLowerCase().includes(wanted.toLowerCase()))
             : undefined;
 
+        // Eat before the shift. `handleWork`'s own `rations` argument means BUY
+        // that many, so the pack cannot be handed to it - but a player who
+        // stocked up and then took work should not go to it hungry, and before
+        // this they finished the season at zero and died on the next action.
+        cultivator = this.feedFromPack(cultivator);
+
         const result = await handleWork(
             {
                 action: 'work',
@@ -1651,7 +1940,157 @@ ${noticed}`;
      * starting cultivator has heard of one, and handing them the register would
      * spend a hundred turns of revelation on a single query.
      */
-    private async sect(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+    private async sect(
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string | undefined,
+        topic?: string,
+        days?: number
+    ): Promise<Execution> {
+        // The four member verbs. `sect_manage` has had all of them the whole
+        // time and none of them was reachable: "I ask for a promotion", "I draw
+        // my stipend", "where do I stand in the sect" and "I leave the sect" all
+        // parsed to `unclear`, so a player could join a house and then do
+        // nothing whatever about it for the rest of the run.
+        switch (intent) {
+            case 'siphon': {
+                // The pace rides in on the plan's topic and the span on its
+                // days, both optional: naming neither is a request to see the
+                // position without taking anything, which is what a player
+                // should be able to do before committing to a crime that runs
+                // on a clock.
+                const pace = topic === 'careful' || topic === 'steady' || topic === 'greedy'
+                    ? topic
+                    : undefined;
+                return this.fromToolResult(
+                    'sect_manage.siphon', 'sect',
+                    await handleSiphon({
+                        action: 'siphon',
+                        cultivatorId: cultivator.id,
+                        ...(pace ? { pace } : {}),
+                        months: Math.max(1, Math.min(240, Math.round((days ?? 30) / 30)))
+                    }),
+                    'The reserves'
+                );
+            }
+            case 'order': {
+                // The errand rides in on the plan's topic and how long they are
+                // out on its days. Both are the ORDERED rung's, not the
+                // caller's: `handleOrder` advances the turn and nothing else,
+                // which is the whole difference between having a rank and
+                // doing the work yourself.
+                const errand = topic === 'gather' || topic === 'carry' || topic === 'labour'
+                    ? topic
+                    : DEFAULT_ERRAND;
+                return this.fromToolResult(
+                    'sect_manage.order', 'sect',
+                    await handleOrder({
+                        action: 'order',
+                        cultivatorId: cultivator.id,
+                        errand,
+                        days: Math.max(1, Math.min(365, Math.round(days ?? 7)))
+                    }),
+                    'The order'
+                );
+            }
+            // ── the four powers a rank buys above `order` ──
+            //
+            // Each takes an argument out of free text, and each has a LISTING
+            // mode reached by omitting it. That is not a fallback: a player who
+            // has not been told which elders there are, or what the bar costs
+            // to move, cannot sensibly name one, and being shown the price is
+            // the sentence before the one that spends it. So an argument that
+            // does not resolve prices the act rather than guessing at it.
+            case 'recruit': {
+                const kind = topic === 'elder' ? 'elder' : 'disciple';
+                // "three disciples" is three people. Read off the same phrase
+                // the parser handed over, bounded by the tool's own schema.
+                const count = Math.max(1, Math.min(50, parseCount(target ?? '') ?? 1));
+                return this.fromToolResult(
+                    'sect_manage.recruit', 'sect',
+                    await handleRecruit({
+                        action: 'recruit', cultivatorId: cultivator.id, kind, count
+                    }),
+                    kind === 'elder' ? 'The seating' : 'The intake'
+                );
+            }
+            case 'admission': {
+                // A rank the sentence actually names, or nothing. There is no
+                // reading of "raise the bar" that tells the engine HOW FAR, and
+                // inventing one here would be a balance decision made in the
+                // narration tier. With no ordinal the tool prices the move and
+                // changes nothing, which is the honest answer to a sentence
+                // that did not say where to put it.
+                const ordinal = this.ordinalNamed(target);
+                return this.fromToolResult(
+                    'sect_manage.admission', 'sect',
+                    await handleAdmission({
+                        action: 'admission',
+                        cultivatorId: cultivator.id,
+                        ...(ordinal !== null ? { ordinal } : {})
+                    }),
+                    'The standard'
+                );
+            }
+            case 'curriculum': {
+                const art = this.artNamed(target, cultivator);
+                const retiring = topic === 'retire';
+                return this.fromToolResult(
+                    'sect_manage.curriculum', 'sect',
+                    await handleCurriculum({
+                        action: 'curriculum',
+                        cultivatorId: cultivator.id,
+                        ...(art && retiring ? { retire: [art] } : {}),
+                        ...(art && !retiring ? { teach: [art] } : {})
+                    }),
+                    'The library'
+                );
+            }
+            case 'expel': {
+                // Two calls, and the first one is free. `expel` with no elderId
+                // reads the house and prices every elder in it without
+                // dismissing anybody, which is both how the argument gets
+                // resolved and the right thing to show a player who named
+                // nobody the house recognises.
+                const roll = await handleExpel({ action: 'expel', cultivatorId: cultivator.id });
+                const elderId = isGuidingErrorBody(roll) ? null : elderNamed(roll, target);
+                if (elderId === null) {
+                    return this.fromToolResult('sect_manage.expel', 'sect', roll, 'The elders');
+                }
+                return this.fromToolResult(
+                    'sect_manage.expel', 'sect',
+                    await handleExpel({ action: 'expel', cultivatorId: cultivator.id, elderId }),
+                    'The dismissal'
+                );
+            }
+            case 'promote':
+                return this.fromToolResult(
+                    'sect_manage.promote', 'sect',
+                    await handlePromote({ action: 'promote', cultivatorId: cultivator.id }),
+                    'The promotion'
+                );
+            case 'stipend':
+                return this.fromToolResult(
+                    'sect_manage.stipend', 'sect',
+                    await handleStipend({ action: 'stipend', cultivatorId: cultivator.id }),
+                    'The stipend'
+                );
+            case 'standing':
+                return this.fromToolResult(
+                    'sect_manage.standing', 'sect',
+                    await handleStanding({ action: 'standing', cultivatorId: cultivator.id }),
+                    'The standing'
+                );
+            case 'leave':
+                return this.fromToolResult(
+                    'sect_manage.leave', 'sect',
+                    await handleLeave({ action: 'leave', cultivatorId: cultivator.id }),
+                    'The departure'
+                );
+            default:
+                break;
+        }
+
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
         const named = query.length >= 3 ? resolveSect(this.repos, query, scope, cultivator.sectId) : null;
@@ -1718,6 +2157,934 @@ ${noticed}`;
                 ok: heard.length > 0
             }]
         };
+    }
+
+    // ── what this cultivator is carrying ─────────────────────────────────
+    //
+    // Found by a rank-band sweep, and the dead sentences were at the CEILING:
+    // "what do I know of Lu Sheng", "what do I know of the Hollow Court" and
+    // "what is my dao" all parsed to nothing at ordinals 37-46, where the
+    // ladder is finished and comprehension is the only thing still moving.
+    //
+    // The gate this must not weaken is the one the whole knowledge layer
+    // rests on, so the defence is structural rather than careful: the query is
+    // matched against THE HOLDER'S OWN ROWS and the catalogs are never
+    // searched. There is no code path from a name the player typed to a name
+    // they have not been told, which means no phrasing of this can teach
+    // anybody anything - and it also means an unheard name and an invented one
+    // come back identical, which is required. The shape of the answer must not
+    // be the answer.
+
+    /**
+     * What this cultivator holds about a name, or about everything.
+     *
+     * `intent` selects which of the two tables is read - what they have HEARD,
+     * or what they have UNDERSTOOD - on the same terms as `sect`, `look` and
+     * `site`. Both are free, so unlike `site` there is no expensive default to
+     * steer away from; an unrecognised label falls through to the wider read.
+     */
+    private recall(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string | undefined
+    ): Execution {
+        const which: RecallIntent = RECALL_INTENTS.includes(intent as RecallIntent)
+            ? intent as RecallIntent
+            : DEFAULT_RECALL_INTENT;
+
+        if (which === 'dao') return this.recallDao(run, cultivator);
+
+        const held = this.knowledge.awareness(cultivator.id);
+        const query = (target ?? '').trim();
+
+        if (query.length < 2) {
+            const facts = factsForHolding(
+                cultivator,
+                held.map(row => ({ kind: row.kind, name: row.name }))
+            );
+            const listing = this.freeAction(run, 'recall', facts);
+            listing.outcome = held.length === 0 ? 'refused' : 'executed';
+            listing.calls = [{
+                name: 'knowledge.awareness',
+                action: 'recall',
+                summary:
+                    `${held.length} knowledge record(s) held by this cultivator. Read only, and read `
+                    + 'from their own rows: no catalog was consulted, so nothing here could be new.',
+                ok: held.length > 0
+            }];
+            return listing;
+        }
+
+        // The gate, in one line. Scored against what they hold, never against
+        // what exists. Every row that matches comes back - a cultivator
+        // carrying four incompatible stories is carrying four, and collapsing
+        // them into one would hand over the resolution that is the prize.
+        const matches = held.filter(row => matchScore(query, row.name) >= MATCH_THRESHOLD);
+        const scope = this.scopeFor(cultivator);
+
+        const facts = factsForRecall(cultivator, query, matches.map(row => ({
+            name: row.name,
+            statement: row.statement,
+            stance: row.stance,
+            sourceKind: row.sourceKind,
+            sourceNote: row.sourceNote,
+            acquiredOnDay: row.acquiredOnDay,
+            earned: this.earnedAbout(cultivator, scope, row)
+        })));
+
+        const execution = this.freeAction(run, 'recall', facts);
+        execution.outcome = matches.length === 0 ? 'refused' : 'executed';
+        execution.calls = [{
+            name: 'knowledge.awareness',
+            action: 'recall',
+            summary:
+                `"${query}" scored against ${held.length} held record(s); ${matches.length} matched at or `
+                + `above ${MATCH_THRESHOLD}. The catalogs were not searched, which is what makes this `
+                + 'read incapable of teaching anybody anything.',
+            ok: matches.length > 0
+        }];
+        return execution;
+    }
+
+    /**
+     * Anything further they have actually earned about it.
+     *
+     * Only for a record held at `knows` - having overheard a word in a market
+     * buys the word and nothing else - and only through the same scoped
+     * resolvers `investigate` uses, which are already awareness-gated. So this
+     * discloses nothing a second sentence could not already have got, and a
+     * record at any lower stance discloses nothing at all.
+     */
+    private earnedAbout(
+        cultivator: Cultivator,
+        scope: KnowledgeScope,
+        row: AwarenessRow
+    ): string[] {
+        if (row.stance !== 'knows') return [];
+        if (row.kind === 'sect') {
+            return resolveSect(this.repos, row.name, scope, cultivator.sectId)?.facts ?? [];
+        }
+        if (row.kind === 'cultivator') {
+            return resolveCultivator(
+                this.repos, row.name, cultivator.id, scope, cultivator.realmOrdinal
+            )?.facts ?? [];
+        }
+        // Places are free text in this engine and events have no resolver.
+        // Nothing to add, and inventing something would be the leak.
+        return [];
+    }
+
+    /**
+     * What this cultivator has understood, which is the other axis entirely.
+     *
+     * Composed from `daoOf` and from the SAME `daoView` the sheet's panel is
+     * built from, so the sentence and the panel cannot drift. That matters
+     * more here than anywhere: at the last two rungs the ladder is shut and
+     * this is the only thing still moving, so a player reading two different
+     * accounts of it is reading two different accounts of their whole
+     * remaining life.
+     */
+    private recallDao(run: Run, cultivator: Cultivator): Execution {
+        const insights = cultivator.insights ?? [];
+        const dao = daoOf(insights);
+        const panel = daoView(cultivator);
+
+        const facts = factsForDao(cultivator, {
+            standing: dao.standing,
+            name: dao.name,
+            subject: dao.subject,
+            depth: dao.depth,
+            breadth: dao.breadth
+        }, panel);
+
+        const execution = this.freeAction(run, 'recall', facts);
+        execution.calls = [{
+            name: 'engine.daoOf',
+            action: 'recall',
+            summary:
+                `standing=${dao.standing}, subject=${dao.subject ?? 'none'}, depth=${dao.depth}, `
+                + `insights=${panel.insights.length}, totalDegrees=${panel.totalDegrees}. `
+                + 'Read only: understanding is formed by exposure, never by asking about it.',
+            ok: true
+        }];
+        return execution;
+    }
+
+    // ── inheritance grounds ──────────────────────────────────────────────
+    //
+    // `data/cultivation/inheritance-trials.ts` is roughly nineteen hundred
+    // lines of finished, tested content - twenty-odd sites, three unrelated
+    // kinds of gate, an interior the type system keeps out of the pre-entry
+    // view - and until these methods existed nothing a typed English sentence
+    // could do reached one line of it. The systems playtest reported it in its
+    // own friction block as the largest unplayable system in the game.
+    //
+    // Four steps, and the split between the first two and the last two is the
+    // one guarantee this whole surface exists to keep: a cultivator who has
+    // not gone in cannot learn what is inside, THROUGH ANY PHRASING. That is
+    // enforced three times over - `outsideViewOf` returns a type with no
+    // `interior` key, `SiteFace` in `facts.ts` has no field that could hold
+    // one, and the single call to `enterSite` in this package sits below a
+    // recorded entry in a method that has already spent the days.
+
+    /** Sites this cultivator could put a name to. The gate under everything. */
+    private nameableFor(cultivator: Cultivator): Site[] {
+        return nameableSites(siteId => this.knowledge.isAwareOf(cultivator.id, 'place', siteId));
+    }
+
+    /**
+     * The world state a fate gate is allowed to turn on.
+     *
+     * Counted off the obligations ledger, which is real rows written by things
+     * that happened. `generation > 0` is business inherited rather than
+     * incurred, which is exactly what "carrying an obligation you did not take
+     * on" means, and it is not a number that rises because somebody repeated an
+     * activity - which is the test `FATE_IS_NOT_A_STAT` sets.
+     */
+    private fateEvidence(cultivator: Cultivator): FateEvidence {
+        const row = this.db
+            .prepare(
+                "SELECT COUNT(*) AS n FROM obligations WHERE holder_id = ? AND status = 'open' AND generation > 0"
+            )
+            .get(cultivator.id) as { n: number } | undefined;
+        return { obligationsNotTakenOn: row?.n ?? 0 };
+    }
+
+    /**
+     * Which site a sentence meant.
+     *
+     * A name resolves against the ones this cultivator may name and nothing
+     * else, so a player cannot type their way into a grave they have never
+     * heard of. A generic phrase - "the door", "the grave", "what is behind the
+     * plate" - names nothing and falls through to the site they went to most
+     * recently, which is a row rather than a guess, exactly the way "what
+     * happened here" falls through to the ground underfoot.
+     */
+    private siteMeant(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): { site: Site | null; namedSomethingUnknown: boolean } {
+        const permitted = this.nameableFor(cultivator);
+        const query = (target ?? '').trim();
+
+        if (query.length >= 3 && !GENERIC_SITE_PHRASE.test(query)) {
+            const named = resolveSite(query, permitted);
+            // A specific name that resolved to nothing does NOT fall through to
+            // the site at hand. Naming a grave the player has only heard
+            // rumoured must not quietly open the one they were standing at an
+            // hour ago - that is the same class of mistake as fuzzy-matching an
+            // elder and dismissing the wrong person.
+            return { site: named, namedSomethingUnknown: named === null };
+        }
+
+        const record = this.sites.atHand(run.id);
+        const site = record ? permitted.find(entry => entry.id === record.catalogId) ?? null : null;
+        return { site, namedSomethingUnknown: false };
+    }
+
+    /** The pre-entry face, at whatever awareness this cultivator holds. */
+    private faceFor(site: Site, cultivator: Cultivator): SiteFace | null {
+        const awareness = awarenessOfSite(site, this.knowledge.isAwareOf(cultivator.id, 'place', site.id));
+        const view = faceOf(site, awareness);
+        if (!view) return null;
+        return {
+            name: view.name,
+            kind: view.kind,
+            marker: view.outside.marker,
+            rumour: view.outside.rumour,
+            attributedTo: view.outside.attributedTo,
+            lastPartySaid: view.outside.lastPartySaid,
+            whatAKnowledgeablePartyReads: view.outside.whatAKnowledgeablePartyReads,
+            whatAnIgnorantPartyConcludes: view.outside.whatAnIgnorantPartyConcludes,
+            advertisedOrdinal: view.outside.advertisedOrdinal,
+            grave: view.kind === 'grave'
+                ? {
+                    mannerOfDeath: view.mannerOfDeath,
+                    burial: view.burial,
+                    occupantOrdinal: view.occupantOrdinal,
+                    yearsDead: view.yearsDead
+                }
+                : null
+        };
+    }
+
+    /** The refusal every step gives when no site resolved. Costs nothing. */
+    private noSiteAtHand(action: ActionName, query: string | undefined): Execution {
+        return refused('engine.resolveSite', action, factsForRefusal(
+            'Nothing here to go into.',
+            'You turn to the thing you meant and there is no thing you meant. Ground worth opening '
+            + 'is ground somebody told you about, and you are not standing at any of it.',
+            `Unresolved site "${(query ?? '').trim() || '(none named)'}": no nameable site matched and `
+            + 'no site has been approached in this run.'
+        ));
+    }
+
+    /**
+     * The trials and the graves: reaching one, reading it, going in, taking it.
+     *
+     * `intent` selects WHICH of the four runs and nothing else, on the same
+     * terms as `sect` and `look`: the label is matched against a closed set of
+     * literals, an unrecognised one falls through to the default, and every
+     * outcome on the far side is computed from the catalog and from this
+     * cultivator's own rows. What is different here is that one of the four
+     * spends days and can kill, so the default is deliberately the CHEAPEST of
+     * them. A model that answers `{"action":"site","intent":"go in and get it"}`
+     * gets the listing.
+     */
+    private async site(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined,
+        intent: string | undefined
+    ): Promise<Execution> {
+        const step: SiteIntent = SITE_INTENTS.includes(intent as SiteIntent)
+            ? intent as SiteIntent
+            : DEFAULT_SITE_INTENT;
+
+        const meant = this.siteMeant(run, cultivator, target);
+        const site = meant.site;
+
+        // A named site that resolved to nothing is refused on every step that
+        // does something, and answered with the listing on the step that is a
+        // question. "I go to the eighth stone" from somebody who has only ever
+        // heard it rumoured is a real sentence with an honest answer, and the
+        // honest answer is what they DO have names for.
+        if (!site && meant.namedSomethingUnknown && step !== 'approach') {
+            return this.noSiteAtHand('site', target);
+        }
+
+        if (step === 'approach' && !site) {
+            // Naming none is a question rather than a failure: it asks what
+            // there is, and the honest answer is what has reached this person.
+            const known = this.nameableFor(cultivator);
+            const facts = factsForSiteListing(
+                cultivator,
+                known.map(entry => ({ name: entry.name, kind: entry.kind }))
+            );
+            const listing = this.freeAction(run, 'site', facts);
+            listing.outcome = known.length === 0 ? 'refused' : 'executed';
+            listing.calls = [{
+                name: 'engine.nameableSites',
+                action: 'site',
+                summary:
+                    `${known.length} of ${SITES.length} catalogued site(s) are nameable by this `
+                    + 'cultivator. Filtered by awareness; the catalog holds no locations, so nothing '
+                    + 'here was filtered by distance.',
+                ok: known.length > 0
+            }];
+            return listing;
+        }
+
+        if (!site) return this.noSiteAtHand('site', target);
+
+        const face = this.faceFor(site, cultivator);
+        if (!face) return this.noSiteAtHand('site', target);
+
+        switch (step) {
+            case 'approach':
+            case 'outside':
+                return this.readSiteFromOutside(run, cultivator, site, face, step === 'approach');
+            case 'enter':
+                return this.enterTheSite(run, cultivator, ambient, site);
+            case 'take':
+                return this.takeFromSite(run, cultivator, site);
+        }
+    }
+
+    /**
+     * Reaching one, and reading it without going in.
+     *
+     * Both steps return the same disclosure because the gate between outside
+     * and inside is a door rather than a distance, and both are reads: no time
+     * passes, nothing is spent, and being refused costs what being answered
+     * costs. What the approach additionally does is write down that this
+     * cultivator has been here, which is what makes "I go inside" a sentence
+     * that resolves to something afterwards.
+     */
+    private readSiteFromOutside(
+        run: Run,
+        cultivator: Cultivator,
+        site: Site,
+        face: SiteFace,
+        arriving: boolean
+    ): Execution {
+        this.sites.write(run.id, site, run.elapsedDays, { soughtOnDay: Math.floor(run.elapsedDays) });
+
+        // Standing at a thing is knowing it is there. Written by the engine,
+        // in phase 2, so the narrator is never the reason a name is available.
+        const learned = face.name !== null && this.knowledge.learnIfNew({
+            holderId: cultivator.id,
+            kind: 'place',
+            id: site.id,
+            name: site.name,
+            onDay: Math.floor(run.elapsedDays),
+            sourceKind: 'witnessed',
+            sourceNote: 'Stood at it.',
+            stance: 'knows',
+            confidence: 1
+        });
+
+        const facts = factsForSiteFace(cultivator, face, arriving);
+        const execution = this.freeAction(run, 'site', facts);
+        execution.calls = [
+            {
+                name: 'engine.outsideViewOf',
+                action: arriving ? 'approach' : 'assess_from_outside',
+                summary:
+                    `${site.id}: pre-entry view returned at awareness `
+                    + `${awarenessOfSite(site, true) === 'named' ? 'named' : site.outside.startingAwareness}. `
+                    + 'The returned type has no interior key, so the inside could not have been read '
+                    + 'here even by mistake. Read only: no time passed, nothing changed.',
+                ok: true
+            },
+            ...(learned ? [{
+                name: 'knowledge.learn',
+                action: 'place_witnessed',
+                summary: `"${site.name}" recorded as witnessed: this cultivator has now stood at it.`,
+                ok: true
+            }] : [])
+        ];
+        return execution;
+    }
+
+    /**
+     * Going in.
+     *
+     * Three things happen, in this order, and the order is the design.
+     *
+     * FIRST the days are spent, through `simulateTimeSkip` and `applyTimeSkip`
+     * like every other stretch of time in this package. That is what makes
+     * entering cost something even at a site that turns out to be empty, and it
+     * is why a cultivator on their last ration can die of the walk in - through
+     * the survival layer, on the same code path as starving anywhere else.
+     * Nothing about that death is asserted here.
+     *
+     * SECOND the gates are read, in the order the catalog puts them in, and the
+     * first one that does not open stops it. Which kind refused decides what
+     * the player is told, because the three are not three settings of one dial:
+     * strength names a shortfall, talent names what was wanted and says power
+     * does not substitute, and fate names nothing at all.
+     *
+     * THIRD, and only for a strength gate, the thing does what it was built to
+     * do. A strength gate is the one kind that states an ordinal of force, so
+     * it is the one kind that puts force into a body, and it is resolved by
+     * `resolveExchange` - the engine's own combat model, priced at the gate's
+     * ordinal - rather than by a damage formula invented in this layer. Death
+     * from it goes through `evaluateDeathConditions` and `markDead`, which is
+     * the same pair `technique_manage.learn` uses when a deviation kills
+     * somebody. A talent gate is indifferent to how hard the claimant can be
+     * hit and a fate gate is not about the claimant at all, so neither of them
+     * is turned into damage: the bench's own `howItKills` opens "It does not,
+     * and that is the trap", and the engine agrees with it.
+     */
+    private async enterTheSite(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        site: Site
+    ): Promise<Execution> {
+        const startDay = Math.floor(run.elapsedDays);
+        const skip = simulateTimeSkip(cultivator, ENTERING_DAYS, {
+            seed: run.seed,
+            locationId: placeName(cultivator),
+            turn: run.turn,
+            startDay,
+            options: { focusMultiplier: ENTERING_FOCUS },
+            rations: this.drawFromPack(cultivator, ENTERING_DAYS),
+            grainAbstinence: false,
+            autoBreakthrough: false,
+            randomEvents: true,
+            toll: tollConditionsFor(this.repos, cultivator)
+        });
+
+        const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const spentLine =
+            `${humanDays(skip.simulatedDays)} went on getting in and being in there, and they came `
+            + 'off the same clock everything else comes off.';
+
+        const baseCalls: ToolCallRecord[] = [
+            ...skipCalls('site', skip, null),
+            ...tollCalls(applied.tollLines),
+            ...worldCalls(world)
+        ];
+
+        // Killed by the trip rather than by the door. The survival layer has
+        // already written it; this only reports what it found.
+        if (!applied.cultivator.alive) {
+            const facts = factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, 'Going in');
+            return {
+                facts,
+                events: skip.events,
+                timeSkip: skip,
+                breakthrough: null,
+                outcome: 'executed',
+                calls: baseCalls
+            };
+        }
+
+        const claimant = claimantOf(applied.cultivator, {
+            // Years actually spent at it. `STARTING_AGE` is the age this
+            // deployment starts a cultivator at, so the difference is the time
+            // the run has put in - which is the thing a talent gate asks about
+            // and the thing that cannot be borrowed on the day.
+            yearsCultivated: applied.cultivator.age - STARTING_AGE,
+            fate: this.fateEvidence(applied.cultivator)
+        });
+        const reading = readGates(site, claimant);
+        const gateCalls: ToolCallRecord[] = reading.verdicts.map(verdict => ({
+            name: 'engine.evaluateGate',
+            action: `gate_${verdict.kind}`,
+            summary: verdict.structure,
+            ok: verdict.met
+        }));
+
+        if (reading.blockedBy) {
+            const blocked = reading.blockedBy;
+            const hurt = await this.gateForce(run, applied.cultivator, ambient, site, blocked);
+            const facts = factsForGateRefused(
+                applied.cultivator,
+                site.name,
+                { kind: blocked.kind, account: blocked.account, shortfall: blocked.shortfall },
+                spentLine
+            );
+            facts.lines.push(...hurt.lines);
+            facts.lines.push(...world.lines);
+            facts.structure.push(...world.structure);
+            if (hurt.lines.length > 0) facts.prose = `${facts.prose}\n\n${hurt.lines.join('\n\n')}`;
+
+            return {
+                facts,
+                events: skip.events,
+                timeSkip: skip,
+                breakthrough: null,
+                // The days were spent and, at a strength gate, a body was hurt.
+                // Marking this refused would say nothing happened, and something
+                // did. The gate's own call carries the ok: false.
+                outcome: 'executed',
+                calls: [...baseCalls, ...gateCalls, ...hurt.calls]
+            };
+        }
+
+        // Every gate opened. This is the one place in the package that calls
+        // `enterSite`, and it is below a recorded entry by construction.
+        const record = this.sites.write(run.id, site, run.elapsedDays, {
+            soughtOnDay: this.sites.get(run.id, site.id)?.soughtOnDay ?? startDay,
+            enteredOnDay: startDay
+        });
+        // A trial and a grave hold different records on purpose - one was
+        // calibrated for a claimant who was expected to arrive, the other was
+        // arranged for nobody - so the three lines are taken from whichever
+        // shape this entry actually has rather than flattened into one.
+        const whole = enterSite(site.id)!;
+        const interior = whole.kind === 'trial'
+            ? {
+                scene: whole.interior.chamber,
+                arrangement: whole.interior.setBy,
+                whatItDoesToPeople: whole.interior.howItKills
+            }
+            : {
+                scene: whole.interior.scene,
+                arrangement: whole.interior.arrangedForAFinder
+                    ? 'Somebody arranged this for whoever found it. That is the exception rather than the rule.'
+                    : 'Nobody arranged this for anybody. Nothing in it was the right size for whoever turned up.',
+                whatItDoesToPeople: whole.interior.whatTheDeathDidToTheContents
+            };
+        const facts = factsForSiteInterior(applied.cultivator, site.name, {
+            ...interior,
+            onOffer: [...prizeOther(whole), ...this.prizeNames(whole)],
+            afterwards: record.takenOnDay !== null ? whole.interior.afterwards : null
+        });
+        facts.lines.unshift(spentLine);
+        facts.lines.push(...world.lines);
+        facts.structure.push(...world.structure);
+
+        return {
+            facts,
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [
+                ...baseCalls,
+                ...gateCalls,
+                {
+                    name: 'engine.enterSite',
+                    action: 'site',
+                    summary:
+                        `${site.id}: every gate opened, entry recorded on day ${startDay}. The interior `
+                        + 'was read only after the row existed.',
+                    ok: true
+                }
+            ]
+        };
+    }
+
+    /**
+     * What a strength gate does to somebody who is under it.
+     *
+     * Priced by `assessPower` and resolved by `resolveExchange`, which are the
+     * engine's own, so a gate hits exactly as hard as a person at that ordinal
+     * would and no harder. Nothing about the arithmetic lives here; what lives
+     * here is the decision that a strength gate is the only kind that applies
+     * force at all, which is the catalog's own distinction and not a new one.
+     */
+    private async gateForce(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        site: Site,
+        blocked: GateVerdict
+    ): Promise<{ lines: string[]; calls: ToolCallRecord[] }> {
+        const ordinal = forceOrdinalOf(site, blocked);
+        if (ordinal === null) return { lines: [], calls: [] };
+
+        const rng = forStream(run.seed, 'site_gate', Math.floor(run.elapsedDays), site.id);
+        const context = { ambient };
+        const gate = assessPower(forceAt(site, ordinal), context);
+        const body = assessPower(
+            {
+                id: cultivator.id,
+                name: cultivator.name,
+                realmOrdinal: cultivator.realmOrdinal,
+                immortalStatus: cultivator.immortalStatus,
+                traditionId: cultivator.traditionId,
+                spiritRoot: cultivator.spiritRoot,
+                attributes: cultivator.attributes,
+                injuries: cultivator.injuries,
+                insights: cultivator.insights,
+                foundationQuality: cultivator.foundationQuality,
+                soulState: cultivator.soulState,
+                hp: cultivator.hp,
+                maxHp: cultivator.maxHp,
+                qi: cultivator.qi,
+                maxQi: cultivator.maxQi,
+                battlesSurvived: cultivator.battlesSurvived
+            },
+            context
+        );
+        const exchange = resolveExchange(gate, body, cultivator.maxHp, {
+            rng,
+            ambient,
+            turn: run.turn,
+            vector: 'body'
+        });
+
+        let death: { cause: string; description: string } | null = null;
+        const persist = this.db.transaction(() => {
+            if (exchange.injury) {
+                this.repos.cultivators.addInjury(cultivator.id, {
+                    id: exchange.injury.id,
+                    severity: exchange.injury.severity,
+                    source: exchange.injury.source,
+                    description: exchange.injury.description,
+                    sustainedOnTurn: exchange.injury.sustainedOnTurn
+                });
+            }
+            this.repos.cultivators.applyDeltas(cultivator.id, { hp: -exchange.damage });
+
+            const after = this.repos.cultivators.getById(cultivator.id)!;
+            const cause = evaluateDeathConditions(after);
+            if (cause) {
+                death = { cause, description: describeDeath(cause, after) };
+                this.repos.cultivators.markDead(cultivator.id, cause, run.turn + 1, death.description);
+            }
+        });
+        persist();
+
+        const lines = [
+            `It cost ${exchange.damage} of what ${cultivator.name} had to give.`
+            + (exchange.injury
+                ? ` It left a ${exchange.injury.severity} injury that will not close on its own.`
+                : '')
+        ];
+        if (death) lines.push((death as { description: string }).description);
+
+        return {
+            lines,
+            calls: [
+                {
+                    name: 'engine.resolveExchange',
+                    action: 'gate_strength',
+                    summary:
+                        `The gate at ordinal ${ordinal} applied force to a body at `
+                        + `${cultivator.realmOrdinal}. ${exchange.narrationHint} Roll `
+                        + `${exchange.roll.toFixed(4)}, advantage ${exchange.advantage.toFixed(2)}.`,
+                    ok: true
+                },
+                ...(death ? [{
+                    name: 'engine.evaluateDeathConditions',
+                    action: 'death',
+                    summary:
+                        `${(death as { cause: string }).cause}. Written by the survival layer after the `
+                        + 'damage landed, on the same path every other death in this package takes.',
+                    ok: true
+                }] : [])
+            ]
+        };
+    }
+
+    /** Catalogued arts a site is holding, by name rather than by id. */
+    private prizeNames(site: Site): string[] {
+        const arts = prizeTechniqueIds(site)
+            .map(id => getTechnique(id)?.name ?? id);
+        const items = prizeImmortalItemIds(site);
+        const lines: string[] = [];
+        if (arts.length > 0) {
+            lines.push(`Written down here, in full: ${arts.join(', ')}.`);
+        }
+        if (items.length > 0) {
+            lines.push('There is also a thing here that did not come from any forge in this world.');
+        }
+        return lines;
+    }
+
+    /**
+     * Taking it, which is the act that empties the place.
+     *
+     * Entry has to be on record first. That is not ceremony: the whole surface
+     * is built so a player cannot learn what is inside without going in, and a
+     * take that worked from the threshold would be a route around that.
+     *
+     * The grant itself goes through `technique_manage.learn` rather than
+     * through anything reimplemented here, so a manual the claimant cannot read
+     * comes back as the engine's own refusal - which is not a bug and is the
+     * world's stated design: the top grades are written for somebody who has
+     * walked a road, which is why they sit in ruins unread.
+     */
+    private async takeFromSite(run: Run, cultivator: Cultivator, site: Site): Promise<Execution> {
+        const record = this.sites.get(run.id, site.id);
+
+        if (!record || record.enteredOnDay === null) {
+            return refused('engine.siteLedger', 'site', factsForRefusal(
+                'You are not in there.',
+                'You reach for it from where you are standing, which is outside, and the reaching '
+                + 'stops at the door. Whatever is behind it is behind it.',
+                `No entry on record for ${site.id} in this run. The interior was not read and the `
+                + 'prize was not resolved.'
+            ));
+        }
+
+        if (record.takenOnDay !== null) {
+            const whole = enterSite(site.id)!;
+            return refused('engine.siteLedger', 'site', factsForRefusal(
+                `${site.name}: already emptied.`,
+                whole.interior.afterwards,
+                `${site.id} was taken on day ${record.takenOnDay}${record.takenBy ? ` by ${record.takenBy}` : ''}. `
+                + `${record.granted.length} thing(s) left the site then and are not here now.`
+            ));
+        }
+
+        const whole = enterSite(site.id)!;
+        const granted: string[] = [];
+        const withheld: string[] = [];
+        const calls: ToolCallRecord[] = [];
+
+        for (const techniqueId of prizeTechniqueIds(whole)) {
+            const result = await handleLearn({
+                action: 'learn',
+                techniqueId,
+                cultivatorId: cultivator.id
+            });
+            const name = getTechnique(techniqueId)?.name ?? techniqueId;
+            if (isGuidingErrorBody(result)) {
+                withheld.push(result.message);
+                calls.push({
+                    name: 'technique_manage.learn',
+                    action: 'site_prize',
+                    summary: `${techniqueId}: ${result.error}. ${result.message}`,
+                    ok: false
+                });
+                continue;
+            }
+            granted.push(name);
+            calls.push({
+                name: 'technique_manage.learn',
+                action: 'site_prize',
+                summary: `${techniqueId} learned off the site. Written by the same handler the tool surface uses.`,
+                ok: true
+            });
+        }
+
+        // The one immortal item in the whole catalog that is a grave good. It
+        // leaves the site - the row below says so - and there is nowhere on a
+        // cultivator to put it, because nothing in the storage layer models a
+        // person holding one. Reported rather than faked: an item the player is
+        // told they are carrying and that no query can find is worse than a
+        // hole that says it is a hole.
+        const items = prizeImmortalItemIds(whole);
+        for (const itemId of items) {
+            withheld.push(
+                'There is a thing here that did not come from any forge in this world. It comes away '
+                + 'with you, and there is nothing in your life that is the right shape to keep it in.'
+            );
+            calls.push({
+                name: 'engine.possessions',
+                action: 'site_prize',
+                summary:
+                    `${itemId} left ${site.id} and is recorded against the site. There is no `
+                    + 'cultivator-side possession row for an immortal item in the storage layer, so '
+                    + 'nothing was written on the cultivator. This is a gap, reported rather than faked.',
+                ok: false
+            });
+        }
+
+        const other = prizeOther(whole);
+        this.sites.write(run.id, site, run.elapsedDays, {
+            takenOnDay: Math.floor(run.elapsedDays),
+            takenBy: cultivator.id,
+            granted: [...prizeTechniqueIds(whole), ...items]
+        });
+
+        const facts = factsForSiteTaken(cultivator, site.name, {
+            granted,
+            withheld,
+            other,
+            afterwards: whole.interior.afterwards
+        });
+
+        const execution = this.freeAction(run, 'site', facts);
+        execution.calls = [
+            ...calls,
+            {
+                name: 'engine.siteLedger',
+                action: 'site',
+                summary:
+                    `${site.id} marked taken on day ${Math.floor(run.elapsedDays)}. The next party to `
+                    + 'reach it finds what `afterwards` says they find.',
+                ok: true
+            }
+        ];
+        return execution;
+    }
+
+    /**
+     * What was done to this ground, and who says why.
+     *
+     * `engine/world/locations.ts` has carried the whole of this from the
+     * start - origin, an append-only change log, and a current state that is
+     * the two folded together, patched in place so the map scars rather than
+     * growing - and nothing in this layer reached any of it. A player could
+     * stand in a scar for a hundred turns and never be able to ask about it.
+     *
+     * Three things are read out and one is withheld:
+     *
+     *  - what the place IS, which anybody with eyes has;
+     *  - that it CHANGED, and when, which is legible in the ground itself;
+     *  - what the people here BELIEVE, which is `attributedCauses` and is
+     *    stored as belief because that is what it is;
+     *  - and the CAUSE, only when `causeKnown` says the world has surrendered
+     *    it. `causeFactId` is deliberately not consulted when it has not: the
+     *    seeded ruins all carry a cause fact that nobody has recovered, and an
+     *    answer that read differently in that case would be an answer.
+     *
+     * A read. No time passes, nothing is spent, and being refused costs the
+     * same as being answered.
+     */
+    private placeHistory(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Execution {
+        const asked = (target ?? '').trim();
+        // "what happened to this place" names nowhere. It means underfoot.
+        const wanted = asked.length >= 2 && !HERE_ITSELF.test(asked)
+            ? asked
+            : (cultivator.location ?? '');
+        const place = this.atHand ? worldLocationFor(this.atHand, wanted) : null;
+
+        if (!place) {
+            // Worded so that it does not confirm anything either way. A place
+            // the world does not model and a place with nothing on record have
+            // to look the same from inside, for the same reason the cause gate
+            // does: the shape of the refusal must not be the answer.
+            return refused('engine.locationHistory', 'look', factsForRefusal(
+                'The ground keeps nothing.',
+                `You look over ${placeName(cultivator)} for the mark of whatever made it this way, ` +
+                'and there is no mark and nobody to ask. Ground that has had something done to it ' +
+                'usually shows it, and this does not.',
+                `No world location record for "${wanted || placeName(cultivator)}"` +
+                `${this.atHand ? '' : ' (world simulation is off for this run)'}.`
+            ));
+        }
+
+        const rows = locationHistory(place);
+        const origin = rows.find(row => row.changeId === null) ?? null;
+        const facts = this.repos && this.atHand ? this.atHand.history.facts : [];
+
+        // Newest first: the thing that made this place what it is now is the
+        // last thing that happened to it, not the first.
+        const changes = rows
+            .filter(row => row.changeId !== null)
+            .slice()
+            .reverse()
+            .slice(0, PLACE_CHANGES_SHOWN)
+            .map(row => ({
+                year: row.year,
+                summary: row.summary,
+                causeKnown: row.causeKnown,
+                cause: row.causeKnown && row.causeFactId
+                    ? facts.find(fact => fact.id === row.causeFactId)?.summary ?? null
+                    : null,
+                attributed: row.attributedCauses
+            }));
+
+        const rendered = factsForPlaceHistory(
+            { name: place.name, kind: place.kind, description: place.description },
+            origin && origin.onDay > Number.NEGATIVE_INFINITY
+                ? { kind: place.origin.kind, year: origin.year }
+                : { kind: place.origin.kind, year: null },
+            changes
+        );
+        rendered.structure.push(`world location ${place.id}; ${place.changes.length} change(s) on record.`);
+
+        const execution = this.freeAction(run, 'look', rendered);
+        execution.calls = [{
+            name: 'world.locationHistory',
+            action: 'look',
+            summary:
+                `${place.id}: ${place.changes.length} change(s); ` +
+                `${changes.filter(c => c.causeKnown).length} with a cause on record, ` +
+                `${changes.reduce((n, c) => n + c.attributed.length, 0)} explanation(s) held locally. ` +
+                'Read only: no time passed, nothing changed.',
+            ok: true
+        }];
+        return execution;
+    }
+
+    /**
+     * The realm rank a sentence names, or null when it names none.
+     *
+     * Read by containment against the ladder's own names rather than parsed,
+     * so `realms.ts` stays the authority for what a rank is called and this
+     * cannot go stale when the ladder changes. Scanned from the top down so a
+     * longer name wins over a shorter one it contains.
+     */
+    private ordinalNamed(text: string | undefined): number | null {
+        const query = (text ?? '').toLowerCase().trim();
+        if (query.length < 3) return null;
+        for (let ordinal = MAX_ORDINAL; ordinal >= 0; ordinal--) {
+            if (query.includes(rankName(ordinal).toLowerCase())) return ordinal;
+        }
+        return null;
+    }
+
+    /**
+     * The art a curriculum sentence named, or null when it named none.
+     *
+     * The generic phrase is refused rather than matched. "What the sect
+     * teaches" is the question, not an answer to it, and handing it to a fuzzy
+     * matcher is how a sentence about the shelf ends up decreeing whichever
+     * art happened to share a word with it - for a generation, at the price of
+     * every elder's standing.
+     */
+    private artNamed(text: string | undefined, cultivator: Cultivator): string | null {
+        const query = (text ?? '').trim();
+        if (query.length < 3 || GENERIC_LIBRARY_PHRASE.test(query)) return null;
+        return resolveTechnique(this.repos, query, cultivator.id)?.id ?? null;
     }
 
     /**
@@ -1851,7 +3218,9 @@ ${noticed}`;
             turn: run.turn,
             startDay,
             options: { focusMultiplier: GATHERING_FOCUS },
-            rations: 0,
+            // What is in the pack feeds them here too. Only seclusion tops the
+            // pack up from the purse; this eats what is already carried.
+            rations: this.drawFromPack(cultivator, GATHERING_DAYS),
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
@@ -1911,6 +3280,66 @@ ${noticed}`;
      * the fact that the engine declined, and it is passed through rather than
      * softened.
      */
+    /**
+     * ADMIN, the exploratory testing surface.
+     *
+     * Deliberately NOT narrated. The operator is asking the engine what it did,
+     * and wrapping that in prose would put a model between them and the answer,
+     * which is the one thing this surface exists to avoid. Output is whatever
+     * `admin_manage` returned, verbatim.
+     *
+     * Arguments are explicit `key=value` pairs rather than parsed from prose.
+     * That is the whole safety property: there is no inference here to be wrong,
+     * and an unrecognised action is answered with the list rather than a guess.
+     */
+    private async adminAct(request: string, run: Run, cultivator: Cultivator): Promise<ActResult> {
+        if (!isAdminModeEnabled()) {
+            throw new GameError(
+                'ADMIN is off for this process. Start the server with ADMIN_MODE=true to enable it.',
+                403
+            );
+        }
+
+        const words = request.trim().split(/\s+/).filter(Boolean);
+        const action = words.shift() ?? '';
+        if (!action) {
+            throw new GameError(
+                `ADMIN needs an action: ${ADMIN_ACTIONS.join(', ')}. ` +
+                'Arguments are key=value, for example: ADMIN spawn_site kind=grave ordinal=41'
+            );
+        }
+
+        const args: Record<string, unknown> = {
+            action,
+            cultivatorId: cultivator.id,
+            runId: run.id
+        };
+        for (const word of words) {
+            const at = word.indexOf('=');
+            if (at <= 0) continue;
+            const key = word.slice(0, at);
+            const raw = word.slice(at + 1);
+            const asNumber = Number(raw);
+            args[key] = raw !== '' && Number.isFinite(asNumber) ? asNumber : raw;
+        }
+
+        const response = await handleAdminManage(args);
+        const text = response.content?.[0]?.text ?? 'The admin surface returned nothing.';
+        const after = this.currentRun();
+
+        this.log.append(run.id, [
+            { role: 'player', turn: run.turn, text: `ADMIN ${request.trim()}` },
+            { role: 'narrator', turn: after.run.turn, text }
+        ]);
+
+        return {
+            narration: text,
+            events: [],
+            toolCalls: [],
+            state: this.stateView(after.run, after.cultivator)
+        };
+    }
+
     private fromToolResult(
         name: string,
         action: ActionName,
@@ -1990,7 +3419,9 @@ ${noticed}`;
             rations: provisioning.rations,
             grainAbstinence: false,
             autoBreakthrough: true,
-            randomEvents: !sealed,
+            // Nothing wanders into a True Immortal's seclusion. The encounter
+            // tables are the mortal world's, and they are not up there.
+            randomEvents: !sealed && !canExistBeyondTheLid(cultivator),
             // A boundary crossed inside this stretch exacts its price, and it
             // can only take what the run actually owns. Handing it the real
             // rows is what makes the price a delete rather than an assertion.
@@ -2061,7 +3492,9 @@ ${noticed}`;
             turn: run.turn,
             startDay,
             options: { focusMultiplier: focus },
-            rations: 0,
+            // What is in the pack feeds them here too. Only seclusion tops the
+            // pack up from the purse; this eats what is already carried.
+            rations: this.drawFromPack(cultivator, days),
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
@@ -2267,6 +3700,323 @@ ${noticed}`;
         };
     }
 
+    // ── being hurt, and the shop that was always there ───────────────────
+    //
+    // The softlock, found by playing cold in a browser and reproduced in full:
+    //
+    //   turn 11  3 untreated meridian injuries. Any further combat is fatal.
+    //   turn 12  "I cultivate for twenty years"
+    //            Day 30 - Qi deviation: a minor meridian injury.
+    //            Day 30 - 4 untreated meridian injuries.
+    //            You came out early. 30 days of the 20 years were spent.
+    //
+    // Untreated injuries raise deviation risk, deviation adds another injury
+    // and ejects the cultivator from seclusion after about a month, and the
+    // next attempt goes wrong slightly sooner. He could not advance, could not
+    // heal, and could not die - the only exit the engine named was combat and
+    // the engine had already said combat was fatal. All of it with three
+    // hundred and forty-five spirit stones in the purse, standing in a market
+    // whose board advertised a physician at forty cash.
+    //
+    // Both halves of that are fixed here and both were the same defect: a
+    // price the player has been shown that no sentence can spend money on.
+
+    /**
+     * The two lines on the board that answer "I am hurt".
+     *
+     * Ids rather than a rule. Everything about what they cost, what they are
+     * worth against a pill and what a mortal physician can and cannot do is
+     * read off the catalog rows themselves - including the one fact that
+     * decides which of them is any use, which is the physician's own note
+     * saying he cannot touch a meridian.
+     */
+    private static readonly PRICE_PHYSICIAN_VISIT = 'price-doctor-visit';
+    private static readonly PRICE_COURSE_OF_CARE = 'price-splint-and-month';
+
+    /**
+     * Getting a wound seen to.
+     *
+     * Priced off the same rows `market` prints, through the same
+     * `localPrice`, so the number the player was quoted is the number they
+     * pay. Nothing about the price or the effect is authored here.
+     *
+     * The physician is refused for the commonest case and it is the catalog
+     * that refuses him: every injury this engine produces is a meridian
+     * injury, and `price-doctor-visit` says in its own note that a mortal
+     * physician "sets a bone, stitches a cut, cannot touch a meridian". What
+     * the mortal world does sell for a meridian is the course of care, which
+     * calls itself the alternative to a healing pill - slower, cheaper, and it
+     * leaves you out of the fight for a season. So the answer to "I am hurt"
+     * is a real choice with a real price on both sides, and it came out of the
+     * price list rather than out of this method.
+     */
+    private async treat(run: Run, cultivator: Cultivator, ambient: AmbientQi): Promise<Execution> {
+        const hurt = untreatedInjuries(cultivator.injuries);
+        const visit = getPrice(GameService.PRICE_PHYSICIAN_VISIT)!;
+        const course = getPrice(GameService.PRICE_COURSE_OF_CARE)!;
+        const regionId = standingOf(cultivator).regionId;
+        const courseCash = localPrice(regionId, course.cash);
+        // Rounded UP to whole stones. The purse holds whole stones and a
+        // player must never be charged less than the board quoted.
+        const perWound = Math.max(1, Math.ceil(cashToStones(courseCash)));
+
+        if (hurt.length === 0) {
+            return refused('engine.untreatedInjuries', 'treat', factsForRefusal(
+                'Nothing to see to.',
+                'You take stock of yourself and find nothing anybody could charge you for. '
+                + 'Whatever is wrong with your life today, it is not a wound.',
+                `No untreated injuries on record. ${course.name} would have cost ${perWound} `
+                + 'spirit stone(s) a wound. Nothing bought, nothing spent, no time passed.'
+            ));
+        }
+
+        if (cultivator.spiritStones < perWound) {
+            // Named price, named shortfall - the shape the sect admission
+            // refusal uses, which is the one refusal in this game that has
+            // never had to be explained to anybody.
+            return refused('engine.localPrice', 'treat', factsForRefusal(
+                'Not for what you are carrying.',
+                `${course.name} is ${courseCash} cash the ${course.unit}, which is ${perWound} spirit `
+                + `stone${perWound === 1 ? '' : 's'}. You are carrying ${cultivator.spiritStones}, which is `
+                + `${perWound - cultivator.spiritStones} short. ${visit.note} That is the whole of what the `
+                + 'mortal world sells for this, and none of it is sold on credit.',
+                `${course.id} at ${courseCash} cash = ${perWound} stone(s) per wound; purse holds `
+                + `${cultivator.spiritStones}. ${hurt.length} untreated injury(ies) left untreated.`
+            ));
+        }
+
+        const courses = Math.min(hurt.length, Math.floor(cultivator.spiritStones / perWound));
+        const cost = courses * perWound;
+
+        // A month under somebody's roof, fed out of the purse the same way a
+        // seclusion is. The clock runs through it: the world moves, the food
+        // is bought or it is not, and a cultivator who cannot pay for both can
+        // still starve during the stay - through the survival layer, exactly
+        // as they would anywhere else.
+        const provisioning = this.buyProvisions(cultivator, TREATMENT_DAYS);
+        const paid = this.repos.cultivators.applyDeltas(provisioning.cultivator.id, { spiritStones: -cost });
+        if (!paid) throw new GameError('Cultivator vanished on the physician\'s table.', 500);
+
+        const startDay = Math.floor(run.elapsedDays);
+        const skip = simulateTimeSkip(paid, TREATMENT_DAYS, {
+            seed: run.seed,
+            locationId: placeName(paid),
+            turn: run.turn,
+            startDay,
+            options: { focusMultiplier: TREATMENT_FOCUS },
+            rations: provisioning.rations,
+            grainAbstinence: false,
+            autoBreakthrough: false,
+            // Lying still under a roof. Nothing wanders in, and no opportunity
+            // finds somebody who cannot stand up, which is the same bargain
+            // closed-door seclusion makes.
+            randomEvents: false,
+            toll: tollConditionsFor(this.repos, paid)
+        });
+
+        const applied = applyTimeSkip(this.repos, { before: paid, run, skip });
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+
+        // The month can kill: the bleed clock runs through it, and so does the
+        // food clock. The survival layer has already written it and nothing
+        // here may treat a corpse's wounds or report a recovery over the top
+        // of a death.
+        if (!applied.cultivator.alive) {
+            const dead = factsForTimeSkip(paid, applied.cultivator, skip, ambient, 'Under a physician');
+            dead.lines.unshift(provisioning.line);
+            dead.lines.push(
+                `The ${cost} spirit stone${cost === 1 ? '' : 's'} for the care was paid up front and `
+                + 'nobody is going to refund it.'
+            );
+            return {
+                facts: dead,
+                events: skip.events,
+                timeSkip: skip,
+                breakthrough: null,
+                outcome: 'executed',
+                calls: [...skipCalls('treat', skip, provisioning.line), ...worldCalls(world)]
+            };
+        }
+
+        // The engine's own triage decides which wounds, worst first. This
+        // layer decides only how many were paid for.
+        const triage = treatWorstInjuries(applied.cultivator.injuries, courses);
+        const treated = applied.cultivator.injuries.filter(
+            (before: Injury) => !before.treated
+                && triage.injuries.some((closed: Injury) => closed.id === before.id && closed.treated)
+        );
+        const persist = this.db.transaction(() => {
+            for (const injury of treated) {
+                this.repos.cultivators.treatInjury(injury.id, run.turn + 1);
+            }
+        });
+        persist();
+
+        const after = this.repos.cultivators.getById(cultivator.id)!;
+        const stillHurt = untreatedInjuryCount(after.injuries);
+        const facts = factsForTreatment(cultivator, after, {
+            what: course.name,
+            note: course.note,
+            cashEach: courseCash,
+            stonesEach: perWound,
+            stonesSpent: cost,
+            days: skip.simulatedDays,
+            treated: treated.map(injury => injury.description),
+            stillUntreated: stillHurt
+        });
+        facts.lines.unshift(provisioning.line);
+        facts.lines.push(...applied.tollLines);
+        facts.lines.push(...world.lines);
+        facts.structure.push(...world.structure);
+
+        return {
+            facts,
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [
+                {
+                    name: 'cultivator.applyDeltas',
+                    action: 'treat',
+                    summary:
+                        `${courses} course(s) of ${course.name} at ${courseCash} cash (${perWound} stone(s)) `
+                        + `each = ${cost} stones. Priced through localPrice(${regionId}), the same call `
+                        + 'the market board prices with.',
+                    ok: true
+                },
+                ...skipCalls('treat', skip, provisioning.line),
+                {
+                    name: 'engine.treatWorstInjuries',
+                    action: 'treat',
+                    summary:
+                        `${treated.length} injury(ies) treated worst-first by the engine's own triage; `
+                        + `${stillHurt} still untreated. Treated wounds stay on the record as scar `
+                        + 'tissue and contribute no penalty.',
+                    ok: treated.length > 0
+                },
+                ...tollCalls(applied.tollLines),
+                ...worldCalls(world)
+            ]
+        };
+    }
+
+    /**
+     * Buying a line off the price board.
+     *
+     * The board is the only list in this game the player has actually been
+     * shown, so a name off it is the one free-text subject they can be certain
+     * they typed correctly - and until this existed, twenty-two advertised
+     * lines had four verbs between them covering three of them. The rest went
+     * to the party resolver, which answered "nobody by that name" to somebody
+     * trying to pay a physician.
+     *
+     * Three outcomes, and the third is the honest one rather than the lazy
+     * one: what the engine models, it does; what it does not model, it says so
+     * and charges nothing. A player who is billed for a night at an inn that
+     * changes no row has been robbed by the software.
+     */
+    private async buy(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined
+    ): Promise<Execution> {
+        const query = (target ?? '').trim();
+        const resolved = query.length >= 3 ? resolvePrice(query) : null;
+        const price = resolved ? getPrice(resolved.id) : undefined;
+
+        if (!price) {
+            const board = PRICES.slice(0, MARKET_LINES).map(row => row.name).join(', ');
+            return refused('engine.resolvePrice', 'buy', factsForRefusal(
+                'Not something anybody here sells.',
+                'You ask for it and get the look people give somebody asking for a thing that is '
+                + `not sold. What is: ${board}, and a dozen more besides.`,
+                `Unresolved price "${query || '(nothing named)'}" against ${PRICES.length} board `
+                + 'line(s). Nothing bought, nothing spent, no time passed.'
+            ));
+        }
+
+        // Medicine that is a course of care rather than an object routes to the
+        // treatment path, so the physician on the board and the sentence "I get
+        // my injuries treated" reach the same code and cannot disagree about
+        // what a wound costs.
+        if (price.id === GameService.PRICE_COURSE_OF_CARE || price.id === GameService.PRICE_PHYSICIAN_VISIT) {
+            return this.treat(run, cultivator, ambient);
+        }
+
+        const regionId = standingOf(cultivator).regionId;
+        const cash = localPrice(regionId, price.cash);
+        const stones = Math.max(1, Math.ceil(cashToStones(cash)));
+
+        // What the engine actually holds a row for. A pill goes in the pouch;
+        // a ferry crossing and a night at an inn do not, and saying so beats
+        // taking the money for a state change that never happens.
+        const pill = price.category === 'medicine' ? resolvePill(price.name.replace(/,.*$/, '')) : null;
+
+        if (!pill) {
+            const facts = factsForUnsupported(
+                `buying ${price.name}`,
+                `${price.name} is priced and quoted and there is no row in this engine for holding `
+                + 'one, so nothing was charged.'
+            );
+            facts.lines.push(
+                `${price.name} is ${cash} cash the ${price.unit} here, which is about ${stones} `
+                + `spirit stone${stones === 1 ? '' : 's'}. ${price.note}`,
+                'You could pay it. Nothing in your life would be different afterwards, so you keep '
+                + 'the money.'
+            );
+            facts.prose = facts.lines.join('\n\n');
+            return refused('engine.possessions', 'buy', facts);
+        }
+
+        if (cultivator.spiritStones < stones) {
+            return refused('engine.localPrice', 'buy', factsForRefusal(
+                'Not for what you are carrying.',
+                `${price.name} is ${cash} cash the ${price.unit} here, which is ${stones} spirit `
+                + `stone${stones === 1 ? '' : 's'}. You are carrying ${cultivator.spiritStones}. `
+                + `You are ${stones - cultivator.spiritStones} short and nobody is offering terms.`,
+                `${price.id} at ${cash} cash = ${stones} stone(s); purse holds `
+                + `${cultivator.spiritStones}. Short by ${stones - cultivator.spiritStones}.`
+            ));
+        }
+
+        const after = this.db.transaction((): Cultivator => {
+            const updated = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
+            if (!updated) throw new GameError('Cultivator vanished mid-purchase.', 500);
+            addToPouch(this.db, cultivator.id, pill.id, 'pill', 1);
+            this.repos.runs.incrementTurn(run.id, 1);
+            return updated;
+        })();
+
+        const facts = factsForToolResult(`${pill.name}, bought.`, [
+            `One ${pill.name}, ${cash} cash the ${price.unit}, which is ${stones} spirit `
+            + `stone${stones === 1 ? '' : 's'} of the ${cultivator.spiritStones} you had.`,
+            price.note,
+            `${after.spiritStones} left in the purse, and the pill is in the pouch.`
+        ]);
+        facts.structure.push(
+            `${price.id} -> ${pill.id}: ${cash} cash at the ${regionId} multiplier, charged as `
+            + `${stones} stone(s). One added to cultivator_pouch.`
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'storage.addToPouch',
+                action: 'buy',
+                summary:
+                    `One ${pill.name} for ${stones} spirit stone(s), priced through `
+                    + `localPrice(${regionId}) - the same call the market board prices with.`,
+                ok: true
+            }]
+        };
+    }
+
     /**
      * An action that costs a turn of attention and nothing else. No day passes,
      * no satiety is burned, no roll is made - looking around must never be able
@@ -2372,6 +4122,57 @@ ${noticed}`;
         const raw = readFlag(this.db, cultivator.id, FLAG_RATIONS_HELD);
         const held = raw === null ? 0 : Number(raw);
         return Number.isFinite(held) && held > 0 ? Math.floor(held) : 0;
+    }
+
+    /**
+     * Hand a stretch of days what it needs out of the pack, and deduct it.
+     *
+     * Seclusion has `buyProvisions`, which also tops the pack up at the door.
+     * The ordinary actions - working, gathering, travelling - do not buy
+     * anything on the player's behalf; they eat what is already carried.
+     * Before this existed they ate nothing at all, and a player could starve to
+     * death holding fifteen rations because they had spent the week earning the
+     * stones rather than sitting in a cave.
+     */
+    /**
+     * Open a ration if the belly is low and the pack has one.
+     *
+     * Nobody carrying food starts a season of hauling hungry. Found by
+     * playtesting: a player who did the sensible thing - buy two years of
+     * rations, then take work to afford more - finished the shift at exactly
+     * zero satiety and died of starvation on their next action, with a
+     * fortnight of food still on their back.
+     */
+    private feedFromPack(cultivator: Cultivator): Cultivator {
+        if (!stillNeedsToEat(cultivator.realmOrdinal)) return cultivator;
+        if (cultivator.satiety >= SATIETY_MAX / 2) return cultivator;
+        const held = this.rationsHeld(cultivator);
+        if (held <= 0) return cultivator;
+
+        this.setRationsHeld(cultivator, held - 1);
+        const updated = this.repos.cultivators.applyDeltas(cultivator.id, {
+            satiety: SATIETY_MAX - cultivator.satiety,
+            starvationTurns: -cultivator.starvationTurns
+        });
+        return updated ?? cultivator;
+    }
+
+    private drawFromPack(
+        cultivator: Pick<Cultivator, 'id' | 'realmOrdinal' | 'satiety'>,
+        days: number
+    ): number {
+        const multiplier = satietyBurnMultiplier(cultivator.realmOrdinal);
+        if (multiplier <= 0) return 0;
+        const perRation = Math.max(1, Math.floor(ACTIONS_PER_FULL_SATIETY / multiplier));
+        // Only the shortfall. The belly covers the first stretch on its own,
+        // and opening a ration to cover days already paid for wastes food the
+        // player bought deliberately.
+        const bellyCovers = Math.floor(cultivator.satiety / (SATIETY_COST_PER_ACTION * multiplier));
+        const wanted = Math.ceil(Math.max(0, days - bellyCovers) / perRation);
+        const held = this.rationsHeld(cultivator);
+        const taken = Math.max(0, Math.min(wanted, held));
+        if (taken > 0) this.setRationsHeld(cultivator, held - taken);
+        return taken;
     }
 
     private setRationsHeld(cultivator: Pick<Cultivator, 'id'>, held: number): void {
