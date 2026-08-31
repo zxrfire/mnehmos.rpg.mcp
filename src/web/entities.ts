@@ -11,8 +11,17 @@
  * That is the second half of the closed-enum protection. The enum stops a model
  * inventing an ACTION; this stops it inventing a THING to do it to.
  *
- * The one deliberate exception is a place name, and it is documented at
- * `resolvePlace`.
+ * ── And a third gate: knowledge ───────────────────────────────────────────
+ * Existing is not enough. docs/world/discovery.md: never reference an entity
+ * the player has no knowledge record for. So resolution of people, factions and
+ * places is scoped to a `KnowledgeScope` - what this cultivator has heard of,
+ * plus whoever is physically standing in front of them. A sect the player has
+ * never heard the name of does not resolve, and the refusal is worded so that
+ * it does not confirm the sect exists either. Ignorance has to be real to be
+ * worth anything.
+ *
+ * The item catalogs (techniques, pills, herbs, formulas) are not scoped; see
+ * the note on `KnownEntityKind` for why.
  */
 
 import type Database from 'better-sqlite3';
@@ -26,6 +35,7 @@ import {
     TECHNIQUES
 } from '../data/cultivation/index.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
+import type { KnowledgeGate } from './knowledge.js';
 
 export type EntityKind =
     | 'cultivator'
@@ -35,6 +45,21 @@ export type EntityKind =
     | 'herb'
     | 'recipe'
     | 'place';
+
+/**
+ * Who is asking, and what they have heard of.
+ *
+ * `here` is the whole reason this is not simply a knowledge lookup: you can see
+ * who is in the room with you whether or not anyone ever said their name.
+ * discovery.md calls that stage `encountered`, and the caller turns it into a
+ * real knowledge record with source `witnessed` once it resolves.
+ */
+export interface KnowledgeScope {
+    gate: KnowledgeGate;
+    holderId: string;
+    /** Where the holder is standing. Anyone else here is perceivable. */
+    here: string | null;
+}
 
 export interface ResolvedEntity {
     kind: EntityKind;
@@ -94,6 +119,75 @@ function best<T>(query: string, items: readonly T[], nameOf: (item: T) => string
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// REDACTION
+//
+// Resolving an entity the player knows about is not the end of it. The facts
+// ABOUT that entity name other entities - the sect a person belongs to, the
+// territory a sect is seated in, the rivals it feuds with - and those are
+// exactly the ancient names discovery.md is protecting. A leak through the
+// facts of a permitted lookup is still a leak, and it is the subtle one.
+//
+// So every name inside a fact goes through here first. What comes back for an
+// unknown name is not a blank: it is the shape of the thing without the label,
+// which is what the player would actually perceive.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A name the holder has heard, or a description of it that names nothing. */
+function nameOrShape(
+    scope: KnowledgeScope | undefined,
+    kind: 'cultivator' | 'sect' | 'place',
+    id: string,
+    name: string,
+    shape: string
+): string {
+    if (!scope) return name;
+    return scope.gate.isAwareOf(scope.holderId, kind, id) ? name : shape;
+}
+
+/** A place name, or an admission that the player could not name it. */
+function placeOrShape(scope: KnowledgeScope | undefined, place: string | null): string {
+    if (!place) return 'unrecorded';
+    if (!scope) return place;
+    const here = (scope.here ?? '').trim().toLowerCase();
+    if (here.length > 0 && place.trim().toLowerCase() === here) return place;
+    return scope.gate.isAwareOf(scope.holderId, 'place', place)
+        ? place
+        : 'somewhere this cultivator could not name';
+}
+
+/**
+ * Keep only the names the holder has heard, and report the rest by count.
+ *
+ * "It has standing feuds with three parties, none of whom this cultivator could
+ * name" is a better sentence than the list, and it is the only honest one.
+ */
+function knownNamesOnly(
+    scope: KnowledgeScope | undefined,
+    kind: 'cultivator' | 'sect',
+    entries: readonly { id: string; name: string }[]
+): { named: string[]; hidden: number } {
+    if (!scope) return { named: entries.map(e => e.name), hidden: 0 };
+    const named: string[] = [];
+    let hidden = 0;
+    for (const entry of entries) {
+        if (scope.gate.isAwareOf(scope.holderId, kind, entry.id)) named.push(entry.name);
+        else hidden++;
+    }
+    return { named, hidden };
+}
+
+/** One line for a list that may be wholly or partly unnameable. */
+function describeParties(label: string, named: string[], hidden: number): string | null {
+    if (named.length === 0 && hidden === 0) return null;
+    if (named.length === 0) {
+        return `${label}: ${hidden}, none of whom this cultivator could name.`;
+    }
+    return hidden === 0
+        ? `${label}: ${named.join(', ')}.`
+        : `${label}: ${named.join(', ')}, and ${hidden} more this cultivator could not name.`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // RESOLVERS
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -106,22 +200,48 @@ function best<T>(query: string, items: readonly T[], nameOf: (item: T) => string
 export function resolveCultivator(
     repos: CultivationRepos,
     query: string,
-    selfId: string
+    selfId: string,
+    scope?: KnowledgeScope
 ): ResolvedEntity | null {
-    const rows = repos.cultivators.roster().filter(entry => entry.id !== selfId);
+    const here = scope?.here?.trim().toLowerCase() ?? null;
+    const rows = repos.cultivators.roster().filter(entry => {
+        if (entry.id === selfId) return false;
+        if (!scope) return true;
+        // Standing in the same place counts: you do not need to have been told
+        // a stranger's name to see that they are there.
+        if (here !== null && (entry.location ?? '').trim().toLowerCase() === here) return true;
+        return scope.gate.isAwareOf(scope.holderId, 'cultivator', entry.id);
+    });
+
     const match = best(query, rows, row => row.name);
     if (!match) return null;
+
+    // Every name inside these facts is redacted independently. Being able to
+    // see a person does not mean being able to name the faction they serve.
+    const affiliation = match.sectId && match.sectName
+        ? nameOrShape(
+            scope, 'sect', match.sectId, match.sectName,
+            'a sect whose name means nothing to this cultivator')
+        : null;
 
     const facts = [
         `${match.name} is a ${match.kind} at ${rankName(match.realmOrdinal)}, age ${Math.floor(match.age)}.`,
         match.alive ? `${match.name} is alive.` : `${match.name} is dead: ${match.deathCause ?? 'cause unrecorded'}.`,
-        match.sectName
-            ? `Affiliation: ${match.sectName}${match.sectRank ? `, ${match.sectRank}` : ''}.`
+        affiliation
+            ? `Affiliation: ${affiliation}${match.sectRank ? `, ${match.sectRank}` : ''}.`
             : `${match.name} is unaffiliated.`,
-        `Whereabouts on record: ${match.location ?? 'unrecorded'}. Spirit stones: ${match.spiritStones}. Untreated injuries: ${match.untreatedInjuries}.`
+        `Whereabouts on record: ${placeOrShape(scope, match.location)}. ` +
+        `Spirit stones: ${match.spiritStones}. Untreated injuries: ${match.untreatedInjuries}.`
     ];
+
+    // Feuds are stored as free-text party labels rather than ids, so there is
+    // nothing to check them against. They are withheld wholesale rather than
+    // guessed at: a grudge the player cannot name is still a grudge.
     if (match.feuds.length > 0) {
-        facts.push(`Standing grudges on record: ${match.feuds.join(', ')}.`);
+        const feudLine = scope
+            ? describeParties('Standing grudges on record', [], match.feuds.length)
+            : describeParties('Standing grudges on record', [...match.feuds], 0);
+        if (feudLine) facts.push(feudLine);
     }
 
     return { kind: 'cultivator', id: match.id, name: match.name, facts };
@@ -131,8 +251,15 @@ export function resolveCultivator(
  * A faction: a sect written into this database, or one from the shipped
  * catalog. The database wins, so an operator's own edits are what is seen.
  */
-export function resolveSect(repos: CultivationRepos, query: string): ResolvedEntity | null {
-    const stored = best(query, repos.sects.list(), sect => sect.name);
+export function resolveSect(
+    repos: CultivationRepos,
+    query: string,
+    scope?: KnowledgeScope
+): ResolvedEntity | null {
+    const heard = (id: string): boolean =>
+        !scope || scope.gate.isAwareOf(scope.holderId, 'sect', id);
+
+    const stored = best(query, repos.sects.list().filter(sect => heard(sect.id)), sect => sect.name);
     if (stored) {
         return {
             kind: 'sect',
@@ -146,18 +273,29 @@ export function resolveSect(repos: CultivationRepos, query: string): ResolvedEnt
         };
     }
 
-    const catalogued = best(query, SECTS, sect => sect.name);
+    const catalogued = best(query, SECTS.filter(sect => heard(sect.id)), sect => sect.name);
     if (!catalogued) return null;
 
+    const seat = placeOrShape(scope, catalogued.territory);
     const facts = [
-        `${catalogued.name} is a ${catalogued.alignment} sect seated at ${catalogued.territory}.`,
+        `${catalogued.name} is a ${catalogued.alignment} sect seated at ${seat}.`,
         `It admits from ${rankName(catalogued.admissionOrdinal)}; its strongest member stands at ${rankName(catalogued.powerOrdinal)}.`,
         catalogued.recruits ? 'It takes applicants.' : 'It takes no applicants at all.',
         `Ranks, outer to inner: ${catalogued.ranks.join(', ')}.`
     ];
+
+    // Rivals are the classic leak: asking about the one sect a villager has
+    // heard of should not hand back the names of the four it fights with.
     if (catalogued.rivals.length > 0) {
-        facts.push(`It has standing feuds with: ${catalogued.rivals.join(', ')}.`);
+        const rivals = catalogued.rivals.map(id => ({
+            id,
+            name: SECTS.find(sect => sect.id === id)?.name ?? id
+        }));
+        const { named, hidden } = knownNamesOnly(scope, 'sect', rivals);
+        const line = describeParties('It has standing feuds with', named, hidden);
+        if (line) facts.push(line);
     }
+
     return { kind: 'sect', id: catalogued.id, name: catalogued.name, facts };
 }
 
@@ -262,14 +400,17 @@ export function resolvePlace(query: string | undefined): ResolvedEntity | null {
     const cleaned = (query ?? '').trim().slice(0, 80);
     if (cleaned.length < 2) return null;
 
-    const catalogued = best(cleaned, SECTS, sect => sect.territory);
+    // Deliberately does NOT volunteer which sect holds the ground. That is one
+    // of the most consequential facts in the world and it is not free for
+    // standing on a road; it has to be learned from a source.
     return {
         kind: 'place',
         id: cleaned,
         name: cleaned,
-        facts: catalogued
-            ? [`${cleaned} lies in ${catalogued.territory}, which ${catalogued.name} holds.`]
-            : [`${cleaned} is a place name the engine records but does not model. Nothing about it is simulated.`]
+        facts: [
+            `${cleaned} is a place name the engine records but does not model. ` +
+            'Nothing about it is simulated, and who holds the ground is not on record here.'
+        ]
     };
 }
 
@@ -287,11 +428,13 @@ export function resolvePlace(query: string | undefined): ResolvedEntity | null {
 export function resolveAnything(
     repos: CultivationRepos,
     query: string,
-    self: Cultivator
+    self: Cultivator,
+    scope?: KnowledgeScope
 ): ResolvedEntity | null {
     return (
-        resolveCultivator(repos, query, self.id) ??
-        resolveSect(repos, query) ??
+        resolveCultivator(repos, query, self.id, scope) ??
+        resolveSect(repos, query, scope) ??
+        resolveKnownPlace(query, self, scope) ??
         resolveTechnique(repos, query, self.id) ??
         resolveRecipe(query) ??
         resolvePill(query) ??
@@ -299,29 +442,84 @@ export function resolveAnything(
     );
 }
 
+/**
+ * A place the holder has actually heard of, or the one they are standing in.
+ *
+ * Distinct from `resolvePlace`, which accepts any name because walking in a
+ * direction does not require having been told where you are going. Examining a
+ * place you have never heard of is a different claim, and it is refused.
+ */
+export function resolveKnownPlace(
+    query: string,
+    self: Cultivator,
+    scope?: KnowledgeScope
+): ResolvedEntity | null {
+    const here = (self.location ?? '').trim();
+    if (here.length >= 2 && matchScore(query, here) >= MATCH_THRESHOLD) {
+        return resolvePlace(here);
+    }
+    if (!scope) return null;
+
+    const known = scope.gate.awareness(scope.holderId, 'place');
+    const match = best(query, known, row => row.name);
+    return match ? resolvePlace(match.name) : null;
+}
+
 /** A person or a faction. The two things `interact` can be pointed at. */
 export function resolveParty(
     repos: CultivationRepos,
     query: string,
-    self: Cultivator
+    self: Cultivator,
+    scope?: KnowledgeScope
 ): ResolvedEntity | null {
-    return resolveCultivator(repos, query, self.id) ?? resolveSect(repos, query);
+    return resolveCultivator(repos, query, self.id, scope)
+        ?? resolveSect(repos, query, scope);
 }
 
 /**
  * Names worth suggesting when a subject resolved to nothing.
  *
- * Sourced from real rows and real catalog entries, so a refusal is useful
- * rather than merely a refusal: it tells the player what is actually there.
+ * Scoped, and this one matters more than it looks: the old version fell back to
+ * listing every recruiting sect in the catalog, which handed the player - and
+ * then the narrator - the answer key inside an error message. A refusal that
+ * leaks the world is worse than a refusal that does not help.
+ *
+ * What is offered instead: people standing in the same place, and names this
+ * cultivator has actually heard. If that list is empty, the honest answer is
+ * that they know of nobody, and the caller says so.
  */
-export function nearbyNames(repos: CultivationRepos, self: Cultivator, limit = 6): string[] {
-    const people = repos.cultivators
+export function nearbyNames(
+    repos: CultivationRepos,
+    self: Cultivator,
+    scope?: KnowledgeScope,
+    limit = 6
+): string[] {
+    const here = (self.location ?? '').trim().toLowerCase();
+    const colocated = repos.cultivators
         .roster()
-        .filter(row => row.id !== self.id && row.alive)
-        .slice(0, limit)
+        .filter(row =>
+            row.id !== self.id &&
+            row.alive &&
+            here.length > 0 &&
+            (row.location ?? '').trim().toLowerCase() === here)
         .map(row => row.name);
-    if (people.length > 0) return people;
-    return SECTS.filter(sect => sect.recruits).slice(0, limit).map(sect => sect.name);
+
+    const heardOf = scope
+        ? scope.gate
+            .awareness(scope.holderId)
+            .filter(row => row.kind === 'cultivator' || row.kind === 'sect')
+            .map(row => row.name)
+        : [];
+
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const name of [...colocated, ...heardOf]) {
+        if (seen.has(name)) continue;
+        seen.add(name);
+        out.push(name);
+        if (out.length >= limit) break;
+    }
+    return out;
 }
 
 /** Arts this cultivator actually knows, for a refusal that helps. */

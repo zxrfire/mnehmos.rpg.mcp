@@ -42,15 +42,24 @@ import {
 } from './actions.js';
 import {
     INTENT_SYSTEM_PROMPT,
-    NARRATION_SYSTEM_PROMPT,
     composeIntentUser,
-    composeNarrationUser
+    composeNarrationUser,
+    narrationSystemPrompt
 } from './prompt.js';
+import type { AwarenessRow } from './knowledge.js';
 import type { EngineFacts } from './facts.js';
 
 export interface NarratorScene {
     place: string;
     ambient: AmbientQi;
+    /**
+     * Every person, faction and place this cultivator has heard of.
+     *
+     * Sent as an explicit whitelist of proper nouns. The discovery rule is
+     * enforced twice over: the model is told what it may name, and it is not
+     * given anything else to name in the first place.
+     */
+    awareness?: readonly AwarenessRow[];
 }
 
 export interface Narration {
@@ -192,7 +201,7 @@ export class ProviderNarrator implements Narrator {
                 maxTokens: this.maxNarrationTokens,
                 signal: AbortSignal.timeout(this.timeoutMs),
                 messages: [
-                    { role: 'system', content: NARRATION_SYSTEM_PROMPT },
+                    { role: 'system', content: narrationSystemPrompt() },
                     { role: 'user', content: composeNarrationUser(facts, scene) }
                 ]
             });

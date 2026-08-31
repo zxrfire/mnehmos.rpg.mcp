@@ -44,6 +44,11 @@ COPY --chown=node:node package.json ./
 COPY --chown=node:node config ./config
 COPY --chown=node:node data   ./data
 COPY --chown=node:node web    ./web
+# The narrator loads docs/world/NARRATOR-CORE.md verbatim as its Tier 1
+# constitution. Without this the container silently falls back to a reduced
+# built-in copy, which is exactly the kind of quiet degradation that is hard
+# to notice in play.
+COPY --chown=node:node docs   ./docs
 
 USER node
 
