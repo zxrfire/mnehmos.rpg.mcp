@@ -12,6 +12,7 @@ import {
     SATIETY_MAX
 } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import { isTraceable } from '../../engine/cultivation/understanding.js';
 
 /**
  * Row shape of `cultivators`. Declared explicitly rather than inferred so a
@@ -43,7 +44,13 @@ interface CultivatorRow {
     location: string | null;
     feuds: string;
     known_techniques: string;
+    insights: string;
+    achievements: string;
     alive: number;
+    existence_state: string;
+    soul_state: string;
+    identity_continuity: number;
+    body_id: string | null;
     death_cause: string | null;
     died_on_turn: number | null;
     created_at: string;
@@ -124,6 +131,16 @@ export interface RosterEntry {
     sectRank: string | null;
     age: number;
     alive: boolean;
+    /**
+     * Authoritative. `alive` is the convenience boolean beside it, and the two
+     * genuinely differ: a `soul_preserved` cultivator is not alive and is
+     * still playing, a `missing` one has no resolved answer either way. The
+     * roster is the one screen a player would ever see those on, so it ships
+     * the real state rather than collapsing everything into a checkbox.
+     */
+    existenceState: Cultivator['existenceState'];
+    soulState: Cultivator['soulState'];
+    identityContinuity: number;
     deathCause: string | null;
     spiritStones: number;
     untreatedInjuries: number;
@@ -142,6 +159,9 @@ interface RosterRow {
     sect_rank: string | null;
     age: number;
     alive: number;
+    existence_state: string;
+    soul_state: string;
+    identity_continuity: number;
     death_cause: string | null;
     spirit_stones: number;
     untreated_injuries: number;
@@ -188,6 +208,8 @@ export class CultivatorRepository {
                 hp, max_hp, qi, max_qi, satiety, starvation_turns,
                 age, years_at_current_realm,
                 spirit_stones, sect_id, sect_rank, location, feuds, known_techniques,
+                insights, achievements,
+                existence_state, soul_state, identity_continuity, body_id,
                 alive, death_cause, died_on_turn,
                 created_at, updated_at
             ) VALUES (
@@ -196,6 +218,8 @@ export class CultivatorRepository {
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns,
                 @age, @yearsAtCurrentRealm,
                 @spiritStones, @sectId, @sectRank, @location, @feuds, @knownTechniques,
+                @insights, @achievements,
+                @existenceState, @soulState, @identityContinuity, @bodyId,
                 @alive, @deathCause, @diedOnTurn,
                 @createdAt, @updatedAt
             )
@@ -212,6 +236,9 @@ export class CultivatorRepository {
                 age = @age, years_at_current_realm = @yearsAtCurrentRealm,
                 spirit_stones = @spiritStones, sect_id = @sectId, sect_rank = @sectRank,
                 location = @location, feuds = @feuds, known_techniques = @knownTechniques,
+                insights = @insights, achievements = @achievements,
+                existence_state = @existenceState, soul_state = @soulState,
+                identity_continuity = @identityContinuity, body_id = @bodyId,
                 alive = @alive, death_cause = @deathCause, died_on_turn = @diedOnTurn,
                 updated_at = @updatedAt
             WHERE id = @id
@@ -269,7 +296,8 @@ export class CultivatorRepository {
             SELECT
                 c.id, c.name, c.kind, c.spirit_root, c.realm_ordinal, c.location,
                 c.sect_id, s.name AS sect_name, c.sect_rank,
-                c.age, c.alive, c.death_cause, c.spirit_stones, c.feuds,
+                c.age, c.alive, c.existence_state, c.soul_state, c.identity_continuity,
+                c.death_cause, c.spirit_stones, c.feuds,
                 (
                     SELECT COUNT(*) FROM cultivator_injuries i
                     WHERE i.cultivator_id = c.id AND i.treated = 0
@@ -364,6 +392,9 @@ export class CultivatorRepository {
             sectRank: row.sect_rank,
             age: row.age,
             alive: row.alive === 1,
+            existenceState: row.existence_state as Cultivator['existenceState'],
+            soulState: row.soul_state as Cultivator['soulState'],
+            identityContinuity: row.identity_continuity,
             deathCause: row.death_cause,
             spiritStones: row.spirit_stones,
             untreatedInjuries: row.untreated_injuries,
@@ -651,6 +682,12 @@ export class CultivatorRepository {
             sectRank: c.sectRank ?? null,
             location: c.location ?? null,
             feuds: JSON.stringify(c.feuds),
+            insights: JSON.stringify(c.insights),
+            achievements: JSON.stringify(c.achievements),
+            existenceState: c.existenceState,
+            soulState: c.soulState,
+            identityContinuity: c.identityContinuity,
+            bodyId: c.bodyId ?? null,
             knownTechniques: JSON.stringify(c.knownTechniques),
             alive: c.alive ? 1 : 0,
             deathCause: c.deathCause ?? null,
@@ -679,7 +716,7 @@ export class CultivatorRepository {
     private rowToCultivator(row: CultivatorRow): Cultivator {
         const injuries = (this.selectInjuriesStmt.all(row.id) as InjuryRow[]).map(rowToInjury);
 
-        return CultivatorSchema.parse({
+        const cultivator = CultivatorSchema.parse({
             id: row.id,
             runId: row.run_id ?? undefined,
             name: row.name,
@@ -705,12 +742,21 @@ export class CultivatorRepository {
             location: row.location,
             feuds: JSON.parse(row.feuds),
             knownTechniques: JSON.parse(row.known_techniques),
+            insights: JSON.parse(row.insights),
+            achievements: JSON.parse(row.achievements),
             alive: row.alive === 1,
+            existenceState: row.existence_state,
+            soulState: row.soul_state,
+            identityContinuity: row.identity_continuity,
+            bodyId: row.body_id,
             deathCause: row.death_cause,
             diedOnTurn: row.died_on_turn,
             createdAt: row.created_at,
             updatedAt: row.updated_at
         });
+
+        assertTraceableInsights(cultivator);
+        return cultivator;
     }
 
     /**
@@ -725,6 +771,37 @@ export class CultivatorRepository {
             );
         }
     }
+}
+
+/**
+ * Reject, do not repair, an insight that cannot say where it came from.
+ *
+ * `InsightSchema` already refuses a missing provenance - it has no default and
+ * no `.optional()` - so what survives parse and still fails here is the
+ * structural check: `formInsight` DERIVES an insight's id from its origin
+ * achievement, so an id that no longer contains its own `achievementId` means
+ * the provenance was swapped out after the fact.
+ *
+ * Repairing that would be worse than failing on it. The only repairs available
+ * are inventing an achievement (fabricating history the simulation never
+ * produced) or dropping the provenance (which the schema forbids precisely
+ * because an insight with no history behind it is, in the design's own words,
+ * a bug). An untraceable insight arriving from the database is a corruption
+ * signal about the writer, and quietly normalising it would hide the writer
+ * while leaving a cultivator holding comprehension nothing ever earned.
+ */
+function assertTraceableInsights(cultivator: Cultivator): void {
+    if (isTraceable(cultivator.insights)) return;
+
+    const untraceable = cultivator.insights
+        .filter(insight => !isTraceable([insight]))
+        .map(insight => `${insight.id} (claims achievement ${insight.provenance.achievementId})`);
+
+    throw new Error(
+        `Cultivator ${cultivator.id} has untraceable insights, which cannot be repaired: ` +
+        `${untraceable.join('; ')}. An insight's id is derived from the achievement that ` +
+        'produced it, so this row was written by something that did not use formInsight.'
+    );
 }
 
 function rowToInjury(row: InjuryRow): Injury {

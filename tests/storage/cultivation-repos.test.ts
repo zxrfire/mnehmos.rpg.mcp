@@ -15,6 +15,8 @@ import {
     INJURY_WEIGHTS
 } from '../../src/schema/cultivation';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms';
+import { formInsight, deepenInsight, isTraceable } from '../../src/engine/cultivation/understanding';
+import type { Achievement, Insight } from '../../src/schema/cultivation';
 
 /**
  * In-memory database with foreign keys ON. The pragma is not on by default for
@@ -34,6 +36,31 @@ function cultivatorColumns(db: Database.Database): string[] {
 }
 
 const NOW = '2025-01-01T00:00:00.000Z';
+
+/**
+ * An achievement and the insight it produced, built through the engine's own
+ * constructors so the id derivation that makes provenance structural is the
+ * real one rather than something this test hand-rolls to match.
+ */
+function sampleAchievement(overrides: Partial<Achievement> = {}): Achievement {
+    return {
+        id: 'ach-river-1',
+        kind: 'met_something_ancient',
+        onDay: 412,
+        turn: 19,
+        summary: 'Met something old in the forbidden river and was taught about water.',
+        detail: { river: 'Forbidden Yin', depth: 30 },
+        ...overrides
+    };
+}
+
+function sampleInsight(achievement = sampleAchievement()): Insight {
+    return formInsight(
+        { domain: 'element', subject: 'water', opening: 'three centuries of water, given in a night' },
+        2,
+        achievement
+    );
+}
 
 function sampleCultivator(overrides: Partial<CreateCultivatorInput> = {}): CreateCultivatorInput {
     return {
@@ -116,13 +143,13 @@ describe('cultivation migration', () => {
         db.close();
     });
 
-    it('adds the location column to a database created before it existed', () => {
+    it('adds every post-release column to a database created before they existed', () => {
         const db = new Database(':memory:');
         db.pragma('foreign_keys = ON');
 
-        // A pre-change database: the original cultivators DDL, verbatim minus
-        // `location`. CREATE TABLE IF NOT EXISTS will skip this table, so only
-        // the guarded ALTER can rescue it.
+        // A pre-change database: the original cultivators DDL, verbatim, with
+        // none of the columns added since. CREATE TABLE IF NOT EXISTS will skip
+        // this table, so only the guarded ALTERs can rescue it.
         db.exec(`
             CREATE TABLE cultivators (
               id TEXT PRIMARY KEY,
@@ -157,28 +184,58 @@ describe('cultivation migration', () => {
                     '{"might":2,"insight":2,"fortune":1,"charm":1}', 10, 10, 0, 0);
         `);
 
-        expect(cultivatorColumns(db)).not.toContain('location');
+        const addedSinceRelease = [
+            'location', 'foundation_quality', 'immortal_status',
+            'insights', 'achievements',
+            'existence_state', 'soul_state', 'identity_continuity', 'body_id'
+        ];
+        for (const column of addedSinceRelease) {
+            expect(cultivatorColumns(db)).not.toContain(column);
+        }
 
         migrate(db);
 
-        expect(cultivatorColumns(db)).toContain('location');
+        for (const column of addedSinceRelease) {
+            expect(cultivatorColumns(db)).toContain(column);
+        }
 
-        // The legacy row survives the upgrade and reads back with a null
-        // location rather than an invented one.
+        // The legacy row survives the upgrade and reads back with honest
+        // values rather than invented ones: no location, no understanding, and
+        // an ordinary living existence.
         const repo = new CultivatorRepository(db);
         const legacy = repo.getById('legacy-1');
         expect(legacy).not.toBeNull();
         expect(legacy!.name).toBe('Old Ancestor');
         expect(legacy!.location).toBeNull();
+        expect(legacy!.insights).toEqual([]);
+        expect(legacy!.achievements).toEqual([]);
+        expect(legacy!.existenceState).toBe('alive');
+        expect(legacy!.soulState).toBe('intact');
+        expect(legacy!.identityContinuity).toBe(1);
+        expect(legacy!.bodyId).toBeNull();
 
-        // And the upgraded database accepts writes to the new column.
-        expect(repo.update('legacy-1', { location: 'the Scorched Wastes' })!.location)
-            .toBe('the Scorched Wastes');
+        // And the upgraded database accepts writes to the new columns.
+        const achievement = sampleAchievement();
+        const upgraded = repo.update('legacy-1', {
+            location: 'the Scorched Wastes',
+            insights: [sampleInsight(achievement)],
+            achievements: [achievement],
+            existenceState: 'sealed'
+        })!;
+        expect(upgraded.location).toBe('the Scorched Wastes');
+        expect(upgraded.insights).toHaveLength(1);
+        expect(upgraded.existenceState).toBe('sealed');
 
-        // Re-running the migration on the upgraded database is a no-op.
+        // Re-running the migration on the upgraded database is a no-op, and no
+        // guard double-adds its column.
         expect(() => migrateCultivation(db)).not.toThrow();
-        expect(cultivatorColumns(db).filter(c => c === 'location')).toHaveLength(1);
-        expect(repo.getById('legacy-1')!.location).toBe('the Scorched Wastes');
+        for (const column of addedSinceRelease) {
+            expect(cultivatorColumns(db).filter(c => c === column)).toHaveLength(1);
+        }
+        const after = repo.getById('legacy-1')!;
+        expect(after.location).toBe('the Scorched Wastes');
+        expect(after.insights[0].provenance.achievementId).toBe(achievement.id);
+        expect(after.existenceState).toBe('sealed');
 
         db.close();
     });
@@ -238,6 +295,146 @@ describe('CultivatorRepository', () => {
         expect(repo.update('cult-1', { location: 'a nameless valley' })!.location)
             .toBe('a nameless valley');
         expect(repo.update('cult-1', { location: null })!.location).toBeNull();
+    });
+
+    it('round-trips an empty understanding, which is the ordinary case', () => {
+        repo.create(sampleCultivator());
+
+        const loaded = repo.getById('cult-1')!;
+        expect(loaded.insights).toEqual([]);
+        expect(loaded.achievements).toEqual([]);
+    });
+
+    it('round-trips insights and achievements with provenance intact', () => {
+        const achievement = sampleAchievement();
+        const insight = sampleInsight(achievement);
+
+        repo.create(sampleCultivator({ insights: [insight], achievements: [achievement] }));
+
+        const loaded = repo.getById('cult-1')!;
+        expect(loaded.achievements).toEqual([achievement]);
+        expect(loaded.insights).toEqual([insight]);
+
+        // The detail record and the derived id survive the JSON round trip.
+        expect(loaded.achievements[0].detail).toEqual({ river: 'Forbidden Yin', depth: 30 });
+        expect(loaded.insights[0].id).toContain(achievement.id);
+        expect(loaded.insights[0].provenance.account).toContain('three centuries of water');
+        expect(isTraceable(loaded.insights)).toBe(true);
+    });
+
+    it('round-trips a deepened insight, keeping the whole chain', () => {
+        const origin = sampleAchievement();
+        const later = sampleAchievement({
+            id: 'ach-duel-2',
+            kind: 'profound_principle',
+            onDay: 900,
+            summary: 'Held a river back for nine breaths.'
+        });
+        const deepened = deepenInsight(sampleInsight(origin), later);
+
+        repo.create(sampleCultivator({
+            insights: [deepened],
+            achievements: [origin, later]
+        }));
+
+        const loaded = repo.getById('cult-1')!;
+        expect(loaded.insights[0].degree).toBe(3);
+        expect(loaded.insights[0].provenance.deepenedBy).toEqual([later.id]);
+        // The origin achievement is what the id derives from and must not move.
+        expect(loaded.insights[0].id).toContain(origin.id);
+        expect(loaded.insights[0].provenance.achievementId).toBe(origin.id);
+        expect(loaded.achievements.map(a => a.id)).toEqual([origin.id, later.id]);
+    });
+
+    it('updates insights and achievements through update()', () => {
+        repo.create(sampleCultivator());
+        const achievement = sampleAchievement();
+        const insight = sampleInsight(achievement);
+
+        const updated = repo.update('cult-1', {
+            insights: [insight],
+            achievements: [achievement]
+        })!;
+        expect(updated.insights).toEqual([insight]);
+
+        const reloaded = repo.getById('cult-1')!;
+        expect(reloaded.insights).toEqual([insight]);
+        expect(reloaded.achievements).toEqual([achievement]);
+    });
+
+    it('rejects rather than repairs an untraceable insight on load', () => {
+        const achievement = sampleAchievement();
+        repo.create(sampleCultivator({
+            insights: [sampleInsight(achievement)],
+            achievements: [achievement]
+        }));
+
+        // Corrupt the stored row the way a hand-rolled writer would: swap the
+        // provenance out from under an id that was derived from a different
+        // achievement. The insight still satisfies InsightSchema - provenance
+        // is present and well formed - so only the structural check catches it.
+        const stored = JSON.parse(
+            (db.prepare('SELECT insights FROM cultivators WHERE id = ?').get('cult-1') as { insights: string }).insights
+        ) as Insight[];
+        stored[0].provenance.achievementId = 'ach-invented-by-nobody';
+        db.prepare('UPDATE cultivators SET insights = ? WHERE id = ?')
+            .run(JSON.stringify(stored), 'cult-1');
+
+        expect(() => repo.getById('cult-1')).toThrow(/untraceable/i);
+        expect(() => repo.getById('cult-1')).toThrow(/ach-invented-by-nobody/);
+
+        // And it stays rejected: nothing quietly normalised the row on the way
+        // through, so a second read fails identically rather than succeeding.
+        expect(() => repo.getById('cult-1')).toThrow(/untraceable/i);
+        expect(() => repo.list()).toThrow(/untraceable/i);
+    });
+
+    it('rejects an insight whose provenance was stripped entirely', () => {
+        const achievement = sampleAchievement();
+        repo.create(sampleCultivator({
+            insights: [sampleInsight(achievement)],
+            achievements: [achievement]
+        }));
+
+        const stored = JSON.parse(
+            (db.prepare('SELECT insights FROM cultivators WHERE id = ?').get('cult-1') as { insights: string }).insights
+        ) as Insight[];
+        delete (stored[0] as Partial<Insight>).provenance;
+        db.prepare('UPDATE cultivators SET insights = ? WHERE id = ?')
+            .run(JSON.stringify(stored), 'cult-1');
+
+        // Caught one layer earlier: InsightProvenanceSchema has no default and
+        // no .optional(), so this never reaches the traceability check.
+        expect(() => repo.getById('cult-1')).toThrow();
+    });
+
+    it('round-trips existence state, soul state, and identity continuity', () => {
+        repo.create(sampleCultivator({
+            existenceState: 'remnant',
+            soulState: 'fragmented',
+            identityContinuity: 0.25,
+            bodyId: null
+        }));
+
+        const loaded = repo.getById('cult-1')!;
+        expect(loaded.existenceState).toBe('remnant');
+        expect(loaded.soulState).toBe('fragmented');
+        expect(loaded.identityContinuity).toBeCloseTo(0.25);
+        expect(loaded.bodyId).toBeNull();
+
+        const moved = repo.update('cult-1', { existenceState: 'possessing', bodyId: 'body-77' })!;
+        expect(moved.existenceState).toBe('possessing');
+        expect(repo.getById('cult-1')!.bodyId).toBe('body-77');
+    });
+
+    it('defaults existence fields to an ordinary living person', () => {
+        repo.create(sampleCultivator());
+
+        const loaded = repo.getById('cult-1')!;
+        expect(loaded.existenceState).toBe('alive');
+        expect(loaded.soulState).toBe('intact');
+        expect(loaded.identityContinuity).toBe(1);
+        expect(loaded.bodyId).toBeNull();
     });
 
     it('lists with filters', () => {
@@ -412,11 +609,65 @@ describe('CultivatorRepository.roster', () => {
             sectRank: 'Core Disciple',
             age: 19.5,
             alive: true,
+            existenceState: 'alive',
+            soulState: 'intact',
+            identityContinuity: 1,
             deathCause: null,
             spiritStones: 145,
             untreatedInjuries: 1,
             feuds: ['Blackwater Pavilion', 'cult-9']
         });
+    });
+
+    it('reports existence states the alive boolean cannot express', () => {
+        // A soul with no body is not alive and is very much still playing; a
+        // remnant is not the person who left it; missing is an honest
+        // unresolved answer. All three read as `alive: false` or `true` alone,
+        // which is exactly the collapse the GUI reported.
+        repo.create(sampleCultivator({
+            id: 'soul', name: 'Bodiless Elder', realmOrdinal: 30,
+            existenceState: 'soul_preserved', soulState: 'damaged', identityContinuity: 0.9
+        }));
+        repo.create(sampleCultivator({
+            id: 'remnant', name: 'Founder Imprint', realmOrdinal: 25,
+            existenceState: 'remnant', soulState: 'fragmented', identityContinuity: 0.15
+        }));
+        repo.create(sampleCultivator({
+            id: 'gone', name: 'Vanished Disciple', realmOrdinal: 6,
+            existenceState: 'missing', soulState: 'intact', identityContinuity: 1
+        }));
+        repo.create(sampleCultivator({
+            id: 'quiet', name: 'Unresolved Stranger', realmOrdinal: 2,
+            existenceState: 'unknown'
+        }));
+
+        const byId = Object.fromEntries(repo.roster().map(r => [r.id, r]));
+        expect(byId.soul.existenceState).toBe('soul_preserved');
+        expect(byId.soul.soulState).toBe('damaged');
+        expect(byId.soul.identityContinuity).toBeCloseTo(0.9);
+        expect(byId.remnant.existenceState).toBe('remnant');
+        expect(byId.remnant.identityContinuity).toBeCloseTo(0.15);
+        expect(byId.gone.existenceState).toBe('missing');
+        expect(byId.quiet.existenceState).toBe('unknown');
+
+        // None of them are empty cells, and none are collapsed into `alive`.
+        for (const entry of repo.roster()) {
+            expect(entry.existenceState).toBeTruthy();
+            expect(entry.soulState).toBeTruthy();
+            expect(typeof entry.identityContinuity).toBe('number');
+        }
+    });
+
+    it('carries the existence state of the dead', () => {
+        repo.create(sampleCultivator());
+        repo.markDead('cult-1', 'qi_deviation', 12);
+
+        const [entry] = repo.roster();
+        expect(entry.alive).toBe(false);
+        expect(entry.deathCause).toBe('qi_deviation');
+        // markDead sets the boolean; the existence state is the engine's to
+        // move, and the roster reports whatever is actually stored.
+        expect(entry.existenceState).toBeTruthy();
     });
 
     it('includes unaffiliated cultivators with a null sect', () => {
@@ -426,6 +677,9 @@ describe('CultivatorRepository.roster', () => {
         expect(entry.sectId).toBeNull();
         expect(entry.sectName).toBeNull();
         expect(entry.sectRank).toBeNull();
+        expect(entry.existenceState).toBe('alive');
+        expect(entry.soulState).toBe('intact');
+        expect(entry.identityContinuity).toBe(1);
         expect(entry.location).toBeNull();
         expect(entry.untreatedInjuries).toBe(0);
     });
