@@ -199,7 +199,8 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
         `Cultivation progress ${Math.round(cultivator.cultivationProgress)} qi-units. HP ${cultivator.hp}/${cultivator.maxHp}. Satiety ${cultivator.satiety}/100. Spirit stones ${cultivator.spiritStones}.`,
         untreated === 0
             ? 'The meridians are whole.'
-            : `${untreated} meridian injur${untreated === 1 ? 'y is' : 'ies are'} still open, and have been since they were taken.`,
+            : `${untreated} meridian injur${untreated === 1 ? 'y has' : 'ies have'} been open ` +
+              'since the day it was taken, and nothing has closed it.',
         `${cultivator.yearsAtCurrentRealm.toFixed(1)} years at this realm without advancing.`,
         describeAmbientPerceived(ambient)
     ];
@@ -548,6 +549,11 @@ export interface Company {
     total: number;
 }
 
+/** Sentence case, for clauses that may or may not land first. */
+function capitalise(sentence: string): string {
+    return sentence.length === 0 ? sentence : sentence[0].toUpperCase() + sentence.slice(1);
+}
+
 /** The most people a look names individually. A square, not a census. */
 export const COMPANY_SHOWN = 4;
 
@@ -576,6 +582,10 @@ function roughly(n: number): string {
 function describeCompany(company: Company, observerOrdinal = 0): string | null {
     if (company.total === 0) return null;
 
+    // Every clause here is written to stand alone, and some of them start
+    // with a count - "twenty-odd people are about". Joined after a full
+    // stop that reads as a typo, so the join capitalises rather than each
+    // clause guessing whether it will be first.
     const sentences: string[] = [];
 
     // Named first: these are the people the player has earned.
@@ -609,7 +619,7 @@ function describeCompany(company: Company, observerOrdinal = 0): string | null {
         }
     }
 
-    return sentences.length > 0 ? sentences.join(' ') : null;
+    return sentences.length > 0 ? sentences.map(capitalise).join(' ') : null;
 }
 
 /**
@@ -856,19 +866,23 @@ export function factsForInteraction(
     subjectFacts: readonly string[],
     unresolved: string
 ): EngineFacts {
+    // `intent` is a label the parser wrote, and it belongs to the inspector.
+    // Reading it back as prose produced "The intent is follow.", which is the
+    // engine telling the player what the engine thinks the player meant - and
+    // then, a paragraph later, "What comes of it is not settled. Nothing is
+    // settled by it.", which is the same sentence twice.
     return {
         headline: `${subject}, approached.`,
-        structure: [],
+        structure: [`Stated intent: ${intent}. Carried for the narrator; read by no conditional.`],
         lines: [
-            `${cultivator.name} approached ${subject}. Stated intent: ${intent}.`,
-            'This is an attempt, not an outcome. Nothing has been agreed, bought, believed or refused.',
+            `${cultivator.name} went to ${subject}.`,
             ...subjectFacts,
             unresolved
         ],
         prose: [
-            `${cultivator.name} goes to ${subject}. The intent is ${intent}.`,
+            `${cultivator.name} goes to ${subject}.`,
             subjectFacts.join(' '),
-            `What comes of it is not settled. ${unresolved}`
+            unresolved
         ].join('\n\n')
     };
 }

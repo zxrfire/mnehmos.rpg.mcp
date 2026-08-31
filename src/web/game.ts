@@ -87,6 +87,7 @@ import {
     resolveAnything,
     resolveCultivator,
     worldLocationFor,
+    type ResolvedEntity,
     resolveHerb,
     resolveParty,
     resolvePlace,
@@ -166,6 +167,15 @@ export const QI_PER_INSIGHT = 5;
  * hundred and forty-three people from another.
  */
 let ambientDb: Database.Database | null = null;
+
+/**
+ * Phrases that point at a person rather than naming one.
+ *
+ * Kept deliberately narrow. Everything here is a role, a pronoun or a
+ * demonstrative - words that cannot be somebody's name - so a misspelled
+ * real name never lands here and quietly gets the wrong person.
+ */
+const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they)$/i;
 
 export const PROVISION_COST_STONES = 2;
 
@@ -1113,7 +1123,14 @@ export class GameService {
         }
 
         const scope = this.scopeFor(cultivator);
-        const subject = resolveAnything(this.repos, query, cultivator, scope);
+        // Ruins are load-bearing: origin.md closes on them being the one door
+        // in this world that opens on nerve rather than standing, and the only
+        // route a poor cultivator has. "The ruins" is how a player refers to
+        // the one they are standing near, and it is not a proper name, so it
+        // resolved to nothing and the most obvious sentence about the most
+        // important feature in the game did nothing at all.
+        const subject = this.ruinAtHand(query, cultivator)
+            ?? resolveAnything(this.repos, query, cultivator, scope);
         if (!subject) {
             // Worded so that it does not confirm existence either. "You have
             // never heard of it" and "it is not there" have to look the same
@@ -1122,7 +1139,14 @@ export class GameService {
             // player is a scene that failed to get written.
             return refused('engine.resolveEntity', 'investigate', factsForRefusal(
                 'Nothing here answers to it.',
-                this.blankLook(cultivator),
+                // Searching a place fails differently from addressing a person.
+                // This used to hand back the conversational brush-off, so "I
+                // explore the ruins" was answered with somebody looking up from
+                // their work - which named a stranger the player had not met and
+                // described a social act nobody had attempted.
+                `You go over ${placeName(cultivator)} looking for it and it is not the kind of ` +
+                'place that has one. Either it is somewhere else, or it is nowhere, and standing ' +
+                'here turning it over is not going to settle which.',
                 `Unresolved subject "${query}": no knowledge record and nothing co-located. ` +
                 `${this.knownNamesLine(cultivator, scope)}`
             ));
@@ -1200,14 +1224,20 @@ export class GameService {
             ));
         }
 
-        const party = resolveCultivator(
-            this.repos, query, cultivator.id, scope, cultivator.realmOrdinal
-        );
+        // A gesture at somebody in the square resolves to somebody in the
+        // square. A name resolves to that name or to nothing.
+        const pointed = this.somebodyAtHand(query, cultivator);
+        const party = pointed
+            ? { kind: 'cultivator' as const, id: pointed.id, name: pointed.name }
+            : resolveCultivator(this.repos, query, cultivator.id, scope, cultivator.realmOrdinal);
         const present = party ? this.present(cultivator).some(row => row.id === party.id) : false;
         if (!party || !present) {
             return refused('engine.resolveParty', 'attack', factsForRefusal(
-                'Not here.',
-                this.blankLook(cultivator),
+                'Nothing to swing at.',
+                // Not the conversational brush-off. A fight that does not
+                // happen fails differently from a question nobody answers.
+                'You look for them and the moment goes past you. There is nobody in front of ' +
+                'you that the thought fits, and standing here deciding is its own answer.',
                 `Unresolved party "${query}" for a confrontation` +
                 `${party ? ', resolved but not co-located' : ''}. No exchange was run.`
             ));
@@ -1219,10 +1249,25 @@ export class GameService {
             ? goal
             : 'drive_off';
 
+        // Half the people in a square exist only in the world state, not in the
+        // cultivators table, and `combat_manage` looks its opponent up by id.
+        // Passing an id it cannot find produced "No cultivator with id npc-95."
+        // as the answer to a player swinging at somebody standing in front of
+        // them. Where there is no row, the opponent is described instead -
+        // which is what `OpponentSchema` has the name and ordinal fields for.
+        const onRecord = this.repos.cultivators.getById(party.id) !== undefined
+            && this.repos.cultivators.getById(party.id) !== null;
+        const standing = this.present(cultivator).find(row => row.id === party.id);
+
         const result = await handleResolve({
             action: 'resolve',
             cultivatorId: cultivator.id,
-            opponent: { cultivatorId: party.id },
+            opponent: onRecord
+                ? { cultivatorId: party.id }
+                : {
+                    name: party.name,
+                    ...(standing ? { realmOrdinal: standing.realmOrdinal } : {})
+                },
             goal: intent,
             vector: 'body',
             edges: [],
@@ -1282,7 +1327,15 @@ export class GameService {
             ));
         }
 
-        const party = resolveParty(this.repos, query, cultivator, scope);
+        // Pointed at rather than named: whoever is at hand is who they meant.
+        const pointedAt = this.somebodyAtHand(query, cultivator);
+        if (pointedAt && topic && topic.length >= 2) {
+            return this.askAround(run, cultivator, pointedAt, topic, scope);
+        }
+
+        const party = pointedAt
+            ? resolveCultivator(this.repos, pointedAt.name, cultivator.id, scope, cultivator.realmOrdinal)
+            : resolveParty(this.repos, query, cultivator, scope);
         if (!party && topic && topic.length >= 2) {
             // A description is not a name. "The old woman" resolves to
             // nobody in the roster and should not be fuzzy-matched into
@@ -2419,6 +2472,66 @@ export class GameService {
         return this.knowledge
             .awareness(cultivator.id, 'place')
             .some(row => placeKey(row.name) === wanted || placeKey(row.id) === wanted);
+    }
+
+
+    /**
+     * Somebody standing here, when the player pointed rather than named.
+     *
+     * "The nearest cultivator", "the old woman", "him" - these are not names
+     * and must never be fuzzy-matched into one, because that hands the player
+     * an identity they have not earned and, in a fight, picks the opponent for
+     * them. What they ARE is a gesture at a person in the square, which is a
+     * legitimate way to indicate somebody standing in front of you.
+     *
+     * Returns null when the phrase looks like an actual name, so a typo in a
+     * real name still fails honestly rather than hitting whoever is closest.
+     */
+    /**
+     * The ruin the player means when they say "the ruins".
+     *
+     * Looked up in the world's own locations rather than invented: a place
+     * whose name or kind says ruin, at or adjacent to where they are standing.
+     * Returns null when the world is off or there is nothing of the sort here,
+     * and the refusal above then says so as a search that came up empty.
+     */
+    private ruinAtHand(query: string, cultivator: Cultivator): ResolvedEntity | null {
+        if (!/^(?:the |that |these |those |a )?(?:old |broken |sealed |dead )*(?:ruins?|wreck|remains|rubble|old place)$/i
+            .test(query.trim())) {
+            return null;
+        }
+        if (!this.atHand) return null;
+
+        const here = placeKey(cultivator.location ?? '');
+        const ruin = this.atHand.locations.find(loc =>
+            /ruin|wreck|remnant|broken|derelict/i.test(loc.name)
+            && (placeKey(loc.name).includes(here) || here.length === 0 || placeKey(loc.name) === here));
+
+        // Failing that, any ruin the cultivator has heard named. A player who
+        // was told about one and walks off to search it is doing the right
+        // thing and should not be told it does not exist.
+        const known = ruin ?? this.atHand.locations.find(loc =>
+            /ruin|wreck|remnant|derelict/i.test(loc.name)
+            && this.knowledge.isAwareOf(cultivator.id, 'place', loc.id));
+        if (!known) return null;
+
+        return {
+            kind: 'place',
+            id: known.id,
+            name: known.name,
+            facts: [
+                `${known.name} is there, and has been longer than anyone standing near it.`,
+                'Nothing about it is arranged for a visitor. What is still in it is still in it ' +
+                'because getting it out was harder than it was worth to whoever tried last.'
+            ],
+            structure: [`world location ${known.id}; matched on "${query}".`]
+        };
+    }
+
+    private somebodyAtHand(query: string, cultivator: Cultivator): RosterEntry | null {
+        if (!POINTING.test(query.trim())) return null;
+        const here = this.present(cultivator);
+        return here.length > 0 ? here[here.length - 1] : null;
     }
 
     private present(cultivator: Cultivator): RosterEntry[] {
