@@ -350,6 +350,159 @@ alchemists, formation masters, merchants, craftsmen, teachers, officials, milita
 cultivators, researchers, administrators, healers, explorers. That is what makes an
 economy exist.
 
+## Dao houses: knowledge accumulated for millennia is itself a form of power
+
+Not every formidable faction should be "a sect with stronger cultivators." Some ancient
+houses are formidable because they have spent thousands of years understanding one
+fundamental aspect of reality better than anyone else alive.
+
+Candidate principles: karma, fate, causality, space, time, life, death, dreams, memory,
+names, oaths, order, chaos, severance, creation, destruction, flame, yin and yang, the
+sword, souls.
+
+> The strongest faction is not necessarily the one with the strongest individual.
+
+A young prodigy can become enormously powerful. An ancient house has generations,
+history, techniques, artifacts, relationships, territory, resources and secrets, and that
+accumulated weight has to matter. **Civilisation itself is part of power progression.**
+
+### Specialisation is not ownership
+
+A house does not "own" karma or "control" fate. It understands a principle
+extraordinarily well and holds an enormous advantage in it. Everyone else still interacts
+with that principle - clumsily, and usually without noticing.
+
+A five-thousand-year-old house holds knowledge a lone genius cannot reproduce overnight,
+because it was built the long way:
+
+```text
+a founder develops a method -> disciples refine it -> descendants preserve it
+  -> artifacts are made -> new techniques are derived -> unique resources accumulate
+    -> the house becomes the authority on the subject
+```
+
+### The principle must operate outside combat
+
+This is the part that is easy to get wrong. A karma specialist must never reduce to
+"karma attack, 900 damage." The specialisation should shape how the house touches
+civilisation:
+
+| House of | Reaches into |
+|---|---|
+| Karma | Relationships, debts, oaths, inheritance, family, causal tracking, concealment, severance |
+| Fate | Probability, divination, recognising which possibilities matter, seeing events converge |
+| Oaths | Contracts, promises, restrictions, sworn agreements, the punishment for breaking one |
+| Space | Travel, portals, territory, formations, storage, barriers |
+
+Which is why such houses become **institutions**, not just powers. A karma house ends up
+supplying judges, oath witnesses, debt arbiters, inheritance authorities and
+investigators. A fate house ends up advising rulers. An oath house ends up holding the
+treaties. Their authority is civil before it is martial.
+
+### Their power should be frightening in a specific way
+
+The interesting question is not *can I beat this person*. It is:
+
+> "I could probably kill him. But what happens afterwards?"
+
+Killing a member creates a permanent relationship with the whole house. Breaking an oath
+invokes something. Entering their territory means being read by people who understand
+that principle better than you do.
+
+### Blind spots and counters are mandatory
+
+No specialisation may be an automatic win.
+
+- Every principle has a counter: karma against karmic severance, fate against fate
+  concealment, oaths against nullification, space against spatial anchoring, souls
+  against soul protection. Counters are rare, dangerous, and usually held by a rival
+  house.
+- Every house is *bad* at things. A karma house may be terrifying at relationships and
+  poor at open warfare, alchemy or formations. A fate house may read possibilities and be
+  useless in genuine chaos or against someone deliberately disrupting prediction. A space
+  house may dominate movement and hold no political influence at all.
+- Houses can disagree about reality itself. *Fate decides what happens* against *karma
+  decides what must eventually be repaid* against *neither is absolute* is an ideological
+  conflict before it is a fight.
+
+And they are not omnipotent: they have enemies, internal factions, political problems,
+resource shortages, declining branches, incomplete knowledge, failed techniques, and
+ancestors who are simply dead.
+
+### Karma is a relationship graph, not a score
+
+Karma is modelled as **persistent relationships between entities** - favour, debt,
+betrayal, blood feud, oath, inheritance, gratitude, revenge, teacher and disciple, family,
+a killing, a rescue, ownership.
+
+**Never surface this as a visible reputation number.** It is a graph that persists, is
+inherited, and is mostly invisible to the people inside it.
+
+It crosses generations without anyone tracking it:
+
+```text
+year 20    a dying cultivator is saved
+year 20    that cultivator's family survives because of it
+year 150   a descendant founds a sect
+year 400   the sect becomes powerful
+year 700   it meets the rescuer's descendant, and an old favour becomes load-bearing
+```
+
+Nobody involved needs to know the original connection. **The world remembers it.** A
+house that studies karma is one of the few things that can see the whole thread.
+
+Severance exists - concealing a connection, cutting one, transferring or redirecting
+consequence, erasing traces, breaking inheritance. It is rare, dangerous, and never free.
+
+### Houses rise, fall, and rewrite what happened
+
+Ancient factions replace each other. A successor inherits territory, resources,
+techniques, enemies, obligations, artifacts and reputation - and frequently rewrites the
+record:
+
+```text
+official history   "the previous house was corrupt and was rightly destroyed"
+the truth          they wanted the territory
+   or              the predecessor had found something dangerous
+   or              nobody now alive remembers what the quarrel was about
+```
+
+The player can uncover the discrepancy between official history, surviving records,
+ruins, descendants, artifacts, and what actually happened.
+
+A destroyed house leaves scars regardless: ruins, forbidden techniques, bloodlines,
+descendants, artifacts, broken formations, cursed ground, inherited enemies, hidden
+disciples, standing oaths, unsettled karma, altered geography. It can matter for thousands
+of years after its last member died.
+
+Territory therefore stacks:
+
+```text
+an older civilisation -> House A -> House B takes it from A -> B declines
+  -> Sect C occupies the ruins -> the present
+```
+
+The player first learns only *"Sect C controls this region."* Much later: Sect C is built
+on House B's ruins. Later: B took it from A. Later still: A was there to keep something
+contained.
+
+### Discovery, not exposition
+
+Never announce that a house studies karma. The player arrives at it:
+
+```text
+a relationship that makes no sense -> an event with no visible cause -> rumours
+  -> investigation -> an old record -> meeting a specialist -> understanding
+```
+
+### And it outlives its experts
+
+If the greatest living karma cultivator dies, the discipline does not. It survives in
+disciples, manuals, artifacts, descendants, sealed inheritances and fragments. A house can
+lose its finest expert and remain dangerous, because the thing that made it dangerous was
+never one person.
+
+
 ## Morality is contextual
 
 No good/evil axis, and no alignment-by-faction. Cultivators hold competing values - family,
