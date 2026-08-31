@@ -1354,11 +1354,11 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Frostmirror Court -------------------------------------------------
+    // --- Frostmirror Sect -------------------------------------------------
     {
         id: 'member-yue-linshuang',
         name: 'Yue Linshuang',
-        factionId: 'sect-frostmirror-court',
+        factionId: 'sect-frostmirror-sect',
         rankIndex: 0,
         rank: 'Snow Servant',
         realmOrdinal: 14,
@@ -1375,7 +1375,7 @@ export const MEMBERS: readonly Member[] = [
     {
         id: 'member-ning-qianshu',
         name: 'Ning Qianshu',
-        factionId: 'sect-frostmirror-court',
+        factionId: 'sect-frostmirror-sect',
         rankIndex: 1,
         rank: 'Mirror Disciple',
         realmOrdinal: 17,
@@ -1392,7 +1392,7 @@ export const MEMBERS: readonly Member[] = [
     {
         id: 'member-bai-tuoyun',
         name: 'Bai Tuoyun',
-        factionId: 'sect-frostmirror-court',
+        factionId: 'sect-frostmirror-sect',
         rankIndex: 4,
         rank: 'Frost Elder',
         realmOrdinal: 22,
@@ -1740,11 +1740,11 @@ export const MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- Storm Tyrant Court ------------------------------------------------
+    // --- Storm Tyrant Sect ------------------------------------------------
     {
         id: 'member-tian-changgeng',
         name: 'Tian Changgeng',
-        factionId: 'sect-storm-tyrant-court',
+        factionId: 'sect-storm-tyrant-sect',
         rankIndex: 0,
         rank: 'Rod Bearer',
         realmOrdinal: 10,
@@ -1761,7 +1761,7 @@ export const MEMBERS: readonly Member[] = [
     {
         id: 'member-bo-shuyi',
         name: 'Bo Shuyi',
-        factionId: 'sect-storm-tyrant-court',
+        factionId: 'sect-storm-tyrant-sect',
         rankIndex: 1,
         rank: 'Storm Servant',
         realmOrdinal: 14,
@@ -1778,13 +1778,13 @@ export const MEMBERS: readonly Member[] = [
     {
         id: 'member-du-yanzhi',
         name: 'Du Yanzhi',
-        factionId: 'sect-storm-tyrant-court',
+        factionId: 'sect-storm-tyrant-sect',
         rankIndex: 2,
         rank: 'Arc Disciple',
         realmOrdinal: 18,
         role: 'rival',
         wants: 'the Thunder Warden\'s post at the tether',
-        fears: 'the Frostmirror Court, one of whose disciples beat her once in front of witnesses',
+        fears: 'the Frostmirror Sect, one of whose disciples beat her once in front of witnesses',
         detail: 'Has challenged the same Frostmirror Rime Disciple three times by letter and been ignored three times, and keeps the unanswered letters.',
         outlier: false,
         outlierReason: null,
@@ -1798,7 +1798,7 @@ export const MEMBERS: readonly Member[] = [
     {
         id: 'member-kang-lishu',
         name: 'Kang Lishu',
-        factionId: 'sect-storm-tyrant-court',
+        factionId: 'sect-storm-tyrant-sect',
         rankIndex: 4,
         rank: 'Storm Elder',
         realmOrdinal: 21,
@@ -2709,7 +2709,7 @@ export const MEMBERS: readonly Member[] = [
     {
         id: 'member-court-sovereign-yan-shu',
         name: 'Court Sovereign Yan Shu',
-        factionId: 'sect-frostmirror-court',
+        factionId: 'sect-frostmirror-sect',
         rankIndex: 5,
         rank: 'Court Sovereign',
         realmOrdinal: 35,
@@ -2794,7 +2794,7 @@ export const MEMBERS: readonly Member[] = [
     {
         id: 'member-the-storm-tyrant',
         name: 'The Storm Tyrant',
-        factionId: 'sect-storm-tyrant-court',
+        factionId: 'sect-storm-tyrant-sect',
         rankIndex: 5,
         rank: 'Storm Tyrant',
         realmOrdinal: 36,

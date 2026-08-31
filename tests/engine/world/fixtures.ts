@@ -187,7 +187,7 @@ export function fixtureCatalog(): WorldCatalog {
                 factionIds: ['court-third-sill'],
                 exports: ['pills', 'formations'],
                 places: [
-                    { name: 'The Third Sill', kind: 'city', ambient: 'dense', note: 'It administers.' }
+                    { name: 'The Third Sill Court', kind: 'city', ambient: 'dense', note: 'It administers.' }
                 ],
                 connections: [{ otherRegionId: 'region-low-fall', kind: 'shared_institution', travelDays: 21 }],
                 scars: ['The deepest vein in the province, and it is spoken for.']

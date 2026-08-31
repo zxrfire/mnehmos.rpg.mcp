@@ -743,9 +743,9 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
 export const COURTS: readonly Court[] = [
     {
         id: 'court-third-sill',
-        name: 'The Third Sill',
+        name: 'The Third Sill Court',
         apexId: 'apex-deep-survey',
-        // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Court at
+        // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Sect at
         // Body Integration Perfection, and a court that could not answer its own
         // tenant would be issuing suggestions rather than grants.
         powerOrdinal: 38,
@@ -765,7 +765,7 @@ export const COURTS: readonly Court[] = [
     },
     {
         id: 'court-root-sill',
-        name: 'The Root Sill',
+        name: 'The Root Sill Court',
         apexId: 'apex-deep-survey',
         powerOrdinal: 37,
         highWaterMark: null,
@@ -778,9 +778,9 @@ export const COURTS: readonly Court[] = [
     },
     {
         id: 'court-ninth-face',
-        name: 'The Ninth Face',
+        name: 'The Ninth Face Court',
         apexId: 'apex-long-cut',
-        // The Ninth Face's tenants are small - the Weir Office at Nascent Soul
+        // The Ninth Face Court's tenants are small - the Weir Office at Nascent Soul
         // Early - so this is far above what the Marches requires. A court of the
         // Long Cut is not sized against its province.
         powerOrdinal: 37,
@@ -885,7 +885,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'Nothing recurring, which is what Ru Anjing actually bought with her last decades. She did not make the Pavilion strong - it was already respectable - she made its independence not worth contesting, settled what was outstanding, and left the position standing without her in it. Nineteen grant renewals are still in the archive and the twentieth was never issued or asked for.',
         unbackedReason: null,
         independenceStance: 'proud',
-        note: 'The Third Sill has never formally acknowledged that the grant lapsed and the Pavilion has never formally asserted that it did. Both parties have found this comfortable for three hundred and eighty years, and the Low Fall reads the silence as whatever suits the speaker.'
+        note: 'The Third Sill Court has never formally acknowledged that the grant lapsed and the Pavilion has never formally asserted that it did. Both parties have found this comfortable for three hundred and eighty years, and the Low Fall reads the silence as whatever suits the speaker.'
     },
     'sect-nine-peaks-ascetic-order': {
         factionId: 'sect-nine-peaks-ascetic-order',
@@ -967,8 +967,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: null,
         note: 'Standing is strained because the Guild\'s heaven-grade failure rate has risen and the in-kind clause does not care why. It has begun buying finished pills to meet the quota, at a loss it cannot sustain for another cycle.'
     },
-    'sect-frostmirror-court': {
-        factionId: 'sect-frostmirror-court',
+    'sect-frostmirror-sect': {
+        factionId: 'sect-frostmirror-sect',
         governance: 'federated',
         relation: 'subsidiary',
         parentFactionId: 'court-third-sill',
@@ -1007,8 +1007,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: null,
         note: 'The Sill grants to a demonic sect on the same terms as anyone else because tribute is tribute, and the Sweptground Temple has been told this to its face by a courier who did not stay to discuss it.'
     },
-    'sect-storm-tyrant-court': {
-        factionId: 'sect-storm-tyrant-court',
+    'sect-storm-tyrant-sect': {
+        factionId: 'sect-storm-tyrant-sect',
         governance: 'federated',
         relation: 'subsidiary',
         parentFactionId: 'court-third-sill',
@@ -1167,7 +1167,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: 'It cannot grow. Six disciples is the number at which every one of them is known by name across the province, and the deference is a belief about those six specific people rather than about an institution - so a seventh means a roster, a roster means administration, and administration means the belief stops being about anybody in particular.',
         unbackedReason: 'holding_something',
         independenceStance: 'proud',
-        note: 'Direct rule by respect. The Grove holds what it can comfortably walk and claims nothing beyond it, and the ground beyond it is nevertheless theirs because nobody has been willing to find out otherwise since the year 41 test. The Third Sill has never granted the valley to anyone, has never been asked to, and has left the file open.'
+        note: 'Direct rule by respect. The Grove holds what it can comfortably walk and claims nothing beyond it, and the ground beyond it is nevertheless theirs because nobody has been willing to find out otherwise since the year 41 test. The Third Sill Court has never granted the valley to anyone, has never been asked to, and has left the file open.'
     },
     // ── unaffiliated, and paying for it ───────────────────────────────
     'sect-sweptground-temple': {
