@@ -128,11 +128,11 @@ const GIVEN = ['Wuyou', 'Qingzhu', 'Lanyin', 'Zhaoxu', 'Feiyan', 'Yuanming', 'Sh
 const SECTS = [
   { id: 'sect_azure', name: 'Azure Cloud Sect', ranks: ['Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Elder', 'Grand Elder', 'Patriarch'] },
   { id: 'sect_serpent', name: 'Nine Serpent Pavilion', ranks: ['Servant', 'Initiate', 'Venom Disciple', 'Elder', 'Hall Master'] },
-  { id: 'sect_ash', name: 'Crimson Ash Hall', ranks: ['Ashling', 'Emberhand', 'Flame Disciple', 'Elder', 'Hall Master'] },
+  { id: 'sect_ember', name: 'Crimson Ember Hall', ranks: ['Cinderhand', 'Emberhand', 'Flame Disciple', 'Elder', 'Hall Master'] },
   { id: 'sect_frost', name: 'Frostroot Valley', ranks: ['Tender', 'Rootkeeper', 'Valley Disciple', 'Elder', 'Valley Lord'] },
   { id: 'sect_ledger', name: 'Iron Ledger Guild', ranks: ['Clerk', 'Factor', 'Broker', 'Ledger Master'] }
 ];
-const LOCATIONS = ['Greenwater Town', 'Stonefall Market', 'Azure Cloud Peak', 'Bitter Sea Coast', 'The Thousand Steps', 'Ashen Fields', 'Nameless Ravine', 'Frostroot Valley', 'Serpent Hollow', 'Cangyan Ruins'];
+const LOCATIONS = ['Greenwater Town', 'Stonefall Market', 'Azure Cloud Peak', 'Bitter Sea Coast', 'The Thousand Steps', 'The Drawn Fields', 'Nameless Ravine', 'Frostroot Valley', 'Serpent Hollow', 'Cangyan Ruins'];
 const DEATH_CAUSES = ['combat_defeat', 'lifespan_exhausted', 'untreated_injuries', 'starvation', 'failed_breakthrough', 'qi_deviation', 'heavenly_tribulation', 'stagnation_aging', 'obviously_fatal_choice'];
 const INJURY_DESCS = [
   'Third meridian of the left arm torn end to end.',
@@ -207,7 +207,11 @@ function makeCultivator(name) {
     deathCause: null,
     foundationQuality: 'none',
     nameTaken: false,
-    immortalStatus: 'none'
+    immortalStatus: 'none',
+    existenceState: 'alive',
+    soulState: 'intact',
+    identityContinuity: 1,
+    bodyId: null
   };
 }
 
@@ -243,8 +247,26 @@ function derived() {
     foundationQuality: c.foundationQuality || 'none',
     nameTaken: !!c.nameTaken,
     // Mirrored from the cultivator so the client can read it from either.
-    immortalStatus: c.immortalStatus || 'none'
+    immortalStatus: c.immortalStatus || 'none',
+    // The engine's own refusal text, so the control can state its case.
+    breakthroughBlockedReason: blockedReason(c, req)
   };
+}
+
+/** Plain English for the engine's machine-readable ineligibility reasons. */
+function blockedReason(c, req) {
+    if (c.immortalStatus !== 'none') {
+        return 'Permanently barred. The Lid has already been opened once against this name, '
+            + 'and it does not open again for anyone it has already been opened for.';
+    }
+    if (c.realmOrdinal >= MAX_ORDINAL) {
+        return 'There is no rung above this one. What is left is the Lid.';
+    }
+    if (c.cultivationProgress < req) {
+        return `Not enough has accumulated: ${Math.round(c.cultivationProgress)} of ${req} qi-units. `
+            + 'The barrier does not care how badly you want it.';
+    }
+    return null;
 }
 
 const statePayload = () => ({
@@ -371,6 +393,11 @@ function buildRoster(count = 44) {
       age: Math.round(18 + rng() * Math.min(lifespan * 0.8, 400)),
       lifespanYears: lifespan,
       alive,
+      existenceState: alive
+        ? (ordinal >= 21 && rng() > 0.82 ? pick(['soul_preserved', 'sealed', 'possessing', 'reconstructed', 'reincarnated']) : 'alive')
+        : (rng() > 0.62 ? pick(['missing', 'unknown', 'remnant']) : 'physically_dead'),
+      soulState: rng() > 0.86 ? pick(['damaged', 'fragmented', 'fading']) : 'intact',
+      identityContinuity: rng() > 0.88 ? Number((0.15 + rng() * 0.6).toFixed(2)) : 1,
       deathCause: alive ? null : pick(DEATH_CAUSES),
       spiritStones: Math.round(Math.pow(rng(), 2) * 9000),
       untreatedInjuries: rng() > 0.7 ? between(1, 4) : 0,
@@ -401,6 +428,9 @@ function playerRosterRow() {
     age: Math.round(c.age),
     lifespanYears: realmFor(c.realmOrdinal).lifespanYears,
     alive: c.alive,
+    existenceState: c.existenceState || 'alive',
+    soulState: c.soulState || 'intact',
+    identityContinuity: c.identityContinuity != null ? c.identityContinuity : 1,
     deathCause: c.deathCause,
     spiritStones: c.spiritStones,
     untreatedInjuries: c.injuries.filter((i) => !i.treated).length,
@@ -507,8 +537,8 @@ function seedScenario(scenario) {
     killRun('failed_breakthrough', 'The eighth layer barrier held and the recoil went inward. Two meridians tore, then a third, and then the ones that mattered. It took most of an afternoon.');
   }
 
-  // The last crossing, resolved the only way that is not a death. The Vault
-  // collects in full here: every instalment is 'taken', including the name.
+  // The last crossing, resolved the only way that is not a death. It collects
+  // in full here: every instalment is 'taken', including the name.
   if (scenario === 'true_immortal' || scenario === 'ascended') {
     W.cultivator.realmOrdinal = MAX_ORDINAL;
     W.cultivator.foundationQuality = 'exceptional';
@@ -523,7 +553,39 @@ function seedScenario(scenario) {
     W.run.elapsedDays = 3100000;
     W.tolls = seedTolls(44, { collectAll: true });
     W.tolls.push(makeToll(44, W.tolls.length, 'taken', 'name', null, 3099980));
-    say('engine', `Crossing completed. Ordinal ${MAX_ORDINAL}. Vault collected in full: ${W.tolls.length} instalments, all taken. Run closed.`);
+    say('engine', `Crossing completed. Ordinal ${MAX_ORDINAL}. Collected in full: ${W.tolls.length} instalments, all taken. Run closed.`);
+  }
+
+  // The existence states, one scenario each. `?scenario=existence&state=remnant`
+  // drives any of the ten; the default is the interesting one.
+  if (scenario === 'existence') {
+    const params = new URLSearchParams(location.search);
+    const state = params.get('state') || 'remnant';
+    const soul = params.get('soul') || (state === 'remnant' ? 'fragmented' : 'damaged');
+    const cont = params.get('continuity');
+
+    W.cultivator.realmOrdinal = 22;
+    W.cultivator.cultivationProgress = Math.round(progressRequired(22) * 0.4);
+    W.cultivator.age = 340;
+    W.cultivator.maxHp = 2400; W.cultivator.hp = 1600;
+    W.cultivator.maxQi = 8800; W.cultivator.qi = 5100;
+    W.cultivator.yearsAtCurrentRealm = 19;
+    W.cultivator.spiritStones = 12400;
+    W.cultivator.foundationQuality = 'rebuilt';
+    W.cultivator.knownTechniques = ['Cinder Star Descent (immortal)'];
+    W.cultivator.existenceState = state;
+    W.cultivator.soulState = soul;
+    W.cultivator.identityContinuity = cont != null
+      ? Number(cont)
+      : (state === 'remnant' ? 0.24 : state === 'alive' ? 1 : 0.72);
+    W.cultivator.bodyId = state === 'possessing' ? 'body_7f2a_lin_qingzhu' : null;
+    W.cultivator.alive = !['physically_dead', 'remnant'].includes(state);
+    W.run.peakOrdinal = 22;
+    W.run.turn = 3120;
+    W.run.elapsedDays = 118500;
+    W.tolls = seedTolls(22);
+    say('engine', `Existence state: ${state}. Soul: ${soul}. Identity continuity ${W.cultivator.identityContinuity}.`);
+    say('narrator', 'The cave has been open for a while. Whatever is sitting in it turns its head when you come in, and takes slightly too long to decide what to do with its face.');
   }
 
   // Survived the tribulation, opened the hole, did not get through it.
@@ -541,7 +603,7 @@ function seedScenario(scenario) {
     W.cultivator.sectId = null;
     W.cultivator.sectRank = null;
     W.cultivator.knownTechniques = ['Cinder Star Descent (immortal)', 'The Long Refusal (chaos)'];
-    W.cultivator.feuds = ['The Hollow Court', 'Ashwright Consortium'];
+    W.cultivator.feuds = ['The Hollow Court', 'Stonewright Consortium'];
     W.run.peakOrdinal = 44;
     W.run.turn = 48200;
     W.run.elapsedDays = 2267000;
@@ -641,7 +703,7 @@ function handleAct(input) {
     engineLine = `Satiety -> ${c.satiety}. Spirit stones -${cost} (${c.spiritStones} remaining). Starvation counter reset.`;
     rulings.push({
       name: 'market.priceProvisions', action: 'quote',
-      summary: `Provisions quoted at ${cost} spirit stone(s) at current Ashwright rates.`, ok: true
+      summary: `Provisions quoted at ${cost} spirit stone(s) at current Stonewright rates.`, ok: true
     });
     rulings.push({
       name: 'cultivator.applyDeltas', action: 'buy_provisions',

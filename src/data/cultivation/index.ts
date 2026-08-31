@@ -121,6 +121,13 @@ export {
     getDisputesFor,
     getSuccessionAccounts,
     isDaoHouse,
+    SECT_ANCESTRY,
+    getSectAncestry,
+    getDormantAncestors,
+    getSectsClaimingLivingAncestor,
+    getPartingGift,
+    getPreeminentSect,
+    auditAncestralClaim,
     type SectEntry,
     type SectAdmission,
     type SectCompound,
@@ -129,7 +136,14 @@ export {
     type DaoHouseSuccession,
     type DaoHouseDispute,
     type DaoPrinciple,
-    type DestroyedDaoHouse
+    type DestroyedDaoHouse,
+    type AncestralRecords,
+    type AncestralRecency,
+    type AncestorFate,
+    type SectAncestor,
+    type DormantAncestor,
+    type PartingGift,
+    type MillennialOffering
 } from './sects.js';
 
 export {
@@ -340,7 +354,7 @@ export function getCultivationOptions(
  * What a sealed site at this ordinal can plausibly be holding: the arts and
  * methods the living world cannot supply at all. This is the payoff half of
  * the exploration loop - the reason a cultivator without talent digs instead
- * of cultivating, since ambient ash in this age will not close the gap to a
+ * of cultivating, since ambient qi in a drawn-down age will not close the gap to a
  * single-root prodigy and a recovered chaos-grade manual might.
  */
 export function getRuinLootTable(ordinal: number): {

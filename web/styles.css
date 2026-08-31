@@ -624,6 +624,18 @@ kbd {
 .btn--send { padding: 8px 18px; }
 .command__hint { font-size: 11.5px; color: var(--paper-far); margin-top: 7px; }
 
+/* The engine's refusal, stated on the page. No hover on a phone. */
+.refusal {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--paper-mut);
+  border-left: 2px solid var(--line-strong);
+  padding: 5px 0 5px 10px;
+  margin-bottom: 10px;
+}
+.refusal--barred { color: var(--violet-300); border-left-color: var(--violet-400); }
+
 /* ───────────────────────────── SHEET ───────────────────────────── */
 
 .play__sheet {
@@ -959,7 +971,7 @@ kbd {
 .tc--declined .tc__summary { color: var(--blood-300); }
 .tc__note { font-family: var(--font-mono); font-size: 10.5px; color: var(--paper-far); }
 
-/* ─────────────────────── THE VAULT'S LEDGER ─────────────────────── */
+/* ─────────────────────── THE TOLL ─────────────────────── */
 
 .toll__summary {
   font-family: var(--font-mono);
@@ -1070,6 +1082,74 @@ kbd {
 
 .btn--barred:disabled { border-color: var(--violet-400); color: var(--violet-300); opacity: 0.62; }
 .btn--barred:disabled .btn__hint { color: var(--violet-400); }
+
+/* ─────────────────────── EXISTENCE ─────────────────────── */
+
+/* Four tones, because the states are not all the same kind of bad.
+   ok         nothing to say
+   odd        no longer straightforwardly a person, still a going concern
+   bad        terminal, or not the person at all
+   unresolved the world genuinely has not decided */
+.tone-ok         { color: var(--jade-400); }
+.tone-odd        { color: var(--violet-400); }
+.tone-warn       { color: var(--amber-400); }
+.tone-bad        { color: var(--blood-400); }
+.tone-critical   { color: var(--blood-300); }
+.tone-unresolved { color: var(--paper-mut); }
+
+.statusflag--existence.tone-odd        { background: var(--violet-dim); }
+.statusflag--existence.tone-bad,
+.statusflag--existence.tone-critical   { background: var(--blood-dim); }
+.statusflag--existence.tone-warn       { background: var(--amber-dim); }
+.statusflag--existence.tone-unresolved { background: rgba(255, 255, 255, 0.04); border-style: dashed; }
+
+.statusflag__body--continuity {
+  border-left: 2px solid currentColor;
+  padding-left: 10px;
+  color: var(--paper);
+}
+.statusflag__meta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--paper-far);
+}
+.statusflag__meta code { color: var(--paper-mut); }
+
+/* A vital that is a word rather than a bar. Sits in the run of meters. */
+.vital-line { display: grid; gap: 3px; }
+.vital-line__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+}
+.vital-line__val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: currentColor;
+}
+.vital-line.tone-critical .vital-line__val { animation: blink 1.6s steps(1) infinite; }
+
+/* Roster existence cell. */
+.ex {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.ex--ok         { color: var(--jade-400); }
+.ex--odd        { color: var(--violet-400); background: var(--violet-dim); }
+.ex--bad        { color: var(--blood-300); background: var(--blood-dim); }
+.ex--warn       { color: var(--amber-400); }
+.ex--unresolved { color: var(--paper-mut); border-style: dashed; }
 
 /* ─────────────────────── TRUE IMMORTAL ENDING ─────────────────────── */
 

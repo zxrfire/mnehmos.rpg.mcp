@@ -533,7 +533,7 @@ export const HERBS: readonly Herb[] = [
         value: 250_000,
         harvestOrdinal: 41,
         description:
-            'Fruits from ash left where someone failed their tribulation. It carries the shape of the lightning that killed them, and it remembers.'
+            'Fruits only on scar ground, where a crossing failed and the qi never came back. It carries the shape of the lightning that ended them, and it keeps it.'
     },
     {
         id: 'herb-chaos-seed',

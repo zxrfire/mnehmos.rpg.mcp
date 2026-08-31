@@ -16,10 +16,19 @@
  * formation nodes and has nine of them lit, because the manual for the other
  * thirty-two went wherever the previous owners went. A courtyard seats two
  * hundred; the sect has eleven disciples. Nobody finds this remarkable - it is
- * simply what a sect is, in an age that is breathing ash the ancients already
- * used.
+ * simply what a sect is in an age whose veins have already been drawn down
+ * once.
  *
- * The five standing powers of the Vault - the Ashwright Consortium, Lantern
+ * WHY ANY OF THEM ARE STRONG
+ * --------------------------
+ * A great sect is old because it sits on a rich vein, and it sits on a rich
+ * vein because it was old enough to take one. That is the whole of sect
+ * history in a sentence, and it is why territory is the most fought-over
+ * property in the world: a sect that loses its vein does not decline
+ * gracefully, it stops producing cultivators within a generation and is
+ * absorbed by whoever took it.
+ *
+ * The five standing powers of the region - the Stonewright Consortium, Lantern
  * Hall, the Severed, the Hollow Court and the Kiln Wardens - are in this
  * catalog alongside the regional sects, because from a cultivator's point of
  * view they are the same kind of object: a door that may or may not open.
@@ -67,6 +76,114 @@ export interface SectCompound {
     formationNodesLit: number;
     /** One small, legible remnant. Not grandiose - a detail, at human scale. */
     remnant: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ANCESTRAL RECORDS
+// Every sect keeps records of its ancestors. For almost all of them this is
+// genealogy and hagiography: a wall of names, a founder's sword nobody can
+// draw, tablets to people dead two thousand years who are not coming back.
+//
+// A handful have an ancestral asset that is still there, and it comes in two
+// forms that behave nothing alike:
+//
+//   ascended → through the Lid and gone. Reachable only by the millennial
+//              offering, which costs the sect's principal and returns a few
+//              words, or nothing.
+//   dormant  → still in the world. Sealed, entombed, or nine hundred years
+//              into seclusion. They can be WOKEN, usually once, and waking
+//              generally ends them - whatever is left is spent on the thing it
+//              was woken for.
+//
+// The dormant kind is what makes "what happens afterwards" a real question. A
+// sect with eleven disciples and something sealed under its mountain is more
+// dangerous than one with three hundred and nothing, and outsiders often
+// cannot tell which is which, because sects lie about both.
+//
+// RECENCY IS MOST OF THE PRESTIGE
+// Nothing goes through the Lid with an ascending cultivator, so the years
+// before a crossing are spent divesting and the sect is where it goes:
+//
+//   recent        the parting gift is intact, the ancestor may still answer,
+//                 everyone in the world knows the sect's name
+//   several_ages  the gift is spent, lost or quietly stolen; offerings return
+//                 less; the claim is true and still worth something
+//   ancient       records, a hall of tablets, an assertion nobody can verify
+//
+// The middle of that curve is where the politics live. A sect whose gift is
+// gone but whose claim survives has every incentive to keep it unexamined, and
+// a rival has every incentive to have it examined - which is a service the
+// Ninefold Ledger sells.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type AncestorFate =
+    | 'dead'
+    | 'ascended'
+    | 'dormant'
+    | 'lost';
+
+export type AncestralRecency = 'none' | 'recent' | 'several_ages' | 'ancient';
+
+export interface SectAncestor {
+    name: string;
+    fate: AncestorFate;
+    /** Years since the death, the crossing, or the sealing. */
+    yearsAgo: number;
+    rememberedFor: string;
+}
+
+export interface MillennialOffering {
+    yearsAgo: number;
+    /** What it cost. Offerings are paid out of the principal, never the interest. */
+    cost: string;
+    /** The few words that came back, as the sect records them. Null for silence. */
+    response: string | null;
+    /** What the sect did about the answer, or about the silence. */
+    consequence: string;
+}
+
+export interface DormantAncestor {
+    name: string;
+    /** Where they are, in one concrete line. */
+    restingPlace: string;
+    dormantYears: number;
+    /** The circumstance under which the sect would actually break the glass. */
+    wakeCondition: string;
+    /** What waking costs. Nearly always the ancestor. */
+    wakeCost: string;
+    /** False when outsiders do not know there is anything under the mountain. */
+    publiclyKnown: boolean;
+}
+
+export interface PartingGift {
+    /** Catalog-style id so the engine can treat it as a real object. */
+    id: string;
+    name: string;
+    /** Plainly beyond what this age can produce. */
+    description: string;
+    /** Why it is held in reserve rather than wielded. */
+    reserveTerms: string;
+    /** False when the gift has been spent, lost, or quietly stolen. */
+    intact: boolean;
+}
+
+export interface AncestralRecords {
+    /** The wall of names. Everybody has one. */
+    ancestors: readonly SectAncestor[];
+    /** What the sect says publicly. */
+    claimsLivingAncestor: boolean;
+    /** Whether the claim is true. Never surfaced directly; discovered. */
+    claimIsTrue: boolean;
+    recency: AncestralRecency;
+    /** Present only where something is still in the world and can be woken. */
+    dormant: DormantAncestor | null;
+    /** What an ascending ancestor left on the way out. */
+    partingGift: PartingGift | null;
+    lastOffering: MillennialOffering | null;
+    /** Evidence that does not match the claim. Empty when the claim is honest. */
+    discoverableTraces: readonly string[];
+    /** How the world actually treats the sect because of all this. */
+    standingNote: string;
 }
 
 export interface SectEntry extends Sect {
@@ -213,7 +330,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'void-piercing-sword-domain',
         specialities: ['attack', 'movement'],
         rivals: ['sect-crimson-abyss-hall', 'sect-ashen-forge-clan'],
-        territory: 'Terraced peaks above Low Fall gorge, three days east of the trade road.',
+        territory: 'Terraced peaks above Low Fall gorge, and the vein under it, taken off somebody else nineteen centuries ago.',
         recruits: true,
         compound: {
             inherited: true,
@@ -244,7 +361,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'spring-returning-life-art',
         specialities: ['support', 'cultivation', 'defense'],
         rivals: ['sect-bone-lantern-cult'],
-        territory: 'A terraced herb valley fed by nine warm springs, four of which were plumbed by somebody else.',
+        territory: 'A terraced herb valley fed by nine warm springs, on ordinary ground with no vein worth the name - which is why the Hall lives on its physicians.',
         recruits: true,
         compound: {
             inherited: true,
@@ -275,7 +392,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'unyielding-mountain-body',
         specialities: ['defense', 'attack', 'cultivation'],
         rivals: ['sect-storm-tyrant-court'],
-        territory: 'Nine linked peaks over the deepest unbreathed vein anyone has surveyed and kept.',
+        territory: 'Nine linked peaks over the deepest vein anyone has surveyed and managed to keep.',
         recruits: true,
         compound: {
             inherited: true,
@@ -306,7 +423,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'nine-rivers-sword-chant',
         specialities: ['attack', 'movement', 'support'],
         rivals: ['sect-thousand-treasure-pavilion'],
-        territory: 'Eleven river towns and every ford between them, including four bridges nobody can date.',
+        territory: 'Eleven river towns and every ford between them, none of it over a vein, all of it over traffic.',
         recruits: true,
         compound: {
             inherited: true,
@@ -367,25 +484,25 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'soul-anchoring-invocation',
         specialities: ['support', 'cultivation'],
-        rivals: ['sect-ashwright-consortium', 'sect-the-severed', 'house-held-names'],
+        rivals: ['sect-stonewright-consortium', 'sect-the-severed', 'house-held-names'],
         territory: 'Reading halls in nine cities, and a stack room under each one that is larger than the hall above it.',
         recruits: true,
         compound: {
             inherited: true,
             formationNodesTotal: 30,
             formationNodesLit: 17,
-            remnant: 'Ledgers in a hand nobody writes in any more, recording names of people who no longer possess them, indexed by the date the name came down.'
+            remnant: 'Ledgers in a hand nobody writes in any more, recording names of people who no longer possess them, indexed by the date of the crossing that took them.'
         },
         description:
-            'Archivists. They catch what falls and write it down - the names, the faces, the lives of people who paid them at a realm boundary and were then told about it. Their position is that ascension is theft and that a world running on stolen memory is a world eating itself. They are correct, which has made them extremely unpopular, and they will read your ledger back to you whether or not you asked.'
+            'Archivists of what the crossings take. When a boundary cuts something away - a face, a name, the fact that two people were brothers - the Hall writes down what it was, from whatever record and whichever witness is left, so that somebody in the world still holds it. Their position is that a world which requires its best people to cut away everything they loved in order to rise is a world eating itself, and that the cheerful phrase for this is "the price". They are unpopular in exactly the way that suggests, and they will read a cultivator their own ledger whether or not it was requested.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
     // NEUTRAL
     // ═══════════════════════════════════════════════════════════════════
     {
-        id: 'sect-ashwright-consortium',
-        name: 'Ashwright Consortium',
+        id: 'sect-stonewright-consortium',
+        name: 'Stonewright Consortium',
         alignment: 'neutral',
         powerOrdinal: 33,
         ranks: ['Weigher', 'Refiner', 'Factor', 'House Factor', 'Rate-Setter', 'Consortium Principal'],
@@ -400,16 +517,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'thousand-li-cloud-tread',
         specialities: ['movement', 'cultivation'],
         rivals: ['sect-lantern-hall', 'sect-thousand-treasure-pavilion'],
-        territory: 'Refining houses at every large fall site, and the exchange rate, which is the real territory.',
+        territory: 'Refining houses at the head of nine veins, and the exchange rate, which is the real territory.',
         recruits: true,
         compound: {
             inherited: true,
             formationNodesTotal: 55,
             formationNodesLit: 34,
-            remnant: 'Presses that compress settled ash into stones, of a design the Consortium repairs constantly and has never once managed to build a new one of.'
+            remnant: 'Presses that compress raw drawn qi until it holds its shape, of a design the Consortium repairs constantly and has never once managed to build a new one of.'
         },
         description:
-            'The closest thing the Vault has to a functioning state. They refine ash into spirit stones and set the rate, which means they set the price of everything else, including medicine and including a life. Not evil; simply incapable of seeing a falling life as anything but throughput. Their quarrel with Lantern Hall is that the Hall keeps writing down whose life it was.'
+            'The closest thing the region has to a functioning state. They draw raw qi off the veins, refine it into spirit stones, and set the rate - which means they set the price of medicine, of a cave on decent ground, and of a vein itself. A vein sale goes through their assay or it does not go through. Not evil; simply incapable of seeing a valley as anything but throughput, and entirely aware that the stones a poor cultivator buys are the difference between progressing and not.'
     },
     {
         id: 'sect-thousand-treasure-pavilion',
@@ -427,7 +544,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'emberstep-mirage',
         specialities: ['movement'],
-        rivals: ['sect-clear-river-alliance', 'sect-cinnabar-crucible-guild', 'sect-ashwright-consortium'],
+        rivals: ['sect-clear-river-alliance', 'sect-cinnabar-crucible-guild', 'sect-stonewright-consortium'],
         territory: 'Auction houses in every city of consequence, and a vault nobody has located.',
         recruits: true,
         compound: {
@@ -545,13 +662,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'rime-heart-stillness-canon',
         specialities: ['attack', 'defense', 'movement', 'cultivation'],
         rivals: ['sect-storm-tyrant-court'],
-        territory: 'A glacier court above the snowline that appears on no accurate map.',
+        territory: 'A glacier court above the snowline, on a cold vein nobody else can work, appearing on no accurate map.',
         recruits: true,
         compound: {
             inherited: true,
             formationNodesTotal: 44,
             formationNodesLit: 26,
-            remnant: 'A hall kept cold enough that the ash on its floor has never been breathed, swept into drifts against the walls by nobody, for an unknown length of time.'
+            remnant: 'A hall kept cold enough that nothing has ever drawn on the qi standing in it, which is why the Court cultivates there and nowhere else.'
         },
         description:
             'The only institution left holding a complete ice curriculum, because the ice curriculum was sealed in the glacier and the Court dug it out rather than inheriting it from teachers. It will not open its library to anyone without a mutated ice root - not out of malice, but because the arts kill everyone else. A mutated ice cultivator who finds this Court has found the one place their talent is not a death sentence. Most never find it.'
@@ -568,7 +685,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: null,
         specialities: ['defense'],
         rivals: [],
-        territory: 'The world-heart, and a perimeter of nine days\' walk in every direction that nobody has surveyed twice.',
+        territory: 'The root vein, and a perimeter of nine days\' walk in every direction that nobody has surveyed twice.',
         recruits: false,
         compound: {
             inherited: true,
@@ -577,7 +694,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A gate. It is not large. Everything else the Wardens hold is behind it, and the gate is the only part any outsider has described.'
         },
         description:
-            'They guard the world-heart, where the fire that fired the Vault is either still burning or has not been checked in a long time. They do not explain themselves and they do not recruit. Every formation node they hold is lit, which is the single most alarming fact anyone has established about them, because nobody else in the world can say that.'
+            'They guard the deep vein at the world\'s root - the one every other vein in the region is understood to branch from, though nobody outside the gate has been permitted to test that. They draw nothing from it. In an age where every institution is fighting over drawn-down holdings, a body of cultivators sitting on the richest ground in the world and taking none of it is the single most alarming fact anyone has established about them, and it is closely followed by the second: every formation node they hold is lit, which nobody else in the world can say.'
     },
     {
         id: 'sect-hollow-court',
@@ -633,7 +750,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A ledger of what each member has already given up, kept accurately, and shown to applicants before anything else.'
         },
         description:
-            'The most coherent argument in the Vault, and it works. Their reasoning is that the toll will be collected eventually, so it should be paid deliberately: cut the bonds, the memories and the name in advance, at a time of your choosing, and cross every boundary clean. They climb faster than anyone. What arrives at the top is not really a person and does not pretend to be, and the Severed regard that objection as sentimental rather than incorrect.'
+            'The most coherent argument in the region, and it works. Their reasoning is that every crossing takes something eventually, so it should be paid deliberately: cut the bonds, the memories and the name in advance, at a time of your choosing, and cross every boundary clean. They climb faster than anyone. What arrives at the top is not really a person and does not pretend to be, and the Severed regard that objection as sentimental rather than incorrect.'
     },
     {
         id: 'sect-crimson-abyss-hall',
@@ -710,7 +827,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'nine-abyss-demon-transformation',
         specialities: ['attack', 'forbidden', 'defense'],
         rivals: ['sect-sweptground-temple', 'sect-ashen-forge-clan'],
-        territory: 'A caldera fortress reached by one bridge, kept in poor repair on purpose.',
+        territory: 'A caldera fortress on the vent vein, reached by one bridge kept in poor repair on purpose.',
         recruits: true,
         compound: {
             inherited: true,
@@ -739,7 +856,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'nine-heaven-scourging-bolt',
         specialities: ['attack', 'movement', 'defense'],
         rivals: ['sect-nine-peaks-ascetic-order', 'sect-frostmirror-court'],
-        territory: 'A floating stone over a permanent storm, tethered to the peak it broke off.',
+        territory: 'A floating stone over a permanent storm, tethered to the peak it broke off, drawing on a vein it can no longer reach the bottom of.',
         recruits: true,
         compound: {
             inherited: true,
@@ -792,17 +909,19 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             'blood feuds, and which killing started one',
             'family lines, including the ones a family has paid to have forgotten',
             'causal tracking: who benefited from an event nobody witnessed',
-            'concealment, and the detection of it'
+            'concealment, and the detection of it',
+            'certification of an ancestral claim, which is the only way in the world to establish whether a sect actually has an ancestor above the Lid'
         ],
         services: [
             'circuit arbitration of debts and inheritance, for a fee scaled to the sum in dispute',
             'audits of a claimed lineage, accepted as proof by every righteous sect in the region',
+            'certification of a claimed living ancestor, sold to the claimant or to a rival, published either way',
             'investigators hired to establish who benefited from a death',
             'sealed escrow of obligations that outlive their parties'
         ],
         dependents: [
             'sects settling succession after an elder dies without naming a heir',
-            'the Ashwright Consortium, whose entire lending business rests on Ledger enforcement',
+            'the Stonewright Consortium, whose entire lending business rests on Ledger enforcement',
             'ordinary families, who use a Ledger seal the way a mortal uses a deed'
         ],
         counter: {
@@ -834,7 +953,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             officialVersion:
                 'The Tally Court sold its judgements, branded debts that could not be settled, and was dissolved by a coalition of righteous sects. The Ledger was founded to do the work honestly.',
             trueVersion:
-                'The Tally Court had begun entering the Vault itself as a debtor - the toll recorded as a taking, with the Lid as the party in arrears - and had got far enough to name what was owed. The Ledger\'s founders were Tally Court auditors. They ended the Court, burned the seat, kept the volumes, and have not opened them since.',
+                'The Tally Court had begun keeping an account of what the crossings take - every cut made at every boundary, entered as a taking, with the Lid itself named as the party in arrears - and had got far enough to name what was owed. The Ledger\'s founders were Tally Court auditors. They ended the Court, burned the seat, kept the volumes, and have not opened them since.',
             discoverableTraces: [
                 'the coalition named in the official account never existed as a coalition; the four sects listed were not at peace with each other that century',
                 'the Ledger\'s own vault index lists nine sealed volumes with no subject line',
@@ -967,7 +1086,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         ],
         dependents: [
             'every sect that has ever ended a war without being destroyed',
-            'the Ashwright Consortium, for contracts it cannot underwrite on trust',
+            'the Stonewright Consortium, for contracts it cannot underwrite on trust',
             'rulers whose borders are held by treaty rather than by garrison'
         ],
         counter: {
@@ -986,7 +1105,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         internalFactions: [
             'the Strict Hall, who read terms exactly as written whatever the outcome',
             'the Warden faction, who want the House to enforce as well as witness',
-            'the Vault clerks, who quietly think a third of the standing treaties should be allowed to lapse'
+            'the vault clerks, who quietly think a third of the standing treaties should be allowed to lapse'
         ],
         weaknesses: [
             'the House is bound by an ancient oath of its own not to witness for the Severed, and this is costing it a fortune',
@@ -1100,7 +1219,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             remnant: 'A register wall of names in nine hands, twenty thousand of them belonging to people who no longer answer to them.'
         },
         description:
-            'Names held in trust. When the Vault takes a name at a realm boundary, the person is left with people having to be told it, every time - and the House still has it, written down, in a register that the taking did not reach. They will give it back. Slowly, incompletely, and for a price set by what the client can be made to pay. Nobody has ever loved them and everybody uses them.',
+            'Names held in trust. When a crossing takes a name at a realm boundary, the person is left with people having to be told it, every time - and the House still has it, written down, in a register that the taking did not reach. They will give it back. Slowly, incompletely, and for a price set by what the client can be made to pay. Nobody has ever loved them and everybody uses them.',
         principle: 'names',
         principleDescription:
             'Identity as a held object rather than a personal possession. A name entered in the register is a fact about the world independent of the person carrying it, which is why a name can be held through a toll, withheld from a divination, or shown to be missing after a severance.',
@@ -1351,7 +1470,7 @@ export const DESTROYED_DAO_HOUSES: readonly DestroyedDaoHouse[] = [
         officialVersion:
             'A karma house that sold its judgements and branded debts which could not be settled. Dissolved by a coalition of righteous sects; its records were destroyed with it.',
         trueVersion:
-            'It was ended by its own auditors, who founded the Ninefold Ledger the following year and kept the volumes. What the Court had been doing when it was ended was entering the Vault as a debtor and totalling what the toll had taken.',
+            'It was ended by its own auditors, who founded the Ninefold Ledger the following year and kept the volumes. What the Court had been doing when it was ended was totalling what the crossings had taken out of everyone, and entering the Lid as the party that owed it.',
         traces: [
             'the burned seat at Sweptground, where debts sworn on the ground do not settle and never have since',
             'nine sealed volumes in the Ledger\'s own vault index, with no subject line',
@@ -1508,7 +1627,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: [],
         requirement: 'Literacy, and a written account of one thing the applicant has already lost and can still name.'
     },
-    'sect-ashwright-consortium': {
+    'sect-stonewright-consortium': {
         minOrdinal: 6,
         minInsight: 3,
         minCharm: 2,
@@ -1628,6 +1747,576 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
     }
 } as const;
 
+/**
+ * Ancestral records, keyed by faction id, in the same style as
+ * `SECT_ADMISSION`: content-side, stripped by `SectSchema.parse`, read at
+ * request time.
+ *
+ * Almost every entry here is a wall of names. Three factions have something
+ * dormant that is still in the world; two have a true ascended claim; one has
+ * a claim that is simply false and has been working for four hundred years.
+ */
+export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
+    // ═══════════════════════════════════════════════════════════════════
+    // THE PREEMINENT INSTITUTION OF THE PRESENT AGE
+    // The last confirmed crossing in the world was this one. The Pavilion
+    // is not the strongest sect by its living members - it is roughly the
+    // fourth or fifth - and none of that matters, because of what is in
+    // the vault and who might still be listening.
+    // ═══════════════════════════════════════════════════════════════════
+    'sect-azure-cloud-pavilion': {
+        ancestors: [
+            {
+                name: 'Ru Anjing, Third Master of the Pavilion',
+                fate: 'ascended',
+                yearsAgo: 380,
+                rememberedFor: 'The last confirmed crossing in the world. Spent her final eleven years divesting: every artifact, every manual, every stone, all of it into the sect, in a sequence the Pavilion recorded and has never published in full.'
+            },
+            {
+                name: 'Ru Wenshi, Second Master',
+                fate: 'dead',
+                yearsAgo: 640,
+                rememberedFor: 'Held the gorge through two sieges and died of ordinary age at Deity Transformation, which the Pavilion considers a failure and says so at every memorial.'
+            },
+            {
+                name: 'Kang Ye, founder',
+                fate: 'dead',
+                yearsAgo: 1_900,
+                rememberedFor: 'Took the gorge and the vein under it off a house whose name the Pavilion no longer records.'
+            }
+        ],
+        claimsLivingAncestor: true,
+        claimIsTrue: true,
+        recency: 'recent',
+        dormant: null,
+        partingGift: {
+            id: 'artifact-the-standing-edge',
+            name: 'The Standing Edge',
+            description:
+                'A sword left point-down in the floor of the inner hall, which no living smith can account for and no formation master can read. It does not need drawing to be measured: standing in the room with it is how the Pavilion certifies that a visitor is who they say they are, because the Edge is unambiguous about it. Twice in three hundred and eighty years it has been drawn. Both times the argument stopped.',
+            reserveTerms:
+                'Held in reserve, never carried. The Pavilion Master may draw it only with four Sword Elders consenting in the same room, and the Pavilion has refused itself permission at least nine times, including once during a siege.',
+            intact: true
+        },
+        lastOffering: {
+            yearsAgo: 180,
+            cost: 'The channel artifact, which did not survive the offering, plus eleven years of the Pavilion\'s accumulated reserves and its second vein holding, sold to the Stonewright Consortium to fund it.',
+            response: 'Not yet.',
+            consequence:
+                'The Pavilion has declined three wars it was expected to fight, refused two alliances, and will not explain any of it. Every rival has spent a century trying to work out what the two words were about, and the Pavilion is aware that the ambiguity is worth more than the answer.'
+        },
+        discoverableTraces: [],
+        standingNote:
+            'Everyone defers, and several rivals resent it openly. The Ashen Forge Clan calls the deference "renting a dead woman", and a faction inside the Stonewright Consortium is quietly modelling what the region looks like the year the Edge is finally spent - a document that would end several careers if it were read aloud.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // TRUE CLAIM, ANCIENT, NOTHING LEFT
+    // ═══════════════════════════════════════════════════════════════════
+    'sect-sweptground-temple': {
+        ancestors: [
+            {
+                name: 'The First Abbot, whose name the Temple did not record',
+                fate: 'ascended',
+                yearsAgo: 2_600,
+                rememberedFor: 'Crossed from the plain outside the wall, having given away everything beforehand to people rather than to the Temple, which is why the Temple has no gift and says so.'
+            },
+            {
+                name: 'Abbot Sheng',
+                fate: 'dead',
+                yearsAgo: 400,
+                rememberedFor: 'Refused a vein offered by the Clear River Alliance on the grounds that accepting it would change who applied.'
+            }
+        ],
+        claimsLivingAncestor: true,
+        claimIsTrue: true,
+        recency: 'ancient',
+        dormant: null,
+        partingGift: null,
+        lastOffering: {
+            yearsAgo: 900,
+            cost: 'Everything the Temple had, which was not much, and the Temple has never pretended it was a real offering.',
+            response: null,
+            consequence:
+                'Nothing came back. The Temple recorded the silence in full, including the amount spent, and has not held another. It still teaches that the claim is true and does not press the point.'
+        },
+        discoverableTraces: [],
+        standingNote:
+            'The claim is true and almost nobody believes it, because the Temple is poor, sits on swept ground with no vein, and has no gift to show. It is the cheapest true claim in the world and it buys the Temple nothing at all.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FALSE CLAIM, PURCHASED, AND WORKING
+    // ═══════════════════════════════════════════════════════════════════
+    'sect-thousand-treasure-pavilion': {
+        ancestors: [
+            {
+                name: 'Wei Zhaoyin, "the Ascended Steward"',
+                fate: 'lost',
+                yearsAgo: 430,
+                rememberedFor: 'Recorded by the Pavilion as having crossed at the northern scar. Recorded by nobody else as having existed.'
+            },
+            {
+                name: 'Mu Ganlu, first Grand Steward',
+                fate: 'dead',
+                yearsAgo: 610,
+                rememberedFor: 'Bought the Pavilion\'s first auction floor and its tablet hall in the same year, from the same estate.'
+            }
+        ],
+        claimsLivingAncestor: true,
+        claimIsTrue: false,
+        recency: 'several_ages',
+        dormant: null,
+        partingGift: null,
+        lastOffering: {
+            yearsAgo: 120,
+            cost: 'Publicly, four hundred thousand spirit stones and a heaven-grade reagent. In the Pavilion\'s own books, considerably less, and the reagent came back.',
+            response: 'A name, which the Pavilion has never disclosed.',
+            consequence:
+                'The undisclosed name is the whole of the evidence, and it is unfalsifiable by design. Attendance at the offering was invitation-only and every invitee was a client.'
+        },
+        discoverableTraces: [
+            'Wei Zhaoyin appears in no register, ledger or sect record outside the Pavilion\'s own, in a century when the House of Held Names was registering at all nine gates',
+            'the northern scar is dated four hundred years older than the claimed crossing, and scars do not accumulate',
+            'the Ninefold Ledger has twice declined to certify the lineage and the Pavilion has not asked a third time',
+            'the tablet hall was bought complete, tablets included, from an estate sale the Ledger itself brokered and still has the paper for'
+        ],
+        standingNote:
+            'It works. Nine cities treat the Pavilion as an ancient house, its bonds price accordingly, and the cost of the fraud is a standing incentive to keep the Ledger uninterested - which the Pavilion manages by being the Ledger\'s largest paying client.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // TRUE CLAIM, GIFT GONE, CLAIM DEFENDED
+    // ═══════════════════════════════════════════════════════════════════
+    'sect-storm-tyrant-court': {
+        ancestors: [
+            {
+                name: 'The First Tyrant, styled the Standing Storm',
+                fate: 'ascended',
+                yearsAgo: 3_400,
+                rememberedFor: 'Crossed from the floating stone, and left the Court the manual that is still the world\'s only working lightning curriculum.'
+            },
+            {
+                name: 'Yan Kuo, ninth Storm Tyrant',
+                fate: 'dead',
+                yearsAgo: 700,
+                rememberedFor: 'Held the tether through the century it began to fail, and did not report that it was failing.'
+            }
+        ],
+        claimsLivingAncestor: true,
+        claimIsTrue: true,
+        recency: 'several_ages',
+        dormant: null,
+        partingGift: {
+            id: 'artifact-the-standing-storm-rod',
+            name: 'The Standing Storm Rod',
+            description:
+                'The rod the ancestor left with the curriculum: the instrument the Court\'s whole doctrine was built to use, and the only object that made the tether serviceable.',
+            reserveTerms:
+                'Displayed once a generation at the succession of a Storm Tyrant. The last three successions were conducted with the vault closed and the rod described rather than shown.',
+            intact: false
+        },
+        lastOffering: {
+            yearsAgo: 1_100,
+            cost: 'Two centuries of stores and the Court\'s second holding.',
+            response: 'Hold the stone.',
+            consequence:
+                'The Court has held the stone, at increasing expense, for eleven hundred years, and can no longer repair the tether that holds it up.'
+        },
+        discoverableTraces: [
+            'the rod has not been shown at a succession in three generations, and the Court now describes it instead',
+            'a rod answering its description was sold through a Thousand Treasure auction two centuries ago by a seller the Pavilion will not name',
+            'the Court has refused Ledger certification of its vault inventory four times, most recently in writing',
+            'Frostmirror Court has offered to pay the Ledger\'s fee itself, which the Ledger has neither accepted nor declined'
+        ],
+        standingNote:
+            'The claim is true, the gift is gone, and the Court is spending real resources to keep anyone from establishing the second fact. Frostmirror Court knows, cannot prove it, and would like it examined by somebody whose certification the world accepts.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DORMANT: STILL IN THE WORLD, AND WAKEABLE
+    // ═══════════════════════════════════════════════════════════════════
+    'sect-nine-abyss-flame-sect': {
+        ancestors: [
+            {
+                name: 'The Kindler, first Flame Sovereign',
+                fate: 'dormant',
+                yearsAgo: 1_200,
+                rememberedFor: 'Took the caldera, signed the transformation contract in full, and went down into the vent rather than finish the terms above ground.'
+            },
+            {
+                name: 'Sovereign Jiang Wu',
+                fate: 'dead',
+                yearsAgo: 300,
+                rememberedFor: 'Burned two allied sects to hold the bridge, and was not disciplined for it.'
+            }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: {
+            name: 'The Kindler',
+            restingPlace: 'The vent under the caldera floor, behind a seal the sect maintains and has never opened.',
+            dormantYears: 1_200,
+            wakeCondition:
+                'The caldera itself is breached, or a Flame Sovereign dies without a named successor. The sect has come within one death of the second condition twice.',
+            wakeCost:
+                'Whatever is left of the Kindler burns itself and the caldera together. The sect survives the waking as an institution and does not survive it as a place.',
+            publiclyKnown: false
+        },
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [
+            'the sect maintains a seal at the vent and has no recorded reason for one',
+            'the caldera bridge is kept in poor repair deliberately, which is defensive doctrine for a sect that is not afraid of being attacked',
+            'two Sovereign successions in four hundred years were resolved in under a day, unusually fast for a demonic sect'
+        ],
+        standingNote:
+            'Nobody outside the sect knows the Kindler is there. Its rivals price it as a strong demonic sect with a caldera, which is why the Ashen Forge Clan has twice pushed a border dispute further than it would have if it knew what was under the floor.'
+    },
+    'sect-frostmirror-court': {
+        ancestors: [
+            {
+                name: 'The First Sovereign, called the Mirror',
+                fate: 'dormant',
+                yearsAgo: 2_000,
+                rememberedFor: 'Dug the curriculum out of the glacier, taught it to nine people, and then lay down in the hall she had cleared.'
+            },
+            {
+                name: 'Sovereign Bai Ning',
+                fate: 'dead',
+                yearsAgo: 500,
+                rememberedFor: 'Turned away forty applicants with clean roots and no ice, all of whom would have died learning it.'
+            }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: {
+            name: 'The Mirror',
+            restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
+            dormantYears: 2_000,
+            wakeCondition: 'The library is entered by force. Not theft, not trespass - force.',
+            wakeCost:
+                'She wakes cold and unhurried, and the Court\'s own hall does not survive it. The Court has written down that this is acceptable.',
+            publiclyKnown: false
+        },
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [
+            'the Court fields a fraction of the defence its holdings warrant and has never lost the library',
+            'two forced entries are recorded by outside parties; the parties are not recorded as having left'
+        ],
+        standingNote:
+            'The Court is small, isolated and treated as a curiosity with a good collection. The Storm Tyrant Court, which has raided it twice and stopped, does not agree with that assessment and has not explained why.'
+    },
+    'house-anchorhold': {
+        ancestors: [
+            {
+                name: 'Xu Ci, the Second Standing Anchor',
+                fate: 'dormant',
+                yearsAgo: 700,
+                rememberedFor: 'Drove the replacement eastern nail personally, then had herself entombed under the datum stone rather than retire, on the argument that a nail should stay where it is.'
+            },
+            {
+                name: 'The First Standing Anchor',
+                fate: 'dead',
+                yearsAgo: 900,
+                rememberedFor: 'Founded the house on the ruins of the Girdle, and wrote the official account of how that happened.'
+            }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: {
+            name: 'Xu Ci',
+            restingPlace: 'Under the datum stone, in the chamber every measurement in the region is ultimately taken from.',
+            dormantYears: 700,
+            wakeCondition:
+                'Two perimeters lost in a single season. One is a shortfall the house posts publicly; two is the condition.',
+            wakeCost:
+                'She rises, drives one nail, and does not come back up. The house has published this, in detail, in the survey standard, as a schedule.',
+            publiclyKnown: true
+        },
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote:
+            'Publishing it is the point. The Anchorhold cannot pursue anyone and does not need to: every party that has considered testing a perimeter has read the schedule, and the two perimeters currently maintained below standard are watched by more people than the house employs.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // WALLS OF NAMES
+    // Genealogy and hagiography. Nobody is coming back for any of these.
+    // ═══════════════════════════════════════════════════════════════════
+    'sect-verdant-spring-hall': {
+        ancestors: [
+            { name: 'Physician Lu Wan', fate: 'dead', yearsAgo: 1_100, rememberedFor: 'Wrote the restoration method the Hall recovered from the valley ruin, or copied it; the Hall is honest that it cannot tell.' },
+            { name: 'Hall Sovereign Ji Rou', fate: 'dead', yearsAgo: 260, rememberedFor: 'Treated a Crimson Abyss envoy, billed him, and was killed for the second thing rather than the first.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'A tablet hall, well kept, of people who are entirely dead. The Hall\'s standing rests on its physicians, which it considers the correct arrangement.'
+    },
+    'sect-nine-peaks-ascetic-order': {
+        ancestors: [
+            { name: 'The Stone Bearer', fate: 'dead', yearsAgo: 1_600, rememberedFor: 'Carried the founding stone over all nine peaks and never said why, which is now the admission requirement.' },
+            { name: 'Patriarch Meng Da', fate: 'lost', yearsAgo: 800, rememberedFor: 'Walked into the vein workings to survey them and did not come out. The Order has never sealed the entrance.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The Order\'s standing is the vein, and everybody knows it is the vein. Meng Da is a story the ascetics tell each other and do not offer to outsiders.'
+    },
+    'sect-clear-river-alliance': {
+        ancestors: [
+            { name: 'Old Shen of the Third Ford', fate: 'dead', yearsAgo: 300, rememberedFor: 'Federated eleven ferry towns by refusing to carry anyone who would not sign.' },
+            { name: 'River Elder Pei', fate: 'dead', yearsAgo: 90, rememberedFor: 'Drowned holding a ford against a Thousand Treasure toll collection.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'Three hundred years of records and no ancestor above Core Formation. The Alliance says so plainly, which costs it nothing it was going to get anyway.'
+    },
+    'sect-lantern-hall': {
+        ancestors: [
+            { name: 'The First Keeper of Names', fate: 'dead', yearsAgo: 1_500, rememberedFor: 'Began the counter-register by writing down what a crossing had taken from a man who could no longer say it himself.' },
+            { name: 'Keeper Ao Shi', fate: 'dead', yearsAgo: 220, rememberedFor: 'Published the crossing ledger of a sitting Grand Elder and was expelled from four cities for it.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The Hall records other people\'s ancestors with more care than its own, and is regularly accused of doing so to avoid the comparison.'
+    },
+    'sect-stonewright-consortium': {
+        ancestors: [
+            { name: 'Principal Hou Jian', fate: 'dead', yearsAgo: 780, rememberedFor: 'Set the first published exchange rate between raw qi and cut stones, which is still the basis of every price in the region.' },
+            { name: 'Rate-Setter Tuo Ming', fate: 'dead', yearsAgo: 150, rememberedFor: 'Priced a vein sale that started a war, and collected the commission from both sides afterwards.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The Consortium treats ancestry as an asset class, values several sects\' claims internally, and has never claimed one of its own.'
+    },
+    'sect-cinnabar-crucible-guild': {
+        ancestors: [
+            { name: 'Grandmaster Xie Lan', fate: 'dead', yearsAgo: 900, rememberedFor: 'Read a third of the method-script on the refining hall wall and built the guild on it.' },
+            { name: 'Furnace Elder Bo', fate: 'dead', yearsAgo: 40, rememberedFor: 'Died proving that the fourth line of the wall script is not a step in the method.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The Guild venerates the wall rather than its dead, which the other sects find distasteful and the Guild finds accurate.'
+    },
+    'sect-ashen-forge-clan': {
+        ancestors: [
+            { name: 'The First Hammer', fate: 'dead', yearsAgo: 1_400, rememberedFor: 'Found the furnace already burning and built the compound around it rather than move it.' },
+            { name: 'Clan Chief Duan Qi', fate: 'dead', yearsAgo: 170, rememberedFor: 'Refused to arm the Azure Cloud Pavilion for a decade over a remark, and the clan is still poorer for it.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'A clan of smiths with a genealogy rather than a hagiography: they can name every ancestor and none of them is interesting.'
+    },
+    'sect-hollow-bell-wanderers': {
+        ancestors: [
+            { name: 'Whoever hung the first bell', fate: 'lost', yearsAgo: 200, rememberedFor: 'Nothing. There is a bell at a crossroads and a practice of hanging more.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'No hall, no tablets, no ancestors worth the word. The Wanderers point out that this also means nobody inherits their debts.'
+    },
+    'sect-kiln-wardens': {
+        ancestors: [
+            { name: 'The First Keeper of the Kiln', fate: 'lost', yearsAgo: 4_000, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [
+            'the Wardens keep every one of their formation nodes lit, which no other institution in the world manages',
+            'no Warden has ever been recorded as dying of age, and no Warden has ever been recorded as leaving'
+        ],
+        standingNote: 'The Wardens make no ancestral claim of any kind, and their refusal to make one is the most-discussed silence in the region.'
+    },
+    'sect-hollow-court': {
+        ancestors: [
+            { name: 'The four seated', fate: 'dead', yearsAgo: 0, rememberedFor: 'Nothing yet. They are still sitting there, and they are the ancestors of nobody, having taken no disciples.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The Court is what a sect gets instead of an ancestor when the ancestor declines to leave. It has no records because it has no succession.'
+    },
+    'sect-the-severed': {
+        ancestors: [
+            { name: 'The First Cut', fate: 'lost', yearsAgo: 600, rememberedFor: 'Cut every bond, memory and name in advance, and is recorded in the house ledger as an entry with the identifying columns blank.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [
+            'the ledger entry is blank because the entry cut itself, which means the house cannot establish whether its founder crossed, died, or is presently a member'
+        ],
+        standingNote: 'The Severed cannot claim an ancestor, because the doctrine that makes them fast is the doctrine that makes ancestry unrecordable. They present this as proof of sincerity.'
+    },
+    'sect-crimson-abyss-hall': {
+        ancestors: [
+            { name: 'The First Abyss Lord', fate: 'dead', yearsAgo: 500, rememberedFor: 'Opened the sinkhole hall and set the tithe at a rate the Hall has never raised.' },
+            { name: 'Left Envoy Shu', fate: 'dead', yearsAgo: 60, rememberedFor: 'Recruited two hundred refused applicants in one season, which is still the record.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The Hall pays well, dies young, and keeps short records. Nobody in it expects to be remembered and the arrangement is understood.'
+    },
+    'sect-bone-lantern-cult': {
+        ancestors: [
+            { name: 'The Pale Ancestor', fate: 'dead', yearsAgo: 700, rememberedFor: 'Worked the third year after a war and established the rotation the Cult still follows.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The Cult keeps unusually good records of other people\'s dead and almost none of its own.'
+    },
+    'house-ninefold-ledger': {
+        ancestors: [
+            { name: 'First Keeper Yan Duo', fate: 'dead', yearsAgo: 2_290, rememberedFor: 'Founded the Ledger the year after the Tally Court ended, having been one of its auditors.' },
+            { name: 'Circuit Arbiter Tang Wei', fate: 'dead', yearsAgo: 400, rememberedFor: 'Established that a debt survives the death of the borrower, in a ruling every sect now relies on and several have tried to overturn.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The Ledger certifies other houses\' ancestral claims and has never asserted one, which its rivals describe as prudence and it describes as method.'
+    },
+    'house-narrow-hour': {
+        ancestors: [
+            { name: 'The First Sighting', fate: 'dead', yearsAgo: 3_180, rememberedFor: 'Established that possibilities narrow, and that the narrowing is the only part worth reading.' },
+            { name: 'Reader Cao Yin', fate: 'dead', yearsAgo: 300, rememberedFor: 'Sighted the year of the scar, said nothing publicly, and left the house a sealed account that does not match what happened.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The House holds that an ancestor who crossed is by definition outside the convergence and therefore not worth sighting for, which is either doctrine or sour grapes.'
+    },
+    'house-bound-word': {
+        ancestors: [
+            { name: 'The First Oathwright', fate: 'dead', yearsAgo: 3_780, rememberedFor: 'Swore the house\'s founding oath, which is still binding and is why the house cannot witness for the Severed.' },
+            { name: 'Warden of Terms Lin Ke', fate: 'dead', yearsAgo: 500, rememberedFor: 'Read a treaty back to two sects until both withdrew from a war they had already started.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The house is bound by its own ancestors more literally than any other institution, and regards the arrangement as the point rather than the cost.'
+    },
+    'house-quiet-cut': {
+        ancestors: [
+            { name: 'Unrecorded', fate: 'lost', yearsAgo: 1_900, rememberedFor: 'The house cuts its own founding records as a matter of doctrine, and does not know who started it.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'No ancestors, deliberately. It is the only house that treats having no ancestral claim as a demonstration of competence.'
+    },
+    'house-held-names': {
+        ancestors: [
+            { name: 'First Register Gu Yao', fate: 'dead', yearsAgo: 2_690, rememberedFor: 'Held a name through a crossing and gave most of it back, which is the founding demonstration and the house\'s entire product.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'The house holds twenty thousand names of people who are not coming back, and is careful never to describe any of them as its ancestors.'
+    },
+    'house-measured-span': {
+        ancestors: [
+            { name: 'The Long Measure', fate: 'dead', yearsAgo: 4_900, rememberedFor: 'Wrote both distances for the first time, walked and true, and the survey has been argued from ever since.' },
+            { name: 'Keeper Fu Zhen', fate: 'lost', yearsAgo: 1_400, rememberedFor: 'Went through a terminal in the year the gates closed and has not been reported since. Four terminals open somewhere breathable.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [
+            'the Long Measure faction maintains that Fu Zhen is alive on the far side of a closed terminal, which is not an ancestral claim and is treated as one'
+        ],
+        standingNote: 'The house has no ancestral claim and a persistent internal argument about whether it should be making one.'
+    }
+} as const;
+
 // ─────────────────────────────────────────────────────────────────────────
 // INDICES + LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
@@ -1698,6 +2387,78 @@ export function stipendForRank(sectId: string, rankIndex: number): number {
  * clearest single number for how late this age is: nobody is near 1, and the
  * ones who are did not inherit anything worth having.
  */
+export function getSectAncestry(id: string): AncestralRecords | undefined {
+    return SECT_ANCESTRY[id];
+}
+
+/**
+ * Factions with something still in the world that can be woken. This is the
+ * list that makes "what happens afterwards" a real question, and the engine
+ * should never surface it wholesale to a player: `publiclyKnown` is false for
+ * most of them, and the ones that are hidden are hidden on purpose.
+ */
+export function getDormantAncestors(): { sectId: string; dormant: DormantAncestor }[] {
+    const out: { sectId: string; dormant: DormantAncestor }[] = [];
+    for (const [sectId, records] of Object.entries(SECT_ANCESTRY)) {
+        if (records.dormant) out.push({ sectId, dormant: records.dormant });
+    }
+    return out;
+}
+
+/** Factions publicly claiming an ancestor above the Lid, true or otherwise. */
+export function getSectsClaimingLivingAncestor(): string[] {
+    return Object.entries(SECT_ANCESTRY)
+        .filter(([, r]) => r.claimsLivingAncestor)
+        .map(([id]) => id);
+}
+
+/**
+ * The parting gift a sect is holding, if it still has one. An intact gift from
+ * a recent crossing is the difference between a venerable sect and a currently
+ * formidable one.
+ */
+export function getPartingGift(sectId: string): PartingGift | undefined {
+    const gift = SECT_ANCESTRY[sectId]?.partingGift;
+    return gift ?? undefined;
+}
+
+/**
+ * The preeminent institution of the present age: the sect whose ancestor made
+ * the last confirmed crossing and left an intact gift behind. There is exactly
+ * one, and the test asserts that.
+ */
+export function getPreeminentSect(): SectEntry | undefined {
+    for (const [sectId, r] of Object.entries(SECT_ANCESTRY)) {
+        if (r.claimsLivingAncestor && r.claimIsTrue && r.recency === 'recent' && r.partingGift?.intact) {
+            return SECT_BY_ID.get(sectId);
+        }
+    }
+    return undefined;
+}
+
+/**
+ * What a verification of this faction's ancestral claim would actually turn
+ * up. Undefined where the faction makes no claim; an empty trace list means
+ * the claim is honest and the certification would come back clean.
+ */
+export function auditAncestralClaim(sectId: string): {
+    claimed: boolean;
+    true: boolean;
+    recency: AncestralRecency;
+    giftIntact: boolean;
+    traces: readonly string[];
+} | undefined {
+    const r = SECT_ANCESTRY[sectId];
+    if (!r || !r.claimsLivingAncestor) return undefined;
+    return {
+        claimed: r.claimsLivingAncestor,
+        true: r.claimIsTrue,
+        recency: r.recency,
+        giftIntact: r.partingGift?.intact ?? false,
+        traces: r.discoverableTraces
+    };
+}
+
 const DAO_HOUSE_BY_ID: ReadonlyMap<string, DaoHouseEntry> = new Map(DAO_HOUSES.map(h => [h.id, h]));
 const DESTROYED_HOUSE_BY_ID: ReadonlyMap<string, DestroyedDaoHouse> =
     new Map(DESTROYED_DAO_HOUSES.map(h => [h.id, h]));
