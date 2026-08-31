@@ -19,6 +19,7 @@ import {
     SECTS,
     SECT_ANCESTRY,
     getSect,
+    getSectAdmission,
     sectThreat,
     sectsWithASealedCeiling,
     WITHDRAWN_POWERS
@@ -517,7 +518,11 @@ describe('holding ground by being unanswerable', () => {
         const strongestApex = Math.max(...APEX_INSTITUTIONS.map(a => a.powerOrdinal));
         expect(court.powerOrdinal).toBeGreaterThan(strongestApex);
         expect(court.powerOrdinal).toBe(Math.max(...SECTS.map(s => s.powerOrdinal)));
-        expect(chainToApex(HOLLOW_COURT)).toEqual([]);
+        // The chain terminates on itself: it reaches no court and no apex,
+        // which is the structural statement that nothing is above it.
+        const chain = chainToApex(HOLLOW_COURT);
+        expect(chain).toEqual([HOLLOW_COURT]);
+        expect(chain.some(id => getApexInstitution(id) || getCourt(id))).toBe(false);
     });
 
     it('admits on the bar alone, and forecloses inheritance explicitly', () => {
