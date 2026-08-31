@@ -22,13 +22,19 @@
 
 import {
     type AmbientQi,
-    type Cultivator
+    type Cultivator,
+    type Element
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from './spirit-roots.js';
 import { progressRequiredForOrdinal } from './realms.js';
 import { ambientRateMultiplier } from './ambient.js';
 import { aggregateInjuryPenalties } from './injuries.js';
 import { foundationEffect, foundationOf } from './foundation.js';
+import {
+    effectiveProgress,
+    understandingEffects,
+    type RelevanceContext
+} from './understanding.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // BASE RATE
@@ -94,9 +100,18 @@ export interface CultivationOptions {
      * fraction of that.
      */
     focusMultiplier?: number;
+    /**
+     * Element of the art being practised. Decides which insights bear on the
+     * rate, alongside the root's own elements.
+     */
+    techniqueElement?: Element | null;
+    /** Subject of the art being practised, e.g. 'sword'. Same purpose. */
+    techniqueSubject?: string | null;
 }
 
-const DEFAULT_OPTIONS: Required<CultivationOptions> = {
+const DEFAULT_OPTIONS: Required<
+    Omit<CultivationOptions, 'techniqueElement' | 'techniqueSubject'>
+> = {
     techniqueBonus: 1,
     sectBonus: 1,
     locationBonus: 1,
@@ -117,7 +132,7 @@ const DEFAULT_OPTIONS: Required<CultivationOptions> = {
  */
 export function computeCultivationRate(
     cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries'> &
-        Partial<Pick<Cultivator, 'foundationQuality'>>,
+        Partial<Pick<Cultivator, 'foundationQuality' | 'insights'>>,
     ambient: AmbientQi,
     opts: CultivationOptions = {}
 ): CultivationRateBreakdown {
@@ -125,6 +140,11 @@ export function computeCultivationRate(
     const root = getSpiritRoot(cultivator.spiritRoot);
     const injuries = aggregateInjuryPenalties(cultivator.injuries);
     const foundation = foundationOf(cultivator);
+    const understanding = understandingEffects(cultivator.insights ?? [], {
+        rootElements: root.elements,
+        techniqueElement: opts.techniqueElement ?? null,
+        techniqueSubject: opts.techniqueSubject ?? null
+    });
 
     const factors: RateFactor[] = [
         {
@@ -139,6 +159,17 @@ export function computeCultivationRate(
             source: 'foundation',
             label: foundation === 'none' ? 'No foundation yet' : `${foundation} foundation`,
             multiplier: foundationEffect(foundation).cultivationMultiplier
+        },
+        {
+            // The third quantity. Only insights that bear on what is actually
+            // being practised count, so this is never a flat "understanding
+            // stat" - see understanding.ts.
+            source: 'understanding',
+            label:
+                understanding.contributing.length === 0
+                    ? 'No relevant understanding'
+                    : understanding.contributing.map(c => c.name).join(', '),
+            multiplier: understanding.cultivationMultiplier
         },
         {
             source: 'ambient_qi',
@@ -235,24 +266,33 @@ export function accrueProgress(
 }
 
 /**
- * Whether enough progress has accumulated to attempt the next rank.
+ * Whether the next rank can be attempted.
+ *
+ * Reads EFFECTIVE progress - what was accumulated plus what understanding
+ * stands in for - which is where "a cultivator with less raw power and a deeper
+ * grasp crosses where a better-supplied rival cannot" actually happens. Every
+ * eligibility question routes through here for exactly that reason.
  *
  * "Eligible" is not "advisable". The engine will happily let a cultivator with
  * three torn meridians attempt a realm boundary in thin qi.
  */
 export function isBreakthroughEligible(
-    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress'>
+    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'spiritRoot'> &
+        Partial<Pick<Cultivator, 'insights'>>,
+    ctx?: Partial<RelevanceContext>
 ): boolean {
-    return cultivator.cultivationProgress >= progressRequiredForOrdinal(cultivator.realmOrdinal);
+    return effectiveProgress(cultivator, ctx) >= progressRequiredForOrdinal(cultivator.realmOrdinal);
 }
 
 /** Progress still needed before the next attempt is legal. Zero when eligible. */
 export function progressRemaining(
-    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress'>
+    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'spiritRoot'> &
+        Partial<Pick<Cultivator, 'insights'>>,
+    ctx?: Partial<RelevanceContext>
 ): number {
     return Math.max(
         0,
-        progressRequiredForOrdinal(cultivator.realmOrdinal) - cultivator.cultivationProgress
+        progressRequiredForOrdinal(cultivator.realmOrdinal) - effectiveProgress(cultivator, ctx)
     );
 }
 
@@ -264,10 +304,12 @@ export function progressRemaining(
  * pretend a finite number of days will fix it.
  */
 export function daysToNextBreakthrough(
-    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress'>,
-    perDay: number
+    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'spiritRoot'> &
+        Partial<Pick<Cultivator, 'insights'>>,
+    perDay: number,
+    ctx?: Partial<RelevanceContext>
 ): number {
-    const remaining = progressRemaining(cultivator);
+    const remaining = progressRemaining(cultivator, ctx);
     if (remaining <= 0) return 0;
     if (!Number.isFinite(perDay) || perDay <= 0) return Infinity;
     return Math.ceil(remaining / perDay);
@@ -275,9 +317,11 @@ export function daysToNextBreakthrough(
 
 /** Fraction of the way to the next rank, in [0, 1]. For progress bars. */
 export function progressFraction(
-    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress'>
+    cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'spiritRoot'> &
+        Partial<Pick<Cultivator, 'insights'>>,
+    ctx?: Partial<RelevanceContext>
 ): number {
     const required = progressRequiredForOrdinal(cultivator.realmOrdinal);
     if (required <= 0) return 1;
-    return Math.max(0, Math.min(1, cultivator.cultivationProgress / required));
+    return Math.max(0, Math.min(1, effectiveProgress(cultivator, ctx) / required));
 }

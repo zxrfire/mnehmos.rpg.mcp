@@ -24,7 +24,7 @@ describe('spell-database key normalization', () => {
         ['Hold Person', ['hold-person', 'hold person']],
         ['Spiritual Weapon', ['spiritual-weapon', 'spiritual weapon']],
         ['Bless', ['bless', 'BLESS']],
-        // Issue #41 acceptance — must resolve via either canonical name or kebab id.
+        // Issue #41 acceptance - must resolve via either canonical name or kebab id.
         ['Scorching Ray', ['scorching-ray', 'scorching ray']],
         ['Healing Word', ['healing-word', 'healing word']],
         ['Web', ['web', 'WEB']]

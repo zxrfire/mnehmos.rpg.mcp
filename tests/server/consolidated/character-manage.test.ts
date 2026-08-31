@@ -238,7 +238,7 @@ describe('character_manage consolidated tool', () => {
         // Regression for issue #44: spell slot array was being read with the
         // wrong index (slots[1] for level1, etc.), so half-casters got nothing
         // and full casters reported one level too low. Reviewers asked for
-        // L1–L9 coverage on the create path plus a level_up assertion.
+        // L1-L9 coverage on the create path plus a level_up assertion.
 
         // Source-of-truth tables (PHB). Indexes 0..8 = level1..level9 slots.
         const FULL_CASTER: Record<number, number[]> = {

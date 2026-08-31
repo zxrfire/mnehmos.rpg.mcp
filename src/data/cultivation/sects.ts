@@ -590,7 +590,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Ashen Forge Clan',
         alignment: 'neutral',
         powerOrdinal: 23,
-        ranks: ['Coal Hand', 'Smith', 'Forge Disciple', 'Hammer Master', 'Ash Elder', 'Clan Chief'],
+        ranks: ['Coal Hand', 'Smith', 'Forge Disciple', 'Hammer Master', 'Cinder Elder', 'Clan Chief'],
         admissionOrdinal: 5,
         stipend: [6, 20, 60, 190, 600, 1_500],
         teaches: [
@@ -866,6 +866,102 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         },
         description:
             'Holds the world\'s only working lightning curriculum, recovered whole from the fragment it lives on, and rules by the simple expedient of being the only place a mutated lightning root can learn anything. The Court does not recruit so much as collect, and treats refusal as a scheduling matter.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // THE QUIET MARCHES
+    // The adjacent region, and a different set of assumptions. Three
+    // factions rather than nineteen, because the ground will not support
+    // nineteen: there is one holding worth having, the Weir Office has it,
+    // and the politics is therefore patronage rather than rivalry. See
+    // `regions.ts` for what changes on crossing the border.
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'sect-weir-office',
+        name: 'The Weir Office',
+        alignment: 'neutral',
+        powerOrdinal: 21,
+        ranks: ['Applicant', 'Ticketed', 'Standing Grant', 'Under-Warden of the Weir', 'Office Warden', 'Weir Master'],
+        admissionOrdinal: 2,
+        stipend: [2, 6, 20, 70, 240, 800],
+        teaches: [
+            'lesser-qi-gathering-manual',
+            'iron-shirt-tempering',
+            'five-breath-circulation-scripture',
+            'shadow-splitting-gait',
+            'foundation-tempering-scripture'
+        ],
+        signatureTechniqueId: 'foundation-tempering-scripture',
+        specialities: ['cultivation', 'defense'],
+        rivals: ['sect-gleaners-company', 'sect-sixmile-wardens'],
+        territory: 'Both live pockets in the Marches, the weir works above Kettle, and the grant book.',
+        recruits: true,
+        compound: {
+            inherited: true,
+            formationNodesTotal: 26,
+            formationNodesLit: 7,
+            remnant: 'A flood-control works built to manage water by people who plainly also used it to manage qi, running seven of its twenty-six nodes and holding both of the region\'s remaining pockets between them.'
+        },
+        description:
+            'Not a sect so much as an office that acquired a monopoly and never gave it back. The Weir holds the only two sites in the Marches where a cultivator can advance at all, and rents access by the day against a grant book that is public, itemised and completely discretionary. There is no rivalry here to speak of, because there is nothing to be rival about: everyone in the region is either holding a grant, waiting on one, or has been refused. A Weir Master at Core Formation is the strongest thing anyone in the Marches has seen, and outside the Marches would be a mid-ranking elder nobody sends for.'
+    },
+    {
+        id: 'sect-sixmile-wardens',
+        name: 'The Sixmile Wardens',
+        alignment: 'righteous',
+        powerOrdinal: 14,
+        ranks: ['Marker', 'Warden', 'Road Warden', 'Warden of the Six Mile'],
+        admissionOrdinal: 0,
+        stipend: [1, 3, 9, 30],
+        teaches: [
+            'cross-meridian-strike',
+            'swallow-skimming-step',
+            'iron-shirt-tempering',
+            'lesser-qi-gathering-manual',
+            'green-mercy-mending-palm'
+        ],
+        signatureTechniqueId: 'swallow-skimming-step',
+        specialities: ['movement', 'defense', 'support'],
+        rivals: ['sect-weir-office'],
+        territory: 'The marked roads: every route through the Marches that does not cross dead ground.',
+        recruits: true,
+        compound: {
+            inherited: false,
+            formationNodesTotal: 0,
+            formationNodesLit: 0,
+            remnant: 'Nine hundred painted stakes and a shed at Sixmile with the survey in it, which is the only complete map of where it is safe to walk.'
+        },
+        description:
+            'A road militia that marks the safe ground and repaints the stakes, which in a region of dead zones is the single most valuable public service anyone performs. Its strongest Warden is at Foundation Establishment and would be an outer disciple at home. They take anyone, pay almost nothing, and lose two or three people a year to burn ground that moved. Their quarrel with the Weir Office is that the Office charges for grants and contributes nothing to the roads its grantees walk in on.'
+    },
+    {
+        id: 'sect-gleaners-company',
+        name: 'The Gleaners\' Company',
+        alignment: 'neutral',
+        powerOrdinal: 17,
+        ranks: ['Barrow Hand', 'Gleaner', 'Deep Gleaner', 'Company Factor', 'Company Master'],
+        admissionOrdinal: 0,
+        stipend: [2, 7, 26, 90, 300],
+        teaches: [
+            'cross-meridian-strike',
+            'shadow-splitting-gait',
+            'stone-hide-mantle',
+            'clear-spring-detoxification',
+            'lesser-qi-gathering-manual'
+        ],
+        signatureTechniqueId: 'shadow-splitting-gait',
+        specialities: ['movement', 'defense'],
+        rivals: ['sect-weir-office'],
+        territory: 'The burn zones, worked in rotation, and the barrow yard at Hollowmarket where the finds are sorted.',
+        recruits: true,
+        compound: {
+            inherited: true,
+            formationNodesTotal: 14,
+            formationNodesLit: 3,
+            remnant: 'A sorting yard laid out inside a ruin the Company did not build and has never fully entered, working three nodes at the front of it and leaving the rest sealed on the reasonable grounds that they were sealed for a reason.'
+        },
+        description:
+            'Diggers. The catastrophe that emptied the Marches also sealed a great deal of it, and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Company brings out of the burn zones. Losses run about one in nine a season. It is the best-paid work available to a Qi Condensation cultivator anywhere in the region and it is understood locally as a way of dying slightly later than the alternative.'
     }
 ] as const;
 
@@ -1739,6 +1835,25 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: [],
         requirement: 'A survey of any nine li of ground, walked and measured, submitted with the applicant\'s working.'
     },
+    // The Quiet Marches. Note how low the bars are, and that the binding
+    // requirement everywhere is stones rather than talent.
+    'sect-weir-office': {
+        minOrdinal: 2,
+        preferredRoots: [],
+        requirement: 'A grant application, a witness to residency, and the first day\'s access fee in advance. The Office refuses about half, and does not give reasons.'
+    },
+    'sect-sixmile-wardens': {
+        minOrdinal: 0,
+        preferredRoots: [],
+        requirement: 'Walk the six miles from Kettle to Sixmile by the marked route, alone, and repaint any stake found down on the way.'
+    },
+    'sect-gleaners-company': {
+        minOrdinal: 0,
+        minMight: 2,
+        preferredRoots: [],
+        requirement: 'One season as a barrow hand at the sorting yard before anyone is permitted into a burn zone. Most applicants are refused after the season rather than before it.'
+    },
+
     'house-anchorhold': {
         minOrdinal: 10,
         minMight: 2,
@@ -2230,6 +2345,47 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         lastOffering: null,
         discoverableTraces: [],
         standingNote: 'The Cult keeps unusually good records of other people\'s dead and almost none of its own.'
+    },
+    'sect-weir-office': {
+        ancestors: [
+            { name: 'Warden Qiu Shen', fate: 'dead', yearsAgo: 220, rememberedFor: 'Took the weir works during the resettlement, wrote the grant book, and never explained why access was to be rented rather than shared.' },
+            { name: 'Weir Master Ho Lian', fate: 'dead', yearsAgo: 60, rememberedFor: 'Reached Core Formation on Office grants, which remains the highest anyone has ever gone from inside the Marches.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'Two hundred years of records and one Core Formation cultivator in all of it. The Office does not claim ancestors and would not be believed if it did.'
+    },
+    'sect-sixmile-wardens': {
+        ancestors: [
+            { name: 'The first Marker, name not recorded', fate: 'dead', yearsAgo: 190, rememberedFor: 'Walked the burn edge until it killed her, painting stakes, and the survey she left is still the basis of every safe route in the region.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'No hall, no tablets, and a survey shed. The Wardens count their dead by the stakes those people were painting when the ground took them.'
+    },
+    'sect-gleaners-company': {
+        ancestors: [
+            { name: 'Company Master Bo Ai', fate: 'dead', yearsAgo: 140, rememberedFor: 'Established the rotation that keeps a burn zone unworked for nine years between passes, which halved the losses and is still resented.' },
+            { name: 'Deep Gleaner Xun', fate: 'lost', yearsAgo: 30, rememberedFor: 'Went through the sealed part of the sorting-yard ruin on a wager and did not come back. The Company sealed it again and raised the wager.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'A trade company with a mortality table instead of a genealogy, and it can quote the table from memory.'
     },
     'house-ninefold-ledger': {
         ancestors: [

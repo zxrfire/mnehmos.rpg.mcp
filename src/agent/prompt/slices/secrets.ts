@@ -1,7 +1,7 @@
 /**
- * Secrets slice — agent-private knowledge.
+ * Secrets slice - agent-private knowledge.
  *
- * Reads from agent_secrets table (NOT from narrative_notes / npc_voice — those are
+ * Reads from agent_secrets table (NOT from narrative_notes / npc_voice - those are
  * DM-reference notes; agent_secrets is what the LLM itself is told it knows).
  */
 

@@ -1,5 +1,5 @@
 /**
- * Consolidated Cultivation Tool — `cultivation_manage`
+ * Consolidated Cultivation Tool - `cultivation_manage`
  *
  * The cultivator's own life: rolled talent, accumulated progress, the long
  * seclusion, and the bottleneck that ends most runs.
@@ -13,7 +13,7 @@
  *                      rather than ignored, so a caller that tried is told it
  *                      failed instead of quietly narrating a lie.
  *   cultivate          hands the whole duration to `simulateTimeSkip` and writes
- *                      exactly what came back — injuries, ranks, death and all.
+ *                      exactly what came back - injuries, ranks, death and all.
  *                      A ten-year skip is one call and one transaction.
  *   breakthrough       hands the attempt to `attemptBreakthrough` and returns the
  *                      complete itemised modifier list and the raw roll. The
@@ -117,7 +117,7 @@ const FORBIDDEN_TALENT_KEYS = [
     'realmOrdinal', 'realm_ordinal', 'realm', 'cultivationProgress', 'cultivation_progress'
 ];
 
-/** Derived, not chosen: a body holds ash in proportion to Might. */
+/** Derived, not chosen: a body holds qi in proportion to Might. */
 function maxHpFor(might: number, ordinal: number): number {
     return 20 + might * 10 + ordinal * 5;
 }
@@ -226,7 +226,7 @@ const LadderSchema = z.object({
  *
  * The stream coordinate includes a nonce so two cultivators created in the same
  * run do not share a draw, and excludes anything the caller controls beyond the
- * name — there is no input that biases the result toward a better root.
+ * name - there is no input that biases the result toward a better root.
  */
 function rollTalent(seed: string, nonce: number) {
     const rootRng = forStream(seed, 'spirit_root', nonce);
@@ -298,7 +298,7 @@ export async function handleCreateCultivator(
     if (kind === 'pc') {
         // One live run at a time. Without this a caller could create cultivator
         // after cultivator until a single root came up, which is exactly the
-        // reroll the genre — and permadeath — forbid.
+        // reroll the genre - and permadeath - forbid.
         const existing = repos.runs.getActiveRun();
         if (existing && !args.runId) {
             return guidingError(
@@ -450,7 +450,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     const days = totalDays(args);
     if (days <= 0) {
         return guidingError('no_duration', 'Cultivating for no time at all does nothing.', {
-            hint: 'Supply days, months or years — e.g. { months: 3 } or { years: 10 }.'
+            hint: 'Supply days, months or years - e.g. { months: 3 } or { years: 10 }.'
         });
     }
 
@@ -498,10 +498,11 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         startDay,
         options,
         techniqueElement,
-        // The Vault charges at every realm boundary crossed during the skip,
-        // and it chooses from what this run has actually accumulated. Handing
-        // it real rows is what makes "you can read the ledger and see the shape
-        // of who you used to be" true rather than decorative.
+        // The Price of Advancement is charged at every realm boundary crossed
+        // during the skip, and what is cut away is chosen from what this run
+        // has actually accumulated. Handing it real rows is what makes "you can
+        // read the ledger and see the shape of who you used to be" true rather
+        // than decorative.
         toll: tollConditionsFor(repos, cultivator),
         rations,
         grainAbstinence: isOnGrainAbstinence(repos.db, cultivator.id, startDay),
@@ -549,7 +550,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             persistImmortalStatus(repos, before.id, result.immortalStatusGained);
         }
 
-        // Every instalment the Vault charged during the skip, in the same
+        // Every instalment charged during the skip, in the same
         // transaction as the ranks it charged them for. The application result
         // is kept so the response can show that what the ledger names was
         // genuinely removed, not merely recorded.
@@ -718,7 +719,7 @@ export async function handleBreakthrough(
         pill: pending ? { name: pending.name, potency: pending.potency } : null,
         ranksGainedThisTurn: alreadyGained,
         // Real candidates from real rows: known techniques and the people in
-        // this run who know this cultivator. The Vault picks; nobody asks.
+        // this run who know this cultivator. The crossing picks; nobody asks.
         toll: tollConditionsFor(repos, cultivator)
     });
 
@@ -999,7 +1000,7 @@ const definitions: Record<CultivationAction, ActionDefinition> = {
         schema: CultivateSchema,
         handler: handleCultivate,
         aliases: ['seclusion', 'meditate', 'time_skip', 'skip'],
-        description: 'Resolve a stretch of cultivation — days, months or years — in one deterministic pass'
+        description: 'Resolve a stretch of cultivation - days, months or years - in one deterministic pass'
     },
     breakthrough: {
         schema: BreakthroughSchema,

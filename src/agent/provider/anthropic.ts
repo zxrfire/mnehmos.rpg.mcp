@@ -1,5 +1,5 @@
 /**
- * Anthropic (Claude) provider — the primary/default runtime agent.
+ * Anthropic (Claude) provider - the primary/default runtime agent.
  *
  * Uses the Messages API: POST https://api.anthropic.com/v1/messages
  * Auth is `x-api-key` (NOT a bearer token) plus the pinned `anthropic-version`
@@ -12,7 +12,7 @@
  *   1. The system prompt is a TOP-LEVEL `system` parameter, not a message with
  *      role 'system'. Incoming ChatMessage[] therefore has its system turns
  *      hoisted out and merged.
- *   2. `max_tokens` is REQUIRED — a request without it is rejected.
+ *   2. `max_tokens` is REQUIRED - a request without it is rejected.
  *   3. The reply is `content: [{type:'text', text}, ...]` blocks, which must be
  *      concatenated to produce the single `.text` the interface promises.
  *   4. Usage is `input_tokens` / `output_tokens`, not prompt/completion.
@@ -139,7 +139,7 @@ export function rejectsSamplingParams(model: string): boolean {
 
 /**
  * Map the runtime's ReasoningEffort onto `output_config.effort`. The vocabulary
- * matches one-for-one except that 'xhigh' only exists on the newer families —
+ * matches one-for-one except that 'xhigh' only exists on the newer families -
  * clamp it down rather than send a level the model will reject.
  */
 function effortFor(model: string, effort: ReasoningEffort): string {
@@ -191,7 +191,7 @@ function normalizeStopReason(stopReason: string | null | undefined): string | un
             return undefined;
         default:
             // 'tool_use', 'pause_turn', 'refusal', and anything added later pass
-            // through verbatim — inventing a translation would lose information.
+            // through verbatim - inventing a translation would lose information.
             return stopReason;
     }
 }
@@ -255,7 +255,7 @@ export class AnthropicProvider implements LLMProvider {
                 body.output_config = { effort: effortFor(model, opts.reasoningEffort) };
             } else {
                 // Legacy families still take a fixed thinking budget, which must
-                // be at least 1024 and strictly less than max_tokens — otherwise
+                // be at least 1024 and strictly less than max_tokens - otherwise
                 // reasoning would consume the entire allowance and the model
                 // would have no room left to speak. If the caller's ceiling can't
                 // fund both, skip thinking rather than send an invalid request.
@@ -332,7 +332,7 @@ export class AnthropicProvider implements LLMProvider {
             text,
             promptTokens,
             completionTokens,
-            // Anthropic reports the two halves but no total — derive it so the
+            // Anthropic reports the two halves but no total - derive it so the
             // runtime's budget accounting doesn't have to fall back to an estimate.
             totalTokens: promptTokens !== undefined && completionTokens !== undefined
                 ? promptTokens + completionTokens

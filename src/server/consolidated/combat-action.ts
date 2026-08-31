@@ -201,7 +201,7 @@ const definitions: Record<CombatAction, ActionDefinition> = {
             // Race-safe restore (PR #60 reviewer ask): two concurrent
             // requests can both find the engine missing and both load from
             // DB. CombatManager.create throws if the key already exists, so
-            // wrap the create in a try/get fallback — the loser of the race
+            // wrap the create in a try/get fallback - the loser of the race
             // adopts the winner's engine.
             if (!engine) {
                 const persisted = getDomainServices().encounter.loadState(params.encounterId);
@@ -216,7 +216,7 @@ const definitions: Record<CombatAction, ActionDefinition> = {
                             getCombatManager().create(sessionKey, candidate);
                             engine = candidate;
                         } catch {
-                            // Lost the race — adopt the engine the winner created.
+                            // Lost the race - adopt the engine the winner created.
                             engine = getCombatManager().get(sessionKey);
                         }
                     }

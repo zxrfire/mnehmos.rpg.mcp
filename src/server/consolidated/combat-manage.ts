@@ -227,7 +227,7 @@ const definitions: Record<CombatManageAction, ActionDefinition> = {
             // Agent auto-invoke hook: after initiative advances, if the new
             // current actor has an active agent with auto_on_turn=true, fire a
             // synchronous invoke and embed the response in this payload.
-            // Errors here NEVER block the turn — the turn already advanced.
+            // Errors here NEVER block the turn - the turn already advanced.
             // ──────────────────────────────────────────────────────────────────
             try {
                 const currentTurn = (data as { currentTurn?: { id?: string; name?: string } }).currentTurn;
@@ -381,7 +381,7 @@ const definitions: Record<CombatManageAction, ActionDefinition> = {
 
                     // Persist the appended state so a restart doesn't lose the
                     // newly spawned enemies. PR #58 reviewer ask: don't return
-                    // success if persistence fails — that splits in-memory and
+                    // success if persistence fails - that splits in-memory and
                     // DB state. Roll back the in-memory addParticipants and
                     // surface an explicit error.
                     try {
@@ -422,14 +422,14 @@ const definitions: Record<CombatManageAction, ActionDefinition> = {
                             attack: preset.defaultAttack
                         })),
                         turnOrder: state.turnOrder,
-                        // currentTurnIndex indexes turnOrder, NOT participants —
+                        // currentTurnIndex indexes turnOrder, NOT participants -
                         // those arrays can diverge when LAIR is in the order.
                         currentTurn: state.turnOrder[state.currentTurnIndex],
                         readyForCombat: true,
                         hint: `Added ${count} ${preset.name}(s) to existing encounter. Initiative re-sorted.`
                     };
                 }
-                // encounterId given but neither in memory nor in DB — return
+                // encounterId given but neither in memory nor in DB - return
                 // an explicit error rather than silently creating a new
                 // encounter with the spawned enemies. Silent fallback hides
                 // typos and stale ids from the caller (PR #58 reviewer ask).

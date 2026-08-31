@@ -10,7 +10,7 @@ import {
     RUNTIME_CONFIG_PATH_ENV
 } from '../../../src/agent/provider/config.js';
 
-/** Every resolution test injects its own env — never the process environment. */
+/** Every resolution test injects its own env - never the process environment. */
 const EMPTY_ENV: Record<string, string | undefined> = {};
 
 function resolve(input: Parameters<typeof resolveRuntimeProviderConfig>[0] = {}) {
@@ -47,7 +47,7 @@ describe('normalizeProviderName', () => {
 });
 
 describe('isProviderName', () => {
-    it('accepts canonical names only — not aliases', () => {
+    it('accepts canonical names only - not aliases', () => {
         expect(isProviderName('anthropic')).toBe(true);
         expect(isProviderName('ollama')).toBe(true);
         expect(isProviderName('claude')).toBe(false);
@@ -55,7 +55,7 @@ describe('isProviderName', () => {
     });
 });
 
-describe('resolveRuntimeProviderConfig — precedence', () => {
+describe('resolveRuntimeProviderConfig - precedence', () => {
     it('defaults to anthropic with its default model', () => {
         const resolved = resolve();
         expect(resolved.provider).toBe('anthropic');
@@ -135,7 +135,7 @@ describe('resolveRuntimeProviderConfig — precedence', () => {
     });
 });
 
-describe('resolveRuntimeProviderConfig — model resolution', () => {
+describe('resolveRuntimeProviderConfig - model resolution', () => {
     it('resolves OLLAMA_MODEL for the ollama provider', () => {
         const resolved = resolve({ env: { RUNTIME_PROVIDER: 'ollama', OLLAMA_MODEL: 'qwen3:8b' } });
         expect(resolved.provider).toBe('ollama');
@@ -184,7 +184,7 @@ describe('resolveRuntimeProviderConfig — model resolution', () => {
     });
 });
 
-describe('resolveRuntimeProviderConfig — credential metadata', () => {
+describe('resolveRuntimeProviderConfig - credential metadata', () => {
     it('names the env var and key requirement for hosted providers', () => {
         const resolved = resolve({ provider: 'claude' });
         expect(resolved.configEnvVar).toBe('ANTHROPIC_API_KEY');
@@ -219,7 +219,7 @@ describe('loadRuntimeConfigFile', () => {
     });
 
     it('falls back to defaults when the config file is unreadable', () => {
-        // A broken config file must never take the runtime down — it is the
+        // A broken config file must never take the runtime down - it is the
         // lowest-priority source, so "unreadable" and "absent" mean the same thing.
         const resolved = resolveRuntimeProviderConfig({
             env: { [RUNTIME_CONFIG_PATH_ENV]: 'no/such/runtime.json' }

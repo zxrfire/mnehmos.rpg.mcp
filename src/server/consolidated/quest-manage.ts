@@ -487,7 +487,7 @@ const definitions: Record<QuestManageAction, ActionDefinition> = {
         schema: UpdateObjectiveSchema,
         handler: handleUpdateObjective,
         aliases: ['progress', 'advance'],
-        description: 'Update objective progress (requires characterId — quest must be active for that character)'
+        description: 'Update objective progress (requires characterId - quest must be active for that character)'
     },
     complete_objective: {
         schema: CompleteObjectiveSchema,

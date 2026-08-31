@@ -126,7 +126,7 @@ export interface SpellValidationResult {
  * returning null when the class is unknown (custom homebrew classes, NPC stat
  * blocks, or callers that pass capitalized strings from the DB).
  *
- * Use this everywhere instead of indexing SPELLCASTING_CONFIG directly — that
+ * Use this everywhere instead of indexing SPELLCASTING_CONFIG directly - that
  * lookup crashes on `config.canCast` when the key doesn't match exactly.
  */
 function lookupSpellConfig(characterClass: string | undefined | null): SpellcastingConfig | null {

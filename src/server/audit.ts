@@ -63,8 +63,8 @@ export class AuditLogger {
      * database to bind to. Resolving at write time also puts each audit row in
      * its own campaign's database, which is where it belongs.
      *
-     * Writes made outside a tenant scope — only the tenant-agnostic meta-tools
-     * reach that path — throw here and are swallowed by the caller's existing
+     * Writes made outside a tenant scope - only the tenant-agnostic meta-tools
+     * reach that path - throw here and are swallowed by the caller's existing
      * catch, so an unscoped call is simply not audited rather than failing.
      */
     private repo(): AuditRepository {

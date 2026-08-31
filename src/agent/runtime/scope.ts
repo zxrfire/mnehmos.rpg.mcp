@@ -89,12 +89,12 @@ export function checkSceneScope(
     character: Character | NPC | null,
     deps: AgentRuntimeDeps
 ): SceneScopeResult {
-    // 1. Distance contact overrides presence — the channel itself carries the truth.
+    // 1. Distance contact overrides presence - the channel itself carries the truth.
     if (input.remoteContact) return { skip: false };
 
     // 2. Encounter-anchored: must be a participant. If the encounter row is
     //    missing/unreadable we deliberately FALL THROUGH to the no-scene-
-    //    context branch — we only deny when we KNOW the character is out,
+    //    context branch - we only deny when we KNOW the character is out,
     //    not when the data is absent. This keeps callers that pass a stale
     //    or placeholder encounterId from breaking on a phantom skip.
     if (input.encounterId) {
@@ -135,7 +135,7 @@ export function composeRemoteContactSituation(
         ? ' This is a one-way channel; you cannot reply through it.'
         : '';
     const prefix =
-        `[REMOTE CONTACT — channel: ${contact.method}${sourceLabel}${wordLimitLabel}] ` +
+        `[REMOTE CONTACT - channel: ${contact.method}${sourceLabel}${wordLimitLabel}] ` +
         `You receive this through ${contact.method}${sourceLabel}. ` +
         `You do not see the scene directly.${oneWayLabel} ` +
         `The message is: "${contact.payload}"`;

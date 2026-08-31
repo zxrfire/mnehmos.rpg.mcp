@@ -4,7 +4,7 @@
  *   - create (composite NPC bootstrap: sheet + optional agent + optional initial relationship/memory)
  *   - get_full_context (single-call "table-ready bundle" for DM)
  *
- * Per CLAUDE.md: NO `import { describe, it, expect } from 'vitest'` — vitest globals
+ * Per CLAUDE.md: NO `import { describe, it, expect } from 'vitest'` - vitest globals
  * are configured and explicit imports break test collection on Windows + vitest 1.6.1.
  */
 
@@ -29,7 +29,7 @@ function parseResult(result: { content: Array<{ type: string; text: string }> })
     return { error: 'parse_failed', rawText: text };
 }
 
-describe('npc_manage unification — create + get_full_context', () => {
+describe('npc_manage unification - create + get_full_context', () => {
     const ctx = { sessionId: 'test-session' };
 
     beforeEach(() => {

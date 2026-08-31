@@ -1,5 +1,5 @@
 /**
- * Recent memory slice — long-term npc_memories for this character.
+ * Recent memory slice - long-term npc_memories for this character.
  *
  * Pulls from NpcMemoryRepository.getRecentInteractions which returns the most
  * recent N conversation memories across all NPCs this character has interacted

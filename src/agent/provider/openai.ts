@@ -45,7 +45,7 @@ interface OpenAIChatResponse {
 }
 
 /**
- * OpenAI's reasoning models (o1, o3, gpt-5 family) reject `max_tokens` —
+ * OpenAI's reasoning models (o1, o3, gpt-5 family) reject `max_tokens` -
  * they require `max_completion_tokens` instead, because the old name was
  * misleading once reasoning tokens entered the picture. They also reject
  * any non-default temperature value.

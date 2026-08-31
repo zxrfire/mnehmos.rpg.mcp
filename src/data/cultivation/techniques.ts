@@ -112,7 +112,7 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // immortal - a handful of sects still transmit theirs; these are not among them
     'star-quenching-blade-domain',
     'abyssal-gate-torrent',
-    'ash-of-the-first-sun',
+    'cinder-of-the-first-sun',
     'void-fold-pilgrimage',
     'lifespring-of-the-jade-pool',
     'severed-fate-mending-art',
@@ -361,7 +361,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: '3d6+2',
         cooldown: 2,
         description:
-            'A low arc of fire qi swept along the ground, leaving a crescent of grey ash that stays warm until morning. The last art most Qi Condensation cultivators bother to master before their bottleneck.'
+            'A low arc of fire qi swept along the ground, leaving a crescent of grey cinders that stays warm until morning. The last art most Qi Condensation cultivators bother to master before their bottleneck.'
     }),
 
     // ═══════════════════════════════════════════════════════════════════
@@ -597,8 +597,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Not a bolt the user makes, but one the user requests. The heavens are not required to stop at one, and the manual is explicit that they frequently do not. Only a mutated lightning root survives the asking.'
     }),
     art({
-        id: 'ash-of-the-first-sun',
-        name: 'Ash of the First Sun',
+        id: 'cinder-of-the-first-sun',
+        name: 'Cinder of the First Sun',
         category: 'attack',
         grade: 'immortal',
         element: 'fire',
@@ -607,7 +607,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: '14d20+70',
         cooldown: 5,
         description:
-            'Fire qi refined past light and past heat into something that simply ends processes. What is left is a fine pale ash that will not scatter in wind and is cold to the touch.'
+            'Fire qi refined past light and past heat into something that simply ends processes. What is left is a fine pale powder that will not scatter in wind and is cold to the touch.'
     }),
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1105,7 +1105,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: '20d20+200',
         cooldown: 8,
         description:
-            'The body is burned down to what is essential and reassembled from the ash by fire qi that has been taught the shape. Survivors describe it as the worst hour of their several thousand years.'
+            'The body is burned down to what is essential and reassembled from the cinders by fire qi that has been taught the shape. Survivors describe it as the worst hour of their several thousand years.'
     }),
     art({
         id: 'word-of-continuance',

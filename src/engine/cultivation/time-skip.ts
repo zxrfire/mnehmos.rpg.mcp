@@ -65,13 +65,17 @@ import {
     type Element,
     type FoundationQuality,
     type ImmortalStatus,
+    type Achievement,
+    type Insight,
     type Injury,
+    type VisionSeed,
     type SimEvent,
     type SimEventKind,
     type TimeSkipResult,
     type TollResult
 } from '../../schema/cultivation.js';
 import { lifespanForOrdinal, rankName } from './realms.js';
+import { getSpiritRoot } from './spirit-roots.js';
 import { AMBIENT_REFRESH_DAYS, ambientForBlock } from './ambient.js';
 import {
     DAYS_PER_YEAR,
@@ -82,6 +86,20 @@ import {
 import { attemptBreakthrough, canAttemptBreakthrough } from './breakthrough.js';
 import type { FoundationConditions } from './foundation.js';
 import type { TollConditions } from './toll.js';
+import {
+    INSIGHT_CHECK_DAYS,
+    INSIGHT_FROM_CRIPPLING_DEVIATION,
+    INSIGHT_FROM_TRIBULATION,
+    VISION_CHECK_DAYS,
+    VISION_KINDS,
+    discoverableInsights,
+    formVision,
+    integrateInsight,
+    meditativeStateChance,
+    recordAchievement,
+    visionChance,
+    type DiscoveryContext
+} from './understanding.js';
 import { resolveDeviation, rollDeviation } from './deviation.js';
 import { createInjury, untreatedInjuryCount } from './injuries.js';
 import { burnSatiety, eat, evaluateDeathConditions, turnsUntilStarvation } from './survival.js';
@@ -224,6 +242,13 @@ export interface TimeSkipContext {
      * caller still owns whether a site was chosen and a pill was bought.
      */
     foundation?: Omit<FoundationConditions, 'ambient'>;
+    /**
+     * What the cultivator is doing and where, for understanding. Supplied by
+     * the caller from real world state - the engine holds no map and no
+     * technique table. Omitted means "sitting in a cave practising nothing in
+     * particular", for which the insight chance is exactly zero.
+     */
+    understanding?: Omit<DiscoveryContext, 'survived'>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -267,6 +292,12 @@ export function simulateTimeSkip(
     let immortalStatus: ImmortalStatus = cultivator.immortalStatus ?? 'none';
     /** Everything the crossings took during the skip, for the caller to apply. */
     const tolls: TollResult[] = [];
+    /** Remarkable things that actually happened, and what was taken from them. */
+    const achievements: Achievement[] = [];
+    const insightsGained: Insight[] = [];
+    /** Beliefs with no ground truth behind them, for the knowledge layer. */
+    const visions: VisionSeed[] = [];
+    let insights: Insight[] = [...(cultivator.insights ?? [])];
 
     /** Integer day counters. Ages are derived from these, never accumulated,
      *  so a thousand chunks introduce no float drift. */
@@ -322,6 +353,7 @@ export function simulateTimeSkip(
         spiritRoot: cultivator.spiritRoot,
         attributes: cultivator.attributes,
         foundationQuality: foundation,
+        insights,
         immortalStatus,
         name: cultivator.name,
         injuries,
@@ -343,6 +375,56 @@ export function simulateTimeSkip(
         interruptReason = `death:${cause}`;
         push('death', deathSummary(cause, cultivator.name, ordinal, currentAge()), true, { cause });
         return true;
+    };
+
+    /**
+     * Turn something that actually happened into an achievement, and possibly
+     * into understanding.
+     *
+     * Every call site is a place where the simulation had ALREADY resolved
+     * something out of the ordinary. Nothing here fires on a schedule, and
+     * there is no path into this function that a cultivator can reach by
+     * spending time or stones. If the cultivator's circumstances open no
+     * candidate comprehension, the achievement is still recorded and no
+     * insight comes of it - which is the ordinary case.
+     */
+    const comprehend = (
+        kind: Parameters<typeof recordAchievement>[0]['kind'],
+        summary: string,
+        absDay: number,
+        survived: DiscoveryContext['survived'],
+        rng: ReturnType<typeof forStream>,
+        detail: Record<string, string | number> = {}
+    ): void => {
+        const candidates = discoverableInsights(cultivator, {
+            ...(ctx.understanding ?? {}),
+            survived
+        });
+        const achievement = recordAchievement(
+            { kind, onDay: absDay, turn: turn + Math.floor(elapsed), summary, detail },
+            rng
+        );
+        achievements.push(achievement);
+        push('achievement', summary, false, { kind, achievementId: achievement.id });
+
+        if (candidates.length === 0) return;
+        const candidate = rng.pick(candidates);
+        const integrated = integrateInsight(insights, candidate, achievement);
+        insights = integrated.insights;
+        insightsGained.push(integrated.insight);
+        push(
+            'insight_gained',
+            `Understanding: ${integrated.insight.subject} ` +
+            `${integrated.deepened ? 'deepened' : 'comprehended'} - ${candidate.opening}.`,
+            false,
+            {
+                insightId: integrated.insight.id,
+                domain: integrated.insight.domain,
+                subject: integrated.insight.subject,
+                degree: integrated.insight.degree,
+                deepened: integrated.deepened
+            }
+        );
     };
 
     let iterations = 0;
@@ -368,6 +450,8 @@ export function simulateTimeSkip(
                     realmOrdinal: ordinal,
                     cultivationProgress: progress,
                     alive: true,
+                    spiritRoot: cultivator.spiritRoot,
+                    insights,
                     // A False Immortal is refused here for the rest of the
                     // skip, so the loop stops re-attempting the last crossing.
                     immortalStatus
@@ -405,6 +489,24 @@ export function simulateTimeSkip(
                     }
                     if (result.immortalStatusGained !== null) {
                         immortalStatus = result.immortalStatusGained;
+                    }
+                    // Standing under heavenly lightning and still being there
+                    // afterwards is the definition of surviving something
+                    // extraordinary. It is rolled, and it usually teaches
+                    // nothing - but this is an event that genuinely occurred.
+                    if (result.tribulation !== null && result.tribulation.survived) {
+                        const rng = forStream(ctx.seed, 'understanding', absDay, 'tribulation');
+                        if (rng.chance(INSIGHT_FROM_TRIBULATION)) {
+                            comprehend(
+                                'survived_extraordinary',
+                                `Weathered ${result.tribulation.strikes} strikes of heavenly ` +
+                                'tribulation and was still standing afterwards.',
+                                absDay,
+                                'tribulation',
+                                rng,
+                                { strikes: result.tribulation.strikes }
+                            );
+                        }
                     }
                     push('breakthrough_success', result.narrationHint, false, {
                         fromOrdinal: result.fromOrdinal,
@@ -473,9 +575,13 @@ export function simulateTimeSkip(
 
         // ── 2. How far can we safely jump? ──
         const rate = computeCultivationRate(
-            { spiritRoot: cultivator.spiritRoot, injuries },
+            { spiritRoot: cultivator.spiritRoot, injuries, foundationQuality: foundation, insights },
             ambient,
-            ctx.options
+            {
+                ...ctx.options,
+                techniqueElement: ctx.techniqueElement ?? null,
+                techniqueSubject: ctx.understanding?.techniqueSubjects?.[0] ?? null
+            }
         );
 
         const chunk = nextChunk({
@@ -483,7 +589,15 @@ export function simulateTimeSkip(
             absDay,
             requestedDays,
             breakthroughDays: autoBreakthrough
-                ? daysToNextBreakthrough({ realmOrdinal: ordinal, cultivationProgress: progress }, rate.perDay)
+                ? daysToNextBreakthrough(
+                      {
+                          realmOrdinal: ordinal,
+                          cultivationProgress: progress,
+                          spiritRoot: cultivator.spiritRoot,
+                          insights
+                      },
+                      rate.perDay
+                  )
                 : Infinity,
             lifespanDays: daysUntilYear(lifespanForOrdinal(ordinal), rawAge()),
             stagnationDays: daysUntilYear(STAGNATION_YEARS, rawYearsAtRealm()),
@@ -535,6 +649,8 @@ export function simulateTimeSkip(
                     overfullProgress: canAttemptBreakthrough({
                         realmOrdinal: ordinal,
                         cultivationProgress: progress,
+                        spiritRoot: cultivator.spiritRoot,
+                        insights,
                         alive: true
                     }).eligible
                 }
@@ -553,6 +669,24 @@ export function simulateTimeSkip(
                     severity: resolution.severity,
                     risk: check.risk
                 });
+
+                // Feeling the qi turn and coming back from it teaches
+                // something about the meridians that no manual does. Only the
+                // worst grade qualifies, and only sometimes.
+                if (resolution.severity === 'crippling') {
+                    const rng = forStream(ctx.seed, 'understanding', newAbsDay, 'deviation');
+                    if (rng.chance(INSIGHT_FROM_CRIPPLING_DEVIATION)) {
+                        comprehend(
+                            'profound_principle',
+                            'Came back from a crippling qi deviation, having felt exactly ' +
+                            'how the circulation turns.',
+                            newAbsDay,
+                            'deviation',
+                            rng,
+                            { severity: resolution.severity }
+                        );
+                    }
+                }
 
                 // Reaching the lethal untreated-injury threshold is not itself
                 // death, but it is the last moment at which the player can
@@ -664,7 +798,58 @@ export function simulateTimeSkip(
             }
         }
 
-        // ── 5. Did any of that kill us? ──
+        // ── 5. A rare meditative state, if the circumstances are exceptional. ──
+        //
+        // Zero chance for a cultivator in ordinary qi practising nothing in
+        // particular, which is most of them. This grid can never award
+        // anything for time served: every term in the chance is a fact about
+        // where they are, what they are practising, or how well they read.
+        if (!interrupted && onGrid(newAbsDay, INSIGHT_CHECK_DAYS)) {
+            const rng = forStream(ctx.seed, 'understanding', newAbsDay, 'meditation');
+            const rootElements = getSpiritRoot(cultivator.spiritRoot).elements;
+            const practised = ctx.understanding?.techniqueElement ?? ctx.techniqueElement ?? null;
+            const { chance } = meditativeStateChance({
+                ambient,
+                matchedTechnique: practised !== null && rootElements.includes(practised),
+                atSiteOfUnderstanding: (ctx.understanding?.locationTags ?? []).length > 0,
+                insight: cultivator.attributes.insight
+            });
+            if (chance > 0 && rng.chance(chance)) {
+                comprehend(
+                    'meditative_state',
+                    'Entered a rare meditative state and did not come out of it the same.',
+                    newAbsDay,
+                    null,
+                    rng
+                );
+            }
+        }
+
+        // ── 6. A temporal phenomenon. Information, never capability. ──
+        //
+        // These do not touch a single number on the cultivator. What comes out
+        // is a belief with no fact behind it, handed to the knowledge layer,
+        // where it can be acted on, doubted, traded, and turn out to have been
+        // wrong all along.
+        if (!interrupted && onGrid(newAbsDay, VISION_CHECK_DAYS)) {
+            const rng = forStream(ctx.seed, 'understanding', newAbsDay, 'vision');
+            const atSite = (ctx.understanding?.locationTags ?? []).length > 0;
+            if (rng.chance(visionChance(atSite))) {
+                const kind = rng.pick(VISION_KINDS);
+                visions.push(
+                    formVision(cultivator.id, kind, newAbsDay, rng.float(0.2, 0.6))
+                );
+                push(
+                    'vision',
+                    'Something arrived that does not sit cleanly in time. It offers a ' +
+                    'direction and no proof, and it may be true of nothing at all.',
+                    false,
+                    { kind }
+                );
+            }
+        }
+
+        // ── 7. Did any of that kill us? ──
         if (checkDeath()) break;
     }
 
@@ -703,7 +888,10 @@ export function simulateTimeSkip(
         foundationEstablished:
             foundation === (cultivator.foundationQuality ?? 'none') ? null : foundation,
         immortalStatusGained:
-            immortalStatus === (cultivator.immortalStatus ?? 'none') ? null : immortalStatus
+            immortalStatus === (cultivator.immortalStatus ?? 'none') ? null : immortalStatus,
+        achievements,
+        insightsGained,
+        visions
     };
 }
 

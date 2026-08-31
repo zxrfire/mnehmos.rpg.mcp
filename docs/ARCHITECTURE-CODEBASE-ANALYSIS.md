@@ -196,7 +196,7 @@ The repository still contains legacy-style tool module [`src/server/tools.ts`](s
 
 ## 10) Recommended Architecture Roadmap (Prioritized)
 
-### P0 — Contract Unification
+### P0 - Contract Unification
 
 Define a **single source of truth** artifact per consolidated tool containing:
 
@@ -207,22 +207,22 @@ Define a **single source of truth** artifact per consolidated tool containing:
 
 Then generate registry metadata dynamically from those definitions, replacing manual maps in [`consolidated-registry`](src/server/consolidated-registry.ts:40).
 
-### P0 — Session/Context Contract Hardening
+### P0 - Session/Context Contract Hardening
 
 Remove mutable module-level context holders and enforce explicit context threading through router function signatures (replace patterns like [`currentContext`](src/server/consolidated/combat-manage.ts:128)).
 
-### P1 — Storage Access Boundary
+### P1 - Storage Access Boundary
 
 Introduce service/repository facade interfaces per domain so server handlers avoid direct DB acquisition (reduce direct calls like [`getDb()`](src/storage/index.ts:112)).
 
-### P1 — Legacy Surface Decision
+### P1 - Legacy Surface Decision
 
 Decide and document one of:
 
 - fully deprecate [`src/server/tools.ts`](src/server/tools.ts)
 - or mark it as compatibility mode with tests proving parity
 
-### P2 — Data Durability Profile
+### P2 - Data Durability Profile
 
 Add backup/snapshot before destructive corruption cleanup in [`handleCorruptedDatabase()`](src/storage/db.ts:35).
 

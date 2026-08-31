@@ -81,7 +81,7 @@ function ensureRuntime() {
     if (existing) return existing;
 
     const { db } = ensureDb();
-    // Lazy fallback factory — reads env keys only, no startup wiring required.
+    // Lazy fallback factory - reads env keys only, no startup wiring required.
     const factory = new ProviderFactory();
     factory.initialize();
     return buildAgentRuntime(db, factory);
@@ -410,7 +410,7 @@ async function handleHealth(args: z.infer<typeof HealthSchema>): Promise<object>
     const recentCalls = agentRepo.listCalls(agent.id, { limit: 10 });
     const lastCall = recentCalls[0];
 
-    // Definitive answer to "can this agent actually speak right now?" — checks
+    // Definitive answer to "can this agent actually speak right now?" - checks
     // the live ProviderFactory, not just stored config. If providerAvailable is
     // false, the agent's bound provider has no API key in the running process's
     // environment (regardless of what .env says on disk).
@@ -532,7 +532,7 @@ async function handleNarrate(args: z.infer<typeof NarrateSchema>): Promise<objec
 async function handleBroadcast(args: z.infer<typeof BroadcastSchema>): Promise<object> {
     const { agentRepo } = ensureDb();
     // Each broadcast entry gets its own unique label so multiple broadcasts in
-    // the same millisecond — or to the same agent within a single call — don't
+    // the same millisecond - or to the same agent within a single call - don't
     // collide on the upsert key.
     const ts = new Date().toISOString();
 
@@ -728,7 +728,7 @@ export const AgentManageTool = {
     name: 'agent_manage',
     description: `Manage LLM-driven NPCs ("agents") bound to characters.
 
-Each agent owns a private mind state — modular system-prompt slices (persona, directive, secrets, narrative_feed, recent, character_state), a first-person journal, and audit-logged LLM calls. The LLM emits plain-text intent declarations; the DM dispatches downstream tools (combat_action, npc_manage, math_manage, etc.).
+Each agent owns a private mind state - modular system-prompt slices (persona, directive, secrets, narrative_feed, recent, character_state), a first-person journal, and audit-logged LLM calls. The LLM emits plain-text intent declarations; the DM dispatches downstream tools (combat_action, npc_manage, math_manage, etc.).
 
 🧠 LIFECYCLE
   create / get / list / update / delete / resume / health / budget
@@ -736,19 +736,19 @@ Each agent owns a private mind state — modular system-prompt slices (persona, 
 📝 PROMPT ASSEMBLY (DM controls every slice)
   set_slice (kind = persona | directive | secrets | narrative_feed | recent | character_state | custom)
   remove_slice / toggle_slice / list_slices
-  narrate     — append an observation to ONE agent's narrative_feed
-  broadcast   — same observation, fanned out to many agents
-  preview_prompt — build messages[] without calling the LLM
+  narrate     - append an observation to ONE agent's narrative_feed
+  broadcast   - same observation, fanned out to many agents
+  preview_prompt - build messages[] without calling the LLM
 
 🔐 MIND STATE
   add_secret / list_secrets / remove_secret   (separate from npc_voice narrative notes by design)
   add_journal / get_journal                   (kinds: response, observation, plan, reflection, dm_note)
 
 ⚡ INVOCATION
-  invoke   — call LLM; returns plain-text intent for DM to dispatch
-  replay   — re-run a stored call for audit/debug
+  invoke   - call LLM; returns plain-text intent for DM to dispatch
+  replay   - re-run a stored call for audit/debug
 
-🤖 AUTONOMY: Agents default to PROPOSAL mode. The engine never executes their decisions. The DM reads response and makes the appropriate tool calls — same loop as a human player declaring intent.
+🤖 AUTONOMY: Agents default to PROPOSAL mode. The engine never executes their decisions. The DM reads response and makes the appropriate tool calls - same loop as a human player declaring intent.
 
 🎯 DIALOGUE: The DM is the broadcast bus. Agents do NOT hear each other automatically; what an agent "knows" comes through narrate/broadcast.
 
@@ -776,7 +776,7 @@ Actions: create, get, list, update, delete, resume, health, budget, set_slice, r
         // budget
         setBudget: z.number().nullable().optional(),
         resetUsage: z.boolean().optional(),
-        // slice OR journal kind — per-action schemas (SetSliceSchema, AddJournalSchema)
+        // slice OR journal kind - per-action schemas (SetSliceSchema, AddJournalSchema)
         // enforce the correct subset; the MCP boundary just needs to allow either enum
         // through so add_journal isn't rejected at the wire layer.
         kind: z.union([AgentSliceKindSchema, AgentJournalKindSchema]).optional(),
@@ -850,7 +850,7 @@ export async function handleAgentManage(args: unknown, ctx: SessionContext): Pro
                         'Status': parsed.status,
                         'Circuit': parsed.circuitState,
                         'Provider': `${parsed.provider}:${parsed.model}`,
-                        'Provider configured': parsed.providerAvailable ? 'yes' : 'NO — key missing in process env',
+                        'Provider configured': parsed.providerAvailable ? 'yes' : 'NO - key missing in process env',
                         'Available providers': Array.isArray(parsed.availableProviders) && parsed.availableProviders.length > 0
                             ? parsed.availableProviders.join(', ')
                             : '(none)',
@@ -858,7 +858,7 @@ export async function handleAgentManage(args: unknown, ctx: SessionContext): Pro
                         'Tokens used': parsed.tokensUsed,
                         'Budget remaining': parsed.budgetRemaining ?? 'unlimited',
                         'Last call': parsed.lastCallAt ?? 'never',
-                        'Last status': parsed.lastCallStatus ?? '—'
+                        'Last status': parsed.lastCallStatus ?? '-'
                     });
                     break;
                 case 'invoke': {
@@ -868,7 +868,7 @@ export async function handleAgentManage(args: unknown, ctx: SessionContext): Pro
                         output += RichFormatter.keyValue({
                             'Status': parsed.status,
                             'Tokens': `${parsed.promptTokens ?? '?'} in / ${parsed.completionTokens ?? '?'} out`,
-                            'Duration': parsed.durationMs !== null ? `${parsed.durationMs}ms` : '—',
+                            'Duration': parsed.durationMs !== null ? `${parsed.durationMs}ms` : '-',
                             'Call ID': parsed.callId
                         });
                         output += '\n**Response:**\n';
@@ -876,7 +876,7 @@ export async function handleAgentManage(args: unknown, ctx: SessionContext): Pro
                     } else {
                         // status: error / timeout / circuit_open / budget_exhausted / incapable / paused / rate_limited
                         const alertType = parsed.status === 'incapable' || parsed.status === 'paused' ? 'warning' : 'error';
-                        output = RichFormatter.header(`Agent invoke — ${parsed.status}`, '');
+                        output = RichFormatter.header(`Agent invoke - ${parsed.status}`, '');
                         output += RichFormatter.alert(parsed.reason || `Agent returned status: ${parsed.status}`, alertType);
                         if (parsed.callId) {
                             output += RichFormatter.keyValue({
@@ -894,8 +894,8 @@ export async function handleAgentManage(args: unknown, ctx: SessionContext): Pro
                         'Agent ID': parsed.agentId,
                         'Messages': parsed.messages?.length ?? 0,
                         'Estimated prompt tokens': parsed.estimatedPromptTokens ?? 0,
-                        'Slices included': Array.isArray(parsed.slicesIncluded) ? parsed.slicesIncluded.join(', ') : '—',
-                        'Slices skipped': Array.isArray(parsed.slicesSkipped) ? parsed.slicesSkipped.join(', ') : '—'
+                        'Slices included': Array.isArray(parsed.slicesIncluded) ? parsed.slicesIncluded.join(', ') : '-',
+                        'Slices skipped': Array.isArray(parsed.slicesSkipped) ? parsed.slicesSkipped.join(', ') : '-'
                     });
                     break;
                 }
@@ -903,11 +903,11 @@ export async function handleAgentManage(args: unknown, ctx: SessionContext): Pro
                     output = RichFormatter.header(`Replay (${parsed.mode})`, '');
                     if (parsed.original) {
                         output += '**Original:** ';
-                        output += `${parsed.original.provider}:${parsed.original.model} — status ${parsed.original.status} @ ${parsed.original.createdAt}\n`;
+                        output += `${parsed.original.provider}:${parsed.original.model} - status ${parsed.original.status} @ ${parsed.original.createdAt}\n`;
                     }
                     if (parsed.replay) {
                         output += '**Replay:** ';
-                        output += `${parsed.replay.provider}:${parsed.replay.model} — status ${parsed.replay.status}`;
+                        output += `${parsed.replay.provider}:${parsed.replay.model} - status ${parsed.replay.status}`;
                         if (parsed.replay.promptTokens) output += ` (${parsed.replay.promptTokens} in / ${parsed.replay.completionTokens} out)`;
                         output += '\n';
                     }

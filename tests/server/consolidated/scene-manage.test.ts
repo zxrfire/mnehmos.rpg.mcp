@@ -118,7 +118,7 @@ describe('scene_manage consolidated tool', () => {
         });
     });
 
-    describe('action: current — auto-injection lookup', () => {
+    describe('action: current - auto-injection lookup', () => {
         it('returns the latest scene for a participant', async () => {
             const setRes = await handleSceneManage({
                 action: 'set',
@@ -192,7 +192,7 @@ describe('scene_manage consolidated tool', () => {
         });
     });
 
-    describe('buildSceneSlice — what the agent sees', () => {
+    describe('buildSceneSlice - what the agent sees', () => {
         it('renders title, when, place, narration, engine state, and party roster', async () => {
             await handleSceneManage({
                 action: 'set',

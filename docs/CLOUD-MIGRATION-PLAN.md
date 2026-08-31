@@ -1,4 +1,4 @@
-# Cloud Migration Plan — Railway, OAuth, Multi-User, Web VTT
+# Cloud Migration Plan - Railway, OAuth, Multi-User, Web VTT
 
 **Status:** Proposed
 **Date:** 2026-07-25
@@ -23,7 +23,7 @@ sequences a web VTT on top.
 |---|---|
 | Browser ↔ engine | REST + WebSocket gateway over the engine-as-library; MCP retained as a second adapter over the same core |
 | Storage | Postgres |
-| Frontend | Full VTT — grid, tokens, fog of war |
+| Frontend | Full VTT - grid, tokens, fog of war |
 | LLM cost | Free tier on a platform key + BYOK to lift the cap |
 
 ### Baseline (verified 2026-07-25)
@@ -39,7 +39,7 @@ sequences a web VTT on top.
 ## 1. Tenancy model
 
 The current schema has no owner anywhere. `SessionContext.userId` exists at
-[types.ts:5](../src/server/types.ts#L5) and is never populated — `withSession` only sets
+[types.ts:5](../src/server/types.ts#L5) and is never populated - `withSession` only sets
 `sessionId`, defaulting to the literal string `'default'`.
 
 **Decision: the tenancy boundary is a `campaign`, not a user.** Scoping every table by
@@ -81,7 +81,7 @@ campaign_members (
 ```
 
 `identities` is a separate table on purpose: a user who signs in with GitHub on Monday
-and Google on Tuesday must land in **one** account. Link on *verified* email only —
+and Google on Tuesday must land in **one** account. Link on *verified* email only -
 linking on an unverified provider email is an account-takeover vector.
 
 ### Root aggregates gaining `campaign_id`
@@ -100,7 +100,7 @@ Repositories take `campaignId` as an explicit parameter; there is no ambient def
 Phase 0 is decision-independent and on the critical path for everything else. It can start
 immediately.
 
-### Phase 0 — Tenancy and facades · ~2–3 weeks
+### Phase 0 - Tenancy and facades · ~2-3 weeks
 
 Implements ADR-005 items 3 and 4, plus identity tables.
 
@@ -112,12 +112,12 @@ Implements ADR-005 items 3 and 4, plus identity tables.
 2. **Identity + campaign tables** per §1, with a data migration that folds all existing
    local rows into a single bootstrap campaign so no dev data is lost.
 3. **`campaign_id` on the eight root aggregates**, `NOT NULL` after backfill, indexed.
-4. **`RequestContext` replaces `SessionContext`** — `{ userId, campaignId, requestId }`,
+4. **`RequestContext` replaces `SessionContext`** - `{ userId, campaignId, requestId }`,
    threaded through function signatures. ADR-005 item 3 forbids module-scoped mutable
    context; this is that change.
 5. **Domain facades** for combat, world, character, party, inventory, quest, agent.
    Handlers orchestrate I/O only.
-6. **Delete the 19 `ensureDb()` copies.** They are not merely duplicated — they diverge:
+6. **Delete the 19 `ensureDb()` copies.** They are not merely duplicated - they diverge:
    `ensureDb()` reads `RPG_DATA_DIR` while `getDbPath()` reads `RPG_MCP_DB_PATH`, and
    which one wins depends on call order because `getDb()` memoizes on first call. Replace
    with a db handle injected through `RequestContext`.
@@ -126,7 +126,7 @@ Implements ADR-005 items 3 and 4, plus identity tables.
 characters, runs combat in both concurrently, and asserts zero cross-read. Full suite
 still green. No `getDb()` call outside the storage layer.
 
-### Phase 1 — Postgres · ~3–4 weeks
+### Phase 1 - Postgres · ~3-4 weeks
 
 The largest single chunk, and the reason it comes after facades: facades give you a seam
 to convert behind, repository by repository, without touching 30 handlers.
@@ -146,7 +146,7 @@ to convert behind, repository by repository, without touching 30 handlers.
 - **In-memory state moves out.** `CombatManager` and `WorldManager`
   ([combat-manager.ts:82](../src/server/state/combat-manager.ts#L82)) are module singletons
   holding `Map`s that die on redeploy and cannot be shared across replicas. They are
-  already keyed `${sessionId}:${encounterId}`, so the key shape survives — re-key to
+  already keyed `${sessionId}:${encounterId}`, so the key shape survives - re-key to
   `${campaignId}:${encounterId}` and back them with Redis.
 - Tests run against ephemeral Postgres (testcontainers or a Railway dev database), not
   `:memory:`.
@@ -154,36 +154,36 @@ to convert behind, repository by repository, without touching 30 handlers.
 **Exit criteria.** Full suite green against Postgres. No `better-sqlite3` in the
 dependency tree. p95 tool latency within 10% of the SQLite baseline (ADR-005's stated bar).
 
-### Phase 2 — Auth and HTTP transport · ~2 weeks
+### Phase 2 - Auth and HTTP transport · ~2 weeks
 
 - **OAuth for GitHub and Google.** Authorization Code + PKCE. Account linking strictly on
   verified email.
 - **Two credential shapes over one session store.** The web app gets an httpOnly,
   `SameSite=Lax`, Secure session cookie. MCP clients get bearer tokens. Both resolve to
   the same `RequestContext`.
-- **Retire `RPG_MCP_TRANSPORT_TOKEN`** — one shared secret for all clients, with no
+- **Retire `RPG_MCP_TRANSPORT_TOKEN`** - one shared secret for all clients, with no
   identity, expiry, or revocation, cannot survive contact with real users.
-- **REST + WebSocket gateway** — the primary surface for the frontend, generated from the
+- **REST + WebSocket gateway** - the primary surface for the frontend, generated from the
   ADR-005 tool contracts so it cannot drift from the MCP adapter.
 - **MCP adapter over Streamable HTTP.** The SDK you already depend on ships
   `server/streamableHttp.js` and a complete OAuth server under `server/auth/`
-  (authorize / token / register / revoke handlers) — currently unused. Wire the MCP
+  (authorize / token / register / revoke handlers) - currently unused. Wire the MCP
   endpoint as an OAuth *resource server* validating the same tokens.
 - **One `McpServer` instance per session.** Today
   [websocket.ts](../src/server/transport/websocket.ts) accepts N clients but is a single
-  `Transport` bound to a single `McpServer`, routing replies by JSON-RPC id — two
+  `Transport` bound to a single `McpServer`, routing replies by JSON-RPC id - two
   concurrent players share one session and can collide on request ids. Correct for one
   desktop app, wrong for multi-user.
 
 **Exit criteria.** Sign in with both providers; both land in one account when the verified
 email matches. A second user cannot read the first user's campaign through REST *or* MCP.
 
-### Phase 3 — Railway · ~1 week
+### Phase 3 - Railway · ~1 week
 
 - Services: **api** (web-facing), **Postgres**, **Redis** (sessions, combat state, pub/sub fan-out).
 - Dockerfile on a pinned Node base. Post-Phase-1 there is no native module, so the version
   pin is hygiene rather than a hard constraint.
-- **Migrations run as a release step, not on boot** — N replicas booting concurrently must
+- **Migrations run as a release step, not on boot** - N replicas booting concurrently must
   not race the migration runner.
 - Health check endpoint; secrets as Railway environment variables; `/metrics` for latency
   and per-user token burn.
@@ -192,35 +192,35 @@ email matches. A second user cannot read the first user's campaign through REST 
 **Exit criteria.** Push to `main` deploys. Redeploy mid-combat does not lose encounter
 state (it is in Redis/Postgres, not process memory).
 
-### Phase 4 — VTT frontend · ~4–6 weeks
+### Phase 4 - VTT frontend · ~4-6 weeks
 
 The engine is well-positioned here. [combat-grid.ts](../src/engine/spatial/combat-grid.ts)
 already provides bounds and position validation, obstacle and difficult-terrain sets,
 diagonal and terrain movement cost, AoE resolution, size-category tile occupancy, and
-`hasLineOfSight()` at line 684 — which is what fog of war derives from. The spatial work
+`hasLineOfSight()` at line 684 - which is what fog of war derives from. The spatial work
 is largely done; this phase is rendering and state sync.
 
 - **Stack:** React + Vite + TypeScript, TanStack Query for server state, Zustand for local
-  UI state, **PixiJS** for the grid canvas (WebGL — token counts and fog masks get
+  UI state, **PixiJS** for the grid canvas (WebGL - token counts and fog masks get
   expensive fast in SVG/DOM).
 - **Screens:** campaign picker → VTT (grid canvas, initiative tracker, narrative log,
   character sheet, inventory, dice tray).
 - **Realtime:** one WebSocket channel per campaign. [PubSub](../src/engine/pubsub.ts)
-  already exists and already emits engine events — bridge it to the socket rather than
+  already exists and already emits engine events - bridge it to the socket rather than
   inventing a new event bus.
 - **Optimistic UI with server authority.** Render the move immediately, reconcile against
   the engine's validation result. This is the existing "LLM describes, engine validates"
   philosophy applied to the client: the client *proposes*, the engine *decides*.
 
-**Exit criteria.** A full combat encounter — initiative through resolution — played
+**Exit criteria.** A full combat encounter - initiative through resolution - played
 end-to-end in the browser by two users in the same campaign.
 
-### Phase 5 — LLM metering and BYOK · ~1–2 weeks
+### Phase 5 - LLM metering and BYOK · ~1-2 weeks
 
 - **Free tier.** `users.token_quota` / `tokens_used`, rolled up from the existing
   `agent_calls` table. The preflight gate at
   [preflight.ts](../src/agent/runtime/preflight.ts) already returns a synthetic
-  `budget_exhausted` result without spending tokens — extend it from per-agent to
+  `budget_exhausted` result without spending tokens - extend it from per-agent to
   per-user. Per-agent `budget_tokens` and `tokens_used` already exist on the `agents` table.
 - **BYOK.** Per-user provider key, AES-256-GCM at rest, decrypted per request, never
   logged and never returned by any endpoint. `ProviderFactory` becomes per-request instead
@@ -241,17 +241,17 @@ Phase 0 (tenancy+facades) ──> Phase 1 (Postgres) ──> Phase 2 (auth+HTTP)
                           Phase 5 (billing) is independent after Phase 2
 ```
 
-Roughly 12–17 weeks of focused work to full launch. Phase 4 parallelizes against a staging
+Roughly 12-17 weeks of focused work to full launch. Phase 4 parallelizes against a staging
 API once Phase 2 lands, which is the main schedule lever.
 
 | Risk | Mitigation |
 |---|---|
-| **Sync → async conversion across 294 methods** — the single largest source of overrun | Convert one repository at a time behind its facade, with its tests. Never bulk-convert. |
-| **Phase 0 scope creep into a full ADR-005 contract rewrite** | Phase 0 needs only ADR-005 items 3 and 4 (context + facades). Contract generation (items 1, 2, 6) is valuable but is *not* on the hosting critical path — defer it. |
+| **Sync → async conversion across 294 methods** - the single largest source of overrun | Convert one repository at a time behind its facade, with its tests. Never bulk-convert. |
+| **Phase 0 scope creep into a full ADR-005 contract rewrite** | Phase 0 needs only ADR-005 items 3 and 4 (context + facades). Contract generation (items 1, 2, 6) is valuable but is *not* on the hosting critical path - defer it. |
 | **Fog of war performance** with many tokens and large maps | `hasLineOfSight()` is per-pair; cache per token per turn and invalidate on movement. Budget a spike before committing to the render approach. |
 | **OAuth account-linking takeover** via unverified provider email | Link on verified email only; require re-auth to link a second provider. |
 | **Migration runner racing across replicas** | Release-step migrations, never on boot. |
-| **Free-tier cost blowout** before metering ships | Phase 5 is independent of Phase 4 — ship metering *before* public signup, not before the VTT. |
+| **Free-tier cost blowout** before metering ships | Phase 5 is independent of Phase 4 - ship metering *before* public signup, not before the VTT. |
 
 ---
 
@@ -260,5 +260,5 @@ API once Phase 2 lands, which is the main schedule lever.
 - ADR-005 contract generators and the docs/registry pipeline (items 1, 2, 6). Worth doing;
   not required to host.
 - Legacy tool surface removal (ADR-004 compatibility mode).
-- Horizontal scaling beyond a small replica count — the architecture permits it after
+- Horizontal scaling beyond a small replica count - the architecture permits it after
   Phase 1, but tuning it is not launch work.

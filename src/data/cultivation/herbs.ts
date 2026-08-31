@@ -525,8 +525,8 @@ export const HERBS: readonly Herb[] = [
             'Forms at the terminus of a spirit vein once the vein has finished. Harvesting one is indistinguishable, from a distance, from killing a region.'
     },
     {
-        id: 'herb-heavenly-tribulation-ash-fruit',
-        name: 'Heavenly Tribulation Ash Fruit',
+        id: 'herb-heavenly-tribulation-cinder-fruit',
+        name: 'Heavenly Tribulation Cinder Fruit',
         grade: 'chaos',
         biome: 'high_peak',
         rarityWeight: 1,

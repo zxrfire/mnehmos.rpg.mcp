@@ -8,15 +8,15 @@
  * missing_data_for_higher_level populated.
  *
  * The engine refuses to recommend elimination when elimination's
- * prerequisites are not queryable — that is what makes the Operator
+ * prerequisites are not queryable - that is what makes the Operator
  * trustworthy even when he is wrong.
  *
- *   1. Elimination    — remove the hazard. Requires committed "removable" state
+ *   1. Elimination    - remove the hazard. Requires committed "removable" state
  *                       (a door for the monster, a kill-switch for the belt).
- *   2. Substitution   — swap a smaller hazard for the larger.
- *   3. Engineering    — place a barrier (committed wall, cover, ventilation).
- *   4. Administrative — change the timing or assignment (rest, reroute).
- *   5. PPE            — armor up; always available, the floor of the ranking.
+ *   2. Substitution   - swap a smaller hazard for the larger.
+ *   3. Engineering    - place a barrier (committed wall, cover, ventilation).
+ *   4. Administrative - change the timing or assignment (rest, reroute).
+ *   5. PPE            - armor up; always available, the floor of the ranking.
  */
 
 import {
@@ -61,7 +61,7 @@ function evalElimination(hazard: Hazard, state: CommittedState): TierEvaluation 
     if (hazard.kind === 'creature') {
         if (state.targetKind === 'room') {
             if (!state.roomExitsCommitted) {
-                return null; // Drop — exits unknown.
+                return null; // Drop - exits unknown.
             }
             return {
                 level: 'elimination',
@@ -74,7 +74,7 @@ function evalElimination(hazard: Hazard, state: CommittedState): TierEvaluation 
             if (!state.encounterGridCommitted) return null;
             return {
                 level: 'elimination',
-                summary: `Engage ${hazard.name} to reduce it to 0 HP — combat geometry is known.`,
+                summary: `Engage ${hazard.name} to reduce it to 0 HP - combat geometry is known.`,
                 requires: ['grid_bounds', 'initiative'],
                 confidence: 'high',
             };
@@ -83,7 +83,7 @@ function evalElimination(hazard: Hazard, state: CommittedState): TierEvaluation 
     }
 
     if (hazard.kind === 'environmental') {
-        // Stopping environmental hazards at source — e.g. dispel antimagic.
+        // Stopping environmental hazards at source - e.g. dispel antimagic.
         if (hazard.name.includes('Antimagic') || hazard.name.includes('Magical')) {
             return {
                 level: 'elimination',
@@ -176,7 +176,7 @@ function rankForHazard(hazard: Hazard, state: CommittedState): ApplicableControl
     const firstAcceptedIdx = steps.findIndex(s => !!s.ev);
 
     // The only skip that downgrades confidence is one ABOVE the first accepted
-    // tier — that's the case where a higher control was queryable in principle
+    // tier - that's the case where a higher control was queryable in principle
     // but its prerequisites were not committed. Lower-tier skips are routine.
     let highestMissing: string | undefined;
     if (firstAcceptedIdx > 0) {

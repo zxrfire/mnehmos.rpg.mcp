@@ -540,7 +540,7 @@ const RECIPE_DATA: readonly Recipe[] = [
         name: 'Soul-Returning Clarity Pill Formula',
         producesPillId: 'pill-soul-returning-clarity',
         ingredients: [
-            { itemId: 'herb-heavenly-tribulation-ash-fruit', quantity: 1 },
+            { itemId: 'herb-heavenly-tribulation-cinder-fruit', quantity: 1 },
             { itemId: 'herb-soulreturn-dew', quantity: 5 },
             { itemId: 'herb-star-fallen-iron-blossom', quantity: 2 }
         ],
@@ -564,7 +564,7 @@ const RECIPE_DATA: readonly Recipe[] = [
         name: 'Tribulation Guiding Pill Formula',
         producesPillId: 'pill-tribulation-guiding',
         ingredients: [
-            { itemId: 'herb-heavenly-tribulation-ash-fruit', quantity: 2 },
+            { itemId: 'herb-heavenly-tribulation-cinder-fruit', quantity: 2 },
             { itemId: 'herb-kalpa-surviving-branch', quantity: 2 },
             { itemId: 'herb-star-fallen-iron-blossom', quantity: 2 }
         ],
@@ -577,7 +577,7 @@ const RECIPE_DATA: readonly Recipe[] = [
         producesPillId: 'pill-immortal-longevity',
         ingredients: [
             { itemId: 'herb-chaos-seed', quantity: 1 },
-            { itemId: 'herb-heavenly-tribulation-ash-fruit', quantity: 1 },
+            { itemId: 'herb-heavenly-tribulation-cinder-fruit', quantity: 1 },
             { itemId: 'herb-immortal-cypress-heartwood', quantity: 4 }
         ],
         baseSuccessRate: 0.05,

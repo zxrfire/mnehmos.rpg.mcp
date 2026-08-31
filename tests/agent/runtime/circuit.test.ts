@@ -31,7 +31,7 @@ describe('shouldTripCircuit', () => {
         expect(shouldTripCircuit(new ProviderError('?', 'unknown'))).toBe(true);
     });
 
-    it('does NOT trip for auth errors (bad key — fix it explicitly)', () => {
+    it('does NOT trip for auth errors (bad key - fix it explicitly)', () => {
         expect(shouldTripCircuit(new ProviderError('401', 'auth'))).toBe(false);
     });
 

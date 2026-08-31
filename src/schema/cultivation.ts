@@ -155,6 +155,143 @@ export const FoundationQualitySchema = z.enum([
 export type FoundationQuality = z.infer<typeof FoundationQualitySchema>;
 
 // ─────────────────────────────────────────────────────────────────────────
+// UNDERSTANDING
+//
+// The third quantity, kept separate from accumulation and from foundation
+// quality. Held as named insights with a degree, never as a single number and
+// never as a fixed tree: which insights exist for a given cultivator is
+// computed from their root, techniques, location and history, so two people
+// may hold sets with no overlap.
+//
+// The load-bearing constraint is provenance. `InsightProvenance` has no
+// default and is not optional, so an insight that cannot say which event
+// produced it fails to parse at the storage boundary rather than being quietly
+// written. See `engine/cultivation/understanding.ts` for why the id is derived
+// from the achievement id as a second lock on the same rule.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const AchievementKindSchema = z.enum([
+    'meditative_state',        // a rare state entered, not a session completed
+    'enlightenment',           // it arrived; nobody schedules these
+    'survived_extraordinary',  // still standing after something that kills people
+    'profound_principle',      // comprehended something about how it all works
+    'met_something_ancient',   // a powerful spirit, or worse, something older
+    'extraordinary_instruction', // taught by someone who did not have to
+    'witnessed_phenomenon',    // saw something that changed what is believed true
+    'resolved_obstacle',       // a personal or dao obstacle, finally answered
+    'unusual_opportunity'      // a cultivation opportunity that does not recur
+]);
+export type AchievementKind = z.infer<typeof AchievementKindSchema>;
+
+export const AchievementSchema = z.object({
+    id: z.string().min(1),
+    kind: AchievementKindSchema,
+    /** Absolute day the event occurred on. */
+    onDay: z.number().int().min(0),
+    turn: z.number().int().min(0),
+    /** Engine-authored factual account of what actually happened. */
+    summary: z.string().min(1),
+    detail: z.record(z.union([z.string(), z.number()])).default({})
+});
+export type Achievement = z.infer<typeof AchievementSchema>;
+
+/** What kind of comprehension this is. Not a class, not a tree node. */
+export const InsightDomainSchema = z.enum([
+    'element',     // water-dao comprehension, a grasp of fire
+    'weapon',      // sword intent, a profound grasp of the spear
+    'body',        // body tempering mastery
+    'formation',   // formation comprehension
+    'alchemy',
+    'karma',       // karmic insight
+    'life_death',  // what it is to nearly not be
+    'time',
+    'void'
+]);
+export type InsightDomain = z.infer<typeof InsightDomainSchema>;
+
+/**
+ * 1 glimpse, 2 grasp, 3 intent, 4 heart, 5 dao.
+ *
+ * Qualitative states with names rather than levels, which is why "sword
+ * intent" and "sword heart" are different things in the fiction and different
+ * things here.
+ */
+export const InsightDegreeSchema = z.union([
+    z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)
+]);
+export type InsightDegree = z.infer<typeof InsightDegreeSchema>;
+
+/**
+ * Where an insight came from. REQUIRED, with no default and no optional: an
+ * insight that cannot name the event that produced it is a bug, and this is
+ * the boundary that makes it impossible to persist one.
+ */
+export const InsightProvenanceSchema = z.object({
+    /**
+     * The achievement that ORIGINATED this comprehension. Stable for the life
+     * of the insight, and the id the insight's own id is derived from - which
+     * is what makes an untraceable insight unrepresentable rather than merely
+     * discouraged.
+     */
+    achievementId: z.string().min(1),
+    achievementKind: AchievementKindSchema,
+    onDay: z.number().int().min(0),
+    /**
+     * Achievements that later DEEPENED it, in order. Understanding does not
+     * restart at a higher degree, it goes further, so the history is a chain
+     * rather than a pointer that gets overwritten.
+     */
+    deepenedBy: z.array(z.string().min(1)).default([]),
+    /** Engine-authored account of how this understanding was arrived at. */
+    account: z.string().min(1)
+});
+export type InsightProvenance = z.infer<typeof InsightProvenanceSchema>;
+
+/**
+ * A temporal phenomenon, shaped to be handed straight to the knowledge layer's
+ * `recordKnowledge`.
+ *
+ * The field that matters is `factId`, which is always null: a vision is a
+ * BELIEF WITH NO GROUND TRUTH BEHIND IT. The epistemics layer already
+ * separates what is true from what someone holds to be true, so a prophecy is
+ * just a held belief whose matching fact does not exist and may never - it can
+ * be acted on, traded, doubted, and turn out to have been wrong, using
+ * machinery that already exists.
+ *
+ * `stance` and `source.kind` are narrowed to the only values a vision can
+ * have. Both are subsets of the knowledge layer's own unions, so a VisionSeed
+ * remains assignable to KnowledgeInput; `understanding.ts` proves that at
+ * compile time.
+ */
+export const VisionSeedSchema = z.object({
+    holderId: z.string().min(1),
+    claimKey: z.string().min(1),
+    stance: z.literal('believes'),
+    statement: z.string().min(1),
+    onDay: z.number().int().min(0),
+    source: z.object({
+        kind: z.literal('divined'),
+        note: z.string().optional()
+    }),
+    /** Always null. There is nothing behind this, and there may never be. */
+    factId: z.null(),
+    confidence: z.number().min(0).max(1),
+    tags: z.array(z.string())
+});
+export type VisionSeed = z.infer<typeof VisionSeedSchema>;
+
+export const InsightSchema = z.object({
+    /** Derived from the achievement id, so it cannot exist without one. */
+    id: z.string().min(1),
+    domain: InsightDomainSchema,
+    /** What specifically: an element, a weapon, a craft, a principle. */
+    subject: z.string().min(1),
+    degree: InsightDegreeSchema,
+    provenance: InsightProvenanceSchema
+});
+export type Insight = z.infer<typeof InsightSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────
 // EXISTENCE
 //
 // At low realms, body destroyed = dead. Nascent Soul breaks that equivalence,
@@ -242,6 +379,17 @@ export const CultivatorSchema = z.object({
      * how much a boundary crossing takes.
      */
     foundationQuality: FoundationQualitySchema.default('none'),
+    /**
+     * Named comprehensions, each with a degree and a traceable origin. The
+     * third quantity: two cultivators at identical progress and identical
+     * foundation can still have entirely different prospects, and this is why.
+     *
+     * Defaults to empty, which is the ordinary case - most cultivators live
+     * and die having comprehended nothing anyone would record.
+     */
+    insights: z.array(InsightSchema).default([]),
+    /** Remarkable things that actually happened, and produced the insights above. */
+    achievements: z.array(AchievementSchema).default([]),
     /**
      * Result of the last crossing, if it has been attempted. Defaults to 'none'
      * so rows written before the crossing existed still parse.
@@ -572,6 +720,12 @@ export const SimEventKindSchema = z.enum([
      * Fortune run.
      */
     'opportunity_missed',
+    /** Something remarkable actually happened. Not a reward; a record. */
+    'achievement',
+    /** Understanding was formed or deepened, always from an achievement. */
+    'insight_gained',
+    /** A temporal phenomenon: information with no ground truth behind it. */
+    'vision',
     'death'
 ]);
 export type SimEventKind = z.infer<typeof SimEventKindSchema>;
@@ -650,7 +804,26 @@ export const TimeSkipResultSchema = z.object({
      * 'false_immortal' must be written, because it is what bars the cultivator
      * from ever attempting again.
      */
-    immortalStatusGained: ImmortalStatusSchema.nullable().default(null)
+    immortalStatusGained: ImmortalStatusSchema.nullable().default(null),
+    /**
+     * Remarkable things that actually occurred during the skip. Every one was
+     * produced by an event the simulation had already resolved; nothing here
+     * is handed out because a cultivator was due an advance.
+     */
+    achievements: z.array(AchievementSchema).default([]),
+    /**
+     * Understanding formed or deepened, each entry carrying the achievement
+     * that produced it. Apply these to the cultivator's `insights`, keyed by
+     * (domain, subject) - a repeat is a deepening, not a duplicate.
+     */
+    insightsGained: z.array(InsightSchema).default([]),
+    /**
+     * Temporal phenomena, shaped to feed the knowledge layer's
+     * `recordKnowledge`. Each is a BELIEF with `factId: null` - there is no
+     * fact behind it and there may never be. These grant information, never
+     * capability, and nothing in the engine reads them back as a bonus.
+     */
+    visions: z.array(VisionSeedSchema).default([])
 });
 export type TimeSkipResult = z.infer<typeof TimeSkipResultSchema>;
 

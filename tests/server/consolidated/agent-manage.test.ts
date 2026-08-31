@@ -474,7 +474,7 @@ describe('agent_manage tool', () => {
     // ─────────── Invocation (live, against runtime with no provider keys) ───────────
 
     describe('invocation', () => {
-        it('invoke surfaces a real status (error or ok) — runtime is wired', async () => {
+        it('invoke surfaces a real status (error or ok) - runtime is wired', async () => {
             const characterId = createCharacter('Kara');
             await handleAgentManage(
                 { action: 'create', characterId, provider: 'openai', model: 'gpt-4o-mini' },
@@ -488,7 +488,7 @@ describe('agent_manage tool', () => {
 
             // No OPENAI_API_KEY in test env -> runtime returns status='error' with provider message
             expect(result.actionType).toBe('invoke');
-            // Either 'error' (no key) or 'ok' (if test env has a key) — both are valid surfaces
+            // Either 'error' (no key) or 'ok' (if test env has a key) - both are valid surfaces
             expect(['error', 'ok', 'incapable', 'paused', 'budget_exhausted']).toContain(result.status);
             expect(result.agentId).toBeDefined();
             expect(result.characterName).toBe('Kara');

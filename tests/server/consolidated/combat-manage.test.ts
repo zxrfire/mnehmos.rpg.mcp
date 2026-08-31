@@ -301,7 +301,7 @@ describe('combat_manage consolidated tool', () => {
         });
 
         // Reviewer follow-up on PR #58: when persistence fails after an
-        // in-memory append, we must NOT return success — that splits memory
+        // in-memory append, we must NOT return success - that splits memory
         // and DB state. Roll back the in-memory addParticipants.
         it('spawn_quick_enemy rolls back in-memory append when persistence fails', async () => {
             const { getCombatManager } = await import('../../../src/server/state/combat-manager.js');

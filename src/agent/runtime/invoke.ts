@@ -11,7 +11,7 @@
  *      append journal kind='response', return result
  *   7. On provider error: record_call(<kind>), recordFailure (may open circuit), return result
  *
- * Never throws to the caller — always returns a structured result the DM/UI can display.
+ * Never throws to the caller - always returns a structured result the DM/UI can display.
  */
 
 import { Agent, AgentCallStatus } from '../../schema/agent.js';
@@ -149,7 +149,7 @@ export async function invokeAgent(input: InvokeInput, deps: AgentRuntimeDeps): P
         };
     }
 
-    // 2b. Scene-scope gate — SYSTEM.md Rule 5. Out-of-scene agents skipped
+    // 2b. Scene-scope gate - SYSTEM.md Rule 5. Out-of-scene agents skipped
     // unless distance-magic (remoteContact) overrides. Skipped invokes
     // persist an audit row but NEVER throw and NEVER call the provider.
     const scope = checkSceneScope(
@@ -175,7 +175,7 @@ export async function invokeAgent(input: InvokeInput, deps: AgentRuntimeDeps): P
         };
     }
 
-    // 2c. Distance-contact honored — synthesize a prefix so the agent's
+    // 2c. Distance-contact honored - synthesize a prefix so the agent's
     // prompt makes the channel legible. Cannot pretend to see scene directly.
     const effectiveSituation = input.remoteContact
         ? composeRemoteContactSituation(input.remoteContact, input.situation)
@@ -313,7 +313,7 @@ export async function invokeAgent(input: InvokeInput, deps: AgentRuntimeDeps): P
             round: input.round ?? null
         });
 
-        // Emit event_inbox row for frontend polling — npc_action with the response payload.
+        // Emit event_inbox row for frontend polling - npc_action with the response payload.
         try {
             deps.eventInboxRepo.push({
                 eventType: 'npc_action',
@@ -339,7 +339,7 @@ export async function invokeAgent(input: InvokeInput, deps: AgentRuntimeDeps): P
                 }
             });
         } catch {
-            // Event emission must never break invoke — it's a one-way notification.
+            // Event emission must never break invoke - it's a one-way notification.
         }
 
         return {

@@ -148,20 +148,20 @@ The initial route set should be small:
 
 ### Public
 
-- GET / — landing page.
-- GET /health — deployment health.
-- POST /stripe/webhook — Stripe signature-verified webhook.
+- GET / - landing page.
+- GET /health - deployment health.
+- POST /stripe/webhook - Stripe signature-verified webhook.
 
 ### Authenticated
 
-- GET /api/me — identity and entitlement summary.
-- GET /api/campaign — active campaign summary.
-- POST /api/campaign — create campaign and character.
-- GET /api/campaign/transcript — load recent messages.
-- POST /api/campaign/message — submit one player action.
-- GET /api/character — load character sheet.
-- POST /api/billing/checkout — create Stripe Checkout Session.
-- POST /api/billing/portal — create Stripe customer portal session.
+- GET /api/me - identity and entitlement summary.
+- GET /api/campaign - active campaign summary.
+- POST /api/campaign - create campaign and character.
+- GET /api/campaign/transcript - load recent messages.
+- POST /api/campaign/message - submit one player action.
+- GET /api/character - load character sheet.
+- POST /api/billing/checkout - create Stripe Checkout Session.
+- POST /api/billing/portal - create Stripe customer portal session.
 
 No hosted route should expose the entire MCP registry.
 

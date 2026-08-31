@@ -146,7 +146,7 @@ describe('ProviderFactory', () => {
 
         const factory = new ProviderFactory();
         factory.initialize();
-        // No direct inspection — just verify successful initialization
+        // No direct inspection - just verify successful initialization
         expect(factory.get('openrouter').name).toBe('openrouter');
     });
 });

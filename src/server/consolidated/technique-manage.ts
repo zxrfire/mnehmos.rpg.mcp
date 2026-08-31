@@ -1,5 +1,5 @@
 /**
- * Consolidated Technique Tool — `technique_manage`
+ * Consolidated Technique Tool - `technique_manage`
  *
  * Arts: what a cultivator can learn, how well they hold it, and what it costs
  * them to hold something their meridians were not built for.
@@ -12,7 +12,7 @@
  *   manual happens to be lying around; the run seed decided that already.
  * - `learn` never silently accepts a conflicting element. It routes the attempt
  *   through the engine's deviation logic (`rollDeviation` / `resolveDeviation`)
- *   and persists whatever that produced — a torn meridian, burned progress, lost
+ *   and persists whatever that produced - a torn meridian, burned progress, lost
  *   HP, and death if the state was already at the edge.
  * - `practise` and `use` compute their own numbers. The caller supplies days or
  *   a target, never a mastery value, a damage roll or a result.
@@ -66,7 +66,7 @@ type TechniqueAction = typeof ACTIONS[number];
 /**
  * Mastery gained per day of dedicated practice at neutral Insight on a
  * mortal-grade art. 0.004 puts full mastery of a mortal manual at roughly 250
- * days — long enough that mastery is a commitment, short enough that a first
+ * days - long enough that mastery is a commitment, short enough that a first
  * art is masterable inside a Qi Condensation lifetime.
  */
 export const MASTERY_BASE_PER_DAY = 0.004;

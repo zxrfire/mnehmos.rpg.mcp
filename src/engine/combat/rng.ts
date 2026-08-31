@@ -340,7 +340,7 @@ type DiceTerm =
  * Accepts a `+`/`-`-joined chain of dice (`NdS`, `dS`) and integers.
  * Examples: `1d6+4+2d6`, `1d8+3+2d8`, `2d6+1d4-2`, `d20+5`.
  *
- * Strict grammar — rejects malformed operator chains like `1d6++2`,
+ * Strict grammar - rejects malformed operator chains like `1d6++2`,
  * `1d6--2`, `1d6+`, or trailing operators. Pattern:
  *   <term> ( [+-] <term> )*
  *   <term> := <int> | <int>?d<int>

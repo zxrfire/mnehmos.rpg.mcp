@@ -70,6 +70,11 @@ import {
     type FoundationConditions
 } from './foundation.js';
 import { evaluateToll, isTolled, type TollConditions } from './toll.js';
+import {
+    bottleneckSubstitution,
+    understandingEffects,
+    type RelevanceContext
+} from './understanding.js';
 import type { CultivationRNG } from './rng.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -243,6 +248,12 @@ export interface BreakthroughContext {
      * which is a real answer rather than a neutral one.
      */
     foundation?: Omit<FoundationConditions, 'ambient'>;
+    /**
+     * What is being practised, which decides WHICH insights bear on this
+     * attempt. Omitted means the cultivator's own root elements and the
+     * universal domains only.
+     */
+    relevance?: Partial<RelevanceContext>;
 }
 
 export interface EligibilityCheck {
@@ -250,7 +261,12 @@ export interface EligibilityCheck {
     /** Machine-readable reason when ineligible; null when eligible. */
     reason: string | null;
     progressRequired: number;
+    /** Accumulated PLUS what understanding stands in for. What is compared. */
     progressAvailable: number;
+    /** Qi-units actually gathered. */
+    progressAccumulated: number;
+    /** Qi-units understanding stood in for. The gap between the two above. */
+    progressSubstituted: number;
 }
 
 /**
@@ -259,13 +275,26 @@ export interface EligibilityCheck {
  */
 export function canAttemptBreakthrough(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'alive'> &
-        Partial<Pick<Cultivator, 'immortalStatus'>>,
-    ctx: Pick<BreakthroughContext, 'ranksGainedThisTurn'> = {}
+        Partial<Pick<Cultivator, 'immortalStatus' | 'spiritRoot' | 'insights'>>,
+    ctx: Pick<BreakthroughContext, 'ranksGainedThisTurn' | 'relevance'> = {}
 ): EligibilityCheck {
     const required = progressRequiredForOrdinal(cultivator.realmOrdinal);
+    // Understanding stands in for accumulation at a bottleneck. A caller that
+    // has no root to hand (an NPC stub) simply gets no substitution rather
+    // than an error - the effect is opt-in by having the data, never assumed.
+    const substitution =
+        cultivator.spiritRoot === undefined
+            ? { substituted: 0 }
+            : bottleneckSubstitution(
+                  cultivator as Parameters<typeof bottleneckSubstitution>[0],
+                  ctx.relevance
+              );
+    const available = cultivator.cultivationProgress + substitution.substituted;
     const base = {
         progressRequired: required,
-        progressAvailable: cultivator.cultivationProgress
+        progressAvailable: available,
+        progressAccumulated: cultivator.cultivationProgress,
+        progressSubstituted: substitution.substituted
     };
 
     if (!cultivator.alive) {
@@ -283,7 +312,7 @@ export function canAttemptBreakthrough(
     if ((ctx.ranksGainedThisTurn ?? 0) >= MAX_RANKS_PER_TURN) {
         return { eligible: false, reason: 'rank_cap_reached_this_turn', ...base };
     }
-    if (cultivator.cultivationProgress < required) {
+    if (available < required) {
         return { eligible: false, reason: 'insufficient_progress', ...base };
     }
     return { eligible: true, reason: null, ...base };
@@ -312,8 +341,8 @@ export interface BreakthroughOdds {
  */
 export function computeBreakthroughOdds(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'spiritRoot' | 'attributes' | 'injuries'> &
-        Partial<Pick<Cultivator, 'foundationQuality'>>,
-    ctx: Pick<BreakthroughContext, 'ambient' | 'pill'>
+        Partial<Pick<Cultivator, 'foundationQuality' | 'insights'>>,
+    ctx: Pick<BreakthroughContext, 'ambient' | 'pill'> & { relevance?: Partial<RelevanceContext> }
 ): BreakthroughOdds {
     const ordinal = cultivator.realmOrdinal;
     const boundary = isRealmBoundary(ordinal);
@@ -321,6 +350,11 @@ export function computeBreakthroughOdds(
     const injuries = aggregateInjuryPenalties(cultivator.injuries);
     const foundation = foundationOf(cultivator);
     const tempering = scarTempering(cultivator.injuries);
+    const understanding = understandingEffects(cultivator.insights ?? [], {
+        rootElements: getSpiritRoot(cultivator.spiritRoot).elements,
+        techniqueElement: ctx.relevance?.techniqueElement ?? null,
+        techniqueSubject: ctx.relevance?.techniqueSubject ?? null
+    });
 
     const modifiers: BreakthroughModifier[] = [];
 
@@ -366,6 +400,13 @@ export function computeBreakthroughOdds(
         modifiers.push({
             source: `untreated_injuries:${injuries.untreatedCount}`,
             delta: -injuries.breakthroughPenalty
+        });
+    }
+
+    if (understanding.breakthroughModifier > 0) {
+        modifiers.push({
+            source: `understanding:${understanding.contributing.length}`,
+            delta: understanding.breakthroughModifier
         });
     }
 
@@ -427,7 +468,7 @@ export function computeBreakthroughOdds(
 export type BreakthroughSubject = Pick<
     Cultivator,
     'realmOrdinal' | 'cultivationProgress' | 'spiritRoot' | 'attributes' | 'injuries' | 'alive'
-> & Partial<Pick<Cultivator, 'foundationQuality' | 'name'>>;
+> & Partial<Pick<Cultivator, 'foundationQuality' | 'name' | 'insights' | 'immortalStatus'>>;
 
 export function attemptBreakthrough(
     cultivator: BreakthroughSubject,

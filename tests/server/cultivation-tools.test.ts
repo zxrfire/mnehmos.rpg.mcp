@@ -1,7 +1,7 @@
 /**
  * Tool-level tests for the cultivation MCP surface.
  *
- * The thing under test is not "does the engine compute the right number" — that
+ * The thing under test is not "does the engine compute the right number" - that
  * is the engine's own suite. It is the AUTHORITY BOUNDARY: that the caller
  * cannot assert an outcome, that whatever the engine decided is what SQLite
  * ends up holding, and that a closed run stays closed.
@@ -249,7 +249,7 @@ describe('cultivation MCP tool surface', () => {
     });
 
     // ─────────────────────────────────────────────────────────────────────
-    describe('cultivate — long simulation in one call', () => {
+    describe('cultivate - long simulation in one call', () => {
         it('resolves ten years in a single call and persists a consistent end state', async () => {
             const created = await newRun();
             const id = created.cultivator.id;
@@ -487,7 +487,7 @@ describe('cultivation MCP tool surface', () => {
     });
 
     // ─────────────────────────────────────────────────────────────────────
-    describe("the Vault's toll", () => {
+    describe('the Price of Advancement', () => {
         /** A real relationship row: somebody who knows this cultivator. */
         function seedBond(
             holderId: string,
@@ -617,7 +617,7 @@ describe('cultivation MCP tool surface', () => {
             return null;
         }
 
-        /** Only crossings where the Vault actually took something. */
+        /** Only crossings where the price actually took something. */
         const tookSomething = (result: any) => result.toll?.outcome === 'taken';
 
         it('charges the toll at a realm boundary and records it in the ledger', async () => {
@@ -701,8 +701,8 @@ describe('cultivation MCP tool surface', () => {
             expect(held.map(r => r.stance)).toEqual(['ignorant']);
             expect(held.some(r => r.stance === 'knows')).toBe(false);
 
-            // 2. The tie no longer operates. It is kept as history — the social
-            //    engine is explicit that ended ties are never deleted — but it
+            // 2. The tie no longer operates. It is kept as history - the social
+            //    engine is explicit that ended ties are never deleted - but it
             //    is inactive and reasoned.
             const tie = db
                 .prepare('SELECT active, ended_reason FROM relationships WHERE id = ?')
@@ -746,7 +746,7 @@ describe('cultivation MCP tool surface', () => {
             expect(result.toll.taken.id).toBe(memoryId);
             expect(result.toll.applied).toBe(true);
 
-            // The memory is gone from the database. Not superseded — gone.
+            // The memory is gone from the database. Not superseded - gone.
             expect(db.prepare('SELECT 1 FROM knowledge_records WHERE id = ?')
                 .get(memoryId)).toBeUndefined();
 
@@ -796,7 +796,7 @@ describe('cultivation MCP tool surface', () => {
             expect(application.applied).toBe(true);
             expect(application.details).toHaveLength(3);
 
-            // All three are genuinely gone — not just the first.
+            // All three are genuinely gone - not just the first.
             expect(repos.techniques.knows(cultivatorId, artId)).toBe(false);
             expect(db.prepare('SELECT active FROM relationships WHERE id = ?')
                 .get(relationshipId)).toMatchObject({ active: 0 });
@@ -1013,7 +1013,7 @@ describe('cultivation MCP tool surface', () => {
 
         it('routes a conflicting-element art through the deviation engine', async () => {
             // A dual root holds two elements that fight each other, so every art
-            // of its own elements conflicts — a guaranteed conflicting case.
+            // of its own elements conflicts - a guaranteed conflicting case.
             // The catalog's elemental arts start at ordinal 1, so lift the realm
             // gate to reach one; that path is itself engine-resolved and audited.
             const dualSeed = seedWhereRoot(grade => grade === 'dual');

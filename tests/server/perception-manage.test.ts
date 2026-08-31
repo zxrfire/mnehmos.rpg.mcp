@@ -1,5 +1,5 @@
 /**
- * Tool-level tests for perception_manage — covering all 5 actions,
+ * Tool-level tests for perception_manage - covering all 5 actions,
  * all 4 dispositions (commit, reject_inert, no_op_spoken, unknown),
  * and the full failure surface from the design.
  */
@@ -100,7 +100,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('assess — commit disposition with ranked controls', () => {
+    describe('assess - commit disposition with ranked controls', () => {
         it('should return ranked controls + capacity decremented + ledger row', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
@@ -146,7 +146,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('assess — unknown disposition when expected categories empty', () => {
+    describe('assess - unknown disposition when expected categories empty', () => {
         it('should return blind_spots, NO invented hazards, cost still paid', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
@@ -172,7 +172,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('assess — reject_inert when capacity exhausted', () => {
+    describe('assess - reject_inert when capacity exhausted', () => {
         it('should refuse, no debit, no ledger row', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
@@ -201,7 +201,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('assess — reject_inert when observer not bound', () => {
+    describe('assess - reject_inert when observer not bound', () => {
         it('should refuse, mention subsystem_not_bound', async () => {
             const firefighterId = makeCharacter(charRepo, 'Firefighter');
             // NOT bound
@@ -220,7 +220,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('assess — reject_inert when concentrating', () => {
+    describe('assess - reject_inert when concentrating', () => {
         it('should refuse and name the held spell', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
@@ -253,7 +253,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('assess — no_op_spoken on interrupted wind-up (cost paid)', () => {
+    describe('assess - no_op_spoken on interrupted wind-up (cost paid)', () => {
         it('should still debit capacity even though looking failed', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
@@ -281,7 +281,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('assess — reject_inert when target_ref invalid', () => {
+    describe('assess - reject_inert when target_ref invalid', () => {
         it('should refuse without debit when room does not exist', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
@@ -301,7 +301,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('list_hazards — caches first call per scene per observer', () => {
+    describe('list_hazards - caches first call per scene per observer', () => {
         it('first call is free; second call costs 1', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
@@ -334,7 +334,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('recover — long_rest refills to max', () => {
+    describe('recover - long_rest refills to max', () => {
         it('drained operator refills to 3 at L1', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
@@ -358,7 +358,7 @@ describe('perception_manage consolidated tool', () => {
             expect(observer?.resourcePools?.attentional_capacity?.current).toBe(3);
         });
 
-        it('idempotent — full → no_op_spoken', async () => {
+        it('idempotent - full → no_op_spoken', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);
             ensurePool(operatorId, charRepo); // already 3/3
@@ -379,7 +379,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('get_capacity — max scales at level breakpoints', () => {
+    describe('get_capacity - max scales at level breakpoints', () => {
         it('returns max=3 at L1, max=4 at L5, max=5 at L9, max=6 at L13', async () => {
             const checks = [
                 { level: 1, expected: 3 },
@@ -417,7 +417,7 @@ describe('perception_manage consolidated tool', () => {
         });
     });
 
-    describe('read_hazard — unknown origin when source metadata missing', () => {
+    describe('read_hazard - unknown origin when source metadata missing', () => {
         it('returns disposition=unknown for hazard whose source row has no placedBy', async () => {
             const operatorId = makeCharacter(charRepo, 'The Operator');
             bindToSubsystem(db, operatorId);

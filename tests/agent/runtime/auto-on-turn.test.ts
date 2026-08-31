@@ -64,7 +64,7 @@ function createCharacter(name: string): string {
     return id;
 }
 
-describe('combat_manage advance — agent auto-invoke hook', () => {
+describe('combat_manage advance - agent auto-invoke hook', () => {
     let scriptedText = '';
     let invokedWith: { model?: string; messages?: unknown[] } = {};
 
@@ -155,7 +155,7 @@ describe('combat_manage advance — agent auto-invoke hook', () => {
             data = extractAdvanceData(r2);
         }
 
-        // At this point an advance landed on Kara's turn — agentResponse must be embedded.
+        // At this point an advance landed on Kara's turn - agentResponse must be embedded.
         expect(data.currentTurn?.id).toBe(karaId);
         expect(data.agentResponse).toBeDefined();
         expect(data.agentResponse.status).toBe('ok');
@@ -306,7 +306,7 @@ describe('combat_manage advance — agent auto-invoke hook', () => {
             data = extractAdvanceData(r2);
         }
 
-        // The turn DID advance — encounter state is intact.
+        // The turn DID advance - encounter state is intact.
         expect(data.currentTurn?.id).toBe(karaId);
         // And the agent response captured the failure cleanly.
         expect(data.agentResponse).toBeDefined();

@@ -1,10 +1,10 @@
 /**
- * Consolidated Run Tool — `run_manage`
+ * Consolidated Run Tool - `run_manage`
  *
  * The unit of permadeath.
  *
  * A run carries the seed every stochastic system in the game derives from, the
- * turn counter, the in-world clock, and — once it ends — the row in the death
+ * turn counter, the in-world clock, and - once it ends - the row in the death
  * ledger that says how this one finished.
  *
  * WHAT IS DELIBERATELY ABSENT
@@ -391,11 +391,11 @@ export const RunManageTool = {
     name: 'run_manage',
     description: `The permadeath run: seed, clock, and the death ledger.
 
-A run is one life. When it ends it is over — there is no resume, revive, reload, rollback or
+A run is one life. When it ends it is over - there is no resume, revive, reload, rollback or
 restore action in this tool, and none will be added. Do not tell the player otherwise.
 
 A run ends when the cultivator DIES. The single exception is a True Immortal, who may step off
-the ladder deliberately — and who had to punch a hole in the sky to earn the choice. There is no
+the ladder deliberately - and who had to punch a hole in the sky to earn the choice. There is no
 quit at Qi Condensation and no honourable retirement at Core Formation.
 
 - start     open a run for an existing cultivator (creating a cultivator normally does this for you)

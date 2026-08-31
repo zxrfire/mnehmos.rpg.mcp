@@ -1,5 +1,5 @@
 /**
- * Narrative feed slice — DM-curated rolling buffer of observations.
+ * Narrative feed slice - DM-curated rolling buffer of observations.
  *
  * Each `agent_manage narrate` / `broadcast` call appends a row with a
  * timestamp label. At compose time we take the most recent N entries

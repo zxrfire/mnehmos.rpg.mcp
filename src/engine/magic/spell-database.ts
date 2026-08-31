@@ -13,13 +13,13 @@ type SpellInput = Omit<Spell, 'ritual'> & { ritual?: boolean };
 
 /**
  * Normalize a spell name/id for lookup.
- * Accepts "Fire Bolt", "fire-bolt", "fire_bolt", "FIREBOLT" — all collapse to "firebolt".
+ * Accepts "Fire Bolt", "fire-bolt", "fire_bolt", "FIREBOLT" - all collapse to "firebolt".
  */
 function normalizeSpellKey(name: string): string {
     return name.toLowerCase().replace(/[\s\-_]+/g, '');
 }
 
-// Helper to add spell to database — registers under both the spaced name
+// Helper to add spell to database - registers under both the spaced name
 // and the kebab-case id so all reasonable callers can find the spell.
 function registerSpell(input: SpellInput): void {
     const spell: Spell = {

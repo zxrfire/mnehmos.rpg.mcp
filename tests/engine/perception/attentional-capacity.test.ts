@@ -1,5 +1,5 @@
 /**
- * Attentional-capacity arithmetic — debit, refill, max-by-level.
+ * Attentional-capacity arithmetic - debit, refill, max-by-level.
  */
 
 import {
@@ -48,7 +48,7 @@ describe('attentional-capacity', () => {
             expect(maxByLevel(20)).toBe(6);
         });
 
-        it('caps at 6 — no omniscience', () => {
+        it('caps at 6 - no omniscience', () => {
             expect(maxByLevel(100)).toBe(6);
         });
     });

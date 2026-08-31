@@ -1,5 +1,5 @@
 /**
- * Blind-spot detector — the §3.5 fog-as-information thesis encoded.
+ * Blind-spot detector - the §3.5 fog-as-information thesis encoded.
  *
  * For each kind of target_ref, an EXPECTED CATEGORIES list says what
  * kinds of rows the engine SHOULD have if this target had been fully
@@ -63,7 +63,7 @@ function detectRoomBlindSpots(roomId: string, deps: ScanDeps): BlindSpot[] {
             whatKindOfDataIsMissing: 'room_atmospherics',
             whyItMatters:
                 'Environmental hazards (darkness, antimagic, fog) are read from the room\'s atmospherics array. ' +
-                'An empty array means either honestly no atmospherics, or never committed — both look the same here.',
+                'An empty array means either honestly no atmospherics, or never committed - both look the same here.',
             suggestedQuery:
                 'spatial_manage action:"update" roomId:"' + roomId + '" atmospherics:[...]',
         });
@@ -92,7 +92,7 @@ function detectRoomBlindSpots(roomId: string, deps: ScanDeps): BlindSpot[] {
         blind.push({
             whatKindOfDataIsMissing: 'room_description',
             whyItMatters:
-                'Room has no committed description — the social-hazard surface (who might be listening, ' +
+                'Room has no committed description - the social-hazard surface (who might be listening, ' +
                 'what tone the place carries) is not queryable.',
             suggestedQuery:
                 'spatial_manage action:"update" roomId:"' + roomId + '" baseDescription:"..."',
@@ -112,7 +112,7 @@ function detectEncounterBlindSpots(encId: string, deps: ScanDeps): BlindSpot[] {
     if (isEmptyJsonArray(enc.tokens)) {
         blind.push({
             whatKindOfDataIsMissing: 'encounter_tokens',
-            whyItMatters: 'Encounter has no tokens — combatants and ranges are not queryable.',
+            whyItMatters: 'Encounter has no tokens - combatants and ranges are not queryable.',
             suggestedQuery: 'combat_manage action:"start_encounter" with combatants',
         });
     }
@@ -139,7 +139,7 @@ function detectSceneBlindSpots(noteId: string, deps: ScanDeps): BlindSpot[] {
         blind.push({
             whatKindOfDataIsMissing: 'scene_participants',
             whyItMatters:
-                'Scene narration has no committed entityId — the actual creatures or NPCs implied by ' +
+                'Scene narration has no committed entityId - the actual creatures or NPCs implied by ' +
                 'the text are not queryable, so no commit-quality answer about them is possible.',
             suggestedQuery: 'npc_manage action:"spawn" or narrative_manage action:"update" entityId:"<id>"',
         });

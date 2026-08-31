@@ -6,10 +6,10 @@
  * D&D 5e proficiency-tier cadence so the resource grows on the same
  * liturgical rhythm as the rest of the engine.
  *
- *   L1–L4  → max 3
- *   L5–L8  → max 4
- *   L9–L12 → max 5
- *   L13+   → max 6 (capped — structural fog, never omniscience)
+ *   L1-L4  → max 3
+ *   L5-L8  → max 4
+ *   L9-L12 → max 5
+ *   L13+   → max 6 (capped - structural fog, never omniscience)
  *
  * The resource is non-refundable on no_op_spoken: looking takes
  * attention even if nothing was there to see.
@@ -98,7 +98,7 @@ export function debit(
 }
 
 /**
- * Refill attentional_capacity to max. Idempotent — if already full,
+ * Refill attentional_capacity to max. Idempotent - if already full,
  * returns before==after and the caller can audit a no_op_spoken.
  */
 export function refill(

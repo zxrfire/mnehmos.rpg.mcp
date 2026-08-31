@@ -1,13 +1,13 @@
 /**
- * Hazard detector — reads from committed state only.
+ * Hazard detector - reads from committed state only.
  *
  * The cardinal rule: NEVER invent a hazard. Every emitted Hazard must
  * carry sourceEvidence pointing at a real row in a real table. If the
  * scene-text says "something moves in the shadow" but no creature row
- * exists, this module emits nothing — the blind-spot detector picks
+ * exists, this module emits nothing - the blind-spot detector picks
  * that up instead.
  *
- * Per SPEC §3.5 — resolution = information. Honest absence is a
+ * Per SPEC §3.5 - resolution = information. Honest absence is a
  * different answer from fog, and the engine refuses to conflate them.
  */
 
@@ -154,7 +154,7 @@ function scanScene(sceneNoteId: string, deps: ScanDeps): Hazard[] {
     try { tags = JSON.parse(note.tags) as string[]; } catch { /* empty */ }
 
     // Only narrative notes EXPLICITLY tagged hazard:* are hazards.
-    // Ambiguous narrative text is NOT a hazard — that's the §3.5 thesis.
+    // Ambiguous narrative text is NOT a hazard - that's the §3.5 thesis.
     const hazardTags = tags.filter(t => t.startsWith('hazard:'));
     for (const tag of hazardTags) {
         const name = tag.slice('hazard:'.length) || 'Unspecified narrative hazard';

@@ -53,7 +53,7 @@ function expectedSignature(secret: string, encodedPayload: string): Buffer {
  * Verifies a tenant token and returns the tenant it names.
  *
  * Returns a reason rather than throwing so the transport can log precisely why
- * a token failed while still returning an opaque 401 to the caller — the
+ * a token failed while still returning an opaque 401 to the caller - the
  * distinction between "bad signature" and "expired" is useful in our logs and
  * useful to an attacker, so it stays on our side of the boundary.
  */

@@ -1081,8 +1081,8 @@ const AMBIENT_RATE: Record<AmbientQi, number> = {
  * applying it is the cultivation engine's job and the durable-process rate is
  * where it lands.
  *
- * Sealed places are the interesting case: a ruin can hold enormous unbreathed
- * qi and still return a low multiplier, because until the seal is broken the
+ * Sealed places are the interesting case: a ruin can hold enormous undrawn qi
+ * and still return a low multiplier, because until the seal is broken the
  * density is not available to anybody standing outside it.
  */
 export function cultivationContext(

@@ -1,11 +1,11 @@
 /**
- * Character state slice — the live mechanical sheet, auto-built every invoke.
+ * Character state slice - the live mechanical sheet, auto-built every invoke.
  *
  * Pulls the character row, concentration state, and inventory directly from the DB.
  * Format is terse and parseable so the LLM can reason about its options without
  * the DM typing it manually every turn.
  *
- * Position / action economy (per-turn state) is deliberately NOT included here —
+ * Position / action economy (per-turn state) is deliberately NOT included here -
  * the DM passes that via the `situation` string at invoke time. This slice covers
  * what's stable across the turn: HP/AC/slots/known spells/inventory.
  */
@@ -118,7 +118,7 @@ export function buildCharacterStateSlice(
 
     // Identity line
     const subclass = character.subclass && character.subclass !== 'none' ? ` ${character.subclass.replace(/_/g, ' ')}` : '';
-    lines.push(`${character.name} — ${character.race ?? 'Human'} ${character.characterClass ?? 'fighter'}${subclass}, level ${character.level}`);
+    lines.push(`${character.name} - ${character.race ?? 'Human'} ${character.characterClass ?? 'fighter'}${subclass}, level ${character.level}`);
 
     // Vital stats line
     const bloodTag = bloodied(character.hp, character.maxHp);
@@ -206,7 +206,7 @@ export function buildCharacterStateSlice(
             }
         }
     } catch {
-        // Inventory queries can fail on minimal test fixtures — silently skip
+        // Inventory queries can fail on minimal test fixtures - silently skip
     }
 
     // Legendary creatures

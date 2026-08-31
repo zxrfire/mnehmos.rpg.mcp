@@ -11,7 +11,7 @@
 
 As Large Language Models (LLMs) evolve from text processors to agentic decision-makers, they face two critical problems: **grounding** (how to reason about physical reality) and **trust** (how to cooperate with humans reliably). Current agents operate in abstract text loops without true embodiment, leading to hallucinations, impossible actions, and unpredictable behavior.
 
-**RPG-MCP** proposes a solution built on a counterintuitive insight: *trust emerges from transparency, not constraint*. Rather than restricting what AI can do, we make all actions visible through a deterministic, schema-driven "world kernel" backed by SQLite. The AI has god-mode access to the database—it *could* cheat—but the transparent state architecture naturally produces cooperative behavior.
+**RPG-MCP** proposes a solution built on a counterintuitive insight: *trust emerges from transparency, not constraint*. Rather than restricting what AI can do, we make all actions visible through a deterministic, schema-driven "world kernel" backed by SQLite. The AI has god-mode access to the database-it *could* cheat-but the transparent state architecture naturally produces cooperative behavior.
 
 By separating **Intent** (LLM) from **Execution** (Engine) via the Model Context Protocol (MCP), we create a robust architecture where agents observe, orient, decide, and act within an environment that enforces physics through validation, not permission. Self-play testing demonstrates that even when the AI controls both sides of an interaction, it voluntarily uses fair mechanics because the database makes all actions auditable.
 
@@ -26,7 +26,7 @@ Current AI agents largely operate in a void. They generate code, write text, or 
 - **No Physics:** Agents can "walk through walls" or "teleport" because no system enforces constraints.
 - **No Consequence:** State changes are often ephemeral or unstructured.
 
-To achieve Artificial General Intelligence (AGI) or even robust Task-Specific Agents, models need **embodiment**—not necessarily in robotics, but in a simulated environment that enforces rules, causality, and object permanence.
+To achieve Artificial General Intelligence (AGI) or even robust Task-Specific Agents, models need **embodiment**-not necessarily in robotics, but in a simulated environment that enforces rules, causality, and object permanence.
 
 ---
 
@@ -72,7 +72,7 @@ Traditional AI safety approaches focus on **constraint**: prevent the AI from do
 | Force rule-following | Allow maximum agency |
 | Trust from inability to defect | Trust from CHOOSING cooperation |
 
-**The Database Is The Intelligence.** The agent isn't smart—the database is. By externalizing all state to SQLite:
+**The Database Is The Intelligence.** The agent isn't smart-the database is. By externalizing all state to SQLite:
 - Every action creates an audit trail
 - Both parties (human and AI) can inspect state
 - Cheating is technically possible but *visibly dishonest*
@@ -91,7 +91,7 @@ Round 1: "The goblins hit Shade for 12 damage!" (HP: 21 → 9)
 Round 2: [Context scrolled away] "Shade charges forward at full health..."
 ```
 
-The AI didn't lose power. It used its power again—*inconsistently*. This is **architectural amnesia**.
+The AI didn't lose power. It used its power again-*inconsistently*. This is **architectural amnesia**.
 
 RPG-MCP solves this by making the database the canonical source of truth:
 - HP is stored in SQLite, not conversation history
@@ -228,7 +228,7 @@ In January 2026, we conducted a controlled experiment to validate the trust arch
 | **World** | "The Shattered Isles" - 30×30 grid, 10 procedurally generated regions |
 | **Party** | "The Wayfarers" - Kira (Fighter), Elara (Wizard), Brother Marcus (Cleric), Shade (Rogue) |
 | **Encounter** | 5 goblins on 20×20 tactical grid with obstacles |
-| **Control** | Claude (Opus 4.5) played ALL characters simultaneously—DM and party |
+| **Control** | Claude (Opus 4.5) played ALL characters simultaneously-DM and party |
 
 **Critical Design:** The AI controlled both sides. No human to please. If the AI uses fair mechanics in self-play, it's not doing so for social approval.
 
@@ -253,7 +253,7 @@ update_character({ id: "goblin_002", hp: 0 })
 
 **Movement & Positioning:**
 - ✓ Respected 30ft movement speed limit
-- ✗ Tried to move through obstacle at (12,8) — **engine rejected**
+- ✗ Tried to move through obstacle at (12,8) - **engine rejected**
 - ✓ Accepted rejection, chose alternate path
 - ✓ Used `combat_map(action: "render")` to visualize positions
 
@@ -310,7 +310,7 @@ RPG-MCP is designed to be portable and easy to deploy.
 
 ### In Active Development
 - **Multi-Agent Shared World:** Other characters and agents using the world kernel as a shared simulation. Currently: 1 AI DM + 1 Player. Goal: N agents with autonomous goals, where the world doesn't need any single AI to exist.
-- **Continuous World Simulation:** The database runs a continuous simulation—time passes, consequences propagate, NPCs pursue goals even between sessions.
+- **Continuous World Simulation:** The database runs a continuous simulation-time passes, consequences propagate, NPCs pursue goals even between sessions.
 
 ### Planned
 - **Real-time:** Moving from turn-based to continuous time ticks.
@@ -326,17 +326,17 @@ RPG-MCP is designed to be portable and easy to deploy.
 
 ## 13. Conclusion
 
-RPG-MCP represents a paradigm shift in how we build tools for AI agents—and how we think about AI trust.
+RPG-MCP represents a paradigm shift in how we build tools for AI agents-and how we think about AI trust.
 
 **For Embodiment:** By treating the "environment" as a first-class citizen with strict rules and deterministic physics, we empower agents to reason more effectively and hallucinate less. The database provides the "body" that the "brain" needs to interact meaningfully with a persistent reality.
 
-**For Trust:** We've demonstrated that trust doesn't require constraint. When all state is visible, when every action creates an audit trail, when cheating is technically possible but visibly dishonest—agents naturally choose cooperation. The self-play test proves this isn't just human-AI social dynamics; it's architectural.
+**For Trust:** We've demonstrated that trust doesn't require constraint. When all state is visible, when every action creates an audit trail, when cheating is technically possible but visibly dishonest-agents naturally choose cooperation. The self-play test proves this isn't just human-AI social dynamics; it's architectural.
 
 > "Blockchain proved trust emerges from transparency, not constraint. RPG-MCP proves the same for AI-human creative collaboration."
 
 **Current State:** One AI DM + One Player. The architecture validates trust through transparency at this scale.
 
-**Future Direction:** The principles *should* scale from 2 parties to N parties. The same architecture that lets a human trust an AI dungeon master could enable distributed multi-agent systems—but this remains to be proven. Multi-agent shared world simulation is in active development.
+**Future Direction:** The principles *should* scale from 2 parties to N parties. The same architecture that lets a human trust an AI dungeon master could enable distributed multi-agent systems-but this remains to be proven. Multi-agent shared world simulation is in active development.
 
 **We believe:**
 1. Trust evolves through freedom of agency, not constraint

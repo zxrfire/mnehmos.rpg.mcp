@@ -2,12 +2,12 @@
  * LLM provider interface for the agent runtime.
  *
  * Implementations:
- *   - Anthropic Messages API  (Claude — primary/default runtime agent)
+ *   - Anthropic Messages API  (Claude - primary/default runtime agent)
  *   - Ollama /api/chat        (local/self-hosted alternative, no API key, no cost)
  *   - OpenAI Chat Completions
  *   - OpenRouter              (OpenAI wire format, different base URL)
  *
- * Plain-text responses only — no structured-output / JSON schema enforcement.
+ * Plain-text responses only - no structured-output / JSON schema enforcement.
  * Every provider-specific request/response quirk lives behind this interface;
  * nothing outside src/agent/provider/ may branch on which provider is in use.
  */
@@ -30,7 +30,7 @@ export interface ProviderCallOpts {
     temperature?: number;
     maxTokens?: number;
     reasoningEffort?: ReasoningEffort | null;
-    /** AbortSignal — runtime sets this from agents.timeout_ms */
+    /** AbortSignal - runtime sets this from agents.timeout_ms */
     signal?: AbortSignal;
 }
 
@@ -70,7 +70,7 @@ export class ProviderError extends Error {
 }
 
 export interface LLMProvider {
-    /** Canonical provider name — the union is owned by ./config.ts. */
+    /** Canonical provider name - the union is owned by ./config.ts. */
     readonly name: ProviderName;
     call(opts: ProviderCallOpts): Promise<ProviderCallResult>;
 }

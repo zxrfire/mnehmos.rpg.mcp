@@ -25,8 +25,8 @@
  *
  * What this module does own is CONTENT SEEDING. The sect catalog is compiled-in
  * data; the `sects` table is state. `ensureSectsSeeded` copies one into the
- * other, idempotently, on first touch — so a fresh world has the nineteen sects
- * of the Vault in it without anyone having to remember a setup step, and an
+ * other, idempotently, on first touch - so a fresh world has the nineteen sects
+ * of the region in it without anyone having to remember a setup step, and an
  * existing world is refreshed rather than duplicated.
  */
 
@@ -109,8 +109,8 @@ export function ensureCultivationDb(): CultivationRepos {
  * disciple's membership survives, because `sect_members` keys on the sect id
  * and the ids are stable catalog constants.
  *
- * `SectSchema.parse` inside `upsert` strips the content-side fields — what a
- * sect teaches, who it feuds with, the state of its inherited compound — which
+ * `SectSchema.parse` inside `upsert` strips the content-side fields - what a
+ * sect teaches, who it feuds with, the state of its inherited compound - which
  * stay in the catalog and are read from there at request time. The database
  * holds what changes; the catalog holds what does not.
  */
@@ -238,7 +238,7 @@ export function resolveActiveRun(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FLAGS — durable per-cultivator scalars
+// FLAGS - durable per-cultivator scalars
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const FLAG_GRAIN_ABSTINENCE_UNTIL = 'grain_abstinence_until_day';
@@ -246,7 +246,7 @@ export const FLAG_PENDING_PILL = 'pending_pill';
 export const FLAG_RANKS_THIS_TURN = 'ranks_this_turn';
 export const FLAG_PILL_TOXICITY = 'pill_toxicity';
 export const FLAG_STIPEND_PAID_DAY = 'stipend_paid_day';
-/** The Vault took the name. People have to be told it, every time. */
+/** The crossing took the name. People have to be told it, every time. */
 export const FLAG_NAME_TAKEN = 'name_taken';
 
 export function readFlag(db: Database.Database, cultivatorId: string, key: string): string | null {
@@ -354,7 +354,7 @@ export function recordRankGained(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// POUCH — pills and herbs a cultivator carries
+// POUCH - pills and herbs a cultivator carries
 // ═══════════════════════════════════════════════════════════════════════════
 
 export type PouchItemKind = 'pill' | 'herb';
@@ -433,7 +433,7 @@ export function removeFromPouch(
 // Ambient qi is a pure function of (seed, location, day) inside the engine, and
 // `simulateTimeSkip` recomputes it internally from the location id it is given.
 // The only way to change what a cultivator breathes without lying about it is
-// therefore to change WHERE they are — which is exactly what an ambient gate
+// therefore to change WHERE they are - which is exactly what an ambient gate
 // lift means in the fiction. `aliasForAmbient` searches for a place name whose
 // engine-computed band is the requested one, so the number the engine returns
 // afterwards is one the engine genuinely derived.
@@ -587,7 +587,7 @@ function roundYears(years: number): number {
 // with real NPCs, real memories, real techniques in the database."
 //
 // The engine layer holds no database, so assembling those candidates from real
-// rows is this layer's job — and so is deleting exactly the row the engine
+// rows is this layer's job - and so is deleting exactly the row the engine
 // named afterwards. A toll the engine charged that the database does not show
 // is the same failure as a breakthrough the narrator invented.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -597,7 +597,7 @@ function roundYears(years: number): number {
  *
  * A convention rather than a schema constraint, because `claim_key` is free
  * text by design. Anything filed here, plus anything whose underlying fact
- * names the cultivator as a subject, is "what this person knows about you" —
+ * names the cultivator as a subject, is "what this person knows about you" -
  * and that is exactly the set a taken bond removes.
  */
 export function cultivatorClaimKey(cultivatorId: string): string {
@@ -627,7 +627,7 @@ interface BondRow {
  *
  * Direction matters and is the whole point: these are ties held BY other people
  * ABOUT the cultivator (`to_character_id = cultivator`). The world bible's
- * phrasing is "a person who knew you stops knowing you", so what the Vault
+ * phrasing is "a person who knew you stops knowing you", so what the crossing
  * reaches for is somebody else's hold on you, not your feelings about them.
  *
  * The holder's display name is resolved across both `cultivators` and
@@ -697,16 +697,16 @@ function memoryCandidates(db: Database.Database, cultivatorId: string): TollCand
 }
 
 /**
- * What this run has that the Vault could take.
+ * What this run has that a realm boundary could take.
  *
  * Every candidate is a real row with a real id, so `persistToll` can act on
- * precisely what was named. Weights say how much a thing MATTERED — the Vault
- * takes what mattered, so higher is more likely to go.
+ * precisely what was named. Weights say how much a thing MATTERED - the price
+ * is paid in what mattered, so higher is more likely to go.
  *
  * All three kinds are drawn from tables: `cultivator_techniques` for arts,
  * `relationships` for bonds, `knowledge_records` for memories. A run that has
  * accumulated none of them offers nothing, and the engine correctly returns
- * `nothing_left` — the Hollow Court condition, arriving early.
+ * `nothing_left` - the Hollow Court condition, arriving early.
  */
 export function tollCandidatesFor(
     repos: CultivationRepos,
@@ -768,15 +768,15 @@ export function tollConditionsFor(
  *
  * 1. THE KNOWLEDGE IS DELETED. Every positive-stance thing the holder held
  *    about the cultivator is removed, and a single `ignorant` row is written in
- *    its place — the knowledge layer's own documented way to say "has no idea",
+ *    its place - the knowledge layer's own documented way to say "has no idea",
  *    as distinct from having no record at all. This is the honest
  *    representation of "a person who knew you stops knowing you": what the
- *    Vault takes is their hold on you, and the row that used to carry it is
+ *    crossing takes is their hold on you, and the row that used to carry it is
  *    genuinely gone.
  *
  * 2. THE TIE IS ENDED, NOT DELETED, via the social engine's own
  *    `endRelationship`. `relationships.ts` is explicit that ended ties are
- *    kept — "a dead master is still a master" — and here that contract does
+ *    kept - "a dead master is still a master" - and here that contract does
  *    real work: the record stays, referring to somebody the holder can no
  *    longer account for. That residue is the point. The bond itself is gone:
  *    the row is inactive, reasoned `toll`, and no longer answers any live query.
@@ -866,7 +866,7 @@ export function severBond(
         onDay,
         source: {
             kind: 'assumed',
-            note: 'The Vault took this bond at a realm boundary. There is no memory of it to draw on.'
+            note: 'The crossing took this bond at a realm boundary. There is no memory of it to draw on.'
         },
         confidence: 1,
         tags: ['toll', 'taken_bond']
@@ -906,7 +906,7 @@ export function severBond(
  *
  * No tombstone and no `superseded` flag, because superseding is for changing
  * your mind and this is not that. The underlying `world_facts` row survives
- * untouched — the thing still happened, and the cultivator simply no longer
+ * untouched - the thing still happened, and the cultivator simply no longer
  * holds it. Anyone else who witnessed it still does, which is how the player
  * finds out what they lost.
  */
@@ -959,7 +959,7 @@ export function persistToll(
 
     // One ledger row per thing taken, so the ledger reads as an itemised
     // account rather than a summary. A charge that took nothing still gets a
-    // row: "the Vault took nothing at this boundary" is worth being able to
+    // row: "nothing was taken at this boundary" is worth being able to
     // look up years later.
     const entries = toll.takenAll.length > 0 ? toll.takenAll : [null];
     for (const taken of entries) {
@@ -1068,7 +1068,7 @@ export interface TollLedgerEntry {
     chargedOnDay: number;
 }
 
-/** Everything the Vault has charged this cultivator, oldest first. */
+/** Every price this cultivator has paid, oldest first. */
 export function listTolls(db: Database.Database, cultivatorId: string): TollLedgerEntry[] {
     const rows = db
         .prepare(`

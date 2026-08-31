@@ -205,7 +205,7 @@ describe('invokeAgent → event_inbox emission', () => {
         } as unknown as EventInboxRepository;
         const brokenDeps = { ...deps, eventInboxRepo: broken };
 
-        // Should not throw — invoke isolates inbox failure
+        // Should not throw - invoke isolates inbox failure
         const result = await invokeAgent({ agentId: agent.id }, brokenDeps);
         expect(result.status).toBe('ok');
         expect(result.response).toBe('ok');

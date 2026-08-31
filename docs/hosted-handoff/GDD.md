@@ -199,7 +199,7 @@ Example presentation:
 ~~~text
 The goblin's blade scrapes across your shield, throwing sparks into the mud.
 
-Attack: d20 9 + 4 = 13 vs AC 16 — miss.
+Attack: d20 9 + 4 = 13 vs AC 16 - miss.
 
 The goblin retreats toward the broken gate. It is hurt, but it is not alone.
 ~~~

@@ -6,14 +6,14 @@ tracks**; there is no general level.
 
 ## Data model
 
-**`class_definitions`** — one row per class (standard or homebrew):
+**`class_definitions`** - one row per class (standard or homebrew):
 `name` (PK), `hit_die`, `key_ability`, `is_homebrew`, `description`, `features` (JSON
 array of `{ level, name, description }`), `created_at`.
 
-**`character_classes`** — per-character tracks:
+**`character_classes`** - per-character tracks:
 `(character_id, class_name)` PK, `level`, `xp_invested`, timestamps, FK to `characters`.
 
-**`characters.xp`** — repurposed as the **spendable XP pool** (fuel). Not a
+**`characters.xp`** - repurposed as the **spendable XP pool** (fuel). Not a
 general-level counter.
 
 ## Rules
@@ -31,16 +31,16 @@ general-level counter.
 
 ## Code
 
-- `src/storage/migrations.class-progression.ts` — `migrateClassProgression(db)` creates
+- `src/storage/migrations.class-progression.ts` - `migrateClassProgression(db)` creates
   the tables + ensures the XP pool column. **Wire into `migrate()`** in `migrations.ts`:
   ```ts
   import { migrateClassProgression } from './migrations.class-progression.js';
   // at the end of migrate():
   migrateClassProgression(db);
   ```
-- `src/storage/repos/class-progression.repo.ts` — `ClassProgressionRepo`
+- `src/storage/repos/class-progression.repo.ts` - `ClassProgressionRepo`
   (definitions CRUD, tracks, effectiveLevel, proficiencyBonus, buildString).
-- `scripts/migrate-class-progression.cjs` — runnable live migration + seed (Brawler,
+- `scripts/migrate-class-progression.cjs` - runnable live migration + seed (Brawler,
   Deepsense) + backfill (used to migrate Sundar). Idempotent.
 
 ## Tool surface to add (in `character-manage.ts`)

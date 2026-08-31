@@ -1,5 +1,5 @@
 /**
- * Blind-spot detector — the §3.5 thesis encoded.
+ * Blind-spot detector - the §3.5 thesis encoded.
  *
  * Asserts the engine STAYS MUTE when narration is ambiguous and no
  * row exists to back it. This is the test that proves the engine
@@ -47,7 +47,7 @@ describe('blind-spot-detector', () => {
         expect(kinds).toContain('room_entities');
     });
 
-    it('REFUSES to fabricate from ambiguous scene narration — emits unknown blind-spot instead', () => {
+    it('REFUSES to fabricate from ambiguous scene narration - emits unknown blind-spot instead', () => {
         const worldId = randomUUID();
         const now = new Date().toISOString();
         db.prepare(`
