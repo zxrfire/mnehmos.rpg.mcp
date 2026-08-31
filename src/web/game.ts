@@ -85,12 +85,11 @@ import {
 import { KnowledgeGate, type AwarenessRow } from './knowledge.js';
 import { offerHearing, othersPresent, recordHearing, type Hearing } from './hearsay.js';
 import {
-    accessFor,
-    observerFor,
-    reportFromDigest,
-    type WorldReport,
-    type WorldSession
-} from './world.js';
+    advanceWorldForCultivator,
+    worldForRun,
+    type WorldAdvance
+} from '../server/state/cultivation-world.js';
+import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
 import {
     factsForBreakthrough,
     factsForEat,
@@ -238,15 +237,14 @@ export interface GameServiceOptions {
     db: Database.Database;
     narrator: Narrator;
     /**
-     * The world the runs happen inside.
+     * Whether the world advances alongside the cultivator.
      *
-     * Optional, and absent means the world simply does not move: every other
-     * system keeps working, and a deployment that has not built one yet is
-     * degraded rather than broken. Built once at startup because seeding loads
-     * the content catalogs asynchronously and everything downstream of it here
-     * is synchronous.
+     * The world itself is owned by `src/server/state/cultivation-world.ts` and
+     * is addressed by run, not held here. This flag exists only so a test can
+     * run the cultivation engine on its own without paying to seed several
+     * hundred people it is not asserting anything about.
      */
-    world?: WorldSession | null;
+    worldEnabled?: boolean;
     adminMode?: boolean;
     /** Injectable for tests that need a reproducible run. */
     seedFactory?: () => string;
@@ -291,8 +289,8 @@ export class GameService {
      * narrator is never handed a name the player has not earned.
      */
     private readonly knowledge: KnowledgeGate;
-    /** Null when no world was built. See GameServiceOptions.world. */
-    readonly world: WorldSession | null;
+    /** Whether time passing for the cultivator also passes for everyone else. */
+    readonly worldEnabled: boolean;
     private readonly narrator: Narrator;
     private readonly seedFactory: () => string;
 
@@ -313,7 +311,7 @@ export class GameService {
         this.repos = ensureCultivationDb();
         this.log = new PlayLog(this.db);
         this.knowledge = new KnowledgeGate(this.db);
-        this.world = options.world ?? null;
+        this.worldEnabled = options.worldEnabled ?? true;
     }
 
     // ── run lifecycle ────────────────────────────────────────────────────
@@ -603,8 +601,9 @@ export class GameService {
         // already here. An operator asking who is in this world wants the
         // world, not the subset that happens to have a row.
         const stored = this.repos.cultivators.roster().map(entry => rosterRowView(entry, player));
-        const inWorld = this.world
-            ? this.world.state.npcs.map(npc => worldRosterRow(npc, this.world!.day))
+        const world = this.cachedWorld;
+        const inWorld = world
+            ? world.npcs.map(npc => worldRosterRow(npc, world.currentDay))
             : [];
 
         return {
@@ -627,7 +626,28 @@ export class GameService {
         if (!this.adminMode) {
             throw new GameError('Admin mode is off. Set ADMIN_MODE=true to read the ladder odds.', 403);
         }
-        return ladderOddsReport(this.world?.state.seed ?? 'no-world', {}, this.world?.state);
+        const world = this.cachedWorld;
+        return ladderOddsReport(world?.seed ?? 'no-world', {}, world ?? undefined);
+    }
+
+    /**
+     * Load the world for the current run, for the admin surfaces.
+     *
+     * `roster()` and `ladderOdds()` are synchronous because they are read-only
+     * views the HTTP layer renders directly, and the world is loaded
+     * asynchronously. So the last world seen by a play action is cached on the
+     * way past and the admin views read that: a roster one action stale is a
+     * fine trade against making every read path async.
+     */
+    private cachedWorld: WorldState | null = null;
+
+    /** Called on every world advance so the admin views have something to show. */
+    async loadWorld(): Promise<WorldState | null> {
+        if (!this.worldEnabled) return null;
+        const run = this.repos.runs.getActiveRun() ?? this.repos.runs.deathLedger(1)[0] ?? null;
+        if (!run) return null;
+        this.cachedWorld = await worldForRun(run);
+        return this.cachedWorld;
     }
 
     // ── engine execution (phase 2) ───────────────────────────────────────
@@ -741,13 +761,13 @@ export class GameService {
      * survive / can succeed" against that location's thresholds. The rule then
      * stays the same: the attempt is always permitted, circumstances decide.
      */
-    private move(
+    private async move(
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
         target: string | undefined,
         intent: string
-    ): Execution {
+    ): Promise<Execution> {
         const place = resolvePlace(target);
         if (!place) {
             return refused('engine.resolvePlace', 'move', factsForRefusal(
@@ -776,7 +796,7 @@ export class GameService {
         const applied = applyTimeSkip(this.repos, {
             before: cultivator, run, skip, location: place.name
         });
-        const world = this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
         // Standing somewhere is how a place stops being a rumour. Recorded with
         // its source so a place walked to and a place read about stay different
@@ -1063,12 +1083,12 @@ export class GameService {
      * out-cultivate a prodigy but you can out-dig them, and nothing else in the
      * verb set reaches that.
      */
-    private gather(
+    private async gather(
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
         target: string | undefined
-    ): Execution {
+    ): Promise<Execution> {
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, GATHERING_DAYS, {
             seed: run.seed,
@@ -1084,7 +1104,7 @@ export class GameService {
         });
 
         const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
-        const world = this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
         // A named herb narrows the draw to that herb if it is within reach;
         // otherwise the catalog's weighted table decides, which is the honest
@@ -1187,13 +1207,13 @@ export class GameService {
      * events, which buys safety from encounters at the price of every
      * opportunity that would have found you. Both halves are the engine's.
      */
-    private runSeclusion(
+    private async runSeclusion(
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
         days: number,
         options: { sealed?: boolean } = {}
-    ): Execution {
+    ): Promise<Execution> {
         const sealed = options.sealed ?? false;
         const provisioning = this.buyProvisions(cultivator, days);
         const provisioned = provisioning.cultivator;
@@ -1231,7 +1251,7 @@ export class GameService {
         // The world spends exactly the days the cultivator spent. Not the days
         // that were asked for: a skip cut short by a wound stops the world at
         // the same hour it stopped the cultivator.
-        const world = this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const verb: ActionName = sealed ? 'seclude' : 'cultivate';
 
         const facts = factsForTimeSkip(
@@ -1266,14 +1286,14 @@ export class GameService {
         };
     }
 
-    private shortSkip(
+    private async shortSkip(
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
         focus: number,
         label: string,
         days = SHORT_ACTION_DAYS
-    ): Execution {
+    ): Promise<Execution> {
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, days, {
             seed: run.seed,
@@ -1289,7 +1309,7 @@ export class GameService {
         });
 
         const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
-        const world = this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
         const facts = factsForTimeSkip(cultivator, applied.cultivator, skip, ambient, label);
         facts.lines.push(...world.lines);
@@ -1587,15 +1607,9 @@ export class GameService {
      * the narrator. Surfacing it would turn "the world is mostly none of your
      * business" into a status line.
      */
-    private advanceWorld(days: number, cultivator: Cultivator, run: Run): WorldReport {
-        if (!this.world || days <= 0) return { lines: [], structure: [] };
-
-        const result = this.world.advance(
-            days,
-            accessFor(this.knowledge, cultivator),
-            observerFor(cultivator, run)
-        );
-        return reportFromDigest(result.digest);
+    private async advanceWorld(days: number, cultivator: Cultivator, run: Run): Promise<WorldReport> {
+        if (!this.worldEnabled || days <= 0) return { lines: [], structure: [] };
+        return reportFromDigest(await advanceWorldForCultivator(run, cultivator, days));
     }
 
     /**
