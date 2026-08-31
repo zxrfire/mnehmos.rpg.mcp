@@ -45,25 +45,23 @@ import { SectRepository } from '../../storage/repos/sect.repo.js';
 import { TechniqueRepository } from '../../storage/repos/technique.repo.js';
 import {
     LETHAL_UNTREATED_INJURIES,
-    STARVATION_TURNS,
+    SATIETY_MAX,
     type AmbientQi,
     type Cultivator,
     type FoundationQuality,
+    type ImmortalStatus,
     type Injury,
-    type InjurySeverity,
-    type InjurySource,
     type Run,
-    type SimEvent,
     type TimeSkipResult,
     type TollCandidate,
-    type TollResult
+    type TollResult,
+    type TollTaken
 } from '../../schema/cultivation.js';
 import {
     DAYS_PER_YEAR,
     ambientForBlock,
     ambientBlockStart,
     AMBIENT_REFRESH_DAYS,
-    defaultInjuryDescription,
     getSpiritRoot,
     progressRequiredForOrdinal,
     progressRemaining,
@@ -531,119 +529,18 @@ export const AMBIENT_BLOCK_DAYS = AMBIENT_REFRESH_DAYS;
 // TIME-SKIP PERSISTENCE
 // ═══════════════════════════════════════════════════════════════════════════
 
-export interface ReconstructedInjury {
-    severity: InjurySeverity;
-    source: InjurySource;
-    description: string;
-    sustainedOnTurn: number;
-    /** True when the engine's digest did not state the severity outright. */
-    inferred: boolean;
-}
-
-const SEVERITY_IN_TEXT = /\b(minor|serious|crippling)\b/i;
-const STRIKES_HOME = /(\d+)\s+struck home/i;
-
-/**
- * Rebuild the injury records a time-skip produced from its own event digest.
- *
- * `TimeSkipResult` reports `deltas.injuriesGained` as a count but does not carry
- * the `Injury` objects, so the digest is the only channel through which the
- * wounds reach persistence. Every branch below reads a fact the ENGINE wrote —
- * `data.severity` on a deviation, the severity word the engine put in its own
- * narration hint, the known-crippling injury a fatal breakthrough always mints,
- * the strike count of a tribulation — so nothing here is the tool inventing a
- * wound. The count is reconciled against `injuriesGained` by the caller.
- *
- * TODO: DELETE THIS FUNCTION once `TimeSkipResult` carries
- * `injuriesSustained: Injury[]`. That change is routed to the engine agent.
- * When it lands, `handleCultivate` should read the field directly and drop the
- * `injuryReconciliation` block with it — parsing the engine's own prose is
- * exact today but only by accident, and it will break the first time a
- * narration hint is reworded. `src/web/apply.ts` reconstructs the same way and
- * should be cut over in the same pass.
- */
-export function reconstructSkipInjuries(
-    result: TimeSkipResult,
-    turnBase: number
-): ReconstructedInjury[] {
-    const injuries: ReconstructedInjury[] = [];
-
-    const stampTurn = (event: SimEvent): number =>
-        Math.max(0, Math.floor(turnBase + Math.floor(event.dayOffset)));
-
-    for (const event of result.events) {
-        if (event.kind === 'qi_deviation') {
-            const severity = asSeverity(event.data?.severity) ?? 'serious';
-            injuries.push({
-                severity,
-                source: 'qi_deviation',
-                description: defaultInjuryDescription(severity, 'qi_deviation'),
-                sustainedOnTurn: stampTurn(event),
-                inferred: asSeverity(event.data?.severity) === null
-            });
-            continue;
-        }
-
-        if (event.kind === 'breakthrough_failure') {
-            const outcome = typeof event.data?.outcome === 'string' ? event.data.outcome : null;
-            if (outcome === 'failure_stable') continue;
-
-            // The fatal branch of `resolveFailure` always mints a crippling
-            // injury; that is a constant of the engine, not a guess.
-            const isDeath = outcome === null && result.died;
-            const source: InjurySource =
-                outcome === 'failure_deviation' ? 'qi_deviation' : 'failed_breakthrough';
-            const matched = SEVERITY_IN_TEXT.exec(event.summary);
-            const severity: InjurySeverity = isDeath
-                ? 'crippling'
-                : (matched ? (matched[1].toLowerCase() as InjurySeverity) : 'serious');
-            injuries.push({
-                severity,
-                source,
-                description: defaultInjuryDescription(severity, source),
-                sustainedOnTurn: stampTurn(event),
-                inferred: !isDeath && matched === null
-            });
-            continue;
-        }
-
-        if (event.kind === 'breakthrough_success') {
-            // Only tribulation breakthroughs wound on success, one injury per
-            // strike that landed, the last of them crippling.
-            const tribulation = event.data?.tribulation as { strikes: number } | null | undefined;
-            if (!tribulation) continue;
-            const landed = STRIKES_HOME.exec(event.summary);
-            const failedStrikes = landed ? Number(landed[1]) : 0;
-            const count = Math.min(failedStrikes, LETHAL_UNTREATED_INJURIES);
-            for (let i = 1; i <= count; i++) {
-                const severity: InjurySeverity =
-                    i >= LETHAL_UNTREATED_INJURIES ? 'crippling' : 'serious';
-                injuries.push({
-                    severity,
-                    source: 'tribulation',
-                    description: `Heavenly lightning, strike ${i} of ${tribulation.strikes}, struck home.`,
-                    sustainedOnTurn: stampTurn(event),
-                    inferred: landed === null
-                });
-            }
-        }
-    }
-
-    return injuries;
-}
-
-function asSeverity(value: unknown): InjurySeverity | null {
-    return value === 'minor' || value === 'serious' || value === 'crippling' ? value : null;
-}
-
 /**
  * Absolute end-state the caller must write so that persistence and simulation
  * agree exactly.
  *
- * `TimeSkipResult.deltas` omits `yearsAtCurrentRealm` and `starvationTurns`, so
- * both are derived here from the digest — the last `breakthrough_success` event
- * dates the stagnation clock's reset, and the `starvation_warning` event dates
- * the moment the belly emptied. Both are engine-emitted facts.
+ * Two of these fields come from `result.endState` rather than from a delta, and
+ * that distinction is load-bearing. `starvationTurns` and `yearsAtCurrentRealm`
+ * both RESET mid-skip - the starvation clock clears the moment there is food
+ * again, the stagnation clock returns to zero on any rank advance - so a delta
+ * against the starting value is not merely imprecise, it is uninvertible. The
+ * engine reports where they actually ended and this writes that straight down.
+ *
+ * Everything else is a genuine accumulation and is applied as a delta.
  */
 export interface SkipEndState {
     hp: number;
@@ -660,41 +557,17 @@ export interface SkipEndState {
 export function skipEndState(before: Cultivator, result: TimeSkipResult): SkipEndState {
     const d = result.deltas;
 
-    let lastAdvanceDay: number | null = null;
-    let emptyBellyDay: number | null = null;
-    for (const event of result.events) {
-        if (event.kind === 'breakthrough_success') lastAdvanceDay = event.dayOffset;
-        if (event.kind === 'starvation_warning') emptyBellyDay = event.dayOffset;
-    }
-
-    const satiety = clampInt(before.satiety + d.satiety, 0, 100);
-    const yearsAtCurrentRealm =
-        lastAdvanceDay === null
-            ? before.yearsAtCurrentRealm + result.simulatedDays / DAYS_PER_YEAR
-            : (result.simulatedDays - lastAdvanceDay) / DAYS_PER_YEAR;
-
-    let starvationTurns = 0;
-    if (result.deathCause === 'starvation') {
-        starvationTurns = STARVATION_TURNS;
-    } else if (satiety === 0 && emptyBellyDay !== null) {
-        starvationTurns = Math.max(
-            0,
-            Math.min(STARVATION_TURNS, Math.floor(result.simulatedDays - emptyBellyDay))
-        );
-    } else if (satiety === 0) {
-        starvationTurns = before.starvationTurns;
-    }
-
     return {
         hp: clampInt(before.hp + d.hp, 0, before.maxHp),
         qi: clampInt(before.qi + d.qi, 0, before.maxQi),
-        satiety,
-        starvationTurns,
+        satiety: clampInt(before.satiety + d.satiety, 0, SATIETY_MAX),
         spiritStones: Math.max(0, Math.round(before.spiritStones + d.spiritStones)),
         cultivationProgress: Math.max(0, before.cultivationProgress + d.cultivationProgress),
         age: Math.max(0, before.age + d.age),
-        yearsAtCurrentRealm: Math.max(0, roundYears(yearsAtCurrentRealm)),
-        realmOrdinal: before.realmOrdinal + d.realmOrdinal
+        realmOrdinal: before.realmOrdinal + d.realmOrdinal,
+        // Absolute, from the engine. Not derived, not inferred.
+        starvationTurns: Math.max(0, Math.round(result.endState.starvationTurns)),
+        yearsAtCurrentRealm: Math.max(0, roundYears(result.endState.yearsAtCurrentRealm))
     };
 }
 
@@ -1045,23 +918,34 @@ export function forgetMemory(db: Database.Database, knowledgeRecordId: string): 
 }
 
 /**
- * Write down what the Vault took, and actually take it.
+ * Write down what the crossing took, and actually take it.
  *
  * THE INVARIANT: if the ledger says it was taken, it is gone from the database.
- * A ledger entry claiming the Vault took somebody's brother while nothing was
- * removed is an outcome asserted without a state change, which is the one
- * thing this engine exists to make impossible. Every `taken` kind below
- * therefore performs a real delete or a real transition, and
- * `applied` reports which — an unapplied take is a bug, not a game outcome.
+ * A ledger entry claiming somebody's brother was taken while nothing was
+ * removed is an outcome asserted without a state change, which is the one thing
+ * this engine exists to make impossible.
+ *
+ * `takenAll` is the authoritative list and the ONLY field this reads. `taken`
+ * is a convenience view of `takenAll[0]` and using it to decide what to delete
+ * would silently under-report the ascension crossing, which collects the
+ * cultivator's whole remaining ledger at once rather than one instalment. Every
+ * entry is applied, every application is reported, and an entry that could not
+ * be applied is surfaced rather than swallowed - an unapplied take is a bug,
+ * not a game outcome.
  *
  * MUST be called inside the caller's transaction: the rank advance and the
  * price are one event, and a crossing that recorded the rank but not the cost
- * would be exactly the drift this is guarding against.
+ * would be exactly the drift this guards against.
  */
 export interface TollApplication {
-    /** True when the named thing was actually removed or ended. */
+    /** True when every entry in `takenAll` was actually removed or ended. */
     applied: boolean;
-    /** What was done, for the response and the tests. */
+    /** One entry per thing taken, in the order the engine listed them. */
+    details: Array<Record<string, unknown>>;
+    /**
+     * Back-compat single view, mirroring the engine's own `taken`/`takenAll`
+     * pairing: `details[0] ?? null`. Never use it to decide what happened.
+     */
     detail: Record<string, unknown> | null;
 }
 
@@ -1071,71 +955,103 @@ export function persistToll(
     cultivatorId: string,
     toll: TollResult
 ): TollApplication {
-    repos.db.prepare(`
-        INSERT INTO cultivation_tolls (
-            run_id, cultivator_id, from_ordinal, to_ordinal, boundary_index,
-            outcome, risk, roll, taken_kind, taken_id, taken_label, taken_reason,
-            narration_hint, charged_on_day
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-        run.id, cultivatorId, toll.fromOrdinal, toll.toOrdinal, toll.boundaryIndex,
-        toll.outcome, toll.risk, toll.roll,
-        toll.taken?.kind ?? null, toll.taken?.id ?? null,
-        toll.taken?.label ?? null, toll.taken?.reason ?? null,
-        toll.narrationHint, run.elapsedDays
-    );
-
-    if (toll.outcome !== 'taken' || !toll.taken) {
-        return { applied: true, detail: null };
-    }
-
     const onDay = Math.floor(run.elapsedDays);
 
-    switch (toll.taken.kind) {
+    // One ledger row per thing taken, so the ledger reads as an itemised
+    // account rather than a summary. A charge that took nothing still gets a
+    // row: "the Vault took nothing at this boundary" is worth being able to
+    // look up years later.
+    const entries = toll.takenAll.length > 0 ? toll.takenAll : [null];
+    for (const taken of entries) {
+        repos.db.prepare(`
+            INSERT INTO cultivation_tolls (
+                run_id, cultivator_id, from_ordinal, to_ordinal, boundary_index,
+                outcome, risk, roll, taken_kind, taken_id, taken_label, taken_reason,
+                narration_hint, charged_on_day
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            run.id, cultivatorId, toll.fromOrdinal, toll.toOrdinal, toll.boundaryIndex,
+            toll.outcome, toll.risk, toll.roll,
+            taken?.kind ?? null, taken?.id ?? null,
+            taken?.label ?? null, taken?.reason ?? null,
+            toll.narrationHint, run.elapsedDays
+        );
+    }
+
+    if (toll.takenAll.length === 0) {
+        return { applied: true, details: [], detail: null };
+    }
+
+    const details: Array<Record<string, unknown>> = [];
+    let allApplied = true;
+
+    for (const taken of toll.takenAll) {
+        const outcome = applyOneTake(repos, cultivatorId, taken, onDay);
+        if (!outcome.applied) allApplied = false;
+        details.push(outcome.detail);
+    }
+
+    return { applied: allApplied, details, detail: details[0] ?? null };
+}
+
+/** Remove exactly one named thing. Every branch is a real write. */
+function applyOneTake(
+    repos: CultivationRepos,
+    cultivatorId: string,
+    taken: TollTaken,
+    onDay: number
+): { applied: boolean; detail: Record<string, unknown> } {
+    switch (taken.kind) {
         case 'technique': {
             // Gone as if never learned. The join row is deleted and the
             // denormalised list on the cultivator is resynced with it.
-            if (!toll.taken.id) return { applied: false, detail: null };
-            const forgotten = repos.techniques.forget(cultivatorId, toll.taken.id);
+            if (!taken.id) {
+                return { applied: false, detail: { kind: 'technique', missingId: true } };
+            }
+            const forgotten = repos.techniques.forget(cultivatorId, taken.id);
             return {
                 applied: forgotten,
-                detail: { kind: 'technique', techniqueId: toll.taken.id, forgotten }
+                detail: { kind: 'technique', techniqueId: taken.id, label: taken.label, forgotten }
             };
         }
 
         case 'bond': {
-            if (!toll.taken.id) return { applied: false, detail: null };
+            if (!taken.id) {
+                return { applied: false, detail: { kind: 'bond', missingId: true } };
+            }
             const subject = repos.cultivators.getById(cultivatorId);
             const severed = severBond(
                 repos.db,
                 cultivatorId,
                 subject?.name ?? 'them',
-                toll.taken.id,
+                taken.id,
                 onDay
             );
             return {
                 applied: severed !== null,
                 detail: severed
-                    ? { kind: 'bond', relationshipId: toll.taken.id, ...severed }
-                    : { kind: 'bond', relationshipId: toll.taken.id, missing: true }
+                    ? { kind: 'bond', relationshipId: taken.id, label: taken.label, ...severed }
+                    : { kind: 'bond', relationshipId: taken.id, label: taken.label, missing: true }
             };
         }
 
         case 'memory': {
-            if (!toll.taken.id) return { applied: false, detail: null };
-            const removed = forgetMemory(repos.db, toll.taken.id);
+            if (!taken.id) {
+                return { applied: false, detail: { kind: 'memory', missingId: true } };
+            }
+            const removed = forgetMemory(repos.db, taken.id);
             return {
                 applied: removed,
-                detail: { kind: 'memory', knowledgeRecordId: toll.taken.id, removed }
+                detail: { kind: 'memory', knowledgeRecordId: taken.id, label: taken.label, removed }
             };
         }
 
         case 'name': {
             // A name is not a row that can be deleted, so it is marked taken.
-            // Thereafter people have to be told it, every time — and the engine
+            // Thereafter people have to be told it, every time - and the engine
             // will not charge it twice, because `nameAlreadyTaken` reads this.
             writeFlag(repos.db, cultivatorId, FLAG_NAME_TAKEN, '1');
-            return { applied: true, detail: { kind: 'name', nameTaken: true } };
+            return { applied: true, detail: { kind: 'name', label: taken.label, nameTaken: true } };
         }
     }
 }
@@ -1188,6 +1104,22 @@ export function listTolls(db: Database.Database, cultivatorId: string): TollLedg
  * overwrite an existing foundation, so a repeated or out-of-order write cannot
  * upgrade a cracked foundation into a flawless one.
  */
+/**
+ * Record the result of the last crossing.
+ *
+ * Both non-'none' values are permanent and load-bearing, so
+ * `recordImmortalStatus` refuses to overwrite an existing one: a
+ * 'false_immortal' is precisely what bars any further attempt, and a write that
+ * could clear it would let the Lid open twice for the same name.
+ */
+export function persistImmortalStatus(
+    repos: CultivationRepos,
+    cultivatorId: string,
+    status: ImmortalStatus
+): void {
+    repos.cultivators.recordImmortalStatus(cultivatorId, status);
+}
+
 export function persistFoundation(
     repos: CultivationRepos,
     cultivatorId: string,
@@ -1334,6 +1266,7 @@ export function describeCultivator(
             note: 'Rolled once from the run seed at creation. Permanent; no tool changes it.'
         },
         foundation: cultivator.foundationQuality,
+        immortalStatus: cultivator.immortalStatus,
         progress: {
             current: round2(cultivator.cultivationProgress),
             required,

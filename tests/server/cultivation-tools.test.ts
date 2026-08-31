@@ -34,6 +34,7 @@ import {
     cultivatorClaimKey,
     ensureCultivationDb,
     listTolls,
+    persistToll,
     tollCandidatesFor
 } from '../../src/server/consolidated/cultivation-support.js';
 import { GRAIN_ABSTINENCE_PILL_ID, MINOR_HEALING_PILL_ID } from '../../src/data/cultivation/pills.js';
@@ -687,7 +688,8 @@ describe('cultivation MCP tool surface', () => {
             expect(result.toll.outcome).toBe('taken');
             expect(result.toll.taken.kind).toBe('bond');
             expect(result.toll.applied).toBe(true);
-            expect(result.toll.appliedDetail.holderId).toBe('npc-brother');
+            expect(result.toll.takenAll).toHaveLength(1);
+            expect(result.toll.appliedDetail[0].holderId).toBe('npc-brother');
 
             // 1. The knowledge that person held about her is genuinely absent.
             const held = db
@@ -751,6 +753,61 @@ describe('cultivation MCP tool surface', () => {
             // The world still knows. She does not. That asymmetry is the setting.
             expect(db.prepare('SELECT statement FROM world_facts WHERE id = ?')
                 .get('fact-mother')).toBeDefined();
+        });
+
+        it('applies EVERY entry in takenAll, not just the first', async () => {
+            // The ascension crossing collects the whole remaining ledger at
+            // once. Driving a real one end to end would take a full run, so
+            // this exercises the helper both front doors call, with a charge
+            // that takes three different kinds of thing at the same moment.
+            const created = await newRun();
+            const cultivatorId = created.cultivator.id;
+
+            const available = await technique({ action: 'list_available' });
+            const artId = available.compatible[0].id;
+            await technique({ action: 'learn', techniqueId: artId });
+            const relationshipId = seedBond('npc-brother', 'Shen Kuo', cultivatorId);
+            const memoryId = seedMemory(cultivatorId, 'mother', 'Her mother was named Yun Qing.');
+
+            const repos = ensureCultivationDb();
+            const activeRun = repos.runs.getActiveRun()!;
+
+            const charge = {
+                outcome: 'collected_in_full' as const,
+                fromOrdinal: 44,
+                toOrdinal: 45,
+                boundaryIndex: 8,
+                risk: 1,
+                modifiers: [{ source: 'ascension', delta: 1 }],
+                roll: 0,
+                takenAll: [
+                    { kind: 'technique' as const, id: artId, label: 'an art', reason: 'It mattered.' },
+                    { kind: 'bond' as const, id: relationshipId, label: 'Shen Kuo', reason: 'He knew her.' },
+                    { kind: 'memory' as const, id: memoryId, label: 'her mother', reason: 'She was using it.' }
+                ],
+                taken: { kind: 'technique' as const, id: artId, label: 'an art', reason: 'It mattered.' },
+                narrationHint: 'Everything still owing came due at once.'
+            };
+
+            const application = repos.db.transaction(() =>
+                persistToll(repos, activeRun, cultivatorId, charge)
+            )();
+
+            expect(application.applied).toBe(true);
+            expect(application.details).toHaveLength(3);
+
+            // All three are genuinely gone — not just the first.
+            expect(repos.techniques.knows(cultivatorId, artId)).toBe(false);
+            expect(db.prepare('SELECT active FROM relationships WHERE id = ?')
+                .get(relationshipId)).toMatchObject({ active: 0 });
+            expect(db.prepare('SELECT 1 FROM knowledge_records WHERE id = ?')
+                .get(memoryId)).toBeUndefined();
+
+            // And the ledger itemises all three rather than summarising them.
+            const ledger = listTolls(db, cultivatorId);
+            expect(ledger).toHaveLength(3);
+            expect(ledger.map(e => e.taken!.kind).sort())
+                .toEqual(['bond', 'memory', 'technique']);
         });
 
         it('never reports a take it did not apply', async () => {
@@ -825,12 +882,68 @@ describe('cultivation MCP tool surface', () => {
             expect(result.error).toBe('run_already_ended');
         });
 
-        it('refuses to start a second run for a cultivator whose run finished', async () => {
+        it('refuses to start a second run for a dead cultivator', async () => {
+            const dead = await killTheRun();
+            const restart = await run({ action: 'start', cultivatorId: dead.cultivator.id });
+            expect(restart.error).toBe('cultivator_dead');
+            expect(restart.hint).toContain('no continuation');
+        });
+
+        it('refuses a second run even for a cultivator who survived their first', async () => {
+            // A True Immortal is alive and finished. Being alive is not a
+            // second life: a run is played once.
+            const created = await newRun();
+            new CultivatorRepository(db)
+                .recordImmortalStatus(created.cultivator.id, 'true_immortal');
+            await run({ action: 'end' });
+
+            const restart = await run({ action: 'start', cultivatorId: created.cultivator.id });
+            expect(restart.error).toBe('run_already_finished');
+            expect(restart.status).toBe('ascended');
+        });
+
+        it('refuses to end a run on request: a run ends by dying', async () => {
             await newRun();
+            const refused = await run({ action: 'end' });
+            expect(refused.error).toBe('voluntary_end_not_permitted');
+            expect(refused.reason).toBe('not_a_true_immortal');
+            expect(refused.hint).toContain('ends by dying');
+
+            const storedRun = new RunRepository(db).getActiveRun()!;
+            expect(storedRun.status).toBe('active');
+        });
+
+        it('refuses a False Immortal too: surviving the crossing is not completing it', async () => {
+            const created = await newRun();
+            const repo = new CultivatorRepository(db);
+            expect(repo.recordImmortalStatus(created.cultivator.id, 'false_immortal')).not.toBeNull();
+
+            const refused = await run({ action: 'end' });
+            expect(refused.error).toBe('voluntary_end_not_permitted');
+            expect(refused.immortalStatus).toBe('false_immortal');
+            expect(new RunRepository(db).getActiveRun()!.status).toBe('active');
+        });
+
+        it('lets a True Immortal step off the ladder, and records it as ascension', async () => {
+            const created = await newRun();
+            const repo = new CultivatorRepository(db);
+            expect(repo.recordImmortalStatus(created.cultivator.id, 'true_immortal')).not.toBeNull();
+            // Permanent: the status is written once and never rewritten.
+            expect(repo.recordImmortalStatus(created.cultivator.id, 'none')).toBeNull();
+            expect(repo.getById(created.cultivator.id)!.immortalStatus).toBe('true_immortal');
+
             const ended = await run({ action: 'end' });
             expect(ended.ended).toBe(true);
-            const restart = await run({ action: 'start', cultivatorId: ended.run.cultivatorId });
-            expect(restart.error).toBe('run_already_finished');
+            expect(ended.endedBy).toBe('ascension');
+            expect(ended.run.status).toBe('ascended');
+
+            const storedRun = new RunRepository(db).getById(ended.run.id)!;
+            expect(storedRun.status).toBe('ascended');
+            expect(storedRun.deathCause).toBeNull();
+
+            // Still permanent: closed is closed, however it closed.
+            const again = await run({ action: 'end', runId: ended.run.id });
+            expect(again.error).toBe('run_already_ended');
         });
 
         it('reports the run as non-reopenable and records the cause in the ledger', async () => {
@@ -1292,9 +1405,16 @@ describe('cultivation MCP tool surface', () => {
                 .get((await run({ action: 'current' })).run.id) as { admin: number };
             expect(flag.admin).toBe(1);
 
-            const ended = await run({ action: 'end' });
-            expect(ended.ended).toBe(true);
-            expect(ended.run.adminFlagged).toBe(true);
+            // A run ends by dying. Starve this one out to get it into the ledger.
+            const dead = await cultivation({
+                action: 'cultivate', years: 10, rations: 0,
+                autoBreakthrough: false, randomEvents: false
+            });
+            expect(dead.died).toBe(true);
+            expect(dead.run.status).toBe('dead');
+
+            const current = await run({ action: 'current', runId: dead.run.id });
+            expect(current.run.adminFlagged).toBe(true);
 
             const ledger = await run({ action: 'ledger' });
             expect(ledger.count).toBe(0);
