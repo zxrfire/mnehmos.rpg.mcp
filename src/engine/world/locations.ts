@@ -1070,7 +1070,8 @@ const AMBIENT_RATE: Record<AmbientQi, number> = {
     thin: 0.5,
     normal: 1,
     dense: 2,
-    spirit_tide: 3
+    spirit_tide: 3,
+    sealed_vein: 4
 };
 
 /**

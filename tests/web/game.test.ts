@@ -489,7 +489,8 @@ describe('admin roster', () => {
     it('refuses with 403 when admin mode is off', async () => {
         const { game } = makeGame({ adminMode: false });
         await game.newRun('Anyone');
-        expect(() => game.roster()).toThrowError(expect.objectContaining({ status: 403 }));
+        await expect(game.roster()).rejects.toMatchObject({ status: 403 });
+        await expect(game.ladderOdds()).rejects.toMatchObject({ status: 403 });
     });
 
     it('is read-only: listing it does not touch a single row', async () => {
@@ -497,7 +498,7 @@ describe('admin roster', () => {
         const { cultivator } = await game.newRun('Anyone');
 
         const before = db.prepare('SELECT * FROM cultivators').all();
-        const roster = game.roster();
+        const roster = await game.roster();
         expect(roster.roster).toHaveLength(1);
         expect(roster.roster[0].isPlayer).toBe(true);
         expect(roster.roster[0].id).toBe(cultivator.id);
@@ -523,7 +524,7 @@ describe('admin roster', () => {
             )
         `).run({ now });
 
-        const rows = game.roster().roster;
+        const rows = (await game.roster()).roster;
         expect(rows).toHaveLength(2);
         const elder = rows.find(r => r.id === 'npc-1')!;
         expect(elder).toMatchObject({

@@ -147,9 +147,14 @@ export function dominantAmbient(profile: Partial<Record<AmbientQi, number>>): Am
  * over and somewhere nobody wants.
  */
 export function densityFromProfile(profile: Partial<Record<AmbientQi, number>>): number {
-    const weights: Record<AmbientQi, number> = { thin: 0.15, normal: 0.45, dense: 0.85, spirit_tide: 1 };
+    const weights: Record<AmbientQi, number> = {
+        thin: 0.15, normal: 0.45, dense: 0.85, spirit_tide: 1, sealed_vein: 1
+    };
     let total = 0;
     let sum = 0;
+    // `sealed_vein` is intentionally not summed: it is a sealed pocket, not a
+    // share of the open air, and folding it in would make a region look rich
+    // because of something nobody has opened yet.
     for (const band of ['thin', 'normal', 'dense', 'spirit_tide'] as AmbientQi[]) {
         const w = profile[band] ?? 0;
         total += w;

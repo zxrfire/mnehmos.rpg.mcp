@@ -593,7 +593,7 @@ export class GameService {
      * has no write path, so there is nothing here for ADMIN to be dangerous
      * with.
      */
-    roster(): { roster: RosterRowView[] } {
+    async roster(): Promise<{ roster: RosterRowView[] }> {
         if (!this.adminMode) {
             throw new GameError('Admin mode is off. Set ADMIN_MODE=true to enable the roster.', 403);
         }
@@ -605,7 +605,7 @@ export class GameService {
         // already here. An operator asking who is in this world wants the
         // world, not the subset that happens to have a row.
         const stored = this.repos.cultivators.roster().map(entry => rosterRowView(entry, player));
-        const world = this.cachedWorld;
+        const world = await this.loadWorld();
         const inWorld = world
             ? world.npcs.map(npc => worldRosterRow(npc, world.currentDay))
             : [];
@@ -626,32 +626,25 @@ export class GameService {
      * play surface: it answers "is the ladder doing what we think it does" and
      * nothing a player would ever ask.
      */
-    ladderOdds(): LadderOddsReport {
+    async ladderOdds(): Promise<LadderOddsReport> {
         if (!this.adminMode) {
             throw new GameError('Admin mode is off. Set ADMIN_MODE=true to read the ladder odds.', 403);
         }
-        const world = this.cachedWorld;
+        const world = await this.loadWorld();
         return ladderOddsReport(world?.seed ?? 'no-world', {}, world ?? undefined);
     }
 
     /**
-     * Load the world for the current run, for the admin surfaces.
+     * The world the current run is standing in.
      *
-     * `roster()` and `ladderOdds()` are synchronous because they are read-only
-     * views the HTTP layer renders directly, and the world is loaded
-     * asynchronously. So the last world seen by a play action is cached on the
-     * way past and the admin views read that: a roster one action stale is a
-     * fine trade against making every read path async.
+     * Rebuilt from the run's seed and caught up to the run's clock by the
+     * owning module, so this is cheap on a warm process and correct on a cold
+     * one. Null when there is no run yet, or when the world is switched off.
      */
-    private cachedWorld: WorldState | null = null;
-
-    /** Called on every world advance so the admin views have something to show. */
     async loadWorld(): Promise<WorldState | null> {
         if (!this.worldEnabled) return null;
         const run = this.repos.runs.getActiveRun() ?? this.repos.runs.deathLedger(1)[0] ?? null;
-        if (!run) return null;
-        this.cachedWorld = await worldForRun(run);
-        return this.cachedWorld;
+        return run ? worldForRun(run) : null;
     }
 
     // ── engine execution (phase 2) ───────────────────────────────────────
@@ -1615,7 +1608,6 @@ export class GameService {
         if (!this.worldEnabled || days <= 0) return { lines: [], structure: [] };
 
         const advance = await advanceWorldForCultivator(run, cultivator, days);
-        if (advance) this.cachedWorld = advance.result.state;
         return reportFromDigest(advance?.result.digest ?? null);
     }
 

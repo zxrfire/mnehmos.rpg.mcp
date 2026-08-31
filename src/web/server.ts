@@ -288,10 +288,10 @@ export function createApp(options: AppOptions): (req: IncomingMessage, res: Serv
                     sendJson(res, 200, game.ledger());
                     return;
                 case '/api/admin/roster':
-                    sendJson(res, 200, game.roster());
+                    sendJson(res, 200, await game.roster());
                     return;
                 case '/api/admin/ladder-odds':
-                    sendJson(res, 200, game.ladderOdds());
+                    sendJson(res, 200, await game.ladderOdds());
                     return;
                 default:
                     sendError(res, 404, 'No such endpoint.');

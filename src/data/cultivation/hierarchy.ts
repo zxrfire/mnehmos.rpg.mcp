@@ -220,6 +220,51 @@ export const ApexInstitutionSchema = z.object({
         pinned: z.literal(true),
         note: z.string().min(80)
     }),
+    /**
+     * What the pinned one is actually sitting on.
+     *
+     * Each apex was founded by somebody who made the crossing, and each of them
+     * sent something back down. Nothing crosses the Lid except the cultivator
+     * and, through a very few objects, information - so these are those objects.
+     * They are why an apex is an apex, and they are why its strongest member has
+     * not stood up in four hundred years.
+     *
+     * The Court is the party with the clearest motive, but it is nowhere near the
+     * nothing from anyone, holds the best vein, pays nobody, and can be offered
+     * nothing - which makes it inert, and makes a setting with no pressure on it.
+     * This is the exception. A treasure that improves the odds on the last
+     * crossing is the only thing four people working continuously on that
+     * crossing could want, and it is held by the two institutions that can
+     * neither be attacked nor traded with.
+     *
+     * And then the wider problem, which is arithmetic anybody can do. A sect
+     * holding a sealed ancestor is holding a single-use asset: waking them is
+     * generally the end of them, so it is spent once and spent on something
+     * worth it. One of these objects is a permanent advantage. Trading a
+     * one-off for a trump card is a GOOD TRADE, and every sect with something
+     * under its mountain has run that calculation at least once - which means
+     * the number of parties who would move on an empty seat is not one, it is
+     * roughly the number of sealed ancestors in the world.
+     *
+     * That is the actual reason the seats are never left. Not the Court.
+     *
+     * `ifUncovered` is where the arrangement has slack. The holder is pinned,
+     * not fixed: an emergency large enough to make an apex send its one out is
+     * the single event that puts the object in reach, and everybody who
+     * understands the situation has already thought about this.
+     */
+    sentDown: z.object({
+        id: z.string(),
+        name: z.string().min(1),
+        description: z.string().min(80),
+        /** What it is good for, stated without mysticism. */
+        uses: z.array(z.string().min(40)).min(2),
+        /** Why the holders never use it. */
+        reserveTerms: z.string().min(60),
+        /** What becomes possible the moment the seat is empty. */
+        ifUncovered: z.string().min(80),
+        intact: z.boolean()
+    }),
     /** What it holds, which is never a single vein. */
     holds: z.string().min(80),
     /** Its courts, by id. */
@@ -302,7 +347,22 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         lastRealm: {
             count: 1,
             pinned: true,
-            note: 'One, seated under the datum vault and cultivating without interruption. The Survey administers a vein system across a province on the strength of a single person who has not left a room in four hundred years, and its entire posture - the couriers, the unappealable arbitration, the letters that do not wait for an answer - is built to make sure nobody ever needs to test whether that person would come out.'
+            note: 'One, seated under the datum vault and cultivating without interruption, on top of what the founder sent down. The Survey administers a vein system across a province on the strength of a single person who has not left a room in four hundred years, and its entire posture - the couriers, the unappealable arbitration, the letters that do not wait for an answer - is built to make sure nobody ever needs to test whether that person would come out.'
+        },
+        sentDown: {
+            id: 'sent-datum-lamp',
+            name: 'The Datum Lamp',
+            description:
+                'A survey instrument, in the sense that a sword is a length of metal. The founder of the Survey sent it back down after her crossing, and it does the one thing nothing on this side does: it holds a fixed reference that is not local. Everything the Survey measures is measured against it in the end.',
+            uses: [
+                'comprehension at the last realm - it presents a structure from the far side of the Lid as something that can be studied rather than inferred, which is the difference between guessing at the crossing and reading about it',
+                'a channel upward, used four times in nine hundred years, each of which cost more than the Survey has ever explained'
+            ],
+            reserveTerms:
+                'Never carried, never lent, never demonstrated. The Survey does not deny that it exists and has never once described what it does.',
+            ifUncovered:
+                'It is a physical object in a room, and the room is guarded by exactly one person. If that person is ever elsewhere it can be taken by anyone who can reach the chamber - and the Court, which has four people who would each have a reason, is only the most obvious. Every sect holding a sealed ancestor is holding a single-use asset, and this is the object that would justify spending it - a permanent advantage for a one-off, which is a trade a great many quiet mountains have already priced.',
+            intact: true
         },
         holds:
             'The arterial system: not the eleven veins of the Low Fall but the four beneath them that the eleven branch from, and the datum every survey in the province is ultimately measured against without knowing whose datum it is.',
@@ -346,7 +406,22 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         lastRealm: {
             count: 1,
             pinned: true,
-            note: 'One, and the Long Cut is more honest about it than the Survey is: the posted staff of forty exists precisely because the one who could settle anything permanently is not available to settle anything. Legalism is what an institution does when its strongest member cannot be spent.'
+            note: 'One, and the Long Cut is more honest about it than the Survey is: the posted staff of forty exists precisely because the one who could settle anything permanently is sitting on the thing that must not be left. Legalism is what an institution does when its strongest member cannot be spent.'
+        },
+        sentDown: {
+            id: 'sent-ninth-nail',
+            name: 'The Ninth Nail',
+            description:
+                'A nail, and it is genuinely a nail: a hand span of dull metal that the founder of the Long Cut drove through from the other side rather than sent. It is the only object in the Marches that does not move, and every perimeter in five provinces is surveyed off it.',
+            uses: [
+                'comprehension at the last realm - it was driven through the Lid from above, so it is a worked example of the crossing that can be held in the hand, and the Cut tradition holds this to be worth more than any manual',
+                'a channel upward, in one direction only: things can be said along it, and nothing has ever been said back'
+            ],
+            reserveTerms:
+                'The Long Cut cannot move it and has stopped pretending that this is a policy. It is where it is. The seat was built around it afterwards.',
+            ifUncovered:
+                'It cannot be carried off, which makes the problem different rather than smaller: anyone who reaches it can use it in place for as long as they are left alone there, and the only reason nobody has is that somebody is always sitting on it. The Long Cut is candid inside its own records that if the seat is ever vacated the contenders will not be the Court alone but every sect that has been maintaining a seal and waiting for a reason to spend it.',
+            intact: true
         },
         holds:
             'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Quiet Marches is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
