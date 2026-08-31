@@ -21,9 +21,13 @@
     "test:ui": "vitest --ui",
     "build": "tsc",
     "start": "node dist/server/index.js",
+    "web": "node dist/web/server.js",
+    "dev:web": "npm run build && node dist/web/server.js",
     "build:binaries": "npm run build && node esbuild.config.mjs",
     "open5e:sync-runtime": "node scripts/generate-open5e-runtime-catalog.mjs",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "play": "node scripts/play.mjs",
+    "mcp": "node dist/server/index.js"
   },
   "repository": {
     "type": "git",
@@ -31,14 +35,19 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
+    "cultivation",
+    "xianxia",
     "rpg",
-    "dnd",
-    "tabletop",
     "game-engine",
-    "ai-game",
-    "procedural-generation",
+    "roguelike",
+    "permadeath",
     "typescript",
-    "model-context-protocol"
+    "llm",
+    "ollama",
+    "claude",
+    "sqlite",
+    "text-rpg"
   ],
   "author": "Mnehmos",
   "license": "MIT",
@@ -46,7 +55,7 @@
     "url": "https://github.com/Mnehmos/rpg-mcp/issues"
   },
   "homepage": "https://github.com/Mnehmos/rpg-mcp#readme",
-  "description": "Complete tabletop RPG game engine via MCP - D&D 5e combat, procedural worldgen, NPC memory, 36 tools (31 consolidated + 5 meta/event)",
+  "description": "Deterministic xianxia cultivation RPG engine over MCP - 45-rank realm ladder, spirit roots, permadeath. The LLM narrates; the engine decides.",
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.10.1",
