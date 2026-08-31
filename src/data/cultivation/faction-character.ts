@@ -46,6 +46,8 @@
  * What a faction can turn out, as opposed to what it happens to contain.
  * All ordinals are on the one shared ladder.
  */
+import { TRUE_IMMORTAL_ORDINAL } from '../../engine/cultivation/realms.js';
+
 export interface ProductionTier {
     /** Highest ordinal it can currently produce reliably, from its own intake. */
     reliableOrdinal: number;
@@ -101,6 +103,70 @@ export interface FactionCharacter {
 }
 
 export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
+    // ═══════════════════════════════════════════════════════════════════
+    // THE TWO THAT CANNOT BE JOINED
+    //
+    // Added because the gap was load-bearing rather than cosmetic. Every other
+    // faction in this file has a `unitOfValue` - what it actually counts, which
+    // is what decides every negotiation it enters - and the two ancient apexes
+    // had none. That is precisely the question somebody has about an
+    // institution they can never be a member of: not how strong is it, which is
+    // published, but what does it want and what would it take.
+    //
+    // Neither has a rank ladder a player can climb, an admission bar, or a door.
+    // What they have is a thing they count, and it is not the same thing.
+    // ═══════════════════════════════════════════════════════════════════
+
+    'apex-deep-survey': {
+        knownFor: {
+            outside: 'Nothing, to almost everybody. Below a certain height the Survey is not a name people decline to say, it is a name they have never heard - and what they have instead is the sense that boundary disputes in some provinces end faster than they should.',
+            actuallyGoodAt: 'Being unable to be lied to about where anything is, and having been so for nine hundred years without interruption. Every arterial figure in the region descends from a measurement it took and has never had to retake.',
+            theGap: 'It is the strongest institution in the world at the thing nobody experiences as strength. A house that wins arbitrations it does not attend leaves no impression at all on the people it beats, which is why its reputation is smaller than the Pavilion\'s and its position is not.'
+        },
+        practice: 'Everything is minuted, including refusals, including the refusals of Surveyors who give no reason. The register is read by successors and the Survey behaves accordingly: it does not act in a way it would be embarrassed to have written down, which outsiders read as caution and is closer to vanity.',
+        grievance: 'That two of its administrations left for the Long Cut in living memory, and that it has not been able to think of a reply to either that would not concede the point.',
+        fear: 'Being made to attend something. The whole position rests on one person not standing up, and every year that nothing requires her to is a year the arrangement was not tested.',
+        lateness: 'Constitutionally. It arrives after everything, by design, because a body that measures cannot also be a body that hurries - and it has never once been early to anything in nine hundred years.',
+        disagreement: 'Whether the standing stock exists to be spent. Two Surveyors hold that an unreorderable line item is a thing you keep; two hold that a thing never spent is a thing you do not have. The register records that the question has been raised eleven times and settled none.',
+        wrongAbout: 'That its silence is read as composure. A substantial minority of the province reads it as having no answer, and the Survey has no instrument that could tell it which.',
+        unitOfValue:
+            'The datum. What the Survey counts is whether a figure it published is still true, and nothing else converts into that - not stones, not standing, not a favour, not a life. It cannot be paid, and this is the single most useful thing to know about it: a petitioner offering anything at all has already misunderstood the room. What it can be given is a correction, and the only people who have ever moved the Survey are the ones who arrived holding a measurement it had got wrong.',
+        production: {
+            reliableOrdinal: 37,
+            currentCount: 4,
+            peakOrdinal: 46,
+            peakCount: 3,
+            yearsSinceLastPeak: 1_900,
+            note: 'Three crossings in three thousand years, the most recent nineteen hundred years ago, and the Survey files each of them under the district they worked rather than under the crossing. It produces Grand Ascension reliably and has never once treated that as the point.'
+        },
+        distinctSentence: 'It has won four hundred years of arbitrations it never had to attend, and the reason is not procedural.'
+    },
+
+    'apex-long-cut': {
+        knownFor: {
+            outside: 'Driven ground, to the few who know the term at all - and the term is doing a great deal of work, because most of the province could not say what was driven or by whom.',
+            actuallyGoodAt: 'Making ground refuse to move, which is worth nothing in a market and everything in a fight. And taking in other people\'s administrations without appearing to have done anything.',
+            theGap: 'Its two most consequential acquisitions in living memory both walked in on their own, so there is nothing for the province to have witnessed. A house that gains by being the better option leaves no story behind it.'
+        },
+        practice: 'Four titles cover every practitioner in every driven province, ranked by work and nothing else, so a Hand may be an apprentice of nineteen or an Inner Face cultivator of four hundred. Carvers consider this obvious. Every visiting Drawn cultivator finds it insulting, and the Long Cut has never adjusted for a visitor.',
+        grievance: 'That the Deep Survey has never once referred to either defection in correspondence, which denies the Long Cut the acknowledgement that would make them mean something.',
+        fear: 'That the two courts it took will discover they dislike each other more than either dislikes the Survey. One left over a grant book and one over a name, and neither rates the other\'s reason.',
+        lateness: 'Never, and it is not a virtue. The Nail cannot be moved, so the Long Cut is already wherever it is going to be, and everything it does has the flat quality of a thing that did not have to travel.',
+        disagreement: 'Whether taking in the Root Sill was a gain or a precedent. It acquired a forty-four and a body of people who have proved they will walk out of an arrangement they dislike, and nobody senior has said the second half out loud.',
+        wrongAbout: 'That its rank ladder is read as egalitarian. Outside the driven provinces it is read as an institution that cannot be negotiated with, because there is no rung to appeal to and no title that means seniority.',
+        unitOfValue:
+            'Work done on the ground, counted in courses cut and faces held. Everything else is invisible to it - a stone offered to the Long Cut is not refused so much as not understood as an offer, and standing acquired anywhere else does not transfer at the border. It can be paid, which makes it the more approachable of the two, but only in the one currency: turn up and do the work, for as long as it takes, and be counted. Nineteen years and four hundred are both acceptable answers to how long.',
+        production: {
+            reliableOrdinal: 38,
+            currentCount: 40,
+            peakOrdinal: 46,
+            peakCount: 2,
+            yearsSinceLastPeak: 2_600,
+            note: 'Two crossings, both twenty-six hundred years ago and both on driven ground, and nothing since. Forty posted staff with an unusually even distribution and no prodigies at all - the Long Cut produces competence at a rate nobody matches and has not produced a crossing in an age.'
+        },
+        distinctSentence: 'Its whole position is a siege it has been winning by default for so long that the staff treat the seat as geography rather than as a garrison.'
+    },
+
     // ═══════════════════════════════════════════════════════════════════
     // LOW FALL - RIGHTEOUS
     // ═══════════════════════════════════════════════════════════════════
@@ -195,7 +261,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'It teaches that the First Abbot gave everything away to people rather than the Temple as a lesson about attachment. The likelier reading of the founding record is that the Temple did not exist yet.',
         unitOfValue: 'Nothing. The Temple keeps no accounts at all, which makes it impossible to negotiate with and is the single most frequent complaint against it.',
         production: {
-            reliableOrdinal: 13, currentCount: 11, peakOrdinal: 45, peakCount: 1, yearsSinceLastPeak: 2_600,
+            reliableOrdinal: 13, currentCount: 11, peakOrdinal: TRUE_IMMORTAL_ORDINAL, peakCount: 1, yearsSinceLastPeak: 2_600,
             note: 'The starkest gap in the catalog: it produced the one crossing in its records and now reliably turns out Foundation Establishment on swept ground, from intake nobody else would accept.'
         },
         distinctSentence: 'The poorest institution in the province, sitting on ground it chose for having no vein, holding a true claim to an ancestor that nobody believes and that buys it nothing.'
@@ -337,7 +403,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         production: {
             reliableOrdinal: 17,
             currentCount: 31,
-            peakOrdinal: 27,
+            peakOrdinal: 37,
             peakCount: 1,
             yearsSinceLastPeak: 40,
             note: 'Reliable to Core Formation, which is better than the number of nodes would suggest and is entirely down to teaching people who have already failed once.'
@@ -401,8 +467,15 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'The Court holds that the Mirror lies under the hall by choice. The hall was built over her afterwards, and the Court\'s own founding inscription is ambiguous in a way it does not teach.',
         unitOfValue: 'Cold. Standing is measured in how long a member can hold the hall\'s temperature without shelter, and the figure is posted.',
         production: {
-            reliableOrdinal: 20, currentCount: 3, peakOrdinal: 35, peakCount: 2, yearsSinceLastPeak: 400,
-            note: 'Constrained by intake rather than ground: it only admits mutated ice roots, so it produces very few and each one very far.'
+            // 35 -> 36, which is the top of Body Integration and the last rung
+            // the court's own signature manual reaches. The Rime-Heart
+            // Stillness Canon caps at 37, and a house whose signature book runs
+            // that far having never produced anybody who finished it read as
+            // the catalog contradicting itself rather than as a fact about the
+            // house. Both of its two peaks got to the end of the book; neither
+            // found the next one.
+            reliableOrdinal: 20, currentCount: 3, peakOrdinal: 36, peakCount: 2, yearsSinceLastPeak: 400,
+            note: 'Constrained by intake rather than ground: it only admits mutated ice roots, so it produces very few and each one very far - to the end of its own canon, twice, and no further.'
         },
         distinctSentence: 'Refuses every applicant in the world except the one root in a hundred that its curriculum will not kill, and leaves its own floors unswept as doctrine.'
     },
@@ -814,6 +887,18 @@ export const PROVENANCE_PENDING: ReadonlySet<string> = new Set([
 ]);
 
 export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
+    'sect-azure-mist-court': {
+        highestOrdinal: 37,
+        climbedYearsAgo: 340,
+        climbedWhere:
+            'The mist terraces below the gorge, on the runoff of the vein Ru Anjing was working, in the same decades and off the same water. Nobody has ever proposed that this is a coincidence and nobody has ever written it down either.',
+        ageNote:
+            'Late Age, and within a generation of the Pavilion\'s own climb, which is the fact that makes the Mist awkward rather than impressive. Two people went up off one vein in one lifetime; one of them crossed and has a province naming its era after her, and the other was a recall the terraces had already given up on and is still filed as a placement.',
+        whyNobodyHasSince:
+            'Nobody has, in three hundred and forty years, and the Mist can say exactly why rather than guessing. The runoff is what the Pavilion does not use and there has never been more of it. The Mist teaches the Pavilion\'s forms to people who failed at them once, which is a method for producing competent cultivators and not a method for producing another Pei Hanzhang, and the house is honest with itself about the difference.',
+        settledBelief:
+            'The Low Fall holds that the Mist is a feeder with an unusually old warden. The Pavilion\'s own register still says placement. Pei Hanzhang has been one rung under Grand Ascension for a century and a half and has never once asked for the entry to be corrected, and anybody who works out why understands the Azure family better than the Azure family does.'
+    },
     'sect-azure-cloud-pavilion': {
         highestOrdinal: 41,
         climbedYearsAgo: 380,
