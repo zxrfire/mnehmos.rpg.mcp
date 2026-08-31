@@ -1,0 +1,33 @@
+/**
+ * The social memory layer.
+ *
+ * What the world remembers about people, and what it has wrong. This layer is
+ * STORAGE: it guarantees that a grudge, a debt, a relationship, a false belief
+ * or a stolen secret is still on file, exact and dated, forty years and three
+ * generations later. The reasoning - whether the grudge is worth acting on,
+ * whether the man is trustworthy, how the sect responds - belongs to the LLM,
+ * which reasons from these records.
+ *
+ * Nothing here decays, scores, weights, or ranks anyone by cultivation.
+ *
+ * Reading order for anyone new to the module:
+ *
+ *   common.ts         day indices, stable ids, engine-owned seeded rolls
+ *   relationships.ts  directed ties with type, strength, history and attitude
+ *   grudges.ts        grudges, debts, favours, oaths and blood feuds; inherited
+ *   knowledge.ts      objective reality kept apart from knows/believes/suspects
+ *                     and from what the public believes. The heart of it.
+ *   secrets.ts        per-holder secret lifecycle, extending secret.repo.ts
+ *
+ * Deliberately does NOT re-export `hearing.ts` or `stealth-perception.ts`,
+ * which are the older D&D-substrate mechanics in this directory. They are
+ * imported by path everywhere they are used and answer a different question
+ * (who can physically hear you), so folding them in would make this barrel a
+ * grab-bag rather than a subsystem.
+ */
+
+export * from './common.js';
+export * from './relationships.js';
+export * from './grudges.js';
+export * from './knowledge.js';
+export * from './secrets.js';
