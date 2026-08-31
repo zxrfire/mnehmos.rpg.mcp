@@ -36,7 +36,7 @@ const TEXT = {
 
 
     items:
-        'Every object known to exist is in three hands, with nothing unaccounted for: thirteen Steps and four Dealings, all of them held. The Pavilion holds nine of the seventeen, more than the two older factions together. The youngest institution on the sheet is sitting on most of the supply, and none of it can be replaced.',
+        'Seventeen are held and thirty-one were ever known, so nearly half the supply is somewhere nobody is saying. Quantity and quality then part company. The Pavilion holds nine of the seventeen and every one of them is lower grade, while the only higher-grade Step sits with the Deep Survey and the only higher-grade Dealing with the Long Cut. Most of the supply and none of the ceiling.',
 
 };
 

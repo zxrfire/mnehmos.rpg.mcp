@@ -688,7 +688,7 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'cultivate', days: parseDuration(text) ?? DEFAULT_CULTIVATION_DAYS };
     }
 
-    if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger)\b/.test(text)) {
+    if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger|loiter|listen|listening|eavesdrop|hang about|hang around)\b/.test(text)) {
         return { action: 'wait' };
     }
 

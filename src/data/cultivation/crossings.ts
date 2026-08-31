@@ -362,7 +362,7 @@ export const ARCHIVE_AS_CLAIM = {
 
 export const PAVILION_SURPLUS = {
     theTension:
-        'The Azure Cloud Pavilion holds nine of these objects and cannot use them. A lower Unearned Step needs somebody standing at an early boundary who has done the accumulation and been stopped by something outside their control, and the Pavilion produces reliably at Core Formation with six people at that height and about ninety disciples below it. The stock arrives faster than the sect can find anybody the instructions permit it to be spent on.',
+        'The Azure Cloud Pavilion holds nine of these objects - seven Unearned Steps and two Second Dealings, all lower grade - and can barely use any of them. A lower Step is not a small thing: it carries somebody from Nascent Soul Perfection across into Deity Transformation, which is a regional power made in an afternoon. It is also useless to anybody not standing at that boundary, and the Pavilion produces reliably at Core Formation with six people at that height and about ninety disciples below it. The stock is enormous, the stock is rising, and the sect has almost nobody it fits. The bottleneck is people rather than medicine, which is the same sentence as everything else about this institution.',
     whatItDoes: [
         'Gives them away, at a rate no institution in history has matched, because the instructions permit it and the arithmetic no longer punishes it - four grants in the last century against one in the two centuries before.',
         'Places them outward: with allied sects, with guest elders, and twice with cultivators who hold no affiliation at all, which is the closest thing the world has seen to an institution exporting advancement.',
