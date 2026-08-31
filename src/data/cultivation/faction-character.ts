@@ -385,7 +385,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     'house-bound-word': {
         practice: 'Oathwrights never say "I promise" in casual speech, will not answer a yes-or-no question without qualifying it, and a witness signs their own name last, after every party, always.',
         grievance: 'That a founding oath forbids them witnessing for the Severed, and is costing them a fortune they can see and cannot touch.',
-        fear: 'A party who accepts the structural penalty and breaks the oath anyway, which happens perhaps twice a century and demonstrates that the seal is a price rather than a law.',
+        fear: 'The unpublished treaty of nine hundred years ago in its own vault, which permitted two traditions to work one vein simultaneously and is the likeliest explanation for the Quiet Marches.',
         lateness: 'Twenty-five of thirty-six nodes lit; a vault of treaties binding on people who have never read them; and a dissolution method for oaths whose parties are all dead that has never worked and is still taught.',
         disagreement: 'The Warden faction want the house to enforce as well as witness. The Strict Hall holds that a witness who enforces is a party, and a party cannot witness.',
         wrongAbout: 'It teaches that an oath binds the person and that ground is ceremony. The Anchorhold\'s figures show no oath sworn on unsurveyed ground has ever held, and the house has not tested it because testing it would cost it the fee.',

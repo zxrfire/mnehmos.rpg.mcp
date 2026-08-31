@@ -1012,6 +1012,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             'circuit arbitration of debts and inheritance, for a fee scaled to the sum in dispute',
             'audits of a claimed lineage, accepted as proof by every righteous sect in the region',
             'certification of a claimed living ancestor, sold to the claimant or to a rival, published either way',
+            'placement of a foreign cultivator inside a realm, which no table can do and which the house sells at a published error rate of one in six',
             'investigators hired to establish who benefited from a death',
             'sealed escrow of obligations that outlive their parties'
         ],

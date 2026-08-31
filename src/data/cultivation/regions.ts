@@ -24,6 +24,15 @@
  * costs. Never a second ladder, and never a rank number that means something
  * different here.
  *
+ * TWO TRADITIONS
+ * --------------
+ * The Low Fall practises the Drawn Road and the Quiet Marches practises the
+ * Cut Road, and they are not two flavours of one thing - they have different
+ * bottlenecks, different costs, and different answers to being killed. See
+ * `traditions.ts`. The border between the regions is also the border between
+ * the traditions, which is why crossing it changes what the people are and not
+ * merely where they live.
+ *
  * THE TRANSLATION IS THE CONTENT
  * ------------------------------
  * Outsiders map local titles onto the ladder, the mapping is disputed by
@@ -34,6 +43,7 @@
 import { z } from 'zod';
 import { AmbientQiSchema, type AmbientQi } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, REALM_TIERS } from '../../engine/cultivation/realms.js';
+import { TraditionIdSchema } from './traditions.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
@@ -174,6 +184,8 @@ export const RegionSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
     role: z.enum(['home', 'adjacent']),
+    /** The cultivation tradition seated here. See `traditions.ts`. */
+    traditionId: TraditionIdSchema,
     summary: z.string().min(80),
     /**
      * The single physical fact everything else follows from. A reader should
@@ -343,6 +355,51 @@ export const TITLE_TRANSLATIONS: readonly TitleTranslation[] = [
     }
 ];
 
+/**
+ * The gap between the realm and the sub-rank, written down as incidents.
+ *
+ * Alignment at the realm boundary is reliable: everyone can see that a person
+ * has opened a standing face, and nobody argues about which realm that is.
+ * Inside the realm there is no correspondence at all, and that is where people
+ * die - not because anyone is a fool, but because there is no lookup that
+ * settles it and both parties are guessing with confidence.
+ */
+export const RANK_MISREADINGS: readonly {
+    localName: string;
+    realmIsClear: string;
+    insideIsNot: string;
+    systematicDirection: string;
+    recordedIncident: string;
+}[] = [
+    {
+        localName: 'Standing Cut',
+        realmIsClear:
+            'Nobody disputes the realm. A face that stays open is Foundation Establishment and both traditions can see it across a room.',
+        insideIsNot:
+            'Three courses against four stages, and the courses are not thirds of the same span: a face does not stand at all until it is deep, so the first course already sits where the standard ladder would put Mid to Late.',
+        systematicDirection:
+            'Outsiders read Standing Cut low, consistently, in the same direction, because "first course" sounds like "Early". Carvers are therefore systematically underestimated by about two stages in the province next door, which is survivable for the carver and not for the person who challenged them.',
+        recordedIncident:
+            'The Scarwater duel, eleven years ago: a Sword Elder\'s disciple of the Azure Cloud Pavilion at Foundation Perfection accepted a challenge from a "first-course Standing Cut" carver on the assumption that first course meant Early Foundation. It did not. The carver was within a stage of him and immune to the soul-pressure art he opened with, and he died in the street at Scarwater in front of forty people. The Ninefold Ledger case note is the only document in the world that states the sub-division mismatch plainly, and the Kettle Assay House has not revised its insurance table since.'
+    }
+];
+
+/**
+ * The profession that exists in the gap. Placing a foreign cultivator inside a
+ * realm cannot be done from a table, so it is done by people, badly, for money.
+ */
+export const PLACERS = {
+    trade: 'placer',
+    what:
+        'Someone who can look at a cultivator from the other tradition and say, accurately, where inside a realm they sit. The realm is free - anyone can see that. The position inside it is the entire product.',
+    whoSellsIt:
+        'The Ninefold Ledger, as a second line of business beside ancestral certification, and about nine independents at Scarwater and Kettle who work the border road and undercut it.',
+    priceNote:
+        'Ledger placement of a single foreign cultivator costs more than a month of cave rent on a decent vein, and is still cheaper than being wrong once.',
+    reliability:
+        'The Ledger publishes its own error rate, which is roughly one in six, and it is the best figure anybody has. The independents do not publish one.'
+} as const;
+
 // ─────────────────────────────────────────────────────────────────────────
 // THE CATALOG
 // ─────────────────────────────────────────────────────────────────────────
@@ -355,6 +412,7 @@ export const REGIONS: readonly Region[] = [
         id: HOME_REGION_ID,
         name: 'The Low Fall',
         role: 'home',
+        traditionId: 'tradition-drawn',
         summary:
             'A drawn-down but working province: nine river towns, four sect mountains, a live trade in medicine and manuals, and twenty-six institutions with overlapping claims on eleven veins. What limits a cultivator here is talent and money, not the ground.',
         governingFact:
@@ -509,6 +567,7 @@ export const REGIONS: readonly Region[] = [
         id: ADJACENT_REGION_ID,
         name: 'The Quiet Marches',
         role: 'adjacent',
+        traditionId: 'tradition-cut',
         summary:
             'The province people leave, and the only place in the world where cultivation is a trade with tools. Something broke here nine hundred years ago and drove the qi out of the air and into the rock, so the Marches does not breathe qi - it cuts it out of stone, and everything about the place follows from that.',
         governingFact:
@@ -714,6 +773,12 @@ export function localRankBand(regionId: string, ordinal: number): LocalRankBand 
 
 export function localRankName(regionId: string, ordinal: number): string | undefined {
     return localRankBand(regionId, ordinal)?.localName;
+}
+
+/** Known cases where the realm is obvious and the position inside it is not. */
+export function rankMisreadingFor(localName: string): typeof RANK_MISREADINGS[number] | undefined {
+    const needle = localName.trim().toLowerCase();
+    return RANK_MISREADINGS.find(m => m.localName.toLowerCase() === needle);
 }
 
 /**

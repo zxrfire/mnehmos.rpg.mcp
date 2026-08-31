@@ -22,6 +22,10 @@ import { RECIPES, getRecipesForPill, type RecipeEntry } from './recipes.js';
 import { HERBS, getHerb } from './herbs.js';
 import { SECTS, DAO_HOUSES, DESTROYED_DAO_HOUSES } from './sects.js';
 import { ENCOUNTERS } from './encounters.js';
+import { REGIONS } from './regions.js';
+import { TRADITIONS } from './traditions.js';
+import { OCCUPATIONS, PRICES, SETTLEMENTS } from './mortal-world.js';
+import { FACTION_CHARACTER } from './faction-character.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RE-EXPORTS
@@ -146,6 +150,11 @@ export {
     type MillennialOffering
 } from './sects.js';
 
+export * from './regions.js';
+export * from './traditions.js';
+export * from './mortal-world.js';
+export * from './faction-character.js';
+
 export {
     ENCOUNTERS,
     EncounterEntrySchema,
@@ -197,6 +206,13 @@ export interface CultivationCatalogCounts {
     /** Houses that no longer exist and are still load-bearing. */
     destroyedDaoHouses: number;
     encounters: number;
+    regions: number;
+    traditions: number;
+    occupations: number;
+    prices: number;
+    settlements: number;
+    /** Factions with a full distinctness record. Should equal `sects`. */
+    charactered: number;
 }
 
 /** Catalog sizes, for tool responses and for the content smoke test. */
@@ -209,7 +225,13 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         sects: SECTS.length,
         daoHouses: DAO_HOUSES.length,
         destroyedDaoHouses: DESTROYED_DAO_HOUSES.length,
-        encounters: ENCOUNTERS.length
+        encounters: ENCOUNTERS.length,
+        regions: REGIONS.length,
+        traditions: TRADITIONS.length,
+        occupations: OCCUPATIONS.length,
+        prices: PRICES.length,
+        settlements: SETTLEMENTS.length,
+        charactered: Object.keys(FACTION_CHARACTER).length
     };
 }
 
