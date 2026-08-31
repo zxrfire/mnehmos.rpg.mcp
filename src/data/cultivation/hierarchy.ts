@@ -177,6 +177,18 @@ export const ApexInstitutionSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
     traditionId: TraditionIdSchema,
+    /**
+     * Realm ordinal of the strongest member, on the same scale a sect's
+     * `powerOrdinal` uses. An apex is measured because a grant is only worth
+     * something if the granter can take it back: authority over a vein has to
+     * be enforceable, or it is a letter. This is what makes the governance
+     * stack and the power table one ranking rather than two.
+     *
+     * It sits in the band the visible world reads as empty. Nobody at an apex
+     * is ever seen, which is the whole reason no sect can name what is above
+     * it - not that the band is unoccupied, but that its occupants do not act.
+     */
+    powerOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** What it holds, which is never a single vein. */
     holds: z.string().min(80),
     /** Its courts, by id. */
@@ -205,6 +217,11 @@ export const CourtSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
     apexId: z.string(),
+    /**
+     * Strongest member, same scale as everywhere else. A court has to outrank
+     * every sect holding from it, or non-renewal is a suggestion.
+     */
+    powerOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** The arterial vein it administers. */
     administers: z.string().min(40),
     /** Region id whose sects hold from it. */
@@ -246,6 +263,11 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         id: 'apex-deep-survey',
         name: 'The Deep Survey',
         traditionId: 'tradition-drawn',
+        // Tribulation Transcendence Late. Above the Hollow Court, which is the
+        // ceiling of the visible world, and above every court and tenant beneath
+        // it - the Survey can end a four-hundred-year sect by declining to sign,
+        // and this is the number that says the sect could not answer.
+        powerOrdinal: 43,
         holds:
             'The arterial system: not the eleven veins of the Low Fall but the four beneath them that the eleven branch from, and the datum every survey in the province is ultimately measured against without knowing whose datum it is.',
         courtIds: ['court-third-sill', 'court-root-sill'],
@@ -281,6 +303,10 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         id: 'apex-long-cut',
         name: 'The Long Cut',
         traditionId: 'tradition-cut',
+        // One rung below the Deep Survey and by the same logic. The Long Cut
+        // administers everything itself, so its floor is not what its tenants
+        // can field - it has none - but what it must be able to walk into.
+        powerOrdinal: 42,
         holds:
             'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Quiet Marches is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
         courtIds: ['court-ninth-face'],
@@ -316,6 +342,10 @@ export const COURTS: readonly Court[] = [
         id: 'court-third-sill',
         name: 'The Third Sill',
         apexId: 'apex-deep-survey',
+        // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Court at
+        // Body Integration Perfection, and a court that could not answer its own
+        // tenant would be issuing suggestions rather than grants.
+        powerOrdinal: 38,
         administers: 'The third arterial vein, which the eleven surveyed veins of the Low Fall branch from.',
         grantsInRegionId: 'region-low-fall',
         embodiedByFactionId: null,
@@ -327,6 +357,7 @@ export const COURTS: readonly Court[] = [
         id: 'court-root-sill',
         name: 'The Root Sill',
         apexId: 'apex-deep-survey',
+        powerOrdinal: 37,
         administers: 'The datum itself: the deep vein at the world\'s root that the arterial system is measured from.',
         grantsInRegionId: 'region-low-fall',
         embodiedByFactionId: 'sect-kiln-wardens',
@@ -338,6 +369,10 @@ export const COURTS: readonly Court[] = [
         id: 'court-ninth-face',
         name: 'The Ninth Face',
         apexId: 'apex-long-cut',
+        // The Ninth Face's tenants are small - the Weir Office at Nascent Soul
+        // Early - so this is far above what the Marches requires. A court of the
+        // Long Cut is not sized against its province.
+        powerOrdinal: 37,
         administers: 'The driven ground of the Quiet Marches and four provinces beyond it that the Marches has never heard named.',
         grantsInRegionId: 'region-quiet-marches',
         embodiedByFactionId: null,

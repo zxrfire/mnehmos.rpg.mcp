@@ -463,15 +463,60 @@ function breakthroughProse(before: Cultivator, after: Cultivator, result: Breakt
 export function factsForLook(cultivator: Cultivator, ambient: AmbientQi): EngineFacts {
     const lines = standingLines(cultivator, ambient);
     const where = placeName(cultivator);
-    const untreated = untreatedInjuryCount(cultivator.injuries);
-
     const prose = [
         `${where}. ${describeAmbientPerceived(ambient)}`,
-        `${cultivator.name}, ${rankName(cultivator.realmOrdinal)}, ${Math.floor(cultivator.age)} years old, ${cultivator.spiritStones} spirit stones to their name.` +
-        (untreated > 0 ? ` ${untreated} meridian injur${untreated === 1 ? 'y' : 'ies'} still open.` : '')
+        selfNoticing(cultivator)
     ].join('\n\n');
 
     return observable(`${where}.`, lines, prose, standingStructure(cultivator, ambient));
+}
+
+/**
+ * What a person notices about themselves without reciting their own numbers.
+ *
+ * The sheet is already on screen. A fallback narrator that answers "look
+ * around" with "Wen Shu, Qi Condensation Layer 4, 17 years old, 0 spirit stones
+ * to their name" has written the sheet twice and the situation not at all. An
+ * empty purse, a wound that has not closed and a year that went nowhere are all
+ * things somebody notices about themselves; none of them are things they count.
+ */
+function selfNoticing(cultivator: Cultivator): string {
+    const notes: string[] = [];
+    const untreated = untreatedInjuryCount(cultivator.injuries);
+
+    if (untreated >= LETHAL_UNTREATED_INJURIES) {
+        notes.push('Three things have gone wrong inside and none of them have closed. Standing up is a decision now.');
+    } else if (untreated === 1) {
+        notes.push('Something opened a while ago and has stayed open.');
+    } else if (untreated > 1) {
+        notes.push(`${untreated} things have gone wrong inside and stayed wrong.`);
+    }
+
+    if (cultivator.starvationTurns > 0) {
+        notes.push('There has been nothing to eat for long enough that it has stopped being uncomfortable and started being a clock.');
+    } else if (cultivator.satiety <= 20) {
+        notes.push('The hunger is back, and there is nothing here to answer it with.');
+    }
+
+    if (cultivator.spiritStones === 0) {
+        notes.push('The purse folds flat.');
+    } else if (cultivator.spiritStones < 10) {
+        notes.push('What is left in the purse would not buy a season.');
+    }
+
+    if (cultivator.yearsAtCurrentRealm >= STAGNATION_YEARS * 0.7) {
+        notes.push('It has been a very long time since anything moved, and the body has begun to have opinions about that.');
+    } else if (cultivator.yearsAtCurrentRealm >= 5) {
+        notes.push('Nothing has shifted in years.');
+    }
+
+    if (cultivator.hp < cultivator.maxHp * 0.4) {
+        notes.push('Whatever happened last has not been slept off.');
+    }
+
+    return notes.length > 0
+        ? notes.join(' ')
+        : 'Nothing about the day is urgent, which in this world is worth noticing on its own.';
 }
 
 export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progressRequired: number, ready: boolean): EngineFacts {
@@ -495,13 +540,16 @@ export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progr
 export function factsForTalk(cultivator: Cultivator, ambient: AmbientQi, target: string | undefined): EngineFacts {
     const who = target?.trim() || 'whoever is within earshot';
     const lines = [
-        `${cultivator.name} spoke to ${who}. No engine system resolved this: no trade, no sect standing, no relationship state changed.`,
+        `${cultivator.name} spoke to ${who}. Words, and nothing that anyone will be able to point to later.`,
         ...standingLines(cultivator, ambient)
     ];
     return {
         headline: `A conversation with ${who}.`,
         lines,
-        structure: standingStructure(cultivator, ambient),
+        structure: [
+            'No system resolved this: no trade, no sect standing, no relationship state changed.',
+            ...standingStructure(cultivator, ambient)
+        ],
         prose:
             `${cultivator.name} speaks to ${who}. Nothing in the world's ledgers moves for it - no stones change hands, no standing shifts, ` +
             `no one owes anyone anything they did not already owe. In ${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}, that is what most conversations are.`
@@ -571,11 +619,21 @@ export function factsForEat(cultivator: Cultivator, satietyRestored: number, sto
 }
 
 /**
- * An action the engine declined. Refusals are facts too, and they are the ones
- * a narrator is most tempted to soften, so they are stated flatly.
+ * An action that did not happen.
+ *
+ * `scene` is what the player sees, and it is the only part that is narrated: a
+ * short piece of the world declining, in the world's own voice. `mechanical` is
+ * why, in the engine's voice, and goes to the inspector and the play log.
+ *
+ * The split matters more here than anywhere else in this file. An error message
+ * that reaches the player is a scene that failed to get written - naming the
+ * engine, explaining the policy, or listing the valid targets all break the
+ * fiction harder than bad prose ever could, and all three are the reflex of
+ * writing for a developer and shipping it unaltered. Refusals still may not be
+ * softened; they simply have to be in character.
  */
-export function factsForRefusal(headline: string, detail: string): EngineFacts {
-    return observable(headline, [detail], detail);
+export function factsForRefusal(headline: string, scene: string, mechanical?: string): EngineFacts {
+    return observable(headline, [scene], scene, mechanical ? [mechanical] : []);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -657,10 +715,12 @@ export function factsForInteraction(
  * exist for something to happen.
  */
 export function factsForUnsupported(attempt: string, missing: string): EngineFacts {
-    const detail =
-        `The engine cannot resolve that yet: ${attempt}. Nothing in the world changed, no time passed, ` +
-        `and nothing was spent. ${missing}`;
-    return observable('The engine has no answer for that yet.', [detail], detail);
+    return observable(
+        'Nothing comes of it.',
+        ['Whatever was intended, nothing followed from it. No time passed and nothing was spent.'],
+        'Whatever was intended, nothing followed from it. No time passed and nothing was spent.',
+        [`Unresolvable: ${attempt}. ${missing}`]
+    );
 }
 
 /**

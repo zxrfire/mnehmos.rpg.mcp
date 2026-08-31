@@ -44,8 +44,29 @@ import {
     sectCatalogFacts,
     writeFlag
 } from './cultivation-support.js';
+import {
+    AboveSchema,
+    DenounceSchema,
+    PatronageSchema,
+    PetitionSchema,
+    ProspectSchema,
+    VerifyClaimSchema,
+    WakeSchema,
+    handleAbove,
+    handleDenounce,
+    handlePatronage,
+    handlePetition,
+    handleProspect,
+    handleVerifyClaim,
+    handleWake
+} from './sect-politics.js';
 
-const ACTIONS = ['list', 'join', 'leave', 'promote', 'stipend', 'standing'] as const;
+const ACTIONS = [
+    'list', 'join', 'leave', 'promote', 'stipend', 'standing',
+    // The half of a sect that is not a stipend. Every one of these reads
+    // catalog data that has had no verb attached to it until now.
+    'prospect', 'patronage', 'verify_claim', 'denounce', 'petition', 'wake', 'above'
+] as const;
 type SectAction = typeof ACTIONS[number];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -547,6 +568,48 @@ const definitions: Record<SectAction, ActionDefinition> = {
         handler: handleStanding,
         aliases: ['status', 'membership'],
         description: 'Rank, contribution, next-rank requirements, stipend accrual'
+    },
+    prospect: {
+        schema: ProspectSchema,
+        handler: handleProspect,
+        aliases: ['consider', 'weigh', 'access', 'worth_joining'],
+        description: 'Would joining this house put anything new within reach - the thing a sect actually sells'
+    },
+    patronage: {
+        schema: PatronageSchema,
+        handler: handlePatronage,
+        aliases: ['backing', 'patron', 'guest_elder', 'grant'],
+        description: 'Who backs this house and on what terms; or be seated as a guest elder, which is not membership'
+    },
+    verify_claim: {
+        schema: VerifyClaimSchema,
+        handler: handleVerifyClaim,
+        aliases: ['certify', 'audit', 'verify', 'certification'],
+        description: 'Buy a certification of a faction\'s ancestral claim. Published either way.'
+    },
+    denounce: {
+        schema: DenounceSchema,
+        handler: handleDenounce,
+        aliases: ['accuse', 'expose', 'denunciation'],
+        description: 'Say it in public. It lands only if a certification is already in hand.'
+    },
+    petition: {
+        schema: PetitionSchema,
+        handler: handlePetition,
+        aliases: ['appeal', 'ask_upward', 'request'],
+        description: 'Send a request upward through the chain, as far as somebody will pass it'
+    },
+    wake: {
+        schema: WakeSchema,
+        handler: handleWake,
+        aliases: ['ancestor', 'dormant', 'under_the_mountain'],
+        description: 'What it would take to wake the thing under the mountain, and what waking it costs'
+    },
+    above: {
+        schema: AboveSchema,
+        handler: handleAbove,
+        aliases: ['hierarchy', 'stack', 'who_rules', 'over'],
+        description: 'What stands above this house, as far as this cultivator can name it'
     }
 };
 

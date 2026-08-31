@@ -517,7 +517,7 @@ export function resolvePlace(query: string | undefined): ResolvedEntity | null {
         kind: 'place',
         id: cleaned,
         name: cleaned,
-        facts: [`${cleaned}. Nothing more about it is on record than the name and the road to it.`],
+        facts: [`${cleaned}, which is a name and a road and not much else that anyone here can tell you.`],
         structure: ['Places are free text in this engine; nothing about them is simulated.']
     };
 }
