@@ -1190,14 +1190,28 @@ describe('cultivation MCP tool surface', () => {
             expect(entry.admission.requirement).toBeTruthy();
         });
 
-        it('refuses the two powers that take no applicants at all', async () => {
+        it('lets the Hollow Court recruit, but only on a realm nobody has reached', async () => {
             await newRun();
-            for (const sectId of ['sect-hollow-court', 'sect-kiln-wardens']) {
-                expect(getSect(sectId)!.recruits).toBe(false);
-                const result = await sect({ action: 'join', sectId });
-                expect(result.error).toBe('sect_does_not_recruit');
-                expect(result.hint).toContain('Not a gate that can be met');
-            }
+            const court = getSect('sect-hollow-court')!;
+
+            // They do take applicants. The bar is the character of the place:
+            // a Void Refinement floor, and nothing else counts - which the
+            // catalog says explicitly includes being somebody's child.
+            expect(court.recruits).toBe(true);
+            expect(court.admissionOrdinal).toBeGreaterThanOrEqual(29);
+
+            const result = await sect({ action: 'join', sectId: 'sect-hollow-court' });
+            expect(result.error).toBeTruthy();
+            expect(result.error).not.toBe('sect_does_not_recruit');
+        });
+
+        it('refuses the power that takes no applicants at all', async () => {
+            await newRun();
+            const sectId = 'sect-kiln-wardens';
+            expect(getSect(sectId)!.recruits).toBe(false);
+            const result = await sect({ action: 'join', sectId });
+            expect(result.error).toBe('sect_does_not_recruit');
+            expect(result.hint).toContain('Not a gate that can be met');
             expect(new SectRepository(db).getMembership(
                 (await run({ action: 'current' })).cultivator.id
             )).toBeNull();
