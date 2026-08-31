@@ -196,7 +196,7 @@ export type SealGrade = 'crude' | 'sound' | 'masterwork';
  *                 nobody else can.
  *
  * The distinction is not sentiment. A protector can be spent on anything worth
- * a weapon; an end-of-life sleeper generally cannot be redirected, because what
+ * a weapon; one sealed at the end generally cannot be redirected, because what
  * is left of them is shaped around one act. It is also the difference between a
  * sect that armed itself and a sect that could not bear to let go, and rivals
  * read those two very differently.
