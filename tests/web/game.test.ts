@@ -445,24 +445,49 @@ describe('investigate', () => {
 
 describe('seclude', () => {
     /**
-     * A decade behind a sealed door is usually quiet, and quiet is not the
-     * same as sealed off. See the long note in encounters-wired.test.ts: the
-     * absolute version of this made sealing a dominant strategy, and a shut
-     * door is what makes a cave look like a ruin worth opening.
+     * Sealing beats not sealing. That is the invariant, and it is the only one
+     * that survives, because how long a door holds is a function of the rung
+     * that set it: a ward halves every `wardHalfLifeYears`, which is twelve
+     * years at the bottom of the ladder and tens of thousands at the top.
+     *
+     * So an absolute like "a decade is quiet" is not true of anybody in
+     * particular - it is true of a strong cultivator and false of a beginner,
+     * and a beginner is who this harness builds. The earlier version of this
+     * test asserted the absolute, passed while the door was a flat rate, and
+     * went red the moment the ward started decaying under the person sitting
+     * behind it. What must always hold is the comparison at the SAME rung.
      */
-    it('is sealed: a decade behind the door is usually quiet', async () => {
-        let disturbed = 0;
-        for (const seed of ['sealed', 'sealed-b', 'sealed-c', 'sealed-d', 'sealed-e']) {
-            const { db, game } = makeGame({ seed });
-            const { cultivator } = await game.newRun('Shut-In');
-            db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+    it('is sealed: the door is worth shutting, at the same rung and the same span', async () => {
+        const seeds = ['sealed', 'sealed-b', 'sealed-c', 'sealed-d', 'sealed-e'];
+        const disturbances = async (phrasing: string) => {
+            let n = 0;
+            for (const seed of seeds) {
+                const { db, game } = makeGame({ seed });
+                const { cultivator } = await game.newRun('Shut-In');
+                db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+                const result = await game.act(phrasing);
+                n += result.events.filter(
+                    e => e.kind === 'encounter' || e.kind === 'opportunity'
+                ).length;
+            }
+            return n;
+        };
 
-            const result = await game.act('I seal the cave for ten years.');
-            expect(planned(result).action).toBe('seclude');
-            if (result.events.some(e => e.kind === 'encounter' || e.kind === 'opportunity')) disturbed++;
-        }
-        expect(disturbed, 'ten years is a short seal and should mostly pass unremarked')
-            .toBeLessThanOrEqual(1);
+        // Asserted on the sealed phrasing only: the open one plans as
+        // `cultivate` rather than `seclude`, which is a parser distinction
+        // this test has no business depending on.
+        const sealedRun = await makeGame({ seed: 'sealed-plan' });
+        const { cultivator: planCultivator } = await sealedRun.game.newRun('Shut-In');
+        sealedRun.db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?')
+            .run(planCultivator.id);
+        expect(planned(await sealedRun.game.act('I seal the cave for ten years.')).action)
+            .toBe('seclude');
+
+        const sealed = await disturbances('I seal the cave for ten years.');
+        const open = await disturbances('I sit in seclusion for ten years.');
+
+        expect(sealed, 'shutting the door left them no better off than leaving it open')
+            .toBeLessThan(open);
     });
 });
 

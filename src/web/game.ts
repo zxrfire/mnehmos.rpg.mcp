@@ -318,6 +318,7 @@ import { whyProgressHasStopped, type SeatStanding } from './why-progress-has-sto
 import { whoWouldTeach, type SomebodyAbove } from './who-would-teach-this-cultivator.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
 import { assessAcquisition, sealedDoorFraction, type AcquisitionRoute } from '../engine/encounters/index.js';
+import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
 import type {
     ArrivableFact,
     DutyCandidate,
@@ -1108,6 +1109,37 @@ interface Execution {
 // ─────────────────────────────────────────────────────────────────────────
 // THE SERVICE
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How much of an open seclusion gets through a door over the whole sitting.
+ *
+ * A shut door is not a ward, and it is not a constant either. `wardIntegrityOf`
+ * halves a formation every `wardHalfLifeYears`, so the door somebody sat down
+ * behind is weaker every year they stay behind it - which is the same clock the
+ * world reads when it decides that an old sealed place has become enterable.
+ *
+ * Averaged across the stretch rather than sampled at either end, because the
+ * time-skip takes ONE scale for the whole span: sampling at the start would
+ * price a three-hundred-year sitting as though the ward were still fresh, and
+ * sampling at the end would price the first decade as though it were already
+ * gone. The mean of a halving curve over [0, Y] has a closed form and there is
+ * no reason to approximate it.
+ *
+ * At full integrity this is the flat fraction the encounter tables use. At zero
+ * integrity it is 1 - no reduction at all - because a formation that is
+ * entirely gone is a person sitting in an open cave who believes otherwise.
+ */
+export function doorScaleOverStretch(setByOrdinal: number, days: number): number {
+    const years = Math.max(0, days) / 365;
+    const halfLife = wardHalfLifeYears(setByOrdinal);
+    const meanIntegrity = years <= 0
+        ? 1
+        : (halfLife / (years * Math.LN2)) * (1 - Math.pow(0.5, years / halfLife));
+    const held = Math.min(1, Math.max(0, meanIntegrity));
+    const fraction = sealedDoorFraction();
+    // Linear between "the door is as set" and "there is no door".
+    return fraction + (1 - fraction) * (1 - held);
+}
 
 export class GameService {
     private readonly db: Database.Database;
@@ -6404,11 +6436,23 @@ ${noticed}`;
             // stays: the encounter tables are the mortal world's and they do
             // not reach above the Lid.
             randomEvents: !canExistBeyondTheLid(cultivator),
-            // The door is a rate, not a switch. Sealing buys the same fraction
-            // here as it buys in the encounter tables - one number, read off
-            // the table, so the two systems cannot come to disagree about how
-            // much a formation is worth.
-            randomEventScale: sealed ? sealedDoorFraction() : 1,
+            // The door is a rate, not a switch, and the rate is not constant:
+            // a formation is a thing somebody built, and it goes. Over a long
+            // enough sitting the ward the cultivator set on their own door
+            // decays under them, and a door that is gone is not a door.
+            //
+            // Both ends of this now read the SAME arithmetic. A prospector
+            // standing at a sealed ruin asking whether they can get in, and a
+            // cultivator sitting behind their own seal wondering what can
+            // reach them, are asking one question about one object - from
+            // outside, a live cultivator's sealed cave and a dead one's are
+            // indistinguishable, which is most of why anybody opens either.
+            //
+            // The half-life carries the cultivator's own rung, so this scales
+            // with power the way the setting says it should: a seal set near
+            // the bottom is largely gone within a lifetime, and one set near
+            // the top holds for tens of thousands of years.
+            randomEventScale: sealed ? doorScaleOverStretch(cultivator.realmOrdinal, lived) : 1,
             // A boundary crossed inside this stretch exacts its price, and it
             // can only take what the run actually owns. Handing it the real
             // rows is what makes the price a delete rather than an assertion.
