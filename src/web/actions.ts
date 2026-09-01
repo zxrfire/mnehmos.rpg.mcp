@@ -23,6 +23,9 @@
  */
 
 import { z } from 'zod';
+// The leverage enum the social resolver reads. Set by the parser so that
+// nothing downstream has to translate a verb into a mechanic.
+import { ApproachLeverageSchema } from '../schema/cultivation.js';
 
 import { SITE_PHRASES } from './trials.js';
 // The board's own titles, so any name the game prints is a name it accepts.
@@ -2000,9 +2003,29 @@ export const MOVE_INTENTS = ['travel', 'flee', 'approach', 'enter', 'follow'] as
  * that walks the player over and describes the building, and a player who filed
  * one got a paragraph about architecture.
  */
+/**
+ * What each verb actually puts on the table.
+ *
+ * The translation lives HERE rather than in `game.ts`, because the social
+ * resolver reads `leverage` and never `intent` - that is the design, and it is
+ * what stops seduction becoming a subsystem instead of a member of an enum.
+ * Doing the mapping at the point the verb is recognised keeps the rule "nothing
+ * downstream branches on the word the player typed" literally true.
+ *
+ * Intents with nothing behind them are absent rather than `none`: an absent key
+ * is a sentence that put nothing on the table, and the resolver's own default
+ * says so.
+ */
+const LEVERAGE_BEHIND_INTENT: Readonly<Partial<Record<string, z.infer<typeof ApproachLeverageSchema>>>> = {
+    bribe: 'coin',
+    threaten: 'force',
+    // The asker themselves. Priced by the same machine as the other two.
+    seduce: 'attachment'
+};
+
 export const INTERACT_INTENTS = [
     'talk', 'negotiate', 'trade', 'deceive', 'interrogate',
-    'threaten', 'bribe', 'recruit', 'apologise'
+    'threaten', 'bribe', 'recruit', 'apologise', 'seduce'
 ] as const;
 
 export const PlannedActionSchema = z.object({
@@ -2034,6 +2057,20 @@ export const PlannedActionSchema = z.object({
      * a turn for no gain.
      */
     intent: z.string().trim().min(1).max(400).optional(),
+    /**
+     * WHAT IS BEHIND THE ASK, set by the parser rather than translated later.
+     *
+     * The social-leverage resolver reads `leverage` and never `intent` - that
+     * is the whole design of it, and it is what keeps seduction priced by the
+     * same machine that prices a purse or a threat instead of becoming a
+     * subsystem with its own rules. Setting it HERE, where the verb is already
+     * being recognised, keeps that rule strictly true: `game.ts` passes it
+     * through and does not translate a word into a mechanic.
+     *
+     * Optional and defaulted to `none` downstream, because most sentences put
+     * nothing on the table.
+     */
+    leverage: ApproachLeverageSchema.optional(),
     /**
      * What an approach is ABOUT, when the player asked about something.
      *
@@ -2292,6 +2329,16 @@ const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltra
 
 const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['deceive', /\b(?:lie to|deceive|mislead|misdirect|bluff|pretend|disguise|pose as|feign|trick)\b/],
+    /**
+     * Ahead of `negotiate` so it does not eat "beg", and ahead of `talk`, which
+     * would take every one of these as speech.
+     *
+     * `attachment` is already a member of `ApproachLeverageSchema`, priced by
+     * the same machine that prices a purse or a threat, so seduction needs no
+     * subsystem and gets none: what this row does is name the leverage, and
+     * nothing downstream branches on the word the player typed.
+     */
+    ['seduce', /\b(?:seduce|seduces|seducing|court|courting|woo|charm|flirt|flatter|win (?:him|her|them) over|make (?:him|her|them) fond of me|get close to)\b/],
     ['threaten', /\b(?:threaten|intimidate|menace|warn (?:him|her|them)|make (?:him|her|them) afraid)\b/],
     ['bribe', /\b(?:bribe|pay off|grease|buy (?:his|her|their) silence)\b/],
     ['interrogate', /\b(?:interrogate|question|press (?:him|her|them)|demand to know|grill)\b/],
@@ -2342,7 +2389,7 @@ export function parseAsk(input: string): { person?: string; topic?: string } | n
     return { ...(person ? { person } : {}), ...(topic ? { topic } : {}) };
 }
 
-const INTERACT_SUBJECT_VERBS = /interact with|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell/;
+const INTERACT_SUBJECT_VERBS = /interact with|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell/;
 
 function matchIntent(text: string, table: ReadonlyArray<[string, RegExp]>): string | undefined {
     for (const [label, pattern] of table) {
@@ -3508,10 +3555,12 @@ export function parseIntent(input: string): PlannedAction {
     // ── interact: everything done to or with a person or a faction ──
     const interactIntent = matchIntent(text, INTERACT_INTENT_PATTERNS);
     if (interactIntent) {
+        const leverage = LEVERAGE_BEHIND_INTENT[interactIntent];
         return {
             action: 'interact',
             target: extractSubject(input, INTERACT_SUBJECT_VERBS),
-            intent: interactIntent
+            intent: interactIntent,
+            ...(leverage ? { leverage } : {})
         };
     }
 

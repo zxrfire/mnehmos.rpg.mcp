@@ -347,6 +347,11 @@ import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.
 import type { PlayerDigest } from '../engine/world/digest.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { createGrudge, type Severity } from '../engine/social/grudges.js';
+// A finished pressure model that had no route from the player to it. The
+// resolver reads  and never , which is the whole design.
+import { resolveAttempt, type AskWeight } from '../engine/social-leverage/index.js';
+import { factsForAttempt } from './facts.js';
+import type { ApproachLeverage } from '../schema/cultivation.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt, npcsInFaction } from '../engine/world/world-state.js';
@@ -581,6 +586,46 @@ const MORTAL_CATEGORIES = new Set(['food', 'lodging', 'transport', 'medicine', '
  * the player about goods they cannot see.
  */
 const MARKET_LINES = 8;
+
+/**
+ * The interact intents that are ATTEMPTS TO MOVE SOMEBODY.
+ *
+ * `talk` and `apologise` are not on it: putting words to a person and saying
+ * sorry are things that happen and do not have a pressure outcome, and running
+ * them through the resolver would price a greeting as an attempt on somebody.
+ * Everything here is a sentence where the player wants something and is using
+ * something to get it.
+ */
+const ATTEMPT_INTENTS: ReadonlySet<string> = new Set([
+    'bribe', 'threaten', 'seduce', 'deceive', 'negotiate', 'interrogate', 'recruit'
+]);
+
+/**
+ * How heavy the thing being asked for is, from the player's own sentence.
+ *
+ * `AskWeight` is what the resolver prices resistance and duration off, and it
+ * must come from what was asked rather than from the verb: bribing somebody for
+ * directions and bribing them to open their house's vault are the same verb and
+ * are not the same ask.
+ *
+ * Defaults to `a_courtesy`, which is the forgiving direction. Reading a
+ * betrayal into a sentence that asked for directions would price an afternoon
+ * as a season and a half, and the cost of being wrong the other way is that an
+ * attempt is cheaper than it should have been.
+ */
+function askWeightOf(text: string): AskWeight {
+    const said = text.toLowerCase();
+    if (/\b(?:betray|turn on|sell out|inform on|give (?:me )?(?:up|them up)|open the (?:vault|reserves|treasury)|hand over the|let me in(?:to)? the (?:vault|treasury|reserves)|denounce)\b/.test(said)) {
+        return 'a_betrayal';
+    }
+    if (/\b(?:against (?:his|her|their) (?:own )?interest|lie for me|cover for me|break (?:the )?(?:rule|rules|oath)|risk (?:his|her|their)|take the blame|falsify|forge)\b/.test(said)) {
+        return 'against_their_interest';
+    }
+    if (/\b(?:lend|loan|give me|hand me|spare me|pay for|put in a word|vouch for|introduce me to|teach me|train me|escort|come with me|fight|help me)\b/.test(said)) {
+        return 'a_real_favour';
+    }
+    return 'a_courtesy';
+}
 
 /**
  * Which lines of a price board get read out, when it will not all fit.
@@ -1922,7 +1967,11 @@ export class GameService {
 
             case 'interact':
                 return this.interact(
-                    run, cultivator, action.target, action.intent ?? 'talk', action.topic
+                    run, cultivator, ambient, action.target, action.intent ?? 'talk', action.topic,
+                    // The leverage the parser recognised, and the player's own
+                    // sentence. The resolver reads the first and echoes the
+                    // second; neither is a branch on the verb.
+                    action.leverage, rawInput
                 );
 
             case 'train_technique':
@@ -2542,10 +2591,15 @@ ${noticed}`;
     private interact(
         run: Run,
         cultivator: Cultivator,
+        ambient: AmbientQi,
         target: string | undefined,
         intent: string,
-        topic?: string
-    ): Execution {
+        topic?: string,
+        leverage?: ApproachLeverage,
+        rawInput = ''
+        // Every branch but one is still synchronous and free; the attempt path
+        // spends real days and has to await the span.
+    ): Execution | Promise<Execution> {
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
 
@@ -2632,6 +2686,26 @@ ${noticed}`;
         const spoken = party.kind === 'cultivator'
             ? this.hear(cultivator, run, `interact:${party.id}`, party.id)
             : null;
+
+        // ── AN ATTEMPT TO MOVE SOMEBODY, ACTUALLY RESOLVED ───────────────
+        //
+        // `engine/social-leverage/` is a finished pressure model - four
+        // outcomes, tone, leverage, audience, concealment, patience,
+        // alignment-dependent fallout, delayed discovery - with 34 passing
+        // tests and no route from the player to it. NPCs ran it on each other
+        // and "I bribe the gate guard" came back "They look at you the way
+        // people look at a sentence with a hole in it", with the inspector
+        // saying `Stated intent: bribe. Carried for the narrator; read by no
+        // conditional.` That is the AGENTS.md defect named first in the file.
+        //
+        // The resolver reads `leverage` and never `intent`, which is what keeps
+        // seduction priced by the machine that prices a purse and a threat.
+        // The parser sets the leverage; nothing here translates a verb.
+        if (party.kind === 'cultivator' && party.party && ATTEMPT_INTENTS.has(intent)) {
+            return this.pressSomebody(
+                run, cultivator, ambient, party, intent, leverage, rawInput, spoken
+            );
+        }
 
         // The player gets the honest in-fiction shape of it - an approach made,
         // nothing settled. Why it is not settled is a fact about this codebase,
@@ -9344,6 +9418,119 @@ ${fit.line}`;
             groundDensityFor(placeName(cultivator)) ?? QI_DENSITY_DEFAULT / QI_DENSITY_MAX,
             sect.ranks.length
         );
+    }
+
+    /**
+     * An attempt to move somebody, resolved rather than described.
+     *
+     * `engine/social-leverage/` has been finished and unreachable: a pressure
+     * model with four outcomes - taken, refused, reported, turned - tone,
+     * leverage, audience, concealment, patience, alignment-dependent fallout
+     * and delayed discovery, with 34 passing tests and no player route into it.
+     * NPCs ran it on each other while "I bribe the gate guard" came back "they
+     * look at you the way people look at a sentence with a hole in it".
+     *
+     * Three things this has to get right, all learned elsewhere the hard way:
+     *
+     *   THE DAYS REACH THE CLOCK. An attempt that costs nothing is not play,
+     *   and `result.days` is the engine's own figure for what it took.
+     *   THE TERMS REACH THE INSPECTOR. `result.terms` is the only thing that
+     *   will ever reveal that a term has gone wrong.
+     *   THE OUTCOME REACHES THE PROSE. A `turned` result coming back as "It is
+     *   done. Nothing about it drew attention." is the invisible-fallback
+     *   failure this codebase has now had four times.
+     *
+     * The ask is read from the player's sentence and defaults to `a_courtesy`,
+     * which is the forgiving direction: assuming somebody asked for a betrayal
+     * when they asked for directions would price an afternoon as a season.
+     */
+    private async pressSomebody(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        party: ResolvedEntity,
+        intent: string,
+        leverage: ApproachLeverage | undefined,
+        rawInput: string,
+        spoken: Hearing | null
+    ): Promise<Execution> {
+        const them = party.party!;
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
+        const theirSect = them.factionId ? getSect(them.factionId) : null;
+
+        const result = resolveAttempt({
+            actor: {
+                id: cultivator.id,
+                name: cultivator.name,
+                ordinal: cultivator.realmOrdinal,
+                charm: cultivator.attributes.charm,
+                factionId: membership?.sectId ?? null,
+                alignment: mySect?.alignment ?? null,
+                ranked: membership !== null
+            },
+            subject: {
+                id: party.id,
+                name: party.name,
+                ordinal: them.realmOrdinal,
+                ...(them.charm === undefined ? {} : { charm: them.charm }),
+                factionId: them.factionId,
+                alignment: theirSect?.alignment ?? null,
+                ranked: them.ranked
+            },
+            onDay: Math.floor(run.elapsedDays),
+            ask: askWeightOf(rawInput),
+            approach: {
+                // The player's own words, recorded and echoed, never parsed for
+                // an outcome. `leverage` is what the resolver actually reads.
+                intent: rawInput.slice(0, 400),
+                ...(leverage ? { leverage } : {})
+            },
+            // The row id is a randomUUID; keying on it would make the run
+            // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
+            rng: forStream(run.seed, 'social_leverage', Math.floor(run.elapsedDays), party.id)
+        });
+
+        // THE DAYS ARE REAL. Pressing somebody for a betrayal is a season and a
+        // half of work, and an attempt that costs no time is not a decision.
+        // Run through `shortSkip` rather than by adding to a counter, so the
+        // food, the world and the bleed clock all move the way they move for
+        // every other span in the game.
+        const spent = await this.shortSkip(
+            run, cultivator, ambient, TRAVEL_FOCUS, `Pressing ${party.name}`, result.days
+        );
+
+        const facts = factsForAttempt(cultivator, party.name, intent, result, party.facts);
+        if (spoken) addHearing(facts, spoken);
+        // The span's own account underneath the attempt's: what the days cost.
+        facts.lines.push(...spent.facts.lines);
+        facts.structure.push(...spent.facts.structure);
+
+        const execution: Execution = {
+            ...spent,
+            facts,
+            outcome: result.outcome === 'taken' ? 'executed' : 'refused'
+        };
+        execution.hearing = spoken;
+        execution.calls = [
+            {
+                name: 'engine.resolveAttempt',
+                action: 'interact',
+                summary:
+                    `${result.outcome} at ${(result.odds * 100).toFixed(1)}%, `
+                    + `ask=${askWeightOf(rawInput)}, leverage=${leverage ?? 'none'}, `
+                    + `${result.days} day(s), ${result.stonesSpent} stone(s) spent. `
+                    // Every term, named. The only thing that will ever reveal
+                    // that one of them has gone wrong.
+                    + `Terms: ${Object.entries(result.terms)
+                        .map(([name, value]) => `${name}=${round2(value)}`)
+                        .join(', ')}.`,
+                ok: result.outcome === 'taken'
+            },
+            ...structureCalls(party.structure),
+            ...spent.calls
+        ];
+        return execution;
     }
 
     private crowdingHere(cultivator: Cultivator): CrowdingRead | null {

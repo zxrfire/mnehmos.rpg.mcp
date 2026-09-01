@@ -35,6 +35,7 @@ import { rankName } from '../engine/cultivation/realms.js';
 import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
+import type { AttemptResult } from '../engine/social-leverage/index.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
 import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
@@ -2120,4 +2121,76 @@ export function factsForGroundTime(
         ]
     );
     return facts;
+}
+
+/**
+ * An attempt to move somebody, resolved.
+ *
+ * The sibling of `factsForInteraction`, which exists because for a long time
+ * nothing here could resolve an approach and saying so plainly was the honest
+ * answer. This is what replaces it now that `engine/social-leverage/` is
+ * reachable: four outcomes, each with its own consequence, and none of them
+ * "nothing is settled by it".
+ *
+ * Each outcome gets its own sentence deliberately. `turned` coming back as "It
+ * is done. Nothing about it drew attention." is the invisible-fallback failure
+ * this codebase has had four times, and it is worst here - being turned means
+ * the person you leaned on is now working against you, which is the single most
+ * consequential thing that can come out of a conversation.
+ */
+export function factsForAttempt(
+    cultivator: Cultivator,
+    subject: string,
+    intent: string,
+    result: AttemptResult,
+    subjectFacts: readonly string[]
+): EngineFacts {
+    const lines: string[] = [`${cultivator.name} put it to ${subject}.`, ...subjectFacts];
+
+    // The engine's own factual line first - it names who did what.
+    lines.push(result.line);
+
+    switch (result.outcome) {
+        case 'taken':
+            lines.push(
+                result.stonesSpent > 0
+                    ? `It was taken, and ${result.stonesSpent} spirit stones went with it.`
+                    : 'It was taken.'
+            );
+            break;
+        case 'refused':
+            lines.push('It was refused, and it stayed between the two of you.');
+            break;
+        case 'reported':
+            lines.push(
+                'It was refused and it did not stay between the two of you. Somebody who was not '
+                + 'in the room now knows what was asked for.'
+            );
+            break;
+        case 'turned':
+            lines.push(
+                `${subject} is not merely unwilling. They have decided what you are, and they are `
+                + 'going to act on it.'
+            );
+            break;
+    }
+
+    if (result.marks.obligation) {
+        lines.push('It is on somebody\'s ledger now, and ledgers here are kept.');
+    }
+    if (result.days > 1) {
+        lines.push(`${result.days} days went into it.`);
+    }
+
+    return observable(
+        `${subject}: ${result.outcome}.`,
+        lines,
+        lines.join(' '),
+        [
+            `resolveAttempt(${intent}): outcome=${result.outcome}, odds=${result.odds}, `
+            + `days=${result.days}, stonesSpent=${result.stonesSpent}, `
+            + `theyKnowWhatYouTried=${result.marks.theyKnowWhatYouTried}, `
+            + `reachedTheHouse=${result.marks.reachedTheHouse}.`
+        ]
+    );
 }
