@@ -412,6 +412,31 @@ export function simulateTimeSkip(
      * a turn is the only thing these fields are.
      */
     const resolvesOnTurn = turn + 1;
+
+    /**
+     * Roads the world has put in reach, in the shape the dao gate reads.
+     *
+     * Taken from `ctx.roadsWithinReach` when a caller supplies it, and
+     * otherwise DERIVED from the dao grounds already sitting in
+     * `ctx.understanding`. The derivation is not a convenience: `src/web/game.ts`
+     * builds its context with `discoveryContextFor(...).context` and passes only
+     * that, so a new top-level field would have reached the MCP tool surface and
+     * never the played game - which is precisely the world-binds-one-side split
+     * this whole change exists to close, reintroduced one layer down.
+     *
+     * The two lists are the same facts. `daoGrounds` says what a place puts
+     * within reach to COMPREHEND; this says what it puts within reach to WALK,
+     * and they must never be able to disagree about which places those are.
+     */
+    const roadsWithinReach: readonly RoadWithinReach[] =
+        ctx.roadsWithinReach
+        ?? (ctx.understanding?.daoGrounds ?? []).map(ground => ({
+            domain: ground.domain,
+            subject: ground.subject,
+            sourceId: ground.id ?? ground.label,
+            sourceName: ground.label,
+            how: ground.how ?? 'ground_open'
+        }));
     const startDay = Math.max(0, Math.floor(ctx.startDay ?? 0));
     const autoBreakthrough = ctx.autoBreakthrough ?? true;
     // Every per-cultivator stream in this file keys on THIS, never on the row
@@ -568,7 +593,7 @@ export function simulateTimeSkip(
         // ended with `insights: []` while every NPC was handed one per art at
         // birth.
         knownTechniques: cultivator.knownTechniques,
-        roadsWithinReach: ctx.roadsWithinReach ?? [],
+        roadsWithinReach,
         immortalStatus,
         name: cultivator.name,
         injuries,
@@ -689,7 +714,7 @@ export function simulateTimeSkip(
                     insights,
                     // See `snapshot` - the gate reads all three of these.
                     knownTechniques: cultivator.knownTechniques,
-                    roadsWithinReach: ctx.roadsWithinReach ?? [],
+                    roadsWithinReach,
                     age: currentAge(),
                     // A False Immortal is refused here for the rest of the
                     // skip, so the loop stops re-attempting the last crossing.
@@ -1046,7 +1071,7 @@ export function simulateTimeSkip(
                         spiritRoot: cultivator.spiritRoot,
                         insights,
                         knownTechniques: cultivator.knownTechniques,
-                        roadsWithinReach: ctx.roadsWithinReach ?? [],
+                        roadsWithinReach,
                         age: currentAge(),
                         alive: true
                     }).eligible

@@ -43,6 +43,7 @@ import {
 import {
     daoGroundsInReachOf,
     roadsBoughtWithMaterialsBy,
+    roadsCarriedByObjectsInReachOf,
     roadsInReachOf,
     DAO_GROUND_TAG
 } from '../src/engine/world/how-a-cultivator-comes-by-a-road.js';
@@ -99,6 +100,7 @@ interface Row {
     fromPractice: number;
     fromGround: number;
     fromMaterial: number;
+    fromObject: number;
     /** How many hold at least k roads, k = 1..8. THE SUPPLY CEILING. */
     atLeast: number[];
 }
@@ -106,7 +108,7 @@ interface Row {
 function emptyRows(): Row[] {
     return BANDS.map(() => ({
         people: 0, roads: 0, pass: 0, arrived: 0,
-        fromPractice: 0, fromGround: 0, fromMaterial: 0,
+        fromPractice: 0, fromGround: 0, fromMaterial: 0, fromObject: 0,
         atLeast: Array.from({ length: 9 }, () => 0)
     }));
 }
@@ -138,6 +140,7 @@ function measure(state: WorldState, seededIds: Set<string>, rows: Row[]): void {
         row.fromPractice += roadsTaughtByPractice(npc.cultivation.techniqueIds).length;
         row.fromGround += daoGroundsInReachOf(state, npc).length;
         row.fromMaterial += roadsBoughtWithMaterialsBy(state, npc.id).length;
+        row.fromObject += roadsCarriedByObjectsInReachOf(state, npc).length;
         for (let k = 1; k <= 8; k++) if (held >= k) row.atLeast[k]++;
     }
 }
@@ -184,7 +187,7 @@ for (let i = 0; i < BANDS.length; i++) {
 line();
 line('  WHERE THE ROADS CAME FROM (roads per person in band, by channel)');
 line();
-line('  band            practice    ground   material');
+line('  band            practice    ground   material     object');
 line('  ' + '-'.repeat(48));
 for (let i = 0; i < BANDS.length; i++) {
     const row = rows[i];
@@ -192,7 +195,8 @@ for (let i = 0; i < BANDS.length; i++) {
     line('  ' + BANDS[i].name.padEnd(16)
         + (row.fromPractice / row.people).toFixed(2).padStart(8)
         + (row.fromGround / row.people).toFixed(2).padStart(10)
-        + (row.fromMaterial / row.people).toFixed(2).padStart(11));
+        + (row.fromMaterial / row.people).toFixed(2).padStart(11)
+        + (row.fromObject / row.people).toFixed(2).padStart(11));
 }
 line();
 line('  THE SUPPLY CEILING: share of each band holding at least k roads');

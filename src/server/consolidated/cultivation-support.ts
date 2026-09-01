@@ -1747,7 +1747,19 @@ export function discoveryContextFor(
                 domain: ground.domain,
                 subject: ground.subject,
                 label: ground.name,
-                id: ground.id
+                id: ground.id,
+                // HOW they got at it, which is what the road costs them in
+                // years - see `what-a-road-in-reach-costs-to-walk.ts`. A
+                // carving is a text and is cheap; a cliff nobody is explaining
+                // is not. Without this every place a player can reach priced as
+                // open ground, which is the dearest, and the three carvings
+                // would have been forty-year sits instead of readings.
+                // Buried never reaches here - it is skipped above, because
+                // digging one out is the site layer's business - so the three
+                // cases left are the three a standing cultivator can be in.
+                how: ground.access === 'held' ? 'ground_held' as const
+                    : ground.access === 'carving' ? 'carving' as const
+                    : 'ground_open' as const
             });
             sources.push({ kind: 'site', label: ground.name, id: ground.id });
         }
