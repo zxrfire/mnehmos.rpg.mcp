@@ -637,7 +637,15 @@ rewards, a celebration, sometimes a dao artifact sent back down. Nobody swears a
 nobody buys a release, nobody carries a grievance, and no house has ever gone to war over
 one. It is sanctioned by everybody because everybody knows a Court disciple could have come
 from anywhere, and because **nobody would start a war with the Hollow Court over any member
-at all**, down to an outer void disciple.
+at all** - not even its most junior.
+
+And note what "most junior" means here, because it is the fact that sets the Court apart from
+every other house on the map: **an OUTER disciple of the Hollow Court is a Void Refinement
+cultivator.** Its bottom rung sits at a rung most houses never reach at all, which is the
+direct consequence of recruiting from about ordinal 29 upward and taking nobody below it. So
+"they would not go to war over an outer disciple" is not a statement about somebody
+unimportant - it is a statement that a body whose *lowest* member outranks most houses'
+heads is simply not worth crossing at any level.
 
 The reason it can behave this way is that it wants one thing and it is not competing with
 anybody for it. **The Court is trying to reach immortality.** It is not accumulating ground,
