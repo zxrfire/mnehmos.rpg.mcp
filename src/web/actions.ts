@@ -3121,6 +3121,27 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
+    // ── the cultivator asking about themselves ──
+    //
+    // This has to be tested BEFORE `interact`, because the ordinary English for
+    // it is shaped exactly like addressing somebody: "tell me about myself" hit
+    // the interact patterns, took `myself` as a person, failed to find one, and
+    // put the words to whichever stranger was standing nearest. Played live it
+    // read as: "You put the words to Bai Kekuan. They look at you the way
+    // people look at a sentence with a hole in it."
+    //
+    // The rest were not misrouted, they were simply unrecognised - "what is my
+    // situation", "who am I", "am I hungry" and "how is my health" all refused,
+    // while "status" and "how am I doing" worked. A player cannot be expected
+    // to guess which half of that they are in, and the ones that failed are the
+    // words somebody actually types when they are hurt or starving.
+    //
+    // Deliberately narrow on the possessive: `tell me about myself` is here and
+    // bare `about myself` is not, so "I ask her about myself" stays an interact.
+    if (/\b(?:who am i|what(?:'s| is) my (?:situation|condition|state)|how(?:'s| is) my (?:health|condition)|am i (?:hungry|starving|injured|hurt|wounded|bleeding|dying|healthy|ok|okay|alright|well)|my (?:health|condition|situation)|tell me about myself|describe myself|look at myself|check (?:myself|my condition))\b/.test(text)) {
+        return { action: 'status' };
+    }
+
     // ── interact: everything done to or with a person or a faction ──
     const interactIntent = matchIntent(text, INTERACT_INTENT_PATTERNS);
     if (interactIntent) {
