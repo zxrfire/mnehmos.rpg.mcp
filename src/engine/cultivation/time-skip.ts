@@ -292,6 +292,21 @@ export interface TimeSkipContext {
     /** Roll encounters and opportunities. Default true. */
     randomEvents?: boolean;
     /**
+     * Scales how often those rolls land, without switching them off. Default 1.
+     *
+     * A shut door is not a ward, and it is also not nothing - the two facts
+     * only fit together on a dial. `randomEvents` alone could say "the world
+     * reaches you" or "the world does not exist", and closed-door seclusion is
+     * neither: it is the world reaching you at a small fraction of the usual
+     * rate. Callers pass `sealedDoorFraction()` rather than a number of their
+     * own.
+     *
+     * Note that this scales the THRESHOLD and never skips a draw. Every sample
+     * below is taken unconditionally to keep the stream aligned across
+     * cultivators; sealing must not shift what anybody else would have rolled.
+     */
+    randomEventScale?: number;
+    /**
      * Conditions for the price of advancement at any realm boundary crossed during the
      * skip. The candidate list must come from real rows - the engine holds no
      * database - so a caller that omits it will see the crossing find nothing
@@ -369,6 +384,7 @@ export function simulateTimeSkip(
     // id directly. See `TimeSkipContext.rollIdentity`.
     const identity = ctx.rollIdentity ?? cultivator.id;
     const randomEvents = ctx.randomEvents ?? true;
+    const eventScale = Math.min(1, Math.max(0, ctx.randomEventScale ?? 1));
     const grainAbstinence = ctx.grainAbstinence ?? false;
     const hostility = ctx.hostility;
 
@@ -990,7 +1006,7 @@ export function simulateTimeSkip(
             // whatever the cultivator's Fortune: whether something comes, how
             // serious it is, whether it lands, and whether it can be left.
             const rng = forStream(ctx.seed, 'encounter', newAbsDay);
-            const came = rng.chance(ENCOUNTER_CHANCE);
+            const came = rng.chance(ENCOUNTER_CHANCE * eventScale);
             const major = rng.chance(MAJOR_ENCOUNTER_FRACTION);
             const landed = rng.next();
             const withdrawal = rng.next();
@@ -1051,7 +1067,7 @@ export function simulateTimeSkip(
             const size = rng.int(10, 60);
             const fortune = fortuneOf(cultivator.attributes);
 
-            const chance = OPPORTUNITY_BASE_CHANCE + fortune * OPPORTUNITY_PER_FORTUNE;
+            const chance = (OPPORTUNITY_BASE_CHANCE + fortune * OPPORTUNITY_PER_FORTUNE) * eventScale;
             if (drawn < chance) {
                 // The window is the second half of luck, and the half the genre
                 // actually turns on: the cache is there either way, and low

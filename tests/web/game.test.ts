@@ -444,17 +444,25 @@ describe('investigate', () => {
 });
 
 describe('seclude', () => {
-    it('is sealed: no encounters and no opportunities reach it', async () => {
-        const { db, game } = makeGame({ seed: 'sealed' });
-        const { cultivator } = await game.newRun('Shut-In');
-        db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+    /**
+     * A decade behind a sealed door is usually quiet, and quiet is not the
+     * same as sealed off. See the long note in encounters-wired.test.ts: the
+     * absolute version of this made sealing a dominant strategy, and a shut
+     * door is what makes a cave look like a ruin worth opening.
+     */
+    it('is sealed: a decade behind the door is usually quiet', async () => {
+        let disturbed = 0;
+        for (const seed of ['sealed', 'sealed-b', 'sealed-c', 'sealed-d', 'sealed-e']) {
+            const { db, game } = makeGame({ seed });
+            const { cultivator } = await game.newRun('Shut-In');
+            db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
 
-        const result = await game.act('I seal the cave for ten years.');
-        expect(planned(result).action).toBe('seclude');
-
-        const kinds = result.events.map(e => e.kind);
-        expect(kinds).not.toContain('encounter');
-        expect(kinds).not.toContain('opportunity');
+            const result = await game.act('I seal the cave for ten years.');
+            expect(planned(result).action).toBe('seclude');
+            if (result.events.some(e => e.kind === 'encounter' || e.kind === 'opportunity')) disturbed++;
+        }
+        expect(disturbed, 'ten years is a short seal and should mostly pass unremarked')
+            .toBeLessThanOrEqual(1);
     });
 });
 

@@ -163,20 +163,38 @@ describe('seclusion', () => {
 });
 
 describe('the sealed door', () => {
-    it('holds against everything, which is the bargain it was sold as', () => {
-        for (const seed of ['a', 'b', 'c', 'd', 'e']) {
-            const roll = rollEncounters({
-                seed,
-                startDay: 0,
-                days: 40 * 360,
-                activity: 'sealed',
-                cultivator: who(10),
-                place: cave,
-                arrivable: [{ factId: 'f', day: 10, text: 'A war crossed the valley.', magnitude: 0.95 }]
-            });
-            expect(roll.occurrences).toHaveLength(0);
-            expect(roll.firstInterruptDay).toBeNull();
-        }
+    /**
+     * It holds against nearly everything, which is a bargain worth paying for
+     * and is not the same as immunity. A war crossing the valley outside is
+     * exactly the case where the door is load-bearing and not absolute.
+     */
+    const forty = (seed: string, activity: 'sealed' | 'seclusion') => rollEncounters({
+        seed,
+        startDay: 0,
+        days: 40 * 360,
+        activity,
+        cultivator: who(10),
+        place: cave,
+        arrivable: [{ factId: 'f', day: 10, text: 'A war crossed the valley.', magnitude: 0.95 }]
+    });
+
+    it('holds against nearly everything, which is the bargain it was sold as', () => {
+        const seeds = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+        const sealed = seeds.reduce((n, s) => n + forty(s, 'sealed').occurrences.length, 0);
+        const open = seeds.reduce((n, s) => n + forty(s, 'seclusion').occurrences.length, 0);
+
+        expect(open, 'an open cave over forty years should see plenty').toBeGreaterThan(0);
+        expect(sealed, 'the door should stop the large majority of it')
+            .toBeLessThan(open / 2);
+    });
+
+    it('is a door rather than a ward, over a long enough seclusion', () => {
+        // Forty years, ten seeds. If this ever goes back to zero across all of
+        // them, sealing has silently become the dominant strategy again.
+        const everReached = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+            .some(s => forty(s, 'sealed').firstInterruptDay !== null);
+        expect(everReached, 'four centuries of sealed cave-years and nobody ever got in')
+            .toBe(true);
     });
 });
 

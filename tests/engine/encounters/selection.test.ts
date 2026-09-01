@@ -105,9 +105,28 @@ describe('the pool', () => {
 });
 
 describe('reach', () => {
-    it('lets nothing at all through a sealed door', () => {
+    /**
+     * A shut door is not a ward.
+     *
+     * This asserted an empty pool at every rung, and that made closed-door
+     * seclusion a dominant strategy rather than a trade: everything that can
+     * end a run arrives through these tables, so a player who sealed was
+     * simply safe and the correct play was never to open the door. Found by
+     * playing - three runs died to wounds and to a fight, and the fourth
+     * survived by sealing and doing nothing else.
+     *
+     * The door still does most of the work. What comes through is a fraction
+     * of an open seclusion, and it is skewed: getting past a formation takes
+     * somebody strong enough not to care or desperate enough to try, and the
+     * ordinary passer-by is exactly who the door stops.
+     */
+    it('lets very little through a sealed door, and not nothing', () => {
         for (const ordinal of [0, 12, 30, 44]) {
-            expect(encounterPool({ ordinal, activity: 'sealed', place: cave })).toHaveLength(0);
+            const sealed = encounterPool({ ordinal, activity: 'sealed', place: cave });
+            const open = encounterPool({ ordinal, activity: 'seclusion', place: cave });
+            expect(sealed.length, `${ordinal}: a door is not a ward`).toBeGreaterThan(0);
+            expect(sealed.length, `${ordinal}: a door should stop most of it`)
+                .toBeLessThanOrEqual(open.length);
         }
     });
 
@@ -125,8 +144,9 @@ describe('reach', () => {
         for (const activity of ENCOUNTER_ACTIVITIES) {
             const place = activity === 'seclusion' || activity === 'sealed' ? cave : road;
             const pool = encounterPool({ ordinal: 10, activity, place });
-            if (activity === 'sealed') expect(pool).toHaveLength(0);
-            else expect(pool.length, `${activity} can have nothing happen to it`).toBeGreaterThan(0);
+            // Every activity, sealed included: nothing in this world is a
+            // place where nothing can ever happen.
+            expect(pool.length, `${activity} can have nothing happen to it`).toBeGreaterThan(0);
         }
     });
 });
