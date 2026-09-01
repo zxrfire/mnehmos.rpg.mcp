@@ -956,7 +956,7 @@ export const SECT_THEFT_PATTERN =
  * the game that pays in it.
  */
 export const SECT_DUTY_PATTERN =
-    /\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b|\b(?:sect|house|order|clan|school)\b[^.!?]*\b(?:work|dut(?:y|ies)|commissions?|assignments?|errands?|missions?)\b|\b(?:commissions?|assignments?|dut(?:y|ies))\b[^.!?]*\b(?:going|available|on offer|posted|open)\b/;
+    /\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b|\b(?:sect|house|order|clan|school)\b[^.!?]*\b(?:work|dut(?:y|ies)|commissions?|assignments?|errands?|missions?)\b|\b(?:commissions?|assignments?|missions?|tasks?|dut(?:y|ies))\b[^.!?]*\b(?:going|available|on offer|posted|open|are there)\b|\b(?:what|which)\b[^.!?]*\b(?:dut(?:y|ies)|missions?|commissions?|assignments?)\b|\b(?:volunteer for|sign up for|put my name down)\b/;
 
 /**
  * Taking one, said without the institution.
@@ -1081,6 +1081,9 @@ export const TEACHER_QUESTION = new RegExp([
     /\b(?:ask|asking|asks|enquire|inquire) (?:about|after|for) (?:a |an |the |any )?(?:master|teacher|mentor|tutor|instructor)\b/,
     /\bis there (?:a |an |any )?(?:master|teacher|mentor|tutor|instructor)\b/,
     /\b(?:a|any) (?:master|teacher|mentor) (?:here|about|around|nearby|in this)\b/,
+    // Somebody who already has one, asking who it is. Reached nothing, which
+    // is a strange answer to give a disciple about their own teacher.
+    /\bwho (?:is|was|are) my (?:master|teacher|mentor|shifu|sifu|instructor)\b/,
     /\bis there (?:anyone|anybody|somebody|someone)\b[^.?!]*\b(?:stronger|higher|deeper|above me|further along|more advanced|senior to me)\b/,
     /\bwho (?:is|are|stands?) (?:above|over) me\b/,
     /\bwho (?:here )?(?:is|are) (?:stronger|higher|deeper|more advanced) than me\b/,
@@ -2985,7 +2988,11 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'refine' };
     }
 
-    if (/\b(?:refine|concoct|brew|distil|distill|alchemy|cauldron)\b/.test(text)
+    // `make` earns its place here only because the second clause still demands
+    // an alchemical noun. "I make a pill" is what a player types and it reached
+    // nothing at all, while "I refine a pill" worked - not a distinction
+    // anybody could be expected to guess.
+    if (/\b(?:refine|concoct|brew|distil|distill|alchemy|cauldron|make|cook)\b/.test(text)
         && /\b(?:pill|elixir|medicine|formula|recipe|cauldron|alchemy)\b/.test(text)) {
         return { action: 'refine', target: extractSubject(input, /refine|concoct|brew|distil|distill|make/) };
     }
@@ -3152,7 +3159,7 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
-    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation)|check myself|where do i stand)\b/.test(text)) {
+    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation|reputation|standing)|what rank am i|what realm am i|check myself|where do i stand|how am i regarded)\b/.test(text)) {
         return { action: 'status' };
     }
 

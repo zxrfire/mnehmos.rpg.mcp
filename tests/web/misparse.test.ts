@@ -2708,3 +2708,60 @@ describe('asking about yourself reaches your own sheet', () => {
         expect(TIME_CONSUMING_ACTIONS).not.toContain('status' as ActionName);
     });
 });
+
+describe('the noun is right and the verb is wrong', () => {
+    /**
+     * Found by playing, and every one of these is the same shape: the player
+     * names a thing the engine models, in words a person would use, and gets
+     * "it does not resolve into anything you could actually do standing here".
+     *
+     * The tell is that a near-synonym worked the whole time. "I refine a pill"
+     * was understood and "I make a pill" was not. "I take a duty" was
+     * understood and "what duties are there" was not. A player has no way to
+     * find the working half except by guessing, and the failing half is
+     * usually the more natural phrasing of the two.
+     */
+    const ROUTES: [string, ActionName][] = [
+        // Alchemy. `make` is safe here only because the rule still demands an
+        // alchemical noun alongside the verb.
+        ['I make a pill', 'refine'],
+        ['I cook a pill', 'refine'],
+        ['I refine a pill', 'refine'],
+
+        // The duty board, asked without naming the house.
+        ['what duties are there', 'sect'],
+        ['what missions are available', 'sect'],
+        ['I volunteer for a task', 'sect'],
+        ['I take a duty', 'sect'],
+
+        // Your own sheet. `what is my rank` worked; `what rank am I` did not.
+        ['what rank am I', 'status'],
+        ['what realm am I', 'status'],
+        ['what is my reputation', 'status'],
+        ['how am I regarded', 'status'],
+
+        // A disciple asking who their own teacher is.
+        ['who is my master', 'teacher'],
+        ['who can teach me', 'teacher']
+    ];
+
+    for (const [said, action] of ROUTES) {
+        it(`routes "${said}" to ${action}`, () => {
+            expect(parseIntent(said).action).toBe(action);
+        });
+    }
+
+    /**
+     * The widened rules must not start swallowing their neighbours. `make` is
+     * a common English verb and `what` begins most questions in the game, so
+     * these are the sentences most at risk from the two broadest additions.
+     */
+    it('does not swallow the verbs it sits next to', () => {
+        expect(parseIntent('I travel to Low Fall').action).toBe('move');
+        expect(parseIntent('what can I buy').action).toBe('market');
+        expect(parseIntent('what sects are there').action).toBe('sect');
+        expect(parseIntent('I look around').action).toBe('look');
+        expect(parseIntent('I attack Cao Nuozhi').action).toBe('attack');
+        expect(parseIntent('where can I go').action).toBe('destinations');
+    });
+});
