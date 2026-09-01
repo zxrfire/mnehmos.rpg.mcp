@@ -156,7 +156,12 @@ describe('the fallback is inert', () => {
             // Pricing three routes is a read of catalogs and rows. The whole
             // point of it being free is that the comparison must not itself
             // cost a decade.
-            'acquisition'
+            'acquisition',
+            // The three questions a stuck player asks. Every line each of them
+            // produces restates a number the engine already computed, so none
+            // of them can spend, teach, move or kill - and a player at a wall
+            // has to be able to ask what it is a hundred times for nothing.
+            'ceiling', 'teacher', 'destinations'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -338,7 +343,16 @@ describe('every verb is reachable from plain English', () => {
         list_techniques: 'what arts can I learn',
         learn_technique: 'I learn the Azure Ripple Art',
         consume_pill: 'I swallow a healing pill',
-        acquisition: 'how do I get further'
+        acquisition: 'how do I get further',
+        // The three the drive harness measured as dead, each with the phrasing
+        // that was being EATEN by another verb rather than merely refused:
+        // "am I stuck" reached a senior's opinion of the player, "who could
+        // guide my cultivation" reached the character sheet, and "I want to
+        // travel somewhere else" reached the travel verb, which went looking
+        // for a place called "somewhere else".
+        ceiling: 'am I stuck',
+        teacher: 'who could guide my cultivation',
+        destinations: 'I want to travel somewhere else'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

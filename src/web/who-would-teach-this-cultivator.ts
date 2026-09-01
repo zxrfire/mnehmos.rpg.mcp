@@ -1,0 +1,232 @@
+/**
+ * WHO STANDS ABOVE THIS CULTIVATOR AND WOULD SAY SOMETHING USEFUL.
+ *
+ * Progress is designed to slow without a master and stop without a book, so
+ * finding people is a core verb - and it was the worst-served question in the
+ * game. Measured over the real endpoint by `scripts/playtest-the-drive.mjs`:
+ * five plain phrasings of "who can teach me", none answered, and three of the
+ * five DEFLECTED, which is the worse failure. "who could guide my cultivation"
+ * returned the character sheet. "I look for a master" returned the room
+ * description. Both are good answers to some other question and neither says
+ * one word about a teacher, so the game appeared to understand and answered
+ * nothing.
+ *
+ * ── EVERY LINE IS A ROW ──────────────────────────────────────────────────
+ *
+ * Nothing here decides who is a teacher. `members.ts` already carries the
+ * answer on every person in the catalog:
+ *
+ *   `role: 'master'`   what they are TO A PLAYER - "somebody who will teach,
+ *                      inside stated limits". The author's word, not a
+ *                      threshold this module invented.
+ *   `teaching`         the three limits from `asking.md`, and all three apply
+ *                      at once: what they genuinely hold (`knows`), what they
+ *                      may not say and on whose authority (`mayNotSay`), and
+ *                      what a straight answer costs them (`costsThem`).
+ *                      Keeping the three separate is what stops a master
+ *                      becoming an oracle, so they are never merged here.
+ *   `realmOrdinal`     where they stand, against where the player stands.
+ *
+ * The only arithmetic in this file is subtracting two ordinals to say how many
+ * rungs apart two people are.
+ *
+ * ── THE DISCOVERY CONSTRAINT, WHICH IS THE HARD PART ─────────────────────
+ *
+ * `docs/world/discovery.md` is emphatic that the game must never name somebody
+ * the player has not heard of, and a read like this one is exactly where that
+ * rule gets broken by accident: the honest implementation walks a roster and
+ * prints it, and a player who has just joined a house is handed a cast list
+ * they did not earn.
+ *
+ * So every person is gated on `isAwareOf`, the same predicate `company()` uses
+ * for faces in a room, and the gate is applied per person rather than to the
+ * whole answer. That matters, because the shape of what is hidden is itself
+ * information the player is entitled to:
+ *
+ *   NAMED       they hold a record. Say the name, the rank, the gap, and the
+ *               three limits on what that person will say.
+ *   UNNAMED     they are on the same roll and the player has never met them.
+ *               Say that there are two of them and how far above they stand.
+ *               A count and an altitude are not an introduction, and a player
+ *               who knows their house contains somebody four rungs up has been
+ *               told something true and given a reason to go and find them.
+ *
+ * "Nobody you know of" is a real answer and a good one. It is never a refusal
+ * here - the question was understood, and the emptiness IS the reply.
+ */
+
+import { rankName } from '../engine/cultivation/realms.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT THE CALLER HAS TO HAVE READ ALREADY
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * One person who stands above the player, as the records hold them.
+ *
+ * Deliberately a subset of `ContactPerson` from `encounters.ts` rather than a
+ * new shape: this is the same roster read through a narrower window, and a
+ * second person-type in the web layer would drift from the first.
+ */
+export interface SomebodyAbove {
+    /** Null when the player holds no record for them. Never invented. */
+    name: string | null;
+    realmOrdinal: number;
+    /** Their seat in their house, when the read has one. */
+    rankTitle: string | null;
+    /** `members.ts` marked them a master: somebody who will teach. */
+    willTeach: boolean;
+    /** `teaching.knows` - the bounded thing they hold. Null when not a master. */
+    knows: string | null;
+    /** `teaching.mayNotSay` - what they may not say, and on whose authority. */
+    mayNotSay: string | null;
+    /** `teaching.costsThem` - what a straight answer costs them. */
+    costsThem: string | null;
+    /** Standing in the same place right now, rather than merely on the roll. */
+    here: boolean;
+}
+
+export interface TeacherInput {
+    name: string;
+    ordinal: number;
+    placeName: string;
+    /** The house they serve, when they serve one. */
+    sectName: string | null;
+    /** Everybody above them, from the roster and from the room. Already gated. */
+    above: readonly SomebodyAbove[];
+    /**
+     * Why finding one matters right now, when it does.
+     *
+     * `techniqueCeiling(...).state`. A master is worth a great deal more to
+     * somebody whose book has ended than to somebody halfway through one, and
+     * `docs/world/manuals.md` makes personal transmission the route across a
+     * shelf gap: "a house that still holds a living master of the higher manual
+     * can bring somebody across; one that has lost its last master cannot."
+     */
+    manualState: 'no_method' | 'exhausted' | 'teaching';
+}
+
+export interface TeacherRead {
+    headline: string;
+    lines: string[];
+    structure: string[];
+    /** How many the player could actually name. The inspector's headline figure. */
+    nameable: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE READ
+// ─────────────────────────────────────────────────────────────────────────
+
+const rungs = (n: number): string => `${n} rung${n === 1 ? '' : 's'}`;
+
+/**
+ * Who could teach this cultivator, said only of people they have heard of.
+ *
+ * Masters first, then anybody else standing above them, then the count of the
+ * ones they cannot name. The ordering is the order of usefulness and nothing
+ * else: a master four rungs up is a road, and a stranger four rungs up is a
+ * reason to introduce yourself.
+ */
+export function whoWouldTeach(input: TeacherInput): TeacherRead {
+    const standing = rankName(input.ordinal);
+    const lines: string[] = [];
+    const structure: string[] = [];
+
+    const named = input.above.filter(p => p.name !== null);
+    const unnamed = input.above.filter(p => p.name === null);
+    const masters = named.filter(p => p.willTeach);
+    const others = named.filter(p => !p.willTeach);
+
+    structure.push(
+        `above=${input.above.length}, nameable=${named.length}, masters=${masters.length}, `
+        + `unnamed=${unnamed.length}, ordinal=${input.ordinal}, manualState=${input.manualState}`
+    );
+
+    for (const master of masters) {
+        const gap = master.realmOrdinal - input.ordinal;
+        lines.push(
+            `${master.name} stands at ${rankName(master.realmOrdinal)}`
+            + `${master.rankTitle ? `, ${master.rankTitle}` : ''}, ${rungs(gap)} above you at `
+            + `${standing}, and teaches.`
+            + `${master.here ? ' They are here.' : ''}`
+        );
+        // The three limits, kept separate. Merging them is how a master becomes
+        // an oracle, which is the one thing `asking.md` forbids.
+        if (master.knows) lines.push(`  What they hold: ${master.knows}`);
+        if (master.mayNotSay) lines.push(`  What they will not say: ${master.mayNotSay}`);
+        if (master.costsThem) lines.push(`  What asking costs them: ${master.costsThem}`);
+        structure.push(
+            `master ${master.name}: ordinal=${master.realmOrdinal}, gap=${gap}, here=${master.here}`
+        );
+    }
+
+    for (const person of others) {
+        const gap = person.realmOrdinal - input.ordinal;
+        lines.push(
+            `${person.name} stands at ${rankName(person.realmOrdinal)}`
+            + `${person.rankTitle ? `, ${person.rankTitle}` : ''}, ${rungs(gap)} above you. `
+            + `Nothing on record says they teach.`
+            + `${person.here ? ' They are here.' : ''}`
+        );
+        structure.push(
+            `above ${person.name}: ordinal=${person.realmOrdinal}, gap=${gap}, here=${person.here}`
+        );
+    }
+
+    // The shape of what is hidden, without the names. A count and an altitude
+    // are not an introduction, and both are things the player is entitled to.
+    if (unnamed.length > 0) {
+        const deepest = unnamed.reduce((a, b) => (b.realmOrdinal > a.realmOrdinal ? b : a));
+        const gap = deepest.realmOrdinal - input.ordinal;
+        const one = unnamed.length === 1;
+        const where = input.sectName
+            ? `on the roll of ${input.sectName}`
+            : `in ${input.placeName}`;
+        lines.push(
+            `${one ? 'One person' : `${unnamed.length} people`} ${where} stand`
+            + `${one ? 's' : ''} above ${standing}, the deepest of them ${rungs(gap)} up, and `
+            + `you have never met ${one ? 'them' : 'any of them'}. You have no name to ask `
+            + `for, which is the whole of what is stopping you.`
+        );
+    }
+
+    // Nothing at all, which is an answer rather than a failure. The two arms
+    // are exclusive with the block above on purpose: a reply that says "you
+    // can name none of them" directly after saying "you have no name for
+    // them" has told the player the same thing twice and neither time well.
+    if (input.above.length === 0) {
+        lines.push(
+            `Nobody you know of stands above ${standing}`
+            + `${input.sectName ? ` inside ${input.sectName}` : ''}, and nobody in `
+            + `${input.placeName} is carrying themselves like somebody who does. `
+            + `There is no teacher here to find.`
+        );
+    }
+
+    // Why it matters now. Read off the manual axis, never asserted.
+    if (input.manualState === 'no_method') {
+        lines.push(
+            `This is the question that matters most to you: you practise no method, so `
+            + `nothing accumulates at ${standing} and no amount of sitting changes it. A book `
+            + `or a teacher is the only thing that does.`
+        );
+    } else if (input.manualState === 'exhausted') {
+        lines.push(
+            `Your own manual has stopped carrying you, and being taught across is one of the `
+            + `three ways past that. A house that still holds a living master of the higher `
+            + `book can bring somebody across; one that has lost its last master cannot.`
+        );
+    }
+
+    return {
+        headline: masters.length > 0
+            ? `${masters.length} who would teach ${input.name}, and what each will not say.`
+            : named.length > 0
+                ? `Nobody ${input.name} knows of teaches, but ${named.length} stand above them.`
+                : `Nobody ${input.name} knows of could teach them.`,
+        lines,
+        structure,
+        nameable: named.length
+    };
+}

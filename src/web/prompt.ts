@@ -397,6 +397,21 @@ site             an inheritance ground: a trial somebody built to be inherited f
                  threshold without going in), enter (go in - this SPENDS DAYS and can kill),
                  take (carry out what is behind the door). Choose "outside" when the player
                  is looking rather than going, and "enter" only when they plainly said so.
+ceiling          why nothing is accumulating, with the binding gate named: the manual, the
+                 province, the seat, the qi, or the settling clock. Passes no time. This is
+                 the right answer to "why am I not making progress", "am I stuck", "what is
+                 my ceiling" and "what is stopping me" - NOT status, which is the sheet, and
+                 NOT assess, which is somebody else's opinion of them.
+teacher          who stands above this cultivator and would teach, with what each one will
+                 not say. Passes no time. Names only people they already hold a record for;
+                 "nobody you know of" is a real answer. Use it for "who can teach me", "I
+                 look for a master" and "is there anyone here stronger than me" - NOT status
+                 and NOT look, both of which answer a different question entirely.
+destinations     where they could go, with what the journey costs, what the qi is like there
+                 and how far that province carries anybody. Passes no time. Use it for "where
+                 can I go", "what is nearby" and "where is there better spiritual energy".
+                 Distinct from recall, which reads their own head; distinct from move, which
+                 goes somewhere they have already named.
 wait             let a day go by doing nothing in particular.
 look             observe the surroundings. Passes no time.
 status           report the cultivator's own condition. Passes no time.
