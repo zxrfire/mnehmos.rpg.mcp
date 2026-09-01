@@ -825,7 +825,7 @@ export const REGIONS: readonly Region[] = [
                 kind: 'trade_route',
                 otherRegionId: SOUTH_REGION_ID,
                 description:
-                    'Nine days down the river to the mouth and out to Watering, which is where the Low Fall\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Alliance will take a hull that far and refuses to go further.',
+                    'Nine days down the river to the mouth and out to Watering, which is where the Low Fall\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Fordhall will take a hull that far and refuses to go further.',
                 travelDays: 9
             }
         ],
@@ -1830,7 +1830,7 @@ export function ambientStatesIn(regionId: string): AmbientQi[] {
 // inherited. So `onPaper` and `onTheGround` are separate fields on every
 // prefecture and they are allowed to disagree, in both directions - a house
 // that holds less than the record says is the common case, and a house that
-// holds more than any document mentions is the Standing Grove. `discrepancy`
+// holds more than any document mentions is the Longbough Grove. `discrepancy`
 // names which kind, and the catalog test asserts that a prefecture claiming
 // `none` really does read the same in both fields.
 //
@@ -2164,7 +2164,7 @@ const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'Surveyed by the Anchorhold to the burn edge and no further, so the last forty li before the Marches border sit on no certified survey and the catchment has no closing line.',
         onTheGround:
-            'Run by the Clear River Alliance, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
+            'Run by the Clear River Fordhall, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
         discrepancy: 'no_holder_of_record',
         note:
             'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Gleaners and the Quiet Cut both use, for opposite reasons.'

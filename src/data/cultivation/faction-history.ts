@@ -272,7 +272,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-hermitage-choice',
         yearsAgo: 120,
         provinceId: 'province-low-fall',
-        what: 'The Verdant Spring Hall grew from a hermitage of nine into a physician house with four dispensaries. The Standing Grove, offered the same growth on the same terms in the same decade, declined it and has taken nobody since.',
+        what: 'The Verdant Spring Hall grew from a hermitage of nine into a physician house with four dispensaries. The Longbough Grove, offered the same growth on the same terms in the same decade, declined it and has taken nobody since.',
         parties: ['sect-verdant-spring-hall', 'sect-standing-grove'],
         accounts: {
             'sect-verdant-spring-hall':
@@ -356,7 +356,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-eleven-day-boundary',
         yearsAgo: 20,
         provinceId: 'province-low-fall',
-        what: 'Two granted sects moved leases inward on the northern side of the Standing Grove\'s deference zone. The Grove does not patrol, was not told, and has not noticed.',
+        what: 'Two granted sects moved leases inward on the northern side of the Longbough Grove\'s deference zone. The Grove does not patrol, was not told, and has not noticed.',
         parties: ['sect-standing-grove', 'court-third-sill'],
         accounts: {
             'sect-standing-grove':
@@ -398,7 +398,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-tolls-and-the-fords',
         yearsAgo: 300,
         provinceId: 'province-low-fall',
-        what: 'The Thousand Treasure Pavilion began pricing tolls on routes kept open, maintained and forded by the Clear River Alliance, and pays nothing toward them.',
+        what: 'The Thousand Treasure Pavilion began pricing tolls on routes kept open, maintained and forded by the Clear River Fordhall, and pays nothing toward them.',
         parties: ['sect-clear-river-alliance', 'sect-thousand-treasure-pavilion'],
         accounts: {
             'sect-clear-river-alliance':

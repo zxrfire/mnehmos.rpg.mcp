@@ -94,7 +94,7 @@ export function fixtureCatalog(): WorldCatalog {
             }),
             faction({
                 id: 'sect-standing-grove',
-                name: 'Standing Grove',
+                name: 'Longbough Grove',
                 powerOrdinal: 25,
                 admissionOrdinal: 8,
                 governance: 'deference',

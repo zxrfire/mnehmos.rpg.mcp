@@ -817,7 +817,7 @@ export const BEAST_TIDES: readonly BeastTide[] = [
         driverBeastId: 'beast-thing-under-nine-peaks',
         beastIds: ['beast-grey-wolf-pack', 'beast-vein-deer', 'beast-stone-ox', 'beast-thunder-hawk'],
         whoAbsorbsIt:
-            'The river villages between the mountain and the province town, none of which are inside any sect recall order, and the Clear River Alliance, which counts the crossings and will call in the debt afterwards.',
+            'The river villages between the mountain and the province town, none of which are inside any sect recall order, and the Clear River Fordhall, which counts the crossings and will call in the debt afterwards.',
         aftermath:
             'The front of it is killed within a month and the cause is not addressed, because addressing it means opening the lower chamber. The same tide is expected again and no date is offered.'
     },

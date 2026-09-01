@@ -396,7 +396,7 @@ export interface AncestralRecords {
 //
 // Four factions carry no ambition at all, and the abstention is the content:
 // the Sweptground Temple, which states no grievance because it holds it was
-// given what it needed two and a half thousand years ago; the Standing Grove,
+// given what it needed two and a half thousand years ago; the Longbough Grove,
 // which holds that a grievance is a claim and makes no claims; the Kiln
 // Wardens, who are staff and have no interests of their own to have; and the
 // Hollow Court, which has nothing left to be afraid of and therefore nothing
@@ -799,7 +799,20 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     },
     {
         id: 'sect-clear-river-alliance',
-        name: 'Clear River Alliance',
+        // RENAMED OFF A WORD THE PARSER NEEDED. It was the Clear River
+        // Alliance, and `alliance` is a bare alternative in the join-a-house
+        // parser - "ally|alliance|swear|join" - so a house whose distinctive
+        // word is `alliance` competes with every sentence about forming one.
+        // The same defect cost the deposit parser the word `hoard`, which is
+        // absent from `LEGACY_NOUNS` to this day because a faction was using
+        // it. A fordhall is what this body actually is: eleven river towns and
+        // every ford between them, agreed to rather than founded.
+        //
+        // THE ID STILL CARRIES THE OLD WORD. Sweeping it reaches into
+        // `members.ts`, which another agent has open, and a half-applied id
+        // rename does not compile. The name is what a player types and what
+        // the parser sees, so the harm is fixed; the id is a follow-up.
+        name: 'Clear River Fordhall',
         alignment: 'righteous',
         powerOrdinal: 24,
         ranks: ['Boat Hand', 'River Disciple', 'Current Disciple', 'Ford Master', 'River Elder', 'Alliance Head'],
@@ -1604,7 +1617,17 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
 
     {
         id: 'sect-standing-grove',
-        name: 'The Standing Grove',
+        // RENAMED OFF A WORD THE PARSER NEEDED, and off one this sheet uses
+        // for something else entirely. `standing` is a bare alternative in two
+        // parser alternations - what a house's standing is, and what a
+        // cultivator's own standing is - and it is also `Parentage.standing`,
+        // the condition of a grant, and the first word of the Standing
+        // Register itself. One word doing four jobs, one of which was a name.
+        //
+        // The id still carries the old word; see the note on the Clear River
+        // Fordhall above for why the id sweep is a follow-up rather than part
+        // of this change.
+        name: 'The Longbough Grove',
         alignment: 'righteous',
         powerOrdinal: 27,
         ranks: ['Guest of the Grove', 'Disciple', 'Elder Disciple', 'Keeper of the Grove'],
@@ -3054,7 +3077,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
                 realmOrdinal: null,
                 yearsAgo: 400,
                 afterCrossing: null,
-                rememberedFor: 'Refused a vein offered by the Clear River Alliance on the grounds that accepting it would change who applied.'
+                rememberedFor: 'Refused a vein offered by the Clear River Fordhall on the grounds that accepting it would change who applied.'
             }
         ],
         claimsLivingAncestor: true,
@@ -4394,7 +4417,7 @@ export function formationIntegrity(sectId: string): number {
 //
 // `delegatedFromSect` returning null is a real answer and the most interesting
 // one in the catalog: it is what the Azure Cloud Pavilion, the Hollow Court,
-// the Standing Grove, the Clear River Alliance and the Sixmile Wardens have in
+// the Longbough Grove, the Clear River Fordhall and the Sixmile Wardens have in
 // common, and it is the only thing they have in common. An apex that answers
 // to nobody, an occupation nothing can move, a zone held by a belief, a toll
 // nobody authorised and six people repainting stakes are five completely

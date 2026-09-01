@@ -309,7 +309,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'Nobody thinks of a physician as a creditor until the bill arrives, and by then they are already the sort of person who owes them.'
         },
         practice: 'Physicians keep their fingernails cut to the quick and their sleeves pinned back at all times, and will treat an enemy on the floor of a fight before asking who started it.',
-        grievance: 'That it was a hermitage of nine people once, holding its valley by respect and nothing else, and chose to grow - and that the Standing Grove, which refused the same choice, is spoken of the way the Hall used to be.',
+        grievance: 'That it was a hermitage of nine people once, holding its valley by respect and nothing else, and chose to grow - and that the Longbough Grove, which refused the same choice, is spoken of the way the Hall used to be.',
         fear: 'That the Bone Lantern Cult is right that the dead are a resource, and that the Hall\'s objection is sentiment rather than medicine.',
         lateness: 'Fourteen of twenty-two nodes lit; the stone irrigation channels are original and get patched with clay; and the rank of Life Elder retains a ceremonial duty at the springs that nobody can explain.',
         disagreement: 'The billing faction wants enemies treated and charged at triple. The physicians want them treated and charged the same, on the argument that a price is a diagnosis of who you think somebody is.',

@@ -20,7 +20,7 @@
  *                 it can comfortably walk and holds a far larger zone because
  *                 nobody is willing to find out what happens otherwise. The
  *                 claim is worth exactly as much as the last time it was
- *                 tested, and beliefs decay. This is the Standing Grove.
+ *                 tested, and beliefs decay. This is the Longbough Grove.
  *
  *   unassailable  holds the ground outright, answers to nobody, and pays
  *                 nothing to anyone. Not a lease, not a claim, and not a
