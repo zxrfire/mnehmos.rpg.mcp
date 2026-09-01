@@ -50,6 +50,8 @@ export class SectRepository {
     private readonly deleteStmt: Database.Statement;
     private readonly addMemberStmt: Database.Statement;
     private readonly removeMemberStmt: Database.Statement;
+    private readonly recordDepartureStmt: Database.Statement;
+    private readonly selectDepartureStmt: Database.Statement;
     private readonly selectMembershipStmt: Database.Statement;
     private readonly listMembersStmt: Database.Statement;
     private readonly setRankStmt: Database.Statement;
@@ -92,6 +94,30 @@ export class SectRepository {
 
         this.removeMemberStmt = db.prepare(`
             DELETE FROM sect_members WHERE sect_id = ? AND cultivator_id = ?
+        `);
+
+        // Written in the same transaction as the delete. A house remembers who
+        // used to be in it, and without that a returning member was a stranger
+        // - which made leaving and re-entering a free promotion. See the table
+        // comment in `migrations.cultivation.ts`.
+        //
+        // Most recent departure wins, because it is the honest record: somebody
+        // who came back and left again at a lower seat left at the lower seat.
+        this.recordDepartureStmt = db.prepare(`
+            INSERT INTO sect_departures
+                (sect_id, cultivator_id, rank_index, rank_title, contribution, left_at)
+            SELECT sect_id, cultivator_id, rank_index, rank_title, contribution, datetime('now')
+            FROM sect_members
+            WHERE sect_id = @sectId AND cultivator_id = @cultivatorId
+            ON CONFLICT(sect_id, cultivator_id) DO UPDATE SET
+                rank_index = excluded.rank_index,
+                rank_title = excluded.rank_title,
+                contribution = excluded.contribution,
+                left_at = excluded.left_at
+        `);
+
+        this.selectDepartureStmt = db.prepare(`
+            SELECT * FROM sect_departures WHERE sect_id = ? AND cultivator_id = ?
         `);
 
         this.selectMembershipStmt = db.prepare(`
@@ -187,11 +213,41 @@ export class SectRepository {
     /** Expulsion or departure. Clears the mirror on the cultivator row too. */
     removeMember(sectId: string, cultivatorId: string): boolean {
         const expel = this.db.transaction(() => {
+            // BEFORE the delete, because it copies out of the row being
+            // deleted. A house remembers who used to be in it: without this a
+            // returning member reads as a stranger, and entry rank is computed
+            // from ordinal alone - which made walking out and back in a free
+            // promotion.
+            this.recordDepartureStmt.run({ sectId, cultivatorId });
             const changed = this.removeMemberStmt.run(sectId, cultivatorId).changes > 0;
             if (changed) this.clearOnCultivatorStmt.run(cultivatorId);
             return changed;
         });
         return expel();
+    }
+
+    /**
+     * The seat somebody held in this house on the day they left it, or null.
+     *
+     * Read at ENTRY, where it caps the rank a returning member may re-enter at.
+     * Contribution is recorded too, and is forfeited rather than restored - the
+     * game already says so on the way out, and it is the thing they have to
+     * re-earn.
+     */
+    formerMembership(
+        sectId: string,
+        cultivatorId: string
+    ): { rankIndex: number; rankTitle: string; contribution: number; leftAt: string } | null {
+        const row = this.selectDepartureStmt.get(sectId, cultivatorId) as {
+            rank_index: number; rank_title: string; contribution: number; left_at: string;
+        } | undefined;
+        if (!row) return null;
+        return {
+            rankIndex: row.rank_index,
+            rankTitle: row.rank_title,
+            contribution: row.contribution,
+            leftAt: row.left_at
+        };
     }
 
     getMembership(cultivatorId: string): SectMembership | null {
