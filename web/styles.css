@@ -498,6 +498,25 @@ kbd {
   min-height: 0;
 }
 
+/*
+ * The three rows are placed BY NAME rather than by source order, because
+ * `.warnings:empty` is `display: none` and a hidden grid item is not in the
+ * grid at all. With no warnings on screen - the ordinary case, most of every
+ * run - auto-placement slid the scroll into row 1 (`auto`) and the command bar
+ * into row 2 (`minmax(0, 1fr)`), which inverts the whole layout:
+ *
+ *   - early, with a short log: the command bar got all the leftover height and
+ *     stood 792px tall under three lines of narration.
+ *   - later, once the log outgrew the viewport: the `auto` scroll row grew with
+ *     its content instead of scrolling, and the command bar was squeezed to its
+ *     minimum - measured at 27px holding 180px of controls, with the input
+ *     itself pushed to y=1266 in an 1182px viewport.
+ *
+ * And nothing could reach it: `.screen--play` is `overflow: hidden` and the
+ * body is exactly viewport-height, so the page has no scroll to give. The
+ * input was off the bottom of the world and the only way to it was
+ * `scrollIntoView()` from a console.
+ */
 .play__narrative {
   min-width: 0;
   min-height: 0;
@@ -505,6 +524,9 @@ kbd {
   grid-template-rows: auto minmax(0, 1fr) auto;
   border-right: 1px solid var(--line);
 }
+.play__narrative > .warnings   { grid-row: 1; }
+.play__narrative > .scroll     { grid-row: 2; }
+.play__narrative > .commandbar { grid-row: 3; }
 
 /* Warnings */
 .warnings:empty { display: none; }
@@ -652,6 +674,20 @@ kbd {
   transition: border-color var(--dur), box-shadow var(--dur);
 }
 .command:focus-within { border-color: var(--jade-600); box-shadow: 0 0 0 3px var(--jade-glow); }
+
+/*
+ * Act pressed on an empty field. It posts nothing and never did; what it did
+ * not do was say so, and a control that answers a press with total silence is
+ * indistinguishable from one that has hung.
+ */
+.command--empty { animation: command-nudge 0.5s ease-out; }
+@keyframes command-nudge {
+  0%, 100% { border-color: var(--line-strong); }
+  35%      { border-color: var(--amber-400); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .command--empty { animation: none; border-color: var(--amber-400); }
+}
 .command__caret { color: var(--jade-500); font-family: var(--font-mono); font-size: 16px; }
 .command__input {
   flex: 1;

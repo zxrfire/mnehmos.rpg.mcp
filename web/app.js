@@ -142,14 +142,11 @@ function immortalStatus(derived = S.derived, cultivator = S.cultivator) {
   ];
   for (const v of candidates) {
     if (v === 'false_immortal' || v === 'true_immortal' || v === 'none') {
-      immortalStatusFieldFound = true;
       return v;
     }
   }
   return null;
 }
-
-let immortalStatusFieldFound = false;
 
 function isFalseImmortal(derived = S.derived, cultivator = S.cultivator) {
   return immortalStatus(derived, cultivator) === 'false_immortal';
@@ -158,10 +155,19 @@ function isFalseImmortal(derived = S.derived, cultivator = S.cultivator) {
 /**
  * Say once, in the console, that no immortalStatus field answered. Cheaper for
  * whoever wires the engine side than discovering the UI silently never lights up.
+ *
+ * It asks the reader for the value rather than consulting a flag the reader
+ * sets, which is what it used to do. `renderPlay()` calls this FIRST, ahead of
+ * every other reader, so the flag was always still false on the first render
+ * and the warning fired on every single load against a payload that had been
+ * carrying `immortalStatus: "none"` the whole time. A warning that cries on a
+ * healthy build is worse than no warning: it taught anybody reading the console
+ * that the False Immortal lockout was dead when it was wired correctly.
  */
 let immortalStatusWarned = false;
 function warnIfImmortalStatusMissing() {
-  if (immortalStatusWarned || immortalStatusFieldFound || !S.cultivator) return;
+  if (immortalStatusWarned || !S.cultivator) return;
+  if (immortalStatus() !== null) return;
   immortalStatusWarned = true;
   console.info(
     '[ui] No immortalStatus found on cultivator or derived. The False Immortal panel and the ' +
@@ -784,7 +790,15 @@ async function beginRun(ev) {
 
   // The register opens in its own tab and links back here for the roster, which
   // lives as an overlay rather than a page of its own.
-  if (params.get('open') === 'roster' && S.health && S.health.adminMode) openRoster();
+  //
+  // Read from the location here rather than reaching for the `params` in boot():
+  // that one is a local const, so this line threw ReferenceError on every single
+  // new run. Being inside an async submit handler, the throw was swallowed into
+  // an unhandled rejection and took `announceRoll()` down with it - so nobody
+  // starting a run was ever shown the talent they had just been dealt, and the
+  // only trace was one line in a console nobody had open.
+  const query = new URLSearchParams(location.search);
+  if (query.get('open') === 'roster' && S.health && S.health.adminMode) openRoster();
   announceRoll();
 }
 
@@ -1621,7 +1635,21 @@ async function submitAction(ev) {
 
   const input = $('#command-input');
   const text = input.value.trim();
-  if (!text) return;
+  // An empty Act was already a no-op, but a silent one: nothing posted, nothing
+  // refused, nothing on screen. A button that does nothing at all when pressed
+  // reads as a hang rather than as a rejection, so say no visibly and put the
+  // caret where the missing sentence goes.
+  if (!text) {
+    const box = input.closest('.command');
+    if (box) {
+      box.classList.remove('command--empty');
+      void box.offsetWidth;              // restart the animation on a repeat press
+      box.classList.add('command--empty');
+      setTimeout(() => box.classList.remove('command--empty'), 700);
+    }
+    focusCommand();
+    return;
+  }
 
   input.value = '';
   setBusy(true);
