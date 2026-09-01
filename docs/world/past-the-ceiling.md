@@ -843,8 +843,9 @@ Three exits sidestep the queue rather than joining it:
 ### The house ending frees you, however it ends
 
 Disbanding is the version you choose. **The commoner version is that somebody else ends it** -
-a war lost, a vein exhausted, a disaster, a succession that failed - and the effect on a
-survivor is the same and completely legitimate: **there is no house left to owe anything to.**
+a war lost, a vein exhausted, a disaster, a succession that failed, or somebody at the top of
+the ladder detonating themselves inside your gates - and the effect on a survivor is the same
+and completely legitimate: **there is no house left to owe anything to.**
 No oath binds, no release is needed, no grievance can be carried, because the party that would
 have carried it does not exist. A survivor walks away free, holding whatever they were
 carrying and everything they know.
