@@ -103,6 +103,10 @@ import {
     readyToStrike,
     strikeAtTheWall
 } from './an-npc-striking-at-the-next-wall.js';
+import {
+    applyRoadsComprehended,
+    roadsInReachOf
+} from './how-a-cultivator-comes-by-a-road.js';
 import type { AmbientQi } from '../../schema/cultivation.js';
 import {
     applyManualCopying,
@@ -302,6 +306,13 @@ export function applyPressure(
         // ladder that runs through a person rather than through luck.
         applyManualCopying(state, year, withinSpan(year * 365 + 95, fromDay, toDay));
         applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
+        // Ground gets dug open, a material comes out of a hole, and a house
+        // spends one of the things it can never replace on the disciple who is
+        // standing at a wall they cannot pass for want of a road. BEFORE
+        // advancement for the same reason manual copying is: a road come by
+        // this year is a road this year's crossing can stand on.
+        // See `how-a-cultivator-comes-by-a-road.ts`.
+        applyRoadsComprehended(state, year, withinSpan(year * 365 + 110, fromDay, toDay));
         applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
         // And then the people those two passes produced meet each other. After
@@ -866,7 +877,13 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
             // seed strikes the same walls with the same outcomes, and adding
             // this pass perturbed no other stream.
             forStream(state.seed, 'strike-the-wall', npc.id, year),
-            conditions.ambient
+            conditions.ambient,
+            // THE ROADS, read against the world rather than against the record.
+            // The arts in their hands are one channel of four and cannot reach
+            // past three domains; the ground their house lets them onto, the
+            // ground their province leaves standing open, the ruin somebody dug
+            // out and the material that was spent on them are the rest of it.
+            roadsInReachOf(state, npc)
         );
         if (!strike) continue;
 
@@ -2036,27 +2053,56 @@ const TEMPLATES: Template[] = [
         weight: 11,
         apply(state, day, rng) {
             const living = state.npcs.filter(n => n.status === 'alive' && isBelowTheLid(n));
-            const victim = pick(rng, living);
-            if (!victim) return null;
 
-            // Preferably somebody with a reason to be there: a member of a
-            // faction the victim's own is at odds with. Failing that, anyone
-            // in the same place, because most killings are local and petty.
-            const victimFaction = victim.factionId
-                ? state.factions.find(f => f.id === victim.factionId) ?? null : null;
-            const hostileIds = victimFaction
-                ? Object.entries(victimFaction.standing)
+            // ── THE KILLER IS DRAWN FIRST, AND THAT IS THE WHOLE FIX. ──
+            //
+            // This used to draw the VICTIM uniformly from everybody alive and
+            // then look for somebody who could do it. `couldKill` kept the
+            // killer commensurate, so the result was never absurd - but the
+            // RATE was, because a Void Refinement cultivator was picked as
+            // often as a Qi Condensation one while having fifty times the span
+            // to lose. A realm's lifespan is the whole of what a high realm
+            // buys, and this was quietly cancelling it.
+            //
+            // Measured over forty centuries on two seeds, residence in a band
+            // as a share of that realm's own span:
+            //
+            //     Qi Cond 100%   Foundation 55%   Core 38%   Nascent 23%
+            //     Deity 16%      Void 10%         Body 15%   Grand 20%
+            //
+            // and at Void Refinement 77% of departures were violent against
+            // 10% of age. The higher the realm, the less of its span anybody
+            // was getting to stand in it, which is the opposite of the ladder's
+            // central promise.
+            //
+            // Drawing the killer first inverts it with no rule about tiers and
+            // no exception for anybody: a killing needs somebody who can do it,
+            // most people are at the bottom, so most killings happen there.
+            // Somebody at Grand Ascension has perhaps one person in the world
+            // who could reach them, and is therefore reached about as often as
+            // that fact implies. `couldKill` is still the gate, unchanged, so
+            // the guarantee `demography.test.ts` pins is untouched.
+            const killer = pick(rng, living);
+            if (!killer) return null;
+
+            // Preferably somebody with a reason: a member of a faction the
+            // killer's own is at odds with. Failing that, anyone in the same
+            // place, because most killings are local and petty.
+            const killerFaction = killer.factionId
+                ? state.factions.find(f => f.id === killer.factionId) ?? null : null;
+            const hostileIds = killerFaction
+                ? Object.entries(killerFaction.standing)
                     .filter(([, v]) => v <= -0.3).map(([k]) => k)
                 : [];
             const pool = living.filter(n =>
-                n.id !== victim.id &&
-                (hostileIds.includes(n.factionId ?? '') || n.locationId === victim.locationId) &&
-                // And could actually do it. Without this the event murdered an
-                // ordinal 44 with whoever happened to be standing nearby.
-                couldKill(n, victim)
+                n.id !== killer.id &&
+                (hostileIds.includes(n.factionId ?? '') || n.locationId === killer.locationId) &&
+                couldKill(killer, n)
             );
-            const killer = pick(rng, pool);
-            if (!killer) return null;
+            const victim = pick(rng, pool);
+            if (!victim) return null;
+            const victimFaction = victim.factionId
+                ? state.factions.find(f => f.id === victim.factionId) ?? null : null;
 
             // The dead keep their account open. It is what the heir inherits.
             const at = state.npcs.findIndex(n => n.id === victim.id);

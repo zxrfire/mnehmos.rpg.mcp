@@ -261,6 +261,57 @@ const RUIN_VEIN_CHANCE = 0.02;
 /** Chance a survived attempt turns up an inheritance worth comprehending. */
 const RUIN_INHERITANCE_CHANCE = 0.18;
 
+/**
+ * What an opened sealed place turns out to have been holding.
+ *
+ * Every entry is a subject `understanding.ts` already maps to a domain -
+ * `SUBJECT_DOMAINS` - so this adds no vocabulary and invents no access source.
+ * The six between them reach six distinct roads, which is what makes returning
+ * to holes a real strategy for somebody with nothing else: the second
+ * expedition is not the first one again.
+ */
+const WHAT_A_SEALED_PLACE_HOLDS: readonly string[] = [
+    'mortality', 'debt', 'formation', 'refinement', 'sword', 'body'
+];
+
+/**
+ * The ground a province has standing open in it that teaches a ROAD.
+ *
+ * Every province in `data/cultivation/places-that-teach-a-dao.ts` has at least
+ * one, and that is an invariant with a test on it: being born badly must NARROW
+ * what is in reach and never empty it. So a life is dealt exactly one of these,
+ * and which one is not for sale.
+ *
+ * Every tag is one `understanding.ts` already reads in `LOCATION_OPENINGS`, so
+ * this adds no vocabulary and no access source.
+ */
+const ROAD_GROUND_A_PROVINCE_HAS: string[] = [
+    'ancient_battlefield',  // formation
+    'tribulation_scar',     // void
+    'sealed_tomb'           // karma
+];
+
+/**
+ * The rung below which the road-bearing ground teaches nothing.
+ *
+ * A place teaches a principle and a principle is either legible to you or it is
+ * not: at Qi Condensation a battlefield whose craters are too regular is a
+ * field with holes in it. The same floor the catalog puts on its own lowest
+ * open grounds, so the early game is unchanged and nobody is handed a road for
+ * having been born.
+ */
+const ROAD_GROUND_FLOOR = 12;
+
+/**
+ * And the rung by which the province's BURIED ground has been dug open.
+ *
+ * A stand-in for `BURIED_GROUND_FOUND_PER_YEAR` in the live world, which is a
+ * clock this harness does not run: a life gets to the Nascent Soul band after
+ * two or three centuries, and over that span somebody in the province has
+ * usually got into the hole. It is deliberately not free at the first wall.
+ */
+const ROAD_GROUND_FOUND_FLOOR = 20;
+
 /** Stones a survived attempt is worth. The poor road's actual economics. */
 const RUIN_STONES = 2_200;
 
@@ -342,6 +393,17 @@ export type LifeEnd =
     | 'died_in_a_ruin'
     | 'lifespan'
     | 'settling'
+    /**
+     * Refused at a realm boundary for want of COMPREHENSION, not for want of qi
+     * or of time.
+     *
+     * Its own end because those are different sentences about a life and this
+     * harness reported both as `settling`, which hid the entire cost of the dao
+     * gate inside a clock. A run that stops here has hit a wall it could have
+     * been let through by somebody, and one that stops at `settling` has not.
+     * See `daoRequirementCurve`.
+     */
+    | 'no_road'
     /** The last crossing completed. True Immortal, ordinal 46. */
     | 'summit'
     /**
@@ -430,6 +492,47 @@ export function simulateLife(
     // later adds. An origin with none contributes nothing and the cultivator
     // reaches their own root, which is the ordinary case.
     const inheritances: { subject: string; label: string }[] = [];
+
+    // ── THE GROUND THEY WERE BORN NEAR ───────────────────────────────────
+    //
+    // The channel this sweep did not have, and the reason it did not have it
+    // was that `locationTags` was only ever written when somebody found a
+    // vein - which opens `deep_cave`, which opens `element`, which the dao
+    // gate does not count. So the whole geographic channel contributed
+    // nothing to a road, and a poor life topped out at ordinal 28 holding two
+    // roads against a wall that asks for three.
+    //
+    // Every province in the world has ground standing open in it that teaches
+    // something - see `data/cultivation/places-that-teach-a-dao.ts` - and no
+    // province has all of it. So a life is dealt ONE, at birth, from the tag
+    // vocabulary `understanding.ts` already reads, and half of what can be
+    // dealt is an element and therefore worth nothing to the gate. Nobody buys
+    // this and no origin tier moves it: it is drawn on its own stream, before
+    // anything about the family is consulted, because where you are born is
+    // not a thing your family decides.
+    // TWO, and both teach a ROAD rather than an element.
+    //
+    // No elemental ground is drawn here, and that is the catalog's own rule
+    // rather than a convenience: `PlaceThatTeachesADaoSchema` REFUSES a ground
+    // whose domain is `element`, because a place teaching what every root
+    // already supplies is scenery wearing the shape of supply. Mixing three
+    // elemental tags into this draw was worse than useless - it made geography
+    // a coin flip AND crowded the one candidate that mattered out of the
+    // per-draw pick, since `discoverableInsights` takes ONE candidate at random
+    // from everything in reach and the root has already put its elements there.
+    //
+    // TWO because every province in the catalog has two or three: one standing
+    // open and at least one still buried. Drawn without replacement, so a
+    // province is a hand rather than one card drawn twice, and the second
+    // arrives later - see `ROAD_GROUND_FOUND_FLOOR`.
+    const bornNearRng = stream('origin-sweep-born-near');
+    const provinceGround = [...ROAD_GROUND_A_PROVINCE_HAS];
+    const roadGround = provinceGround.splice(
+        bornNearRng.int(0, provinceGround.length - 1), 1
+    )[0];
+    const buriedGround = provinceGround.length > 0
+        ? provinceGround[bornNearRng.int(0, provinceGround.length - 1)]
+        : null;
     const insights: Insight[] = [];
 
     let ordinal = 0;
@@ -584,7 +687,15 @@ export function simulateLife(
         // the candidate set, and effort does not widen it.
         const ctx = withOriginAccess(originKey, {
             inheritances: inheritances.slice(),
-            locationTags: foundVein ? ['deep_cave'] : [],
+            locationTags: [
+                ...(ordinal >= ROAD_GROUND_FLOOR ? [roadGround] : []),
+                // The buried one, once somebody in the province has dug it
+                // open. Later than the first, because that is exactly the
+                // difference between ground that is standing there and ground
+                // that is not.
+                ...(buriedGround && ordinal >= ROAD_GROUND_FOUND_FLOOR ? [buriedGround] : []),
+                ...(foundVein ? ['deep_cave'] : [])
+            ],
             // Having stood under heavenly lightning and still been standing
             // after is access nobody's family arranges and nobody sells. It is
             // the only route to the void domain in this harness, and it is why
@@ -649,8 +760,20 @@ export function simulateLife(
                 foundVein = true;
             }
             if (ruinRng.chance(RUIN_INHERITANCE_CHANCE)) {
+                // WHAT IS IN THE HOLE IS NOT ALWAYS THE SAME THING. This drew
+                // `mortality` every time, so however many sealed places a life
+                // opened, the whole channel was worth exactly one road - and
+                // with the dao gate live that capped a reckless poor life at
+                // ordinal 24, which is the setting's own "the poor climb by
+                // being reckless" failing at the first wall it should open.
+                //
+                // Six subjects, six domains, drawn on the expedition's own
+                // stream so nothing else in the sweep moves. It is the same
+                // fact `data/cultivation/places-that-teach-a-dao.ts` states
+                // about the buried grounds: four of them, and no two hold the
+                // same road.
                 inheritances.push({
-                    subject: 'mortality',
+                    subject: ruinRng.pick(WHAT_A_SEALED_PLACE_HOLDS),
                     label: 'what was left behind in a sealed place'
                 });
             }
@@ -685,7 +808,9 @@ export function simulateLife(
         if (!gate.eligible) {
             // Never silently. A run that stops here has hit a gate rather than
             // a clock, and reporting it as a lifespan would hide the fact.
-            end = gate.reason === 'at_ladder_summit' ? 'summit' : 'settling';
+            end = gate.reason === 'at_ladder_summit' ? 'summit'
+                : gate.reason === 'insufficient_dao' ? 'no_road'
+                    : 'settling';
             break;
         }
 
@@ -912,6 +1037,7 @@ export function measureOriginOutcomes(
             died_in_a_ruin: 0,
             lifespan: 0,
             settling: 0,
+            no_road: 0,
             summit: 0,
             false_immortal: 0,
             guard: 0

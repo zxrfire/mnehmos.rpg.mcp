@@ -23,6 +23,7 @@ import {
     DAO_GATE_ENFORCED,
     DAO_GATE_FROM_ORDINAL,
     MAX_PILL_MULTIPLIER,
+    MOST_ROADS_THE_WORLD_SUPPLIES,
     PILL_GRADE_FACTOR,
     PILL_TOLERANCE_RETENTION,
     ROADS_BESIDES_YOUR_OWN,
@@ -213,7 +214,7 @@ describe('the requirement curve', () => {
         }
     });
 
-    it('rises one road per realm, and stops one short of every road there is', () => {
+    it('rises one road per realm, and stops at what the world can supply', () => {
         // The requirements go up as you go. Tabulated rather than derived a
         // second time, so a change to the shape has to be restated by hand.
         const expected: Record<number, number> = {
@@ -222,16 +223,23 @@ describe('the requirement curve', () => {
             28: 3,  // into Void Refinement
             32: 4,  // into Body Integration
             36: 5,  // into Grand Ascension
-            40: 6,  // into Tribulation Transcendence
-            44: 7   // the last crossing
+            40: 5,  // into Tribulation Transcendence - the cap bites here
+            44: 5   // the last crossing
         };
         for (const [ordinal, roads] of Object.entries(expected)) {
             expect(daoRequirementCurve(Number(ordinal)), `ordinal ${ordinal}`).toBe(roads);
         }
-        // Never the complete set: the last crossing must not turn on holding a
-        // full house, because `understanding.ts` already prices depth.
-        expect(Math.max(...Object.values(expected)))
-            .toBeLessThan(ROADS_BESIDES_YOUR_OWN.length);
+        // The top used to read 6 and 7, on the reasoning that the curve should
+        // stop one short of every road that EXISTS. It was measured instead:
+        // with the world's comprehension supply live, three seeds at 1,500
+        // years, nobody in any band on any seed holds 7, and 6 is held by an
+        // eighth to two fifths of the people who get that high. A requirement
+        // of 7 was not a hard gate, it was a rung nobody could attempt again.
+        //
+        // The number of domains the schema defines is a fact about the schema.
+        // Only what the world can put in somebody's reach may bound this.
+        expect(Math.max(...Object.values(expected))).toBe(MOST_ROADS_THE_WORLD_SUPPLIES);
+        expect(MOST_ROADS_THE_WORLD_SUPPLIES).toBeLessThan(ROADS_BESIDES_YOUR_OWN.length);
     });
 
     it('never decreases with height and never exceeds the roads that exist', () => {
@@ -247,34 +255,53 @@ describe('the requirement curve', () => {
     });
 });
 
-describe('the gate is wired and deliberately switched off', () => {
-    it('enforces nothing anywhere on the ladder today', () => {
-        // A HOLD, NOT A DOUBT. The curve is right and wanted; the substrate
-        // under it does not exist. A played cultivator has an insight list and
-        // `game.ts` now fills it, so the gate would bind a player today. AN NPC
-        // RECORD HAS NO INSIGHT LIST AT ALL - the world runs ruins, phenomena,
-        // teachers and near-deaths and writes none of them down.
+describe('the gate is live', () => {
+    it('charges exactly the curve, at every rung', () => {
+        // IT WAS HELD OFF, AND WHAT IT WAS WAITING FOR NOW EXISTS. The hold was
+        // never a doubt about the curve: an NPC record had no insight list, the
+        // world ran ruins, phenomena, teachers and near-deaths and wrote none of
+        // them down, so switching this on bound the player and not the world -
+        // the same one-sided enforcement the wound layer had, running the other
+        // way. Measured then: 0 of 1,511 living NPCs held a single road, and at
+        // 1,500 years nothing crossed ordinal 28 again.
         //
-        // So switching it on binds the player and not the world, which is the
-        // same one-sided enforcement the wound layer had, in the other
-        // direction. Measured twice, independently: 0 of 1,511 living NPCs hold
-        // a single road, and at 1,500 years nothing in the world crosses
-        // ordinal 28 again. Not thinned - stopped. See DAO_GATE_ENFORCED.
-        expect(DAO_GATE_ENFORCED).toBe(false);
+        // The supply is `engine/world/how-a-cultivator-comes-by-a-road.ts`:
+        // named ground a house lets you onto by standing, ground a province
+        // leaves standing open, ruins dug out on the world's own clock, and
+        // single-use materials spent once and gone. Re-measured with it live,
+        // three seeds at 1,500 years, the Void band holds a mean 4.5 roads
+        // against a requirement of 4 and is 87% arrivals rather than survivors.
+        expect(DAO_GATE_ENFORCED).toBe(true);
         for (let ordinal = 0; ordinal <= MAX_ORDINAL; ordinal++) {
-            expect(daoRequirementFor(ordinal), `ordinal ${ordinal}`).toBe(0);
+            expect(daoRequirementFor(ordinal), `ordinal ${ordinal}`)
+                .toBe(daoRequirementCurve(ordinal));
         }
     });
 
-    it('is held by the switch alone, so turning it on is a one-line act', () => {
-        // The curve must NOT also be inert. If both were switched off, flipping
-        // the switch would be a leap rather than a step, and nothing would have
-        // been tested in the meantime.
-        expect(daoRequirementCurve(DAO_GATE_FROM_ORDINAL)).toBeGreaterThan(0);
-        expect(daoRequirementFor(DAO_GATE_FROM_ORDINAL)).toBe(0);
+    it('asks nothing at all below the Nascent Soul crossing', () => {
+        // Three whole realms on a root, a book and time. This is what keeps the
+        // bottom of the ladder soloable and what makes the first three realms
+        // the ones a nobody can actually walk.
+        for (let ordinal = 0; ordinal < DAO_GATE_FROM_ORDINAL; ordinal++) {
+            expect(daoRequirementFor(ordinal), `ordinal ${ordinal}`).toBe(0);
+        }
+        expect(daoRequirementFor(DAO_GATE_FROM_ORDINAL)).toBeGreaterThan(0);
     });
 
-    it('lets a cultivator with no comprehension at all still cross today', () => {
+    it('never asks for more roads than the world was measured to supply', () => {
+        // The cap is a claim about what sects, provinces, ruins and single-use
+        // objects can put in one person's reach, NOT about how many domains the
+        // schema happens to define. It was the latter, at 8, and nobody in any
+        // measured world ever held 7 - so the top of the curve was a rung that
+        // could never be attempted again rather than a gate.
+        for (let ordinal = 0; ordinal <= MAX_ORDINAL; ordinal++) {
+            expect(daoRequirementCurve(ordinal), `ordinal ${ordinal}`)
+                .toBeLessThanOrEqual(MOST_ROADS_THE_WORLD_SUPPLIES);
+        }
+        expect(MOST_ROADS_THE_WORLD_SUPPLIES).toBeLessThan(ROADS_BESIDES_YOUR_OWN.length);
+    });
+
+    it('lets a cultivator with no comprehension at all cross the early walls', () => {
         const empty = makeCultivator({
             realmOrdinal: 12,
             cultivationProgress: progressRequiredForOrdinal(12) ?? 0,
@@ -283,8 +310,42 @@ describe('the gate is wired and deliberately switched off', () => {
         expect(canAttemptBreakthrough(empty).eligible).toBe(true);
     });
 
-    it('still reports what the rung would ask and what is held', () => {
-        // Wired even while inert, so the web layer can WARN before it refuses.
+    it('refuses the Nascent Soul crossing to somebody who has walked no road', () => {
+        // You cannot form a nascent soul without a dao. This is that sentence,
+        // and it is the first moment in a run where sitting in a cave stops
+        // being a complete strategy.
+        const alone = makeCultivator({
+            realmOrdinal: DAO_GATE_FROM_ORDINAL,
+            cultivationProgress: progressRequiredForOrdinal(DAO_GATE_FROM_ORDINAL) ?? 0,
+            insights: []
+        });
+        const check = canAttemptBreakthrough(alone);
+        expect(check.eligible).toBe(false);
+        expect(check.reason).toBe('insufficient_dao');
+
+        // And one road besides their own opens it. Not a set - one.
+        const taught = makeCultivator({
+            realmOrdinal: DAO_GATE_FROM_ORDINAL,
+            cultivationProgress: progressRequiredForOrdinal(DAO_GATE_FROM_ORDINAL) ?? 0,
+            insights: [insight('weapon', 'sword')]
+        });
+        expect(canAttemptBreakthrough(taught).eligible).toBe(true);
+    });
+
+    it('does not count the one road a root supplies unaided', () => {
+        // A muddled five-element root reaches five `element` insights and has
+        // still got nowhere out of its own body. That is the hole a naive
+        // breadth requirement would have left open.
+        const rooted = makeCultivator({
+            realmOrdinal: DAO_GATE_FROM_ORDINAL,
+            cultivationProgress: progressRequiredForOrdinal(DAO_GATE_FROM_ORDINAL) ?? 0,
+            insights: [insight('element', 'fire'), insight('element', 'water')]
+        });
+        expect(canAttemptBreakthrough(rooted).daoHeld).toBe(0);
+        expect(canAttemptBreakthrough(rooted).reason).toBe('insufficient_dao');
+    });
+
+    it('still reports what the rung asks and what is held', () => {
         const check = canAttemptBreakthrough(makeCultivator({
             realmOrdinal: 12,
             cultivationProgress: progressRequiredForOrdinal(12) ?? 0,
@@ -294,11 +355,15 @@ describe('the gate is wired and deliberately switched off', () => {
         expect(check).toHaveProperty('daoRequired');
     });
 
-    it('refuses on progress before it would ever refuse on dao', () => {
+    it('refuses on progress before it ever refuses on dao', () => {
         // Ordering matters: telling somebody to go and find a teacher while
         // they are still eighty qi-units short is advice about the wrong
         // problem.
-        const short = makeCultivator({ realmOrdinal: 12, cultivationProgress: 0, insights: [] });
+        const short = makeCultivator({
+            realmOrdinal: DAO_GATE_FROM_ORDINAL,
+            cultivationProgress: 0,
+            insights: []
+        });
         expect(canAttemptBreakthrough(short).reason).toBe('insufficient_progress');
     });
 });

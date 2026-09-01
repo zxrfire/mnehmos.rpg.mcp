@@ -95,6 +95,7 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
 import { seedArtifacts } from './artifact-placement.js';
 import { seedComprehensionMaterials } from './single-use-dao-comprehension-materials.js';
+import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
@@ -256,6 +257,14 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // rests on existed only in a catalog nothing read. See `goods.ts`.
     state.objects.push(...seedArtifacts(state));
     state.objects.push(...seedComprehensionMaterials(state));
+    // And the ground that teaches a road, which is the other half of the same
+    // problem: a material is spent and gone, a terrace is not, and the gate in
+    // `breakthrough.ts` asks for comprehension the world had no way at all to
+    // supply. Seeded AFTER the population so it cannot perturb where anybody
+    // was born, and after the materials so their ruin draw is unchanged - both
+    // of those are deliberate, and both keep every existing seeded world
+    // identical up to this line. See `how-a-cultivator-comes-by-a-road.ts`.
+    state.locations.push(...seedPlacesThatTeachADao(state));
     // And the medicine, which the same catalog-nothing-read defect applied to:
     // a world with no pills in it is a world where the crossing pill is a price
     // in a document. Two shapes, one threshold - see

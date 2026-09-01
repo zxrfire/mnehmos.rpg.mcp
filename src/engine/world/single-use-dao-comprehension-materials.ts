@@ -55,6 +55,7 @@
 import type { WorldState } from './world-state.js';
 import { makeObject, type ObjectRecord } from './possessions.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import type { DaoGroundDomain } from '../../data/cultivation/places-that-teach-a-dao.js';
 
 /** How a comprehension material came to exist, which decides whether more can. */
 export type MaterialSource = 'made_above' | 'found_below';
@@ -65,6 +66,8 @@ export interface ComprehensionMaterial {
     /** The height it is any use to. Below it the reader takes nothing from it. */
     forOrdinal: number;
     source: MaterialSource;
+    /** The road understanding it opens. See WHAT A MATERIAL ACTUALLY GIVES. */
+    domain: DaoGroundDomain;
 }
 
 /**
@@ -75,15 +78,46 @@ export interface ComprehensionMaterial {
  * the world at the heights that matter, because their scarcity IS the reason
  * the upper ladder is thin - and a generous table here would quietly undo the
  * production ceiling it exists to explain.
+ *
+ * Exported so the standing register can report how many of these the world
+ * starts with rather than restating the figures beside them. Nothing outside
+ * this module may seed from it; the seeder is {@link seedComprehensionMaterials}.
+ *
+ * ── WHAT A MATERIAL ACTUALLY GIVES ───────────────────────────────────────
+ *
+ * A ROAD. One `InsightDomain` besides the reader's own, which is the currency
+ * the dao gate in `breakthrough.ts` is denominated in, and which nothing in the
+ * world could supply to an NPC before these carried a domain.
+ *
+ * The band a material sits in decides which road, and the pairing is read off
+ * the realm the band is named for rather than assigned: the Body Integration
+ * band teaches the body, the Tribulation band teaches the void, the commonest
+ * and lowest band teaches ALCHEMY - which is the one road no technique in the
+ * catalog teaches at all, and therefore the one a cultivator's practice can
+ * never supply. That the world's most numerous single-use object is the only
+ * source of its scarcest road is the reason houses hoard the cheap ones.
+ *
+ * `weapon` has no material and that is deliberate rather than an omission: it
+ * is the best-supplied road in the world - three grounds and an armful of arts
+ * teach it - and a material for it would be the one nobody needed.
+ *
+ * The domain does NOT vary by instance. Two settled-heart lamps are the same
+ * object, and a house that holds one holds a known thing rather than a lottery
+ * ticket, which is what makes `whyNotSold` below a decision instead of a guess.
  */
-const MATERIAL_BANDS: readonly { forOrdinal: number; inTheWorld: number; name: string }[] = [
-    { forOrdinal: 16, inTheWorld: 14, name: 'a clouded resonance stone' },
-    { forOrdinal: 20, inTheWorld: 9, name: 'a settled-heart lamp' },
-    { forOrdinal: 24, inTheWorld: 6, name: 'a nascent echo' },
-    { forOrdinal: 28, inTheWorld: 4, name: 'a transformation seed' },
-    { forOrdinal: 32, inTheWorld: 3, name: 'a void-tempered mote' },
-    { forOrdinal: 36, inTheWorld: 2, name: 'an integration relic' },
-    { forOrdinal: 40, inTheWorld: 1, name: 'an ascension fragment' }
+export const MATERIAL_BANDS: readonly {
+    forOrdinal: number;
+    inTheWorld: number;
+    name: string;
+    domain: DaoGroundDomain;
+}[] = [
+    { forOrdinal: 16, inTheWorld: 14, name: 'a banked cinder', domain: 'alchemy' },
+    { forOrdinal: 20, inTheWorld: 9, name: 'a clouded resonance stone', domain: 'formation' },
+    { forOrdinal: 24, inTheWorld: 6, name: 'a settled-heart lamp', domain: 'karma' },
+    { forOrdinal: 28, inTheWorld: 4, name: 'a nascent echo', domain: 'life_death' },
+    { forOrdinal: 32, inTheWorld: 3, name: 'an integration relic', domain: 'body' },
+    { forOrdinal: 36, inTheWorld: 2, name: 'a held hour', domain: 'time' },
+    { forOrdinal: 40, inTheWorld: 1, name: 'a void-tempered mote', domain: 'void' }
 ];
 
 /**
@@ -129,18 +163,25 @@ export function seedComprehensionMaterials(state: WorldState): ObjectRecord[] {
                     : band.forOrdinal >= 24 ? 'significant' : 'notable',
                 power: band.forOrdinal,
                 description: source === 'made_above'
-                    ? `Made above the Lid and sent down. Understanding it carries somebody to ordinal `
+                    ? `Made above the Lid and sent down. Understanding it opens the road of `
+                      + `${band.domain.replace(/_/g, ' and ')} to somebody standing at ordinal `
                       + `${band.forOrdinal}, once, after which there is one fewer in the world.`
                     : `Out of a hole, made in an age that could make them and by nobody since. `
-                      + `Understanding it carries somebody to ordinal ${band.forOrdinal}, once.`,
+                      + `Understanding it opens the road of ${band.domain.replace(/_/g, ' and ')} `
+                      + `to somebody standing at ordinal ${band.forOrdinal}, once.`,
                 possessorId: holder?.id ?? null,
                 ownerId: holder?.id ?? null,
                 ownerName: holder?.name ?? '',
                 locationId: site?.id ?? (holder ? holder.seatLocationId : null),
-                tags: ['comprehension', 'single-use', source,
+                tags: ['comprehension', 'single-use', source, `road:${band.domain}`,
                     ...(site ? ['unrecovered'] : [])],
                 data: {
                     forOrdinal: band.forOrdinal, source, spent: false,
+                    // THE ROAD, on the row. Read by `how-a-cultivator-comes-by-a-road.ts`
+                    // off the spent object rather than off the band table, so a
+                    // material dug out of a ruin two centuries from now still
+                    // says what it teaches without anybody having to look it up.
+                    domain: band.domain,
                     whyNotSold: holder ? whyNotSold(state, holder.id, band.forOrdinal, rng) : null
                 }
             }));
