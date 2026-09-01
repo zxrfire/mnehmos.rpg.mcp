@@ -27,14 +27,35 @@
     </div>
 
     <div class="topbar__actions">
-      <span class="badge badge--admin" id="admin-badge" hidden title="The server is running with admin tooling exposed.">
-        ADMIN<span class="badge__long"> MODE</span>
-      </span>
+      <!--
+        The admin tools live under the badge rather than beside it. They are the
+        only controls in the bar that are not part of playing, and spreading them
+        along the top made the operator surface look like part of the game.
+      -->
+      <div class="adminmenu" id="admin-menu" hidden>
+        <button class="badge badge--admin adminmenu__button" id="admin-badge" type="button"
+                aria-haspopup="true" aria-expanded="false" aria-controls="admin-tools"
+                title="Operator tools. The server is running with admin tooling exposed.">
+          ADMIN<span class="badge__long"> MODE</span><span class="adminmenu__caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="adminmenu__list" id="admin-tools" role="menu" hidden>
+          <button class="adminmenu__item" role="menuitem" type="button" data-open="roster" id="btn-roster">
+            Roster
+            <span class="adminmenu__hint">Everyone in the world, read-only</span>
+          </button>
+          <button class="adminmenu__item" role="menuitem" type="button" data-open="map" id="btn-map">
+            World Map
+            <span class="adminmenu__hint">Every place the engine holds, nested and linked</span>
+          </button>
+          <button class="adminmenu__item" role="menuitem" type="button" data-open="register" id="btn-register">
+            Standing Register
+            <span class="adminmenu__hint">Every faction on the ladder. Opens in a new tab</span>
+          </button>
+        </div>
+      </div>
       <span class="badge badge--mock" id="mock-badge" hidden title="Responses are served by the local mock, not the engine.">
         MOCK<span class="badge__long"> DATA</span>
       </span>
-      <button class="btn btn--ghost btn--sm btn--adminonly" type="button" data-open="roster" id="btn-roster" hidden>Roster</button>
-      <button class="btn btn--ghost btn--sm btn--adminonly" type="button" data-open="register" id="btn-register" hidden title="The standing register: every faction on the ladder. Opens in a new tab.">Register</button>
       <button class="btn btn--ghost btn--sm" type="button" data-open="ladder">Ladder</button>
       <button class="btn btn--ghost btn--sm" type="button" data-open="ledger"><span class="btn__long">Death </span>Ledger</button>
       <button class="btn btn--ghost btn--sm topbar__sheet-toggle" type="button" id="sheet-toggle" aria-expanded="false" aria-controls="sheet">
@@ -60,9 +81,17 @@
         <div class="opening__hero">
           <p class="opening__eyebrow">A cultivation roguelike</p>
           <h1 class="opening__title">The Cultivation Ladder</h1>
+          <!--
+            The figures here track MAX_ORDINAL in engine/cultivation/realms.ts:
+            the ladder is 0-46, and the top two rungs are the two landings of a
+            single crossing rather than steps anybody climbs. The Ladder view
+            reads the real numbers from /api/reference/ladder; this line is copy
+            and has to be corrected by hand when the ladder is re-cut.
+          -->
           <p class="opening__lede">
-            Forty-five ranks stand between a mortal with a party trick and something the
-            heavens must answer for. Almost no one climbs past the first thirteen.
+            Forty-six ranks stand between a mortal with a party trick and something the
+            heavens must answer for, and the last two of them are not climbed. Almost no
+            one gets past the first thirteen.
           </p>
 
           <div class="rules">

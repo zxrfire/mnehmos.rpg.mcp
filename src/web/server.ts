@@ -32,6 +32,7 @@ import { GameError, GameService } from './game.js';
 import { DeterministicNarrator, ProviderNarrator, type Narrator } from './narrator.js';
 import { ladderView, spiritRootsView } from './view.js';
 import { buildRegister, renderRegisterHtml } from './register.js';
+import { placesView } from './places.js';
 import { clearProse, defaultProsePath, ensureProse, type GenerateOptions } from './register-prose.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -316,6 +317,14 @@ export function createApp(options: AppOptions): (req: IncomingMessage, res: Serv
                     return;
                 case '/api/admin/ladder-odds':
                     sendJson(res, 200, await game.ladderOdds());
+                    return;
+                // The world map. A read over `WorldState.locations` and
+                // nothing else - see `places.ts` for why it carries no
+                // coordinates. Null world before a run is an answer, not a
+                // failure, so this does not 404 on an empty database.
+                case '/api/admin/places':
+                    game.assertAdmin('the world map');
+                    sendJson(res, 200, placesView(await game.loadWorld()));
                     return;
                 // Two representations of one build. The JSON is for tooling;
                 // the HTML is what an operator opens in a tab beside the game.
