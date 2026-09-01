@@ -81,9 +81,38 @@
  * shows up in outcomes decades later.
  *
  * A near-peer teacher is also still climbing, so the tie has a clock on it. They
- * are promoted, posted, or die, and this module never re-pairs a student who
- * already has a master. Being abandoned by the person who was teaching you is
- * an outcome, not a bug, and it is why some people end up with nobody.
+ * are promoted, posted, or die. Being abandoned by the person who was teaching
+ * you is an outcome, not a bug.
+ *
+ * ── A STUDENT HOLDS SEVERAL MASTERS, AND THAT IS THE CHAIN ───────────────
+ *
+ * This module used to pair a student ONCE and never again, and that single rule
+ * is what made teaching worthless in this world. Measured: guidance was worth
+ * x1.05 against a term that offers x1.5, and 39-75% of every master tie in the
+ * world pointed at a grave. Two reasons, and one fix answers both. The tie was
+ * taken at intake against the LOWEST person who could carry the student, so the
+ * gap decayed to nothing as they climbed past that teacher; and the day the
+ * teacher died the student had nobody, forever.
+ *
+ * On the design owner's ruling - *"a student can have multiple masters, this is
+ * a xianxia thing"* - a student now accumulates up to {@link MASTERS_AT_ONCE}
+ * masters, and {@link GUIDANCE_FULL_GAP} decides when another is worth taking.
+ * They are bound UPWARD ONLY: a new master must stand deeper than the deepest
+ * living one already there, because that is the only one the rate term reads.
+ * So outgrowing your intake teacher leaves you with the others rather than with
+ * nothing, and a house adds a deeper teacher when the student is ready for one.
+ * Losing a master is still a real loss. It is no longer career-ending.
+ *
+ * The set is also meant to be READABLE: one for the house's own road, one for a
+ * technique, one who simply took an interest. They are not interchangeable
+ * slots, and what somebody ended up holding is an account of how they got where
+ * they are - the same thing the origin and shelf work produce elsewhere.
+ *
+ * WHAT STOPS THIS BECOMING A RATE CHANGE is {@link studentsAtOnce}, not the cap
+ * on slots. The scarce thing is an elder's hours, so capacity falls as the gap
+ * widens: a near-peer carries six, somebody eight rungs up carries one. Without
+ * that, letting everybody accumulate masters would hand the whole world the
+ * x1.5 that is supposed to be its rarest advantage.
  *
  * ── What that makes a favour worth, and why the ladder is recursive ──────
  *
@@ -144,7 +173,7 @@
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
-import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { DAYS_PER_YEAR, GUIDANCE_FULL_GAP } from '../cultivation/cultivation.js';
 import { isBelowTheLid } from './layers.js';
 // The one number the whole file is calibrated against, imported rather than
 // retyped for the reason `time.ts` states: a threshold that exists in two
@@ -249,6 +278,44 @@ export const HOUSEHOLD_PER_YEAR = 0.03;
  * teacher whose disciples have died or left is free again.
  */
 export const STUDENTS_AT_ONCE = 3;
+
+/**
+ * Master ties one student may hold at once.
+ *
+ * On the design owner's ruling: *"a student can have multiple masters, this is
+ * a xianxia thing."* One for the house's own road, one for a technique, one who
+ * simply took an interest - they are not interchangeable slots, and the set a
+ * person ends up with is a readable account of how they got where they are.
+ *
+ * Three, because the point is a CHAIN and not a collection. A student who has
+ * outgrown their intake teacher keeps them and gains a deeper one; the cap
+ * stops that becoming "everybody is taught by everybody", which would make the
+ * guidance term universal and therefore worth nothing as a distinction.
+ */
+export const MASTERS_AT_ONCE = 3;
+
+/**
+ * Students one person carries at a time, priced by how far they are reaching
+ * DOWN to do it.
+ *
+ * The hours are the scarce thing, not the books - the shelf inside a deep house
+ * is open and it is the elders' time that is rationed. Teaching across a wide
+ * gap costs the teacher far more of themselves than teaching somebody a rung
+ * below, so capacity falls as the gap grows: an outer disciple passing on what
+ * they learned last decade carries many, and an elder eight rungs up carries
+ * one.
+ *
+ * This is what keeps a full ladder of teachers the property of two or three
+ * houses rather than of everybody. Without it, letting students accumulate
+ * masters would hand the whole world the x1.5 that is supposed to be the
+ * rarest advantage in it - a rate change wearing a tail's clothes.
+ */
+export function studentsAtOnce(gap: number): number {
+    if (gap >= 8) return 1;
+    if (gap >= 5) return 2;
+    if (gap >= 3) return 4;
+    return 6;
+}
 
 /**
  * Chance per year that a pair who serve together get any further with it.
@@ -680,10 +747,41 @@ export function applyTeachingLines(
 
         const power = Number(faction.resources.power_ordinal ?? 0);
         const rankCount = Math.max(1, faction.ranks.length);
+        // The deepest LIVING master already standing above each student, which
+        // is what `guideOrdinalFor` will read and therefore the only thing that
+        // decides whether another master is worth anything to them.
+        const guideOf = (n: NpcRecord): number | null => {
+            let best: number | null = null;
+            for (const tie of n.relationships) {
+                if (tie.kind !== 'master') continue;
+                const i = at.get(tie.targetId);
+                if (i === undefined) continue;
+                const m = state.npcs[i];
+                if (m.status !== 'alive') continue;
+                if (best === null || m.cultivation.realmOrdinal > best) {
+                    best = m.cultivation.realmOrdinal;
+                }
+            }
+            return best;
+        };
+
         // Juniors first, so the scarce capacity in a thin house goes to the
         // people who cannot move at all without it.
+        //
+        // A student used to be dropped from this list the moment they held any
+        // master at all, which is what made a tie a one-time event and let the
+        // gap decay to nothing as they climbed past whoever taught them. They
+        // are now dropped only when there is nothing left to gain: they already
+        // hold the full complement, or somebody living is already far enough
+        // above them to be worth the whole guidance term.
         const students = members
-            .filter(n => !n.relationships.some(r => r.kind === 'master'))
+            .filter(n => {
+                if (n.relationships.filter(r => r.kind === 'master').length >= MASTERS_AT_ONCE) {
+                    return false;
+                }
+                const guide = guideOf(n);
+                return guide === null || guide - n.cultivation.realmOrdinal < GUIDANCE_FULL_GAP;
+            })
             .sort((a, b) =>
                 a.factionRankIndex - b.factionRankIndex ||
                 a.cultivation.realmOrdinal - b.cultivation.realmOrdinal ||
@@ -694,14 +792,29 @@ export function applyTeachingLines(
             const needs = whatTheyNeedTaught(state, student, shelf, rankCount);
             if (needs.length === 0) continue;
 
+            // Masters accumulate UPWARD or not at all. A second teacher who is
+            // no deeper than the one already standing over them adds nothing to
+            // `guideOrdinalFor`, which reads the deepest living master - so
+            // binding one would spend a teacher's hours to move no number, and
+            // fill the student's three slots with people who cannot help.
+            const already = guideOf(student);
+            const floor = already ?? student.cultivation.realmOrdinal;
+
             let teacher: NpcRecord | null = null;
             let taught: Manual | null = null;
             for (const manual of needs) {
                 for (const candidate of index.get(manual.id) ?? []) {
                     if (candidate.id === student.id) continue;
                     if (candidate.factionRankIndex < student.factionRankIndex) continue;
-                    if (candidate.cultivation.realmOrdinal <= student.cultivation.realmOrdinal) continue;
-                    if ((load.get(candidate.id) ?? 0) >= STUDENTS_AT_ONCE) continue;
+                    if (candidate.cultivation.realmOrdinal <= floor) continue;
+                    // Already teaching them. `bind` upserts on target id, so
+                    // without this the same pair is rebound every year and the
+                    // student's slots read as one person three times.
+                    if (student.relationships.some(r =>
+                        r.kind === 'master' && r.targetId === candidate.id)) continue;
+                    // The hours, priced by how far down the teacher is reaching.
+                    const gap = candidate.cultivation.realmOrdinal - student.cultivation.realmOrdinal;
+                    if ((load.get(candidate.id) ?? 0) >= studentsAtOnce(gap)) continue;
                     // Nobody is taught by their own child, and nobody is
                     // apprenticed to the person they are married to. Those are
                     // already relationships and the teaching kind would
@@ -723,8 +836,11 @@ export function applyTeachingLines(
             load.set(teacher.id, (load.get(teacher.id) ?? 0) + 1);
             // The tie carried `sinceDay` and the ledger said nothing, so a life
             // could hold a master and never record having taken one. Taking a
-            // master is a life event at every altitude, and there is exactly one
-            // at a time, so this is not the kind of row that accumulates.
+            // master is a life event at every altitude, and a life now takes at
+            // most MASTERS_AT_ONCE of them, each strictly deeper than the last -
+            // so this is a row that accumulates, three times at the very most,
+            // and the sequence of them is the account of who carried this person
+            // and how far.
             recordMasterTaken(state, student, teacher, taught.name, day);
 
             lines.push({

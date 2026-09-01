@@ -130,29 +130,45 @@ import { carryingWounds, setRealm, woundsCarriedBy, type NpcRecord } from './npc
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The person the world has already named as their master, by id.
+ * Everybody the world has named as this person's master, by id.
  *
- * Read off the `master` relationship rather than off "the strongest person in
+ * Read off the `master` relationships rather than off "the strongest person in
  * their house", which would be a second opinion about transmission beside the
  * one `the-ties-an-ordinary-life-produces.ts` already forms - and a wrong one,
  * because that module's whole ruling is that a student is taught by the LOWEST
  * ranked person who can carry them. An apex sect's intake is taught by an outer
  * disciple who is nevertheless a Core Formation cultivator; a poor sect's is
- * taught by its elder. Reading the tie preserves that and invents nothing.
+ * taught by its elder. Reading the ties preserves that and invents nothing.
  *
- * A tie is formed once and never replaced, so somebody whose master died is
- * unguided from that day, which is the intended outcome rather than an
- * oversight - see that module on being abandoned by the person teaching you.
+ * PLURAL, on the design owner's ruling that a student may hold several masters
+ * at once. This returned the FIRST tie for a long time and the whole model
+ * assumed one, which produced the defect that made teaching worthless: the tie
+ * was taken at intake against the lowest person who could carry the student,
+ * so the gap decayed to nothing as they climbed past that teacher, and the day
+ * the teacher died they had nobody. Measured before the change, guidance was
+ * worth x1.05 against a term that offers x1.5, and 39-75% of all master ties
+ * pointed at a grave.
+ *
+ * Losing a master is still a real loss - the tie is kept pointing at the dead,
+ * and `guideOrdinalFor` stops counting it. It is no longer career-ending,
+ * because there are others.
  */
-export function masterIdOf(npc: NpcRecord): string | null {
+export function masterIdsOf(npc: NpcRecord): string[] {
+    const ids: string[] = [];
     for (const tie of npc.relationships) {
-        if (tie.kind === 'master') return tie.targetId;
+        if (tie.kind === 'master') ids.push(tie.targetId);
     }
-    return null;
+    return ids;
 }
 
 /**
- * How far above them their master is standing, or null for nobody.
+ * The highest LIVING master standing above them, or null for nobody.
+ *
+ * The deepest of them and not the first, because that is what being carried by
+ * several people is worth: outgrowing one master leaves the student with the
+ * others rather than with nothing, which is the whole point of holding more
+ * than one. A student climbs past their intake teacher and the elder who took
+ * them on later is still ahead.
  *
  * Null and "a master at or below them" are the same answer to
  * `guidanceMultiplier` - a multiplier of 1 - and it is deliberately the
@@ -163,11 +179,14 @@ export function guideOrdinalFor(
     npc: NpcRecord,
     livingById: ReadonlyMap<string, NpcRecord>
 ): number | null {
-    const masterId = masterIdOf(npc);
-    if (masterId === null) return null;
-    const master = livingById.get(masterId);
-    if (!master || master.status !== 'alive') return null;
-    return master.cultivation.realmOrdinal;
+    let best: number | null = null;
+    for (const masterId of masterIdsOf(npc)) {
+        const master = livingById.get(masterId);
+        if (!master || master.status !== 'alive') continue;
+        const ord = master.cultivation.realmOrdinal;
+        if (best === null || ord > best) best = ord;
+    }
+    return best;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
