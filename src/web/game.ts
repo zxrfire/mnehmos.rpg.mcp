@@ -394,7 +394,7 @@ import { stagesHeldBy, stagesWrittenSince } from './stages.js';
 import { PlayLog, type LogEntry } from './log.js';
 import type { FiledOutcome, Narrator } from './narrator.js';
 import { composeStateSummary } from './prompt.js';
-import { handleAdminManage, isAdminModeEnabled } from '../server/consolidated/admin-manage.js';
+import { handleAdminManage, isAdminModeEnabled, parseAdminCommand } from '../server/consolidated/admin-manage.js';
 import {
     cultivatorView,
     derivedView,
@@ -6299,6 +6299,14 @@ ${noticed}`;
      * Arguments are explicit `key=value` pairs rather than parsed from prose.
      * That is the whole safety property: there is no inference here to be wrong,
      * and an unrecognised action is answered with the list rather than a guess.
+     *
+     * A VALUE ENDS AT THE NEXT KEY, NOT AT THE NEXT SPACE. This used to split on
+     * whitespace, so `set_location location=The Dead Verge` sent `"The"` and
+     * quoting it sent `"The` - and most of this world's gazetteer is multi-word,
+     * so most of the map was unreachable from the operator surface. Booleans had
+     * the same shape of problem: `fill=true` arrived as a string and every
+     * boolean field in the admin schemas rejected it. `parseAdminCommand` owns
+     * both, beside the schemas it has to satisfy.
      */
     private async adminAct(request: string, run: Run, cultivator: Cultivator): Promise<ActResult> {
         if (!isAdminModeEnabled()) {
@@ -6308,9 +6316,8 @@ ${noticed}`;
             );
         }
 
-        const words = request.trim().split(/\s+/).filter(Boolean);
-        const action = words.shift() ?? '';
-        if (!action) {
+        const parsed = parseAdminCommand(request);
+        if (!parsed.action) {
             throw new GameError(
                 `ADMIN needs an action: ${ADMIN_ACTIONS.join(', ')}. ` +
                 'Arguments are key=value, for example: ADMIN spawn_site kind=grave ordinal=41'
@@ -6318,18 +6325,13 @@ ${noticed}`;
         }
 
         const args: Record<string, unknown> = {
-            action,
             cultivatorId: cultivator.id,
-            runId: run.id
+            runId: run.id,
+            // The operator's own ids win over anything typed, and `action` is
+            // last so a `action=` in the arguments cannot redirect the call.
+            ...parsed.args,
+            action: parsed.action
         };
-        for (const word of words) {
-            const at = word.indexOf('=');
-            if (at <= 0) continue;
-            const key = word.slice(0, at);
-            const raw = word.slice(at + 1);
-            const asNumber = Number(raw);
-            args[key] = raw !== '' && Number.isFinite(asNumber) ? asNumber : raw;
-        }
 
         const response = await handleAdminManage(args);
         const text = response.content?.[0]?.text ?? 'The admin surface returned nothing.';
