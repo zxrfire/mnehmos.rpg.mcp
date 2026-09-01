@@ -15,6 +15,26 @@ The organising principle is the same one that makes
 of place. What follows is the set of axes that make them differ, and every one of them is
 a column the engine already reads.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [The four axes](#the-four-axes) | a ruin is being described, compared, or chosen between |
+| &nbsp;&nbsp;[Reading a ruin is a skill, and it is not a realm](#reading-a-ruin-is-a-skill-and-it-is-not-a-realm) | somebody tries to identify who built a site, or the player meets an expert reader |
+| &nbsp;&nbsp;[Knowledge follows engagement, not altitude](#knowledge-follows-engagement-not-altitude) | what a house or person knows about a site is in question |
+| [Convergence: a ruin is not a place you can go](#convergence-a-ruin-is-not-a-place-you-can-go) | a ruin's window is opening, closing, or being waited on |
+| &nbsp;&nbsp;[The escape hatch is real, and self-cancelling](#the-escape-hatch-is-real-and-self-cancelling) | somebody is trapped by a closing window, or claims they can leave anyway |
+| &nbsp;&nbsp;[But somebody might come for you](#but-somebody-might-come-for-you) | the player is in trouble somewhere and has powerful connections |
+| &nbsp;&nbsp;[The schedule is its own kind of knowledge](#the-schedule-is-its-own-kind-of-knowledge) | the timing of an opening is being sold, guarded, or guessed at |
+| [Loot is a record, not a table](#loot-is-a-record-not-a-table) | the player is searching a site, or wondering why the entrance is bare |
+| [Not every ruin is ancient, and the world makes more of them](#not-every-ruin-is-ancient-and-the-world-makes-more-of-them) | a recent disaster has left a site, or a ruin's age is in question |
+| [Access: disciples only, a fee, or a task](#access-disciples-only-a-fee-or-a-task) | a house controls the way in, and the player must pay, join, or serve to enter |
+| [A stripped ruin is empty of things and full of understanding](#a-stripped-ruin-is-empty-of-things-and-full-of-understanding) | the player enters a site everybody agrees is finished |
+| [Mechanics that change the terms](#mechanics-that-change-the-terms) | the player is inside a site that does not behave like an ordinary place |
+| [The variety test](#the-variety-test) | **Tier 3** - never injected |
+
 ---
 
 ## The four axes

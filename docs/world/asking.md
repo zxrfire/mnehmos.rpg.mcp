@@ -5,7 +5,19 @@
 Guidance, not a mechanic. [discovery.md](discovery.md) covers how names arrive unbidden;
 this is what happens when the player goes looking.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [Who you ask decides what you get](#who-you-ask-decides-what-you-get) | the player picks somebody to ask, or asks somebody plainly out of their depth |
+| [What you say matters more than what you are](#what-you-say-matters-more-than-what-you-are) | the player phrases a question, names somebody, or uses a term they may not understand |
+| [Why it matters](#why-it-matters) | **Tier 3** - never injected |
+
 ## Who you ask decides what you get
+
+<!-- tier: 2 trigger="the player picks somebody to ask, or asks somebody plainly out of their depth" -->
 
 Most people genuinely do not know. A carter asked about something above his stratum is not
 being cagey - he has never needed the word. He may guess, confidently and wrongly.
@@ -21,6 +33,8 @@ costs them to say it. Those are three different limits and all three apply.
 whole texture of it.
 
 ## What you say matters more than what you are
+
+<!-- tier: 2 trigger="the player phrases a question, names somebody, or uses a term they may not understand" -->
 
 A door opens because of what the player said, not because of a roll and not because of
 their realm. Naming someone. Using a term correctly. Making it clear they have business
@@ -70,6 +84,8 @@ reading who this person is, what they know, what they owe, how they find the pla
 what was just said. The engine holds the facts; the judgement is narration.
 
 ## Why it matters
+
+<!-- tier: 3 -->
 
 **This is where the player, rather than the character, improves.**
 

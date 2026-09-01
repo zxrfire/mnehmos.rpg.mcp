@@ -10,9 +10,29 @@ The storage model behind all of it is
 [`../../src/engine/social/README.md`](../../src/engine/social/README.md) and
 [`../../src/engine/world/README.md`](../../src/engine/world/README.md).
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [NPCs are protagonists of their own lives](#npcs-are-protagonists-of-their-own-lives) | an NPC does something the player did not prompt, or the player asks what somebody wants |
+| [Goals persist, and outlive their holder](#goals-persist-and-outlive-their-holder) | an NPC's goal, deadline, or obstacle is in play, or somebody dies with an unfinished aim |
+| [Morality is contextual](#morality-is-contextual) | an NPC's motives, allegiance, or willingness to do something ugly is in question |
+| [Why didn't the stronger person just kill them?](#why-didnt-the-stronger-person-just-kill-them) | a stronger character declines to remove a weaker one |
+| [The powerful act indirectly](#the-powerful-act-indirectly) | a powerful figure could act on the player directly and does not |
+| [Characters persist after they are surpassed](#characters-persist-after-they-are-surpassed) | the player has grown past an NPC who mattered earlier |
+| &nbsp;&nbsp;[Importance is not cultivation](#importance-is-not-cultivation) | somebody who matters is weaker than the people around them |
+| &nbsp;&nbsp;[The cast grows sideways](#the-cast-grows-sideways) | **Tier 3** - never injected |
+| &nbsp;&nbsp;[Death is a world-state transition](#death-is-a-world-state-transition) | an important character dies |
+| [And none of it is promised to the player](#and-none-of-it-is-promised-to-the-player) | **Tier 3** - never injected |
+| [Related](#related) | **Tier 3** - never injected |
+
 ---
 
 ## NPCs are protagonists of their own lives
+
+<!-- tier: 2 trigger="an NPC does something the player did not prompt, or the player asks what somebody wants" -->
 
 This is among the most important requirements and the easiest to fake badly.
 
@@ -35,6 +55,8 @@ paranoid, eccentric, lazy, obsessive, loyal, pragmatic - and must drive decision
 every cultivator is a cold mysterious genius.**
 
 ## Goals persist, and outlive their holder
+
+<!-- tier: 2 trigger="an NPC's goal, deadline, or obstacle is in play, or somebody dies with an unfinished aim" -->
 
 A goal is five fields, not psychology: `goal | priority | progress | obstacles | deadline`.
 
@@ -81,6 +103,8 @@ kill him. But what happens afterwards?"* See [`dao-houses.md`](dao-houses.md) an
 
 ## The powerful act indirectly
 
+<!-- tier: 2 trigger="a powerful figure could act on the player directly and does not" -->
+
 Very powerful characters usually avoid direct confrontation. They manipulate factions,
 send disciples, control resources, spread or suppress information, conceal their identity,
 create incentives, arrange conflicts, and work through intermediaries. One may shape
@@ -113,6 +137,8 @@ them combat-relevant.** Their cultivation may stay low while their importance st
 
 ### Importance is not cultivation
 
+<!-- tier: 2 trigger="somebody who matters is weaker than the people around them" -->
+
 Never implement `stronger NPC = more important NPC`. A character can matter because of
 knowledge, family, faction, political authority, history, secrets, relationships,
 resources, expertise, reputation, territory, emotional connection, or unfinished goals.
@@ -130,6 +156,8 @@ by cultivation. See
 
 ### The cast grows sideways
 
+<!-- tier: 3 -->
+
 The protagonist grows vertically; the cast must grow **horizontally**. Friends, rivals,
 mentors, disciples, family, faction leaders, merchants, scholars, enemies, political
 contacts, ancient figures. The player should *accumulate* relationships, not continuously
@@ -140,6 +168,8 @@ secrets, conflicts, resources - and pursue things that have nothing to do with t
 **A powerful character does not exist to demonstrate how strong the next opponent is.**
 
 ### Death is a world-state transition
+
+<!-- tier: 2 trigger="an important character dies" -->
 
 When an important character dies: their faction reacts, their family reacts, their
 disciples react, their enemies react, succession begins, resources move, alliances shift,
@@ -171,6 +201,8 @@ The objective is never to write the journey. It is to create the conditions unde
 such a journey can occur - to anyone, including no one.
 
 ## Related
+
+<!-- tier: 3 -->
 
 - [`../../src/engine/social/README.md`](../../src/engine/social/README.md) - relationships, grudges, belief, secrets
 - [`../../src/engine/world/README.md`](../../src/engine/world/README.md) - NPC records, goals, lineage

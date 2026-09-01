@@ -7,6 +7,22 @@ what makes a run worth playing. The compressed always-loaded version of the regi
 [`NARRATOR-CORE.md`](NARRATOR-CORE.md); this file is the full statement, for humans and for
 agents tuning prompts.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [The register](#the-register) | **Tier 1** - every turn |
+| [Humour is required, not optional](#humour-is-required-not-optional) | **Tier 3** - never injected |
+| [Guidance for the narrator](#guidance-for-the-narrator) | **Tier 1** - every turn |
+| [Naming conventions](#naming-conventions) | **Tier 1** - every turn |
+| [What makes a run interesting](#what-makes-a-run-interesting) | **Tier 3** - never injected |
+| [The core emotional principle](#the-core-emotional-principle) | **Tier 3** - never injected |
+| [Long life is bittersweet](#long-life-is-bittersweet) | **Tier 3** - never injected |
+| [Related](#related) | **Tier 3** - never injected |
+| [Show, never explain](#show-never-explain) | **Tier 1** - every turn |
+
 ---
 
 ## The register
@@ -114,12 +130,16 @@ to a substantially different one - see
 
 ## Related
 
+<!-- tier: 3 -->
+
 - [`NARRATOR-CORE.md`](NARRATOR-CORE.md) - the always-loaded compression of the register
 - [`people.md`](people.md) - who is being written
 - [`../../src/web/README.md`](../../src/web/README.md) - where the prose is composed, and what it is allowed to know
 - [`../../context.md`](../../context.md) - the authority rule the register serves
 
 ## Show, never explain
+
+<!-- tier: 1 -->
 
 The world is full of structure - governance models, two traditions, a sect pyramid, rank
 vocabularies that do not correspond, awareness strata. **None of it is ever explained to
