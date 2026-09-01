@@ -84,6 +84,11 @@ describe('aggregateInjuryPenalties', () => {
         expect(penalties).toEqual({
             cultivationPenalty: 0,
             breakthroughPenalty: 0,
+            // Wounds nothing in the world closes. Zero for anybody unwounded,
+            // and counted separately because a permanent wound is priced like
+            // an open one and excluded from the bleed clock. See
+            // `bleedingInjuryCount`.
+            permanentCount: 0,
             untreatedCount: 0,
             cultivationMultiplier: 1,
             lethalThresholdReached: false
@@ -134,7 +139,11 @@ describe('scarTempering', () => {
         expect(scarTempering([])).toEqual({
             scars: 0,
             breakthroughBonus: 0,
-            deviationRelief: 0
+            deviationRelief: 0,
+            wornScars: 0,
+            rateAttrition: 0,
+            breakthroughAttrition: 0,
+            netBreakthroughModifier: 0
         });
     });
 
