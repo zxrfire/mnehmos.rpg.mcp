@@ -30,9 +30,8 @@
  *
  *   - Production decays with the vein. A sect that loses its ground keeps its
  *     old strong members for a century and loses its pipeline in a generation.
- *   - It separates the two kinds of decline. One ancient elder and no pipeline
- *     reads nothing like no elder and a strong pipeline, and `powerOrdinal`
- *     cannot tell them apart.
+ *   - One ancient elder and no pipeline reads nothing like no elder and a
+ *     strong pipeline, and `powerOrdinal` cannot tell them apart.
  *   - It explains recruitment. A sect that can no longer produce Core
  *     Formation has to buy one, and that is a motive.
  *
@@ -40,6 +39,53 @@
  * characterful on its own: a sect whose strongest member stands four realms
  * above anything it can still produce is living on inheritance, and the data
  * should say so without anyone writing it in prose.
+ *
+ * THE GAP IS A RESOURCE STATEMENT, NOT A TEACHING ONE
+ * ---------------------------------------------------
+ * A house standing at 36 that can only produce 28 has the books and it has the
+ * master. What it does not have is the pills and the comprehension materials -
+ * which DO exist in this world today, and which somebody else can get. Its own
+ * 36 had to reach that peak by their own means. So the gap is a motive, and it
+ * is why a house buys, digs, marries, allies and occasionally goes to war.
+ *
+ * Which constraint a house is actually under is diagnosable rather than
+ * asserted: compare `reliableOrdinal` against the cap of the best cultivation
+ * manual the house teaches (`productionConstraint` below takes that cap as an
+ * argument rather than importing it, so the two catalogs stay uncoupled).
+ * `reliable == the shelf` is a MANUAL-limited house - it delivers everything
+ * its books can. `reliable < the shelf` is a RESOURCE-limited house - it owns a
+ * book it cannot walk anybody to the end of.
+ *
+ * NOT EVERY HOUSE IS IN DECLINE. THIS WAS MEASURED AND IT WAS WRONG.
+ * -----------------------------------------------------------------
+ * `scripts/probe-production.ts` reported thirty-two of thirty-two houses with
+ * their peak behind them, at a mean gap of twelve rungs. A universal decline is
+ * not a setting; it is a mood applied uniformly, and it made the genuinely
+ * declining houses unremarkable. The axis now carries five states, and every
+ * one of them is readable off the numbers by `productionState` below - the
+ * `note` explains the state, it never creates it:
+ *
+ *   declining     `peak > reliable`. It lost access to something it used to
+ *                 source. Still the large majority, because this IS a late age.
+ *   at-peak       `reliable == peak`, below `powerOrdinal`. As good as it has
+ *                 ever been. Its strongest member is not its own product.
+ *   complete      `reliable == peak == powerOrdinal`. It takes people all the
+ *                 way to the end of its book, every time, and there is nowhere
+ *                 further inside it - so its best eventually have to leave.
+ *   ascending     `climbingToward` is set and `waitingOn` is not 'time'.
+ *                 Something changed about what it can SOURCE, and it is
+ *                 working toward a stated target that could still be taken
+ *                 back. The rare one, and the one that did not exist at all.
+ *   well-stocked  `climbingToward` is set and `waitingOn` is 'time'. It already
+ *                 has the material its own method needs, in quantity, and has
+ *                 not had the generations. Nothing is wrong with this house.
+ *                 It is also a target, because everybody knows where the
+ *                 stores are.
+ *
+ * The two moving states are authored under one rule: the reasons must not
+ * repeat. Two ascending houses ascend for unrelated reasons and two declining
+ * houses lost different things, which is the same standard the catalog test
+ * already holds `distinctSentence` to.
  */
 
 /**
@@ -57,8 +103,32 @@ export interface ProductionTier {
     peakOrdinal: number;
     /** How many it produced at that peak, ever. Usually one or two. */
     peakCount: number;
-    /** Years since it last produced anyone at the peak ordinal. */
+    /** Years since it last produced anyone at the peak ordinal. Zero means now. */
     yearsSinceLastPeak: number;
+    /**
+     * The ordinal it is working toward TODAY, where it is working toward one.
+     *
+     * Absent for most of the catalog, which is not going anywhere. Present only
+     * where the house could name the target and something specific has already
+     * happened to put it in reach - and where `note` says both what changed and
+     * what would take it back, because an ascent that cannot be lost is a
+     * status rather than a story.
+     */
+    climbingToward?: number;
+    /**
+     * What stands between the house and `climbingToward`, and therefore what
+     * has to be attacked to stop it. Absent when it is not climbing.
+     *
+     *   'access'  It has the years and lacked the material, and something
+     *             changed about what it can source - ground taken, a supplier
+     *             bought, a patron paying, a route it now carries. Reversible,
+     *             always, which is the whole of the interest.
+     *   'time'    It already holds the material its own method needs, in
+     *             quantity, and simply has not had the generations. Patient
+     *             rather than anxious, and a target for exactly that reason.
+     *   'shelf'   It has the years and the material and is short a book.
+     */
+    waitingOn?: 'access' | 'time' | 'shelf';
     note: string;
 }
 
@@ -204,7 +274,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Unpaid bills. The Hall\'s real ledger is who owes it for treatment, and it never writes one off.',
         production: {
             reliableOrdinal: 20, currentCount: 4, peakOrdinal: 26, peakCount: 3, yearsSinceLastPeak: 120,
-            note: 'A healthy pipeline on ordinary ground: it reliably produces Core Formation Perfection and produced Deity Transformation as recently as four generations ago.'
+            climbingToward: 26, waitingOn: 'access',
+            note: 'Climbing, and what changed is not the ground but what a debt can be settled in. The Hall has begun taking old bills in herb stock and comprehension materials instead of stones, which is the first time the largest book of unpaid obligations in the province has been convertible into anything a disciple can use, and on that it can put a physician back into Deity Transformation. What would end it: the houses able to pay in kind are the same houses whose injured it treats at cost, and it has already stopped doing that in two of four dispensaries without saying why.'
         },
         distinctSentence: 'The only sect that treats its enemies on the floor where they fell and then bills them, and has outlived four sects that thought this was weakness.'
     },
@@ -223,7 +294,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Years of service. Rank, grain and vein access are all counted in seasons carried, and stones are treated as an administrative nuisance.',
         production: {
             reliableOrdinal: 21, currentCount: 5, peakOrdinal: 28, peakCount: 4, yearsSinceLastPeak: 90,
-            note: 'The best pipeline in the province, because the vein under it is the deepest anyone has kept. Production tracks the vein exactly, which is the world model in one row.'
+            climbingToward: 28, waitingOn: 'time',
+            note: 'The best pipeline in the province, because the vein under it is the deepest anyone has kept, and nothing here is short except years. It is the one house in the catalog not waiting on a supplier - it is waiting on people to have carried the stone long enough, because its own rule prices every rung in seasons served and that cannot be paid faster. Which makes it the most obvious target in the province: everybody knows where the stores are, and that they have never been assayed.'
         },
         distinctSentence: 'Sits on the richest vein in the province and has refused for two centuries to lease a foot of it, while maintaining forty formation nodes it cannot light and will not remove.'
     },
@@ -243,7 +315,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Crossings owed. A debt here is discharged by carrying somebody, and the Alliance will accept nothing else from its own.',
         production: {
             reliableOrdinal: 13, currentCount: 9, peakOrdinal: 24, peakCount: 1, yearsSinceLastPeak: 300,
-            note: 'Wide and shallow: a great many at Foundation Establishment, no vein, and exactly one Nascent Soul cultivator in its history, three hundred years ago.'
+            climbingToward: 17, waitingOn: 'access',
+            note: 'Wide, shallow, no vein - and moving for the first time in three centuries, on wagons rather than water. Three Ford Masters have run an unlicensed carrying service to Scarwater for six years and remit a share in kind, so eleven landings now handle bonded refining stock instead of ferry fares, which is enough to put boat hands into Core Formation. It turns on two things the Alliance does not control: the River Elders continuing not to establish what the wagons are, and Scarwater staying a ford rather than becoming a Measured Span station.'
         },
         distinctSentence: 'A federation of ferrymen who learned to fight, who settle internal debts in river crossings rather than stones, and whose oldest asset is a pier they did not build.'
     },
@@ -343,8 +416,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'Its staff genuinely believe the Wei Zhaoyin lineage - the fraud is three generations old and the people repeating it are not the people who committed it.',
         unitOfValue: 'Commission, in stones, on somebody else\'s transaction. The Pavilion is the only faction whose unit is a fraction of another faction\'s unit.',
         production: {
-            reliableOrdinal: 17, currentCount: 7, peakOrdinal: 27, peakCount: 1, yearsSinceLastPeak: 90,
-            note: 'Produces little and hires much. Its prestige rests on a claimed ancestor precisely because its pipeline cannot supply one.'
+            reliableOrdinal: 20, currentCount: 5, peakOrdinal: 20, peakCount: 2, yearsSinceLastPeak: 0,
+            note: 'At its own best, and its own best is modest. An appraiser who spends forty years on the floor arrives at Core Formation Perfection, the Pavilion is turning them out at that rung right now, and it has never in its history produced anybody higher - everything above that on the roll walked in with a price on it. Nothing here is decaying. This is a house that never had far to fall, which is exactly why a claimed ancestor is worth what it is worth.'
         },
         distinctSentence: 'Bought its ancestors at an estate sale the Ninefold Ledger brokered, and is now the Ledger\'s largest client for exactly that reason.'
     },
@@ -363,7 +436,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Successful batches. Standing inside the Guild is a count of refinements that held, and no amount of money moves it.',
         production: {
             reliableOrdinal: 17, currentCount: 5, peakOrdinal: 25, peakCount: 2, yearsSinceLastPeak: 260,
-            note: 'Steady but capped: alchemists spend their cultivation years at a furnace, and the Guild treats a Core Formation grandmaster as a full career.'
+            climbingToward: 21, waitingOn: 'time',
+            note: 'The one house in the catalog that is not short of pills, because it makes them - and short of the only thing pills cannot buy. An alchemist spends the years that would have been cultivation standing at a cauldron refining what other houses climb on, so the Guild sits on stores it could walk its own people to the end of its scripture with and has never had the generations to spare. The stores are not even hidden. They are on a fixed price list nobody negotiates.'
         },
         distinctSentence: 'Built a monopoly on the third of a wall it can read, and still teaches a step that killed the man who proved it was not one.'
     },
@@ -381,8 +455,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'The clan holds that the furnace is theirs by right of the First Hammer building the compound around it. The compound is later than the furnace by an age and the furnace has an inscription the clan reads as decoration.',
         unitOfValue: 'Turns at the furnace. Obligation inside the clan is counted in rota shifts, and outsiders find that a shift cannot be bought at any price.',
         production: {
-            reliableOrdinal: 16, currentCount: 8, peakOrdinal: 23, peakCount: 2, yearsSinceLastPeak: 170,
-            note: 'A blood clan, so intake is births rather than applicants: production is capped by the family and everybody in it knows the number.'
+            reliableOrdinal: 23, currentCount: 4, peakOrdinal: 23, peakCount: 4, yearsSinceLastPeak: 0,
+            note: 'Complete, and closed. A blood clan cannot recruit, so what it produces is the family, and the family gets the same fire every generation: every Ashen child who takes the rota arrives at the rung the clan chief stands on, none has ever passed it, and in eleven generations none has fallen short of it either. Nothing is missing and nothing is decaying. There is simply no further rung inside a compound built round one furnace, which is what the two who refused a turn were actually refusing.'
         },
         distinctSentence: 'A clan whose entire religion is a duty rota for a fire they inherited, cannot relight, and have not let go out in eleven generations.'
     },
@@ -425,12 +499,12 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'It believes the Pavilion values it for the finds. The Pavilion values it because a body teaching in the villages keeps the villages from teaching themselves, which no Dew Elder has ever considered.',
         unitOfValue: 'People sent up the gorge, counted by name, going back four hundred years.',
         production: {
-            reliableOrdinal: 14,
+            reliableOrdinal: 16,
             currentCount: 22,
-            peakOrdinal: 24,
-            peakCount: 1,
-            yearsSinceLastPeak: 70,
-            note: 'Low and steady. The Dew does not keep its best, by design, and the number reflects a body that exports rather than accumulates.'
+            peakOrdinal: 16,
+            peakCount: 6,
+            yearsSinceLastPeak: 0,
+            note: 'Exactly as good as it has ever been, and it gives the result away. The Dew walks a village child to the last rung of the tempering scripture and then sends them up the gorge, so its figure is a delivery rather than a ceiling: it has never produced anybody higher, has never tried, and is producing at that rung this year. The Warden standing well above it is an inheritance rather than a product, and the Dew has never pretended otherwise.'
         },
         distinctSentence: 'It is the only holding in the Azure grant that built what it stands in, and the only one that measures itself in people it no longer has.'
     },
@@ -554,8 +628,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'It believes the tithe rate is generous because it has never been raised. Measured against five centuries of Consortium rates, holding it flat has more than tripled it in real terms.',
         unitOfValue: 'Spirit stones, paid weekly and in advance, which is the entire pitch and the reason it works.',
         production: {
-            reliableOrdinal: 16, currentCount: 11, peakOrdinal: 29, peakCount: 2, yearsSinceLastPeak: 40,
-            note: 'High intake, high mortality, and a genuinely functional pipeline to Foundation Establishment - the Hall produces more Foundation cultivators annually than any righteous sect in the province.'
+            reliableOrdinal: 29, currentCount: 2, peakOrdinal: 29, peakCount: 3, yearsSinceLastPeak: 0,
+            note: 'Finished rather than stalled, and it is the sharpest case in the catalog: everybody who survives the Hall finishes its book, because the devouring art ends where it ends and the Hall\'s material is its own intake, which is the one supply in the world that has never run short. It has been paying for that by under-declaring the Court\'s tithe by about a fifth for six years. The price is who does not survive - the same high intake and high mortality that make it the largest annual source of Foundation Establishment cultivators in the province - and the consequence is that the Abyss Lord is right that talent leaves, because there is nowhere further inside the Hall except his seat.'
         },
         distinctSentence: 'Sets up a table with a cash box outside other sects\' admission days and pays the first month in advance to everyone they turned away.'
     },
@@ -774,7 +848,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Days of face time. Every debt, wage, fine and favour in the region is denominated in grant days, and stones are simply how days are bought.',
         production: {
             reliableOrdinal: 13, currentCount: 3, peakOrdinal: 20, peakCount: 1, yearsSinceLastPeak: 60,
-            note: 'The whole region\'s pipeline, and it is three people at Standing Cut. One Keystone in two hundred years, sixty years ago, and he is the current Weir Master.'
+            climbingToward: 21, waitingOn: 'access',
+            note: 'The whole region\'s pipeline is three people at Standing Cut, one Keystone in two hundred years, and a bureau that has started prospecting, which is not a thing bureaus do. Two survey parties have gone past the Dead Verge in four years looking for a third workable face and one did not come back, none of it entered in the grant book. A third face would be the first new ground in the Marches since the catastrophe and would let the Office raise a Keystone out of its own ticketed instead of waiting sixty years for another accident. It ends if Gapwater runs out first, and the Office is the only party that has measured how close that is and has never published the figure.'
         },
         distinctSentence: 'Rents the only two workable stone faces in a province by the day, prices them by a rank table it has never dared submit for certification, and none of its members have ever held a chisel.'
     },
@@ -812,7 +887,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Shares in a find, allocated before the shift and honoured after a death - a dead gleaner\'s share goes to their family, and the Company has never once defaulted on that.',
         production: {
             reliableOrdinal: 8, currentCount: 9, peakOrdinal: 17, peakCount: 1, yearsSinceLastPeak: 40,
-            note: 'Loses about one in nine a season, so it produces almost nobody: the one Keystone in its history left for the Low Fall within a year of reaching it.'
+            climbingToward: 13, waitingOn: 'access',
+            note: 'It loses about one in nine a season and the one Keystone in its history left for the Low Fall within a year - and it is rising anyway, on ground it is not supposed to be on. The Factors have worked two live burn edges without a rotation entry and paid the shares out of the general fund; live ground yields grades the nine-year cycle never turns up, and on that material a gleaner reaches Foundation Establishment instead of stopping at Chipping. What ends it is not the Weir Office. It is one season where the losses outrun the fund and a family goes unpaid, which has never happened and is the whole of what the Company is.'
         },
         distinctSentence: 'Pays a dead digger\'s share to their family without exception, will not open a sealed door in the first hour of a shift, and works a rotation whose stated purpose it has misremembered as mercy.'
     }
@@ -1262,7 +1338,91 @@ export function inheritanceGap(factionId: string, powerOrdinal: number): number 
     return tier ? powerOrdinal - tier.reliableOrdinal : 0;
 }
 
-/** Factions that can no longer produce what they once did, worst first. */
+/**
+ * Which of the five states a house is in, derived rather than declared.
+ *
+ * See the file header for what each one means. The order of the tests is the
+ * definition: a house that is MOVING is described by where it is going, and
+ * only a house that is not moving is described by where it has been.
+ *
+ * Takes `powerOrdinal` as an argument for the same reason `inheritanceGap`
+ * does - this file does not import the sect catalog.
+ */
+export type ProductionState =
+    | 'declining'
+    | 'at-peak'
+    | 'complete'
+    | 'ascending'
+    | 'well-stocked';
+
+export function productionState(factionId: string, powerOrdinal: number): ProductionState | undefined {
+    const p = FACTION_CHARACTER[factionId]?.production;
+    if (!p) return undefined;
+    if (p.climbingToward !== undefined && p.climbingToward > p.reliableOrdinal) {
+        return p.waitingOn === 'time' ? 'well-stocked' : 'ascending';
+    }
+    if (p.peakOrdinal > p.reliableOrdinal) return 'declining';
+    return p.reliableOrdinal >= powerOrdinal ? 'complete' : 'at-peak';
+}
+
+/**
+ * Whether a house is held back by its shelf or by its stores.
+ *
+ * `shelfCapOrdinal` is the cap of the best cultivation manual the house
+ * teaches, which lives in `techniques.ts` by way of `sects[].teaches`. It is
+ * passed in rather than imported so that this file stays a description of
+ * institutions and does not acquire a dependency on the technique catalog -
+ * and so that a shelf which grows moves the diagnosis on its own.
+ *
+ * 'manual' - it delivers everything its books can, and the next rung needs a
+ *            book it does not have.
+ * 'resource' - it owns a book it cannot walk anybody to the end of. This is the
+ *            common case and it is the one the gap was always about.
+ */
+export type ProductionConstraint = 'manual' | 'resource';
+
+/**
+ * A manual's `cap` is `realmEnd + 1`, so the top rung of a book is a HANDOFF to
+ * wherever the next book opens rather than somewhere the house puts people.
+ * A house delivering `cap - 1` has therefore delivered everything its shelf
+ * holds, and one more rung needs a different book rather than more pills.
+ */
+const HANDOFF_RUNG = 1;
+
+export function productionConstraint(
+    factionId: string,
+    shelfCapOrdinal: number
+): ProductionConstraint | undefined {
+    const p = FACTION_CHARACTER[factionId]?.production;
+    if (!p) return undefined;
+    return p.reliableOrdinal >= shelfCapOrdinal - HANDOFF_RUNG ? 'manual' : 'resource';
+}
+
+/** Everything working toward a named target today, and what each one waits on. */
+export function ascendingFactions(): {
+    factionId: string;
+    climbingToward: number;
+    waitingOn: NonNullable<ProductionTier['waitingOn']>;
+}[] {
+    return Object.entries(FACTION_CHARACTER)
+        .filter(([, c]) =>
+            c.production.climbingToward !== undefined
+            && c.production.climbingToward > c.production.reliableOrdinal)
+        .map(([factionId, c]) => ({
+            factionId,
+            climbingToward: c.production.climbingToward!,
+            waitingOn: c.production.waitingOn ?? 'access'
+        }));
+}
+
+/**
+ * Factions that have lost ground - `peak` above `reliable` - worst first.
+ *
+ * This is the raw arithmetic and not the state: a house climbing back toward a
+ * peak it once held appears here too, because it HAS lost the ground, and
+ * `productionState` is what says whether it is still falling. Use that for the
+ * five-way read and this for how far anybody has fallen.
+ */
 export function decliningFactions(): { factionId: string; lost: number; yearsSinceLastPeak: number }[] {
     return Object.entries(FACTION_CHARACTER)
         .map(([factionId, c]) => ({
