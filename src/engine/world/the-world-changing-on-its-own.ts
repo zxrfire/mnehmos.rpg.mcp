@@ -96,7 +96,9 @@ import {
 } from './npc-state.js';
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
-import { manualCeilingOf, newlyEntitled, refreshChosen, BOOKLESS_CEILING } from './manuals.js';
+import {
+    newlyEntitled, refreshChosen, reachableCeilingFor, BOOKLESS_CEILING
+} from './manuals.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
 import { applyGatherings } from './gatherings.js';
@@ -642,7 +644,10 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         // the situation acquiring a new manual exists for, and the right outcome is
         // that they stop here until they find a later volume, are taught, or
         // write one.
-        const manualCeiling = manualCeilingOf(npc) || BOOKLESS_CEILING;
+        // What they can be CARRIED to, which for a disciple of a house that
+        // teaches in person is the shelf they are being taught off rather
+        // than the nothing they are holding. See `reachableCeilingFor`.
+        const manualCeiling = reachableCeilingFor(state, npc) || BOOKLESS_CEILING;
         const ceiling = Math.min(regionCeiling, manualCeiling);
         if (ceiling <= npc.cultivation.realmOrdinal) continue;
 

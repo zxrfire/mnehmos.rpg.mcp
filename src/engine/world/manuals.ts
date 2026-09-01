@@ -948,6 +948,71 @@ export function manualCeilingOf(npc: NpcRecord): number {
 }
 
 /**
+ * How high somebody can actually be carried, book or no book.
+ *
+ * `manualCeilingOf` answers "what do they HOLD", and for most people that is
+ * the same question. It is not the same question for anybody in a house that
+ * teaches in person.
+ *
+ * A house whose admission terms are `a_teacher` hands its newest people no
+ * object at all - an inner disciple teaches them, which is the cheapest option
+ * for the house and the most demanding for the disciple. I wrote that rule and
+ * noted at the time that such a disciple is "not stuck, they are dependent,
+ * which is a different and more interesting problem, and it is the relationship
+ * layer's". The relationship layer never picked it up, so in practice it was a
+ * hard stop with a deadlock inside it:
+ *
+ *     no book -> BOOKLESS_CEILING (6) -> cannot reach any rank's bar
+ *             -> never promoted -> never entitled to a book -> no book
+ *
+ * Measured: 26 houses teach this way, 219 people belong to them, 121 of those
+ * held no road at all, and 74 sat at rank 0 permanently unable to leave it.
+ * That is most of the world's bookless, and every one of them was inside an
+ * institution whose entire purpose is to teach.
+ *
+ * Being taught is not the same as being given. A disciple learning a method
+ * from somebody who holds it can climb it; what they cannot do is take it with
+ * them, sell it, or keep it if the house turns on them. So the CEILING follows
+ * what their rank reaches on the shelf, and the OBJECT stays where it was.
+ * Which is exactly what makes those terms demanding rather than generous.
+ */
+export function reachableCeilingFor(state: WorldState, npc: NpcRecord): number {
+    const held = manualCeilingOf(npc);
+    if (held > 0) return held;
+    if (!npc.factionId) return 0;
+    if (admissionOffer(npc.factionId, state.seed) !== 'a_teacher') return 0;
+
+    const shelf = manualsOf(npc.factionId);
+    if (shelf.length === 0) return 0;
+    const faction = state.factions.find(f => f.id === npc.factionId);
+    const rankCount = Math.max(1, faction?.ranks.length ?? 1);
+    const reach = npc.tags.includes('chosen')
+        ? shelf.length
+        : shelfReach(npc.factionRankIndex, rankCount, shelf.length);
+
+    // Somebody has to be able to teach it. A house that lost its last master of
+    // a book cannot pass it on however senior the student is - the same rule
+    // `newlyEntitled` uses to carry people over a gap in a shelf.
+    const teachable = new Set<string>();
+    for (const other of state.npcs) {
+        if (other.status !== 'alive' || other.factionId !== npc.factionId) continue;
+        if (other.id === npc.id) continue;
+        for (const id of other.cultivation.techniqueIds) {
+            const m = shelf.find(x => x.id === id);
+            if (m && other.cultivation.realmOrdinal >= m.requiredOrdinal) teachable.add(id);
+        }
+    }
+
+    let best = 0;
+    for (const m of shelf.slice(0, reach)) {
+        if (!suitsRoot(npc.cultivation.spiritRoot, m.element)) continue;
+        if (m.requiredOrdinal > npc.cultivation.realmOrdinal && !teachable.has(m.id)) continue;
+        best = Math.max(best, m.cap);
+    }
+    return best;
+}
+
+/**
  * Can this person write out another copy?
  *
  * Mastery, not acquaintance: somebody must have taken the book to its end
