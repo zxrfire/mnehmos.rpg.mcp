@@ -2033,8 +2033,16 @@ export const BreakthroughResultSchema = z.object({
         foundationQuality: FoundationQualitySchema.nullable().default(null),
         /** Years to ADD to age. The span spent rather than lived. */
         yearsBurned: z.number().min(0).default(0),
-        soulState: SoulStateSchema.nullable().default(null),
-        identityContinuity: z.number().min(0).max(1).nullable().default(null),
+        /** Soul state this outcome drags them DOWN to. A floor, never an assignment. */
+        soulStateFloor: SoulStateSchema.nullable().default(null),
+        /**
+         * What to MULTIPLY `identityContinuity` by, in (0, 1].
+         *
+         * A factor, never an assignment. Ruin compounds and never restores -
+         * written as an absolute, a second ruin healed the first. See
+         * `applyCrossingConsequence`.
+         */
+        identityContinuityFactor: z.number().min(0).max(1).nullable().default(null),
         /** True when this cultivator will never cross a realm boundary again. */
         halted: z.boolean().default(false)
     }).nullable().default(null),

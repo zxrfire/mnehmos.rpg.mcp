@@ -230,9 +230,9 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Core Formation, comfortable, established, and entirely without a next step. Frequently the most politically capable people in a sect, because the ones who are still climbing have somewhere else to put the effort.'
     },
     {
-        key: 'stillborn-soul',
+        key: 'unformed-nascent-soul',
         nature: 'physical',
-        name: 'A stillborn soul',
+        name: 'An unformed nascent soul',
         description:
             'The infant soul was born and did not take. What is in there is the shape of one - it holds the body together and it will never separate from it, which is the entire point of the realm and the one thing this one cannot do.',
         severities: ['crippling'],
@@ -243,9 +243,9 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Nascent Soul in every way that a stranger could check, and mortal in the way that matters: destroy the body and they are gone. They do not advertise it and a great many of them have died of somebody finding out.'
     },
     {
-        key: 'unmerged-self',
+        key: 'incomplete-transformation',
         nature: 'physical',
-        name: 'An unmerged self',
+        name: 'An incomplete transformation',
         description:
             'The form was taken apart and put back together with body and soul lying alongside each other rather than through each other. It works. It is two things wearing one shape, and it will not be raised as one.',
         severities: ['crippling'],
@@ -256,22 +256,22 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Deity Transformation, and a half-second of hesitation between deciding and moving that nobody below the realm can see and nobody at it can miss. It is the tell, and their peers are unfailingly polite about it.'
     },
     {
-        key: 'spoiled-temper',
+        key: 'damaged-spirit-sense',
         nature: 'physical',
-        name: 'A spoiled temper',
+        name: 'Damaged spirit sense',
         description:
-            'The self went into the emptiness and came out smaller without coming out harder. The refining happened; the tempering did not, and what is left is a reduced thing rather than a concentrated one.',
+            'Refining the self against emptiness is what builds the spirit sense - the reach a cultivator perceives with, out past the body. This one went into the emptiness and the sense came back torn: it extends, it returns wrong, and the errors are not the kind the owner can detect from inside.',
         severities: ['crippling'],
         permanent: true,
         treatment:
-            'A foundation-repairing pill of immortal grade. Nothing made below the Lid has ever re-tempered anybody.',
+            'A foundation-repairing pill of immortal grade. Nothing made below the Lid has ever restored a spirit sense once it has been torn in the emptiness.',
         presentation:
-            'Void Refinement, quiet, and notably less than the rung suggests - they lost what the emptiness took and did not gain what it gives back. They know exactly what they are and are usually the least deceived people in any room.'
+            'Void Refinement, and a reach that reports things which are not there and misses things that are. They compensate by never relying on it - they ask, they send people, they check twice - and it makes them look either extraordinarily careful or extraordinarily suspicious depending on who is describing them.'
     },
     {
-        key: 'open-seam',
+        key: 'failed-body-joining',
         nature: 'physical',
-        name: 'An open seam',
+        name: 'A failed body joining',
         description:
             'Soul and body were welded from the sinew inward and one seam did not close. Everything moving through this cultivator is enormous, and there is a place where it is not held.',
         severities: ['crippling'],
@@ -282,9 +282,9 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Body Integration, indivisible everywhere but one place, and the whole of their art is built around not being touched there. It is how people at this realm are killed, and they are the only ones who know precisely where.'
     },
     {
-        key: 'stalled-rising',
+        key: 'unset-ascension',
         nature: 'physical',
-        name: 'A stalled rising',
+        name: 'An unset ascension',
         description:
             'Body, soul, name and dao are raised in that order and the rising stopped partway along. What was raised stays raised. What was not never will be, and the four no longer sit level with each other.',
         severities: ['crippling'],
@@ -295,9 +295,9 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Grand Ascension, uneven - enormous along the axes that went up and oddly ordinary along the ones that did not. Which is which differs by person and is the single most useful thing to know about any of them.'
     },
     {
-        key: 'broken-step',
+        key: 'unformed-tribulation-body',
         nature: 'physical',
-        name: 'A broken step',
+        name: 'An unformed tribulation body',
         description:
             'The step into the last realm was taken and did not land clean. They are at the rung, they hold it, and the part of them that would summon a tribulation is the part that broke getting here.',
         severities: ['crippling'],

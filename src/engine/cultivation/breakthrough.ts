@@ -88,6 +88,7 @@ import {
     brokenStatusRepairedBy,
     resolveCrossingFailure,
     rollArrivesBroken,
+    structuralBlockOn,
     trialForOrdinal,
     type CrossingConsequence,
     type TrialKind
@@ -871,6 +872,25 @@ export function canAttemptBreakthrough(
     //
     // And the desperate path is not merely survivable, it is curative: clearing
     // a crossing while carrying the status removes it. See THE CRUCIBLE below.
+    //
+    // A CRACKED STRUCTURE, HOWEVER, REFUSES THE NEXT REALM CROSSING, and that
+    // one is mechanical rather than punitive: the core will not form on a
+    // cracked foundation, the same way a core cannot form before a foundation
+    // exists at all. Structural only - a heart demon crosses with you, a
+    // severed meridian crosses with you, a burnt span crosses with you. Mental
+    // and physical wounds travel up the ladder and are priced by the ordinary
+    // injury penalty; only a broken version of the thing the next thing is
+    // built on stops the build.
+    //
+    // Sub-rank steps are NOT gated, so they can still fill out the realm they
+    // are standing in. That is what leaves them a long life at their rung
+    // rather than quietly executing them on the settling clock.
+    if (isRealmBoundary(cultivator.realmOrdinal)) {
+        const block = structuralBlockOn(cultivator.injuries ?? []);
+        if (block) {
+            return { eligible: false, reason: `barred:${block}`, ...base };
+        }
+    }
     if (required === null || available < required) {
         return { eligible: false, reason: 'insufficient_progress', ...base };
     }
@@ -1473,8 +1493,8 @@ function resolveFailure(
                 outcome: failure.outcome.key,
                 foundationQuality: failure.consequence.foundationQuality ?? null,
                 yearsBurned: failure.consequence.yearsBurned ?? 0,
-                soulState: failure.consequence.soulState ?? null,
-                identityContinuity: failure.consequence.identityContinuity ?? null,
+                soulStateFloor: failure.consequence.soulStateFloor ?? null,
+                identityContinuityFactor: failure.consequence.identityContinuityFactor ?? null,
                 halted: failure.consequence.halted ?? false
             };
         }

@@ -209,10 +209,26 @@ export interface CrossingConsequence {
     foundationQuality?: FoundationQuality;
     /** Years to ADD to `age`. The span that was spent rather than lived. */
     yearsBurned?: number;
-    /** New soul state, when what came back is not what went in. */
-    soulState?: SoulState;
-    /** New `identityContinuity`, 0..1. How much of the original person this is. */
-    identityContinuity?: number;
+    /**
+     * The soul state this outcome drags the cultivator DOWN TO, never up to.
+     *
+     * A floor, not an assignment. See `applyCrossingConsequence`.
+     */
+    soulStateFloor?: SoulState;
+    /**
+     * What this outcome MULTIPLIES `identityContinuity` by, in (0, 1].
+     *
+     * A factor, not an assignment, and the distinction is the whole of the bug
+     * this replaced. Written as an absolute, a second ruin restored whatever
+     * the first had taken: somebody who went mad (0.2) and then went half mad
+     * (0.75) came out three quarters intact, with their soul UPGRADED from
+     * fragmented back to damaged. The more times the world broke them, the more
+     * whole they got.
+     *
+     * Compounded, two Severings at 0.75 leave 56% and the third leaves 42%,
+     * which is what repeated ruin is supposed to mean.
+     */
+    identityContinuityFactor?: number;
     /**
      * True when this cultivator can never cross a realm boundary again.
      *
@@ -222,6 +238,58 @@ export interface CrossingConsequence {
      * answer. See `isHalted`.
      */
     halted?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// APPLYING A CONSEQUENCE
+//
+// One place, so every path that can ruin somebody ruins them the same way.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Worst first. A soul only ever moves down this list. */
+const SOUL_STATE_ORDER: readonly SoulState[] = ['intact', 'damaged', 'fragmented', 'fading'];
+
+/** The worse of two soul states. Never the better. */
+export function worseSoulState(a: SoulState, b: SoulState): SoulState {
+    return SOUL_STATE_ORDER.indexOf(b) > SOUL_STATE_ORDER.indexOf(a) ? b : a;
+}
+
+export interface RuinableSelf {
+    soulState: SoulState;
+    identityContinuity: number;
+    age: number;
+}
+
+/**
+ * Fold a consequence into what somebody already is.
+ *
+ * THE RULE: RUIN COMPOUNDS, IT NEVER RESTORES. Written as plain assignment this
+ * did the opposite - a cultivator who went mad and then went half mad came out
+ * three quarters intact with their soul upgraded from fragmented back to
+ * damaged, so the more times the world broke them the more whole they got. The
+ * second heart demon was an improvement on the first.
+ *
+ * So: the soul takes the WORSE of what it is and what happened, and continuity
+ * MULTIPLIES. Two Severings at 0.75 leave 56% rather than 75%.
+ *
+ * Applied here rather than at each call site precisely so that a new path that
+ * can inflict one cannot forget to compound. Pure - returns the new values.
+ */
+export function applyCrossingConsequence(
+    self: RuinableSelf,
+    consequence: CrossingConsequence
+): RuinableSelf {
+    return {
+        soulState: consequence.soulStateFloor
+            ? worseSoulState(self.soulState, consequence.soulStateFloor)
+            : self.soulState,
+        identityContinuity: consequence.identityContinuityFactor
+            ? Math.max(0, Math.min(1, self.identityContinuity * consequence.identityContinuityFactor))
+            : self.identityContinuity,
+        // Years are spent, not set. Additive for the same reason the other two
+        // compound: burning a span twice costs twice.
+        age: self.age + (consequence.yearsBurned ?? 0)
+    };
 }
 
 export interface CrossingOutcome {
@@ -434,10 +502,10 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
             injuries: [
                 wound(ctx, rng, 'heart-demon-rooted', rng.next() < 0.6 ? 'serious' : 'crippling', 'qi_deviation')
             ],
-            soulState: 'damaged',
+            soulStateFloor: 'damaged',
             // Functional and not right. Still overwhelmingly themselves, which
             // is what makes them employable, meetable and unreliable.
-            identityContinuity: 0.75
+            identityContinuityFactor: 0.75
         })
     },
     {
@@ -457,14 +525,14 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
         },
         apply: (_s, rng, ctx) => ({
             injuries: [wound(ctx, rng, 'heart-demon-ascendant', 'crippling', 'qi_deviation')],
-            soulState: 'fragmented',
+            soulStateFloor: 'fragmented',
             // Low, and deliberately not zero. `identityContinuity` is the field
             // that stops a remnant being mistaken for the person who left it,
             // and this is the same question asked of somebody still walking
             // around: how much of them is this. Enough is left to remember the
             // grudges, hold the techniques and know the way home, which is
             // precisely what makes it dangerous rather than merely sad.
-            identityContinuity: 0.2
+            identityContinuityFactor: 0.35
         })
     },
     {
@@ -479,7 +547,7 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
         },
         apply: (_s, rng, ctx) => ({
             injuries: [wound(ctx, rng, 'sundered-recall', rng.next() < 0.6 ? 'minor' : 'serious', 'qi_deviation')],
-            identityContinuity: 0.85
+            identityContinuityFactor: 0.85
         })
     },
     {
@@ -638,14 +706,14 @@ export const HALTING_WOUND = 'ruined-dantian';
 export const BROKEN_STATUS_FOR_TRIAL: Partial<Record<TrialKind, string>> = {
     the_setting_of_the_foundation: 'broken-foundation',
     the_condensation: 'cracked-core',
-    the_birthing: 'stillborn-soul',
-    the_merging: 'unmerged-self',
-    the_emptiness: 'spoiled-temper',
-    the_joining: 'open-seam',
-    the_ascent: 'stalled-rising',
+    the_birthing: 'unformed-nascent-soul',
+    the_merging: 'incomplete-transformation',
+    the_emptiness: 'damaged-spirit-sense',
+    the_joining: 'failed-body-joining',
+    the_ascent: 'unset-ascension',
     // The crossing INTO Tribulation Transcendence. Lightning resolves whether
     // they survive it; this is what a survival that did not land clean leaves.
-    heavenly_lightning: 'broken-step'
+    heavenly_lightning: 'unformed-tribulation-body'
 };
 
 /** Every broken status, for the callers that need to recognise one. */
@@ -657,7 +725,7 @@ export const BROKEN_STATUSES: readonly string[] = Object.values(BROKEN_STATUS_FO
  * Only meaningful at the crossing INTO Tribulation Transcendence among the
  * lightning ordinals: 41, 42 and 43 are steps within the realm and 44 is the
  * last crossing, which lands on its own two rungs and has its own answer. So
- * lightning maps to 'broken-step' only from ordinal 40.
+ * lightning maps to 'unformed-tribulation-body' only from ordinal 40.
  */
 export function brokenStatusFor(ordinal: number): string | null {
     const trial = trialForOrdinal(ordinal);
@@ -837,17 +905,50 @@ export const BROKEN_STATUS_STRAIN = -0.55;
 export const REPAIRED_IN_THE_CRUCIBLE: Record<string, boolean> = {
     'broken-foundation': true,
     'cracked-core': true,
-    'stillborn-soul': true,
-    'unmerged-self': true,
-    'spoiled-temper': true,
-    'open-seam': true,
-    'stalled-rising': true,
-    'broken-step': false
+    'unformed-nascent-soul': true,
+    'incomplete-transformation': true,
+    'damaged-spirit-sense': true,
+    'failed-body-joining': true,
+    'unset-ascension': true,
+    'unformed-tribulation-body': false
 };
 
 /** Whether a successful crossing would clear this status. */
 export function isRepairableInTheCrucible(status: string | null): boolean {
     return status !== null && (REPAIRED_IN_THE_CRUCIBLE[status] ?? false);
+}
+
+/**
+ * Whether this wound stops the NEXT realm crossing.
+ *
+ * THE GATE IS STRUCTURAL, NOT SEVERITY-BASED, and the reason is mechanical
+ * rather than punitive: each realm builds the next thing on top of the last
+ * thing, and the next thing will not build on a broken version of it. A core
+ * does not form on a cracked foundation. That is not a penalty applied to
+ * somebody who failed; it is the same rule that says a foundation has to exist
+ * before a core can.
+ *
+ * So the broken statuses block, and NOTHING ELSE DOES. A heart demon crosses
+ * with you - it is carried up the ladder, it makes everything harder through
+ * the ordinary injury penalty, and it may even be shed on the way. A severed
+ * meridian crosses with you. A burnt span crosses with you. Mental and physical
+ * wounds travel; a cracked structure stops you.
+ *
+ * Below the last realm the medicine clears it, which is most of what being an
+ * apex clan or a Dao house is worth. At 41 it does not, because medicine is
+ * barred at that crossing by rule - see `REPAIRED_IN_THE_CRUCIBLE`.
+ */
+export function blocksAdvancement(injury: Injury): boolean {
+    if (injury.treated) return false;
+    return injury.woundType !== null && BROKEN_STATUSES.includes(injury.woundType);
+}
+
+/** The structural break stopping this cultivator's next crossing, if any. */
+export function structuralBlockOn(injuries: readonly Injury[]): string | null {
+    for (const injury of injuries) {
+        if (blocksAdvancement(injury)) return injury.woundType;
+    }
+    return null;
 }
 
 /**

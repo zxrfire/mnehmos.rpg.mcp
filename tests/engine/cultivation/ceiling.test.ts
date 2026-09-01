@@ -14,6 +14,12 @@
  * A muddled five-element root does not reach the top however lucky it gets.
  * Its 0.55 cultivation speed is the whole point of it, and luck must never be
  * able to launder that.
+ *
+ * This file asks WHETHER, and every assertion in it is a reachability bound
+ * over a best-of-N search. `crossing.test.ts` next door asks HOW OFTEN, over a
+ * distribution of whole lives, and pins the recalibrated shares. The two are
+ * deliberately separate: the ceilings here are population structure and must
+ * not move, while the shares there are balance and are expected to.
  */
 
 import { forStream } from '../../../src/engine/cultivation/rng.js';
@@ -59,6 +65,13 @@ function peakOrdinal(
         if (yearsAtRank + years >= stagnationYearsForOrdinal(ordinal)) return best;
         if (age + years >= lifespanForOrdinal(ordinal)) return best;
         age += years; yearsAtRank += years; progress += need;
+        // Re-checked with the wounds, against the same subject the attempt is
+        // made with. A cracked structure refuses the next realm crossing - the
+        // core will not form on a broken foundation - so a loop that attempts
+        // anyway gets a throw instead of an outcome.
+        if (!canAttemptBreakthrough({ ...subj, cultivationProgress: progress, injuries }).eligible) {
+            return best;
+        }
         const r = attemptBreakthrough(
             { ...subj, cultivationProgress: progress, attributes, injuries, foundationQuality: foundation },
             { rng: forStream(seed, 'bt', root, attempt++), ambient, turn: Math.floor(age),
@@ -71,6 +84,13 @@ function peakOrdinal(
         // cultivator who never spends a pill stalls in the low thirties
         // regardless of where they are standing - which is correct, and is a
         // separate axis of "everything went right" rather than a clock.
+        //
+        // Treating is no longer free of consequence, though: closed wounds past
+        // SCAR_PLATEAU cost cultivation rate, so a run that healed its way
+        // through thirty failures arrives at the top slower than one that did
+        // not need to. That is the intended shape - healing is still much
+        // better than not healing - and it is what the "reachable" bounds below
+        // are now measured against.
         if (withInsights) {
             const healed = treatWorstInjuries(injuries, injuries.length);
             injuries.length = 0;
@@ -108,10 +128,11 @@ describe('the exceptional site is what opens the top', () => {
     });
 
     it('leaves the last realm reachable rather than merely the first few above 32', () => {
-        // Wider sweep: this harness never treats an injury, so most lives
-        // stall on accumulated meridian damage long before the clocks bind.
-        // Reaching Tribulation Transcendence is supposed to be the outlier
-        // among outliers, and it wants a real sample to show up in.
+        // Wider sweep. Every realm boundary is now capped at
+        // MAX_BOUNDARY_CHANCE however well prepared the cultivator is, so even
+        // the best build loses lives at each of the eight walls below the last
+        // rung. Reaching Tribulation Transcendence is supposed to be the
+        // outlier among outliers, and it wants a real sample to show up in.
         expect(bestOf('single_fire', 'sealed_vein', true, 2500)).toBeGreaterThanOrEqual(41);
     });
 });
