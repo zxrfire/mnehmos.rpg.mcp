@@ -736,6 +736,117 @@ export function mentionableFor(speaker: Speaker): Mentionable[] {
     return LORE.filter(entry => holds(entry, speaker));
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT ANYBODY FROM HERE ALREADY HAS
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The geography an ordinary person born in a place grew up holding.
+ *
+ * discovery.md draws the line at the county: "Their world is the county, the
+ * local sect that takes disciples, the market town, and whatever their
+ * grandmother believed." The county is not one village. Somebody raised in a
+ * temple town can name the market town two days off, the province seat, and
+ * the fact that there is a border and something on the other side of it -
+ * because everybody around them could, since before they could walk.
+ *
+ * This is not a revelation and must not be dressed as one. It is the floor the
+ * ladder starts from, and the reason it exists is that a cultivator who cannot
+ * name anywhere cannot leave, and a cultivator who cannot leave dies on thin
+ * ground at the bottom of the ladder without ever having been told there was
+ * anywhere else.
+ */
+export interface LocalGeography {
+    /** The region the home place sits in, or null when it is off the map. */
+    regionId: string | null;
+    /** That region, as a name. Null when it is called what its seat is called. */
+    region: GeographyPlace | null;
+    /** Every other settlement and site in it. Ordinary local knowledge. */
+    neighbours: GeographyPlace[];
+    /**
+     * Regions the home region has a road to.
+     *
+     * A name and a direction and nothing else. Everybody knows there is a
+     * border and roughly what is over it; nobody local can tell you anything
+     * useful about it, and several of them are wrong.
+     */
+    further: GeographyPlace[];
+}
+
+/** A place, reduced to what a knowledge record actually files. */
+export interface GeographyPlace {
+    /** The name, which is also the id an existence record is filed under. */
+    id: string;
+    name: string;
+    regionId: string;
+}
+
+/**
+ * What somebody from `home` can point at without being told.
+ *
+ * Read straight off `REGIONS` rather than off {@link LORE}, and that is not an
+ * oversight. The lore table deduplicates by NAME so that a thing reachable two
+ * ways is acquired once - which is right for hearsay and wrong here: a province
+ * and the town it is named after collapse into a single row there, and a
+ * cultivator seeded from that row would hold "The Low Fall" and then be unable
+ * to travel to "Low Fall". The names a person grew up saying are the catalog's
+ * own, and this is the one caller that needs them exactly.
+ */
+export function localGeographyFor(home: string | null | undefined): LocalGeography {
+    const regionId = regionOfPlace(home);
+    if (regionId === null) {
+        return { regionId: null, region: null, neighbours: [], further: [] };
+    }
+
+    const region = REGIONS.find(entry => entry.id === regionId) ?? null;
+    if (!region) return { regionId, region: null, neighbours: [], further: [] };
+
+    const wantedHome = normaliseName(home ?? '');
+    const neighbours: GeographyPlace[] = [];
+    for (const place of region.places) {
+        if (normaliseName(place.name) === wantedHome) continue;
+        neighbours.push({ id: place.name, name: place.name, regionId });
+    }
+
+    // The border, and what is past it. Deduplicated because a region can be
+    // reachable four ways - a trade route, a refugee flow, a shared office and
+    // an argument about a survey are one road as far as a name goes.
+    const further: GeographyPlace[] = [];
+    const seen = new Set<string>();
+    for (const connection of region.connections) {
+        if (seen.has(connection.otherRegionId)) continue;
+        seen.add(connection.otherRegionId);
+        const other = REGIONS.find(entry => entry.id === connection.otherRegionId);
+        if (!other) continue;
+        further.push({ id: other.name, name: other.name, regionId: other.id });
+    }
+
+    // The province's own name, unless a town inside it is called the same
+    // thing. Where both exist the town is the one worth holding: it is
+    // somewhere a person can walk to, and carrying both would put two spellings
+    // of one word in front of a narrator that then has to choose.
+    const seatSharesTheName = region.places
+        .some(place => normaliseName(place.name) === normaliseName(region.name));
+
+    return {
+        regionId,
+        region: seatSharesTheName ? null : { id: region.name, name: region.name, regionId },
+        neighbours,
+        further
+    };
+}
+
+/**
+ * Every place in the table this speaker could name, as plain rows.
+ *
+ * The traveller channel's candidate list. Places only, because a traveller's
+ * value is geography: they are the one source a cultivator who never leaves
+ * has for the existence of anywhere else.
+ */
+export function placesInLore(): Mentionable[] {
+    return LORE.filter(entry => entry.kind === 'place');
+}
+
 /**
  * The region a free-text place name belongs to.
  *

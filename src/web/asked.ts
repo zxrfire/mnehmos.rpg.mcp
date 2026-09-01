@@ -99,6 +99,84 @@ export interface Answer {
     introduces: boolean;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT THEY DID, IN WORDS
+//
+// asking.md's one hard rule about variation: "Do not randomise across runs.
+// The world's habits should be stable enough to learn." So these are picked by
+// a stable hash of who was asked and what about, never by a roll. The same
+// person asked the same thing answers the same way for ever, and two different
+// questions to the same person do not come back byte-identical - which is what
+// made ignorance and evasion impossible to tell apart at any point in a run
+// rather than merely at first.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Attached, and the question named something they are placed to say nothing about. */
+const BLANK_LINES: readonly string[] = [
+    '{who} hears the question out and does not answer it, with the ease of somebody who ' +
+    'has been asked a great many things.',
+    '{who} lets the question sit, looks at something behind you, and does not pick it up.',
+    '{who} waits until it is clear no answer is coming, and then asks what you wanted here.'
+];
+
+/** Attached, and the question landed on nothing they could place. */
+const UNPLACEABLE_LINES: readonly string[] = [
+    '{who} turns "{topic}" over once, says something true about the weather on that road, ' +
+    'and lets it go.',
+    '{who} says they could not tell you, in the tone of somebody who could tell you a great ' +
+    'deal about something adjacent, and does not.',
+    '{who} asks who told you that, does not wait for the answer, and moves the conversation ' +
+    'somewhere easier.'
+];
+
+/** Attached, knows it, and the account they owe costs more than the telling. */
+const DEFLECT_LINES: readonly string[] = [
+    '{who} gives an answer general enough to contain nothing, and moves the conversation ' +
+    'somewhere easier.',
+    '{who} agrees that it is a good question, agrees that people do ask it, and has finished ' +
+    'speaking.',
+    '{who} answers a slightly different question, thoroughly, and looks pleased to have helped.'
+];
+
+/** Unattached, above their stratum, and nothing at all stopping them. */
+const GUESS_LINES: readonly string[] = [
+    '{who} answers straight away and at length, and none of it sits with anything else you ' +
+    'have been told.',
+    '{who} has a view on it, delivers the whole view, and is quite certain throughout.',
+    '{who} starts with what their uncle said, and by the end of it has settled several things ' +
+    'nobody asked about.'
+];
+
+/** Unattached, and the question named nothing anybody could answer. */
+const UNATTACHED_UNPLACEABLE_LINES: readonly string[] = [
+    '{who} has never heard "{topic}" said before, and answers anyway, at some length.',
+    '{who} is fairly sure they know what you mean by "{topic}", and is not.',
+    '{who} takes "{topic}" for something else entirely and tells you about that instead.'
+];
+
+/**
+ * Which line this person gives, decided once and for ever.
+ *
+ * A hash rather than a roll: nothing here consumes an RNG stream, nothing
+ * varies between runs, and the same question to the same person is the same
+ * answer in a replay. That is the whole of asking.md's stability rule, and the
+ * reason the person playing can learn the world's habits at all.
+ */
+function pick(lines: readonly string[], who: string, topic: string, askedId: string): string {
+    let hash = 2166136261;
+    for (const text of [askedId, topic.trim().toLowerCase()]) {
+        for (let i = 0; i < text.length; i++) {
+            hash ^= text.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+        }
+        hash ^= 0x5f;
+    }
+    const chosen = lines[Math.abs(hash) % lines.length];
+    return chosen
+        .replace('{who}', who)
+        .replace('{topic}', topic.trim() || 'it');
+}
+
 /**
  * Whether this person has a position to protect.
  *
@@ -185,12 +263,43 @@ export function askedAbout(input: AskedInput): Answer {
         // position does not, which is why the confident wrong answer and the
         // useful one come from the same kind of person.
         if (holdsPosition) {
+            // ── Two different failures, and they used to be one ──
+            //
+            // A question that resolved to something ABOVE this person is a wall:
+            // they are placed to say nothing and they say nothing, and that is
+            // asking.md's official who is not being difficult.
+            //
+            // A question that resolved to NOTHING is a different situation
+            // entirely, and collapsing the two is what made the asking surface
+            // useless. Almost every question a new cultivator asks resolves to
+            // nothing, because they have no names to ask with - so the stratum
+            // test could never pass, every attached speaker returned `blank`,
+            // and `blank` is the one reach that can never deposit a name. Two
+            // entirely different questions came back byte-identical, forever,
+            // and a player learned that asking does not work. It was the single
+            // largest hole in the discovery layer.
+            //
+            // What actually happens when somebody with a position is asked
+            // something they cannot place is that they say something warm and
+            // empty and move it along - which is `deflects`, and a deflection
+            // is worth sitting through precisely because it can still drop the
+            // one thing on the way out.
+            if (!subject) {
+                return {
+                    reach: 'deflects',
+                    lines: [pick(UNPLACEABLE_LINES, who, input.rawTopic, asked.id)],
+                    structure: [
+                        ...structure,
+                        'Reach: deflects. Nothing in the question they could place, and a position ' +
+                        'that makes guessing at it a bad idea.'
+                    ],
+                    teaches: false,
+                    introduces: false
+                };
+            }
             return {
                 reach: 'blank',
-                lines: [
-                    `${who} hears the question out and does not answer it, with the ease of ` +
-                    'somebody who has been asked a great many things.'
-                ],
+                lines: [pick(BLANK_LINES, who, input.rawTopic, asked.id)],
                 structure: [...structure, 'Reach: blank. Above their stratum, and placed to say nothing.'],
                 teaches: false,
                 introduces: false
@@ -198,10 +307,7 @@ export function askedAbout(input: AskedInput): Answer {
         }
         return {
             reach: 'guesses',
-            lines: [
-                `${who} answers straight away and at length, and none of it sits with ` +
-                'anything else you have been told.'
-            ],
+            lines: [pick(GUESS_LINES, who, input.rawTopic, asked.id)],
             structure: [...structure, 'Reach: guesses. Above their stratum, nothing to protect, so they fill it.'],
             teaches: false,
             introduces: true
@@ -213,10 +319,7 @@ export function askedAbout(input: AskedInput): Answer {
         // or the player learns to stop asking rather than learning who to ask.
         return {
             reach: 'deflects',
-            lines: [
-                `${who} gives an answer general enough to contain nothing, and moves the ` +
-                'conversation somewhere easier.'
-            ],
+            lines: [pick(DEFLECT_LINES, who, input.rawTopic, asked.id)],
             structure: [...structure, 'Reach: deflects. Knows it; the account they owe costs more than the telling.'],
             teaches: false,
             introduces: false
@@ -224,10 +327,19 @@ export function askedAbout(input: AskedInput): Answer {
     }
 
     if (!subject) {
+        // Unattached, and asked about something that named nothing. They engage,
+        // get nowhere, and fill the space - which is the carter answering
+        // confidently and wrongly, and it is `guesses` rather than `blank`
+        // because something came out of their mouth and the player has no way
+        // to tell that it was worthless.
         return {
-            reach: 'blank',
-            lines: [`${who} does not follow the question, and says so.`],
-            structure: [...structure, 'Reach: blank. Nothing was named that anybody could answer.'],
+            reach: 'guesses',
+            lines: [pick(UNATTACHED_UNPLACEABLE_LINES, who, input.rawTopic, asked.id)],
+            structure: [
+                ...structure,
+                'Reach: guesses. Nothing was named that anybody could answer, and nothing ' +
+                'stops them answering anyway.'
+            ],
             teaches: false,
             // They engaged with the question, which is more than a shrug.
             introduces: true
