@@ -89,7 +89,7 @@ import {
     type ManualBand,
     type OpeningPenalty
 } from './cultivation.js';
-import { ElementSchema, type Element, type TechniqueGrade } from '../../schema/cultivation.js';
+import type { TechniqueGrade } from '../../schema/cultivation.js';
 // The one piece of "a piece is worth less than the whole" arithmetic in the
 // repo. A volume of a scattered canon is a manual capped one rung lower for
 // exactly the reason a shattered blade is a worse blade, and there must not be
@@ -150,13 +150,38 @@ export interface GatedManual extends CappedManual, GatedTechnique {
     domainDegree?: number;
 }
 
-/** A manual as {@link canDerive} reads it. */
-export interface DerivableManual extends GatedManual {
-    /** Whether a sufficient dao could write the continuation. */
+/** A manual as {@link canExtend} reads it. */
+export interface ExtendableManual extends GatedManual {
+    /**
+     * NO LONGER READ, and kept only so a caller passing a catalog row still
+     * typechecks.
+     *
+     * It encoded an opt-in allowlist: certain manuals were extendable and the
+     * rest were not. That is the wrong model. Writing the next stage is
+     * something a CULTIVATOR does to the book in front of them, not a property
+     * an author blesses certain rows with - so extension is available by
+     * default and what varies is whether anybody could manage it, which is what
+     * the new-ground curve measures.
+     *
+     * @deprecated Read `notExtendableReason` instead.
+     */
     derivable?: boolean;
-    /** Why not, when it cannot. An absence with a reason attached. */
+    /**
+     * Why this particular manual cannot be extended, however deep the reader,
+     * or null/absent for the ordinary case where it can.
+     *
+     * The opt-OUT, and the half of the old model worth keeping. These are the
+     * interesting refusals - the ones where "you cannot write the next stage"
+     * is a fact about the book rather than about the reader. The catalog's
+     * `NOT_DERIVABLE_NOTES` are already exactly this and are read verbatim.
+     */
+    notExtendableReason?: string | null;
+    /** The catalog's current name for the field above. Read as a fallback. */
     notDerivableReason?: string | null;
 }
+
+/** @deprecated Renamed to {@link ExtendableManual}. */
+export type DerivableManual = ExtendableManual;
 
 // Realm geometry and the opening penalty, re-exported from `cultivation.ts` so
 // that everything the escape routes need reads off one import.
@@ -171,6 +196,120 @@ export {
     type ManualBand,
     type OpeningPenalty
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT A MANUAL IS: A SEQUENCE OF STAGES
+//
+// The correction that reshaped this module, and it simplified more than it
+// complicated. A manual is not a fixed object with a ceiling attached. It is a
+// numbered sequence of stages, and the cap is simply HOW FAR IT HAS BEEN
+// WRITTEN. A manual stops at stage twelve because nobody has written stage
+// thirteen. Somebody with the understanding writes thirteen, and the manual now
+// goes one rung further. Then fourteen. Then fifteen.
+//
+// Three consequences, and none of them is a new subsystem:
+//
+//   EXTENDING IS SOMETHING A CULTIVATOR DOES, not a property a catalog author
+//   sets on certain rows. Any manual can in principle gain a stage; what varies
+//   is whether anybody alive could manage it, which is what the new-ground
+//   curve measures. `derivable` as an opt-in allowlist was the wrong model and
+//   is no longer read - see {@link canExtend}.
+//
+//   ONE STAGE IS ONE RUNG. The one-rung rule was arrived at before the model
+//   that explains it, and this is the explanation.
+//
+//   A MANUAL GAINS A STAGE THREE WAYS, interchangeable in effect and utterly
+//   different in cost: find the volume somebody already wrote, be taught it, or
+//   write it yourself. That is one mechanism with three doors rather than two
+//   parallel systems, and `effectiveCapOf` was already most of it.
+//
+// ── Volumes and stages are the same idea at different grain ──────────────
+//
+// Stated carefully, because the tidy version is false. A volume is a PHYSICAL
+// container and a stage is a UNIT OF METHOD, and they do not divide evenly:
+// the one scattered work in the catalog is 3 volumes across 4 rungs. So this
+// module does not renumber the catalog or pretend a volume is a stage. What is
+// shared is the reasoning - both are "somebody already wrote this part, and
+// without it the book stops earlier" - and both therefore run through
+// `shardPower` rather than through two different pieces of arithmetic.
+//
+// ── A written stage is transmissible ─────────────────────────────────────
+//
+// "It can be passed on from master to student personally (or even written
+// down)." So a derivation is not a private escape. It is how a manual actually
+// grows, and how a house's library gets deeper over generations - which is the
+// same fact dormant arts and deep-foundation sects state from the other end: a
+// house holds stages somebody wrote long ago that nobody living has reached.
+//
+// Mechanically this needs nothing new. A stage somebody wrote is a stage like
+// any other, so `canTransmit` in `../encounters/acquisition.ts` already carries
+// it from master to student, and its "you cannot be shown further than the
+// teacher went" rule is exactly right for it.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * One stage of a manual: the unit a manual grows by, and one rung of ceiling.
+ *
+ * This is what a derivation PRODUCES. It is not a technique row and must not be
+ * persisted as one - see the note on {@link writeNextStage} for what the
+ * storage layer actually needs.
+ */
+export interface Stage {
+    /** The manual this is a stage OF. Stages do not exist on their own. */
+    manualId: string;
+    /**
+     * 1-based. Stage n carries a reader from `requiredOrdinal + n - 1` to
+     * `requiredOrdinal + n`, so the manual's cap is its highest written stage.
+     */
+    number: number;
+    /**
+     * Who wrote it, or null for the stages the manual has always had.
+     *
+     * The field that makes a library a history. A house holding stage 14 of
+     * something, written four hundred years ago by somebody whose name is on
+     * it, is a fact this column produces rather than one anybody authored.
+     */
+    authorId: string | null;
+    /** Day it was written. Null for the stages the manual was found with. */
+    writtenOnDay: number | null;
+    /**
+     * How much of it failed to survive being written down, 0..1.
+     *
+     * High for a newly written stage on purpose: one person's working notes are
+     * not a house's polished canon. This is what makes a derived stage harder
+     * for the NEXT reader than the stages before it, and it is the honest cost
+     * of a library that grew by accretion.
+     */
+    opacity: number;
+}
+
+/**
+ * How many stages this manual has been written to.
+ *
+ * Derived, not authored: the cap IS the count of written stages, so there is no
+ * new field and nothing for a catalog author to keep in sync.
+ */
+export function stagesWrittenOf(manual: Pick<CappedManual, 'requiredOrdinal' | 'cap'>): number {
+    const from = clampOrdinal(manual.requiredOrdinal);
+    const to = manual.cap === null ? MAX_ORDINAL : clampOrdinal(manual.cap);
+    return Math.max(0, to - from);
+}
+
+/**
+ * How many parts of an ordered work are held from the beginning, unbroken.
+ *
+ * The contiguity rule, and it is the whole reason stages are numbered: nobody
+ * practises stage fifteen without fourteen. Holding the first and third volumes
+ * of a canon is holding the first volume, plus a book you cannot read yet.
+ */
+export function contiguousRun(ordered: readonly string[], held: ReadonlySet<string>): number {
+    let run = 0;
+    for (const part of ordered) {
+        if (!held.has(part)) break;
+        run++;
+    }
+    return run;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // E1. THE SCATTERED SET
@@ -240,6 +379,13 @@ export function effectiveCapOf(
     const held = new Set(heldVolumeIds);
     const missing = volumes.filter(v => !held.has(v));
     const volumesHeld = volumes.length - missing.length;
+    // CONTIGUITY. A work in parts is read in order, so what a holder can
+    // actually practise is the unbroken run from the beginning. Holding the
+    // first and third volumes is holding the first volume and owning a book
+    // they cannot read yet, which is a different and more interesting position
+    // than "one volume short".
+    const run = contiguousRun(volumes, held);
+    const unusable = volumes.length - run;
 
     if (missing.length === 0) {
         return {
@@ -259,8 +405,12 @@ export function effectiveCapOf(
 
     // The notional whole. An uncapped work is measured from the top of the
     // ladder, because a piece of a thing that never stops still stops.
+    //
+    // Stepped down once per part BEYOND THE UNBROKEN RUN rather than once per
+    // missing part, which is the contiguity rule above expressed in the one
+    // piece of "a piece is worth less than the whole" arithmetic this repo has.
     let cursor: number | null = wholeCap === null ? MAX_ORDINAL + 1 : wholeCap;
-    for (let i = 0; i < missing.length; i++) {
+    for (let i = 0; i < unusable; i++) {
         cursor = shardPower(cursor);
     }
     const dropped = cursor === null ? null : Math.max(0, cursor);
@@ -278,7 +428,11 @@ export function effectiveCapOf(
         line: volumesHeld === 0
             ? `${title} exists in ${volumes.length} volumes and none of them are in hand. ` +
               'There is nothing here to practise.'
-            : `${title} is ${volumes.length} volumes and ${volumesHeld} of them are in hand. ` +
+            : `${title} is ${volumes.length} volumes and ${volumesHeld} of them are in hand` +
+              `${run < volumesHeld
+                  ? `, but only the first ${run} run unbroken - the rest cannot be read past ` +
+                    'the gap, and a later volume is worth nothing without the one before it'
+                  : ''}. ` +
               `What is missing costs ${rungsLost} ${rungsLost === 1 ? 'rung' : 'rungs'} of ceiling: ` +
               (cap === null
                   ? 'and it still does not stop.'
@@ -476,8 +630,8 @@ function reachClause(requirement: ManualRequirement): string {
 
 /** What a derivation attempt is refused for, when it is. */
 export type DerivationRefusal =
-    /** The book itself cannot be reconstructed, for a stated reason. */
-    | 'not_derivable'
+    /** This particular book cannot be extended, for a stated reason. */
+    | 'not_extendable'
     /** No road at all, or one too shallow to build on. `daoGate`'s word. */
     | 'no_matching_dao'
     /** A road deep enough to READ this and not to EXTEND it. */
@@ -517,24 +671,21 @@ export const DERIVATION_STANDING: DaoStanding = 'dao';
  * Shaped exactly like `daoGate` and reusing `daoMatches`, so the two refusals
  * read alike and a caller that already renders one renders the other.
  */
-export function canDerive(
+export function canExtend(
     dao: DaoAssessment,
-    manual: DerivableManual,
+    manual: ExtendableManual,
     precedent?: Precedent
 ): DerivationCheck {
     const title = manual.name ?? manual.id;
     const base = { requiredStanding: DERIVATION_STANDING, heldStanding: dao.standing };
 
-    if (manual.derivable === false || manual.derivable === undefined) {
-        return {
-            ...base,
-            permitted: false,
-            reason: 'not_derivable',
-            detail: manual.notDerivableReason
-                ?? `${title} is not a work anybody reconstructs. What is in it was ` +
-                   'transmitted rather than arrived at, and there is no road that ends ' +
-                   'at these pages.'
-        };
+    // Opt-OUT, not opt-in. Any manual can in principle gain a stage; a few
+    // carry a stated reason they cannot, and those are the interesting ones -
+    // a book written for a condition no reader is in, or one whose only test is
+    // a crossing nobody gets to attempt twice.
+    const blocked = manual.notExtendableReason ?? manual.notDerivableReason ?? null;
+    if (blocked) {
+        return { ...base, permitted: false, reason: 'not_extendable', detail: blocked };
     }
 
     if (manual.cap === null || manual.cap > MAX_ORDINAL) {
@@ -782,66 +933,22 @@ export function derivationYears(precedent: Precedent): number {
 }
 
 /**
- * The shape of a manual this module wrote.
+ * WHAT USED TO BE HERE: `DerivedManual`, a complete technique row this module
+ * invented, with its own id, name, grade, element and a `provenance: 'derived'`
+ * the data layer was asked to admit.
  *
- * Every field `TechniqueSchema` parses, plus the ones `TechniqueEntry` carries,
- * so the storage layer can persist it as an ordinary technique row with no
- * special case anywhere. It is an ordinary book that happens to have been
- * written recently, by somebody the player knows.
- *
- * `provenance` is the one value the data layer does not have yet - see the
- * report. Typed here as the string it must become.
+ * It was the wrong model and it is gone. A derivation is not a new book - it is
+ * the next STAGE of the book already in hand, so what comes out is a
+ * {@link Stage} belonging to an existing manual, and the manual's own cap moves
+ * up one rung. See the note on {@link writeNextStage} for what that means for
+ * storage, which is materially less than a new row per derivation.
  */
-export interface DerivedManual {
-    id: string;
-    name: string;
-    category: 'cultivation';
-    grade: TechniqueGrade;
-    element: Element | null;
-    requiredOrdinal: number;
-    cap: number | null;
-    class: 'cultivation';
-    description: string;
-    mastery: 0;
-    qiCost: 0;
-    damage: null;
-    cooldown: 0;
-    /** A NEW `TechniqueProvenance` value. The data layer must admit it. */
-    provenance: 'derived';
-    survivingCopy: true;
-    sourceNote: string;
-    fragmentOf: null;
-    notDerivableReason: null;
-    /**
-     * How much of it failed to survive being written down, 0..1.
-     *
-     * The one thing the seeded stream decides, and a real consequence: a
-     * derived manual is one person's working notes, not a house's polished
-     * canon, so it is harder for anybody ELSE to read than the book it
-     * continues. Drawn high on purpose.
-     */
-    opacity: number;
-    /** Root grades it will take. Empty - it asks nothing it was not written by. */
-    rootGrades: readonly string[];
-    domain: null;
-    domainDegree: number;
-    volumes: null;
-    /**
-     * A derived work has no hard opening for the person who wrote it - they
-     * arrived at it rather than being handed it, so there is no stretch where
-     * the method is foreign to them. To anybody ELSE the same book is one
-     * person's working notes, which is what `opacity` above is for.
-     */
-    opening: null;
-    /** A derived work is derivable in turn. A road that goes on goes on. */
-    derivable: true;
-}
 
 export interface DerivationRequest {
     runSeed: string;
     cultivatorId: string;
-    /** The manual whose continuation is being written. */
-    source: DerivableManual;
+    /** The manual being extended. The stage produced belongs to it. */
+    source: ExtendableManual;
     /** What the deriver turns out to have been doing. `daoOf(insights)`. */
     dao: DaoAssessment;
     /**
@@ -856,8 +963,29 @@ export interface DerivationRequest {
 }
 
 export type DerivationResult =
-    | { derived: false; check: DerivationCheck; manual: null; years: 0; line: string }
-    | { derived: true; check: DerivationCheck; manual: DerivedManual; years: number; line: string };
+    | {
+        written: false;
+        check: DerivationCheck;
+        stage: null;
+        /** The manual's ceiling, unchanged. */
+        newCap: number | null;
+        years: 0;
+        line: string;
+    }
+    | {
+        written: true;
+        check: DerivationCheck;
+        /** What was actually produced. A stage OF the source manual. */
+        stage: Stage;
+        /**
+         * The source manual's ceiling once this stage is appended - one rung
+         * above where it stopped. The caller raises the manual to this; it does
+         * not create a second book.
+         */
+        newCap: number;
+        years: number;
+        line: string;
+    };
 
 /**
  * Write the continuation.
@@ -870,106 +998,72 @@ export type DerivationResult =
  * Returns a refusal rather than throwing, so a caller can put {@link canDerive}
  * and this behind one verb.
  */
-export function deriveContinuation(request: DerivationRequest): DerivationResult {
+export function writeNextStage(request: DerivationRequest): DerivationResult {
     const { runSeed, cultivatorId, source, dao } = request;
-    const check = canDerive(dao, source, request.precedent);
+    const check = canExtend(dao, source, request.precedent);
     if (!check.permitted) {
-        return { derived: false, check, manual: null, years: 0, line: check.detail };
+        return {
+            written: false,
+            check,
+            stage: null,
+            newCap: source.cap,
+            years: 0,
+            line: check.detail
+        };
     }
 
-    // Guarded by `canDerive`'s `nothing_above` branch; narrowed for the type.
+    // Guarded by `canExtend`'s `nothing_above` branch; narrowed for the type.
     const sourceCap = source.cap as number;
-    // ONE RUNG, and not one realm.
-    //
-    // A derived book is a step off a ceiling, not a leapfrog over the
-    // corridor. Writing a realm's worth of method from your own road would
-    // make derivation the best route in the game rather than the most
-    // desperate, and it would hand the prodigy in a cave what the Frostmirror
-    // Court's entire library is for.
-    //
-    // It also puts the new-ground curve where it can be felt: every further
-    // rung needs its own derivation, and each one is written against thinner
-    // ground than the last. The cost is not paid once.
-    const cap = Math.min(MAX_ORDINAL, sourceCap + 1);
+    // ONE STAGE IS ONE RUNG, which is the whole model rather than a balance
+    // choice. The manual stopped at its last written stage; this is the next
+    // one. Every further rung needs its own, written against thinner ground
+    // than the last, so the new-ground cost is paid again each time rather
+    // than once.
+    const newCap = Math.min(MAX_ORDINAL, sourceCap + 1);
+    const number = stagesWrittenOf(source) + 1;
     const subject = dao.subject ?? 'the method';
     const road = dao.name ?? daoName(subject, dao.domain ?? 'element');
 
     const rng = forStream(runSeed, 'derivation', cultivatorId, source.id, subject);
-    // Deterministic and stable across replays - `uuid()` draws from the stream
-    // rather than from `crypto`, for exactly this reason.
-    const id = `derived-${source.id}-${rng.uuid().slice(0, 8)}`;
-    // High, and high on purpose. One person's working notes are not a canon.
+    // High, and high on purpose. One person's working notes are not a house's
+    // polished canon, and this is what makes a stage somebody wrote harder for
+    // the NEXT reader than the stages before it - the honest cost of a library
+    // that grew by accretion.
     const opacity = round2(rng.float(0.35, 0.7));
-
-    // Suited by construction: the road the deriver walks IS the road the book
-    // is written on. An element road yields an elemental method; any other road
-    // yields an elementless one, which every root may practise safely.
-    const parsedElement = dao.domain === 'element' ? ElementSchema.safeParse(dao.subject) : null;
-    const element: Element | null = parsedElement?.success ? parsedElement.data : null;
 
     const years = derivationYears(request.precedent);
     const thinness = thinnessAt(request.precedent);
-
     const sourceTitle = source.name ?? source.id;
-    const name = `${road}: What Follows ${sourceTitle}`;
 
-    const manual: DerivedManual = {
-        id,
-        name,
-        category: 'cultivation',
-        // A continuation is the grade of what it continues. The engine does not
-        // promote a book by writing it; what changed is the ceiling.
-        grade: source.grade,
-        element,
-        requiredOrdinal: sourceCap,
-        cap,
-        class: 'cultivation',
-        description:
-            `Written rather than found. ${sourceTitle} ends at ${rankName(sourceCap)}, and ` +
-            `${road} does not. This is the single rung that comes after, worked out by ` +
-            'somebody who had walked far enough along that road to say where it went next ' +
-            'rather than read it somewhere. It goes one step and stops: what lies past it ' +
-            'would have to be written too, against ground thinner than this. They are notes ' +
-            'and not a canon - everything in them is correct and a great deal of it is only ' +
-            'legible to the person who wrote it.',
-        mastery: 0,
-        qiCost: 0,
-        damage: null,
-        cooldown: 0,
-        provenance: 'derived',
-        survivingCopy: true,
-        sourceNote:
-            'Derived. There is one copy, it is in the hand of whoever wrote it, and nobody ' +
-            'else in the world knows this work exists.',
-        fragmentOf: null,
-        notDerivableReason: null,
-        opacity,
-        rootGrades: [],
-        domain: null,
-        domainDegree: 1,
-        volumes: null,
-        opening: null,
-        derivable: true
+    const stage: Stage = {
+        manualId: source.id,
+        number,
+        authorId: cultivatorId,
+        writtenOnDay: null,
+        opacity
     };
 
     return {
-        derived: true,
+        written: true,
         check,
-        manual,
+        stage,
+        newCap,
         years,
         line:
-            `${sourceTitle} ends at ${rankName(sourceCap)}. ${road} does not, and this ` +
-            'cultivator has walked it far enough to write what comes after: ' +
-            `${name}, carrying to ${rankName(cap)} and no further. ` +
-            `${years} years of work` +
+            `${sourceTitle} had been written as far as stage ${number - 1}, which is why it ` +
+            `stopped at ${rankName(sourceCap)}. ${road} does not stop there, and this ` +
+            'cultivator has walked it far enough to write stage ' +
+            `${number}: the manual now carries to ${rankName(newCap)}, and no further until ` +
+            `somebody writes stage ${number + 1}. ${years} years of work` +
             `${thinness > 0
-                ? `, most of it because almost nothing stands at this height to compose ` +
-                  `against - ${request.precedent.artsAtOrAbove} ` +
-                  `${request.precedent.artsAtOrAbove === 1 ? 'art' : 'arts'} in the whole ` +
-                  'world, and the next rung will be worse'
+                ? `, most of it because almost nothing stands at this height to write from - ` +
+                  `${request.precedent.artsAtOrAbove} ` +
+                  `${request.precedent.artsAtOrAbove === 1 ? 'manual' : 'manuals'} in the ` +
+                  'whole world reach it, and the next stage will be worse'
                 : ', on a road well enough walked that the precedent is there to build on'}` +
             '. It is theirs by construction - nobody had to have written it for them, ' +
-            'because they wrote it.'
+            'because they wrote it. And it can be taught, or copied out: a stage somebody ' +
+            'wrote is a stage like any other, which is how a library gets deeper.'
     };
 }
 

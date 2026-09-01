@@ -12,7 +12,7 @@ import {
     assessAcquisition,
     bestAcquisition,
     canTransmit,
-    derivationOption,
+    extensionOption,
     findFromManual,
     type ManualLike,
     type Transmitter
@@ -81,7 +81,7 @@ describe('E6 - one Find builder', () => {
         // disagree about what a manual demands. A derived book is not a catalog
         // row and must still go through the same door.
         const fromCatalog = findFromManual(FIRE_MANUAL);
-        const asDerived = findFromManual({ ...FIRE_MANUAL, derivable: true, opening: null });
+        const asDerived = findFromManual({ ...FIRE_MANUAL, notExtendableReason: null, opening: null });
         expect(asDerived).toEqual(fromCatalog);
     });
 
@@ -341,11 +341,29 @@ describe('the living teacher', () => {
 
 // ─────────────────────────────────────────────────────────────────────────
 describe('derivation offered through the same funnel', () => {
-    it('is refused for the right reason and in the right vocabulary', () => {
-        expect(derivationOption(NO_DAO, FIRE_MANUAL).reason).toBe('not_derivable');
-        const derivable = { ...FIRE_MANUAL, derivable: true };
-        expect(derivationOption(NO_DAO, derivable).reason).toBe('no_matching_dao');
-        expect(derivationOption(FIRE_DAO, derivable).permitted).toBe(true);
+    it('extension is available by DEFAULT - the allowlist was the wrong model', () => {
+        // Inverted deliberately. Writing the next stage is something a
+        // cultivator does to the book in front of them, not a property an
+        // author blesses certain rows with. So an ordinary manual carrying no
+        // stated objection is extendable, and the refusal a cultivator without
+        // a road gets is about THEM rather than about the book.
+        expect(extensionOption(NO_DAO, FIRE_MANUAL).reason).toBe('no_matching_dao');
+        expect(extensionOption(FIRE_DAO, FIRE_MANUAL).permitted).toBe(true);
+    });
+
+    it('a manual with a stated reason it cannot be extended still refuses', () => {
+        // The opt-OUT, and the half of the old model worth keeping: the
+        // interesting refusals, where "you cannot write the next stage" is a
+        // fact about the book rather than about the reader. Read verbatim.
+        const sealed = {
+            ...FIRE_MANUAL,
+            notDerivableReason:
+                'It is written for a condition the reader is not in and cannot simulate.'
+        };
+        const check = extensionOption(FIRE_DAO, sealed);
+        expect(check.permitted).toBe(false);
+        expect(check.reason).toBe('not_extendable');
+        expect(check.detail).toContain('a condition the reader is not in');
     });
 
     it('is available to somebody with no resources at all', () => {
@@ -353,7 +371,7 @@ describe('derivation offered through the same funnel', () => {
         // corollary is that being penniless does not close it.
         const derivable = TECHNIQUES.find(t => t.derivable && classOf(t) === 'cultivation');
         expect(derivable).toBeDefined();
-        const check = derivationOption(
+        const check = extensionOption(
             daoOf([insight('water', 'element', 4), insight('tides', 'element', 2)]),
             {
                 id: derivable!.id, name: derivable!.name,

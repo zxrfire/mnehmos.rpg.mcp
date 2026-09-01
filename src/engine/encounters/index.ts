@@ -107,7 +107,7 @@ export {
     assessAcquisition,
     bestAcquisition,
     canTransmit,
-    derivationOption,
+    extensionOption,
     findFromManual,
     type AcquisitionInput,
     type AcquisitionRefusal,

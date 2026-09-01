@@ -46,11 +46,11 @@ import {
     type Suitability
 } from './suitability.js';
 import {
-    canDerive,
+    canExtend,
     effectiveCapOf,
     manualGate,
     openingPenalty,
-    type DerivableManual,
+    type ExtendableManual,
     type DerivationCheck,
     type EffectiveCap,
     type Precedent,
@@ -505,7 +505,7 @@ export function canTransmit(
  * not for them and a road they have walked for eighty years should be told the
  * fourth option exists.
  */
-export function derivationOption(
+export function extensionOption(
     dao: DaoAssessment,
     manual: ManualLike,
     /**
@@ -517,7 +517,7 @@ export function derivationOption(
      */
     precedent?: Precedent
 ): DerivationCheck {
-    const source: DerivableManual = {
+    const source: ExtendableManual = {
         id: manual.id,
         name: manual.name,
         requiredOrdinal: manual.requiredOrdinal,
@@ -527,8 +527,7 @@ export function derivationOption(
         element: manual.element ?? null,
         subject: manual.subject ?? null,
         category: manual.category ?? null,
-        derivable: manual.derivable ?? false,
-        notDerivableReason: manual.notDerivableReason ?? null
+        notExtendableReason: manual.notDerivableReason ?? null
     };
-    return canDerive(dao, source, precedent);
+    return canExtend(dao, source, precedent);
 }
