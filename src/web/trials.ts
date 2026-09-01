@@ -141,14 +141,34 @@ export function phraseOf(siteId: string): string {
  * come here. Read by the deterministic parser, which needs to know that "the
  * eighth stone" is a place before `game.ts` gets a chance to resolve it.
  *
- * Deliberately built from ids and not from names. Site names are English
- * sentences - "Two Graves On a Survey Line", "A Culler On the Kettle Circuit"
- * - and matching a player's prose against the words in those would fire on
- * half the sentences in the game. The id slug is the hand-authored short
- * form, and it is the only part that is distinctive enough to match on.
+ * Built from ids AND from whole names, and the distinction matters.
+ *
+ * This was ids only, on the reasoning that site names are English sentences -
+ * "Two Graves On a Survey Line", "A Culler On the Kettle Circuit" - and that
+ * matching a player's prose against the WORDS in those would fire on half the
+ * sentences in the game. That reasoning is correct about words and does not
+ * apply to whole names, because `siteNamed` tests `text.includes(phrase)`: a
+ * complete name is one long specific substring, not a bag of common words.
+ *
+ * The gap it left was closed-loop and unwinnable. The game lists these places
+ * by NAME - "The ones you have names for are The Outer Gate of a Sect That No
+ * Longer Exists, The Bench at the Burned Seat, The Gate Frame With No Gate In
+ * It..." - and then accepted only the id slug, which is never shown anywhere.
+ * Found by playing: asking what ruins were near, typing back one of the names
+ * the game had just printed, and getting nothing. `trial-the-swept-frame`
+ * answers to "swept frame", and the player had been told "The Gate Frame With
+ * No Gate In It".
+ *
+ * The leading article is dropped so that "I approach the Gate Frame..." and
+ * "I approach Gate Frame..." both land, and the length floor in `siteNamed`
+ * still guards against a short slug becoming a wildcard.
  */
-export const SITE_PHRASES: readonly string[] =
-    SITES.map(site => phraseOf(site.id)).sort((a, b) => b.length - a.length);
+export const SITE_PHRASES: readonly string[] = [
+    ...new Set(SITES.flatMap(site => [
+        phraseOf(site.id),
+        site.name.toLowerCase().replace(/^(?:the|a|an)\s+/, '')
+    ]))
+].sort((a, b) => b.length - a.length);
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE CLAIMANT
