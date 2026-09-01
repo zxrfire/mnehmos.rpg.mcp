@@ -44,6 +44,8 @@ import {
 } from '../cultivation/spirit-roots.js';
 import { rollOrigin, type OriginTierKey } from '../cultivation/origin.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { untreatedInjuryCount } from '../cultivation/injuries.js';
+import type { Injury } from '../../schema/cultivation.js';
 import { personName } from './history.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 
@@ -255,8 +257,38 @@ export interface NpcCultivation {
      * can have very different futures and the record must be able to say why.
      */
     foundation: string;
-    /** Untreated meridian injuries. The ratchet, stored as a count. */
+    /**
+     * How many of the wounds below are still untreated.
+     *
+     * Kept as a stored field because the roster view, the repo and the web
+     * layer all read it, and derived from `injuries` at every write in this
+     * layer - see `carryingWounds`. It is a cache of a count, never a second
+     * opinion about what somebody is carrying.
+     */
     untreatedInjuries: number;
+    /**
+     * WHAT THEY ARE ACTUALLY CARRYING, as rows rather than as a number.
+     *
+     * The world layer kept only the count, and everything that needed a wound
+     * fabricated one: `combatantOf` in `gatherings.ts` and the opponent stub in
+     * `combat-manage.ts` both expanded the integer into that many identical
+     * generic `Injury` objects with `woundType: null`, because there was nothing
+     * else to expand it into.
+     *
+     * That made a whole authored layer unreachable from the world. A broken
+     * foundation, a cracked core, an unformed tribulation body and a ruined
+     * dantian are rows in `data/cultivation/wounds.ts` with names, permanence
+     * and stated treatments, and `what-goes-wrong-at-a-realm-boundary.ts`
+     * decides which one a failed crossing leaves - but no NPC could hold any of
+     * it, so the population the setting most wanted could not exist: somebody
+     * who struck at a wall, cracked, survived, and is standing at their rung
+     * finished.
+     *
+     * Ordinary wounds live here too. One list, two natures, exactly as
+     * `InjurySchema.woundType` describes - a second list beside this one is a
+     * list nothing downstream would read.
+     */
+    injuries: Injury[];
     /** Technique ids they can actually use. */
     techniqueIds: string[];
     /** Tags for environmental compatibility: 'fire', 'poison', 'soul', 'sword'. */
@@ -265,6 +297,26 @@ export interface NpcCultivation {
     lifespanEndsOnDay: number;
     /** Absolute day of their most recent rank advance. Settling counts from here. */
     lastAdvancedOnDay: number;
+    /**
+     * Absolute day their current stock of progress started building.
+     *
+     * TWO CLOCKS RUN AT A RUNG AND THEY ARE NOT THE SAME CLOCK.
+     * `lastAdvancedOnDay` is the settling clock: how long they have been stuck
+     * here at all, and a plateau longer than the realm allows ends the climb.
+     * This one is the accumulation clock: how much of the next rung's
+     * requirement they are currently holding.
+     *
+     * A failed crossing burns part of what was accumulated and leaves the
+     * settling clock alone - so this moves and that does not. Without the
+     * distinction a failure at a high rung costs nothing but a review cycle,
+     * and somebody who reached the wall once would strike at it every twelve
+     * years until it opened, which turns a thousand-year crossing into a
+     * formality.
+     *
+     * Zero means "the same as `lastAdvancedOnDay`", which is the honest reading
+     * of every row written before the world struck at anything.
+     */
+    accumulatingSinceDay: number;
 }
 
 export interface NpcRecord {
@@ -406,10 +458,12 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         attributes,
         foundation: 'incomplete',
         untreatedInjuries: 0,
+        injuries: [],
         techniqueIds: [],
         specialties: root.elements.slice(),
         lifespanEndsOnDay: opts.bornOnDay + lifespanForOrdinal(ordinal) * DAYS_PER_YEAR,
         lastAdvancedOnDay: opts.onDay,
+        accumulatingSinceDay: opts.onDay,
         ...(opts.cultivation ?? {})
     };
     // Recompute the derived field if the caller overrode the ordinal but not it.
@@ -490,10 +544,71 @@ export function setRealm(npc: NpcRecord, ordinal: number, onDay: number): NpcRec
             realmOrdinal,
             lifespanEndsOnDay:
                 npc.identity.bornOnDay + lifespanForOrdinal(realmOrdinal) * DAYS_PER_YEAR,
-            lastAdvancedOnDay: onDay
+            lastAdvancedOnDay: onDay,
+            // A new rung is a new requirement and nothing carries over.
+            accumulatingSinceDay: onDay
         },
         updatedOnDay: onDay
     };
+}
+
+/**
+ * Add wounds to a record and keep the count honest.
+ *
+ * The ONE write path for `injuries`, so `untreatedInjuries` cannot drift from
+ * the list it is a count of. Everything in the world layer that hurts somebody
+ * comes through here: a bout at a gathering, a failed crossing, a tribulation.
+ */
+export function carryingWounds(
+    npc: NpcRecord,
+    added: readonly Injury[],
+    onDay: number
+): NpcRecord {
+    if (added.length === 0) return npc;
+    const injuries = [...npc.cultivation.injuries, ...added];
+    return {
+        ...npc,
+        cultivation: {
+            ...npc.cultivation,
+            injuries,
+            untreatedInjuries: untreatedInjuryCount(injuries)
+        },
+        updatedOnDay: onDay
+    };
+}
+
+/**
+ * The wounds to hand to anything that prices a body.
+ *
+ * Rows where the world has them, and generic stand-ins only for a shortfall
+ * between the stored count and the stored list. That shortfall is legacy: rows
+ * written before wounds were kept as rows have a count and no list, and a
+ * combat resolver that ignored them would quietly heal every NPC in an old save
+ * on load. It is the last home of the fabrication that used to live in two
+ * callers, and it shrinks to nothing as saves turn over.
+ */
+export function woundsCarriedBy(npc: NpcRecord): Injury[] {
+    const rows = npc.cultivation.injuries;
+    const shortfall = Math.max(0, Math.floor(npc.cultivation.untreatedInjuries))
+        - untreatedInjuryCount(rows);
+    if (shortfall <= 0) return [...rows];
+    return [
+        ...rows,
+        ...Array.from({ length: shortfall }, (_, i) => ({
+            id: `${npc.id}-carried-${i}`,
+            severity: 'serious' as const,
+            source: 'combat' as const,
+            description: 'A wound they were already carrying.',
+            sustainedOnTurn: 0,
+            treated: false,
+            cultivationPenalty: 0.25,
+            breakthroughPenalty: 0.15,
+            // Null because there is genuinely nothing to name. This row was
+            // reconstructed from a count, and a count does not remember what it
+            // was counting.
+            woundType: null
+        }))
+    ];
 }
 
 export interface GoalInput {

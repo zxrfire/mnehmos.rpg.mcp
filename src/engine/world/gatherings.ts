@@ -142,8 +142,10 @@ import {
 import { expeditionBudget } from './convergence.js';
 import {
     addGoal,
+    carryingWounds,
     relationshipWith,
     upsertRelationship,
+    woundsCarriedBy,
     type NpcRecord,
     type RelationshipKind
 } from './npc-state.js';
@@ -835,10 +837,11 @@ function runChallenge(
             continue;
         }
 
-        // What the bout did to a body, in the only unit the world layer keeps.
+        // What the bout did to a body. The resolver already returns wound ROWS,
+        // and this used to count them and throw them away - so a crippling
+        // wound and a scratch both arrived on the record as "+1".
         for (const person of [a, b]) {
-            const wounds = (result.injuries[person.id] ?? []).length;
-            if (wounds > 0) applyWounds(state, person, wounds, day);
+            applyWounds(state, person, result.injuries[person.id] ?? [], day);
         }
 
         if (winner && loser) {
@@ -898,19 +901,17 @@ function openAmbition(state: WorldState, behind: NpcRecord, ahead: NpcRecord, da
     }, day);
 }
 
-/** Put wounds on the record in the only unit the world layer stores. */
-function applyWounds(state: WorldState, npc: NpcRecord, count: number, day: number): void {
+/** Put the rows the resolver produced onto the record, as rows. */
+function applyWounds(
+    state: WorldState,
+    npc: NpcRecord,
+    wounds: readonly Injury[],
+    day: number
+): void {
+    if (wounds.length === 0) return;
     const at = state.npcs.findIndex(n => n.id === npc.id);
     if (at < 0) return;
-    const current = state.npcs[at];
-    state.npcs[at] = {
-        ...current,
-        cultivation: {
-            ...current.cultivation,
-            untreatedInjuries: current.cultivation.untreatedInjuries + count
-        },
-        updatedOnDay: day
-    };
+    state.npcs[at] = carryingWounds(state.npcs[at], wounds, day);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1419,36 +1420,20 @@ function place(npc: NpcRecord, at: number, score: number): GatheringPlacing {
 /**
  * Price an NPC for the combat layer.
  *
- * Everything the world layer actually stores, and nothing invented. Two of the
- * combat layer's inputs have no world-layer equivalent and are handled rather
+ * Everything the world layer actually stores, and nothing invented. One of the
+ * combat layer's inputs has no world-layer equivalent and is handled rather
  * than faked:
  *
- *   INJURIES  the world keeps a COUNT, not a list. Expanded to that many
- *             wounds at one severity, which is exactly what
- *             `combat-manage.ts` does for an opponent described rather than
- *             stored. If the world layer ever keeps severities this reads them.
  *   THE BODY  normalised. See `BOUT_BODY`.
+ *
+ * Injuries used to be the second. The world kept a COUNT, so this expanded it
+ * into that many identical `serious` wounds with `woundType: null` - which is
+ * what `combat-manage.ts` still does for an opponent described rather than
+ * stored. NPCs now carry rows, so the rows are what a bout prices; the only
+ * synthesis left is in `woundsCarriedBy`, for a save written before they did.
  */
 function combatantOf(npc: NpcRecord): CombatantInput {
-    const wounds: Injury[] = Array.from(
-        { length: Math.max(0, Math.floor(npc.cultivation.untreatedInjuries)) },
-        (_, i) => ({
-            id: `${npc.id}-carried-${i}`,
-            severity: 'serious' as const,
-            source: 'combat' as const,
-            description: 'A wound they were already carrying.',
-            sustainedOnTurn: 0,
-            treated: false,
-            cultivationPenalty: 0.25,
-            breakthroughPenalty: 0.15,
-            // Null because there is nothing to name: this wound is synthesised
-            // from `untreatedInjuries`, which is a COUNT rather than a list, so
-            // the world layer genuinely does not know what any of these are.
-            // Once NPCs carry a real wound list this whole `Array.from` goes
-            // away and the actual rows are passed through.
-            woundType: null
-        })
-    );
+    const wounds: Injury[] = woundsCarriedBy(npc);
 
     return {
         id: npc.id,
