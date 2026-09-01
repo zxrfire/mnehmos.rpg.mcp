@@ -471,8 +471,9 @@ export async function handleCreateCultivator(
         // and nothing recommends a path from it.
         originRoll: {
             seedStream: `origin, nonce ${nonce}`,
-            // Unrounded on purpose. A great house is four births in a hundred
-            // thousand, and round4 would report that as a probability of zero.
+            // Unrounded on purpose. The three rarest origins together are four
+            // births in a hundred thousand and the rarest of them is far below
+            // that, and round4 would report those as a probability of zero.
             ...openingPosition(origin.key),
             locked: true,
             note: 'Where this life started. It confers stones, placement, access, standing and supplied risk. It confers no realm, no rank, no admission and no progress.'

@@ -368,7 +368,7 @@ ancient art with a material requirement is a relationship, not an acquisition.**
 
 <!-- tier: 2 trigger="a house holds a manual it cannot supply, or the player is offered a book with no stock behind it" -->
 
-A great house holds a copy, brought back by an expedition generations ago, and has nothing
+A high house holds a copy, brought back by an expedition generations ago, and has nothing
 left to feed it. Four things follow:
 
 1. **It explains why a house would part with one.** Giving away a book nobody there can use

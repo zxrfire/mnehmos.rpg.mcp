@@ -92,14 +92,14 @@
  * `declining` is a statement about a house's trajectory against ITS OWN past
  * and says nothing whatever about where it stands against anybody else. A house
  * falling from 44 toward 36 is categorically beyond a house climbing from 13
- * toward 21, and the second must never read as catching up. What a great house
+ * toward 21, and the second must never read as catching up. What a high house
  * in decline has lost is the ability to MAKE MORE - not the people it already
  * has, who will end anybody who comes to test the point for centuries yet.
  *
  * The test for a note on a high house: could it be moved onto a mid-tier house
  * without sounding wrong? If yes it is describing ordinary diminishment and it
- * is the wrong note. The register is a great house that is worried, never a
- * great house that is vulnerable.
+ * is the wrong note. The register is a high house that is worried, never a
+ * high house that is vulnerable.
  *
  * And decline at the top is not the default. The Azure Cloud Pavilion's founder
  * crossed within living memory and is still sending single-use material down

@@ -93,7 +93,7 @@ describe('who you are born to varies, and reaches the top of the world', () => {
     it('can be born under the strongest house there is, and almost never is', () => {
         // Drawn rather than asserted: the top tier's band is open at the top,
         // so whether the Hollow Court is in it is a fact about the catalog.
-        const top = getOrigin('great_house');
+        const top = getOrigin('dao_house_bloodline');
         const band = housesAtStanding(top, world.houses);
         const names = band.map(h => h.name);
         expect(names).toContain('The Hollow Court');
@@ -101,13 +101,13 @@ describe('who you are born to varies, and reaches the top of the world', () => {
         // And it is out of reach of every tier below, because the bands
         // partition the catalog by standing.
         for (const tier of ORIGIN_TIERS) {
-            if (tier.key === 'great_house') continue;
+            if (tier.key === 'dao_house_bloodline') continue;
             expect(housesAtStanding(tier, world.houses).map(h => h.name))
                 .not.toContain('The Hollow Court');
         }
 
         // Which makes it a birth of roughly one run in seventy-five thousand.
-        const odds = originProbability('great_house') / band.length;
+        const odds = originProbability('dao_house_bloodline') / band.length;
         expect(odds).toBeGreaterThan(0);
         expect(odds).toBeLessThan(0.0001);
     });
@@ -136,7 +136,7 @@ describe('who you are born to varies, and reaches the top of the world', () => {
 
 describe('an origin buys inputs and never rank', () => {
     it('carries no position on any ladder at all', () => {
-        const birth = drawBirth('rank-check', { world, origin: 'great_house' });
+        const birth = drawBirth('rank-check', { world, origin: 'dao_house_bloodline' });
         for (const field of [
             'realmOrdinal',
             'cultivationProgress',
@@ -153,7 +153,7 @@ describe('an origin buys inputs and never rank', () => {
     });
 
     it('never claims membership of the house somebody was born under', () => {
-        const birth = drawBirth('membership', { world, origin: 'great_house' });
+        const birth = drawBirth('membership', { world, origin: 'dao_house_bloodline' });
         expect(birth.house).not.toBeNull();
         const row = birth.knowledge.find(k => k.id === birth.house!.id)!;
         expect(row.statement).toContain('their family belongs to');
@@ -199,19 +199,29 @@ describe('what you have heard of falls out of who your family corresponded with'
     });
 
     it('grows the list monotonically with what the family reaches', () => {
+        // ORDERED BY REACH, NOT BY TABLE POSITION. Those were the same thing
+        // while the table was one ladder; they stopped being the same when the
+        // top row split into three routes, because an apex sect member's child
+        // is rarer than a Dao house's blood and their name reaches far less
+        // far - the apex will not lend its name to a placement, so what the
+        // parent has is a word to spend rather than standing to trade on. The
+        // claim being made here is about reach and it is unchanged.
+        const byReach = [...ORIGIN_TIERS].sort(
+            (a, b) => a.placement.reach - b.placement.reach
+        );
         let previous = -1;
-        for (const tier of ORIGIN_TIERS) {
+        for (const tier of byReach) {
             const count = drawBirth('ladder-of-names', { world, origin: tier.key })
                 .knowledge.length;
-            expect(count, `${tier.key} knows fewer names than a poorer tier`)
+            expect(count, `${tier.key} knows fewer names than a shorter reach`)
                 .toBeGreaterThanOrEqual(previous);
             previous = count;
         }
     });
 
     it('stops at the family reach, so the top of the world stays unheard of', () => {
-        const birth = drawBirth('earshot', { world, origin: 'great_house' });
-        const reach = getOrigin('great_house').placement.reach;
+        const birth = drawBirth('earshot', { world, origin: 'dao_house_bloodline' });
+        const reach = getOrigin('dao_house_bloodline').placement.reach;
         const heard = new Set(birth.knowledge.filter(k => k.kind === 'sect').map(k => k.id));
 
         for (const house of world.houses) {
@@ -228,8 +238,8 @@ describe('what you have heard of falls out of who your family corresponded with'
         // Reach opens a conversation. Every house in the catalog with a bar
         // above zero still refuses a sixteen-year-old at ordinal zero, and
         // nothing in a birth says otherwise.
-        const birth = drawBirth('admission', { world, origin: 'great_house' });
-        const barred = housesWithinEarshot(getOrigin('great_house'), world.houses)
+        const birth = drawBirth('admission', { world, origin: 'dao_house_bloodline' });
+        const barred = housesWithinEarshot(getOrigin('dao_house_bloodline'), world.houses)
             .filter(h => h.admissionOrdinal > 0);
         expect(barred.length).toBeGreaterThan(0);
         for (const row of birth.knowledge) {
@@ -259,7 +269,7 @@ describe('the draw itself', () => {
             }],
             houses: []
         };
-        const birth = drawBirth('tiny', { world: tiny, origin: 'great_house' });
+        const birth = drawBirth('tiny', { world: tiny, origin: 'dao_house_bloodline' });
         expect(birth.place.name).toBe('Nowhere');
         // The ground reported is the ground somebody is standing on, not the
         // one the draw wanted. An honest downgrade beats a fictional vein.
@@ -321,7 +331,7 @@ describe('privilege is still not visible in the outcome distribution', () => {
         // The two ends of the axis, side by side. Enormous at the open and
         // measured as nothing by the sweep above.
         const poor = drawBirth('two-ends', { world, origin: 'thin_county' });
-        const rich = drawBirth('two-ends', { world, origin: 'great_house' });
+        const rich = drawBirth('two-ends', { world, origin: 'dao_house_bloodline' });
         expect(rich.spiritStones / poor.spiritStones).toBeGreaterThan(100);
         expect(rich.knowledge.length).toBeGreaterThan(poor.knowledge.length * 5);
         expect(rich.house).not.toBeNull();

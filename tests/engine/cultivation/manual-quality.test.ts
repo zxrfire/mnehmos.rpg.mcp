@@ -270,13 +270,34 @@ describe('the catalog', () => {
 
 describe('an origin hands over a book', () => {
     it('says which one, for every tier, and better standing never means worse', () => {
-        let previous = -1;
         for (const tier of ORIGIN_TIERS) {
             expect(ManualQualitySchema.safeParse(tier.roadQuality).success).toBe(true);
+        }
+
+        // THE COMMON ROWS ARE ONE LADDER and the shelf climbs with them.
+        // The last three are not rungs of it - they are three ways of being
+        // born privileged, and a child placed at a house on somebody's word
+        // reads that house's WORKING book at the rank a ward holds, which is
+        // what rank reaches on any shelf. A Dao house's own blood reads the
+        // house canon. Neither is a better standing than the other; they are
+        // different positions, and forcing them into one order is the
+        // conflation the origin split exists to remove.
+        const ladder = ORIGIN_TIERS.slice(0, -3);
+        let previous = -1;
+        for (const tier of ladder) {
             const rank = manualQualityRank(tier.roadQuality);
             expect(rank, `${tier.key} holds a worse road than a poorer origin`)
                 .toBeGreaterThanOrEqual(previous);
             previous = rank;
+        }
+
+        // And no privileged birth is handed a worse book than the best any
+        // common one gets, which is the claim that actually matters.
+        for (const route of ORIGIN_TIERS.slice(-3)) {
+            expect(
+                manualQualityRank(route.roadQuality),
+                `${route.key} reads worse than an ordinary backed birth`
+            ).toBeGreaterThanOrEqual(previous);
         }
     });
 

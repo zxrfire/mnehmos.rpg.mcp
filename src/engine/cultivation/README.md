@@ -100,7 +100,9 @@ A cultivator is dealt a spirit root, four attributes, and **a place to have been
 into**. `origin.ts` owns the third, on the same terms as the first two: rolled once from
 the run seed, permanent, and with no tool anywhere that changes it. Nine births in ten are
 a farm in a thin county - no teacher, no manual, no vein, and nobody to vouch for you -
-and roughly one in twenty-five thousand is a child of a great house.
+and roughly one in twenty-five thousand arrives by one of the three routes at
+the top of the table: a Dao house's own blood, an apex sect member's child, or a
+child somebody spent a word to place at a house that would have refused them.
 
 The hard rule is that **an origin buys inputs and never rank**. There is deliberately no
 field on `OriginTier` that could confer a realm, progress, admission, or a rank inside an

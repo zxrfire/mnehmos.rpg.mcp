@@ -160,7 +160,7 @@ export const WASHING_OUT = {
     whichIsWhyAFriendSaysYES:
         'Taking somebody\'s child on a favour is not pure cost, and this is the return. If the placement takes, the house has a strong member it did not have to find. If it does not, the house has a servant who is loyal, well-connected, going nowhere, and cheaper than anybody it could hire - which is a real asset and is why the answer to the asking is usually yes.',
     andWhatItProduces:
-        'People who know things. A washed-out servant in a great house knows they were somebody\'s child, knows what they were supposed to become, has been inside the place for decades being spoken over, and is not on anybody\'s list of who matters. They are among the better positions in this world to be a person from, and among the worst to have underestimated.',
+        'People who know things. A washed-out servant in a high house knows they were somebody\'s child, knows what they were supposed to become, has been inside the place for decades being spoken over, and is not on anybody\'s list of who matters. They are among the better positions in this world to be a person from, and among the worst to have underestimated.',
     andTheParentGambled:
         'Which is the honest description of what a high placement is. Succeed and the child has a start nobody could have earned. Fail and they spend a life inside that house as staff, having been given every advantage and visibly not been enough, in front of everybody who watched them arrive.'
 } as const;

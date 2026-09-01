@@ -228,10 +228,10 @@ export interface NpcIdentity {
     /**
      * Where they were born, drawn from the run seed exactly as the player's is.
      *
-     * This is also the honest explanation for why a great house has the members
+     * This is also the honest explanation for why a Dao house has the members
      * it does: nobody is assigned to one. Origins are rolled, the weights are
      * the same weights, and the derivation that follows spends what the birth
-     * actually supplied. It carries no rank - a great-house NPC still has to
+     * actually supplied. It carries no rank - an NPC born into one still has to
      * have walked the ladder to be anywhere on it.
      */
     origin: OriginTierKey;

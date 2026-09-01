@@ -809,7 +809,7 @@ export interface DeriveOrdinalOptions {
      * same way: it moves the ground under them, whether a house stands behind
      * them, what the family can pay for in pills, and whether the province's own
      * ceiling is theirs. It moves NOTHING else, and in particular it never adds
-     * a rank - a great house child who draws a muddled root lands where a
+     * a rank - a Dao house child who draws a muddled root lands where a
      * muddled root lands, only better fed.
      *
      * Omitted reads as 'thin_county', which is nine births in ten.
@@ -1217,7 +1217,7 @@ function seedPopulation(
 
             // Derived, not assigned. Same inputs the player gets, and that now
             // includes where they were born - which is the honest explanation
-            // for why a great house has the members it does. Nobody is placed
+            // for why a Dao house has the members it does. Nobody is placed
             // in one; the origin roll puts them there and the derivation spends
             // what it supplied.
             const life = deriveLife(

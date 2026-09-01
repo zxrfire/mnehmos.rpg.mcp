@@ -1245,7 +1245,7 @@ const PLACEMENTS = [
     { label: 'rogue', sectBonus: 1, stipend: 0 },
     { label: 'minor sect', sectBonus: 1.1, stipend: 12 },
     { label: 'established sect', sectBonus: 1.25, stipend: 40 },
-    { label: 'great house', sectBonus: 1.45, stipend: 260 },
+    { label: 'Dao house', sectBonus: 1.45, stipend: 260 },
     { label: 'apex house', sectBonus: 1.6, stipend: 1_400 }
 ];
 

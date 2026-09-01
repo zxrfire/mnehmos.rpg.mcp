@@ -1321,7 +1321,7 @@ export class GameService {
         // of that standing would have said in front of a child, and they are
         // written as ordinary knowledge records with ordinary stances and sources
         // - so the gate that governs every other name governs these, and a
-        // great-house birth knows more because of who raised them rather than
+        // Dao house birth knows more because of who raised them rather than
         // because of a special case. `learn` supersedes, so a name the county
         // only placed is still upgraded by a birth that genuinely knew it.
         this.knowledge.seedStartingAwareness(created.cultivator.id, 0, birth.place.name, null);

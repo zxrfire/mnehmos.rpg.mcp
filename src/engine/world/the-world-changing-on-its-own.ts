@@ -741,7 +741,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         // is why joining a house is worth forty years of sweeping.
         const shelf: OriginTierKey = !npc.factionId
             ? 'thin_county'
-            : npc.factionRankIndex >= 3 ? 'great_house'
+            : npc.factionRankIndex >= 3 ? 'dao_house_bloodline'
                 : npc.factionRankIndex >= 1 ? 'established_clan'
                     : 'sect_retainer';
 

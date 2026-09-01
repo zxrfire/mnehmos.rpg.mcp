@@ -53,17 +53,61 @@ describe('the table', () => {
         expect(DEFAULT_ORIGIN).toBe('thin_county');
     });
 
-    it('makes a great house vanishingly rare', () => {
-        const p = originProbability('great_house');
+    it('makes a Dao house vanishingly rare', () => {
+        const p = originProbability('dao_house_bloodline');
         expect(p).toBeGreaterThan(0);
         expect(p).toBeLessThan(0.0001);
     });
 
-    it('is ordered from nothing upward, and strictly', () => {
+    it('is ordered from nothing upward, and strictly, in rarity', () => {
         for (let i = 1; i < ORIGIN_TIERS.length; i++) {
             expect(ORIGIN_TIERS[i].weight).toBeLessThan(ORIGIN_TIERS[i - 1].weight);
-            expect(ORIGIN_TIERS[i].spiritStones).toBeGreaterThan(ORIGIN_TIERS[i - 1].spiritStones);
         }
+    });
+
+    // THIS USED TO ASSERT ONE LADDER IN BOTH AXES, and it cannot any more.
+    //
+    // It ran `spiritStones` strictly upward alongside `weight` strictly
+    // downward for the whole table, which said rarer means richer at every
+    // step. That was true while the top of the table was a single row. It
+    // stopped being true when `great_house` split into three routes that
+    // differ in KIND rather than in height: a Dao house's blood is the
+    // richest and the commonest of the three, and an apex member's child is
+    // rarer and holds a personal allowance rather than a house treasury.
+    // Forcing them back into one chain would be re-imposing the exact
+    // conflation the split exists to remove.
+    //
+    // What is still true, and is what the table actually promises, is below.
+    it('separates the common lives from the privileged ones on both axes', () => {
+        const routes = ORIGIN_TIERS.slice(-3);
+        expect(routes.map(t => t.key)).toEqual([
+            'dao_house_bloodline', 'apex_sect_members_child', 'fostered_on_a_word'
+        ]);
+
+        // The five common rows are still one ladder, in both axes.
+        const ladder = ORIGIN_TIERS.slice(0, -3);
+        for (let i = 1; i < ladder.length; i++) {
+            expect(ladder[i].spiritStones).toBeGreaterThan(ladder[i - 1].spiritStones);
+        }
+
+        // And every route out-resources and under-weighs every rung of it.
+        const richestCommon = Math.max(...ladder.map(t => t.spiritStones));
+        const rarestCommon = Math.min(...ladder.map(t => t.weight));
+        for (const route of routes) {
+            expect(route.spiritStones, `${route.key} is not out of the common range`)
+                .toBeGreaterThan(richestCommon);
+            expect(route.weight, `${route.key} is not rarer than every common birth`)
+                .toBeLessThan(rarestCommon);
+        }
+    });
+
+    it('splits the old top row without inflating what privilege is worth', () => {
+        // The three routes together carry exactly the weight the single
+        // `great_house` row carried: 4 in 100,000, which is 400 in the ten
+        // million the table now runs on. A differentiation, not an inflation.
+        const routes = ORIGIN_TIERS.slice(-3);
+        const share = routes.reduce((s, t) => s + t.weight, 0) / ORIGIN_WEIGHT_TOTAL;
+        expect(share).toBeCloseTo(0.00004, 10);
     });
 
     it('rolls reproducibly from a sample, with the weights it claims', () => {
@@ -79,7 +123,10 @@ describe('the table', () => {
         // The same sample always produces the same birth.
         expect(rollOrigin(0.5).key).toBe(rollOrigin(0.5).key);
         expect(rollOrigin(0).key).toBe('thin_county');
-        expect(rollOrigin(0.999999999).key).toBe('great_house');
+        // The last row, which is the rarest birth in the table rather than the
+        // grandest name in it - those stopped being the same thing when the
+        // top row split three ways.
+        expect(rollOrigin(0.999999999).key).toBe('fostered_on_a_word');
     });
 
     it('has weights that sum to the declared total', () => {
@@ -118,16 +165,16 @@ describe('an origin buys inputs and never rank', () => {
         }
     });
 
-    it('does not waive an institution\'s own floor, including for a great house', () => {
+    it('does not waive an institution\'s own floor, including for a Dao house', () => {
         // The Hollow Court: Void Refinement at the floor, and nothing else
         // counts, which includes being somebody's child.
         const hollowCourt = { id: 'sect-hollow-court', powerOrdinal: 44, admissionOrdinal: 29 };
         const localSect = { id: 'sect-local', powerOrdinal: 11, admissionOrdinal: 0 };
         const houses = [hollowCourt, localSect];
 
-        // A great house child at the age placement happens is at ordinal zero
+        // A Dao house child at the age placement happens is at ordinal zero
         // like everybody else, and the Court's floor is the whole of the answer.
-        const atBirth = placementsWithinReach('great_house', 0, houses);
+        const atBirth = placementsWithinReach('dao_house_bloodline', 0, houses);
         expect(atBirth.map(h => h.id)).toEqual(['sect-local']);
 
         // And the Court is beyond every family's reach in any case.
@@ -187,7 +234,7 @@ describe('access goes through the mechanism that already exists', () => {
     });
 
     it('names a real source for everything a house puts within reach', () => {
-        const ctx = withOriginAccess('great_house');
+        const ctx = withOriginAccess('dao_house_bloodline');
         const candidates = discoverableInsights({ spiritRoot: 'single_fire' }, ctx);
         expect(candidates.length).toBeGreaterThan(4);
         for (const candidate of candidates) {
@@ -199,7 +246,7 @@ describe('access goes through the mechanism that already exists', () => {
     });
 
     it('adds to a context without displacing what is already in it', () => {
-        const merged = withOriginAccess('great_house', {
+        const merged = withOriginAccess('dao_house_bloodline', {
             teachers: [{ subject: 'sword', label: 'somebody met on the road' }],
             tradition: { subject: 'debt', label: 'a house they actually joined' }
         });
@@ -235,7 +282,7 @@ describe('resources are finite and they are spent', () => {
             return o;
         };
         const modest = rungs(getOrigin('established_clan').spiritStones);
-        const enormous = rungs(getOrigin('great_house').spiritStones);
+        const enormous = rungs(getOrigin('dao_house_bloodline').spiritStones);
         expect(enormous).toBeGreaterThan(modest);
         expect(enormous - modest).toBeLessThan(10);
         // And it runs out well short of the top.
@@ -254,7 +301,7 @@ describe('resources are finite and they are spent', () => {
 
     it('makes a long seclusion a plan only for the tiers that funded it', () => {
         expect(provisionedYears(getOrigin('thin_county').spiritStones)).toBeLessThan(1);
-        expect(provisionedYears(getOrigin('great_house').spiritStones)).toBeGreaterThan(40);
+        expect(provisionedYears(getOrigin('dao_house_bloodline').spiritStones)).toBeGreaterThan(40);
     });
 });
 
@@ -275,7 +322,7 @@ describe('supplied risk moves survival and nothing else', () => {
             expect(supplied - 0.45).toBeLessThanOrEqual(MAX_EXPEDITION_MARGIN + 1e-9);
             expect(supplied).toBeLessThanOrEqual(1);
         }
-        expect(expeditionSurvival('great_house', 0.95, true)).toBeLessThanOrEqual(1);
+        expect(expeditionSurvival('dao_house_bloodline', 0.95, true)).toBeLessThanOrEqual(1);
     });
 
     it('runs out - it is a count over a life, not a standing condition', () => {
@@ -292,7 +339,7 @@ describe('supplied risk moves survival and nothing else', () => {
 
 describe('nothing tells anybody what their birth is worth', () => {
     it('reports an opening position with no score, rating or recommendation in it', () => {
-        const position = openingPosition('great_house');
+        const position = openingPosition('dao_house_bloodline');
         expect(Object.keys(position).sort()).toEqual([
             'accessCount', 'description', 'ground', 'name', 'origin',
             'placementAge', 'placementReach', 'probability', 'provisionedYears',
