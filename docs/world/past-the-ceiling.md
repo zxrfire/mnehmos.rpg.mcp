@@ -630,7 +630,20 @@ book, not over the person, and the house's reaction is proportional to what leav
 Everything in this section describes leaving as a thing that costs something. **Going to the
 Hollow Court costs nothing and is an honour on the house you leave.**
 
-The Court takes people from about ordinal 29 upward, out of any house anywhere. A member
+The Court takes people from about ordinal 29 upward, out of any house anywhere - **and only
+if they are 250 years old or younger.**
+
+That age cap is the whole of its selection, and it is not about youth. **It is a rate test
+wearing an age limit.** Reaching Void Refinement at all puts somebody in a very small
+population; reaching it inside 250 years says something the rung alone does not, because at
+that height a lifespan runs to thousands and most people who arrive have spent most of theirs
+getting there. Somebody who took four centuries to reach 29 has demonstrated they will not
+reach 46 before their years run out. Somebody who did it in two has demonstrated the opposite.
+The Court is not looking for strong people - it is looking for people whose *trajectory* ends
+above the Lid, and the only way to read a trajectory is against the clock.
+
+It also explains how a body this attractive stays small without turning anybody away
+arbitrarily: the bar is objective, it is knowable in advance, and almost nobody clears it. A member
 leaving for it is not a defection and is not treated as one: **the original house gains
 standing by having produced somebody the Court wanted**, and the Court makes that explicit -
 rewards, a celebration, sometimes a dao artifact sent back down. Nobody swears an oath,
