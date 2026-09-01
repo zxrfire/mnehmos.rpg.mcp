@@ -1,5 +1,11 @@
 # Making places and factions feel different
 
+<!-- tier: 3 -->
+
+An authoring guide, not narrator material. Tier 3 throughout: never auto-injected, read
+by humans and by agents writing a new region, faction, or compound. The in-play facts it
+produces reach the narrator through `qi.md`, `sects.md` and `architecture.md`.
+
 An authoring guide. Read before writing a new region or faction.
 
 The failure mode this exists to prevent: every province is "sects, mountains, a market and
