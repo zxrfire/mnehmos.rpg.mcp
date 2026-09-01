@@ -809,6 +809,8 @@ options are *stay* and *defect* is missing most of the board.
 | **Buy or barter the road, and stay** | a favour owed upward, spent once | the book is obtainable and the house is not the problem |
 | **Schism** | you take people with you, and inherit the war | the disagreement is institutional, not personal |
 | **Found your own house** | everything, at first | you hold a road nobody will teach you further on |
+| **Defect to a neutral apex** | nothing, and they reward you for coming | you are qualified, blocked, and worth something to a body that large |
+| **Disband the house and leave** | it ends; you answer to nobody afterwards | you are senior enough to end it, and there is nothing left worth holding |
 | **Go rogue** | no shelf, no backing, no materials | every door above is shut, or you want none of them |
 
 ### Money cannot buy a house, and it can buy the people in one
@@ -869,6 +871,21 @@ ladder is not for sale - but they can now pay their way OUT of a house that has 
 without swearing away the only thing they have to sell. That is one of the few moments where
 stones convert into a rung, and it converts indirectly, through people, at the risk of being
 found out.
+
+**The three that answer being QUALIFIED AND BLOCKED are the ones to build first**, because
+that is the commonest situation in the world by a wide margin - somebody who meets every bar
+for the next rank and is waiting on a seat that a living person is sitting in:
+
+- **Leave upwards.** To the house above yours, or to the apex over it. Frictionless inside
+  your own bloc, and the ordinary answer.
+- **Defect to a neutral apex, and be paid for it.** A body that large has seats, wants
+  competent people, and **rewards somebody for coming** rather than charging them to leave.
+  For a person whose own house cannot promote them, this is not a betrayal so much as the
+  market working.
+- **Disband the house and leave legitimately.** The sharpest of the three and the most
+  final: if you are senior enough to end it, you end it, and then there is no house left to
+  owe anything to. No oath, no release, no grievance - not because anybody forgave you, but
+  because the party that would have held it does not exist any more.
 
 Two of these are worth more attention than the others when this gets built. **Secondment** is
 the answer for the extremely common case where a house likes you and has run out of book - it
