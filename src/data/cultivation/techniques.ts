@@ -1057,6 +1057,17 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     'chaos-origin-scripture': 'pristine',
     'lifespan-devouring-heaven-theft': 'corrupt',
 
+    // ── The four roads that reach the top of the ladder. Refined at the three
+    // apexes, because each was written once by one person for one successor
+    // and has been kept rather than improved. Pristine at the Hollow Court,
+    // which is the only body that has had generation after generation of
+    // people take the same road to its end and write down what they found -
+    // and that difference is the same difference the `opening` field states.
+    'clear-terrace-ascension-canon': 'refined',
+    'arterial-sounding-canon': 'refined',
+    'driven-ground-endurance-canon': 'refined',
+    'protected-crossing-canon': 'pristine',
+
     // ── The treasures. Wide-span books are pristine BECAUSE they are wide: a
     // work that carries a reader across a boundary was finished by somebody
     // who had stood on both sides of it, and nobody has copied it since. ──
@@ -2313,6 +2324,120 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         cooldown: 0,
         description:
             'One incomplete copy is known. It came out of a sealed vault under a collapsed compound, in a grade nobody has been taught in living memory, and it is incomplete in the way a map of a coastline is incomplete. Cultivating from it at Tribulation Transcendence Perfection is the last thing anyone in this world can be said to be doing.'
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // THE FOUR ROADS THAT REACH THE TOP OF THE LADDER
+    //
+    // One each, to the three apexes and to the Hollow Court, and nothing below
+    // that altitude has one. This band used to hold exactly one book - the
+    // Chaos Origin Scripture above, incomplete, out of a ruin, on nobody's
+    // shelf - which meant the strongest institutions in the world topped out
+    // at Foundation Establishment on their own teach lists. The Azure Cloud
+    // Pavilion could teach to 21 and had produced a woman who walked off the
+    // top of the ladder inside living memory, and both of those were in the
+    // catalog at once.
+    //
+    // THE FOUR ARE THE SAME HEIGHT AND ARE NOT THE SAME ROAD. Every one of
+    // them takes `requiredOrdinal` 41 and the ordinary cap that follows from
+    // it, so all four end where the ladder does and none of them crosses,
+    // because the crossing is in no book. What separates them is what it costs
+    // to walk them, which is the `opening` field and nothing else:
+    //
+    //   The three apex roads are authored with a hard opening. Each was
+    //   written by one person for one successor and never revised by anybody
+    //   who had to read it cold, so the first rungs are somebody else's
+    //   shorthand and the reader crawls.
+    //
+    //   The Hollow Court's has none, and that is the whole of why its road is
+    //   the best in the world. Not a further reach and not a stronger method:
+    //   fewer walls, and transitions somebody already wrote out properly. A
+    //   body whose single purpose is getting its own members over the last
+    //   crossing has had every rung of this one walked, questioned and written
+    //   up again by people who were about to need the next one.
+    //
+    // AND NO LIVING PERSON CAN WALK ANYBODY TO THE END OF THREE OF THEM, which
+    // is not authored either - it falls out of `carriesTo` against the seats.
+    // The Deep Survey stands at 43, the Long Cut at 42 and the Pavilion at 41,
+    // so the last rungs of those three roads have no teacher anywhere and have
+    // to be walked alone. The Hollow Court stands at 44 and is the only body
+    // in the world that can take somebody to the end of its own road, which is
+    // also the only one of the four that has repeatedly produced people who
+    // got there.
+    // ═══════════════════════════════════════════════════════════════════
+    art({
+        id: 'clear-terrace-ascension-canon',
+        name: 'Clear Terrace Ascension Canon',
+        category: 'cultivation',
+        grade: 'chaos',
+        element: 'metal',
+        // Sword intent at depth, because the road is one a swordswoman walked
+        // and she wrote it in the only vocabulary she had.
+        domain: 'weapon',
+        domainDegree: 3,
+        requiredOrdinal: 41,
+        qiCost: 880,
+        damage: null,
+        cooldown: 0,
+        // Three rungs of private shorthand. It was written in the decades
+        // spent divesting, for a reader who was in the room, and its author
+        // never found out what it reads like to anybody else.
+        opening: { rungs: 3, rateMultiplier: 0.4 },
+        description:
+            'The road the Azure Cloud Pavilion actually holds, and the one nobody outside the inner hall has been shown a page of. It was written by the woman who crossed, during the decades she spent settling what was outstanding rather than getting stronger, and it is addressed throughout to a single reader who was in the room - so the first three rungs are a stretch of private shorthand, and after those it is the clearest metal road anybody has set eyes on. The Pavilion holds two copies and neither leaves the hall.'
+    }),
+    art({
+        id: 'arterial-sounding-canon',
+        name: 'Arterial Sounding Canon',
+        category: 'cultivation',
+        grade: 'chaos',
+        element: null,
+        // Formation at depth: the road is a method for reading what is under
+        // the reader, and at this height that is the arterial system itself.
+        domain: 'formation',
+        domainDegree: 3,
+        requiredOrdinal: 41,
+        qiCost: 900,
+        damage: null,
+        cooldown: 0,
+        opening: { rungs: 4, rateMultiplier: 0.35 },
+        description:
+            'The Deep Survey\'s own road, and a survey instrument before it is a method of advancement. It teaches a cultivator at the top of the ladder to take the measure of the vein they are standing on rather than to draw harder on it, on the argument that at this height the limit is never the qi and is always what the reader has understood about where it comes from. The opening is four rungs of unannotated figures, because the Survey writes everything the way it writes a datum.'
+    }),
+    art({
+        id: 'driven-ground-endurance-canon',
+        name: 'Driven Ground Endurance Canon',
+        category: 'cultivation',
+        grade: 'chaos',
+        element: null,
+        domain: 'body',
+        domainDegree: 3,
+        requiredOrdinal: 41,
+        qiCost: 920,
+        damage: null,
+        cooldown: 0,
+        opening: { rungs: 4, rateMultiplier: 0.3 },
+        description:
+            'The Long Cut\'s road, written like a schedule because everything the Long Cut writes is a schedule. It carries a reader to the top of the ladder by treating the last realm as a face to be worked rather than a state to be attained: so many rungs, in this order, with the failure modes listed and dated. The four rungs of the opening are the hardest start of any road in the world, and the house does not regard that as a defect, on the stated ground that anybody who cannot get through them was going to die further up.'
+    }),
+    art({
+        id: 'protected-crossing-canon',
+        name: 'Protected Crossing Canon',
+        category: 'cultivation',
+        grade: 'chaos',
+        element: null,
+        domain: 'void',
+        domainDegree: 3,
+        requiredOrdinal: 41,
+        qiCost: 860,
+        damage: null,
+        cooldown: 0,
+        // No opening, and it is the only road at this height without one. The
+        // reason is institutional rather than magical - see the section
+        // comment above - and it is the whole of what "best paved" means here.
+        opening: null,
+        description:
+            'The best-paved road in the world, and it does not reach a rung further than the other three. What it has is no bad stretch anywhere in it: every transition between realms is written out by somebody who had just made it and was asked to explain how, every place a reader has historically stopped has an answer beside it, and there is nothing in it a student is expected to work out alone. That is what a body with exactly one purpose produces after enough centuries of it. The Hollow Court exists to get its own members over the last crossing and has spent everything it has on the question, and the road is where the spending shows.'
     }),
 
     // ═══════════════════════════════════════════════════════════════════

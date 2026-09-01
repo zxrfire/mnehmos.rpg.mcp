@@ -1176,6 +1176,18 @@ describe('the arts', () => {
         const untaught = reg.techniques.filter(t => !t.taughtBy.length);
         expect(reg.counts.untaughtTechniques).toBe(untaught.length);
         for (const t of untaught) {
+            // Or it is HELD rather than taught, which is the third state and
+            // the one the two hidden apexes are in. A road to the top of the
+            // ladder inside a body with no sect row can have no teach list by
+            // construction, and reading that as an orphan says nobody in the
+            // world can hand it over when in fact it is lent, on terms, by a
+            // named house with somebody standing in the book's own band.
+            if (t.heldBy) {
+                expect(t.transmission, `${t.id} is held and read rather than shown`).toBe('shown');
+                expect(t.heldBy.teachers, `${t.id} is held by nobody who can teach it`)
+                    .toBeGreaterThan(0);
+                continue;
+            }
             expect(t.transmission, `${t.id} is shown and nobody shows it`).toBe('read');
         }
     });

@@ -79,7 +79,9 @@ import {
 import {
     TECHNIQUES,
     GRADE_ORDER,
+    carriesTo,
     classOf,
+    getTechnique,
     gradeRank,
     opacityOf,
     transmissionModeOf
@@ -109,6 +111,11 @@ import {
     type Regard,
     type ResolvedRelationship
 } from '../data/cultivation/faction-relationships.js';
+import {
+    deepRoadOf,
+    whoHoldsDeepRoad,
+    type DeepRoadHolding
+} from '../data/cultivation/roads-to-the-top-of-the-ladder.js';
 
 /**
  * The band this page is about, and the two rungs above it.
@@ -615,6 +622,16 @@ export interface RegisterTechnique {
     description: string;
     /** Every faction that will teach it, strongest first. */
     taughtBy: { id: string; name: string; ordinal: number; signature: boolean }[];
+    /**
+     * The body that holds it where no teach list can say so. Four arts.
+     *
+     * A road to the top of the ladder held by an apex with no sect row is not
+     * an art nobody can obtain - it is one that is lent, on terms, by a named
+     * body. `taughtBy` stays exactly the sect catalog's teach lists; this is
+     * the other relation, and the copy count and teacher count are on it
+     * because those are what a shelf entry would have got wrong.
+     */
+    heldBy: { id: string; name: string; ordinal: number; copies: number; teachers: number } | null;
 }
 
 /** One house, and the library it will actually open. */
@@ -850,6 +867,29 @@ export interface RegisterRelationship extends ResolvedRelationship {
 }
 
 /**
+ * What a body holds at the top of the ladder, and what it can do with it.
+ *
+ * The catalog row plus the two numbers a reader wants resolved against it: the
+ * rung the road ends at, and the rung the house's own teacher stops at. Those
+ * are not the same figure on three of the four holders, and the gap between
+ * them is the most useful thing on the block - a road with no teacher for its
+ * last rungs is a road somebody has to finish alone.
+ */
+export interface RegisterDeepRoad extends DeepRoadHolding {
+    roadName: string;
+    /** Where the book ends. */
+    cap: number | null;
+    capRank: string | null;
+    /** The furthest the strongest teacher here can actually carry somebody. */
+    carriesTo: number;
+    carriesToRank: string;
+    /** Whether the house can finish what it starts. Three of four cannot. */
+    canFinishIt: boolean;
+    /** How hard the first rungs are, in the manual's own words. Null is smooth. */
+    opening: { rungs: number; rateMultiplier: number } | null;
+}
+
+/**
  * What it is actually good at, against what it is known for.
  *
  * Reputation fixes on whatever is legible from the road and then stops
@@ -1034,6 +1074,18 @@ export interface SectDossier {
     specialities: string[];
     /** What it will teach, resolved. Null on a house with no teach list. */
     curriculum: RegisterCurriculum | null;
+    /**
+     * The road to the top of the ladder, on the four bodies that hold one.
+     *
+     * Beside the curriculum rather than inside it, because a teach list answers
+     * "is this title on the shelf" and the two questions that decide whether
+     * anybody ever gets up one of these are not on any shelf: how many copies
+     * physically exist, and how many people in the house can teach at that
+     * depth. Those are the fields that separate an apex, which can spare a
+     * fraction of one person, from the body that has four working on nothing
+     * else. See {@link DeepRoadHolding}.
+     */
+    deepRoad: RegisterDeepRoad | null;
     /**
      * Three or four sentences that say what this faction is, assembled from the
      * fields rather than written. See {@link buildSynopsis}.
@@ -1835,6 +1887,32 @@ function buildTechniques(): RegisterTechnique[] {
         }))
         .sort((a, b) => b.ordinal - a.ordinal || a.name.localeCompare(b.name));
 
+    /**
+     * The body that HOLDS a road to the top of the ladder, where a teach list
+     * cannot say so.
+     *
+     * Deliberately not folded into `taughtBy`, which is defined as the sect
+     * catalog's teach lists and nothing else and is asserted to be exactly
+     * that. Two of the four roads are held by apexes with no sect row, so no
+     * shelf anywhere can carry them - and reading only the shelves reported
+     * those two as arts nobody in the world can hand over, which is the
+     * opposite of what is true about them. Holding is a different relation
+     * from teaching and it gets a different field.
+     */
+    const heldByOf = (techniqueId: string): RegisterTechnique['heldBy'] => {
+        const road = whoHoldsDeepRoad(techniqueId);
+        if (!road) return null;
+        const apex = getApexInstitution(road.factionId);
+        const sect = getSect(road.factionId);
+        return {
+            id: road.factionId,
+            name: apex?.name ?? sect?.name ?? road.factionId,
+            ordinal: apex?.powerOrdinal ?? sect?.powerOrdinal ?? 0,
+            copies: road.copies,
+            teachers: road.teachers.length
+        };
+    };
+
     return TECHNIQUES
         .map(t => ({
             id: t.id,
@@ -1854,7 +1932,8 @@ function buildTechniques(): RegisterTechnique[] {
             artClass: String(t.class ?? classOf(t)),
             worldSupplyCeiling:
                 ANCIENT_ARTS.find(a => a.techniqueId === t.id)?.worldSupplyCeiling ?? null,
-            taughtBy: teachersOf(t.id)
+            taughtBy: teachersOf(t.id),
+            heldBy: heldByOf(t.id)
         }))
         .sort((a, b) =>
             gradeRank(b.grade) - gradeRank(a.grade)
@@ -2133,6 +2212,33 @@ function buildHoldsFrom(factionId: string): RegisterHoldsFrom | null {
 function buildRelationships(factionId: string): RegisterRelationship[] {
     return relationshipsOf(factionId, idsForFaction(factionId))
         .map(r => ({ ...r, anchor: null as string | null }));
+}
+
+/**
+ * The deep road a body holds, with the two rungs a reader needs beside it.
+ *
+ * `carriesTo` is not restated here - it is the technique layer's own function,
+ * given the strongest teacher on the holding. Recomputing the rule would be a
+ * second copy of it, and this is exactly the join where a second copy would
+ * quietly disagree: the whole point of the block is that three of the four
+ * houses cannot walk anybody to the end of their own road.
+ */
+function buildDeepRoad(factionId: string): RegisterDeepRoad | null {
+    const holding = idsForFaction(factionId).map(id => deepRoadOf(id)).find(Boolean);
+    if (!holding) return null;
+    const art = getTechnique(holding.techniqueId);
+    const strongest = holding.teachers.reduce((n, t) => Math.max(n, t.realmOrdinal), 0);
+    const reach = carriesTo(strongest, holding.techniqueId) ?? strongest;
+    return {
+        ...holding,
+        roadName: art?.name ?? holding.techniqueId,
+        cap: art?.cap ?? null,
+        capRank: art?.cap === null || art?.cap === undefined ? null : rankName(art.cap),
+        carriesTo: reach,
+        carriesToRank: rankName(reach),
+        canFinishIt: art?.cap !== null && art?.cap !== undefined ? reach >= art.cap : true,
+        opening: art?.opening ?? null
+    };
 }
 
 /** Reputation against capability, straight out of the character catalog. */
@@ -3409,6 +3515,7 @@ function buildDossiers(
             titles: [...(sect?.ranks ?? [])],
             specialities: [...(sect?.specialities ?? [])].map(String),
             curriculum: buildCurriculum(row.id, techniquesById),
+            deepRoad: buildDeepRoad(row.id),
             // Filled in the second pass: it reads the assembled blocks below.
             synopsis: [],
             fielded,
@@ -3565,6 +3672,10 @@ function buildDossiers(
             titles: a.ranks.map(r => r.title),
             specialities: [],
             curriculum: a.factionId ? buildCurriculum(a.factionId, techniquesById) : null,
+            // Read on the apex id as well as the faction id, because the two
+            // apexes with no sect row have no curriculum at all and their road
+            // is the only shelf they have.
+            deepRoad: buildDeepRoad(a.id),
             synopsis: [],
             // An apex is not sealed and holds nothing back, so its ceiling is
             // its acting figure: the one at the last realm is seated, awake,
@@ -4584,6 +4695,17 @@ function artifactTable(list: RegisterArtifact[], ceiling: RegisterArtifactCeilin
  */
 function taughtByLine(t: RegisterTechnique): string {
     if (!t.taughtBy.length) {
+        // Held is not taught, and the sheet says which. A road at the top of
+        // the ladder inside a body with no teach list is neither an orphan nor
+        // a curriculum: it is one or two copies, lent and returned, and a
+        // teacher who is sometimes available.
+        if (t.heldBy) {
+            return `<span class="jump" data-goto="faction-${esc(t.heldBy.id)}">${esc(t.heldBy.name)}</span>`
+                + ` <span class="dim">${t.heldBy.ordinal}</span>`
+                + ` <span class="chip pin">held, not taught</span>`
+                + ` <span class="dim">${t.heldBy.copies} cop${t.heldBy.copies === 1 ? 'y' : 'ies'},`
+                + ` ${t.heldBy.teachers} who can teach it</span>`;
+        }
         return `<span class="dim">${t.survivingCopy
             ? 'nobody teaches it'
             : 'no copy anywhere'}</span>`;
@@ -5066,6 +5188,51 @@ function fieldedBlock(f: RegisterFielded): string {
     ${produces}
     ${withdrawn}
   </dl></div>`;
+}
+
+/**
+ * The road to the top of the ladder, and what stands between it and a reader.
+ *
+ * Three figures lead, because they are the ones a reader would otherwise take
+ * off a teach list and get wrong: how many copies exist, how many people can
+ * teach it, and how far the best of those people can actually carry somebody.
+ * The last of those is not authored anywhere - it is the technique layer's own
+ * rule applied to the house's own seats - and on three of the four holders it
+ * comes out below the end of their own book.
+ */
+function deepRoadBlock(r: RegisterDeepRoad): string {
+    const teachers = r.teachers.map(t =>
+        `<div class="who"><span class="wn">${esc(t.who)}</span>`
+        + `<span class="wo">${t.realmOrdinal}</span>`
+        + `<span class="wr">${esc(rankName(t.realmOrdinal))}</span>`
+        + `<span class="wd">${esc(t.availability)}</span></div>`).join('');
+
+    const rows: string[] = [
+        `<dt>Copies in the house</dt><dd><b>${r.copies}</b>. ${esc(r.whyThatManyCopies)}</dd>`,
+        `<dt>How a reader gets one</dt><dd>${r.access === 'lent' ? 'Lent, and it goes back.' : 'Read where it sits; it does not leave the room.'} ${esc(r.accessTerms)}</dd>`,
+        `<dt>Who can teach it</dt><dd><b>${r.teachers.length}</b>. ${esc(r.capacityNote)}</dd>`,
+        `<dt>How far they can take you</dt><dd><b>${r.carriesTo}</b> &middot; ${esc(r.carriesToRank)}`
+            + (r.cap === null
+                ? ', against a book that ends nowhere.'
+                : r.canFinishIt
+                    ? `, and the book ends at ${r.cap}. This is the one house in the world that can walk somebody to the end of its own road.`
+                    : `, and the book ends at ${r.cap}. The last ${r.cap - r.carriesTo} rung${r.cap - r.carriesTo === 1 ? '' : 's'} have no teacher anywhere and have to be walked alone.`)
+            + '</dd>',
+        `<dt>What the opening costs</dt><dd>${r.opening
+            ? `The first ${r.opening.rungs} rungs run at ${Math.round(r.opening.rateMultiplier * 100)}% of ordinary progress. A hard stretch of somebody else's shorthand before the road opens up.`
+            : 'Nothing. There is no bad stretch anywhere in it, which is what separates this road from every other one at its height - the same reach, and a fraction of the cost to walk.'}</dd>`,
+        `<dt>Where the teaching comes from</dt><dd>${esc(r.whereTheTeachingComesFrom)}</dd>`
+    ];
+    if (r.gradedByStanding) {
+        rows.push(`<dt>And who gets how much</dt><dd>${esc(r.gradedByStanding)}</dd>`);
+    }
+
+    return `<div class="grp deeproad"><h4>The road to the top of the ladder <span>1</span>`
+        + `<span class="gap">${esc(r.roadName)}${r.cap === null ? '' : ` &middot; ends at ${r.cap}`} &middot; ${r.copies} cop${r.copies === 1 ? 'y' : 'ies'} &middot; ${r.teachers.length} who can teach it</span></h4>`
+        + `<dl class="hist">${rows.join('')}</dl>`
+        + `<h4>Who can carry somebody up it <span>${r.teachers.length}</span></h4>`
+        + teachers
+        + '</div>';
 }
 
 /**
@@ -5685,6 +5852,13 @@ function dossier(d: SectDossier): string {
     // curriculum block is the one place the sheet distinguishes an art nobody
     // else teaches from a method half the province has.
     if (d.curriculum) controls.push(curriculumBlock(d.curriculum));
+
+    // Under the library, because it is the one title on it that a teach list
+    // describes wrongly. A shelf entry says the house has the book; what
+    // decides whether anybody gets up the road is how many copies exist and
+    // how much of one person's attention is available, and neither of those is
+    // a property of a title.
+    if (d.deepRoad) controls.push(deepRoadBlock(d.deepRoad));
 
     // ── 5. what it says about itself ─────────────────────────────────
     const claims: string[] = [];

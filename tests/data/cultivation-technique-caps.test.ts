@@ -31,6 +31,7 @@ import {
     carriesTo,
     getTechnique
 } from '../../src/data/cultivation/techniques.js';
+import { THE_DEEPEST_ROADS } from '../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { houseTeachingCeiling } from '../../src/data/cultivation/index.js';
 import { PILLS, isAdvancement } from '../../src/data/cultivation/pills.js';
 import { getArtifact } from '../../src/data/cultivation/artifacts.js';
@@ -319,15 +320,21 @@ describe('a cap and a suitability are independent axes', () => {
 });
 
 describe('the houses, measured against their own books', () => {
-    it('never derives a ceiling of zero from a house that takes no disciples', () => {
-        // The Hollow Court reads `reliableOrdinal: 0` while sitting at power
-        // ordinal 40, and its own note says why: "produces nobody, by
-        // construction: it takes no disciples". Zero is a statement about
-        // INTAKE. Deriving the cap from the MANUAL rather than the house is
-        // what stops the strongest institution in the world being handed a
-        // ceiling of zero.
+    it('never derives a ceiling of zero from a house with a road and no shelf', () => {
+        // The Hollow Court used to read `reliableOrdinal: 0`, on the reasoning
+        // that zero is a statement about INTAKE rather than about the house -
+        // it takes nobody from the bottom because there is no bottom here. The
+        // reasoning was sound and answered the wrong question: it admits at a
+        // Void Refinement floor, and the honest reading of "routinely" is what
+        // happens to somebody after they walk in, which is that they reach the
+        // top of the ladder. Four are standing there now.
+        //
+        // What the assertion is actually guarding is unchanged and is the
+        // second line: whatever the house's own intake looks like, the ceiling
+        // comes off the MANUAL, so the strongest acting body in the world can
+        // never be handed a teaching ceiling of zero.
         const hollow = FACTION_CHARACTER['sect-hollow-court'];
-        expect(hollow.production.reliableOrdinal).toBe(0);
+        expect(hollow.production.reliableOrdinal).toBeGreaterThan(36);
         expect(hollow.production.peakOrdinal).toBeGreaterThan(30);
         expect(houseTeachingCeiling('sect-hollow-court')).not.toBe(0);
         for (const t of MANUALS) expect(t.cap, t.id).not.toBe(0);
@@ -387,10 +394,33 @@ describe('the manuals a player can actually reach', () => {
     it('puts the whole ladder behind a book at some height', () => {
         // Nothing above ordinal zero is reachable by cultivating raw: at every
         // rung there is a manual that has to be found, and the highest of them
-        // are behind a seal or on a body.
+        // are behind a seal, on a body, or inside one of the four institutions
+        // that stand at the top of the world.
+        //
+        // That last clause is the change, and it is narrow on purpose. The
+        // assertion used to be that NOTHING at this height is taught, which
+        // read as scarcity and was in fact an accident: it meant the strongest
+        // houses in the world had teach lists ending at Core Formation, and the
+        // apex whose own member walked off the top of the ladder inside living
+        // memory could be recorded as unable to teach past the middle of it.
+        //
+        // The four roads are exempt and nothing else is. Each is held by
+        // exactly one of the four bodies with somebody standing in the band the
+        // book is written for, which is the fact that makes holding it
+        // coherent - and a shelf is still not a promise: `THE_DEEPEST_ROADS`
+        // carries the one or two lent copies and the single teacher, available
+        // sometimes, that stand between a chosen disciple and any of them.
+        const exempt = new Set(THE_DEEPEST_ROADS.map(r => r.techniqueId));
         const top = MANUALS.filter(t => (t.cap ?? MAX_ORDINAL) >= MAX_ORDINAL - 1);
         expect(top.length).toBeGreaterThan(0);
-        for (const t of top) expect(t.provenance).not.toBe('taught');
+        for (const t of top) {
+            if (exempt.has(t.id)) continue;
+            expect(t.provenance, t.id).not.toBe('taught');
+        }
+        // And the exemption stays tiny: four bodies, four roads, one each.
+        expect(THE_DEEPEST_ROADS.length).toBe(4);
+        expect(new Set(THE_DEEPEST_ROADS.map(r => r.factionId)).size).toBe(4);
+        expect(new Set(THE_DEEPEST_ROADS.map(r => r.techniqueId)).size).toBe(4);
     });
 });
 

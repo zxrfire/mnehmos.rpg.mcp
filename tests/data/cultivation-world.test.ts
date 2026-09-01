@@ -718,10 +718,25 @@ describe('faction distinctness pass', () => {
         }
     });
 
-    it('makes the Hollow Court the extreme case of the two metrics disagreeing', () => {
+    it('makes the Hollow Court the one house whose two metrics agree', () => {
+        // The reverse of what this used to assert, and the reversal is the
+        // point. Everywhere else in the catalog the routine figure sits far
+        // under the strongest member, because a house's best person is an
+        // exception to its own pipeline. Here they are three rungs apart: the
+        // body exists for one thing, spends everything on it, and the people
+        // it routinely produces are standing next to the person who runs it.
         const court = getSect('sect-hollow-court')!;
-        expect(getProductionTier(court.id)!.reliableOrdinal).toBe(0);
+        const tier = getProductionTier(court.id)!;
         expect(court.powerOrdinal).toBe(44);
+        expect(court.powerOrdinal - tier.reliableOrdinal).toBeLessThanOrEqual(3);
+        // And it is the only house this tight at this HEIGHT, which is the
+        // claim worth making: a small house whose best member is its routine
+        // output is an ordinary shape, and one at the top of the ladder is not.
+        const tightAndHigh = SECTS.filter(s => {
+            const t = getProductionTier(s.id);
+            return t !== undefined && s.powerOrdinal >= 37 && s.powerOrdinal - t.reliableOrdinal <= 3;
+        });
+        expect(tightAndHigh.map(s => s.id)).toEqual([court.id]);
     });
 });
 

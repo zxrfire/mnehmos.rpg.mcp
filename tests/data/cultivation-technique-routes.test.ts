@@ -38,6 +38,7 @@ import {
     getTechniquesWithNoSurvivingCopy
 } from '../../src/data/cultivation/techniques.js';
 import { SECTS, SECT_ANCESTRY } from '../../src/data/cultivation/sects.js';
+import { THE_DEEPEST_ROADS } from '../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { INHERITANCE_TRIALS, GRAVES } from '../../src/data/cultivation/inheritance-trials.js';
 import { allDaoCarvings } from '../../src/data/cultivation/false-immortals.js';
 
@@ -48,7 +49,7 @@ import { allDaoCarvings } from '../../src/data/cultivation/false-immortals.js';
 // somebody put down on the way out of the world.
 // ─────────────────────────────────────────────────────────────────────────
 
-type RouteKind = 'taught' | 'trial' | 'grave' | 'carving' | 'parting_gift';
+type RouteKind = 'taught' | 'trial' | 'grave' | 'carving' | 'parting_gift' | 'apex_road';
 
 interface Route {
     kind: RouteKind;
@@ -60,6 +61,16 @@ function routesTo(techniqueId: string): Route[] {
     const out: Route[] = [];
     for (const s of SECTS) {
         if (s.teaches.includes(techniqueId)) out.push({ kind: 'taught', where: s.id });
+    }
+    // The four roads to the top of the ladder, which two of the four holders
+    // cannot express as a teach list because they have no sect row at all.
+    // Without this the Deep Survey's and the Long Cut's roads read as arts
+    // nothing in the world can hand to anybody, which is the opposite of what
+    // is true about them: each is held by one of the four bodies with somebody
+    // standing in the band the book is written for, and lent, on terms, to
+    // people that body has already decided about.
+    for (const road of THE_DEEPEST_ROADS) {
+        if (road.techniqueId === techniqueId) out.push({ kind: 'apex_road', where: road.factionId });
     }
     for (const t of INHERITANCE_TRIALS) {
         if (t.interior.prize.techniqueIds.includes(techniqueId)) {
@@ -173,8 +184,8 @@ describe('the route agrees with the provenance', () => {
     it('gives every taught art a living teacher and every teacher a taught art', () => {
         for (const t of TECHNIQUES) {
             if (t.provenance !== 'taught') continue;
-            expect(routesTo(t.id).some(r => r.kind === 'taught'),
-                `${t.id} is taught provenance and no sect teaches it`).toBe(true);
+            expect(routesTo(t.id).some(r => r.kind === 'taught' || r.kind === 'apex_road'),
+                `${t.id} is taught provenance and nobody hands it over`).toBe(true);
         }
         for (const s of SECTS) {
             for (const id of s.teaches) {
@@ -198,10 +209,27 @@ describe('the route agrees with the provenance', () => {
         }
     });
 
-    it('keeps the upper grades off the teaching route entirely', () => {
+    it('keeps the upper grades off the ordinary teaching route', () => {
+        // Off the ORDINARY route, which is the claim that was always meant.
+        // A chaos art is not something a house puts on a shelf and teaches to
+        // its disciples - except at the four bodies that stand in the band the
+        // books are written for, each of which holds exactly one and hands it
+        // over on terms no shelf could express. Everything else is a ruin or a
+        // grave, which is the Late Age rule and is unchanged.
+        const deepRoads = new Set(THE_DEEPEST_ROADS.map(r => r.techniqueId));
         for (const t of TECHNIQUES.filter(x => x.grade === 'chaos')) {
+            if (deepRoads.has(t.id)) continue;
             expect(routesTo(t.id).some(r => r.kind === 'taught'),
                 `${t.id} is chaos grade and somebody is teaching it`).toBe(false);
+        }
+        // And the four are one per body, held rather than published: each is on
+        // at most one sect shelf, and the holder is the body the road catalog
+        // names.
+        for (const road of THE_DEEPEST_ROADS) {
+            const shelves = SECTS.filter(x => x.teaches.includes(road.techniqueId)).map(x => x.id);
+            expect(shelves.length, `${road.techniqueId} is on ${shelves.length} shelves`)
+                .toBeLessThanOrEqual(1);
+            if (shelves.length === 1) expect(shelves[0]).toBe(road.factionId);
         }
     });
 });
