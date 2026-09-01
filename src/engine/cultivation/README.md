@@ -352,9 +352,19 @@ qi already inside them keeps working, and with nowhere left to go it begins work
 *them*. The body greys. The memory thins in the same way an ascended one's does, but with
 nothing gained for it.
 
-Fifty years at one realm, and the process finishes. This is called **settling**, and it
-is the most common death among cultivators who survive long enough to have a choice
-about it. The engine calls it death by aging. The world calls it becoming furniture.
+`stagnationYearsForOrdinal(ordinal)` at one rung, and the process finishes. That is fifty
+years through Qi Condensation and Foundation Establishment, where `STAGNATION_YEARS` is
+the floor, and a fifth of the realm's own span above them - a hundred at Core Formation,
+twenty thousand at Tribulation Transcendence. Do not write the fifty down anywhere: it is
+the floor, it is true for the first two realms only, and every copy of it that has ever
+been made in this codebase has quietly become a lie about the other seven.
+
+This is called **settling**, and it is the most common death among cultivators who survive
+long enough to have a choice about it. And it *is* a choice: somebody may stop striking,
+consolidate, and live the span out at the rung they reached. The clock is the deadline on
+that decision, not a fuse - what it does at the end is make the decision for anybody who
+declined to make it. The engine calls it death by aging. The world calls it becoming
+furniture.
 
 ## The five deaths
 
@@ -368,7 +378,7 @@ counters; they hand the resulting state to `survival.ts` and it returns a `Death
 combat_defeat       hp reaches 0
 starvation          STARVATION_TURNS consecutive turns at 0 satiety
 lifespan_exhausted  age reaches the realm's lifespanYears
-stagnation_aging    STAGNATION_YEARS without advancing a rank
+stagnation_aging    stagnationYearsForOrdinal(ordinal) without advancing a rank
 untreated_injuries  LETHAL_UNTREATED_INJURIES untreated - fight, or simply wait
 ```
 

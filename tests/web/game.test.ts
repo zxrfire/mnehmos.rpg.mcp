@@ -11,6 +11,7 @@ import {
     CultivatorSchema,
     SATIETY_MAX,
     STARTING_SPIRIT_STONES,
+    stagnationYearsForOrdinal,
     type Cultivator
 } from '../../src/schema/cultivation';
 import { DAYS_PER_YEAR } from '../../src/engine/cultivation/cultivation';
@@ -37,6 +38,10 @@ import { STARTING_AGE, STARTING_LOCATION, PROVISION_COST_STONES } from '../../sr
 import { makeGame, injuryCount, planned, engineCalls, refusedCall } from './harness';
 import { drawBirth } from '../../src/engine/birth/birth';
 import { ACTIONS_PER_FULL_SATIETY } from '../../src/engine/cultivation/survival';
+import {
+    lifespanPressure,
+    lifespanPressureOnsetAge
+} from '../../src/engine/cultivation/breakthrough';
 
 /**
  * How far an encounter's own deltas may move the purse inside one window.
@@ -745,6 +750,67 @@ describe('derived: the sheet reads the engine, not an approximation of it', () =
         const ordinary = subject({ realmOrdinal: 44, age: 1000 });
         expect(derivedView(ordinary).lifespanRemaining).toBe(lifespanForOrdinal(44) - 1000);
         expect(derivedView(subject()).lifespanRemaining).toBe(lifespanForOrdinal(0) - 16);
+    });
+
+    // ── the two mortality clocks ──
+    //
+    // The panel had `50` written into it in four places and said "Fifty years
+    // without advancing is fatal" to everybody, which was true through
+    // Foundation Establishment and a lie above it. The fix is that the browser
+    // stops knowing the number at all, so what is asserted here is that the
+    // wire carries the engine's own figure for whatever rung is being asked
+    // about - not that any particular constant is 50.
+    it('ships the settling clock and the span it belongs to, per rung', () => {
+        for (const ordinal of [0, 13, 17, 21, 25, 29, 33, 37, 41]) {
+            const d = derivedView(subject({ realmOrdinal: ordinal }));
+            expect(d.stagnationYears).toBe(stagnationYearsForOrdinal(ordinal));
+            expect(d.lifespanYears).toBe(lifespanForOrdinal(ordinal));
+            // The meter's own maximum has to be the same span its remainder was
+            // subtracted from, or the bar and the sentence under it disagree.
+            expect(d.lifespanYears - d.lifespanRemaining).toBe(16);
+        }
+
+        // And the figure genuinely moves, which is the whole defect: a client
+        // that hardcoded any single number was wrong for most of the ladder.
+        expect(derivedView(subject({ realmOrdinal: 0 })).stagnationYears)
+            .toBeLessThan(derivedView(subject({ realmOrdinal: 41 })).stagnationYears);
+    });
+
+    it('measures the same span a False Immortal is actually living on', () => {
+        const d = derivedView(subject({
+            realmOrdinal: 44,
+            immortalStatus: 'false_immortal',
+            age: 1000
+        }));
+        expect(d.lifespanYears).toBe(effectiveLifespanYears(44, 'false_immortal'));
+        expect(d.lifespanYears).not.toBe(lifespanForOrdinal(44));
+    });
+
+    // The age term, on the wire so the panel can say what waiting costs rather
+    // than only what it leaves. A fraction of THIS rung's span, never an
+    // absolute age - which is what makes reaching a rung early worth anything.
+    it('ships the age penalty on the next crossing, and where it starts', () => {
+        const young = derivedView(subject({ realmOrdinal: 0, age: 16 }));
+        expect(young.lifespanPressure).toBe(0);
+        expect(young.lifespanPressureFromAge).toBe(lifespanPressureOnsetAge(0));
+        expect(young.lifespanPressureFromAge).toBeGreaterThan(young.lifespanPressure);
+
+        const old = derivedView(subject({ realmOrdinal: 0, age: 90 }));
+        expect(old.lifespanPressure).toBe(lifespanPressure(0, 90));
+        expect(old.lifespanPressure).toBeLessThan(0);
+
+        // Ninety is lethal at Qi Condensation and irrelevant at Core Formation,
+        // because the term is age over the realm's span and nothing else. Get
+        // this wrong and every high cultivator is permanently doomed.
+        expect(derivedView(subject({ realmOrdinal: 17, age: 90 })).lifespanPressure).toBe(0);
+
+        // Reaching a rung early leaves runway on it, and the runway is the
+        // reward for climbing young. No bonus awards this; it falls out.
+        const early = derivedView(subject({ realmOrdinal: 13, age: 30 }));
+        const late = derivedView(subject({ realmOrdinal: 13, age: 95 }));
+        expect(early.lifespanPressureFromAge).toBe(late.lifespanPressureFromAge);
+        expect(early.lifespanPressureFromAge - 30)
+            .toBeGreaterThan(late.lifespanPressureFromAge - 95);
     });
 
     it('carries the engine own refusal text while a breakthrough is blocked', () => {

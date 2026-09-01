@@ -785,6 +785,33 @@ kbd {
 .meter__note.is-ready { color: var(--brass-300); }
 .meter__note.is-barred { color: var(--violet-300); }
 
+/* The reckoning: the two mortality clocks related to each other.
+   Two countdowns printed side by side answer nothing on their own - which one
+   ends the run first is the only thing a player needs from the pair, so it gets
+   its own block under them rather than a third note that reads like the other
+   two. The left rule takes the tone of whichever clock is nearer. */
+.reckoning {
+  margin-top: 2px;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-left-color: currentColor;
+  background: rgba(255, 255, 255, 0.02);
+}
+.reckoning__head {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.reckoning__body {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--paper-far);
+}
+
 .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 13px; }
 .kv dt { color: var(--paper-far); }
 .kv dd { margin: 0; color: var(--paper-dim); text-align: right; word-break: break-word; }

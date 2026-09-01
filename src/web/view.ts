@@ -36,10 +36,14 @@ import {
     getSpiritRoot,
     rootProbability
 } from '../engine/cultivation/spirit-roots.js';
-import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
+import {
+    canAttemptBreakthrough,
+    lifespanPressure,
+    lifespanPressureOnsetAge
+} from '../engine/cultivation/breakthrough.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
-import { BLEED_OUT_TURNS } from '../schema/cultivation.js';
+import { BLEED_OUT_TURNS, stagnationYearsForOrdinal } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 
@@ -199,6 +203,45 @@ export interface DerivedView {
      * countable - so it has to be right here rather than corrected downstream.
      */
     lifespanRemaining: number;
+    /**
+     * The whole span this cultivator is measured against, so a client can show
+     * "16 of 100" without knowing 100 - the same reason `bleedOutTurns` is
+     * here beside `turnsUntilBleedOut`.
+     *
+     * `effectiveLifespanYears`, not `lifespanForOrdinal`, for the False
+     * Immortal reason given on `lifespanRemaining`: the two have to be the same
+     * span or the meter and its own remainder disagree.
+     */
+    lifespanYears: number;
+    /**
+     * Years at one rung before the climb ends there, at THIS rung.
+     *
+     * The client had 50 written into it. That is the floor and it is true only
+     * through Foundation Establishment: `stagnationYearsForOrdinal` is a fifth
+     * of the realm's own span above that, so the panel was telling a Core
+     * Formation cultivator they had 50 years when the ladder credits 100, and
+     * a Tribulation Transcendence cultivator the same when it credits 20,000.
+     * A number the browser invents is a bug; this is the engine's.
+     */
+    stagnationYears: number;
+    /**
+     * What the span already spent is worth to the NEXT crossing, as the flat
+     * modifier `computeBreakthroughOdds` will book - zero or negative.
+     *
+     * Sent because the two clocks in the mortality panel are two halves of one
+     * decision and the panel could only show one of them. Lifespan was a
+     * countdown with no consequence attached; this is the consequence, and it
+     * is what makes waiting cost something before the span actually runs out.
+     * Needs only ordinal and age, so it is honest here without the ambient the
+     * full odds line would require.
+     */
+    lifespanPressure: number;
+    /**
+     * The age at which that penalty starts at this rung. Below it there is
+     * nothing to pay, and how far below is the whole argument for crossing
+     * young - a rung reached early is a rung with runway left on it.
+     */
+    lifespanPressureFromAge: number;
     untreatedInjuries: number;
     /**
      * Turns left before the open meridians give out on their own, or null when
@@ -281,6 +324,10 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
             : refusalText(eligibility.reason, eligibility.progressAvailable, eligibility.progressRequired),
         lifespanRemaining:
             effectiveLifespanYears(ordinal, cultivator.immortalStatus) - cultivator.age,
+        lifespanYears: effectiveLifespanYears(ordinal, cultivator.immortalStatus),
+        stagnationYears: stagnationYearsForOrdinal(ordinal),
+        lifespanPressure: lifespanPressure(ordinal, cultivator.age),
+        lifespanPressureFromAge: lifespanPressureOnsetAge(ordinal),
         untreatedInjuries: untreatedInjuryCount(cultivator.injuries),
         turnsUntilBleedOut: finiteOrNull(turnsUntilBleedOut(bleedStateOf(cultivator))),
         bleedOutTurns: BLEED_OUT_TURNS,

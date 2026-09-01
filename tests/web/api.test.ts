@@ -132,10 +132,24 @@ describe('GET /api/state', () => {
 
         expect(Object.keys(res.body.derived).sort()).toEqual([
             'bleedOutTurns', 'breakthroughBlockedReason', 'breakthroughReady', 'dao',
-            'foundationQuality', 'lifespanRemaining', 'nameTaken', 'nextRankName',
-            'progressRequired', 'rankName', 'realmName', 'sectName',
+            'foundationQuality', 'lifespanPressure', 'lifespanPressureFromAge',
+            'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextRankName',
+            'progressRequired', 'rankName', 'realmName', 'sectName', 'stagnationYears',
             'turnsUntilBleedOut', 'untreatedInjuries'
         ]);
+        // The four that were added together, and the reason: the client had 50
+        // written into it as the settling clock and said "fifty years without
+        // advancing is fatal" to a cultivator at any rung. It is 50 only
+        // through Foundation Establishment. The browser no longer knows the
+        // number - it reads whichever one the engine sends for this rung, and
+        // the span and the age term travel beside it so the panel can say which
+        // clock runs out first and what waiting costs the next crossing.
+        expect(res.body.derived.stagnationYears).toBeGreaterThan(0);
+        expect(res.body.derived.lifespanYears)
+            .toBe(res.body.derived.lifespanRemaining + res.body.cultivator.age);
+        expect(res.body.derived.lifespanPressure).toBeLessThanOrEqual(0);
+        expect(res.body.derived.lifespanPressureFromAge)
+            .toBeLessThan(res.body.derived.lifespanYears);
         // No wounds open, so no clock. Null rather than Infinity, because JSON
         // has no Infinity and the wire type has to be the one the client tests.
         expect(res.body.derived.turnsUntilBleedOut).toBeNull();

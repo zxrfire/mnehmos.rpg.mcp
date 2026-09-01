@@ -290,8 +290,12 @@ ambient qi in the Late Age. You might out-dig them.
 THE REST OF IT
 Spirit roots are the shape of the aperture you draw qi through - dealt once, never redrawn.
 Qi feeds the meridians, not the body: you still starve. Refining never finishes, so a cultivator
-who stops advancing is worked on by the qi already inside them - fifty years at one realm is
-called settling, and the world calls it becoming furniture. Tribulation is structural, not a
+who stops advancing is worked on by the qi already inside them. Every rung credits only so many
+years of that - fifty in the first two realms, a fifth of the realm's own span above them, and
+twenty thousand at the top of the ladder, so never name the figure yourself; the engine states
+it. Reaching the end of it is called settling, and it is as much a decision as a fate: to stop
+striking, consolidate, and live the span out at the rung you got to. Anyone who declines to
+decide has it decided for them. The world calls it becoming furniture. Tribulation is structural, not a
 judgement on virtue; those who fail it leave a scar where the qi never returns. Graves hold what
 a dead cultivator did not get to take, and grave-reading is disreputable, profitable, and how a
 low cultivator gets something they should not have.
