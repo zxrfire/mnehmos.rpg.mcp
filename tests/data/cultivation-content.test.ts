@@ -38,6 +38,7 @@ import {
     learningCostMultiplier,
     transmissionModeOf
 } from '../../src/data/cultivation/techniques.js';
+import { THE_DEEPEST_ROADS } from '../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { WANDERERS, getWanderer } from '../../src/data/cultivation/wanderers.js';
 import { SPIRIT_ROOTS } from '../../src/engine/cultivation/spirit-roots.js';
 import { DiceEngine } from '../../src/math/dice.js';
@@ -672,11 +673,16 @@ describe('sects', () => {
                 continue;
             }
             if (s.id === 'sect-hollow-court') {
-                // The one recruiter with no curriculum. It admits at Void
-                // Refinement, so everyone arriving is already formed, and what
-                // it offers is the vein and the company rather than a manual.
-                expect(s.teaches.length, 'the Court has no curriculum').toBe(0);
-                expect(s.signatureTechniqueId).toBeNull();
+                // One book, and it is the whole library. This used to assert
+                // zero, on the reasoning that everybody arriving is already
+                // formed - which was true and did not follow: the Court admits
+                // only people capable of reaching the last realm because that
+                // is the only thing it is for, and a body with one purpose
+                // holds the road to it. What it does not hold is a second
+                // title, because a second title would be a second purpose.
+                expect(s.teaches, 'the Court holds one road and nothing else')
+                    .toEqual(['protected-crossing-canon']);
+                expect(s.signatureTechniqueId).toBe('protected-crossing-canon');
                 continue;
             }
             expect(s.teaches.length, `${s.id} teaches nothing`).toBeGreaterThan(0);
@@ -881,9 +887,35 @@ describe('the Late Age: provenance and the exploration loop', () => {
         expect(getTechniquesByProvenance('grave').length).toBeGreaterThan(0);
     });
 
-    it('has no living teacher for any chaos-grade art', () => {
+    it('teaches a chaos-grade art nowhere below the top of the world', () => {
+        // This used to assert that no chaos art anywhere is taught, which was
+        // the Late Age rule applied one step too far. The rule is that the last
+        // age's height is out of reach of THIS age's houses - and the four
+        // bodies at the top of the world are not this age's houses in the sense
+        // that matters: each of them has somebody standing in the band the book
+        // is written for, which is precisely what nobody else has.
+        //
+        // So the assertion is now the one that was actually intended. A chaos
+        // art is either out of a ruin or a grave, or it is one of the four
+        // roads to the top of the ladder, each held by exactly one of the four
+        // bodies that could hold one. Holding it is still not the same as
+        // handing it over: see `THE_DEEPEST_ROADS` for the one or two lent
+        // copies and the one teacher, sometimes, at each of the three apexes.
+        const deepRoadIds = new Set(THE_DEEPEST_ROADS.map(r => r.techniqueId));
         for (const t of TECHNIQUES.filter(x => x.grade === 'chaos')) {
+            if (deepRoadIds.has(t.id)) continue;
             expect(t.provenance, `${t.id} cannot be taught in this age`).not.toBe('taught');
+        }
+
+        // And each of the four is on exactly one house's shelf, or on none at
+        // all where the holder is an apex with no sect row - which is a fact
+        // about the register's tables rather than about the world, and the
+        // holding is recorded either way.
+        for (const road of THE_DEEPEST_ROADS) {
+            const houses = SECTS.filter(s => s.teaches.includes(road.techniqueId));
+            expect(houses.length, `${road.techniqueId} is on ${houses.length} shelves`)
+                .toBeLessThanOrEqual(1);
+            if (houses.length === 1) expect(houses[0].id).toBe(road.factionId);
         }
     });
 

@@ -40,6 +40,7 @@ import { MAX_ORDINAL, realmForOrdinal } from '../../../src/engine/cultivation/re
 import { daoGate, daoOf } from '../../../src/engine/cultivation/dao.js';
 import { shardPower } from '../../../src/engine/world/possessions.js';
 import { TECHNIQUES, classOf } from '../../../src/data/cultivation/techniques.js';
+import { THE_DEEPEST_ROADS } from '../../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import type { AmbientQi, Cultivator, Insight } from '../../../src/schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -764,6 +765,33 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
         expect(JSON.stringify(lonely).toLowerCase()).not.toContain('contribution');
     });
 
+    /**
+     * The manuals a derivation can actually compose against.
+     *
+     * Not simply every cultivation manual, and the exclusion is one row wide:
+     * the four roads to the top of the ladder are held rather than circulated.
+     * Each sits inside one of the four bodies at the top of the world, in one
+     * or two copies, lent to somebody that body has already decided about and
+     * returned afterwards. Nobody deriving in the wild has read one, so they
+     * are not precedent for anybody's new ground - and counting them said the
+     * opposite: adding them took the count at ordinal 37 from four to eight,
+     * which is exactly `PRECEDENT_WELL_WALKED`, and the thinness at the top of
+     * the corridor fell to zero. That would have made deriving at the choke
+     * points cost the floor price, which is the hole this whole curve exists
+     * to keep shut.
+     *
+     * `precedentAt` is passed a list of ordinals and does not know where any
+     * of them lives, which is correct for an engine function - what counts as
+     * precedent is a question about the world and belongs on this side of the
+     * boundary. The recipe in that function's own doc comment predates the
+     * four roads and should pick this up; flagged rather than edited, because
+     * the engine constant is shared.
+     */
+    const READABLE_MANUAL_ORDINALS = TECHNIQUES
+        .filter(t => classOf(t) === 'cultivation')
+        .filter(t => !THE_DEEPEST_ROADS.some(r => r.techniqueId === t.id))
+        .map(t => t.requiredOrdinal);
+
     it('reads the live catalog: the ground genuinely thins near the top', () => {
         // Not a claim about a fixture - a measurement of the world as authored.
         // If this inverts, the corridor has been widened at the top and
@@ -771,9 +799,7 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
         // Cultivation manuals, not every art - see `precedentAt`. Counting dao
         // arts too leaves 13 standing at rung 44 and the curve inert
         // everywhere, which is how a diluted denominator hides a real scarcity.
-        const ordinals = TECHNIQUES
-            .filter(t => classOf(t) === 'cultivation')
-            .map(t => t.requiredOrdinal);
+        const ordinals = READABLE_MANUAL_ORDINALS;
         const low = precedentAt(ordinals, 13);
         const high = precedentAt(ordinals, 37);
         expect(low.artsAtOrAbove).toBeGreaterThan(high.artsAtOrAbove);
@@ -815,9 +841,8 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
         // completely where nobody has ever stood: the expensive case and the
         // impossible case are different, and only one of them is a price.
         const priceOf = (manual: { requiredOrdinal: number }): number => {
-            const above = TECHNIQUES.filter(
-                t => classOf(t) === 'cultivation' && t.requiredOrdinal >= manual.requiredOrdinal
-            ).length;
+            const above = READABLE_MANUAL_ORDINALS
+                .filter(o => o >= manual.requiredOrdinal).length;
             return derivationYears({ artsAtOrAbove: above });
         };
         const high = derivable.filter(m => m.requiredOrdinal >= 29);

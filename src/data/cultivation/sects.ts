@@ -661,7 +661,15 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'gale-riding-sword-flight',
             'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
-            'void-piercing-sword-domain'
+            'void-piercing-sword-domain',
+            // The road to the top of the ladder, and the reason this list used
+            // to be wrong: an apex that has produced an ascension inside living
+            // memory was carrying a teach list that stopped at Core Formation,
+            // so the register reported the strongest house in the region as
+            // unable to teach past the middle of the ladder. Holding it is not
+            // the same as handing it over - see `THE_DEEPEST_ROADS` for the two
+            // lent copies and the one person, sometimes, who can show it.
+            'clear-terrace-ascension-canon'
         ],
         signatureTechniqueId: 'void-piercing-sword-domain',
         specialities: ['attack', 'movement'],
@@ -1319,8 +1327,15 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ranks: ['Outer Disciple', 'Inner Disciple', 'Elder', 'Seat'],
         admissionOrdinal: 29,
         stipend: [500, 1_500, 4_000, 12_000],
-        teaches: [],
-        signatureTechniqueId: null,
+        // One book, and it is the whole library. The Court teaches nothing
+        // else because it is for nothing else: it exists to get its own
+        // members over the last crossing, and a second title would be a second
+        // purpose. This used to be empty, which said the highest acting body
+        // in the world could not teach anybody anything - see
+        // `THE_DEEPEST_ROADS` for what it holds and who can walk somebody up
+        // it, which is the fact that actually distinguishes it from an apex.
+        teaches: ['protected-crossing-canon'],
+        signatureTechniqueId: 'protected-crossing-canon',
         specialities: ['defense'],
         rivals: [],
         territory: 'Four mountains standing on the richest vein anyone has ever surveyed, one occupant each, and a great deal of quiet in between.',

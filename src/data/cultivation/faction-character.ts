@@ -279,8 +279,21 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'It teaches that Ru Anjing\'s two words were an instruction to wait for a specific event. The offering record shows the words were answered to a question about a border dispute nobody now remembers asking.',
         unitOfValue: 'Deference. The Pavilion keeps no ledger of favours and an exact mental account of who stood up.',
         production: {
-            reliableOrdinal: 17, currentCount: 6, peakOrdinal: 44, peakCount: 2, yearsSinceLastPeak: 380,
-            climbingToward: 21, waitingOn: 'access',
+            // Was 17, which is the end of Foundation Establishment, in a record
+            // whose own note says in its second sentence that the house
+            // reliably turns out Core Formation. Core Formation begins at 21.
+            // The prose was right and the figure was a realm low, and it
+            // mattered more once the shelf was corrected: a house recorded as
+            // routinely producing Foundation Establishment while holding the
+            // road to the top of the ladder is the exact shape of a register
+            // that asserts rather than reflects.
+            //
+            // It rises by one realm and no further. Holding a deep road is a
+            // ceiling and not a rate - what decides how many people get up it
+            // is teaching capacity, and this house has one teacher available
+            // sometimes. See `THE_DEEPEST_ROADS`.
+            reliableOrdinal: 21, currentCount: 6, peakOrdinal: 44, peakCount: 2, yearsSinceLastPeak: 380,
+            climbingToward: 25, waitingOn: 'access',
             note: 'The widest gap in the catalog outside the Hollow Court, and it is being read backwards. The Pavilion reliably turns out Core Formation and has not produced above Nascent Soul in three centuries - and its founder crossed the Lid inside the memory of people still working the terraces, and has been sending things down since. Single-use material made above and addressed to a house that still exists is a supply nobody else in either province has at any price, and there is enough of it arriving now for Nascent Soul to become a matter of course rather than an event. What would end it is not a rival and not the gorge. The Pavilion is frightened of spending the Standing Edge and has not noticed that the Edge is the inheritance and the post is the asset - and a post is a relationship, three hundred years is not three thousand, and attention is the one thing in the world that cannot be secured.'
         },
         distinctSentence: 'The only institution in the world holding a parting gift from the last confirmed crossing, and it has refused itself permission to draw it nine times.'
@@ -612,8 +625,16 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'They believe they are inert. Three regional wars have been settled by parties travelling to ask them a question and going home with the answer, which is not inertness by any measure but their own.',
         unitOfValue: 'Nothing at all. They cannot be paid, and the only currency that moves them is a question worth answering.',
         production: {
-            reliableOrdinal: 0, currentCount: 0, peakOrdinal: 40, peakCount: 4, yearsSinceLastPeak: 900,
-            note: 'Zero, and the figure is a fact about the door rather than about the house. The Court admits - the bar is a Void Refinement floor and evidence you could reach the last realm - so everybody who has ever walked in was already most of the way, and nothing has ever been walked up from the bottom because there is no bottom here to start at. Read the routine figure as a limit and it is the most wrong the sheet can be about anything: six of this house\'s own have crossed the Lid, which is the top of the lineage tiers and the one objective claim about it nobody disputes. Nothing here is falling. Nothing here is doing anything either.'
+            // The peak used to read 40 with a count of 4, in a record whose own
+            // note says six of this house's people have crossed the Lid. The
+            // note was right and the numbers were not: `LINEAGE_STANDINGS`
+            // carries the six, names the most recent, and dates her at six
+            // hundred years, so all three figures are taken from there rather
+            // than restated. The consequence is not cosmetic - the teaching
+            // ceiling is checked against `peakOrdinal`, and at 40 this house
+            // could not have been recorded as teaching the road it exists for.
+            reliableOrdinal: 41, currentCount: 4, peakOrdinal: 46, peakCount: 6, yearsSinceLastPeak: 600,
+            note: 'The routine figure used to read zero here, on the argument that nobody is ever raised from the bottom because there is no bottom to start at, and that argument answered a question nobody was asking. The Court admits at a Void Refinement floor with evidence a person could reach the last realm, so the honest reading of "routinely" is what happens to somebody after they walk in - and what happens is that they get to the top of the ladder. Four of them are standing there now. That is the whole institution stated as one number: it exists to get its own members over the last crossing, it holds the only road at that height with no bad stretch in it, and it has four people at the top working on nothing else. What is NOT routine is the crossing itself, which six have made in four thousand four hundred years, and the gap between those two figures is the honest account of this house. It reliably delivers people to the edge. It does not reliably get them across, and neither does anything else.'
         },
         distinctSentence: 'Four people who reached the top of the ladder, declined to pay for the last step, and have not stood up since - and cannot be paid in anything but a good question.'
     },
