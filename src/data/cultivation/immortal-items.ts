@@ -767,7 +767,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-nine-peaks-ascetic-order',
         itemId: 'immortal-unearned-step',
-        throughLine: 'The Deep Survey line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since - and the Third Sill answers to the Long Cut now, so the line is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
+        throughLine: 'The Long Cut line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since. The part nobody in the province has ever remarked on is that the Order stands on ground the Deep Survey holds and was fed by the other apex entirely, three times, in writing, and that neither apex has ever explained the arrangement or been asked to. It is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
         everReceived: { higher: 0, middle: 0, lower: 3 },
         stillHeld: { higher: 0, middle: 0, lower: 1 },
         countedByTheRegisters: false,
@@ -805,7 +805,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-verdant-spring-hall',
         itemId: 'immortal-unearned-step',
-        throughLine: 'The Deep Survey line, through the Third Sill court and the Nine Peaks above it, which is two removes and shows in the volume. Both intermediaries went to the Long Cut with the transfer, which means the object in this house arrived down a chain that no longer exists.',
+        throughLine: 'The Long Cut line, through the Third Sill court and the Nine Peaks above it, which is two removes and shows in the volume. The chain still exists and has simply stopped moving: the Sill has sent nothing down it in two centuries, the Order sends nothing further, and the Hall has never established which of the two stopped first.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
@@ -817,7 +817,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-frostmirror-court',
         itemId: 'immortal-second-dealing',
-        throughLine: 'The Deep Survey line, through the Third Sill court, exactly once and never again - and "never again" stopped being a decision the day the Third Sill changed patrons.',
+        throughLine: 'The Long Cut line, through the Third Sill court, exactly once and never again - and the Court has never been able to establish whether "never again" was a decision anybody took or simply what happened. It has raised the question twice, in eleven years of letters, and both times inside a paragraph about something else.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
@@ -829,7 +829,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-cinnabar-crucible-guild',
         itemId: 'immortal-second-dealing',
-        throughLine: 'The Deep Survey line, through the Third Sill court, which sent one object to the Guild and has sent nothing since. What the Guild is holding is the last thing the Survey ever gave it, and neither party knew that at the time.',
+        throughLine: 'The Long Cut line, through the Third Sill court, which sent one object to the Guild and has sent nothing since - and the Guild now holds from the Frostmirror instead, so the door that object came through is not one it can knock on any more. Neither party knew at the time that it was the last, which is the ordinary way a line ends.',
         everReceived: { higher: 0, middle: 1, lower: 0 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
