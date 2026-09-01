@@ -25,7 +25,7 @@
  *   their own warmth, their own account of the tie in their own mouth, what
  *   they actually do about it, and a grievance where there is one. A house can
  *   be dutiful upward and brutal downward; a client can be warm to a patron who
- *   is merely correct back. That asymmetry is the interesting part and it is
+ *   is merely civil back. That asymmetry is the interesting part and it is
  *   the reason two mirrored records would have been the wrong shape: mirrored
  *   records let the facts drift, and a pair with two sides cannot.
  *
@@ -93,19 +93,32 @@ export type RelationStance = z.infer<typeof RelationStanceSchema>;
  * outsider can observe and what the engine could ever act on:
  *
  *   warm     glad of them, and will spend on them without being asked
- *   correct  the forms observed exactly, and nothing beyond them
+ *   civil    the forms observed, and nothing past them
  *   distant  no ill will and no contact; nobody maintains this one
  *   wary     useful, and watched, and not left unattended
- *   cold     the forms observed and the warmth deliberately withheld
+ *   cold     the forms observed, and the warmth deliberately withheld
  *   hostile  acted against, or would be if the cost ever fell
  *
- * `correct` and `cold` are the pair that does the most work in this world.
- * Both parties do exactly what the arrangement requires; only one of them has
+ * `civil` and `cold` are the pair that does the most work in this world. Both
+ * parties do exactly what the arrangement requires; only one of them has
  * decided that is all they will ever do.
+ *
+ * WHY THIS WORD IS `civil` AND NOT `correct`. It was `correct` for a long time,
+ * in the formal-manners sense - scrupulously polite, nothing beyond the forms -
+ * and every reader who met it read it as "accurate" instead, because that is
+ * what the word means to anybody who has not been told otherwise. A gloss
+ * printed beside it does not rescue that: the reader hits the word first and
+ * has already misread the row by the time they reach the explanation. `civil`
+ * carries the same meaning in ordinary English, needs no gloss to be understood
+ * at all, and keeps the distinction from `cold` that the pair exists for -
+ * everybody knows the difference between being met civilly and being met
+ * coldly. The other five were checked against the same test and all pass it:
+ * `warm`, `distant`, `wary`, `cold` and `hostile` mean in this scale what they
+ * mean in a sentence.
  */
 export const WarmthSchema = z.enum([
     'warm',
-    'correct',
+    'civil',
     'distant',
     'wary',
     'cold',
@@ -241,7 +254,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
                 'Nobody was asked. The reposting arrived by letter about a body that had been walking the same rota for nine hundred years, and what the Wardens declined was not the work but being reassigned to it in writing. The half that stayed accepted the same letter without comment, and that is the part this body has never got past.'
         },
         b: {
-            warmth: 'correct',
+            warmth: 'civil',
             howTheyPutIt:
                 'The Kiln is where the datum, the nodes and the perimeter are, and the work is walking all three on a schedule. Some of the people who used to do it went elsewhere and are doing something else now. The province has read four Warden ranks off this gate for nine hundred years and reads them off it today, and none of that was affected.',
             andSoTheyDo:
@@ -288,7 +301,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'The walk. The Long Cut offered a schedule rather than a rank, which was the only offer in the world that would have been taken, and it has never acknowledged making it.',
         a: {
-            warmth: 'correct',
+            warmth: 'civil',
             howTheyPutIt:
                 'A place in the schedule was available and was taken. The Long Cut ranks people by faces worked and deaths avoided, it owns every act it takes by name, and it has never described this one as anything but an ordinary arrangement working.',
             andSoTheyDo:
@@ -315,7 +328,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Nine hundred years, uninterrupted from the Survey side of the record: it posted the court, it named the court, and it lists this body as its court on the datum today.',
         a: {
-            warmth: 'correct',
+            warmth: 'civil',
             howTheyPutIt:
                 'A posting on the datum is the most important assignment in the Survey arrangement and the least eventful. It is staffed, the figure arrives, and there is nothing further to administer.',
             andSoTheyDo:
@@ -323,7 +336,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            warmth: 'correct',
+            warmth: 'civil',
             howTheyPutIt:
                 'Staff, posted, doing an assigned job on somebody else datum. Every single thing the province finds inexplicable about the Wardens is explained by that sentence, and the sentence is the Survey.',
             andSoTheyDo:
@@ -367,7 +380,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     // toward each other is authored on each apex row already; what was missing
     // was the pairing, which is what makes the asymmetries legible - the
     // Pavilion is cold to both and both are wary of it, and neither of those
-    // two is anything but correct with the other.
+    // two is anything but civil with the other.
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'rel-the-two-old-apexes',
@@ -380,7 +393,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Longer than either keeps a record of. The Third Sill has administered an arterial for the Long Cut inside a province the Deep Survey holds for longer than either apex can date, and neither has ever explained or raised that either.',
         a: {
-            warmth: 'correct',
+            warmth: 'civil',
             howTheyPutIt:
                 'A difference about method between two bodies that have both costed their principles. It is much older than any live question and there is no room in which it would need settling.',
             andSoTheyDo:
@@ -388,7 +401,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            warmth: 'correct',
+            warmth: 'civil',
             howTheyPutIt:
                 'Courteous and total. It has taken two of the other administrations and acknowledged nothing, and nothing has been acknowledged back, and both understand that as the arrangement working rather than as hostility.',
             andSoTheyDo:
@@ -582,7 +595,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Eleven years of correspondence, and longer than that as an arrangement nobody has needed to revisit.',
         a: {
-            warmth: 'correct',
+            warmth: 'civil',
             howTheyPutIt:
                 'The curriculum is the one thing in the province nobody can replace and the arrangement holding it is working. There is nothing in the letters that requires an answer, and answering would make the question a question.',
             andSoTheyDo:
@@ -667,12 +680,12 @@ function invert(stance: RelationStance): RelationStance {
  * in the scale the register reads. It runs in one direction only, because
  * `standing` runs in one direction only: it says how the client stands, and it
  * says nothing whatever about what the patron feels, which is why a derived
- * downward tie takes `correct` and an authored one is the only way a patron
+ * downward tie takes `civil` and an authored one is the only way a patron
  * ever gets a warmer or a colder word than that.
  */
 function warmthFromStanding(standing: string): Warmth {
     switch (standing) {
-        case 'good': return 'correct';
+        case 'good': return 'civil';
         case 'strained': return 'cold';
         case 'probationary': return 'wary';
         case 'lapsed': return 'cold';
@@ -766,7 +779,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 ? `Renewal: ${terms.renewal}`
                 : 'No terms are recorded, because the arrangement is not a tenancy: this is staff rather than a tenant, and there is nothing on a cycle to renew.',
             a: {
-                warmth: 'correct',
+                warmth: 'civil',
                 howTheyPutIt: `An arrangement in ${parentName}'s own book, on the terms in it, standing ${parentage.standing.replace(/_/g, ' ')}.`,
                 andSoTheyDo: terms
                     ? `Takes what the terms say and renews on the stated cycle. ${terms.buys.length} thing${terms.buys.length === 1 ? '' : 's'} are bought by it and ${terms.inKind.length} taken in kind.`
@@ -803,7 +816,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
             since: court.transferNote
                 ?? 'No record anywhere says it ever answered anywhere else.',
             a: {
-                warmth: 'correct',
+                warmth: 'civil',
                 howTheyPutIt: `One of ${(getApexInstitution(court.apexId)?.courtIds.length ?? 1)} court${(getApexInstitution(court.apexId)?.courtIds.length ?? 1) === 1 ? '' : 's'} standing between this apex and the ground it holds.`,
                 andSoTheyDo: court.posting
                     ? 'Appoints into it. There is no application anybody could make, so every person standing there is somebody this house or a house friendly to it decided about, elsewhere.'
@@ -811,7 +824,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 grievance: null
             },
             b: {
-                warmth: 'correct',
+                warmth: 'civil',
                 howTheyPutIt: court.officesNote,
                 andSoTheyDo: `Administers on the apex's behalf and reports upward. Awareness of the body above it, in the province: ${court.startingAwareness}.`,
                 grievance: null

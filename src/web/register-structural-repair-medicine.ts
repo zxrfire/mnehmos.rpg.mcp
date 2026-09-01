@@ -196,26 +196,68 @@ function esc(value: string): string {
 const stones = (v: number) => v.toLocaleString('en-US');
 
 /**
- * The section, as HTML. Splice into the register sheet wherever the items
- * material sits; it depends on nothing else in the page.
+ * WHAT THIS MEDICINE IS. The almanac half, for the Objects tab.
+ *
+ * WHY THIS IS TWO FUNCTIONS AND NOT ONE. It was one section holding both
+ * halves of the sheet's own dividing line - what a thing IS, and who has one -
+ * and it sat on the Key tab, which is neither. So the register's most
+ * irreplaceable consumable had its description filed under how-to-read-this and
+ * its holder list filed under the same heading, and the Items tab that exists
+ * to answer who-has-what pointed at the Key tab for the answer.
+ *
+ * Split on the line docs/world/items.md draws: the kind is described here, and
+ * the rows with holders are in the function below. Nothing was reworded.
+ *
+ * The header shape, the table wrapper and the paragraph class are the sheet's
+ * own now. This section was written with a bare h2 and bare tables, so it was
+ * the one block on the page that did not look like the page - no rule under its
+ * heading, no horizontal scroll on a table too wide for its column, and body
+ * text set at a different size to the prose either side of it.
  */
 export function renderRepairMedicineSection(): string {
     const r = buildRepairMedicineRegister();
     const rows = r.medicines.map(m => `<tr>
-      <td>${esc(m.name)}</td>
-      <td>${esc(m.grade)}</td>
-      <td>${m.reachesUpToOrdinal} (${esc(m.reachesUpToRealm)})</td>
-      <td>${stones(m.weightInStones)}</td>
-      <td>${m.cashPrice === null ? 'not for cash' : stones(m.cashPrice)}</td>
-      <td>${esc(m.terms.replace(/_/g, ' '))}</td>
+      <td class="nm">${esc(m.name)}</td>
+      <td class="m">${esc(m.grade)}</td>
+      <td class="n">${m.reachesUpToOrdinal} <span class="dim">${esc(m.reachesUpToRealm)}</span></td>
+      <td class="n">${stones(m.weightInStones)}</td>
+      <td class="n">${m.cashPrice === null ? '<span class="dim">not for cash</span>' : stones(m.cashPrice)}</td>
+      <td class="q">${esc(m.terms.replace(/_/g, ' '))}</td>
     </tr>`).join('\n');
 
+    return `
+<section id="structural-repair-medicine">
+  <div class="sh"><h2>Structural repair medicine</h2><span class="r">${r.medicines.length} medicines &middot; what each one reaches</span></div>
+  <p class="note">What mends a cultivator who crossed and arrived broken. Nothing refined below
+     the Lid reaches a break above ordinal ${r.ceilings.madeBelowTheLid}, and nothing
+     at all reaches above ordinal ${r.ceilings.anythingAtAll} - the crossing into the
+     last realm is your own effort, and medicine is barred at it by rule.</p>
+  <div class="scroll"><table class="itemtbl">
+    <colgroup><col style="width:26%"><col style="width:12%"><col style="width:16%"><col style="width:12%"><col style="width:12%"><col style="width:22%"></colgroup>
+    <thead><tr><th>Medicine</th><th>Grade</th><th>Reaches</th><th>Worth (stones)</th><th>Price</th><th>Terms</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>
+  <p class="note">Who is holding a dose of any of these, and what has been spent on whom, is on the Items tab.</p>
+</section>`;
+}
+
+/**
+ * WHO HAS A DOSE, AND WHAT HAS BEEN SPENT. The ledger half, for the Items tab.
+ *
+ * Every row here names a body. That is the whole test for what belongs on that
+ * tab, and it is why this material was in the wrong place: a holder list and a
+ * dated record of who spent what on whom is as pure a ledger as this sheet has,
+ * and it was filed under the column glossary.
+ */
+export function renderRepairMedicineHolders(): string {
+    const r = buildRepairMedicineRegister();
+
     const held = r.holdings.map(h => `<tr>
-      <td>${esc(h.name)}</td>
-      <td>${esc(h.medicineName)}</td>
-      <td>${h.count}</td>
-      <td>${h.tracked ? 'tracked' : 'counted'}</td>
-      <td>${esc(h.whoDecides)}</td>
+      <td class="nm">${esc(h.name)}</td>
+      <td class="nm">${esc(h.medicineName)}</td>
+      <td class="pw">${h.count}</td>
+      <td class="m">${h.tracked ? 'tracked' : 'counted'}</td>
+      <td class="q">${esc(h.whoDecides)}</td>
     </tr>`).join('\n');
 
     const spent = r.spendings.map(s => `<li><strong>${s.yearsAgo} years ago</strong>`
@@ -223,28 +265,20 @@ export function renderRepairMedicineSection(): string {
         + `${s.onWoundKey ? ` (${esc(s.onWoundKey)})` : ''}: ${esc(s.entry)}</li>`).join('\n');
 
     return `
-<section id="structural-repair-medicine">
-  <h2>Structural repair medicine</h2>
-  <p>What mends a cultivator who crossed and arrived broken. Nothing refined below
-     the Lid reaches a break above ordinal ${r.ceilings.madeBelowTheLid}, and nothing
-     at all reaches above ordinal ${r.ceilings.anythingAtAll} - the crossing into the
-     last realm is your own effort, and medicine is barred at it by rule.</p>
-  <p><strong>Sent down and still standing: ${r.counts.sentDownStanding}.</strong>
+<section id="who-holds-repair-medicine">
+  <div class="sh"><h2>Who holds repair medicine</h2><span class="r">${r.counts.allDoses} doses &middot; ${r.counts.holders} bodies</span></div>
+  <p class="note"><strong>Sent down and still standing: ${r.counts.sentDownStanding}.</strong>
      ${r.counts.sentDownEverArrived} have ever arrived; ${r.counts.sentDownSpent} are
      spent in the dated record; ${r.counts.sentDownUnaccounted} cannot be accounted
      for by ${esc(r.unaccounted.heldByName)}. Nobody below the Lid can make another,
      so this figure only ever falls.</p>
-  <table>
-    <thead><tr><th>Medicine</th><th>Grade</th><th>Reaches</th><th>Worth (stones)</th><th>Price</th><th>Terms</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <h3>Who is holding it (${r.counts.allDoses} doses across ${r.counts.holders} bodies)</h3>
-  <table>
+  <div class="scroll"><table class="itemtbl">
+    <colgroup><col style="width:24%"><col style="width:22%"><col style="width:8%"><col style="width:10%"><col style="width:36%"></colgroup>
     <thead><tr><th>Holder</th><th>Medicine</th><th>Count</th><th>Kept as</th><th>Who decides</th></tr></thead>
     <tbody>${held}</tbody>
-  </table>
-  <h3>The sent-down record</h3>
-  <ul>${spent}</ul>
-  <p>${esc(r.unaccounted.note)}</p>
+  </table></div>
+  <h3 class="bandhead">The sent-down record <span>${r.spendings.length}</span></h3>
+  <ul class="spendlist">${spent}</ul>
+  <p class="note">${esc(r.unaccounted.note)}</p>
 </section>`;
 }

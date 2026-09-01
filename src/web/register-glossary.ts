@@ -378,9 +378,9 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
                     + 'downward.'
             },
             {
-                term: 'Correct',
+                term: 'Civil',
                 meaning:
-                    'The forms observed exactly and nothing beyond them. The most common word in the '
+                    'The forms observed, and nothing past them. The most common word in the '
                     + 'catalog and the least informative on its own - read it against the other side.'
             },
             {
@@ -396,7 +396,7 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
             {
                 term: 'Cold',
                 meaning:
-                    'The forms observed and the warmth deliberately withheld. Distinguished from correct '
+                    'The forms observed and the warmth deliberately withheld. Distinguished from civil '
                     + 'by intent: both parties do what the arrangement requires, and only one of them has '
                     + 'decided that is all they will ever do.'
             },
