@@ -667,6 +667,20 @@ Three consequences, and they make the Court unlike every other institution in th
   Open and unwritten are not in tension: **the restriction is on recording, not on sharing.**
   What it means is that access to an oral road runs through a person rather than a shelf, and
   that a road nobody passed on is gone when its holder is.
+- **And it buys books, in the ordinary way.** A written shelf sits alongside the oral one,
+  legitimately purchased over a long history by a body that can afford anything. A house may
+  also *gift* it one, which is honourable on both sides and is the other way a written road
+  gets in.
+
+  **What never gets in is a book a recruit carried out of their old house.** That would be
+  dishonourable, and - the part that matters - **it would reflect badly on the Court**, which
+  is the one thing it cannot afford. So the Court declines them, and everybody knows it does.
+
+  **That refusal is the whole reason the arrangement is sanctioned.** A house losing somebody
+  to the Court knows its shelf is not walking out of the door with them: the person goes, the
+  books stay, and what the member carries in their head they may teach but nobody may copy.
+  A body that took the books as well would be a thief operating at a height nobody could
+  answer - and would be treated as one, standing or no standing.
 - **Inside it, everybody shares freely.** A Court disciple teaches the other disciples what
   their original house taught them. That is the exact inverse of the secrecy economy
   everywhere else in this file, and it is why the Court can go where it goes - it is the one

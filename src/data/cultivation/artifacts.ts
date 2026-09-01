@@ -103,36 +103,6 @@ export const NOTHING_AT_FORTY_SIX_IS_EVER_LEFT = {
         'With one exception, and it is the only evidence for any of this: something came down into a courtyard, crossed it, and eleven people watched. Three accounts survive, they agree on the duration and on nothing else, and not one of them describes what was in its hand in a way that establishes anything. Everything above is inference from the rule rather than from a sighting, and the catalog states it that way round.'
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
-// AN OBJECT FIT FOR YOUR PATH, AND THE MANY THAT ARE NOT
-//
-// `data.daoDomain` is the road an object is legible AS. Seven rows carry one
-// and seventeen do not, and the seventeen are the point: an object that is
-// merely strong teaches nobody anything, and if every legendary row taught a
-// road then holding one would be a prize rather than information.
-//
-// The rule for whether a row gets one is written in the row's own description
-// and nowhere else. The Ninth Nail is a place that cannot be folded, so it is
-// legible as formation. The Standing Edge settles who somebody is without
-// appeal, so it is karma. The Cold Arterial Key is explicitly "the strongest
-// thing anybody has built out of a CURRICULUM instead of out of a dao" - so it
-// has no road in it and never will, and the Storm Tally is a lightning
-// curriculum for the same reason. A curriculum teaches a method; a dao does
-// not.
-//
-// Nothing else is stored. The rung below which a holder reads nothing is
-// derived from `power` by `ARTIFACT_LEGIBLE_WITHIN` in
-// `engine/world/how-a-cultivator-comes-by-a-road.ts`, because a second
-// authored number beside `power` is a second opinion about how strong a thing
-// is, and it would go stale the first time anybody retuned the ladder. Data
-// files say what is standing where; they do not do arithmetic.
-//
-// This is the third of the comprehension sources the design owner asked for -
-// carvings, ground somebody great sat on, and an object fit for your path -
-// and all three arrive at the gate through the same `RoadWithinReach` list
-// that a player and an NPC both hand to the same function.
-// ─────────────────────────────────────────────────────────────────────────
-
 export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 46: carried, never held. See `NOTHING_AT_FORTY_SIX_IS_EVER_LEFT` ──
     // Three rows with a null owner and a possessor nobody in this world can
@@ -181,7 +151,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 45: three of them, and no two are held by allies ──────────────────
     makeObject({
         id: 'hollow-unwritten-length',
-        data: { daoDomain: 'life_death' },
         name: 'The Unwritten Length',
         kind: 'artifact',
         significance: 'legendary',
@@ -195,7 +164,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'sent-ninth-nail',
-        data: { daoDomain: 'formation' },
         name: 'The Ninth Nail',
         kind: 'artifact',
         significance: 'legendary',
@@ -209,7 +177,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'artifact-the-standing-edge',
-        data: { daoDomain: 'karma' },
         name: 'The Standing Edge',
         kind: 'artifact',
         significance: 'legendary',
@@ -264,7 +231,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'sent-datum-lamp',
-        data: { daoDomain: 'void' },
         name: 'The Datum Lamp',
         kind: 'artifact',
         significance: 'legendary',
@@ -289,7 +255,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 41: the ceiling, and the only mortal-made thing that reaches it ───
     makeObject({
         id: 'artifact-the-standing-weight',
-        data: { daoDomain: 'formation' },
         name: 'The Standing Weight',
         kind: 'artifact',
         significance: 'legendary',
@@ -304,7 +269,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 38-26: what centuries and a dao will buy ──────────────────────────
     makeObject({
         id: 'artifact-the-ninth-volume-case',
-        data: { daoDomain: 'karma' },
         name: 'The Ninth Volume Case',
         kind: 'artifact',
         significance: 'legendary',
@@ -331,7 +295,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'artifact-the-severed-ledger-blade',
-        data: { daoDomain: 'karma' },
         name: 'The Severed Ledger',
         kind: 'artifact',
         significance: 'significant',

@@ -24,24 +24,13 @@
  * This file is the other supply, and it is GROUND. Somewhere you have to be.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * ACCESS PUTS A ROAD IN REACH, AND YEARS ARE WHAT WALK IT
+ * ACCESS, NOT EFFORT - AND ACCESS IS NOT FREE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * This banner used to say ACCESS, NOT EFFORT, and the requirement still names
- * what must be IN REACH rather than what must be DONE: there is no deed here
- * and no quest, and nothing on this page can be earned by completing anything.
- * What has changed is that access alone is no longer the whole answer. Under
- * the old reading an NPC held every road their access could supply from the day
- * they were born, free, while a player standing on the same cliff held none -
- * so a price in YEARS OF PRACTICE now sits on every kind of access, charged the
- * same way to everybody, in
- * `engine/cultivation/what-a-road-in-reach-costs-to-walk.ts`. A cliff is forty
- * years. A carving is eight, because it is a text. Nobody may be somewhere for
- * an afternoon and leave with a road.
- *
- * What the rows below decide is still the interesting half: four completely
- * different ways of being unable to get in, and the difference between them is
- * the content:
+ * The gate's own doctrine is that the requirement names what must be IN REACH
+ * and never what must be DONE. There is no minimum number of years here, no
+ * deed and no quest. What there is instead is three completely different ways
+ * of being unable to get in, and the difference between them is the content:
  *
  *   HELD    A house controls it, and lets its own people in by STANDING. This
  *           is what membership is actually worth, and it is the answer to "why
@@ -65,15 +54,6 @@
  *           province that had none. An expedition is worth dying on because
  *           what comes out of the hole is not treasure, it is a road, and a
  *           road is the thing that money has never once bought.
- *
- *   CARVING A worked face somebody left behind, standing open in a province
- *           like any other rock. Three exist. Nobody is on the door and the
- *           bar is entirely the FLOOR, which is the highest in this file: a
- *           carving was cut for people who were in the room and had it shown to
- *           them first, so a later reader gets the surface without the
- *           afternoon. It is the one-time source to the other three's passive
- *           one, and in this engine that difference is the price - see
- *           `DaoGroundAccessSchema`.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * WHY A GROUND HAS A FLOOR AND NOT A CEILING
@@ -128,26 +108,8 @@ import { InsightDomainSchema } from '../../schema/cultivation.js';
 export const DaoGroundDomainSchema = InsightDomainSchema.exclude(['element']);
 export type DaoGroundDomain = z.infer<typeof DaoGroundDomainSchema>;
 
-/**
- * How somebody fails to get in, which is four different sentences.
- *
- * The fourth, CARVING, is the one-time shape and the other three are the
- * passive one, and that difference is now a real difference rather than a
- * flavour note: `YEARS_A_ROAD_COSTS` in
- * `engine/cultivation/what-a-road-in-reach-costs-to-walk.ts` charges each kind
- * of access a price in years of practice, and a carving is cheap where ground
- * is expensive.
- *
- * That is the whole distinction and it is the right way round. A cliff is
- * expensive because nothing on it is addressed to you and the only way through
- * it is to sit there for forty years. A carving is a TEXT: you read it, and
- * what is scarce about it is that there are three faces in the world and
- * getting to one is the entire journey. `docs/world/immortals.md` is explicit
- * that a later reader "gets the surface an afternoon was worked out on without
- * the afternoon, and pays the whole of what reading costs" - so the price is
- * the floor, which is very high, and not the sitting.
- */
-export const DaoGroundAccessSchema = z.enum(['held', 'open', 'buried', 'carving']);
+/** How somebody fails to get in, which is three different sentences. */
+export const DaoGroundAccessSchema = z.enum(['held', 'open', 'buried']);
 export type DaoGroundAccess = z.infer<typeof DaoGroundAccessSchema>;
 
 export const PlaceThatTeachesADaoSchema = z.object({
@@ -517,77 +479,6 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
             'A terrace under the gorge scree where a tribulation came down on a person who did not survive it, long enough ago that the province has forgotten which. The lightning took nearly everything they were carrying, which is the ordinary rule, and it did not take the terrace, and the terrace is what is worth having.',
         what:
             'Standing where they stood. What is on the stone is the shape of somebody in the last moment of holding something they could not hold, at a scale a living cultivator will not otherwise see, and it is not survivable to look at below Void Refinement.'
-    },
-
-    // ── CARVING. Three worked faces, and nobody cut them for a reader. ────
-    //
-    // `docs/world/immortals.md` is the authority and it is unusually specific.
-    // The living False Immortal is on the third path, has not done the durable
-    // carving because he still has students, and what exists instead is
-    // RESIDUE: "a lecture needs a surface, he works on whatever is there, and
-    // he does not take the stone away afterwards. Three faces exist, in the
-    // ordinary hand, cut for people who were in the room and had it shown to
-    // them first. A later reader gets the surface an afternoon was worked out
-    // on without the afternoon, from an author who is still alive and could
-    // simply have been asked, and pays the whole of what reading costs."
-    //
-    // So: three, not four and not a set. Ordinary hand rather than the
-    // compressed one, because these were not written to outlast anybody. The
-    // price is the FLOOR, which is the highest in this file, and not the years
-    // - reading is cheap and being able to read it at all is not.
-    //
-    // They are in three provinces that do not connect, which is not a
-    // flourish: the register cannot establish whether the sightings behind
-    // them are one existence or four in sequence, and three unlinked faces is
-    // what that looks like from the ground.
-    //
-    // Nothing about these rows is bespoke. Same schema, same seeding, same
-    // `daoGroundsInReachOf`, same `RoadWithinReach`. Take the author away and
-    // they are three cliffs with working on them.
-    {
-        id: 'dao-carving-the-rain-face',
-        name: 'The Rain Face',
-        regionId: 'region-white-stair',
-        domain: 'void',
-        subject: 'the seam',
-        fromOrdinal: 28,
-        access: 'carving',
-        heldBy: null,
-        standingRequired: 0,
-        description:
-            'An overhang two days above the last village on the stair, worked across about eleven paces of dry rock in a single afternoon and never touched since. The hand is unhurried and completely ordinary, the way a man writes when the person he is explaining to is standing next to him, and it stops mid-argument because the argument was finished out loud.',
-        what:
-            'Reading it. What is on the rock is one person describing the boundary from the far side of it, to somebody who had already been shown what he meant, so a later reader gets the notation without the afternoon. Below Deity Transformation there is nothing there but weathering; above it there is a great deal there and none of it is addressed to you.'
-    },
-    {
-        id: 'dao-carving-the-counted-wall',
-        name: 'The Counted Wall',
-        regionId: 'region-quiet-marches',
-        domain: 'time',
-        subject: 'a span you can count',
-        fromOrdinal: 32,
-        access: 'carving',
-        heldBy: null,
-        standingRequired: 0,
-        description:
-            'The inner face of a drainage cut behind an abandoned holding, carrying a single running figure worked down its length and revised eleven times, each revision smaller than the last. Nobody local can read it and everybody local knows it is there. It has been variously explained as a tax record, a flood mark and a curse.',
-        what:
-            'Working out what is being counted. It is a remaining span, revised as it was recalculated, by somebody who knows his own to the year and gives the figure to anybody who asks - and the thing that teaches is not the number but that it was worth revising eleven times. A cultivator below Void Refinement has no span worth the arithmetic and reads a list of numbers.'
-    },
-    {
-        id: 'dao-carving-the-unfinished-side',
-        name: 'The Unfinished Side',
-        regionId: 'region-wide-field',
-        domain: 'life_death',
-        subject: 'coming back short',
-        fromOrdinal: 36,
-        access: 'carving',
-        heldBy: null,
-        standingRequired: 0,
-        description:
-            'A field boundary stone, on the side that faces away from the road, worked over about a day and a half by somebody who then left the district. Two thirds of it is a careful account of a thing that did not complete. The last third is the same account started again from a different place and abandoned, and the abandonment is legible.',
-        what:
-            'Reading both attempts and seeing why the second one stopped. It is the only first-hand description in the world of an ending that did not finish, from the only person it has happened to who is still walking around, and what it teaches is what the shortfall consists of rather than how to avoid it. Nothing below Body Integration has anything to compare it to.'
     }
 ];
 
