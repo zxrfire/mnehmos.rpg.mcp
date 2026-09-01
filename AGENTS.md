@@ -462,6 +462,29 @@ from that broken arithmetic - one docstring even reasoned from it explicitly. Pa
 tests are evidence, not proof. When a fix turns tests red, read whether they assert the
 intent or the bug, and re-derive rather than reverting a correct change.
 
+### The test harness runs with the world OFF, and the game runs with it ON
+
+`makeGame` in `tests/web/harness.ts` defaults `worldEnabled: false`. `GameService`
+defaults it to `true`. So hand-playing through the harness is not playing the game - it is
+playing a configuration where every guard that needs a world to check against is skipped by
+design.
+
+The trap is that those guards fail OPEN and read exactly like bugs. Travelling to
+"Nowhereville", to "sleep", or to "the moon" all succeeded through the harness and set the
+cultivator's location to the typed string, which looks like a serious defect and is
+documented in `move` as the exact thing it refuses. With `worldEnabled: true` the same three
+come back with "You ask after Nowhereville and get the look people give a name that is not a
+place", and the location does not move.
+
+So: **pass `worldEnabled: true` when hand-playing.** Reach for the default only when the
+test genuinely does not need a world and wants the speed.
+
+This is the fourth time in one session that a harness disagreed with the engine and the
+harness was wrong - the others were reading `narration` when the API returns `error` on a
+closed run, and using `factionId` and `techniqueIds` where the player row carries `sectId`
+and `knownTechniques`. Before reporting engine behaviour as a defect, check that the thing
+you are driving it with is configured the way the real caller configures it.
+
 ### The register is a reflection, not a source
 
 The standing register must be readable off the world's own state. Where it says a house
