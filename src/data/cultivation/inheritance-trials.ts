@@ -258,6 +258,384 @@ export const GateSchema = z.discriminatedUnion('kind', [
 export type Gate = z.infer<typeof GateSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────
+// WHAT SORT OF PLACE IT IS
+//
+// `kind` is the RECORD SHAPE - a trial has a prize somebody arranged, a grave
+// has an occupant and an inventory nobody arranged - and it must stay a
+// two-member discriminator because the two records genuinely differ. It is not
+// a statement about what the place was, and for a long time it was the only
+// statement this file made, which left twenty-four entries reading as two sorts
+// of thing when what is actually in them is a bench on burned ground, a
+// courier yard, a refining hall, a curriculum cut into a ledge and a clan
+// undercroft.
+//
+// `character` is the other axis and it is orthogonal on purpose: an archive can
+// be a trial or a grave, and so can a workshop. Anything that walks the catalog
+// looking for variety should read this, and anything that switches on the
+// record shape should read `kind`.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the category is called, and why it is not called ruins any more.
+ *
+ * "Ruin" was a plain English word doing work for something that now spans an
+ * abandoned sect mountain, an inheritance somebody about to ascend left
+ * addressed to a claimant, and a dead man's one-room cave. Two of those three
+ * are not ruined and nobody would call them that.
+ *
+ * CLOSED GROUND is the term, and it was picked to match the register this
+ * catalog already writes in rather than to sound impressive. The good names
+ * here are concrete and slightly administrative - the Ninefold Ledger, the
+ * Measured Span, the Unlit Gate, the Deep Survey, the Girdle of Nine Stones -
+ * and none of them reaches for grandeur. So: ground that is closed. It says
+ * what the category has in common, which is a door and something behind it, and
+ * it says nothing about how the door got there, which is the part that varies.
+ *
+ * It also names the axis. `THE_THREE_WAYS_GROUND_IS_CLOSED` was already using
+ * this vocabulary before the category needed a name, and what a place does over
+ * time is stop being closed, which is a sentence the term makes available.
+ *
+ * Two sub-terms for the ends of the scale, and they are what people in the
+ * world actually say:
+ *
+ *   A SHUT CAVE   the smallest thing that qualifies. One room, one door, one
+ *                 person, a lifespan that ran out behind it.
+ *   AN EMPTY SEAT the largest. A house's mountain with nobody in it, which is
+ *                 the thing most people mean when they say ruin and is the only
+ *                 one of these that a province remembers the opening of.
+ *
+ * Deliberately NOT `sealed ground`, which was the other candidate: `sealed` is
+ * a boolean on `LocationRecord`, `sealed_domain` is a `LocationKind`, and
+ * `sealed-ancestors.ts` is a live catalog of people behind doors. A fourth
+ * meaning of the word would have been unreadable within a month.
+ */
+export const WHY_CLOSED_GROUND = {
+    term: 'closed ground',
+    whyNotRuins:
+        'Because two thirds of the category is not ruined. An inheritance left by somebody preparing to ascend is in perfect order and was arranged last week by the standards of the world; a cave whose owner died in it is exactly as its owner left it. Ruin describes what happened to a sect mountain and describes nothing else here.',
+    whatTheyHaveInCommon:
+        'A door, something behind it, and nobody currently coming out. That is the whole of the category and it is why the term names the closing rather than the damage.',
+    theEnds: [
+        'a shut cave: one room, one door, one person, and a lifespan that ran out behind it. The smallest thing that qualifies and the commonest.',
+        'an empty seat: a house\'s mountain with nobody in it. Halls, wards, a road that used to go there, and more than one person\'s worth of history.'
+    ],
+    andTheAxisIsTheCategorisation:
+        'The old split was trial against grave, which froze two record shapes into two kinds of place. What actually varies is intent, and intent decays, so the categorisation runs along `IntentStanding` and not across it.'
+} as const;
+
+/**
+ * A ruin is typically more epic than a cave.
+ *
+ * The correction that produced this section, in the design owner's own terms: a
+ * dead cultivator's sealed cave is real and it is THE BOTTOM OF A SCALE rather
+ * than the model for the category. The word should mostly conjure something
+ * with scale to it.
+ */
+export const A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE = {
+    correction:
+        'A cave whose owner died in it is the very smallest type. It is not what the category is mostly made of and it is not what anybody pictures. A place with scale to it - a mountain a house held for six hundred years and then left, halls, wards, a road that used to go there - is the ordinary case.',
+    whyTheDistinctionIsMechanical:
+        'Scale decides things downstream that nothing else decides: what is inside, how many can go in at once, whether a house can simply claim it, whether its existence is public, and where the access band sits. A one-room cave is looted by a wandering rogue in an afternoon. An empty seat is an expedition, an argument between houses about who owns it, and a thing provinces remember the opening of.',
+    andTheOriginsAreAFloor:
+        'Three origins were named and the list is explicitly not closed. A house that gave up its seat, somebody who left what they had addressed to a claimant, and a door nobody opened again are three different sorts of place that should not read the same and should not be entered for the same reasons. There will be more.'
+} as const;
+
+/**
+ * Where a piece of closed ground came from.
+ *
+ * A FLOOR AND NOT A TAXONOMY. The design owner has asked repeatedly for many
+ * different types and has said the named ones are a starting point, so this
+ * list is expected to grow and nothing downstream may assume it is complete -
+ * every switch on it has a default.
+ *
+ * These are not the same kind of place and must not read the same:
+ *
+ *   `abandoned_by_a_house` is the big end and probably the commonest thing
+ *   anybody means. Something HAPPENED to it: a war, a vein that failed, a line
+ *   that ended. It has architecture, a planned layout, defences built against
+ *   an enemy rather than against weather, and whatever the evacuation could not
+ *   carry. The danger in one is decay and whatever moved in afterwards. The
+ *   world produces these on its own - a house the simulation destroys leaves
+ *   its mountain behind, which is the reserve being fed by the ordinary
+ *   business of houses falling.
+ *
+ *   `left_addressed` is DELIBERATE, and it is a completely different object.
+ *   Somebody at a great height arranged for what they had to be found later, by
+ *   the right person, and addressed it rather than merely leaving it lying
+ *   there. It can carry conditions on who may take it, a trial rather than a
+ *   hazard, a message, an intent. THE DANGER IS THAT THE PERSON WHO BUILT IT
+ *   MEANT TO SORT APPLICANTS AND THE CLAIMANT MAY NOT BE WHO THEY WERE SORTING
+ *   FOR. An inheritance that is a ruin with better contents has thrown away the
+ *   only thing that makes it interesting.
+ *
+ *   `a_door_nobody_opened_again` is the small end. One person, one door, a
+ *   lifespan that ran out behind it, everything they owned still inside, and
+ *   nobody told.
+ */
+export const RuinOriginSchema = z.enum([
+    'abandoned_by_a_house',
+    'left_addressed',
+    'a_door_nobody_opened_again',
+    /** A working site caught in the middle of an ordinary day. */
+    'overrun_at_work',
+    /** Nobody built it and nobody left it. The catastrophe or the sky made it. */
+    'what_the_catastrophe_made',
+    /** Two parties stopped each other on it and neither came back to collect. */
+    'fought_over_and_left'
+]);
+export type RuinOrigin = z.infer<typeof RuinOriginSchema>;
+
+/**
+ * How big the thing is, which decides more than it looks like it should.
+ *
+ * See `A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE`. The ordering is meaningful
+ * and `partiesItTakes`, `aHouseCanClaimIt` and `itsExistenceIsPublic` are read
+ * off it rather than stated per entry, so a new place cannot disagree with the
+ * scale it declares.
+ */
+export const RuinScaleSchema = z.enum(['one_room', 'a_building', 'a_compound', 'a_mountain']);
+export type RuinScale = z.infer<typeof RuinScaleSchema>;
+
+/** What each scale means for who can take it and whether anybody knows it is there. */
+export const WHAT_SCALE_DECIDES: Readonly<Record<RuinScale, {
+    partiesItTakes: number;
+    aHouseCanClaimIt: boolean;
+    itsExistenceIsPublic: boolean;
+    note: string;
+}>> = {
+    one_room: {
+        partiesItTakes: 1,
+        aHouseCanClaimIt: false,
+        itsExistenceIsPublic: false,
+        note: 'One door and one room behind it. A wandering rogue does it in an afternoon and nobody hears about it, and there is nothing here for a house to hold because holding it would cost more than it contains.'
+    },
+    a_building: {
+        partiesItTakes: 1,
+        aHouseCanClaimIt: false,
+        itsExistenceIsPublic: false,
+        note: 'A store, a reading room, a working floor. One party, one trip, and the local villages usually know it is there and have not thought it worth anything.'
+    },
+    a_compound: {
+        partiesItTakes: 3,
+        aHouseCanClaimIt: true,
+        itsExistenceIsPublic: true,
+        note: 'Walls, several buildings and a layout somebody planned. Big enough that a house can put a claim on it and post people, and big enough that the claim is worth arguing about.'
+    },
+    a_mountain: {
+        partiesItTakes: 8,
+        aHouseCanClaimIt: true,
+        itsExistenceIsPublic: true,
+        note: 'A seat. Halls, wards, a road that used to go there and more than one person\'s worth of history in it. Opening one is an expedition, an argument between houses about who owns it, and a thing the province remembers the year of.'
+    }
+};
+
+/**
+ * How much of the arrangement still binds.
+ *
+ * THE AXIS, and the reason `left_addressed` and `abandoned_by_a_house` are not
+ * two catalogs. An inheritance is a ruin plus an intent and intent has a
+ * half-life; what wears it out is that the trial enforcing it IS A LIVE
+ * FORMATION, and formations weaken. See `INTENT_HAS_A_HALF_LIFE` and
+ * `how-far-gone-a-formation-is.ts`, which owns the clock.
+ *
+ *   `addressed`       Somebody arranged this for a claimant and the arrangement
+ *                     still runs. The trial can still refuse people.
+ *   `lapsed`          It was addressed and the sorting no longer works. The
+ *                     conditions are still cut into the wall and nothing is
+ *                     enforcing them, so the place admits whoever turns up -
+ *                     which is what a ruin is.
+ *   `never_addressed` Nobody arranged anything. A house left, or a man died, or
+ *                     the sky did it.
+ */
+export const IntentStandingSchema = z.enum(['addressed', 'lapsed', 'never_addressed']);
+export type IntentStanding = z.infer<typeof IntentStandingSchema>;
+
+export const RuinCharacterSchema = z.enum([
+    /** A house's seat, standing, with its formations unlit. */
+    'compound',
+    /** A refining or forging floor. The furnace is cold and the stock is not. */
+    'workshop',
+    /** Where a house kept what it wrote down. */
+    'archive',
+    /** Sealed on purpose, and the purpose is frequently still running. */
+    'vault',
+    /** Ground two parties ended each other on. Nobody built it and nobody left it. */
+    'battlefield',
+    /**
+     * Ground the sky or the catastrophe fused. Not a battlefield - nobody was
+     * fighting - and not open ground, because open ground is only unbuilt and a
+     * scar is unbuilt and changed. `scar` is already a `LocationKind` for the
+     * same reason.
+     */
+    'scar',
+    /** A relay, a border post, a bridge house. The shallowest sort and the first found. */
+    'waystation',
+    /** A walled growing ground, gone feral and still walled. */
+    'physic_garden',
+    /** A node of something bigger that is no longer there, still carrying its share. */
+    'array_anchor',
+    /** Where a house kept its dead, which is not the same as where somebody died. */
+    'ossuary',
+    /** Where a curriculum was cut and taught out of. */
+    'teaching_hall',
+    /** A quarry, a shaft, a working face. Somebody was taking something out. */
+    'cut',
+    /** Somebody's own rooms, which is the smallest and most specific sort. */
+    'dwelling',
+    /** No building at all. A bench, a ledge, a depression, a stone in a field. */
+    'open_ground'
+]);
+export type RuinCharacter = z.infer<typeof RuinCharacterSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE THREE WAYS GROUND IS CLOSED
+//
+// A gate is a question the DOOR asks the claimant about themselves. Access is
+// a fact about the GROUND: what it does to a body standing in it, whether or
+// not there is a door and whether or not anybody set anything. Most graves in
+// this catalog have no gate at all and every one of them still has an access
+// band, which is why this is not a fourth gate kind - it would be a gate that
+// half the entries could not carry.
+//
+// It is also not a new mechanism. `LocationThresholds` in the world layer has
+// carried `entry`/`survival` from the beginning and means exactly this; what
+// the world layer had no way to say, and what the design owner asked for, is
+// the other two.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The rung at which somebody is an elder somewhere.
+ *
+ * Core Formation, and the ladder's own note on that realm is the argument:
+ * "Sects stop recruiting you and start negotiating with you." Below it a person
+ * is somebody's disciple however senior they feel; at it they are a body a
+ * house seats rather than trains. Stated once here so no entry re-derives it.
+ */
+export const ELDER_FLOOR_ORDINAL = 17;
+
+export const THE_THREE_WAYS_GROUND_IS_CLOSED = {
+    principle:
+        'Ground is closed three ways and they are three different problems rather than three numbers on one row. A minimum makes a ruin a gamble. A cap makes it a thing you have to send somebody else into. An elder floor makes it an errand run for somebody who cannot come.',
+    theMinimumIsTheOrdinaryCase:
+        'Nothing forbids entry. A cultivator can always walk in, and the question is whether they walk out. The floor is not a rule, it is a description of what is down there, and where it sits relative to what the place holds is the whole of the site\'s risk against its reward. This is what most ruins have and it is what makes a ruin a decision rather than a queue.',
+    theCapIsNotOneMechanism:
+        'Some ground will not open to somebody too strong, and the reason has to differ between sites or it becomes one rule wearing thirteen hats. An entry array calibrated for a house\'s own disciples reads a pressure above that as an attack and shuts. A crawl cut for a body does not admit a field larger than a body. A floor over a void does not hold a heavy presence. A tally door answers to the token a disciple carried and does not know what an elder is. A containment tightens against power because power is the thing it was set against. What is in there goes to ground when something big walks in, and it was the thing worth having.',
+    theElderFloorIsTheCapFromTheOtherEnd:
+        'Both mean the person who enters and the person who gains are different people, and that is the fact worth making legible. Under a cap the beneficiary is above the line and sends somebody below it. Under an elder floor the beneficiary is below the line and cannot be sent at all, so somebody senior goes instead.',
+    andWhyAnElderWouldBother:
+        'Because they are not going for themselves. A senior cultivator with a long span and nothing further to gain personally goes into dangerous ground to bring something back for a junior, which is a motive that is not greed, an act that creates an obligation, and the only reason the high bands do anything at all in this part of the world. It is continuous with what the world already does: a house spends an irreplaceable material on the disciple stopped at a wall, an elder spends structural repair medicine on kin or on the house\'s chosen, and a house invests decades in a chosen before anybody asks what for. An elder going into a hole for an inheritor is that same relationship expressed as an expedition.',
+    theTest:
+        'For any proposed access band: does it change what somebody DOES, or only what number they need? A minimum changes whether they go. A cap changes who goes. An elder floor changes who it is for. If the answer is "they need a bigger number", it is a minimum and should be written as one.'
+} as const;
+
+export const RuinAccessSchema = z.discriminatedUnion('admits', [
+    /**
+     * The gamble. Anybody may walk in; below the floor they do not walk out.
+     */
+    z.object({
+        admits: z.literal('anyone_who_survives_it'),
+        /** Below this the place kills them. It is a fact, not a permission. */
+        floorOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+        whatIsDownThere: z.string().min(80),
+        whatItDoesToSomebodyShortOfIt: z.string().min(80)
+    }),
+    /**
+     * The cap. Closed above a line, for a reason that is this site's own.
+     */
+    z.object({
+        admits: z.literal('nobody_above_the_line'),
+        floorOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+        ceilingOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
+        /** The specific thing that measures the person. Never the same twice. */
+        whatReadsThePerson: z.string().min(80),
+        whyItRefusesPower: z.string().min(80),
+        /** Who ends up going, and for whom. The point of a cap. */
+        soWhoGoesInstead: z.string().min(80)
+    }),
+    /**
+     * The errand. High enough that only a senior survives it, and the senior is
+     * not the one who gains.
+     */
+    z.object({
+        admits: z.literal('elders_and_above'),
+        floorOrdinal: z.number().int().min(ELDER_FLOOR_ORDINAL).max(MAX_ORDINAL),
+        whyNobodyBelowComesBack: z.string().min(80),
+        /** The junior it is being done for. Never the entrant. */
+        whoTheyGoFor: z.string().min(60),
+        whatComesBackForThatPerson: z.string().min(60)
+    })
+]);
+export type RuinAccess = z.infer<typeof RuinAccessSchema>;
+
+/**
+ * Whether the body that goes in is the body that gains.
+ *
+ * False under a cap and under an elder floor, and that is the whole of what
+ * those two have in common. A narrator that wants to say why somebody is
+ * standing outside a door they could open should read this.
+ */
+export function entrantIsTheBeneficiary(access: RuinAccess): boolean {
+    return access.admits === 'anyone_who_survives_it';
+}
+
+/** The band of ordinal this ground admits at all, inclusive. */
+export function admittedBand(access: RuinAccess): { floor: number; ceiling: number | null } {
+    return {
+        floor: access.floorOrdinal,
+        ceiling: access.admits === 'nobody_above_the_line' ? access.ceilingOrdinal : null
+    };
+}
+
+export interface AdmissionReading {
+    /** True when the ground will let this body in at all. */
+    admitted: boolean;
+    /** True when it will also let them out. Distinct, and the distinction is the point. */
+    survives: boolean;
+    /** Which way it is closed, where it is. */
+    closedBy: 'below_the_floor' | 'above_the_line' | null;
+    /** The site's own words for it. Never composed from a template. */
+    account: string;
+}
+
+/**
+ * What this ground does to a body at this ordinal.
+ *
+ * `admitted` and `survives` are two answers and not one, because the ordinary
+ * case is a place that admits everybody and kills most of them. Collapsing
+ * them would turn every minimum into a locked door, which is precisely what a
+ * minimum is not.
+ */
+export function readAdmission(access: RuinAccess, ordinal: number): AdmissionReading {
+    if (access.admits === 'nobody_above_the_line' && ordinal > access.ceilingOrdinal) {
+        return {
+            admitted: false,
+            survives: false,
+            closedBy: 'above_the_line',
+            account: `${access.whatReadsThePerson} ${access.whyItRefusesPower} ${access.soWhoGoesInstead}`
+        };
+    }
+    if (ordinal < access.floorOrdinal) {
+        const account = access.admits === 'anyone_who_survives_it'
+            ? `${access.whatIsDownThere} ${access.whatItDoesToSomebodyShortOfIt}`
+            : access.admits === 'elders_and_above'
+                ? `${access.whyNobodyBelowComesBack} ${access.whoTheyGoFor}`
+                : access.whatReadsThePerson;
+        // Admitted and not survived. The door is not what stops them.
+        return { admitted: true, survives: false, closedBy: 'below_the_floor', account };
+    }
+    return {
+        admitted: true,
+        survives: true,
+        closedBy: null,
+        account: access.admits === 'anyone_who_survives_it'
+            ? access.whatIsDownThere
+            : access.admits === 'elders_and_above'
+                ? access.whatComesBackForThatPerson
+                : access.whatReadsThePerson
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // THE PRE-ENTRY FACE
 // Everything a party can learn without going in. Nothing here may restate
 // anything from the interior.
@@ -333,6 +711,16 @@ export const InheritanceTrialSchema = z.object({
     id: z.string(),
     kind: z.literal('trial'),
     name: z.string().min(1),
+    /** What sort of place it is. Orthogonal to `kind`. See `RuinCharacterSchema`. */
+    character: RuinCharacterSchema,
+    /** Where it came from. A floor rather than a taxonomy. */
+    origin: RuinOriginSchema,
+    /** How big it is, and therefore who can take it. See `WHAT_SCALE_DECIDES`. */
+    scale: RuinScaleSchema,
+    /** How much of the arrangement still binds. The axis, not a category. */
+    intent: IntentStandingSchema,
+    /** What the ground does to a body standing in it. See `RuinAccessSchema`. */
+    access: RuinAccessSchema,
     /** Faction ids from the sect catalog, living or destroyed. */
     factionIds: z.array(z.string()),
     outside: OutsideSchema,
@@ -416,6 +804,11 @@ export const GraveSchema = z.object({
     id: z.string(),
     kind: z.literal('grave'),
     name: z.string().min(1),
+    character: RuinCharacterSchema,
+    origin: RuinOriginSchema,
+    scale: RuinScaleSchema,
+    intent: IntentStandingSchema,
+    access: RuinAccessSchema,
     factionIds: z.array(z.string()),
     /** The rank the occupant died at. */
     occupantOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
@@ -504,6 +897,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-outer-gate-that-does-not-adjust',
         kind: 'trial',
         name: 'The Outer Gate of a Sect That No Longer Exists',
+        character: 'compound',
+        origin: 'abandoned_by_a_house',
+        scale: 'a_mountain',
+        intent: 'lapsed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 13,
+            whatIsDownThere: 'A hall that discharges a measured load into a body at the far end of it, at the figure a Foundation Establishment applicant was expected to hold for a count of six, four times a year, for nobody.',
+            whatItDoesToSomebodyShortOfIt: 'Below Foundation there is nothing in the body to spread the load through. The channels either side of the walk were cut to drain what happens, which is the whole of the description anybody needs.'
+        },
         factionIds: ['sect-nine-peaks-ascetic-order'],
         outside: {
             marker: 'A double gate in a hillside, cut for people rather than for effect, with a worn step and a bar socket on the inside face. The stone around the sockets is polished to a shine by four centuries of hands and nothing else about it is decorated at all.',
@@ -543,6 +946,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-eighth-stone',
         kind: 'trial',
         name: 'The Chamber Under the Eighth Stone',
+        character: 'array_anchor',
+        origin: 'abandoned_by_a_house',
+        scale: 'a_compound',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 26,
+            whatIsDownThere: 'A ninth of a containment ring, redistributed onto eight stones instead of nine, read off any body standing in the room at the foot of the worst-loaded leg. It does not build and it does not stop.',
+            whatItDoesToSomebodyShortOfIt: 'Puts them on the floor in the first ten paces and keeps them there until they stop breathing, which is slow enough that every recovery attempt in the site\'s history was launched on good information and arrived late.'
+        },
         factionIds: ['house-girdle-of-nine-stones', 'house-anchorhold'],
         outside: {
             marker: 'One of eight standing stones on a dead province\'s perimeter, all still upright, all still doing something. This one has a shaft cut down beside it at an angle, lined, with a rail bracket every four paces and the rail long gone.',
@@ -584,6 +997,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-nine-hundred-year-strike',
         kind: 'trial',
         name: 'The Hall That Has Been Winding Up',
+        character: 'workshop',
+        origin: 'overrun_at_work',
+        scale: 'a_building',
+        intent: 'lapsed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 31,
+            whatIsDownThere: 'Nine hundred years of stored draw on a plinth at chest height, in a hall built to deliver two years of it to one candidate standing in exactly that spot, holding about four hundred and fifty times what it was sized for.',
+            whatItDoesToSomebodyShortOfIt: 'Cinders, immediately, along with everything they were carrying and everything within about nine paces of them. There is no wounded and there is no witness, which is why the site keeps taking crews on the same reasoning as the last crew.'
+        },
         factionIds: ['sect-nine-abyss-flame-sect'],
         outside: {
             marker: 'A refining hall at the end of a spur, roof intact, doors gone, with a single node lit at the back of it and the floor swept clean by the draught. Standing outside, the air over the threshold moves against the wind.',
@@ -625,6 +1048,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-audit-bench',
         kind: 'trial',
         name: 'The Bench at the Burned Seat',
+        character: 'open_ground',
+        origin: 'left_addressed',
+        scale: 'one_room',
+        intent: 'addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A bench, a table and a book. Nobody has ever been hurt at this site and nobody ever will be, which is the most dangerous thing about it and the reason the Temple calls it furniture.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing, because there is nobody it is above. The floor is zero and it is honestly zero: the cost of this ground is charged to whoever reads far enough to be entered as having read, and a villager can incur it.'
+        },
         factionIds: ['house-tally-court', 'house-ninefold-ledger', 'sect-sweptground-temple'],
         outside: {
             marker: 'A stone bench and a stone table on the burned ground at Sweptground, both original, both cut for somebody to sit at one and put documents on the other. There is no building. Debts sworn on this ground do not settle and never have.',
@@ -688,6 +1121,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-swept-frame',
         kind: 'trial',
         name: 'The Gate Frame With No Gate In It',
+        character: 'waystation',
+        origin: 'abandoned_by_a_house',
+        scale: 'a_compound',
+        intent: 'lapsed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A terminal hall with thirty-one arches, nine of them answering and four of those opening somewhere a person can breathe. The hall is indifferent to rank and has been open continuously for fourteen hundred years.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing. Station staff sweep the yard around the frame daily and walk through it, and the frame has never done anything to any of them, because the yard is also there and the yard is what they are in.'
+        },
         factionIds: ['house-unlit-gate', 'house-measured-span'],
         outside: {
             marker: 'A stone frame standing in the yard of a Measured Span relay station, swept daily by the station staff because it is in the way of the cart line and they have always swept it. Nothing is in the frame. Standing anywhere in the yard, it is a doorway with a wall of the yard visible through it.',
@@ -764,6 +1207,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-cold-curriculum',
         kind: 'trial',
         name: 'The Curriculum Cut Above the Ice Field',
+        character: 'teaching_hall',
+        origin: 'abandoned_by_a_house',
+        scale: 'a_building',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'Nine sections of working exercise cut into a stone face on an open ledge, in the ordinary hand of the province, legible to anybody who can read. The obstacle at this site has never been the text and is never the rank.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing kills on the ledge and nothing ever has. What the fifth section does to a wuxing root that pushed past the fourth is the ordinary meridian injury, which the ordinary pill fixes inside a season and which four people are carrying permanently because the Court\'s stipend does not cover the pill.'
+        },
         factionIds: ['sect-frostmirror-court'],
         outside: {
             marker: 'A ledge two days above the Frostmirror ice field with a face of dressed stone across it, cut over with a script that is legible, complete, and in the ordinary hand of the province. Anybody who can read can read it. It is a curriculum: nine sections, in order, with the exercises written out.',
@@ -819,6 +1272,18 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-foundation-that-was-not-finished',
         kind: 'trial',
         name: 'The Cave That Checks the Work',
+        character: 'dwelling',
+        origin: 'left_addressed',
+        scale: 'one_room',
+        intent: 'addressed',
+        access: {
+            admits: 'nobody_above_the_line',
+            floorOrdinal: 13,
+            ceilingOrdinal: 20,
+            whatReadsThePerson: 'The gathering array cut into the floor, which was laid to read a foundation by sitting a body in it for one circulation. It is a measuring instrument and it has the range a measuring instrument has.',
+            whyItRefusesPower: 'Above Core Formation the foundation has been built on top of so many times that what the array gets back is not a reading of a foundation at all, and an instrument that cannot read does not open a chest on a guess. The strongest party ever to sit in it got the same answer as an empty room.',
+            soWhoGoesInstead: 'A house that understands the site sends the disciple whose foundation it is proudest of, which is precisely backwards from how a house sends anybody anywhere else, and is why the two sects that have worked it out do not say so.'
+        },
         factionIds: ['sect-azure-cloud-pavilion'],
         outside: {
             marker: 'A cultivation cave in the Nine Peaks with a cut lintel, a sealed inner door, and an outer chamber somebody has plainly lived in. On the outer chamber floor, in the original hand, is a single line: what is behind the door was laid slowly and will not be given to anybody who did not.',
@@ -871,6 +1336,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-witness-door',
         kind: 'trial',
         name: 'The Door That Wants Somebody Not In the Record',
+        character: 'compound',
+        origin: 'left_addressed',
+        scale: 'a_building',
+        intent: 'addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A room with a log in it. Nothing in it is dangerous, nothing is set for anybody and nothing has ever hurt a person who got inside, which is the honest reading and not a reassurance.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing at all. Girdle descendants have lived against the outside of this door for nine hundred years without it doing anything to any of them, and the cost of the site is entirely in what the log says once somebody is holding it.'
+        },
         factionIds: ['house-girdle-of-nine-stones', 'house-anchorhold', 'house-held-names'],
         outside: {
             marker: 'A door in the perimeter wall of the dead province, on the inside face, with no handle, no seam visible and no formation anybody has been able to read. Girdle descendants living at the perimeter have known it was a door for nine hundred years and have never seen it open.',
@@ -937,6 +1412,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-oath-with-no-party',
         kind: 'trial',
         name: 'The Oath Room Under a Dyer\'s Yard',
+        character: 'archive',
+        origin: 'abandoned_by_a_house',
+        scale: 'a_building',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A filing room. Several thousand live obligations with nobody holding them, in a brick vault under a working yard, and not one thing in it that was ever meant to injure a person.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing, and it cannot be forced either, so a mortal and an immortal get exactly the same result from trying. The danger at this site is all downstream of holding the position, which is a thing a person acquires rather than survives.'
+        },
         factionIds: ['house-tally-court', 'house-bound-word', 'house-ninefold-ledger'],
         outside: {
             marker: 'A vault head in the eastern towns, brick, in the corner of a yard behind a dyer\'s, with the surround cut in a pattern the dyer\'s family has repainted for six generations without knowing it is writing.',
@@ -981,6 +1466,16 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-door-that-wants-a-refusal',
         kind: 'trial',
         name: 'The Step That Was Put Down Again',
+        character: 'vault',
+        origin: 'left_addressed',
+        scale: 'one_room',
+        intent: 'addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A stone box on a plinth just inside an open threshold, closed for six hundred years and not locked. The elder who put it here wrote down that he did not want a guarded thing, he wanted an unspendable one.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing whatever. Anybody can walk in, and anybody can put both hands on the box, and the six hundred years of it staying shut are six hundred years of people who could have opened it deciding on the threshold that they would rather have it.'
+        },
         factionIds: ['sect-azure-cloud-pavilion', 'sect-the-severed', 'house-narrow-hour'],
         outside: {
             marker: 'A cut chamber mouth high on a spur above the Pavilion\'s outer holdings, open, unsealed, with a stone box on a plinth just inside the threshold and nothing else visible from outside. The box is closed. It has been closed for six hundred years and it is not locked.',
@@ -1027,6 +1522,18 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-ground-that-wants-the-wrong-claimant',
         kind: 'trial',
         name: 'The Ground That Is Waiting For Somebody It Should Not Want',
+        character: 'scar',
+        origin: 'what_the_catastrophe_made',
+        scale: 'a_compound',
+        intent: 'addressed',
+        access: {
+            admits: 'nobody_above_the_line',
+            floorOrdinal: 0,
+            ceilingOrdinal: 24,
+            whatReadsThePerson: 'The working itself, which is a transfer with the vessel condition left open and therefore has to take hold of whoever stands in the circle before it can do anything at all.',
+            whyItRefusesPower: 'Past Nascent Soul there is too much of the claimant\'s own settled self for the transfer to get purchase on, so it does not engage and nothing happens. This is why the circle is four generations old, sits beside a walked track, and has never once taken one of the strong people who have stood in it out of curiosity.',
+            soWhoGoesInstead: 'Nobody sends anybody, and the two houses that understand the circle have both decided independently not to. The single recorded attempt was a party who sent a junior in without telling him what the ground was for, which is the whole of why the burn crews will not step over the line.'
+        },
         factionIds: ['sect-bone-lantern-cult', 'sect-lantern-hall'],
         outside: {
             marker: 'A cleared circle in the burn zone, forty paces across. The burnt floor inside it has not been disturbed since the catastrophe and the burnt floor outside it is walked flat. Nothing grows in either. Crews have used the edge as a landmark for four generations and none of them steps in, for reasons nobody in the Marches has ever been able to state.',
@@ -1084,6 +1591,17 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-fourth-branch-station',
         kind: 'trial',
         name: 'The Station At the Bottom of the Fourth Branch',
+        character: 'cut',
+        origin: 'abandoned_by_a_house',
+        scale: 'a_compound',
+        intent: 'never_addressed',
+        access: {
+            admits: 'elders_and_above',
+            floorOrdinal: 33,
+            whyNobodyBelowComesBack: 'The descent, not the station. The stair goes down further than the gallery is high, does not turn, and is what kills in almost every recorded case; the sump gate at the bottom takes the rest. The Deep Survey staffed it continuously for two hundred and ten years with people who walked it daily and it has killed everybody who has tried it since on the way down.',
+            whoTheyGoFor: 'The Survey\'s own readers-in-training, who will spend their careers on the branch sequence and cannot make the descent to fetch it, and who are the reason a seated surveyor goes down at all.',
+            whatComesBackForThatPerson: 'The station\'s working sequence, which is the thing a reader needs before the fourth branch is anything but a hole, and which is carried up by somebody who will never use it themselves.'
+        },
         factionIds: ['apex-deep-survey', 'court-kiln'],
         outside: {
             marker: 'A stair head cut into the floor of a dry arterial gallery, treads worn on the left side only, with a bracket for a rail every four paces and no rail. A depth figure is cut at every hundredth tread. The stair goes down further than the gallery is high and does not turn.',
@@ -1148,6 +1666,17 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         id: 'trial-the-four-inward-faces',
         kind: 'trial',
         name: 'The Four Stones That Face the Standing Ground',
+        character: 'array_anchor',
+        origin: 'left_addressed',
+        scale: 'a_compound',
+        intent: 'lapsed',
+        access: {
+            admits: 'elders_and_above',
+            floorOrdinal: 37,
+            whyNobodyBelowComesBack: 'The ground, and only the ground. Nothing on the site is hostile and nothing is concealed: reading the inward faces spends at a rate nobody budgets for because nobody expects a stone to charge for being looked at, and the ring is two hundred paces across with nothing in it to draw on.',
+            whoTheyGoFor: 'Whoever in the reader\'s house is going to stand where those four candidates stood, which at Grand Ascension is always somebody younger and is never the reader.',
+            whatComesBackForThatPerson: 'Four separate accounts of the hours before an attempt at the last crossing, written by four people who did not know about each other and did not come back, which is the only document of its kind anybody holds.'
+        },
         factionIds: ['apex-long-cut', 'court-ninth-face'],
         outside: {
             marker: 'A ring of boundary stones on high open ground, set at a spacing nobody local uses, enclosing about two hundred paces of ground on which nothing grows and nothing has for a very long time. Four of the stones are cut on the faces that point inward. From outside the ring the four faces cannot be seen at all.',
@@ -1202,6 +1731,280 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             },
             afterwards: 'Nothing changes and nothing is spent. The stones are stones, the ring is still ground that gives nothing back, and the next claimant reads the same four faces. What the site loses when somebody takes it is exclusivity, which the Long Cut has never had and has never wanted, because a candidate who cannot get to the ring is not a candidate it would have authorised.'
         }
+    },
+
+    // ── ground that is closed against strength ────────────────────────
+    //
+    // Four entries whose access band is a CAP, and the reason differs at
+    // every one of them, which is the whole requirement: an array with a
+    // calibrated range, a ward that classifies by weight, a floor over a
+    // void, and a door that only knows one kind of token. A cap makes a
+    // site a thing somebody has to be SENT into, and the four of them
+    // together are the argument that this is a property of ground rather
+    // than one rule wearing four hats.
+    {
+        id: 'trial-the-beds-that-read-weight',
+        kind: 'trial',
+        name: 'The Garden That Takes Everything Heavy For a Deer',
+        character: 'physic_garden',
+        origin: 'overrun_at_work',
+        scale: 'a_building',
+        intent: 'never_addressed',
+        access: {
+            admits: 'nobody_above_the_line',
+            floorOrdinal: 0,
+            ceilingOrdinal: 16,
+            whatReadsThePerson: 'A grazing ward laid over eleven beds, which does one thing: it decides whether the thing that has come over the wall is a person or an animal, and it decides by weight of presence because that is the only measure a herbalist had that a deer could not fake.',
+            whyItRefusesPower: 'A cultivator past Foundation Establishment reads to the ward as something very large and very hungry, and the ward does what it was built to do about something large and hungry, which is fold the beds down into the ground and stay folded until the thing goes away. Nothing is destroyed and nobody is attacked. The garden simply is not there any more.',
+            soWhoGoesInstead: 'The Hall\'s youngest, which the Hall has been doing without knowing why for a hundred and ten years: the standing instruction is that the walled ground is a task for a first-year, everyone assumes it is because the work is menial, and it is the only reason the Hall gets anything out of it at all.'
+        },
+        factionIds: ['sect-frostmirror-court', 'house-measured-span'],
+        outside: {
+            marker: 'A dry-stone wall about chest height enclosing rather more ground than a garden needs, with a gate that has rotted off its hangings and been left where it fell. Inside, eleven long beds are still visible as ridges under the grass, and the grass over them is a different colour from the grass everywhere else.',
+            rumour: 'The valley calls it the old physic wall and says the beds went over to weeds four generations back. Herb crews cut through it as a shortcut and have never once brought anything out of it, which everybody treats as settled evidence.',
+            attributedTo: 'A growing house that supplied the terraced valley before the Hall did',
+            lastPartySaid: 'A Span forage contractor walked the wall two years ago at Core Formation, wrote that the beds were extinct, and cut the survey short because there was demonstrably nothing there.',
+            whatAKnowledgeablePartyReads: 'That grass grows a different colour over ground that is still being worked, and that eleven ridges holding their line under a century of turf are eleven ridges something is holding. A walled growing ground that empties every time a strong person looks at it is not empty. It is a garden with an opinion about who is standing in it, and the opinion is one a herbalist would have built on purpose.',
+            whatAnIgnorantPartyConcludes: 'That the beds are dead, because every competent person who has ever gone to check has found dead beds, and the stronger the person who checked the more certain the conclusion. The evidence is unanimous, it is first-hand, it has been gathered repeatedly over a century, and it is produced by the act of gathering it.',
+            startingAwareness: 'named',
+            advertisedOrdinal: null
+        },
+        interior: {
+            chamber: 'Standing in the enclosure at the right weight, the ridges are beds and the beds are worked: eleven of them, planted in a rotation, each one carrying a crop that has been running unattended and unharvested for a hundred and ten years and has therefore run to a maturity nothing in cultivation ever reaches. At the head of the fourth bed there is a slate with the rotation cut into it and the intervals marked in a hand that used numbers the valley stopped using.',
+            setBy: 'A growing house that lost its people in a bad decade and left the ward running because there was nobody left who knew how to take it down. It was never a test and was never meant to keep anybody out. It was a fence against deer, built by somebody who had lost a season to deer and had decided it would not happen twice.',
+            gates: [
+                {
+                    kind: 'age_and_talent',
+                    requires: [
+                        {
+                            measure: 'years_cultivated',
+                            atLeast: 6,
+                            note: 'The rotation is on a slate in an obsolete numbering and reading it is a matter of having seen enough seasons pass to know what a rotation is for.'
+                        },
+                        {
+                            measure: 'attribute',
+                            attribute: 'insight',
+                            atLeast: 2,
+                            note: 'Eleven beds at eleven different points of a cycle, and cutting the wrong one at the wrong point ends that bed for good rather than costing a harvest.'
+                        }
+                    ],
+                    test: 'Read the slate at the head of the fourth bed and cut in the order it gives. The whole of the difficulty is that the beds do not look different from each other to somebody who has not read it, and a person who cuts by eye takes the two that were nearly ready and destroys the nine that were not.',
+                    strengthDoesNotHelp: 'There is nothing here to apply force to and force is what closes the site in the first place. The one thing a strong claimant could do about this garden is stand outside the wall and send somebody, which is the correct play and is what the access band is describing.',
+                    below: 'A claimant who cuts by eye gets one useful harvest and leaves an enclosure of destroyed beds, which is what four of the six recorded harvests have been and is why the site is thought to be nearly worked out when it has never once been worked properly.'
+                }
+            ],
+            howItKills: 'It does not, and nothing in the enclosure has ever hurt anybody. What it costs is the beds: a rotation cut in the wrong order does not recover, and eleven beds that have been running for a hundred and ten years are eleven things that cannot be started again by anybody now living. Every party that has taken something out of this garden has taken it by ending part of the garden, and none of them knew that at the time.',
+            prize: {
+                techniqueIds: [],
+                other: [
+                    'Eleven beds of a rotation nobody has interrupted for a hundred and ten years, which is a length of undisturbed growth that cannot be bought, cannot be forced and cannot be started again inside the life of anybody now alive.',
+                    'The rotation itself, cut on the slate at the head of the fourth bed, in the intervals the growing house actually used rather than the ones the Hall teaches, which differ at three points and differ in the direction that matters.'
+                ],
+                immortalItemId: null
+            },
+            afterwards: 'The beds that were cut correctly come back on their own interval, so a party that read the slate can come back in eleven years and find the garden working. A party that cut by eye has left an enclosure with grass in it. This is the only site in the catalog whose value depends on how carefully it was taken rather than on whether it was taken.'
+        }
+    },
+    {
+        id: 'trial-the-floor-over-the-old-cut',
+        kind: 'trial',
+        name: 'The Working Floor With Nothing Under It',
+        character: 'cut',
+        origin: 'overrun_at_work',
+        scale: 'a_building',
+        intent: 'never_addressed',
+        access: {
+            admits: 'nobody_above_the_line',
+            floorOrdinal: 4,
+            ceilingOrdinal: 28,
+            whatReadsThePerson: 'The floor, which is two spans of dressed slab laid across the head of a worked-out shaft on the understanding that nobody would ever need to stand on it for long, and which is holding up a ceiling as well as a walkway.',
+            whyItRefusesPower: 'Weight here is not a number in a ledger, it is a load on stone. A cultivator past Deity Transformation does not walk on a floor so much as press on it, and the slab over the shaft head has about the margin a two-hundred-year-old slab has. Three parties have gone through it and the shaft under it is four hundred paces of nothing.',
+            soWhoGoesInstead: 'Whoever in the party is smallest, roped, with everybody heavy standing on the gallery side of the door. This is the ordinary practice of every survey house and it is written into the Deep Survey\'s own procedure, which does not explain why and does not have to.'
+        },
+        factionIds: ['house-anchorhold', 'house-measured-span'],
+        outside: {
+            marker: 'A door in the side of a dry gallery, propped, with a working floor visible beyond it and a rope still tied off to the frame. The rope goes through the doorway and down, which is not where a rope for a floor goes. There is a chalk line across the threshold that somebody has redrawn several times.',
+            rumour: 'Gallery crews say the old cut behind that door was worked out before anybody\'s grandfather and that the floor is safe because people have walked it for two hundred years. Both halves are true and they are not the same claim.',
+            attributedTo: null,
+            lastPartySaid: 'Four from a salvage crew went through six years ago. The two at the back are alive. Their account is that the floor was fine right up until it was not, and that nothing had changed except who was standing on it.',
+            whatAKnowledgeablePartyReads: 'That a rope tied off at a doorway and running down through it is a rope for the shaft rather than for the floor, and that somebody redraws a chalk line on the threshold for a reason. A worked-out cut with a dressed floor over the shaft head is a place where the last crew laid a lid and left, and a lid is sized for the people who laid it.',
+            whatAnIgnorantPartyConcludes: 'That two hundred years of people crossing a floor is two hundred years of evidence the floor holds, which it is, for the sort of person who has been crossing it. The stronger the party, the more confident it is, and the more confident it is the fewer of them go through the door one at a time.',
+            startingAwareness: 'whisper',
+            advertisedOrdinal: null
+        },
+        interior: {
+            chamber: 'A working floor about thirty paces square with the stock still on it: cut faces stacked against the far wall in the sizes the house used, a dressing bench with the tools laid out in order along the back of it, and the shaft head under the middle of the floor with two spans of slab across it. Everything on this floor was left tidy by people who expected to come back on the Monday, and the tidiness is what makes it legible.',
+            setBy: 'Nobody. There is no test here and nothing was arranged: a cutting house closed a worked-out face at the end of a season, laid a floor over the shaft so the gallery could still be used, stacked the last of the stock and went home. The house was gone inside two years for reasons that had nothing to do with this cut.',
+            gates: [
+                {
+                    kind: 'age_and_talent',
+                    requires: [
+                        {
+                            measure: 'insight',
+                            domain: 'formation',
+                            atLeast: 2,
+                            note: 'The stock against the wall is cut to a house standard and the standard is the document. Reading it off the sizes is a formation reader\'s habit rather than a mason\'s.'
+                        },
+                        {
+                            measure: 'years_cultivated',
+                            atLeast: 12,
+                            note: 'Twelve years is about how long it takes anybody to have seen enough working floors to know which of the tools on the bench is the one that is not ordinary.'
+                        }
+                    ],
+                    test: 'Read the stack. The house cut its stone to a standard that encodes what the stone was for, and the sizes against the far wall are an inventory of everything the house was building at the moment it stopped, in a notation that was never written down anywhere because the people who used it were looking at it every day.',
+                    strengthDoesNotHelp: 'The floor is the reason a strong claimant is not in this room, and if one were the stack would still be a stack of cut stone in sizes that mean nothing to somebody who has not spent years around a dressing bench. Nothing on this floor can be lifted into revealing anything.',
+                    below: 'A claimant who cannot read the stack takes the tools, which are good tools and are worth about what good tools are worth, and leaves the thing they came for standing against the wall in plain sight.'
+                }
+            ],
+            howItKills: 'By the floor, and only in one direction. Nothing on the site is hostile, nothing is concealed and the shaft is not hidden - the slab over it is the most visible thing in the room. What kills is a heavy body standing on a lid that was laid for the crew who laid it, and the fall is four hundred paces of worked-out shaft with the ladders taken out at the end of the season.',
+            prize: {
+                techniqueIds: [],
+                other: [
+                    'The house\'s cutting standard, readable off the stock against the far wall, which states what every size was for and is the only surviving statement of what that house was actually building in its last season.',
+                    'A dressing tool on the bench that is not one of the eleven a mason carries, and which is the reason a cutting house was able to work a face that three houses since have called unworkable.'
+                ],
+                immortalItemId: null
+            },
+            afterwards: 'The stack stays where it is, because reading it does not consume it and a second reader gets the same standard off the same stones. What is spent is the tool on the bench, which is one object and leaves with whoever takes it. The floor goes on holding whatever it can hold until it does not.'
+        }
+    },
+    {
+        id: 'trial-the-door-that-only-knows-tokens',
+        kind: 'trial',
+        name: 'The Store Door That Never Heard of Elders',
+        character: 'vault',
+        origin: 'abandoned_by_a_house',
+        scale: 'a_building',
+        intent: 'never_addressed',
+        access: {
+            admits: 'nobody_above_the_line',
+            floorOrdinal: 0,
+            ceilingOrdinal: 12,
+            whatReadsThePerson: 'A tally door on an outer store, which opens to a disciple\'s draw token and to nothing else. It was built to let an errand-runner take a sack of grain out without finding a seated member of the house to ask.',
+            whyItRefusesPower: 'The door does not refuse power, it does not know what power is. It knows tokens, and a token was a thing carried by somebody at the bottom of a house that issued them to its intake and to nobody above Qi Condensation, because above Qi Condensation you sent somebody. A Nascent Soul cultivator standing at that door is standing in front of a mechanism with no concept she fits into.',
+            soWhoGoesInstead: 'Somebody\'s errand-runner, exactly as it always was. Two houses have worked this out and both of them handle it the same way, which is to hand a token to their newest intake and to tell them nothing, and one of those houses has been doing it for sixty years.'
+        },
+        factionIds: ['sect-nine-peaks-ascetic-order', 'house-ninefold-ledger'],
+        outside: {
+            marker: 'A store front built into a bank at the edge of a compound that has otherwise fallen in, with a slot beside the door at about the height of a boy\'s chest and a shallow dish worn into the stone underneath it. The door is intact, the lintel is intact, and the roof of everything behind it is on the floor.',
+            rumour: 'Locals say the stores at the old compound were emptied within a month of the sect going and that the last door is stuck. The children of the two nearest villages have been putting things in the slot for as long as anybody remembers, on a dare, and nothing has ever happened.',
+            attributedTo: 'The sect that held the compound, whose intake tokens are still turned up by ploughing',
+            lastPartySaid: 'A Ledger valuation clerk came out four years ago to price the site for a client, spent a morning on the door, and wrote that it was a common tally lock, that the tallies were long gone, and that the store was therefore closed permanently.',
+            whatAKnowledgeablePartyReads: 'That the slot is at the height of a boy\'s chest and the dish under it is worn, which means the door was used constantly by short people carrying things and was never a security fitting at all. A tally lock on an outer store is the least serious lock a house owns, and the reason it is the only door still standing is that nobody has ever bothered to break something that was not worth breaking.',
+            whatAnIgnorantPartyConcludes: 'That an intact door on a fallen compound is the door worth opening, and that a lock nobody has beaten in four hundred years is a serious lock. Eleven parties have attacked this door and none of them has looked at the height of the slot, which is the entire answer and is visible from the road.',
+            startingAwareness: 'named',
+            advertisedOrdinal: 6
+        },
+        interior: {
+            chamber: 'A store: four bays of shelving on the left, a counting table under the slot on the right with the tally box still on it, and a run of sacks along the back wall that went to dust several centuries ago and left their shapes. On the counting table, under the box, is the issue book, which records every token drawn and returned for the last eleven years the house existed and is written in the hand of whichever child was on the counter that day.',
+            setBy: 'A quartermaster, as a convenience. There is no test here, nothing was calibrated for a claimant, and nobody intended this room to survive anything: it is the least important door in a compound that had thirty, and it is the only one left because importance is what people come and break.',
+            gates: [
+                {
+                    kind: 'strength',
+                    ordinal: 2,
+                    test: 'The door is heavy and it is stiff, and once the tally is in the slot it still has to be pulled. That is the whole of the physical test and it is set at about what a two-year intake could manage, because a two-year intake is who it was set for and there was never a reason to make it harder.',
+                    below: 'A child or a mortal who has the tally cannot shift the leaf, which is the only reason the village children who have been putting things in that slot for generations have never got it open. Every one of them has satisfied the lock and none of them has satisfied the door.',
+                    noWorkaround: 'There is none and there does not need to be one. It is a heavy leaf on a stiff hinge and either the person pulling it can pull it or they cannot; the ordinal is low enough that this has never been what stopped anybody.'
+                },
+                {
+                    kind: 'age_and_talent',
+                    requires: [
+                        {
+                            measure: 'attribute',
+                            attribute: 'insight',
+                            atLeast: 2,
+                            note: 'The issue book is eleven years of a rotating series of children\'s hands and it takes some holding in the head to see that the same three names keep drawing against a bay that has no stock in it.'
+                        },
+                        {
+                            measure: 'years_cultivated',
+                            atLeast: 3,
+                            note: 'Long enough to have been somebody\'s junior and to know what a draw book is for, which is a thing nobody who was never anybody\'s junior thinks to ask.'
+                        }
+                    ],
+                    test: 'Read the issue book. It is a complete record of what a house of that size actually consumed, week by week, for its last eleven years, and it is the only document of its kind anybody holds, because a house\'s own quartermaster book is the first thing a raiding party burns and the last thing a raiding party values.',
+                    strengthDoesNotHelp: 'The book is on the table in the open and a claimant of any rank can pick it up. What a claimant of any rank cannot do is see that the fourth bay was being drawn against by three people for two years after the fourth bay was formally struck off the inventory, which is the thing the book is actually worth.',
+                    below: 'The claimant takes a store room with nothing in it and an old ledger, correctly values both at nothing, and leaves. This is what nine of the eleven recorded openings of similar doors have produced and it is why nobody prices a quartermaster book.'
+                }
+            ],
+            howItKills: 'It does not, and there is nothing in this room that could hurt anybody. What the store costs is entirely a matter of who reads the fourth bay: three names drawing against struck stock for two years is a house feeding somebody it had stopped admitting to feeding, and two of those three names are on stones in the province with dates that do not match the account their descendants give.',
+            prize: {
+                techniqueIds: [],
+                other: [
+                    'The issue book: eleven years of one house\'s actual weekly consumption, in the hands of the children who kept the counter, which is the only surviving document of what a body of that size really cost to run.',
+                    'The tally box, still on the counting table, holding forty-one returned tokens with the bearers\' marks on them, which is a roll of the house\'s intake for its last year and is the sort of thing an ancestral claim turns on.'
+                ],
+                immortalItemId: null
+            },
+            afterwards: 'The door stays open, because a tally door that has been opened does not shut itself and nobody is coming to reset it. The book leaves with whoever takes it. The store is then a store room with four empty bays in it, which is what everybody thought it was for four hundred years and what it will now genuinely be.'
+        }
+    },
+    {
+        id: 'trial-the-reading-room-that-was-not-shut',
+        kind: 'trial',
+        name: 'The Reading Room They Left the Lamps In',
+        character: 'archive',
+        origin: 'overrun_at_work',
+        scale: 'a_compound',
+        intent: 'never_addressed',
+        access: {
+            admits: 'elders_and_above',
+            floorOrdinal: 25,
+            whyNobodyBelowComesBack: 'The room is under a collapsed hall on a vein that has been drawing without a draw for eight hundred years, and the approach is a chimney of settled rubble that has to be held apart for as long as somebody is inside it. Below Deity Transformation nobody can hold it and go in as well, and the four parties that tried to do it in shifts are all in the chimney.',
+            whoTheyGoFor: 'The junior the reader is bringing up, because a reading room is not a thing an elder needs and is exactly the thing somebody two realms below them is stopped for want of.',
+            whatComesBackForThatPerson: 'A road. What is on the shelves is the working notes of a house that thought in one particular direction for two hundred years, which is the sort of thing that gives somebody a way of seeing they did not have and cannot be handed a technique for.'
+        },
+        factionIds: ['house-tally-court', 'sect-sweptground-temple'],
+        outside: {
+            marker: 'A fallen hall on a low rise with a chimney of settled rubble at one corner that goes down rather than in, and a draught coming out of it that does not vary with the weather and has not varied within living memory. The rubble around the mouth is polished on the underside where things have been dragged out of it.',
+            rumour: 'The Temple lists it as a collapsed hall and has done for eight centuries. The draught is well known and is generally explained as a cave under the rise, which is a reasonable explanation and is the one the Temple prefers.',
+            attributedTo: 'A house the Temple absorbed the ground of and not the people',
+            lastPartySaid: 'Four went down in shifts eleven years ago on the theory that two could hold the chimney while two worked. The two who were holding it are the ones who are still in it.',
+            whatAKnowledgeablePartyReads: 'A draught that does not vary with the weather is a draught with a vein behind it rather than a cave, and eight hundred years of a vein drawing into a sealed space under a fallen hall is a space that has not been touched. The polish on the underside of the rubble is people dragging things out, which means the chimney has been open and worked before, and the things that came out are not in any account anybody has published.',
+            whatAnIgnorantPartyConcludes: 'That a collapsed hall is a collapsed hall, and that the draught means a cave, and that a cave under a rise in a province full of caves is not worth four days. The Temple has said so in writing for eight hundred years and the Temple is not lying: it does not know either.',
+            startingAwareness: 'whisper',
+            advertisedOrdinal: null
+        },
+        interior: {
+            chamber: 'A reading room, whole, under the fallen hall: eight desks in two rows, the shelves down both long walls with the volumes still standing on them in order, and the lamps still in their brackets with oil in them because the room has had no air moving through it in eight hundred years. Somebody\'s work is open on the third desk with a marker in it, and the marker is a strip of cloth rather than paper, which is what a person uses when they mean to come back before the end of the day.',
+            setBy: 'Nobody, and that is the point of it. This was a working reading room in a house that was in the middle of an ordinary morning when the hall came down on top of it, and every arrangement in the room is the arrangement of people who were about to have lunch. Nothing here was calibrated for a claimant because nobody in this room knew there was going to be one.',
+            gates: [
+                {
+                    kind: 'age_and_talent',
+                    requires: [
+                        {
+                            measure: 'insight',
+                            domain: 'karma',
+                            atLeast: 2,
+                            note: 'The shelves are ordered by the house\'s own subject scheme and the scheme is the argument. Reading the order is reading what the house thought the world was made of.'
+                        },
+                        {
+                            measure: 'attribute',
+                            attribute: 'insight',
+                            atLeast: 3,
+                            note: 'Two hundred years of working notes by people who all agreed with each other, and the useful part is the three places where they stopped agreeing.'
+                        },
+                        {
+                            measure: 'years_cultivated',
+                            atLeast: 45,
+                            note: 'A house\'s direction of thought is visible only against other houses\' directions, and nobody has seen enough of those in under half a century.'
+                        }
+                    ],
+                    test: 'Read the shelves as an order rather than as a list. Two hundred years of one house\'s working notes, shelved by a scheme that house invented, is a complete statement of how those people saw and it is legible only to somebody who can hold the whole arrangement at once.',
+                    strengthDoesNotHelp: 'Getting into this room takes Deity Transformation and getting anything out of it does not care. An elder who holds the chimney open, walks in, and reads a shelf of somebody else\'s notes without the comprehension to see the order is standing in a library with a headache, and four of the six who have got in are exactly that.',
+                    below: 'The claimant carries out an armful of volumes, which are worth what old volumes are worth, and leaves the order on the shelves where the order is. The order is the thing and it does not travel in an armful.'
+                }
+            ],
+            howItKills: 'By the chimney, in both directions, and it kills on the way out more often than on the way in because a party going out is carrying something and is tired. Nothing in the reading room itself has ever hurt anybody: the lamps have oil in them, the desks are desks, and the eight hundred years of stillness in there is the most benign thing on the site.',
+            prize: {
+                techniqueIds: [],
+                other: [
+                    'Two hundred years of one house\'s working notes, in their own shelf order, which is a complete statement of a way of seeing and is the only route by which that way of seeing is still available to anybody.',
+                    'The work open on the third desk with a cloth marker in it, which is the last thing anybody in that house was doing and stops in the middle of a sentence.'
+                ],
+                immortalItemId: null
+            },
+            afterwards: 'The room is still there and the chimney still needs holding, so it stays an errand rather than becoming a route. What a second party finds is a reading room with a gap on one shelf and the third desk cleared, and the order the first party read is still readable because an order is not a thing that can be carried away.'
+        }
     }
 ];
 
@@ -1218,6 +2021,17 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-shen-guyi',
         kind: 'grave',
         name: 'The Interment of Shen Guyi',
+        character: 'ossuary',
+        origin: 'left_addressed',
+        scale: 'a_building',
+        intent: 'addressed',
+        access: {
+            admits: 'elders_and_above',
+            floorOrdinal: 33,
+            whyNobodyBelowComesBack: 'A chamber cut and dressed for a man who sat down at the end of Tribulation Transcendence, with what he was carrying still in it. Nothing in it was sized for a visitor and nothing in it has been made safe, and the masonry being maintained is not the same fact as the chamber being survivable.',
+            whoTheyGoFor: 'The house\'s own chosen, who is the reason a seated elder is willing to open a door that everybody agrees should stay shut.',
+            whatComesBackForThatPerson: 'What a man at the top of the ladder was still carrying when he stopped, none of which is the right size for the person who goes in and all of which is the right size for the person it is being fetched for.'
+        },
         factionIds: ['court-third-sill'],
         occupantOrdinal: 44,
         yearsDead: 160,
@@ -1331,6 +2145,17 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-yun-baiheng',
         kind: 'grave',
         name: 'Eleven Li of Ground In the High Marches',
+        character: 'scar',
+        origin: 'what_the_catastrophe_made',
+        scale: 'a_mountain',
+        intent: 'never_addressed',
+        access: {
+            admits: 'elders_and_above',
+            floorOrdinal: 29,
+            whyNobodyBelowComesBack: 'Eleven li of ground that has not held qi in ninety years and will not again. There is nothing to draw on anywhere inside the boundary, so the crossing is paid entirely out of whatever the crosser walked in with, and the middle is further from either edge than most pools reach.',
+            whoTheyGoFor: 'Anybody the crosser intends to outlive them, which after a failed crossing is the only reason left to walk onto ground that took the person who made it.',
+            whatComesBackForThatPerson: 'What fell out of a hand. There is no body, no pouch and nothing anybody arranged, and it is the shortest list in the world and the best one.'
+        },
         factionIds: ['court-ninth-face', 'sect-weir-office'],
         occupantOrdinal: 44,
         yearsDead: 90,
@@ -1392,6 +2217,16 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-the-forty-first-boundary',
         kind: 'grave',
         name: 'The One Who Was Struck At the Boundary',
+        character: 'scar',
+        origin: 'what_the_catastrophe_made',
+        scale: 'a_compound',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 24,
+            whatIsDownThere: 'Two hundred paces of moor fused to a depth nobody has dug through, four hundred years old, with a body lying on top of it that was never buried and is the first thing every account of the site mentions.',
+            whatItDoesToSomebodyShortOfIt: 'The residue is still in the ground and still discharging into anything that crosses it slowly enough. Below Nascent Soul a person gets about as far as the fused edge before what is left in the moor finishes what the lightning started.'
+        },
         factionIds: ['sect-storm-tyrant-court', 'house-ninefold-ledger'],
         occupantOrdinal: 40,
         yearsDead: 410,
@@ -1453,6 +2288,18 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-the-forge-clan-vault',
         kind: 'grave',
         name: 'The Clan Undercroft That Opens For Blood',
+        character: 'vault',
+        origin: 'left_addressed',
+        scale: 'a_building',
+        intent: 'addressed',
+        access: {
+            admits: 'nobody_above_the_line',
+            floorOrdinal: 0,
+            ceilingOrdinal: 26,
+            whatReadsThePerson: 'The clan, standing on the leaf. The undercroft is in the floor of a hall that is in daily use, walked over by forty people, and the only route in that does not end the clan is one the clan opens itself.',
+            whyItRefusesPower: 'A house does not open its own floor for somebody who could take the hall off it afterwards, and there is no rank at which that stops being true - it gets worse. Above Deity Transformation the clan reads a visitor as the end of the clan and the leaf stays shut whatever is offered for it.',
+            soWhoGoesInstead: 'Kin, or somebody a senior of the house has chosen to send in their place and has vouched for by name, which is the entire reason the clan mark is inlaid in the leaf where two hundred and forty years of feet can wear it smooth.'
+        },
         factionIds: ['sect-ashen-forge-clan'],
         occupantOrdinal: 27,
         yearsDead: 240,
@@ -1549,6 +2396,16 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-the-channel-physician',
         kind: 'grave',
         name: 'The Physician Who Was Working On the Channels',
+        character: 'ossuary',
+        origin: 'left_addressed',
+        scale: 'one_room',
+        intent: 'lapsed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A low walled plot at the top of a terraced herb valley with ten physicians in it, nine of them ordinary Hall interments and one with a longer stone. Nothing here was ever set against anybody.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing, and the plot is walked into by the Hall\'s own students on the ordinary rounds. The eleven lines on the long stone are the whole of the site and they can be read by anybody standing in front of them, which is why the site has been open for a century and has not been taken.'
+        },
         factionIds: ['sect-verdant-spring-hall'],
         occupantOrdinal: 15,
         yearsDead: 70,
@@ -1649,6 +2506,18 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-deep-gleaner-xun',
         kind: 'grave',
         name: 'The Man Behind the Company\'s Own Wall',
+        character: 'workshop',
+        origin: 'overrun_at_work',
+        scale: 'a_compound',
+        intent: 'never_addressed',
+        access: {
+            admits: 'nobody_above_the_line',
+            floorOrdinal: 8,
+            ceilingOrdinal: 24,
+            whatReadsThePerson: 'The gap the Company left when it put the wall back by hand, which is a crawl about the width of a sorting hatch and was never meant to be a door at all.',
+            whyItRefusesPower: 'A cultivator past Nascent Soul does not fit a crawl in the sense that matters: the field a body at that height carries is larger than the body, and a hole cut for a body reads it as the wall and closes on it. Two Gleaners have died going in the correct way round and one very strong outsider has died going in sideways.',
+            soWhoGoesInstead: 'The Company sends its own small people, which is a sentence the Company would object to and is exactly what the wager board records: everybody whose name is on it went in at Foundation or under, and the amount is still written next to his.'
+        },
         factionIds: ['sect-gleaners-company', 'sect-weir-office'],
         occupantOrdinal: 12,
         yearsDead: 30,
@@ -1736,6 +2605,16 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-the-remote-carrier',
         kind: 'grave',
         name: 'Somebody Who Came Down and Stopped Somewhere',
+        character: 'open_ground',
+        origin: 'a_door_nobody_opened_again',
+        scale: 'one_room',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A dry overhang with a person under it who sat down against the rock and did not get up. There is no cutting, no cairn and no arrangement of any kind, and weather has done everything that has been done to the site.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing, which is precisely the problem: what closes this site is four days off the nearest track in either direction, and distance charges the same to a villager and to a Grand Ascension cultivator who does not know it is there.'
+        },
         factionIds: ['house-ninefold-ledger', 'sect-bone-lantern-cult'],
         occupantOrdinal: 33,
         yearsDead: 600,
@@ -1835,6 +2714,16 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-the-survey-line-duel',
         kind: 'grave',
         name: 'Two Graves On a Survey Line',
+        character: 'battlefield',
+        origin: 'fought_over_and_left',
+        scale: 'one_room',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'Two cairns eleven paces apart, raised by the same party on the same afternoon, with a stone standing at the head of each and no name on either. There is nothing else and there never was.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing. This is the plainest site in the catalog and the ordinary case for a grave: unguarded, unsealed, walked past by surveyors twice a season, and the only thing keeping anything in it is that nobody has thought it worth the digging.'
+        },
         factionIds: ['sect-azure-cloud-pavilion', 'sect-stonewright-consortium', 'house-anchorhold'],
         occupantOrdinal: 18,
         yearsDead: 12,
@@ -1915,6 +2804,16 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-the-culler-nobody-buried',
         kind: 'grave',
         name: 'A Culler On the Kettle Circuit',
+        character: 'open_ground',
+        origin: 'a_door_nobody_opened_again',
+        scale: 'one_room',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A man in a ditch with his contract still in his coat, three years there, reported twice by people who did not want the trouble of moving him. The village has a note of it and nothing else has happened.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing whatever, and the site is a hundred paces from a walked circuit. What has kept it is not danger and not concealment, it is that two separate people looked at a dead culler and decided he was somebody else\'s business.'
+        },
         factionIds: ['sect-verdant-spring-hall'],
         occupantOrdinal: 6,
         yearsDead: 3,
@@ -1988,6 +2887,16 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-the-collector-in-arrears',
         kind: 'grave',
         name: 'The Collector Who Was Made to Settle',
+        character: 'open_ground',
+        origin: 'fought_over_and_left',
+        scale: 'one_room',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 12,
+            whatIsDownThere: 'A dry watercourse with a body in it that has not gone the way a body goes, laid in order, with a brand cut across the front of the skull that repeats on a stone at the head of the channel.',
+            whatItDoesToSomebodyShortOfIt: 'Whatever was done to him is still being done, at the rate it has been done for as long as the channel has been dry, and a body below Foundation that lies down in that watercourse does not get up either. Nobody set this and nobody maintains it; it is a property of what happened here.'
+        },
         factionIds: ['house-tally-court', 'house-ninefold-ledger'],
         occupantOrdinal: 34,
         yearsDead: 2_280,
@@ -2070,6 +2979,17 @@ export const GRAVES: readonly Grave[] = [
         id: 'grave-the-count-that-outlived-him',
         kind: 'grave',
         name: 'The Glass Where the Count Stopped',
+        character: 'scar',
+        origin: 'what_the_catastrophe_made',
+        scale: 'a_compound',
+        intent: 'never_addressed',
+        access: {
+            admits: 'elders_and_above',
+            floorOrdinal: 34,
+            whyNobodyBelowComesBack: 'Four hundred paces of fen fused to green glass with the reeds still standing in it, and the depression is at the centre. The sheet does not repair and does not drain; what it does is charge for the crossing, both ways, at a rate the Bone Lantern Cult has priced every cycle for two centuries and declined every cycle.',
+            whoTheyGoFor: 'Whoever the crosser has already decided to leave things to, because the Cult\'s arithmetic is right and nobody makes this crossing for their own benefit.',
+            whatComesBackForThatPerson: 'Three objects, two of them warranted copies of arts nobody in the world holds a warranted copy of and nobody ever will again, because the only way to issue that warranty is to carry the thing to a boundary and lose.'
+        },
         factionIds: ['sect-bone-lantern-cult', 'house-ninefold-ledger'],
         occupantOrdinal: 42,
         yearsDead: 340,
@@ -2123,6 +3043,180 @@ export const GRAVES: readonly Grave[] = [
             ],
             whatTheDeathDidToTheContents: 'It took him and left the arithmetic. Everything he owned went except the two manuals and the rod, which is the short list the profile predicts and which happens here to be the two things he had spent a life buying and the object he had used to keep score with. Nobody in the world holds a warranted copy of either art and nobody ever will again, because the only way to issue that warranty is to carry the thing to a boundary and lose.',
             afterwards: 'The sheet does not repair and does not drain, and the glass will still be there when everybody currently arguing about who he was is dead. What comes off it comes off it once. The Bone Lantern Cult has had the site in its rotation for two centuries and has passed on it every cycle, on the stated ground that the crossing costs more than three objects are worth, which is the first time in four hundred years the Cult has been wrong about a piece of ground.'
+        }
+    },
+
+    // ── the shallowest sort, and the sort under a battle ──────────────
+    //
+    // Two entries that exist because the catalog had nothing at either
+    // end of the range. A border post is the sort of ruin that gets found
+    // first and is worth least, which is what the shallow end of a
+    // reserve actually looks like; a field where two houses stopped each
+    // other is the sort nobody built and nobody left, and it has an
+    // ordinary minimum with a hard number on it.
+    {
+        id: 'grave-the-post-at-the-upper-ford',
+        kind: 'grave',
+        name: 'The Border Post Above the Upper Ford',
+        character: 'waystation',
+        origin: 'overrun_at_work',
+        scale: 'a_building',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 0,
+            whatIsDownThere: 'A two-room post with a stove in it, a duty board on the wall and a man on the floor of the back room who was on his own watch when whatever happened happened. Nothing here was ever dangerous to anybody.',
+            whatItDoesToSomebodyShortOfIt: 'Nothing. This is the shallowest sort of site there is and it is the sort that gets found first, worked in an afternoon and written up as disappointing, which it is, and which is exactly what the easy end of the ground looks like.'
+        },
+        factionIds: ['house-measured-span'],
+        occupantOrdinal: 4,
+        yearsDead: 210,
+        mannerOfDeath: 'killed_in_a_fight',
+        burial: 'left_where_they_fell',
+        outside: {
+            marker: 'A two-room stone post above a ford, roof half on, with a stove in the front room and a duty board still nailed to the wall beside the door. The board has a week of watches chalked on it and the chalk is still legible under the overhang where the rain has never reached.',
+            rumour: 'The ford villages know there is a body in the back room and have known for as long as anybody has been alive. Nobody has moved him and nobody has taken the stove, which is a good stove, on the general principle that you do not take things out of a room with a man in it.',
+            attributedTo: 'The relay house that kept the crossing before the present one did',
+            lastPartySaid: 'A carter looked in about thirty years ago to get out of the weather, saw the back room, and went and stood in the rain instead.',
+            whatAKnowledgeablePartyReads: 'A duty board with a week chalked on it and a man in the back room is a post that was overrun between one watch and the next, and a post that was overrun is a post whose day book was never squared off. The chalk on the board names four people, three of whom are not in the relay house\'s roll for that year, and that is the whole of what this site is worth.',
+            whatAnIgnorantPartyConcludes: 'That it is a shack with a corpse in it, which is precisely what it is. Every party that has looked at this post has correctly valued the stove, correctly valued the body, and gone away, and the valuation is right by every measure except the one nobody applies to a border post.',
+            startingAwareness: 'named',
+            advertisedOrdinal: null
+        },
+        interior: {
+            scene: 'Two rooms. The front one has the stove, a table, and the duty board by the door with a week of watches on it in three different hands. The back room has a bed frame, a chest with the lid up, and a man on the floor between them who was reaching for something on the far side of the chest and did not get there. What he was reaching for is still on the far side of the chest and is the only thing in the post that was not standard issue.',
+            arrangedForAFinder: false,
+            gates: [],
+            gateOrigin: 'none',
+            contents: [
+                {
+                    what: 'The duty board off the wall, with a week of watches on it in three hands, naming four people of whom three are not in the relay house\'s roll for that year.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'A standard-issue post sabre, notched, of the pattern the relay houses issued for two centuries and stopped issuing when the pattern was found to bend.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'A stove of the good sort, cast rather than built, which is worth more than everything else in the post together and is the thing every visitor has priced.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'A chest of ordinary post kit: blankets, a spare coat, a tally of what came over the ford, and four months of a wage nobody collected.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'The thing on the far side of the chest that he was reaching for, which is a courier\'s seal from a house that had no business being on that road, unbroken.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                }
+            ],
+            whatTheDeathDidToTheContents: 'Nothing at all, which is the whole profile for a death that is not a tribulation: he was killed on his own floor by somebody who took nothing, so the post is a complete inventory of what a border post held on an ordinary week, untested by anything and worth about what it looks like. The one item that matters is the one he died reaching for, and it is worth what it is worth because of where it was rather than what it is.',
+            afterwards: 'Somebody takes the stove, eventually, and the post becomes two rooms with a bed frame in them. Nothing regenerates and nothing was ever going to; this is a site that is used up in an afternoon and stays used up, and a world that only had sites like this one would have run out of them centuries ago.'
+        }
+    },
+    {
+        id: 'grave-the-field-where-both-of-them-stopped',
+        kind: 'grave',
+        name: 'The Field Where Both Houses Stopped',
+        character: 'battlefield',
+        origin: 'fought_over_and_left',
+        scale: 'a_mountain',
+        intent: 'never_addressed',
+        access: {
+            admits: 'anyone_who_survives_it',
+            floorOrdinal: 21,
+            whatIsDownThere: 'About a mile of ground that two houses spent a day on, with what they were carrying still in it and the formation both of them were standing inside still holding at the setting it was left at.',
+            whatItDoesToSomebodyShortOfIt: 'The array is still up and it is still doing to anything inside it what it was doing to them, which was designed to hold a Nascent Soul cultivator in place long enough to be reached. Below that it does not hold, it stops: nine of the eleven bodies added to the field since the battle are people who walked in under it.'
+        },
+        factionIds: ['house-anchorhold', 'house-girdle-of-nine-stones'],
+        occupantOrdinal: 23,
+        yearsDead: 340,
+        mannerOfDeath: 'duel',
+        burial: 'left_where_they_fell',
+        outside: {
+            marker: 'A mile of open field with the crop line going round it rather than through it, and a scatter of low mounds across the middle that nobody has raised and nobody has levelled. Standing at the edge, the air over the field is very slightly slower than the air at the edge, and it has been for three hundred years.',
+            rumour: 'The farms either side both say the field is bad ground and both give a different reason. One says a battle, which is right. The other says the ploughing turns things up, which is also right and is the more useful of the two.',
+            attributedTo: 'Two houses that ended a boundary argument on it and each other with it',
+            lastPartySaid: 'A salvage party of six went in eleven years ago at Foundation and Core Formation. Two came back to the edge. Their account is that the field got heavier as they went and that they could not turn round.',
+            whatAKnowledgeablePartyReads: 'That air moving slower over a field than beside it is an array holding rather than weather, and that an array which has held for three hundred and forty years is an array both sides were standing inside when it stopped mattering to either of them. The mounds are where the holding worked. The crop line going round is four generations of farmers agreeing about something without ever writing it down.',
+            whatAnIgnorantPartyConcludes: 'That an old battlefield with the finds still in it is the easiest money in the province, which it would be, and that three hundred years of nobody clearing it means three hundred years of nobody bothering. Eleven parties have gone in on that reasoning and nine of them are among the mounds now, which the farms either side both know and neither mentions.',
+            startingAwareness: 'named',
+            advertisedOrdinal: 21
+        },
+        interior: {
+            scene: 'A mile of field with the grass grown normally over everything and the ground under it holding what two houses were carrying on the day. There are no chambers, no doors and nothing arranged: the array is a lattice laid across the whole of it by one side and answered across the whole of it by the other, and the two of them have been holding against each other since before anybody now farming here was born. Walking into it is walking into a room with no walls and a ceiling that comes down.',
+            arrangedForAFinder: false,
+            gates: [
+                {
+                    kind: 'strength',
+                    ordinal: 21,
+                    test: 'The lattice reads a body crossing it and closes on it at the weight it was set to hold a Nascent Soul opponent at, which is what both houses were fielding and is therefore what both of them calibrated against. It does not escalate and it does not choose; it applies the same holding to a farmer, to a salvage crew and to a Deity Transformation cultivator, and only the third of those can walk out of it.',
+                    below: 'Below Nascent Soul the holding is not a hindrance, it is the end of the trip. The party gets progressively further in because the lattice is denser toward the middle, discovers at about the halfway point that turning round is a separate problem from walking, and joins the mounds. Nine of the eleven post-battle bodies in the field arrived exactly this way.',
+                    noWorkaround: 'There is nothing to disarm. The two arrays are answering each other rather than answering the ground, so cutting either one releases the other at full strength across the whole mile, and the one recorded attempt to do that is why there is a strip along the eastern edge where the crop still will not take.'
+                }
+            ],
+            gateOrigin: 'accreted',
+            contents: [
+                {
+                    what: 'The field-weight equipment of two houses, scattered across a mile: blades, braces, carried nodes and the harness a formation crew wears, in the ground where it fell.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'The Girdle\'s lattice, entire, still running, which is the only complete example of that house\'s field work standing anywhere and is readable by anybody who can stand inside it long enough to read.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'The Anchorhold\'s answer to it, laid across the same ground on the same day by people who were reading it live, which is a document about what the Anchorhold understood of the Girdle at the moment the two of them stopped talking.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'Two sets of house marks on the same field, which settles a boundary question both surviving houses still argue about and settles it against the account both of them give.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'Eleven later bodies among the mounds, with eleven parties\' worth of equipment on them, which is a running record of who has tried this field and what they thought they needed.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                },
+                {
+                    what: 'A carried node of the Girdle pattern, cracked but not spent, lying about two hundred paces in from the western edge where somebody dropped it running.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: null,
+                    immortalItemId: null
+                }
+            ],
+            whatTheDeathDidToTheContents: 'Nothing removed anything. Two houses stopped each other in a field and neither of them was in a condition afterwards to come back and collect, so everything either side carried onto that ground is still on it, untested by anything except three hundred and forty winters. It is a long inventory of good equipment and not one item of it has a warranty on it, which is the ordinary case and is why a party that reads the field as loot is reading it correctly and pricing it wrongly.',
+            afterwards: 'The lattice keeps holding, because nothing that has happened since has been the sort of thing that stops an array both halves of which are being maintained by each other. A party that takes equipment out has taken equipment out; the field is the same field the next morning and will hold the next party at the same weight. This site does not empty and does not need to be found twice.'
         }
     }
 ];
