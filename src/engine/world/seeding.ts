@@ -95,6 +95,7 @@ import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
 import { seedArtifacts } from './artifact-placement.js';
 import { seedComprehensionMaterials } from './single-use-dao-comprehension-materials.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
+import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
     createWorld,
     makeFaction,
@@ -259,6 +260,10 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // in a document. Two shapes, one threshold - see
     // `where-the-pills-actually-are.ts`.
     state.objects.push(...seedPillStock(state));
+    // And the medicine that mends a cracked cultivator, which is placed rather
+    // than scattered: exactly the authored holdings, on exactly those bodies,
+    // and nowhere else. See `who-holds-the-structural-repair-medicine.ts`.
+    state.objects.push(...seedStructuralRepairMedicine(state));
     const npcAt = new Map(state.npcs.map((n, i) => [n.id, i]));
     for (const grant of grantBooksToMembers(state)) {
         const at = npcAt.get(grant.npcId);
