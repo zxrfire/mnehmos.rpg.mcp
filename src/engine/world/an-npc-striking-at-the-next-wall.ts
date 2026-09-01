@@ -107,8 +107,11 @@ import {
     stagnationYearsForOrdinal,
     type AmbientQi,
     type BreakthroughResult,
+    InsightDomainSchema,
     type FoundationQuality,
-    type Injury
+    type Injury,
+    type Insight,
+    type InsightDomain
 } from '../../schema/cultivation.js';
 import {
     LAST_CROSSING_ORDINAL,
@@ -117,6 +120,7 @@ import {
 } from '../cultivation/realms.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
 import { clearBrokenStatus } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
+import { getTechnique } from '../../data/cultivation/techniques.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import { carryingWounds, setRealm, woundsCarriedBy, type NpcRecord } from './npc-state.js';
 
@@ -163,6 +167,68 @@ export function guideOrdinalFor(
     const master = livingById.get(masterId);
     if (!master || master.status !== 'alive') return null;
     return master.cultivation.realmOrdinal;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ROADS BESIDES THEIR OWN
+//
+// `canAttemptBreakthrough` reads `roadsWalked(cultivator.insights)` for the dao
+// gate, and an NPC record has no insight list - so a subject built without one
+// answers ZERO roads walked, at every rung, forever. While `DAO_GATE_FROM_ORDINAL`
+// sat above the ladder that cost nothing. The moment the gate comes down onto
+// Nascent Soul it would stop every NPC in the world crossing ordinal 21 while
+// leaving the player untouched, which is precisely the world-binds-NPCs-and-not-
+// the-player split this repo keeps finding, running the other way.
+//
+// THE ROADS YOU HAVE WALKED ARE THE ROADS IN YOUR HANDS. Nothing is invented
+// and no new state is stored: every technique in the catalog already declares a
+// `domain`, drawn from the same `InsightDomain` enum an insight uses, and an
+// NPC's `techniqueIds` is what they have spent a life practising. Somebody
+// holding a sword canon and a formation canon has stepped onto two roads
+// besides their own, and the record already said so.
+//
+// Degree is deliberately the shallowest. `roadsWalked` does not read degree at
+// all - it asks how many roads have been stepped onto, not how far along any of
+// them anybody has got - so the domain is the load-bearing part, and claiming
+// depth the world has not modelled would quietly hand every NPC an odds bonus
+// through `understandingEffects` that no event in their life paid for.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Domains a technique can teach, other than the one a root supplies unaided. */
+const TAUGHT_DOMAINS: ReadonlySet<string> = new Set(
+    InsightDomainSchema.options.filter(d => d !== 'element')
+);
+
+/**
+ * The comprehension an NPC's practice actually amounts to.
+ *
+ * One insight per distinct domain among the arts and roads they hold, at the
+ * shallowest degree, with provenance naming the technique it came out of - so
+ * an insight here is still traceable to an event, which is the rule
+ * `InsightProvenance` exists to enforce.
+ */
+export function roadsWalkedBy(npc: NpcRecord): Insight[] {
+    const byDomain = new Map<InsightDomain, string>();
+    for (const id of npc.cultivation.techniqueIds) {
+        const t = getTechnique(id) as { domain?: string | null } | undefined;
+        const domain = t?.domain ?? null;
+        if (domain === null || !TAUGHT_DOMAINS.has(domain)) continue;
+        if (!byDomain.has(domain as InsightDomain)) byDomain.set(domain as InsightDomain, id);
+    }
+    const bornOn = Math.max(0, npc.identity.bornOnDay);
+    return [...byDomain].map(([domain, techniqueId]) => ({
+        id: `${npc.id}-practised-${techniqueId}`,
+        domain,
+        subject: techniqueId,
+        degree: 1 as const,
+        provenance: {
+            achievementId: `${npc.id}-practised-${techniqueId}`,
+            achievementKind: 'extraordinary_instruction' as const,
+            onDay: bornOn,
+            deepenedBy: [],
+            account: `Practised ${techniqueId} for long enough that it taught them something.`
+        }
+    }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -341,6 +407,10 @@ export function strikeAtTheWall(
     const injuries = woundsCarriedBy(npc);
     const subject = {
         realmOrdinal: ordinal,
+        // The dao gate reads this. See THE ROADS BESIDES THEIR OWN - without it
+        // every NPC in the world answers zero roads walked and stops at the
+        // first rung the gate covers, while the player is unaffected.
+        insights: roadsWalkedBy(npc),
         // They stood here until they had it. That is what `readyToStrike`
         // measured, and handing the requirement over is the same accounting
         // `deriveLife` does when it charges the years and then rolls.
