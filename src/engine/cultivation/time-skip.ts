@@ -1188,9 +1188,27 @@ export function simulateTimeSkip(
                     interruptReason = 'lethal_injury_threshold';
                     push(
                         'bleeding_warning',
+                        // NAMES THE CURE, because the cure exists and is cheap.
+                        //
+                        // Statistical playtesting: `untreated_injuries` is the
+                        // leading cause of death in this game - eleven of
+                        // eighteen sampled runs, median age at death 22. It is
+                        // not because nothing answers a torn meridian. A month
+                        // under a physician closes them, worst first, for about
+                        // five spirit stones a wound out of a starting purse of
+                        // thirty; the pill ladder does it faster.
+                        //
+                        // The warning said the wound was fatal and stopped
+                        // there, so the one sentence that reaches a player at
+                        // the moment they can still act named the blocker and
+                        // not the fix - the same defect as the technique
+                        // ceiling, and this is the condition that is actually
+                        // killing everybody.
                         `${untreatedInjuryCount(injuries)} untreated meridian injuries. Any further combat is fatal, ` +
-                        `and nothing heals them on their own: ${BLEED_OUT_TURNS - bleedingTurns} days of this ` +
-                        'and the meridians give out on their own.',
+                        `and nothing closes them on its own: ${BLEED_OUT_TURNS - bleedingTurns} days of this ` +
+                        'and the meridians give out. What does close them is a physician - a month ' +
+                        'of care in any settlement, worst wound first - or a healing pill, which is ' +
+                        'faster and dearer. Both have to be gone to.',
                         true,
                         {
                             untreated: untreatedInjuryCount(injuries),

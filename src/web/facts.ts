@@ -573,7 +573,16 @@ function timeSkipProse(
         );
     }
     if (untreated > 0) {
-        closing.push(`${untreated} meridian injur${untreated === 1 ? 'y is' : 'ies are'} still untreated, and nothing heals them on its own.`);
+        // Names the cure, for the same reason the bleed warning does: untreated
+        // meridian injuries are the leading cause of death in this game and a
+        // month under a physician closes them for a few stones a wound. The
+        // sentence that told a player their wound was permanent stopped one
+        // clause short of the sentence that saves the run.
+        closing.push(
+            `${untreated} meridian injur${untreated === 1 ? 'y is' : 'ies are'} still untreated, `
+            + 'and nothing closes them on its own. A month under a physician does, in any '
+            + 'settlement; a healing pill does it faster.'
+        );
     }
     // HP that came back, said out loud. Rest is a real answer to being hurt -
     // the design owner's ruling, after a cultivator with zero injuries and

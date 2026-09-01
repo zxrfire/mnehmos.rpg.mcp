@@ -3058,6 +3058,24 @@ export function parseIntent(input: string): PlannedAction {
     // The noun `market` is a place people stand in and steal from and talk
     // about. Asking to SEE the board is a different sentence, and it is
     // either a question about what things cost or a verb aimed at a stall.
+    // ── ASKING FOR A CATEGORY BY NAME ────────────────────────────────────
+    //
+    // "what pills are for sale" and "what medicine is for sale" both resolved
+    // into NOTHING, which matters more than it sounds: untreated meridian
+    // injuries are the leading cause of death in this game, the cure is on the
+    // board, and the two sentences a dying player types to find it were the two
+    // that did not work. `what is for sale` did work and then showed the eight
+    // cheapest lines, all of them mortal goods, so the pills were invisible on
+    // that route too.
+    //
+    // The category noun is left in the target on purpose: `GameService.market`
+    // matches it against MARKET_CATEGORIES and filters the board, which is the
+    // machinery that already existed and had no sentence pointing at it.
+    if (/\b(?:what|which|any)\b[^.?!]*\b(?:pills?|medicines?|elixirs?|remed(?:y|ies)|healing|cures?)\b[^.?!]*\b(?:for sale|on offer|are sold|is sold|do they sell|can i buy|are there|available|here)\b/.test(text)
+        || /\b(?:pill|medicine|apothecary|physician|healer)\b[^.?!]*\b(?:stall|shop|counter|board|prices?)\b/.test(text)) {
+        return { action: 'market', target: 'medicine' };
+    }
+
     if (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices?)\b/.test(text)
         || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|find|go to|look at|look over|head to|walk to')
             && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(text))) {
