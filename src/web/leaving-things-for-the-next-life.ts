@@ -1023,7 +1023,12 @@ export function vaultAsACache(
 
 /** What is being put aside, said in the ways a player says it. */
 export const LEGACY_NOUNS =
-    /\b(?:cache|caches|stash|hoard|deposit|deposits|strongbox|safekeeping|my (?:things|goods|possessions|stones|purse|pouch|wealth|savings|estate)|everything i (?:have|own|am carrying)|what i(?:'m| am)? carrying|for (?:the next life|whoever comes after|whoever comes next))\b/;
+    // `hoard` is deliberately absent. The Moving Hoard is a faction, so a bare
+    // `hoard` made "what do I have on the Moving Hoard" - a recall question
+    // about what somebody knows of a house - into a question about deposit
+    // counters. Caught by the parser coverage tests on the first integration.
+    // The other nouns here are not the names of anything in the catalog.
+    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|my (?:things|goods|possessions|stones|purse|pouch|wealth|savings|estate)|everything i (?:have|own|am carrying)|what i(?:'m| am)? carrying|for (?:the next life|whoever comes after|whoever comes next))\b/;
 
 /** Verbs that mean burying and nothing else, so they need no noun beside them. */
 export const LEGACY_BURY_VERBS_ALONE = 'bury|buries|burying|cache|caches|caching|inter|inters';
