@@ -1216,6 +1216,242 @@ is what people were short of. The apex is still not a procedural product - `seed
 and `seedFactionApex` instantiate it, for the reason stated in `seeding.ts` - and nothing
 here makes advancement easier at any rung.
 
+## The world produces its upper ladder rather than inheriting it
+
+The section above ends with "the apex is still not a procedural product", and that
+sentence stopped being acceptable the moment somebody asked where the giants come from
+after the seeded ones are gone. This section is the answer, and it is three changes.
+
+### 1. The world never rolled a breakthrough
+
+`applyAdvancement` advanced NPCs with `deriveOrdinal`, and its own comment said what that
+is: *not a behaviour model - the same closed-form derivation seeding uses*. A derivation
+answers "given this talent and this age, where would somebody plausibly be", and used as
+a progression rule it has three properties that between them decided the shape of the
+whole world. **It only rises**, so nobody had ever got worse at cultivating. **It never
+hurts**, so no failure, no wound and no death at a wall - the entire tribulation-and-wounds
+layer was unreachable from the world. And **it saturates**, because it walks one life
+against one lifespan and stops where that life stops, however many centuries the person
+then lives. An ordinal 33 with five thousand years of span whose walk finished at age
+three hundred had forty-seven centuries the derivation never priced.
+
+`attemptBreakthrough` was called only by measurement code. Now, when the derivation has
+nothing further to give and the person is still below what their book and their province
+permit, the world strikes at the wall for real - same odds, same failure table, same
+boundary trial, same wounds, same death. See `an-npc-striking-at-the-next-wall.ts`.
+
+**A rung has two clocks and they are not the same clock.** `lastAdvancedOnDay` is the
+settling clock: how long somebody has been stuck here at all, and a plateau longer than
+the realm allows ends the climb permanently. `accumulatingSinceDay` is how much of the
+next rung's requirement they are holding. A failed crossing burns progress, so it moves
+the second and leaves the first alone. Without the distinction a failure at a high rung
+costs nothing but a review cycle and somebody who reached the wall once strikes at it
+every twelve years until it opens, which turns a thousand-year crossing into a formality.
+
+**The last crossing is not this pass's.** `applyLastCrossing` owns ordinal 44 and runs it
+on the clock the crossing actually takes. Left unguarded the strike pass reached it every
+eight hundred years or so, forty times too often, and it emptied the apex: measured over
+five thousand years without the guard, both seeded Tribulation Transcendence figures were
+gone and the world's ceiling stood at 38.
+
+### 2. Nobody stands above their own book, including the apex
+
+`manualCeilingOf` is a hard stop for every cultivator in the world and the people the
+catalogs place at the top were exempt from it, because a house's shelf is not what its
+patriarch cultivates. Measured at seeding, the mean book held by the world's Tribulation
+Transcendence figures capped at **ordinal 11.5**. Two people at 44 practising a canon that
+runs out at 11 is not somebody anybody can believe in, and it is the whole reason the apex
+could teach nothing: nothing it held reached itself.
+
+`roadThatCarriedThemHere` reconstructs the missing fact rather than granting a favour -
+the lowest-capping manual in the ordinary catalog that reaches where they already stand,
+by the same four filters `roadTheyFound` uses.
+
+### 3. A master writes it out for the people behind them
+
+The designer's mechanism, and it was half-built: `canReproduce` has always said who may
+write a book out, and nothing called it. So a library could only shrink - `faction_fell`
+takes shelves out of circulation, `technique_lost` takes the last living holder of an art
+out of the world, and no pass put one back. `applyManualCopying` is the pass.
+
+It is the apex mechanism and not a flavour pass. The catalog holds one cultivation manual
+carrying to ordinal 41 and three carrying to 45, and the deepest shelf in the world stops
+at 37 - so before this the only route from Grand Ascension to Tribulation Transcendence
+anywhere in the simulation was `applyFoundRoads`, a one-in-nine-hundred yearly roll halved
+for every realm above Foundation. Luck alone, with nobody teaching anybody anything, which
+is exactly the case the designer says should be almost impossible. The other half of that
+sentence had no implementation, because there was nothing for anybody to be shown.
+
+### Transmission is the axis, and all three of its terms were already in the engine
+
+| Term | Where it lives | What it decides |
+|---|---|---|
+| the book | `reachableCeilingFor` | a hard stop. Reaching 41 needs a book that carries there, and those sit on four shelves in the world |
+| the master | `guidanceMultiplier`, read off the `master` tie `applyTeachingLines` writes | up to half again on the rate, and only from somebody standing above you |
+| the clock | `yearsNeeded` against `stagnationYearsForOrdinal` | whether the rung fits inside the realm's allowance at all |
+
+Half again on the rate is the difference between arriving at the wall and settling one
+rung short of it, which is why a master decides outcomes here rather than merely speeding
+things up.
+
+### The measurement
+
+One seed, before and after, same machine, `scripts/probe-does-the-world-produce-its-apex.ts`.
+The parenthesised figure is how many of that count **arrived** rather than being placed
+there at seeding, which is the number a headcount cannot see.
+
+```text
+                 above 29        above 33       above 37   at 41+   wounded  halted
+  before  5,000y  12 (10)         8 (6)          3 (2)      1 (0)    0        0
+          10,000y 14 (12)         7 (5)          3 (2)      1 (0)    0        0
+  after   5,000y  20 (19)        10 (9)          1 (0)      1 (0)   59      1-4
+          10,000y 28 (27)        15 (14)         3 (2)      1 (0)   48      1-4
+```
+
+The upper middle of the ladder roughly doubles and is now almost entirely arrivals. The
+apex itself does not move: **1 to 2 people at 41+, and none of them arrived there**, which
+is the same figure before and after and is the honest state of it - see the absence
+recorded below.
+
+**The wounds are the point, not a side effect.** A real wall produces real failures, and
+the wounds layer is what a failure leaves, so the world getting more broken is wanted.
+Broken statuses now appear on NPCs - `unformed-nascent-soul`, `damaged-spirit-sense`,
+`cracked-core` have all been observed on living people - and one to four cultivators at
+any time are carrying `ruined-dantian`. That is the population the setting most wanted and
+could not produce.
+
+They are not frozen. `canAttemptBreakthrough` applies the structural gate **only at a
+realm boundary**, so a halted cultivator keeps climbing sub-ranks inside the realm they
+are standing in and roughly doubles in strength across it. What they cannot do is leave
+it. A long life at a rung, getting steadily stronger and going nowhere, is a different and
+better thing than a corpse on the settling clock.
+
+**Two reconciliations with the crossing taxonomy, both deliberate.** The five outcomes the
+design states are written down as `CROSSING_RESULTS` with `classifyCrossingResult`; the
+world layer does not read the taxonomy because it does not narrate, it applies deltas, and
+`success` / `death` mean the same thing under both namings while `arrivedBroken` and
+`crossing.halted` are read separately.
+
+And `FAILURE_PROGRESS_LOSS` was left alone. The design says a failure loses the qi
+outright; the engine takes 25/50/75% by severity. Flipping it to a total loss was measured
+rather than argued about, over 3,000 lives per band on three seeds:
+
+```text
+                   Foundation   Core    Nascent  Deity   Void      Grand
+  25/50/75%  dense    44-46%     18.0%    7.3%    2.4-2.8% 0.5-0.8%  0.03-0.07%
+  total      dense    38-39%     14.3%    5.7%    1.8-2.3% 0.5-0.6%  0.03-0.07%
+  25/50/75%  normal   14.4%       3.7%    0.9%    0.27%
+  total      normal   10.5%       2.7%    0.6%    0.18%
+```
+
+It costs the BOTTOM of the ladder a quarter of its throughput and does not move the top at
+all - the origin sweep's share reaching ordinal 41 went 0.462% to 0.457%. The reason is
+structural: at a high rung the limit is the settling allowance's total span rather than
+the number of attempts that fit in it. So it is not a lever for making the apex harder,
+which is what it would have been reached for. It is a global balance change to every
+ordinary cultivator's life including the player's, and it belongs to the design owner.
+
+**Cost.** 0.97 seconds per simulated century at 500 years and 4.6 at 5,000, against 0.61
+and 3.95 before. The growth with horizon is the world's own accumulated history and object
+table rather than this pass, and it is present in both columns.
+
+### The dao gate would freeze this world, and that is measured rather than feared
+
+`canAttemptBreakthrough` reads `roadsWalked(cultivator.insights)`, and an NPC record has no
+insight list - so a subject built without one answers ZERO roads walked at every rung
+forever. While `DAO_GATE_FROM_ORDINAL` sits above the ladder that costs nothing. The
+moment it comes down onto Nascent Soul it stops every NPC in the world crossing while
+leaving the player untouched, which is the world-binds-NPCs-and-not-the-player split this
+repo keeps finding, running the other way.
+
+`roadsWalkedBy` closes the categorical half of it without inventing state: **the roads you
+have walked are the roads in your hands.** Every technique in the catalog already declares
+a `domain` drawn from the same enum an insight uses, and `techniqueIds` is what an NPC has
+spent a life practising. Degree is the shallowest, because `roadsWalked` does not read
+degree and claiming depth the world never modelled would hand every NPC an odds bonus no
+event in their life paid for.
+
+**It is not enough, and the numbers say by how much.** One seed at 1,500 years, roads
+actually held against what the curve asks at the wall out of each band:
+
+```text
+  band            people   mean roads   needed at the wall   would pass
+  Core 17-20          28         1.18            1             28 / 28
+  Nascent 21-24       20         1.30            2              5 / 20
+  Deity 25-28          7         1.86            3              0 / 7
+  Void 29-32           2         2.50            4              0 / 2
+  Body 33-36           3         2.00            5              0 / 3
+  Grand 37-40          1         3.00            6              0 / 1
+```
+
+An NPC holds one road and a couple of arts, so two or three domains is the ceiling of what
+practice alone supplies, and the curve wants six by Grand Ascension. Switched on as it
+stands, nothing in the world would ever cross ordinal 28 again.
+
+The missing half is that a player accumulates comprehension from EVENTS - a ruin, a
+phenomenon, a teacher who did not have to, nearly not being. The world runs all four of
+those and none of them writes an insight, because there is nowhere to write one. That is
+the same shape as the wound gap this section opened with, and it wants the same answer: a
+stored list on the record and a pass that fills it from what the world already does. It is
+its own piece of work and it is not done here.
+
+### Two things this does not fix, written down so they are not mistaken for design
+
+**The world produces a Tribulation Transcender about once in several thousand years, and
+counting the band at 41-44 hides it.** Two things had to be measured properly before that
+sentence could be written, and both had been getting the answer wrong.
+
+The first is that crossing the Lid REMOVES somebody from the band by succeeding. A count
+that stops at ordinal 44 reads a graduation as a failure to produce. Measured over four
+seeds at 5,000 years, counting 41-44, 45 and 46 separately:
+
+```text
+  seed   standing 41-44   at 45   at 46   ever at 41+   of whom arrived
+   a          2 (1 new)      0       0         3               1
+   b          1 (0)          0       0         2               0
+   c          0              1       0         2               0
+   d          1 (1 new)      1       0         3               1
+```
+
+So two of four seeds produced somebody at the apex who was not placed there, and two hold
+a False Immortal at ordinal 45 that a 41-44 count reports as an empty band. That is
+roughly one arrival per world per five thousand years, which is the "one in a generation
+unaided" rarity the design asks for, on the harsh side of it.
+
+The gate is `heaven-conversing-primordial-canon`, the only manual in the catalog carrying
+from ordinal 37 to 41, which sits on no house's `teaches` list. A house acquires it only
+when somebody already at 38 or above writes it out, so the road to the top exists in the
+world exactly as long as somebody who walked it is alive to reproduce it. That is a
+legible, self-limiting reason for the Late Age rather than a defect - but it does mean the
+apex is one death away from closing, and it is worth a designer's eye.
+
+**What ends somebody at the top, and whether the world can name it.** The design's rule is
+that nothing ORDINARY may kill a Tribulation Transcender - a sect war, a conspiracy, a
+chosen sacrifice or the tribulation itself, and not attrition. Measured across four seeds
+at 5,000 years, every apex death the world produced was one of two things: killed by a
+named person (the killing template already refuses a killer more than
+`CASUAL_KILL_MAX_GAP` rungs below, so the killer is a peer rather than a pool), or a
+tribulation they called down and could not hold - ordinals 40 to 44 summon lightning at
+every step, so a death at a wall there IS the tribulation. The world can also express
+institutional violence and does: `Killed when the Azure Mist Court came` accounts for a
+tenth of deaths at 29 and above. What it cannot currently express is a conspiracy or a
+chosen sacrifice, and that is an absence rather than a gap to fill quietly.
+
+Below the apex the picture is different and worth a look. Across 69 deaths at 29+ on one
+seed over 5,000 years: 12 of age, 25 killed by a named peer, 9 in a house coming for
+another house, 5 of an old wound, 4 of a breakthrough that did not hold, 3 at a wall. That
+is not a pool - every one of those has a name or a cause - but the share dying of age at a
+rung whose span is thousands of years is worth someone checking.
+
+**Nothing in the engine reproduces a house's ARTS.** Splitting the "distinct books held by
+the living" measure into roads and arts corrects an earlier finding: the collapse from 68
+to 13 is almost entirely arts. Cultivation roads hold at 13-17 across five thousand years
+both before and after this change. House arts go 58 to zero by year 5,000 in both columns,
+because `newlyEntitled` hands out roads only and `artsOf` reads a static catalog list keyed
+on a house somebody wrote by hand - so a founded house has none and never will, and a
+catalog house's arts die with the last person who was granted them. Copying does not reach
+them: `canReproduce` defines mastery as standing at the manual's `cap` and an art has none.
+
 ## Reading order
 
 ```text
