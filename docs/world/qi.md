@@ -132,7 +132,28 @@ themselves, the four innate attributes, and what each draw actually costs are in
 [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md).
 
 The point that belongs to the world rather than to the engine: **talent is not earned,
-cannot be improved, and decides nearly everything.** The overwhelming majority of people
+cannot be improved, and is the largest single thing you are handed - about a third of the
+story, and not more than that.**
+
+That sentence used to read "decides nearly everything", and the measurement does not
+support it. Over 720,000 birth-weighted lives through `simulateLife`, the share of
+variance in how far a life gets:
+
+| Factor | Share | |
+|---|---|---|
+| spirit root | 29% | dealt at birth |
+| foundation quality | 25% | earned in the life |
+| depth of what was comprehended | 22% | earned in the life |
+| Insight | 10% | dealt at birth |
+| origin tier | 0.8% | dealt at birth |
+| Fortune | 0% | dealt at birth |
+
+So the root is the biggest single term and it is not most of the answer: the foundation
+you establish and how deeply you comprehend anything are together worth more, and both are
+things that happen after you are born. A root sets the ceiling on the climb rather than
+walking it for you.
+
+What does not change is the shape of the population. The overwhelming majority of people
 who ever try to cultivate draw a muddled root, get nowhere, and die at eighty having spent
 their lives on it anyway. A player who draws a muddled root in a poor region has drawn the
 real experience of this world.

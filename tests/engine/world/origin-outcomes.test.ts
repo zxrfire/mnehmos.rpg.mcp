@@ -31,33 +31,51 @@ const row = (key: string) => report.rows.find(r => r.origin === key)!;
 
 describe('privilege is visible in the opening position', () => {
     it('gives strictly more of every input as the tiers climb', () => {
-        const positions = ORIGIN_TIERS.map(t => openingPosition(t.key));
+        // THE LADDER IS THE COMMON ROWS. The last three are three routes into
+        // privilege rather than three heights of it, and they are deliberately
+        // not ordered against one another: an apex sect member's child is
+        // rarer than a Dao house's blood and holds less of everything except
+        // the one thing that transfers, which is the word their parent can
+        // spend. Asserting a chain across them would put back the single
+        // `great_house` row the split removed.
+        const positions = ORIGIN_TIERS.slice(0, -3).map(t => openingPosition(t.key));
         for (let i = 1; i < positions.length; i++) {
             expect(positions[i].spiritStones).toBeGreaterThan(positions[i - 1].spiritStones);
             expect(positions[i].provisionedYears).toBeGreaterThan(positions[i - 1].provisionedYears);
             expect(positions[i].placementReach).toBeGreaterThanOrEqual(positions[i - 1].placementReach);
             expect(positions[i].vouchers).toBeGreaterThanOrEqual(positions[i - 1].vouchers);
         }
+
+        // Every route is above every rung of that ladder on the inputs the
+        // ladder is measured in, and none of them reaches down into it.
+        const top = positions[positions.length - 1];
+        for (const tier of ORIGIN_TIERS.slice(-3)) {
+            const route = openingPosition(tier.key);
+            expect(route.spiritStones, `${tier.key}`).toBeGreaterThan(top.spiritStones);
+            expect(route.provisionedYears, `${tier.key}`).toBeGreaterThan(top.provisionedYears);
+            expect(route.placementReach, `${tier.key}`).toBeGreaterThanOrEqual(top.placementReach);
+        }
+
         // And the two ends of it are not close.
-        expect(positions[positions.length - 1].spiritStones)
+        expect(openingPosition('dao_house_bloodline').spiritStones)
             .toBeGreaterThan(positions[0].spiritStones * 100);
     });
 });
 
 describe('and most people born to enormous advantage still fail', () => {
-    it('leaves the overwhelming majority of great-house children short of Core Formation', () => {
-        expect(row('great_house').reachedAtLeast[21]).toBeLessThan(0.05);
+    it('leaves the overwhelming majority of Dao house children short of Core Formation', () => {
+        expect(row('dao_house_bloodline').reachedAtLeast[21]).toBeLessThan(0.05);
     });
 
     it('ends the great majority of privileged lives on a clock, not at the top', () => {
-        const ends = row('great_house').ends;
-        const n = row('great_house').sampleSize;
+        const ends = row('dao_house_bloodline').ends;
+        const n = row('dao_house_bloodline').sampleSize;
         expect((ends.settling + ends.lifespan) / n).toBeGreaterThan(0.5);
         expect(ends.summit / n).toBeLessThan(0.01);
     });
 
-    it('does not stop a great-house child dying in a ruin like anybody else', () => {
-        expect(row('great_house').ends.died_in_a_ruin).toBeGreaterThan(0);
+    it('does not stop a Dao house child dying in a ruin like anybody else', () => {
+        expect(row('dao_house_bloodline').ends.died_in_a_ruin).toBeGreaterThan(0);
     });
 });
 
@@ -114,15 +132,44 @@ describe('the last realm is reachable, and only as a conjunction', () => {
         // ruin entered more than once.
         let found = 0;
         for (let i = 0; i < 30_000 && found < 1; i++) {
-            const life = simulateLife('conjunction', i, 'great_house');
+            const life = simulateLife('conjunction', i, 'dao_house_bloodline');
             if (life.peakOrdinal < 45) continue;
             found++;
             expect(life.foundVein, 'reached the last realm without a vein').toBe(true);
             expect(life.ruinsEntered).toBeGreaterThan(0);
             expect(life.degreeTotal).toBeGreaterThan(20);
-            expect(life.end).toBe('summit');
+            // Either landing of the last crossing satisfies the conjunction -
+            // the terms above are what it takes to STAND at 44 with the price
+            // paid, and the completion roll afterwards is a separate question.
+            // Asserting 'summit' here was only ever passing because the False
+            // Immortal landing was being discarded; see the header of
+            // `origin-odds.ts`.
+            expect(['summit', 'false_immortal']).toContain(life.end);
+            expect(life.immortalStatus).not.toBe('none');
         }
         expect(found, 'the last realm was not reachable at all').toBe(1);
+    });
+
+    it('lands False Immortal more often than True, which is what the Lid does', () => {
+        // `MAX_COMPLETION_CHANCE` is 0.25, so most crossings that survive the
+        // tribulation do not complete. This is a regression test for a harness
+        // defect that silently rerolled the crossing until it came up True:
+        // over 1.2M lives it produced 58 False Immortal results at ordinal 44
+        // and reported ZERO lives ending at ordinal 45.
+        let falseImmortals = 0;
+        let trueImmortals = 0;
+        for (let i = 0; i < 60_000; i++) {
+            const life = simulateLife('landings', i, 'dao_house_bloodline');
+            if (life.end === 'false_immortal') falseImmortals++;
+            if (life.end === 'summit') trueImmortals++;
+        }
+        expect(
+            falseImmortals,
+            'no crossing landed False Immortal - the outcome is being dropped again'
+        ).toBeGreaterThan(0);
+        expect(falseImmortals + trueImmortals).toBeGreaterThan(0);
+        // Every life ending at 45 must actually be recorded as standing there.
+        expect(falseImmortals).toBeGreaterThanOrEqual(trueImmortals);
     });
 
     it('is not closed to a farmer, only far narrower', () => {
@@ -160,7 +207,7 @@ describe('the harness itself', () => {
         // Two tiers at the same index must not be the same life with a
         // different label; the origin is part of the stream coordinate.
         const poor = simulateLife('independence', 7, 'thin_county');
-        const rich = simulateLife('independence', 7, 'great_house');
+        const rich = simulateLife('independence', 7, 'dao_house_bloodline');
         expect(poor).not.toEqual(rich);
     });
 });
