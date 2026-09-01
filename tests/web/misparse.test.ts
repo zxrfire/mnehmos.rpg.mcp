@@ -2813,3 +2813,61 @@ describe('a site can be named the way the game named it', () => {
         expect(parseIntent('I go into The Gate Frame With No Gate In It').action).toBe('site');
     });
 });
+
+describe('the plainest things a player says', () => {
+    /**
+     * A sweep of forty sentences somebody would actually type found
+     * twenty-two that reached nothing at all. These are the ones with an
+     * unambiguous destination; the rest are recorded in the session notes as
+     * open, because guessing where "I bow" or "what is the news" should go is
+     * how a parser acquires rules nobody wanted.
+     *
+     * The pattern is the same one this file already documents: a near-synonym
+     * worked the whole time. "I practise the manual" was understood and "I
+     * practise" was not, because the rule demanded a noun. A cultivator with
+     * one art and nothing else to do says "I train".
+     */
+    const ROUTES: [string, ActionName][] = [
+        // Practising what you already know, said bare.
+        ['I train', 'train_technique'],
+        ['I practise', 'train_technique'],
+        ['I drill', 'train_technique'],
+        ['I spar', 'train_technique'],
+        // `book` was not among the nouns, which is the commonest word for it.
+        ['I read my book', 'train_technique'],
+        ['I practise the manual', 'train_technique'],
+        // NOT here: "I study my manual" and "I read my manual", which route to
+        // `learn_technique` because `manual` is one of its nouns. That is
+        // defensible and the handler answers it well - "already known, use
+        // practise to raise mastery" - so it is left alone rather than fought
+        // over. `book` is the word that had no route at all.
+
+        // Your own sheet.
+        ['how old am I', 'status'],
+        ['what do I own', 'status'],
+
+        // The question a player who does not know the vocabulary asks first.
+        ['how do I get stronger', 'ceiling'],
+        ['what should I do', 'ceiling'],
+        ['what is stopping me', 'ceiling']
+    ];
+
+    for (const [said, action] of ROUTES) {
+        it(`routes "${said}" to ${action}`, () => {
+            expect(parseIntent(said).action).toBe(action);
+        });
+    }
+
+    /**
+     * The bare-verb rule is anchored to the end of the sentence, so a longer
+     * sentence that merely contains the word keeps its own meaning.
+     */
+    it('does not let a bare verb swallow a longer sentence', () => {
+        expect(parseIntent('I travel to Low Fall').action).toBe('move');
+        expect(parseIntent('what am I carrying').action).toBe('inventory');
+        expect(parseIntent('I look around').action).toBe('look');
+        expect(parseIntent('I attack Cao Nuozhi').action).toBe('attack');
+        expect(parseIntent('I cultivate for a year').action).toBe('cultivate');
+        expect(parseIntent('who can teach me').action).toBe('teacher');
+    });
+});

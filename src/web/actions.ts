@@ -1055,6 +1055,10 @@ export const CEILING_QUESTION = new RegExp([
     /\bwhat (?:is|'s) (?:stopping|blocking|holding) me\b/,
     // the neighbours a player reaches for next
     /\bwhat(?:'s| is) holding me back\b/,
+    // The plainest form of the question, and it reached nothing. A player who
+    // does not yet know the vocabulary asks this one first.
+    /\bhow (?:do|can|would) i (?:get|become|grow) (?:stronger|more powerful|better)\b/,
+    /\bwhat should i (?:do|be doing)\b/,
     /\bwhy (?:can'?t|cannot) i (?:break through|breakthrough|advance|progress|rise|go (?:any )?(?:further|higher))\b/,
     /\bwhy (?:has|have) my cultivation (?:stopped|stalled)\b/,
     /\bwhy (?:is|am) (?:nothing|my progress) (?:happening|accumulating|moving)\b/,
@@ -3026,8 +3030,15 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'gather', target: extractSubject(input, /gather|forage|harvest|pick|collect|dig up/) };
     }
 
-    if (/\b(?:practi[cs]e|drill|rehearse|work on)\b.*\b(?:art|technique|manual|stance|form)\b/.test(text)
-        || /\b(?:train|practi[cs]e)\s+(?:the\s+)?[a-z-]+\s+(?:art|technique|manual|stance)\b/.test(text)) {
+    // The bare forms, and `book`. "I practise", "I train", "I drill", "I spar"
+    // and "I read my book" all reached nothing, because the rule demanded a
+    // noun from a list that did not include the commonest word for the object.
+    // A cultivator with one art and nothing else to do says "I train", and the
+    // game had no answer for it.
+    if (/\b(?:practi[cs]e|drill|rehearse|work on)\b.*\b(?:art|technique|manual|stance|form|book|scripture|canon)\b/.test(text)
+        || /\b(?:train|practi[cs]e)\s+(?:the\s+)?[a-z-]+\s+(?:art|technique|manual|stance)\b/.test(text)
+        || /\b(?:read|study|go (?:over|through))\b[^.?!]*\bmy (?:book|manual|art|technique|scripture|canon)\b/.test(text)
+        || /^(?:i\s+)?(?:practi[cs]e|train|drill|spar)\s*[.!?]?$/.test(text)) {
         return {
             action: 'train_technique',
             target: extractSubject(input, /practi[cs]e|train|drill|rehearse|work on/)
@@ -3181,7 +3192,7 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
-    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation|reputation|standing)|what rank am i|what realm am i|check myself|where do i stand|how am i regarded)\b/.test(text)) {
+    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation|reputation|standing)|what rank am i|what realm am i|how old am i|what do i own|check myself|where do i stand|how am i regarded)\b/.test(text)) {
         return { action: 'status' };
     }
 
