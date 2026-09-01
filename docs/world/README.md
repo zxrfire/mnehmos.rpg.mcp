@@ -60,6 +60,7 @@ converge on `NARRATOR-CORE.md`.
 | [`ruins.md`](ruins.md) | Authoring guide: ruins. The four axes (who left it, how gone-over, how long ago, who holds the door); convergence and the self-cancelling escape; loot as a record rather than a table; access; why a stripped ruin still teaches; mechanics that change the terms | 2 and 3 |
 | [`architecture.md`](architecture.md) | Built places: what a compound is generated from, precincts and rooms, house style as an archaeological fingerprint, access as a chain of gates, and what knowing a room means. Also the authoring guide for adding one | 2 and 3 |
 | [`techniques.md`](techniques.md) | What an art can DO, by height: the ladder that escalates in kind rather than magnitude, ending in causal speech; how it composes with class and era; dormant archives; what runs out | 1, 2 and 3 |
+| [`manuals.md`](manuals.md) | Books as items with a count: who can copy one, where a manual stops, the shelf a disciple climbs, what a house can teach against what it can supply, and an art as a signature | 2 and 3 |
 | [`sects.md`](sects.md) | Sects as political institutions, factions, succession, ancestral records, dormant and ascended ancestors, the standing powers | 2 and 3 |
 | [`dao-houses.md`](dao-houses.md) | The ancient houses, specialisation without ownership, civil authority, counters and blind spots, rewritten histories | 2 and 3 |
 | [`economy.md`](economy.md) | Scarcity, resources, spirit stones, provenance, possession and ownership and claim, trade, graves, inheritances | 2 and 3 |
@@ -122,6 +123,7 @@ These cut across place. A scene commonly takes one row from each table.
 | The player hears of something they have never met | [`discovery.md`](discovery.md) |
 | An NPC is present, remembered, or being reasoned about | [`people.md`](people.md) |
 | An art is used, taught, refused, or compared | [`techniques.md`](techniques.md) |
+| A book is held, copied, bought, refused, or stolen | [`manuals.md`](manuals.md) |
 | Nobody present recognises what somebody is practising | [`ancient.md`](ancient.md) |
 | The player has run out of manual | [`escapes.md`](escapes.md) |
 | Two people of the same rank are not equally dangerous | [`understanding.md`](understanding.md) |
