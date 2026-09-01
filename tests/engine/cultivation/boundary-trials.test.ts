@@ -25,7 +25,10 @@ import {
     brokenStatusFor,
     brokenStatusOf,
     brokenStatusRepairedBy,
+    classifyCrossingResult,
     clearBrokenStatus,
+    CROSSING_RESULTS,
+    getCrossingResult,
     drawCrossingOutcome,
     isHalted,
     isRepairableInTheCrucible,
@@ -43,6 +46,7 @@ import {
     untreatedInjuryCount
 } from '../../../src/engine/cultivation/injuries.js';
 import {
+    assessPower,
     brokenCombatPowerForOrdinal,
     combatPowerForOrdinal
 } from '../../../src/engine/cultivation/combat.js';
@@ -342,24 +346,181 @@ describe('striking on a break is legal, suicidal, and curative if it lands', () 
     });
 });
 
-describe('a broken cultivator is the weakest thing at their rung', () => {
-    it('sits below their own realm floor and above the realm below, at equal attributes', () => {
-        // The ordering the design asks for: weaker than every other holder of
-        // their rung, stronger than every holder of the rung below - so the
-        // crossing was still worth making and "never attempt" is never right.
-        for (const ordinal of [17, 21, 25, 29, 33, 37, 41]) {
-            const tier = realmForOrdinal(ordinal);
-            const broken = brokenCombatPowerForOrdinal(ordinal);
-            const ownFloor = combatPowerForOrdinal(tier.ordinalStart);
-            expect(broken).toBeLessThan(ownFloor);
-            // And above the strongest rung of the realm below.
-            expect(broken).toBeGreaterThan(combatPowerForOrdinal(tier.ordinalStart - 1));
+describe('the five ways a crossing ends', () => {
+    it('names all five and every kind has an authored row', () => {
+        expect(CROSSING_RESULTS).toHaveLength(5);
+        for (const row of CROSSING_RESULTS) {
+            expect(getCrossingResult(row.kind)).toBe(row);
+        }
+    });
+
+    it('separates a broken success from a bad failure, which is the distinction that matters', () => {
+        const hurt = [createInjury({ severity: 'serious', source: 'failed_breakthrough', turn: 1 }, rng())];
+        expect(classifyCrossingResult({ succeeded: true, survived: true })).toBe('clean_success');
+        expect(classifyCrossingResult({ succeeded: true, survived: true, injuriesSustained: hurt }))
+            .toBe('clean_success');
+        expect(classifyCrossingResult({ succeeded: true, survived: true, brokenStatus: 'cracked-core' }))
+            .toBe('broken_success');
+        expect(classifyCrossingResult({ succeeded: false, survived: true })).toBe('clean_failure');
+        expect(classifyCrossingResult({ succeeded: false, survived: true, injuriesSustained: hurt }))
+            .toBe('failure_with_sequelae');
+        expect(classifyCrossingResult({ succeeded: false, survived: false })).toBe('death');
+    });
+
+    it('produces a structural break ONLY from a broken success', () => {
+        // The load-bearing claim of the taxonomy. Somebody who fails badly is
+        // hurt and structurally intact at the rung they set out from - they are
+        // NOT a broken version of the rung below, because the structure that
+        // would have broken was never built. So no row in the FAILURE registry
+        // may mint a wound from BROKEN_STATUSES, at any trial, ever.
+        for (const outcome of CROSSING_OUTCOMES) {
+            for (const trial of Object.keys(outcome.weights) as (keyof typeof outcome.weights)[]) {
+                // Drawn many times, because several rows roll their own severity
+                // and one of them could in principle branch on it.
+                for (let i = 0; i < 40; i++) {
+                    const consequence = outcome.apply(
+                        { realmOrdinal: 20, injuries: [], age: 200 },
+                        new CultivationRNG(`no-break-from-failure-${outcome.key}-${trial}-${i}`),
+                        { turn: 1 }
+                    );
+                    for (const injury of consequence.injuries) {
+                        expect(BROKEN_STATUSES).not.toContain(injury.woundType);
+                    }
+                }
+            }
+        }
+    });
+});
+
+describe('how strong a broken cultivator is', () => {
+    // ── What is being pinned, and what deliberately is not ────────────────
+    //
+    // The ordering that binds is ONE-SIDED. A broken holder must beat every
+    // intact holder of the realm below, must lose to a typical holder of their
+    // own rung, and MAY beat a weak one - the last is wanted rather than
+    // tolerated, because a cracked core who has been fighting for a century
+    // should be dangerous to somebody who formed their core last year.
+    //
+    // The strict two-sided version is unsatisfiable and the arithmetic is in
+    // `BROKEN_STATUS_POWER`: the window between realms is x2.000 and a strict
+    // fit needs x2.299. Do not reinstate it.
+    //
+    // Measured by `scripts/probe-how-strong-a-broken-cultivator-is.ts`.
+
+    /** Every legal attribute pair. `rollAttributes` is uniform over these. */
+    const ATTRIBUTES: Array<{ might: number; insight: number }> = [];
+    for (let might = 1; might <= 3; might++) {
+        for (let insight = 1; insight <= 4; insight++) ATTRIBUTES.push({ might, insight });
+    }
+
+    /** Identical in every respect except the ordinal, the attributes and the wound. */
+    const price = (
+        ordinal: number,
+        might: number,
+        insight: number,
+        injuries: ReturnType<typeof createInjury>[] = []
+    ): number =>
+        assessPower(
+            {
+                id: 'x',
+                name: 'x',
+                realmOrdinal: ordinal,
+                spiritRoot: 'single_fire',
+                attributes: { might, insight, fortune: 1, charm: 2 },
+                injuries,
+                hp: 100,
+                maxHp: 100,
+                qi: 50,
+                maxQi: 50,
+                battlesSurvived: 10,
+                technique: null
+            },
+            { ambient: 'normal' }
+        ).total;
+
+    const break_ = (status: string) =>
+        createInjury(
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: status },
+            rng()
+        );
+
+    const REALMS = [13, 17, 21, 25, 29, 33, 37, 41];
+
+    it('beats every intact holder of the realm below, from any rung and at any attributes', () => {
+        // The one hard requirement, and the reason the crossing stays worth
+        // attempting when it goes wrong: if this inverted, "never attempt"
+        // would become the correct play.
+        //
+        // Swept over the full cross product rather than at the median, because
+        // a flat penalty passes at the median and fails here - which is exactly
+        // how it went unnoticed. Worst margin measured at x1.088.
+        for (const floor of REALMS) {
+            const tier = realmForOrdinal(floor);
+            const wound = break_(brokenStatusFor(floor - 1)!);
+            const belowTier = realmForOrdinal(floor - 1);
+            for (let o = tier.ordinalStart; o <= tier.ordinalEnd; o++) {
+                for (const b of ATTRIBUTES) {
+                    const broken = price(o, b.might, b.insight, [wound]);
+                    for (let io = belowTier.ordinalStart; io <= belowTier.ordinalEnd; io++) {
+                        for (const i of ATTRIBUTES) {
+                            expect(broken).toBeGreaterThan(price(io, i.might, i.insight));
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    it('loses to an ordinary holder of their own rung whatever attributes they were dealt', () => {
+        // The break being real. The best attributes in the world do not lift a
+        // broken holder past a median intact peer - measured at 0.840 against
+        // 1.000 - so the break is never something a good roll cancels.
+        for (const floor of REALMS) {
+            const wound = break_(brokenStatusFor(floor - 1)!);
+            const median = price(floor, 2, 2);
+            for (const b of ATTRIBUTES) {
+                expect(price(floor, b.might, b.insight, [wound])).toBeLessThan(median);
+            }
+        }
+    });
+
+    it('can be overturned by a weak peer, which is wanted', () => {
+        // Not a defect and not an accident. A broken holder with the best
+        // attributes prices above an intact peer with the worst, and this test
+        // exists so that a future tightening has to argue with it rather than
+        // silently remove it.
+        for (const floor of REALMS) {
+            const wound = break_(brokenStatusFor(floor - 1)!);
+            expect(price(floor, 3, 4, [wound])).toBeGreaterThan(price(floor, 1, 1));
+        }
+    });
+
+    it('is stronger for the sub-ranks it climbs, because nothing stops it climbing them', () => {
+        // `blocksAdvancement` gates realm boundaries and not sub-rank steps, and
+        // the wound rows describe somebody forty years into being extremely
+        // good at the rung they are on. That has to be worth something.
+        for (const floor of REALMS) {
+            const tier = realmForOrdinal(floor);
+            const wound = break_(brokenStatusFor(floor - 1)!);
+            expect(price(tier.ordinalEnd, 2, 2, [wound]))
+                .toBeGreaterThan(price(tier.ordinalStart, 2, 2, [wound]));
+        }
+    });
+
+    it('charges the break once, not once here and again through the condition line', () => {
+        // The break is held out of `aggregateInjuryPenalties` inside
+        // `assessPower` because the `broken` line is what it costs in a fight.
+        // Charged in both places it would compound to x0.563 against a declared
+        // x0.750, which puts a broken holder BELOW the realm under them.
+        for (const floor of REALMS) {
+            const wound = break_(brokenStatusFor(floor - 1)!);
+            const ratio = price(floor, 2, 2, [wound]) / price(floor, 2, 2);
+            expect(ratio).toBeCloseTo(brokenCombatPowerForOrdinal(floor) / combatPowerForOrdinal(floor), 6);
         }
     });
 
     it('leaves the crossing worth making even when it goes wrong', () => {
-        // A broken 41 outfights any 40 alive. If this inverted, the correct
-        // play would become "never attempt", which the ladder must not have.
+        // A broken 41 outfights any 40 alive.
         expect(brokenCombatPowerForOrdinal(41)).toBeGreaterThan(combatPowerForOrdinal(40));
         expect(brokenCombatPowerForOrdinal(41)).toBeLessThan(combatPowerForOrdinal(41));
     });
