@@ -344,8 +344,24 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // rendered to THIS house and a newcomer has none, which is exactly why
     // this is entry and not promotion - what a stranger is seated by is what
     // they visibly are.
+    //
+    // AND THE HEADSHIP IS NOT AN ENTRY RANK.
+    //
+    // This loop started at the last index, so a strong enough stranger was
+    // seated at the TOP of the ladder on the day they walked up - at the Azure
+    // Dew Sect, whose ladder is pitched from ordinal 0, that is anybody at
+    // ordinal 16 becoming Sect Warden over a living head. The world already
+    // refuses this to its own people and says why: `seatsAtRank` returns 0 for
+    // the top rank because "the top seat is not a promotion, it is a
+    // succession, it happens when the person in it dies or leaves", and filling
+    // it by the ordinary route "would quietly install a weaker head over a
+    // living master, which is not a thing a house does".
+    //
+    // A rule the world enforces on everybody else and not on the player is the
+    // oldest defect in this codebase. Entry stops one below the top; the
+    // headship changes hands by succession or not at all.
     let entryIndex = 0;
-    for (let index = sect.ranks.length - 1; index > 0; index--) {
+    for (let index = sect.ranks.length - 2; index > 0; index--) {
         if (cultivator.realmOrdinal >= requiredOrdinalForRank(sect.admissionOrdinal, index)) {
             entryIndex = index;
             break;
