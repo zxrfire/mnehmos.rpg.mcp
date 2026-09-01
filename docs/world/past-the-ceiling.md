@@ -659,6 +659,38 @@ It also explains why a strong house tolerates defection at all: **it offers the 
 Losing a person is survivable; losing the road is not. A house that lets people go freely on
 oath and hunts the ones who refuse is behaving consistently.
 
+### What actually leaves with you, and what the oath actually forbids
+
+**The books stay.** No house lets a departing member walk out with manuals, and none of them
+have to guess about it - **a shelf is signed out, and they know who has what.** So a departure
+is never about objects. What leaves is what is in your head, which is a worse copy than the
+book: partial, remembered, without the commentary and without the teacher who explained it.
+That is the thing every negotiation above is actually over.
+
+**And the oath forbids TRANSMISSION, not possession.** This is the distinction that makes the
+whole instrument liveable:
+
+- **Being seen practising your old house's road is fine.** Everybody understands what an
+  ex-disciple is. Holding is a signature and the signature reads *"this person trained at that
+  house"*, which is true and was never a secret. Nobody is in trouble for it.
+- **It stops mattering on its own.** As you climb in the new house on the new house's road,
+  the old one is superseded - you are simply not practising it any more, and the signature
+  fades from your work. **The problem has a natural expiry**, which is exactly why an oath that
+  binds forever is not as harsh as it sounds.
+- **Teaching it to somebody else is the violation.** And the evidence is not you - it is the
+  third party. Your old house sees a stranger practising their road, traces where it came from,
+  and arrives at your name. That is when there is trouble, and it is proportionate, because the
+  road has now genuinely escaped: there is a person in the world practising it who never trained
+  there and owes them nothing.
+
+Two consequences worth building. First, the discovery is DELAYED and indirect - it comes through
+somebody else being seen, years later, by people who then work backwards. That is the same shape
+as the existing machinery for somebody working out what you did, and it should reuse it rather
+than checking anything at the moment of teaching. Second, it means an oath-breaker is usually
+caught long after the fact, by which time they have a house, a rank and something to lose, which
+is what makes the consequence land.
+
+
 ### The full set of exits
 
 Not all of these are leaving, which is the point - a capped cultivator who thinks the only
