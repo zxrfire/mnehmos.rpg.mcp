@@ -55,6 +55,97 @@ tests pass.
 
 ---
 
+## Nothing in the lore is bespoke
+
+The companion rule to the one above, and the one most often broken by accident.
+
+> **Lore describes what the systems produce. It never adds a system of its own.**
+
+Every dramatic fact about this world has to be a consequence of something a generic
+system already reads. If the lore says somebody is untouchable, the reason must be an
+object in the ordinary object table with an ordinary power level, held by an ordinary
+person at an ordinary rung. The narrative weight comes from the size of the numbers, not
+from an exception written next to them.
+
+Concretely:
+
+- **No faction-specific combat rules.** An apex head dies the way anybody dies. There is
+  no branch anywhere on tier, title, faction or importance, in either direction. What is
+  different about them is what they are carrying, in the same field a bandit's notched
+  sabre uses, read by the same resolver.
+- **No parallel catalogs for important things.** The strongest object in the world and a
+  looted blade are rows in `src/data/cultivation/artifacts.ts`, made by the same
+  `makeObject` factory and ordered by `power`, so the whole hierarchy of force is readable
+  top to bottom. An "immortal weapons" table beside the artifact table is the exact
+  mistake this rule exists to prevent.
+- **No arithmetic in a lore file.** Data files may state what is standing where and what
+  it is holding. They must not decide who wins - a margin constant, a weight function, a
+  "how many houses it takes" helper is a second combat system living in the prose layer,
+  and it will drift from the real one.
+- **The prose yields to the measurement.** Where a description and the resolver disagree,
+  the description is what changes. Say so in the file, and cite the harness run
+  (`scripts/playtest-conspiracy.ts` is the worked example).
+- **Take the object away and nothing is left over.** The test for whether a piece of lore
+  is bespoke: remove the item, and the holder must price out as an ordinary cultivator at
+  their ordinal, with no residue anywhere.
+
+If you find yourself writing a rule that applies to exactly one faction, stop. The thing
+you want is an item.
+
+---
+
+## Measuring, and being honest about what you measured
+
+Most of the setting's load-bearing claims are now numbers produced by the engine rather
+than assertions written next to it. That is the right direction and it has a failure mode:
+a measurement is only worth what the harness that produced it is worth, and several have
+been wrong in ways that read as findings.
+
+Every one of these actually happened while writing this section. Check for them.
+
+- **Build the character sheet legally.** `might` is capped at 3 and `insight` at 4
+  (`src/schema/cultivation.ts`). A probe using 5/5/5/5 is not measuring this game. The
+  whole legal attribute range is worth about ×1.5; one realm is ×4, at every rung.
+- **A stalemate is not a loss.** `resolveMelee` returns `winningSideId: null` when neither
+  side finishes. Scoring `winner === 'a'` counts that as a defeat for A, which is how "one
+  immortal loses to ten ordinary cultivators" was reported when what actually happened was
+  she ended on 80 HP with eight of them dead and the round budget ran out.
+- **Give both sides the same treatment.** Handing one side a technique and not the other is
+  a 1.4× swing before anything else is varied, and it will look like whatever mechanic you
+  were investigating.
+- **Filter every catalog you join.** A helper that filters courts by apex but not sects
+  gives every house every sealed ancestor in the world. That one was caught only because
+  the numbers barely moved - which was itself the finding.
+- **Prefer the controlled table to the complicated one.** When a clean uniform sweep and a
+  messy realistic case disagree, the harness is wrong far more often than the engine.
+  Trust the simple result and go looking for the bug in the setup.
+
+And when a measurement contradicts the prose, **change the prose in the same commit** and
+say what it used to claim. `catastrophe.ts` records its own corrections in place, including
+the figures that turned out to be harness artifacts, because a number nobody can trace is
+worth less than a number with its retraction attached.
+
+---
+
+## What the engine does not model yet
+
+Absences shape the setting as much as rules do, and an absence that nobody has written down
+gets mistaken for a design decision. Two found by measurement rather than by reading:
+
+- **Single-target-only was distorting everything.** Until reach existed, no combatant could
+  strike more than one person a round, so an even 5v5 was a 100% stalemate and one person
+  against a province could never resolve. That read for a while as "the world holds against
+  an immortal", which was never a design claim - it was a missing mechanic wearing one.
+- **Numbers still buy time even when they buy no force.** Bodies a full realm below cannot
+  strike, but they can be struck, and clearing them costs rounds. Whether somebody should
+  be able to be worn down by people who cannot hurt them is a design question, not a tuning
+  constant, and it should be put to a person rather than settled quietly.
+
+If you find one of these, write it down where the affected material lives. "The engine has
+no answer for this yet" is a legitimate and useful sentence.
+
+---
+
 ## Provider neutrality
 
 Supported runtime agents: **Claude (Anthropic)** - primary/default - and **Ollama** -
@@ -304,6 +395,95 @@ error: unable to index file 'test-invoke.db-journal'
 Stage explicit paths instead, or make sure every artifact pattern is in `.gitignore`
 before staging. When a run produces an artifact that is not ignored, **add the pattern**;
 do not delete the file and hope, because the next run recreates it.
+
+### Commit with a pathspec, never a bare `git commit`
+
+Every agent on this tree shares one git index. A bare `git commit` commits **whatever is
+staged**, including work another agent staged and has not finished. This has happened:
+
+```bash
+git commit -m "..."            # swept up another agent's staged src/web/** work
+git commit -- <your paths>     # only yours, whatever else is in the index
+```
+
+The agent that did it noticed, reset, and recommitted correctly - but nothing would have
+caught it otherwise, and the owner would have found their half-finished edit in somebody
+else's commit. Always name your paths. Check `git status` before staging so you know what
+else is in flight.
+
+**A pathspec in your command does not protect you if the command does not parse.** This
+happened a second time, one message after the agent had been warned: a PowerShell
+here-string (`@'...'@`) was used in the **Bash** tool, the quoting shattered, the `--`
+pathspec was swallowed with it, and the commit swept up twelve of another agent's files
+including three untracked ones. So:
+
+- **Never use PowerShell quoting syntax in the Bash tool.** For any multi-line commit
+  message use a heredoc or `git commit -F <msgfile>`.
+- **`git reset --soft HEAD~1` is the recovery** and it preserves the index byte-for-byte.
+  Verify the other agent's files are back in the index *and* that untracked ones are still
+  on disk before continuing.
+
+**And a pathspec does not protect a file you both touch.** It limits the commit to paths
+you name, but it commits the *working tree* at those paths - so if another agent is
+mid-edit in a file you also changed, their half-finished work goes in under your message.
+This happened with a rename in flight. Before committing a shared file, check whether
+anyone else has it open (`git status`, recent mtimes), and if they do, either wait or
+commit only the files nobody else is in.
+
+### Reverting your own work by file destroys everyone else's
+
+The same hazard runs backwards, and it is worse, because a bad commit can be undone and a
+discarded working tree cannot. An agent abandoned a design it had built and ran
+`git checkout -- src/storage/migrations.cultivation.ts` to drop it. That file is a shared
+registry: another agent's `bleeding_turns` migration was sitting in it, unstaged and
+therefore not in any object git could hand back. 69 tests started failing and the only
+copy of the lost block was in a `Read` result earlier in a transcript.
+
+**A file-level revert on a shared file is not a scoped operation.** It does not undo your
+change; it restores the file, including over work you never made and cannot see. Before
+discarding, `git diff` the file and confirm every hunk you are about to lose is yours. If
+it is not, revert your hunks specifically or edit them back out by hand, and commit
+whatever you rescued immediately so it cannot be lost a second time.
+
+### A file you never committed is invisible to everyone else
+
+Untracked files in your working tree are not in the branch. An agent found
+`src/web/above.ts`, `standing.ts` and `trials.ts` untracked while committed
+`actions.ts`/`game.ts` already imported them - so **the branch did not build from a clean
+checkout** and nothing local would ever have shown it. If you add a module, commit it in
+the same commit as its first importer, and when in doubt clone the branch into a scratch
+directory and build there.
+
+### Read state, not prose
+
+The narrator can say things that did not happen. That is not hypothetical: a scripted
+narrator produced *"Day 91 - Breakthrough succeeded: Qi Condensation Layer 1 to Layer 2.
+Odds were 94.0%"* against a cultivator who was still at ordinal 0 with zero progress,
+imitating the engine's own digest format down to the day numbers. `auditNarration` now
+catches the two irreversible fabrications, but the general rule stands:
+
+- **Measure from the database or the state view, never by parsing narration.** A harness
+  that reads `realmOrdinal` out of prose is measuring the model, not the engine.
+- **A refusal from an endpoint is data.** `POST /api/run/new` answers **409** while a run
+  is alive - *"there is no abandoning one"*. A driver that ignores that error replays one
+  exhausted body and reports it as many lives. That exact bug produced a "100% starvation"
+  finding that was entirely an artifact.
+- **An absent field reads as zero.** A harness that asks for `after.qi` when the engine
+  writes `cultivationProgress` measures `0 - 0` at every rung and calls it flat.
+
+### Verify before you relay, and push back with evidence
+
+Findings passed along without checking have repeatedly turned out to be the measurement
+rather than the engine. When you are handed a defect report:
+
+- **Reproduce it yourself before acting on it**, especially before changing a shared
+  constant. Three separate "engine bugs" this project has chased were harness errors, and
+  one nearly caused a retune of the exchange resolver to chase a figure that was three
+  seeds out of three hundred in a distribution that was almost entirely stalemate.
+- **If the report is wrong, say so and show the measurement.** That is more useful than
+  complying, and it is how every one of those was caught.
+- **State which build you measured.** A report against a stale `dist/` is not a finding;
+  rebuild, restart the server, and say so.
 
 ### Only commit from a state you verified in one pass
 
