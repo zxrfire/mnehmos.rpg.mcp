@@ -247,18 +247,60 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
 
     // ── Ingredients must actually be in the pouch. ──
     const missing = recipe.ingredients
-        .map(ing => ({
-            itemId: ing.itemId,
-            name: getHerb(ing.itemId)?.name ?? ing.itemId,
-            required: ing.quantity,
-            held: pouchQuantity(repos.db, cultivator.id, ing.itemId)
-        }))
+        .map(ing => {
+            const herb = getHerb(ing.itemId);
+            const held = pouchQuantity(repos.db, cultivator.id, ing.itemId);
+            return {
+                itemId: ing.itemId,
+                name: herb?.name ?? ing.itemId,
+                required: ing.quantity,
+                held,
+                short: ing.quantity - held,
+                // Where it grows and how high the ground has to be before it
+                // gives any up. Both are already on the herb row; a refusal
+                // that omits them tells somebody to go and get a thing without
+                // saying where, or whether they can.
+                biome: herb?.biome ?? null,
+                harvestOrdinal: herb?.harvestOrdinal ?? null
+            };
+        })
         .filter(i => i.held < i.required);
     if (missing.length > 0) {
-        return guidingError('missing_ingredients', `${recipe.name} cannot be attempted.`, {
-            missing,
-            hint: 'Gather or buy the herbs first. The engine will not refine from an empty pouch.'
-        });
+        // ── A REFUSAL THAT DOES NOT NAME ITS CAUSE IS A BROKEN FEATURE ────
+        //
+        // This said `${recipe.name} cannot be attempted.` and stopped, with the
+        // shortfall sitting in the payload where no player ever sees it. Found
+        // by playing: a cultivator dying of untreated meridian injuries typed
+        // "I refine a Minor Healing Pill" and was told that sentence, which is
+        // indistinguishable from an unfinished subsystem - and it sits directly
+        // on the only road out of the commonest death in the game.
+        //
+        // The branch immediately above already does this properly ("requires
+        // Qi Condensation Layer 7; Torn stands at Qi Condensation Layer 1"), so
+        // the fix is to match its sibling rather than to invent a style.
+        //
+        // WHERE IT GROWS, not just what is missing. Every recipe in the
+        // catalog wants only herbs that grow at or below the rung the recipe
+        // itself demands (asserted in
+        // `tests/server/alchemy-refusals-name-their-cause.test.ts`), so
+        // anybody who has got past the branch above can go and pick every one
+        // of these - which makes naming the ground an instruction rather than
+        // an observation. Biome, not a place name: the world has many
+        // riverbanks and the engine is not choosing one for them.
+        const shortOf = missing.map(i => `${i.short} x ${i.name}`).join(', ');
+        const where = ` ${missing.map(i => `${i.name} grows ${i.biome === null
+            ? 'somewhere nobody has written down'
+            : `on ${String(i.biome).replace(/_/g, ' ')}`}`).join('; ')}.`;
+        return guidingError(
+            'missing_ingredients',
+            `${recipe.name} cannot be attempted: the pouch is short of ${shortOf}. `
+            + 'Ingredients burn whether or not a pill comes out, so the cauldron will not '
+            + `open on a partial set.${where}`,
+            {
+                missing,
+                hint: 'Gather or buy the herbs first. The engine will not refine from an empty pouch.'
+            }
+        );
     }
 
     const supplements = args.supplements ?? [];
