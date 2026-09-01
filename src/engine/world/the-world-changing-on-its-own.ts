@@ -97,7 +97,8 @@ import {
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
 import {
-    newlyEntitled, refreshChosen, reachableCeilingFor, BOOKLESS_CEILING
+    newlyEntitled, refreshChosen, reachableCeilingFor,
+    mightFindARoad, roadTheyFound, BOOKLESS_CEILING
 } from './manuals.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
@@ -261,6 +262,8 @@ export function applyPressure(
         // Then the parts of a year that are arithmetic rather than incident:
         // people advance, institutions pay their bills, and children are born.
         // Births last, so a year's dead are counted before its replacements.
+        applyResettlement(state, year, withinSpan(year * 365 + 70, fromDay, toDay));
+        applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
         applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
         applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
         applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
@@ -729,6 +732,119 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
  * book however deep their house's shelf is, nobody alive held a manual reaching
  * past ordinal 17.
  */
+/**
+ * Somebody standing at the end of their shelf finds a way past it.
+ *
+ * Its own pass, and deliberately NOT part of the advancement sample.
+ * `applyAdvancement` looks at roughly one living cultivator in forty each year
+ * because a life-walk is expensive; asking whether somebody found a book is two
+ * comparisons. Putting the check inside that sample would multiply its odds by
+ * a fortieth without anybody intending it - and did, in the first version of
+ * this, which never got wired at all and so fired zero times.
+ *
+ * The capped are a small set at any moment, so visiting all of them yearly
+ * costs nothing and the stated odds are the real odds. Without this the world
+ * has no route out of a house's library whatsoever: isolated lives reach
+ * ordinal 41, and nobody in a living world had ever exceeded 29.
+ */
+/**
+ * People move back into ruined ground, because they have nowhere else to go.
+ *
+ * The world consumed places and never made one. Every settlement and sect seat
+ * in a seeded world is eventually turned into a ruin or a forbidden zone by
+ * disasters, falls and expenditures - and nothing anywhere put a habitable
+ * place back. Measured before this existed:
+ *
+ *     years   living   habitable places
+ *         0      565           49 of 49
+ *       500      493           25 of 25
+ *      1000      502           11 of 11
+ *      1500      147            0 of 0
+ *      2500        0            0 of 0
+ *
+ * The world went extinct, and the ladder collapsing to ordinal 11 on the way
+ * was a symptom rather than the disease. Births need somewhere a person can
+ * stand; when the last habitable place became a ruin, nobody was born again.
+ *
+ * Resettlement is the honest fix rather than slowing the destruction, because
+ * the destruction is correct - houses do fall and ground does go bad. What was
+ * missing is the other half of what people actually do, which is move into the
+ * wreckage and live in it. A ruin with nobody in it is a site to be dug; a ruin
+ * somebody has moved back into is a village with very old walls, and this world
+ * should have both.
+ *
+ * Deliberately does NOT resettle a forbidden zone. Ground that kills you is not
+ * somewhere desperation solves, and keeping that distinction is what stops this
+ * from quietly undoing the catastrophe layer.
+ */
+function applyResettlement(state: WorldState, year: number, day: number): number {
+    const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
+    let settled = 0;
+
+    for (const region of regions) {
+        const under = locationIdsUnder(state, region.id);
+        const habitable = state.locations.filter(l =>
+            under.has(l.id) && (l.kind === 'settlement' || l.kind === 'sect_seat')
+            && !l.sealed && l.thresholds.entry <= 0 && l.thresholds.survival <= 0);
+        const people = state.npcs.filter(n =>
+            n.status === 'alive' && n.locationId !== null && under.has(n.locationId)).length;
+        if (people === 0) continue;
+
+        // One habitable place per fifty people is thin but not desperate. Below
+        // that the province is short of anywhere to live and somebody moves
+        // into a ruin; above it nobody bothers, because a ruin is a worse place
+        // to live than a village and everybody knows it.
+        const wanted = Math.max(1, Math.ceil(people / 50));
+        if (habitable.length >= wanted) continue;
+
+        const candidates = state.locations.filter(l =>
+            under.has(l.id) && l.kind === 'ruin' && !l.sealed
+            && l.thresholds.entry <= 0 && l.thresholds.survival <= 0);
+        if (candidates.length === 0) continue;
+
+        const rng = forStream(state.seed, 'resettle', region.id, year);
+        // Rare per year even under pressure. A province does not repopulate its
+        // wreckage in a decade, and a world that did would never feel emptied.
+        if (!rng.chance(0.04)) continue;
+
+        const site = candidates[rng.int(0, candidates.length - 1)];
+        const at = state.locations.findIndex(l => l.id === site.id);
+        state.locations[at] = {
+            ...site,
+            kind: 'settlement',
+            description: site.description
+                + ' People live here again, in and among what was here before.',
+            data: { ...site.data, populationWeight: 1, resettledOnDay: day }
+        };
+        settled++;
+    }
+    return settled;
+}
+
+function applyFoundRoads(state: WorldState, year: number, day: number): number {
+    let found = 0;
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        if (npc.status !== 'alive' || !isBelowTheLid(npc)) continue;
+        const ceiling = reachableCeilingFor(state, npc) || BOOKLESS_CEILING;
+        if (npc.cultivation.realmOrdinal < ceiling) continue;
+        const luck = forStream(state.seed, 'found-a-road', npc.id, year);
+        if (!mightFindARoad(npc, ceiling, luck)) continue;
+        const road = roadTheyFound(npc, ceiling, luck);
+        if (!road) continue;
+        state.npcs[i] = {
+            ...npc,
+            cultivation: {
+                ...npc.cultivation,
+                techniqueIds: [...npc.cultivation.techniqueIds, road]
+            },
+            updatedOnDay: day
+        };
+        found++;
+    }
+    return found;
+}
+
 function applyPromotions(state: WorldState, day: number): number {
     const { promotions } = assessPromotions(state);
     if (promotions.length === 0) return 0;

@@ -35,7 +35,7 @@ some are a row with a history. Getting it wrong in either direction is expensive
 
 **Counted.** Made, bought, spent and replaced constantly, and nobody cares *which one* you
 took. A holder and a number is the whole of what needs storing. Low and middling pills are
-here — they churn enormously — and so are a house's twenty intake primers, which are one
+here - they churn enormously - and so are a house's twenty intake primers, which are one
 fact about the house rather than twenty facts.
 
 **Tracked.** Each one is a row with a holder, a provenance and a story about how it was got.
@@ -45,9 +45,9 @@ movement of this specific object is an event somebody should be able to find out
 centuries later.** If yes, it is a row.
 
 The engine already draws this line and it should not be redrawn. `possessions.ts` has both
-shapes: `makeResourceLot` for a quantity that came from somewhere worth remembering — *the
+shapes: `makeResourceLot` for a quantity that came from somewhere worth remembering - *the
 108 stones out of an abandoned mine are one row; the stones somebody was paid last week are
-not tracked at all* — and `makeObject` with a `significance` that gates whether provenance is
+not tracked at all* - and `makeObject` with a `significance` that gates whether provenance is
 kept at all. `mundane` things deliberately get none.
 
 **Use `significance` as the switch.** It exists for exactly this and adding a second field
@@ -67,7 +67,7 @@ has stones. This tier is what keeps an unbacked nobody from being locked out of 
 entirely, and it is why a poor cultivator's first real decision is whether the money goes on
 a book or on food.
 
-**Above it, cash is simply not the medium.** Not "expensive" — *not for sale*. The people who
+**Above it, cash is simply not the medium.** Not "expensive" - *not for sale*. The people who
 hold these things do not need money, and offering it reads as not understanding what you are
 looking at. What moves them instead:
 
@@ -90,14 +90,14 @@ those two boundaries ever drift apart, one of them is wrong.
 
 The obvious move is to sell. A material calibrated to a height your best disciple will never
 reach is dead capital, and somebody two provinces over would pay enormously. Houses hold
-these for centuries anyway, and the reasons are not sentiment — each produces a different
+these for centuries anyway, and the reasons are not sentiment - each produces a different
 institution:
 
 - **Afraid to sell.** Putting it on a market announces that you have it, and announces the
   day it leaves your walls with a small escort. A weak house holding a valuable thing is not
   rich, it is *quiet*. The fear is specific: not of being robbed, but of the bloodbath that
   starts when three interested parties learn about each other.
-- **A rainy day.** Held against a future they can name — a succession, a war they expect, a
+- **A rainy day.** Held against a future they can name - a succession, a war they expect, a
   disciple who is eleven. This house has a plan and the object is in it.
 - **Tribute.** Owed upward. A subsidiary holding something its backer would want does not own
   it in any sense that matters; it is holding it until asked, and the asking is a matter of
@@ -114,8 +114,8 @@ only exists where the object is beyond its holder.
 <!-- tier: 2 trigger="something is consumed, and later somebody investigates what a house once had" -->
 
 **A consumed object leaves its row behind.** Single-use comprehension materials are the sharp
-case — once it goes into your head it is gone, nobody can lend one, nobody can share one, and
-a house that spends one on the wrong disciple has spent it — but the record of *that house
+case - once it goes into your head it is gone, nobody can lend one, nobody can share one, and
+a house that spends one on the wrong disciple has spent it - but the record of *that house
 having held one and used it on that person* is precisely the sort of thing somebody should be
 able to discover two hundred years later.
 
@@ -135,7 +135,7 @@ that has decided not to look.**
 
 Objects are not anonymous. Practising an art is visible and knowledgeable people recognise it
 on sight, so a manual off a black market works exactly as well as the real one and is
-**evidence for as long as you keep climbing on it** — which is the rest of your life, because
+**evidence for as long as you keep climbing on it** - which is the rest of your life, because
 putting it down means starting again.
 
 **What happens when they catch you is decided by whose it is**, not by the theft:
@@ -165,7 +165,7 @@ out of anybody's judgement:
 
 **Every cultivation manual above the Void Refinement line is taught by exactly one house.**
 Nobody decided that. It fell out of counting, and it is why "common" is now defined as *how
-widely a thing is held* rather than *how high it carries* — the two coincided by accident
+widely a thing is held* rather than *how high it carries* - the two coincided by accident
 until the shelves were filled in, and then the old definition started calling the province's
 standard crossing somebody's private property.
 
