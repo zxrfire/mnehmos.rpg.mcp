@@ -646,7 +646,10 @@ It also explains how a body this attractive stays small without turning anybody 
 arbitrarily: the bar is objective, it is knowable in advance, and almost nobody clears it.
 
 **And there is a second reason for the bar: the Court does not want to share.** Not space -
-**it has never been short of that.** It has cultivation rooms for everybody and spare ones
+**it has never been short of that**, and this is true of the Hollow Court and of nowhere else.
+Every other house in the world rations where its people sit, because good ground is scarce and
+a seat on a vein holds only so many. The Court does not have that problem, because **it sits on
+the best vein on the planet** and has built against it accordingly. It has cultivation rooms for everybody and spare ones
 besides, it has never had enough members to fill them, and if it ever did it could trivially
 afford to cut more. **Nobody has ever been turned away from the Hollow Court for want of
 somewhere to sit.**
