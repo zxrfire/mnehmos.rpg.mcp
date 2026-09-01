@@ -880,6 +880,31 @@ export function gradeRank(grade: TechniqueGrade): number {
 // Independent of suitability, deliberately. A manual has both a cap and a fit
 // to a spirit root, and they do not interact: a perfectly suited manual still
 // runs out, and an ill-suited one teaches nothing at any height.
+//
+// ── WHY "PLUS ONE", AND WHY IT IS NOT AN OFF-BY-ONE ──────────────────────
+//
+// This has now been read twice as a mistake, so it is worth stating in the
+// terms the misreading uses. A book IS written to the perfection of its realm:
+// the last rung it teaches you to hold is the realm's last rung, and it also
+// teaches the crossing out of it, which is the hardest thing in the book and
+// the reason it was written. The cap is where the reader is STANDING when the
+// paper runs out, and after a crossing that is the first rung of the next
+// realm. So `realmEnd + 1` is the perfection rule, expressed as a position
+// rather than as a syllabus.
+//
+// It is also the interlock. Every manual's `requiredOrdinal` sits on a realm's
+// first rung, so a cap of `realmEnd + 1` lands the reader exactly on the rung
+// where the next book opens, and the world chain has no seam anywhere.
+// Re-capping the catalog at `realmEnd` instead - which is the natural way to
+// read "written to perfection" - puts a one-rung wall at every boundary,
+// because the reader stops at 16 and every successor wants 17 and nothing can
+// stand between them. Measured in `scripts/probe-seam.ts`: zero walls as the
+// catalog stands, walls at 12, 16, 20, 24, 28, 32, 36, 40 and 44 under the
+// re-capping. Do not move these numbers without running it.
+//
+// A cap that is NOT on this list is therefore an anomaly and needs a reason on
+// the entry - the author died, the upper sections were lost, the house holds a
+// copy missing its last volume. There are none in the catalog today.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
@@ -2919,6 +2944,40 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Accumulation by precipitation rather than by draw: the practitioner sits in moving water carrying metal silt and lets the core form around what settles. It is slower than the fire road and enormously more forgiving of being interrupted, which is why it is the method of choice for anybody whose life contains other people.'
     }),
     art({
+        // A THIRD ROAD AT 17-20, AND THE FIRST THAT ASKS NOTHING OF THE READER.
+        //
+        // The corridor at Core Formation had two doors and both of them were
+        // somebody else's element: fire on the Molten Core road, metal on the
+        // Iron-Silt. A wood, water or earth root - or a muddled one, which is
+        // most people - arriving at ordinal 17 had nothing at all.
+        //
+        // Measured against the faction catalog by `scripts/probe-shelf.ts`,
+        // that was not scarcity, it was a hole. Twenty of thirty-two houses
+        // held a shelf no disciple inside them could walk end to end, and the
+        // commonest shape by a distance was a primer stopping at 13 and the
+        // next book on the shelf wanting 21, with an eight-rung dead zone
+        // between them that no amount of rank, favour or patience crossed,
+        // because the requirement is on the book. Houses four centuries old do
+        // not sit on that. They solve it the cheapest way available, which is
+        // to buy the plain edition rather than write a better one.
+        //
+        // It is deliberately the least good of the three roads. Elementless
+        // means no attunement to gather the core around, which is slower going
+        // in and worse to build on afterwards, and that is the price of the
+        // door being open to everybody.
+        id: 'undyed-core-canon',
+        name: 'Undyed Core Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 17,
+        qiCost: 30,
+        damage: null,
+        cooldown: 0,
+        description:
+            'Core Formation with no element to gather the core around: slower than either attuned road going in, and the core it leaves takes an attunement badly for the rest of the cultivator\'s life. It exists because the two attuned roads want a fire root or a metal root and the province is mostly neither. Copied so often and so carelessly that no house claims it - houses that will not sit in the same room teach the same edition, errata and all, because each of them bought a copy rather than being handed one.'
+    }),
+    art({
         // A SECOND ROAD AT 33-35, which had exactly one, wanted a mutated ice
         // root, and was held by a single house that admits nobody else.
         //
@@ -2981,6 +3040,64 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         opacity: 0.85,
         description:
             'One method, held without substitution from the foundation to the integrated body, written by somebody who evidently never changed books and appears not to have understood that everybody else does. It is the only surviving argument that the succession of manuals is a convenience rather than a law, and the reason nobody has been able to check is that the argument cannot be started without an understanding of absence that almost nobody at Foundation has any way to have acquired.'
+    }),
+    art({
+        // THE FIRST WIDE-SPAN BOOK ANYBODY ACTUALLY TEACHES.
+        //
+        // Every other book that reaches past its own realm is a treasure with
+        // no living transmission, and the rule underneath that was "nobody
+        // teaches a book that makes four of their own redundant". That rule
+        // answered the wrong question. It is true of a house with four books;
+        // it says nothing about a house whose intake cannot use the ordinary
+        // succession at all, and the catalog contains one.
+        //
+        // The two mutated elements are starved on purpose - it is stated at
+        // the top of this file and made true by the count of entries - and
+        // below ordinal 33 there is no ice manual anywhere in the world. The
+        // Frostmirror Court admits nothing but mutated ice roots. So the
+        // orthodox succession, which is four attuned books in a row, is not
+        // available to a single person the Court has ever taken in, and a
+        // house in that position either writes one long unattuned road or
+        // stops producing anybody. It wrote one.
+        //
+        // WHAT LENGTH BUYS AND WHAT IT COSTS. Three realms held on one method,
+        // where every ordinary book carries a reader through one. That is what
+        // a deep foundation is mechanically: its people change methods less
+        // often, and every change of method is a risk they do not take. The
+        // price is `opening` - six rungs at a third rate, so a disciple who
+        // opens this at seventeen is behind somebody on the plain Undyed Core
+        // Canon until well past twenty - plus a comprehension gate money
+        // cannot pay, which is why a well-funded outsider cannot simply buy
+        // the Court's advantage even holding the book.
+        //
+        // AND IT STILL ENDS. A long span buys further, never all the way. It
+        // ends at twenty-nine, which is where the taught world ends for
+        // everybody: measured, no house anywhere transmits a manual that
+        // continues past 29, and the only book that does is dug out of a
+        // sealed site. The Second Register continued this and the Court has
+        // not held a copy in four hundred years, so above the far boundary its
+        // people are where every other house's people are - under a living
+        // master or nowhere. A shelf that stops is a fact about a house; a
+        // shelf that stops at a volume the house can name is a better one.
+        id: 'standing-mirror-first-register',
+        name: 'Standing Mirror Canon, First Register',
+        category: 'cultivation',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 17,
+        cap: 29,
+        opening: { rungs: 6, rateMultiplier: 0.3 },
+        // The reader has to keep re-founding the same method through two realm
+        // boundaries that ordinarily demand a new book at each. That is a
+        // demand on the body they live in rather than on anything they own.
+        domain: 'body',
+        domainDegree: 2,
+        qiCost: 46,
+        damage: null,
+        cooldown: 0,
+        opacity: 0.62,
+        description:
+            'One method held from the forming of the core to the far side of Deity Transformation without ever being put down, written by a court whose disciples cannot use the attuned succession because every book in it was written for somebody else\'s root. It is slower than the plain road for the first six rungs and then it is simply never replaced again, which is worth more than the six rungs and is the reason the Court produces what it produces out of an intake nobody else will take. The Second Register, which continued it from the far boundary, is not in the Court\'s hands and has not been for four hundred years. Applicants are told this at the gate, along with what happens after it, which is nothing the Court can promise.'
     }),
     art({
         // THE TOP PRIZE, AND THE ONE BOOK THAT TAKES THE BAND EXEMPTION.
