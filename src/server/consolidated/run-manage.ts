@@ -251,12 +251,16 @@ export async function handleLedger(args: z.infer<typeof LedgerSchema>): Promise<
     const repos = ensureCultivationDb();
     const includeAdmin = args.includeAdminRuns ?? false;
 
-    // Over-fetch, then filter: admin runs are excluded from the ledger by
-    // design, and a limit applied before filtering would silently return short.
-    const raw = repos.runs.deathLedger(includeAdmin ? (args.limit ?? 20) : (args.limit ?? 20) * 4);
-    const adminIds = adminRunIds(repos.db);
-    const filtered = includeAdmin ? raw : raw.filter(r => !adminIds.has(r.id));
-    const rows = filtered.slice(0, args.limit ?? 20);
+    // The exclusion is the repository's now, in SQL, so the limit is applied to
+    // the rows that were going to be shown rather than to a superset that was
+    // then filtered down and silently returned short. It used to be done here
+    // and only here, which is exactly why /api/ledger - reading the same
+    // repository by the other door - was showing rigged runs.
+    const rows = repos.runs.deathLedger(args.limit ?? 20, { includeAdmin });
+    const excluded = includeAdmin
+        ? 0
+        : repos.runs.deathLedger(args.limit ?? 20, { includeAdmin: true })
+            .filter(r => adminRunIds(repos.db).has(r.id)).length;
 
     const causes = new Map<string, number>();
     for (const run of rows) {
@@ -266,7 +270,7 @@ export async function handleLedger(args: z.infer<typeof LedgerSchema>): Promise<
 
     return {
         count: rows.length,
-        excludedAdminRuns: includeAdmin ? 0 : raw.length - filtered.length,
+        excludedAdminRuns: excluded,
         entries: rows.map(run => {
             const cultivator = repos.cultivators.getById(run.cultivatorId);
             return {
