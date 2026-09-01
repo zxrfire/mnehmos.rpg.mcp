@@ -21,23 +21,79 @@
  * sentence with numbers in it.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE BASELINE, MEASURED
+ * THE BASELINE, MEASURED - AND IT IS A LOG, NOT A CONSTANT
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * `scripts/probe-the-pyramid.ts`, three seeds at 500 years, share of the
+ * `scripts/probe-the-pyramid.ts`, five seeds at 500 years, share of the
  * living. The 200-year figures this test uses are within a point of these,
  * which is itself worth knowing - the shape is stable over time as well as
- * over seeds:
+ * over seeds.
  *
- *     qi_condensation            61.97 .. 67.98
- *     foundation_establishment   13.36 .. 17.06
- *     core_formation              6.88 .. 10.81
- *     nascent_soul                4.56 ..  7.53
- *     deity_transformation        2.18 ..  3.14
- *     void_refinement             0.79 ..  1.38
- *     body_integration            1.54 ..  1.59
- *     grand_ascension             0.39 ..  0.40
- *     tribulation_transcendence   0.39 ..  0.40
+ * KEEP THE OLD ROWS. Every re-take stays here with what moved it, because the
+ * bars below cannot catch what this log is for. See the drift note.
+ *
+ * Two horizons, because they are not interchangeable and the first two columns
+ * are the only pair that is a controlled comparison:
+ *
+ *                              200y, 2 seeds        200y, 2 seeds     500y, 5 seeds
+ *                              WITHOUT root cond.   WITH (current)    WITH (current)
+ *     qi_condensation           66.47 .. 67.67      59.88 .. 66.40    59.81 .. 67.98
+ *     foundation_establishment  13.25 .. 14.79      14.60 .. 19.37    13.36 .. 17.06
+ *     core_formation             7.30 ..  7.63       6.60 ..  8.61     6.85 .. 12.04
+ *     nascent_soul               5.02 ..  5.52       6.00 ..  6.65     4.56 ..  7.53
+ *     deity_transformation       2.76 ..  3.21       2.15 ..  2.80     2.18 ..  3.69
+ *     void_refinement            0.99 ..  1.00       0.98 ..  1.20     0.78 ..  1.38
+ *     body_integration           1.38 ..  1.41       1.57 ..  1.60     1.17 ..  1.59
+ *     grand_ascension            0.39 ..  0.40       0.39 ..  0.40     0.39 ..  0.40
+ *     tribulation_transcendence  0.39 ..  0.40       0.39 ..  0.40     0.39 ..  0.40
+ *
+ * What separates the first two columns: root conditioning in `5ccbaab`, so a
+ * seeded house member's root now follows from the road their house teaches.
+ * Measured here back-to-back in one command - `seeding.ts` and `catalog.ts`
+ * checked out at `5ccbaab^`, run, restored, run - it is worth -3.93 points of
+ * mean Qi Condensation, redistributed upward. Its author measured -2.49 pooled
+ * over five seeds at 500 years with the living population unchanged at 2556 vs
+ * 2557, so it is redistribution rather than growth, and the mechanism is the
+ * obvious one: members who fit their house's road can read its books, so more
+ * of them get out of the bottom band.
+ *
+ * ── AND THE FIRST FIGURES IN THIS FILE WERE CONTAMINATED ─────────────────
+ *
+ * The baseline originally committed here as the pre-change reading was not one.
+ * It was taken off a working tree that already held the root-conditioning edits
+ * UNCOMMITTED - `git status` showed `M src/engine/world/seeding.ts` at the time
+ * and I noted the file was another agent's and did not think through what that
+ * meant for a number I was reading out of it. So the "before" and "after" I
+ * would have quoted differed by nothing, because both were after.
+ *
+ * This is the hazard AGENTS.md states as "a number taken across a gap is
+ * worthless while other agents are committing", and the lesson is sharper than
+ * the version I had internalised: it is not only about the gap BETWEEN two
+ * measurements. A single measurement off a shared tree is already a
+ * measurement of somebody else's unfinished work, and it does not announce
+ * itself - the figures looked entirely reasonable and sat in a committed test
+ * as the authority. The control arm above is the first clean "without" reading
+ * this file has ever had.
+ *
+ * ── THE DRIFT THESE BARS CANNOT CATCH ────────────────────────────────────
+ *
+ * That change moved Qi Condensation by between two and a half and four points,
+ * depending on horizon, and NOTHING here went red - which is correct and is
+ * also the hazard. The bars have roughly a factor of two of headroom because
+ * they are built to catch a regime change in one step. Four separate changes of
+ * that size, each individually reasonable and each individually green, walk Qi
+ * Condensation from 67 to 51 and the suite says nothing until the last of them.
+ *
+ * There is no bar that fixes this. Tightening these until they caught two
+ * points would put them red on every content pass, which is the failure the
+ * loose bars exist to avoid. What catches drift is the LOG above: re-take the
+ * baseline when something lands that plausibly touches the climb, write the new
+ * row next to the old one, and say what moved it. A single step is noise; three
+ * rows leaning the same way is a finding.
+ *
+ * As a number to argue with rather than a bar to trip: Qi Condensation below
+ * 55, or the share above Void Refinement above 3, is not a red test and IS a
+ * conversation to have before the next change lands on top of it.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * AND THE THING THE TABLE SAYS THAT NOBODY ASKED IT
@@ -103,9 +159,11 @@ describe('the pyramid holds its shape', () => {
     });
 
     it('keeps the bottom of the ladder the overwhelming majority', () => {
-        // Baseline 59.9 - 66.4. The floor is what stops an ambient change
-        // draining Qi Condensation into the bands above it, which is what
-        // "inflating from the bottom up" looks like in one number.
+        // Baseline 59.9 - 66.4, against 66.5 - 67.7 before root conditioning,
+        // so this band has already absorbed one real change. The floor is what
+        // stops an ambient change draining Qi Condensation into the bands above
+        // it, which is what "inflating from the bottom up" looks like in one
+        // number.
         for (const run of RUNS) {
             expect(
                 at(run.share, 'qi_condensation'),
@@ -128,7 +186,8 @@ describe('the pyramid holds its shape', () => {
     });
 
     it('does not let the world fill with the last three realms', () => {
-        // Baseline 2.32 - 2.40. THE owner's constraint, stated as a number.
+        // Baseline 2.35 - 2.40 with root conditioning, 2.17 - 2.21 without.
+        // THE owner's constraint, stated as a number.
         // Bodies at Body Integration and above are meant to be countable by a
         // person who cares, not a demographic.
         for (const run of RUNS) {
