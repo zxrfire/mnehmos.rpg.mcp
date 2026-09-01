@@ -203,6 +203,42 @@ export function migrateCultivation(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_techniques_category ON techniques(category);
     CREATE INDEX IF NOT EXISTS idx_techniques_required_ordinal ON techniques(required_ordinal);
 
+    -- ── STAGES ───────────────────────────────────────────────────────────
+    -- A derivation is the next STAGE of a manual, not a new book. The manual
+    -- stays the catalog row it always was; what changes is how far it has been
+    -- written, and by whom.
+    --
+    -- ONLY RUNTIME-WRITTEN STAGES GET ROWS. The stages a manual shipped with
+    -- are implied by 'cap - requiredOrdinal' and are deliberately NOT
+    -- back-filled: two representations of the same fact drift, and the catalog
+    -- is the authority for everything it already states. So the count of rows
+    -- here is 'stagesWrittenSince', which is exactly what 'writtenTo' takes.
+    CREATE TABLE IF NOT EXISTS technique_stages (
+      manual_id       TEXT    NOT NULL,   -- the catalog id. Stages never exist alone
+      stage_number    INTEGER NOT NULL,   -- 1-based; catalog ships 1..(cap - requiredOrdinal)
+      author_id       TEXT,               -- NULL for the stages the manual has always had
+      written_on_day  INTEGER,            -- NULL likewise
+      opacity         REAL    NOT NULL DEFAULT 0,
+      PRIMARY KEY (manual_id, stage_number)
+    );
+
+    -- How far a given cultivator has actually got through a manual.
+    --
+    -- ONE INTEGER, because stages are contiguous: nobody practises stage 14
+    -- while stuck at stage 2 for want of the volume in between. Gapped VOLUMES
+    -- are a different thing and stay in the object table where they already
+    -- live; 'effectiveCapOf' takes the gapped id set and computes the unbroken
+    -- run from it.
+    CREATE TABLE IF NOT EXISTS cultivator_stages (
+      cultivator_id   TEXT    NOT NULL,
+      manual_id       TEXT    NOT NULL,
+      through_stage   INTEGER NOT NULL,   -- highest UNBROKEN stage held
+      PRIMARY KEY (cultivator_id, manual_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_technique_stages_manual
+      ON technique_stages(manual_id);
+
     -- Who knows what, and how well. Mastery and cooldown are per-cultivator
     -- state, not properties of the art, so they belong on the join and not on
     -- the catalog row two cultivators share.
