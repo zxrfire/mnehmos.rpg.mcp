@@ -268,6 +268,14 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I learn the Azure Ripple Art',
         'I study the Iron Bell Manual',
         'I take up the Cloudstep technique'
+    ],
+    // The verb that was missing entirely, and with it the six heal_hp pills
+    // and every breakthrough pill bonus ever computed.
+    consume_pill: [
+        'I swallow a healing pill',
+        'I take a Minor Healing Pill',
+        'I eat a healing pill',
+        'I use the pill'
     ]
 };
 

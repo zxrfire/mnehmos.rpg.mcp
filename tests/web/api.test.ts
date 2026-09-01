@@ -131,10 +131,22 @@ describe('GET /api/state', () => {
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(res.body.ambient);
 
         expect(Object.keys(res.body.derived).sort()).toEqual([
-            'breakthroughBlockedReason', 'breakthroughReady', 'foundationQuality',
-            'lifespanRemaining', 'nameTaken', 'nextRankName', 'progressRequired',
-            'rankName', 'realmName', 'sectName', 'untreatedInjuries'
+            'bleedOutTurns', 'breakthroughBlockedReason', 'breakthroughReady', 'dao',
+            'foundationQuality', 'lifespanRemaining', 'nameTaken', 'nextRankName',
+            'progressRequired', 'rankName', 'realmName', 'sectName',
+            'turnsUntilBleedOut', 'untreatedInjuries'
         ]);
+        // No wounds open, so no clock. Null rather than Infinity, because JSON
+        // has no Infinity and the wire type has to be the one the client tests.
+        expect(res.body.derived.turnsUntilBleedOut).toBeNull();
+        // Rank and dao are separate axes, and only one of them can be shut. The
+        // sheet gets both, so a cultivator whose ladder is finished is not shown
+        // a page made entirely of things they cannot do.
+        expect(res.body.derived.dao).toMatchObject({
+            insights: [],
+            totalDegrees: 0,
+            theOnlyAxisLeft: false
+        });
         expect(res.body.derived).toMatchObject({
             rankName: 'Qi Condensation Layer 1',
             nextRankName: 'Qi Condensation Layer 2',
@@ -233,7 +245,15 @@ describe('POST /api/cultivate', () => {
         // endpoint, got a structure back, and rendered a table of deltas,
         // while a player who typed the same thing got prose. One design,
         // two front doors, and only one of them had the narrator.
-        expect(Object.keys(res.body).sort()).toEqual(['narration', 'state', 'timeSkip']);
+        // `events` and `interruptReason` are the second half of the same fix.
+        // `timeSkip.events` is only the cultivation engine's half of the span;
+        // the encounter layer's occurrences are merged into `events`, and this
+        // endpoint was returning neither - so the GUI's seclusion button showed
+        // no encounters at all, measured as zero summonses across 200 lives
+        // against 1.63 a sect life through the typed endpoint on the same build.
+        expect(Object.keys(res.body).sort())
+            .toEqual(['events', 'interruptReason', 'narration', 'state', 'timeSkip']);
+        expect(Array.isArray(res.body.events)).toBe(true);
         expect(res.body.narration).toEqual(expect.any(String));
         expect(res.body.narration.length).toBeGreaterThan(0);
 

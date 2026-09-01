@@ -71,6 +71,7 @@ import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { capOf, classOf } from '../data/cultivation/techniques.js';
+import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import {
     auditAncestralClaim,
@@ -95,12 +96,14 @@ import { OPENLY_OR_IN_SECRET } from '../data/cultivation/standoff.js';
 import { IMMORTAL_MOTIVE } from '../data/cultivation/crossings.js';
 import { baseReservesFor } from '../engine/cultivation/embezzlement.js';
 import {
+    handleConsumePill,
     handleInventory,
     handleListRecipes,
     handleRefine
 } from '../server/consolidated/alchemy-manage.js';
 import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
 import { handleMarket, handleWork, standingOf } from '../server/consolidated/cultivation-mortal.js';
+import { SECT_BONUS_PER_RANK } from '../server/consolidated/cultivation-manage.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
 import {
     handleJoin,
@@ -275,6 +278,8 @@ import {
     refuseDuty,
     fitOf,
     sectBoardFor,
+    writeObligation,
+    type DatabaseHandle,
     withEncounterDeltas,
     type DutyLedgerInput
 } from './encounters.js';
@@ -293,6 +298,7 @@ import {
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
 import type { PlayerDigest } from '../engine/world/digest.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import { createGrudge, type Severity } from '../engine/social/grudges.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt } from '../engine/world/world-state.js';
@@ -701,6 +707,37 @@ const TECHNIQUES_SHOWN = 8;
 const DUTIES_SHOWN = 8;
 
 /**
+ * What emptying a piece of ground is worth to whoever holds it, by the rung the
+ * ground is pitched at.
+ *
+ * Bands rather than a curve, and read off the site's own ordinal, so the same
+ * table prices a Qi Condensation grave and the interment of somebody at the top
+ * of the ladder. Aligned to the realm boundaries the rest of the game already
+ * uses rather than chosen: `serious` opens at Foundation, `grave` at Core
+ * Formation, `unforgivable` where the ladder stops producing people who can be
+ * quietly robbed.
+ */
+const GRAVE_SERIOUS_ORDINAL = 13;
+const GRAVE_GRAVE_ORDINAL = 21;
+const GRAVE_UNFORGIVABLE_ORDINAL = 33;
+
+/**
+ * How much of what a body is missing a FULL month of care puts back.
+ *
+ * One, and it is a decision rather than a dial. See the long note in
+ * `GameService.treat` for the measurement that produced it: HP was a strictly
+ * monotonic decreasing resource with no restorer any sentence could reach, and
+ * three quarters of all deaths by violence happened to somebody with nothing to
+ * treat. Below one this stays a bleed-out with a slower gradient; at one, being
+ * battered and being wounded become two different problems with two different
+ * answers, which is the distinction the whole medicine layer assumes.
+ *
+ * A shorter stay mends proportionally less, off `simulatedDays`, so this is a
+ * ceiling on a month rather than a grant.
+ */
+const CARE_RESTORES_FRACTION = 1;
+
+/**
  * The rung a cultivator with no cultivation manual is carried to.
  *
  * Zero, and it is a real number rather than an absence. `techniqueExhausted`
@@ -911,6 +948,29 @@ export interface ActResult {
 export interface CultivateResult {
     timeSkip: TimeSkipResult;
     state: StateView;
+    /**
+     * EVERYTHING that happened in the span, merged and in order.
+     *
+     * `timeSkip.events` is only the cultivation engine's half. `runSeclusion`
+     * merges the encounter layer's occurrences into `Execution.events`, and
+     * only `act` was returning those - so a player who clicked the seclusion
+     * button in the GUI saw NO ENCOUNTERS AT ALL, while the same build reached
+     * through the typed endpoint produced 1.63 summonses a sect life and made
+     * `npc_event` the commonest event kind in the game. One design, two front
+     * doors, and the door with a button on it was showing half the world.
+     *
+     * Measured as zero summonses across 200 lives on this endpoint against
+     * 1.63 per sect life on the other, on the same build.
+     */
+    events: SimEvent[];
+    /**
+     * Why the span stopped short, when it did.
+     *
+     * Provisions ran out, a wound opened, something walked in. No endpoint
+     * returned it, so "the ten years you asked for were three" arrived with no
+     * reason attached.
+     */
+    interruptReason: string | null;
     /**
      * The same prose a typed command would have produced.
      *
@@ -1371,7 +1431,10 @@ export class GameService {
         return {
             timeSkip: execution.timeSkip,
             state: this.stateView(after.run, after.cultivator),
-            narration: narration.text
+            narration: narration.text,
+            // The merged list, not `timeSkip.events`. See the note on the type.
+            events: execution.events,
+            interruptReason: execution.timeSkip.interruptReason ?? null
         };
     }
 
@@ -1667,6 +1730,9 @@ ${noticedWaiting}`;
 
             case 'inventory':
                 return this.inventory(run, cultivator);
+
+            case 'consume_pill':
+                return this.consumePill(cultivator, action.target);
 
             case 'list_techniques':
                 return this.listTechniques(run, cultivator);
@@ -5273,6 +5339,27 @@ ${noticed}`;
             granted: [...prizeTechniqueIds(whole), ...items]
         });
 
+        // ── AND TAKE THE ATTENTION ───────────────────────────────────────
+        //
+        // `tone.md` states the dilemma as two things the world will make you
+        // regret: "rob the grave and TAKE THE ATTENTION, or stay poor and stay
+        // slow." Only half of it existed. A site could be emptied and the
+        // emptying was recorded against the site and against nobody else, so
+        // there was no second half and therefore no decision - taking was
+        // strictly better than not taking, every time.
+        //
+        // No new rule and no grave-specific branch. `factionIds` is an ordinary
+        // column on every site, trial and grave alike; a house whose name is on
+        // the ground notices what came off it, and the record is held BY that
+        // house ABOUT this cultivator - the same direction `refuseDuty` and
+        // `combat-manage` already write in.
+        //
+        // The reason an unclaimed grave is safe to rob is therefore structural
+        // rather than merciful: there is nobody on the row to notice.
+        const noticed = this.attentionFor(run, cultivator, site);
+        for (const line of noticed.lines) withheld.push(line);
+        calls.push(...noticed.calls);
+
         const facts = factsForSiteTaken(cultivator, site.name, {
             granted,
             withheld,
@@ -5293,6 +5380,103 @@ ${noticed}`;
             }
         ];
         return execution;
+    }
+
+    /**
+     * Who notices that a piece of ground was emptied.
+     *
+     * Every house named on the site, and nobody else. The severity is read off
+     * what the ground is pitched at rather than chosen: emptying a Qi
+     * Condensation grave is a slight and emptying somebody at the top of the
+     * ladder is not, and the same table prices both. Nothing here is written
+     * about graves in particular.
+     *
+     * The record is an ordinary `grudge` row on the `obligations` tables, so
+     * it is discoverable by every query that already reads them, it inherits
+     * the ordinary inheritance rules, and a descendant three generations later
+     * can still be carrying it.
+     */
+    private attentionFor(
+        run: Run,
+        cultivator: Cultivator,
+        site: Site
+    ): { lines: string[]; calls: ToolCallRecord[] } {
+        const onDay = Math.floor(run.elapsedDays);
+        // The rung the ground is pitched at. A grave states the occupant's; a
+        // trial states what it advertises, and a trial that advertises nothing
+        // is priced at the bottom, which is honest - nobody can be indignant
+        // about a theft nobody can size.
+        const pitch = site.kind === 'grave'
+            ? site.occupantOrdinal
+            : site.outside.advertisedOrdinal ?? 0;
+        const severity: Severity =
+            pitch >= GRAVE_UNFORGIVABLE_ORDINAL ? 'unforgivable'
+                : pitch >= GRAVE_GRAVE_ORDINAL ? 'grave'
+                    : pitch >= GRAVE_SERIOUS_ORDINAL ? 'serious'
+                        : 'slight';
+
+        const lines: string[] = [];
+        const calls: ToolCallRecord[] = [];
+        /** Claimants this cultivator has no name for. Counted, then said once. */
+        let nameless = 0;
+
+        for (const factionId of site.factionIds) {
+            const house = this.repos.sects.getById(factionId);
+            if (!house) continue;
+
+            const record = createGrudge({
+                holderId: factionId,
+                subjectId: cultivator.id,
+                cause: 'robbery',
+                severity,
+                onDay,
+                description:
+                    `${site.name} was emptied on day ${onDay}. The ground is ${house.name}'s and `
+                    + 'what came off it did not.',
+                terms: null,
+                dueOnDay: null,
+                tags: ['site', site.kind, site.id]
+            });
+            writeObligation(this.db as unknown as DatabaseHandle, record);
+
+            // Said to the player as a fact about the world, not as a warning.
+            // Whether they can name the house is the discovery layer's
+            // question, and it is asked here rather than assumed.
+            const known = this.knowledge.isAwareOf(cultivator.id, 'sect', factionId);
+            if (known) {
+                lines.push(
+                    `${house.name} holds this ground, and what came off it did not come off it `
+                    + 'quietly.'
+                );
+            } else {
+                nameless++;
+            }
+            calls.push({
+                name: 'social.createGrudge',
+                action: 'site',
+                summary:
+                    `${factionId} now holds a ${severity} robbery grudge about ${cultivator.id}, `
+                    + `off ${site.id} at pitch ${pitch}. Written to obligations; permanent until `
+                    + 'settled, and inheritable.',
+                ok: true
+            });
+        }
+
+        // Said once, however many of them there are. Three separate sentences
+        // reading "somebody will notice" is three copies of one fact, and the
+        // discovery layer's rule is that not knowing who is ITSELF the fact.
+        if (nameless > 0) {
+            lines.push(
+                lines.length === 0 && nameless === 1
+                    ? 'This ground was somebody\'s. Whoever they are, they will find it emptied, '
+                      + 'and they will not have to wonder whether somebody was here.'
+                    : `${nameless} part${nameless === 1 ? 'y has' : 'ies have'} a claim on this `
+                      + 'ground and you have no name for any of them. They will find it emptied '
+                      + 'all the same.'
+            );
+        }
+
+        return { lines, calls };
     }
 
     /**
@@ -6367,33 +6551,77 @@ ${noticed}`;
         // player must never be charged less than the board quoted.
         const perWound = Math.max(1, Math.ceil(cashToStones(courseCash)));
 
-        if (hurt.length === 0) {
+        // ── WHAT A PHYSICIAN IS ACTUALLY FOR ─────────────────────────────
+        //
+        // A design decision, made deliberately and written down here because it
+        // is a decision and not a tuning constant.
+        //
+        // Measured across 1,058 lives: HP was a strictly monotonic decreasing
+        // resource. Forty controlled ten-year skips from 5/50 with full rations
+        // restored exactly zero, and 75% of all combat deaths had NO untreated
+        // wounds - nothing to treat, no verb to use, no way back. The frontier
+        // sat at ordinal 17 of 46 with a median age at death of 23 against a
+        // hundred-year lifespan. That is not a hard road; it is a bleed-out,
+        // and a bleed-out is not a decision anybody gets to make.
+        //
+        // The rule chosen, and the reason it does not contradict anything:
+        //
+        //   A WOUND DOES NOT MEND ON ITS OWN. A BODY DOES, UNDER CARE.
+        //
+        // `injuries.ts` is explicit that there is no long rest and no hit dice,
+        // and that stays exactly true: a torn meridian is permanent until
+        // somebody is paid to close it, it never closes by waiting, and it
+        // still ratchets the odds of the next one. What changes is that being
+        // BATTERED and being WOUNDED stop being the same thing. Lying still
+        // under a roof for a month, fed, having paid for it, puts a body back
+        // on its feet - which is what every physician in the world has ever
+        // been for, and is the one service the board already advertises and
+        // nothing could buy.
+        //
+        // It is not free and it is not fast. A month is a month, the clock runs
+        // through it, the food is bought or the stay kills them, and a broke
+        // cultivator cannot have it at all. What it is not any more is
+        // impossible.
+        const battered = cultivator.hp < cultivator.maxHp;
+
+        if (hurt.length === 0 && !battered) {
             return refused('engine.untreatedInjuries', 'treat', factsForRefusal(
                 'Nothing to see to.',
                 'You take stock of yourself and find nothing anybody could charge you for. '
-                + 'Whatever is wrong with your life today, it is not a wound.',
-                `No untreated injuries on record. ${course.name} would have cost ${perWound} `
-                + 'spirit stone(s) a wound. Nothing bought, nothing spent, no time passed.'
+                + 'Whatever is wrong with your life today, it is not a wound and it is not the body.',
+                `No untreated injuries on record and HP is full at ${cultivator.hp}/${cultivator.maxHp}. `
+                + `${course.name} would have cost ${perWound} spirit stone(s) a wound. `
+                + 'Nothing bought, nothing spent, no time passed.'
             ));
         }
 
-        if (cultivator.spiritStones < perWound) {
-            // Named price, named shortfall - the shape the sect admission
-            // refusal uses, which is the one refusal in this game that has
-            // never had to be explained to anybody.
+        // Being put back on your feet is the cheaper line on the same board.
+        // A course of care closes a meridian; a visit sets what is ordinary
+        // about a body, and somebody with no torn meridians is buying the
+        // second one.
+        const visitCash = localPrice(regionId, visit.cash);
+        const restingPrice = Math.max(1, Math.ceil(cashToStones(visitCash)));
+        const dueNow = hurt.length === 0 ? restingPrice : perWound;
+
+        if (cultivator.spiritStones < dueNow) {
             return refused('engine.localPrice', 'treat', factsForRefusal(
                 'Not for what you are carrying.',
-                `${course.name} is ${courseCash} cash the ${course.unit}, which is ${perWound} spirit `
-                + `stone${perWound === 1 ? '' : 's'}. You are carrying ${cultivator.spiritStones}, which is `
-                + `${perWound - cultivator.spiritStones} short. ${visit.note} That is the whole of what the `
-                + 'mortal world sells for this, and none of it is sold on credit.',
-                `${course.id} at ${courseCash} cash = ${perWound} stone(s) per wound; purse holds `
-                + `${cultivator.spiritStones}. ${hurt.length} untreated injury(ies) left untreated.`
+                `${hurt.length === 0 ? visit.name : course.name} is `
+                + `${hurt.length === 0 ? visitCash : courseCash} cash, which is ${dueNow} spirit `
+                + `stone${dueNow === 1 ? '' : 's'}. You are carrying ${cultivator.spiritStones}, `
+                + `which is ${dueNow - cultivator.spiritStones} short. ${visit.note} None of it is `
+                + 'sold on credit, and lying down somewhere for free is not the same thing.',
+                `${hurt.length === 0 ? visit.id : course.id} = ${dueNow} stone(s); purse holds `
+                + `${cultivator.spiritStones}. HP ${cultivator.hp}/${cultivator.maxHp}, `
+                + `${hurt.length} untreated injury(ies).`
             ));
         }
 
+        // How many meridians get closed, and what the whole stay costs. A stay
+        // with no wounds in it still costs the visit: somebody was paid to keep
+        // a body alive for a month.
         const courses = Math.min(hurt.length, Math.floor(cultivator.spiritStones / perWound));
-        const cost = courses * perWound;
+        const cost = Math.max(restingPrice, courses * perWound);
 
         // A month under somebody's roof, fed out of the purse the same way a
         // seclusion is. The clock runs through it: the world moves, the food
@@ -6457,10 +6685,25 @@ ${noticed}`;
             (before: Injury) => !before.treated
                 && triage.injuries.some((closed: Injury) => closed.id === before.id && closed.treated)
         );
+        // ── AND THE BODY, IN PROPORTION TO THE DAYS THEY LAY STILL ───────
+        //
+        // Proportional rather than flat, and derived rather than chosen: a stay
+        // cut short by starvation or by a boundary crossing mends exactly the
+        // fraction of a month it lasted, off the same `simulatedDays` every
+        // other consequence of this stretch is priced from. A full month
+        // restores a body completely; half a month restores half of what was
+        // missing. Nothing here can exceed `maxHp`, and nothing here touches a
+        // meridian - `treatWorstInjuries` above owns those and is the only
+        // thing that closes one.
+        const lay = Math.max(0, Math.min(1, skip.simulatedDays / TREATMENT_DAYS));
+        const missing = applied.cultivator.maxHp - applied.cultivator.hp;
+        const mended = Math.max(0, Math.round(missing * lay * CARE_RESTORES_FRACTION));
+
         const persist = this.db.transaction(() => {
             for (const injury of treated) {
                 this.repos.cultivators.treatInjury(injury.id, run.turn + 1);
             }
+            if (mended > 0) this.repos.cultivators.applyDeltas(cultivator.id, { hp: mended });
         });
         persist();
 
@@ -6474,7 +6717,8 @@ ${noticed}`;
             stonesSpent: cost,
             days: skip.simulatedDays,
             treated: treated.map(injury => injury.description),
-            stillUntreated: stillHurt
+            stillUntreated: stillHurt,
+            mended
         });
         facts.lines.unshift(provisioning.line);
         facts.lines.push(...applied.tollLines);
@@ -6820,6 +7064,67 @@ ${noticed}`;
         );
         return this.freeAction(run, 'inventory', facts);
     }
+
+    /**
+     * Swallowing a pill.
+     *
+     * Two systems were dark behind this one missing case, and the second is
+     * the larger. The six `heal_hp` pills could be BOUGHT and never taken - a
+     * new cultivator could spend 28 of their 30 stones on a Minor Healing Pill
+     * and carry it to their death - and `handleConsumePill` is the ONLY writer
+     * of `FLAG_PENDING_PILL`, so `ctx.pill` at every breakthrough in every
+     * played life was null and `MAX_PILL_BONUS`, the largest modifier in the
+     * game and the intended way past the rungs that kill, had never fired.
+     *
+     * Resolved against the POUCH, for the same reason `sell` is: a pill is a
+     * thing you are carrying, and the alternative reading of the sentence is a
+     * person by that name.
+     */
+    private async consumePill(
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Promise<Execution> {
+        const held = listPouch(this.db, cultivator.id).filter(row => row.kind === 'pill');
+        if (held.length === 0) {
+            return refused('storage.listPouch', 'consume_pill', factsForRefusal(
+                'Nothing in the pouch to take.',
+                'You go through the pouch for it and there is no pill in there. Wanting one is not '
+                + 'a method for having one.',
+                `No pill rows in cultivator_pouch for ${cultivator.id}. Nothing swallowed.`
+            ));
+        }
+
+        const query = (target ?? '').trim();
+        // A bare "I take a pill" with exactly one in the pouch is not
+        // ambiguous, and refusing it to make a player retype the name they can
+        // already see in their inventory is the same defect as a board that
+        // can be read and not bought from.
+        const chosen = query.length >= 3 && !GameService.PILL_IN_GENERAL.test(query)
+            ? this.pouchEntryFor(held, query)
+            : held.length === 1 ? held[0] : null;
+
+        if (!chosen) {
+            const carried = held.map(e => this.lotFor(e)?.name ?? e.itemId).join(', ');
+            return refused('engine.resolvePill', 'consume_pill', factsForRefusal(
+                query.length >= 3 ? `No pill called ${query} on you.` : 'Which one.',
+                `What is in the pouch: ${carried}.`,
+                `Unresolved pill "${query || '(nothing named)'}" against ${held.length} pill row(s). `
+                + 'Nothing swallowed, nothing spent.'
+            ));
+        }
+
+        const name = this.lotFor(chosen)?.name ?? chosen.itemId;
+        const result = await handleConsumePill({
+            action: 'consume_pill',
+            pillId: chosen.itemId,
+            cultivatorId: cultivator.id
+        });
+        return this.fromToolResult('alchemy_manage.consume_pill', 'consume_pill', result, name);
+    }
+
+    /** "a pill", "one", "the medicine" - a category, not a name. */
+    private static readonly PILL_IN_GENERAL =
+        /^(?:a |one |the |my |some )?\s*(?:pill|pills|elixir|elixirs|medicine|medicines|tablet|pellet|one|it)\s*$/i;
 
     /**
      * The arts that could be learned, filtered by everything that decides it.
@@ -7209,6 +7514,8 @@ ${fit.line}`;
     private rateTermsFor(cultivator: Cultivator): {
         techniqueCap: number | null;
         guideOrdinal: number | null;
+        techniqueBonus: number;
+        sectBonus: number;
     } {
         let cap: number | null = null;
         let anyManual = false;
@@ -7221,7 +7528,8 @@ ${fit.line}`;
             // ladder ends the question for every other book they own.
             if (theirs === null || theirs === undefined) return {
                 techniqueCap: null,
-                guideOrdinal: this.guideFor(cultivator)
+                guideOrdinal: this.guideFor(cultivator),
+                ...this.multipliersFor(cultivator)
             };
             cap = cap === null ? theirs : Math.max(cap, theirs);
         }
@@ -7229,7 +7537,58 @@ ${fit.line}`;
         return {
             // NO_MANUAL_CEILING when they hold none. Not null - see above.
             techniqueCap: anyManual ? cap : NO_MANUAL_CEILING,
-            guideOrdinal: this.guideFor(cultivator)
+            guideOrdinal: this.guideFor(cultivator),
+            ...this.multipliersFor(cultivator)
+        };
+    }
+
+    /**
+     * The two ORDINARY multipliers, which this layer was also not supplying.
+     *
+     * `CultivationOptions` has four rate terms and the six skip sites here
+     * passed one of them. `techniqueBonus` and `sectBonus` both defaulted to 1,
+     * which is why 30 promotions and 5,376 contribution across 52 measured sect
+     * lives moved the outcome by approximately zero: `rankIndex` reaches the
+     * rate through `sectBonus` and through nothing else, so climbing socially
+     * was arithmetically free of effect.
+     *
+     * The two cultivate paths were computing disjoint halves of the same
+     * options object - the MCP surface supplied these two and no ceilings, this
+     * one supplied the ceilings and neither of these - so the same cultivator
+     * progressed at two different rates depending on which door they came
+     * through. Same derivation as `cultivationOptionsFor`, deliberately: a
+     * manual half understood is half a manual, and a rank is worth what
+     * `SECT_BONUS_PER_RANK` says it is worth.
+     */
+    private multipliersFor(cultivator: Cultivator): {
+        techniqueBonus: number;
+        sectBonus: number;
+    } {
+        const root = getSpiritRoot(cultivator.spiritRoot);
+        let techniqueBonus = 1;
+
+        // The best cultivation manual they actually hold, at the mastery they
+        // actually hold it. Nothing is declared per-action here because
+        // seclusion declares no art; what a cultivator sits down with is the
+        // best road they own.
+        for (const id of cultivator.knownTechniques) {
+            const catalog = getTechnique(id);
+            if (!catalog || classOf(catalog) !== 'cultivation') continue;
+            const known = this.repos.techniques.getKnown(cultivator.id, id);
+            if (!known) continue;
+            const matched =
+                catalog.element !== null && root.elements.includes(catalog.element);
+            const bonus =
+                1 + known.mastery * 0.5 * (matched ? root.matchedTechniqueBonus / 2 : 1);
+            techniqueBonus = Math.max(techniqueBonus, bonus);
+        }
+
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        return {
+            techniqueBonus,
+            sectBonus: membership
+                ? 1 + SECT_BONUS_PER_RANK * (membership.rankIndex + 1)
+                : 1
         };
     }
 
@@ -8345,6 +8704,39 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     // largest sum a low cultivator ever sees. Same defect class as `work` and
     // `join`: a tool surface written for a model that will phrase the figures,
     // called by something that has to phrase them itself.
+    // A pill swallowed. `handleConsumePill` returns the applied effect and no
+    // narration hint, so the single most consequential object in the game -
+    // and, through FLAG_PENDING_PILL, the largest modifier in it - landed in
+    // the generic catch-all as "It is done. Nothing about it drew attention."
+    if (body.consumed === true) {
+        const swallowed = body.pill as { name?: string; grade?: string } | undefined;
+        lines.push(
+            `${swallowed?.name ?? 'The pill'}`
+            + `${swallowed?.grade ? `, ${swallowed.grade} grade` : ''}, swallowed. It is gone `
+            + 'whether it did anything or not.'
+        );
+        if (typeof body.applied === 'string') lines.push(body.applied);
+
+        if (body.pendingBreakthroughPill) {
+            lines.push(
+                'It is held for the next bottleneck rather than spent now, and the engine prices it '
+                + 'at the moment of the attempt - spent whether the attempt succeeds or not.'
+            );
+        }
+
+        const tox = body.toxicity as {
+            after?: number; tolerance?: number; crossedThreshold?: boolean;
+        } | undefined;
+        if (tox && typeof tox.after === 'number') {
+            lines.push(tox.crossedThreshold
+                ? `Toxicity is past ${tox.tolerance ?? 'the tolerance'} at `
+                  + `${tox.after.toFixed(2)}. The medicine has become the injury, and that is a `
+                  + 'real wound on a real body.'
+                : `Toxicity stands at ${tox.after.toFixed(2)} of ${tox.tolerance ?? '?'}. `
+                  + 'It does not clear on its own.');
+        }
+    }
+
     // A master's read of a student, which is a sentence about a person and not
     // about a place. `handleAssess` returns rows and no narration hint.
     if (body.against === 'student') {

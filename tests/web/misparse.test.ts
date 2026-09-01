@@ -332,7 +332,8 @@ describe('every verb is reachable from plain English', () => {
         sell: 'I sell the Qi Gathering Grass',
         inventory: 'what am I carrying',
         list_techniques: 'what arts can I learn',
-        learn_technique: 'I learn the Azure Ripple Art'
+        learn_technique: 'I learn the Azure Ripple Art',
+        consume_pill: 'I swallow a healing pill'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

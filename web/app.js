@@ -187,15 +187,60 @@ function isTrueImmortal(run = S.run, cultivator = S.cultivator) {
  * so a False Immortal's own vast-but-finite ceiling is already accounted for and
  * the client does not duplicate the constant.
  */
+/** Open wounds, from the derived view when it is there and the sheet when it is not. */
+function untreatedCount() {
+  const d = S.derived || {};
+  if (d.untreatedInjuries != null) return Number(d.untreatedInjuries) || 0;
+  return ((S.cultivator || {}).injuries || []).filter((i) => !i.treated).length;
+}
+
 function lifespanRemaining(derived = S.derived) {
   return Number(derived && derived.lifespanRemaining);
 }
 
-/** Highest legal ordinal, taken from the ladder the engine served. */
+/**
+ * Highest legal ordinal, taken from the ladder the engine served.
+ *
+ * The fallback is only reached before /api/reference/ladder has answered. It
+ * tracks the engine's MAX_ORDINAL, which is 46: the ladder is 47 rungs, 0-46,
+ * and its top two are False Immortal and True Immortal.
+ */
 function summitOrdinal() {
   return Array.isArray(S.ladder) && S.ladder.length
     ? Number(S.ladder[S.ladder.length - 1].ordinal)
-    : 45;
+    : 46;
+}
+
+/**
+ * The engine's sentinel for a span that has stopped being a quantity
+ * (`UNBOUNDED_LIFESPAN_YEARS` in engine/cultivation/realms.ts). Mirrored here
+ * for presentation only, never to compute anything: a billion years is not a
+ * number a person reads as a number, and printing it would make the top of the
+ * ladder look like a larger version of the rungs below rather than a different
+ * kind of thing.
+ */
+const UNBOUNDED_LIFESPAN_YEARS = 1e9;
+
+/** A realm's lifespan grant, as words. Never a bare sentinel. */
+function lifespanText(years) {
+  const v = Number(years);
+  if (!Number.isFinite(v) || v <= 0) return 'not recorded';
+  if (v >= UNBOUNDED_LIFESPAN_YEARS) return 'no longer a number';
+  return `${fmtInt(v)} yr`;
+}
+
+/**
+ * Whether a rung can be climbed off at all.
+ *
+ * `progressRequired` is null on the two rungs above the Lid, and that null is
+ * the engine making a statement rather than failing to send one: immortal qi is
+ * not this currency and there is no exchange rate. Nothing can attempt from
+ * either rung in any case - 46 is the summit and 45 is barred permanently - so
+ * this one flag governs both the cost column and the odds column, and neither
+ * of them prints a figure where there is no figure to print.
+ */
+function isClimbable(rung) {
+  return rung != null && rung.progressRequired !== null && rung.progressRequired !== undefined;
 }
 
 /* -- Existence -----------------------------------------------------------
@@ -399,6 +444,7 @@ const EVENT_TONE = {
   injury_sustained: 'bad',
   resource_depleted: 'warn',
   starvation_warning: 'warn',
+  bleeding_warning: 'warn',
   lifespan_warning: 'warn',
   death: 'fatal'
 };
@@ -600,6 +646,10 @@ async function beginRun(ev) {
   await refreshState({ quiet: true });
   resetLogRender();
   routeFromState();
+
+  // The register opens in its own tab and links back here for the roster, which
+  // lives as an overlay rather than a page of its own.
+  if (params.get('open') === 'roster' && S.health && S.health.adminMode) openRoster();
   announceRoll();
 }
 
@@ -668,11 +718,21 @@ function renderWarnings() {
     ? d.untreatedInjuries
     : (c.injuries || []).filter((i) => !i.treated).length) || 0;
   if (untreated >= 3) {
+    // The countdown is the engine's own number - derived.turnsUntilBleedOut -
+    // never one worked out here. Null means no clock is running, which at this
+    // count should not happen, so the line falls back to the standing warning
+    // rather than printing a number the engine did not send.
+    const bleed = d.turnsUntilBleedOut;
+    const fullWindow = Number(d.bleedOutTurns) || 0;
     items.push({
       level: 'critical',
       mark: '✕',
-      title: `${untreated} untreated injuries`,
-      body: 'Meridian damage does not heal on its own. Three or more compounds into a fatal spiral - treat them before cultivating.'
+      title: bleed == null
+        ? `${untreated} untreated injuries`
+        : `${untreated} untreated injuries - ${fmtInt(bleed)} days before they kill you`,
+      body: bleed == null
+        ? 'Meridian damage does not heal on its own. Any further combat is fatal.'
+        : `Meridian damage does not heal on its own. Any further combat is fatal, and doing nothing is too: ${fullWindow} days at this many open wounds and the meridians give out. Find a healer or a pill.`
     });
   } else if (untreated === 2) {
     items.push({
@@ -931,6 +991,68 @@ function meter(opts) {
     </div>`;
 }
 
+/**
+ * The dao side of the sheet.
+ *
+ * Rank and dao are separate axes and only one of them can ever be shut. The
+ * ordinal stops at the Lid; understanding does not, because insight discovery
+ * reads the spirit root and nothing else and degree has no ceiling tied to the
+ * ladder. For a cultivator still climbing this is a second track. For a False
+ * Immortal, whose rank is finished permanently, it is the only one left open -
+ * and it is what a span that long is actually spent on, so the panel says so
+ * rather than leaving their page a list of things they cannot do.
+ */
+function daoSection(d) {
+  const dao = d.dao;
+  if (!dao) return '';
+  const insights = Array.isArray(dao.insights) ? dao.insights : [];
+  const only = !!dao.theOnlyAxisLeft;
+
+  if (insights.length === 0) {
+    return html`
+      <section class="sheet__group">
+        <h3 class="sheet__label">Dao${only ? ' · the only axis left' : ''}</h3>
+        <p class="dao__empty">
+          ${only
+            ? 'Nothing comprehended deeply enough to name. The rank is finished and this is the one thing that can still go up, which makes it the only shortfall left worth reporting.'
+            : 'Nothing comprehended deeply enough to name yet. Understanding is drawn from what a cultivator is exposed to, not from what they accumulate.'}
+        </p>
+      </section>`;
+  }
+
+  const rows = insights
+    .slice()
+    .sort((a, b) => (b.degree - a.degree) || String(a.name).localeCompare(String(b.name)))
+    .map((i) => html`
+      <div class="dao__row${i.universal ? ' dao__row--universal' : ''}">
+        <span class="dao__name">${i.name}</span>
+        <span class="dao__domain">${titleise(String(i.domain))}</span>
+        <span class="dao__degree">${fmtInt(i.degree)}${'\u00b0'}</span>
+      </div>`)
+    .join('');
+
+  const rate = Number(dao.cultivationMultiplier) || 1;
+  const bt = Number(dao.breakthroughModifier) || 0;
+
+  return html`
+    <section class="sheet__group">
+      <h3 class="sheet__label">Dao${only ? ' · the only axis left' : ''}</h3>
+      <div class="dao__summary">
+        <span class="dao__depth">${fmtInt(dao.totalDegrees)} degrees</span>
+        <span class="muted">across ${fmtInt(insights.length)} insight${insights.length === 1 ? '' : 's'}</span>
+      </div>
+      <div class="dao__list">${raw(rows)}</div>
+      <div class="dao__effects">
+        ${rate > 1 ? html`<span>×${fmtNum(rate, 2)} cultivation rate</span>` : ''}
+        ${bt > 0 ? html`<span>+${fmtNum(bt * 100, 1)}% on a breakthrough</span>` : ''}
+        ${rate <= 1 && bt <= 0 ? html`<span class="muted">None of it bears on what is being done right now.</span>` : ''}
+      </div>
+      ${only ? raw(html`<p class="dao__note">
+        The ladder is shut against this name and will not open again. This is not.
+      </p>`) : ''}
+    </section>`;
+}
+
 function renderSheet() {
   const c = S.cultivator;
   const d = S.derived || {};
@@ -942,7 +1064,11 @@ function renderSheet() {
   const injuries = Array.isArray(c.injuries) ? c.injuries : [];
   const untreated = injuries.filter((i) => !i.treated);
 
-  const progressRequired = Number(d.progressRequired) || 0;
+  // Null above the Lid, and null is not zero. `Number(null) || 0` would turn
+  // "this rung is not bought with qi" into "this rung costs nothing", which is
+  // the opposite statement and would draw an empty bar out of a full one.
+  const priced = d.progressRequired !== null && d.progressRequired !== undefined;
+  const progressRequired = priced ? Number(d.progressRequired) || 0 : null;
   const progress = Number(c.cultivationProgress) || 0;
   const ready = !!d.breakthroughReady;
 
@@ -1017,21 +1143,33 @@ function renderSheet() {
 
     <section class="sheet__group">
       <h3 class="sheet__label">Cultivation</h3>
-      ${raw(meter({
-        name: d.nextRankName ? `Toward ${d.nextRankName}` : 'Progress',
-        value: progress,
-        max: progressRequired,
-        kind: 'prog'
-      }))}
-      <div class="meter__note ${raw(falseImmortal ? 'is-barred' : ready ? 'is-ready' : '')}">
-        ${falseImmortal
-          ? 'Full, and it does not matter. The crossing does not open again for this cultivator.'
-          : ready
-            ? 'Breakthrough ready - the engine will resolve the attempt.'
-            : progressRequired > 0
-              ? `${fmtInt(Math.max(0, progressRequired - progress))} qi-units short.`
-              : 'The engine reports no further rank.'}
-      </div>
+      ${progressRequired === null
+        ? raw(html`<div class="vital-line tone-odd">
+            <div class="vital-line__top">
+              <span class="meter__name">Progress</span>
+              <span class="vital-line__val">Not counted here</span>
+            </div>
+            <div class="meter__note">
+              Above the Lid qi stops being the currency, so there is no figure to fill and
+              nothing to fill it toward. This is not a reading the engine failed to take.
+            </div>
+          </div>`)
+        : raw(meter({
+            name: d.nextRankName ? `Toward ${d.nextRankName}` : 'Progress',
+            value: progress,
+            max: progressRequired,
+            kind: 'prog'
+          }))}
+      ${progressRequired === null ? '' : raw(html`
+        <div class="meter__note ${raw(falseImmortal ? 'is-barred' : ready ? 'is-ready' : '')}">
+          ${falseImmortal
+            ? 'Full, and it does not matter. The crossing does not open again for this cultivator.'
+            : ready
+              ? 'Breakthrough ready - the engine will resolve the attempt.'
+              : progressRequired > 0
+                ? `${fmtInt(Math.max(0, progressRequired - progress))} qi-units short.`
+                : 'The engine reports no further rank.'}
+        </div>`)}
       <div class="ambient">
         <span class="muted">Ambient qi</span>
         <span class="ambient__val amb-${raw(String(S.ambient))}">${titleise(S.ambient)}</span>
@@ -1045,6 +1183,8 @@ function renderSheet() {
         <div class="foundation__note">${FOUNDATION_TEXT[foundation] || 'The engine reports a foundation quality this client does not recognise.'}</div>
       </div>
     </section>
+
+    ${raw(daoSection(d))}
 
     <section class="sheet__group">
       <h3 class="sheet__label">Vitals</h3>
@@ -1355,7 +1495,12 @@ async function doCultivate(days) {
   if (payload.state) applyState(payload.state);
   afterMutation({ skipRoute: true });
 
-  if (payload.timeSkip) showTimeSkip(payload.timeSkip, payload.narration);
+  // `payload.events` is the MERGED list - the cultivation engine's half plus
+  // the encounter layer's - and `timeSkip.events` is only the first half. This
+  // button was showing no encounters at all: zero summonses across 200
+  // measured lives here, against 1.63 a sect life through the typed endpoint on
+  // the same build.
+  if (payload.timeSkip) showTimeSkip(payload.timeSkip, payload.narration, payload.events);
   else routeFromState();
 }
 
@@ -1577,8 +1722,11 @@ function rollViz(finalChance, roll) {
 
 /* ── time-skip digest ── */
 
-function showTimeSkip(skip, narration) {
-  const events = Array.isArray(skip.events) ? skip.events.slice() : [];
+function showTimeSkip(skip, narration, merged) {
+  // Prefer the merged list when the caller has one. Falls back to the skip's
+  // own events so every other caller is unchanged.
+  const source = Array.isArray(merged) ? merged : skip.events;
+  const events = Array.isArray(source) ? source.slice() : [];
   events.sort((a, b) => (Number(a.dayOffset) || 0) - (Number(b.dayOffset) || 0));
   const deltas = skip.deltas || {};
 
@@ -1665,9 +1813,15 @@ function pickerDays() {
   return Math.max(1, Math.round(PICKER.amount * UNIT_DAYS[PICKER.unit]));
 }
 
-function pickerBody() {
-  const presets = UNIT_PRESETS[PICKER.unit];
-  const days = pickerDays();
+/**
+ * Everything wrong with committing this many days, as plain sentences.
+ *
+ * Extracted so the live re-render on the custom-duration field can print the
+ * same list. It used to redraw the summary line WITHOUT the warnings, so a
+ * player who typed "20" into the years box - which is exactly the person who
+ * needs telling - watched the warning vanish as they typed it.
+ */
+function pickerWarnings(days) {
   const life = lifespanRemaining();
   const stag = Number((S.cultivator || {}).yearsAtCurrentRealm) || 0;
   const years = days / DAYS_PER_YEAR;
@@ -1683,6 +1837,26 @@ function pickerBody() {
   if (satiety <= 30 && days > 30) {
     warnings.push(`Satiety is ${fmtInt(satiety)}. Long seclusion on an empty stomach is how runs end.`);
   }
+  // Open meridians kill on a clock, and time is exactly what is being spent
+  // here. This is the last thing read before committing it, so it is where the
+  // player has to be told. The number is the engine's (derived.turnsUntilBleedOut).
+  const bleed = (S.derived || {}).turnsUntilBleedOut;
+  if (bleed != null) {
+    warnings.push(days >= bleed
+      ? `You will not survive this. ${fmtInt(untreatedCount())} untreated meridian injuries give out in ${fmtInt(bleed)} days, and you are asking for ${fmtInt(days)}. Treat them first.`
+      : `${fmtInt(untreatedCount())} untreated meridian injuries. They give out in ${fmtInt(bleed)} days whatever you do; this leaves ${fmtInt(bleed - days)} to reach a healer afterwards.`);
+  }
+
+  return warnings;
+}
+
+function pickerWarningHtml(days) {
+  return raw(pickerWarnings(days).map((w) => html`<div class="pick__warn">⚠ ${w}</div>`).join(''));
+}
+
+function pickerBody() {
+  const presets = UNIT_PRESETS[PICKER.unit];
+  const days = pickerDays();
 
   return html`
     <div class="pick">
@@ -1710,7 +1884,7 @@ function pickerBody() {
       <div class="pick__total">
         Entering seclusion for <b>${fmtDays(days)}</b>
         <span class="muted" style="font-family:var(--font-mono);font-size:12.5px"> (${fmtInt(days)} days sent to the engine)</span>
-        ${raw(warnings.map((w) => html`<div class="pick__warn">⚠ ${w}</div>`).join(''))}
+        ${pickerWarningHtml(days)}
       </div>
     </div>`;
 }
@@ -1741,7 +1915,8 @@ function openCultivatePicker() {
           // Re-render only the summary so the number field keeps focus/caret.
           const days = pickerDays();
           total.innerHTML = html`Entering seclusion for <b>${fmtDays(days)}</b>
-            <span class="muted" style="font-family:var(--font-mono);font-size:12.5px"> (${fmtInt(days)} days sent to the engine)</span>`;
+            <span class="muted" style="font-family:var(--font-mono);font-size:12.5px"> (${fmtInt(days)} days sent to the engine)</span>
+            ${pickerWarningHtml(days)}`;
         }
         $$('#pick-amounts .pick__amount').forEach((b) => {
           b.setAttribute('aria-pressed', Number(b.dataset.amount) === v ? 'true' : 'false');
@@ -1843,30 +2018,52 @@ async function openLadder() {
   const here = S.cultivator ? Number(S.cultivator.realmOrdinal) : -1;
   const peak = S.run ? Number(S.run.peakOrdinal) : -1;
 
+  // Grouped off `realmKey`, never off the sub-rank names. Four realms do not
+  // use Early/Mid/Late/Perfection at all - Deity Transformation counts Turns,
+  // Void Refinement counts Temperings, Body Integration names the four things
+  // it has joined, Grand Ascension the four Risings - and the two rungs above
+  // the Lid carry no realm prefix on their names at all. The view prints what
+  // the engine served and assumes nothing about its vocabulary.
   const groups = [];
   for (const r of S.ladder) {
     const last = groups[groups.length - 1];
-    if (!last || last.key !== r.realmKey) groups.push({ key: r.realmKey, name: r.realm, lifespan: r.lifespanYears, rows: [r] });
+    if (!last || last.key !== r.realmKey) groups.push({ key: r.realmKey, name: r.realm, rows: [r] });
     else last.rows.push(r);
   }
+
+  // One span for the realm, or null where its own rungs disagree. Every realm
+  // below the Lid grants the same span at each of its rungs, so the figure
+  // belongs in the realm header. The Immortal realm does not: a False Immortal
+  // has a vast countable span and a True Immortal has none to count, and
+  // printing the first rung's number as the realm's would quietly attribute the
+  // lesser of the two to both.
+  const realmLifespan = (g) => {
+    const spans = new Set(g.rows.map((r) => Number(r.lifespanYears)));
+    return spans.size === 1 ? [...spans][0] : null;
+  };
 
   const body = html`
     <div class="legend">
       <span><b style="color:var(--jade-300)">◆</b> where you stand</span>
       <span><b style="color:var(--brass-300)">▮</b> realm boundary - the rungs that kill</span>
       <span><b>%</b> base breakthrough chance before any modifier</span>
+      <span><b>above the Lid</b> the last two rungs are the two landings of one crossing, and nothing is climbed off either</span>
     </div>
     <div class="ladder">
       ${raw(groups.map((g) => html`
         <div class="ladder__realm">
           <span class="ladder__realmname">${g.name}</span>
-          <span class="ladder__realmmeta">lifespan ${Number(g.lifespan) > 0 ? `${fmtInt(g.lifespan)} yr` : 'no longer a number'} · ordinals ${fmtInt(g.rows[0].ordinal)}-${fmtInt(g.rows[g.rows.length - 1].ordinal)}</span>
+          <span class="ladder__realmmeta">${realmLifespan(g) === null
+            ? 'lifespan differs by rung'
+            : `lifespan ${lifespanText(realmLifespan(g))}`} · ordinals ${fmtInt(g.rows[0].ordinal)}-${fmtInt(g.rows[g.rows.length - 1].ordinal)}</span>
         </div>
         ${raw(g.rows.map((r) => {
           const o = Number(r.ordinal);
+          const climbable = isClimbable(r);
           const cls = [
             'rung',
             r.isBoundary ? 'rung--boundary' : '',
+            climbable ? '' : 'rung--abovelid',
             o === here ? 'rung--here' : '',
             here >= 0 && o === here + 1 ? 'rung--next' : '',
             here >= 0 && o < here ? 'rung--past' : ''
@@ -1876,8 +2073,10 @@ async function openLadder() {
               <span class="rung__ord">${fmtInt(o)}</span>
               <span class="rung__name">${r.name}${o === here ? raw(html`<span class="rung__tag">you are here</span>`)
                 : (o === peak && peak > here ? raw(html`<span class="rung__tag">run peak</span>`) : '')}</span>
-              <span class="rung__prog">${fmtInt(r.progressRequired)} qi</span>
-              <span class="rung__odds" style="color:${raw(oddsColor(r.baseBreakthroughChance))}">${fmtPct(r.baseBreakthroughChance, 0)}</span>
+              ${climbable
+                ? raw(html`<span class="rung__prog">${fmtInt(r.progressRequired)} qi</span>
+                  <span class="rung__odds" style="color:${raw(oddsColor(r.baseBreakthroughChance))}">${fmtPct(r.baseBreakthroughChance, 0)}</span>`)
+                : raw(html`<span class="rung__void">no price, and nothing to attempt</span>`)}
             </div>`;
         }).join(''))}`).join(''))}
     </div>`;
@@ -1984,6 +2183,21 @@ const ROSTER_COLUMNS = [
  * this file would reimplement. Regenerating is a reload: the endpoint rebuilds
  * from the catalogs on every request.
  */
+/* ── the admin menu ────────────────────────────────────────────────────
+   Operator tools hang off the badge rather than sitting in the bar, so the
+   top of the screen stays what a player is meant to touch. */
+function openAdminMenu() {
+  $('#admin-tools').hidden = false;
+  $('#admin-badge').setAttribute('aria-expanded', 'true');
+  const first = $('#admin-tools').querySelector('.adminmenu__item');
+  if (first) first.focus();
+}
+
+function closeAdminMenu() {
+  $('#admin-tools').hidden = true;
+  $('#admin-badge').setAttribute('aria-expanded', 'false');
+}
+
 function openRegister(refresh) {
   const url = refresh ? '/api/admin/register.html?refresh=1' : '/api/admin/register.html';
   const win = window.open(url, 'standing-register');
@@ -2397,6 +2611,15 @@ function wire() {
   $('#sheet-toggle').addEventListener('click', toggleSheetDrawer);
   $('#sheet-scrim').addEventListener('click', closeSheetDrawer);
 
+  $('#admin-badge').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('#admin-tools').hidden ? openAdminMenu() : closeAdminMenu();
+  });
+  // Any click that is not inside the menu dismisses it.
+  document.addEventListener('click', (e) => {
+    if (!$('#admin-tools').hidden && !e.target.closest('#admin-menu')) closeAdminMenu();
+  });
+
   document.addEventListener('click', (e) => {
     const closer = e.target.closest('[data-overlay-close]');
     if (closer) { e.preventDefault(); closeOverlay(); return; }
@@ -2404,6 +2627,7 @@ function wire() {
     if (opener) {
       e.preventDefault();
       const what = opener.dataset.open;
+      if (opener.closest('#admin-tools')) closeAdminMenu();
       if (what === 'ladder') openLadder();
       else if (what === 'ledger') openLedger();
       else if (what === 'roster') openRoster();
@@ -2415,6 +2639,7 @@ function wire() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (!$('#admin-tools').hidden) { closeAdminMenu(); $('#admin-badge').focus(); return; }
       if (!$('#overlay').hidden) { closeOverlay(); return; }
       if (app.dataset.sheet === 'open') { closeSheetDrawer(); return; }
     }
@@ -2463,11 +2688,10 @@ async function boot() {
 
   if (health.ok) {
     S.health = health.data;
-    if (health.data.adminMode) {
-      $('#admin-badge').hidden = false;
-      $('#btn-roster').hidden = false;   // read-only observability view
-      $('#btn-register').hidden = false; // the world reference sheet
-    }
+    // One gate for the whole operator surface. Everything a player is not
+    // meant to see hangs off the badge, so revealing the menu reveals all of
+    // it and nothing leaks into the bar when admin mode is off.
+    if (health.data.adminMode) $('#admin-menu').hidden = false;
   } else {
     toast('Engine unreachable', health.error);
   }

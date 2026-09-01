@@ -174,7 +174,7 @@ const FOCUS_MULTIPLIERS = {
 type FocusMode = keyof typeof FOCUS_MULTIPLIERS;
 
 /** Sect support per rank step: elder guidance, arrays, a stipend that feeds you. */
-const SECT_BONUS_PER_RANK = 0.05;
+export const SECT_BONUS_PER_RANK = 0.05;
 
 /** One ration fills the belly once, and a full belly covers 50 turn-actions. */
 export const RATION_COST_STONES = 2;

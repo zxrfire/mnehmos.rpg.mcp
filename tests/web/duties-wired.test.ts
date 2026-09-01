@@ -16,6 +16,7 @@ import { describe, it, expect } from 'vitest';
 import { parseIntent } from '../../src/web/actions';
 import { makeGame } from './harness';
 import { SECTS } from '../../src/data/cultivation/index';
+import { SITES } from '../../src/data/cultivation/inheritance-trials';
 
 const LOCAL_SECT = SECTS
     .filter(sect => sect.recruits)
@@ -121,5 +122,76 @@ describe('contribution, which had no earner', () => {
         // Contract work, paid in the only currency somebody on nobody's roll
         // can be paid in. That difference IS the membership.
         expect(game.state().cultivator.spiritStones).toBeGreaterThan(before - 1000);
+    });
+});
+
+/**
+ * "Rob the grave and take the attention, or stay poor and stay slow."
+ *
+ * `tone.md` states the four dilemmas the design is built out of, and this one
+ * had only one half. A site could be emptied and the emptying was recorded
+ * against the SITE and against nobody else, so taking was strictly better than
+ * not taking at every rung and there was no decision in it at all.
+ *
+ * Not a grave rule. `factionIds` is an ordinary column on every site, and the
+ * reason an unclaimed piece of ground is safe to rob is structural: there is
+ * nobody on the row to notice.
+ */
+describe('taking what is behind the door, and being noticed for it', () => {
+    it('writes a grudge held by every house named on the ground', async () => {
+        const { db, game } = makeGame({ seed: 'rob-guard' });
+        const { cultivator } = await game.newRun('Digger');
+        db.prepare(
+            'UPDATE cultivators SET realm_ordinal = 40, spirit_stones = 50000, hp = 900, max_hp = 900 WHERE id = ?'
+        ).run(cultivator.id);
+
+        // Whichever grave this cultivator can actually get into. Which one it
+        // is depends on gates the site catalog owns, and the property under
+        // test is about what happens AFTER the door, not about which door.
+        let robbed = false;
+        for (const site of SITES.filter(s => s.kind === 'grave')) {
+            await game.act(`I go to ${site.name}`);
+            await game.act('I go inside');
+            await game.act(`I rob ${site.name}`);
+            const rows = db.prepare('SELECT COUNT(*) AS c FROM obligations').get() as { c: number };
+            if (rows.c > 0) { robbed = true; break; }
+        }
+        expect(robbed, 'no grave in the catalog admitted an ordinal-40 cultivator').toBe(true);
+
+        const grudges = db.prepare(
+            "SELECT kind, cause, severity, holder_id, subject_id FROM obligations WHERE kind = 'grudge'"
+        ).all() as { cause: string; severity: string; holder_id: string; subject_id: string }[];
+
+        expect(grudges.length).toBeGreaterThan(0);
+        for (const row of grudges) {
+            expect(row.cause).toBe('robbery');
+            // Held BY the aggrieved party ABOUT the robber, which is the
+            // direction the rest of the ledger writes in.
+            expect(row.subject_id).toBe(cultivator.id);
+            expect(row.holder_id).not.toBe(cultivator.id);
+        }
+    });
+
+    it('says once that somebody will notice, not once per claimant', async () => {
+        const { db, game } = makeGame({ seed: 'rob-voice' });
+        const { cultivator } = await game.newRun('Digger');
+        db.prepare(
+            'UPDATE cultivators SET realm_ordinal = 40, spirit_stones = 50000, hp = 900, max_hp = 900 WHERE id = ?'
+        ).run(cultivator.id);
+
+        for (const site of SITES.filter(s => s.kind === 'grave')) {
+            await game.act(`I go to ${site.name}`);
+            await game.act('I go inside');
+            const taken = await game.act(`I rob ${site.name}`);
+            const rows = db.prepare('SELECT COUNT(*) AS c FROM obligations').get() as { c: number };
+            if (rows.c === 0) continue;
+
+            // Not knowing WHO is one fact about the player, said once. Three
+            // copies of it is the same defect as a market board repeating
+            // "you cannot afford this" on every line.
+            const repeated = taken.narration.split('They will find it emptied').length - 1;
+            expect(repeated).toBeLessThanOrEqual(1);
+            return;
+        }
     });
 });

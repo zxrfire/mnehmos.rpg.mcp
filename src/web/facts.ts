@@ -30,9 +30,11 @@ import {
     SimEvent,
     TimeSkipResult
 } from '../schema/cultivation.js';
+import { insightName } from '../engine/cultivation/understanding.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
+import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 
 export interface EngineFacts {
@@ -157,7 +159,22 @@ export function describeStanding(observerOrdinal: number, subjectOrdinal: number
     return 'so far above that the question of comparison does not arise, and they are not thinking about it either';
 }
 
-export function placeName(cultivator: Pick<Cultivator, 'location'>): string {
+/**
+ * Where a True Immortal is, which is not anywhere on the map.
+ *
+ * The Immortal realm is a place rather than a rank band - other immortals and
+ * immortal beasts are in it, and the province the cultivator came from is on
+ * the other side of a hole they had to punch to leave through.
+ */
+export const ABOVE_THE_LID_PLACE = 'the far side of the Lid';
+
+export function placeName(
+    cultivator: Pick<Cultivator, 'location'> & Partial<Pick<Cultivator, 'immortalStatus'>>
+): string {
+    // A True Immortal keeps whatever `location` row they had when they crossed,
+    // because nothing clears it - and every surface that read it then reported
+    // them as standing in a market town they left permanently.
+    if ((cultivator.immortalStatus ?? 'none') === 'true_immortal') return ABOVE_THE_LID_PLACE;
     return cultivator.location?.trim() || 'Sweptground';
 }
 
@@ -210,7 +227,12 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
 export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): string[] {
     return [
         `realmOrdinal=${cultivator.realmOrdinal} (${rankName(cultivator.realmOrdinal)}), spiritRoot=${cultivator.spiritRoot}, foundation=${cultivator.foundationQuality}.`,
-        `untreatedInjuries=${untreatedInjuryCount(cultivator.injuries)} of ${LETHAL_UNTREATED_INJURIES} lethal; ` +
+        // The countdown rides beside the count, as a number, so the ruling
+        // panel carries it rather than only the prose does. `Infinity` is the
+        // honest value for somebody who is not on the clock and is printed as
+        // a dash rather than as a very large number.
+        `untreatedInjuries=${untreatedInjuryCount(cultivator.injuries)} of ${LETHAL_UNTREATED_INJURIES} lethal, ` +
+        `daysUntilBleedOut=${Number.isFinite(turnsUntilBleedOut(bleedStateOf(cultivator))) ? turnsUntilBleedOut(bleedStateOf(cultivator)) : '-'}; ` +
         `yearsAtRealm=${cultivator.yearsAtCurrentRealm.toFixed(1)} of ${Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal))} before settling.`,
         describeAmbientInWorld(ambient)
     ];
@@ -636,7 +658,21 @@ function selfNoticing(cultivator: Cultivator): string {
     const untreated = untreatedInjuryCount(cultivator.injuries);
 
     if (untreated >= LETHAL_UNTREATED_INJURIES) {
-        notes.push('Three things have gone wrong inside and none of them have closed. Standing up is a decision now.');
+        // This used to end at "Standing up is a decision now", which was the
+        // whole truth only while a fight was the only way untreated wounds
+        // could kill. It is half the truth now: they give out on their own,
+        // and the count is read off the same bleed clock the engine kills by
+        // rather than restated here. `turnsUntilBleedOut` returns Infinity for
+        // anybody not on that clock, which is what is guarded on - the injury
+        // count is not the same question.
+        const left = turnsUntilBleedOut(bleedStateOf(cultivator));
+        notes.push(
+            'Three things have gone wrong inside and none of them have closed. Standing up is a '
+            + 'decision now'
+            + (Number.isFinite(left)
+                ? `, and so is not standing up: ${left} days of this and they give out on their own.`
+                : '.')
+        );
     } else if (untreated === 1) {
         notes.push('Something opened a while ago and has stayed open.');
     } else if (untreated > 1) {
@@ -697,13 +733,56 @@ function stableIndex(key: string, modulo: number): number {
     return Math.abs(hash) % Math.max(1, modulo);
 }
 
-export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progressRequired: number, ready: boolean): EngineFacts {
+/**
+ * What is still moving for somebody whose rank never will.
+ *
+ * Rank and dao are separate axes and only one of them is shut above the Lid.
+ * `discoverableInsights` reads the spirit root and nothing else, and degree has
+ * no ceiling tied to the ladder, so understanding keeps deepening at 45 and 46
+ * exactly as it did below - which is the whole of what a False Immortal has to
+ * do with a span that long, and the only honest answer to "where do I stand".
+ */
+function daoStandingLines(cultivator: Cultivator): string[] {
+    const insights = cultivator.insights ?? [];
+    if (insights.length === 0) {
+        return [
+            'The rank is finished and the dao is not. Nothing has been comprehended deeply ' +
+            'enough to name yet, which at this height is the only shortfall left worth reporting.'
+        ];
+    }
+
+    const depth = insights.reduce((sum, i) => sum + i.degree, 0);
+    const deepest = insights.reduce((best, i) => (i.degree > best.degree ? i : best), insights[0]);
+    return [
+        `The rank is finished and the dao is not: ${insights.length} ` +
+        `insight${insights.length === 1 ? '' : 's'} held, ${depth} degrees between them, ` +
+        `deepest is ${insightName(deepest)}.`,
+        'Understanding has no rung above it to be barred from. It is the one axis still open.'
+    ];
+}
+
+export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progressRequired: number | null, ready: boolean): EngineFacts {
     const lines = standingLines(cultivator, ambient);
-    lines.push(
-        ready
-            ? `Enough progress has accumulated to attempt the next rank: ${Math.round(cultivator.cultivationProgress)} of ${progressRequired} required.`
-            : `${Math.round(cultivator.cultivationProgress)} of ${progressRequired} qi-units toward the next rank. Not yet eligible.`
-    );
+    if (progressRequired === null) {
+        // No figure, because there is no rung above this one priced in qi -
+        // handing the narrator a number here would be handing it a lie. But
+        // saying only that leaves somebody above the Lid with a status read that
+        // is entirely absences, which is the opposite of the truth about them.
+        //
+        // The rank is finished. The dao is not: insight formation, degree and
+        // discovery never touched the ladder, so the one axis that still moves
+        // is the one that was never counted in qi to begin with. For a False
+        // Immortal it is the only thing left that can go up, and it is what six
+        // hundred years of having nothing to attempt is actually spent on.
+        lines.push('There is nothing above this rung that qi buys, so there is no figure to report.');
+        lines.push(...daoStandingLines(cultivator));
+    } else {
+        lines.push(
+            ready
+                ? `Enough progress has accumulated to attempt the next rank: ${Math.round(cultivator.cultivationProgress)} of ${progressRequired} required.`
+                : `${Math.round(cultivator.cultivationProgress)} of ${progressRequired} qi-units toward the next rank. Not yet eligible.`
+        );
+    }
     return {
         headline: `${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}.`,
         lines,
@@ -850,6 +929,137 @@ export function factsForInvestigation(
     };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT WAS DONE TO THE GROUND
+// ─────────────────────────────────────────────────────────────────────────
+
+/** One thing that was done to a place, as a player standing on it can learn it. */
+export interface PlaceChangeAccount {
+    /** The year it landed. */
+    year: number;
+    /** The engine's factual statement of what was done. Never flavour. */
+    summary: string;
+    /**
+     * Whether the true cause is on record anywhere in the world.
+     *
+     * The ONLY thing this renderer is permitted to branch on. A place can hold
+     * a cause that nobody has recovered - the seeded ruins all do - and the
+     * answer for that case has to be indistinguishable from the answer for a
+     * place whose cause was never written down at all. If the prose could be
+     * read to say "there is a reason and you have not earned it", the gate has
+     * been turned into a hint, and a hint is the whole prize.
+     */
+    causeKnown: boolean;
+    /** The cause, and only ever when {@link causeKnown} is true. */
+    cause: string | null;
+    /**
+     * The explanations the people here hold. Belief, never truth: these are
+     * stories attached to the ground, and two of them being incompatible is
+     * the normal state of a place rather than a defect in the record.
+     */
+    attributed: readonly string[];
+}
+
+/** What a place was before anybody did anything to it. */
+export interface PlaceOrigin {
+    kind: string;
+    year: number | null;
+}
+
+/** `sect_seat` is a column value. Nobody standing in one calls it that. */
+function plainKind(kind: string): string {
+    return kind.replace(/_/g, ' ').trim() || 'ground';
+}
+
+/** The same, with its article, for the middle of a sentence. */
+function aKind(kind: string): string {
+    const plain = plainKind(kind);
+    return /^[aeiou]/i.test(plain) ? `an ${plain}` : `a ${plain}`;
+}
+
+/**
+ * What a place is, what was done to it, and what the people here say about why.
+ *
+ * The shape of the answer is fixed and the knowledge gate decides only its last
+ * paragraph. Everything above that - what it is now, that it changed, the year
+ * it changed - is physical and observable by anybody with eyes. The cause is
+ * the only part that is knowledge rather than perception, and it is the only
+ * part that can be missing.
+ *
+ * When it is missing the answer is the disagreement, in full, with no ranking
+ * and no hint of which of them is closest. A player who could tell the likely
+ * story from the unlikely one by how it was phrased would be reading the
+ * engine's opinion, and the engine does not have one.
+ */
+export function factsForPlaceHistory(
+    place: { name: string; kind: string; description: string },
+    origin: PlaceOrigin | null,
+    changes: readonly PlaceChangeAccount[]
+): EngineFacts {
+    const now = `${place.name} is ${aKind(place.kind)}.`
+        + (place.description.trim() ? ` ${place.description.trim()}` : '');
+
+    if (changes.length === 0) {
+        const lines = [
+            now,
+            'Nothing has been done to this ground that anybody kept. It is what it was, and the '
+            + 'people here have never had cause to explain it to anybody.'
+        ];
+        return {
+            headline: `${place.name}, as it has always been.`,
+            lines,
+            structure: ['location history: origin only, no changes on record.'],
+            prose: lines.join('\n\n')
+        };
+    }
+
+    const latest = changes[0];
+    const lines = [now];
+
+    if (origin && plainKind(origin.kind) !== plainKind(place.kind)) {
+        lines.push(
+            `It was ${aKind(origin.kind)} before that`
+            + (origin.year !== null && origin.year > Number.NEGATIVE_INFINITY
+                ? `, from about the year ${origin.year.toLocaleString()}.`
+                : '.')
+        );
+    }
+
+    for (const change of changes) {
+        lines.push(`In the year ${change.year.toLocaleString()}: ${change.summary}`);
+    }
+
+    if (latest.causeKnown && latest.cause) {
+        lines.push(`Why is not in dispute here. ${latest.cause}`);
+    } else if (latest.attributed.length > 0) {
+        lines.push(
+            'Nobody here can tell you why. What they can tell you is that they do not agree '
+            + 'about it, and they have not for a long time.'
+        );
+        for (const held of latest.attributed) {
+            lines.push(`One account has it: ${held}.`);
+        }
+    } else {
+        lines.push(
+            'Nobody here can tell you why. There is no story about it either - the people who '
+            + 'would have carried one are not the people standing here.'
+        );
+    }
+
+    return {
+        headline: `${place.name}: ${latest.summary.slice(0, 90)}`,
+        lines,
+        // Deliberately no cause fact id, in either direction. The inspector is
+        // a surface a player can read, and an id appearing there for a cause
+        // the world has not surrendered is the leak this whole path is built
+        // to avoid.
+        structure: changes.map((c, i) =>
+            `location change ${i}: year ${c.year}, causeKnown=${c.causeKnown}, `
+            + `explanations held locally=${c.attributed.length}.`),
+        prose: lines.join('\n\n')
+    };
+}
+
 /**
  * An attempted interaction.
  *
@@ -916,6 +1126,611 @@ export function factsForToolResult(
     prose?: string
 ): EngineFacts {
     return observable(headline, [...lines], prose ?? lines.join('\n'));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT THIS CULTIVATOR IS CARRYING
+//
+// Two reads, and the discipline is the same one that governs the whole
+// knowledge layer: these renderers may say what the holder HOLDS and may not
+// say what is true. A knowledge row that says a name got said and nothing else
+// renders as a name that got said and nothing else, however thin that reads.
+//
+// The thinness is the content. `docs/world/discovery.md` wants a player to
+// accumulate fragments they cannot place, and the moment this file starts
+// helpfully joining two of them up, the revelation the player was supposed to
+// earn over a hundred turns has been spent on a status read.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** One thing the holder is carrying, as they hold it. */
+export interface HeldFact {
+    name: string;
+    /** What they take it to be. Never what it is. */
+    statement: string;
+    /** `knows`, `believes`, `suspects` - how firmly, in the engine's words. */
+    stance: string;
+    /** How it reached them: witnessed, told, overheard. */
+    sourceKind: string;
+    sourceNote: string;
+    acquiredOnDay: number;
+    /**
+     * Anything further the holder has genuinely earned about it, from the same
+     * scoped resolver `investigate` uses. Empty unless they hold it firmly -
+     * having overheard a word in a market buys the word and nothing else.
+     */
+    earned: readonly string[];
+}
+
+/** How firmly somebody holds a thing, said the way they would say it. */
+function stancePhrase(stance: string): string {
+    if (stance === 'knows') return 'You are sure of that much.';
+    if (stance === 'believes') return 'You take it to be so.';
+    return 'You would not put money on it.';
+}
+
+/** How it reached them, said as the moment rather than as a column value. */
+function sourcePhrase(sourceKind: string): string {
+    if (sourceKind === 'witnessed') return 'You were there for it.';
+    if (sourceKind === 'told') return 'Somebody said it to you.';
+    if (sourceKind === 'overheard') return 'You were not meant to hear it.';
+    if (sourceKind === 'inferred') return 'Nobody told you; you put it together.';
+    return 'Where it came from is not clear even to you.';
+}
+
+/**
+ * What the holder has on one name.
+ *
+ * Several rows for one query is the ordinary case and is never collapsed. A
+ * cultivator who has heard four incompatible stories has four incompatible
+ * stories, and the engine has no opinion about which of them is the real one -
+ * working that out is the prize, and a renderer that ranked them would have
+ * handed it over for the price of a question.
+ */
+export function factsForRecall(
+    cultivator: Cultivator,
+    asked: string,
+    held: readonly HeldFact[]
+): EngineFacts {
+    if (held.length === 0) {
+        // Worded so it does not confirm anything either way. A name the world
+        // has never used and a name the world uses constantly, three provinces
+        // from here, have to read identically from inside this head - the
+        // shape of the answer must not be the answer.
+        return factsForRefusal(
+            'Nothing comes back.',
+            `You turn "${asked}" over and it does not connect to anything you are carrying. `
+            + 'It is not that you have forgotten. Nobody has ever said it in front of you.',
+            `No knowledge record held by ${cultivator.name} matches "${asked}". The catalogs were `
+            + 'not consulted: this read touches the holder\'s own rows and nothing else, so an '
+            + 'unheard name and an invented one are indistinguishable here by construction.'
+        );
+    }
+
+    const lines: string[] = [
+        held.length === 1
+            ? `One thing, and it is thin.`
+            : `${held.length} separate things, and nothing joins them up.`
+    ];
+
+    for (const fact of held) {
+        // The record's own sentence, unaltered. For a name that was merely
+        // overheard that is "a name that got said. What it is remains
+        // unknown", and the thinness is the accurate answer rather than a gap
+        // for this renderer to fill in.
+        lines.push(`${fact.statement} ${stancePhrase(fact.stance)}`);
+        lines.push(`${sourcePhrase(fact.sourceKind)}${fact.sourceNote ? ` ${fact.sourceNote}` : ''}`);
+        for (const earned of fact.earned) lines.push(earned);
+    }
+
+    if (held.length > 1) {
+        // Said plainly, because it is true and because the alternative is the
+        // player assuming the engine would have told them if they were the
+        // same thing.
+        lines.push(
+            'Whether any of them are the same thing is not something you know. Nobody has ever '
+            + 'put them side by side for you, and they do not sit together on their own.'
+        );
+    }
+
+    return {
+        headline: held.length === 1 ? `${held[0].name}, and not much of it.` : `${held.length} fragments.`,
+        structure: held.map(fact =>
+            `held: "${fact.name}" stance=${fact.stance}, source=${fact.sourceKind}, `
+            + `day=${fact.acquiredOnDay}, earned lines=${fact.earned.length}.`),
+        lines,
+        prose: lines.join('\n\n')
+    };
+}
+
+/** Everything the holder has ever heard of, counted rather than listed out. */
+export function factsForHolding(
+    cultivator: Cultivator,
+    held: ReadonlyArray<{ kind: string; name: string }>
+): EngineFacts {
+    if (held.length === 0) {
+        return factsForRefusal(
+            'Almost nothing.',
+            'You go through what you have ever actually been told and find that it comes to very '
+            + 'little. You know where you are from. Past that, the world is a rumour you have not '
+            + 'heard yet.',
+            `${cultivator.name} holds no knowledge records at all.`
+        );
+    }
+
+    const byKind = new Map<string, string[]>();
+    for (const row of held) {
+        if (!byKind.has(row.kind)) byKind.set(row.kind, []);
+        byKind.get(row.kind)!.push(row.name);
+    }
+
+    const lines = [`${held.length} names, and a name is most of what any of them is.`];
+    for (const [kind, names] of byKind) {
+        lines.push(
+            `${kind === 'cultivator' ? 'People' : kind === 'sect' ? 'Houses' : kind === 'place' ? 'Places' : 'Things that happened'}: `
+            + `${names.join(', ')}.`
+        );
+    }
+    lines.push(
+        'That is the whole of it. Most of these you could not say a second sentence about, and the '
+        + 'world does not stop to explain itself to somebody who did not already know.'
+    );
+
+    return {
+        headline: `${held.length} names.`,
+        structure: [`knowledge records held: ${held.length} across ${byKind.size} kind(s).`],
+        lines,
+        prose: lines.join('\n\n')
+    };
+}
+
+/**
+ * The other axis.
+ *
+ * Rank and dao are separate and only one of them can be shut, which is why
+ * this read exists as its own answer rather than as a line on the status
+ * sheet. For a cultivator whose ladder is finished it is not a subsection of
+ * their condition - it is the whole of what they are still doing, and
+ * `theOnlyAxisLeft` comes off the same predicate the engine refuses a
+ * re-attempt with, so the sheet, the refusal and this sentence cannot disagree.
+ */
+export function factsForDao(
+    cultivator: Cultivator,
+    dao: {
+        standing: string;
+        name: string | null;
+        subject: string | null;
+        depth: number;
+        breadth: number;
+    },
+    panel: {
+        insights: ReadonlyArray<{ name: string; domain: string; degree: number; universal: boolean }>;
+        totalDegrees: number;
+        cultivationMultiplier: number;
+        breakthroughModifier: number;
+        theOnlyAxisLeft: boolean;
+    }
+): EngineFacts {
+    const lines: string[] = [];
+
+    if (panel.insights.length === 0) {
+        lines.push(
+            `${cultivator.name} has comprehended nothing anybody would write down. That is the `
+            + 'ordinary case and it is not a failure - most people live and die having understood '
+            + 'nothing in particular, and it costs them nothing until the day it costs them '
+            + 'everything.'
+        );
+    } else {
+        lines.push(
+            dao.standing === 'dao' && dao.name
+                ? `You walk ${dao.name}. It is a road rather than a thing you know, which is the `
+                  + 'difference the word is for.'
+                : dao.standing === 'leaning' && dao.subject
+                    ? `You lean toward ${dao.subject}, and have for long enough that other people `
+                      + 'would say so before you did. It is not a road yet.'
+                    : 'You have understood some things. None of them has become the thing you are.'
+        );
+        for (const insight of panel.insights) {
+            lines.push(
+                `${insight.name}, at degree ${insight.degree}`
+                + (insight.universal ? ', which bears on everything rather than on one craft.' : '.')
+            );
+        }
+        lines.push(
+            `What it is worth, standing still: cultivation runs at ${panel.cultivationMultiplier.toFixed(2)} `
+            + `times, and a crossing goes ${panel.breakthroughModifier >= 0 ? 'better' : 'worse'} by `
+            + `${Math.abs(panel.breakthroughModifier * 100).toFixed(1)} in the hundred.`
+        );
+    }
+
+    if (panel.theOnlyAxisLeft) {
+        lines.push(
+            'The ladder is finished for you and does not open twice. This does not finish. It is '
+            + 'the only thing a span this long can be spent on, and it has no ceiling anybody has '
+            + 'found.'
+        );
+    }
+
+    return {
+        headline: dao.name
+            ? `${dao.name}.`
+            : panel.insights.length === 0 ? 'Nothing comprehended.' : `${panel.insights.length} things understood.`,
+        structure: [
+            `dao standing=${dao.standing}, subject=${dao.subject ?? 'none'}, depth=${dao.depth}, `
+            + `breadth=${dao.breadth}, totalDegrees=${panel.totalDegrees}. `
+            + `theOnlyAxisLeft=${panel.theOnlyAxisLeft}, read off the same predicate that gates a re-attempt.`
+        ],
+        lines,
+        prose: lines.join('\n\n')
+    };
+}
+
+/**
+ * A course of mortal care, bought and taken.
+ *
+ * Reads out the price twice on purpose - what it cost in cash and what that
+ * came to in stones - because the board quotes the first and the purse holds
+ * the second, and a player who was shown "40 cash the visit" and charged
+ * "1 stone" has been given two numbers with no bridge between them.
+ *
+ * The count of wounds still open is stated plainly and last. It is the number
+ * the whole spiral turns on: untreated injuries raise deviation risk, and a
+ * player who has paid for one course out of four needs to know they have not
+ * bought their way out yet.
+ */
+export function factsForTreatment(
+    before: Cultivator,
+    after: Cultivator,
+    course: {
+        what: string;
+        note: string;
+        cashEach: number;
+        stonesEach: number;
+        stonesSpent: number;
+        days: number;
+        treated: readonly string[];
+        stillUntreated: number;
+        /** HP the stay put back. Zero is legal and says so. */
+        mended?: number;
+    }
+): EngineFacts {
+    const lines = [
+        // "0 courses of Splint" is not a sentence anybody would say. A stay
+        // with no meridians in it is a stay, and it is what somebody who is
+        // battered rather than torn is actually buying.
+        course.treated.length === 0
+            ? `${before.name} paid ${course.stonesSpent} spirit `
+              + `stone${course.stonesSpent === 1 ? '' : 's'} to be kept, fed and looked at for a `
+              + `month. ${after.spiritStones} left in the purse.`
+            : `${before.name} paid for ${course.treated.length === 1 ? 'a course' : `${course.treated.length} courses`} `
+              + `of ${course.what}: ${course.cashEach} cash each, which is ${course.stonesEach} spirit `
+              + `stone${course.stonesEach === 1 ? '' : 's'}, ${course.stonesSpent} in all. `
+              + `${after.spiritStones} left in the purse.`,
+        course.note,
+        `${humanDays(course.days)} went by lying still.`
+    ];
+
+    // The body, which is a different thing from a meridian. A wound does not
+    // mend on its own and a body does, under care - see the long note in
+    // `GameService.treat` for why that is a decision rather than a constant.
+    if (course.mended !== undefined && course.mended > 0) {
+        lines.push(
+            `${course.mended} of what the body was missing came back. `
+            + `${after.hp} of ${after.maxHp} now, and a month of being kept is the whole of why.`
+        );
+    }
+
+    if (course.treated.length === 0) {
+        lines.push('Nothing closed. The month was spent and the meridians are where they were.');
+    } else {
+        for (const description of course.treated) {
+            lines.push(`Closed: ${description} It is scar tissue now, and scar tissue costs nothing.`);
+        }
+    }
+
+    lines.push(
+        course.stillUntreated === 0
+            ? 'Nothing is still open. Whatever else is wrong, it is not a wound any more.'
+            : `${course.stillUntreated} still untreated, and nothing heals those on its own either.`
+    );
+
+    return {
+        headline: course.treated.length === 0
+            ? (course.mended ?? 0) > 0
+                ? 'Back on your feet.'
+                : 'The month bought nothing.'
+            : `${course.treated.length} wound${course.treated.length === 1 ? '' : 's'} closed.`,
+        structure: [
+            `treatment: ${course.treated.length} treated at ${course.stonesEach} stone(s) each, `
+            + `${course.stonesSpent} spent, ${course.stillUntreated} untreated remaining. `
+            + 'Triage was the engine\'s, worst wound first.'
+        ],
+        lines,
+        prose: lines.join('\n\n')
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// INHERITANCE GROUNDS
+//
+// Four renderers for the four steps, and the split between the first two and
+// the last two IS the structural gate. `SiteFace` has no interior key. Not
+// "does not read one" - does not have one, so the compiler refuses a version
+// of this file that leaks the inside through the outside view, exactly the
+// way `outsideViewOf` refuses it one layer down. Everything an un-entered
+// player can be told goes through {@link factsForSiteFace}, and everything
+// that renderer can say is in the type it is handed.
+//
+// The other rule these carry: none of the prose below is composed. The
+// marker, the rumour, the two readings, the chamber, what it does to people
+// and what each gate does when it refuses were all authored beside the site
+// in `inheritance-trials.ts`, and they are passed through verbatim. A
+// renderer that paraphrased them would be a second, worse copy of the catalog
+// living in the presentation layer.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A site as somebody standing outside it has it.
+ *
+ * Deliberately not derived from the catalog's `Site` by omission: it is
+ * written out, so a field added to an interior can never widen this by
+ * accident. Same reasoning, and the same wording, as `SiteOutsideView`.
+ */
+export interface SiteFace {
+    /** Null where this cultivator's awareness does not permit naming it. */
+    name: string | null;
+    kind: 'trial' | 'grave';
+    marker: string;
+    /** Empty below `named`, because a rumour is how a name reaches somebody. */
+    rumour: string;
+    attributedTo: string | null;
+    lastPartySaid: string | null;
+    whatAKnowledgeablePartyReads: string;
+    whatAnIgnorantPartyConcludes: string;
+    /** The number in the rumour, which is not the number in the room. */
+    advertisedOrdinal: number | null;
+    /** Graves only. Legible from the marker, and the whole of the useful read. */
+    grave: {
+        mannerOfDeath: string;
+        burial: string;
+        occupantOrdinal: number;
+        yearsDead: number;
+    } | null;
+}
+
+/** How a site is referred to when the player cannot name it. */
+function siteHead(face: SiteFace): string {
+    return face.name ?? (face.kind === 'grave' ? 'A grave nobody has attributed' : 'An unattributed site');
+}
+
+/**
+ * Everything that can be learned without going in, and nothing else.
+ *
+ * `arriving` changes only the framing sentence. It does not change what is
+ * disclosed, and it must not: a player who walked up to the threshold has
+ * exactly what a player who stood back and read it has, because the gate
+ * between outside and inside is a door rather than a distance.
+ */
+export function factsForSiteFace(
+    cultivator: Cultivator,
+    face: SiteFace,
+    arriving: boolean
+): EngineFacts {
+    const head = siteHead(face);
+    const lines = [
+        arriving
+            ? `${cultivator.name} came to ${head} and stopped at the threshold.`
+            : `${cultivator.name} read ${head} from outside it. Nothing was opened and nothing was entered.`,
+        face.marker
+    ];
+
+    if (face.grave) {
+        lines.push(
+            `The manner of death is legible off the marker: ${face.grave.mannerOfDeath.replace(/_/g, ' ')}, `
+            + `${face.grave.yearsDead} years ago, at ordinal ${face.grave.occupantOrdinal}. `
+            + `${face.grave.burial.replace(/_/g, ' ')}.`
+        );
+    }
+    if (face.rumour) lines.push(face.rumour);
+    if (face.attributedTo) lines.push(`It is put down to ${face.attributedTo}.`);
+    if (face.lastPartySaid) lines.push(face.lastPartySaid);
+    lines.push(face.whatAKnowledgeablePartyReads);
+    lines.push(face.whatAnIgnorantPartyConcludes);
+    lines.push(
+        'That is the outside. What is behind it is behind it, and the only way to find out is to '
+        + 'go in, which is a separate thing to decide.'
+    );
+
+    return {
+        headline: arriving ? `${head}, reached.` : `${head}, from outside.`,
+        structure: [
+            `site ${face.kind}: awareness permits naming = ${face.name !== null}. `
+            + `Advertised ordinal ${face.advertisedOrdinal ?? 'none'}, which is the rumour's number and `
+            + 'not the room\'s - three entries in the catalog disagree with their own interior on purpose.',
+            'Pre-entry view only. The interior was not read: this renderer has no field that could hold it.'
+        ],
+        lines,
+        prose: lines.join('\n\n')
+    };
+}
+
+/**
+ * What this cultivator could name, when they named none.
+ *
+ * The same answer the sect listing gives and for the same reason: no entry in
+ * the catalog carries a location, so "what is near here" cannot be answered by
+ * distance and is answered by what has actually reached this person instead.
+ */
+export function factsForSiteListing(
+    cultivator: Cultivator,
+    known: ReadonlyArray<{ name: string; kind: 'trial' | 'grave' }>
+): EngineFacts {
+    if (known.length === 0) {
+        return factsForRefusal(
+            'No ground you know of.',
+            'You go over what you have ever been told about ground worth opening, and there is '
+            + 'nothing in it. Somebody would have to have said one in front of you, and nobody has.',
+            'No site in the catalog is nameable by this cultivator: awareness below `named` on all of them.'
+        );
+    }
+
+    const graves = known.filter(k => k.kind === 'grave').length;
+    const lines = [
+        known.length === 1
+            ? `There is one you have a name for: ${known[0].name}.`
+            : `The ones you have names for are ${known.slice(0, -1).map(k => k.name).join(', ')} `
+              + `and ${known[known.length - 1].name}.`,
+        'Knowing a name is not a map. None of them is anywhere in particular as far as you are '
+        + 'concerned, and getting to one is its own sentence.'
+    ];
+
+    return {
+        headline: `${known.length} you could put a name to.`,
+        structure: [
+            `site listing: ${known.length} nameable by ${cultivator.name} `
+            + `(${graves} grave(s), ${known.length - graves} trial(s)). `
+            + 'Filtered by awareness, not by distance - the catalog holds no locations.'
+        ],
+        lines,
+        prose: lines.join('\n\n')
+    };
+}
+
+/**
+ * The inside, once the engine has recorded that somebody walked in.
+ *
+ * This is the only renderer in the file that may hold interior text, and the
+ * only caller that may build one is the branch in `game.ts` that has already
+ * written the entry.
+ */
+export function factsForSiteInterior(
+    cultivator: Cultivator,
+    name: string,
+    interior: {
+        /** The room, physically. `chamber` on a trial, `scene` on a grave. */
+        scene: string;
+        /**
+         * Who arranged it and for whom. A trial says so directly; a grave has
+         * no answer to that question and gives the other one it does have -
+         * what the manner of death did to what is lying there - which is the
+         * whole difference between the two kinds and is worth keeping visible.
+         */
+        arrangement: string;
+        /** What the place does to people who come in. */
+        whatItDoesToPeople: string;
+        /** What is here to be taken, as the catalog describes it. */
+        onOffer: readonly string[];
+        /** Set only where somebody has already taken it. */
+        afterwards: string | null;
+    }
+): EngineFacts {
+    const lines = [
+        `${cultivator.name} went into ${name}.`,
+        interior.scene,
+        interior.arrangement,
+        interior.whatItDoesToPeople
+    ];
+
+    if (interior.afterwards) {
+        lines.push(interior.afterwards);
+    } else if (interior.onOffer.length > 0) {
+        lines.push(...interior.onOffer);
+        lines.push('It is all still here. Taking it is a separate act and it is the last one.');
+    } else {
+        lines.push('There is nothing here anybody could carry out.');
+    }
+
+    return {
+        headline: `${name}, inside.`,
+        structure: [
+            `site entered: interior read for the first time this run. ${interior.onOffer.length} `
+            + `item(s) on offer; ${interior.afterwards ? 'already taken by somebody.' : 'untaken.'}`
+        ],
+        lines,
+        prose: lines.join('\n\n')
+    };
+}
+
+/**
+ * A door that did not open, and which of the three questions it was asking.
+ *
+ * `shortfall` is present exactly where the concept applies, and its absence on
+ * a fate gate is the whole point of this renderer existing rather than one
+ * generic refusal. A player refused by strength is told what they are short of
+ * because getting stronger is a thing they can go and do. A player refused by
+ * talent is told what the door wanted and that hitting it harder is not an
+ * answer. A player refused by fate is told that it did not open, and nothing
+ * else, because there is nothing else that is true - and a sentence implying
+ * there is something to try would be the engine lying to keep them busy.
+ */
+export function factsForGateRefused(
+    cultivator: Cultivator,
+    name: string,
+    verdict: { kind: 'strength' | 'age_and_talent' | 'fate'; account: readonly string[]; shortfall: string | null },
+    spent: string
+): EngineFacts {
+    const opening = verdict.kind === 'fate'
+        ? `${cultivator.name} went in, and ${name} did not open. There is no reading of this in `
+          + 'which something was lacking. The door is not asking about the person standing at it.'
+        : verdict.kind === 'strength'
+            ? `${cultivator.name} went in, and ${name} is set at an ordinal they are not at.`
+            : `${cultivator.name} went in, and ${name} wanted something that is not power.`;
+
+    const lines = [opening, ...verdict.account];
+    if (verdict.shortfall) lines.push(`Short by: ${verdict.shortfall}.`);
+    lines.push(spent);
+
+    return {
+        headline: verdict.kind === 'fate'
+            ? `${name}: it did not open.`
+            : `${name}: refused at the ${verdict.kind === 'strength' ? 'strength' : 'talent'} gate.`,
+        structure: [`gate kind ${verdict.kind}; shortfall ${verdict.shortfall ?? 'not applicable'}.`],
+        lines,
+        prose: lines.join('\n\n')
+    };
+}
+
+/**
+ * What actually left the site.
+ *
+ * `granted` and `withheld` both come back from `technique_manage.learn`, which
+ * is the same handler the tool surface uses, so a manual sitting in a ruin
+ * that the claimant cannot read comes back as the engine's own refusal rather
+ * than as a silent nothing. That case is not a bug: the world says outright
+ * that the top grades are written for somebody who has walked a road, which is
+ * why such manuals sit in ruins unread.
+ */
+export function factsForSiteTaken(
+    cultivator: Cultivator,
+    name: string,
+    outcome: {
+        granted: readonly string[];
+        withheld: readonly string[];
+        other: readonly string[];
+        afterwards: string;
+    }
+): EngineFacts {
+    const lines = [`${cultivator.name} took what was behind the door at ${name}.`];
+
+    if (outcome.granted.length > 0) {
+        lines.push(`Carried out and learned: ${outcome.granted.join(', ')}.`);
+    }
+    for (const line of outcome.withheld) lines.push(line);
+    for (const line of outcome.other) lines.push(line);
+    if (outcome.granted.length === 0 && outcome.other.length === 0 && outcome.withheld.length === 0) {
+        lines.push('There was nothing here that would come away with anybody.');
+    }
+    lines.push(outcome.afterwards);
+
+    return {
+        headline: `${name}: taken.`,
+        structure: [
+            `site taken: ${outcome.granted.length} art(s) learned, ${outcome.withheld.length} refused `
+            + `by the engine, ${outcome.other.length} thing(s) with no catalog entry. Recorded against `
+            + 'the site, so the next party finds it emptied.'
+        ],
+        lines,
+        prose: lines.join('\n\n')
+    };
 }
 
 /** A stretch of foraging, and whatever the ground gave up. */
