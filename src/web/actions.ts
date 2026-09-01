@@ -1211,7 +1211,22 @@ export const DEFAULT_SITE_INTENT: SiteIntent = 'approach';
  * one site whose name contains it is reachable by that name instead.
  */
 export const SITE_NOUNS =
-    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment)\b/;
+    // `ruin` was missing, which is the word the setting itself uses: locations
+    // carry `kind: 'ruin'`, the seeding layer talks about `ruin.opened`, and
+    // there is a `docs/world/ruins.md`. So the parser knew about tombs and
+    // crypts and inheritance grounds and not about the thing they are all
+    // called. Found by playing: "what ruins are near" reached nothing, "I enter
+    // the ruin" was read as travel, and "I look for a ruin" returned the room
+    // description - while the whole site subsystem sat behind words a player
+    // had to guess.
+    //
+    // A secret realm is here for the same reason and nothing else is. Adding
+    // scars, sealed domains, forbidden zones and spirit veins as well was too
+    // greedy: they stole sentences from `investigate` and from ordinary place
+    // resolution, because those words appear in the names and descriptions of
+    // places a player travels to rather than walks into. Fix the gap that was
+    // demonstrated, not the one that was imagined.
+    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment|ruins?|ruined (?:hall|compound|temple)|secret realms?)\b/;
 
 /**
  * The face of a site: what is physically at the threshold.
@@ -1231,6 +1246,9 @@ export const SITE_PRIZE_NOUNS =
 export const SITE_ENTER_VERBS =
     'enter|enters|entering|go inside|goes inside|step inside|steps inside|go in|goes in|'
     + 'step in|steps in|walk in|walks in|head inside|climb down into|descend into|descend|'
+    // `go in` does not match "go into", because the boundary falls after `in`.
+    // "I go into the ruins" reached nothing at all while "I go in" worked.
+    + 'go into|goes into|get into|gets into|climb into|climbs into|venture into|ventures into|'
     + 'breach|open|opens|opening|unseal|unseals|break into|breaks into|attempt|attempts|'
     + 'attempting|try|tries|sit at|sit down at|put my hands on';
 
@@ -2051,7 +2069,11 @@ function extractTarget(input: string): string | undefined {
  */
 const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['flee', /\b(?:flee|escape|run away|get away|disengage|retreat|break off|withdraw|hide from)\b/],
-    ['enter', /\b(?:enter|go inside|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
+    // `go into` was absent while `go inside` and `step into` were present, so
+    // "I go into the village" reached nothing. The site rule takes this
+    // sentence first when a site noun is in it, and movement gets it otherwise,
+    // which is the correct order for both.
+    ['enter', /\b(?:enter|go into|goes into|go inside|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
     ['approach', /\b(?:approach|draw near|walk up to|close on|come to)\b/],
     ['follow', /\b(?:follow|shadow|trail|tail)\b/],
     ['travel', /\b(?:travel|go to|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b/]
