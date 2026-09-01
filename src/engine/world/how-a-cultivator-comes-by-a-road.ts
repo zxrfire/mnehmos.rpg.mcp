@@ -88,6 +88,10 @@ import { makeEnvironment, makeThresholds, makeLocation, type LocationRecord } fr
 import type { ObjectRecord } from './possessions.js';
 import { isUnspent, spend } from './single-use-dao-comprehension-materials.js';
 import { roadsWalkedBy } from './an-npc-striking-at-the-next-wall.js';
+import {
+    FOUND_BY_PROSPECTING_TAG,
+    prospectingEffortIn
+} from './how-the-world-keeps-finding-more-ruins.js';
 import type { NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 
@@ -397,19 +401,72 @@ export function roadsInReachOf(state: WorldState, npc: NpcRecord): Insight[] {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Chance per year that one still-buried ground is dug open.
+ * Chance per year that one still-buried ground is dug open, per party looking
+ * in the province it is in.
  *
- * Four of them in the world. At this rate about a third are open after three
- * centuries and about nine in ten after fifteen, which is the point of the
- * figure: A LONG HORIZON HAS MORE ROADS IN IT THAN A SHORT ONE, without
- * anybody having been given anything, so the map a world holds at year 300 is
- * genuinely poorer than the one it holds at year 1500.
+ * Four of them in the world. It was a FLAT per-year figure of 0.0015 with no
+ * reference to anybody, which made buried ground the one thing in the world
+ * that got dug up by nobody: a province with four houses working out of it and
+ * a province with nothing in it found their buried grounds at exactly the same
+ * rate, and a world whose population collapsed went on finding them.
  *
- * It was four times this while the pass was being written, and at that rate
- * every buried ground in every seed was open inside eight hundred years -
- * measured, six of six - which made "buried" a word rather than a state.
+ * Now it is the same effort that finds everything else, from
+ * `how-the-world-keeps-finding-more-ruins.ts`, so the rate rises and falls with
+ * how many parties are actually out there. The per-party figure is set so that
+ * a province at ordinary strength - three parties or so - lands near where the
+ * flat figure was, which is deliberate: this is a change of cause, not a change
+ * of rate, and the calibration behind the old number was sound.
+ *
+ * At this rate about a third are open after three centuries and about nine in
+ * ten after fifteen, which is the point of the figure: A LONG HORIZON HAS MORE
+ * ROADS IN IT THAN A SHORT ONE, without anybody having been given anything, so
+ * the map a world holds at year 300 is genuinely poorer than the one it holds
+ * at year 1500.
+ */
+export const BURIED_GROUND_FOUND_PER_PARTY_YEAR = 0.0005;
+
+/**
+ * What the flat figure was, kept because the calibration argument above is
+ * stated against it and a number nobody can trace is worth less than a number
+ * with its history attached.
  */
 export const BURIED_GROUND_FOUND_PER_YEAR = 0.0015;
+
+/**
+ * The characters of ruin that can turn out to be ground that teaches a road,
+ * and the road each one teaches.
+ *
+ * THIS IS THE SUPPLY LINE INTO THE DAO GATE, and it is the reason the reserve
+ * model matters beyond ruins. Four of the twenty authored grounds in
+ * `places-that-teach-a-dao.ts` are buried and teach nobody until the world digs
+ * them out, so a world that stops finding ruins is a world that slowly stops
+ * producing roads. Twenty grounds is also a FIXED endowment of its own, and the
+ * same argument applies to it.
+ *
+ * Nothing here is a second catalog. A ground that teaches a road is an ordinary
+ * location with a tag and four `data` keys - `seedPlacesThatTeachADao` says so
+ * in its own comment - so a found archive being one is the generic mechanism
+ * doing what it was built for rather than a parallel table beside it.
+ *
+ * Only the characters where somebody's whole way of seeing is legible off the
+ * place. A border post teaches nobody anything and is not in the list.
+ */
+const ROAD_TAUGHT_BY_CHARACTER: Readonly<Record<string, InsightDomain>> = {
+    archive: 'karma',
+    teaching_hall: 'body',
+    array_anchor: 'formation',
+    compound: 'weapon',
+    scar: 'life_death',
+    ossuary: 'life_death',
+    workshop: 'alchemy',
+    vault: 'time'
+};
+
+/** Share of qualifying deep finds that turn out to teach a road. */
+export const FOUND_GROUND_TEACHES_A_ROAD = 1 / 6;
+
+/** How deep ground has to be before it could be one. Shallow ground is shallow. */
+export const ROAD_TEACHING_GROUND_STARTS_AT_BAND = 2;
 
 /**
  * And the chance a material lying unrecovered in a ruin is brought out.
@@ -439,6 +496,16 @@ function plausibleRecoverer(
 export interface RoadsPassResult {
     /** Buried grounds dug open this pass. */
     groundsFound: number;
+    /**
+     * Ruins found this year that turned out to be ground teaching a road.
+     *
+     * The new supply, and it is counted separately from `groundsFound` because
+     * the two are different events: one is the world digging out something the
+     * catalog already held, and the other is the world finding something the
+     * catalog never listed. Reported apart so a measurement can tell whether
+     * the dao gate is being fed by the fixed twenty or by the reserve.
+     */
+    groundsNewlyFound: number;
     /** Materials brought out of ruins. */
     materialsRecovered: number;
     /** Materials understood, and therefore gone. */
@@ -457,17 +524,82 @@ export function applyRoadsComprehended(
     year: number,
     day: number
 ): RoadsPassResult {
-    const result: RoadsPassResult = { groundsFound: 0, materialsRecovered: 0, materialsSpent: 0 };
+    const result: RoadsPassResult = {
+        groundsFound: 0,
+        groundsNewlyFound: 0,
+        materialsRecovered: 0,
+        materialsSpent: 0
+    };
     const rng = forStream(state.seed, 'roads-comprehended', year);
 
-    // ── Somebody digs a ground open. ──
+    // Parties out looking, by province. Computed once because
+    // `prospectingEffortIn` walks the roster and the loops below would
+    // otherwise call it per ground per year.
+    const partiesByRegion = new Map<string, number>();
+    const partiesIn = (regionId: string | null): number => {
+        if (!regionId) return 0;
+        const cached = partiesByRegion.get(regionId);
+        if (cached !== undefined) return cached;
+        const parties = prospectingEffortIn(state, regionId).parties;
+        partiesByRegion.set(regionId, parties);
+        return parties;
+    };
+
+    // ── Somebody digs a ground open, and it is the same somebody. ──
+    //
+    // The parties that find ruins are the parties that find buried ground.
+    // This read a flat per-year constant with nobody behind it, which meant a
+    // province with nobody in it dug things up at the same rate as a province
+    // with four houses working out of it. See
+    // `BURIED_GROUND_FOUND_PER_PARTY_YEAR`.
     for (let i = 0; i < state.locations.length; i++) {
         const location = state.locations[i];
         if (!location.tags.includes(DAO_GROUND_TAG)) continue;
         if (location.discovered || location.data.daoAccess !== 'buried') continue;
-        if (!rng.chance(BURIED_GROUND_FOUND_PER_YEAR)) continue;
+        const parties = partiesIn(location.parentId);
+        if (parties <= 0) continue;
+        if (!rng.chance(Math.min(1, parties * BURIED_GROUND_FOUND_PER_PARTY_YEAR))) continue;
         state.locations[i] = { ...location, discovered: true, discoveredOnDay: day };
         result.groundsFound++;
+    }
+
+    // ── And some of what was found this year turns out to teach one. ──
+    //
+    // The reserve feeding the dao gate. A ruin found deep, of a character where
+    // somebody's whole way of seeing is legible off the place, becomes ordinary
+    // dao ground: same tag, same four `data` keys, read by the same
+    // `daoGroundsInReachOf` that reads the authored twenty. Without this the
+    // gate's ground channel is a fixed endowment of twenty and has exactly the
+    // failure the ruin supply had.
+    for (let i = 0; i < state.locations.length; i++) {
+        const location = state.locations[i];
+        if (!location.tags.includes(FOUND_BY_PROSPECTING_TAG)) continue;
+        if (location.tags.includes(DAO_GROUND_TAG)) continue;
+        if (Number(location.data.foundInYear ?? -1) !== year) continue;
+        if (Number(location.data.depthBand ?? 0) < ROAD_TEACHING_GROUND_STARTS_AT_BAND) continue;
+        const domain = ROAD_TAUGHT_BY_CHARACTER[String(location.data.ruinCharacter ?? '')];
+        if (!domain) continue;
+        if (!rng.chance(FOUND_GROUND_TEACHES_A_ROAD)) continue;
+
+        const region = location.parentId
+            ? state.locations.find(l => l.id === location.parentId) ?? null
+            : null;
+        if (!region) continue;
+
+        state.locations[i] = {
+            ...location,
+            tags: [...location.tags, DAO_GROUND_TAG, 'buried', `road:${domain}`],
+            data: {
+                ...location.data,
+                catalogRegionId: region.data.catalogRegionId ?? null,
+                daoDomain: domain,
+                daoAccess: 'buried',
+                daoFromOrdinal: Number(location.data.floorOrdinal ?? 0),
+                daoSubject: location.name,
+                daoStandingRequired: 0
+            }
+        };
+        result.groundsNewlyFound++;
     }
 
     // ── Somebody brings a material out of a hole. ──
