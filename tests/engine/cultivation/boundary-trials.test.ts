@@ -367,6 +367,46 @@ describe('the five ways a crossing ends', () => {
         expect(classifyCrossingResult({ succeeded: false, survived: false })).toBe('death');
     });
 
+    it('leaves being halted broader than being broken, by more than one route', () => {
+        // The ruling this pins: they all close the road, without medicine. A
+        // ruined reservoir is not a break of any rung - it happens on a
+        // FAILURE, on the way to arriving nowhere - and it closes the road
+        // exactly as thoroughly as a cracked core does.
+        //
+        // So the axis everything downstream reads is "is the road closed", not
+        // "which of the five was this". `isHalted` is that predicate and it has
+        // to answer true down both routes while `brokenStatusOf` answers only
+        // down one.
+        const wound = (key: string) =>
+            createInjury(
+                { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: key },
+                rng()
+            );
+
+        const viaBrokenSuccess = [wound('cracked-core')];
+        const viaRuinedReservoir = [wound(HALTING_WOUND)];
+
+        expect(isHalted({ injuries: viaBrokenSuccess })).toBe(true);
+        expect(isHalted({ injuries: viaRuinedReservoir })).toBe(true);
+
+        // Broken is the narrower condition. Only one route reads as one.
+        expect(brokenStatusOf(viaBrokenSuccess)).toBe('cracked-core');
+        expect(brokenStatusOf(viaRuinedReservoir)).toBeNull();
+
+        // And the reservoir route really is reachable from a failure, which is
+        // the whole point - a halted cultivator need not have succeeded at
+        // anything. Read off the registry rather than asserted.
+        const reservoir = CROSSING_OUTCOMES.find(o => o.key === 'reservoir_ruined')!;
+        const consequence = reservoir.apply(
+            { realmOrdinal: 16, injuries: [] },
+            rng(),
+            { turn: 1 }
+        );
+        expect(consequence.halted).toBe(true);
+        expect(isHalted({ injuries: consequence.injuries })).toBe(true);
+        expect(brokenStatusOf(consequence.injuries)).toBeNull();
+    });
+
     it('produces a structural break ONLY from a broken success', () => {
         // The load-bearing claim of the taxonomy. Somebody who fails badly is
         // hurt and structurally intact at the rung they set out from - they are

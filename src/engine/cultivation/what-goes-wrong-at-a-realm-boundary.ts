@@ -27,7 +27,9 @@
  * And that person is a SUCCESS, which is the thing most easily got wrong about
  * this file. A crossing ends in one of five ways and only one of them cracks
  * anybody; the failure table below is a different pair of outcomes entirely,
- * and it leaves people structurally intact at the rung they set out from. See
+ * and it leaves people at the rung they set out from with nothing broken above
+ * them. It can still end their climb - a ruined reservoir does - because being
+ * HALTED is broader than being BROKEN and more than one outcome reaches it. See
  * THE FIVE WAYS A CROSSING ENDS, immediately below the imports, before adding
  * anything to `CROSSING_OUTCOMES`.
  *
@@ -150,34 +152,71 @@ import type { CultivationRNG } from './rng.js';
 //      realm below them - they genuinely made it, and `assessPower` gives them
 //      their rung's own spine - and why they will not go further.
 //
+//      It is NOT the only source of a closed road. Broken is narrower than
+//      halted, and conflating the two is how a failure gets mistaken for a
+//      break. See the section below the fifth outcome.
+//
 //   3  CLEAN FAILURE. It did not take, and nothing is carried away from it but
-//      the loss. That loss is not small: the accumulated qi is spent, they are
-//      back at the bottom of the Perfection rung they set out from, and the
-//      whole accumulation has to be made again. Against
-//      `stagnationYearsForOrdinal` and a finite span, this is what actually
-//      ends most careers - not the dramatic outcomes, the repetition.
+//      the loss. That loss is real and it is PARTIAL: a share of the price is
+//      spent reconciling the failure rather than all of it, the share rises
+//      with how badly it went, and preparation buys it down - more prepared,
+//      less loss. `FAILURE_PROGRESS_LOSS` in `breakthrough.ts` owns the
+//      figures. They stay at the rung they set out from and gather the
+//      difference again. Against `stagnationYearsForOrdinal` and a finite span,
+//      this is what actually ends most careers - not the dramatic outcomes, the
+//      repetition.
 //
 //   4  FAILURE WITH SEQUELAE. The same failure, and something is carried away
 //      from it: a heart demon, a parted meridian, a stretch of the life the
-//      crossing took with it, years burned to survive the attempt. The
-//      registry below is the table of these.
+//      crossing took with it, years burned to survive the attempt, a reservoir
+//      that cracked rather than the channels. The registry below is the table
+//      of these.
 //
-//      IT DOES NOT CRACK THEM, and this is the distinction that is easiest to
-//      get wrong. Somebody who fails badly is at the previous Perfection,
-//      structurally intact, carrying what the wall did to them. They are NOT a
-//      broken version of the rung below - there is nothing there to have
-//      broken, because the structure the crossing would have built was never
-//      built. Nothing in `CROSSING_OUTCOMES` mints a row from
-//      `BROKEN_STATUSES`, and nothing should be added that does.
+//      IT DOES NOT CRACK THE RUNG ABOVE, and this is the distinction that is
+//      easiest to get wrong. Somebody who fails badly is at the previous
+//      Perfection carrying what the wall did to them. They are NOT a broken
+//      version of the rung above - there is nothing there to have broken,
+//      because the structure the crossing would have built was never built.
+//      Nothing in `CROSSING_OUTCOMES` mints a row from `BROKEN_STATUSES`, and
+//      nothing should be added that does.
+//
+//      What it CAN do is close the road anyway. See below; that is a separate
+//      question from which of the five this was.
 //
 //   5  DEATH. The wall was the end of it.
 //
-// Note the symmetry the middle two have with each other, because it is the
-// clearest way to hold the set in mind: 3 and 4 land the person in exactly the
-// same PLACE - previous Perfection, qi spent, road still open - and differ only
-// in what they are carrying afterwards. 1 and 2 land the person in the same
-// place too - the new rung - and differ in whether the road onward is still
-// there. The failures differ in cargo; the successes differ in future.
+// ── AND BEING HALTED IS A STATE, NOT A SIXTH OUTCOME ─────────────────────
+//
+// The five exhaust the ways a CROSSING RESOLVES. They do not exhaust the ways a
+// road closes, and reading them as though they did is the mistake this section
+// exists to head off.
+//
+// More than one outcome can leave somebody permanently unable to advance. A
+// broken success does it through the structure the crossing was for. A failure
+// with sequelae can do it too - `reservoir_ruined` cracks the reservoir itself,
+// which is not a break of any rung, happens on the way to arriving nowhere, and
+// closes the road exactly as thoroughly.
+//
+// The organising axis for everything downstream is therefore NOT which outcome
+// produced the condition. It is: IS THE ROAD CLOSED, AND WHAT WOULD OPEN IT.
+// Two people halted by different routes are the same kind of person to
+// everything that reads them - they cannot advance, and structural-repair
+// medicine of a grade almost nobody ever sees is what would change that. How
+// they arrived is a fact about their story rather than a different mechanic.
+//
+// `isHalted` is the predicate and it already reads both routes, off the wound
+// list and off nothing else. Ask it that question; ask
+// `classifyCrossingResult` the other one. They are different questions about
+// the same event and neither answers the other.
+//
+// ── THE SYMMETRY, WHICH IS HOW TO HOLD THE SET IN MIND ───────────────────
+//
+// 3 and 4 land the person in the same PLACE - the previous Perfection, the
+// accumulation spent - and differ in what they are carrying away. 1 and 2 land
+// the person in the same place too - the new rung - and differ in whether the
+// road onward is still there. The failures differ in cargo; the successes
+// differ in future. What cuts across both pairs is whether the road closed,
+// which is why it is a state rather than a row.
 //
 // WHERE EACH ONE IS PRODUCED. This file owns 4 and the wound rows behind 2.
 // `breakthrough.ts` owns which of the five happened: `rollArrivesBroken` is
@@ -223,13 +262,13 @@ export const CROSSING_RESULTS: readonly {
         kind: 'clean_failure',
         name: 'It did not take',
         description:
-            'The accumulation was spent and the wall did not open. Nothing is carried away but the loss, and the loss is the years it will take to gather the price a second time.'
+            'Part of the accumulation was spent reconciling the failure and the wall did not open. Nothing is carried away but that loss, and the loss is the years it will take to gather the difference again.'
     },
     {
         kind: 'failure_with_sequelae',
         name: 'It did not take, and it left something',
         description:
-            'The same failure, at the same rung, carrying whatever the wall did on the way past. The structure is intact - there was never one at the rung above to break - and the road onward is still open to somebody who can afford to try again.'
+            'The same failure, at the same rung, carrying whatever the wall did on the way past. Nothing at the rung above was broken, because nothing was built there - but what the wall did can still be the thing that ends the climb, and whether it did is a question about the wound rather than about the failure.'
     },
     {
         kind: 'death',
@@ -245,6 +284,11 @@ export const CROSSING_RESULTS: readonly {
  * the person, so there is no second field anywhere that could disagree with the
  * wound list. Takes plain values rather than a `BreakthroughResult` so that
  * `breakthrough.ts` can keep importing this module and not the other way about.
+ *
+ * NOT A ROAD-CLOSURE CHECK, and callers must not use it as one. A
+ * `failure_with_sequelae` may have closed the road for good and a
+ * `clean_success` never has; the two questions are independent and `isHalted`
+ * answers the other one.
  */
 export function classifyCrossingResult(result: {
     succeeded: boolean;
