@@ -1706,7 +1706,13 @@ export function locationFromScar(scar: Scar): LocationRecord {
         witnessed: false,
         patch: {
             kind: 'scar',
-            name: `the scar at ${scar.location}`,
+            // Named, not labelled. A scar is not called "the scar" by the
+            // people who watched it happen - it is called whatever they said
+            // at the time, which is usually slightly too plain for what it
+            // describes. `SCAR_NAMES` carries those.
+            // Named at creation in `history.ts`, from one pool shared across
+            // the whole world, so no two scars carry the same name.
+            name: scar.name,
             description: `Dead ground. Every scar was somebody's entire ambition.`,
             ambient: 'thin',
             qiDensity: QI_DENSITY_MIN,

@@ -59,6 +59,7 @@
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import { RUIN_NAMES, SCAR_NAMES } from '../../data/cultivation/regions.js';
 import { QI_DENSITY_MAX, clampQiDensity } from './qi-scale.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -811,6 +812,8 @@ export interface Ruin {
 }
 
 export interface Scar {
+    /** What the province calls it. Never its kind - see `SCAR_NAMES`. */
+    name: string;
     id: string;
     location: string;
     year: number;
@@ -970,7 +973,30 @@ const DEFAULT_PRIOR_AGES: Required<PriorAgesOptions> = {
  * with `causeKnown: false`: they are ground truth, and nothing legible about
  * them survives - until somebody digs.
  */
+/**
+ * Take a name off a table without repeating one inside a world.
+ *
+ * Deterministic in the id, so the same world always names the same place the
+ * same thing, and it degrades to the caller's fallback rather than throwing
+ * once a table is exhausted - a world with more ruins than authored names
+ * should get a dull name, not a crash.
+ */
+function drawPlaceName(
+    table: readonly { name: string }[],
+    used: Set<string>,
+    key: string
+): string | null {
+    const rng = forStream('place-name', key);
+    const free = table.filter(t => !used.has(t.name));
+    if (free.length === 0) return null;
+    const picked = free[rng.int(0, free.length - 1)].name;
+    used.add(picked);
+    return picked;
+}
+
 export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorAges {
+    const ruinNames = new Set<string>();
+    const scarNames = new Set<string>();
     const o = { ...DEFAULT_PRIOR_AGES, ...opts };
     const ledger = createLedger();
     const ruins: Ruin[] = [];
@@ -1114,6 +1140,14 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                 }));
                 scars.push({
                     id: `scar-${ageIndex}-${s}`,
+                    // Named here rather than where the location is built, so
+                    // every scar in a world draws from one pool and no two
+                    // share a name. Naming them independently downstream
+                    // collided repeatedly - ten scars against fourteen names,
+                    // shuffled separately per age, produced duplicates in most
+                    // seeds.
+                    name: drawPlaceName(SCAR_NAMES, scarNames, `scar-${ageIndex}-${s}`)
+                        ?? `the scar at ${scarSite}`,
                     location: scarSite,
                     year: scarYear,
                     originFactId: scarFact.id,
@@ -1218,7 +1252,16 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
 
             ruins.push({
                 id: `ruin-${ageIndex}-${s}`,
-                name: `the sealed compound at ${seat}`,
+                // A place is called something. It is not called its own kind.
+                //
+                // This read `the sealed compound at ${seat}` for every one of
+                // the twelve ruins in a world, which is the type system leaking
+                // into the fiction - nobody in this world says "sealed
+                // compound", they say whatever the province has been calling it
+                // for nine hundred years. `RUIN_NAMES` carries those, each with
+                // what it records and why the province settled on it.
+                name: drawPlaceName(RUIN_NAMES, ruinNames, `ruin-${ageIndex}-${s}`)
+                    ?? `the sealed compound at ${seat}`,
                 location: seat,
                 sealedYear: fallYear,
                 originFactId: ruinFact.id,

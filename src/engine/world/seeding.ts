@@ -206,6 +206,17 @@ const APEX_AGE_FRACTION = 0.25;
 // THE SEED
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * "the The Low Fall vein".
+ *
+ * Region names in the catalog carry their own article - The Low Fall, The Wide
+ * Field, The Quiet Marches - so prefixing another one doubles it. Visible in
+ * `probe-places.ts` output and in the map panel.
+ */
+function withoutArticle(name: string): string {
+    return name.replace(/^[Tt]he\s+/, '');
+}
+
 export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const presentYear = opts.presentYear ?? DEFAULTS.presentYear;
     const population = Math.max(0, opts.population ?? DEFAULTS.population);
@@ -376,7 +387,7 @@ function seedRegions(
         if (region.veinStatus) {
             state.locations.push(makeLocation({
                 id: `${regionLocationId(region.id)}-vein`,
-                name: `the ${region.name} vein`,
+                name: `the ${withoutArticle(region.name)} vein`,
                 kind: 'vein',
                 parentId: location.id,
                 description: region.veinStatus,
@@ -1586,7 +1597,7 @@ function seedOpportunities(
         const harvest = makeOpportunity({
             id: `opp-harvest-${region.id}`,
             kind: 'resource',
-            name: `the ${region.name} ripening`,
+            name: `the ${withoutArticle(region.name)} ripening`,
             summary: `What ${region.name} exports is worth gathering for a few weeks a year.`,
             locationId: loc.id,
             opensOnDay: presentDay + rng.int(0, 364),
