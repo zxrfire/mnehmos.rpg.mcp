@@ -437,10 +437,25 @@ function timeSkipProse(
     // leaving rather than anywhere they are going.
     //
     // The label already says which it is; it just was not being asked.
-    const seated = !/travel|journey|road|walk/i.test(label);
+    // Three postures, not two. Travelling is a road; a sect duty, a commission
+    // or a stretch of work is somebody OUT DOING SOMETHING, and neither is
+    // sitting still. The seclusion opener reached both until it was played:
+    // "Wheatgate. Shen Weiran sat down and began to breathe. Sect duty: What a
+    // Poor District Has Instead of Monsters of 20 days was intended." - a man
+    // sent to deal with a district's troubles, described as settling in to
+    // meditate, with the ambient flavour underneath about ground he is not
+    // sitting on.
+    //
+    // The label already says which it is; it just was not being asked.
+    const travelling = /travel|journey|road|walk/i.test(label);
+    const sentOut = /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label);
 
-    const opening = !seated
+    const opening = travelling
         ? `${where}. ${before.name} took to the road.`
+        : sentOut
+            // Not a place they settled into - a place they were sent to, and
+            // the ground's own qi is beside the point for the duration.
+            ? `${where}. ${before.name} went out to it.`
         : ambient === 'thin'
             ? `${where}. The qi is thin here; it always has been. ${before.name} sat down anyway.`
             : ambient === 'spirit_tide'
