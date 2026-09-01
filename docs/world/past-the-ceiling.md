@@ -654,16 +654,19 @@ lost anything to a rival.
 
 Three consequences, and they make the Court unlike every other institution in the setting:
 
-- **Its own shelf is OPEN, and it is large.** Everything the Court has legitimately obtained
-  over its history is available to its members - not gated by rank, not rationed, not held
-  back for favourites. And it has obtained a great deal. **This is the inverse of every other
-  house in the setting**, where the book is the guarded thing.
-- **What its members BROUGHT is oral, and that is a different rule.** People arrive carrying
-  the roads of the houses that raised them, and **the Court does not write those down, out of
-  respect for the house each one came from.** So there are two bodies of knowledge inside it
-  with opposite properties: the Court's own holdings, written and open, and the incoming
-  roads, unwritten and passed person to person - which means an inherited road dies with the
-  member who held it if they never taught it on.
+- **Its whole shelf is OPEN, and it is large.** Everything the Court holds is available to
+  its members - not gated by rank, not rationed, not held back for favourites. It has
+  legitimately obtained a great deal over its history, and its members bring more. **This is
+  the inverse of every other house in the setting**, where the book is the guarded thing.
+- **And much of that shelf is ORAL.** People arrive carrying the roads of the houses that
+  raised them, and **the Court does not write those down, out of respect for the house each
+  one came from.** They are taught anyway, freely, disciple to disciple. So a large part of
+  what the Court holds exists only in its members' heads - open to anybody inside it, and
+  written nowhere.
+
+  Open and unwritten are not in tension: **the restriction is on recording, not on sharing.**
+  What it means is that access to an oral road runs through a person rather than a shelf, and
+  that a road nobody passed on is gone when its holder is.
 - **Inside it, everybody shares freely.** A Court disciple teaches the other disciples what
   their original house taught them. That is the exact inverse of the secrecy economy
   everywhere else in this file, and it is why the Court can go where it goes - it is the one
