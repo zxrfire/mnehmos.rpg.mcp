@@ -415,7 +415,18 @@ describe('what a faction entry actually says', () => {
             const joined = d.synopsis.join(' ');
             expect(joined, `${d.id} precis is just its territory`).not.toBe(d.territory);
             expect(d.description.startsWith(joined), `${d.id} precis is just its prose`).toBe(false);
-            expect(flatProse, `${d.id} precis not rendered`).toContain(joined);
+            // SENTENCE BY SENTENCE RATHER THAN AS ONE RUN, and the change is
+            // deliberate. The precis used to be printed as a single block
+            // inside a fold, so asserting the joined string also asserted that
+            // it was contiguous. The first sentence is the identity line and
+            // it now leads the entry, unfolded, above the reputation - the
+            // design owner asked for a plain "what is this" before anything
+            // about how the body is spoken of - and the rest stays in the
+            // fold. Both halves are still on the page; only the run is broken.
+            for (const line of d.synopsis) {
+                expect(flatProse, `${d.id} precis line not rendered: ${line.slice(0, 40)}`)
+                    .toContain(line);
+            }
         }
     });
 

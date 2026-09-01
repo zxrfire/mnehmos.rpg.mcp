@@ -570,8 +570,8 @@ briefing with people standing in it.
 
 ## The standing register
 
-**The world reference sheet lives in [`register.ts`](register.ts). That is where to change
-it, and it is the only place.**
+**The world reference sheet is assembled by [`register.ts`](register.ts). That is where the
+page is put together, and where a new tab is wired in.**
 
 It is a **view over the catalogs**, not a document. `buildRegister()` reads
 `data/cultivation/` and `engine/cultivation/realms.ts` and returns a `WorldRegister`;
@@ -589,6 +589,84 @@ Three ways to get it, one build behind all of them:
 
 Regenerating is a reload. The endpoint rebuilds on every request, so after editing a
 catalog the sheet is current with no step in between.
+
+### The tabs, and where each one is built
+
+Ten panes, one visible at a time, state in the DOM. A `data-tab` button and a
+`data-pane` div share a name, and `tests/web/register.test.ts` asserts the two sets are
+equal - a section outside every pane renders under all of them at once, which has happened.
+
+| Tab | What it answers | Built in |
+|---|---|---|
+| People | everybody at or above Grand Ascension, from every catalog at once | `register.ts` |
+| Factions | what each body **is**: a resume, read in about thirty seconds | `register.ts` |
+| Ties | how each body stands with every other, under both parties | `register.ts` |
+| History | how each house got here, and the dated events several of them share | `register.ts` |
+| Objects | the almanac: what kinds of thing exist, and what each one is | [`register-items.ts`](register-items.ts) |
+| Items | the ledger: which specific things exist right now, and who has them | `register.ts` |
+| Holdings | what each house actually **holds**, joined across seven catalogs | [`register-what-each-house-holds.ts`](register-what-each-house-holds.ts) |
+| Teaching | what each house will teach, art by art, and how far it can carry you | `register.ts` |
+| Arts | the technique catalog, the ground, and what the last age left | `register.ts` |
+| Key | structural repair medicine, and the column glossary | [`register-structural-repair-medicine.ts`](register-structural-repair-medicine.ts), [`register-glossary.ts`](register-glossary.ts) |
+
+### One structure, on every faction-scoped page
+
+**Ties, History, Holdings and Teaching draw the same arrangement of bodies the Factions
+tab draws** - the three apex pyramids as an indented tree, then everybody outside one
+grouped by how they hold their ground. You click a house and it tells you that house's
+ties, or its dated events, or its inventory, or its shelf. One shape, learned once.
+
+It is a `HouseView` in `register.ts`: each pane supplies its anchor prefix, the facts on
+the closed card, and what opening a house shows. Nothing about the tree, the groups, the
+courts or the ordering is written twice, and **every view names its own anchor prefix** so
+one house carrying a card on five tabs still leaves every id on the sheet unique.
+
+**Items and Arts are deliberately excluded.** They are almanacs - organised by the thing
+rather than by the house that has one - and a house tree over a catalog of objects would
+be filing the question under the wrong noun.
+
+### The sheet does not explain itself
+
+**Do not write a paragraph about the sorting rule, the editorial policy, or what a section
+is for.** A reader does not need to be told that entries are grouped, that a card opens,
+that a tie is written once, or what a resume is; if an arrangement is not self-evident
+from the rendering, the fix is the rendering. This was a whole cleanup pass - the sheet had
+accumulated a note per section narrating its own design, and the design owner's word for
+it was *"I really don't need to see this, do I?"*
+
+A **key** is not this. Saying once what a glyph means, which end of an arrow is which, or
+what a warmth word covers is content, and it belongs **where the thing is read** rather
+than at the top of a tab a reader is nowhere near once they have opened a house.
+
+### Every count names its noun
+
+`4 immortal` is not notation, it is a riddle, and it shipped with a disclosure labelled
+*what each one is* pointing at the tab that owns the detail. **Name the noun in the count
+and delete the pointer** - a resume line may point at the page that owns a question or
+answer it, never both, and the pointer is the whole job only when the count is meaningless
+without it.
+
+### A level shown is the teachable end, never the cap
+
+`cap` is where the paper stops. On a road covering the last realm the final rung is
+reached by surviving the crossing and by nothing else, so a cap quoted as a level is a rung
+no house can walk anybody onto. Use `teachableEndOf`. The cap belongs only where it is
+explicitly set against the teachable end.
+
+**A section big enough to argue about gets its own module.** `register.ts` is several
+hundred kilobytes and is worked on by more than one person at a time; a section that is
+one `build*()` call and one `render*Section()` call is a section nobody has to open that
+file to add. The module carries its own `esc()` and its own header explaining what the
+section is for. That is the pattern to copy.
+
+**Objects and Items are not the same question, and the split is deliberate.** Objects is
+one `ObjectKind` out of the ten in [`../engine/world/possessions.ts`](../engine/world/possessions.ts) -
+the kind with a combat rating, sorted on it, because there the ordering is the argument.
+Items is the other nine, which is most of what somebody can actually pick up, and it is
+organised on the one line `docs/world/items.md` says governs every item in the world:
+**counted or tracked**. It also *measures* that document's second claim rather than
+repeating it - a thing is cash-priced exactly where it is fungible - by joining the two
+independent engine answers per catalog and naming any row where they part.
 
 ### The curated prose
 
@@ -624,10 +702,25 @@ decide anything. Bump `PROSE_SCHEMA_VERSION` when the prompt changes and every b
 invalidates without touching a catalog.
 
 **Adding a new kind of thing to the world?** Add it to `WorldRegister`, extend
-`buildRegister()` to read its catalog, and add a `<section>` to `renderRegisterHtml()`.
-Keep the ordering rule the sheet is built on: **ordinal is the strongest _acting_
-member**, never a sealed ceiling and never a withdrawn one - those are separate columns
-because conflating them is the specific bug the register exists to make visible.
+`buildRegister()` to read its catalog, and add a `<section>` inside an existing pane - or,
+if it is a question of its own, a new module and a new tab per the table above. Keep the
+ordering rule the sheet is built on: **ordinal is the strongest _acting_ member**, never a
+sealed ceiling and never a withdrawn one - those are separate columns because conflating
+them is the specific bug the register exists to make visible.
+
+Two page-wide rules a new section has to satisfy, both enforced by tests rather than by
+review:
+
+- **No chunk a reader lands on runs past a short paragraph.** `enforceChunkLimit` splits
+  oversized `<p>` and `<dd>` on the finished document, so a section does not have to do
+  anything - but it declines to touch a paragraph that already holds a block tag, so
+  **anything that must stay visible has to be a sibling of the paragraph, not inside it.**
+  The direction key on the relationships section was a `<span>` at the tail of an
+  oversized note, and shipped folded into a disclosure on all 38 entries that carry it.
+- **A wide listing is `table-layout: fixed` with declared column widths.** Auto layout
+  sizes every column to its longest cell, which on free text produces tables several
+  thousand pixels wide inside a 1,080px column. `.itemtbl` and `.holdtbl` carry the rule;
+  each table declares its own `<colgroup>`.
 
 ### Why it is admin-gated
 

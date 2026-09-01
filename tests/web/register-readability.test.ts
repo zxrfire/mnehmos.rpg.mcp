@@ -125,9 +125,20 @@ describe('the register is consistent with itself', () => {
         //
         // A passing test is evidence, not proof. This one passed for as long
         // as the entry was too long, because it was asserting the length.
+        //
+        // THIS TEST ENCODED A LAYOUT THAT HAS SINCE BEEN CORRECTED, AND SAYING
+        // SO IS THE POINT OF THIS COMMENT. `The roll` is a sixth heading and
+        // it was added deliberately, at the design owner's instruction: the
+        // named people used to be one `h4` group buried inside `Who is in it`,
+        // below the fielding table, the admission bar, the favour stance and
+        // the adoption terms, and a list of people you can actually go and
+        // meet arriving as the fifth block of a chunk about institutional
+        // machinery read as a run-on. The list is a fixed set, not a growing
+        // one - the two headings below still must not come back.
         const order = [
             'What they are',
             'Who is in it',
+            'The roll',
             'What they want',
             'Ancestors',
             'How it stands'
@@ -190,11 +201,19 @@ describe('the register is consistent with itself', () => {
         const dead = [...new Set(targets.filter(t => !ids.has(t)))];
         expect(dead, 'a cross-reference points at nothing').toEqual([]);
 
-        // And the tab jumps have to name a tab that exists, for the same
-        // reason: a wrong name selects no pane and hides every one of them.
+        // And a tab jump, WHERE THERE IS ONE, has to name a tab that exists:
+        // a wrong name selects no pane and hides every one of them.
+        //
+        // THE COUNT IS NO LONGER ASSERTED, AND THAT IS A CORRECTION. This used
+        // to require at least one, which was true while the faction resume
+        // pointed at four other tabs in running text. The design owner read
+        // those and asked for them to go - a link that looks pasted in is
+        // worse than a reader navigating by tab, and every one of them sat
+        // mid-sentence inside a line of notation. There may legitimately be
+        // none now. What must still hold is that any that exist land
+        // somewhere, and the `data-goto` check above is the one with teeth.
         const tabs = new Set([...html.matchAll(/data-tab="([a-z]+)"/g)].map(m => m[1]));
         const tabTargets = [...new Set([...html.matchAll(/data-tab-goto="([a-z]+)"/g)].map(m => m[1]))];
-        expect(tabTargets.length, 'no tab jumps at all').toBeGreaterThan(0);
         expect(tabTargets.filter(t => !tabs.has(t)), 'a jump names no tab').toEqual([]);
     });
 
