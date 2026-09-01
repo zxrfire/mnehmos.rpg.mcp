@@ -747,6 +747,21 @@ curriculum - and it should be priced ruinously, refused far more often than not,
 way out is a way to leave cleanly while carrying much less than a defector does, not a way to
 have both.
 
+**But permission to transmit is a sliding scale, not a wall, and the slider is exclusivity.** A
+house will never release its unique road - the one that reaches the top, the one only it teaches
+- at any price, because the whole value of that road is that nobody else has it. A road it
+already shares with several other houses is a different matter entirely: there is nothing left
+to protect, the road is out, and letting a departing member carry it costs the house almost
+nothing. So the same number that measures how widely a road is held - the one that decides how
+safe it is to steal, and how plausibly a stranger practising it could have learned it anywhere -
+also decides how cheaply a house will let it go.
+
+Which means a leaver's real question is not *may I take my road* but *which of the roads I know
+is common enough to be allowed out*. Somebody who trained at a house with a deep shelf may leave
+entirely legitimately carrying the shallow end of it, and that is both the commonest case and a
+good one: the world's widely-held roads stay widely held, and the top of each shelf does not
+move.
+
 Which makes a sudden windfall a genuine turning point rather than a bigger number. Somebody who
 opens a piece of closed ground and comes out rich has not bought their way up the ladder - the
 ladder is not for sale - but they can now pay their way OUT of a house that has run out of book,
