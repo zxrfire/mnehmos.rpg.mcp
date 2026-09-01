@@ -505,7 +505,15 @@ function resolvePillEffect(
             return {
                 ...base,
                 deltas: { hp: pill.potency },
-                summary: `${Math.max(0, Math.round(healed))} HP restored (potency ${pill.potency}).`
+                // SAY WHEN IT COULD NOT HAVE DONE ANYTHING. A restorative
+                // swallowed at full does nothing, is gone anyway, and adds
+                // toxicity - so it is strictly worse than not taking it, and
+                // "0 HP restored" alone reads as bad luck rather than as a
+                // wasted pill. The engine knows both numbers here.
+                summary: healed <= 0
+                    ? `No HP restored: already at ${cultivator.hp} of ${cultivator.maxHp}. `
+                      + `The pill is gone and it did nothing (potency ${pill.potency}).`
+                    : `${Math.max(0, Math.round(healed))} HP restored (potency ${pill.potency}).`
             };
         }
         case 'restore_qi': {
@@ -513,7 +521,14 @@ function resolvePillEffect(
             return {
                 ...base,
                 deltas: { qi: pill.potency },
-                summary: `${Math.max(0, Math.round(restored))} qi restored (potency ${pill.potency}).`
+                // Same as HP above. Found by playing: a fresh cultivator at
+                // 30/30 qi spent eighteen of thirty spirit stones on a
+                // Qi-Gathering Pill, was told "0 qi restored (potency 15)",
+                // and carried 0.10 of toxicity for it.
+                summary: restored <= 0
+                    ? `No qi restored: already at ${cultivator.qi} of ${cultivator.maxQi}. `
+                      + `The pill is gone and it did nothing (potency ${pill.potency}).`
+                    : `${Math.max(0, Math.round(restored))} qi restored (potency ${pill.potency}).`
             };
         }
         case 'treat_injury': {
