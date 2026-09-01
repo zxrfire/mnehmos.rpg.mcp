@@ -316,7 +316,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: 'Storm Tyrant Court',
         possessorId: 'sect-storm-tyrant-court',
         description:
-            'A lightning curriculum written into a bar of something that was struck often enough to remember it. The Court was held on probation for two centuries and promoted over the Third Sill\'s head because of what is in this object, and it has never let anybody outside read it - which is the entire reason the probation was imposed and the entire reason it was lifted.',
+            'A lightning curriculum written into a bar of something that was struck often enough to remember it. The Court was held on probation for two centuries and raised to answer the Deep Survey directly because of what is in this object, and it has never let anybody outside read it - which is the entire reason the probation was imposed and the entire reason it was not lifted with the promotion.',
         tags: ['forged', 'curriculum-bearing', 'never-shown']
     }),
     // ── 22-14: what an ordinary strong house fields ───────────────────────

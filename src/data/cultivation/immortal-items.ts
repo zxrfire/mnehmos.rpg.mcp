@@ -228,9 +228,9 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         notForSale:
             'It has never appeared in a Thousand Treasure catalogue, and the Stonewright Consortium declines to assay one on the stated grounds that an assay implies a rate. There is no price, there has never been a price, and a party who opens with an offer of stones has told the room something about themselves.',
         grades: {
-            higher: 'May deliver a cultivator into Grand Ascension and no higher, so the greatest crossing it enables is Body Integration Perfection to Grand Ascension Early - ordinal 36 to 37, the last boundary on the mortal plane. One is known to exist and the Deep Survey holds it. It is still one rung, still only from Perfection, and it still stops dead below 41. See `THE_LAST_REALM_IS_UNBUYABLE`.',
-            middle: 'May deliver a cultivator into Void Refinement and no higher: at best Deity Transformation Perfection to Void Refinement Early, ordinal 28 to 29. That is the boundary most careers end at, which makes a middle the difference between a regional power and one of the dozen strongest people in a province - and it is one rung, from the top, like every other grade. Three are known.',
-            lower: 'May deliver a cultivator into Deity Transformation and no higher: at best Nascent Soul Perfection to Deity Transformation Early, ordinal 24 to 25. Not a lesser effect - the same single crossing every grade performs, capped at a lower destination - and 25 is body and soul merged, two thousand years of lifespan, and a region learning your name. Nine are known: seven at the Azure Cloud Pavilion, one at the Deep Survey, one on the Long Cut schedule.'
+            higher: 'May deliver a cultivator into Grand Ascension and no higher, so the greatest crossing it enables is Body Integration Marrow to Grand Ascension Rising Body - ordinal 36 to 37, the last boundary on the mortal plane. One is known to exist and the Deep Survey holds it. It is still one rung, still only from Perfection, and it still stops dead below 41. See `THE_LAST_REALM_IS_UNBUYABLE`.',
+            middle: 'May deliver a cultivator into Void Refinement and no higher: at best Deity Transformation Final Turn to Void Refinement First Tempering, ordinal 28 to 29. That is the boundary most careers end at, which makes a middle the difference between a regional power and one of the dozen strongest people in a province - and it is one rung, from the top, like every other grade. Three are known.',
+            lower: 'May deliver a cultivator into Deity Transformation and no higher: at best Nascent Soul Perfection to Deity Transformation First Turn, ordinal 24 to 25. Not a lesser effect - the same single crossing every grade performs, capped at a lower destination - and 25 is body and soul merged, two thousand years of lifespan, and a region learning your name. Nine are known: seven at the Azure Cloud Pavilion, one at the Deep Survey, one on the Long Cut schedule.'
         },
         effectNote:
             'It carries a cultivator across exactly one realm boundary, from Perfection of their current realm into Early of the next, and it does nothing else at all. It is not a ride from wherever somebody happens to be standing: what it moves is one rung, from where the recipient stands to Early of the next realm, and Perfection is where that is worth the most rather than where it is required. The grade caps how high that destination may be. What would have been forty years of sitting at Perfection, or a century, or a lifetime that ran out at the boundary, is simply done - and the body arrives without having built the road to it, which every physician who has examined a recipient has remarked on and none can quantify. See `THE_STEP_AND_THE_BOUNDARY` and `ONCE_IN_A_LIFE`.',
@@ -289,7 +289,7 @@ export const THE_LAST_REALM_IS_UNBUYABLE = {
         'lower: may deliver into Deity Transformation. Top crossing 24 to 25.',
         'middle: may deliver into Void Refinement. Top crossing 28 to 29.',
         'higher: may deliver into Grand Ascension. Top crossing 36 to 37.',
-        'and then nothing. Grand Ascension Perfection at 40 is the highest rung any object touches, and 41 upward is reachable only by the work.'
+        'and then nothing. Grand Ascension Rising Dao at 40 is the highest rung any object touches, and 41 upward is reachable only by the work.'
     ],
     gradeCapsDestinationNotDistance:
         'Note what the grades actually buy, because it is easy to misread: every grade performs the same single crossing, from Perfection to the Early rung above it. What a higher grade buys is permission to perform that crossing further up the ladder, not a longer journey. A higher-grade pill spent at Nascent Soul Perfection does exactly what a lower-grade one would have done there, and the difference between them is spent for nothing.',
@@ -388,7 +388,7 @@ export const THE_TWO_CLAIMS = {
         sheKnowsIt:
             'Completely, and says so without bitterness when asked, which is rarely. She was not honoured and she was not thanked. She was kept, the way a sect keeps anything it cannot replace, and she has spent ninety years being the reason the lights are on and knowing exactly why she is still here.',
         theCost:
-            'She stalled at Deity Transformation Early the year she took it and has not moved since, which everybody expected. A Sword Elder seat was not offered and she did not ask for one; the Pavilion pays what it owes in stipend and in access and has never pretended the arrangement was anything else.'
+            'She stalled at Deity Transformation First Turn the year she took it and has not moved since, which everybody expected. A Sword Elder seat was not offered and she did not ask for one; the Pavilion pays what it owes in stipend and in access and has never pretended the arrangement was anything else.'
     },
     theOneWhoWasRefused: {
         who: 'A Sword Elder who held the lower gate through the second Crimson Abyss incursion and lost the use of an arm doing it, and who was refused sixty years later.',
@@ -653,7 +653,7 @@ export const STOCK_VERSUS_FLOW = {
     theyAreDifferentBetsAndOneIsBetter:
         'These are different bets and for most purposes there is no exchange rate between them. On the one question that actually matters there is, and it does not favour the shelf everybody envies.',
     theArgument: [
-        'The last realm cannot be bought by anybody. Nothing delivers past Grand Ascension Perfection, and 41 upward is climbed unaided by everyone who has ever done it. That is fixed and universal - see `THE_LAST_REALM_IS_UNBUYABLE`.',
+        'The last realm cannot be bought by anybody. Nothing delivers past Grand Ascension Rising Dao, and 41 upward is climbed unaided by everyone who has ever done it. That is fixed and universal - see `THE_LAST_REALM_IS_UNBUYABLE`.',
         'So height purchased is spent on the part of the ladder that was never the constraint. A higher Step puts exactly one person at 37, and that person then faces the unbuyable stretch alone. If they do not have whatever it takes, the object is gone and there is no second candidate.',
         'Width is therefore the rational purchase. Seven people carried across the first hard boundary is seven independent chances that one of them turns out to be somebody who can make the last climb without help.',
         'And the conjunction at the top is multiplicative and brutal: talent, affinity, luck, time, a protector, and forty centuries of not dying. Nothing anybody can buy moves any of those terms. The only lever in the world is the number of candidates standing at the bottom of the climb.'
@@ -767,7 +767,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-nine-peaks-ascetic-order',
         itemId: 'immortal-unearned-step',
-        throughLine: 'The Deep Survey line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since.',
+        throughLine: 'The Deep Survey line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since - and the Third Sill answers to the Long Cut now, so the line is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
         everReceived: { higher: 0, middle: 0, lower: 3 },
         stillHeld: { higher: 0, middle: 0, lower: 1 },
         countedByTheRegisters: false,
@@ -805,7 +805,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-verdant-spring-hall',
         itemId: 'immortal-unearned-step',
-        throughLine: 'The Deep Survey line, through the Third Sill court and the Nine Peaks above it, which is two removes and shows in the volume.',
+        throughLine: 'The Deep Survey line, through the Third Sill court and the Nine Peaks above it, which is two removes and shows in the volume. Both intermediaries went to the Long Cut with the transfer, which means the object in this house arrived down a chain that no longer exists.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
@@ -817,7 +817,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-frostmirror-court',
         itemId: 'immortal-second-dealing',
-        throughLine: 'The Deep Survey line, through the Third Sill court, exactly once and never again.',
+        throughLine: 'The Deep Survey line, through the Third Sill court, exactly once and never again - and "never again" stopped being a decision the day the Third Sill changed patrons.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
@@ -829,7 +829,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-cinnabar-crucible-guild',
         itemId: 'immortal-second-dealing',
-        throughLine: 'The Deep Survey line, through the Third Sill court, which sent one object to the Guild and has sent nothing since.',
+        throughLine: 'The Deep Survey line, through the Third Sill court, which sent one object to the Guild and has sent nothing since. What the Guild is holding is the last thing the Survey ever gave it, and neither party knew that at the time.',
         everReceived: { higher: 0, middle: 1, lower: 0 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
@@ -927,3 +927,4 @@ export function recordedRefusals(): { holding: Holding; refusal: RecordedRefusal
 export function getEngineGap(effect: ImmortalItemEffect): typeof ENGINE_GAPS[number] | undefined {
     return ENGINE_GAPS.find(g => g.effect === effect);
 }
+

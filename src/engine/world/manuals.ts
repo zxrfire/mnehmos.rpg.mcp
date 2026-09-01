@@ -1013,6 +1013,69 @@ export function reachableCeilingFor(state: WorldState, npc: NpcRecord): number {
 }
 
 /**
+ * The rare thing that happens to somebody standing at the end of their shelf.
+ *
+ * A world that never lets anybody past their house's library is terminal at the
+ * top. Measured before this existed: no cultivator anywhere crossed above rung
+ * 28 in five hundred years, every person at 29 or higher was a seeded survivor,
+ * and running the clock to six thousand years left NOTHING above Qi
+ * Condensation - the whole upper world was inherited and spending itself.
+ *
+ * The design has always had the answer and the world layer never used it: a
+ * capped cultivator finds a later volume, is taught by somebody above them,
+ * talks their way onto a shelf they have no right to, or writes the next stage
+ * themselves. `acquisition.ts` prices all four for the player. This is the
+ * world's coarse version of the same event - it does not model WHICH route,
+ * because from outside a life the difference is not visible; what is visible is
+ * that somebody who had stopped is moving again.
+ *
+ * It must stay rare, and rarer the higher it happens, or the ladder stops
+ * meaning anything. The odds halve with every realm above Foundation, so
+ * crossing out of Qi Condensation on a found book is a thing that happens to
+ * people and reaching the top of the world that way is very nearly a legend.
+ * The unbacked get worse odds than that: a route usually runs through somebody,
+ * and they have fewer somebodies.
+ */
+const FOUND_A_ROAD_AT_FOUNDATION = 1 / 900;
+
+export function mightFindARoad(
+    npc: NpcRecord,
+    ceiling: number,
+    rng: CultivationRNG
+): boolean {
+    if (npc.cultivation.realmOrdinal < ceiling) return false;
+    if (ceiling < 13) return false;
+    const realmsUp = Math.max(0, Math.floor((ceiling - 13) / 4));
+    const backing = npc.factionId ? 1 : 0.35;
+    return rng.next() < FOUND_A_ROAD_AT_FOUNDATION * backing / Math.pow(2, realmsUp);
+}
+
+/**
+ * What they found. The nearest road in the world that would actually help.
+ *
+ * Drawn from the whole catalog rather than from anybody's shelf, because the
+ * point of the event is that it came from outside the institution they are
+ * stuck inside. Still bounded by what they can open: a book whose entry
+ * requirement is above them is a paperweight, which is the rule everywhere else.
+ */
+export function roadTheyFound(npc: NpcRecord, ceiling: number, rng: CultivationRNG): string | null {
+    const held = new Set(npc.cultivation.techniqueIds);
+    const open = (TECHNIQUES as readonly {
+        id: string; class?: string; cap?: number | null;
+        requiredOrdinal?: number; element?: string | null;
+    }[])
+        .filter(t => t.class === 'cultivation' && t.cap != null)
+        .filter(t => Number(t.cap) > ceiling)
+        .filter(t => Number(t.requiredOrdinal ?? 0) <= npc.cultivation.realmOrdinal)
+        .filter(t => suitsRoot(npc.cultivation.spiritRoot, t.element ?? null))
+        .filter(t => !held.has(t.id))
+        .sort((a, b) => Number(a.cap) - Number(b.cap));
+    if (open.length === 0) return null;
+    return open[Math.min(open.length - 1, rng.int(0, 1))].id;
+}
+
+
+/**
  * Can this person write out another copy?
  *
  * Mastery, not acquaintance: somebody must have taken the book to its end

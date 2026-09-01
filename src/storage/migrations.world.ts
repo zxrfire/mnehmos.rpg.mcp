@@ -190,6 +190,11 @@ export function migrateWorld(db: Database.Database): void {
       world_id TEXT NOT NULL,
       name TEXT NOT NULL,
       kind TEXT NOT NULL,                            -- region|ruin|secret_realm|forbidden_zone|...
+      -- Which layer of the world this place is on. The one point where
+      -- progression is geographic: the far side of the Lid is a place, and
+      -- reaching ordinal 46 moves a cultivator there. A place never changes
+      -- layer, so there is no UPDATE path for this column anywhere.
+      layer TEXT NOT NULL DEFAULT 'mortal',          -- mortal|immortal
       parent_id TEXT,
       description TEXT NOT NULL DEFAULT '',
 
@@ -303,6 +308,10 @@ export function migrateWorld(db: Database.Database): void {
       world_id TEXT NOT NULL,
       name TEXT NOT NULL,
       kind TEXT NOT NULL DEFAULT 'sect',
+      -- An immortal house and a village hall are rows in this same table,
+      -- ordered by the same fields. Keeping them together is what makes a
+      -- mortal sect being a branch of an immortal lineage writable at all.
+      layer TEXT NOT NULL DEFAULT 'mortal',          -- mortal|immortal
       alignment TEXT NOT NULL DEFAULT 'neutral',
       seat_location_id TEXT,
       controlled_location_ids TEXT NOT NULL DEFAULT '[]',  -- JSON mirror of world_locations
@@ -346,6 +355,12 @@ export function migrateWorld(db: Database.Database): void {
       last_advanced_on_day INTEGER NOT NULL DEFAULT 0,
 
       location_id TEXT,
+      -- Which side of the Lid this person is on. Stored rather than derived
+      -- from location_id, because "who is above the Lid" has to keep having an
+      -- answer for somebody whose whereabouts are unknown. Ascension is the
+      -- only thing that writes it, and it changes nothing else on the row -
+      -- same id, same lineage edges, same grudges, same history.
+      layer TEXT NOT NULL DEFAULT 'mortal',          -- mortal|immortal
       faction_id TEXT,
       faction_rank_index INTEGER NOT NULL DEFAULT -1,
       -- What they hold. Derived by the life walk rather than assigned, so a
@@ -449,6 +464,7 @@ export function migrateWorld(db: Database.Database): void {
       world_id TEXT NOT NULL,
       actor_id TEXT NOT NULL,
       location_id TEXT,
+      layer TEXT NOT NULL DEFAULT 'mortal',          -- mortal|immortal
       faction_id TEXT,
       faction_rank_index INTEGER NOT NULL DEFAULT -1,
       resources TEXT NOT NULL DEFAULT '{}',          -- JSON {spirit_stones: n, ...}
@@ -642,6 +658,53 @@ export function migrateWorld(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_world_runs_finished
       ON world_runs(world_id, ended_on_day) WHERE outcome != 'active';
 
+    -- ── ASCENSIONS: WHAT THE ENGINE KNOWS AND THE WORLD CANNOT ───────────
+    -- Reaching ordinal 46 is a transition rather than an ending, and this is
+    -- the row that says so. It is deliberately NOT part of world_runs: a run
+    -- may be closed by ascension or continue afterwards, and either way the
+    -- person is still in world_npcs, still on their lineage edges, still owed
+    -- and owing. Nothing is reset.
+    --
+    -- "after_crossing" is the one column in this schema that must never reach
+    -- a player. There is no signal across the Lid: it does not report deaths,
+    -- the crossing is one-way for people, and the objects that carry
+    -- information across carry what somebody chose to send. A house whose
+    -- channel has gone quiet knows nothing at all - the silence is equally
+    -- consistent with death, with disinterest, with a war up there, and with
+    -- an object down here that stopped working. So a sect's claim to a living
+    -- ancestor is a claim, and it is frequently an honest one made by people
+    -- who do not know.
+    CREATE TABLE IF NOT EXISTS world_ascensions (
+      id TEXT NOT NULL,
+      world_id TEXT NOT NULL,
+      resident_id TEXT NOT NULL,                     -- still a row in world_npcs
+      resident_name TEXT NOT NULL DEFAULT '',
+      ascended_on_day INTEGER NOT NULL,
+      from_location_id TEXT,
+      from_faction_id TEXT,                          -- its claim to an ancestor is now true
+      run_id TEXT,
+      to_location_id TEXT NOT NULL,
+      -- The ambiguous fact the lower world got. Its truth is 'unresolved' and
+      -- it stays that way: crossed, died and in seclusion look identical from
+      -- underneath.
+      below_fact_id TEXT,
+      after_crossing TEXT NOT NULL DEFAULT 'still_above',  -- still_above|died_above
+      died_above_on_day INTEGER,
+      end_note_above TEXT NOT NULL DEFAULT '',
+      -- Nothing goes through the Lid except the cultivator, so the years
+      -- before a crossing are spent divesting. These two columns are where it
+      -- went, and they are the author of the world's inheritance economy.
+      inheritance_location_id TEXT,
+      parting_gift_object_id TEXT,
+      PRIMARY KEY (world_id, id),
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_world_ascensions_resident
+      ON world_ascensions(world_id, resident_id);
+    CREATE INDEX IF NOT EXISTS idx_world_ascensions_faction
+      ON world_ascensions(world_id, from_faction_id);
+
     -- The edge itself. Its own table because it is walked from both ends:
     -- "who are this person's descendants" and "whose descendant is this".
     CREATE TABLE IF NOT EXISTS world_lineage_edges (
@@ -717,6 +780,12 @@ export function migrateWorld(db: Database.Database): void {
       -- useless and the queries slow.
       significance TEXT NOT NULL DEFAULT 'notable',  -- mundane|notable|significant|legendary
       description TEXT NOT NULL DEFAULT '',
+      -- What it is worth in a fight, on the same ladder a person stands on, or
+      -- NULL for the great majority of things that are worth nothing in one. A
+      -- notched sabre and an object an ascended founder sent down are the same
+      -- row with different numbers here; nothing reads this column differently
+      -- depending on who is holding it.
+      power INTEGER,
       possessor_id TEXT,                             -- who is physically holding it
       owner_id TEXT,                                 -- whose it actually is; NULL is a real answer
       owner_name TEXT NOT NULL DEFAULT '',
@@ -833,6 +902,18 @@ function addWorldColumns(db: Database.Database): void {
     if (!npcColumns.includes('origin_tier')) {
         console.error('[Migration] Adding origin_tier column to world_npcs table');
         db.exec("ALTER TABLE world_npcs ADD COLUMN origin_tier TEXT NOT NULL DEFAULT 'thin_county';");
+    }
+
+    // Which layer of the world each row is on. Added after first release, so
+    // every existing row needs the explicit ALTER. The default is the honest
+    // reading of every row written before the far side existed: nobody has
+    // ascended in living memory, so everything already in a saved world is
+    // below the Lid.
+    for (const table of ['world_locations', 'world_factions', 'world_npcs', 'world_actors']) {
+        if (!columnsOf(table).includes('layer')) {
+            console.error(`[Migration] Adding layer column to ${table} table`);
+            db.exec(`ALTER TABLE ${table} ADD COLUMN layer TEXT NOT NULL DEFAULT 'mortal';`);
+        }
     }
 
     for (const table of ['world_npcs', 'world_actors']) {

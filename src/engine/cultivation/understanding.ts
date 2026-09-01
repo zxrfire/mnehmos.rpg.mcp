@@ -56,7 +56,7 @@ import {
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from './spirit-roots.js';
 import { progressRequiredForOrdinal } from './realms.js';
-import type { CultivationRNG } from './rng.js';
+import { forStream, type CultivationRNG } from './rng.js';
 // TYPE-ONLY, and must remain so: social/common.ts imports from this
 // package, so a value import here would close a runtime cycle. Type
 // imports are erased, so this one is free - it buys the contract safety
@@ -312,6 +312,10 @@ export function bottleneckSubstitution(
     ctx?: Partial<RelevanceContext>
 ): SubstitutionResult {
     const required = progressRequiredForOrdinal(cultivator.realmOrdinal);
+    // Understanding substitutes for accumulation at a bottleneck. Above the Lid
+    // there is no bottleneck and no accumulation, so there is nothing to stand
+    // in for and no fraction of it to report.
+    if (required === null) return { substituted: 0, fraction: 0, required: 0, contributing: [] };
     const relevance = relevanceFor(cultivator, ctx);
 
     let raw = 0;
@@ -464,6 +468,193 @@ export interface DiscoveryContext {
      */
     techniqueSubjects?: readonly string[];
     techniqueElement?: Element | null;
+
+    /**
+     * The run seed. Supplying it turns SUITABILITY on: candidates that do not
+     * fit this cultivator are dropped. Omit only where there is no run to seed
+     * from - an odds harness, an NPC stub - and understand that omitting it
+     * models a world in which everything fits everybody.
+     */
+    runSeed?: string;
+    /**
+     * Latent affinity, injected. Supplying it turns the prodigy path on: a
+     * cultivator built for a thing is suited to it on first contact. Omitted
+     * means ordinary fit only.
+     */
+    affinityOf?: AffinityResolver;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SUITABILITY
+//
+// Access is necessary and it is NOT sufficient. A manual is not universally
+// legible; a treasury is an opportunity, not a delivery. What a cultivator can
+// take out of a room depends on what they already are, and most of what is in
+// most rooms will never fit them.
+//
+// This is the mechanism that makes searching rational rather than decorative.
+// If most things suited most people, a library would be a general solution and
+// the right play would be to find the nearest one and stop. Because fit is
+// personal and scarce, the manual, pill, inheritance or art that answers to
+// YOUR root and YOUR comprehension is somewhere, and the odds of it being in
+// the place you were born next to are small. So people go out looking - which
+// is what ruins, sealed compounds, inheritance trials, the discovery ladder and
+// the encounter system have all been waiting for a reason to be used.
+//
+// The library-and-treasury path - fully supplied, sitting still, climbing to
+// the top - stays real and stays open. It is simply the province of somebody
+// who happens to be perfectly suited to what that particular library holds,
+// which is vanishingly rare and should be. A well-born cultivator is granted
+// access to A library, never to THEIR library, which is exactly why the birth
+// axis is loud at the opening and quiet in the outcome.
+//
+// ── What is always suited, and why it must be ────────────────────────────
+//
+//   own_root     you are always suited to your own aperture. Anything else
+//                breaks the game at ordinal 0.
+//   phenomenon   it happened TO you. A cultivator who came back from a
+//                deviation felt the circulation turn whether or not the
+//                subject was ever going to suit them.
+//
+// ── What is drawn ────────────────────────────────────────────────────────
+//
+// Everything reached through a manual, teacher, artifact, inheritance,
+// tradition or site, at SUITABILITY_BASE - unless the cultivator already holds
+// a comprehension in that domain, in which case they have a foothold on that
+// road and can keep walking it. Without that clause, progress along a road
+// would be a fresh coin flip every time and understanding would be noise
+// rather than a road at all.
+//
+// The draw is seeded on (cultivator, domain, subject) and never on the day, so
+// re-reading a manual gives the same answer forever. A thing that does not fit
+// you does not start fitting you because you tried again, and a player must be
+// able to learn that by trying twice.
+//
+// ── A miss is stated, never silent ───────────────────────────────────────
+//
+// `assessAccess` returns what did NOT fit alongside what did, with the reason
+// attached, so a caller can say "you read it through twice and it stayed a
+// list of somebody else's conclusions" rather than reporting nothing at all. A
+// silent miss teaches a player to sit longer, which is the exact opposite of
+// the lesson.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Access kinds that are suited by their nature and are never drawn for. */
+const ALWAYS_SUITED: readonly AccessKind[] = ['own_root', 'phenomenon'];
+
+/**
+ * Chance an unrelated thing turns out to fit a cultivator who has no foothold
+ * on that road.
+ *
+ * 0.2 - so a room of five unrelated manuals yields about one that means
+ * anything, and a life turns on finding one or two things rather than on
+ * finding a shelf. Low enough that a cultivator can be rich, well-placed and
+ * still stuck because the fit was never there; high enough that going out to
+ * look is a rational plan rather than a lottery.
+ */
+export const SUITABILITY_BASE = 0.2;
+
+/**
+ * Latent predisposition toward one comprehension, injected by the caller.
+ *
+ * Returns 's AffinityDegree. Typed structurally rather than imported
+ * so this module keeps its one-way dependency on dao.ts.
+ */
+export type AffinityResolver =
+    (target: { domain: InsightDomain; subject: string }) => 'none' | 'aptitude' | 'strong' | 'extraordinary';
+
+export interface SuitabilityVerdict {
+    suited: boolean;
+    /** Engine-authored factual reason. Never narration. */
+    why: string;
+}
+
+/**
+ * Whether this cultivator can take anything out of this particular opening.
+ *
+ * Deterministic in (runSeed, cultivator, domain, subject). Pure.
+ */
+export function insightSuitability(
+    cultivator: Pick<Cultivator, 'spiritRoot'> & Partial<Pick<Cultivator, 'id' | 'insights'>>,
+    candidate: InsightCandidate,
+    runSeed: string,
+    affinityOf?: AffinityResolver
+): SuitabilityVerdict {
+    if (ALWAYS_SUITED.includes(candidate.access.kind)) {
+        return { suited: true, why: 'it is your own, or it happened to you' };
+    }
+
+    const root = getSpiritRoot(cultivator.spiritRoot);
+    if (candidate.domain === 'element' && root.elements.includes(candidate.subject as never)) {
+        return { suited: true, why: `a ${root.name} is built to hold ${candidate.subject}` };
+    }
+
+    const holdsRoad = (cultivator.insights ?? []).some(i => i.domain === candidate.domain);
+    if (holdsRoad) {
+        return { suited: true, why: `already walking the ${candidate.domain} road` };
+    }
+
+    // Latent affinity IS fit, and this is the prodigy path: somebody who turns
+    // out to have been built for a thing is suited to it the moment they are
+    // let near it. It is what makes "supplied, sitting still, climbing to the
+    // top" a real road for the rare person perfectly matched to the particular
+    // library they got into.
+    //
+    // Note the boundary this respects. `affinityFor` carries a standing
+    // instruction not to decide what a cultivator can REACH, and it still does
+    // not: access was settled above, by the room. This asks only whether what
+    // is already in reach fits, which is the question affinity answers.
+    //
+    // INJECTED rather than imported: `dao.ts` value-imports `isUniversalDomain`
+    // from this module, so reaching back for `affinityFor` would close a
+    // runtime cycle. `time-skip.ts` imports both and supplies it.
+    if (affinityOf) {
+        const affinity = affinityOf({ domain: candidate.domain, subject: candidate.subject });
+        if (affinity === 'strong' || affinity === 'extraordinary') {
+            return { suited: true, why: `an ${affinity} affinity for ${candidate.subject}` };
+        }
+    }
+
+    const draw = forStream(
+        runSeed, 'suitability', cultivator.id ?? 'anonymous', candidate.domain, candidate.subject
+    ).next();
+    return draw < SUITABILITY_BASE
+        ? { suited: true, why: 'it happens to fit' }
+        : {
+            suited: false,
+            why: `nothing in ${cultivator.spiritRoot} answers to ${candidate.subject}, ` +
+                'and there is no foothold on that road to read it from'
+        };
+}
+
+export interface AccessAssessment {
+    /** In reach AND suited. What `discoverableInsights` returns. */
+    suited: InsightCandidate[];
+    /** In reach and NOT suited. The half that must be said out loud. */
+    unsuited: (InsightCandidate & { why: string })[];
+}
+
+/**
+ * Everything in reach, split by whether it fits.
+ *
+ * The legible form. Callers that want to tell a player why the manual on their
+ * knee is doing nothing use this; callers that only need the usable list use
+ * `discoverableInsights`.
+ */
+export function assessAccess(
+    cultivator: Pick<Cultivator, 'spiritRoot'> & Partial<Pick<Cultivator, 'id' | 'insights'>>,
+    ctx: DiscoveryContext,
+    runSeed: string
+): AccessAssessment {
+    const affinityOf = ctx.affinityOf;
+    const suited: InsightCandidate[] = [];
+    const unsuited: (InsightCandidate & { why: string })[] = [];
+    for (const candidate of discoverableInsights(cultivator, { ...ctx, runSeed: undefined })) {
+        const verdict = insightSuitability(cultivator, candidate, runSeed, affinityOf);
+        if (verdict.suited) suited.push(candidate);
+        else unsuited.push({ ...candidate, why: verdict.why });
+    }
+    return { suited, unsuited };
 }
 
 /**
@@ -473,9 +664,15 @@ export interface DiscoveryContext {
  * is the ordinary case and the honest one: a hermit with no library, no
  * teacher and nothing remarkable underfoot can reach their own root and
  * nothing else, however long they sit.
+ *
+ * When `ctx.runSeed` is supplied the list is also filtered by SUITABILITY -
+ * see the banner above. Without it nothing is filtered, which is the old
+ * behaviour and the right answer for a caller with no run to seed from
+ * (odds harnesses, NPC stubs). Anything resolving a real cultivator's real
+ * turn should pass it.
  */
 export function discoverableInsights(
-    cultivator: Pick<Cultivator, 'spiritRoot'>,
+    cultivator: Pick<Cultivator, 'spiritRoot'> & Partial<Pick<Cultivator, 'id' | 'insights'>>,
     ctx: DiscoveryContext = {}
 ): InsightCandidate[] {
     const root = getSpiritRoot(cultivator.spiritRoot);
@@ -555,7 +752,14 @@ export function discoverableInsights(
             'came close enough to see it');
     }
 
-    return dedupe(candidates);
+    const reachable = dedupe(candidates);
+    // Access, then fit. Everything above decided what is in the room; this
+    // decides what this particular person can take out of it. See the
+    // SUITABILITY banner.
+    if (ctx.runSeed === undefined) return reachable;
+    return reachable.filter(
+        candidate => insightSuitability(cultivator, candidate, ctx.runSeed!, ctx.affinityOf).suited
+    );
 }
 
 /** Turn one exposure into whatever it puts within reach. */

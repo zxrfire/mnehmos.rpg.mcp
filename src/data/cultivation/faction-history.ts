@@ -172,7 +172,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
             'court-kiln':
                 'The ground did not move. Everything the Kiln is - the datum, the nodes, the rota, the perimeter - was here before the reposting and was here after it, and the only thing that walked out of the gate was a roll of names and an administrative word. The Court states this without heat and has never said anything else.',
             'sect-kiln-wardens':
-                'Nobody was asked. That is the fact the Root Sill puts first and the one the Kiln never mentions: the Survey reposted a nine-hundred-year-old body without consulting a single person standing in it, and what most of the Wardens declined was not the work but being reassigned to it by letter. The roll walked. The rota came with the people who had been walking it.',
+                'Nobody was asked, about a thing every one of them had wanted. That is the fact the Root Sill puts first and the one the Kiln never mentions: the Survey reposted a nine-hundred-year-old body without consulting a single person standing in it, and what most of the Wardens declined was not the work but being reassigned to it by letter. The roll walked. The rota came with the people who had been walking it.',
             'apex-deep-survey':
                 'A routine reposting of a court, executed correctly, on a schedule. The Survey has never characterised it otherwise in any document, has never referred to the departed body in correspondence, and lists the Kiln Court as its court on the datum. Whether that is composure or the absence of an answer is not something the Survey has been asked in a room where it would have to reply.',
             'apex-long-cut':
@@ -181,32 +181,16 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         explains: 'the claim'
     },
     {
-        id: 'event-the-grant-book',
-        yearsAgo: 1_100,
-        provinceId: 'province-low-fall',
-        what: 'The Third Sill Court left the Deep Survey for the Long Cut over a grant book. It was the first administration to move between apexes in living memory, it took the book with it, and it went on issuing grants in the Low Fall the following season without a break.',
-        parties: ['court-third-sill', 'apex-deep-survey', 'apex-long-cut'],
-        accounts: {
-            'court-third-sill':
-                'The book is the office. A grant book is eleven centuries of who holds what and on what terms, it cannot be reconstructed, and the Sill\'s position was and is that a court which does not hold its own book is a courier. It has never explained further and has never needed to, because the Low Fall kept queuing at the same door.',
-            'apex-deep-survey':
-                'A book left the building. The Survey has never described the departure in any other terms and has never issued a replacement book, which the province has read for eleven hundred years as either the deepest possible indifference or an admission it could not be replaced.',
-            'apex-long-cut':
-                'The first of two. The Long Cut took in an administration that arrived with its own records intact, gave it a schedule, and asked for nothing it had not already been doing - and then did the same thing eight hundred years later, and has posted the two of them beside each other.'
-        },
-        explains: 'the holding'
-    },
-    {
-        id: 'event-the-promotion-over-the-sill',
+        id: 'event-the-promotion-past-the-kiln',
         yearsAgo: 200,
         provinceId: 'province-low-fall',
-        what: 'The Deep Survey raised the Storm Tyrant Court to answer to it directly, over the head of the Third Sill Court, which had held its probation for two centuries and was not consulted. The probation was carried across with it.',
-        parties: ['sect-storm-tyrant-court', 'court-third-sill', 'apex-deep-survey'],
+        what: 'The Deep Survey raised the Storm Tyrant Court to answer to it directly, making it the Survey\'s second body in the Low Fall beside the Kiln Court. The probation it had held under for two centuries was carried across rather than lifted, and the Kiln was not consulted.',
+        parties: ['sect-storm-tyrant-court', 'court-kiln', 'apex-deep-survey'],
         accounts: {
             'sect-storm-tyrant-court':
-                'A recognition, and a century overdue - the Court reads it as the Survey acknowledging that a body holding the only working lightning curriculum in the world is not a tenant. What it does not read, and has never once discussed in a room where it could be minuted, is that the probation came with it and that the last two renewals were issued short.',
-            'court-third-sill':
-                'A tenant was removed from its book without notice and the Sill was told afterwards. It has not raised it, because raising it would require stating out loud which of the two apexes it answers to and which one it grants for, and every clerk in the office understands that the answer to that question is not one anybody wants written down.',
+                'A recognition, and a century overdue - the Court reads it as the Survey acknowledging that a body holding the only working lightning curriculum in the world is not a tenant, and as the nearest thing to a restoration available to a house that was once one of the three. What it does not read, and has never once discussed in a room where it could be minuted, is that the probation came with it, that the last two renewals were issued short, and that the other body the Survey keeps in this province was not asked and would not have cared.',
+            'court-kiln':
+                'Nothing about it concerns the Kiln, which issues no grants, holds no tenants and has never had a book for one to be removed from - and the Court has said as much, once, in the only sentence it has ever contributed to the subject. What it did not say, and what the Storm Tyrant has never stopped hearing, is that the Survey now keeps two bodies in this province: one that administers the richest arrangement in the world and takes nothing out of it, and one that administers a broken tether and cannot stop asking to be looked at.',
             'apex-deep-survey':
                 'The curriculum is the one thing in the Low Fall that cannot be replaced, and the Survey would rather administer such a thing than lease it. That is the whole of the reasoning and it was stated in one line. What the sect is, and what the province calls it, did not appear in the decision and there is no line on the form where it would have.'
         },
@@ -738,7 +722,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         whereTheWrongBeliefComesFrom:
             'It teaches that the tether is the ancestor\'s work and therefore permanent, which is the only doctrine available to a body whose entire seat hangs from it: a tether that can fail is a fact nobody can act on, so it became a fact nobody states. The tether predates the Court, was failing before Yan Kuo concealed it, and has an inspection record the Court reads as ceremonial - a record kept annually, correctly, by people who have been told what it means and believe them.',
         sharedEvents: [
-            'event-the-promotion-over-the-sill',
+            'event-the-promotion-past-the-kiln',
             'event-one-letter-for-both',
             'event-the-two-raids',
             'event-the-storeroom-read-from-a-list'

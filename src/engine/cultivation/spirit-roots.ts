@@ -8,7 +8,10 @@
  *
  * Weights are expressed as integers out of WEIGHT_TOTAL rather than floats, so
  * the distribution is exactly reproducible from a seed and can be asserted in
- * tests without float tolerance.
+ * tests without float tolerance. Every weight is a multiple of 9 and they sum
+ * to 999, so a weight read aloud is very nearly its own percentage: 81 is
+ * 8.1%, 144 is 14.4%. Adding a root means taking its share out of the
+ * neighbouring buckets, never restating the total.
  */
 
 export type Element = 'metal' | 'wood' | 'water' | 'fire' | 'earth' | 'lightning' | 'ice';
@@ -21,11 +24,20 @@ export type SpiritRootKey =
     | 'single_earth'
     | 'dual_water_fire'
     | 'dual_metal_wood'
+    | 'triple_metal_wood_earth'
+    | 'quad_metal_wood_earth_water'
     | 'muddled_five_element'
     | 'mutated_lightning'
     | 'mutated_ice';
 
-export type SpiritRootGrade = 'single' | 'dual' | 'muddled' | 'mutated';
+/**
+ * Grades run worst-to-best in element count, not in element count's favour:
+ * `single` is the prize, and every element after the first is one more mouth
+ * on the same intake. `dual` through `muddled` is a single descending gradient
+ * - speed, matched-art bonus and breakthrough odds all fall along it, and
+ * commonness rises along it. `mutated` is off that axis entirely.
+ */
+export type SpiritRootGrade = 'single' | 'dual' | 'triple' | 'quad' | 'muddled' | 'mutated';
 
 export interface SpiritRoot {
     key: SpiritRootKey;
@@ -137,7 +149,7 @@ export const SPIRIT_ROOTS: readonly SpiritRoot[] = [
         name: 'Water-Fire Dual Root',
         grade: 'dual',
         elements: ['water', 'fire'],
-        weight: 162,
+        weight: 90,
         cultivationSpeed: 1.0,
         deviationRisk: 0.08,
         matchedTechniqueBonus: 1.3,
@@ -150,7 +162,7 @@ export const SPIRIT_ROOTS: readonly SpiritRoot[] = [
         name: 'Metal-Wood Dual Root',
         grade: 'dual',
         elements: ['metal', 'wood'],
-        weight: 162,
+        weight: 90,
         cultivationSpeed: 1.0,
         deviationRisk: 0.08,
         matchedTechniqueBonus: 1.3,
@@ -159,11 +171,45 @@ export const SPIRIT_ROOTS: readonly SpiritRoot[] = [
             'Metal cuts wood, and it does so inside your meridians. Qi deviation is a standing risk.'
     },
     {
+        // Three links of the overcoming cycle, in order: metal cuts wood, wood
+        // breaks earth. Nothing in the set overcomes metal and nothing is
+        // overcome by earth, so the chain has two ends instead of closing -
+        // earth arts are the one clean thing this root can hold, and the
+        // cultivator finds that out by trying everything else first.
+        key: 'triple_metal_wood_earth',
+        name: 'Metal-Wood-Earth Triple Root',
+        grade: 'triple',
+        elements: ['metal', 'wood', 'earth'],
+        weight: 99,
+        cultivationSpeed: 0.85,
+        deviationRisk: 0.06,
+        matchedTechniqueBonus: 1.2,
+        techniqueAvailability: 1,
+        description:
+            'Three elements in an overcoming chain. Two of them fight on the way in; only earth arrives clean.'
+    },
+    {
+        // Four links of the same chain, one short of closing it. Fire is what
+        // is missing, and its absence is worth nothing: a root is judged by
+        // what it holds, not by what it was spared.
+        key: 'quad_metal_wood_earth_water',
+        name: 'Metal-Wood-Earth-Water Quad Root',
+        grade: 'quad',
+        elements: ['metal', 'wood', 'earth', 'water'],
+        weight: 117,
+        cultivationSpeed: 0.7,
+        deviationRisk: 0.04,
+        matchedTechniqueBonus: 1.1,
+        techniqueAvailability: 1,
+        description:
+            'Four elements and one gap where fire should be. The gap saves nothing; the intake is already divided four ways.'
+    },
+    {
         key: 'muddled_five_element',
         name: 'Five-Element Muddled Root',
         grade: 'muddled',
         elements: ['metal', 'wood', 'water', 'fire', 'earth'],
-        weight: 216,
+        weight: 144,
         cultivationSpeed: 0.55,
         deviationRisk: 0.02,
         matchedTechniqueBonus: 1.0,
@@ -232,6 +278,12 @@ export function rootProbability(key: SpiritRootKey): number {
  * Whether cultivating a technique of `element` conflicts with this root.
  * Conflict means the technique's element overcomes one the root holds, or the
  * root is internally conflicted (dual) and the element is one of its own.
+ *
+ * The dual clause exists because two opposed elements are too few for the
+ * cycle to catch on its own - water overcomes fire, but nothing in the pair
+ * overcomes water. Triple, quad and muddled roots need no such clause: they
+ * hold enough of the cycle that it turns on them by itself, which is exactly
+ * what having more elements costs.
  */
 export function conflictsWithRoot(root: SpiritRoot, element: Element): boolean {
     if (root.grade === 'dual' && root.elements.includes(element)) return true;

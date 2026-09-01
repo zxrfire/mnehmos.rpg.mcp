@@ -440,6 +440,35 @@ export const LineageStandingSchema = z.object({
     mostRecentCrossingName: z.string().nullable(),
     /** One line on who they were before they crossed. */
     mostRecentCrossingNote: z.string().min(60).nullable(),
+    /**
+     * Every crossing this house has ever had, one entry each, oldest first.
+     *
+     * `count` is a number and a number is not a roster. That distinction has
+     * already cost this catalog once: the Hollow Court's six were carried as a
+     * count plus a line reading "five more in succession", and everything
+     * downstream reported three of its people as names that had gone. They had
+     * not gone; nobody had written them down.
+     *
+     * So the roll sits beside the count and a test asserts they agree. Nobody at
+     * this rung is a remainder. A house may withhold a NAME - several do, and
+     * that is a fact about the house rather than a gap - but it may not withhold
+     * that somebody existed, and every entry here carries a title even where the
+     * name is refused.
+     */
+    roll: z.array(z.object({
+        /**
+         * A title always. A name only where the house uses one.
+         *
+         * The floor is deliberately low: 'Yin Que' is seven characters and is
+         * a whole person. What this field must not hold is a count.
+         */
+        title: z.string().min(3),
+        yearsAgo: z.number().int().min(0),
+        /** What they were before, in the house's own terms. */
+        was: z.string().min(20),
+        /** Null where nobody below the Lid knows. */
+        afterCrossing: z.enum(['still_above', 'died_above']).nullable()
+    })).min(1),
     depletion: DepletionSchema,
     /** Total objects held, across both medicines. Volume, not quality. */
     volume: z.number().int().min(0),
@@ -465,6 +494,21 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         mostRecentCrossingName: 'Yin Que',
         mostRecentCrossingNote:
             'Took Second Seat at four hundred and eleven, held it for ninety years, and crossed from the east mountain without telling the other three she was going. The Court has never said whether that was discourtesy or consideration.',
+        roll: [
+            { title: 'The one who went through first, whom the Court refers to only as that', yearsAgo: 4_400, was: 'the first of them to reach the last rung, in a house that did not yet know what it was for', afterCrossing: 'still_above' },
+            { title: 'The Second Seat who went from the north mountain', yearsAgo: 3_600, was: 'Second Seat, with the first standing protector the Court ever posted', afterCrossing: 'still_above' },
+            { title: 'The First Seat who held the vein six hundred years and then went from it', yearsAgo: 2_900, was: 'First Seat, and the longest holder of that chair in the Court\'s record', afterCrossing: 'still_above' },
+            // She is filed as the Third Seat because that is the chair she held
+            // longest and the one the Court still calls her by. It is not the
+            // chair she went from. SEAT_ORDER ranks by ordinal descending, so
+            // every crossing above her moved her up a place - and she stood
+            // protector at four of them. By the time it was her turn there was
+            // nobody left in front of her, which is the whole shape of her life:
+            // she reached First Seat by outlasting the reason the chair mattered.
+            { title: 'The Third Seat who stood protector at four crossings and was First by her own', yearsAgo: 2_100, was: 'Third Seat for most of it and First Seat by the end, having watched four others go up from in front of her', afterCrossing: 'still_above' },
+            { title: 'The Fourth Seat who waited two hundred years for three protectors to be free at once', yearsAgo: 1_300, was: 'Fourth Seat, ready long before the Court could spare the people to stand for her', afterCrossing: 'died_above' },
+            { title: 'Yin Que', yearsAgo: 600, was: 'Second Seat at four hundred and eleven, and holder of it for ninety years', afterCrossing: 'still_above' }
+        ],
         depletion: 'medium',
         volume: 0,
         gradeCeiling: 'none',
@@ -484,6 +528,15 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         mostRecentCrossingName: 'Qiao Yan',
         mostRecentCrossingNote:
             'A field surveyor for two centuries before anybody suggested she was anything else, and the Survey still files her under the district she worked rather than under the crossing. The Lamp is older than her and came from somebody else.',
+        roll: [
+            { title: 'The First Surveyor, whose name the Survey records and does not use', yearsAgo: 3_100, was: 'the founder of the arterial survey, who crossed from a site the register locates and does not describe', afterCrossing: 'still_above' },
+            // The middle crossing, and the reason the Survey files people by
+            // district rather than by anything else. He is a line in a ledger
+            // that was never closed, which is the most Deep Survey thing about
+            // him and the whole of what is known.
+            { title: 'The surveyor of the fourth branch, entered under the district and never under his own name', yearsAgo: 2_400, was: 'a working surveyor on the fourth arterial branch, who filed for seven hundred years and stopped mid-return', afterCrossing: 'still_above' },
+            { title: 'Qiao Yan', yearsAgo: 1_900, was: 'a field surveyor for two centuries before anybody suggested she was anything else', afterCrossing: 'still_above' }
+        ],
         depletion: 'heavy',
         volume: 4,
         gradeCeiling: 'higher',
@@ -503,6 +556,14 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         mostRecentCrossingName: 'Bai Zhuo',
         mostRecentCrossingNote:
             'Cut his own road, in the Marches, on driven ground, with no patron and a posted staff that did not notice until it was over. The Nail was already there and had been for a long time.',
+        roll: [
+            // Both at twenty-six hundred years, which the Court's own schedule
+            // records without comment and which nobody outside has ever been
+            // able to get an explanation of. Two people went up in the same
+            // year, on the same ground, and only one of them is named.
+            { title: 'The First Course, named on the schedule and nowhere else', yearsAgo: 2_600, was: 'whoever drove the Nail through from the other side, which the Long Cut states and does not elaborate', afterCrossing: 'still_above' },
+            { title: 'Bai Zhuo', yearsAgo: 2_600, was: 'a cutter with no patron and a posted staff that did not notice until it was over', afterCrossing: 'still_above' }
+        ],
         depletion: 'light',
         volume: 4,
         gradeCeiling: 'higher',
@@ -522,6 +583,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         mostRecentCrossingName: 'Ru Anjing',
         mostRecentCrossingNote:
             'Third Master of the Pavilion, and the only crossing this house has ever produced. She is named in the sect ancestry too, which is where the detail lives.',
+        roll: [
+            { title: 'Ru Anjing, Third Master of the Pavilion', yearsAgo: 380, was: 'Third Master, and the last confirmed crossing anybody in either province can date', afterCrossing: 'still_above' }
+        ],
         depletion: 'light',
         volume: 9,
         gradeCeiling: 'lower',
@@ -611,3 +675,90 @@ export function answeringChannels(): ImmortalChannel[] {
 export function hasAnsweringChannel(factionId: string): boolean {
     return CHANNEL_BY_FACTION.get(factionId)?.kind === 'answering_channel';
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ANCESTOR WHO MIGHT ANSWER
+// The largest deterrent in the setting, and it is not a weapon, an ancestor
+// or a count. It is a question nobody can answer and everybody has an opinion
+// about, which turns out to be worth more than an answer would be.
+//
+// This is a rule about anybody who crossed and stayed attentive - it applies
+// wherever `claimsLivingAncestor` and `claimIsTrue` are both set, and the
+// Azure Cloud Pavilion is the clearest instance rather than the subject.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What a true living ascended ancestor is worth to the house that has one.
+ *
+ * Not a power level. A house with somebody genuinely above the Lid who has not
+ * stopped paying attention holds a deterrent that no assembly answers and no
+ * object counters, and that nobody can price - including the house itself.
+ *
+ * WHAT IS MEASURED, AND WHAT IT TOOK TO MEASURE IT
+ * An earlier draft quoted figures that came from a broken harness, and the
+ * correction is worth keeping because of what it turned up. The resolver would
+ * not settle one person against a mobilised house at all: it returned a
+ * stalemate in every seed, with her standing near full and most of them dead at
+ * her feet, because a striker could only ever remove one body a round. That was
+ * not a fact about her. It was a missing mechanic - nothing in the engine could
+ * hit more than one person at a time, which is a poor model of this world at
+ * every rung and an absurd one at the top.
+ *
+ * With area attacks in, the case resolves, and these are the numbers: somebody
+ * at the last rung carrying an art that lands on more than one person takes any
+ * mobilised apex in the region a hundred times in a hundred, in about two
+ * rounds. Carrying a single-target art she takes none of them, which is the
+ * more interesting half - what makes her unanswerable is not the rung on its
+ * own, it is the rung and an art wide enough to use it.
+ *
+ * The gradient one rung down says it more sharply still, and the reason is not
+ * the crowd. Lu Sheng stands at forty-five and holds no immortal object at all,
+ * having stopped being close to the Hollow Court a long time ago, so his arts
+ * are the whole of his inventory. With a wide one he takes the Deep Survey
+ * every time, the Azure Cloud Pavilion seven times in eight, and the Long Cut
+ * four times in five.
+ *
+ * Read that ordering against what each house is carrying rather than who it is:
+ *
+ *   the Deep Survey    head 43, the Datum Lamp rated 43   - he takes it always
+ *   the Azure Cloud    head 41, the Standing Edge at 45   - seven times in eight
+ *   the Long Cut       head 42, the Ninth Nail at 45      - four times in five
+ *
+ * It tracks the OBJECT and not the head. The Deep Survey has the highest rung
+ * in the region and the weakest thing in its hands, and it is the one that
+ * never holds. The Long Cut has a lesser head and a forty-five, and it is the
+ * only house in the world that has ever been measured stopping somebody above
+ * the Lid - one time in five, by withdrawal rather than by killing him, because
+ * he is never killed in any of it.
+ *
+ * AND THE PROVINCE STANDING BEHIND THEM IS NOT PART OF THE FIGHT
+ * This is the part worth being exact about. Mean damage dealt to him, by source,
+ * over two hundred seeds: the apex head, and nothing else. Not "less". Zero.
+ * The Deep Survey's sealed ancestor at forty-four - the best weapon any house in
+ * the region owns, spent once, ever - lands nothing at all. The courts land
+ * nothing, the clients land nothing, and removing six high-ordinal bodies from a
+ * side including that forty-four moves the result by about two points.
+ *
+ * So a mobilised apex against somebody above the Lid is not a battle that is
+ * lost. It is a duel with a crowd standing around it. The province is not
+ * outweighed; it is irrelevant, and the only question in the room is what the
+ * one person at the front is holding.
+ */
+export const THE_ANCESTOR_WHO_MIGHT_ANSWER = {
+    theThingNobodyWantsToTest:
+        'Kill somebody who is being watched from the other side of the Lid and you have made an enemy nothing in this world answers. No object below the Lid counters one, no seal holds one, and no amount of practice closes the rung - measured, the best art in the world at full mastery buys a mortal nothing at all across that boundary. And a province is not an answer either: an apex mobilised, courts and clients and every seal broken, is taken by one person in about two rounds. The fifteen breaths are not a limit on what she can do. They are a limit on how long she stays. It is the only threat in the setting with no ceiling on it, and a house that has one does not have to say so more than once.',
+    andItLastsFifteenBreaths:
+        'And it is over almost before it starts, which is the part that makes the whole arrangement stable rather than absurd. Nothing above the Lid can remain below it: come down and tribulation lightning takes you back up in ten to fifteen breaths, and it takes what you are carrying with it, so a True Immortal arrives with an object of their own rung and both of them are already leaving. See `BREATHS_IN_THE_LOWER_REALM`. That is enough to end a faction and nowhere near enough to take one. Nobody above the Lid can occupy anything, install anybody, hold ground or govern for an afternoon down here - which is why the strongest force in the setting has never once been used to rule and why the people below it are afraid of exactly one thing rather than of everything.',
+    soItIsAnANSWERAndNotAConquest:
+        'Which changes what the threat is for. It cannot be turned into an empire, a protectorate or a standing arrangement, and no house can rent it. It can be provoked, once, by doing something specific to somebody specific, and the fifteen breaths that follow are aimed at whoever did it. That is the whole instrument: not a power anybody holds, but a consequence anybody can trigger and nobody can direct.',
+    andItIsNeverACERTAINTY:
+        'And it is never a certainty, which the setting must not round off. Nobody below the Lid knows what somebody above it will do. The record is clear that most who cross do not look back - they go exploring and they perish out there - and the ones who stay attentive to one province are the exception. Whether any given ascended ancestor would answer for their house is exactly as unknowable as whether a sealed ancestor would wake for the right reason: a question about a person, put by people who cannot reach them.',
+    butPeopleHaveADecentIdea:
+        'What everybody does have is a decent idea, and a decent idea is enough. What somebody spent their last decades on is a matter of record - what they divested, to whom, in what order, and what they arranged for afterwards - and any Surveyor in the region can read the same file and reach the same estimate. Nobody publishes a figure, because publishing one would mean somebody could argue with it. The estimate does the work precisely by staying an estimate.',
+    whichIsWhyTheCLAIMBeingTrueMatters:
+        'Half the houses in the world claim a living ascended ancestor and most of those claims are ornamental - a name on a tablet, an offering channel nobody has seen answered, a lineage that would like to be older than it is. `claimsLivingAncestor` and `claimIsTrue` are separate fields for exactly this reason, and `auditAncestralClaim` exists so the difference can be established rather than asserted. What a true claim buys is not force. It is that when it is weighed against everybody else\'s, it is the one nobody discounts.',
+    andItIsTheSameShapeAsASEAL:
+        'Which makes it the same instrument as a sealed ancestor, one tier up and with the uncertainty inverted. A seal is a weapon whose existence is uncertain and whose loyalty is known; this is a weapon whose existence is known and whose willingness is not. Both deter, neither can be verified without spending it, and a house that had to find out would learn the answer at the same moment as everybody else.',
+    theClearestInstance:
+        'The Azure Cloud Pavilion, which is why it is the one apex nobody has ever pressed. Ru Anjing made the most recent confirmed crossing in the world, there are witnesses alive who watched it, the objects she sent back are in a catalog, and she spent eleven documented years divesting into that sect on behalf of one specific person - one of the years on a chamber and a man nobody was told about, put under to stand behind the sister she was leaving in charge. That is not the file of somebody about to lose interest, and every apex in the region has read it. The Pavilion has never once referred to her in correspondence, which the Low Fall reads as grief and every rival reads correctly.'
+} as const;

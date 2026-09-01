@@ -57,7 +57,7 @@ import {
     type GatedManual,
     type ManualGateResult,
     type OpeningPenalty
-} from '../cultivation/escapes.js';
+} from '../cultivation/acquisition.js';
 import { rankName } from '../cultivation/realms.js';
 import { guidanceMultiplier } from '../cultivation/cultivation.js';
 import type { DaoAssessment } from '../cultivation/dao.js';

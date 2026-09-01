@@ -45,6 +45,7 @@ import {
 import { rollOrigin, type OriginTierKey } from '../cultivation/origin.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { personName } from './history.js';
+import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // GOALS
@@ -273,6 +274,18 @@ export interface NpcRecord {
     cultivation: NpcCultivation;
 
     locationId: string | null;
+    /**
+     * Which layer of the world this person is on.
+     *
+     * Stored rather than derived from `locationId`, because the question "who
+     * is above the Lid" has to keep having an answer for somebody whose
+     * location is unknown - and because a person's layer is a fact about them
+     * rather than about where they were last seen. Ascension is the only thing
+     * that changes it, and it changes nothing else about the record: the same
+     * id, the same lineage edges, the same grudges, the same history. See
+     * `layers.ts` and `immortal-world.ts`.
+     */
+    layer: LayerKey;
     factionId: string | null;
     /** Index into the faction's rank ladder. -1 when unaffiliated. */
     factionRankIndex: number;
@@ -334,9 +347,18 @@ export interface CreateNpcOptions {
     id: string;
     /** Omit to have the engine roll a name. */
     name?: string;
+    /**
+     * Names already spoken for in this world. A rolled name is drawn to avoid
+     * them, because the knowledge system is keyed by id and everything the
+     * player reads is keyed by name - two people sharing one breaks the rule
+     * that a name you were told is a name you have.
+     */
+    takenNames?: ReadonlySet<string>;
     bornOnDay: number;
     onDay: number;
     locationId?: string | null;
+    /** Which layer they were born on. Omit for the lower world, as almost everybody is. */
+    layer?: LayerKey;
     factionId?: string | null;
     factionRankIndex?: number;
     /** What they hold. Seeding passes what the life derivation actually left. */
@@ -398,7 +420,7 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
 
     return {
         id: opts.id,
-        name: opts.name ?? personName(nameRng),
+        name: opts.name ?? personName(nameRng, opts.takenNames),
         identity: {
             bornOnDay: opts.bornOnDay,
             origin: opts.origin ?? rollOrigin(originRng.next()).key,
@@ -409,6 +431,7 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         },
         cultivation,
         locationId: opts.locationId ?? null,
+        layer: opts.layer ?? DEFAULT_LAYER,
         factionId: opts.factionId ?? null,
         factionRankIndex: opts.factionRankIndex ?? (opts.factionId ? 0 : -1),
         spiritStones: Math.max(0, Math.round(opts.spiritStones ?? 0)),

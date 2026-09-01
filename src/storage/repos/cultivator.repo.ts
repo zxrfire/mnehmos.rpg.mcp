@@ -9,6 +9,7 @@ import {
     InjurySeverity,
     InjurySource,
     INJURY_WEIGHTS,
+    LETHAL_UNTREATED_INJURIES,
     SATIETY_MAX
 } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
@@ -38,6 +39,7 @@ interface CultivatorRow {
     max_qi: number;
     satiety: number;
     starvation_turns: number;
+    bleeding_turns: number;
     age: number;
     years_at_current_realm: number;
     spirit_stones: number;
@@ -105,6 +107,7 @@ export interface CultivatorDeltas {
     qi?: number;
     satiety?: number;
     starvationTurns?: number;
+    bleedingTurns?: number;
     spiritStones?: number;
     cultivationProgress?: number;
     age?: number;
@@ -201,6 +204,7 @@ export class CultivatorRepository {
     private readonly selectUntreatedInjuriesStmt: Database.Statement;
     private readonly countUntreatedStmt: Database.Statement;
     private readonly treatInjuryStmt: Database.Statement;
+    private readonly clearBleedClockStmt: Database.Statement;
     private readonly selectInjuryByIdStmt: Database.Statement;
     private readonly rosterStmt: Database.Statement;
 
@@ -209,7 +213,7 @@ export class CultivatorRepository {
             INSERT INTO cultivators (
                 id, run_id, name, kind, spirit_root, origin_tier, tradition_id, attributes,
                 realm_ordinal, cultivation_progress, foundation_quality, immortal_status,
-                hp, max_hp, qi, max_qi, satiety, starvation_turns,
+                hp, max_hp, qi, max_qi, satiety, starvation_turns, bleeding_turns,
                 age, years_at_current_realm,
                 spirit_stones, sect_id, sect_rank, location, feuds, known_techniques,
                 insights, achievements, battles_survived, battles_won,
@@ -219,7 +223,7 @@ export class CultivatorRepository {
             ) VALUES (
                 @id, @runId, @name, @kind, @spiritRoot, @origin, @traditionId, @attributes,
                 @realmOrdinal, @cultivationProgress, @foundationQuality, @immortalStatus,
-                @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns,
+                @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns, @bleedingTurns,
                 @age, @yearsAtCurrentRealm,
                 @spiritStones, @sectId, @sectRank, @location, @feuds, @knownTechniques,
                 @insights, @achievements, @battlesSurvived, @battlesWon,
@@ -238,6 +242,7 @@ export class CultivatorRepository {
                 foundation_quality = @foundationQuality, immortal_status = @immortalStatus,
                 hp = @hp, max_hp = @maxHp, qi = @qi, max_qi = @maxQi,
                 satiety = @satiety, starvation_turns = @starvationTurns,
+                bleeding_turns = @bleedingTurns,
                 age = @age, years_at_current_realm = @yearsAtCurrentRealm,
                 spirit_stones = @spiritStones, sect_id = @sectId, sect_rank = @sectRank,
                 location = @location, feuds = @feuds, known_techniques = @knownTechniques,
@@ -287,6 +292,12 @@ export class CultivatorRepository {
             WHERE id = @id AND treated = 0
         `);
         this.selectInjuryByIdStmt = db.prepare('SELECT * FROM cultivator_injuries WHERE id = ?');
+        // Treatment stops the bleed. Written as its own statement rather than
+        // through update(), because it must run inside treatInjury's own
+        // transaction and must not touch any other column.
+        this.clearBleedClockStmt = db.prepare(
+            'UPDATE cultivators SET bleeding_turns = 0 WHERE id = @id'
+        );
 
         // One query, no N+1. The admin panel renders a few hundred rows, and a
         // per-cultivator sect lookup plus a per-cultivator injury count would
@@ -455,6 +466,7 @@ export class CultivatorRepository {
             qi: clampInt(existing.qi + (deltas.qi ?? 0), 0, maxQi),
             satiety: clampInt(existing.satiety + (deltas.satiety ?? 0), 0, SATIETY_MAX),
             starvationTurns: Math.max(0, Math.round(existing.starvationTurns + (deltas.starvationTurns ?? 0))),
+            bleedingTurns: Math.max(0, Math.round(existing.bleedingTurns + (deltas.bleedingTurns ?? 0))),
             spiritStones: Math.max(0, Math.round(existing.spiritStones + (deltas.spiritStones ?? 0))),
             cultivationProgress: Math.max(0, existing.cultivationProgress + (deltas.cultivationProgress ?? 0)),
             age: Math.max(0, existing.age + (deltas.age ?? 0)),
@@ -635,15 +647,30 @@ export class CultivatorRepository {
      * Treat one injury. Returns the treated injury, or null when the id is
      * unknown or the injury was already treated - the caller consuming a pill
      * needs to know the difference between "healed" and "wasted".
+     *
+     * Closing a wound that drops the untreated count back under
+     * LETHAL_UNTREATED_INJURIES also stops the bleed clock, in the same
+     * transaction. That reset lives here rather than in each caller because
+     * this is the only place in the codebase where an injury becomes treated,
+     * and a clock that kept running after the wound was closed would be the
+     * database disagreeing with the engine about whether somebody is dying.
      */
     treatInjury(injuryId: string, treatedOnTurn?: number): Injury | null {
-        const result = this.treatInjuryStmt.run({
-            id: injuryId,
-            treatedOnTurn: treatedOnTurn ?? null
-        });
-        if (result.changes === 0) return null;
+        const treat = this.db.transaction((): InjuryRow | undefined => {
+            const result = this.treatInjuryStmt.run({
+                id: injuryId,
+                treatedOnTurn: treatedOnTurn ?? null
+            });
+            if (result.changes === 0) return undefined;
 
-        const row = this.selectInjuryByIdStmt.get(injuryId) as InjuryRow | undefined;
+            const row = this.selectInjuryByIdStmt.get(injuryId) as InjuryRow | undefined;
+            if (row && this.countUntreatedInjuries(row.cultivator_id) < LETHAL_UNTREATED_INJURIES) {
+                this.clearBleedClockStmt.run({ id: row.cultivator_id });
+            }
+            return row;
+        });
+
+        const row = treat();
         return row ? rowToInjury(row) : null;
     }
 
@@ -683,6 +710,7 @@ export class CultivatorRepository {
             maxQi: c.maxQi,
             satiety: c.satiety,
             starvationTurns: c.starvationTurns,
+            bleedingTurns: c.bleedingTurns,
             age: c.age,
             yearsAtCurrentRealm: c.yearsAtCurrentRealm,
             spiritStones: c.spiritStones,
@@ -745,6 +773,7 @@ export class CultivatorRepository {
             maxQi: row.max_qi,
             satiety: row.satiety,
             starvationTurns: row.starvation_turns,
+            bleedingTurns: row.bleeding_turns,
             age: row.age,
             yearsAtCurrentRealm: row.years_at_current_realm,
             injuries,

@@ -16,6 +16,7 @@ import type { OpportunityWindow } from '../../engine/world/opportunities.js';
 import type { ObjectRecord, OwnershipClaim, ProvenanceEntry } from '../../engine/world/possessions.js';
 import type { WorldRun } from '../../engine/world/legacy.js';
 import { runSeedFor } from '../../engine/world/legacy.js';
+import { makeAscensionRecord, toLayerKey, type AscensionRecord } from '../../engine/world/layers.js';
 import { yearOfDay } from '../../engine/world/history.js';
 import { DEFAULT_ORIGIN, isOriginTierKey } from '../../engine/cultivation/origin.js';
 
@@ -81,6 +82,7 @@ export class WorldStateRepository {
     private readonly insertLineageStmt: Database.Statement;
     private readonly insertLineageEdgeStmt: Database.Statement;
     private readonly insertRunStmt: Database.Statement;
+    private readonly insertAscensionStmt: Database.Statement;
     private readonly insertOpportunityStmt: Database.Statement;
     private readonly insertObjectStmt: Database.Statement;
     private readonly insertClaimStmt: Database.Statement;
@@ -102,6 +104,7 @@ export class WorldStateRepository {
     private readonly selectLineagesStmt: Database.Statement;
     private readonly selectLineageEdgesStmt: Database.Statement;
     private readonly selectRunsStmt: Database.Statement;
+    private readonly selectAscensionsStmt: Database.Statement;
     private readonly selectOpportunitiesStmt: Database.Statement;
     private readonly selectObjectsStmt: Database.Statement;
     private readonly selectClaimsStmt: Database.Statement;
@@ -167,7 +170,7 @@ export class WorldStateRepository {
 
         this.insertLocationStmt = db.prepare(`
             INSERT OR REPLACE INTO world_locations (
-                id, world_id, name, kind, parent_id, description,
+                id, world_id, name, kind, layer, parent_id, description,
                 ambient, qi_density,
                 threshold_entry, threshold_survival, threshold_operational, threshold_mastery,
                 hazards, affinities,
@@ -180,7 +183,7 @@ export class WorldStateRepository {
                 origin_thresholds, origin_hazards, origin_affinities, origin_environment, origin_from_day,
                 next_change_seq, tags, data, updated_at
             ) VALUES (
-                @id, @worldId, @name, @kind, @parentId, @description,
+                @id, @worldId, @name, @kind, @layer, @parentId, @description,
                 @ambient, @qiDensity,
                 @thresholdEntry, @thresholdSurvival, @thresholdOperational, @thresholdMastery,
                 @hazards, @affinities,
@@ -207,11 +210,11 @@ export class WorldStateRepository {
 
         this.insertFactionStmt = db.prepare(`
             INSERT OR REPLACE INTO world_factions (
-                id, world_id, name, kind, alignment, seat_location_id,
+                id, world_id, name, kind, layer, alignment, seat_location_id,
                 controlled_location_ids, ranks, standing, resources, description,
                 founded_on_day, dissolved_on_day, tags
             ) VALUES (
-                @id, @worldId, @name, @kind, @alignment, @seatLocationId,
+                @id, @worldId, @name, @kind, @layer, @alignment, @seatLocationId,
                 @controlledLocationIds, @ranks, @standing, @resources, @description,
                 @foundedOnDay, @dissolvedOnDay, @tags
             )
@@ -223,7 +226,7 @@ export class WorldStateRepository {
                 born_on_day, origin_tier, occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
-                location_id, faction_id, faction_rank_index, spirit_stones,
+                location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
                 history_fact_ids, memory_ids
@@ -232,7 +235,7 @@ export class WorldStateRepository {
                 @bornOnDay, @origin, @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
-                @locationId, @factionId, @factionRankIndex, @spiritStones,
+                @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
                 @historyFactIds, @memoryIds
@@ -263,10 +266,10 @@ export class WorldStateRepository {
 
         this.insertActorStmt = db.prepare(`
             INSERT OR REPLACE INTO world_actors (
-                world_id, actor_id, location_id, faction_id, faction_rank_index,
+                world_id, actor_id, location_id, layer, faction_id, faction_rank_index,
                 resources, key_ids, updated_on_day, history_fact_ids, memory_ids
             ) VALUES (
-                @worldId, @actorId, @locationId, @factionId, @factionRankIndex,
+                @worldId, @actorId, @locationId, @layer, @factionId, @factionRankIndex,
                 @resources, @keyIds, @updatedOnDay, @historyFactIds, @memoryIds
             )
         `);
@@ -342,6 +345,25 @@ export class WorldStateRepository {
             )
         `);
 
+        // Reaching ordinal 46 is a transition, not an ending, so this is a
+        // table of its own rather than a column on world_runs: the run may be
+        // closed by the ascension or continue after it, and the person stays
+        // in world_npcs either way, on the same lineage edges, owed the same
+        // debts. Nothing about the row resets anything.
+        this.insertAscensionStmt = db.prepare(`
+            INSERT OR REPLACE INTO world_ascensions (
+                id, world_id, resident_id, resident_name, ascended_on_day,
+                from_location_id, from_faction_id, run_id, to_location_id,
+                below_fact_id, after_crossing, died_above_on_day, end_note_above,
+                inheritance_location_id, parting_gift_object_id
+            ) VALUES (
+                @id, @worldId, @residentId, @residentName, @ascendedOnDay,
+                @fromLocationId, @fromFactionId, @runId, @toLocationId,
+                @belowFactId, @afterCrossing, @diedAboveOnDay, @endNoteAbove,
+                @inheritanceLocationId, @partingGiftObjectId
+            )
+        `);
+
         this.insertOpportunityStmt = db.prepare(`
             INSERT OR REPLACE INTO world_opportunities (
                 id, world_id, kind, name, summary, location_id, faction_ids,
@@ -358,11 +380,11 @@ export class WorldStateRepository {
 
         this.insertObjectStmt = db.prepare(`
             INSERT OR REPLACE INTO world_objects (
-                id, world_id, name, kind, significance, description,
+                id, world_id, name, kind, significance, description, power,
                 possessor_id, owner_id, owner_name, known_ownership_by,
                 location_id, tags, data, next_claim_seq
             ) VALUES (
-                @id, @worldId, @name, @kind, @significance, @description,
+                @id, @worldId, @name, @kind, @significance, @description, @power,
                 @possessorId, @ownerId, @ownerName, @knownOwnershipBy,
                 @locationId, @tags, @data, @nextClaimSeq
             )
@@ -409,6 +431,9 @@ export class WorldStateRepository {
         this.selectLineagesStmt = db.prepare('SELECT * FROM world_lineages WHERE world_id = ? ORDER BY rowid ASC');
         this.selectLineageEdgesStmt = db.prepare('SELECT * FROM world_lineage_edges WHERE world_id = ? ORDER BY rowid ASC');
         this.selectRunsStmt = db.prepare('SELECT * FROM world_runs WHERE world_id = ? ORDER BY run_index ASC');
+        this.selectAscensionsStmt = db.prepare(
+            'SELECT * FROM world_ascensions WHERE world_id = ? ORDER BY ascended_on_day ASC, id ASC'
+        );
         this.selectOpportunitiesStmt = db.prepare('SELECT * FROM world_opportunities WHERE world_id = ? ORDER BY rowid ASC');
         this.selectObjectsStmt = db.prepare('SELECT * FROM world_objects WHERE world_id = ? ORDER BY rowid ASC');
         this.selectClaimsStmt = db.prepare('SELECT * FROM world_object_claims WHERE world_id = ? ORDER BY rowid ASC');
@@ -578,6 +603,7 @@ export class WorldStateRepository {
                 )
             ),
             runs: (this.selectRunsStmt.all(worldId) as RunRow[]).map(rowToRun),
+            ascensions: (this.selectAscensionsStmt.all(worldId) as AscensionRow[]).map(rowToAscension),
             history,
             memories,
             populationTarget: runtime.population_target,
@@ -654,7 +680,7 @@ export class WorldStateRepository {
             'world_lineage_edges', 'world_lineages',
             'world_opportunities',
             'world_object_claims', 'world_object_provenance', 'world_objects',
-            'world_factions', 'world_runs'
+            'world_factions', 'world_runs', 'world_ascensions'
         ]) {
             this.db.prepare(`DELETE FROM ${table} WHERE world_id = ?`).run(worldId);
         }
@@ -672,6 +698,7 @@ export class WorldStateRepository {
         this.writeProcesses(s);
         this.writeLineages(s);
         this.writeRuns(s);
+        this.writeAscensions(s);
         this.writeOpportunities(s);
         this.writeObjects(s);
     }
@@ -792,6 +819,7 @@ export class WorldStateRepository {
                 links: JSON.stringify(location.links),
                 cyclePeriodDays: location.cycle?.periodDays ?? null,
                 cycleOpenDays: location.cycle?.openDays ?? null,
+                layer: location.layer,
                 cyclePhaseDay: location.cycle?.phaseDay ?? null,
                 sealed: location.sealed ? 1 : 0,
                 sealedOnDay: location.sealedOnDay,
@@ -840,6 +868,7 @@ export class WorldStateRepository {
                 worldId: s.id,
                 name: faction.name,
                 kind: faction.kind,
+                layer: faction.layer,
                 alignment: faction.alignment,
                 seatLocationId: faction.seatLocationId,
                 controlledLocationIds: JSON.stringify(faction.controlledLocationIds),
@@ -876,6 +905,7 @@ export class WorldStateRepository {
                 lifespanEndsOnDay: npc.cultivation.lifespanEndsOnDay,
                 lastAdvancedOnDay: npc.cultivation.lastAdvancedOnDay,
                 locationId: npc.locationId,
+                layer: npc.layer,
                 factionId: npc.factionId,
                 factionRankIndex: npc.factionRankIndex,
                 spiritStones: npc.spiritStones,
@@ -908,6 +938,7 @@ export class WorldStateRepository {
                 worldId: s.id,
                 actorId: actor.actorId,
                 locationId: actor.locationId,
+                layer: actor.layer,
                 factionId: actor.factionId,
                 factionRankIndex: actor.factionRankIndex,
                 resources: JSON.stringify(actor.resources),
@@ -1008,6 +1039,28 @@ export class WorldStateRepository {
         }
     }
 
+    private writeAscensions(s: WorldState): void {
+        for (const record of s.ascensions ?? []) {
+            this.insertAscensionStmt.run({
+                id: record.id,
+                worldId: s.id,
+                residentId: record.residentId,
+                residentName: record.residentName,
+                ascendedOnDay: record.ascendedOnDay,
+                fromLocationId: record.fromLocationId,
+                fromFactionId: record.fromFactionId,
+                runId: record.runId,
+                toLocationId: record.toLocationId,
+                belowFactId: record.belowFactId,
+                afterCrossing: record.afterCrossing,
+                diedAboveOnDay: record.diedAboveOnDay,
+                endNoteAbove: record.endNoteAbove,
+                inheritanceLocationId: record.inheritanceLocationId,
+                partingGiftObjectId: record.partingGiftObjectId
+            });
+        }
+    }
+
     private writeOpportunities(s: WorldState): void {
         for (const opportunity of s.opportunities) {
             this.insertOpportunityStmt.run({
@@ -1044,6 +1097,7 @@ export class WorldStateRepository {
                 kind: object.kind,
                 significance: object.significance,
                 description: object.description,
+                power: object.power,
                 possessorId: object.possessorId,
                 ownerId: object.ownerId,
                 ownerName: object.ownerName,
@@ -1281,6 +1335,7 @@ function rowToLocation(row: LocationRow, changes: LocationChange[]): LocationRec
         id: row.id,
         name: row.name,
         kind: row.kind as LocationRecord['kind'],
+        layer: toLayerKey(row.layer),
         parentId: row.parent_id,
         description: row.description,
         ambient: row.ambient as LocationRecord['ambient'],
@@ -1358,6 +1413,7 @@ function rowToFaction(row: FactionRow): FactionRecord {
         id: row.id,
         name: row.name,
         kind: row.kind,
+        layer: toLayerKey(row.layer),
         alignment: row.alignment as FactionRecord['alignment'],
         seatLocationId: row.seat_location_id,
         controlledLocationIds: parseArray(row.controlled_location_ids),
@@ -1395,6 +1451,7 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
             lastAdvancedOnDay: row.last_advanced_on_day
         },
         locationId: row.location_id,
+        layer: toLayerKey(row.layer),
         factionId: row.faction_id,
         factionRankIndex: row.faction_rank_index,
         spiritStones: row.spirit_stones ?? 0,
@@ -1457,6 +1514,7 @@ function rowToActor(
     return {
         actorId: row.actor_id,
         locationId: row.location_id,
+        layer: toLayerKey(row.layer),
         factionId: row.faction_id,
         factionRankIndex: row.faction_rank_index,
         inventory,
@@ -1574,6 +1632,33 @@ function rowToRun(row: RunRow): WorldRun {
     };
 }
 
+/**
+ * The engine's own answer to what became of somebody who crossed.
+ *
+ * "after_crossing" round-trips because the engine is allowed to know things
+ * the world cannot. Nothing that renders to a player may read it: below the
+ * Lid there is no signal at all, and a house whose channel has gone quiet
+ * knows exactly as much as one whose ancestor is standing up there ignoring it.
+ */
+function rowToAscension(row: AscensionRow): AscensionRecord {
+    return makeAscensionRecord({
+        id: row.id,
+        residentId: row.resident_id,
+        residentName: row.resident_name,
+        ascendedOnDay: row.ascended_on_day,
+        fromLocationId: row.from_location_id,
+        fromFactionId: row.from_faction_id,
+        runId: row.run_id,
+        toLocationId: row.to_location_id,
+        belowFactId: row.below_fact_id,
+        afterCrossing: row.after_crossing === 'died_above' ? 'died_above' : 'still_above',
+        diedAboveOnDay: row.died_above_on_day,
+        endNoteAbove: row.end_note_above,
+        inheritanceLocationId: row.inheritance_location_id,
+        partingGiftObjectId: row.parting_gift_object_id
+    });
+}
+
 function rowToOpportunity(row: OpportunityRow): OpportunityWindow {
     return {
         id: row.id,
@@ -1609,6 +1694,7 @@ function rowToObject(
         kind: row.kind as ObjectRecord['kind'],
         significance: row.significance as ObjectRecord['significance'],
         description: row.description,
+        power: row.power,
         possessorId: row.possessor_id,
         ownerId: row.owner_id,
         ownerName: row.owner_name,
@@ -1751,10 +1837,28 @@ interface FactRow {
     data: string;
 }
 
+interface AscensionRow {
+    id: string;
+    resident_id: string;
+    resident_name: string;
+    ascended_on_day: number;
+    from_location_id: string | null;
+    from_faction_id: string | null;
+    run_id: string | null;
+    to_location_id: string;
+    below_fact_id: string | null;
+    after_crossing: string;
+    died_above_on_day: number | null;
+    end_note_above: string;
+    inheritance_location_id: string | null;
+    parting_gift_object_id: string | null;
+}
+
 interface LocationRow {
     id: string;
     name: string;
     kind: string;
+    layer: string;
     parent_id: string | null;
     description: string;
     ambient: string;
@@ -1816,6 +1920,7 @@ interface FactionRow {
     id: string;
     name: string;
     kind: string;
+    layer: string;
     alignment: string;
     seat_location_id: string | null;
     controlled_location_ids: string;
@@ -1847,6 +1952,7 @@ interface NpcRow {
     lifespan_ends_on_day: number;
     last_advanced_on_day: number;
     location_id: string | null;
+    layer: string;
     faction_id: string | null;
     faction_rank_index: number;
     spirit_stones: number;
@@ -1899,6 +2005,7 @@ interface RelationshipRow {
 interface ActorRow {
     actor_id: string;
     location_id: string | null;
+    layer: string;
     faction_id: string | null;
     faction_rank_index: number;
     resources: string;
@@ -2028,6 +2135,7 @@ interface ObjectRow {
     kind: string;
     significance: string;
     description: string;
+    power: number | null;
     possessor_id: string | null;
     owner_id: string | null;
     owner_name: string;
