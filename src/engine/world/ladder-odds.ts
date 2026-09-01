@@ -500,7 +500,28 @@ export function measureLadderReach(seed: string, opts: SweepOptions = {}): Sweep
         let outcome: keyof typeof outcomes = 'still_going';
 
         while (age < maxYears) {
-            const rate = computeCultivationRate({ spiritRoot: root.key, injuries }, ambient, {
+            // THE RUNG THEY ARE STANDING ON, which this omitted.
+            //
+            // `computeCultivationRate` reads a missing `realmOrdinal` as zero
+            // and says so in its own comment: "it is WRONG for anybody standing
+            // higher... rather than discovering it as a flat ladder six months
+            // later." This sweep is the authoritative measurement of the ladder
+            // and it was discovering exactly that.
+            //
+            // The realm intake multiplier doubles every realm - 1, 2, 4, 8, up
+            // to 256 at Tribulation Transcendence - and it exists precisely to
+            // offset a progress requirement that grows at the same pace. Priced
+            // flat, ordinal 44 needs 442,644 years against a 20,000-year
+            // settling clock; priced at the rung, it needs 1,729. So the sweep
+            // reported a ladder that stops dead at Core Formation, with nobody
+            // in nine thousand lives reaching Nascent Soul at any ambient band.
+            //
+            // Every calibration read off this sweep before now understated the
+            // ladder, and the same defect is documented and fixed in
+            // `seeding.ts`'s `deriveLife`.
+            const rate = computeCultivationRate({
+                spiritRoot: root.key, injuries, realmOrdinal: ordinal
+            }, ambient, {
                 focusMultiplier: focus,
                 locationBonus,
                 techniqueBonus: 1 + attributes.insight * 0.06

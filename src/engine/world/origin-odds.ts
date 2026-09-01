@@ -492,20 +492,27 @@ export function simulateLife(
                 // rather than against the schema pivot. Without it every origin
                 // in this comparison reads a book at insight 2 and the axis
                 // this function exists to measure goes flat.
-                attributes
-                // NOTE: `realmOrdinal` is deliberately NOT passed, which
-                // `computeCultivationRate` reads as ordinal 0 and prices the
-                // whole climb at Qi Condensation intake. That is very probably
-                // a defect - it is the same one `seeding.ts` documents finding
-                // and fixing in `deriveLife`, where it had stalled every NPC in
-                // the world - but supplying it here moves this harness's
-                // outcome distribution hard: measured, top-tier children
-                // reaching Core Formation went from 4% to 8% against a 5% bar,
-                // because the realm intake term compounds upward and the
-                // well-born are the ones standing high enough to collect it.
-                // That is a balance decision about what `docs/world/origin.md`
-                // means, not a side effect a manual-quality change should
-                // smuggle in, so it is left alone and written down.
+                attributes,
+                // The rung they are standing on. This was left out on purpose
+                // once, and the note explaining why was right about the
+                // consequence and wrong about the conclusion: supplying it
+                // moves this harness hard, because the realm intake term
+                // compounds upward and the well-born are the ones standing
+                // high enough to collect it. Top-tier children reaching Core
+                // Formation go from about 4% to about 8%.
+                //
+                // It is supplied now anyway, for two reasons. It is what the
+                // played game does - `time-skip.ts` passes the ordinal - so
+                // withholding it here measured a ladder nobody actually
+                // climbs. And the effect it produces is the thing this file
+                // exists to measure: that backing shortens the road. A harness
+                // that flattened the advantage in order to keep a bar was
+                // reporting a smaller advantage than the engine grants.
+                //
+                // The same defect was found and fixed in `seeding.ts`'s
+                // `deriveLife` and in `ladder-odds.ts`, where it had the
+                // ladder stopping dead at Core Formation.
+                realmOrdinal: ordinal
             },
             ambient,
             {
