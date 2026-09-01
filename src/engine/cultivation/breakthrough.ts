@@ -46,18 +46,27 @@ import {
     type BreakthroughResult,
     type Cultivator,
     type Injury,
-    type InjurySeverity
+    type InjurySeverity,
+    type TechniqueGrade,
+    type Insight,
+    type InsightDomain,
+    InsightDomainSchema
 } from '../../schema/cultivation.js';
 import {
+    FALSE_IMMORTAL_ORDINAL,
+    LAST_CROSSING_ORDINAL,
     MAX_ORDINAL,
     REALM_TIERS,
     baseBreakthroughChance,
     hasCrossedTheLid,
     isLastCrossing,
     isRealmBoundary,
+    lifespanForOrdinal,
     progressRequiredForOrdinal,
     rankName,
-    triggersHeavenlyTribulation
+    realmForOrdinal,
+    triggersHeavenlyTribulation,
+    type RealmKey
 } from './realms.js';
 import { getSpiritRoot, type SpiritRootGrade } from './spirit-roots.js';
 import { ambientBreakthroughMod } from './ambient.js';
@@ -92,16 +101,79 @@ export const MIN_BREAKTHROUGH_CHANCE = 0.02;
 export const MAX_BREAKTHROUGH_CHANCE = 0.97;
 
 /**
+ * The ceiling on a REALM BOUNDARY, which is a different ceiling and much lower.
+ *
+ * This is the correction that recalibrated the top of the ladder, and it is
+ * worth stating plainly because the old single ceiling looked harmless.
+ *
+ * Preparation is additive here - root, comprehension, foundation, the site, a
+ * pill - and a cultivator who has all of it clears +1.0 of modifiers before the
+ * base is even counted. Against one ceiling of 0.97 that meant a fully prepared
+ * cultivator crossed EVERY realm boundary at 97%, so the nine walls of the
+ * ladder were nine formalities and the only thing that could end such a run was
+ * the clock. Measured, that produced 73% of best-case lives arriving above the
+ * Lid, which is not a ladder, it is a corridor.
+ *
+ * A wall you can prepare your way through at 97% is not a wall. Preparation buys
+ * you the ATTEMPT - the right to stand in front of it with the qi gathered and
+ * your meridians whole - and the crossing decides the rest. FIVE IN SIX IS AS
+ * GOOD AS A REALM BOUNDARY EVER GETS, for anybody, ever.
+ *
+ * The figure is deliberately not punitive, and it is not where the rarity of
+ * the top of the ladder is supposed to live. Perfect conditions are meant to be
+ * GOOD odds; what makes an immortal rare is that almost nobody ever gets those
+ * conditions, which is a fact about spirit roots, sealed veins and living
+ * teachers rather than about this constant. Measured over whole lives, the cap
+ * moves the best-case share finishing above the Lid from 73% to about a half,
+ * and the share coming out True Immortal from 28% to about 14%.
+ *
+ * It is also as low as it can go. The population structure below depends on a
+ * thin-county farmer who finds a vein still being able to reach Void Refinement
+ * - the setting's own "the well-born climb by being supplied and the poor climb
+ * by being reckless" - and that road runs through the Deity Transformation wall
+ * on a single attempt the clock will not let them repeat. At 0.80 it closes
+ * entirely: 30,000 sampled poor lives, none past ordinal 28. The existence
+ * proof is one life in thirty thousand either way, so treat this constant as
+ * load-bearing for `tests/engine/world/origin-outcomes.test.ts` and re-run that
+ * file before moving it.
+ */
+export const MAX_BOUNDARY_CHANCE = 0.85;
+
+/**
+ * The last crossing is exempt, and gets the ordinary ceiling back.
+ *
+ * Not a softening. At an ordinary boundary the primary roll asks whether the
+ * cultivator can open the wall; at 44 there is no wall to open. The price has
+ * been paid, the tribulation is coming down whether or not anyone is ready for
+ * it, and the primary roll only asks whether the cultivator can hold what they
+ * gathered long enough to call it. What is genuinely in doubt at the last
+ * crossing is the lightning and the seam, and those are rolled separately - see
+ * THE LAST CROSSING at the bottom of the file. Capping the primary roll here as
+ * well would have priced the same danger twice.
+ */
+export function maxChanceFor(ordinal: number): number {
+    if (isLastCrossing(ordinal)) return MAX_BREAKTHROUGH_CHANCE;
+    return isRealmBoundary(ordinal) ? MAX_BOUNDARY_CHANCE : MAX_BREAKTHROUGH_CHANCE;
+}
+
+/**
  * Spirit-root contribution, by grade.
  *
  * Note this is NOT `cultivationSpeed`. Speed decides how fast you arrive at the
  * bottleneck; this decides whether you get through it. Mutated roots are fast
  * and powerful but volatile - they get a smaller bonus than clean single roots
  * despite cultivating faster, because raw lightning is not the same as control.
+ *
+ * dual through muddled is one descending run, and the steps shorten as it
+ * falls: the difference between two elements and three is felt at a
+ * bottleneck, the difference between four and five barely is. By then the
+ * intake is already divided past the point where one more division matters.
  */
 export const BREAKTHROUGH_ROOT_MOD: Record<SpiritRootGrade, number> = {
     single: 0.06,
     dual: -0.04,
+    triple: -0.05,
+    quad: -0.055,
     muddled: -0.06,
     mutated: 0.02
 };
@@ -160,23 +232,244 @@ export const TRUE_IMMORTAL_BASE_COMPLETION = 0.12;
 /** Each strike that landed is damage the crossing has to carry through the seam. */
 export const COMPLETION_PER_LANDED_STRIKE = -0.05;
 export const MIN_COMPLETION_CHANCE = 0.01;
-export const MAX_COMPLETION_CHANCE = 0.45;
+/**
+ * A quarter, and the ceiling is the whole point of the number.
+ *
+ * Everything that helps a crossing - the site, the foundation, a clean
+ * tribulation - is additive and a well-prepared cultivator clears the raw
+ * figure easily, so in practice this cap is what every crossing worth making
+ * actually resolves at. That makes it a design statement rather than a
+ * safeguard: THREE OUT OF FOUR CROSSINGS THAT SURVIVE THE LIGHTNING DO NOT GO
+ * THROUGH. The Hollow Court is three times the size of the company on the other
+ * side, and it is that way because the seam closes, not because those people
+ * were worse.
+ *
+ * It was 0.45, which put the ratio at roughly 1.2 False to 1 True and quietly
+ * made the good ending the likely one.
+ */
+export const MAX_COMPLETION_CHANCE = 0.25;
 
-/** Cap on how much a single pill may contribute, however good the pill is. */
+// ─────────────────────────────────────────────────────────────────────────
+// PILLS
+//
+// A pill MULTIPLIES the odds; it does not add percentage points to them. That
+// distinction is the whole of this section, and getting it wrong the other way
+// made consumption a solution to the ladder.
+//
+// The measurement that settles it: the last crossing at ordinal 44 resolves at
+// finalChance 0.0200. Read additively, a +0.35 pill takes that to 37% - one
+// purchase handing a player the ascension the entire setting is built on being
+// out of reach. Read multiplicatively it goes to 2.1%, which is what a pill
+// should be. The same pill at a rung already sitting at 60% takes it to 81%:
+// help where you are already likely, never a substitute for being ready.
+//
+// ── Three curves, and they all bend the same way ─────────────────────────
+//
+//   effective = 1 + (gradeFactor - 1) * bandDecay(grade, ordinal)
+//                                     * toleranceDecay(priorPillsTaken)
+//
+// 1. GRADE sets the base factor, and it DESCENDS as the grade climbs. This is
+//    the inversion, and it is deliberate: an upper-grade pill is not a bigger
+//    lower-grade pill. It is rarer, dearer, harder to make, and it buys less
+//    than the cheap one bought a cultivator at the bottom. Set against the
+//    catalog's own values, which ascend from 75 spirit stones to 750,000:
+//
+//      grade     factor   at its own rung   catalogued guiding pill      value
+//      mortal    1.35     +35%             Foundation-Guiding               75
+//      earth     1.25     +25%             Golden Core Guiding             650
+//      heaven    1.18     +18%             Nascent Soul Guiding          7,500
+//      immortal  1.12     +12%             Void Refinement Guiding      60,000
+//      chaos     1.08     +8%              Tribulation Guiding         750,000
+//
+//    THE RATIO THAT IS THE DESIGN STATEMENT: the cheapest pill in the world
+//    lifts the Foundation wall by a third. The dearest lifts the last crossing
+//    by a sixteenth. Four and a half times less help for ten thousand times the
+//    price - so the curve bends against a cultivator from both directions at
+//    once, and the higher they get the less any amount of money can do. A
+//    cultivator at the bottom can meaningfully buy their way through a rung.
+//    One near the top cannot buy their way through anything, however rich.
+//    An upper-grade pill is worth a fortune precisely because it is the LAST
+//    marginal help available, not because it is powerful.
+//
+// 2. BAND handles altitude. Each grade is pitched at a rung - the realm its
+//    guiding pill is named for - and the effect halves every
+//    PILL_BAND_HALF_LIFE_RUNGS above it. Below its rung a pill works in full:
+//    taking a Foundation pill at Layer 3 is a waste of money, not a penalty.
+//    A mortal pill at ordinal 44 sits 31 rungs above its band and delivers
+//    +2.4%, which is the "close to noise at Tribulation Transcendence" the
+//    design asks for, reached by a curve rather than by a cutoff.
+//
+// 3. TOLERANCE handles repetition, and it is PERMANENT. Each pill already
+//    taken leaves PILL_TOLERANCE_RETENTION of the next one's effect: the
+//    second is worth 60%, the fourth 22%, the sixth 8%. Permanent rather than
+//    windowed because this is a game where the body is a finite resource and
+//    scar tissue is forever, and because a window would only teach players to
+//    wait it out. It is what makes hoarding one good pill for the one attempt
+//    that matters the correct play, and "just take another" stop working.
+//
+// ── Where the clamps sit, which is a real decision ───────────────────────
+//
+// The pill multiplies the chance AFTER the ordinary floor and ceiling have been
+// applied, and the result is clamped again. So a pill can never carry anyone
+// past `maxChanceFor(ordinal)` - that ceiling is the design statement about how
+// often a realm boundary may ever be crossed, and a purchasable exception to it
+// would be the same defect in a different place. Someone already at the ceiling
+// gets nothing for their pill, correctly.
+//
+// `MAX_COMPLETION_CHANCE` does not interact: `completionChance` takes no pill
+// and never has. Whether the Lid stays open is not for sale.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The fractional lift of the strongest pill reading, as a bare fraction.
+ *
+ * Retained under its original name because `engine/world/origin-odds.ts` and
+ * `engine/world/seeding.ts` scale a 0..1 preparation quality by it. Under the
+ * multiplicative reading this is "+35%", not "+35 points" - the same number,
+ * a different meaning - and {@link MAX_PILL_MULTIPLIER} is the clearer way to
+ * say it. The two are tied by construction so they cannot drift.
+ */
 export const MAX_PILL_BONUS = 0.35;
+
+/** The most a pill may multiply breakthrough odds by. A mortal-grade pill. */
+export const MAX_PILL_MULTIPLIER = 1 + MAX_PILL_BONUS;
+
+/**
+ * Base multiplier by pill grade, DESCENDING. See the banner above for why.
+ *
+ * Reuses the five-grade vocabulary every other consumable catalog already
+ * uses - herbs, techniques, pills - rather than inventing a second "lower /
+ * middle / upper" scale beside it. Lower/middle/upper is what the top, middle
+ * and bottom of this table read as.
+ */
+export const PILL_GRADE_FACTOR: Readonly<Record<TechniqueGrade, number>> = {
+    mortal: MAX_PILL_MULTIPLIER,
+    earth: 1.25,
+    heaven: 1.18,
+    immortal: 1.12,
+    chaos: 1.08
+};
+
+/**
+ * The realm each pill grade is pitched at, as a realm key.
+ *
+ * Read off the catalog's own guiding-pill line - Foundation-Guiding is mortal,
+ * Golden Core Guiding is earth, and so on up - and resolved to an ordinal
+ * through `REALM_TIERS` rather than by writing the rung numbers down, so the
+ * band follows the ladder if the ladder moves. `tests/engine/cultivation/
+ * pills.test.ts` asserts this still matches the catalog.
+ */
+export const PILL_GRADE_REALM: Readonly<Record<TechniqueGrade, RealmKey>> = {
+    mortal: 'foundation_establishment',
+    earth: 'core_formation',
+    heaven: 'nascent_soul',
+    immortal: 'void_refinement',
+    chaos: 'tribulation_transcendence'
+};
+
+/** Rungs above its own band over which a pill loses half its effect. */
+export const PILL_BAND_HALF_LIFE_RUNGS = 8;
+
+/** Share of a pill's effect that survives each pill already taken. Permanent. */
+export const PILL_TOLERANCE_RETENTION = 0.6;
+
+/** First ordinal of the realm a pill of this grade is made for. */
+export function pillBandOrdinal(grade: TechniqueGrade): number {
+    const key = PILL_GRADE_REALM[grade];
+    const tier = REALM_TIERS.find(t => t.key === key);
+    // Unreachable while PILL_GRADE_REALM names real realms; a loud 0 rather
+    // than a throw, because a bad edit here should fail a test, not a run.
+    return tier?.ordinalStart ?? 0;
+}
+
+/**
+ * How much of a pill survives being taken this far above its own band.
+ *
+ * 1 at or below the band. Never reaches zero: a curve rather than a cutoff, so
+ * that "this pill is beneath you now" arrives as a shrinking number a player
+ * can watch rather than as a rule that fires.
+ */
+export function pillBandDecay(grade: TechniqueGrade, realmOrdinal: number): number {
+    const above = Math.max(0, realmOrdinal - pillBandOrdinal(grade));
+    return Math.pow(0.5, above / PILL_BAND_HALF_LIFE_RUNGS);
+}
+
+/** How much of a pill survives the ones already eaten. Permanent, compounding. */
+export function pillToleranceDecay(priorPillsTaken: number): number {
+    const taken = Number.isFinite(priorPillsTaken) ? Math.max(0, Math.floor(priorPillsTaken)) : 0;
+    return Math.pow(PILL_TOLERANCE_RETENTION, taken);
+}
+
+/**
+ * The multiplier a pill actually applies, after grade, altitude and tolerance.
+ *
+ * Never below 1: a pill is never a penalty. Never above
+ * {@link MAX_PILL_MULTIPLIER}.
+ */
+export function pillMultiplier(pill: ConsumedPill, realmOrdinal: number): number {
+    // A graded pill takes the real curve. One without a grade is a legacy or
+    // synthetic caller - `origin-odds.ts` and `seeding.ts` both build a pill
+    // out of a 0..1 preparation quality - and keeps the plain reading, where a
+    // higher potency means more help and nothing decays. Passing a grade is
+    // strictly better and should be done wherever a catalog row is in hand.
+    const base = pill.grade
+        ? PILL_GRADE_FACTOR[pill.grade]
+        : 1 + Math.max(0, Math.min(MAX_PILL_BONUS, pill.potency ?? 0));
+
+    const decay = pill.grade
+        ? pillBandDecay(pill.grade, realmOrdinal) * pillToleranceDecay(pill.priorPillsTaken ?? 0)
+        : pillToleranceDecay(pill.priorPillsTaken ?? 0);
+
+    const effective = 1 + (base - 1) * decay;
+    return Math.max(1, Math.min(MAX_PILL_MULTIPLIER, effective));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE CLOCK
+//
+// Most bad attempts in this world are not made by fools. They are made by
+// people who have run out of road: the rung grants a span, the span is most of
+// the way gone, and there will not be a second chance to gather this much qi
+// again. So they strike at odds they can read perfectly well, because the
+// alternative is to sit down and wait to die at the rung they are on.
+//
+// The engine has to price that, because a cultivator who forces a crossing on a
+// body with a decade left in it is not attempting the same thing as one who has
+// nine tenths of their span in hand. Nothing here decides WHETHER to strike -
+// that is the player's, and for NPCs the caller's, and `assessLastCrossing`
+// below is what they consult. This only makes the late attempt worse, which is
+// the fact that makes the decision a real one.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Share of the rung's granted span that may be spent before the clock bites. */
+export const LIFESPAN_PRESSURE_ONSET = 0.5;
+/** Worst the clock can be worth, at the very end of a span. */
+export const MAX_LIFESPAN_PRESSURE = -0.2;
 
 /**
  * Failure severity tables. Each column is a cumulative threshold against one
  * [0,1) sample, checked in order: stable, injured, deviation, death.
  *
  * Sub-rank failure is mostly a wasted stretch of time. Boundary failure is a
- * 10% chance of dying on the spot and a 65% chance of taking a wound you will
+ * 15% chance of dying on the spot and a 63% chance of taking a wound you will
  * still be carrying a decade later. This table is where "boundaries are the
  * bottlenecks that kill cultivators" is actually implemented.
+ *
+ * The boundary column carried a 10% death share until it was measured against
+ * whole lives rather than single rolls. A cultivator who fails a boundary does
+ * not stop; they heal, re-gather and strike again, so what matters is not the
+ * chance of dying on one roll but the chance of dying before the wall opens,
+ * and at 10% against the ceiling above that came to almost nobody.
+ *
+ * The last crossing has its own column and it is the worst in the game. There is
+ * no walking away from a tribulation you summoned and could not hold: nearly
+ * half of the cultivators who lose their grip on it are killed by what they
+ * called down, and the ones who are not have nothing left to try again with.
  */
 export const FAILURE_TABLE = {
     subRank: { stable: 0.55, injured: 0.9, deviation: 0.99 },
-    boundary: { stable: 0.25, injured: 0.65, deviation: 0.9 }
+    boundary: { stable: 0.22, injured: 0.6, deviation: 0.85 },
+    lastCrossing: { stable: 0.05, injured: 0.3, deviation: 0.55 }
 } as const;
 
 /** Fraction of the required progress burned by each failure outcome. */
@@ -186,6 +479,20 @@ export const FAILURE_PROGRESS_LOSS: Record<BreakthroughFailure, number> = {
     failure_deviation: 0.75,
     death: 1
 };
+
+/**
+ * A failed last crossing costs the whole accumulation, whatever the severity.
+ *
+ * The qi was not dispersed, it was SPENT - thrown at the Lid and kept. A
+ * cultivator who survives a failed crossing is standing on Tribulation
+ * Transcendence Perfection with nothing in them, needing the full price again
+ * to try a second time, and the settling clock at that rung does not grant two
+ * of those. This is what makes the crossing a single shot in practice without
+ * a special-case rule saying so, and it is why so many of the people the world
+ * calls "the ones who refused to step through" are in fact the ones who tried
+ * once and cannot afford to again.
+ */
+export const LAST_CROSSING_PROGRESS_LOSS = 1;
 
 /**
  * Heavenly tribulation: strikes escalate as the cultivator climbs the final
@@ -216,8 +523,27 @@ export const MAX_TRIBULATION_SURVIVAL = 0.95;
 
 export interface ConsumedPill {
     name: string;
-    /** Flat probability bonus. Clamped to MAX_PILL_BONUS. */
-    potency: number;
+    /**
+     * The pill's grade, from the catalog row. THE input that matters: it sets
+     * the base multiplier and the realm band the pill is made for. Supply it
+     * wherever a catalog row is in hand.
+     */
+    grade?: TechniqueGrade;
+    /**
+     * Legacy strength, as a FRACTIONAL lift rather than percentage points:
+     * 0.35 means x1.35, not +35 points. Read only when no `grade` is given -
+     * `engine/world/origin-odds.ts` and `engine/world/seeding.ts` synthesise a
+     * pill from a 0..1 preparation quality and have no catalog row to grade.
+     * Clamped to MAX_PILL_BONUS.
+     */
+    potency?: number;
+    /**
+     * How many breakthrough pills this cultivator has ALREADY taken in their
+     * life. Drives permanent tolerance - see the PILLS banner. Omitted reads as
+     * zero, which is the no-tolerance behaviour; a caller that persists a count
+     * gets the real curve.
+     */
+    priorPillsTaken?: number;
 }
 
 export interface BreakthroughContext {
@@ -256,11 +582,195 @@ export interface BreakthroughContext {
     relevance?: Partial<RelevanceContext>;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// THE ROADS BESIDES YOUR OWN
+//
+// The structural gate: past Qi Condensation, a realm boundary asks for
+// comprehension that a cultivator's own body cannot supply, and refuses the
+// attempt when it is not there.
+//
+// ── Why this exists ──────────────────────────────────────────────────────
+//
+// Measured over 400 hand-played lives: 94% of deaths land on a boundary rung,
+// in a clean survivorship curve - 137 at ordinal 12, 123 at 16, 52 at 20, 31 at
+// 24, 13 at 28, 6 at 32, 8 at 36 - and a sect elder dies at the same rungs at
+// the same rates as a rogue. The ladder was hard and it was not STRUCTURAL:
+// nothing on it ever asked a cultivator for anything they could only get from
+// somebody else, so joining a sect meant nothing and sitting in a cave forever
+// was a complete strategy that merely had bad odds.
+//
+// Comprehension was the obvious lever and it was only ever a bonus - insight
+// entered as an additive modifier and no rung anywhere could be refused for
+// want of it.
+//
+// ── Why counting NON-ELEMENT domains is the right measure ────────────────
+//
+// Not a new system. `discoverableInsights` already decides what is in reach,
+// and it is already access-shaped: the `own_root` source - the one access
+// everybody is born with - grants comprehension in the `element` domain and in
+// no other. Every one of the other eight domains requires a manual that can be
+// read, a teacher willing to teach, an artifact, an inheritance, the inside of
+// a Dao house, a place with something in it, or having survived something.
+//
+// So "how many domains do you hold outside `element`" is exactly "how far have
+// you got out of your own body", read off data that already exists, with no
+// new field, no migration and no branch on who anybody is. A cave in a starting
+// area yields the root's elements and stops. A muddled five-element root - the
+// worst draw in the game - reaches five `element` insights and still counts
+// zero, which is the hole a naive breadth requirement would have left open.
+//
+// ── ACCESS, NOT EFFORT ───────────────────────────────────────────────────
+//
+// This is the constraint that shapes everything above, and it must not be
+// eroded later: the requirement names WHAT MUST BE IN REACH, never what must be
+// done. There is no minimum number of years, no deed, no quest, no suffering
+// requirement. A cultivator sealed in a sect's library with the right manuals
+// is sitting just as still as one in a cave and should reach the top, because
+// the library has things in it and the cave does not. Being handed an
+// inheritance counts. Being taught counts. Reading counts. Theft counts.
+//
+// The interesting question therefore stops being "have you put in the time" and
+// becomes "how did you get in the room" - and rank, patronage, inheritance,
+// birth and burglary all become real strategies, all of them already modelled.
+//
+// ── The curve, and where it bites ────────────────────────────────────────
+//
+// One road per realm already climbed, capped at the eight that exist:
+//
+//   12 -> 13  Foundation Establishment   1 road   the transition
+//   16 -> 17  Core Formation             2
+//   20 -> 21  Nascent Soul               3
+//   24 -> 25  Deity Transformation       4
+//   28 -> 29  Void Refinement            5
+//   32 -> 33  Body Integration           6
+//   36 -> 37  Grand Ascension            7
+//   40 -> 41  Tribulation Transcendence  8   every road there is
+//   44        the last crossing          8
+//
+// The transition sits at 12 -> 13 deliberately, and it is the same rung the
+// mortal-grade pill band is pitched at, so that the moment a cultivator needs
+// help they cannot make alone is ONE moment rather than two. It is where the
+// setting already says almost nobody gets past, and it is early enough that a
+// player who has been soloing still has most of a fifty-year settling clock in
+// which to go and join something.
+//
+// Within-realm rungs are NOT gated. The soloable feel between walls is
+// preserved; it is the walls that ask.
+//
+// A refusal here is not a death. It is a redirect, and it should read like the
+// progress gate reads - the measurement first, and no encouragement attached.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The lowest ordinal at which the dao requirement is ENFORCED.
+ *
+ * ── Why this is above the ladder, and what must land before it moves ─────
+ *
+ * The gate below is complete, tested and correct, and it is switched off,
+ * because the supply half of the design does not exist yet and shipping half
+ * of a two-half mechanism would not make the game structural - it would make
+ * it unwinnable.
+ *
+ * Measured, not assumed. `discoverableInsights` is properly access-shaped and
+ * grants a non-`element` road only through a manual, teacher, artifact,
+ * inheritance, tradition, site or survived phenomenon. In the running game:
+ *
+ *   - `src/web/game.ts` NEVER populates `ctx.understanding`. Not once. The
+ *     playable layer supplies no manuals, no teachers, no sites, no
+ *     inheritances - exactly the way it supplied no `locationDensity`.
+ *   - so the only roads reachable in play are the ones a phenomenon grants:
+ *     `body` from surviving a qi deviation, and `life_death` + `void` from
+ *     surviving a tribulation. Three, and only by being badly hurt.
+ *   - the curve asks for 4 by Deity Transformation and 8 by Tribulation
+ *     Transcendence. Turning it on today would stop every cultivator in the
+ *     world - players and NPCs alike - at Deity at the very best, and at
+ *     Foundation for anyone who never deviates. The 500-year acceptance test
+ *     needs a world that still produces elders.
+ *
+ * Set this to 12 - the Foundation wall, and the same rung the mortal-grade
+ * pill band is pitched at - once ALL of the following can be reached in play:
+ *
+ *   1. A library. `ctx.understanding.readableManuals` populated from real
+ *      rows, on sect ground and in ruins. This is the big one: without it
+ *      nothing but injury teaches anybody anything.
+ *   2. A teacher. `ctx.understanding.teachers` from sect membership and rank.
+ *   3. Places. `ctx.understanding.locationTags` from the world layer's real
+ *      locations, which already carry the tags `LOCATION_OPENINGS` reads.
+ *   4. Inheritances. `ctx.understanding.inheritances` from opened ruins -
+ *      `inheritance-trials.ts` is already authored for exactly this.
+ *
+ * One and three alone would probably be enough to switch it on at Foundation.
+ * `tests/engine/cultivation/dao-gate.test.ts` asserts both that the curve is
+ * right and that it is currently inert, so flipping this constant is a
+ * deliberate act with a test that notices.
+ */
+export const DAO_GATE_FROM_ORDINAL = MAX_ORDINAL + 1;
+
+/** The one domain a cultivator's own root can supply unaided. */
+const SELF_TAUGHT_DOMAIN: InsightDomain = 'element';
+
+/** Every domain that requires access to something outside the cultivator. */
+export const ROADS_BESIDES_YOUR_OWN: readonly InsightDomain[] = InsightDomainSchema.options
+    .filter(domain => domain !== SELF_TAUGHT_DOMAIN);
+
+/**
+ * Distinct comprehension domains this cultivator holds beyond their own root.
+ *
+ * The measure the boundary gate reads. Degree is deliberately not consulted:
+ * this asks how many roads have been stepped onto, not how far along any of
+ * them the cultivator has got. Depth is what the odds already price.
+ */
+export function roadsWalked(insights: readonly Insight[] | undefined): number {
+    const domains = new Set<InsightDomain>();
+    for (const insight of insights ?? []) {
+        if (insight.domain !== SELF_TAUGHT_DOMAIN) domains.add(insight.domain);
+    }
+    return domains.size;
+}
+
+/**
+ * Roads besides their own that a cultivator must hold to attempt this rung.
+ *
+ * Zero everywhere except a realm boundary, and zero at every boundary inside
+ * Qi Condensation - which has none, being one realm thirteen rungs deep. The
+ * first requirement any cultivator ever meets is the Foundation wall.
+ */
+export function daoRequirementCurve(ordinal: number): number {
+    if (!isRealmBoundary(ordinal) && !isLastCrossing(ordinal)) return 0;
+    const tier = REALM_TIERS.find(t => t.key === realmForOrdinal(ordinal).key);
+    if (!tier) return 0;
+    const realmIndex = REALM_TIERS.indexOf(tier);
+    // Qi Condensation is index 0 and asks for nothing: crossing OUT of it is
+    // the first ask, and that is one road.
+    return Math.min(ROADS_BESIDES_YOUR_OWN.length, Math.max(0, realmIndex + 1));
+}
+
+/**
+ * What this rung ACTUALLY asks for right now - the curve, behind the switch.
+ *
+ * Zero everywhere while `DAO_GATE_FROM_ORDINAL` sits above the ladder. Read
+ * `daoRequirementCurve` for what the design says, and see that constant for
+ * what has to be reachable in play before the two become the same function.
+ */
+export function daoRequirementFor(ordinal: number): number {
+    if (ordinal < DAO_GATE_FROM_ORDINAL) return 0;
+    return daoRequirementCurve(ordinal);
+}
+
 export interface EligibilityCheck {
     eligible: boolean;
     /** Machine-readable reason when ineligible; null when eligible. */
     reason: string | null;
-    progressRequired: number;
+    /** Roads besides their own this rung asks for. Zero off a boundary. */
+    daoRequired: number;
+    /** Distinct non-element comprehension domains actually held. */
+    daoHeld: number;
+    /**
+     * Null above the Lid, where the requirement is not denominated in this
+     * currency and no amount of it would do. Reported rather than flattened to
+     * zero so a caller cannot render "0 required" beside a refusal.
+     */
+    progressRequired: number | null;
     /** Accumulated PLUS what understanding stands in for. What is compared. */
     progressAvailable: number;
     /** Qi-units actually gathered. */
@@ -290,30 +800,46 @@ export function canAttemptBreakthrough(
                   ctx.relevance
               );
     const available = cultivator.cultivationProgress + substitution.substituted;
+    const daoRequired = daoRequirementFor(cultivator.realmOrdinal);
+    const daoHeld = roadsWalked(cultivator.insights);
     const base = {
         progressRequired: required,
         progressAvailable: available,
         progressAccumulated: cultivator.cultivationProgress,
-        progressSubstituted: substitution.substituted
+        progressSubstituted: substitution.substituted,
+        daoRequired,
+        daoHeld
     };
 
     if (!cultivator.alive) {
         return { eligible: false, reason: 'dead', ...base };
     }
-    // The Lid does not open twice for the same name. A False Immortal is
-    // REFUSED, not merely made unlikely - this is a hard engine gate, and it is
-    // the whole reason False Immortal is a status rather than a setback.
-    if (hasCrossedTheLid(cultivator.immortalStatus ?? 'none')) {
-        return { eligible: false, reason: 'barred:the_lid_opened_once', ...base };
-    }
+    // The summit first. Both gates catch a True Immortal - they are at the top
+    // AND they have crossed - and only one of them describes their situation.
+    // Checked the other way round, somebody standing on the last rung of the
+    // ladder was told the Lid had been opened against their name and would not
+    // open again, which is the False Immortal's sentence, not theirs.
     if (cultivator.realmOrdinal >= MAX_ORDINAL) {
         return { eligible: false, reason: 'at_ladder_summit', ...base };
+    }
+    // The Lid does not open twice for the same name. A False Immortal is
+    // REFUSED, not merely made unlikely - a hard engine gate, and the only
+    // thing stopping them: they sit at 45 with a legal rung above them.
+    if (hasCrossedTheLid(cultivator.immortalStatus ?? 'none')) {
+        return { eligible: false, reason: 'barred:the_lid_opened_once', ...base };
     }
     if ((ctx.ranksGainedThisTurn ?? 0) >= MAX_RANKS_PER_TURN) {
         return { eligible: false, reason: 'rank_cap_reached_this_turn', ...base };
     }
-    if (available < required) {
+    if (required === null || available < required) {
         return { eligible: false, reason: 'insufficient_progress', ...base };
+    }
+    // The structural gate, and deliberately AFTER progress: a cultivator who
+    // has neither should be told about the qi first, because that is the one
+    // they can fix by sitting still, and hearing "go and find a teacher" while
+    // still eighty qi-units short would be advice about the wrong problem.
+    if (daoHeld < daoRequired) {
+        return { eligible: false, reason: 'insufficient_dao', ...base };
     }
     return { eligible: true, reason: null, ...base };
 }
@@ -335,13 +861,114 @@ export interface BreakthroughOdds {
 }
 
 /**
+ * What the clock is worth to an attempt, as a flat modifier in
+ * [MAX_LIFESPAN_PRESSURE, 0].
+ *
+ * Zero until half the rung's granted span is gone, then falling linearly to the
+ * end of it. Age is optional throughout the odds path because plenty of callers
+ * legitimately do not carry it - NPC stubs from the world layer, the reachability
+ * sweep - and an unknown age has to read as "no pressure" rather than as the
+ * worst case, or every one of those callers would silently be penalised.
+ */
+export function lifespanPressure(ordinal: number, age?: number): number {
+    if (age === undefined || !Number.isFinite(age)) return 0;
+    const span = lifespanForOrdinal(ordinal);
+    if (span <= 0) return 0;
+    const spent = Math.max(0, Math.min(1, age / span));
+    if (spent <= LIFESPAN_PRESSURE_ONSET) return 0;
+    const through = (spent - LIFESPAN_PRESSURE_ONSET) / (1 - LIFESPAN_PRESSURE_ONSET);
+    return MAX_LIFESPAN_PRESSURE * through;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WAITING
+//
+// `docs/world/tone.md` says a run is interesting when the player has to choose
+// between two things the world will make them regret, and gives the first
+// example as "breakthrough now at poor odds, or stagnate toward settling".
+//
+// That sentence was false. Measured before this was written: at rung 16
+// (requires 30,803 progress) the odds were 32.4% at x1 the requirement and
+// 32.4% at x4. Nothing a player ACCUMULATED appeared in the modifier list at
+// all, so striking the instant the gate opened was strictly optimal at every
+// one of the ladder's rungs, and sitting longer cost years off the settling
+// clock for literally nothing. The doc described a dilemma; the engine made it
+// an automatic move, forty-six times a life.
+//
+// So overflow past the requirement buys odds. Three properties hold it in
+// place, and each is pinned by a test:
+//
+//   IT MUST NOT BECOME "ALWAYS WAIT". Diminishing returns - half the available
+//   bonus at 1.5x the requirement, and the last third of it never arrives at
+//   any finite figure. Against the settling clock and `lifespanPressure`, which
+//   is subtractive and unbounded in the other direction, patience is defensible
+//   for the young and indefensible for the old. That asymmetry is the point.
+//
+//   IT MUST NOT MAKE A BOUNDARY SAFE. `maxChanceFor` still clamps a realm
+//   boundary at MAX_BOUNDARY_CHANCE, and this term is inside that clamp rather
+//   than outside it. No amount of sitting grinds a wall down to a formality;
+//   the rungs that kill go on killing.
+//
+//   IT COMPOSES, AND DOES NOT REPLACE. Ground, foundation, comprehension and a
+//   pill were the only four levers, three of them slow. Patience is a fifth,
+//   which is what makes the others read as choices rather than as the only path.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The most that waiting can ever be worth, as a flat modifier.
+ *
+ * Sized against the terms it sits beside: a single spirit root is +0.06 and a
+ * realm boundary costs -0.08, so a life spent waiting is worth a little more
+ * than being born with the best root in the world and a little less than two
+ * boundaries' strain. Enough to be the reason somebody sits; nowhere near
+ * enough to be the reason they succeed.
+ */
+export const MAX_OVERFLOW_BONUS = 0.15;
+
+/**
+ * The overflow ratio at which HALF the bonus has arrived. 0.5 - so half of it
+ * is bought by 1.5x the requirement and the rest costs progressively more.
+ *
+ * The curve is `max * r / (r + half)`, which saturates rather than capping: it
+ * approaches the ceiling and never reaches it, so there is no figure at which
+ * a player has "finished waiting" and every additional decade is worth
+ * measurably less than the one before. A hard cap would create exactly the
+ * grind-to-the-number behaviour this is meant to avoid.
+ */
+export const OVERFLOW_HALF_AT = 0.5;
+
+/**
+ * What sitting on a full gate is worth to an attempt, in [0, MAX_OVERFLOW_BONUS).
+ *
+ * Reads ACCUMULATED progress only, never `progressAvailable`. Understanding
+ * already stands in for accumulation at a bottleneck via
+ * `bottleneckSubstitution` and already has its own line in the ledger; letting
+ * substituted progress buy overflow as well would pay comprehension twice for
+ * the same thing.
+ *
+ * Optional throughout, like `age`, because plenty of callers legitimately do
+ * not carry it - NPC stubs, the reachability sweep - and an unknown progress
+ * has to read as "no overflow" rather than as a penalty.
+ */
+export function overflowBonus(ordinal: number, cultivationProgress?: number): number {
+    if (cultivationProgress === undefined || !Number.isFinite(cultivationProgress)) return 0;
+    const required = progressRequiredForOrdinal(ordinal);
+    // Null above the Lid, where the requirement is not denominated in this
+    // currency and no amount of it would do.
+    if (required === null || required <= 0) return 0;
+    const overflow = (cultivationProgress - required) / required;
+    if (overflow <= 0) return 0;
+    return MAX_OVERFLOW_BONUS * (overflow / (overflow + OVERFLOW_HALF_AT));
+}
+
+/**
  * Compute the odds without rolling. Exposed separately so the UI can show a
  * player what they are about to do before they commit to doing it - which in a
  * permadeath game is the difference between a tragedy and a bug report.
  */
 export function computeBreakthroughOdds(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'spiritRoot' | 'attributes' | 'injuries'> &
-        Partial<Pick<Cultivator, 'foundationQuality' | 'insights'>>,
+        Partial<Pick<Cultivator, 'foundationQuality' | 'insights' | 'age' | 'cultivationProgress'>>,
     ctx: Pick<BreakthroughContext, 'ambient' | 'pill'> & { relevance?: Partial<RelevanceContext> }
 ): BreakthroughOdds {
     const ordinal = cultivator.realmOrdinal;
@@ -420,15 +1047,62 @@ export function computeBreakthroughOdds(
         });
     }
 
-    if (ctx.pill) {
+    if (tempering.wornScars > 0) {
+        // And the other side of the same record. Booked as its own line rather
+        // than netted against the tempering above, because a player looking at
+        // this list should be able to see both that their scars taught them
+        // something and that there are now too many of them.
         modifiers.push({
-            source: `pill:${ctx.pill.name}`,
-            delta: Math.max(0, Math.min(MAX_PILL_BONUS, ctx.pill.potency))
+            source: `scar_tissue:${tempering.wornScars}_worn`,
+            delta: -tempering.breakthroughAttrition
         });
     }
 
+    const pressure = lifespanPressure(ordinal, cultivator.age);
+    if (pressure < 0) {
+        modifiers.push({ source: 'lifespan_pressure', delta: pressure });
+    }
+
+    // Waiting, and the term the clock above is the counterweight to. Booked
+    // immediately after the pressure so a player reading the ledger sees the
+    // two halves of the same decision on consecutive lines: what another decade
+    // of gathering bought, and what it cost off the span.
+    const overflow = overflowBonus(ordinal, cultivator.cultivationProgress);
+    if (overflow > 0) {
+        modifiers.push({ source: 'accumulated_overflow', delta: overflow });
+    }
+
+    // ── The pill, which multiplies rather than adds. ──
+    //
+    // Booked as a DERIVED additive line so the ledger below still sums exactly
+    // to finalChance. The base it multiplies is the chance this cultivator
+    // would have faced without it, floor-and-ceiling clamped, because a
+    // multiplier applied to a raw sum that is negative or already over the
+    // ceiling is not a chance at all. That pre-clamp is itself booked, so the
+    // reader can see the floor carry them and then the pill act on it.
+    if (ctx.pill) {
+        const rawBeforePill = modifiers.reduce((sum, m) => sum + m.delta, 0);
+        const beforePill = Math.max(
+            MIN_BREAKTHROUGH_CHANCE,
+            Math.min(maxChanceFor(ordinal), rawBeforePill)
+        );
+        if (beforePill !== rawBeforePill) {
+            modifiers.push({
+                source: beforePill > rawBeforePill ? 'clamp:floor' : 'clamp:ceiling',
+                delta: beforePill - rawBeforePill
+            });
+        }
+        const factor = pillMultiplier(ctx.pill, ordinal);
+        if (factor !== 1) {
+            modifiers.push({
+                source: `pill:${ctx.pill.name}`,
+                delta: beforePill * (factor - 1)
+            });
+        }
+    }
+
     const raw = modifiers.reduce((sum, m) => sum + m.delta, 0);
-    const clamped = Math.max(MIN_BREAKTHROUGH_CHANCE, Math.min(MAX_BREAKTHROUGH_CHANCE, raw));
+    const clamped = Math.max(MIN_BREAKTHROUGH_CHANCE, Math.min(maxChanceFor(ordinal), raw));
 
     // Keep sum(modifiers) === finalChance an exact identity by booking the
     // clamp itself as a line item rather than silently discarding the overflow.
@@ -468,7 +1142,7 @@ export function computeBreakthroughOdds(
 export type BreakthroughSubject = Pick<
     Cultivator,
     'realmOrdinal' | 'cultivationProgress' | 'spiritRoot' | 'attributes' | 'injuries' | 'alive'
-> & Partial<Pick<Cultivator, 'foundationQuality' | 'name' | 'insights' | 'immortalStatus'>>;
+> & Partial<Pick<Cultivator, 'foundationQuality' | 'name' | 'insights' | 'immortalStatus' | 'age'>>;
 
 export function attemptBreakthrough(
     cultivator: BreakthroughSubject,
@@ -492,6 +1166,14 @@ export function attemptBreakthrough(
     // (seed, 'breakthrough', turn) therefore replays identically.
     const roll = ctx.rng.next();
     const succeeded = roll < odds.finalChance;
+
+    // Unreachable: `canAttemptBreakthrough` refuses everything above the Lid
+    // before an attempt gets this far. Asserted rather than defaulted, so a
+    // future caller that skips the eligibility check fails loudly instead of
+    // resolving a breakthrough against a requirement of zero.
+    if (required === null) {
+        throw new Error(`No breakthrough is denominated in qi at ordinal ${fromOrdinal}`);
+    }
 
     if (!succeeded) {
         return resolveFailure(ctx, { fromOrdinal, required, odds, roll });
@@ -606,7 +1288,12 @@ interface AttemptFrame {
 // ─────────────────────────────────────────────────────────────────────────
 
 function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): BreakthroughResult {
-    const table = frame.odds.isBoundary ? FAILURE_TABLE.boundary : FAILURE_TABLE.subRank;
+    const lastCrossing = isLastCrossing(frame.fromOrdinal);
+    const table = lastCrossing
+        ? FAILURE_TABLE.lastCrossing
+        : frame.odds.isBoundary
+          ? FAILURE_TABLE.boundary
+          : FAILURE_TABLE.subRank;
     const severityRoll = ctx.rng.next();
 
     let outcome: BreakthroughFailure;
@@ -630,7 +1317,9 @@ function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): Breakthr
         );
     }
 
-    const progressConsumed = frame.required * FAILURE_PROGRESS_LOSS[outcome];
+    const progressConsumed =
+        frame.required *
+        (lastCrossing ? LAST_CROSSING_PROGRESS_LOSS : FAILURE_PROGRESS_LOSS[outcome]);
 
     return {
         outcome,
@@ -897,6 +1586,169 @@ export function completionChance(
     return { chance, modifiers };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// DECLINING
+//
+// The top of the ladder is a QUESTION, not an outcome, and until this existed
+// nothing in play ever asked it. A cultivator arrived at Tribulation
+// Transcendence Perfection and either struck or ran out of clock, and the
+// difference between those two was luck rather than judgement.
+//
+// It should be judgement. Most of the people who reach the last rung do not
+// attempt the crossing, and they do not attempt it because they can read their
+// own odds: worn meridians, most of a span spent getting here, and a completion
+// chance that was never better than a quarter for anybody. Sitting down at 44
+// buys a hundred thousand years of being the most powerful thing in a province.
+// Striking buys a coin-flip against a scar in the ground.
+//
+// `hierarchy.ts` has recorded the distinction in its courts for a long time -
+// `highWaterMark.end` is 'attempted' or 'declined' - and nothing in the engine
+// could produce either. This is the missing half: the engine tells a caller
+// what the attempt is actually worth, and the caller (a player, or an NPC
+// driver) decides. The engine still owns every number; it does not own the
+// decision, and it must not, because a decision the engine makes for you is not
+// a decision you made.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** What the engine thinks of a crossing this cultivator is considering. */
+export type LastCrossingVerdict =
+    /** Not standing at 44 at all, or already through the Lid. */
+    | 'not_at_the_rung'
+    /** The price is not gathered. Nothing to decide yet. */
+    | 'not_yet_priced'
+    /** As good as this ever gets. Still likelier to end at 45 than 46. */
+    | 'as_ready_as_anyone_gets'
+    /** Attemptable, and the numbers are worse than the cultivator's remaining life. */
+    | 'marginal'
+    /** Worn, late, or both. Striking is a way of choosing how to die. */
+    | 'hopeless';
+
+export interface LastCrossingAssessment {
+    verdict: LastCrossingVerdict;
+    /** Whether an attempt would be legal right now. */
+    attemptable: boolean;
+    /** Odds of holding the gathered qi long enough to summon at all. */
+    summonChance: number;
+    /** Per-strike survival, and how many strikes are coming. */
+    strikes: number;
+    perStrikeSurvival: number;
+    /** Probability of weathering the tribulation, given it is summoned. */
+    tribulationSurvival: number;
+    /** Chance the seam holds, given a clean weathering. */
+    completionChance: number;
+    /** End-to-end, from standing at the rung to each of the four endings. */
+    trueImmortalChance: number;
+    falseImmortalChance: number;
+    deathChance: number;
+    /**
+     * Survived a failed summon: alive at 44, the whole price spent, and no
+     * realistic prospect of gathering it again inside the settling clock. The
+     * outcome nobody plans for and a good number of the courts are full of.
+     */
+    strandedChance: number;
+    /** Years of the rung's span still unspent, or null when age is unknown. */
+    yearsRemaining: number | null;
+    /** Itemised, in the house style: every figure above is derivable from these. */
+    modifiers: BreakthroughModifier[];
+}
+
+/**
+ * Everything the engine knows about the crossing, before anybody commits to it.
+ *
+ * Read-only and roll-free. It exists so that "should I go up the mountain" can
+ * be answered with the same arithmetic the mountain will use, which is the only
+ * way declining can be a decision rather than a guess. A caller that wants to
+ * model a decline records the choice and stops offering the attempt; the
+ * cultivator stays at 44 with their span and their standing, and the world gets
+ * one more of the quiet ones the courts have always been full of.
+ */
+export function assessLastCrossing(
+    cultivator: BreakthroughSubject,
+    ambient: AmbientQi,
+    opts: { pill?: ConsumedPill | null; relevance?: Partial<RelevanceContext> } = {}
+): LastCrossingAssessment {
+    const relevance = opts.relevance;
+    const ordinal = cultivator.realmOrdinal;
+    const eligibility = canAttemptBreakthrough(cultivator, { relevance });
+    // The pill is part of the question, not a surprise sprung afterwards: a
+    // cultivator weighing the crossing knows exactly what they intend to
+    // swallow going up the mountain, and an assessment that ignored it would
+    // be advising a different person.
+    const odds = computeBreakthroughOdds(cultivator, { ambient, pill: opts.pill ?? null, relevance });
+    const strikes = tribulationStrikeCount(LAST_CROSSING_ORDINAL);
+    const perStrike = tribulationStrikeSurvival(cultivator, ambient);
+    const survival = tribulationSurvivalChance(strikes, perStrike);
+    // Assessed against a clean weathering: the strikes that land are not known
+    // in advance, and quoting the crossing at its worst would be as misleading
+    // as quoting it at its best.
+    const completion = completionChance(cultivator, ambient, 0);
+
+    // Four endings, and they sum to one. Summon, then weather, then the seam;
+    // a failed summon is not a wasted month up here, it is the price gone.
+    const summon = odds.finalChance;
+    const failedSummonKills = 1 - FAILURE_TABLE.lastCrossing.deviation;
+    const trueChance = summon * survival * completion.chance;
+    const falseChance = summon * survival * (1 - completion.chance);
+    const deathChance = summon * (1 - survival) + (1 - summon) * failedSummonKills;
+    const strandedChance = (1 - summon) * (1 - failedSummonKills);
+
+    const span = lifespanForOrdinal(ordinal);
+    const yearsRemaining =
+        cultivator.age === undefined ? null : Math.max(0, span - cultivator.age);
+
+    let verdict: LastCrossingVerdict;
+    if (!isLastCrossing(ordinal) || hasCrossedTheLid(cultivator.immortalStatus ?? 'none')) {
+        verdict = 'not_at_the_rung';
+    } else if (!eligibility.eligible) {
+        verdict = 'not_yet_priced';
+    } else if (trueChance >= 0.15) {
+        verdict = 'as_ready_as_anyone_gets';
+    } else if (trueChance >= 0.05) {
+        verdict = 'marginal';
+    } else {
+        verdict = 'hopeless';
+    }
+
+    return {
+        verdict,
+        attemptable: eligibility.eligible,
+        summonChance: summon,
+        strikes,
+        perStrikeSurvival: perStrike,
+        tribulationSurvival: survival,
+        completionChance: completion.chance,
+        trueImmortalChance: trueChance,
+        falseImmortalChance: falseChance,
+        deathChance,
+        strandedChance,
+        yearsRemaining,
+        modifiers: [
+            ...odds.modifiers,
+            ...completion.modifiers.map(m => ({ source: `completion.${m.source}`, delta: m.delta }))
+        ]
+    };
+}
+
+/**
+ * Probability of taking fewer than TRIBULATION_LETHAL_STRIKES hits out of
+ * `strikes`, closed-form, so the assessment does not have to sample.
+ */
+function tribulationSurvivalChance(strikes: number, perStrike: number): number {
+    const fail = 1 - perStrike;
+    let survived = 0;
+    for (let k = 0; k < TRIBULATION_LETHAL_STRIKES; k++) {
+        survived += binomial(strikes, k) * Math.pow(fail, k) * Math.pow(perStrike, strikes - k);
+    }
+    return Math.max(0, Math.min(1, survived));
+}
+
+function binomial(n: number, k: number): number {
+    if (k < 0 || k > n) return 0;
+    let out = 1;
+    for (let i = 0; i < k; i++) out = (out * (n - i)) / (i + 1);
+    return out;
+}
+
 function resolveLastCrossing(
     cultivator: BreakthroughSubject,
     ctx: BreakthroughContext,
@@ -951,9 +1803,11 @@ function resolveLastCrossing(
     }
 
     // ── False Immortal. Survived, opened the Lid, did not go through. ──
-    // The ordinal does not move. Something is taken regardless of any roll,
-    // because "incomplete in a way that shows" is a fact of the setting and
-    // never nothing.
+    // The ordinal moves to 45: something did happen, and they are strictly
+    // above anything still under the Lid. What it does not do is move again -
+    // 46 is one rung up and permanently shut. Something is taken regardless of
+    // any roll, because "incomplete in a way that shows" is a fact of the
+    // setting and never nothing.
     const toll = evaluateToll(
         {
             realmOrdinal: frame.fromOrdinal,
@@ -967,7 +1821,7 @@ function resolveLastCrossing(
     return {
         outcome: 'false_immortal',
         fromOrdinal: frame.fromOrdinal,
-        toOrdinal: frame.fromOrdinal,
+        toOrdinal: FALSE_IMMORTAL_ORDINAL,
         finalChance: frame.odds.finalChance,
         modifiers,
         roll: frame.roll,
@@ -978,7 +1832,7 @@ function resolveLastCrossing(
         foundationEstablished: null,
         immortalStatusGained: 'false_immortal',
         narrationHint:
-            `${weathered} The crossing did not complete. What is left stays on this side of the Lid, ` +
-            `permanently: a False Immortal, barred from ever attempting again. ${toll.narrationHint}`
+            `${weathered} The crossing did not complete: ${rankName(FALSE_IMMORTAL_ORDINAL)}, ` +
+            `over the Lid and not through it, barred from ever attempting again. ${toll.narrationHint}`
     };
 }

@@ -29,14 +29,39 @@ import { makeCultivator, makeInjuries } from './fixtures.js';
 
 const EXPECTED_FACTOR_ORDER = [
     'spirit_root',
+    // What you were dealt, then where you have got to. Both are "what this
+    // body is", which is why they sit together at the front, ahead of
+    // everything that is circumstance.
+    'realm',
     'foundation',
     'understanding',
     'ambient_qi',
     'untreated_injuries',
+    // Open wounds and closed ones are two different facts about the same body
+    // and get two lines. Folding scar tissue into the injury factor would have
+    // left a breakdown reading "no untreated injuries" beside a multiplier that
+    // was not one, which is the one thing a rate breakdown may never do.
+    'scar_tissue',
     'technique',
     'sect',
     'location',
-    'focus'
+    'focus',
+    // Soft brake and hard ceiling, in that order, and last because a zero
+    // from the ceiling must be visibly the thing that stopped them.
+    'guidance',
+    // The ground: a soft share of contested qi, then the hard stop on ground
+    // too poor to condense on at all.
+    'crowding',
+    'ground_ceiling',
+    // The two halves of what the book in their hands is worth, in the order
+    // they bite. `technique_opening` is the soft one - an exceptional manual
+    // that reaches past its own realm is genuinely worse to begin than the
+    // ordinary book a house teaches, and only wins over the long run. It sits
+    // immediately before the ceiling because both are facts about the same
+    // object, and after it because a zero from the ceiling must still be
+    // visibly the thing that stopped them.
+    'technique_opening',
+    'technique_ceiling'
 ];
 
 describe('computeCultivationRate', () => {

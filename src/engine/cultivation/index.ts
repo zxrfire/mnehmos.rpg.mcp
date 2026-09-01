@@ -28,6 +28,9 @@
  *                    somebody is standing - one table every catalog reads
  *   market.ts        the buy board read from the other side: what a buyer pays
  *   survival.ts      the death engine; the ONLY place death is decided
+ *   escapes.ts       what a capped cultivator does next: partial volume sets,
+ *                    the standing an exceptional manual asks for, and the one
+ *                    place in the repo that writes a manual at runtime
  *   time-skip.ts     "I cultivate for ten years", resolved in one pass
  */
 
@@ -50,4 +53,5 @@ export * from './combat.js';
 export * from './regard.js';
 export * from './market.js';
 export * from './survival.js';
+export * from './escapes.js';
 export * from './time-skip.js';
