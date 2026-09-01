@@ -58,6 +58,8 @@ import {
     type CultivationRepos
 } from './cultivation-support.js';
 import { describeDeath } from '../../engine/cultivation/survival.js';
+import { isCommonlyHeld } from '../../engine/world/manuals.js';
+import { getSect, getSectsTeaching } from '../../data/cultivation/sects.js';
 import {
     UNPROVISIONED,
     isSupplyStalled,
@@ -140,7 +142,25 @@ const ListAvailableSchema = z.object({
 const LearnSchema = z.object({
     action: z.literal('learn'),
     techniqueId: z.string().describe('Catalog id of the art'),
-    cultivatorId: z.string().optional()
+    cultivatorId: z.string().optional(),
+    /**
+     * WHERE THE BOOK CAME FROM, when it did not come from a stall.
+     *
+     * Above the commonly-held line a road is somebody's property, and the
+     * caller has to say how this cultivator came by it. Absent, only the
+     * common shelf and the reader's own house are open - which is the honest
+     * default, because a player naming an art has not thereby acquired it.
+     *
+     * The gate this feeds is deliberately not a rank check. A house's working
+     * library is what its people can be taught FROM; which of them is entitled
+     * to which shelf is a further question the world layer already answers for
+     * NPCs in `manuals.ts`, and wiring that to the player is worth doing on
+     * top of this rather than instead of it.
+     */
+    provenance: z
+        .enum(['found_in_place', 'taught_by_a_person', 'bought', 'inherited'])
+        .optional()
+        .describe('How the cultivator came by the manual, for arts above the common shelf')
 });
 
 const PractiseSchema = z.object({
@@ -395,6 +415,44 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
         );
     }
 
+    // ── ABOVE THE COMMON SHELF, A ROAD IS SOMEBODY'S PROPERTY ──
+    //
+    // The world runs on this and the player did not. `manuals.ts` seeds sect
+    // libraries, hands copies to members, prices the betrayal of selling one,
+    // and caps every NPC at the best book they actually hold - while a player
+    // could name any art at or below the Dao gate and simply have it. Measured
+    // in `scripts/probe-who-may-open-a-book.ts`: fifteen of twenty-four roads
+    // asked for nothing but the rung, and the widest opened at thirteen and
+    // carried to thirty-three. Found by playing, when an outsider with no house
+    // learned a named sect's canon for nothing.
+    //
+    // The common shelf stays open, and that is load-bearing rather than
+    // generous: `manuals-wired.test.ts` measures that the first book is
+    // reachable in every fresh life, because a hard ceiling at six with no way
+    // to buy a road past it is a soft lock on turn one.
+    if (!isCommonlyHeld(technique.id) && args.provenance === undefined) {
+        const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
+        if (!house?.teaches.includes(technique.id)) {
+            const taughtBy = getSectsTeaching(technique.id);
+            return guidingError(
+                'no_road_to_this_book',
+                `${technique.name} is not a thing anybody hands out. `
+                + (house
+                    ? `${house.name} does not teach it.`
+                    : 'This cultivator serves no house, and nobody teaches it to a stranger.'),
+                {
+                    // How many hold it, never which. Who teaches what is
+                    // something you find out by asking people, and an engine
+                    // that volunteers the list has answered a question nobody
+                    // put to it.
+                    housesTeachingIt: taughtBy.length,
+                    commonlyHeld: false,
+                    hint: 'Join a house that teaches it, be taught it by somebody who knows it, '
+                        + 'or find a copy. `provenance` records which of those it was.'
+                }
+            );
+        }
+    }
     if (!isAvailableInRun(run.seed, cultivator.spiritRoot, technique)) {
         return guidingError(
             'no_copy_in_this_run',
