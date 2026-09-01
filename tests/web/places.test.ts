@@ -128,7 +128,7 @@ describe('containment at arbitrary depth', () => {
             makeLocation({ id: 's', name: 'Seat', kind: 'sect_seat', parentId: 'r' }),
             makeLocation({ id: 'p', name: 'Precinct', kind: 'precinct', parentId: 's' }),
             makeLocation({ id: 'h', name: 'Hall', kind: 'hall', parentId: 'p' }),
-            makeLocation({ id: 'v', name: 'Vault', kind: 'vault', parentId: 'h' })
+            makeLocation({ id: 'v', name: 'the strongroom', kind: 'vault', parentId: 'h' })
         ]));
         const depth = new Map(view.locations.map(l => [l.id, l.depth]));
         expect(depth.get('r')).toBe(0);

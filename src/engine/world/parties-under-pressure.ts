@@ -279,7 +279,7 @@ function stepAsHouse(
     // And the seal, when they have one and have not already spent it.
     //
     // Weighted by how much worse everything else is: severity squared, times
-    // how far the sleeper outranks whoever did this. A house with a working
+    // how far the sealed ancestor outranks whoever did this. A house with a working
     // patron and half its roster does not wake anybody. A house with neither
     // has one thing left and knows exactly what it is.
     if (ceiling > 0 && !spent) {
