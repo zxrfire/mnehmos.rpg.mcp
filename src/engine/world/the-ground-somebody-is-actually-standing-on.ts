@@ -240,3 +240,123 @@ export function houseFallbackRate(
     // own compound poorer than the fields outside it.
     return rate === null ? provinceRate : Math.max(rate, provinceRate);
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT A MEMBER IS ENTITLED TO, FOR ANYBODY WHO HAS TO SAY IT OUT LOUD
+//
+// Everything above computes ground time for the world's own people and hands
+// the answer straight to the advancement pass, which is exactly the shape of
+// defect AGENTS.md records under "the world's rules must bind the player too" -
+// running in the direction nobody watches for. The recorded case is a system
+// that bound every NPC and never reached the player. This is the mirror image:
+// a BENEFIT the world computes for its own people and never offers to the
+// player, who is then quietly slower than every NPC alive for a reason they
+// cannot see, on the largest multiplier in the model.
+//
+// Found by playing rather than by reading, which is the only thing that ever
+// finds these. In the live UI, as a sect member:
+//
+//     "I go to the sect cultivation chamber"  -> a name that is not a place
+//     "I ask for time on the vein"            -> the interact dead end
+//     "where can I cultivate in the sect"     -> answers about manuals
+//
+// THE SEAM. This function is the ENTITLEMENT and it belongs here, because it
+// has to be the same arithmetic the world runs or the player is being told a
+// story about a different world. The VERB is not here: phrasing, refusals and
+// what goes on the sheet belong to `src/web/game.ts` and `actions.ts`. Nothing
+// below decides what anybody is allowed to ask for or writes any prose.
+//
+// TWO THINGS THE CALLER NEEDS THAT THE WORLD ITSELF NEVER ASKS FOR, and they
+// are why this is a separate function rather than an export of the internals:
+//
+//   DAYS, NOT A FRACTION. "Your rank gets you 46 days a year in the vein
+//   chamber" is an entitlement somebody can act on. 0.126 is a number.
+//
+//   WHAT THE NEXT RUNG WOULD GET. A refusal that teaches needs the delta, so
+//   an outer disciple told no can be told what rank reaches it. That is the
+//   difference between a wall and a goal, and it is the concrete answer to the
+//   two hundred and forty-four people measured sitting qualified-and-blocked -
+//   it is the first thing rank has ever visibly bought.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Days in a year, for turning a share into something a person can act on. */
+export const DAYS_IN_A_YEAR = 365;
+
+export interface GroundEntitlement {
+    factionId: string;
+    /** The room the share is measured against, or null where the house has none. */
+    room: { id: string; name: string; density: number; band: string } | null;
+    /** Share of the year on that ground, 0..1. */
+    share: number;
+    /** The same figure as days, which is the form worth saying out loud. */
+    daysPerYear: number;
+    /** Rate in the room, null where the house holds no priced ground. */
+    chamberRate: number | null;
+    /** Rate on the days they are not in it - the house's own lesser ground. */
+    fallbackRate: number;
+    /** The year averaged over both, which is what their climb actually runs at. */
+    effectiveRate: number;
+    /**
+     * What the rung above would be worth, or null at the top of the house.
+     *
+     * For refusals that teach. The share is recomputed with this member moved
+     * up one rank and everybody else held still, so it answers "what would a
+     * promotion get me" rather than "what does the person above me have",
+     * which are different numbers whenever the house is lopsided.
+     */
+    atNextRank: { rankIndex: number; daysPerYear: number; effectiveRate: number } | null;
+}
+
+/**
+ * What this member's standing entitles them to on their house's ground.
+ *
+ * Pure, and takes the same shapes the allocation already uses, so a caller
+ * reading it for the player gets the identical arithmetic the world ran for
+ * every NPC in the same house on the same day.
+ */
+export function groundEntitlementFor(
+    member: GroundClaimant,
+    factionId: string,
+    members: readonly GroundClaimant[],
+    rooms: readonly LocationRecord[],
+    provinceRate: number,
+    rankCount: number
+): GroundEntitlement {
+    const shares = groundTimeShares(members, rooms);
+    const share = shares.get(member.id) ?? 0;
+    const chamberRate = groundRateAt(rooms[0]);
+    const fallbackRate = houseFallbackRate(rooms, provinceRate);
+    const best = rooms[0];
+
+    const atTop = member.factionRankIndex >= rankCount - 1;
+    let atNextRank: GroundEntitlement['atNextRank'] = null;
+    if (!atTop) {
+        const promoted = { ...member, factionRankIndex: member.factionRankIndex + 1 };
+        const after = groundTimeShares(
+            members.map(m => (m.id === member.id ? promoted : m)), rooms
+        ).get(member.id) ?? 0;
+        atNextRank = {
+            rankIndex: promoted.factionRankIndex,
+            daysPerYear: Math.round(after * DAYS_IN_A_YEAR),
+            effectiveRate: rateOverTheYear(after, chamberRate, fallbackRate)
+        };
+    }
+
+    return {
+        factionId,
+        room: best && typeof best.qiDensity === 'number'
+            ? {
+                id: best.id,
+                name: best.name,
+                density: best.qiDensity,
+                band: ordinaryBandFor(best.qiDensity)
+            }
+            : null,
+        share,
+        daysPerYear: Math.round(share * DAYS_IN_A_YEAR),
+        chamberRate,
+        fallbackRate,
+        effectiveRate: rateOverTheYear(share, chamberRate, fallbackRate),
+        atNextRank
+    };
+}
