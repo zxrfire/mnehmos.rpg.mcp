@@ -1692,6 +1692,23 @@ export const GRAVES: readonly Grave[] = [
             gateOrigin: 'circumstance',
             contents: [
                 {
+                    // THE TOP PRIZE IN THE SETTING, on a body, unprotected,
+                    // in a pouch with four changes of clothing.
+                    //
+                    // It is here rather than behind a door because of what he
+                    // was: somebody who came down and stopped somewhere, at
+                    // thirty-three, of injuries. The canon ends at forty-five.
+                    // He was twelve rungs short of finishing the book he was
+                    // carrying and there is no indication anywhere on him that
+                    // he knew what it was worth, which is the ordinary way the
+                    // most valuable things in this world change hands.
+                    what: 'A sixth manual, at the bottom of the pouch, water-damaged along one edge and folded rather than cased. It is the only thing he was carrying that nobody has been able to price.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: 'first-and-last-breath-canon',
+                    immortalItemId: null
+                },
+                {
                     what: 'A storage pouch with the ordinary contents of a Body Integration cultivator on the road: stones, materials, four changes of clothing.',
                     proven: false,
                     survived: null,
