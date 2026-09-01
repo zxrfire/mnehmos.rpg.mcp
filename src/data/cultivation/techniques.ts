@@ -48,6 +48,7 @@ import type {
 } from '../../schema/cultivation.js';
 import {
     FALSE_IMMORTAL_ORDINAL,
+    LAST_CROSSING_ORDINAL,
     MAX_ORDINAL,
     TOTAL_RANKS,
     TRUE_IMMORTAL_ORDINAL,
@@ -3974,23 +3975,56 @@ export function teachersOf(techniqueId: string): readonly LivingTransmission[] {
 }
 
 /**
+ * The highest rung TEACHING can put somebody on, for this book.
+ *
+ * A book's `cap` and its teachable end are not the same number, and reading the
+ * first as the second is what made the register say the Hollow Court cannot
+ * finish its own road.
+ *
+ * `cap` is where the paper stops carrying you, and for a book covering the last
+ * realm that is 45 - the rung the last crossing LANDS on. Nobody is ever taught
+ * onto 45. It is reached by surviving the crossing and by nothing else, which
+ * `realms.ts` states flatly and which is the whole reason `LAST_CROSSING_ORDINAL`
+ * is 44. So the highest rung any teacher can walk any student to is 44, whatever
+ * the book says after that.
+ *
+ * The consequence worth stating, because it is the coherence complaint that
+ * produced this function: a house whose best teacher stands at 44 can teach
+ * every rung anybody can be taught, and comparing their reach against `cap`
+ * reports them as two rungs short of a road they have in fact finished. The
+ * Hollow Court's First Seat is that person. Compare against this instead.
+ */
+export function teachableEndOf(techniqueId: string): number | null {
+    const art = getTechnique(techniqueId);
+    if (!art || art.class !== 'cultivation') return null;
+    return art.cap === null
+        ? LAST_CROSSING_ORDINAL
+        : Math.min(art.cap, LAST_CROSSING_ORDINAL);
+}
+
+/**
  * How far this teacher can actually take a student in this art.
  *
- * Their own rung or the book's cap, whichever is lower - because guidance is
- * priced on the gap between guide and guided, so nobody walks anybody past
- * where they themselves have stood.
+ * Their own rung, the book's teachable end, whichever is lower - because
+ * guidance is priced on the gap between guide and guided, so nobody walks
+ * anybody past where they themselves have stood, and nobody walks anybody onto
+ * a rung that only the crossing reaches. See `teachableEndOf`.
  *
  * That produces a fact worth having rather than a rounding error. The
  * Rime-Heart Stillness Canon ends at 37 and the Frostmirror Court's highest
  * living member stands at 36, so the last rung of the narrowest book in the
  * world has no living teacher anywhere and has to be walked alone. Nobody
  * authored that; it fell out of the two numbers.
+ *
+ * The clamp at `LAST_CROSSING_ORDINAL` is inert today - the highest teacher in
+ * the world stands at 44 - and it is written down anyway, because the thing it
+ * refuses is a False Immortal being read as able to teach somebody onto their
+ * own rung, and that is a sentence somebody will otherwise write.
  */
 export function carriesTo(memberOrdinal: number, techniqueId: string): number | null {
-    const art = getTechnique(techniqueId);
-    if (!art || art.class !== 'cultivation') return null;
-    if (art.cap === null) return memberOrdinal;
-    return Math.min(memberOrdinal, art.cap);
+    const end = teachableEndOf(techniqueId);
+    if (end === null) return null;
+    return Math.min(memberOrdinal, end);
 }
 
 /** Everything this person can transmit. */
