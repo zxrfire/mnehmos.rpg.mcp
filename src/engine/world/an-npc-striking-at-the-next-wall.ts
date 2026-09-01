@@ -107,11 +107,9 @@ import {
     stagnationYearsForOrdinal,
     type AmbientQi,
     type BreakthroughResult,
-    InsightDomainSchema,
     type FoundationQuality,
     type Injury,
-    type Insight,
-    type InsightDomain
+    type Insight
 } from '../../schema/cultivation.js';
 import {
     LAST_CROSSING_ORDINAL,
@@ -119,8 +117,11 @@ import {
     progressRequiredForOrdinal
 } from '../cultivation/realms.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
+import {
+    roadsTaughtByPractice,
+    type RoadWithinReach
+} from '../cultivation/what-a-road-in-reach-costs-to-walk.js';
 import { clearBrokenStatus } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
-import { getTechnique } from '../../data/cultivation/techniques.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import { carryingWounds, setRealm, woundsCarriedBy, type NpcRecord } from './npc-state.js';
 
@@ -172,63 +173,47 @@ export function guideOrdinalFor(
 // ─────────────────────────────────────────────────────────────────────────
 // THE ROADS BESIDES THEIR OWN
 //
-// `canAttemptBreakthrough` reads `roadsWalked(cultivator.insights)` for the dao
-// gate, and an NPC record has no insight list - so a subject built without one
-// answers ZERO roads walked, at every rung, forever. While `DAO_GATE_FROM_ORDINAL`
-// sat above the ladder that cost nothing. The moment the gate comes down onto
-// Nascent Soul it would stop every NPC in the world crossing ordinal 21 while
-// leaving the player untouched, which is precisely the world-binds-NPCs-and-not-
-// the-player split this repo keeps finding, running the other way.
+// `canAttemptBreakthrough` reads the dao gate off a cultivator, and an NPC
+// record has no insight list - so a subject built without one answered ZERO
+// roads walked, at every rung, forever, and the moment the gate came down onto
+// Nascent Soul it would have stopped every NPC in the world crossing ordinal 21
+// while leaving the player untouched.
 //
-// THE ROADS YOU HAVE WALKED ARE THE ROADS IN YOUR HANDS. Nothing is invented
-// and no new state is stored: every technique in the catalog already declares a
-// `domain`, drawn from the same `InsightDomain` enum an insight uses, and an
-// NPC's `techniqueIds` is what they have spent a life practising. Somebody
-// holding a sword canon and a formation canon has stepped onto two roads
-// besides their own, and the record already said so.
+// What was built instead was the other half of that same defect. This function
+// SYNTHESISED an insight per distinct domain among the arts an NPC held, at
+// degree 1, DATED TO THE DAY THEY WERE BORN, with the account "Practised X for
+// long enough that it taught them something." So an NPC was handed a road for
+// merely holding an art, at birth, for nothing, while a player holding the same
+// art got nothing at all and had to survive a tribulation or a crippling qi
+// deviation for the same road. Measured at 800 years over three seeds: 2.09
+// roads each standing in Nascent Soul against a player who ended every
+// completed run with `insights: []`.
 //
-// Degree is deliberately the shallowest. `roadsWalked` does not read degree at
-// all - it asks how many roads have been stepped onto, not how far along any of
-// them anybody has got - so the domain is the load-bearing part, and claiming
-// depth the world has not modelled would quietly hand every NPC an odds bonus
-// through `understandingEffects` that no event in their life paid for.
+// The rule is now one rule and it does not live here. See
+// `cultivation/what-a-road-in-reach-costs-to-walk.ts`: an art in the hands puts
+// a road IN REACH, and forty-five years of practising it are what walk it. This
+// module's job is reduced to gathering, which is all an adapter may ever do -
+// and the gathering itself is shared, because `NpcCultivation.techniqueIds` and
+// `Cultivator.knownTechniques` are the same fact in the same shape against the
+// same catalog.
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Domains a technique can teach, other than the one a root supplies unaided. */
-const TAUGHT_DOMAINS: ReadonlySet<string> = new Set(
-    InsightDomainSchema.options.filter(d => d !== 'element')
-);
-
 /**
- * The comprehension an NPC's practice actually amounts to.
+ * The roads an NPC's practice puts within reach. Not roads they have walked.
  *
- * One insight per distinct domain among the arts and roads they hold, at the
- * shallowest degree, with provenance naming the technique it came out of - so
- * an insight here is still traceable to an event, which is the rule
- * `InsightProvenance` exists to enforce.
+ * Kept as a named export because the probes and the register read it to report
+ * the practice channel apart from the ground and material ones, and because the
+ * old name is what everything downstream already asks for. It is now a
+ * one-liner over the shared rule, which is the point: there is nothing left in
+ * here for the two sides to disagree about.
  */
-export function roadsWalkedBy(npc: NpcRecord): Insight[] {
-    const byDomain = new Map<InsightDomain, string>();
-    for (const id of npc.cultivation.techniqueIds) {
-        const t = getTechnique(id) as { domain?: string | null } | undefined;
-        const domain = t?.domain ?? null;
-        if (domain === null || !TAUGHT_DOMAINS.has(domain)) continue;
-        if (!byDomain.has(domain as InsightDomain)) byDomain.set(domain as InsightDomain, id);
-    }
-    const bornOn = Math.max(0, npc.identity.bornOnDay);
-    return [...byDomain].map(([domain, techniqueId]) => ({
-        id: `${npc.id}-practised-${techniqueId}`,
-        domain,
-        subject: techniqueId,
-        degree: 1 as const,
-        provenance: {
-            achievementId: `${npc.id}-practised-${techniqueId}`,
-            achievementKind: 'extraordinary_instruction' as const,
-            onDay: bornOn,
-            deepenedBy: [],
-            account: `Practised ${techniqueId} for long enough that it taught them something.`
-        }
-    }));
+export function roadsWithinReachFromPractice(npc: NpcRecord): RoadWithinReach[] {
+    return roadsTaughtByPractice(npc.cultivation.techniqueIds);
+}
+
+/** How old this person is, in years, on a given day. What exposure is charged against. */
+export function ageOf(npc: NpcRecord, day: number): number {
+    return Math.max(0, (day - npc.identity.bornOnDay) / DAYS_PER_YEAR);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -400,17 +385,23 @@ export function strikeAtTheWall(
     rng: CultivationRNG,
     ambient: AmbientQi,
     /**
-     * Every road this person holds, when the caller can see the world.
+     * Every road WITHIN REACH of this person, when the caller can see the world.
      *
-     * `roadsWalkedBy` below is the half that can be read off the record alone -
-     * the arts in their hands - and it is the DEFAULT rather than the answer,
-     * because a caller with only an NPC in scope must still get a sensible one.
-     * A caller that has `WorldState` should pass `roadsInReachOf`, which adds
-     * the ground they can get at and the single-use materials that were spent
-     * on them; the technique half cannot on its own reach past three roads, and
-     * `alchemy` is taught by no art in the catalog at all.
+     * In reach, not walked. What is actually walked is decided by
+     * `canAttemptBreakthrough` out of these and the person's age, by the one
+     * rule that also answers for a player - see
+     * `cultivation/what-a-road-in-reach-costs-to-walk.ts`. This module hands
+     * over facts and takes no view.
+     *
+     * EMPTY is the honest default and not a degraded one: the arts in their
+     * hands travel on the subject itself, under `knownTechniques`, and the rule
+     * reads them there. What a caller with no `WorldState` genuinely cannot
+     * know is the ground and the spent objects, and that is exactly what this
+     * parameter carries. A caller that has the world should pass
+     * `roadsInReachOf`; the technique channel cannot on its own reach past
+     * three roads, and `alchemy` is taught by no art in the catalog at all.
      */
-    roads: Insight[] = roadsWalkedBy(npc)
+    roads: readonly RoadWithinReach[] = []
 ): Strike | null {
     const ordinal = npc.cultivation.realmOrdinal;
     const required = progressRequiredForOrdinal(ordinal);
@@ -419,10 +410,18 @@ export function strikeAtTheWall(
     const injuries = woundsCarriedBy(npc);
     const subject = {
         realmOrdinal: ordinal,
-        // The dao gate reads this. See THE ROADS BESIDES THEIR OWN - without it
-        // every NPC in the world answers zero roads walked and stops at the
-        // first rung the gate covers, while the player is unaffected.
-        insights: roads,
+        // NOTHING HAS HAPPENED TO THEM YET. The world writes no insight on an
+        // NPC, so this is empty and stays empty; the roads below are what is in
+        // REACH, and the gate charges them against the age two lines down. The
+        // day this field starts carrying real comprehension - a tribulation an
+        // NPC survived, written down - it will add to the same total without
+        // anything here changing, which is what having one rule buys.
+        insights: [] as Insight[],
+        // The arts in their hands, under the name a player's row uses for the
+        // same fact - so the practice channel goes through the shared rule with
+        // no adapter between the two sides at all.
+        knownTechniques: npc.cultivation.techniqueIds,
+        roadsWithinReach: roads,
         // They stood here until they had it. That is what `readyToStrike`
         // measured, and handing the requirement over is the same accounting
         // `deriveLife` does when it charges the years and then rolls.

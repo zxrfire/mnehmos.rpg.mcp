@@ -56,6 +56,7 @@ import {
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from './spirit-roots.js';
 import { progressRequiredForOrdinal } from './realms.js';
+import type { HowARoadCameWithinReach } from './what-a-road-in-reach-costs-to-walk.js';
 import { forStream, type CultivationRNG } from './rng.js';
 // TYPE-ONLY, and must remain so: social/common.ts imports from this
 // package, so a value import here would close a runtime cycle. Type
@@ -479,6 +480,21 @@ export interface DiscoveryContext {
         subject: string;
         label: string;
         id?: string | null;
+        /**
+         * HOW they can get at it, which is what the road costs them in years.
+         *
+         * Carried here rather than in a second field beside `understanding`
+         * because this list is already the player's half of the reach set, and
+         * `src/web/game.ts` passes only `.context` from `discoveryContextFor` -
+         * so a new top-level field would have reached the MCP surface and not
+         * the played game, which is the exact split the one-rule change exists
+         * to close. `simulateTimeSkip` reads it back out.
+         *
+         * Omitted reads as open ground, the dearest of the ground prices,
+         * which is the safe default: a caller that does not know how somebody
+         * got in should not be the one making it cheap.
+         */
+        how?: HowARoadCameWithinReach;
     }[];
     /** Something extraordinary happened in front of them. */
     survived?: 'tribulation' | 'deviation' | 'near_death' | null;
