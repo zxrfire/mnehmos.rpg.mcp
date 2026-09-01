@@ -97,6 +97,13 @@ import {
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
 import {
+    guideOrdinalFor,
+    readyToStrike,
+    strikeAtTheWall
+} from './an-npc-striking-at-the-next-wall.js';
+import type { AmbientQi } from '../../schema/cultivation.js';
+import {
+    applyManualCopying,
     newlyEntitled, refreshChosen, reachableCeilingFor,
     mightFindARoad, roadTheyFound, librariesCarriedOutBy, BOOKLESS_CEILING
 } from './manuals.js';
@@ -284,6 +291,14 @@ export function applyPressure(
         applyResettlement(state, year, withinSpan(year * 365 + 70, fromDay, toDay));
         applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
         applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
+        // Somebody who mastered an art writes it out for the people coming up
+        // behind them. BEFORE the handout, so a copy written this year is a
+        // copy somebody can be given this year - and before advancement, so the
+        // ceiling it raises is the ceiling this year's review reads. See
+        // `applyManualCopying`: it is the only thing in the engine that puts a
+        // book back into circulation, and the only route to the top of the
+        // ladder that runs through a person rather than through luck.
+        applyManualCopying(state, year, withinSpan(year * 365 + 95, fromDay, toDay));
         applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
         applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
@@ -664,15 +679,28 @@ function applyDemography(
 /**
  * People keep cultivating.
  *
- * Not a behaviour model - the same closed-form derivation seeding uses, run
- * again against the age they have now. Without it the population's realms are
- * frozen at the moment of seeding: elders never emerge, the factions' power
- * never moves, and after five centuries every cultivator in the world is
- * exactly as strong as the day they were born.
+ * TWO PASSES OVER ONE ROTATION, and the split is the whole design:
+ *
+ *   THE DERIVATION   the same closed-form walk seeding uses, run again against
+ *                    the age they have now. It is right about what it is for -
+ *                    an ordinary life on an ordinary budget arriving at an
+ *                    ordinary rung - and it is what carries almost everybody
+ *                    from nothing to wherever their talent and their book stop
+ *                    them. Without it the population's realms are frozen at the
+ *                    moment of seeding.
+ *   THE LADDER       when the derivation has nothing further to give and they
+ *                    are still below what their book and their province permit,
+ *                    the world strikes at the wall FOR REAL - the same
+ *                    `attemptBreakthrough` the player gets, with the same
+ *                    odds, the same failure table, the same wounds and the same
+ *                    deaths. See `an-npc-striking-at-the-next-wall.ts` for what
+ *                    that closes and why the derivation alone could never
+ *                    produce an apex.
  *
  * A slice of the roster per year rather than the whole of it, so the cost is a
- * constant and the outcome is decomposable. A realm only ever goes up here;
- * losing one is the cultivation engine's business, not this module's.
+ * constant and the outcome is decomposable. A realm only ever goes up; a person
+ * can now come out of a review WORSE - wounded, cracked, halted or dead - which
+ * is what a real wall does and what the derivation could not express.
  *
  * ── A ROTATION, NOT A DRAW ────────────────────────────────────────────────
  *
@@ -731,6 +759,11 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
     if (due.length === 0) return [];
 
     const advanced: NpcRecord[] = [];
+    // ONE index for the whole pass, not one lookup per person. The strike pass
+    // needs the rung of whoever is teaching them, and a scan of the roster per
+    // reviewed NPC would turn a linear pass quadratic over five hundred people
+    // for the whole life of the world.
+    const byId = new Map(state.npcs.map(n => [n.id, n]));
 
     for (const at of due) {
         const npc = state.npcs[at];
@@ -798,12 +831,73 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
             forStream(state.seed, 'advance-npc', npc.id),
             { origin: shelf }
         );
-        if (derived <= npc.cultivation.realmOrdinal) continue;
+        if (derived > npc.cultivation.realmOrdinal) {
+            state.npcs[at] = setRealm(npc, derived, day);
+            advanced.push(state.npcs[at]);
+            continue;
+        }
 
-        state.npcs[at] = setRealm(npc, derived, day);
-        advanced.push(state.npcs[at]);
+        // ── THE DERIVATION HAS RUN OUT. THE LADDER TAKES OVER. ────────────
+        //
+        // Everybody who reaches this line has a rung the walk cannot improve
+        // and a ceiling above them they are still allowed to reach. That is the
+        // entire high band of the world: a life-walk saturates in its first few
+        // centuries and the realm it reached grants thousands of years more.
+        //
+        // The conditions are the three the design says decide the top of the
+        // ladder, and all three are read rather than invented: the ground under
+        // them, the book in their hands, and whoever is teaching them.
+        const conditions = {
+            ambient: ambientAround(state, npc, region),
+            rateMultiplier,
+            guideOrdinal: guideOrdinalFor(npc, byId),
+            manualCeiling
+        };
+        const readiness = readyToStrike(npc, day, conditions);
+        if (!readiness.ready) continue;
+
+        const strike = strikeAtTheWall(
+            npc,
+            day,
+            readiness,
+            // Keyed on the person and the year, so a world replayed from its
+            // seed strikes the same walls with the same outcomes, and adding
+            // this pass perturbed no other stream.
+            forStream(state.seed, 'strike-the-wall', npc.id, year),
+            conditions.ambient
+        );
+        if (!strike) continue;
+
+        if (strike.died) {
+            state.npcs[at] = markDead(
+                npc,
+                day,
+                'The wall did not open. It closed.'
+            );
+            continue;
+        }
+        state.npcs[at] = strike.npc;
+        if (strike.result.outcome === 'success') advanced.push(state.npcs[at]);
     }
     return advanced;
+}
+
+/**
+ * The band of the ground somebody is actually standing on.
+ *
+ * Their own place first, because a sect seat inside a thin province is not a
+ * thin place and the location record already says so; the province second; and
+ * 'normal' last, which is what `deriveLife` has always defaulted to.
+ */
+function ambientAround(
+    state: WorldState,
+    npc: NpcRecord,
+    region: LocationRecord | undefined
+): AmbientQi {
+    const here = npc.locationId === null
+        ? undefined
+        : state.locations.find(l => l.id === npc.locationId);
+    return here?.ambient ?? region?.ambient ?? 'normal';
 }
 
 /**
