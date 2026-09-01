@@ -3250,7 +3250,13 @@ export function parseIntent(input: string): PlannedAction {
     }
 
     if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger|loiter|listen|listening|eavesdrop|hang about|hang around)\b/.test(text)) {
-        return { action: 'wait' };
+        // Carry the duration when one is named. "I wait ten years" returned no
+        // days at all, so the handler took its one-day default and the game
+        // silently did a thousandth of what was asked - "Waiting of 1 day was
+        // intended", to somebody who had just typed ten years. Bare "I wait"
+        // still costs a day, so a misparse is no more expensive than before.
+        const waited = parseDuration(text);
+        return { action: 'wait', ...(waited !== null ? { days: waited } : {}) };
     }
 
     // ── look ──
