@@ -1430,6 +1430,19 @@ export const SimEventKindSchema = z.enum([
      */
     'bleeding_warning',
     'lifespan_warning',
+    /**
+     * The method is not carrying this cultivator any further, and it says
+     * which of the two reasons it is in `data.state`: `no_method` for somebody
+     * practising nothing at all, `exhausted` for a manual that has ended.
+     *
+     * The sibling of the two warnings above and a separate kind for the same
+     * reason they are separate from each other: this one never resolves on its
+     * own and never resolves with time. Eleven of twelve measured lives died of
+     * stagnation at ordinal 0 without the game once mentioning it, because an
+     * ABSENCE has no natural event to hang off - see `techniqueCeiling` in
+     * `engine/cultivation/cultivation.ts`, which authors both sentences.
+     */
+    'method_ceiling',
     'toll_charged',
     'foundation_established',
     /**

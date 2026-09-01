@@ -388,6 +388,122 @@ export function techniqueExhausted(
     return realmOrdinal >= techniqueCap;
 }
 
+/**
+ * The rung a cultivator practising NO METHOD AT ALL is carried to.
+ *
+ * Zero, and it is a real number rather than an absence. `techniqueExhausted`
+ * reads null as "no ceiling declared", so handing it null for somebody
+ * practising nothing gives them an unlimited climb and makes learning a first
+ * book strictly harmful.
+ *
+ * It lives here rather than in a caller because it is the engine's number: the
+ * rule it encodes - "no proper cultivation technique, progress is impossible" -
+ * is the hard half of the asymmetry in the banner above, and a caller that
+ * picked its own floor would be deciding a mechanic. `src/web/game.ts` should
+ * import this rather than define its own copy; reported rather than reached
+ * across for.
+ */
+export const NO_MANUAL_CEILING = 0;
+
+/**
+ * Why the manual is or is not carrying this cultivator any further.
+ *
+ * ── THE SENTENCE THAT WAS MISSING ────────────────────────────────────────
+ *
+ * A cap of zero and a cap of thirteen are different facts and used to read the
+ * same. `techniqueExhausted` returned true for both, so the breakdown said
+ * "The manual ends at Qi Condensation Layer 1" to somebody holding no manual
+ * at all - naming a book that does not exist, at the one moment the player most
+ * needed to be told there wasn't one.
+ *
+ * Measured on the build before this: twelve honest lives, playing correctly -
+ * stipend, work, food, treat wounds, sit, strike when the gate opens - ended
+ * eleven times in stagnation at ordinal 0, age 66, after fifty years of
+ * two-year seclusions at 0/100 progress. Nothing anywhere said why. The only
+ * tell was inverted and buried: a deviation reporting "0 qi-units of
+ * cultivation destroyed", because there was nothing to destroy.
+ *
+ * The rule is right and is not weakened here. What was missing was the
+ * sentence, and the two ends of this axis want OPPOSITE advice:
+ *
+ *   no_method   there is no book. Go and learn one. Sitting is not the answer
+ *               and more years are not the answer.
+ *   exhausted   there is a book and it has ended. Go and find the next volume.
+ *
+ * This is the fourth of the four reasons a manual can fail somebody - no
+ * method, wrong root, insufficient dao, ends here - and the only one that is an
+ * ABSENCE rather than a refusal, which is exactly why nobody wrote a sentence
+ * for it.
+ */
+export type TechniqueCeilingState = 'no_method' | 'exhausted' | 'teaching';
+
+export interface TechniqueCeiling {
+    state: TechniqueCeilingState;
+    /** 0 stops dead; 1 is out of the way. Never a taper. */
+    multiplier: 0 | 1;
+    /** Short, for the rate breakdown line. */
+    label: string;
+    /**
+     * A complete sentence for the PLAYER, or null when nothing is wrong.
+     *
+     * Engine-authored and factual, in the idiom `Suitability.line` established:
+     * it says what is true and what would change it, and it never softens the
+     * answer into a maybe. The rate factors are visible in an inspector; the
+     * person sitting in a cave for fifty years is reading prose, so this exists
+     * to be carried into narration rather than to be looked up.
+     */
+    line: string | null;
+}
+
+/**
+ * Read the ceiling, with its reason attached.
+ *
+ * `techniqueExhausted` remains the boolean everything else reads; this is the
+ * legible form, and the two cannot disagree because this calls it.
+ */
+export function techniqueCeiling(
+    realmOrdinal: number,
+    techniqueCap?: number | null
+): TechniqueCeiling {
+    if (!techniqueExhausted(realmOrdinal, techniqueCap)) {
+        return {
+            state: 'teaching',
+            multiplier: 1,
+            label: 'Manual has further to teach',
+            line: null
+        };
+    }
+
+    // A real manual's cap is `realmForOrdinal(requiredOrdinal).ordinalEnd + 1`,
+    // which is one or more at every rung on the ladder. Zero is therefore not a
+    // book that teaches nothing; it is the absence of a book, and it is
+    // reserved for exactly that.
+    if (techniqueCap === NO_MANUAL_CEILING) {
+        return {
+            state: 'no_method',
+            multiplier: 0,
+            label: 'No cultivation method: there is no book',
+            line:
+                'This cultivator is practising no cultivation method at all. Sitting in a ' +
+                'quiet room and breathing is not cultivation: without a manual there is no ' +
+                'road for the qi to take, so nothing accumulates and nothing ever will. ' +
+                `They will stand at ${rankName(realmOrdinal)} for as long as they live. ` +
+                'What is missing is not years and not discipline. It is a book, or somebody ' +
+                'willing to teach them one.'
+        };
+    }
+
+    return {
+        state: 'exhausted',
+        multiplier: 0,
+        label: `The manual ends at ${rankName(techniqueCap ?? 0)}`,
+        line:
+            `The manual in their hands ends at ${rankName(techniqueCap ?? 0)}, and that is ` +
+            'where they are standing. It is not slower here; it is stopped, and no amount ' +
+            'of sitting with it changes that. What is missing is the next volume.'
+    };
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // HOW FAR A MANUAL REACHES, AND WHAT REACHING FURTHER COSTS
 //
@@ -869,11 +985,13 @@ export function computeCultivationRate(
             // them rather than something buried mid-list. A capped manual does
             // not slow a cultivator down; it stops them, and the answer is
             // another book rather than another decade.
+            // Read through `techniqueCeiling` so the breakdown line and the
+            // sentence the narrator carries are the same judgement. "No book at
+            // all" and "the book ends here" are different facts and used to
+            // print the same one.
             source: 'technique_ceiling',
-            label: techniqueExhausted(ordinal, opts.techniqueCap)
-                ? `The manual ends at ${rankName(opts.techniqueCap ?? 0)}`
-                : 'Manual has further to teach',
-            multiplier: techniqueExhausted(ordinal, opts.techniqueCap) ? 0 : 1
+            label: techniqueCeiling(ordinal, opts.techniqueCap).label,
+            multiplier: techniqueCeiling(ordinal, opts.techniqueCap).multiplier
         }
     ];
 

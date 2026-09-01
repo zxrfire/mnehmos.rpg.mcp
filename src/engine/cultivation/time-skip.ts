@@ -84,6 +84,7 @@ import {
     DAYS_PER_YEAR,
     computeCultivationRate,
     daysToNextBreakthrough,
+    techniqueCeiling,
     type CultivationOptions
 } from './cultivation.js';
 import { attemptBreakthrough, canAttemptBreakthrough } from './breakthrough.js';
@@ -502,9 +503,13 @@ export function simulateTimeSkip(
         rng: ReturnType<typeof forStream>,
         detail: Record<string, string | number> = {}
     ): void => {
-        const candidates = discoverableInsights(cultivator, {
+        const candidates = discoverableInsights({ ...cultivator, insights }, {
             ...(ctx.understanding ?? {}),
-            survived
+            survived,
+            // Suitability is live in play: what is in reach is filtered by what
+            // this particular cultivator can take out of it.
+            runSeed: ctx.seed,
+            affinityOf: target => affinityFor(ctx.seed, cultivator.id, target)
         });
         const achievement = recordAchievement(
             { kind, onDay: absDay, turn: turn + Math.floor(elapsed), summary, detail },
@@ -692,8 +697,19 @@ export function simulateTimeSkip(
         }
 
         // ── 2. How far can we safely jump? ──
+        //
+        // `ordinal` rather than `cultivator.realmOrdinal`: the LIVE rung, which
+        // a skip that advances ranks changes underneath itself. Passing the
+        // entry ordinal would price a forty-year seclusion at the realm the
+        // cultivator walked in at, which is the whole thing this term is for.
         const rate = computeCultivationRate(
-            { spiritRoot: cultivator.spiritRoot, injuries, foundationQuality: foundation, insights },
+            {
+                spiritRoot: cultivator.spiritRoot,
+                injuries,
+                foundationQuality: foundation,
+                insights,
+                realmOrdinal: ordinal
+            },
             ambient,
             {
                 ...ctx.options,
@@ -701,6 +717,33 @@ export function simulateTimeSkip(
                 techniqueSubject: ctx.understanding?.techniqueSubjects?.[0] ?? null
             }
         );
+
+        // ── 2b. Say it, if there is no book. ──
+        //
+        // The one fact a stalled cultivator most needs and was never given.
+        // Eleven of twelve measured lives sat through fifty years of correct
+        // play, took injuries, aged, and died of stagnation at ordinal 0
+        // without the digest once mentioning that they were practising no
+        // method - because an absence generates no event of its own, so
+        // nothing was there to hang the sentence off.
+        //
+        // Pushed rather than returned only, because the person sitting in the
+        // cave is reading the digest and not an inspector. `push` collapses
+        // identical lines, so a forty-year seclusion says it once.
+        //
+        // It does NOT interrupt. Being told is not a reason to stop the
+        // seclusion out from under a player who may have chosen it knowingly,
+        // and an interrupt every chunk would make a stalled cultivator unable
+        // to pass time at all.
+        const ceiling = techniqueCeiling(ordinal, ctx.options?.techniqueCap);
+        if (ceiling.line !== null) {
+            push(
+                'method_ceiling',
+                ceiling.line,
+                false,
+                { state: ceiling.state, techniqueCap: ctx.options?.techniqueCap ?? null }
+            );
+        }
 
         const chunk = nextChunk({
             elapsed,
@@ -1019,9 +1062,11 @@ export function simulateTimeSkip(
         // only missing piece, and most cultivators die never having stood in a
         // room where their own Dao was being practised.
         if (!interrupted && onGrid(newAbsDay, INSIGHT_CHECK_DAYS)) {
-            const reachable = discoverableInsights(cultivator, {
+            const reachable = discoverableInsights({ ...cultivator, insights }, {
                 ...(ctx.understanding ?? {}),
-                survived: null
+                survived: null,
+                runSeed: ctx.seed,
+                affinityOf: target => affinityFor(ctx.seed, cultivator.id, target)
             });
             for (const candidate of reachable) {
                 const held = insights.some(
