@@ -122,6 +122,16 @@ const SLEEPER_ALLOWLIST: readonly string[] = [
 /** Files exempt from the hyphens rule. Same reasoning, same short list. */
 const DASH_ALLOWLIST: readonly string[] = [
     'docs/bastion/',
+
+    // The rule cannot read its own enforcement. This file asserts that no
+    // rumour or residue entry contains an en- or em-dash, which it does by
+    // holding both characters in a regex character class - so the guard here
+    // flags the very test that enforces the guard there. Exempting it is the
+    // only honest option: rewriting the character class to satisfy this scan
+    // would mean the other test could no longer detect the thing it exists to
+    // detect. Permanent rather than temporary, because it can never come out.
+    'tests/data/cultivation-rumours-and-residue.test.ts',
+
     ...TEMPORARY_ALLOWLIST
 ];
 

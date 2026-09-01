@@ -129,7 +129,7 @@ and the fix is in the content file, not here.
 
 `sealedCeilingOrdinal` had been on `CatalogFaction` recording the one-off power a house
 holds asleep and spends once, and **that thing was asleep nowhere.** It is now a `vault`
-under the ancestral hall, sealed, with all four thresholds at the sleeper's own ordinal
+under the ancestral hall, sealed, with all four thresholds at the sealed ancestor's own ordinal
 and a `keyId` on it. Six houses in the seeded world have one; they are the only locations
 at depth 4, which is the honest shape - the world goes that deep in exactly six places.
 

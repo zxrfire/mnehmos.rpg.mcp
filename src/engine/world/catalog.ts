@@ -278,7 +278,7 @@ export async function loadCultivationCatalog(): Promise<WorldCatalog> {
             // Only the part that is ABOVE what the house fields day to day is a
             // sealed ceiling. `sectThreat` returns the max of the two, so a
             // house with nothing asleep reports its own power ordinal here and
-            // would otherwise look as though it held a sleeper.
+            // would otherwise look as though it held a sealed ancestor.
             if (ceiling > (raw.powerOrdinal ?? 0)) sealed = clampOrdinal(ceiling);
         } catch { /* a catalog that cannot answer is a house with nothing. */ }
         factions.push(mapFaction(raw, parentage[raw.id], characters[raw.id], sealed, {
