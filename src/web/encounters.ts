@@ -65,7 +65,7 @@ import {
 } from '../engine/encounters/index.js';
 import type { Cultivator, SimEvent } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
-import type { WorldState } from '../engine/world/world-state.js';
+import { npcsAt, type WorldState } from '../engine/world/world-state.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { KnowledgeGate } from './knowledge.js';
 import { createGrudge, createOath, settleObligation } from '../engine/social/grudges.js';
@@ -265,8 +265,50 @@ export function placeFor(world: WorldState | null, cultivator: Cultivator): Enco
         qiDensity: record.qiDensity,
         hazards: record.hazards,
         controllingFactionId: record.controllingFactionId,
-        sealed: record.sealed
+        sealed: record.sealed,
+        company: {
+            heads: npcsAt(world!, record.id).length + 1,
+            settledShare: settledShareOf(record.kind)
+        }
     };
+}
+
+/**
+ * How much of a place's population is sitting rather than moving about.
+ *
+ * The owner's rule needs a denominator - "people / people in seclusion" - and
+ * nothing in the world records whether an individual NPC is behind a door. What
+ * the world does record is what the place IS, and that carries the same fact
+ * for free: a mountain grown up around a sect is people in seclusion, a market
+ * town is people moving. It is exactly the owner's own pair of examples, and it
+ * needs no new state on anybody.
+ *
+ * Stated as a proxy rather than smuggled in as a measurement. When an NPC
+ * seclusion flag exists this should read it instead, and this table should go.
+ */
+function settledShareOf(kind: string): number {
+    switch (kind) {
+        // Ground people go to in order to sit, and nothing else.
+        case 'cave':
+        case 'vein':
+        case 'secret_realm':
+        case 'sealed_domain':
+            return 0.9;
+        // A sect's own mountain: disciples behind doors, and its own people and
+        // formations around them. The case that was measured backwards.
+        case 'sect_seat':
+        case 'precinct':
+        case 'chamber':
+        case 'vault':
+            return 0.75;
+        case 'hall':
+            return 0.5;
+        // Nobody is in seclusion in a market.
+        case 'settlement':
+            return 0.1;
+        default:
+            return 0.35;
+    }
 }
 
 /**
