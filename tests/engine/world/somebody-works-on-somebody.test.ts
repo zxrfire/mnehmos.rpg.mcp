@@ -65,19 +65,41 @@ describe('the world runs manoeuvres on people, and not at zero', () => {
     /**
      * Aggregated over seeds on purpose, and this is a finding rather than a
      * convenience: an attachment chain is rare enough that a single 500-year
-     * world can contain none at all. `lev-rate` alone has zero. Three seeds
-     * reliably have some.
+     * world can contain none at all. `lev-rate` alone has zero.
      *
      * So the guard is against ZERO ACROSS THE BOARD, which is what all four
      * defects produced, and not against a particular seed being quiet - a
      * quiet seed is the world working. Whether roughly one chain per world per
      * few centuries is the right ambient rate is a tuning question for a
      * person, and it is deliberately not being answered by widening this bar.
+     *
+     * ── WHY EIGHT SEEDS AND NOT THREE ────────────────────────────────────
+     *
+     * It was three, and three was not enough to measure a floor this close to
+     * the ground. Adding nine manuals to the technique catalog turned this red
+     * without touching leverage, pressure or relationships at all: the fixture
+     * catalog does not carry the real technique list, but `seedSectLibraries`
+     * reads the real `SECTS` regardless, and `copiesOf` draws from the RNG once
+     * per manual - so nine more books displaced every downstream stream in the
+     * world and the three chosen seeds landed on the other side of a coin flip.
+     *
+     * Measured across eight seeds at that point: landings of 0, 0, 0, 1, 0, 1,
+     * 0, 0 - two chains in eight 500-year worlds - with `strongest` reaching
+     * 0.850. So the subsystem was working exactly as before and the sample was
+     * too small to say so. A three-seed aggregate over an event this rare is
+     * not a floor against zero, it is a floor against zero most of the time.
+     *
+     * The honest reading of the original comment is that "three seeds reliably
+     * have some" was true of the catalog on the day it was written rather than
+     * of the mechanism. Eight is a real sample; if this goes red again, check
+     * the rate with `scripts/probe-does-anybody-actually-work-on-anybody.ts`
+     * before concluding anything, because the thing most likely to have moved
+     * is somebody else's content.
      */
     it('lets attachments actually LAND, which for a long time none ever did', () => {
         let landed = 0;
         let strongest = 0;
-        for (const seed of ['lev-rate', 'lev-b', 'lev-c']) {
+        for (const seed of ['lev-rate', 'lev-b', 'lev-c', 'lev-d', 'lev-e', 'lev-f', 'lev-g', 'lev-h']) {
             const { state } = runCenturies(seed, 5);
             const isLeverage = (id: string) =>
                 state.history.facts.find(f => f.id === id)?.data?.pressure === 'leverage_applied';

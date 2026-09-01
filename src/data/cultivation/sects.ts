@@ -662,6 +662,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
             'void-piercing-sword-domain',
+            // A metal road in the middle of the Pavilion's own shelf, which
+            // ran 17 then 41 and nothing between - twenty-four rungs in which
+            // a house whose library is metal end to end had no metal book at
+            // all, and its disciples left the element to climb. This does not
+            // close that hole and is not meant to; it puts one rung of the
+            // house's own element where the gap is widest.
+            'drawn-wire-canon',
             // The road to the top of the ladder, and the reason this list used
             // to be wrong: an apex that has produced an ascension inside living
             // memory was carrying a teach list that stopped at Core Formation,
@@ -717,6 +724,21 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
             'verdant-longevity-canon',
+            // The wood line continued past Foundation for the first time. The
+            // Hall's canon capped at 17 and the next wood book in the world
+            // did not exist, so the Hall's own attuned disciples changed to
+            // somebody else's elementless road at exactly the rung its
+            // identity should have been deepest.
+            'heartwood-forming-canon',
+            // And the rung above that, which makes the Hall the clearest case
+            // in the catalog of what a house's road decides about a career.
+            // Its wood line runs 16, 17, 21, 25; its elementless line stops at
+            // 17. So a wood root here has somewhere to go for four realms and
+            // anybody else is finished at Foundation, in a house that is
+            // otherwise generous, open and cheap to join. Which road you are
+            // on is how far you get inside these walls, and the Hall has never
+            // pretended otherwise at its own gate.
+            'grafted-form-canon',
             // The Hall's one serious weapon, and it is a physician's weapon:
             // the barbs are shaped so that taking the shaft out is a second
             // injury, which is knowledge nobody else in the province has and
@@ -827,6 +849,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // takes in gets as far as its water canon.
             'lesser-qi-gathering-manual',
             'moonlit-well-absorption-art',
+            // AND THE TWO THAT MAKE IT A WATER HOUSE RATHER THAN A HOUSE WITH
+            // A WATER BOOK. The Alliance topped out at thirteen: its own canon
+            // stopped one rung into Foundation and there was no second water
+            // road anywhere in the world to follow it with, so a ferryman's
+            // child born to a water root walked the same elementless
+            // succession as everybody else or stopped. These join it with no
+            // seam - 13, then 17, then 21 - and give the Alliance the only
+            // continuous elemental career below Core Formation in the catalog.
+            'slack-water-foundation-canon',
+            'held-under-canon',
             'nine-rivers-sword-chant',
             'still-water-mirror-guard',
             'samsara-tide-crush'
@@ -1033,6 +1065,11 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // road above was unopenable by anybody the Consortium trained
             // itself: it wants 17 and the primer stops at 13.
             'foundation-tempering-scripture',
+            // The trade's own book, in a mason's vocabulary, and the earth
+            // road the Consortium should always have been the house that had.
+            // It opens at the primer's cap and hands off to the metal canon
+            // above, so the shelf now walks end to end in two elements.
+            'footing-and-fill-canon',
             'shadow-splitting-gait',
             'formless-severing-intent',
             'thousand-li-cloud-tread'
@@ -1589,6 +1626,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'foundation-tempering-scripture',
             'undyed-core-canon',
             'nascent-lotus-canon',
+            // THE STORM ROADS, AND THE COURT HAD NONE. It held five lightning
+            // arts to fight with and not one lightning book to climb on, so
+            // the province's storm house raised its people on the same
+            // elementless succession a ford town uses and its whole identity
+            // lived in its weapons. These are the road: one at Foundation that
+            // has to be worked standing in the weather, and one sixteen rungs
+            // above it with nothing in between, which is what a starved
+            // element looks like when it is written down honestly.
+            'struck-ground-foundation-canon',
+            'twice-struck-canon',
             'drumming-thunder-clap',
             'arcstep-thunder-lance',
             'lightning-gate-transposition',
@@ -2623,6 +2670,12 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             'foundation-tempering-scripture',
             'undyed-core-canon',
             'nascent-lotus-canon',
+            // Between the lotus canon and the vein road, in the house's own
+            // element, and it is the one book on this shelf that cannot be
+            // carried away: the soul it produces is buried on the Anchorhold's
+            // ground and stays there. A house that teaches it is a house
+            // stating it does not expect to be driven off.
+            'interred-soul-canon',
             'mountain-vein-devouring-canon'
         ],
         signatureTechniqueId: 'anchor-stance-of-fixed-ground',
