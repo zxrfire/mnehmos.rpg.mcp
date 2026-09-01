@@ -69,6 +69,30 @@ export interface CatalogFaction {
      * recovers from a bad decade and whether losing a vein is fatal.
      */
     production: number;
+    /**
+     * What it can still MAKE, as against what it happens to contain.
+     *
+     * `faction-character.ts` has carried this from the start and said in its own
+     * header that the gap between `powerOrdinal` and `reliableOrdinal` is the
+     * real prestige metric - and the mapper below flattened the whole structure
+     * to one 0..1 number and threw the ordinals away, so nothing downstream
+     * could read it. Measured across the catalog: every one of the 32 houses
+     * has its peak behind it, and the mean gap between its strongest member and
+     * what it can still reliably produce is TWELVE RUNGS.
+     *
+     * That gap is a resource statement, not a teaching one. A house standing at
+     * 36 that can only produce 28 has the books and it has the master; what it
+     * does not have is the pills and the comprehension materials, which DO
+     * exist in the world today and which somebody else can get. Its own 36 had
+     * to reach that peak by their own means. So the gap is a motive - it is
+     * why a house buys, digs, allies and occasionally goes to war - rather than
+     * a decline it simply suffers.
+     */
+    reliableOrdinal: number;
+    /** The highest it has ever produced. Behind `reliableOrdinal` for nobody. */
+    peakOrdinal: number;
+    /** Years since it last produced anyone at that peak. Decline, dated. */
+    yearsSinceLastPeak: number;
     /** Fraction of its inherited compound it can still operate, 0..1. */
     formationIntegrity: number;
     /**
@@ -297,7 +321,16 @@ interface RawParentage {
 }
 
 interface RawCharacter {
-    production?: { selfSufficiency?: number; tier?: string } | string;
+    production?: {
+        selfSufficiency?: number;
+        tier?: string;
+        /** The real shape, from `faction-character.ts`'s `ProductionTier`. */
+        reliableOrdinal?: number;
+        peakOrdinal?: number;
+        peakCount?: number;
+        currentCount?: number;
+        yearsSinceLastPeak?: number;
+    } | string;
 }
 
 interface RawRegion {
@@ -348,6 +381,7 @@ function mapFaction(
         tributeStonesPerYear: parent?.terms?.tributeStonesPerYear ?? 0,
         renewalYears: renewalYearsOf(parent?.terms?.renewal),
         production: productionOf(character),
+        ...productionOrdinalsOf(character),
         formationIntegrity: total > 0 ? Number((lit / total).toFixed(4)) : 1,
         sealedCeilingOrdinal,
         preferredRoots: architecture.preferredRoots.slice(),
@@ -446,6 +480,27 @@ function renewalYearsOf(renewal: string | undefined): number {
         twelve: 12, ten: 10, twenty: 20, thirty: 30, fifty: 50, hundred: 100
     };
     return words[m[2].toLowerCase()] ?? 0;
+}
+
+/**
+ * The three ordinals `productionOf` throws away.
+ *
+ * A house may record its production as a bare tier string, in which case it has
+ * said nothing about ordinals and zero is the honest answer - a caller reading
+ * zero knows it is unstated rather than believing the house can produce nobody.
+ */
+function productionOrdinalsOf(character: RawCharacter | undefined): {
+    reliableOrdinal: number; peakOrdinal: number; yearsSinceLastPeak: number;
+} {
+    const p = character?.production;
+    if (!p || typeof p === 'string') {
+        return { reliableOrdinal: 0, peakOrdinal: 0, yearsSinceLastPeak: 0 };
+    }
+    return {
+        reliableOrdinal: clampOrdinal(p.reliableOrdinal ?? 0),
+        peakOrdinal: clampOrdinal(p.peakOrdinal ?? 0),
+        yearsSinceLastPeak: Math.max(0, Number(p.yearsSinceLastPeak ?? 0))
+    };
 }
 
 function productionOf(character: RawCharacter | undefined): number {
