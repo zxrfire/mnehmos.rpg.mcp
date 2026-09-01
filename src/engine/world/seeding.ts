@@ -91,6 +91,7 @@ import { addGoal, createNpc, setRealm, upsertRelationship, type NpcRecord } from
 import { addLineageEdge, createLineageRecord, type LineageRecord } from './lineage.js';
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
 import { dayOfYear, makeFact, appendFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
 import { seedArtifacts } from './artifact-placement.js';
 import { seedComprehensionMaterials } from './single-use-dao-comprehension-materials.js';
@@ -1558,13 +1559,16 @@ function assignFactionRoles(
         faction.resources.power_ordinal = strongest;
         if (cf && strongest < cf.powerOrdinal - 3) {
             faction.tags = faction.tags.concat('underpowered');
-            appendFact(state.history, makeFact({
+            appendWorldFact(state, makeFact({
                 day: presentDay,
                 kind: 'succession',
                 scale: 'local',
                 summary:
                     `The ${faction.name} is held by ${members[0].name}, who is weaker than the seat ` +
                     `has historically wanted. Nobody says so where it can be heard.`,
+                // The person the summary is about, as an id. It used to be a
+                // name inside a sentence, which is a fact nothing could join.
+                actors: [{ id: members[0].id, name: members[0].name, role: 'holder' }],
                 factionIds: [faction.id],
                 visibility: 'faction',
                 magnitude: 0.35,
