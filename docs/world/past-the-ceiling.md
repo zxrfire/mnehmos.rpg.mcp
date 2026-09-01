@@ -855,6 +855,19 @@ not a decision and it does not require seniority. It happens to outer disciples 
 alike, and for somebody who was qualified and blocked it resolves the problem completely and
 without their consent.
 
+**But a blow does not decide this - the bench does.** Whether a house ends is a question about
+who is left standing, not about how large the thing that hit it was. A house whose second is a
+Deity Transformation elder does not end when its head dies, however spectacularly: the number
+two takes the seat, the house continues wounded, and nobody is freed of anything. A house whose
+strength was entirely its head ends with them.
+
+So the same event produces completely different worlds depending on succession depth, and that
+depth is already readable off the roster. It is worth getting right rather than treating every
+catastrophe as terminal, because **the wounded-but-standing house is the more interesting of the
+two outcomes** - it has lost its apex, kept its ground and its people, and is now holding
+something it can no longer defend, which is a situation every neighbour can read as well as it
+can.
+
 It is also **how roads actually move through history.** A house that falls scatters its people,
 and its people are carrying its curriculum in their heads - so the fall of a house is one of
 the largest transmission events this world has, and the only one nobody negotiated. See
