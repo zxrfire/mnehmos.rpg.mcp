@@ -22,6 +22,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import type { ManualQuality } from '../schema/cultivation.js';
 import type { ManualBand } from '../engine/cultivation/cultivation.js';
 import type Database from 'better-sqlite3';
@@ -326,7 +327,7 @@ import { createGrudge, type Severity } from '../engine/social/grudges.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt } from '../engine/world/world-state.js';
-import {
+import { DEATH_IN_WORLD,
     factsForBreakthrough,
     factsForEat,
     factsForGather,
@@ -9361,6 +9362,26 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
             'sect stipend is worth more than the stipend.'
         );
         if (typeof body.unpaid === 'string') lines.push(body.unpaid);
+
+        // AND SAY IF THEY ARE STARVING.
+        //
+        // The time-skip path has warned at this threshold since it was written;
+        // the work path never did, and work is where a player spends years.
+        // Found by playing: fourteen consecutive years of innkeeping took HP
+        // from 30 to 15 and satiety to 20, the purse to twelve hundred stones,
+        // and said nothing but the wages each time. A meal costs one stone.
+        //
+        // The information was not even hidden - `status` prints "Satiety
+        // 20/100" - but a player has no reason to open a status sheet while a
+        // job is going fine, and nothing in the job's own account suggested it
+        // was not.
+        const satietyNow = typeof body.satiety === 'number' ? body.satiety : null;
+        if (satietyNow !== null && satietyNow <= LOW_SATIETY) {
+            lines.push(
+                `Satiety is down to ${satietyNow}. The work pays and it does not feed you, ` +
+                'and qi feeds the meridians rather than the body.'
+            );
+        }
     }
 
     // -- the sects --
@@ -9587,6 +9608,27 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
                 'somebody at this rank.'
             );
         }
+    }
+
+    // AND IF THEY DIED DOING IT, SAY SO.
+    //
+    // Every verb that consumes time can kill somebody - untreated injuries, a
+    // disturbance that lands, starvation - and only the seclusion path ever
+    // reported it. `facts.ts` has rendered death since it was written and is
+    // reached from the time-skip narration alone, so a cultivator who died
+    // working got the wages line and then, on every turn afterwards, nothing at
+    // all. Found by playing: fourteen years of farm work ended in
+    // `untreated_injuries` and the game never said a word.
+    //
+    // Here rather than in each verb, because the next verb added would have the
+    // same hole and nobody would notice.
+    if (body.died === true || body.alive === false) {
+        const cause = typeof body.deathCause === 'string' ? body.deathCause : null;
+        lines.push(
+            cause === null
+                ? 'And that was the end of it.'
+                : `That was the end of it: ${DEATH_IN_WORLD[cause as keyof typeof DEATH_IN_WORLD] ?? cause.replace(/_/g, ' ')}.`
+        );
     }
 
     return lines;

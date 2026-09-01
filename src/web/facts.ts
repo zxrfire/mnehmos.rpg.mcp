@@ -32,6 +32,7 @@ import {
 } from '../schema/cultivation.js';
 import { insightName } from '../engine/cultivation/understanding.js';
 import { rankName } from '../engine/cultivation/realms.js';
+import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
@@ -129,7 +130,7 @@ const AMBIENT_PERCEIVED: Record<AmbientQi, string> = {
     sealed_vein: 'The air in here has not been breathed. It is thicker than anything outside and it does not move, and the first lungful is enough to understand why people die getting into rooms like this.'
 };
 
-const DEATH_IN_WORLD: Record<DeathCause, string> = {
+export const DEATH_IN_WORLD: Record<DeathCause, string> = {
     combat_defeat: 'killed in combat',
     obviously_fatal_choice: 'forced a fight while barely able to stand',
     lifespan_exhausted: 'lifespan exhausted - died of old age at the ceiling of the realm',
@@ -417,7 +418,7 @@ function timeSkipProse(
     if (skip.deltas.spiritStones !== 0) {
         closing.push(`Spirit stones: ${after.spiritStones}, a change of ${signed(skip.deltas.spiritStones)}.`);
     }
-    if (after.satiety <= 20 && after.alive) {
+    if (after.satiety <= LOW_SATIETY && after.alive) {
         closing.push(`Satiety is down to ${after.satiety}. Qi feeds the meridians; it does not feed the body.`);
     }
     paragraphs.push(closing.join(' '));
