@@ -33,7 +33,13 @@ import {
     rollInjurySeverity,
     treatWorstInjury
 } from '../../engine/cultivation/index.js';
-import { getPill, PILLS } from '../../data/cultivation/pills.js';
+import {
+    getPill,
+    lifespanRefusalReason,
+    lifespanYearsFor,
+    MODERN_REFINEMENT,
+    PILLS
+} from '../../data/cultivation/pills.js';
 import { RECIPES, getRecipe } from '../../data/cultivation/recipes.js';
 import { getHerb } from '../../data/cultivation/herbs.js';
 import { gradeRank } from '../../data/cultivation/techniques.js';
@@ -582,14 +588,42 @@ function resolvePillEffect(
                 deltas: { cultivationProgress: pill.potency },
                 summary: `${pill.potency} qi-units of cultivation progress condensed directly.`
             };
-        case 'extend_lifespan':
+        case 'extend_lifespan': {
             // Lifespan is a realm property; a longevity pill buys years by
             // taking them off the clock, not by raising the ceiling.
+            //
+            // What it buys is decided by `lifespanYearsFor`, not by `potency`,
+            // because a refinement is bounded by the refiner: nothing any
+            // living alchemist can set holds past three hundred years, and
+            // nothing they can set holds at all in a body past Nascent Soul.
+            // The rule is about who made the pill and never about which pill
+            // it is - see `MODERN_REFINEMENT` in `pills.ts`.
+            //
+            // A refusal is still a consumption. The pill is spent either way,
+            // which is the honest outcome and the one a narrator has to be
+            // able to report: the engine says it did nothing, and the prose
+            // does not get to soften that.
+            const years = lifespanYearsFor(pill, cultivator.realmOrdinal);
+            const refusal = lifespanRefusalReason(pill, cultivator.realmOrdinal);
+            if (years <= 0) {
+                return {
+                    ...base,
+                    deltas: {},
+                    summary: refusal
+                        ?? 'The refinement did not set. The pill was wasted.'
+                };
+            }
+            const capped = years < pill.potency;
             return {
                 ...base,
-                deltas: { age: -pill.potency },
-                summary: `${pill.potency} years taken back off the body's clock.`
+                deltas: { age: -years },
+                summary: capped
+                    ? `${years} years taken back off the body's clock. The pill is rated for `
+                        + `${pill.potency}, and no refinement set by a living hand holds longer than `
+                        + `${MODERN_REFINEMENT.maxLifespanYears}.`
+                    : `${years} years taken back off the body's clock.`
             };
+        }
         case 'sate_hunger':
             return {
                 ...base,

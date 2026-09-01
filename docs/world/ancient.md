@@ -137,15 +137,17 @@ the recipe and no branch in the refiner.
 
 It comes in two shapes, and they are the same sentence applied differently:
 
-- **discrete** - a finished object nobody can make another of. The Thousand-Autumn Pill.
+- **discrete** - a finished object nobody can make another of. The Immortal Longevity Pill.
 - **continuous** - an art whose *practice* consumes something extinct. This is why an ancient
   art can be a standing commitment rather than an acquisition: finding the manual is not
   the end of the story.
 
-**Even the immortal realm lost some of it.** What is above the Lid depended on things that
-grew below it, and when those went the art went up there too. That inversion is worth
-keeping and worth saying out loud: the ones above are not exempt from the late age, they are
-just further from the ground it happened to.
+**The immortal realm lost it too, and not because it depended on us.** The materials went
+from both sides at once, so the ones above are holding the same intact methods and the same
+empty cupboards. That symmetry is worth saying out loud, because the alternative reading -
+a supply chain broken at the bottom - is the one that makes the Lid look like a door somebody
+is standing in front of. Nobody is standing in front of it. See *the extinction is
+symmetric*, below.
 
 ### No surviving copy - the last one is gone
 
@@ -320,39 +322,122 @@ There is exactly one in the catalog. Defend that number.
 
 <!-- tier: 2 trigger="the player finds, is offered, or hears of a life-extending medicine, or asks what an old house is holding" -->
 
-A pill. It grants **a thousand years, flat, at any rung, to anybody who swallows it**, at no
-cost on the way in.
+A pill - **the Immortal Longevity Pill**, which is a row that was already in the catalog.
+It grants **a thousand years, flat, at any rung, to anybody who swallows it**, at no cost on
+the way in.
 
-**Why it is a pill and not a new kind of thing.** `extend_lifespan` already existed and the
-lifespan ladder already ran five, twenty, a hundred, five hundred and three thousand years,
-so this is a sixth rung of a ladder that was already there. Per
-[`../../AGENTS.md`](../../AGENTS.md): no parallel catalogs for important things. Its
-significance is legible *because* it sits in the same column as a pill that mortals ruin
-families for.
+**It is one object.** For a short while this catalog carried two: the existing pill and a
+separate "thousand-year medicine" added beside it. They were always the same thing, and two
+rows for one object is the parallel-catalog mistake [`../../AGENTS.md`](../../AGENTS.md)
+forbids, committed where it does the most damage - nobody in play could have told them
+apart. The second row is retired.
 
-**It is not the biggest number and that is deliberate.** The Immortal Longevity Pill grants
-three times as long. What is different is two ordinary fields: **toxicity zero**, where every
-other rung of that ladder is a bargain with a price attached, and a value at the exact
-ceiling of what the catalog can price. The most valuable object anybody can name, and not for
-sale anywhere.
+**Why a pill and not a new kind of thing.** `extend_lifespan` already existed and the
+lifespan ladder was already there. Its significance is legible *because* it sits in the same
+column as a pill that mortals ruin families for.
 
-**It prices itself.** A thousand years is a rounding error to somebody with a century of
-ambition and decisive to somebody at the top of the ladder facing a crossing that consumes
-tens of thousands of years of their span. Nothing branches on who swallows it.
+### The ladder
 
-**No more are coming.** The flower needed an arterial vein reaching the surface and staying
-there, which the world no longer produces, and nothing is sent down from above either -
-because what is above the Lid depended on what grew below it.
+| | |
+|---|---|
+| **modern, refinable today** | 5 → 20 → 100 → **300 years**, and **Nascent Soul and below only** |
+| **the ruin medicine** | **1,000 years, any rung, toxicity 0** |
+| above that | nothing. There is no higher rung anywhere. |
 
-**"Sparingly" means it is being held for somebody.** A house sitting on one is not
-hoarding in the abstract; it is waiting for a specific person's remaining years to matter.
-The natural consumer is an elder running out of time - the same person the ancient roads
-sort themselves toward, which is not a coincidence.
+**A refinement is bounded by the refiner**, and that one sentence produces both modern
+limits. Nothing a living alchemist can set holds longer than three hundred years, and
+nothing they can set holds *at all* in a body past Nascent Soul - above that height the body
+has stopped being the kind of thing the refinement was made for. `MODERN_REFINEMENT` in
+`pills.ts` carries the two numbers and `lifespanYearsFor` applies them.
 
-`MEDICINE_HOLDINGS` records who still has theirs, who has spent it, and the one house nobody
-can confirm either way. **A house that has spent its one is a different house from a house
-that has not**, and that is exactly the sort of fact the Standing Register and
-`standoff.ts` are built to argue about.
+**The rule is about who made it, never about which pill it is.** The ruin medicine is not
+exempt because it is special; it is outside the rule because the rule is about living
+alchemists and no living alchemist made it. That is a real property with a real answer, in
+`NOT_REFINABLE_BELOW_THE_LID_PILL_IDS`.
+
+The consequence is the shape the setting wants: **a cultivator above Nascent Soul cannot buy
+a single year, at any price, from anybody.** Time is the scarcest thing at the top of the
+world, and it falls out of two numbers rather than out of a claim.
+
+Every other rung of the ladder is a bargain with a price attached - twenty years at a
+toxicity that makes the third dose worthless, three hundred at a toxicity that is the tree's
+opinion of the transaction. **This one asks nothing.** That, and not the figure, is what
+makes it categorical.
+
+### The extinction is symmetric
+
+The obvious construction is a cross-Lid supply chain: a flower that grew down here, immortals
+who needed it, an extinction that broke the arrangement at the bottom. **That is not the
+world.**
+
+The flower went from **both sides at once**. The immortals know the method perfectly well -
+nothing was lost above - and they are in exactly the position everybody else is in: holding a
+recipe with nothing to work it on.
+
+Three consequences, each better than the dependency version:
+
+- **The immortal realm is not a source.** Not one you could reach with enough standing, not
+  one that is holding out, not one the right house could petition. There is none up there
+  either, and every apex has established that independently and stopped asking.
+- **Nobody is withholding.** *"No more are sent down"* needs no story about willingness or
+  judgement. There is nothing to send - a duller and far more final answer than a refusal.
+- **What exists is leftovers.** The pills in ancient houses and sealed sites are not the
+  output of an arrangement. They are what was lying around when the flower stopped.
+
+### The trade: material up, a pill back
+
+A house that finds the flower in a sealed site **can** send it up through an answering
+channel and receive a finished pill, because the method survives above and only the material
+is gone. It composes entirely out of parts that already exist - `IMMORTAL_CHANNELS`,
+`MillennialOffering`, and a Deep Survey channel that already returns objects nobody below can
+make. Nothing new is being modelled. What is new is that there is finally something worth
+sending that is not devotion.
+
+**It is one thing that can happen, not a route.** Both ends are scarce - the flower is nearly
+gone and an ancestor is not a shop - so this is a once-in-generations event. Do not let it
+become a supply line; per the section above, there is no line to become.
+
+**The return is not guaranteed.** Sending is the house's decision; answering is not. A house
+that spends its one find on an offering and receives nothing has learned something
+devastating, and has spent the find learning it. That outcome must stay possible.
+
+**And completing it is proof of a living ancestor** - which is the sharpest thing about it.
+`claimsLivingAncestor` and `claimIsTrue` are separate fields precisely because a house
+frequently does not know: a channel gone quiet is equally consistent with death, with
+disinterest, with a war up there, and with an object down here that has stopped working.
+There is no way to ask. Sending material up and getting something back collapses that in the
+only way the setting allows - not by asking, but by something coming back.
+
+So a house that has never tried, or tried and heard nothing, has an excellent reason not to
+discuss it. **The silence is evidence too.**
+
+### What is actually left, and where
+
+`LOST_MATERIALS[].remaining` carries a **count and a placement**, not a mood. *"Nobody has
+any"* is a wall; *"there are nine left in the world and three of them are behind the last
+gate of a sealed curriculum"* is a search with a destination and an end. Every unit found is
+one nobody else can ever have.
+
+Keep the totals small enough to hold in the head - the point is that a determined party
+could, in principle, establish how much is left, and that is impossible if the figure is in
+the hundreds. The flower is the sharpest case: **one, alive, growing inside a sealed station
+on a branch of a vein nobody has drawn since**, because that sealed room is the only place
+left where the condition it needs still holds. It makes one pill. There is no second.
+
+### Who holds one
+
+`MEDICINE_HOLDINGS` records it. **A house that has spent its one is a different house from a
+house that has not** - exactly the sort of fact the Standing Register and `standoff.ts` are
+built to argue about.
+
+And the **Azure Cloud Pavilion has none**, for the same reason it holds no province: its
+ancestor crossed three hundred and eighty years ago, and this is a thing an ancestor
+accumulates over an age. `heritage: 'recent'` now shows up in three independent places - no
+province, no medicine, and no counterparty for the trade. **Three absences, one cause.**
+
+**"Sparingly" means it is being held for somebody.** A house sitting on one is waiting for a
+specific person's remaining years to matter. The natural consumer is an elder running out of
+time - the same person the ancient roads sort themselves toward, which is not a coincidence.
 
 ---
 

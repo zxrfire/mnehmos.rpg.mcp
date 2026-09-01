@@ -44,6 +44,7 @@
  */
 
 import type { Pill, PillEffect, TechniqueGrade } from '../../schema/cultivation.js';
+import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import type { Band } from './techniques.js';
 
 /** Human-readable unit for each effect's `potency`. Also asserted in tests. */
@@ -122,6 +123,90 @@ export const ADVANCEMENT_EFFECTS: ReadonlySet<PillEffect> = new Set<PillEffect>(
 /** Whether this effect buys advancement. The one place that decides. */
 export function isAdvancement(effect: PillEffect): boolean {
     return ADVANCEMENT_EFFECTS.has(effect);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT MODERN ALCHEMY CAN DO ABOUT A LIFESPAN
+//
+// Two limits, and they are one fact stated twice: a refinement is bounded by
+// the refiner. Nothing any living alchemist can set holds longer than three
+// hundred years, and nothing any living alchemist can set holds AT ALL in a
+// body past Nascent Soul. Above that height the body is doing something the
+// refinement was not made for, and it does not take.
+//
+// THIS IS A RULE ABOUT REFINEMENT, NOT ABOUT AN OBJECT, which is the whole
+// reason it is written this way. There is no branch anywhere on a pill's
+// identity, its grade, its name or who is holding it. The discriminating
+// question is who made it - and that is a real property with a real answer,
+// carried in `NOT_REFINABLE_BELOW_THE_LID_PILL_IDS` in the same idiom
+// `RECOVERED_RECIPE_IDS` uses next door. A pill nobody alive refined is not
+// exempt because it is special. It is outside the rule because the rule is
+// about living alchemists and no living alchemist made it.
+//
+// The consequence is the shape the setting wants. A cultivator at Core
+// Formation can buy years, expensively, up to three hundred. A cultivator at
+// Deity Transformation cannot buy a single one at any price, from anybody, and
+// the only thing in the world that would work for them is an object that was
+// made in an age that could make it. That is why time is the scarcest thing at
+// the top of the world, and it falls out of two numbers rather than out of a
+// claim.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The end of Nascent Soul, read off the ladder rather than retyped. */
+const NASCENT_SOUL_END_ORDINAL = REALM_TIERS
+    .find(t => t.key === 'nascent_soul')!.ordinalEnd;
+
+export const MODERN_REFINEMENT = {
+    /** Most years any living alchemist can put into a pill that holds. */
+    maxLifespanYears: 300,
+    /** Above this, a refinement does not take at all. */
+    lifespanCeilingOrdinal: NASCENT_SOUL_END_ORDINAL,
+    why:
+        'A refinement has to set in the body it is given to, and past Nascent Soul the body has stopped being the kind of thing it was made for. Every guild has tried. The Cinnabar Crucible has the failures written up and the method-script on its wall does not help, because the script is a transcription of somebody who could and the difficult step is missing.',
+    whatItMeansAtTheTop:
+        'Nobody above Nascent Soul can buy a year. Not expensively, not at auction, not from a house that owes them: the thing does not exist to be bought, and every apex in the world has established that independently and stopped asking.'
+} as const;
+
+/**
+ * Pills no living alchemist can produce, with the reason each.
+ *
+ * A marker with no reason attached is the same silence in a different place -
+ * the discipline `NO_SURVIVING_COPY_NOTES` is held to in `techniques.ts`. Keep
+ * this set tiny; it is the exemption from the only ceiling the medicine
+ * economy has, and one entry is currently the whole of it.
+ */
+export const NOT_REFINABLE_BELOW_THE_LID_PILL_IDS: ReadonlySet<string> = new Set([
+    'pill-immortal-longevity'
+]);
+
+export const NOT_REFINABLE_NOTES: Readonly<Record<string, string>> = {
+    'pill-immortal-longevity':
+        'The formula survives complete, is not secret, and can be read by any alchemist with the standing to be shown it. Its first ingredient stopped growing before any institution now standing was founded, and it stopped growing everywhere at once - so nobody below the Lid can make one, and nobody above it can either. What exists was made when there were flowers.'
+} as const;
+
+/**
+ * The years a lifespan pill actually buys this body, which is not always the
+ * years printed on it.
+ *
+ * Returns 0 where the refinement will not take. Callers get a number and never
+ * have to know why; `lifespanRefusalReason` is the sentence for the ones that
+ * have to tell somebody.
+ */
+export function lifespanYearsFor(pill: Pill, ordinal: number): number {
+    if (pill.effect !== 'extend_lifespan') return 0;
+    if (NOT_REFINABLE_BELOW_THE_LID_PILL_IDS.has(pill.id)) return pill.potency;
+    if (ordinal > MODERN_REFINEMENT.lifespanCeilingOrdinal) return 0;
+    return Math.min(pill.potency, MODERN_REFINEMENT.maxLifespanYears);
+}
+
+/** Why it did nothing, or null where it did what it says. */
+export function lifespanRefusalReason(pill: Pill, ordinal: number): string | null {
+    if (pill.effect !== 'extend_lifespan') return null;
+    if (NOT_REFINABLE_BELOW_THE_LID_PILL_IDS.has(pill.id)) return null;
+    if (ordinal > MODERN_REFINEMENT.lifespanCeilingOrdinal) {
+        return 'The refinement does not set. Nothing any living alchemist can make holds in a body past Nascent Soul, and this one is no exception - it is spent, and it did nothing.';
+    }
+    return null;
 }
 
 /** Every run starts holding exactly one of these. */
@@ -543,11 +628,11 @@ export const PILLS: readonly Pill[] = [
         name: 'Thousand-Year Cypress Pill',
         grade: 'immortal',
         effect: 'extend_lifespan',
-        potency: 500,
+        potency: 300,
         toxicity: 15.0,
         value: 88_000,
         description:
-            'Five hundred years, taken from a tree that will not miss them and paid for by someone who will. The toxicity is the tree\'s opinion of the transaction.'
+            'Three hundred years, taken from a tree that will not miss them and paid for by someone who will. The toxicity is the tree\'s opinion of the transaction, and three hundred is the end of the line: no living alchemist has ever set a refinement that held longer, and none has ever made one hold in a body past Nascent Soul.'
     },
     {
         id: 'pill-perpetual-grain-abstinence',
@@ -631,64 +716,53 @@ export const PILLS: readonly Pill[] = [
             'Thirty-five points of probability against the heavenly tribulation itself. There is no more valuable object in the mortal world, and its price is set by the only market that has ever mattered.'
     },
     {
+        // THE RUIN MEDICINE, and it was always this row.
+        //
+        // This entry used to read three thousand years at a toxicity that had
+        // killed the recipient, and a second row was briefly added beside it
+        // for "the thousand-year medicine". That was the parallel-catalog
+        // mistake AGENTS.md forbids, committed against a single object: two
+        // pills nobody could have told apart in play. They are one thing, and
+        // this is it.
+        //
+        // WHAT CHANGED AND WHY.
+        //
+        //   3,000 -> 1,000  Nothing refined below the Lid exceeds three hundred
+        //                   years - see `MODERN_REFINEMENT` - so a three-thousand
+        //                   figure sitting above the ruin medicine made the ruin
+        //                   medicine unremarkable. One categorical object at a
+        //                   thousand, and nothing between it and three hundred,
+        //                   is the whole of the ladder above the modern line.
+        //   35 -> 0         Every other rung here is a bargain with a price
+        //                   attached: twenty years at a toxicity that makes the
+        //                   third dose worthless, three hundred at a toxicity
+        //                   that is the tree's opinion of the transaction. This
+        //                   one asks nothing, at any rung, and no living
+        //                   alchemist can explain how - because no living
+        //                   alchemist made it.
+        //   880k -> 1M      The ceiling of what this catalog can price. The most
+        //                   valuable object anybody can name, and not for sale.
+        //
+        // A FLAT THOUSAND AT ANY LEVEL, and the flatness prices it without a
+        // rule. A thousand years is a rounding error to somebody with a century
+        // of ambition and decisive to somebody at the top of the ladder facing a
+        // crossing that consumes tens of thousands of years of their span.
+        // Nothing anywhere branches on who swallows it; the object sorts its own
+        // market.
+        //
+        // It is in `NOT_REFINABLE_BELOW_THE_LID_PILL_IDS` and its formula names
+        // an extinct flower, so `recipe-immortal-longevity` is readable,
+        // complete and unfillable. See `lost-ages.ts` for who holds one, who
+        // spent theirs, and what is left of the flower anywhere in the world.
         id: 'pill-immortal-longevity',
         name: 'Immortal Longevity Pill',
-        grade: 'chaos',
-        effect: 'extend_lifespan',
-        potency: 3_000,
-        toxicity: 35.0,
-        value: 880_000,
-        description:
-            'Three thousand years, refined with a chaos seed, at a toxicity that has killed the recipient outright on at least one recorded occasion. It is still bought.'
-    },
-    {
-        // THE THOUSAND-AUTUMN PILL, and it is a pill.
-        //
-        // The question of whether the setting's most significant object should
-        // be a pill, an artifact or a third kind of thing was settled by
-        // AGENTS.md before it was asked: no parallel catalogs for important
-        // things. `extend_lifespan` already existed, the lifespan ladder
-        // already ran five, twenty, a hundred, five hundred and three thousand
-        // years, and a sixth rung of an existing ladder is a row. An "immortal
-        // medicines" table beside this one is the exact mistake that rule
-        // exists to prevent, and the rung the object sits on is legible only
-        // because it is in the same column as the Decade-Lengthening Pill.
-        //
-        // WHAT MAKES IT REMARKABLE IS NOT THE NUMBER. It is not even the
-        // largest lifespan figure in this catalog - the Immortal Longevity
-        // Pill above it is three times as long. It is different in kind on two
-        // ordinary fields:
-        //
-        //   toxicity 0   Every other rung of this ladder is a bargain. Twenty
-        //                years at a toxicity that makes the third dose worth
-        //                nothing; three thousand at a toxicity that has killed
-        //                the recipient. This one costs the taker nothing at
-        //                all, at any rung, and no living alchemist can explain
-        //                how, because the method is in `recipes.ts` and the
-        //                ingredient is not in the world.
-        //   value        The band ceiling. It is the most valuable object the
-        //                pill catalog can price, and it is not for sale
-        //                anywhere, by anyone, at any figure.
-        //
-        // A FLAT THOUSAND AT ANY LEVEL, and that flatness is the whole design.
-        // Nothing here branches on the taker's ordinal, because nothing needs
-        // to: a thousand years is a rounding error to somebody with a century
-        // of ambition and it is decisive to somebody at the top of the ladder
-        // looking at a crossing that consumes tens of thousands of years of
-        // their allotted span. The object prices itself against the taker's
-        // own situation without a single line of code knowing who they are.
-        //
-        // See `lost-ages.ts` for who is holding one, who has spent theirs, and
-        // why no more are coming.
-        id: 'pill-thousand-autumn',
-        name: 'Thousand-Autumn Pill',
         grade: 'chaos',
         effect: 'extend_lifespan',
         potency: 1_000,
         toxicity: 0,
         value: 1_000_000,
         description:
-            'A thousand years, flat, to anybody who swallows it, and it does no harm on the way in. The formula survives complete and is not even secret; the flower it is refined from stopped growing before any institution now standing was founded, so every one still in the world was made in an age that could make them, and nobody is counting up.'
+            'A thousand years, flat, to anybody who swallows it, and it does no harm on the way in. It has not been refined on either side of the Lid for an age: the flower it needs stopped growing everywhere at once, so every one still in the world was made when there were flowers, and nobody anywhere has a complete count.'
     }
 ] as const;
 

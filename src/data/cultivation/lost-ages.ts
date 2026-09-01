@@ -10,7 +10,7 @@
  *
  * THIS FILE ADDS NO MECHANICS. Every object it talks about is an ordinary row
  * in an ordinary catalog, made by the ordinary factory, read by the ordinary
- * lookups: the Thousand-Autumn Pill is a `PILLS` entry with `extend_lifespan`
+ * lookups: the ruin medicine is a `PILLS` entry with `extend_lifespan`
  * on it, the ancient roads are `TECHNIQUES` entries with a `qiCost` and a
  * `cooldown`, and the extinct materials are `HERBS` rows. Take the objects
  * away and nothing is left over. What this file holds is the sentence the
@@ -371,41 +371,118 @@ export interface LostMaterial {
     gatesTechniqueIds: readonly string[];
     /** Kinds of finished object that can no longer be made. Not ids: kinds. */
     closedObjectKinds: readonly string[];
-    /** Where any of it still is. Always an archive, never a market. */
+    /**
+     * The sentence a register prints. Kept beside the counts rather than
+     * derived from them, because the interesting part of a stock is rarely the
+     * figure - it is who has it, what it is in, and whether they know.
+     */
     remainingStock: string;
+    /**
+     * What is left, as a number, and where.
+     *
+     * WHY A NUMBER AND NOT A MOOD. "Nobody has any" is a wall; "there are nine
+     * left in the world and three of them are in a sealed site four days off
+     * any track" is a search with a destination and an end. The count is the
+     * whole difference between a scarcity a player is told about and one they
+     * can work with - and every unit found is one nobody else can ever have,
+     * which is a kind of consequence the setting otherwise has to fake.
+     *
+     * Keep the totals small enough to hold in the head. The point is that a
+     * sufficiently determined party could, in principle, learn how much is left
+     * in the world; that is impossible if the figure is in the hundreds.
+     */
+    remaining: {
+        /** Held by named houses. Cross-checked against `ARCHIVE_COPIES`. */
+        inArchives: number;
+        /** Sitting in sealed sites nobody has opened. */
+        unfound: number;
+        /** Where the unfound units are, by site id from `inheritance-trials.ts`. */
+        placements: readonly { siteId: string; units: number; note: string }[];
+        /** What anybody in the world could establish about the figure. */
+        whatIsKnownOfTheCount: string;
+    };
 }
 
 export const LOST_MATERIALS: readonly LostMaterial[] = [
     {
         herbId: 'herb-kingfisher-lacquer-fern',
+        remainingStock:
+            'Jars. Two in an archive that has never acknowledged holding them, and seven more in three sealed sites, each with the level marked on the outside so that whoever opens the cupboard can see what is left without opening the jar.',
         closedRecipeIds: [],
         gatesTechniqueIds: ['sealed-field-of-the-shut-hour'],
         closedObjectKinds: [
             'element-bound blades of the old pattern, where the element is in the coating rather than in the smith - a class of weapon nobody now makes, as against a class nobody now makes WELL',
             'the sealing lacquer for any working that has to hold a boundary against the world rather than against a person'
         ],
-        remainingStock:
-            'Jars. A small number of very old archives hold them, with the level marked on the outside so that whoever opens the cupboard can see what is left without opening the jar.'
+        remaining: {
+            inArchives: 2,
+            unfound: 7,
+            placements: [
+                {
+                    siteId: 'trial-the-cold-curriculum',
+                    units: 3,
+                    note: 'Three sealed jars on a shelf behind the last gate, packed the way somebody packs a thing they expect to come back for. The seals are intact and the level is marked on the outside of each.'
+                },
+                {
+                    siteId: 'grave-the-forge-clan-vault',
+                    units: 2,
+                    note: 'Two jars at the back of the vault beside the manual, which the clan has walked past for four hundred years without ever having had anybody able to read what they were for.'
+                },
+                {
+                    siteId: 'trial-the-swept-frame',
+                    units: 2,
+                    note: 'Two, in a store that was swept and left tidy. Whoever closed this place put them away properly, which is the only reason they are still usable.'
+                }
+            ],
+            whatIsKnownOfTheCount:
+                'Nine, and this is the one figure in the table anybody could actually establish. The jars were made to a standard and marked on the outside, the Ninefold Ledger has certified transfers of four of them over eleven hundred years, and a patient reader working the Ledger case notes could get to a number. Nobody has, because nobody has thought to ask how many are left rather than where to get one.'
+        }
     },
     {
         herbId: 'herb-mirror-heart-lotus',
+        remainingStock:
+            'Three, and everybody who has an opinion says none. Two are a dried pair in a cold archive that has never been asked a question direct enough to require lying about them, and the third is in the room with the manual that needs it.',
         closedRecipeIds: [],
         gatesTechniqueIds: ['hollow-second-body'],
         closedObjectKinds: [
             'a second body, which is the only capability on this list that nobody chose to give up - it was taken away when the flower went, and the manuals stayed on the shelves being readable'
         ],
-        remainingStock:
-            'Nothing anybody will confirm. There is a persistent claim that one archive still has a dried pair and has never said so, and the claim is persistent because it has never been denied either.'
+        remaining: {
+            inArchives: 2,
+            unfound: 1,
+            placements: [
+                {
+                    siteId: 'trial-the-four-inward-faces',
+                    units: 1,
+                    note: 'One, dried, in the room with the four faces and the manual that needs it. Whoever arranged that room put the art and its last input in the same place and did not leave a note explaining the pairing.'
+                }
+            ],
+            whatIsKnownOfTheCount:
+                'Nothing anybody will confirm. The persistent claim is that one archive still holds a dried pair and has never said so, and the claim is persistent because it has never been denied either. The claim is true: the Frostmirror Court has them, in the cold, and has never been asked a question direct enough to require lying.'
+        }
     },
     {
         herbId: 'herb-thousand-autumn-chrysanthemum',
-        closedRecipeIds: ['recipe-thousand-autumn'],
+        remainingStock:
+            'One, and it is alive. There is no jar, no cutting and no seed in any archive in the world; there is a single living stand inside a sealed station on a branch of a vein nobody has drawn since. It makes one pill. There is no second.',
+        closedRecipeIds: ['recipe-immortal-longevity'],
         gatesTechniqueIds: [],
         closedObjectKinds: [
             'the only medicine in the world that adds a long life to somebody without taking anything for it'
         ],
-        remainingStock:
-            'None anywhere. Not a jar, not a cutting, not a seed. What exists is finished pills, in single figures, and every one of them was made before the last institution now standing was founded.'
+        remaining: {
+            inArchives: 0,
+            unfound: 1,
+            placements: [
+                {
+                    siteId: 'trial-the-fourth-branch-station',
+                    units: 1,
+                    note: 'ONE, AND IT IS ALIVE. The station was sealed on a branch of a vein that has not been drawn since, so the one condition the flower needs - an arterial reaching the surface and staying there - still holds inside, and nowhere else anybody has looked. It is not a preserved cutting. It is growing.'
+                }
+            ],
+            whatIsKnownOfTheCount:
+                'Everybody with an opinion says none, and everybody with an opinion is nearly right. There is no jar, no cutting and no seed in any archive in the world, and every house that has looked has concluded the flower is simply over - which is why the single living stand inside a sealed site is the most valuable object in the setting and is not on anybody\'s list of things to look for. It makes one pill. There is no second.'
+        }
     }
 ];
 
@@ -415,28 +492,34 @@ export const LOST_MATERIALS: readonly LostMaterial[] = [
 
 /**
  * The most economically significant object in the setting, and it is a row in
- * `pills.ts`.
+ * `pills.ts` that was already there.
  *
- * WHY A PILL AND NOT AN ARTIFACT OR A THIRD KIND OF THING. AGENTS.md settles
- * it before the question is asked: no parallel catalogs for important things.
- * `extend_lifespan` already existed and the lifespan ladder already ran five,
- * twenty, a hundred, five hundred and three thousand years, so a sixth rung of
- * an existing ladder is a row and nothing else. The object's significance is
- * legible precisely because it is in the same column as a pill that mortals
- * ruin families for.
+ * IT IS ONE OBJECT. For a short while this catalog carried two - the existing
+ * Immortal Longevity Pill at three thousand years, and a `pill-thousand-autumn`
+ * added beside it for "the thousand-year medicine". They were always the same
+ * thing, and two rows for one object is the parallel-catalog mistake AGENTS.md
+ * forbids, committed at the worst possible place: nobody in play could have
+ * told the two apart. The second row is retired and the surviving one is
+ * re-rated. See the comment on the entry in `pills.ts` for what moved.
  *
- * WHY IT IS NOT SIMPLY THE BIGGEST NUMBER. It is not even the largest lifespan
- * figure in the catalog - the Immortal Longevity Pill is three times as long.
- * It is different in kind on two ordinary fields: toxicity zero, where every
- * other rung of that ladder is a bargain with a price attached, and a value at
- * the exact ceiling of what the pill catalog can price. It is the most
- * valuable object anybody can name and it is not for sale anywhere.
+ * WHY A PILL AND NOT AN ARTIFACT OR A THIRD KIND OF THING. `extend_lifespan`
+ * already existed and the lifespan ladder already ran from five years upward,
+ * so this is a rung of a ladder that was there. Its significance is legible
+ * precisely because it sits in the same column as a pill mortals ruin families
+ * for.
+ *
+ * WHY IT IS NOT SIMPLY THE BIGGEST NUMBER. It is different in kind on two
+ * ordinary fields: toxicity zero, where every other rung of that ladder is a
+ * bargain with a price attached, and a value at the exact ceiling of what the
+ * pill catalog can price. And the modern line stops at three hundred years for
+ * Nascent Soul and below - see `MODERN_REFINEMENT` - so there is nothing
+ * between three hundred and this, and nothing above it at all.
  *
  * A FLAT THOUSAND AT ANY LEVEL, and the flatness prices it without a rule. A
- * thousand years is a rounding error to somebody with a century of ambition
- * and decisive to somebody at the top of the ladder facing a crossing that
- * consumes tens of thousands of years of their span. Nothing branches on who
- * swallows it; the object sorts its own market.
+ * thousand years is a rounding error to somebody with a century of ambition and
+ * decisive to somebody at the top of the ladder facing a crossing that consumes
+ * tens of thousands of years of their span. Nothing branches on who swallows
+ * it; the object sorts its own market.
  *
  * WHAT "SPARINGLY" ACTUALLY MEANS. A house holding one and not spending it is
  * holding it FOR somebody, and the moment it is spent is a moment about a
@@ -444,20 +527,117 @@ export const LOST_MATERIALS: readonly LostMaterial[] = [
  * consumer is an elder running out of time - which is also, and not by
  * coincidence, the same person the ancient roads sort themselves toward.
  */
-export const THE_THOUSAND_AUTUMN_PILL = {
-    pillId: 'pill-thousand-autumn',
-    recipeId: 'recipe-thousand-autumn',
+export const THE_RUIN_MEDICINE = {
+    pillId: 'pill-immortal-longevity',
+    recipeId: 'recipe-immortal-longevity',
     extinctIngredientHerbId: 'herb-thousand-autumn-chrysanthemum',
     whyItIsAPill:
         'Because `extend_lifespan` already existed and a parallel catalog for important things is the exact mistake AGENTS.md forbids. Remove the row and nothing is left over anywhere.',
     whatItGrants:
         'A thousand years, flat, at any rung, to anybody who swallows it, at no cost on the way in.',
-    whyNoMoreAreComing:
-        'The flower required an arterial vein reaching the surface and staying there, which is a condition the world no longer produces. Nothing is sent down either: what is above the Lid depended on what grew below it, and when the flower went the art went with it up there too.',
+    againstTheModernLine:
+        'Three hundred years is the most any living alchemist can set, and it does not hold at all in a body past Nascent Soul. So the ladder reads five, twenty, a hundred, three hundred - and then nothing until this, which is a different kind of object rather than the next rung.',
     theSupply:
         'Fixed, small, and only ever falling. Every one in the world was made in an age that could make them, and no party has a complete count - which is itself one of the more valuable pieces of information anybody could hold.'
 } as const;
 
+/**
+ * THE EXTINCTION IS SYMMETRIC, and this is the more interesting fact.
+ *
+ * The obvious construction is a cross-Lid supply chain: a flower that grew down
+ * here, immortals who needed it, and an extinction that broke the arrangement
+ * at the bottom. That is not the world. The flower went from BOTH SIDES, at
+ * once, and the immortals are in precisely the position everybody else is in -
+ * holding a method with nothing to work it on.
+ *
+ * Three consequences, and each is better than what the dependency version would
+ * have produced:
+ *
+ *   - THE IMMORTAL REALM IS NOT A SOURCE. Not one you could reach with enough
+ *     standing, not one that is holding out, not one that could be petitioned
+ *     by the right house with the right claim. There is none up there either.
+ *     Every apex in the world has established this independently and stopped
+ *     asking, which is why nobody treats the Lid as a supply problem.
+ *
+ *   - NOBODY IS WITHHOLDING. "No more are sent down" needs no story about
+ *     willingness, judgement or a decision taken above about the lower world.
+ *     There is simply nothing to send, and that is a much duller and much more
+ *     final answer than a refusal would have been.
+ *
+ *   - WHAT EXISTS IS LEFTOVERS. The pills in ancient houses and in sealed sites
+ *     are not the output of an arrangement. They are what was lying around when
+ *     the flower stopped, on both sides, and they have been going down ever
+ *     since with nothing coming the other way.
+ */
+export const THE_EXTINCTION_IS_SYMMETRIC = {
+    aboveTheLid:
+        'They know how. The method is intact up there and always has been - nothing was lost above, and an immortal asked about it can describe the refinement in full. What they cannot do is the same thing nobody down here can do: find the flower. It went from their side too.',
+    notADependency:
+        'There was never a standing arrangement in which the lower world grew something the upper world needed. Both sides had the flower because the flower grew, and both sides stopped when it stopped.',
+    whyThisIsBetter:
+        'Because it removes the one comforting reading. A supply chain can be repaired, a refusal can be argued with, and a gatekeeper can be petitioned by somebody sufficiently remarkable. An extinction on both sides of the Lid cannot be any of those, and the pills in the world are the last pills.',
+    whatIsLeft:
+        'Leftovers, on both sides, from when it could be made at all. Nobody is producing and nobody has produced for an age.'
+} as const;
+
+/**
+ * THE TRADE: material up, a finished pill back.
+ *
+ * ONE THING THAT CAN HAPPEN, NOT A ROUTE. A house that finds the flower in a
+ * sealed site can send it up through an answering channel and receive a
+ * finished pill in return, because the method survives above and only the
+ * material is gone. It composes out of parts that already exist -
+ * `IMMORTAL_CHANNELS` and `MillennialOffering` already model sending things
+ * across, and the Deep Survey channel already returns objects nobody below can
+ * make - so nothing new is being modelled here. What is being written down is
+ * that there is finally something worth sending that is not devotion.
+ *
+ * It must stay rare and slow. Both ends are scarce: the flower is nearly gone,
+ * and an ancestor is not a shop. This is a once-in-generations undertaking and
+ * it would be a mistake to let it become a supply line - see
+ * `THE_EXTINCTION_IS_SYMMETRIC`, which is the reason there is no line to
+ * become.
+ *
+ * THE RETURN IS NOT GUARANTEED, and that has to stay true or the whole thing
+ * proves nothing. Sending is the house's decision. Answering is not.
+ *
+ * AND IT IS PROOF OF A LIVING ANCESTOR, which is the sharpest thing about it.
+ * `claimsLivingAncestor` and `claimIsTrue` are separate fields in `sects.ts`
+ * precisely because a house frequently does not know: a channel that has gone
+ * quiet is equally consistent with death, with disinterest, with a war up
+ * there, and with an object down here that has stopped working. There is no
+ * way to ask. Sending material up and getting a pill back collapses that
+ * ambiguity in the only way the setting allows - not by asking, but by
+ * something coming back - so the trade is also the one reliable instrument a
+ * house has for settling its own most important claim.
+ *
+ * Which is why a house that has never tried, or tried and heard nothing, has an
+ * excellent reason not to discuss it.
+ */
+export const THE_TRADE = {
+    whatItIs:
+        'A house finds the flower in a sealed site, sends it up through whatever channel it has, and a finished pill comes back down. The method is above and the material is below, and for one transaction the two are in the same place.',
+    frequency:
+        'Once in generations, if that. Both ends are scarce and neither is on a schedule. It is an event, not an arrangement, and treating it as a route is how a setting gets a supply line it was not supposed to have.',
+    whoCanAttemptIt:
+        'A house with an answering channel and something to send. That is a short list in both directions, and the intersection has been empty for as long as anybody can check, because the houses with channels have had nothing to put in them.',
+    theReturnIsNotGuaranteed:
+        'Sending is the house\'s decision and answering is not. A house that spends its one find on an offering and receives nothing has learned something devastating about its own ancestor, and has spent the find learning it. That outcome has to be possible or the trade proves nothing.',
+    itProvesTheClaim:
+        'Something came back. That is the only evidence the setting permits and it is unforgeable: `claimIsTrue` cannot be established by asking, by a tablet, by a lineage or by an audit, and a returned pill settles it in front of witnesses who watched the material go up.',
+    theSilenceIsAlsoEvidence:
+        'A house that sends and hears nothing has established the opposite, at ruinous cost, and will not be publishing it. This is the better half of the mechanic: the failure is as informative as the success and far more likely, and a house that will not say whether it has ever tried is telling you something.',
+    whoCannotDoItAtAll:
+        'Anybody with no ancestor above. The Azure Cloud Pavilion is the case in the catalog: an ancestor three hundred and eighty years across is not somebody the Pavilion can make this kind of request of, and the Pavilion knows it.'
+} as const;
+
+/**
+ * `believed_to_hold` currently has nobody in it, and the variant is kept
+ * anyway: a house nobody can confirm either way is a legitimate state of the
+ * world and the register has to be able to say it. The one candidate for it
+ * was the Azure Cloud Pavilion, and that resolved into a fact with a cause,
+ * which is worth more than an unknown.
+ */
 export type MedicineStanding = 'holds_one' | 'spent_theirs' | 'believed_to_hold' | 'never_had_one';
 
 export interface MedicineHolding {
@@ -493,10 +673,29 @@ export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
         whatBecameOfIt: null
     },
     {
+        // NONE, AND THE REASON IS THE SAME ONE AS EVERYTHING ELSE ABOUT THEM.
+        //
+        // This entry read `believed_to_hold` for a while, on the argument that
+        // the ambiguity was worth more than either answer. It is not. An
+        // unknown is only an unknown; an absence with a cause is a fact about
+        // the house. The Pavilion has none because Ru Anjing crossed three
+        // hundred and eighty years ago, and a pill of this kind comes from an
+        // ancestor with an age behind them - somebody who was given one, or
+        // kept one back, in a period when there were still flowers. She was not
+        // up there when there were.
+        //
+        // THREE ABSENCES, ONE CAUSE, and the third is the one that closes it.
+        // `heritage: 'recent'` already showed up as an empty province array in
+        // `regions.ts`; it shows up here as an empty medicine column; and it
+        // shows up a third time in `THE_TRADE`, because an ancestor three
+        // hundred and eighty years across is not somebody a house can make that
+        // kind of request of. No province, no medicine, no counterparty - and
+        // every one of them is the same sentence about the same woman crossing
+        // too recently.
         factionId: 'apex-azure-cloud',
-        standing: 'believed_to_hold',
+        standing: 'never_had_one',
         howItIsKnown:
-            'Ru Anjing spent eleven years divesting and the Pavilion has never published the list. Every rival has reasoned that a woman settling her sister\'s position would have left this if she had it, and every rival has also noticed that this is reasoning rather than evidence. The Pavilion has never confirmed or denied, and the ambiguity is worth more to it than either answer.',
+            'The Pavilion says so when asked, which nobody expected and which is why the province stopped asking. Ru Anjing spent eleven years divesting and the list, whatever else is on it, has never had one of these on it - because she crossed three hundred and eighty years ago and this is a thing an ancestor accumulates over an age. The Pavilion is the youngest apex in the world and this is the third place that shows.',
         whatBecameOfIt: null
     },
     {
@@ -701,6 +900,45 @@ export function materialGatedArts(): AncientArt[] {
     return ANCIENT_ARTS.filter(a => a.upkeepHerbId !== null);
 }
 
+/**
+ * How many of a material are left in the world, archives and sealed sites
+ * together. The one number the whole search economy turns on.
+ */
+export function unitsLeftInTheWorld(herbId: string): number {
+    const m = getLostMaterial(herbId);
+    if (!m) return 0;
+    return m.remaining.inArchives + m.remaining.unfound;
+}
+
+/**
+ * Extinct material sitting in a site nobody has opened, by site id.
+ *
+ * This is what makes an extinct herb a destination rather than a wall: a party
+ * that reaches this site finds a countable quantity of a thing that is not
+ * anywhere else, and taking it is permanent in both directions - they have it
+ * and the world has that much less.
+ */
+export function ancientMaterialsAt(siteId: string): {
+    herbId: string;
+    units: number;
+    note: string;
+}[] {
+    const out: { herbId: string; units: number; note: string }[] = [];
+    for (const m of LOST_MATERIALS) {
+        for (const place of m.remaining.placements) {
+            if (place.siteId === siteId) {
+                out.push({ herbId: m.herbId, units: place.units, note: place.note });
+            }
+        }
+    }
+    return out;
+}
+
+/** Every site holding any of it, for anything that wants to seed a map. */
+export function sitesHoldingAncientMaterial(): string[] {
+    return [...new Set(LOST_MATERIALS.flatMap(m => m.remaining.placements.map(p => p.siteId)))];
+}
+
 export function getLostMaterial(herbId: string): LostMaterial | undefined {
     return LOST_MATERIALS.find(m => m.herbId === herbId);
 }
@@ -744,11 +982,11 @@ export function ancientTierReferences(): {
             ...LOST_MATERIALS.map(m => m.herbId),
             ...materialGatedArts().map(a => a.upkeepHerbId as string),
             ...STOCKED_INHERITANCES.map(s => s.upkeepHerbId),
-            THE_THOUSAND_AUTUMN_PILL.extinctIngredientHerbId
+            THE_RUIN_MEDICINE.extinctIngredientHerbId
         ],
-        pills: [THE_THOUSAND_AUTUMN_PILL.pillId],
+        pills: [THE_RUIN_MEDICINE.pillId],
         recipes: [
-            THE_THOUSAND_AUTUMN_PILL.recipeId,
+            THE_RUIN_MEDICINE.recipeId,
             ...LOST_MATERIALS.flatMap(m => m.closedRecipeIds)
         ],
         techniques: [

@@ -72,13 +72,12 @@ export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
     'recipe-soul-returning-clarity',
     'recipe-millennium-condensation',
     'recipe-tribulation-guiding',
-    'recipe-immortal-longevity',
-    // Recovered in the ordinary way and then not secret at all. The
-    // Thousand-Autumn formula circulates freely among the houses that hold a
-    // copy, because a method whose first ingredient stopped growing is not
-    // worth guarding - which is what makes the loss legible rather than
-    // mysterious, and is the whole difference between this and a lost art.
-    'recipe-thousand-autumn'
+    // Recovered in the ordinary way and then not secret at all. This formula
+    // circulates freely among the houses that hold a copy, because a method
+    // whose first ingredient stopped growing is not worth guarding - which is
+    // what makes the loss legible rather than mysterious, and is the whole
+    // difference between a lost medicine and a lost art.
+    'recipe-immortal-longevity'
 ]);
 
 const RECIPE_SOURCE_NOTES: Record<RecipeProvenance, string> = {
@@ -602,41 +601,37 @@ const RECIPE_DATA: readonly Recipe[] = [
         requiredOrdinal: 42
     },
     {
+        // THE FORMULA THAT SURVIVES AND CANNOT BE FILLED.
+        //
+        // Nothing about this entry is special, and that is the point. It parses
+        // against `RecipeSchema`, all three ingredients resolve to real herbs,
+        // its success rate sits in the chaos band, its `requiredOrdinal` clears
+        // every harvest site it names, and the ingredient bill comes out at a
+        // healthy margin under the pill. Every invariant this file commits to
+        // holds. A player can read it, cost it, and go shopping.
+        //
+        // They will not find the first ingredient, because it is in
+        // `EXTINCT_HERB_IDS` and nothing forages it. That is the entire
+        // mechanism behind "they have the recipe just not the materials" - one
+        // set membership in `herbs.ts`, no rule in this file, and no branch in
+        // the refiner. The knowledge survived; the input did not.
+        //
+        // THE CHAOS SEED CAME OFF, deliberately. It used to head this list, and
+        // it is the wrong kind of scarce: four are known and three are
+        // accounted for, so it is rare in the way a famous object is rare.
+        // Of the flower, zero are known. A formula with two impossible
+        // ingredients says less than one with a single impossible ingredient,
+        // because the second one blurs which absence is doing the work.
         id: 'recipe-immortal-longevity',
         name: 'Immortal Longevity Pill Formula',
         producesPillId: 'pill-immortal-longevity',
         ingredients: [
-            { itemId: 'herb-chaos-seed', quantity: 1 },
+            { itemId: 'herb-thousand-autumn-chrysanthemum', quantity: 1 },
             { itemId: 'herb-heavenly-tribulation-cinder-fruit', quantity: 1 },
-            { itemId: 'herb-immortal-cypress-heartwood', quantity: 4 }
+            { itemId: 'herb-immortal-cypress-heartwood', quantity: 2 }
         ],
         baseSuccessRate: 0.05,
         requiredOrdinal: 43
-    },
-    {
-        // THE FORMULA THAT SURVIVES AND CANNOT BE FILLED.
-        //
-        // Nothing about this entry is special and that is the point. It parses
-        // against `RecipeSchema`, both its ingredients resolve to real herbs,
-        // its success rate sits in the chaos band, its `requiredOrdinal` clears
-        // every harvest site it names, and the ingredient bill comes out at a
-        // healthy margin under the pill. Every invariant this file commits to
-        // holds. A player can read it, price it, and go shopping.
-        //
-        // And they will not find the first ingredient, because it is in
-        // `EXTINCT_HERB_IDS` and nothing forages it. That is the entire
-        // mechanism behind "they have the recipe just not the materials" - one
-        // set membership in `herbs.ts`, no rule anywhere in this file, and no
-        // branch in the refiner. The knowledge survived; the input did not.
-        id: 'recipe-thousand-autumn',
-        name: 'Thousand-Autumn Pill Formula',
-        producesPillId: 'pill-thousand-autumn',
-        ingredients: [
-            { itemId: 'herb-thousand-autumn-chrysanthemum', quantity: 1 },
-            { itemId: 'herb-kalpa-surviving-branch', quantity: 1 }
-        ],
-        baseSuccessRate: 0.09,
-        requiredOrdinal: 42
     }
 ] as const;
 

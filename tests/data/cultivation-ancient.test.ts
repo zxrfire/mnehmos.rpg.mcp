@@ -62,7 +62,12 @@ import {
     MEDICINE_HOLDINGS,
     MODERN_AND_ANCIENT,
     STOCKED_INHERITANCES,
-    THE_THOUSAND_AUTUMN_PILL,
+    THE_EXTINCTION_IS_SYMMETRIC,
+    THE_TRADE,
+    ancientMaterialsAt,
+    sitesHoldingAncientMaterial,
+    unitsLeftInTheWorld,
+    THE_RUIN_MEDICINE,
     absenceTierOf,
     ancientTechniques,
     housesStillHoldingMedicine,
@@ -78,7 +83,15 @@ import {
     findHerbsForOrdinal,
     rollHerb
 } from '../../src/data/cultivation/herbs.js';
-import { getPill } from '../../src/data/cultivation/pills.js';
+import {
+    MODERN_REFINEMENT,
+    NOT_REFINABLE_BELOW_THE_LID_PILL_IDS,
+    NOT_REFINABLE_NOTES,
+    PILLS,
+    getPill,
+    lifespanRefusalReason,
+    lifespanYearsFor
+} from '../../src/data/cultivation/pills.js';
 import { getRecipe } from '../../src/data/cultivation/recipes.js';
 import { TECHNIQUES, getTechnique } from '../../src/data/cultivation/techniques.js';
 import { SITES } from '../../src/data/cultivation/inheritance-trials.js';
@@ -448,40 +461,89 @@ describe('extinction', () => {
     });
 
     it('THE RECIPE SURVIVES: the formula is readable, complete, and cannot be filled', () => {
-        const recipe = getRecipe(THE_THOUSAND_AUTUMN_PILL.recipeId);
+        const recipe = getRecipe(THE_RUIN_MEDICINE.recipeId);
         expect(recipe, 'the formula does not exist').toBeDefined();
         // Every invariant recipes.ts commits to holds. It is an ordinary
         // formula. It simply names something that is not in the world.
         expect(recipe!.ingredients.some(i => EXTINCT_HERB_IDS.has(i.itemId)))
             .toBe(true);
         expect(recipe!.ingredients.every(i => HERBS.some(h => h.id === i.itemId))).toBe(true);
-        expect(recipe!.producesPillId).toBe(THE_THOUSAND_AUTUMN_PILL.pillId);
+        expect(recipe!.producesPillId).toBe(THE_RUIN_MEDICINE.pillId);
     });
 });
 
-// ─────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────
 describe('the thousand-year medicine', () => {
+    it('IS ONE OBJECT: the ruin medicine and the Immortal Longevity Pill are the same row', () => {
+        // Two rows for one object is the parallel-catalog mistake AGENTS.md
+        // forbids, and it was briefly committed here. The retired id must stay
+        // retired: an orphan that still resolves is worse than one that does
+        // not, because it reads as a second thing.
+        expect(PILLS.some(p => p.id === 'pill-thousand-autumn'), 'the retired row came back')
+            .toBe(false);
+        expect(getPill('pill-thousand-autumn')).toBeUndefined();
+        expect(THE_RUIN_MEDICINE.pillId).toBe('pill-immortal-longevity');
+        expect(getPill(THE_RUIN_MEDICINE.pillId), 'the surviving row is gone').toBeDefined();
+    });
+
     it('is an ordinary pill row, and take it away and nothing is left over', () => {
-        const pill = getPill(THE_THOUSAND_AUTUMN_PILL.pillId);
-        expect(pill, 'the medicine is not in the pill catalog').toBeDefined();
-        expect(pill!.effect, 'the medicine invented a new effect').toBe('extend_lifespan');
+        const pill = getPill(THE_RUIN_MEDICINE.pillId)!;
+        expect(pill.effect, 'the medicine invented a new effect').toBe('extend_lifespan');
         // A flat thousand at any level. The flatness is what prices it, and
         // nothing anywhere branches on who swallows it.
-        expect(pill!.potency).toBe(1_000);
-        // Different in kind rather than bigger: the whole rest of the lifespan
+        expect(pill.potency).toBe(1_000);
+        // Different in kind rather than bigger: every other rung of this
         // ladder is a bargain with a price attached, and this one is not.
-        expect(pill!.toxicity, 'the medicine costs the taker something').toBe(0);
-        for (const other of TECHNIQUES) void other; // no technique should be involved at all
-        const otherLifespanPills = (
-            ['pill-decade-lengthening', 'pill-two-decade-longevity', 'pill-century-lotus',
-             'pill-thousand-year-cypress', 'pill-immortal-longevity'] as const
-        ).map(id => getPill(id)!);
-        for (const p of otherLifespanPills) {
-            expect(p.toxicity, `${p.id} should be a bargain and is free`).toBeGreaterThan(0);
-        }
+        expect(pill.toxicity, 'the medicine costs the taker something').toBe(0);
         // The most valuable object the catalog can price, and not for sale.
-        for (const p of otherLifespanPills) {
-            expect(pill!.value).toBeGreaterThan(p.value);
+        for (const p of PILLS) {
+            if (p.id === pill.id) continue;
+            expect(pill.value, `${p.id} is priced above the ruin medicine`)
+                .toBeGreaterThan(p.value);
+        }
+    });
+
+    it('THE LADDER: nothing refinable exceeds 300, and nothing above it exists at all', () => {
+        const lifespan = PILLS.filter(p => p.effect === 'extend_lifespan');
+        for (const p of lifespan) {
+            if (NOT_REFINABLE_BELOW_THE_LID_PILL_IDS.has(p.id)) {
+                // The only exemption, and it is an exemption from a rule about
+                // living alchemists rather than a rule about this object.
+                expect(NOT_REFINABLE_NOTES[p.id], `${p.id} is exempt and does not say why`)
+                    .toBeTruthy();
+                continue;
+            }
+            expect(p.potency, `${p.id} is refinable today and exceeds the ceiling`)
+                .toBeLessThanOrEqual(MODERN_REFINEMENT.maxLifespanYears);
+            // And every refinable rung is a bargain. The ruin medicine is the
+            // only free one, which is the whole of what makes it categorical.
+            expect(p.toxicity, `${p.id} is refinable today and costs nothing`).toBeGreaterThan(0);
+        }
+        // Nothing anywhere sits above the ruin medicine.
+        const ceiling = getPill(THE_RUIN_MEDICINE.pillId)!.potency;
+        for (const p of lifespan) {
+            expect(p.potency, `${p.id} grants more than the ruin medicine`)
+                .toBeLessThanOrEqual(ceiling);
+        }
+    });
+
+    it('A REFINEMENT IS BOUNDED BY THE REFINER, and the rule never names an object', () => {
+        const cypress = getPill('pill-thousand-year-cypress')!;
+        const medicine = getPill(THE_RUIN_MEDICINE.pillId)!;
+        const below = MODERN_REFINEMENT.lifespanCeilingOrdinal;
+
+        // At and under Nascent Soul a modern pill does what it says.
+        expect(lifespanYearsFor(cypress, below)).toBe(cypress.potency);
+        expect(lifespanRefusalReason(cypress, below)).toBeNull();
+
+        // One rung higher it does nothing at all, at any price, for anybody.
+        expect(lifespanYearsFor(cypress, below + 1)).toBe(0);
+        expect(lifespanRefusalReason(cypress, below + 1)).toBeTruthy();
+
+        // And the exemption is about who made it, so it holds everywhere.
+        for (const ordinal of [0, below, below + 1, MAX_ORDINAL]) {
+            expect(lifespanYearsFor(medicine, ordinal), `medicine at ${ordinal}`).toBe(1_000);
+            expect(lifespanRefusalReason(medicine, ordinal)).toBeNull();
         }
     });
 
@@ -505,6 +567,47 @@ describe('the thousand-year medicine', () => {
         // handful, "ancient sects hold exactly one" has stopped being true.
         expect(MEDICINE_HOLDINGS.length).toBeLessThanOrEqual(8);
         expect(new Set(MEDICINE_HOLDINGS.map(h => h.factionId)).size).toBe(MEDICINE_HOLDINGS.length);
+    });
+
+    it('THREE ABSENCES, ONE CAUSE: a recent apex holds no province and no medicine', () => {
+        // The Pavilion has none because its ancestor crossed too recently to
+        // have accumulated one. That is the same fact as its empty province
+        // array, and asserting the link is what stops somebody quietly handing
+        // the youngest apex a pill later on because it seemed unfair.
+        for (const apex of APEX_INSTITUTIONS) {
+            if (apex.heritage !== 'recent') continue;
+            expect(apex.holdsProvinceIds, `${apex.id} is recent and holds a province`).toEqual([]);
+            const holding = MEDICINE_HOLDINGS.find(h => h.factionId === apex.id);
+            expect(holding, `${apex.id} is recent and has no medicine entry at all`).toBeDefined();
+            expect(holding!.standing, `${apex.id} is recent and holds a medicine`)
+                .toBe('never_had_one');
+        }
+        // And the ancient ones are where the medicine actually is.
+        for (const h of housesStillHoldingMedicine()) {
+            const apex = APEX_INSTITUTIONS.find(a => a.id === h.factionId);
+            if (!apex) continue;
+            expect(apex.heritage, `${apex.id} holds one and is not ancient`).toBe('ancient');
+        }
+    });
+
+    it('SYMMETRIC EXTINCTION: the immortal realm is not a source either', () => {
+        // The obvious construction is a cross-Lid dependency broken at the
+        // bottom. The world does not have one, and the difference is load
+        // bearing: a supply chain can be repaired and a refusal argued with.
+        expect(THE_EXTINCTION_IS_SYMMETRIC.aboveTheLid.length).toBeGreaterThan(100);
+        expect(THE_EXTINCTION_IS_SYMMETRIC.notADependency.length).toBeGreaterThan(80);
+        expect(THE_EXTINCTION_IS_SYMMETRIC.whatIsLeft.length).toBeGreaterThan(60);
+    });
+
+    it('THE TRADE is an event, not a route, and can come back empty', () => {
+        // Both halves have to stay true. If the return were guaranteed the
+        // trade would prove nothing about a living ancestor, and if it were
+        // routine the setting would have the supply line it does not have.
+        expect(THE_TRADE.theReturnIsNotGuaranteed.length).toBeGreaterThan(100);
+        expect(THE_TRADE.itProvesTheClaim.length).toBeGreaterThan(100);
+        expect(THE_TRADE.theSilenceIsAlsoEvidence.length).toBeGreaterThan(100);
+        expect(THE_TRADE.frequency.length).toBeGreaterThan(60);
+        expect(THE_TRADE.whoCannotDoItAtAll.length).toBeGreaterThan(60);
     });
 });
 
@@ -550,6 +653,74 @@ describe('copies, stock and stocked inheritances', () => {
             if (!art?.worldSupplyCeiling) continue;
             expect(s.carriesToMastery, `${s.siteId} does not get past the world's supply`)
                 .toBeGreaterThan(art.worldSupplyCeiling);
+        }
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+describe('the remaining stock, seeded into the world', () => {
+    it('every placement names a real site, and the counts add up', () => {
+        for (const m of LOST_MATERIALS) {
+            const placed = m.remaining.placements.reduce((n, p) => n + p.units, 0);
+            expect(placed, `${m.herbId} placements do not match its unfound count`)
+                .toBe(m.remaining.unfound);
+            for (const place of m.remaining.placements) {
+                expect(SITES.some(site => site.id === place.siteId),
+                    `${m.herbId} is placed at unknown site ${place.siteId}`).toBe(true);
+                expect(place.units, `${m.herbId} at ${place.siteId}`).toBeGreaterThan(0);
+                expect(place.note.length, `${m.herbId} at ${place.siteId} note`)
+                    .toBeGreaterThan(60);
+            }
+            expect(unitsLeftInTheWorld(m.herbId))
+                .toBe(m.remaining.inArchives + m.remaining.unfound);
+            expect(m.remaining.whatIsKnownOfTheCount.length, `${m.herbId} count note`)
+                .toBeGreaterThan(80);
+            // The prose form is still carried for the register, and it is not
+            // allowed to be the empty gesture the structured counts replaced.
+            expect(m.remainingStock.length, `${m.herbId} prose`).toBeGreaterThan(60);
+        }
+    });
+
+    it('SCARCE AND LEGIBLE: small enough that a party could learn the figure', () => {
+        for (const m of LOST_MATERIALS) {
+            const total = unitsLeftInTheWorld(m.herbId);
+            // Something has to be findable, or the extinction is a wall rather
+            // than a search with a destination.
+            expect(m.remaining.unfound, `${m.herbId} has nothing left to find`).toBeGreaterThan(0);
+            // And it has to be countable on two hands. A figure in the
+            // hundreds cannot be established by anybody, which is the whole
+            // property the counts exist to give the world.
+            expect(total, `${m.herbId} is too plentiful to be scarce`).toBeLessThanOrEqual(12);
+        }
+        // The flower is the sharpest case: one, alive, in a sealed site.
+        const flower = LOST_MATERIALS.find(
+            m => m.herbId === THE_RUIN_MEDICINE.extinctIngredientHerbId
+        )!;
+        expect(flower.remaining.inArchives, 'somebody has the flower in a jar').toBe(0);
+        expect(unitsLeftInTheWorld(flower.herbId), 'there is more than one flower left').toBe(1);
+    });
+
+    it('resolves material by site, and every holding site is reachable', () => {
+        const sites = sitesHoldingAncientMaterial();
+        expect(sites.length).toBeGreaterThan(0);
+        for (const id of sites) {
+            const found = ancientMaterialsAt(id);
+            expect(found.length, `${id} is listed and holds nothing`).toBeGreaterThan(0);
+            for (const f of found) {
+                expect(EXTINCT_HERB_IDS.has(f.herbId), `${id} holds a herb that is not extinct`)
+                    .toBe(true);
+            }
+        }
+        expect(ancientMaterialsAt('site-that-does-not-exist')).toEqual([]);
+    });
+
+    it('every material with an upkeep still has something left to find', () => {
+        // An art gated on a material with nothing anywhere is not a standing
+        // commitment, it is a dead entry. The upkeep only means anything while
+        // the search has a destination.
+        for (const art of materialGatedArts()) {
+            expect(unitsLeftInTheWorld(art.upkeepHerbId!), `${art.techniqueId} upkeep is gone`)
+                .toBeGreaterThan(0);
         }
     });
 });
