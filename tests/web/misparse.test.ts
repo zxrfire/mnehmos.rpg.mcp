@@ -2646,3 +2646,65 @@ describe('attacking a house', () => {
         expect(refusedCall(result)).not.toBeNull();
     }, 120_000);
 });
+
+describe('asking about yourself reaches your own sheet', () => {
+    /**
+     * Found by playing, and the misroute is the interesting half.
+     *
+     * "status" and "how am I doing" worked. "what is my situation", "who am I",
+     * "am I hungry" and "how is my health" all refused outright, and "tell me
+     * about myself" was WORSE than a refusal: the status rule sat after the
+     * interact rule, so the sentence matched "tell me about ...", took
+     * `myself` as a person, found no such person, and put the words to
+     * whichever stranger was nearest. Live it read as "You put the words to
+     * Bai Kekuan. They look at you the way people look at a sentence with a
+     * hole in it."
+     *
+     * A player cannot be expected to guess which half of that split they are
+     * in, and the phrasings that failed are the ones somebody types when they
+     * are hurt or hungry - which is exactly when the sheet matters, because it
+     * is where satiety, HP and the untreated-wound count are printed.
+     */
+    const SELF = [
+        'what is my situation',
+        'who am I',
+        'am I hungry',
+        'am I starving',
+        'am I injured',
+        'how is my health',
+        'what is my condition',
+        'tell me about myself',
+        'describe myself',
+        'check myself',
+        'look at myself',
+        // The two that already worked, kept so a rewrite cannot lose them.
+        'status',
+        'how am I doing'
+    ];
+
+    for (const said of SELF) {
+        it(`routes "${said}" to the sheet`, () => {
+            expect(parseIntent(said).action).toBe('status');
+        });
+    }
+
+    /**
+     * The guard on the possessive. `tell me about myself` is self-directed and
+     * bare `about myself` is not, because a player can perfectly well ask
+     * another person about themselves - and that is a conversation, not a
+     * status read. If this ever flips, the self rule has been widened too far.
+     */
+    it('leaves a question put to somebody else as a conversation', () => {
+        expect(parseIntent('I ask Cao Nuozhi about myself').action).toBe('interact');
+        expect(parseIntent('I talk to Bai Kekuan').action).toBe('interact');
+    });
+
+    /**
+     * Reading your own sheet is free. It is the action a player takes when they
+     * suspect they are in trouble, and charging a turn for looking would make
+     * finding out cost the thing they are trying to preserve.
+     */
+    it('costs nothing, because finding out you are dying must not cost a turn', () => {
+        expect(TIME_CONSUMING_ACTIONS).not.toContain('status' as ActionName);
+    });
+});
