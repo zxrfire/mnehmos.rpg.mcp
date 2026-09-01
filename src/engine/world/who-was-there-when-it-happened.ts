@@ -57,6 +57,7 @@
 
 import { forStream } from '../cultivation/rng.js';
 import { appendFact, type HistoricalFact, type PendingFact } from './history.js';
+import { foldOccurrenceInto, rowThisRecurs } from './a-fact-that-keeps-happening-is-one-row.js';
 import type { NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 
@@ -139,11 +140,16 @@ export function whoWasThere(state: WorldState, input: PresenceInput): string[] {
  * `witnessIds` supplied by the caller is taken as given - `gatherings.ts` knows
  * exactly who attended and should not have that overwritten by a draw. Left
  * empty, presence is worked out from the place.
+ *
+ * A statement the ledger already holds is EXTENDED rather than repeated. See
+ * `a-fact-that-keeps-happening-is-one-row.ts` for what counts as the same fact
+ * and why the merge cannot lose anything. Pass `recur: false` where a caller
+ * genuinely needs its own row whatever else is on the books.
  */
 export function appendWorldFact(
     state: WorldState,
     pending: PendingFact,
-    opts: { bystanders?: boolean } = {}
+    opts: { bystanders?: boolean; recur?: boolean } = {}
 ): HistoricalFact {
     const witnessIds = pending.witnessIds.length > 0
         ? pending.witnessIds
@@ -154,10 +160,46 @@ export function appendWorldFact(
             visibility: pending.visibility,
             factionIds: pending.factionIds
         });
+    const occurrence: PendingFact = { ...pending, witnessIds };
 
-    const stored = appendFact(state.history, { ...pending, witnessIds });
+    const existing = opts.recur === false ? null : rowThisRecurs(state.history, occurrence);
+    if (existing) {
+        foldOccurrenceInto(existing, occurrence);
+        // Linked against the day it happened, not the day the row opened: the
+        // people standing there today were confirmed alive today.
+        linkFactToWhoItNames(state, existing, occurrence.day);
+        return existing;
+    }
+
+    const stored = appendFact(state.history, occurrence);
     linkFactToWhoItNames(state, stored);
     return stored;
+}
+
+/**
+ * Where each id sits in `state.npcs`, held beside the state.
+ *
+ * `findIndex` per named person was the honest first version and it is quadratic:
+ * a two-thousand-year world names about five people per fact across seventeen
+ * thousand facts, against a roster ten thousand deep, which is nine hundred
+ * million comparisons spent on a lookup. Kept in a WeakMap for the same reason
+ * the ledger index is - it must never be serialised - and brought up to date
+ * incrementally, because the roster only ever grows at the end and is replaced
+ * in place everywhere else.
+ */
+const NPC_INDEXES = new WeakMap<WorldState, { byId: Map<string, number>; upTo: number }>();
+
+function npcIndexFor(state: WorldState): Map<string, number> {
+    let index = NPC_INDEXES.get(state);
+    if (!index || index.upTo > state.npcs.length) {
+        index = { byId: new Map(), upTo: 0 };
+        NPC_INDEXES.set(state, index);
+    }
+    for (let at = index.upTo; at < state.npcs.length; at++) {
+        index.byId.set(state.npcs[at].id, at);
+    }
+    index.upTo = state.npcs.length;
+    return index.byId;
 }
 
 /**
@@ -165,19 +207,38 @@ export function appendWorldFact(
  *
  * Separate from the append so that a fact written by some other path can still
  * be linked, and so that the linking can be tested without a ledger.
+ *
+ * `onDay` is the day of THIS occurrence, which is the row's own day for an
+ * ordinary fact and the later date for a recurrence folded into an existing row.
+ * Somebody standing there in year 3000 was confirmed alive in year 3000, not in
+ * year 1004 when the row opened.
  */
-export function linkFactToWhoItNames(state: WorldState, fact: HistoricalFact): void {
+export function linkFactToWhoItNames(
+    state: WorldState,
+    fact: HistoricalFact,
+    onDay = fact.day
+): void {
     const named = new Set<string>([...fact.actors.map(a => a.id), ...fact.witnessIds]);
+    if (named.size === 0) return;
+    const byId = npcIndexFor(state);
     for (const id of named) {
-        const at = state.npcs.findIndex(n => n.id === id);
-        if (at < 0) continue;
+        const at = byId.get(id);
+        if (at === undefined) continue;
         const npc = state.npcs[at];
-        if (npc.historyFactIds.includes(fact.id)) continue;
+        // Guard the index rather than trust it: a caller that reordered the
+        // roster would otherwise write onto the wrong person, which is a far
+        // worse failure than a missed link.
+        if (!npc || npc.id !== id) continue;
+        const alreadyLinked = npc.historyFactIds.includes(fact.id);
+        const confirmed = Math.max(npc.lastConfirmedOnDay, onDay);
+        if (alreadyLinked && confirmed === npc.lastConfirmedOnDay) continue;
         state.npcs[at] = {
             ...npc,
-            historyFactIds: npc.historyFactIds.concat(fact.id),
+            historyFactIds: alreadyLinked
+                ? npc.historyFactIds
+                : npc.historyFactIds.concat(fact.id),
             // Somebody who was standing there was, demonstrably, still around.
-            lastConfirmedOnDay: Math.max(npc.lastConfirmedOnDay, fact.day)
+            lastConfirmedOnDay: confirmed
         };
     }
 }
