@@ -1138,17 +1138,62 @@ export async function handleAdmission(args: z.infer<typeof AdmissionSchema>): Pr
 }
 
 /** Change what the house hands its intake. The most consequential act here. */
+/**
+ * Technique ids as the names a player would say back.
+ *
+ * An id the catalog does not hold passes through unchanged rather than being
+ * dropped: an art a house genuinely teaches is worth naming even when this
+ * process cannot resolve it, and inventing a name for it would be worse.
+ */
+function namesOf(ids: readonly string[]): string[] {
+    return ids.map(id => getTechnique(id)?.name ?? id);
+}
+
 export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): Promise<object> {
     const repos = ensureCultivationDb();
     const view = loadHouse(repos, args);
     if (isGuidingErrorBody(view)) return view;
 
+    const teach = args.teach ?? [];
+    const retire = args.retire ?? [];
+
+    // ── READING THE SHELF IS NOT DECREEING WHAT IS ON IT ─────────────────
+    //
+    // The authority gate used to run first, so a member asking what their own
+    // house teaches was answered "Dew Servant does not do that in Azure Dew
+    // Sect. It opens at Sect Warden, and not before." That is the right refusal
+    // for rewriting a curriculum and the wrong one for looking at it: what a
+    // house hands its intake is the single most useful fact about belonging to
+    // it, every disciple in the world knows it, and it is not a secret from the
+    // people being taught out of it.
+    //
+    // So the gate moved below the read. Naming nothing is a question and is
+    // free to any member; naming something is a decree and still needs the
+    // seat. Same split `site`, `petition`, `posture`, `seal` and `offer` all
+    // follow, and the same one this file's own `expel` already uses.
+    const decreeing = teach.length > 0 || retire.length > 0;
+    if (!decreeing) {
+        return {
+            sect: { id: view.sectId, name: view.sectName },
+            teaches: view.teaches,
+            signatureTechniqueId: view.signatureTechniqueId,
+            // NAMED, not counted. "Teaches 2 methods" is the deflection this
+            // whole read exists to stop: the player asked WHAT, and a number is
+            // an answer to how many. The names are what they would go and ask
+            // to be taught.
+            narrationHint: view.teaches.length === 0
+                ? `${view.sectName} teaches nothing at all. A house with an empty shelf hands its `
+                  + 'intake a name and a stipend and no road, and that is a fact about the house.'
+                : `${view.sectName} teaches ${namesOf(view.teaches).join(', ')}. That is what a `
+                  + 'member is taught out of, and what a house hands its intake is the single most '
+                  + 'consequential thing about it over a century.',
+            note: 'Nothing was decreed. Pass teach and retire to actually change the shelf.'
+        };
+    }
+
     if (!powersAt(view.rankIndex, view.rankCount).includes('set_curriculum')) {
         return noAuthority('set_curriculum', view);
     }
-
-    const teach = args.teach ?? [];
-    const retire = args.retire ?? [];
 
     const unknown = teach.filter(id => !getTechnique(id));
     if (unknown.length > 0) {

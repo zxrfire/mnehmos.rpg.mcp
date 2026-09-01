@@ -25,6 +25,8 @@
 import { z } from 'zod';
 
 import { SITE_PHRASES } from './trials.js';
+// The board's own titles, so any name the game prints is a name it accepts.
+import { SUMMONS_ENTRIES, COMMISSION_ENTRIES } from '../engine/encounters/duties.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
 import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
 
@@ -938,8 +940,18 @@ export const SECT_ADMISSION_QUESTION =
  * What the house hands its intake, which is the most consequential thing about
  * it over a century and the only one of the four that is a generational act.
  */
+/**
+ * `my sect` is in this list, and its absence was the whole bug.
+ *
+ * The pattern knew "what the sect teaches" and not "what does MY sect teach",
+ * which is how a member phrases it - and a member is the only person for whom
+ * the question has an answer. Two words apart, and the sentence fell past the
+ * curriculum block entirely into the rule that finds you a sect to join, so a
+ * disciple asking what their own house teaches was told that knowing a name is
+ * not an introduction.
+ */
 export const SECT_CURRICULUM_NOUNS =
-    /\b(?:curriculum|curricula|what (?:we|they|the house|the sect|the school) teach(?:es)?|(?:working )?library|the shelf|teaching list|what is taught|methods (?:we|the house|the sect) teach(?:es)?)\b/;
+    /\b(?:curriculum|curricula|what (?:we|they|the house|the sect|the school|my (?:sect|house|school|clan|order)) teach(?:es)?|(?:working )?library|the shelf|teaching list|what is taught|methods (?:we|the house|the sect) teach(?:es)?|(?:my|our) (?:sect|house|school|clan|order) teach(?:es)?)\b/;
 
 export const SECT_CURRICULUM_VERBS =
     'change|changes|changing|set|sets|setting|rewrite|rewrites|rewriting|revise|revises|'
@@ -1380,6 +1392,46 @@ export function siteNamed(text: string): string | undefined {
     }
     return undefined;
 }
+
+/**
+ * A commission or summons the player has NAMED, or undefined.
+ *
+ * The same shape as {@link siteNamed} and for the same rule: any name the game
+ * prints is a name the game must accept. The board prints titles like "What a
+ * Poor District Has Instead of Monsters", and typing one back reached nothing
+ * at all - the duty branch needs a board noun and a title has none, so a
+ * sentence made entirely of what the game had just said fell through to the
+ * generic parser and out the bottom.
+ *
+ * That left the whole progression loop dead: the board lists work, prices it in
+ * contribution, changes the payout when you join a house, and had no accepting
+ * sentence of any kind. Contribution gates promotion and promotion gates the
+ * shelf, so the sect member's entire path terminated at a wall they could read
+ * and not touch.
+ *
+ * Longest first, so a title that contains another title matches the longer one.
+ */
+export function dutyNamed(text: string): string | undefined {
+    for (const phrase of DUTY_PHRASES) {
+        if (text.includes(phrase)) return phrase;
+    }
+    return undefined;
+}
+
+/**
+ * Every commission and summons title, lowercased, longest first.
+ *
+ * Built from the catalogs the board itself draws from, so a title added to the
+ * content files is typeable the day it lands and nobody has to remember to add
+ * it here. Short titles are dropped: a two-word name is a phrase somebody might
+ * use in an ordinary sentence, and stealing those is the failure mode this
+ * file's own history is full of.
+ */
+const DUTY_PHRASES: readonly string[] = [...new Set(
+    [...SUMMONS_ENTRIES, ...COMMISSION_ENTRIES].map(entry => entry.name.toLowerCase())
+)]
+    .filter(name => name.length >= 12)
+    .sort((a, b) => b.length - a.length);
 
 /**
  * One of the four steps of taking an inheritance, or null.
@@ -2632,6 +2684,31 @@ function leadershipIntent(text: string, input: string): PlannedAction | null {
         return { action: 'sect', intent: 'admission', ...(phrase ? { target: phrase } : {}) };
     }
 
+    // ── WHAT MY OWN HOUSE TEACHES, WHICH IS A QUESTION AND NOT A DECREE ──
+    //
+    // "what does my sect teach" is the single most useful fact about belonging
+    // to one, and it answered with the stranger's line: "There is one name you
+    // have for this: Azure Dew Sect. Knowing a name is not an introduction."
+    // The player IS a member. The branch below owns REWRITING the shelf, which
+    // is a patriarch's act, and nothing owned reading it - so the question fell
+    // past this block entirely and was picked up by the find-me-a-sect rule.
+    //
+    // `handleCurriculum` with neither `teach` nor `retire` is already the free
+    // read; it had no sentence pointing at it. Ahead of the decree branch and
+    // gated on a question shape, so "I stop teaching the Ash Form" is untouched.
+    //
+    // Vetoed by the learning verbs for the same reason the decree branch below
+    // is: "I train in what the sect teaches" satisfies the noun and the
+    // question word completely and is a sentence about doing the drill. A guard
+    // in `misparse.test.ts` caught that within one run of adding this, which is
+    // exactly what it is there for.
+    if (SECT_CURRICULUM_NOUNS.test(text)
+        && /\b(?:what|which|does|do|is|are|list|show|tell me)\b/.test(text)
+        && !LEARNING_RATHER_THAN_DECREEING.test(text)
+        && !usedAsVerb(text, 'change|set|rewrite|revise|decree|reform|add|retire|drop|stop teaching|start teaching')) {
+        return { action: 'sect', intent: 'curriculum' };
+    }
+
     // The shelf. Vetoed by the learning verbs: "I practise what the sect
     // teaches" satisfies this rule completely and is a sentence about doing the
     // drill, not about rewriting the library.
@@ -2916,6 +2993,30 @@ export function parseIntent(input: string): PlannedAction {
     // paid in cash, moving no standing) and `look` (which answers with the
     // weather). Requires a board noun or an institution beside a work noun, so
     // "I take whatever work the village will give me" is untouched.
+    // A title the board printed, taken by name. See `dutyNamed`: a commission
+    // is called "What a Poor District Has Instead of Monsters" and contains no
+    // board noun, so typing back exactly what the game had just said reached
+    // nothing and the whole contribution loop had no accepting sentence.
+    const namedDuty = usedAsVerb(text, DUTY_TAKING_VERBS) ? dutyNamed(text) : undefined;
+    if (namedDuty) {
+        return { action: 'sect', intent: 'duty', target: namedDuty };
+    }
+
+    // ── HOW MUCH CONTRIBUTION DO I HAVE ──────────────────────────────────
+    //
+    // `contribution` is a board noun in SECT_DUTY_PATTERN, on the sound
+    // reasoning that exactly one thing in this game pays in it. That made a
+    // question about the BALANCE return the list of jobs - not a refusal, a
+    // confident wrong answer, which is the harder kind to notice because the
+    // player reads it and moves on. Contribution gates promotion and the
+    // promotion refusal quotes it correctly, so the number exists and was
+    // reachable from everywhere except the sentence that asks for it.
+    if (/\b(?:contribution|contributions)\b/.test(text)
+        && /\b(?:how much|how many|what(?:'s| is)?|do i have|have i|my|balance|standing)\b/.test(text)
+        && !usedAsVerb(text, DUTY_TAKING_VERBS)) {
+        return { action: 'sect', intent: 'standing' };
+    }
+
     if (SECT_DUTY_PATTERN.test(text)
         || (usedAsVerb(text, DUTY_TAKING_VERBS) && DUTY_NOUNS.test(text))) {
         // A SUBJECT ONLY WHEN SOMETHING IS BEING TAKEN. Reading the wall and
@@ -3339,7 +3440,13 @@ export function parseIntent(input: string): PlannedAction {
     //
     // Deliberately narrow on the possessive: `tell me about myself` is here and
     // bare `about myself` is not, so "I ask her about myself" stays an interact.
-    if (/\b(?:who am i|what(?:'s| is) my (?:situation|condition|state)|how(?:'s| is) my (?:health|condition)|am i (?:hungry|starving|injured|hurt|wounded|bleeding|dying|healthy|ok|okay|alright|well)|my (?:health|condition|situation)|tell me about myself|describe myself|look at myself|check (?:myself|my condition))\b/.test(text)) {
+    // `how long will I live` is in this list, and it took an embarrassing while
+    // to get there. Lifespan is the central pressure of the whole game - the
+    // ladder is a race against it, stagnation is measured against it, and the
+    // sheet prints the number - and the sentence that asks for it directly fell
+    // to `unclear` through several passes of fixing everything around it.
+    if (/\b(?:who am i|what(?:'s| is) my (?:situation|condition|state)|how(?:'s| is) my (?:health|condition)|am i (?:hungry|starving|injured|hurt|wounded|bleeding|dying|healthy|ok|okay|alright|well)|my (?:health|condition|situation)|tell me about myself|describe myself|look at myself|check (?:myself|my condition))\b/.test(text)
+        || /\b(?:how long (?:will|can|do|have) i (?:live|got|got left|have left)|how (?:long|much longer) have i got|how many years (?:do i have|have i got|are left|left)|what(?:'s| is) my (?:lifespan|life ?span|age)|how old am i|when (?:will|do) i die|years left)\b/.test(text)) {
         return { action: 'status' };
     }
 
