@@ -28,10 +28,10 @@
  * this file. A crossing ends in one of five ways and only one of them cracks
  * anybody; the failure table below is a different pair of outcomes entirely,
  * and it leaves people at the rung they set out from with nothing broken above
- * them. It can still end their climb - a ruined reservoir does - because being
- * HALTED is broader than being BROKEN and more than one outcome reaches it. See
- * THE FIVE WAYS A CROSSING ENDS, immediately below the imports, before adding
- * anything to `CROSSING_OUTCOMES`.
+ * them. It never ends their climb either: only a realm's own break closes a
+ * road, so being HALTED and being BROKEN are the same set. See THE FIVE WAYS A
+ * CROSSING ENDS, immediately below the imports, before adding anything to
+ * `CROSSING_OUTCOMES`.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * WHICH TRIAL YOU FACE IS DECIDED BY WHERE YOU STAND
@@ -58,7 +58,7 @@
  *
  * THE WEIGHTS LIVE ON THE OUTCOME, NOT ON THE TRIAL, and that is the whole
  * reason for the shape. The named set - foundation destroyed, mad, half mad,
- * maimed, halted, span burnt - is explicitly illustrative rather than
+ * maimed, reservoir ruined, span burnt - is explicitly illustrative rather than
  * exhaustive, so a per-boundary table of hard-coded outcomes would mean a tenth
  * outcome touched nine boundaries. Written this way, a tenth outcome is one
  * object appended to the registry with weights wherever it applies, and every
@@ -86,10 +86,11 @@
  *                          the person who left it.
  *   span burnt             `age`. Read by `lifespanPressure`, by the lifespan
  *                          death check, and by `stagnationYearsForOrdinal`.
- *   halted                 `foundationQuality` -> 'incomplete', which
+ *   reservoir ruined       `foundationQuality` -> 'incomplete', which
  *                          `assessFoundation` already produces and the whole
  *                          engine already prices at -0.08 on every subsequent
- *                          crossing.
+ *                          crossing. It does NOT halt - see the rule in THE
+ *                          FIVE WAYS A CROSSING ENDS.
  *
  * So the deltas returned here are all writes to fields that existed before this
  * file did, and the caller applies them the way it applies any other result.
@@ -152,9 +153,9 @@ import type { CultivationRNG } from './rng.js';
 //      realm below them - they genuinely made it, and `assessPower` gives them
 //      their rung's own spine - and why they will not go further.
 //
-//      It is NOT the only source of a closed road. Broken is narrower than
-//      halted, and conflating the two is how a failure gets mistaken for a
-//      break. See the section below the fifth outcome.
+//      It is also the ONLY source of a closed road, which makes broken and
+//      halted the same set. See the rule below the fifth outcome for why the
+//      realm keywords are the only things that may ever be in it.
 //
 //   3  CLEAN FAILURE. It did not take, and nothing is carried away from it but
 //      the loss. That loss is real and it is PARTIAL: a share of the price is
@@ -180,34 +181,53 @@ import type { CultivationRNG } from './rng.js';
 //      Nothing in `CROSSING_OUTCOMES` mints a row from `BROKEN_STATUSES`, and
 //      nothing should be added that does.
 //
-//      What it CAN do is close the road anyway. See below; that is a separate
-//      question from which of the five this was.
+//      AND IT NEVER CLOSES THE ROAD, however grave it is. A ruined reservoir
+//      is the worst thing in the failure table and the ladder still lets them
+//      walk up to the next wall. See the rule below the fifth outcome.
 //
 //   5  DEATH. The wall was the end of it.
 //
 // ── AND BEING HALTED IS A STATE, NOT A SIXTH OUTCOME ─────────────────────
 //
-// The five exhaust the ways a CROSSING RESOLVES. They do not exhaust the ways a
-// road closes, and reading them as though they did is the mistake this section
-// exists to head off.
+// ONE ROUTE, AND IT IS OUTCOME 2. The whole rule in a line:
 //
-// More than one outcome can leave somebody permanently unable to advance. A
-// broken success does it through the structure the crossing was for. A failure
-// with sequelae can do it too - `reservoir_ruined` cracks the reservoir itself,
-// which is not a break of any rung, happens on the way to arriving nowhere, and
-// closes the road exactly as thoroughly.
+//   The only way to have your road closed is to cross badly at a realm wall
+//   and come away with THAT REALM'S break. Everything else is damage.
 //
-// The organising axis for everything downstream is therefore NOT which outcome
-// produced the condition. It is: IS THE ROAD CLOSED, AND WHAT WOULD OPEN IT.
-// Two people halted by different routes are the same kind of person to
-// everything that reads them - they cannot advance, and structural-repair
-// medicine of a grade almost nobody ever sees is what would change that. How
-// they arrived is a fact about their story rather than a different mechanic.
+// Anything not named for a realm's construction does not block further
+// cultivation. A heart demon does not. A severed meridian does not. A lost arm
+// does not. A ruined reservoir does not - and that one is worth naming because
+// this file used to claim it did, on `reservoir_ruined`, which is the largest
+// thing this section had wrong.
 //
-// `isHalted` is the predicate and it already reads both routes, off the wound
-// list and off nothing else. Ask it that question; ask
-// `classifyCrossingResult` the other one. They are different questions about
-// the same event and neither answers the other.
+// ── WHY THE REALM KEYWORDS ARE DIFFERENT, SO NOBODY RE-ADDS A BLOCKER ────
+//
+// The reason is mechanical rather than a matter of degree, and it is the only
+// argument that should ever be accepted for adding one:
+//
+//   THE LADDER IS A SEQUENCE OF CONSTRUCTIONS, EACH RESTING ON THE LAST.
+//   A cracked core is a fault in the APPARATUS the next crossing has to build
+//   on - the core will not carry a nascent soul because the core itself is
+//   wrong. Only damage to the construction interrupts the sequence.
+//   Everything else is damage to the BUILDER, and builders work hurt.
+//
+// A heart demon afflicts the person. So does a maiming, a fragmented soul, a
+// burnt span. They are permanent, they are ruinous, they cost rate and odds
+// and combat power, and they can make a crossing that is technically permitted
+// a very bad idea. None of them is a fault in the thing being built on.
+//
+// It is also why the medicine works the way it does: structural repair mends
+// the apparatus, and there is nothing for it to do about a heart demon or an
+// arm. See `data/cultivation/structural-repair-medicine.ts`.
+//
+// So a cultivator may cross carrying a heart demon, and the crucible may even
+// shed it on the way. That path is open in code, not merely undocumented as
+// closed: `blocksAdvancement` returns false for every wound that is not a
+// realm break, and it is the only thing `canAttemptBreakthrough` consults.
+//
+// `isHalted` asks whether the road is closed and reads exactly that set;
+// `classifyCrossingResult` asks which of the five this was. Different
+// questions, and neither answers the other.
 //
 // ── THE SYMMETRY, WHICH IS HOW TO HOLD THE SET IN MIND ───────────────────
 //
@@ -215,8 +235,8 @@ import type { CultivationRNG } from './rng.js';
 // accumulation spent - and differ in what they are carrying away. 1 and 2 land
 // the person in the same place too - the new rung - and differ in whether the
 // road onward is still there. The failures differ in cargo; the successes
-// differ in future. What cuts across both pairs is whether the road closed,
-// which is why it is a state rather than a row.
+// differ in future - and only the successes can differ in it, because closing
+// the road is something only outcome 2 does.
 //
 // WHERE EACH ONE IS PRODUCED. This file owns 4 and the wound rows behind 2.
 // `breakthrough.ts` owns which of the five happened: `rollArrivesBroken` is
@@ -430,12 +450,18 @@ export interface CrossingConsequence {
      */
     identityContinuityFactor?: number;
     /**
-     * True when this cultivator can never cross a realm boundary again.
+     * DEAD, AND KEPT ONLY UNTIL ITS READERS ARE CLEANED UP. Never set this.
      *
-     * The important one. Represented by an 'incomplete' foundation plus this
-     * flag, so a caller that persists nothing new still gets a cultivator whose
-     * odds are permanently worse, and a caller that reads it gets the hard
-     * answer. See `isHalted`.
+     * A FAILURE NEVER CLOSES THE ROAD. Only a realm's own break does, only a
+     * broken SUCCESS produces one, and `structuralBlockOn` is the bar. This
+     * flag was the one thing in the failure table that claimed otherwise, on
+     * `reservoir_ruined`, and it never even worked - the bar has never read it.
+     *
+     * Left in place rather than deleted because `breakthrough.ts` and
+     * `schema/cultivation.ts` still read it and neither is this module's to
+     * edit. Nothing in `CROSSING_OUTCOMES` sets it, so it is always false, and
+     * the narration line it feeds no longer fires. It should be removed from
+     * all three files together.
      */
     halted?: boolean;
 }
@@ -622,25 +648,30 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
         })
     },
 
-    // ── An incomplete foundation, and unable to continue. ──
+    // ── The reservoir goes. Ruinous, and NOT a bar. ──
+    //
+    // This row used to set `halted: true`, and that was the single largest
+    // violation of the rule stated at the top of this file: a ruined reservoir
+    // is not a realm's construction, so it may not close the road. It is one of
+    // the worst things a cultivator can carry and it is still only damage.
+    //
+    // Note it never actually barred anybody. `canAttemptBreakthrough` gates on
+    // `structuralBlockOn`, which reads `BROKEN_STATUSES` and has never included
+    // this wound, so the flag fed a narration line and a disagreeing predicate
+    // and nothing else. Removing it makes the prose agree with the ladder.
     {
         key: 'reservoir_ruined',
         summary:
-            'The reservoir cracked rather than the channels. The cultivator is alive, at the rung they were on, and will not cross another boundary.',
+            'The reservoir cracked rather than the channels. The cultivator is alive, at the rung they were on, and everything they do from here is done through a vessel that leaks.',
         weights: {
             // NOT AT THE FIRST WALL, and this is a deliberate exclusion rather
             // than an oversight. Qi Condensation to Foundation Establishment is
-            // where every run starts, and a permanent bar there ends a life
-            // before it has begun - measured, it halted cultivators at ordinal
-            // 12 holding the full price, which is the exact brutality the low
-            // ladder is supposed to be free of. Failing to SET a foundation is
-            // already modelled, on the success path, by `assessFoundation`
-            // handing back 'incomplete' or 'damaged'.
-            //
-            // So the halt starts at the second wall, where it also happens to
-            // describe the commonest figure in the setting: the Foundation
-            // Establishment elder who never made Core Formation, is perfectly
-            // respectable, and stopped.
+            // where every run starts, and this is the gravest wound in the
+            // table - measured, it landed on cultivators at ordinal 12 holding
+            // the full price, which is the exact brutality the low ladder is
+            // supposed to be free of. Failing to SET a foundation is already
+            // modelled, on the success path, by `assessFoundation` handing back
+            // 'incomplete' or 'damaged'.
             //
             // Rises with altitude from there: the higher the wall, the more of
             // the person is load-bearing when it fails to set.
@@ -654,10 +685,10 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
         apply: (_s, rng, ctx) => ({
             injuries: [wound(ctx, rng, 'ruined-dantian', 'crippling')],
             // 'incomplete' is a quality `assessFoundation` already produces and
-            // the whole engine already prices. Nothing new is being invented to
-            // carry this; what is new is that it can now happen after ordinal 12.
-            foundationQuality: 'incomplete',
-            halted: true
+            // the whole engine already prices, on every subsequent crossing,
+            // forever. That is what this costs: the next wall is much worse,
+            // and it is still a wall they are allowed to walk up to.
+            foundationQuality: 'incomplete'
         })
     },
 
@@ -887,16 +918,6 @@ export function resolveCrossingFailure(
  * Whether this cultivator has been stopped for good.
  *
  * Read off the wound list rather than off a flag, because the wound list is
- * what persists and what the narrator reads. A ruined dantian is the wound that
- * means "the reservoir will not hold a crossing again", and carrying one is
- * what being halted IS - there is no second field that could disagree with it.
- *
- * This is the population the setting most needed and could not previously
- * produce: somebody who crossed once, arrived, and will not arrive anywhere
- * else. They keep their rung, their span, their standing and their students.
- */
-export const HALTING_WOUND = 'ruined-dantian';
-
 /**
  * The broken status each crossing leaves when it lands badly, by trial.
  *
@@ -917,7 +938,7 @@ export const BROKEN_STATUS_FOR_TRIAL: Partial<Record<TrialKind, string>> = {
     the_birthing: 'unformed-nascent-soul',
     the_merging: 'incomplete-transformation',
     the_emptiness: 'damaged-spirit-sense',
-    the_joining: 'unsealed-seam',
+    the_joining: 'unstable-joining',
     the_ascent: 'unset-ascension',
     // The crossing INTO Tribulation Transcendence. Lightning resolves whether
     // they survive it; this is what a survival that did not land clean leaves.
@@ -957,22 +978,28 @@ export function brokenStatusOf(injuries: readonly Injury[]): string | null {
 /**
  * Whether this cultivator has been stopped for good.
  *
+ * ONE ROUTE, AND IT IS THE REALM KEYWORDS. A broken status means they CROSSED,
+ * arrived, and the structure that crossing was for did not take. Nothing else
+ * a cultivator can carry closes the road - not a heart demon, not a severed
+ * meridian, not a ruined reservoir, not a fragmented soul, not a burnt span,
+ * however grave any of them is.
+ *
+ * This used to read a ruined dantian as a second halting wound, and it was
+ * wrong twice over. It was wrong by the rule, because a reservoir is not a
+ * realm's construction. And it was wrong against the ENGINE: the actual bar is
+ * `structuralBlockOn` in `canAttemptBreakthrough`, which has only ever read
+ * `BROKEN_STATUSES`, so this predicate was reporting a population the ladder
+ * did not refuse. Exactly the second opinion the wound list exists to prevent.
+ *
  * Read off the wound list rather than off a flag, because the wound list is
- * what persists and what the narrator reads. There is no second field that
- * could disagree with it.
+ * what persists and what the narrator reads. This is now the same predicate
+ * `blocksAdvancement` applies, asked of a whole person instead of one wound,
+ * so a reading and a bar cannot disagree.
  *
- * Two ways to be here, and they are different stories. A broken status means
- * they CROSSED and arrived and the structure did not take - they are at the new
- * rung, permanently. A ruined dantian means the reservoir itself went, which
- * can happen without arriving anywhere. Both end the climb.
- *
- * This is the population the setting most needed and could not previously
- * produce. They keep their rung, their span, their standing and their students.
+ * They keep their rung, their span, their standing and their students.
  */
 export function isHalted(subject: Pick<Cultivator, 'injuries'>): boolean {
-    return subject.injuries.some(
-        i => !i.treated && (i.woundType === HALTING_WOUND || (i.woundType !== null && BROKEN_STATUSES.includes(i.woundType)))
-    );
+    return subject.injuries.some(blocksAdvancement);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1116,7 +1143,7 @@ export const REPAIRED_IN_THE_CRUCIBLE: Record<string, boolean> = {
     'unformed-nascent-soul': true,
     'incomplete-transformation': true,
     'damaged-spirit-sense': true,
-    'unsealed-seam': true,
+    'unstable-joining': true,
     'unset-ascension': true,
     'unformed-tribulation-body': false
 };

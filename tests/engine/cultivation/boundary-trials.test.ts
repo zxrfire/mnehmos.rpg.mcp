@@ -19,7 +19,6 @@ import {
     BROKEN_STATUSES,
     BROKEN_STATUS_FOR_TRIAL,
     CROSSING_OUTCOMES,
-    HALTING_WOUND,
     applyCrossingConsequence,
     blocksAdvancement,
     brokenStatusFor,
@@ -337,10 +336,10 @@ describe('striking on a break is legal, suicidal, and curative if it lands', () 
         // Marking it treated would leave it counting as scar tissue against
         // SCAR_PLATEAU - charging attrition for a wound no longer carried.
         const wound = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unsealed-seam' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unstable-joining' },
             rng()
         );
-        const after = clearBrokenStatus([wound, createInjury({ severity: 'minor', source: 'combat', turn: 1 }, rng())], 'unsealed-seam');
+        const after = clearBrokenStatus([wound, createInjury({ severity: 'minor', source: 'combat', turn: 1 }, rng())], 'unstable-joining');
         expect(after).toHaveLength(1);
         expect(after[0].woundType).toBeNull();
     });
@@ -368,7 +367,7 @@ describe('what the broken statuses are called', () => {
         nascent_soul: ['nascent', 'soul'],
         deity_transformation: ['transformation'],
         void_refinement: ['spirit', 'sense'],
-        body_integration: ['seam'],
+        body_integration: ['joining'],
         grand_ascension: ['ascension'],
         tribulation_transcendence: ['tribulation']
     };
@@ -439,44 +438,84 @@ describe('the five ways a crossing ends', () => {
         expect(classifyCrossingResult({ succeeded: false, survived: false })).toBe('death');
     });
 
-    it('leaves being halted broader than being broken, by more than one route', () => {
-        // The ruling this pins: they all close the road, without medicine. A
-        // ruined reservoir is not a break of any rung - it happens on a
-        // FAILURE, on the way to arriving nowhere - and it closes the road
-        // exactly as thoroughly as a cracked core does.
-        //
-        // So the axis everything downstream reads is "is the road closed", not
-        // "which of the five was this". `isHalted` is that predicate and it has
-        // to answer true down both routes while `brokenStatusOf` answers only
-        // down one.
+    it('closes a road ONLY through a realm keyword, and never through a failure', () => {
+        // The rule, in the user's words: anything not of those keywords does
+        // not block further cultivation. So halted and broken are the SAME set,
+        // and a failure never halts anybody however grave the wound.
         const wound = (key: string) =>
             createInjury(
                 { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: key },
                 rng()
             );
 
-        const viaBrokenSuccess = [wound('cracked-core')];
-        const viaRuinedReservoir = [wound(HALTING_WOUND)];
+        // The one route in: a realm's own break, from a broken SUCCESS.
+        expect(isHalted({ injuries: [wound('cracked-core')] })).toBe(true);
 
-        expect(isHalted({ injuries: viaBrokenSuccess })).toBe(true);
-        expect(isHalted({ injuries: viaRuinedReservoir })).toBe(true);
-
-        // Broken is the narrower condition. Only one route reads as one.
-        expect(brokenStatusOf(viaBrokenSuccess)).toBe('cracked-core');
-        expect(brokenStatusOf(viaRuinedReservoir)).toBeNull();
-
-        // And the reservoir route really is reachable from a failure, which is
-        // the whole point - a halted cultivator need not have succeeded at
-        // anything. Read off the registry rather than asserted.
+        // The worst wound the FAILURE table can produce. It cracks the
+        // reservoir itself and it still does not close the road - this row set
+        // `halted: true` until the rule was stated.
         const reservoir = CROSSING_OUTCOMES.find(o => o.key === 'reservoir_ruined')!;
-        const consequence = reservoir.apply(
-            { realmOrdinal: 16, injuries: [] },
-            rng(),
-            { turn: 1 }
-        );
-        expect(consequence.halted).toBe(true);
-        expect(isHalted({ injuries: consequence.injuries })).toBe(true);
+        const consequence = reservoir.apply({ realmOrdinal: 16, injuries: [] }, rng(), { turn: 1 });
+        expect(consequence.halted).toBeUndefined();
+        expect(isHalted({ injuries: consequence.injuries })).toBe(false);
         expect(brokenStatusOf(consequence.injuries)).toBeNull();
+
+        // And no row in the whole failure table halts, by the same rule.
+        for (const outcome of CROSSING_OUTCOMES) {
+            for (let i = 0; i < 20; i++) {
+                const c = outcome.apply(
+                    { realmOrdinal: 20, injuries: [], age: 200 },
+                    new CultivationRNG(`no-halt-${outcome.key}-${i}`),
+                    { turn: 1 }
+                );
+                expect(c.halted).toBeFalsy();
+                expect(isHalted({ injuries: c.injuries })).toBe(false);
+            }
+        }
+    });
+
+    it('lets the gravest wound of every kind keep climbing', () => {
+        // The user's worked examples: a heart demon would not block you, nor
+        // does losing an arm. A heart demon afflicts the PERSON; a cracked core
+        // is a fault in the apparatus the next crossing builds on. Builders
+        // work hurt.
+        //
+        // Asserted against `blocksAdvancement`, which is what
+        // `canAttemptBreakthrough` actually consults - not against a predicate
+        // that could disagree with the bar.
+        const gravest = [
+            'ascendant-heart-demon',  // mental, permanent, the worst there is
+            'rooted-heart-demon',
+            'severed-meridian',       // physical and permanent - the lost arm
+            'ruined-dantian',         // the reservoir itself
+            'burnt-span',             // lifespan
+            'scattered-cultivation'   // the whole base came apart
+        ];
+        for (const key of gravest) {
+            const injury = createInjury(
+                { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: key },
+                rng()
+            );
+            expect(blocksAdvancement(injury)).toBe(false);
+            expect(isHalted({ injuries: [injury] })).toBe(false);
+            expect(structuralBlockOn([injury])).toBeNull();
+        }
+    });
+
+    it('lets somebody cross carrying a heart demon, in code and not only in prose', () => {
+        // The path has to be OPEN, not merely undocumented as closed.
+        const demon = createInjury(
+            { severity: 'serious', source: 'qi_deviation', turn: 1, woundType: 'heart-demon' },
+            rng()
+        );
+        const cracked = createInjury(
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'cracked-core' },
+            rng()
+        );
+        expect(structuralBlockOn([demon])).toBeNull();
+        // And the break beside it is what stops them, so the demon is not
+        // merely being masked by an empty list.
+        expect(structuralBlockOn([demon, cracked])).toBe('cracked-core');
     });
 
     it('produces a structural break ONLY from a broken success', () => {
@@ -645,12 +684,14 @@ describe('halting reads off the wound list and nowhere else', () => {
             .toBe(false);
     });
 
-    it('is true for a ruined reservoir as well as for a broken status', () => {
-        const ruined = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: HALTING_WOUND },
+    it('is true for a realm break and for nothing else', () => {
+        const broken = createInjury(
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unstable-joining' },
             rng()
         );
-        expect(isHalted({ injuries: [ruined] })).toBe(true);
+        expect(isHalted({ injuries: [broken] })).toBe(true);
+        // Treated is not carried: a break the crucible reseated stops halting.
+        expect(isHalted({ injuries: [{ ...broken, treated: true }] })).toBe(false);
     });
 });
 
