@@ -470,6 +470,41 @@ while the outflow that matters, the one that fills the next bucket, is near zero
 the two kinds of outflow separately. And check what "arrival" counts: somebody who climbed
 one rung and is now recounted in the band above is not the world producing anybody.
 
+### Rare in the world and common at the top are the same fact
+
+A birth tier that almost nobody is born into can still make up a large minority of an elite
+house, and there is no contradiction between those two sentences. They are the same
+distribution asked two different questions.
+
+> The chance somebody is born high is tiny. The chance somebody is born high **given that
+> they are an elder of a Dao house** is large.
+
+Selection is not random. Advantage buys the inputs - stones, provisioned years, a teacher,
+placement - that make surviving the climb far likelier, so the small pool supplies most of
+the people who arrive. Nobody is placed at the top for being born well; they are
+over-represented at the top because being born well made them likelier to get there. That
+is the setting's own thesis rather than an exception to it: **an origin buys inputs and
+never rank.**
+
+This was found the hard way. Every Dao house member on the register read `thin_county`,
+because the seeder ran the people it PLACES through the lottery meant for people it BIRTHS.
+A world whose entire aristocracy was born on farms is not the thesis arriving on its own -
+it is a sampling error wearing the thesis as a costume, and it is more flattering than the
+truth, which is why it survived review.
+
+Two habits follow:
+
+**Measure the conditional, not just the marginal.** A distribution over the whole
+population and a distribution over an institution's membership answer different questions,
+and a system is only right when both look correct. Reporting one and assuming the other is
+how this got missed.
+
+**Ask whether a rule written for one moment is being applied to another.** Birth and
+placement are different events. So are arriving in a band and being seeded into it - the
+same mistake, in a different file, produced an "arrivals" figure that counted everybody not
+present at world creation. When a number looks wrong, check that the rule producing it was
+written for the case it is being asked about.
+
 ### Decline is correct for a house and wrong for the world
 
 Sects rise and fall; that is the setting working. The world's standing distribution
