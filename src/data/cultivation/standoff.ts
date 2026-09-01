@@ -22,17 +22,11 @@
  * is `scripts/playtest-conspiracy.ts`; the guard is
  * `tests/data/cultivation-standoff.test.ts`.
  *
- * ── AND SOME OF THOSE NUMBERS ARE CURRENTLY UNMEASURABLE ─────────────────
- *
- * The sentence above is a promise, and for the whole-house figures it is not
- * being kept. See `MEASUREMENT_STATUS` at the foot of this file, which records
- * which figures still reproduce, which do not, and why - in place, the way
- * `catastrophe.ts` records its own retractions, because a number nobody can
- * trace is worth less than a number with its correction attached.
- *
- * The short version: the head-to-head figures reproduce exactly. The
- * whole-house sweep figures do not, and the reason is the instrument rather
- * than the world. Do not tune the resolver to make them come back.
+ * The whole-house figures in this file were unmeasurable for a while and are
+ * not any more. `MEASUREMENT_STATUS` at the foot records what was wrong, what
+ * was retracted and what replaced it, in place, the way `catastrophe.ts` does -
+ * because a number nobody can trace is worth less than a number with its
+ * correction attached.
  */
 
 import { APEX_INSTITUTIONS } from './hierarchy.js';
@@ -224,7 +218,7 @@ export const THE_SHADOW_CONSPIRACY = {
     andItBuysTheSealsToo:
         'Which is the second half and the reason it is worth doing at all. A court that answers to you does not merely fail to reinforce - it brings its own ancestor, and its clients\', and it does so wearing the livery of the house being attacked. The strike is made with the target\'s own reserve power. That is the only assembly in the setting that can put three or four bodies above forty in one place at one hour without the region noticing an alliance form, because it does not look like an alliance. It looks like the apex\'s own people going to work.',
     whatItStillCannotSolve:
-        'The weapon. All of this is preparation for a fight that still has to be won on the day against something that eats two of his realm, and the Deep Survey\'s in particular makes concealment structurally hard - a plot built over a century has a century of surface for the Datum Lamp to catch. The Azure Cloud Pavilion, which has no court under it at all, is the softest of the three by this reasoning and the hardest by another: the Standing Edge settles who somebody is, permanently and without appeal, which is precisely the instrument a conspiracy of borrowed liveries cannot survive contact with.',
+        'The weapon. All of this is preparation for a fight that still has to be won on the day against something that eats two of his realm, and the Deep Survey\'s in particular makes concealment structurally hard - a plot built over a century has a century of surface for the Datum Lamp to catch. The Azure Cloud Pavilion, whose entire administration is one court of four people, has almost nothing to suborn and is the softest of the three by this reasoning and the hardest by another: the Standing Edge settles who somebody is, permanently and without appeal, which is precisely the instrument a conspiracy of borrowed liveries cannot survive contact with.',
     andTheFailureMode:
         'It fails the way everything with this many parties fails: one officer, somewhere in the hundred and fifty years, decides that being the person who warned an apex is worth more than being the person who helped kill one. The plot cannot be verified from inside and cannot be abandoned safely, and every year it exists is another year of somebody having that thought. Nobody has ever been observed to complete it, and the setting should treat that as a record rather than a law.'
 } as const;
@@ -307,7 +301,7 @@ export const WHY_NOBODY_MOVES = {
     andItHasHappenedOnce:
         'The Third Sill Court administered the third arterial under the Deep Survey for nine hundred years and does not any more. Three of its own clients had been contesting the same grant book for two centuries; the Survey declined to settle it, on the standing ground that a dispute among a court\'s clients is the court\'s own business, and the Long Cut offered to settle it. No fighting, no announcement, no betrayal anybody could name - an administration went where its problem could be solved. It is the largest thing that has happened at the top of the world in nine centuries and there is no battle in it anywhere.',
     andThePavilionIsTheReasonNEITHEROfThemMoves:
-        'The Azure Cloud Pavilion has one body, no courts and no clients, and either of the other two can take it in a day - the Survey ninety-nine times in a hundred, the Long Cut a hundred. Neither will, and the reason is not mercy. Whoever does it walks out of that mountain having spent a war on a house at forty-one holding the most martial object in the world, and then has to stand in front of the third apex the same season: measured, the Survey survives that meeting twice in a hundred and the Long Cut not once. Taking the weakest house in the region is the single most reliable way to stop existing that either of them has available.',
+        'The Azure Cloud Pavilion is the shallowest house on the board rather than the emptiest one - one body at the last realm, the next name three full stages below it, and a single four-person court against the others\' courts and client rings - and either of the other two can take it in a day - the Survey ninety-nine times in a hundred, the Long Cut a hundred. Neither will, and the reason is not mercy. Whoever does it walks out of that mountain having spent a war on a house at forty-one holding the most martial object in the world, and then has to stand in front of the third apex the same season: measured, the Survey survives that meeting twice in a hundred and the Long Cut not once. Taking the weakest house in the region is the single most reliable way to stop existing that either of them has available.',
     whichIsWhatSheActuallyHolds:
         'So the Pavilion\'s power is not its own strength and never was. It is the certainty that anybody who spends themselves on it is next - and behind that, the thing nobody will put a number on: see `THE_ANCESTOR_WHO_MIGHT_ANSWER`. Ru Anjing left a house that cannot win anything and cannot be attacked, which is a stranger legacy than an army and a considerably more durable one - and the province, which reads the Pavilion as the harmless one, is describing the only faction on the board that has never had to be careful.',
     andSheDoesNotJOINAnything:
@@ -317,7 +311,11 @@ export const WHY_NOBODY_MOVES = {
     andItIsTHREEHousesForAReason:
         'Which is why the number is three rather than two. Two apexes in a province is a war with a winner; a third makes attacking the weak one lethal and leaves the strong two to deadlock each other on their own terms. None of the three can be removed without the other two discovering what they are actually worth, and none of them wants to find out.',
     andTwoOfThemTogetherIsTheOnlyLeverLeft:
-        'Which leaves the alliance, and it was measured too. Two apexes against the third: the Long Cut and the Pavilion against the Survey never wins, the Survey and the Pavilion against the Long Cut never wins, and the Deep Survey and the Long Cut against the Pavilion wins every single time. Exactly one combination on the board works, and it is the one that removes the house holding the other two apart.',
+        // Re-measured. This used to say exactly one of the three alliances
+        // could win and the other two never could. All three win, every time,
+        // and the finding is better for it: the lever exists three times over
+        // and is unusable three times over, for the same reason each time.
+        'Which leaves the alliance, and it was measured too. Two apexes against the third wins - all three pairings, a hundred times in a hundred, which is the one thing on this board that is not close. Any two of them can end any third whenever they choose to. The lever is not rare and it is not hidden; it is simply held at both ends by people who have each worked out what the other does with it afterwards.',
     andTheMorningAfterIsWhyItHasNotHappened:
         // Was "ninety-nine times in a hundred", which contradicted
         // `theDuelIsNotTheWar` twenty lines up saying "a hundred times in a
@@ -337,9 +335,22 @@ export const WHY_NOBODY_MOVES = {
     andWhatWouldBreakIt:
         'An object changing hands, a court changing patrons, or the Pavilion ceasing to exist. Nothing else on the board matters - not a death, not a succession, not a grant. Two apexes in this province is a war with a winner, so the fastest route to the largest change in the region is not attacking either of the strong houses: it is removing the weak one, which is precisely what neither of them can safely do. The day the Ninth Nail leaves the Long Cut, the Survey can travel; the day a second court moves, the war stops being unwinnable. Which is why the two of them, who agree on nothing, watch each other\'s grant books far more closely than each other\'s vaults.',
     soNothingOnTheBoardIsWorthDOING:
-        'Which is the finding the whole arrangement turns on, and it was swept rather than argued. Every move available to every apex, measured, with the bar an apex would actually apply - take the target AND still be standing in front of the house that did not fight - and the best move anybody has comes out clean one time in a hundred. Not zero, and the difference matters: nothing here is forbidden, impossible or ruled out, and a setting where the top of the world literally cannot be moved would be a worse one than a setting where moving it is simply a terrible idea. One in a hundred is a real number. It is also nobody\'s plan.',
+        'Which is the finding the whole arrangement turns on, and it was swept rather than argued. Every move available to every apex, measured, with the bar an apex would actually apply - take the target AND still be standing in front of the house that did not fight - and the best move anybody has comes out clean three times in a thousand. It is the Long Cut, against the Pavilion, and it is the only entry on the board above zero. Not zero, and the difference matters: nothing here is forbidden, impossible or ruled out, and a setting where the top of the world literally cannot be moved would be a worse one than a setting where moving it is simply a terrible idea. Three in a thousand is a real number. It is also nobody\'s plan.',
+    andTheREASONIsTheThirdHouseRatherThanTheFight:
+        'And the sweep says WHY, which it never used to be able to. Winning is not the hard part and for two of the three it is barely a part at all: the Long Cut takes the Deep Survey ninety-nine times in a hundred with everybody mobilised, and the Pavilion takes the Deep Survey eighty-eight. What none of them can do is the second thing. Across every ordering of every pair, the house that wins the war and then meets the third house survives it zero times in a thousand - not rarely, not usually not, never. The arrangement is not held together by anybody being unable to win. It is held together by the evening after the victory, and that is a different and much more durable kind of peace.',
     andTheThingThatWouldBreakItIsAnOBJECT:
-        'One more immortal object arriving from above, and only that. Sent a second, the Deep Survey\'s move on the Pavilion goes from one in a hundred to thirty-two, and the Long Cut\'s to twenty-eight - from nobody\'s plan to somebody\'s, in the time it takes to hand a person a box. Nothing else moves that number. Give either of them a second cultivator at forty-four instead, the once-a-century event every house in the world organises its entire existence around producing, and the best move on the board reaches five per cent and stays not worth making. A person is worth almost nothing at this altitude. An object is worth the region.',
+        // Re-measured, and the old figures are retracted rather than adjusted:
+        // this said thirty-two and twenty-eight for a second object and five
+        // per cent for a second person, and concluded "a person is worth almost
+        // nothing". The first half survives and the second half does not. See
+        // `MEASUREMENT_STATUS`.
+        'One more immortal object arriving from above does it, and it does it enormously. Sent a second, the Long Cut\'s move on either neighbour goes to ninety-seven and ninety-eight per cent; the Deep Survey\'s on the Long Cut goes to forty-seven; the Pavilion\'s on the Long Cut goes to fifty. Every one of those is from nobody\'s plan to somebody\'s, in the time it takes to hand a person a box, and no house on the board is exempt.',
+    andAPersonIsNotWorthNothingAfterAll:
+        // The correction. The old sentence was the better line and it is not
+        // what the resolver says.
+        'The catalog used to say a person was worth almost nothing at this altitude and an object was worth the region, which was tidy and is half wrong. Give the Deep Survey a second cultivator at forty-four and its best move moves from nothing to three in a thousand - almost nothing, exactly as claimed. Give the LONG CUT one and it takes the Pavilion sixty-five times in a hundred and the Survey thirty-five. Same gift, same rung, two houses, and the difference is not close.',
+    andWhatDecidesItIsHowManyTheyAlreadyHave:
+        'What separates them is what the gift lands on. The Deep Survey is one seated person and an instrument, and a second body standing next to somebody who has not left a room in four hundred years does not change what the Survey is; it mobilises eight and the eighth is not the problem. The Long Cut mobilises fifteen, and a fifteenth thing at the last realm arrives on top of a position that was already winning its wars and losing only the evening afterwards - which is precisely the margin a second body closes. So an object is worth more than a person to everybody, and how much more depends entirely on how many people you had already. That is not the neat claim. It is the one that is true, and it explains something the neat one never could: why the two of them watch each other\'s grant books more closely than each other\'s vaults, which this file has always said and could not previously account for.',
     whichIsWhyTheyWatchTHESKY:
         'So the thing the top of the world is actually afraid of is not each other and never was. It is an ancestor on the far side of the Lid deciding, for reasons nobody down here will ever be told, to send a second thing down to somebody. That is the only event that turns a province where nothing is worth doing into a province where something is - it cannot be prevented, negotiated, predicted or answered, and it has happened four times in nine hundred years. Every apex in the region has spent centuries building a position that a stranger who is no longer a person could end by making a gift.',
     andTheReasonTheZEROHoldsIsUnderTheInnerHall:
@@ -479,18 +490,18 @@ export function housesThatCouldJoinAConspiracy(): { id: string; name: string; ce
  * changed.
  */
 export const MEASUREMENT_STATUS = {
-    stillReproduces:
-        'The head-to-head figures, exactly. The Long Cut takes the Deep Survey a hundred times in a hundred; the Azure Cloud Pavilion takes the Deep Survey ninety-seven. Both re-measured. These are two-body fights and they resolve inside the round budget, which is why they are the half of this file that can still be trusted.',
-    doesNotReproduce:
-        'Every figure that comes off the whole-house sweep. "The best move anybody has comes out clean one time in a hundred" now prints as zero; the two-apex alliance against the Pavilion, written as winning every single time, prints as eleven per cent; the second-object perturbations, written as thirty-two and twenty-eight, print as four and seventeen. Five figures, all from the same instrument.',
-    andTheInstrumentIsWhatMoved:
-        'Not the world. Every one of those numbers is downstream of whether a fifteen-body war resolves inside eight exchanges, and it does not - three hundred runs of every pairing, three hundred stalemates. The original "one in a hundred" was three seeds in three hundred, which is to say it was already the tail of a stalemate distribution rather than a measurement of anything. An engine change that made large fights marginally longer took it to zero, and that is a fact about the round budget rather than about whether the top of the world can be moved.',
-    soDoNotTuneTheResolver:
-        'Which is the load-bearing conclusion and the reason this block exists. Moving `MAX_EXCHANGES`, the artifact weighting or the power curve to bring "one in a hundred" back would be tuning combat - the resolver that settles every fight in the game, for two farmhands with sticks - to compensate for a metric that cannot tell a beaten attacker from a clock running out. The engine is not known to be wrong here. The measurement is known to be uninformative.',
-    whatWouldActuallySettleIt:
-        'A metric that separates the three outcomes instead of two: took the target, was beaten, ran out of time. Until the harness reports the stalemate rate alongside the win rate, no figure it prints about whole houses means anything, and the perturbation figures are differences between two quantities that are both mostly stalemate. That is a change to `scripts/playtest-conspiracy.ts` rather than to the engine or to this file.',
-    theDesignStatementStands:
-        'And it stands as a REQUIREMENT rather than as a measurement, which is the honest status for it. The top of the world must be movable and must not be worth moving - "not zero, and the difference matters" - because a setting where the top literally cannot be moved is a worse one than a setting where moving it is a terrible idea. That was ruled on deliberately. Nothing measured today contradicts it; nothing measured today supports it either, and it should not be quietly deleted because the instrument that used to report it has stopped being able to.'
+    whatWasWrong:
+        'For a period this file carried five figures off the whole-house sweep that could not be reproduced, and the cause was the instrument. `MAX_EXCHANGES` was a flat 8 - calibrated, by its own doc comment, so that a genuinely even DUEL only just runs out of exchanges - and the sweep fights whole mobilised apexes of eight, fifteen and five bodies. Eight exchanges cannot empty a side of fifteen, so every one of the six pairings returned `winningSideId: null` on all three hundred runs, in both directions. `worthIt` gates on the attacker actually winning, so a stalemate counted as a failure to take the target, and the sweep printed "nothing is worth doing" for every house in every world.',
+    howItWasFound:
+        'By removing one variable. The identical construction with the client reinforcements left out - two or three bodies a side instead of fifteen - stalemated zero times in three thousand and returned decisive figures. Side SIZE decided whether the resolver resolved, and nothing else had changed. That is the failure mode AGENTS.md names by title: a stalemate is not a loss, and scoring it as one is how "one immortal loses to ten ordinary cultivators" was once reported.',
+    andTheFix:
+        'Was in the engine and not here, which is why this file did not chase it. The round budget is now per body on the smallest side, so a fight ends when some side can be cleared, and the stalemate rate is zero at every size from one against one to fifteen against fifteen. The sweep produces real numbers for the first time and this file has been rewritten against them.',
+    whatWasRetracted:
+        'Three figures, all wrong, all replaced above. The best move on the board was written as one in a hundred and is three in a thousand. Exactly one of the three two-apex alliances was said to be able to win, and all three win a hundred times in a hundred. A second object was said to take the Deep Survey to thirty-two per cent and a second person to five, from which the file concluded that a person is worth almost nothing - and that conclusion is the one real casualty, because it was one of the better arguments in the setting and it is only half true.',
+    andWhatSurvivedIntact:
+        'The argument, which is the part that matters. Nobody moves because nobody survives the morning after, and that is now emerging from the resolver rather than being asserted next to it: every attacker who wins a war and then meets the third house survives it zero times in a thousand. The head-to-head figures were never in question and still reproduce exactly - the Long Cut takes the Deep Survey a hundred times in a hundred, the Pavilion takes the Deep Survey ninety-seven. And the property the whole arrangement was designed around holds on measurement rather than by request: the best move available to anybody is above zero and is nobody\'s plan.',
+    theLessonWorthKeeping:
+        'Which is that the request that came out of the bad numbers was to tune the resolver until "one in a hundred" came back. That would have been tuning the fight that settles a tavern brawl to compensate for a metric that could not tell a beaten attacker from a clock running out, and it would have corrupted every other measurement in the repo to fix a sentence in this file. The instrument was wrong. The world was not.'
 } as const;
 
 /**

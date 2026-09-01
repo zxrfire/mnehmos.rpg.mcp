@@ -1124,7 +1124,54 @@ export const TechniqueSchema = z.object({
      * that gets gradually stickier reads as bad luck, and one that stops dead
      * reads as a fact about the book in your hands.
      */
-    cap: z.number().int().min(0).max(MAX_ORDINAL).nullable().default(null)
+    cap: z.number().int().min(0).max(MAX_ORDINAL).nullable().default(null),
+    /**
+     * Root grades the manual will take at all. Empty means any root may read it.
+     *
+     * Mirrors `SpiritRootGrade` in `engine/cultivation/spirit-roots.ts` -
+     * single, dual, triple, quad, muddled, mutated - as strings rather than as
+     * an import, because `Find.rootGrades` in the encounters layer is already
+     * `readonly string[]` and coupling the schema to the engine's root module
+     * would buy nothing.
+     *
+     * Authored because it was NOT: only `element` was filled in, so the root
+     * axis never fired and every suitability miss a player ever saw read as an
+     * element miss. A manual that wants a mutated root and a manual that wants
+     * a water root are different refusals and should sound different.
+     */
+    rootGrades: z.array(z.string()).default([]),
+    /**
+     * Comprehension domain the manual cannot be worked without, or null.
+     * Read by `assessFit`, which already judges it and never had anything to
+     * judge because nothing populated it.
+     */
+    domain: InsightDomainSchema.nullable().default(null),
+    /** Minimum degree in that domain. Ignored when `domain` is null. */
+    domainDegree: z.number().min(0).default(1),
+    /**
+     * Ordered ids of the OBJECT rows that carry this work in parts, or null
+     * for a single-volume work.
+     *
+     * A volume is a physical copy of a piece of the book, so it lives in the
+     * object catalog with a holder and a provenance, not here. Its power is one
+     * rung below the whole by `shardPower`, which is the same arithmetic that
+     * turns a broken blade into a worse blade - there is one piece of that
+     * reasoning in the repo and this reuses it rather than adding a second.
+     *
+     * There is deliberately NO second cap field. The cap of a partial set is
+     * derived, by the engine, from how many volumes are held.
+     */
+    volumes: z.array(z.string()).nullable().default(null),
+    /**
+     * Whether somebody at sufficient dao standing could write the continuation
+     * themselves rather than finding it.
+     *
+     * False on almost everything, and that is the point: derivation is the
+     * prodigy's road, not the way missing content gets papered over. Resolved
+     * by the catalog's authoring helper from a named set, the way provenance
+     * and surviving copies already are.
+     */
+    derivable: z.boolean().default(false)
 });
 export type Technique = z.infer<typeof TechniqueSchema>;
 
