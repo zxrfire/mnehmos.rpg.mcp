@@ -253,7 +253,7 @@ import { SITES, enterSite, type Site } from '../data/cultivation/inheritance-tri
 import { assessPower, resolveExchange } from '../engine/cultivation/combat.js';
 import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
 import { getHerb } from '../data/cultivation/herbs.js';
-import { getPill } from '../data/cultivation/pills.js';
+import { PILLS, getPill } from '../data/cultivation/pills.js';
 import { askedAbout } from './asked.js';
 import {
     hearingProse,
@@ -268,6 +268,7 @@ import { observableHere, observedLine } from './practices.js';
 import {
     acceptDuty,
     activityForVerb,
+    PLAYER_ROLL_IDENTITY,
     arrivableForSpan,
     completeDuty,
     consumeArrivals,
@@ -723,20 +724,41 @@ const GRAVE_GRAVE_ORDINAL = 21;
 const GRAVE_UNFORGIVABLE_ORDINAL = 33;
 
 /**
- * How much of what a body is missing a FULL month of care puts back.
+ * What a FULL month of mortal care puts back, as a flat quantity of HP.
  *
- * One, and it is a decision rather than a dial. See the long note in
- * `GameService.treat` for the measurement that produced it: HP was a strictly
- * monotonic decreasing resource with no restorer any sentence could reach, and
- * three quarters of all deaths by violence happened to somebody with nothing to
- * treat. Below one this stays a bleed-out with a slower gradient; at one, being
- * battered and being wounded become two different problems with two different
- * answers, which is the distinction the whole medicine layer assumes.
+ * FIXED, not a fraction, and that is the whole of the design. The user's
+ * ruling: wounds are not forever, they are answered by a graded ladder of
+ * healing pills at the same rank requirement, "where a lower should heal almost
+ * nothing - it'll heal a fixed hp amount and as you get up the amount becomes
+ * a lot."
+ *
+ * A fixed amount self-scales in exactly that way with no rule saying so.
+ * Twenty-four HP is most of a novice's body and a rounding error on a
+ * Nascent Soul one, so the same village physician who mends a Qi Condensation
+ * cultivator is a person applying a splint to a mountain four realms up. Being
+ * weak after a seclusion is allowed to stay true.
+ *
+ * This was a FRACTION for one commit - "a full month restores a body
+ * completely" - and that was wrong for a reason worth recording: it made the
+ * entire pill ladder pointless. Nobody buys a 1,200-potency Undying Flesh Pill
+ * when a month and a few stones does more, so the graded consumable the whole
+ * medicine layer is built around had no customers at any rung.
+ *
+ * DERIVED FROM THE LADDER, not chosen beside it: the strongest mortal-grade
+ * `heal_hp` pill in the catalog. Mortal care IS the bottom rung, and pricing it
+ * as its own constant would let the two drift until a month of rest quietly
+ * beat a pill again. If the data layer retunes the band, this follows.
  *
  * A shorter stay mends proportionally less, off `simulatedDays`, so this is a
- * ceiling on a month rather than a grant.
+ * ceiling on a month rather than a grant - and it can never exceed what the
+ * body is actually missing.
  */
-const CARE_RESTORES_FRACTION = 1;
+const CARE_RESTORES_HP = Math.max(
+    1,
+    ...PILLS
+        .filter(pill => pill.effect === 'heal_hp' && pill.grade === 'mortal')
+        .map(pill => pill.potency)
+);
 
 /**
  * The rung a cultivator with no cultivation manual is carried to.
@@ -6089,7 +6111,10 @@ ${noticed}`;
                 days,
                 activity: sealed ? 'sealed' : 'seclusion',
                 cultivator,
-                arrivable: this.pendingArrivals
+                arrivable: this.pendingArrivals,
+                // The row id is a randomUUID and would make the run
+                // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
+                rollIdentity: PLAYER_ROLL_IDENTITY
             }
         );
         const lived = daysActuallySpent(enc, startDay, days);
@@ -6224,7 +6249,10 @@ ${noticed}`;
                 days,
                 activity,
                 cultivator,
-                arrivable: this.pendingArrivals
+                arrivable: this.pendingArrivals,
+                // The row id is a randomUUID and would make the run
+                // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
+                rollIdentity: PLAYER_ROLL_IDENTITY
             }
         );
         const lived = daysActuallySpent(enc, startDay, days);
@@ -6630,7 +6658,15 @@ ${noticed}`;
         //
         // The rule chosen, and the reason it does not contradict anything:
         //
-        //   A WOUND DOES NOT MEND ON ITS OWN. A BODY DOES, UNDER CARE.
+        //   A WOUND DOES NOT MEND ON ITS OWN. A BODY DOES, UNDER CARE -
+        //   BY A FIXED AMOUNT, WHICH IS THE BOTTOM RUNG OF A LADDER.
+        //
+        // The user's ruling settled the second half: wounds are not forever,
+        // they are answered by graded healing pills at the same rank
+        // requirement, "where a lower should heal almost nothing - it'll heal a
+        // fixed hp amount and as you get up the amount becomes a lot." So care
+        // restores `CARE_RESTORES_HP` and not a share of the wound, and being
+        // weak after a seclusion stays true at every rung above the first.
         //
         // `injuries.ts` is explicit that there is no long rest and no hit dice,
         // and that stays exactly true: a torn meridian is permanent until
@@ -6749,19 +6785,26 @@ ${noticed}`;
             (before: Injury) => !before.treated
                 && triage.injuries.some((closed: Injury) => closed.id === before.id && closed.treated)
         );
-        // ── AND THE BODY, IN PROPORTION TO THE DAYS THEY LAY STILL ───────
+        // ── AND THE BODY, A FIXED AMOUNT FOR A FULL MONTH ────────────────
         //
-        // Proportional rather than flat, and derived rather than chosen: a stay
-        // cut short by starvation or by a boundary crossing mends exactly the
-        // fraction of a month it lasted, off the same `simulatedDays` every
-        // other consequence of this stretch is priced from. A full month
-        // restores a body completely; half a month restores half of what was
-        // missing. Nothing here can exceed `maxHp`, and nothing here touches a
-        // meridian - `treatWorstInjuries` above owns those and is the only
-        // thing that closes one.
+        // `CARE_RESTORES_HP` of it, scaled only by the days actually lain
+        // still: a stay cut short by starvation or by a boundary crossing mends
+        // the fraction of a month it lasted, off the same `simulatedDays` every
+        // other consequence of this stretch is priced from. Never more than the
+        // body is missing.
+        //
+        // A FLAT quantity rather than a share of the wound, so that a month of
+        // mortal care is most of a novice and almost nothing at height, and the
+        // graded healing pills are the actual answer once a body is large. It
+        // is the bottom rung of that ladder, not a substitute for it.
+        //
+        // Nothing here touches a meridian. `treatWorstInjuries` above owns
+        // those, is the only thing that closes one, and is unchanged - a wound
+        // and a battering are two different problems with two different
+        // answers, and this is only the second one.
         const lay = Math.max(0, Math.min(1, skip.simulatedDays / TREATMENT_DAYS));
         const missing = applied.cultivator.maxHp - applied.cultivator.hp;
-        const mended = Math.max(0, Math.round(missing * lay * CARE_RESTORES_FRACTION));
+        const mended = Math.max(0, Math.min(missing, Math.round(CARE_RESTORES_HP * lay)));
 
         const persist = this.db.transaction(() => {
             for (const injury of treated) {

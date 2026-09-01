@@ -118,6 +118,16 @@ const VERB_ACTIVITY: Readonly<Record<string, EncounterActivity>> = {
     rest: 'convalescence'
 };
 
+/**
+ * The roll identity for THE player of a run.
+ *
+ * A constant, and that is the point: a run has exactly one player, `seed` is
+ * already the first component of every stream, and mixing in anything else
+ * that is not derived from the seed makes the run irreproducible. Two
+ * cultivators in one world cannot both be this, because there are never two.
+ */
+export const PLAYER_ROLL_IDENTITY = 'player';
+
 export function activityForVerb(verb: string): EncounterActivity {
     return VERB_ACTIVITY[verb] ?? 'labour';
 }
@@ -142,6 +152,23 @@ export interface EncounterRequest {
     cultivator: Cultivator;
     /** Unheard world facts eligible to arrive. See `arrivableForSpan`. */
     arrivable?: readonly ArrivableFact[];
+    /**
+     * What the roll's RNG streams are keyed to, beside the seed.
+     *
+     * `window.ts` mixes `cultivator.id` into seven streams, which is right for
+     * its own purpose - two cultivators standing in one world must not draw the
+     * same encounters - and WRONG as a default for a played run, because a
+     * cultivator's row id is a `randomUUID()` and is not derived from the seed.
+     * Two runs created from the same seed therefore rolled different
+     * encounters, which broke the project's own rule that runs are reproducible
+     * from their seed. Measured: `requestedDays` 1215 on one run and 3650 on
+     * the next, same seed, same cultivator, same everything a caller supplies.
+     *
+     * Callers with a genuinely stable id (an NPC out of the catalog, a fixture)
+     * should leave this alone and get the old behaviour. A caller whose id is
+     * random must pass something seed-stable instead.
+     */
+    rollIdentity?: string;
     /** Whether anybody could find them. See `locatabilityFor`. */
     locatability?: Locatability;
     /** Their house, when they have one. See `membershipFor`. */
@@ -159,7 +186,8 @@ export function encountersFor(deps: EncounterDeps, request: EncounterRequest): E
         days: request.days,
         activity: request.activity,
         cultivator: {
-            id: cultivator.id,
+            // Not necessarily the row id. See `rollIdentity`.
+            id: request.rollIdentity ?? cultivator.id,
             realmOrdinal: cultivator.realmOrdinal,
             fortune: cultivator.attributes.fortune,
             maxHp: cultivator.maxHp,
