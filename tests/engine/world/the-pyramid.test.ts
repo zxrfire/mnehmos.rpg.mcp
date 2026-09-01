@@ -157,6 +157,35 @@
  * ask instead, this failure is a QUESTION rather than a verdict, and it must
  * not be quoted as evidence that the top of the ladder is broken.
  *
+ * ── AND THE TOP BAND IS STATIC ON PURPOSE, WITH A NUMBER BEHIND IT ───────
+ *
+ * The remaining question was what the people at 41-44 are doing, and whether
+ * anybody ever attempts the last crossing. Both are answered in the engine and
+ * neither is a defect.
+ *
+ * `applyLastCrossing` in `the-world-changing-on-its-own.ts` owns the attempt and
+ * fires at `1 / LAST_CROSSING_YEARS` per figure per year, where
+ * LAST_CROSSING_YEARS is 35,000 - twenty thousand for a prodigy and fifty for
+ * everybody else, out of a hundred-thousand-year span. With one or two figures
+ * standing at 44, that is one attempt somewhere in the world roughly every
+ * seventeen thousand years. Its own comment says the value of the pass is not
+ * that it fires but that when the top of the world does change there is a named
+ * cause rather than attrition.
+ *
+ * And `readyToStrike` refuses to touch ordinal 44 at all, returning
+ * `yearsNeeded: Infinity`, so the ordinary wall-striking pass cannot
+ * double-drive it. That guard also carries a measurement: without it the pass
+ * struck at the crossing every eight hundred years, forty times too often, and
+ * over five thousand years it emptied the apex - both seeded Tribulation
+ * Transcendence figures gone and the world ceiling standing at 38.
+ *
+ * So a static 41-44 band over two hundred or two thousand years is not evidence
+ * of anything. It is arithmetic: the only modelled exit from that band is an
+ * event with a seventeen-thousand-year return period, against lifespans of a
+ * hundred thousand. ANY horizon this test can afford will show it standing
+ * still, and Rule 2 asking an ordering question of it is asking a question the
+ * horizon cannot answer.
+ *
  * ═══════════════════════════════════════════════════════════════════════════
  * THE BASELINE, MEASURED - AND IT IS A LOG, NOT A CONSTANT
  * ═══════════════════════════════════════════════════════════════════════════
