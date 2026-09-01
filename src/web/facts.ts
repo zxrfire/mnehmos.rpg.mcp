@@ -575,6 +575,19 @@ function timeSkipProse(
     if (untreated > 0) {
         closing.push(`${untreated} meridian injur${untreated === 1 ? 'y is' : 'ies are'} still untreated, and nothing heals them on its own.`);
     }
+    // HP that came back, said out loud. Rest is a real answer to being hurt -
+    // the design owner's ruling, after a cultivator with zero injuries and
+    // sixty years of lifespan left died of a three-point scratch that had been
+    // sitting on their sheet since a previous seclusion. A player who cannot
+    // see the mending has no reason to believe sitting still is worth anything.
+    if (skip.deltas.hp > 0 && after.alive) {
+        closing.push(
+            after.hp >= after.maxHp
+                ? `The body mended over that stretch: ${after.hp} of ${after.maxHp}, whole again.`
+                : `The body mended ${skip.deltas.hp} of what it was carrying, and stands at `
+                  + `${after.hp} of ${after.maxHp}.`
+        );
+    }
     if (skip.deltas.spiritStones !== 0) {
         closing.push(`Spirit stones: ${after.spiritStones}, a change of ${signed(skip.deltas.spiritStones)}.`);
     }

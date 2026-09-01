@@ -61,6 +61,7 @@ import {
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
     STARVATION_TURNS,
+    HP_RECOVERY_FRACTION_PER_DAY,
     stagnationYearsForOrdinal,
     type AmbientQi,
     type Cultivator,
@@ -465,6 +466,8 @@ export function simulateTimeSkip(
      * one cannot put its name on a bandit in year nine.
      */
     let hpDepletedBy: DeathCause | null = null;
+    /** Fractional HP mended but not yet whole. See the recovery block below. */
+    let mending = 0;
     /**
      * Every wound the skip produced, in the order it happened. This is the
      * authoritative record the caller persists; `deltas.injuriesGained` is
@@ -900,6 +903,45 @@ export function simulateTimeSkip(
             { untreatedInjuries: untreatedInjuryCount(injuries), bleedingTurns },
             chunk
         ).bleedingTurns;
+
+        // ── THE BODY MENDS ──────────────────────────────────────────────
+        //
+        // HP only ever went down, and it killed people who were not in any
+        // danger. Measured: ordinal 13, age 38 of 100, full belly, ZERO
+        // injuries, killed by a 3 HP scratch the engine's own line says nothing
+        // followed - because the running total from every prior seclusion had
+        // never come back up. See HP_RECOVERY_FRACTION_PER_DAY for the ruling.
+        //
+        // Three gates, and each is a system that already existed:
+        //
+        //   at the lethal untreated count - the meridians are open and the
+        //     bleed clock is running. "Unless you are so injured you are slowly
+        //     dying" is the owner's own exception, and this is it. Nothing
+        //     closes a torn channel on its own and nothing here pretends to.
+        //   at zero satiety - a body with nothing to eat does not mend. It is
+        //     already spending itself.
+        //   at zero HP - the death gate below owns that, and a body cannot mend
+        //     its way back across it inside the chunk that emptied it.
+        //
+        // The carry is a float so the arithmetic is exact across chunk
+        // boundaries: half a point a day over a 30-day grid must be fifteen
+        // points, not thirty roundings of zero. It is dropped whenever
+        // recovery is blocked, because a body that stopped mending has not been
+        // quietly banking it.
+        const mendingBlocked =
+            hp <= 0
+            || untreatedInjuryCount(injuries) >= LETHAL_UNTREATED_INJURIES
+            || (stillNeedsToEat(ordinal) && satiety <= 0);
+        if (mendingBlocked) {
+            mending = 0;
+        } else if (hp < cultivator.maxHp) {
+            mending += cultivator.maxHp * HP_RECOVERY_FRACTION_PER_DAY * chunk;
+            const whole = Math.floor(mending);
+            if (whole > 0) {
+                mending -= whole;
+                hp = Math.min(cultivator.maxHp, hp + whole);
+            }
+        }
 
         if (!grainAbstinence) {
             const fed = consumeFood(chunk, { satiety, starvationTurns, rations }, cultivator.realmOrdinal);
