@@ -379,13 +379,27 @@ function timeSkipProse(
     const paragraphs: string[] = [];
     const where = placeName(before);
 
-    const opening = ambient === 'thin'
-        ? `${where}. The qi is thin here; it always has been. ${before.name} sat down anyway.`
-        : ambient === 'spirit_tide'
-            ? `${where}. A tide was running when ${before.name} sat down, and for once the air gave more than it asked.`
-            : ambient === 'dense'
-                ? `${where}. There is a vein under this ground, close enough to feel. ${before.name} sat down on top of it.`
-                : `${where}. ${before.name} sat down and began to breathe.`;
+    // NOT EVERY SPAN IS SPENT SITTING DOWN.
+    //
+    // This renderer serves every action that consumes time, and its opening
+    // assumed the one that made it: seclusion. So travelling read as
+    // "Low Fall. Drive Recheck sat down and began to breathe. Travel of 1 day
+    // was intended." - a person setting out described as somebody settling in,
+    // and the ambient flavour underneath it is about the ground they are
+    // leaving rather than anywhere they are going.
+    //
+    // The label already says which it is; it just was not being asked.
+    const seated = !/travel|journey|road|walk/i.test(label);
+
+    const opening = !seated
+        ? `${where}. ${before.name} took to the road.`
+        : ambient === 'thin'
+            ? `${where}. The qi is thin here; it always has been. ${before.name} sat down anyway.`
+            : ambient === 'spirit_tide'
+                ? `${where}. A tide was running when ${before.name} sat down, and for once the air gave more than it asked.`
+                : ambient === 'dense'
+                    ? `${where}. There is a vein under this ground, close enough to feel. ${before.name} sat down on top of it.`
+                    : `${where}. ${before.name} sat down and began to breathe.`;
     paragraphs.push(`${opening} ${label} of ${humanDays(skip.requestedDays)} was intended.`);
 
     if (skip.events.length === 0) {
