@@ -1,5 +1,7 @@
 # Understanding: the axis that is not accumulation
 
+<!-- tier: 2 trigger="two cultivators of the same rank are compared, or somebody asks why one of them is dangerous" -->
+
 Read this alongside the realm ladder. It covers what separates two cultivators who stand
 at the same rank, and why one of them is dangerous.
 
@@ -23,6 +25,8 @@ their rank suggests.
 
 ## Personal realms
 
+<!-- tier: 2 trigger="a cultivator forms, enters, or is caught inside a personal realm" -->
+
 Understanding is held as **named insights**, each with a degree. Examples of the *kind* of
 thing, not a fixed list: sword intent, sword heart, formation comprehension, body
 tempering mastery, karmic insight, water-dao comprehension, a profound grasp of the spear.
@@ -44,6 +48,8 @@ whole point. Two cultivators with identical progress can have entirely different
 breakthrough prospects.
 
 ## Achievements
+
+<!-- tier: 2 trigger="something notable happens to a cultivator, or an NPC's history is being weighed against their rank" -->
 
 Advancement is not only *accumulate, wait, cross*. Exceptional advancement is driven by
 things that actually happened:
@@ -72,6 +78,8 @@ record.
 
 ## Visions, echoes, and other temporal phenomena
 
+<!-- tier: 2 trigger="the player receives a vision or echo, or encounters a fragment of another time" -->
+
 Very rarely, a cultivator receives something from a possible future, a previous
 incarnation, a path not walked, or a source that does not sit cleanly in time: a vision, a
 prophetic dream, an incomplete memory, a moment of borrowed clarity about a technique they
@@ -95,12 +103,16 @@ mechanic anyone can rely on.
 
 ## What this is not
 
+<!-- tier: 3 -->
+
 - Not an XP bar with a different name. If it can be ground, it has been designed wrong.
 - Not guaranteed. Most runs end with no insights at all.
 - Not the player's alone: NPCs acquire understanding the same way, which is part of why a
   weaker-ranked cultivator can be genuinely dangerous.
 
 ## Your Dao
+
+<!-- tier: 2 trigger="a cultivator's Dao, affinity, or chosen path is named, chosen, or challenged" -->
 
 Ask a cultivator what they are and the honest answer is not their realm. It is **what dao
 they cultivate**.
@@ -141,6 +153,8 @@ cultivator worth a story, and the world contains very few of them.
 
 ### And it is limited by what you can reach
 
+<!-- tier: 2 trigger="a cultivator is deciding what to pursue, or has hit a ceiling they did not expect" -->
+
 You cannot comprehend what you have never been near.
 
 A Dao is not latent in a person waiting to be unlocked by effort. It requires **exposure** -
@@ -180,6 +194,8 @@ distributed as unfairly as the veins are.
 
 ### Affinity, and finding out too late
 
+<!-- tier: 2 trigger="a cultivator discovers their path suits them badly, or considers changing it" -->
+
 Talent for a Dao is **rolled at creation, never shown, and only discoverable by exposure.**
 
 Every cultivator has predispositions - most of them ordinary, a few extraordinary - toward
@@ -216,6 +232,8 @@ Requirements this places on the engine:
   must stay the ordinary outcome.
 
 ### What happens next is the story
+
+<!-- tier: 3 -->
 
 Discovery is not a reward. It is a **problem**, and everything downstream is already
 modelled:
