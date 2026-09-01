@@ -468,17 +468,43 @@ describe('the world can lose sight of somebody without losing them', () => {
         expect(after.unaccountedFor).toBe(before.unaccountedFor + 1);
     });
 
-    it('does drop the ceiling when somebody is established dead', async () => {
+    it('does drop the ceiling once everybody at the top is established dead', async () => {
         // The other half: this must still be able to fall, or it is not a
         // measure of anything.
+        //
+        // ── RE-DERIVED, BECAUSE THE ASSUMPTION UNDER IT STOPPED BEING TRUE ──
+        //
+        // This used to kill the single strongest NPC and assert the ceiling
+        // fell. That was correct for years and is not any more: seeding the
+        // Hollow Court stood its four Seats up at ordinals 44, 43, 43 and 42,
+        // so the world it seeds now reads 44(alive), 44(alive), 43, 43, 42, 41
+        // and killing one of TWO people at 44 correctly leaves the ceiling at
+        // 44. The test failed with "expected 44 to be less than 44".
+        //
+        // The old assumption was that exactly one person sits at the top of the
+        // world. The behaviour being guarded is not that - it is that the
+        // ceiling is a real measurement that falls when the rung empties - so
+        // the rung is emptied rather than one person taken off it. That keeps
+        // the guard and drops only the coincidence it was leaning on.
         const catalog = await loadCultivationCatalog();
         const { state } = seedWorld({ seed: 'missing-guard', catalog });
-        const top = [...state.npcs].sort(
-            (a, b) => b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
-        )[0];
-        const at = state.npcs.findIndex(n => n.id === top.id);
-        state.npcs[at] = { ...state.npcs[at], status: 'physically_dead' };
-        expect(worldShape(state).strongestOrdinal)
-            .toBeLessThan(top.cultivation.realmOrdinal);
+        const ceiling = state.npcs.reduce(
+            (top, n) => Math.max(top, n.cultivation.realmOrdinal), 0);
+        const atTheTop = state.npcs.filter(n => n.cultivation.realmOrdinal === ceiling);
+        expect(atTheTop.length, 'nobody is at the ceiling').toBeGreaterThan(0);
+
+        // Killing all but one must NOT move it, which is the half that would
+        // have caught the stale version rather than merely tolerating it.
+        for (const n of atTheTop.slice(1)) {
+            const at = state.npcs.findIndex(x => x.id === n.id);
+            state.npcs[at] = { ...state.npcs[at], status: 'physically_dead' };
+        }
+        expect(worldShape(state).strongestOrdinal, 'one survivor still holds the rung')
+            .toBe(ceiling);
+
+        const last = state.npcs.findIndex(x => x.id === atTheTop[0].id);
+        state.npcs[last] = { ...state.npcs[last], status: 'physically_dead' };
+        expect(worldShape(state).strongestOrdinal, 'the rung is empty and the ceiling has not moved')
+            .toBeLessThan(ceiling);
     });
 });
