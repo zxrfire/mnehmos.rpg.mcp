@@ -88,6 +88,27 @@ const ASKS = {
     ]
 };
 
+/**
+ * The API answers in two shapes and a harness that reads one of them lies.
+ *
+ * `/api/act` returns `{ narration }` while the run is live and `{ error }` once
+ * it is not - and the error is a good sentence, not a failure: "Work Death is
+ * dead (combat_defeat). The run is closed: there is no reload, no revival, and
+ * no continuation." A probe that only looks for `narration` prints that as
+ * empty output, which reads exactly like the engine silently doing nothing.
+ *
+ * I nearly filed that as a bug. Three separate times in one session a harness
+ * of mine read the wrong field and produced a finding about the engine that was
+ * a finding about the harness - `factionId` where the player carries `sectId`,
+ * `techniqueIds` where the player carries `knownTechniques`, and this. Read
+ * both, and say which one answered.
+ */
+const reply = d => {
+    if (typeof d?.narration === 'string' && d.narration.length > 0) return d.narration;
+    if (typeof d?.error === 'string') return `[refused] ${d.error}`;
+    return '';
+};
+
 const post = async (path, body) => {
     const r = await fetch(`http://localhost:${port}${path}`, {
         method: 'POST',
@@ -125,7 +146,7 @@ for (const [question, phrasings] of Object.entries(ASKS)) {
     let deflections = 0;
     for (const p of phrasings) {
         const r = await post('/api/act', { input: p });
-        const text = String(r?.narration ?? '').replace(/\s+/g, ' ').trim();
+        const text = reply(r).replace(/\s+/g, ' ').trim();
         const refused = text === '' || REFUSAL.test(text);
         const deflected = !refused
             && (DEFLECTIONS.some(d => d.test(text)) || !RELEVANT[question].test(text));
