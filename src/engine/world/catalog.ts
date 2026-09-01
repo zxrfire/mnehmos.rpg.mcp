@@ -24,6 +24,7 @@
  */
 
 import type { AmbientQi } from '../../schema/cultivation.js';
+import { MAX_ORDINAL } from '../cultivation/realms.js';
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX, clampQiDensity } from './qi-scale.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -523,8 +524,14 @@ function tierToNumber(tier: string): number {
 }
 
 function clampOrdinal(n: number): number {
+    // `MAX_ORDINAL`, not a literal 44. The hard-coded bound silently truncated
+    // every figure above the last mortal rung on its way into the world: a
+    // house recording an ancestor at `TRUE_IMMORTAL_ORDINAL` reached the
+    // simulation as 44, and a province declaring an uncapped ceiling reported
+    // 44 as though somebody had chosen it. `realms.ts` is the authority on the
+    // ladder's bounds and restating them anywhere else goes stale in silence.
     if (!Number.isFinite(n)) return 0;
-    return Math.max(0, Math.min(44, Math.floor(n)));
+    return Math.max(0, Math.min(MAX_ORDINAL, Math.floor(n)));
 }
 
 function clamp01(n: number): number {
