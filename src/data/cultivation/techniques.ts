@@ -50,8 +50,8 @@ import {
     MAX_ORDINAL,
     TOTAL_RANKS,
     TRUE_IMMORTAL_ORDINAL,
-    realmForOrdinal
 } from '../../engine/cultivation/realms.js';
+import { ordinaryCapFor } from '../../engine/cultivation/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PROVENANCE - the Late Age rule
@@ -78,7 +78,19 @@ import {
 // prodigy on the ambient qi of a late age. You might out-dig them.
 // ─────────────────────────────────────────────────────────────────────────
 
-export type TechniqueProvenance = 'taught' | 'ruin' | 'grave';
+/**
+ * Where a copy came from.
+ *
+ * `derived` is the fourth and it is not like the other three. The first three
+ * are all somebody else's copy reaching a reader - a shelf, a sealed site, a
+ * body - and the acquisition question is where it is and who has it. A derived
+ * art had no prior copy: a cultivator at sufficient dao standing wrote the
+ * continuation out of their own understanding, and the engine produced the row.
+ *
+ * It is the one route money cannot open, which is why it gets a provenance of
+ * its own rather than borrowing `ruin`. A ruin can be excavated by hirelings.
+ */
+export type TechniqueProvenance = 'taught' | 'ruin' | 'grave' | 'derived';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SHOWN OR READ - the rule underneath provenance
@@ -118,7 +130,13 @@ export type TransmissionMode = 'shown' | 'read';
 
 /** Shown or read, from where the art came from. */
 export function transmissionModeOf(provenance: TechniqueProvenance): TransmissionMode {
-    return provenance === 'taught' ? 'shown' : 'read';
+    // `derived` is shown, and the reasoning is the rule rather than an
+    // exception to it: the channel loses what it loses because somebody has to
+    // put an understanding into a form and somebody else has to take it back
+    // out. A cultivator who wrote the continuation themselves never encoded it
+    // for anybody, so there is no half-second missing and nothing to recover.
+    // It is the only art in the world with no transmission loss at all.
+    return provenance === 'taught' || provenance === 'derived' ? 'shown' : 'read';
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -429,7 +447,8 @@ export const NO_SURVIVING_COPY_NOTES: Readonly<Record<string, string>> = {
 const SOURCE_NOTES: Record<TechniqueProvenance, string> = {
     taught: 'Transmitted by at least one living sect. A teacher exists and can be paid, joined, or robbed.',
     ruin: 'Recovered, not taught. Copies survive only in sealed sites, and no living cultivator learned it from a person.',
-    grave: 'Taken off a body. Somebody died carrying it, somewhere remote enough that it stayed where they fell, and their sect very likely knows where that was.'
+    grave: 'Taken off a body. Somebody died carrying it, somewhere remote enough that it stayed where they fell, and their sect very likely knows where that was.',
+    derived: 'Written rather than found. Nobody transmitted this: a cultivator whose own road had gone far enough set down the continuation out of their understanding, and what they produced is suited to them by construction because it came out of them. There is no second copy unless they made one.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -697,9 +716,11 @@ export function classOf(t: Pick<Technique, 'id' | 'category'>): TechniqueClass {
  */
 export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>): number | null {
     if (classOf(t) !== 'cultivation') return null;
-    const band = realmForOrdinal(t.requiredOrdinal);
-    const cap = band.ordinalEnd + 1;
-    return cap > MAX_ORDINAL ? null : cap;
+    // Delegated rather than restated. Realm geometry is the engine's and the
+    // data layer owns which books exist; two copies of how a cap relates to a
+    // realm is one copy too many, and `realmsSpannedBy` depends on there being
+    // exactly one.
+    return ordinaryCapFor(t.requiredOrdinal);
 }
 
 /**
@@ -721,6 +742,23 @@ export function isWideSpan(t: Pick<Technique, 'id' | 'category' | 'requiredOrdin
 }
 
 /**
+ * The road a category is on, when an entry does not name one itself.
+ *
+ * A default rather than a mapping: `subject` is finer than `category` and the
+ * interesting entries override it. What this guarantees is that every art
+ * answers the question at all, which is what `techniqueSubject` has always
+ * needed and never had.
+ */
+const SUBJECT_BY_CATEGORY: Readonly<Record<string, string | null>> = {
+    attack: 'weapon',
+    defense: 'body',
+    movement: 'movement',
+    support: 'alchemy',
+    cultivation: null,
+    forbidden: 'life_death'
+};
+
+/**
  * Authoring helper. Mastery is per-cultivator state, never catalog state, so
  * every entry starts at zero and the factory keeps that out of the literals.
  * Provenance is resolved from the id sets above rather than repeated on every
@@ -729,7 +767,7 @@ export function isWideSpan(t: Pick<Technique, 'id' | 'category' | 'requiredOrdin
  * an art with none carries its own reason in place of the generic note.
  */
 function art(
-    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening'>
+    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subject'>
         & {
             opacity?: Opacity;
             class?: TechniqueClass;
@@ -738,6 +776,7 @@ function art(
             domain?: InsightDomain | null;
             domainDegree?: number;
             opening?: { rungs: number; rateMultiplier: number } | null;
+            subject?: string | null;
         }
 ): TechniqueEntry {
     const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
@@ -770,6 +809,10 @@ function art(
         volumes: SCATTERED_MANUAL_VOLUMES[t.id] ? [...SCATTERED_MANUAL_VOLUMES[t.id]] : null,
         derivable: DERIVABLE_TECHNIQUE_IDS.has(t.id),
         opening: t.opening ?? null,
+        // The road the art is on. Defaults from the category, so the ninety
+        // entries that never named one still answer the question, and an
+        // entry that wants to be specific overrides it.
+        subject: t.subject ?? SUBJECT_BY_CATEGORY[t.category] ?? null,
         notDerivableReason: NOT_DERIVABLE_NOTES[t.id] ?? null
     };
 }

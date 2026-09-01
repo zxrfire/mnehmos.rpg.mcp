@@ -1544,6 +1544,39 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // The genre's thesis, expressed as a weight table.
     // ═══════════════════════════════════════════════════════════════════
     {
+        // THE CORPSE ROW, and it is the cheapest high-value row in the
+        // catalog: `mayHoldAFit` has read the `corpse` tag since it was
+        // written and no entry anywhere carried one, so route 3 - what a dead
+        // cultivator was practising is still on them - was unreachable.
+        //
+        // `economy.md` already writes the dilemma this exists to put in front
+        // of a player: "An inheritance can refuse you. A grave never does,
+        // which is exactly why graves kill." A body does not assess anybody. It
+        // hands over whatever it was carrying, suited or not, and the manual on
+        // it was written for the person who died holding it rather than for
+        // the person who found them.
+        //
+        // Deliberately not a fight. `threatOrdinal` is null: what is dangerous
+        // here is the decision and whatever killed them, and neither is in the
+        // room.
+        id: 'enc-what-they-were-practising',
+        name: 'A Body, and What Was On It',
+        kind: 'grave',
+        simEventKind: 'opportunity',
+        weight: 26,
+        minOrdinal: 0,
+        maxOrdinal: 40,
+        interrupts: true,
+        threatOrdinal: null,
+        summaryTemplate:
+            'A cultivator is dead at {place}, {days} days by the look of it, {cause}. They stood at {rank}. What they were practising is still on them, and it is written for the person who died holding it.',
+        tokens: ['place', 'days', 'cause', 'rank'],
+        tags: ['corpse', 'technique', 'unclaimed', 'road'],
+        // Never outgrown, and for the ordinary reason: somebody dies on every
+        // rung of the ladder and somebody finds them on every rung of it.
+        regard: { span: 4 }
+    },
+    {
         id: 'enc-qi-deviation-onset',
         name: 'Qi Deviation Onset',
         kind: 'misfortune',

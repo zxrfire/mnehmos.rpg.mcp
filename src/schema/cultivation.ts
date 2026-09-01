@@ -1079,6 +1079,23 @@ export const TechniqueSchema = z.object({
     qiCost: z.number().int().min(0).default(0),
     /** Dice expression resolved by the existing dice engine, e.g. "2d6+4". */
     damage: z.string().nullable().default(null),
+    /**
+     * The road this art is on: 'sword', 'formation', 'body'. Null for an art
+     * that is not on one.
+     *
+     * On `Technique` rather than on `TechniqueEntry` deliberately, and the
+     * split is real: `TechniqueEntry` carries what the CATALOG knows about a
+     * row - provenance, surviving copies, opacity - and `Technique` is what a
+     * cultivator HOLDS. A derived art has no catalog row at all, so anything
+     * that must survive onto a held instance has to live here. The subject is
+     * the thing that made a derived manual suited by construction, because it
+     * was taken from the deriver's own road; putting it on the entry would
+     * lose it at exactly the moment it matters.
+     *
+     * `CultivationOptions.techniqueSubject` has been reading this concept for
+     * a while and had to be told it by the caller. Now it can be asked.
+     */
+    subject: z.string().nullable().default(null),
     /** Mastery 0..1. Raised by practice, gates the technique's full effect. */
     mastery: z.number().min(0).max(1).default(0),
     description: z.string().default(''),
