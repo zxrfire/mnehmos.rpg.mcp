@@ -117,11 +117,15 @@ describe('the register is consistent with itself', () => {
         // Chunks inside chunks, and the same shape everywhere. A reader who
         // has read one entry should be able to find their way around any other
         // one without re-learning it.
+        // "What they hold" became "What they teach" when the inventory moved to
+        // the Holdings tab and the artifact rows to the Items ledger. What is
+        // left in that part of an entry is the shelf, which Holdings only
+        // summarises, so the heading now says what is actually under it.
         const order = [
             'History',
             'What they are',
             'Who is in it',
-            'What they hold',
+            'What they teach',
             'What they want',
             'Ancestors',
             'How it stands with everybody'

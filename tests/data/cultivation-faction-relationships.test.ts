@@ -190,10 +190,10 @@ describe('faction relationships - the two bodies nobody joins', () => {
         const long = relationshipBetween(ROOT_SILL, 'apex-long-cut');
         expect(long?.stance).toBe('above');
         expect(long?.kind).toBe('apex_and_posting');
-        // Warm upward against a patron that is only correct back, which is the
+        // Warm upward against a patron that is only civil back, which is the
         // shape the section exists to make visible.
         expect(long?.warmth).toBe('warm');
-        expect(long?.theirWarmth).toBe('correct');
+        expect(long?.theirWarmth).toBe('civil');
 
         const survey = relationshipBetween(ROOT_SILL, 'apex-deep-survey');
         expect(survey?.kind).toBe('severed_patronage');

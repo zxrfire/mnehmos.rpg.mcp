@@ -566,7 +566,11 @@ function itemTable(caption: string, rows: readonly RegisterItemRow[]): string {
     if (!rows.length) return '';
     return `<div class="scroll"><table class="itemtbl">
   <caption>${esc(caption)}</caption>
-  <colgroup><col style="width:27%"><col style="width:9%"><col style="width:16%"><col style="width:9%"><col style="width:15%"><col style="width:24%"></colgroup>
+  <!-- Names less, prose more. Price held fifteen per cent for a four-digit
+       number while "Where it comes from" - the only column here anybody reads
+       as a sentence - had twenty-four, and "Pitched at" was too narrow for the
+       realm name it prints and overflowed into the column beside it. -->
+  <colgroup><col style="width:23%"><col style="width:8%"><col style="width:18%"><col style="width:9%"><col style="width:9%"><col style="width:33%"></colgroup>
   <thead><tr><th>Name</th><th>Grade</th><th>Pitched at</th><th>Kept as</th><th>Price</th><th>Where it comes from</th></tr></thead>
   <tbody>${rows.map(r => `<tr>
     <td class="nm">${esc(r.name)}<span class="dim"> ${esc(r.detail)}</span></td>
@@ -619,11 +623,14 @@ export function renderItemsSection(): string {
     return `
 <section>
   <div class="sh"><h2>What the world can track</h2><span class="r">${r.counts.kinds} kinds &middot; ${r.counts.kindsWithACatalog} with a catalog</span></div>
-  <p class="note"><strong>The Objects tab is one of these ten kinds.</strong> It is the artifact table, sorted on a combat rating, because for a thing that changes what you can survive the ordering is the argument. Every other kind of thing somebody can hold, lose, steal or be asked about two centuries later is here - and none of them has a power rating, which is exactly why none of them belongs in a table sorted on one.</p>
+  <p class="note"><strong>The artifact table is one of these ten kinds.</strong> It is on the Items tab, sorted on a combat rating, because for a thing that changes what you can survive the ordering is the argument. Every other kind of thing somebody can hold, lose, steal or be asked about two centuries later is here - and none of them has a power rating, which is exactly why none of them belongs in a table sorted on one.</p>
   <p class="note">The engine's own record of a thing is <em>ObjectRecord</em>, and these are its kinds. A row minted for a manual and a row minted for a grave are the same shape with different columns filled in: one owner field, one possessor field, one provenance chain, one claims list. There is no second table anywhere for important objects, and adding one is the mistake this arrangement exists to prevent.</p>
   <div class="scroll"><table class="itemtbl">
     <caption>Every kind of thing, and what the world has of it</caption>
-    <colgroup><col style="width:16%"><col style="width:25%"><col style="width:9%"><col style="width:10%"><col style="width:17%"><col style="width:23%"></colgroup>
+    <!-- The Kind column has to hold a chip, and a chip is one unbreakable
+         token: at sixteen per cent the widest of them hung fourteen pixels
+         into the column beside it. -->
+    <colgroup><col style="width:19%"><col style="width:24%"><col style="width:8%"><col style="width:9%"><col style="width:16%"><col style="width:24%"></colgroup>
     <thead><tr><th>Kind</th><th>What it is</th><th>Catalogued</th><th>Kept as</th><th>Graded on</th><th>Who holds one</th></tr></thead>
     <tbody>${kindRows}</tbody>
   </table></div>
@@ -649,13 +656,13 @@ export function renderItemsSection(): string {
 <section>
   <div class="sh"><h2>Every catalogued thing</h2><span class="r">${r.rows.length} rows &middot; by kind</span></div>
   <p class="note"><strong>The <em>pitched at</em> column is a rung, and it does not mean the same thing twice.</strong> ${esc(pitch.map(p => p.replace(/^the /, '')).join('; '))}. They are printed in one column because they are all positions on the one ladder and a reader wants them comparable, and they are annotated because flattening them silently would be the sheet inventing a comparison the engine does not make.</p>
-  <p class="note">Artifacts and the immortal objects are not repeated here. They are the Objects tab, in the catalog's own order, and a second copy of that table sorted differently is exactly the parallel listing this page exists not to have.</p>
+  <p class="note">Artifacts are not repeated here. Every one of them is a row with a holder, so they are on the Items tab with the rest of the ledger, and a second copy of that table sorted differently is exactly the parallel listing this page exists not to have.</p>
   ${itemTable(`Pills - ${rowsOf('pills').length} of them, the only reliable way to undo damage`, rowsOf('pills'))}
   ${itemTable(`Structural repair medicine - ${rowsOf('repair medicine').length}, for a cultivator who crossed and arrived broken`, rowsOf('repair medicine'))}
   ${itemTable(`Comprehension materials - ${rowsOf('comprehension materials').length} bands, spent by being understood`, rowsOf('comprehension materials'))}
   ${itemTable(`Extinct ingredients - ${rowsOf('extinct ingredients').length}, and what is left of each. Each is also a row in the herb table below, because an extinct herb is still a herb: what changed is that no quantity of it grows any more, so the count is what an older age left somewhere and did not come back for`, rowsOf('extinct ingredients'))}
   ${itemTable(`Spirit herbs - ${rowsOf('spirit herbs').length}, the ingredient layer under all of it`, rowsOf('spirit herbs'))}
   <p class="note"><strong>A pill is only ever as obtainable as its rarest ingredient</strong>, which is where the real cost of the alchemy system lives. ${RECIPES.length} recipes turn the herbs above into the pills above; ${RECIPES.filter(x => x.provenance === 'recovered').length} of them exist only because somebody opened something that was sealed, and no recipe may name a herb this catalog does not hold.</p>
-  <p class="note">Nothing on this side is rated above ${OBJECT_CEILING_BELOW_THE_LID} whatever kind it is, because an object rated at a rung lets whoever holds it strike at that rung. A manual is paper and is under no such rule, which is the one exception and the reason the arts have a sheet of their own. ${STRUCTURAL_REPAIR_HOLDINGS.length} opening holdings of repair medicine are recorded against named houses; who is holding what is in the Key tab, and what each house holds altogether is the Holdings tab.</p>
+  <p class="note">Nothing on this side is rated above ${OBJECT_CEILING_BELOW_THE_LID} whatever kind it is, because an object rated at a rung lets whoever holds it strike at that rung. A manual is paper and is under no such rule, which is the one exception and the reason the arts have a sheet of their own. ${STRUCTURAL_REPAIR_HOLDINGS.length} opening holdings of repair medicine are recorded against named houses; who is holding what is on the Items tab, and what each house holds altogether is the Holdings tab.</p>
 </section>`;
 }

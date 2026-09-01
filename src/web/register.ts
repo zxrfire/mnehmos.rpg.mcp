@@ -56,12 +56,13 @@ import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from '../data/cultivation/immortal-
 import {
     buildRepairMedicineRegister,
     renderRepairMedicineSection,
+    renderRepairMedicineHolders,
     type RegisterRepairMedicine
 } from './register-structural-repair-medicine.js';
-// Two more sections in their own modules, for the same reason. The items pane
-// answers what KINDS of thing the world tracks - which is nine kinds the
-// objects pane does not cover - and the holdings pane answers what is actually
-// inside each house, read across seven catalogs that have never been joined.
+// Two more sections in their own modules, for the same reason. The kinds
+// section answers what KINDS of thing the world tracks - the almanac, on the
+// Objects tab - and the holdings pane answers what is actually inside each
+// house, read across seven catalogs that have never been joined.
 import {
     buildItemsRegister,
     renderItemsSection,
@@ -875,7 +876,7 @@ export interface RegisterHoldsFrom {
  * relations in three directions, the warmth of each is a separate fact from the
  * structure of it, and the interesting houses are the ones where those two
  * disagree - dutiful upward and brutal downward, or warm to a patron who is
- * merely correct back.
+ * merely civil back.
  *
  * Every field here is quoted from `faction-relationships.ts` and none is
  * assembled at render time. `theirWarmth` is the other body's word for the same
@@ -4253,8 +4254,29 @@ const STYLE = `
    Dark is therefore the accurate one, matched to the game hex for hex. Light
    is the same bar re-lit: the ink ramp inverts, the accents stay the same hue
    and darken enough to hold contrast on paper. */
+/* ── One hue, one job ────────────────────────────────────────────────────
+   THE DEFECT THIS CLOSES. Teal (--datum) is the sheet's structure: every
+   panel's left rule, every open card's border, every figure, every link. It
+   was ALSO the colour that meant "this body stands over that one" on a
+   relationship row - so inside a single open entry a reader met teal bars
+   that were structure and teal bars that were a direction, with nothing
+   distinguishing them. Neither could be read, which is exactly what the
+   design owner reported: the colour code and the border are the same blue.
+
+   Teal keeps the structural job, because it holds it in a hundred places and
+   the sheet's whole identity is built on it. DIRECTION MOVES OFF IT, onto two
+   hues that appear NOWHERE ELSE on this page and mean nothing else when they
+   do - a plum for a body standing over this one, a moss for a body answering
+   to it, grey for level. Burnt orange (--signal) was not available either: it
+   already means "look at this" on flags, seals and ambitions.
+
+   The bar tokens are not borrowed for this any more. --bar-brass is the game
+   bar's badge colour and it was doing duty as the "below" rule, which meant a
+   change to the top bar would silently restyle the relationship section. */
 :root{--ground:#EDF0F1;--panel:#F7F9F9;--ink:#12181C;--quiet:#5C6E74;--faint:#8C9BA0;
 --rule:#C4D0D3;--strong:#9AAAAF;--datum:#14545F;--datum-soft:#DCE8EA;--signal:#9E4A16;--signal-soft:#F0E0D3;
+--rel-up:#5A3E86;--rel-up-soft:#E7E0F0;--rel-down:#42632C;--rel-down-soft:#E1EBD9;
+--rel-level:#6C7C81;--rel-level-soft:#E4E9EA;
 --bar-top:#F8FAFA;--bar-bottom:#E7ECEE;--bar-line:rgba(18,24,28,.12);--bar-line-strong:rgba(18,24,28,.2);
 --bar-ink:#12181C;--bar-ink-dim:#5C6E74;--bar-hover:rgba(18,24,28,.06);--bar-sigil:#1D5B48;
 --bar-brass:#7E5D1C;--bar-brass-dim:rgba(126,93,28,.13);--bar-focus:#1D5B48;
@@ -4264,17 +4286,26 @@ const STYLE = `
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#0C1113;--panel:#131A1D;
 --ink:#DFE7E9;--quiet:#93A5AA;--faint:#64777D;--rule:#263337;--strong:#3A4C52;--datum:#6BB6C4;
 --datum-soft:#173136;--signal:#D2884D;--signal-soft:#342315;
+--rel-up:#B79AD8;--rel-up-soft:#241B33;--rel-down:#A6C583;--rel-down-soft:#1B2618;
+--rel-level:#8B9AA0;--rel-level-soft:#1B2225;
 --bar-top:#0D1211;--bar-bottom:#0A0E0D;--bar-line:rgba(232,230,223,.09);--bar-line-strong:rgba(232,230,223,.18);
 --bar-ink:#E8E6DF;--bar-ink-dim:#B9BDB6;--bar-hover:#161E1C;--bar-sigil:#7FD1B9;
 --bar-brass:#CFA95F;--bar-brass-dim:rgba(207,169,95,.13);--bar-focus:#7FD1B9;}}
 :root[data-theme="dark"]{--ground:#0C1113;--panel:#131A1D;--ink:#DFE7E9;--quiet:#93A5AA;--faint:#64777D;
 --rule:#263337;--strong:#3A4C52;--datum:#6BB6C4;--datum-soft:#173136;--signal:#D2884D;--signal-soft:#342315;
+--rel-up:#B79AD8;--rel-up-soft:#241B33;--rel-down:#A6C583;--rel-down-soft:#1B2618;
+--rel-level:#8B9AA0;--rel-level-soft:#1B2225;
 --bar-top:#0D1211;--bar-bottom:#0A0E0D;--bar-line:rgba(232,230,223,.09);--bar-line-strong:rgba(232,230,223,.18);
 --bar-ink:#E8E6DF;--bar-ink-dim:#B9BDB6;--bar-hover:#161E1C;--bar-sigil:#7FD1B9;
 --bar-brass:#CFA95F;--bar-brass-dim:rgba(207,169,95,.13);--bar-focus:#7FD1B9;}
 *{box-sizing:border-box}
+/* Leading and measure are half of whether a page is easy, and neither costs a
+   word. 1.68 rather than 1.6 opens the line spacing on a serif set at 16px,
+   and text-wrap:pretty stops the last line of a paragraph landing as one
+   orphaned word where the browser supports it. */
 body{background:var(--ground);color:var(--ink);margin:0;padding:0 clamp(14px,4vw,44px) 80px;
-font:16px/1.6 Newsreader,Georgia,"Times New Roman",serif;-webkit-font-smoothing:antialiased}
+font:16px/1.68 Newsreader,Georgia,"Times New Roman",serif;-webkit-font-smoothing:antialiased;
+text-wrap:pretty}
 .sheet{max-width:1080px;margin:0 auto}
 /* ── The bar ─────────────────────────────────────────────────────────────
    The register opens in a tab of its own, so it has to carry its own way back.
@@ -4331,11 +4362,35 @@ margin:0 0 12px;text-wrap:balance}
 .stand{font-size:clamp(16px,2vw,20px);line-height:1.5;color:var(--quiet);max-width:60ch;margin:0;font-weight:300}
 .stand em{color:var(--ink);font-style:italic}
 section{padding-top:clamp(36px,5vw,60px)}
-.sh{display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--strong);padding-bottom:8px;margin-bottom:20px}
+/* ── A SECTION HEADER IS ALSO ITS FOLD CONTROL ───────────────────────────
+   The sheet renders everything, always. There is no simple mode and no
+   advanced mode - a mode means somebody has decided in advance what a reader
+   does not need, and on a register whose whole job is to be complete that is
+   the wrong trade. What the reader gets instead is the ability to put away
+   any section they are not reading, one at a time or all at once, and to have
+   that remembered the next time the page is built. */
+.sh{display:flex;align-items:baseline;gap:8px 16px;flex-wrap:wrap;
+border-bottom:1px solid var(--strong);padding-bottom:8px;margin-bottom:20px;cursor:pointer}
+.sh:hover h2{color:var(--datum)}
+.secfold{appearance:none;background:transparent;border:1px solid var(--rule);border-radius:3px;
+color:var(--quiet);font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
+text-transform:uppercase;padding:4px 9px;cursor:pointer;white-space:nowrap;
+transition:color .12s,border-color .12s}
+.secfold:hover{color:var(--datum);border-color:var(--datum)}
+.secfold:focus-visible{outline:2px solid var(--datum);outline-offset:2px}
+section[data-folded] .secbody{display:none}
+section[data-folded]>.sh{margin-bottom:0;border-bottom-style:dashed}
+section[data-folded]>.sh h2{color:var(--faint)}
+/* The one control that acts on the whole page. Sits under the tabs, where a
+   reader looking for a way to make the sheet smaller looks first. */
+.foldbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0 0;
+border-bottom:1px solid var(--rule)}
+.foldbar p{margin:0;flex:1;min-width:220px;font-size:13px;line-height:1.5;color:var(--quiet)}
+.foldbar .secfold{padding:5px 11px}
 .sh h2{font:600 clamp(19px,2.4vw,26px)/1.2 Archivo,"Helvetica Neue",Arial,sans-serif;letter-spacing:-.012em;margin:0;flex:1}
 .sh .r{font:11px/1.6 "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;
 color:var(--faint);white-space:nowrap}
-.note{max-width:68ch;color:var(--quiet);margin:0 0 20px}
+.note{max-width:68ch;color:var(--quiet);margin:0 0 16px;line-height:1.68}
 .note strong{color:var(--ink);font-weight:500}
 .chip{display:inline-block;font:500 10px/1.5 "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
 text-transform:uppercase;padding:2px 7px;border:1px solid var(--strong);color:var(--quiet);white-space:nowrap}
@@ -4387,7 +4442,10 @@ color:var(--datum);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid va
 .orgchart li{position:relative}
 .orgchart ul ul>li::before{content:"";position:absolute;left:-24px;top:24px;width:22px;height:2px;background:var(--rule)}
 .ncard{background:var(--ground);border:1px solid var(--rule);border-left:3px solid var(--faint);max-width:none}
-.ncard>summary{list-style:none;cursor:pointer;padding:11px 14px;display:grid;gap:3px}
+/* More air between the three lines of a card head. They are three different
+   KINDS of statement - who this is, the facts about it, what it is reaching
+   for - and 3px of gap made them one block of text. */
+.ncard>summary{list-style:none;cursor:pointer;padding:12px 15px;display:grid;gap:7px}
 .ncard>summary::-webkit-details-marker{display:none}
 .ncard>summary:hover{background:var(--datum-soft)}
 .ncard>summary:focus-visible{outline:2px solid var(--datum);outline-offset:-2px}
@@ -4400,14 +4458,43 @@ color:var(--datum);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid va
 .ncard:focus-visible{outline:2px solid var(--datum);outline-offset:2px}
 .node.apex>.ncard{border-left-color:var(--datum);border-left-width:5px;background:var(--datum-soft)}
 .node.court>.ncard{border-left-color:var(--datum)}
-.nhead{display:flex;align-items:baseline;gap:10px}
-.nname{font:600 16px Archivo,"Helvetica Neue",Arial,sans-serif;letter-spacing:-.01em}
-.nord{font:500 14px "IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--datum)}
-.nkind{font:10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:8px}
+/* THE CARD HEAD, WHICH IS THE MOST-READ THING ON THE SHEET.
+   Every faction in the world is a row here, so a reader meets this shape
+   thirty-four times before they meet anything else. It used to be a name, a
+   bare number and then one undifferentiated run of uppercase micro-type
+   holding six facts. Now it is three ranked lines: the name, the facts with
+   printed separators and named labels, and the want on its own line. */
+.nhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+/* Names wrap at their own spaces rather than being held on one line and
+   pushing everything else off the card. */
+.nname{font:600 16.5px/1.3 Archivo,"Helvetica Neue",Arial,sans-serif;letter-spacing:-.01em;
+min-width:0;overflow-wrap:break-word}
+.nord{font:500 14px "IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;
+color:var(--datum);white-space:nowrap}
+/* Wrapping rather than a flex row that overflows, and the gap is small because
+   the separator is a printed character now and does the work. */
+.nkind{font:10.5px/1.7 "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.08em;
+color:var(--faint);display:flex;flex-wrap:wrap;align-items:baseline;gap:0 2px}
+.nfact{white-space:nowrap}
+/* The two weights that give the row its hierarchy: the label recedes, the
+   value is in reading ink. A reader scanning for "which one admits at 3" is
+   looking at the values and never at the labels. */
+.nfl{text-transform:uppercase;letter-spacing:.11em;color:var(--faint)}
+.nfv{color:var(--ink);font-weight:500;text-transform:none;letter-spacing:.02em}
+.nsep{color:var(--strong)}
+.nfact.pin .nfv{color:var(--datum)}
+.nfact.ex .nfv{color:var(--signal)}
+.nfact.sl .nfv{border-bottom:1px dashed var(--strong)}
+.nord .nfl{font-size:9.5px;margin-right:1px}
 .ngo{font:11px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--datum);opacity:0;transition:opacity .12s}
 /* Motive on the closed card. Clamped to two lines: it is a scanning aid, and
-   an ambition that ran to a paragraph here would make the list unscannable. */
-.nwant{font-size:13.5px;line-height:1.45;color:var(--quiet);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+   an ambition that ran to a paragraph here would make the list unscannable.
+   Labelled, and set apart from the facts line above by a hairline, because the
+   two used to run into each other with nothing at all between them. */
+.nwant{font-size:14px;line-height:1.5;color:var(--quiet);display:-webkit-box;-webkit-line-clamp:2;
+-webkit-box-orient:vertical;overflow:hidden;padding-top:6px;border-top:1px solid var(--rule);max-width:88ch}
+.nwant .nfl{font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.13em;
+text-transform:uppercase;color:var(--faint);margin-right:4px}
 .ncard:hover .ngo,.ncard:focus-visible .ngo{opacity:1}
 .objblk{border:1px solid var(--rule);background:var(--panel);padding:16px 18px;margin-bottom:12px}
 .objblk h3{font:600 18px Archivo,"Helvetica Neue",Arial,sans-serif;margin:0 0 12px;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
@@ -4428,14 +4515,31 @@ color:var(--datum);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid va
    Widths are declared per table in its own colgroup; this rule is only what
    makes the browser honour them. */
 .itemtbl,.holdtbl{table-layout:fixed;width:100%}
-.itemtbl td,.holdtbl td{vertical-align:top;word-break:normal;overflow-wrap:anywhere}
+/* break-word rather than anywhere: a name should wrap at its own spaces and
+   only ever be cut inside a word when the word alone cannot fit the column.
+   Anywhere gave mid-word breaks on names that had a space in them the browser
+   was perfectly willing to use.
+   NOTE: no backticks in this comment. It lives inside a template literal and
+   one backtick here terminates the whole stylesheet - see AGENTS.md. */
+.itemtbl td,.holdtbl td{vertical-align:top;word-break:normal;overflow-wrap:break-word}
+/* A one-word mono cell - a grade, a state, a standing - is never improved by
+   being cut in half. It either fits its column or the column is wrong, and
+   breaking "legendary" across two lines hides the fact that it is wrong. */
+.itemtbl td.m,.holdtbl td.m{overflow-wrap:normal}
 /* td.nm and td.m are nowrap everywhere else on the sheet, which is right for a
    name column sized to its content and wrong inside a fixed table: the cell
    cannot grow, so the text runs out over the column beside it. Scoped to these
    two tables rather than relaxed globally. */
-.itemtbl td.nm,.itemtbl td.m,.holdtbl td.nm,.holdtbl td.m{white-space:normal}
+/* td.n was left out of this relaxation and it is the same bug: a fixed cell
+   that cannot wrap does not grow, it OVERFLOWS, and a rung printed with its
+   realm name - "13 Foundation Establishment Early" - ran straight across the
+   column beside it and sat on top of that cell's own chip. Every cell in a
+   fixed table has to be allowed to wrap or the table is lying about its
+   widths. */
+.itemtbl td.nm,.itemtbl td.m,.itemtbl td.n,
+.holdtbl td.nm,.holdtbl td.m,.holdtbl td.n{white-space:normal}
 .itemtbl td.nm .dim,.holdtbl td.nm .dim{display:block;margin-top:2px}
-.holdset{margin:6px 0 2px;display:grid;grid-template-columns:200px 1fr;gap:7px 16px}
+.holdset{margin:6px 0 2px;display:grid;grid-template-columns:172px 1fr;gap:7px 16px}
 .holdset dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
 text-transform:uppercase;color:var(--faint);padding-top:3px}
 .holdset dd{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
@@ -4449,7 +4553,11 @@ text-transform:uppercase;color:var(--faint);padding-top:3px}
 .holdset dt{padding-top:9px}}
 .jump{color:var(--datum);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .dos:target,.dos.flash{border-left-color:var(--datum);box-shadow:0 0 0 2px var(--datum-soft)}
-.tabs{display:flex;gap:2px;margin-top:clamp(22px,3vw,32px);border-bottom:2px solid var(--ink)}
+/* Seven tabs in a row that could not wrap put a horizontal scrollbar on the
+   whole document at any narrow width, which is the one page-level scroll this
+   sheet is not allowed to have: everything else that is too wide scrolls
+   inside its own .scroll box. */
+.tabs{display:flex;flex-wrap:wrap;gap:2px;margin-top:clamp(22px,3vw,32px);border-bottom:2px solid var(--ink)}
 .tab{appearance:none;background:transparent;border:1px solid var(--rule);border-bottom:none;color:var(--quiet);
 font:600 12px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;
 padding:10px 16px;cursor:pointer;display:flex;gap:8px;align-items:center}
@@ -4496,7 +4604,14 @@ font-size:14px;line-height:1.55;color:var(--ink)}
 .grp h4 .gap{color:var(--faint);font-weight:400;letter-spacing:.04em;text-transform:none}
 .grp.sealed h4,.grp.sealed .wo{color:var(--signal)}
 .grp.ascended .wo{color:var(--datum)}
-.who{display:grid;grid-template-columns:minmax(140px,auto) 34px minmax(120px,auto) 1fr;gap:4px 14px;padding:5px 0;border-top:1px solid var(--rule);align-items:baseline}
+/* NAMES GET LESS AND THE DESCRIPTION GETS MORE, which is the opposite of what
+   an auto column does. Auto is sized to its longest cell, so one long name or
+   one long role title took width off the only column on the row that is prose,
+   on every row, for every faction. Fractions bound all three: the name and the
+   role wrap at their own spaces, and what they give up goes to the detail.
+   NOTE: no backticks in this comment - see AGENTS.md and the note above. */
+.who{display:grid;grid-template-columns:minmax(0,1.1fr) 38px minmax(0,1fr) minmax(0,2.7fr);
+gap:4px 14px;padding:6px 0;border-top:1px solid var(--rule);align-items:baseline}
 .who:first-of-type{border-top:none}
 .wn{font:500 15px Archivo,"Helvetica Neue",Arial,sans-serif}
 .wo{font:500 14px "IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--quiet);text-align:right}
@@ -4617,14 +4732,54 @@ dd .more{margin-top:5px}
    list, so the ordering does the grouping and the reader keeps one table. */
 .who.sole .wn{font-weight:600}
 .who.sole{border-left:2px solid var(--datum);padding-left:8px;margin-left:-10px}
-.part{display:flex;align-items:baseline;gap:10px;margin:20px 0 8px;
-padding-bottom:5px;border-bottom:1px solid var(--rule)}
+.part{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;
+padding-bottom:5px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
 .part h4{margin:0;font:600 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
 letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
 .part span{font-size:11.5px;color:var(--faint)}
+/* ── The reader folds what they are not reading ──────────────────────────
+   Nothing here hides anything by default. Every part of every entry renders
+   open, at full detail, and this is only the control that lets somebody put
+   away the parts they have finished with. The heading is the control, so
+   there is nothing extra to aim at, and the marker on the right says which
+   way it will go. The folded set is kept per PART NAME rather than per entry
+   - see foldablePart - so folding Ancestors once folds it everywhere. */
+.partfold{margin:0}
+.partfold>summary{list-style:none;cursor:pointer}
+.partfold>summary::-webkit-details-marker{display:none}
+.partfold>summary:hover .part h4{color:var(--datum)}
+.partfold>summary:focus-visible{outline:2px solid var(--datum);outline-offset:2px}
+.partfold>summary .part::after{content:"hide";margin-left:auto;
+font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.13em;
+text-transform:uppercase;color:var(--faint)}
+.partfold:not([open])>summary .part::after{content:"show"}
+.partfold:not([open])>summary .part{border-bottom-style:dashed;color:var(--faint)}
+.partfold:not([open])>summary .part h4{color:var(--quiet)}
+/* ── A LABEL AND ITS BODY ARE TWO COLUMNS, NOT ONE PARAGRAPH ─────────────
+   THE DEFECT. A paragraph written as a bold label followed by its text sets
+   the body indented after the label on the first line and then wraps every
+   later line back to the left margin - underneath the label. On screen that
+   reads as a two-column layout whose second column has escaped, which is
+   exactly what the design owner reported: text should not go under.
+   The fix is to make the two columns real. Same measurements and the same
+   grammar as .hist and .relsides, so a labelled paragraph and a definition
+   list look like the same thing on the page, because they are. Applied by
+   separateLabelFromBody, which only treats a bold as a label when it really
+   is one - short, and not a grammatical part of the sentence after it. */
+.labelled{display:grid;grid-template-columns:160px minmax(0,1fr);gap:4px 16px;align-items:baseline}
+.labelled>.lbl{font:600 10px/1.6 "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
+text-transform:uppercase;color:var(--faint);padding-top:2px}
+.labelled>.lbd{min-width:0}
+@media (max-width:640px){.labelled{grid-template-columns:1fr;gap:2px}
+.labelled>.lbl{padding-top:8px}}
+/* Inside a definition value there is no room for a second pair of columns, so
+   the same defect is fixed by stacking instead. A name over its description
+   is still a name and a description; a name with its description wrapped back
+   underneath it is neither. */
+dd>.lbl--stacked{display:block;margin-bottom:2px;color:var(--ink)}
 /* History, and the demonic identities, share a term list. Both are the
    catalog's own sentences with a heading derived from the field. */
-.hist{margin:0 0 10px;display:grid;grid-template-columns:190px 1fr;gap:7px 16px}
+.hist{margin:0 0 10px;display:grid;grid-template-columns:160px 1fr;gap:7px 16px}
 .hist dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
 text-transform:uppercase;color:var(--faint);padding-top:2px}
 .hist dd{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
@@ -4655,7 +4810,7 @@ text-transform:uppercase;color:var(--faint);padding-top:2px}
 .demon h4{margin:0 0 8px;font:600 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
 letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
 .demon h4 span{margin-left:8px;letter-spacing:.06em;text-transform:none;color:var(--faint)}
-.dispute{margin:0;display:grid;grid-template-columns:210px 1fr;gap:9px 16px}
+.dispute{margin:0;display:grid;grid-template-columns:180px 1fr;gap:9px 16px}
 .dispute dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
 text-transform:uppercase;color:var(--signal);padding-top:3px}
 .dispute dd{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
@@ -4673,21 +4828,34 @@ text-transform:uppercase;color:var(--signal);padding-top:3px}
    per row inside it, and the row rule carries the direction as colour.
    DIRECTION IS THE COLOUR AXIS and warmth is not. A reader arrives wanting to
    know who backs this house and whom it backs, so that is what is legible from
-   across the page: teal for a body standing over this one, brass for a body
+   across the page: plum for a body standing over this one, moss for a body
    answering to it, and a plain grey for level. Warmth is a word in the
    sentence, because six shades of warmth on top of three of direction is two
-   colour systems fighting over one row and neither of them readable. */
+   colour systems fighting over one row and neither of them readable.
+
+   THE TWO HUES ARE RESERVED. They are defined once at the top of this sheet
+   and used only here, so a plum rule anywhere on the page means one thing and
+   a teal rule always means structure. They were teal and brass, which is the
+   collision the token comment explains: teal was simultaneously the panel
+   border, the open-card border, the figures and the links. */
 .rels{margin:8px 0 4px;border-left:3px solid var(--rule);padding-left:14px}
 .relgrp{margin:14px 0 0}
 .relgrp:first-child{margin-top:2px}
 .relgrp h4{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
 text-transform:uppercase;color:var(--faint);margin:0 0 6px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-.relgrp h4 span{color:var(--datum)}
+/* The group heading takes the direction's own colour rather than the sheet's
+   structural teal, so the whole of this region reads on one axis. */
+.relgrp h4 span{color:var(--rel-level)}
+.relgrp--above h4 span{color:var(--rel-up)}
+.relgrp--below h4 span{color:var(--rel-down)}
 .relgrp h4 .gap{color:var(--faint);font-weight:400;letter-spacing:.04em;text-transform:none}
-.rel{border-left:2px solid var(--rule);padding:0 0 0 12px;margin:10px 0}
-.rel--above{border-left-color:var(--datum)}
-.rel--below{border-left-color:var(--bar-brass)}
-.rel--alongside{border-left-color:var(--strong)}
+/* Wider than the 2px it was. The direction rule is now the only coloured mark
+   in this region and it is what a reader decodes from across the page, so it
+   is given enough weight to be seen without being read. */
+.rel{border-left:4px solid var(--rule);padding:0 0 0 13px;margin:14px 0}
+.rel--above{border-left-color:var(--rel-up)}
+.rel--below{border-left-color:var(--rel-down)}
+.rel--alongside{border-left-color:var(--rel-level)}
 .relh{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:5px}
 .relwho{font:600 14px Newsreader,Georgia,serif;color:var(--ink)}
 /* The badge repeats the rule colour, because a coloured bar alone is a legend
@@ -4695,9 +4863,9 @@ text-transform:uppercase;color:var(--faint);margin:0 0 6px;display:flex;gap:8px;
 .reldir{font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
 text-transform:uppercase;padding:2px 6px;border-radius:3px;border:1px solid var(--rule);
 color:var(--faint);white-space:nowrap}
-.reldir.above{color:var(--datum);border-color:var(--datum);background:var(--datum-soft)}
-.reldir.below{color:var(--bar-brass);border-color:var(--bar-brass);background:var(--bar-brass-dim)}
-.reldir.alongside{color:var(--quiet);border-color:var(--strong)}
+.reldir.above{color:var(--rel-up);border-color:var(--rel-up);background:var(--rel-up-soft)}
+.reldir.below{color:var(--rel-down);border-color:var(--rel-down);background:var(--rel-down-soft)}
+.reldir.alongside{color:var(--rel-level);border-color:var(--rel-level);background:var(--rel-level-soft)}
 /* The key, as three sample cards rather than three loose badges. It shows the
    RULE as well as the badge, because the rule is the mark a reader decodes
    scanning from a distance and the badge was the only thing the old key
@@ -4713,7 +4881,7 @@ letter-spacing:.02em;color:var(--quiet)}
 .relsay{margin:0 0 6px;font-size:14.5px;line-height:1.55;color:var(--ink)}
 .relsay b{font-weight:600}
 .relwhat{margin:0 0 6px;font-size:14px;line-height:1.55;color:var(--quiet)}
-.relsides{margin:0;display:grid;grid-template-columns:190px 1fr;gap:6px 16px}
+.relsides{margin:0;display:grid;grid-template-columns:160px 1fr;gap:6px 16px}
 .relsides dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
 text-transform:uppercase;color:var(--faint);padding-top:2px}
 .relsides dd{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
@@ -4829,7 +4997,20 @@ function artifactTable(list: RegisterArtifact[], ceiling: RegisterArtifactCeilin
             + `<td class="q">${esc(a.description)}${tagChips(a.tags)}</td></tr>`;
     }).join('');
 
-    return `<div class="scroll"><table>
+    // WIDTHS, DECLARED, BECAUSE AUTO LAYOUT GOT THEM EXACTLY BACKWARDS.
+    // Measured on the rendered page before this: the artifact name column was
+    // 351px holding "The First Course" with two hundred pixels of nothing
+    // beside it, while "What it is" - the only column on the row anybody reads
+    // as prose - was squeezed to 317px and came out as eight lines of six
+    // words. Auto layout sizes a column to its longest cell and a nowrap name
+    // cell has no longest line, so the names took the width and the paragraph
+    // paid for it. Meanwhile "The Hollow Court" in a 104px owner column broke
+    // across two lines, which is the same fault seen from the other end.
+    //
+    // So: the names get less and are allowed to wrap, and the description gets
+    // the rest. `table-layout:fixed` is what makes a browser honour any of it.
+    return `<div class="scroll"><table class="itemtbl">
+  <colgroup><col style="width:6%"><col style="width:18%"><col style="width:15%"><col style="width:14%"><col style="width:11%"><col style="width:36%"></colgroup>
   <caption>Every artifact in the world &middot; power descending</caption>
   <thead><tr><th class="pw">Power</th><th>Artifact</th><th>Owner</th><th>Held by</th><th>Standing</th><th>What it is</th></tr></thead>
   <tbody>${body}</tbody></table></div>`;
@@ -5417,13 +5598,22 @@ function deepRoadBlock(r: RegisterDeepRoad): string {
 /**
  * What each warmth word means, printed where it is used rather than only in the
  * key, because a one-word column that needs a lookup is a column nobody reads.
+ *
+ * THE GLOSS IS A REMINDER AND NEVER A RESCUE. A reader meets the word before
+ * they reach the bracket, so any word that needs the bracket to avoid being
+ * misread has already been misread. `correct` failed exactly that way for a
+ * long time here - it was meant in the formal-manners sense and every reader
+ * took it to mean "accurate" - and the fix was the word, not a longer gloss.
+ * It is `civil` now. Nothing on this list is doing that any more: warm, civil,
+ * distant, wary, cold and hostile each mean in this scale what they mean in a
+ * sentence, and the glosses below only say how far each one goes.
  */
 const WARMTH_GLOSS: Record<Warmth, string> = {
     warm: 'glad of them, and will spend on them unasked',
-    correct: 'the forms observed exactly, and nothing past them',
+    civil: 'the forms observed, and nothing past them',
     distant: 'no ill will and no contact; nobody maintains this one',
     wary: 'useful, watched, and not left unattended',
-    cold: 'the forms observed and the warmth deliberately withheld',
+    cold: 'the forms observed, and the warmth deliberately withheld',
     hostile: 'acted against, or would be if the cost fell'
 };
 
@@ -5614,8 +5804,8 @@ function warmthSentence(r: RegisterRelationship, name: string): string {
  * WHAT A READER SEES AND WHAT THEY DO NOT. Everything in the reading line is a
  * sentence. The stored fields - the warmth enum, the tie kind, and which table
  * the row came out of - are this sheet's own bookkeeping, and printing them raw
- * was the defect this replaces: an entry that read "correct / and back /
- * correct / apex and court / from authored" was showing somebody the shape of
+ * was the defect this replaces: an entry that read "civil / and back /
+ * civil / apex and court / from authored" was showing somebody the shape of
  * the record instead of telling them anything. Provenance is collapsed into one
  * line at the foot of the section, which is where this sheet puts detail only
  * somebody checking the data wants.
@@ -5633,10 +5823,10 @@ function warmthSentence(r: RegisterRelationship, name: string): string {
  */
 function relationshipsBlock(rels: RegisterRelationship[], name: string): string {
     if (!rels.length) {
-        return sectionHead('How it stands with everybody', 'above, below and beside - and nothing recorded')
-            + `<p class="none">Nothing in the catalog puts ${esc(name)} in relation to any other body. `
+        return foldablePart('How it stands with everybody', 'above, below and beside - and nothing recorded',
+            `<p class="none">Nothing in the catalog puts ${esc(name)} in relation to any other body. `
             + 'That is a hole in the data rather than a house that stands alone: every faction holds from '
-            + 'somebody, is held from, is contested, or was in a room when something happened.</p>';
+            + 'somebody, is held from, is contested, or was in a room when something happened.</p>');
     }
 
     const groups = (['above', 'alongside', 'below'] as const)
@@ -5652,7 +5842,7 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
         below ? `${below} under it` : ''
     ].filter(Boolean).join(', ');
 
-    const body = groups.map(g => `<div class="relgrp">`
+    const body = groups.map(g => `<div class="relgrp relgrp--${esc(g.stance)}">`
         + `<h4>${esc(STANCE_HEADS[g.stance].label)} <span>${g.rows.length}</span>`
         + `<span class="gap">${esc(STANCE_HEADS[g.stance].gloss)}</span></h4>`
         + g.rows.map(r => {
@@ -5687,7 +5877,7 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
         .map(src => `${rels.filter(r => r.source === src).length} from ${src}`)
         .join(', ');
 
-    return sectionHead('How it stands with everybody', `${counts} - and how warm each end of it is`)
+    return foldablePart('How it stands with everybody', `${counts} - and how warm each end of it is`,
         // ONE SENTENCE, AND IT IS ABOUT HOUSES RATHER THAN ABOUT STORAGE.
         // This ran to five lines explaining that direction is held once and
         // warmth twice - true, and a fact about the database. Every faction
@@ -5695,8 +5885,8 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
         // against 3,798 substantial lines, and the register's whole claim is to
         // be a reflection of the world rather than of the code. The in-world
         // half is the half that survives: a house can be warm to a patron that
-        // is only correct back, and no org chart shows that.
-        + '<p class="note"><strong>A house can be warm to a patron that is only correct back, '
+        // is only civil back, and no org chart shows that.
+        '<p class="note"><strong>A house can be warm to a patron that is only civil back, '
         + 'or dutiful upward and cold to everything under it.</strong> Neither is on any org chart.</p>'
         // THE KEY IS A SIBLING OF THE PARAGRAPH, NOT A SPAN INSIDE IT, and that
         // is the whole of the bug this closes. It used to be three badges at the
@@ -5704,7 +5894,7 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
         // paragraph that already holds a BLOCK tag, a span is not one, and the
         // note runs past the limit - so on all 38 entries that carry this
         // section the key was pushed into the continuation and shipped closed.
-        // A reader landed on cards ruled in teal and brass with the legend for
+        // A reader landed on cards ruled in two colours with the legend for
         // them folded away, which is how a working colour system reads as
         // decoration applied to some rows and not others.
         + `<div class="relkey">${([
@@ -5719,7 +5909,7 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
         // convention does not: it was identical on all 12 entries that carry
         // one, and it describes how the catalog was written rather than how the
         // world is.
-        + `<p class="desc">${esc(bySource)}.</p></details>`;
+        + `<p class="desc">${esc(bySource)}.</p></details>`);
 }
 
 /** Who it answers to, on what terms, and what leaving would cost. */
@@ -5931,7 +6121,26 @@ function houseBlock(h: RegisterHouseAdmission): string {
  * the alternative is breaking the catalog's own prose, and a sentence is the
  * smallest unit this sheet is allowed to have an opinion about.
  */
-const CHUNK_LIMIT = 360;
+const CHUNK_LIMIT = 280;
+
+/*
+ * WHY 280 AND NOT 360. The design owner has now read this sheet three times and
+ * said each time that it is still not easy. The words are not the problem and
+ * are not being touched: what was wrong is that a "short paragraph" at 360
+ * characters is four or five lines of dense subordinate clauses, and a page of
+ * those is a wall however well each one is written.
+ *
+ * Lowering the limit makes MORE chunks out of the same sentences and never
+ * fewer words, which is the same rule this file has always followed, applied
+ * harder. Measured on the built sheet: the median chunk was 176 characters and
+ * the ninetieth percentile 310, so this cuts the long tail and leaves the
+ * ordinary case exactly as it was.
+ *
+ * It also costs less than it looks. A field that has already been split adds
+ * its new paragraph INSIDE the continuation that already exists rather than
+ * opening a second one, so the count of disclosures moves far less than the
+ * count of paragraphs.
+ */
 
 /**
  * One field, as paragraphs that each fit the limit.
@@ -6039,6 +6248,38 @@ function sectionHead(label: string, gloss: string): string {
     return `<div class="part"><h4>${esc(label)}</h4><span>${esc(gloss)}</span></div>`;
 }
 
+/** A stable handle for a heading, so a reader's folding survives a rerender. */
+function foldKey(label: string): string {
+    return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/**
+ * One part of an entry, and the reader decides whether it is open.
+ *
+ * EVERYTHING IS SHOWN BY DEFAULT. This is not a detail level and there is no
+ * mode: the sheet renders at full detail, always, and nothing is chosen for the
+ * reader. What the reader gets is the ability to fold away the parts they are
+ * not reading, on a page where one faction entry runs to seven of them and
+ * there are thirty-four faction entries.
+ *
+ * FOLDING IS REMEMBERED BY PART NAME RATHER THAN BY ENTRY. Somebody who does
+ * not care about Ancestors does not care about Ancestors on any house, and
+ * making them fold it thirty-four times would be worse than not offering it.
+ * So the handle is the heading, the same on every entry, and the script keeps
+ * the folded set in localStorage - which is per-viewer, per-browser, and never
+ * leaves the machine.
+ *
+ * Empty parts render as nothing at all rather than as a heading with a fold
+ * control and no content behind it.
+ */
+function foldablePart(label: string, gloss: string, body: string): string {
+    if (!body.trim()) return '';
+    return `<details class="partfold" open data-part="${esc(foldKey(label))}">`
+        + `<summary>${sectionHead(label, gloss)}</summary>`
+        + `<div class="partbody">${body}</div>`
+        + '</details>';
+}
+
 /**
  * How a faction came to be here, first on its entry.
  *
@@ -6077,11 +6318,11 @@ function historyBlock(h: RegisterHistory): string {
             + '</div>';
     }).join('');
 
-    return sectionHead('History', 'how it came to be here, and what that accounts for')
-        + `<dl class="hist">${rows.join('')}</dl>`
+    return foldablePart('History', 'how it came to be here, and what that accounts for',
+        `<dl class="hist">${rows.join('')}</dl>`
         + (shared
             ? `<div class="evts"><p class="note">The neutral line is the minimum every party would concede happened. The second paragraph is this house speaking for itself.</p>${shared}</div>`
-            : '');
+            : ''));
 }
 
 /**
@@ -6246,12 +6487,16 @@ function courtPanel(court: RegisterCourt): string {
  *                         first hard test of the history: a house whose history
  *                         claims one thing and whose roster shows another is
  *                         either declining or lying, and both are interesting.
- *   3. WHAT IT CONTROLS    items and arts, held outright or shared. The
- *                         distinction is load-bearing and the data supports it:
- *                         an art nobody else teaches is a possession, a method
- *                         half the province teaches is not, and the artifact
- *                         catalog carries owner and holder separately because
- *                         they are not always the same party.
+ *   3. WHAT IT TEACHES     the shelf, art by art, and the road to the top of
+ *                         the ladder where there is one. The distinction is
+ *                         load-bearing and the data supports it: an art nobody
+ *                         else teaches is a possession, a method half the
+ *                         province teaches is not. The INVENTORY is no longer
+ *                         here - objects, immortal objects, doses and the ground
+ *                         are the Holdings tab, and which body holds which
+ *                         specific object is the Items ledger. This part carries
+ *                         one line pointing at both rather than a third copy of
+ *                         rows that already have two homes.
  *   4. STANDINGS           loyalty, patrons, goals and grievances. Where the
  *                         cross-references land, and every grievance here
  *                         should be recognisable from the other side's entry.
@@ -6371,38 +6616,45 @@ function dossier(d: SectDossier): string {
     // about it, and the sheet should not bury it in a strip of small print.
     const controls: string[] = [];
 
-    // Above the weapons, because this is the measured column and that one is
-    // not. A holding says an object came down; a power says what it is worth
-    // against a person, on the ladder the person is standing on.
-    if (d.artifacts.length) {
-        controls.push(`<div class="grp artifacts"><h4>Artifacts <span>${d.artifacts.length}</span>`
-            + `<span class="gap">strongest ${d.artifacts[0].power}</span></h4>`
-            + d.artifacts.map(a =>
-                `<div class="who"><span class="wn">${esc(a.name)}</span>`
-                + `<span class="wo">${a.power}</span>`
-                + `<span class="wr">${esc(a.significance)} · held by ${esc(heldByLine(a))}</span>`
-                + `<span class="wd">${esc(a.description)}${tagChips(a.tags)}</span></div>`).join('')
-            + '</div>');
-    }
+    // ── THE INVENTORY IS NOT HERE ANY MORE, AND THAT IS THE POINT ────────
+    //
+    // This part used to render two lists nobody needed here: every artifact
+    // this house owns, and every immortal object it holds. Both are now the
+    // Holdings tab's job, in full, house by house, joined across the seven
+    // catalogs that carry them - and the artifact rows are also the Items tab's
+    // ledger, with owner and holder as separate columns. A faction entry
+    // carrying them made a THIRD rendering of the same rows.
+    //
+    // A third rendering is not a convenience. Every copy is a place the facts
+    // can drift, and on a sheet the design owner has three times called too
+    // dense, the copy is also what makes an entry exhausting: a reader working
+    // down a house met a full artifact catalog with descriptions and tags in
+    // the middle of it, having already met the same objects on two other tabs.
+    // One line pointing at the tab that owns the question replaces both lists.
+    //
+    // What stays is what Holdings only summarises: the shelf, art by art, and
+    // the road to the top of the ladder with its copies and its teachers.
+    // Holdings gives a count and the hardest title; this gives the curriculum.
+    const inventoryElsewhere = d.artifacts.length || d.holdings.length || d.partingGift || d.apex
+        ? `<p class="note"><strong>What this house is holding is on the Holdings tab</strong>`
+            + ` - ${[
+                d.artifacts.length
+                    ? `${d.artifacts.length} object${d.artifacts.length === 1 ? '' : 's'} in the artifact catalog, strongest at ${d.artifacts[0].power}`
+                    : '',
+                d.holdings.length
+                    ? `${d.holdings.reduce((n, h) => n + h.count, 0)} immortal object${d.holdings.reduce((n, h) => n + h.count, 0) === 1 ? '' : 's'}`
+                    : '',
+                d.apex ? `the ${esc(d.apex.giftName)} that was sent down` : '',
+                d.partingGift ? `the ${esc(d.partingGift.name)}${d.partingGift.intact ? '' : ', spent'}` : ''
+            ].filter(Boolean).join(', ')}`
+            + ' - spelled out there with what waking or spending each thing would cost. '
+            + 'Who is holding which specific object is the Items tab.</p>'
+        : '';
 
-    const weapons: string[] = [];
-    if (d.apex) weapons.push(`<div class="who"><span class="wn">${esc(d.apex.giftName)}</span><span class="wo">-</span><span class="wr">sent down</span><span class="wd">Permanent, unreproducible, and the reason this faction is an apex.</span></div>`);
-    if (d.partingGift) weapons.push(`<div class="who"><span class="wn">${esc(d.partingGift.name)}</span><span class="wo">-</span><span class="wr">parting gift${d.partingGift.intact ? '' : ' · spent'}</span><span class="wd">Left on the way out by somebody who crossed.</span></div>`);
-    for (const h of d.holdings) {
-        const mix = (['higher', 'middle', 'lower'] as const)
-            .filter(g => h.byGrade[g] > 0)
-            .map(g => `${h.byGrade[g]} ${g}`)
-            .join(', ');
-        weapons.push(`<div class="who"><span class="wn">${esc(h.item)}</span><span class="wo">${h.count}</span><span class="wr">${esc(mix)}</span><span class="wd">Came down. Cannot be made or reordered here; every use is permanent.</span></div>`);
-    }
-    if (weapons.length) {
-        controls.push(`<div class="grp weapons"><h4>Immortal weapons <span>${weapons.length}</span></h4>${weapons.join('')}</div>`);
-    }
-
-    // A library is what the house can teach rather than what it is holding,
-    // which is why it sits under the objects and not above them - and the
-    // curriculum block is the one place the sheet distinguishes an art nobody
-    // else teaches from a method half the province has.
+    // A library is what the house can teach rather than what it is holding -
+    // and the curriculum block is the one place on the sheet that distinguishes
+    // an art nobody else teaches from a method half the province has. Holdings
+    // reports a count and the hardest title; the shelf itself is here.
     if (d.curriculum) controls.push(curriculumBlock(d.curriculum));
 
     // Under the library, because it is the one title on it that a teach list
@@ -6504,48 +6756,49 @@ function dossier(d: SectDossier): string {
   ${d.history ? historyBlock(d.history) : ''}
   ${d.demonic ? demonicBlock(d.demonic, d.name) : ''}
 
-  ${sectionHead('What they are', 'the fuller version, and then the catalog in its own words')}
-  ${d.synopsis.length ? chunked(d.synopsis.join(' '), 'the rest of the precis', 'synop') : ''}
-  ${d.description
-      // Moved up into this chunk from the foot of the entry. It is the
-      // catalog's narrative prose - written to be read rather than used - and
-      // it belongs with the description rather than after everything else,
-      // collapsed so it never costs a reader who does not want it.
-      ? `<details class="context"><summary>In the catalog's own words</summary>${chunkParagraphs(d.description).map(part => `<p class="desc">${esc(part)}</p>`).join('')}</details>`
+  ${foldablePart('What they are', 'the fuller version, and then the catalog in its own words',
+      (d.synopsis.length ? chunked(d.synopsis.join(' '), 'the rest of the precis', 'synop') : '')
+      + (d.description
+          // Moved up into this chunk from the foot of the entry. It is the
+          // catalog's narrative prose - written to be read rather than used -
+          // and it belongs with the description rather than after everything
+          // else, collapsed so it never costs a reader who does not want it.
+          ? `<details class="context"><summary>In the catalog's own words</summary>${chunkParagraphs(d.description).map(piece => `<p class="desc">${esc(piece)}</p>`).join('')}</details>`
+          : ''))}
+
+  ${foldablePart('Who is in it', 'the people and their ranks, how you get in, and who it answers to',
+      fieldedBlock(d.fielded)
+      + (d.posting
+          // In place of the gate rather than beside it, and `wayIn` is null on
+          // these two rather than merely unrendered: there is no application
+          // anybody could make, so an admission block would print a bar that
+          // does not exist.
+          ? postingBlock(d.posting, d.name)
+          : d.wayIn ? wayInBlock(d.wayIn) : '')
+      + (d.favour ? favourBlock(d.favour) : '')
+      + (d.noPlaceForItsOwn ? noPlaceBlock(d.noPlaceForItsOwn, d.name) : '')
+      + (d.house ? houseBlock(d.house) : '')
+      + (d.id === 'sect-hollow-court' ? howTheCourtIsSeenBlock() : '')
+      + (people.length ? `<div class="grps">${people.join('')}</div>` : '')
+      + (d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''))}
+
+  ${holds.length || inventoryElsewhere
+      ? foldablePart('What they teach', 'the shelf, art by art - and which of it is theirs alone',
+          inventoryElsewhere + (holds.length ? `<div class="grps">${holds.join('')}</div>` : ''))
       : ''}
 
-  ${sectionHead('Who is in it', 'the people and their ranks, how you get in, and who it answers to')}
-  ${fieldedBlock(d.fielded)}
-  ${d.posting
-      // In place of the gate rather than beside it, and `wayIn` is null on
-      // these two rather than merely unrendered: there is no application
-      // anybody could make, so an admission block would print a bar that does
-      // not exist.
-      ? postingBlock(d.posting, d.name)
-      : d.wayIn ? wayInBlock(d.wayIn) : ''}
-  ${d.favour ? favourBlock(d.favour) : ''}
-  ${d.noPlaceForItsOwn ? noPlaceBlock(d.noPlaceForItsOwn, d.name) : ''}
-  ${d.house ? houseBlock(d.house) : ''}
-  ${d.id === 'sect-hollow-court' ? howTheCourtIsSeenBlock() : ''}
-  ${people.length ? `<div class="grps">${people.join('')}</div>` : ''}
-  ${d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''}
-
-  ${holds.length
-      ? sectionHead('What they hold', 'weapons, and the arts - which of them are theirs alone')
-        + `<div class="grps">${holds.join('')}</div>`
-      : ''}
-
-  ${sectionHead('What they want', 'and what they are wrong about, and what is in the way')}
-  ${d.ambition
-      ? ambitionBlock(d.ambition)
-      // Only on a faction that could have one. An apex reaching for something
-      // is not a shape the catalog records, and printing an absence there would
-      // read as an omission rather than as the abstention it is on a sect.
-      : d.apex ? '' : '<p class="none">Nothing recorded that this faction is reaching for, and the abstention is the entry rather than a hole in it.</p>'}
-  ${d.capability ? capabilityBlock(d.capability) : ''}
-  ${flagBlock(d.flags)}
-  ${d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : ''}
-  ${d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>` : ''}
+  ${foldablePart('What they want', 'and what they are wrong about, and what is in the way',
+      (d.ambition
+          ? ambitionBlock(d.ambition)
+          // Only on a faction that could have one. An apex reaching for
+          // something is not a shape the catalog records, and printing an
+          // absence there would read as an omission rather than as the
+          // abstention it is on a sect.
+          : d.apex ? '' : '<p class="none">Nothing recorded that this faction is reaching for, and the abstention is the entry rather than a hole in it.</p>')
+      + (d.capability ? capabilityBlock(d.capability) : '')
+      + flagBlock(d.flags)
+      + (d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : '')
+      + (d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>` : ''))}
 
   ${claims.length
       // Omitted entirely where a house has no ancestors of any kind, which is
@@ -6556,10 +6809,10 @@ function dossier(d: SectDossier): string {
       // a house holding somebody in reserve and a house with only a roll of the
       // dead is the single most useful fact in this chunk, and a static
       // subtitle would say the same thing about both.
-      ? sectionHead('Ancestors', d.people.sealed
+      ? foldablePart('Ancestors', d.people.sealed
           ? 'one sealed and still down there, and the roll'
-          : 'the roll. Nothing held in reserve, which is the ordinary case')
-        + `<div class="grps">${claims.join('')}</div>`
+          : 'the roll. Nothing held in reserve, which is the ordinary case',
+          `<div class="grps">${claims.join('')}</div>`)
       : ''}
 
   ${nothingAtAll
@@ -6568,6 +6821,39 @@ function dossier(d: SectDossier): string {
 
   ${relationshipsBlock(d.relationships, d.name)}
 </article>`;
+}
+
+/**
+ * One fact on a closed card: what it is called, and what it says.
+ *
+ * THE DEFECT THIS EXISTS TO CLOSE. The card head used to be a single run of
+ * uppercase micro-type in one colour, holding six unrelated facts with nothing
+ * between them. Flattened, a reader got
+ *
+ *   Frostmirror Court36holds from The Deep Surveyceiling 42gate 132 flaggedwants...
+ *
+ * and on screen they got the same thing with a small gap where every separator
+ * should have been - one weight, one colour, no labels, so the ordinal ran into
+ * the name and the flag count ran into the want. It was the worst thing on the
+ * page and it is where the eye lands first, because this is the list of every
+ * faction in the world.
+ *
+ * Three things fix it and all three are needed. Every fact is NAMED, so a bare
+ * number never has to be guessed at. Every fact is SEPARATED by a printed
+ * middot rather than by margin alone, so the separation survives being copied,
+ * pasted, read aloud or rendered without the stylesheet. And the label and the
+ * value take different weights, so the row has a hierarchy to scan instead of
+ * being one texture.
+ */
+function nfact(label: string, value: string, tone = ''): string {
+    return `<span class="nfact${tone ? ` ${tone}` : ''}">`
+        + `<span class="nfl">${esc(label)}</span> `
+        + `<span class="nfv">${esc(value)}</span></span>`;
+}
+
+/** The facts of a card head, separated by a mark that is really in the text. */
+function nfacts(items: string[]): string {
+    return `<span class="nkind">${items.filter(Boolean).join('<span class="nsep"> &middot; </span>')}</span>`;
 }
 
 /**
@@ -6583,31 +6869,36 @@ function dossier(d: SectDossier): string {
  * and the line says who the other party is.
  */
 function factionCard(d: SectDossier): string {
-    const flag = d.standing === 'strained' || d.standing === 'probationary'
-        ? ` <span class="chip ex">${esc(d.standing)}</span>`
-        : '';
-    const from = d.parentName
-        ? `holds from ${esc(d.parentName)}`
-        : 'holds from nobody';
-
     // The four questions a reader scanning thirty-four entries is asking, on
     // the closed card: how dangerous, whose are they, what do they want, can I
     // get in. Only the first two used to be here, so the answer to the other
     // two cost an expand each, thirty-four times.
-    const gate = d.intake === 'closed'
-        ? ' <span class="chip">closed</span>'
-        : d.intake === 'adoption'
-            ? ' <span class="chip">adoption only</span>'
-            : ` <span class="chip">gate ${d.admissionOrdinal}</span>`;
+    const facts = [
+        d.apex ? nfact('standing', 'apex', 'pin') : '',
+        nfact('holds from', d.parentName ?? 'nobody'),
+        d.standing === 'strained' || d.standing === 'probationary'
+            ? nfact('terms', d.standing, 'ex')
+            : '',
+        d.ceiling ? nfact('ceiling', String(d.ceiling), 'sl') : '',
+        d.intake === 'closed'
+            ? nfact('gate', 'closed')
+            : d.intake === 'adoption'
+                ? nfact('gate', 'adoption only')
+                : nfact('gate', String(d.admissionOrdinal)),
+        d.flags.length ? nfact('flagged', String(d.flags.length), 'ex') : ''
+    ];
 
+    // Labelled like every other fact, and on its own line. It used to begin
+    // with a bare lowercase "wants" immediately after the flag count, which is
+    // where "132 flaggedwants The third arterial" came from.
     const want = d.ambition
-        ? `<span class="nwant">wants ${esc(d.ambition.wants)}</span>`
+        ? `<span class="nwant"><span class="nfl">wants</span> ${esc(d.ambition.wants)}</span>`
         : '';
 
     return `<details class="ncard" id="faction-${esc(d.id)}">
       <summary>
-        <span class="nhead"><span class="nname"><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}</span><span class="nord">${d.ordinal}</span></span>
-        <span class="nkind">${from}${flag}${d.apex ? ' <span class="chip pin">apex</span>' : ''}${d.ceiling ? ` <span class="chip sl">ceiling ${d.ceiling}</span>` : ''}${gate}${d.flags.length ? ` <span class="chip ex">${d.flags.length} flagged</span>` : ''}</span>
+        <span class="nhead"><span class="nname"><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}</span><span class="nord"><span class="nfl">ord</span> ${d.ordinal}</span></span>
+        ${nfacts(facts)}
         ${want}
       </summary>
       <div class="nbody">${dossier(d)}</div>
@@ -6656,8 +6947,16 @@ function treeNode(
         // catalog says has never been settled.
         ? `<details class="ncard" id="faction-${esc(entry.id)}">
         <summary>
-          <span class="nhead"><span class="nname"><span class="dot ${esc(entry.alignment)}"></span>${esc(entry.name)}</span><span class="nord">${entry.ordinal}</span></span>
-          <span class="nkind">the ${esc(court.name.replace(/^The\s+/i, ''))} of ${esc(court.apexName)} &middot; ${court.officers.length} offices &middot; and a faction in its own right${entry.ceiling ? ` <span class="chip sl">ceiling ${entry.ceiling}</span>` : ''}${entry.flags.length ? ` <span class="chip ex">${entry.flags.length} flagged</span>` : ''}<span class="ngo">open</span></span>
+          <span class="nhead"><span class="nname"><span class="dot ${esc(entry.alignment)}"></span>${esc(entry.name)}</span><span class="nord"><span class="nfl">ord</span> ${entry.ordinal}</span></span>
+          ${nfacts([
+              nfact('court of', court.apexName),
+              nfact('as the', court.name.replace(/^The\s+/i, '')),
+              nfact('offices', String(court.officers.length)),
+              nfact('and', 'a faction in its own right'),
+              entry.ceiling ? nfact('ceiling', String(entry.ceiling), 'sl') : '',
+              entry.flags.length ? nfact('flagged', String(entry.flags.length), 'ex') : ''
+          ])}
+          <span class="ngo">open</span>
         </summary>
         ${courtPanel(court)}
         <div class="nbody">${dossier(entry)}</div>
@@ -6671,14 +6970,19 @@ function treeNode(
                 // here its own account was unreachable from the other side.
                 ? `<details class="ncard" id="court-${esc(court.id)}">
         <summary>
-          <span class="nhead"><span class="nname">${esc(court.name)}</span><span class="nord">${court.ordinal}</span></span>
-          <span class="nkind">court &middot; ${court.officers.length} offices &middot; posted by ${esc(court.apexName)}<span class="ngo">open</span></span>
+          <span class="nhead"><span class="nname">${esc(court.name)}</span><span class="nord"><span class="nfl">ord</span> ${court.ordinal}</span></span>
+          ${nfacts([
+              nfact('standing', 'court', 'pin'),
+              nfact('offices', String(court.officers.length)),
+              nfact('posted by', court.apexName)
+          ])}
+          <span class="ngo">open</span>
         </summary>
         ${courtPanel(court)}
       </details>`
                 : `<div class="ncard ncard--flat">
-        <span class="nhead"><span class="nname">${esc(node.name)}</span><span class="nord">${node.ordinal || ''}</span></span>
-        <span class="nkind">${kind} &middot; no separate entry</span>
+        <span class="nhead"><span class="nname">${esc(node.name)}</span>${node.ordinal ? `<span class="nord"><span class="nfl">ord</span> ${node.ordinal}</span>` : ''}</span>
+        ${nfacts([nfact('standing', kind), nfact('entry', 'none of its own')])}
       </div>`;
 
     return `<li class="node ${kind}">${card}`
@@ -6768,6 +7072,236 @@ function enforceChunkLimit(html: string): string {
     out = rewrite(out, /(<dd\b[^>]*>)([\s\S]*?)(<\/dd>)/g);
     return out;
 }
+
+/**
+ * A LABEL AND ITS BODY, IN TWO COLUMNS RATHER THAN ONE RUNNING PARAGRAPH.
+ *
+ * THE DEFECT, AS A READER MEETS IT. A paragraph written as a bold label and
+ * then its text - "The lordship. One, seated under the datum vault and
+ * cultivating without interruption" - sets the body indented after the label on
+ * the first line, and then wraps every later line back to the left margin,
+ * underneath the label. It reads as a two-column layout whose right-hand column
+ * has fallen out of its column, which is what the design owner saw and reported
+ * as text going under. It is invisible in the markup and unmistakable on
+ * screen, which is why this was found by looking at the page.
+ *
+ * The fix is to make the two columns real, once, on the finished document -
+ * same reason `enforceChunkLimit` runs here rather than at two hundred call
+ * sites, and it must run AFTER that one so a label lands on the lead paragraph
+ * and never on a continuation.
+ *
+ * WHAT COUNTS AS A LABEL, which is the whole difficulty. A bold at the head of
+ * a paragraph is sometimes a label and sometimes the first words of the
+ * sentence, and pulling the second kind into a column would cut a sentence in
+ * half. "For you is the shelf, the gate and the purse" is one sentence with a
+ * bolded opening; "The lordship." is a label. Three tests separate them, and a
+ * bold has to pass all three:
+ *
+ *   it is SHORT - a label is a handle, not a statement, so anything past a
+ *   line's worth of words is prose and is left alone. This is also what keeps
+ *   a bolded lead SENTENCE - the sheet has many, and they read correctly as
+ *   running prose - out of the column treatment.
+ *
+ *   it has LETTERS in it - "6" leading "rungs, and it is one use" is a figure
+ *   inside a sentence, not a label.
+ *
+ *   and it ENDS the thought, either by closing with a full stop or a colon, or
+ *   by being a proper name that the following sentence starts cleanly after. A
+ *   bold followed by a lowercase word is grammatically joined to it and is
+ *   never a label.
+ *
+ * Definition values are stacked rather than columned: a dd is already the
+ * right-hand column of a grid, and a second pair of columns inside one is not
+ * a layout, it is a corridor.
+ */
+const LABEL_MAX = 34;
+
+function separateLabelFromBody(html: string): string {
+    const text = (fragment: string): string =>
+        fragment.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const isLabel = (label: string, rest: string): boolean => {
+        const head = label.trim();
+        if (head.length < 3 || head.length > LABEL_MAX) return false;
+        if (!/[a-z]/i.test(head)) return false;
+        const body = text(rest);
+        // A label needs something to be the label OF. A handful of words is a
+        // phrase that happens to be emphasised.
+        if (body.length < 40) return false;
+        if (/[.:]$/.test(head)) return true;
+        return /^[A-Z]/.test(head) && /^[A-Z"'(]/.test(body);
+    };
+
+    // The bold has to be the FIRST thing in the block and hold no markup of its
+    // own, which is what every real label on this sheet looks like.
+    let out = html.replace(
+        /(<p)([^>]*)(>)\s*<(b|strong)>([^<]*)<\/\4>([\s\S]*?)(<\/p>)/g,
+        (whole, open: string, attrs: string, gt: string, _tag: string, label: string, rest: string, close: string) => {
+            if (!isLabel(label, rest)) return whole;
+            const cls = /class="([^"]*)"/.exec(attrs);
+            const attrsOut = cls
+                ? attrs.replace(/class="([^"]*)"/, `class="$1 labelled"`)
+                : `${attrs} class="labelled"`;
+            return `${open}${attrsOut}${gt}`
+                + `<b class="lbl">${label.replace(/[.:]\s*$/, '')}</b>`
+                + `<span class="lbd">${rest.replace(/^\s+/, '')}</span>`
+                + close;
+        }
+    );
+
+    out = out.replace(
+        /(<dd\b[^>]*>)\s*<(b|strong)>([^<]*)<\/\2>([\s\S]*?)(<\/dd>)/g,
+        (whole, open: string, _tag: string, label: string, rest: string, close: string) => {
+            if (!isLabel(label, rest)) return whole;
+            return `${open}<b class="lbl--stacked">${label}</b>${rest.replace(/^\s+/, '')}${close}`;
+        }
+    );
+
+    return out;
+}
+
+/**
+ * Every section of the page gets a fold, and the reader decides.
+ *
+ * WHY A PASS AND NOT A PARAMETER. The sheet's sections are written in five
+ * different files and something like twenty places, all of them already
+ * agreeing on one shape: a `section` whose first thing is a `sh` header holding
+ * an `h2`. Threading a control through every one of them means every future
+ * section has to remember to take it. Rewriting the finished document means
+ * every section has one, including sections nobody has written yet.
+ *
+ * The id is derived from the heading rather than from a counter, so a reader's
+ * folded set survives a section being added above it, a rebuild, or the whole
+ * world being regenerated. A section with no header is left exactly as it is.
+ */
+function makeSectionsCollapsible(html: string): string {
+    const out: string[] = [];
+    let cursor = 0;
+    const used = new Set<string>();
+
+    for (;;) {
+        const start = html.indexOf('<section', cursor);
+        if (start < 0) break;
+        const openEnd = html.indexOf('>', start);
+        if (openEnd < 0) break;
+
+        // The matching close, by depth, because a pass that took the first
+        // one would swallow half a page the moment anybody nests a section.
+        let depth = 1;
+        let scan = openEnd + 1;
+        let end = -1;
+        while (depth > 0) {
+            const next = html.indexOf('<section', scan);
+            const shut = html.indexOf('</section>', scan);
+            if (shut < 0) break;
+            if (next >= 0 && next < shut) { depth += 1; scan = next + 8; continue; }
+            depth -= 1;
+            if (depth === 0) { end = shut; break; }
+            scan = shut + 10;
+        }
+        if (end < 0) break;
+
+        const openTag = html.slice(start, openEnd + 1);
+        const inner = html.slice(openEnd + 1, end);
+        const header = /^([\s\S]*?)(<div class="sh">[\s\S]*?<\/div>)([\s\S]*)$/.exec(inner);
+        const heading = header ? /<h2[^>]*>([\s\S]*?)<\/h2>/.exec(header[2]) : null;
+
+        if (!header || !heading || header[1].trim()) {
+            // No header, or something before it. Left alone rather than
+            // guessed at: a fold control on a section whose top is not a
+            // heading would open onto the wrong thing.
+            out.push(html.slice(cursor, end + 10));
+            cursor = end + 10;
+            continue;
+        }
+
+        // A section that already carries an id keeps it - it is a link target
+        // somebody else on the page may be pointing at, and a second id
+        // attribute beside it is markup a browser silently picks one of.
+        const own = /\sid="([^"]+)"/.exec(openTag);
+        const base = `sec-${foldKey(heading[1].replace(/<[^>]*>/g, ''))}`.slice(0, 60);
+        let id = own ? own[1] : base;
+        let n = 2;
+        while (used.has(id)) { id = `${base}-${n++}`.slice(0, 62); }
+        used.add(id);
+
+        const button = '<button class="secfold" type="button" aria-expanded="true">hide</button>';
+        const sh = header[2].replace('</div>', `${button}</div>`);
+
+        out.push(html.slice(cursor, start));
+        out.push(own ? openTag : openTag.replace('<section', `<section id="${id}"`));
+        out.push(sh);
+        out.push(`<div class="secbody">${header[3]}</div>`);
+        out.push('</section>');
+        cursor = end + 10;
+    }
+
+    out.push(html.slice(cursor));
+    return out.join('');
+}
+/**
+ * The immortal objects, from the holder's end.
+ *
+ * THE LEDGER OWES A HOLDER FOR EVERY TRACKED KIND, and this was the one it did
+ * not have. The artifact catalog names an owner and a carrier for all
+ * twenty-four of its rows; the immortal objects had a count on the Objects tab
+ * and nothing anywhere saying whose. The Holdings tab answers the same join
+ * from the other end - it is house-first, and a reader who arrives with a HOUSE
+ * in mind goes there. A reader who arrives with a THING in mind arrives here,
+ * and until now had nowhere to arrive.
+ *
+ * Not a duplicate of Holdings and not a second source: both are rendered off
+ * the same dossier holdings the sheet has already built, so they cannot
+ * disagree, and neither says anything the other says in the same shape.
+ */
+function immortalObjectHolders(reg: WorldRegister): string {
+    const byItem = new Map<string, { name: string; count: number; higher: number; middle: number; lower: number; ordinal: number; anchor: string }[]>();
+    for (const d of reg.dossiers) {
+        for (const h of d.holdings) {
+            if (!byItem.has(h.item)) byItem.set(h.item, []);
+            byItem.get(h.item)!.push({
+                name: d.name,
+                count: h.count,
+                higher: h.byGrade.higher,
+                middle: h.byGrade.middle,
+                lower: h.byGrade.lower,
+                ordinal: d.ordinal,
+                anchor: `faction-${d.id}`
+            });
+        }
+    }
+    if (!byItem.size) return '';
+
+    const tables = [...byItem.entries()].map(([item, holders]) => {
+        const rows = holders
+            .slice()
+            .sort((a, b) => b.count - a.count || b.ordinal - a.ordinal)
+            .map(h => `<tr>
+      <td class="nm"><span class="jump" data-goto="${esc(h.anchor)}">${esc(h.name)}</span></td>
+      <td class="n">${h.ordinal}</td>
+      <td class="pw">${h.count}</td>
+      <td class="m">${[
+          h.higher ? `${h.higher} higher` : '',
+          h.middle ? `${h.middle} middle` : '',
+          h.lower ? `${h.lower} lower` : ''
+      ].filter(Boolean).join(' &middot; ')}</td>
+    </tr>`).join('');
+        const total = holders.reduce((n, h) => n + h.count, 0);
+        return `<div class="scroll"><table class="itemtbl">
+    <colgroup><col style="width:44%"><col style="width:10%"><col style="width:12%"><col style="width:34%"></colgroup>
+    <caption>${esc(item)} &middot; ${total} held by ${holders.length} ${holders.length === 1 ? 'body' : 'bodies'}</caption>
+    <thead><tr><th>Who holds it</th><th>Ord</th><th class="pw">How many</th><th>Which grades</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+    }).join('');
+
+    return `<section>
+  <div class="sh"><h2>Who holds an immortal object</h2><span class="r">${byItem.size} kinds &middot; most first</span></div>
+  <p class="note">What each of these things <em>is</em> is on the Objects tab, with what every grade of it reaches. This is the other question: which bodies are holding one right now, how many, and of which grade. Nobody below the Lid can make another, so every figure here only ever falls.</p>
+  ${tables}
+</section>`;
+}
+
 /** The whole sheet as one self-contained document. */
 export function renderRegisterHtml(
     reg: WorldRegister,
@@ -6790,7 +7324,13 @@ export function renderRegisterHtml(
 
 
 
-    return enforceChunkLimit(`<!doctype html><html lang="en"><head><meta charset="utf-8">
+    // THREE PASSES OVER THE FINISHED DOCUMENT, IN THIS ORDER AND NOT ANOTHER.
+    // Chunking first, so a field that runs long becomes a lead and a
+    // continuation. Then the label pass, so a label lands on the lead and never
+    // on a continuation paragraph that begins mid-thought. Then the fold pass,
+    // which only ever wraps and never rewrites, so it is safe last and would
+    // have been in the way of both of the others.
+    return makeSectionsCollapsible(separateLabelFromBody(enforceChunkLimit(`<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Standing Register</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6841,12 +7381,24 @@ export function renderRegisterHtml(
 <nav class="tabs" role="tablist">
   <button class="tab" role="tab" data-tab="people" aria-selected="true">People &ge; Grand Ascension <span>${reg.high.length}</span></button>
   <button class="tab" role="tab" data-tab="factions" aria-selected="false">Factions <span>${c.factions}</span></button>
-  <button class="tab" role="tab" data-tab="objects" aria-selected="false">Objects <span>${c.artifacts}</span></button>
-  <button class="tab" role="tab" data-tab="items" aria-selected="false">Items <span>${c.catalogued}</span></button>
+  <!-- The almanac and the ledger, and the counts say which is which: Objects
+       counts described things, Items counts things with a named holder. -->
+  <button class="tab" role="tab" data-tab="objects" aria-selected="false" title="The almanac: what kinds of thing exist, and what each one is">Objects <span>${c.catalogued}</span></button>
+  <button class="tab" role="tab" data-tab="items" aria-selected="false" title="The ledger: which specific things exist right now, and who has them">Items <span>${c.artifacts}</span></button>
   <button class="tab" role="tab" data-tab="holdings" aria-selected="false">Holdings <span>${reg.whatEachHouseHolds.counts.houses}</span></button>
   <button class="tab" role="tab" data-tab="arts" aria-selected="false">Arts <span>${c.techniques}</span></button>
   <button class="tab" role="tab" data-tab="key" aria-selected="false">Key</button>
 </nav>
+
+<!-- Everything on this page is shown, always. There is no simple view and no
+     advanced view: what a reader gets instead is the ability to put away the
+     parts they are not reading, section by section or all at once, and to have
+     that remembered the next time they open the sheet. -->
+<div class="foldbar">
+  <p>Everything is open. Fold away any section you are not reading by clicking its heading - this browser remembers what you folded.</p>
+  <button class="secfold" type="button" data-fold="all">fold everything</button>
+  <button class="secfold" type="button" data-fold="none">open everything</button>
+</div>
 
 <div class="pane" data-pane="people">
 <section>
@@ -6861,7 +7413,8 @@ export function renderRegisterHtml(
       if (!rows.length) return '';
       return `<h3 class="bandhead">${band.label} <span>${rows.length}</span></h3>
   <p class="note">${band.hint}</p>
-  <div class="scroll"><table>
+  <div class="scroll"><table class="itemtbl">
+  <colgroup><col style="width:6%"><col style="width:22%"><col style="width:9%"><col style="width:15%"><col style="width:48%"></colgroup>
   <thead><tr><th>Ord</th><th>Who</th><th>State</th><th>Faction</th><th>Detail</th></tr></thead><tbody>
   ${rows.map(p => `<tr><td class="n">${esc(p.ordinalNote ?? String(p.ordinal))}</td>`
         + `<td class="nm">${esc(p.name)}${p.named ? '' : ' <span class="chip">unnamed</span>'}</td>`
@@ -6893,10 +7446,51 @@ export function renderRegisterHtml(
 
 </div>
 
-<!-- Everything the world holds rather than everybody it contains. The immortal
-     objects block used to sit outside every pane, which meant it rendered under
-     every tab at once; it is inside one now, with the artifact catalog. -->
+<!-- ── THE ALMANAC ────────────────────────────────────────────────────────
+     WHAT KINDS OF THING EXIST IN THE WORLD, AND WHAT EACH ONE IS. Nobody is
+     named on this tab and no holder appears on it; a reader opens it to find
+     out what a thing is, not who has one.
+
+     It used to be neither. This pane held the artifact catalog - twenty-four
+     specific rows with an owner column and a holder column, which is a ledger
+     - while the kinds, the counted-or-tracked rule and every catalogued thing
+     described sat on the Items tab, which had no holder anywhere on it and
+     said so in its own closing sentence. The two tabs were the wrong way
+     round, so the sheet answered neither question completely and a reader
+     asking either one had to open both.
+
+     The line is the engine's own and is documented in docs/world/items.md
+     under "Counted or tracked": whether the movement of this specific object
+     is an event somebody should be able to find out about two centuries
+     later. The almanac describes the KIND. The ledger tracks the ROW. -->
 <div class="pane" data-pane="objects" hidden>
+${renderItemsSection()}
+
+${renderRepairMedicineSection()}
+
+<section>
+  <div class="sh"><h2>The immortal objects</h2><span class="r">Two kinds, three grades each</span></div>
+  <p class="note"><strong>Grade caps the destination, not the distance.</strong> Every grade performs the same single crossing - the top rung of one realm to the first rung of the next - and what a higher grade buys is permission to perform it further up the ladder. Lower reaches ordinal 25, middle 29, higher 37, <strong>and nothing reaches ${TRIBULATION.ordinalStart}</strong>: Tribulation Transcendence is walked to or it is not reached, and the two rungs above it are not reached at all except by surviving the crossing. Who is holding one is on the Items tab, and what each house holds altogether is on Holdings.</p>
+  ${reg.items.map(i => `<div class="objblk">
+    <h3>${esc(i.name)} <span class="objmeta">${esc(i.form.replace(/_/g, ' '))} · ${esc(i.effect.replace(/_/g, ' '))} · ${i.knownCount} of ${i.everKnown} ever known</span></h3>
+    <p class="objcount">higher ${i.knownByGrade.higher} · middle ${i.knownByGrade.middle} · lower ${i.knownByGrade.lower}</p>
+    <dl class="grades">
+      <dt>Higher</dt><dd>${esc(i.grades.higher)}</dd>
+      <dt>Middle</dt><dd>${esc(i.grades.middle)}</dd>
+      <dt>Lower</dt><dd>${esc(i.grades.lower)}</dd>
+    </dl>
+  </div>`).join('')}
+  ${prose(blocks, 'items')}
+</section>
+</div>
+
+<!-- ── THE LEDGER ─────────────────────────────────────────────────────────
+     WHICH SPECIFIC THINGS EXIST RIGHT NOW, AND WHO HAS THEM. Every table on
+     this tab carries a holder, because delivering the holder is the whole
+     reason the tab exists. What a thing IS belongs on the Objects tab, and a
+     description here that was not needed to identify the row would be the
+     almanac leaking back into the ledger. -->
+<div class="pane" data-pane="items" hidden>
 <section>
   <div class="sh"><h2>The artifact catalog</h2><span class="r">${reg.artifacts.length} objects &middot; power descending</span></div>
   <p class="note"><strong>Power is the ladder people stand on.</strong> An object at ${reg.artifacts[0]?.power ?? 0} is worth roughly what a cultivator at ${reg.artifacts[0]?.power ?? 0} is worth, so the question a reader wants to ask - is this worth more than the person carrying it - is a subtraction. It is a combat rating and not a ranking of importance, and this table is sorted on it and on nothing else: the first row and the last are the same kind of record, made by the same factory and read by the same code, and the only thing between them is the number in the first column.</p>
@@ -6908,28 +7502,9 @@ export function renderRegisterHtml(
   <p class="note">Owner and holder are separate columns because they are separate facts. ${reg.artifacts.filter(a => a.inVault).length} of the objects above sit in a vault their owner also is, ${reg.artifacts.filter(a => a.possessorId !== null && !a.inVault).length} are being carried by somebody - and where a holder is named the rung beside them is theirs rather than the object's, so the two numbers on that line can be read against each other. An owner marked <span class="chip">no entry</span> is an id this sheet could not resolve to a faction, which is a fault in the catalog rather than a kind of ownership.</p>
 </section>
 
-<section>
-  <div class="sh"><h2>The immortal objects</h2><span class="r">Two kinds, three grades each</span></div>
-  <p class="note">Holdings are listed under each faction; this is what a holding is <em>worth</em>. <strong>Grade caps the destination, not the distance.</strong> Every grade performs the same single crossing - the top rung of one realm to the first rung of the next - and what a higher grade buys is permission to perform it further up the ladder. Lower reaches ordinal 25, middle 29, higher 37, <strong>and nothing reaches ${TRIBULATION.ordinalStart}</strong>: Tribulation Transcendence is walked to or it is not reached, and the two rungs above it are not reached at all except by surviving the crossing.</p>
-  ${reg.items.map(i => `<div class="objblk">
-    <h3>${esc(i.name)} <span class="objmeta">${esc(i.form.replace(/_/g, ' '))} · ${esc(i.effect.replace(/_/g, ' '))} · ${i.knownCount} of ${i.everKnown} ever known</span></h3>
-    <p class="objcount">higher ${i.knownByGrade.higher} · middle ${i.knownByGrade.middle} · lower ${i.knownByGrade.lower}</p>
-    <dl class="grades">
-      <dt>Higher</dt><dd>${esc(i.grades.higher)}</dd>
-      <dt>Middle</dt><dd>${esc(i.grades.middle)}</dd>
-      <dt>Lower</dt><dd>${esc(i.grades.lower)}</dd>
-    </dl>
-  </div>`).join('')}
-  ${prose(blocks, 'items')}
-  <p class="note">Both of the tables above are one <em>kind</em> of thing out of the ten the engine can track, and they are the kind with a combat rating. Everything else somebody can hold - manuals, medicine, ingredients, the comprehension pieces that are gone once understood, lots of currency, graves and ground - is on the Items tab, along with the one line that governs all of them: whether a thing is a quantity or a row with a history.</p>
-</section>
-</div>
+${immortalObjectHolders(reg)}
 
-<!-- Every other kind of thing. The objects pane is the artifact table sorted on
-     a combat rating, which is one ObjectKind out of ten; this is the other
-     nine, and the counted/tracked line that governs every one of them. -->
-<div class="pane" data-pane="items" hidden>
-${renderItemsSection()}
+${renderRepairMedicineHolders()}
 </div>
 
 <!-- What is in the building, joined across the seven catalogs that hold it.
@@ -7043,9 +7618,12 @@ ${renderHoldingsSection(reg.dossiers)}
 </section>
 </div>
 
+<!-- The column glossary and nothing else. The repair medicine section used to
+     be here, carrying both halves of the sheet's own dividing line - what the
+     medicine is, and who is holding a dose - under a tab called Key. The
+     description is on Objects with the rest of the almanac and the holder list
+     is on Items with the rest of the ledger. -->
 <div class="pane" data-pane="key" hidden>
-${renderRepairMedicineSection()}
-
 <section class="legend">
   <div class="sh"><h2>How to read this</h2><span class="r">Column meanings</span></div>
   <div class="keys">${glossaryGroups().map(g => `<div class="key">
@@ -7133,8 +7711,125 @@ document.querySelectorAll('.tab').forEach(function (tab) {
     window.scrollTo({ top: 0 });
   });
 });
+
+// ── FOLDING, AND WHAT IT IS INSTEAD OF ──────────────────────────────────
+//
+// This page has no detail level and no modes. Everything renders, at full
+// detail, every time - because a mode is somebody deciding in advance what a
+// reader does not need, and on a register whose entire job is completeness
+// that decision cannot be made correctly for everybody. What a reader gets
+// instead is the ability to fold away what they are not reading.
+//
+// Two granularities, one mechanism. A SECTION is a whole subject on the page;
+// a PART is one of the six chunks inside a faction entry. Both remember.
+//
+// SECTIONS ARE REMEMBERED BY ID and parts BY NAME. A section is a place on
+// the page and there is one of each. A part is a kind of material and there
+// are thirty-four of each, so somebody who does not want to read Ancestors
+// does not want to read it on any house - folding it once folds it
+// everywhere, and asking them to do it thirty-four times would be worse than
+// not offering the control at all.
+//
+// localStorage is per-viewer and per-browser and nothing here leaves the
+// machine. Every access is wrapped, because private windows, cleared site
+// data and browsers configured to refuse storage all throw rather than
+// returning nothing, and a page that cannot remember a fold must still fold.
+var FOLD_SECTIONS = 'register.foldedSections.v1';
+var FOLD_PARTS = 'register.foldedParts.v1';
+
+function readSet(key) {
+  try {
+    var raw = window.localStorage.getItem(key);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch (err) {
+    return new Set();
+  }
+}
+
+function writeSet(key, set) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(Array.prototype.slice.call(Array.from(set))));
+  } catch (err) {
+    /* No storage. The fold still works for this visit, which is most of it. */
+  }
+}
+
+var foldedSections = readSet(FOLD_SECTIONS);
+var foldedParts = readSet(FOLD_PARTS);
+
+function paintSection(section) {
+  var folded = foldedSections.has(section.id);
+  if (folded) section.setAttribute('data-folded', '1');
+  else section.removeAttribute('data-folded');
+  var button = section.querySelector(':scope > .sh > .secfold');
+  if (button) {
+    button.textContent = folded ? 'show' : 'hide';
+    button.setAttribute('aria-expanded', String(!folded));
+  }
+}
+
+function setSection(section, folded) {
+  if (folded) foldedSections.add(section.id);
+  else foldedSections.delete(section.id);
+  writeSet(FOLD_SECTIONS, foldedSections);
+  paintSection(section);
+}
+
+function paintParts() {
+  document.querySelectorAll('.partfold').forEach(function (part) {
+    part.open = !foldedParts.has(part.dataset.part);
+  });
+}
+
+document.querySelectorAll('section[id]').forEach(paintSection);
+paintParts();
+
+// The header is the control. A reader aiming at a heading to collapse it is
+// aiming at the obvious thing, and the button beside it is the affordance
+// that says so rather than a second, separate target.
+document.addEventListener('click', function (e) {
+  var head = e.target.closest('.sh');
+  if (!head) return;
+  var section = head.parentElement;
+  if (!section || !section.id) return;
+  setSection(section, !section.hasAttribute('data-folded'));
+});
+
+// A part folds by name, so folding one folds the same part on every entry.
+// Written on toggle rather than on click, so it is right however the
+// disclosure was operated - mouse, keyboard, or the browser's own find.
+document.addEventListener('toggle', function (e) {
+  var part = e.target;
+  if (!part.classList || !part.classList.contains('partfold')) return;
+  var key = part.dataset.part;
+  if (part.open) foldedParts.delete(key);
+  else foldedParts.add(key);
+  writeSet(FOLD_PARTS, foldedParts);
+  document.querySelectorAll('.partfold[data-part="' + key + '"]').forEach(function (other) {
+    if (other !== part) other.open = part.open;
+  });
+}, true);
+
+document.querySelectorAll('[data-fold]').forEach(function (button) {
+  button.addEventListener('click', function () {
+    var shut = button.dataset.fold === 'all';
+    document.querySelectorAll('section[id]').forEach(function (section) {
+      if (shut) foldedSections.add(section.id);
+      else foldedSections.delete(section.id);
+      paintSection(section);
+    });
+    document.querySelectorAll('.partfold').forEach(function (part) {
+      if (shut) foldedParts.add(part.dataset.part);
+      else foldedParts.delete(part.dataset.part);
+    });
+    writeSet(FOLD_SECTIONS, foldedSections);
+    writeSet(FOLD_PARTS, foldedParts);
+    paintParts();
+    window.scrollTo({ top: 0 });
+  });
+});
 </script>
-</body></html>`);
+</body></html>`)));
 }
 
 /** One call: read the catalogs, return the sheet. */
