@@ -375,7 +375,7 @@ counters; they hand the resulting state to `survival.ts` and it returns a `Death
 `alive = false` eventually produce a ledger that disagrees with itself.
 
 ```text
-combat_defeat       hp reaches 0
+combat_defeat       hp reaches 0 and no caller said what took it
 starvation          STARVATION_TURNS consecutive turns at 0 satiety
 lifespan_exhausted  age reaches the realm's lifespanYears
 stagnation_aging    stagnationYearsForOrdinal(ordinal) without advancing a rank

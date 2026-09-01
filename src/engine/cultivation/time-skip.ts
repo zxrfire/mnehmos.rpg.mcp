@@ -378,6 +378,22 @@ export function simulateTimeSkip(
 ): TimeSkipResult {
     const requestedDays = Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0;
     const turn = Math.max(0, Math.floor(ctx.turn ?? 0));
+    /**
+     * The turn this whole stretch resolves on.
+     *
+     * A seclusion is ONE turn however many years it covers, and `applyTimeSkip`
+     * books the result as `run.turn + 1`. Every record minted inside the loop
+     * used to be stamped `turn + Math.floor(elapsed)` instead - a turn number
+     * plus a day count, two different units added together. Played live: a run
+     * standing on turn 31 carried an injury stamped `sustainedOnTurn: 73`,
+     * which is 31 plus the 42 days that had elapsed when the deviation landed,
+     * and reads as a wound taken forty-two turns in the future.
+     *
+     * The day is not lost by this: achievements carry `onDay` and every event
+     * carries its absolute day. It was only ever the turn that was wrong, and
+     * a turn is the only thing these fields are.
+     */
+    const resolvesOnTurn = turn + 1;
     const startDay = Math.max(0, Math.floor(ctx.startDay ?? 0));
     const autoBreakthrough = ctx.autoBreakthrough ?? true;
     // Every per-cultivator stream in this file keys on THIS, never on the row
@@ -436,6 +452,19 @@ export function simulateTimeSkip(
     let interruptReason: string | null = null;
     let died = false;
     let deathCause: DeathCause | null = null;
+    /**
+     * What took the last point of HP, when it was not violence.
+     *
+     * `survival.ts` reads an empty bar as `combat_defeat` unless somebody who
+     * watched it empty says otherwise, and a seclusion is the one place where
+     * nothing is hitting anybody. Played live: a cultivator sat down, took
+     * three qi deviations over the stretch, died of them, and went into the
+     * death ledger as "killed in combat" in a run containing no combat at all.
+     *
+     * Set only by the loss that actually reaches zero, so a deviation in year
+     * one cannot put its name on a bandit in year nine.
+     */
+    let hpDepletedBy: DeathCause | null = null;
     /**
      * Every wound the skip produced, in the order it happened. This is the
      * authoritative record the caller persists; `deltas.injuriesGained` is
@@ -522,7 +551,10 @@ export function simulateTimeSkip(
     });
 
     const checkDeath = (): boolean => {
-        const cause = evaluateDeathConditions(snapshot());
+        const cause = evaluateDeathConditions(
+            snapshot(),
+            hpDepletedBy ? { hpDepletedBy } : {}
+        );
         if (cause === null) return false;
         died = true;
         deathCause = cause;
@@ -560,7 +592,7 @@ export function simulateTimeSkip(
             affinityOf: target => affinityFor(ctx.seed, identity, target)
         });
         const achievement = recordAchievement(
-            { kind, onDay: absDay, turn: turn + Math.floor(elapsed), summary, detail },
+            { kind, onDay: absDay, turn: resolvesOnTurn, summary, detail },
             rng
         );
         achievements.push(achievement);
@@ -633,7 +665,7 @@ export function simulateTimeSkip(
                 const result = attemptBreakthrough(snapshot(), {
                     rng: forStream(ctx.seed, 'breakthrough', absDay, ordinal),
                     ambient,
-                    turn: turn + Math.floor(elapsed),
+                    turn: resolvesOnTurn,
                     ranksGainedThisTurn: ranksOnDay,
                     toll: ctx.toll,
                     foundation: ctx.foundation
@@ -946,10 +978,13 @@ export function simulateTimeSkip(
                 const resolution = resolveDeviation(
                     { cultivationProgress: progress, hp, maxHp: cultivator.maxHp },
                     forStream(ctx.seed, 'deviation_resolve', newAbsDay),
-                    { turn: turn + Math.floor(elapsed) }
+                    { turn: resolvesOnTurn }
                 );
                 progress = Math.max(0, progress - resolution.progressLost);
                 hp = Math.max(0, hp - resolution.hpLost);
+                // The turning qi is what emptied the bar, and it is the only
+                // caller in a position to say so. See `hpDepletedBy`.
+                if (hp <= 0 && resolution.hpLost > 0) hpDepletedBy = 'qi_deviation';
                 injuries = [...injuries, ...resolution.injuries];
                 sustained.push(...resolution.injuries);
                 push('qi_deviation', resolution.summary, false, {
@@ -1130,7 +1165,7 @@ export function simulateTimeSkip(
                     {
                         kind: 'recognition',
                         onDay: newAbsDay,
-                        turn: turn + Math.floor(elapsed),
+                        turn: resolvesOnTurn,
                         summary:
                             `Saw ${candidate.subject} at close range for the first time, and it was ` +
                             'obvious. Comprehension arrived at a speed nothing in their experience ' +

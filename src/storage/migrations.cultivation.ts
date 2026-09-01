@@ -173,6 +173,7 @@ export function migrateCultivation(db: Database.Database): void {
       cultivation_penalty REAL NOT NULL DEFAULT 0.1,
       breakthrough_penalty REAL NOT NULL DEFAULT 0.05,
       treated_on_turn INTEGER,                       -- audit trail; not part of the domain schema
+      wound_type TEXT,                               -- key into data/cultivation/wounds.ts; null = an ordinary wound of its severity
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
     );
@@ -612,6 +613,23 @@ function addCultivationColumns(db: Database.Database): void {
     if (!cultivatorColumns.includes('bleeding_turns')) {
         console.error('[Migration] Adding bleeding_turns column to cultivators table');
         db.exec('ALTER TABLE cultivators ADD COLUMN bleeding_turns INTEGER NOT NULL DEFAULT 0;');
+    }
+
+    // What the wound is CALLED, as a key into the authored wound table.
+    //
+    // The engine has minted it for a long time - `resolveDeviation` and the
+    // crossing path both pass `ordinaryWoundFor(...)` - and the repository
+    // dropped it on the floor, because there was no column to put it in. So
+    // every wound the player carried came back with `woundType: null` and the
+    // UI could not name a single one of them, including the crippling ones.
+    // Nullable, because null is the honest reading of every row written before
+    // this: an ordinary wound of its severity, which is what they were.
+    const injuryColumns = (
+        db.prepare('PRAGMA table_info(cultivator_injuries)').all() as { name: string }[]
+    ).map(col => col.name);
+    if (!injuryColumns.includes('wound_type')) {
+        console.error('[Migration] Adding wound_type column to cultivator_injuries table');
+        db.exec('ALTER TABLE cultivator_injuries ADD COLUMN wound_type TEXT;');
     }
 
     const runColumns = (
