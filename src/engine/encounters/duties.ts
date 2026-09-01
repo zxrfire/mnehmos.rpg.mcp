@@ -182,6 +182,32 @@ export const CONTRIBUTION_BASE = 8;
 /** Added contribution per rung the duty is pitched at. */
 export const CONTRIBUTION_PER_ORDINAL = 1.6;
 
+/**
+ * How much stone-value the board itself puts on one point of contribution.
+ *
+ * DERIVED, NOT PICKED, and it falls out of the two lines below in closed form.
+ * `dutyTermsFor` prices a commission as
+ *
+ *     contribution = base * yieldScale * (days / 20)
+ *     stones       = base * yieldScale * 1.4
+ *
+ * so the base, the pitch and the regard all cancel and what is left is
+ * `contribution / stones = days / 28`. The house's own exchange rate, stated by
+ * the house's own board, with nothing invented.
+ *
+ * It is a function of DAYS because that is the only term that survives: a long
+ * commission pays more contribution for the same money, which is the board
+ * saying that service is measured in time given rather than in value delivered.
+ *
+ * Exported so the donation path can read it rather than hold a second opinion.
+ * If the two lines above are retuned this moves with them, which is the whole
+ * point of deriving it here instead of writing a number down somewhere else.
+ */
+export function contributionPerStoneOverDays(days: number): number {
+    const span = Number.isFinite(days) && days > 0 ? days : 1;
+    return span / (20 * 1.4);
+}
+
 export interface DutyTerms {
     origin: DutyOrigin;
     posture: DutyPosture;

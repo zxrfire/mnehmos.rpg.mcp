@@ -707,7 +707,16 @@ export type SectIntent =
      * `commissionBoard`, `boardRefusals` and the accept/complete/refuse ledger
      * are what answer it, and none of them was reachable.
      */
-    | 'duty';
+    | 'duty'
+    /**
+     * Paying into the house's ledger instead of serving it.
+     *
+     * The other half of the contribution economy. Missions were the only
+     * earner, and a player with stones and no time had no way to convert one
+     * into the other - so a rich cultivator and a poor one had exactly the same
+     * route to a promotion, which is not what money is for in this setting.
+     */
+    | 'donate';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -3502,6 +3511,45 @@ export function parseIntent(input: string): PlannedAction {
     // repository, so a seat-holder swearing to somebody else is a defection
     // and is answered as one - by the join path, out of real state, rather
     // than by a second verb that would have to decide the same thing again.
+    // ── PAYING IN, instead of serving ────────────────────────────────────
+    //
+    // Missions were the only earner of contribution, so a player with stones
+    // and no time had no route to a promotion at all - a rich cultivator and a
+    // poor one had exactly the same one, which is not what money is for in this
+    // setting. Ahead of the sect-noun rules, which would otherwise take it, and
+    // ahead of `buy`, which owns "I buy" and not "I give".
+    //
+    // The amount is read here and defaults to nothing: a donation with no sum
+    // named is a question about what the house would want, not an offer.
+    if (/\b(?:donate|donation|give|gift|contribute|pay|hand over|offer)\b/.test(text)
+        && /\b(?:sect|house|clan|school|order|contribution|treasury|coffers)\b/.test(text)
+        && !usedAsVerb(text, SIPHON_TAKING_VERBS)) {
+        const amount = parseCount(text);
+        return {
+            action: 'sect',
+            intent: 'donate',
+            ...(amount !== null ? { days: amount } : {})
+        };
+    }
+
+    // ── WHO LEADS IT, which is not a request to be found one ─────────────
+    //
+    // The find-me-a-sect rule below fires on a sect noun beside any question
+    // word, and `who` is one of them - so "who leads this sect", asked by a
+    // member about their own house, was answered with the register of houses
+    // that might take them on: "There is one name you have for this: Azure Dew
+    // Sect. Knowing a name is not an introduction."
+    //
+    // This has to sit AHEAD of that rule rather than below it, which is where a
+    // first attempt put it, and the reviewer caught the difference because the
+    // standing read one command later happily names the head and their title.
+    // Same shape as the curriculum question: reading a house is not being sent
+    // to find one.
+    if (/\b(?:who (?:leads|heads|runs|founded|commands)|who is (?:the )?(?:head|leader|patriarch|matriarch|master|strongest)(?: of)?|who is in charge)\b/.test(text)
+        && /\b(?:sect|house|clan|school|order|here|it|this|my|our)\b/.test(text)) {
+        return { action: 'sect', intent: 'standing' };
+    }
+
     if (/\b(?:join|joining|apply to|applying to|swear to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|give (?:my|our) (?:oath|word) to|bind myself to|take (?:the|their) oath|take me on|taken on|would (?:take|have) me|accept me|admit me|adopt me|take me in|be admitted)\b/.test(text)
         || (/\b(?:sects?|order|school|clan)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who)\b/.test(text))) {
         return { action: 'sect', target: extractSubject(input, /joining|join|applying to|apply to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|swear to|give (?:my|our) (?:oath|word) to|bind myself to|enter|find|look for/) };

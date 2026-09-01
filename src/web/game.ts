@@ -350,6 +350,8 @@ import { createGrudge, type Severity } from '../engine/social/grudges.js';
 // A finished pressure model that had no route from the player to it. The
 // resolver reads  and never , which is the whole design.
 import { resolveAttempt, type AskWeight } from '../engine/social-leverage/index.js';
+// The board's own exchange rate, in closed form. See the function's comment.
+import { contributionPerStoneOverDays } from '../engine/encounters/duties.js';
 import { factsForAttempt } from './facts.js';
 import type { ApproachLeverage } from '../schema/cultivation.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
@@ -585,6 +587,24 @@ const MORTAL_CATEGORIES = new Set(['food', 'lodging', 'transport', 'medicine', '
  * slice. A board that lists eight and reasons about twenty-five is telling
  * the player about goods they cannot see.
  */
+/**
+ * What a donation is worth against the same money earned by serving.
+ *
+ * The one judgement in the donation path, which is why it is named and stated
+ * rather than folded into an expression. The design owner's rule: "somebody who
+ * pays instead of serving should get a worse rate than the duty board implies,
+ * or contribution stops meaning service rendered and becomes a second
+ * currency."
+ *
+ * A third, which is steep on purpose. Paying is meant to be the expensive way
+ * to do it - the route for somebody who has stones and no years - and a shallow
+ * discount would make the board pointless for anybody who ever finds money.
+ */
+const DONATION_DISCOUNT = 1 / 3;
+
+/** Reference span when a house is offering nothing to take a median of. */
+const DEFAULT_DUTY_DAYS = 20;
+
 const MARKET_LINES = 8;
 
 /**
@@ -2660,10 +2680,47 @@ ${noticed}`;
             }
         }
         if (!party) {
+            // ── AND WHO IS ACTUALLY HERE ─────────────────────────────────
+            //
+            // The blank look is right about the NAME and says nothing about the
+            // room, so every failed approach read identically whatever was
+            // attempted and whoever was standing there. Played live, "I bribe
+            // the gate guard" in a town with no gate guard came back "a
+            // sentence with a hole in it" - and a reviewer comparing it against
+            // a working seduction concluded the leverage mapping was missing.
+            // It was not: the verb parsed correctly and the person did not
+            // exist. A refusal that cannot be told apart from a broken feature
+            // is a bad refusal.
+            //
+            // Naming who is visibly present leaks nothing - `look` already
+            // lists exactly these people - and it is the difference between a
+            // dead end and a next move. `blankLook`'s own rule stands: it still
+            // never confirms whether the NAME exists, and this adds no name the
+            // player could not already see by looking up.
+            const here = this.present(cultivator);
+            const nameable = here
+                .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
+                .map(row => row.name);
+
+            // Two different states, and only one of them is the player's fault.
+            // Naming people they already know leaks nothing - `look` lists
+            // exactly those - and saying "there are people here and you have no
+            // name for any of them" leaks nothing either, which is the sentence
+            // `whoWouldTeach` already uses for the same situation.
+            const nextMove = nameable.length > 0
+                ? ` Whoever you meant, the people here you could actually put it to are `
+                  + `${nameable.slice(0, 4).join(', ')}.`
+                : here.length > 0
+                    ? ` There are ${here.length} people about and you have a name for none of them. `
+                      + 'Somebody has to be introduced, or overheard, before they can be asked for '
+                      + 'anything.'
+                    : '';
+
             return refused('engine.resolveParty', 'interact', factsForRefusal(
                 'Nobody by that name.',
-                this.blankLook(cultivator),
+                this.blankLook(cultivator) + nextMove,
                 `Unresolved party "${query}": no knowledge record and nobody co-located. ` +
+                `${here.length} present, ${nameable.length} of them nameable. ` +
                 `${this.knownNamesLine(cultivator, scope)}`
             ));
         }
@@ -3129,6 +3186,9 @@ ${noticed}`;
                     await handleStipend({ action: 'stipend', cultivatorId: cultivator.id }),
                     'The stipend'
                 );
+            case 'donate':
+                return this.donate(run, cultivator, days);
+
             case 'standing':
                 return this.fromToolResult(
                     'sect_manage.standing', 'sect',
@@ -9530,6 +9590,127 @@ ${fit.line}`;
             ...structureCalls(party.structure),
             ...spent.calls
         ];
+        return execution;
+    }
+
+    /**
+     * Paying into the house's ledger instead of serving it.
+     *
+     * The other half of the contribution economy. Missions were the only
+     * earner, so a player with stones and no time had no route to a promotion -
+     * a rich cultivator and a poor one had exactly the same one.
+     *
+     * THE RATE IS DERIVED AND NOT PICKED. `contributionPerStoneOverDays` falls
+     * out of `dutyTermsFor`'s own two lines in closed form: the base, the pitch
+     * and the regard all cancel, leaving `days / 28`. The reference span is the
+     * MEDIAN of what this house is actually offering right now, so the rate
+     * follows the board as content changes and there is no second opinion about
+     * what contribution is worth anywhere in the codebase.
+     *
+     * TWO RULES ON TOP OF IT, both the design owner's:
+     *
+     *   A DONATION IS WORTH LESS THAN THE WORK. Otherwise contribution stops
+     *   meaning service rendered and becomes a second currency. The discount is
+     *   the one number here that is a judgement rather than a derivation, which
+     *   is why it is named, and it is steep on purpose: paying should be the
+     *   expensive way to do it, taken by somebody who has stones and no years.
+     *
+     *   A HOUSE THAT TAKES ANY SUM FROM ANYBODY READS AS A SHOP. The floor is
+     *   the lowest rank's monthly stipend, read off the sect's own table: below
+     *   what the house pays its least important member in a month is below what
+     *   it is worth a clerk's time to write down.
+     */
+    private donate(run: Run, cultivator: Cultivator, amount: number | undefined): Execution {
+        const held = this.repos.sects.getMembership(cultivator.id);
+        const sect = held ? this.repos.sects.getById(held.sectId) : null;
+        if (!held || !sect) {
+            return refused('engine.donate', 'sect', factsForRefusal(
+                'There is no ledger with your name on it.',
+                'Contribution is a record a house keeps of what its own people have done for it. '
+                + 'You are on nobody\'s roll, so there is nothing to pay into and nobody who would '
+                + 'know what to do with the money.',
+                `${cultivator.name} holds no membership; contribution is per-house.`
+            ));
+        }
+
+        const floor = Math.max(1, this.repos.sects.stipendForRank(sect.id, 0));
+        const board = sectBoardFor(
+            { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
+            cultivator
+        );
+        const spans = board.offers.map(offer => offer.terms.days).sort((a, b) => a - b);
+        const reference = spans.length > 0 ? spans[Math.floor(spans.length / 2)] : DEFAULT_DUTY_DAYS;
+        const rate = contributionPerStoneOverDays(reference) * DONATION_DISCOUNT;
+
+        if (amount === undefined) {
+            return this.freeAction(run, 'sect', factsForToolResult(
+                `${sect.name} takes donations, at a price.`,
+                [
+                    `Nothing under ${floor} spirit stones is worth writing down - that is what the `
+                    + 'house pays its least important member in a month, and a clerk is not going '
+                    + 'to open the book for less.',
+                    `Above it, ${sect.name} credits about ${rate.toFixed(2)} contribution the `
+                    + `stone. The board pays better: the same money earned by serving is worth `
+                    + `${(rate / DONATION_DISCOUNT).toFixed(2)} the stone, because contribution is `
+                    + 'a record of service and buying it is not serving.',
+                    `You are carrying ${cultivator.spiritStones}. Name a sum.`
+                ]
+            ));
+        }
+
+        const offered = Math.max(0, Math.floor(amount));
+        if (offered < floor) {
+            return refused('engine.donate', 'sect', factsForRefusal(
+                'Not worth opening the book for.',
+                `${offered} spirit stones is under what ${sect.name} pays its least important `
+                + `member in a month. It is not refused out of pride - it is refused because `
+                + `somebody would have to write it down. ${floor} is where the ledger starts.`,
+                `Donation ${offered} below floor ${floor} (stipend at rank 0). Nothing spent.`
+            ));
+        }
+        if (offered > cultivator.spiritStones) {
+            return refused('engine.donate', 'sect', factsForRefusal(
+                'You are not carrying it.',
+                `${offered} spirit stones is more than the ${cultivator.spiritStones} on you, and `
+                + 'a house does not take a promise from somebody at your rank.',
+                `Donation ${offered} exceeds purse ${cultivator.spiritStones}. Nothing spent.`
+            ));
+        }
+
+        const credited = Math.max(1, Math.round(offered * rate));
+        const persist = this.db.transaction(() => {
+            this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -offered });
+            this.repos.sects.addContribution(sect.id, cultivator.id, credited);
+            this.repos.runs.incrementTurn(run.id, 1);
+        });
+        persist();
+
+        const after = this.repos.sects.getMembership(cultivator.id);
+        const facts = factsForToolResult(
+            `${credited} contribution, bought.`,
+            [
+                `${offered} spirit stones into ${sect.name}'s coffers, credited as ${credited} `
+                + `contribution at ${rate.toFixed(2)} the stone. The ledger now reads `
+                + `${after?.contribution ?? credited}.`,
+                'It is worth less than the same money earned on the board, and everybody who '
+                + 'reads the ledger can see which of the two it was.'
+            ]
+        );
+        facts.structure.push(
+            `donate: ${offered} stones -> ${credited} contribution at ${rate} `
+            + `(median duty span ${reference} days, discount ${DONATION_DISCOUNT}, floor ${floor}).`
+        );
+
+        const execution = this.freeAction(run, 'sect', facts);
+        execution.calls = [{
+            name: 'engine.donate',
+            action: 'sect',
+            summary:
+                `${offered} stone(s) -> ${credited} contribution. Rate ${rate} the stone, derived `
+                + `from contributionPerStoneOverDays(${reference}) x ${DONATION_DISCOUNT}. `
+                + `Floor ${floor} = stipend at rank 0.`,
+            ok: true
+        }];
         return execution;
     }
 
