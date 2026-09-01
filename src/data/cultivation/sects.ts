@@ -1286,7 +1286,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // The only house in the region whose record supports teaching a Body
             // Integration manual, and the only alternative anywhere to an ice
             // canon held by a court that admits mutated roots and nobody else.
-            'ash-lung-tempering-canon',
+            'cinder-lung-tempering-canon',
             'shadow-splitting-gait',
             'crimson-tithe-palm',
             'meridian-devouring-art',

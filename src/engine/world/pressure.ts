@@ -57,6 +57,8 @@ import { rankName } from '../cultivation/realms.js';
 // module gets to reorganise on a fifty-five-events-per-century budget. The far
 // side is `advanceImmortalLayer`, which the driver runs on the same slice.
 import { isBelowTheLid } from './layers.js';
+import { lifespanForOrdinal } from '../cultivation/realms.js';
+import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import {
     appendFact,
     fillConsequences,
@@ -666,6 +668,116 @@ function liveFactions(state: WorldState): FactionRecord[] {
     return state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f));
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHO IS OLD ENOUGH TO DIE OF BEING OLD
+//
+// The `elder_died` event picked uniformly from everybody at a senior rank and
+// killed them, and it never looked at how long they had left. That is fatal to
+// the setting, and measurably so: seeded and advanced, the world's six
+// strongest went 44,41,38,37,36,36 at seeding to a flat 12 by year 300, with
+// every apex head, court seat and named figure dead and nothing above ordinal
+// 20 alive anywhere.
+//
+// The cause was not that cultivation fails to advance. It is that a realm's
+// LIFESPAN is the whole of what a high realm buys, and this event ignored it.
+// An ordinal 44 has a hundred thousand years and is seeded a quarter of the
+// way through, so it should be effectively permanent on any horizon a run
+// reaches - and it was being ground out by the same roll that retires a
+// Foundation Establishment elder at four hundred.
+//
+// `the-late-age.md` says figures older than anything now living walk through
+// this world constantly. The simulation was producing the exact opposite: a
+// world that had giants at seeding and none a century later.
+//
+// The fix is to read the number that already exists. Weighted by how much of
+// their own span somebody has spent, squared, so it falls away fast:
+//
+//   spent  5%  ->  0.0025   effectively never
+//   spent 50%  ->  0.25
+//   spent 95%  ->  0.90     the ordinary answer to "an elder died"
+//
+// A weighting rather than a filter, because the causes this event names are
+// not all age - "an old wound" and "a breakthrough that did not hold" can
+// reach somebody early, and should stay possible and rare. What must not
+// happen is a hundred-thousand-year being dying of age at twenty-five
+// thousand, which is what was happening.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The most rungs a killer can give away and still manage it.
+ *
+ * Three, and it is the combat layer's own number rather than a new one:
+ * `MAX_EDGE_MULTIPLIER` caps everything a person can bring to a fight at about
+ * two rungs' worth, so somebody four or more below cannot get there however
+ * the day goes. AGENTS.md states the same thing from the other side - a
+ * four-rank gap is not a hard fight, it is a death.
+ *
+ * This event was not checking at all. It picked a victim uniformly from every
+ * living person in the world and then a killer from whoever was standing
+ * nearby, so an ordinal 44 was exactly as murderable as a farmhand, by a
+ * farmhand. That is the single largest contradiction the world layer contained:
+ * `standoff.ts` spends four hundred lines measuring who could kill an apex
+ * head and concluding almost nobody, off the real resolver, while this rolled
+ * eleven times a century and did it for free.
+ */
+const CASUAL_KILL_MAX_GAP = 3;
+
+/** Whether this person could actually kill that one, on the ordinary ladder. */
+function couldKill(killer: NpcRecord, victim: NpcRecord): boolean {
+    return killer.cultivation.realmOrdinal >= victim.cultivation.realmOrdinal - CASUAL_KILL_MAX_GAP;
+}
+
+/** How much of their own realm's span this person has spent, 0..1. */
+function lifeSpent(npc: NpcRecord, day: number): number {
+    const span = lifespanForOrdinal(npc.cultivation.realmOrdinal);
+    if (!Number.isFinite(span) || span <= 0) return 1;
+    const age = (day - npc.identity.bornOnDay) / DAYS_PER_YEAR;
+    return Math.max(0, Math.min(1, age / span));
+}
+
+/**
+ * Pick somebody to have died of their own mortality, or nobody.
+ *
+ * Weighted by spent lifespan squared. Returns null when the pool is empty or
+ * when the roll lands in the enormous slack held by people with centuries in
+ * front of them, which is the correct and common answer.
+ */
+function pickByMortality(
+    rng: CultivationRNG,
+    candidates: readonly NpcRecord[],
+    day: number
+): NpcRecord | null {
+    if (candidates.length === 0) return null;
+    const weights = candidates.map(n => {
+        const spent = lifeSpent(n, day);
+        return spent * spent;
+    });
+    const total = weights.reduce((sum, w) => sum + w, 0);
+    // Nobody in the pool is anywhere near the end of themselves. That is not a
+    // failure of the event; it is the event correctly declining to fire.
+    if (total <= 0) return null;
+    let cursor = rng.next() * total;
+    let chosen = candidates[candidates.length - 1];
+    for (let i = 0; i < candidates.length; i++) {
+        cursor -= weights[i];
+        if (cursor < 0) { chosen = candidates[i]; break; }
+    }
+
+    // AND AN ACCEPTANCE ROLL, which is the half that matters.
+    //
+    // A weighting only re-orders a pool; it never lets the event decline to
+    // fire. The senior pool is small and at times consists entirely of people
+    // with most of themselves left, and a pure weighting still killed one of
+    // them every time the roll came up - which is why the first version of
+    // this fix moved the numbers and did not save anybody.
+    //
+    // Rolling again against the chosen person's own spent fraction makes the
+    // absolute rate scale with how old the pool actually is. A cohort with
+    // centuries in front of it produces almost no deaths, which is the correct
+    // answer and was the missing one.
+    return rng.chance(lifeSpent(chosen, day)) ? chosen : null;
+}
+
 function pick<T>(rng: CultivationRNG, items: readonly T[]): T | null {
     return items.length === 0 ? null : items[rng.int(0, items.length - 1)];
 }
@@ -885,7 +997,7 @@ const TEMPLATES: Template[] = [
                 n => n.status === 'alive' && isBelowTheLid(n) &&
                     n.factionId != null && n.factionRankIndex >= 3
             );
-            const npc = pick(rng, seniors);
+            const npc = pickByMortality(rng, seniors, day);
             if (!npc) return null;
             const faction = state.factions.find(f => f.id === npc.factionId) ?? null;
 
@@ -955,7 +1067,10 @@ const TEMPLATES: Template[] = [
                 : [];
             const pool = living.filter(n =>
                 n.id !== victim.id &&
-                (hostileIds.includes(n.factionId ?? '') || n.locationId === victim.locationId)
+                (hostileIds.includes(n.factionId ?? '') || n.locationId === victim.locationId) &&
+                // And could actually do it. Without this the event murdered an
+                // ordinal 44 with whoever happened to be standing nearby.
+                couldKill(n, victim)
             );
             const killer = pick(rng, pool);
             if (!killer) return null;
@@ -1398,7 +1513,11 @@ const TEMPLATES: Template[] = [
                 n => n.status === 'alive' && isBelowTheLid(n) &&
                     n.cultivation.techniqueIds.length > 0
             );
-            const npc = pick(rng, holders);
+            // Weighted the same way `elder_died` is. Going out and not coming
+            // back is a thing that happens to people who were running out of
+            // time anyway; somebody with seventy thousand years in front of
+            // them does not simply fail to return.
+            const npc = pickByMortality(rng, holders, day);
             if (!npc) return null;
             const techniqueId = pick(rng, npc.cultivation.techniqueIds);
             if (!techniqueId) return null;
@@ -1651,7 +1770,15 @@ const TEMPLATES: Template[] = [
             const candidates = state.npcs.filter(
                 n => n.status === 'alive' && isBelowTheLid(n) && n.cultivation.realmOrdinal >= 13
             );
-            const npc = pick(rng, candidates);
+            // Weighted by how much of themselves is left, and this is the one
+            // that mattered most: the pool is everybody above ordinal 13,
+            // which is about fifty people, and the world's entire high-realm
+            // cohort lives in it. Picking uniformly meant thirteen of the
+            // seventeen strongest people alive walked into the hills inside
+            // three centuries. An elder vanishing into seclusion and never
+            // being seen again is good xianxia and should stay possible; it
+            // should not be the ordinary fate of everybody who ever climbed.
+            const npc = pickByMortality(rng, candidates, day);
             if (!npc) return null;
             replaceNpc(state, markMissing(npc, day, 'Went into the hills and was not seen again.'));
 
