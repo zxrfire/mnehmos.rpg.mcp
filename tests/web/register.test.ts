@@ -1028,13 +1028,32 @@ describe('a court panel', () => {
     });
 
     it('names no kind of move in the heading over a transfer note', () => {
-        // Two courts do not answer where they used to; one was a transfer
-        // between patrons and one a promotion inside one. A heading that picks
-        // one word for both is wrong on whichever it was not, and it was.
+        // Was "two courts do not answer where they used to". There is one, and
+        // that is a correction rather than a loss: the other was the Third
+        // Sill, which never moved at all and had a conversion note describing a
+        // transfer that did not happen. The body that did move is the Root Sill
+        // and it is a posting rather than a court, so its account lives on its
+        // own entry as a contested lineage instead.
+        //
+        // What survives is the reason the heading is worded the way it is. The
+        // one remaining note is a promotion inside a patron rather than a move
+        // between them, and a heading that named a kind of move would be
+        // asserting the wrong one - so it names none, and the note says which
+        // in its own first sentence.
         const moved = reg.courts.filter(c => c.transferNote);
-        expect(moved.length).toBeGreaterThan(1);
+        expect(moved.length, 'nothing came to answer anywhere by anything but always having')
+            .toBe(1);
+        expect(moved[0].id, 'the one note left should be the promotion').toBe('court-azure-mist');
         expect(flat).not.toContain('It has changed patrons');
         expect(flat).toContain('How it came to answer here');
+
+        // And the one administration that genuinely changed patrons is reachable
+        // from the sheet, as a lineage two bodies claim rather than as a move.
+        const disputed = [
+            ...reg.courts.filter(c => c.lineageDispute),
+            ...reg.dossiers.filter(d => d.lineageDispute)
+        ].map(x => x.id).sort();
+        expect(disputed).toEqual(['court-kiln', 'sect-kiln-wardens']);
     });
 });
 

@@ -67,6 +67,7 @@ import { demonicStandingOf } from '../data/cultivation/demonic-sects-and-what-th
 import {
     NO_PLACE_FOR_THEIR_OWN,
     THE_MEMENTO_AND_THE_SEARCH,
+    WASHING_OUT,
     noPlaceForTheirOwn
 } from '../data/cultivation/bodies-that-cannot-keep-their-members-children.js';
 import {
@@ -1270,6 +1271,15 @@ export interface WorldRegister {
         andWhetherItIsPermanent: string;
         whatItCostsTheParent: string;
     }[];
+    /**
+     * What happens when a placement does not take.
+     *
+     * Beside the three rather than on any of them, because it is an outcome of
+     * being placed above your ability rather than a rule about a body - and it
+     * applies to the Court's placements as much as to the postings', which is
+     * the sharpest thing about it.
+     */
+    washingOut: { key: string; heading: string; text: string }[];
     /** The object at the centre of the one storyline this produces. */
     theMemento: { key: string; heading: string; text: string }[];
     /** Every art, with every house that teaches it. Grade descending. */
@@ -3672,6 +3682,16 @@ export function buildRegister(): WorldRegister {
         noPlaceForTheirOwn: noPlaceRows,
         // Headings derived from the record's own keys, so a field added to the
         // catalog turns up here instead of being silently dropped.
+        washingOut: Object.entries(WASHING_OUT).map(([key, text]) => ({
+            key,
+            heading: key
+                .replace(/([A-Z]+)/g, ' $1')
+                .replace(/\s+/g, ' ')
+                .toLowerCase()
+                .trim()
+                .replace(/^./, c => c.toUpperCase()),
+            text: String(text)
+        })),
         theMemento: Object.entries(THE_MEMENTO_AND_THE_SEARCH).map(([key, text]) => ({
             key,
             heading: key
@@ -5669,6 +5689,9 @@ export function renderRegisterHtml(
       + `<td class="q">${esc(x.whatTheChildKnows)}</td>`
       + '</tr>').join('')}</tbody></table></div>
   <p class="note">Two of them have <em>no intake at all</em> - people arrive by appointment to a posting and a child cannot be appointed - so there is no standard to fail. The third has a bar nothing else in the world applies: it only wants people capable of reaching the last realm, which is not a high standard but a different one, and most children of even the greatest cultivators are not that. Which is also why only one of the three produces a mystery. A posting is a public appointment and everybody knows who holds one, so those children know exactly who their parent is and inherit an expectation and a debt. The Court's discretion is absolute, and its children inherit an object with no name attached to it.</p>
+  <p class="note"><strong>And a placement is a gamble rather than a gift.</strong> It applies to all three and to every other placement in the world, which is why it sits here rather than on any one entry.</p>
+  <dl class="dispute">${reg.washingOut.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
+  <p class="note">The object at the centre of the one storyline any of this produces, on the Court's side only, because it is the only one of the three whose child has nothing else to go on.</p>
   <dl class="dispute">${reg.theMemento.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
 </section>
 

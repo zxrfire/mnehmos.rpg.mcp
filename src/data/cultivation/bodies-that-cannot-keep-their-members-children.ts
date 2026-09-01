@@ -99,7 +99,7 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
         whatTheChildKnows:
             'The shape and not the name. The identity goes to the friend being asked and to nobody else, the child included, because parents know children talk - and the discretion needs no enforcement, because naming a Hollow Court member burns the namer\'s own face in front of exactly the people whose trust is their entire position. Nobody at that level would take money for it and no sum would make sense. So what the child actually has is a placement they did not earn and cannot fully explain, sometimes a memento that was left and never accounted for, a near-certainty about the shape of it because nothing else explains the placement, and no name at all. The one person who could tell them will not, and their refusal is honourable rather than cruel.',
         andWhetherItIsPermanent:
-            'Permanent, because the parent is never leaving. A Seat does not serve a term and does not come back, so a child placed this way is placed for good and the receiving house knows it is taking a member rather than a boarder. That is also why the arrangement is worth so little to the receiving house in any material sense and so much in every other: there is no favour coming back, only a friendship that was already two centuries old and is now load-bearing.',
+            'Permanent, because the parent is never leaving. A Seat does not serve a term and does not come back, so a child placed this way is placed for good and the receiving house knows it is taking a member rather than a boarder. And the placement is a gamble rather than a gift: a child placed high who cannot meet the receiving house\'s standard does not go home, because there is no home to go to - they wash out into a servant\'s position and stay, which is what a house does with somebody it was given and cannot promote. The parent placed them at a friendly strong court precisely to avoid the bar that shut them out of the Court, and the friendly court has a bar of its own. The risk was moved rather than removed.',
         whatItCostsTheParent:
             'Their child is raised by somebody else\'s house and will not be told why. Nothing else in the catalog costs anybody that, and it is the price of standing at the top of the world stated as a fact rather than as a lesson - the Court has four people on it, they have been there a very long time, and most of them have placed nobody.'
     },
@@ -109,7 +109,7 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
         whyItCannotKeepThem:
             'There is no door. The Kiln takes nobody on any terms: people stand here because they were appointed to a posting, by the Deep Survey or by a sect under it or friendly to it, and a child cannot be appointed to a posting. It is not that a child would fail an assessment - there is no assessment, no admission figure anybody has ever met, and no procedure by which an application could be made. Che Yuan has turned away something over four thousand people and not one of them was ever going to be admitted.',
         whereTheChildGoes:
-            'To a house that owes the appointee, or would like to. The placement is an ordinary favour asked of somebody who wants a Warden well disposed to them, and it is asked openly, because there is nothing here to conceal - a posting is a public appointment and everybody already knows who holds one.',
+            'Home, which is not here. An appointee is on loan from somewhere and the child goes to the somewhere: sent by the Deep Survey, the child goes to the Survey; sent by a sect below, the child goes back to that sect. Nothing has to be arranged, because the parent\'s house is the child\'s house and the posting is only where the parent currently is. The one case that needs a favour is an appointee promoted into the apex during or after the term, who then asks for their child the way anybody asks - on somebody\'s word, openly, because a posting is a public appointment and everybody already knows who holds one.',
         whatTheChildKnows:
             'Everything. There was never anything to hide: their parent\'s name is on a gate the province has been reading for nine hundred years. What the child inherits is not a mystery but an expectation, and a debt - they are in this house because somebody who will come back from the datum with precedence asked, and everybody in the house knows it, including them. Being visibly somebody\'s is a different weight from being secretly somebody\'s and is not obviously the lighter one.',
         andWhetherItIsPermanent:
@@ -123,7 +123,7 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
         whyItCannotKeepThem:
             'The same absence of a door, moved four provinces and re-signed. Nobody joins the Root Sill either; appointment is by the Long Cut, or by a sect under it or friendly to it, and a child cannot be appointed. What is different is only who signs, and the admission figure on its own row is what a posting requires rather than what an applicant could meet - there has been no applicant in nine hundred years because there is no way to be one.',
         whereTheChildGoes:
-            'To a Long Cut house, and generally to a face rather than to a sect, which is the difference the Root Sill has never been able to explain to anybody from the Low Fall. A child placed into driven ground is placed into an arrangement that ranks people by faces worked and deaths avoided, so what they get is not a rank but a schedule - and a schedule is a thing that can be honoured exactly, which the Course Keepers do.',
+            'Home, by the same three routes and into a different kind of house. Sent by the Long Cut, the child goes to the Long Cut - which means to a face rather than to a sect, into an arrangement that ranks people by faces worked and deaths avoided, so what they get is not a rank but a schedule, and a schedule is a thing that can be honoured exactly. Sent by a sect below, the child goes back to that sect. Promoted into the apex, the appointee asks a favour like anybody else. The Root Sill has never been able to explain the first of the three to anybody from the Low Fall.',
         whatTheChildKnows:
             'Everything, and more than at the Kiln, because the roll here is public. Every appointee is a name somebody can read, so a child knows their parent\'s name, the term, and where it sits among nine hundred years of names above it. What they also know, and what nobody at the Kiln has to carry, is that the name is on a document one of the three apexes behaves as though does not exist - the Deep Survey has never referred to this body in correspondence, so a child of this house grows up holding a lineage that is public, verifiable and formally unacknowledged.',
         andWhetherItIsPermanent:
@@ -132,6 +132,37 @@ export const NO_PLACE_FOR_THEIR_OWN: readonly NoPlaceForTheirOwn[] = [
             'The same decades, publicly, plus one thing the Kiln does not charge: the child is raised inside the patron that took the posting, which means the parent has handed the Long Cut a person as well as a term, and has done it without anybody proposing it or writing it down.'
     }
 ];
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT HAPPENS WHEN A PLACEMENT DOES NOT TAKE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Washing out, which is what makes a placement a risk rather than a gift.
+ *
+ * It is an outcome of being placed above your ability rather than a rule about
+ * any one body, and it applies wherever a child is placed - the Hollow Court's
+ * children included, which is the sharpest version of it: their parent placed
+ * them at a friendly strong court precisely to avoid the bar that shut them out
+ * of the Court, and the friendly court has a bar of its own.
+ *
+ * Nothing here is a mechanic and no resolver reads it. It describes an outcome
+ * the ordinary systems already produce - somebody who cannot meet a standard
+ * does not meet it - and says what a house does with the person afterwards,
+ * which is the part nobody had written down.
+ */
+export const WASHING_OUT = {
+    whatItIs:
+        'A child placed above their ability does not simply leave. They wash out into a servant\'s position and the house keeps them, at a level that reflects what they turned out to be - which is not cruelty and is not charity: it is what an institution does with somebody it was given, cannot promote, and cannot send back without saying so to the person who asked.',
+    andWhyThereIsNoGoingHome:
+        'Because the arrangement that put them there was a favour between two people, and unwinding it means one of them telling the other that their child was not enough. Nobody does that. The receiving house absorbs the outcome quietly instead, and the parent is told the child is doing well, and both parties understand the sentence.',
+    whichIsWhyAFriendSaysYES:
+        'Taking somebody\'s child on a favour is not pure cost, and this is the return. If the placement takes, the house has a strong member it did not have to find. If it does not, the house has a servant who is loyal, well-connected, going nowhere, and cheaper than anybody it could hire - which is a real asset and is why the answer to the asking is usually yes.',
+    andWhatItProduces:
+        'People who know things. A washed-out servant in a great house knows they were somebody\'s child, knows what they were supposed to become, has been inside the place for decades being spoken over, and is not on anybody\'s list of who matters. They are among the better positions in this world to be a person from, and among the worst to have underestimated.',
+    andTheParentGambled:
+        'Which is the honest description of what a high placement is. Succeed and the child has a start nobody could have earned. Fail and they spend a life inside that house as staff, having been given every advantage and visibly not been enough, in front of everybody who watched them arrive.'
+} as const;
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE MEMENTO

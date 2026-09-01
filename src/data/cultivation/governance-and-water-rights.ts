@@ -744,12 +744,23 @@ export const CourtSchema = z.object({
      */
     officesNote: z.string().min(120),
     /**
-     * Set only where the court has changed patrons, which has happened once.
+     * Set where a court came to answer where it does by something other than
+     * always having done so. On one court, and it is not a transfer.
      *
-     * A court that moves takes its ground, its clients and its people, and its
-     * people arrive holding titles from a ladder that no longer applies. The
-     * conversion is never clean and the places it is not clean are where the
-     * grievances live, so they are written down rather than smoothed over.
+     * NO COURT IN THIS CATALOG HAS EVER CHANGED PATRONS. This doc used to say
+     * one had, and named the Third Sill, which has answered the Long Cut for
+     * longer than either apex keeps a record of - inside a province the Deep
+     * Survey holds, which neither has ever explained or raised. The body that
+     * did move is the Root Sill, and it is a POSTING rather than a court: you
+     * can repost a posting and you cannot repost a sect, which is the whole
+     * reason that event was available to anybody. Its account lives on its own
+     * entry, in `lineageDispute`, not here.
+     *
+     * What is left for this field is the other kind of move, and the register
+     * deliberately does not classify which: the Azure Mist was a feeder sect
+     * promoted to be its own apex's court, on the same ground, with the same
+     * four people, and nothing about it changed except the figure everybody was
+     * using. The note says which in its own first sentence.
      */
     transferNote: z.string().min(120).optional(),
     /**
@@ -1251,8 +1262,6 @@ export const COURTS: readonly Court[] = [
         embodiedByFactionId: null,
         officesNote:
             'Four things happen to a grant and the Sill has one person for each: it is measured, it is apportioned, it is drafted, and it is carried. Nobody here is anybody\'s disciple and nobody here teaches, so there is no ladder and never has been - an Assessor does not become a Keeper of the Eleven by being good at assessing, he becomes one because the office fell vacant and somebody had to hold it. Inside the Deep Survey the same five people are a Surveyor, a Sill-Sworn, two First Marks and a Second Mark, which is the standing that would decide a room if they were ever all in one, and they have not been in one in ninety years. The two columns do not agree and the Survey does not expect them to: the courier stands a mark above the man who measures the vein and eight rungs below him on the ladder, which is exactly what a body that ranks by service rather than by realm looks like from close up.',
-        transferNote:
-            'Every officer here holds a Long Cut rank now, and the conversion was not clean. The Survey ladder had a rung for a posting to a court and the Long Cut ladder has no such thing, so the Sill-Sworn came out a Set Hand, which is two removes from what the title meant and is the sort of thing a career notices. The Sill Courier came out a Face Master, one rung above the Assessor she has always been eight ordinals beneath, because the Long Cut counts what a person does on a course rather than where they stand on the ladder - which is the same quirk the Survey had, arrived at for a different reason, and is the only part of the transfer nobody has complained about.',
         roster: [
             {
                 id: 'court-officer-ruan-kezhen',
