@@ -568,6 +568,30 @@ is not possible, do not report the delta. Prove correctness a different way inst
 functions returning identical output for every input, or a test suite giving the same
 pass/fail count with and without the change, both of which are immune to a moving tree.
 
+### A single measurement off a shared tree is already somebody else's unfinished work
+
+The lesson above is about the gap BETWEEN two readings, and that framing is too narrow. It
+lets you believe one careful reading is safe. It is not.
+
+Measured: an agent took a pyramid baseline, committed it as the authority, and later
+re-ran its own probe at the same parameters - getting numbers identical **to two decimal
+places across all nine bands**. That precision is not small-sample noise, it is "the change
+did not apply", and chasing it found the real story: the original baseline had been taken
+off a working tree that already held another agent's uncommitted root-conditioning edits.
+The file showed as `M` in `git status`, was correctly identified as somebody else's, and was
+correctly left alone - and none of that stopped it being *in the tree the number came out
+of*. Both arms of every before-and-after quoted from that baseline were "after". A real
+change worth four points looked like no change at all.
+
+So: **`git status --short` before you measure, not only before you edit.** A dirty file you
+do not own is still in your build. If anything relevant is dirty, either take both arms
+back-to-back in one command (checkout, measure, restore, measure) or say plainly which
+uncommitted work was in the tree when you read the number. A baseline is a claim about a
+tree state, and a baseline that does not name its tree state is not a baseline.
+
+The reciprocal holds and is worth saying out loud: **your own unstaged work is in everybody
+else's measurements** for as long as it sits there. Commit or say so.
+
 ### An aggregate can be measuring the seeder rather than the thing you changed
 
 A band histogram said 123 cultivators above Core Formation with the dao gate off and 130
