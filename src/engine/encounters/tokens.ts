@@ -26,6 +26,10 @@
  */
 
 import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';
+// The ONE banding table. This file used to carry a second one with different
+// floors, which is how an encounter line and the sheet beside it came to
+// disagree about the same ground.
+import { QI_DENSITY_DEFAULT, ordinaryBandFor } from '../world/qi-scale.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import type { EncounterEntry } from '../../data/cultivation/encounters.js';
 import type {
@@ -445,15 +449,35 @@ function stonesFor(ordinal: number, rng: CultivationRNG): number {
     return Math.max(1, rng.int(Math.max(1, Math.round(base * 0.4)), Math.max(2, base * 2)));
 }
 
+/**
+ * The band of the ground this is happening on.
+ *
+ * Two defects lived here, and both of them made an encounter line assert a
+ * MEASUREMENT the rest of the engine disagreed with. The crowding template
+ * reads "Measured ambient has fallen to {ambient}", which is a claim about a
+ * reading, so getting it wrong is not a wording problem.
+ *
+ *   A SECOND BANDING TABLE. The floors here were 70/40/15 against
+ *   `QI_BAND_FLOORS`' 90/55/25, so the same density banded two ways depending
+ *   on which reader you asked. A place at 45 was `dense` in this sentence and
+ *   `normal` on the sheet beside it. One table now, the canonical one.
+ *
+ *   A RANDOM DRAW WHERE THERE WAS NO READING. An unmapped place - a road, a
+ *   hillside, anywhere the world has no record for - has no density, and this
+ *   answered by picking a band out of a hat and then calling it "measured".
+ *   Played live, that is how the panel, `/api/state` and the engine log came to
+ *   give three different answers about the same ground. Unmeasured ground now
+ *   reads as the Late Age's ordinary open air, which is what such a place is.
+ *
+ * The sample is still drawn, because every stream in this package is aligned by
+ * position and dropping a draw would shift every subsequent one.
+ */
 function ambientWord(place: EncounterPlace, rng: CultivationRNG): string {
+    void pick(rng, ['thin', 'normal', 'dense'] as const);
     const density = place.qiDensity;
-    if (typeof density === 'number' && Number.isFinite(density)) {
-        if (density >= 70) return 'spirit_tide';
-        if (density >= 40) return 'dense';
-        if (density >= 15) return 'normal';
-        return 'thin';
-    }
-    return pick(rng, ['thin', 'normal', 'dense'] as const);
+    return ordinaryBandFor(
+        typeof density === 'number' && Number.isFinite(density) ? density : QI_DENSITY_DEFAULT
+    );
 }
 
 function gradeWord(rng: CultivationRNG): string {
