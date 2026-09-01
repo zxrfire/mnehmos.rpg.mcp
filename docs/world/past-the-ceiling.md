@@ -736,8 +736,16 @@ about: a release is not the purchase of standing, it is **compensation for a los
 paying an institution for the value of what walks out with you - the years it spent on you and
 the road in your head. That is a transaction a house can take without contradicting itself,
 because nothing about its own ladder has been sold. It is the fee half of the transfer above,
-paid by the leaver instead of by the receiving house, and it is what turns a hostile departure
-into a settled one when no oath is on offer or when you refuse to swear.
+paid by the leaver instead of by the receiving house, and it settles a departure that would
+otherwise be resented.
+
+**It does not buy the road, and it does not replace the oath.** A release covers what the house
+is owed for your years; you still may not teach its method to anybody. Being released *with the
+right to transmit* is a different purchase entirely - that is the house selling its own
+curriculum - and it should be priced ruinously, refused far more often than not, and, by the
+[`items.md`](items.md) rule, not payable in money at all above a certain height. So paying your
+way out is a way to leave cleanly while carrying much less than a defector does, not a way to
+have both.
 
 Which makes a sudden windfall a genuine turning point rather than a bigger number. Somebody who
 opens a piece of closed ground and comes out rich has not bought their way up the ladder - the
