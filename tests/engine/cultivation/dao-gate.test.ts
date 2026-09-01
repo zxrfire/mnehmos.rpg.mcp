@@ -20,6 +20,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+    DAO_GATE_ENFORCED,
     DAO_GATE_FROM_ORDINAL,
     MAX_PILL_MULTIPLIER,
     PILL_GRADE_FACTOR,
@@ -38,9 +39,11 @@ import {
 import {
     FALSE_IMMORTAL_ORDINAL,
     FOUNDATION_ORDINAL,
+    LAST_CROSSING_ORDINAL,
     MAX_ORDINAL,
     isRealmBoundary,
-    progressRequiredForOrdinal
+    progressRequiredForOrdinal,
+    realmForOrdinal
 } from '../../../src/engine/cultivation/realms.js';
 import { InsightDomainSchema, type Insight } from '../../../src/schema/cultivation.js';
 import { makeCultivator } from './fixtures.js';
@@ -177,13 +180,29 @@ describe('roads besides your own', () => {
 });
 
 describe('the requirement curve', () => {
-    it('asks for nothing inside Qi Condensation until the wall out of it', () => {
-        // Ordinal 12 IS the boundary - the crossing OUT of the first realm -
-        // and it is the one rung of Qi Condensation that asks.
-        for (let ordinal = 0; ordinal < FOUNDATION_ORDINAL - 1; ordinal++) {
+    it('asks nothing at all for the first three realms', () => {
+        // Qi Condensation, Foundation Establishment and Core Formation are
+        // soloable on a root, a book and time. That is what makes the bottom of
+        // the ladder a place a nobody can actually walk, and it is why the
+        // curve starts where it starts rather than at the Foundation wall.
+        for (let ordinal = 0; ordinal < DAO_GATE_FROM_ORDINAL; ordinal++) {
             expect(daoRequirementCurve(ordinal), `ordinal ${ordinal}`).toBe(0);
         }
-        expect(daoRequirementCurve(FOUNDATION_ORDINAL - 1)).toBe(1);
+    });
+
+    it('begins at the Nascent Soul crossing, and asks for exactly one road', () => {
+        // You cannot form a nascent soul without a dao. ONE road besides your
+        // own, held by somebody who has been up three realms - not a set.
+        expect(daoRequirementCurve(DAO_GATE_FROM_ORDINAL)).toBe(1);
+        expect(realmForOrdinal(DAO_GATE_FROM_ORDINAL + 1).key).toBe('nascent_soul');
+    });
+
+    it('charges the crossing where the attempt is made, not where it lands', () => {
+        // The rung that pays is the one they are standing on. Getting this
+        // backwards puts the first ask a whole realm too high and the gate
+        // never bites at the Nascent Soul wall at all.
+        expect(realmForOrdinal(DAO_GATE_FROM_ORDINAL).key).toBe('core_formation');
+        expect(daoRequirementCurve(DAO_GATE_FROM_ORDINAL - 1)).toBe(0);
     });
 
     it('asks only at realm boundaries, so the rungs between walls stay soloable', () => {
@@ -194,9 +213,30 @@ describe('the requirement curve', () => {
         }
     });
 
-    it('rises one road per realm and never exceeds the roads that exist', () => {
+    it('rises one road per realm, and stops one short of every road there is', () => {
+        // The requirements go up as you go. Tabulated rather than derived a
+        // second time, so a change to the shape has to be restated by hand.
+        const expected: Record<number, number> = {
+            20: 1,  // into Nascent Soul
+            24: 2,  // into Deity Transformation
+            28: 3,  // into Void Refinement
+            32: 4,  // into Body Integration
+            36: 5,  // into Grand Ascension
+            40: 6,  // into Tribulation Transcendence
+            44: 7   // the last crossing
+        };
+        for (const [ordinal, roads] of Object.entries(expected)) {
+            expect(daoRequirementCurve(Number(ordinal)), `ordinal ${ordinal}`).toBe(roads);
+        }
+        // Never the complete set: the last crossing must not turn on holding a
+        // full house, because `understanding.ts` already prices depth.
+        expect(Math.max(...Object.values(expected)))
+            .toBeLessThan(ROADS_BESIDES_YOUR_OWN.length);
+    });
+
+    it('never decreases with height and never exceeds the roads that exist', () => {
         let previous = 0;
-        for (let ordinal = 0; ordinal < FALSE_IMMORTAL_ORDINAL; ordinal++) {
+        for (let ordinal = 0; ordinal <= LAST_CROSSING_ORDINAL; ordinal++) {
             const required = daoRequirementCurve(ordinal);
             expect(required).toBeLessThanOrEqual(ROADS_BESIDES_YOUR_OWN.length);
             if (required > 0) {
@@ -204,28 +244,34 @@ describe('the requirement curve', () => {
                 previous = required;
             }
         }
-        expect(previous).toBe(ROADS_BESIDES_YOUR_OWN.length);
-    });
-
-    it('puts the transition at the Foundation wall, where the mortal pill band is', () => {
-        // One moment, not two: the rung that first asks for a road you cannot
-        // walk alone is the same rung the cheapest pill is pitched at.
-        expect(daoRequirementCurve(12)).toBe(1);
-        expect(pillBandOrdinal('mortal')).toBe(FOUNDATION_ORDINAL);
     });
 });
 
 describe('the gate is wired and deliberately switched off', () => {
     it('enforces nothing anywhere on the ladder today', () => {
-        // Supply does not exist yet: `src/web/game.ts` never populates
-        // `ctx.understanding`, so the only roads reachable in play are the ones
-        // a survived deviation or tribulation grants. Turning this on now would
-        // stop every cultivator in the world - players and NPCs alike - at
-        // Deity Transformation at the very best. See DAO_GATE_FROM_ORDINAL.
-        expect(DAO_GATE_FROM_ORDINAL).toBeGreaterThan(MAX_ORDINAL);
+        // A HOLD, NOT A DOUBT. The curve is right and wanted; the substrate
+        // under it does not exist. A played cultivator has an insight list and
+        // `game.ts` now fills it, so the gate would bind a player today. AN NPC
+        // RECORD HAS NO INSIGHT LIST AT ALL - the world runs ruins, phenomena,
+        // teachers and near-deaths and writes none of them down.
+        //
+        // So switching it on binds the player and not the world, which is the
+        // same one-sided enforcement the wound layer had, in the other
+        // direction. Measured twice, independently: 0 of 1,511 living NPCs hold
+        // a single road, and at 1,500 years nothing in the world crosses
+        // ordinal 28 again. Not thinned - stopped. See DAO_GATE_ENFORCED.
+        expect(DAO_GATE_ENFORCED).toBe(false);
         for (let ordinal = 0; ordinal <= MAX_ORDINAL; ordinal++) {
             expect(daoRequirementFor(ordinal), `ordinal ${ordinal}`).toBe(0);
         }
+    });
+
+    it('is held by the switch alone, so turning it on is a one-line act', () => {
+        // The curve must NOT also be inert. If both were switched off, flipping
+        // the switch would be a leap rather than a step, and nothing would have
+        // been tested in the meantime.
+        expect(daoRequirementCurve(DAO_GATE_FROM_ORDINAL)).toBeGreaterThan(0);
+        expect(daoRequirementFor(DAO_GATE_FROM_ORDINAL)).toBe(0);
     });
 
     it('lets a cultivator with no comprehension at all still cross today', () => {

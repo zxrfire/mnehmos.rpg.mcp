@@ -861,49 +861,83 @@ export interface BreakthroughContext {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The lowest ordinal at which the dao requirement is ENFORCED.
+ * The rung a cultivator stands on for the first crossing the dao gate asks of.
  *
- * ── Why this is above the ladder, and what must land before it moves ─────
+ * Twenty, and it is Core Formation Perfection rather than Nascent Soul Early
+ * because a requirement is charged where the attempt is MADE. "Turned on at
+ * Nascent Soul" is a statement about which crossing pays it - the one INTO
+ * Nascent Soul - and the person paying is standing at 20 when they do.
  *
- * The gate below is complete, tested and correct, and it is switched off,
- * because the supply half of the design does not exist yet and shipping half
- * of a two-half mechanism would not make the game structural - it would make
- * it unwinnable.
- *
- * Measured, not assumed. `discoverableInsights` is properly access-shaped and
- * grants a non-`element` road only through a manual, teacher, artifact,
- * inheritance, tradition, site or survived phenomenon. In the running game:
- *
- *   - `src/web/game.ts` NEVER populates `ctx.understanding`. Not once. The
- *     playable layer supplies no manuals, no teachers, no sites, no
- *     inheritances - exactly the way it supplied no `locationDensity`.
- *   - so the only roads reachable in play are the ones a phenomenon grants:
- *     `body` from surviving a qi deviation, and `life_death` + `void` from
- *     surviving a tribulation. Three, and only by being badly hurt.
- *   - the curve asks for 4 by Deity Transformation and 8 by Tribulation
- *     Transcendence. Turning it on today would stop every cultivator in the
- *     world - players and NPCs alike - at Deity at the very best, and at
- *     Foundation for anyone who never deviates. The 500-year acceptance test
- *     needs a world that still produces elders.
- *
- * Set this to 12 - the Foundation wall, and the same rung the mortal-grade
- * pill band is pitched at - once ALL of the following can be reached in play:
- *
- *   1. A library. `ctx.understanding.readableManuals` populated from real
- *      rows, on sect ground and in ruins. This is the big one: without it
- *      nothing but injury teaches anybody anything.
- *   2. A teacher. `ctx.understanding.teachers` from sect membership and rank.
- *   3. Places. `ctx.understanding.locationTags` from the world layer's real
- *      locations, which already carry the tags `LOCATION_OPENINGS` reads.
- *   4. Inheritances. `ctx.understanding.inheritances` from opened ruins -
- *      `inheritance-trials.ts` is already authored for exactly this.
- *
- * One and three alone would probably be enough to switch it on at Foundation.
- * `tests/engine/cultivation/dao-gate.test.ts` asserts both that the curve is
- * right and that it is currently inert, so flipping this constant is a
- * deliberate act with a test that notices.
+ * Documentation rather than a switch. `daoRequirementCurve` derives the same
+ * boundary from the realm index and does not read this, so the two cannot
+ * disagree; a test asserts they agree at every ordinal. The switch is
+ * `DAO_GATE_ENFORCED` below.
  */
-export const DAO_GATE_FROM_ORDINAL = MAX_ORDINAL + 1;
+export const DAO_GATE_FROM_ORDINAL = 20;
+
+/**
+ * WHETHER THE CURVE IS CHARGED. Currently FALSE, and it is a hold rather than
+ * a doubt: the curve is right, wanted, and must not go live yet.
+ *
+ * ── What is missing, measured twice, independently ───────────────────────
+ *
+ * `canAttemptBreakthrough` reads `roadsWalked(cultivator.insights)`. A played
+ * cultivator has an insight list and `src/web/game.ts` now populates the
+ * discovery context that fills it, so the gate would bind a player correctly
+ * today. AN NPC RECORD HAS NO INSIGHT LIST AT ALL. The world runs ruins,
+ * phenomena, teachers and near-deaths and writes none of them down, because
+ * there is nowhere on an NPC to write one.
+ *
+ * So the gate would bind the player and not the world - the same one-sided
+ * enforcement, in the other direction, that the wound layer had.
+ *
+ * Measured here, three seeds, the live driver:
+ *
+ *   - 0 of 1,511 living NPCs hold a single road besides their own.
+ *   - switched on, 100 of 100 NPCs standing at a gated wall are refused.
+ *     Not thinned. Every one, permanently.
+ *   - the standing band histogram barely moves (123 above Core Formation
+ *     against 130 at 1,000 years), and that is a TRAP rather than a
+ *     reassurance: the upper bands are overwhelmingly seeded, and only 1 NPC
+ *     in 32 alive from seeding climbs past ordinal 21 in a thousand years. The
+ *     histogram is measuring the seeder, not the ladder.
+ *
+ * And measured independently by the world-advancement agent at 1,500 years,
+ * counting roads held in the hand rather than in an insight list:
+ *
+ *     band            people   mean roads   needed   would pass
+ *     Core 17-20          28      1.18          1      28 / 28
+ *     Nascent 21-24       20      1.30          2       5 / 20
+ *     Deity 25-28          7      1.86          3       0 / 7
+ *     Void 29-32           2      2.50          4       0 / 2
+ *     Body 33-36           3      2.00          5       0 / 3
+ *     Grand 37-40          1      3.00          6       0 / 1
+ *
+ * Nothing in the world crosses ordinal 28 again. Not thinned - stopped.
+ *
+ * ── What has to exist before this becomes true ───────────────────────────
+ *
+ * SOMEWHERE ON AN NPC TO ACCUMULATE COMPREHENSION, and it is its own piece of
+ * work in the world layer rather than a line here. Two halves:
+ *
+ *   1. The categorical half, which the world-advancement agent has built:
+ *      `roadsWalkedBy` reads the domains of the techniques somebody actually
+ *      holds, since every technique declares a `domain` from the same enum.
+ *      The roads you have walked are the roads in your hands.
+ *   2. The event half, which does not exist. A player accumulates comprehension
+ *      from things that HAPPEN - a ruin opened, a phenomenon survived, a
+ *      teacher, nearly not being. The world runs all four and records none.
+ *
+ * Flip this to true when an NPC can accumulate from events, and re-run
+ * `scripts/probe-what-the-dao-gate-costs-the-world.ts` in the same pass. The
+ * bar to clear is not "some NPCs pass" - it is that the band table above shows
+ * a survivor at every rung the ladder is supposed to produce.
+ *
+ * `tests/engine/cultivation/dao-gate.test.ts` asserts the curve is right AND
+ * that it is currently inert, so flipping this is a deliberate act with a test
+ * that notices.
+ */
+export const DAO_GATE_ENFORCED = false;
 
 /** The one domain a cultivator's own root can supply unaided. */
 const SELF_TAUGHT_DOMAIN: InsightDomain = 'element';
@@ -930,29 +964,64 @@ export function roadsWalked(insights: readonly Insight[] | undefined): number {
 /**
  * Roads besides their own that a cultivator must hold to attempt this rung.
  *
- * Zero everywhere except a realm boundary, and zero at every boundary inside
- * Qi Condensation - which has none, being one realm thirteen rungs deep. The
- * first requirement any cultivator ever meets is the Foundation wall.
+ * ── WHERE IT STARTS ──────────────────────────────────────────────────────
+ *
+ * At the NASCENT SOUL CROSSING, and nowhere below it. Qi Condensation,
+ * Foundation Establishment and Core Formation ask nothing of understanding at
+ * all - a cultivator can climb three whole realms on a root, a book and time,
+ * which is what keeps the bottom of the ladder soloable and what makes the
+ * first three realms the ones a nobody can actually walk.
+ *
+ * You cannot form a nascent soul without a dao. That is the design sentence
+ * and it is why the curve begins at exactly one: not a set of roads, ONE road
+ * besides your own, held by somebody who has been up three realms.
+ *
+ * ── AND IT RISES ─────────────────────────────────────────────────────────
+ *
+ * One more road per realm above that, so the ask is a function of height and
+ * never a single bar that everything above inherits:
+ *
+ *     into Nascent Soul               1
+ *     into Deity Transformation       2
+ *     into Void Refinement            3
+ *     into Body Integration           4
+ *     into Grand Ascension            5
+ *     into Tribulation Transcendence  6
+ *     the last crossing               7
+ *
+ * Capped at `ROADS_BESIDES_YOUR_OWN.length`, which is 8, so the top of the
+ * curve deliberately stops one short of the complete set. Demanding every
+ * road there is would make the last crossing turn on holding a full house
+ * rather than on being deep, and `understanding.ts` already prices depth.
+ *
+ * The shape is derived from the realm index rather than tabulated, so it
+ * follows the ladder if a realm is ever inserted or removed.
  */
 export function daoRequirementCurve(ordinal: number): number {
     if (!isRealmBoundary(ordinal) && !isLastCrossing(ordinal)) return 0;
-    const tier = REALM_TIERS.find(t => t.key === realmForOrdinal(ordinal).key);
-    if (!tier) return 0;
-    const realmIndex = REALM_TIERS.indexOf(tier);
-    // Qi Condensation is index 0 and asks for nothing: crossing OUT of it is
-    // the first ask, and that is one road.
-    return Math.min(ROADS_BESIDES_YOUR_OWN.length, Math.max(0, realmIndex + 1));
+    const realmIndex = REALM_TIERS.indexOf(realmForOrdinal(ordinal));
+    if (realmIndex < 0) return 0;
+    // Nothing is asked below the Nascent Soul crossing, and the subtraction is
+    // what makes that true by construction rather than by a second guard: the
+    // realm you stand in to attempt Nascent Soul is Core Formation, so its
+    // index is the zero point and every realm below it comes out negative.
+    const steps = realmIndex - CORE_FORMATION_REALM_INDEX;
+    if (steps < 0) return 0;
+    return Math.min(ROADS_BESIDES_YOUR_OWN.length, steps + 1);
 }
+
+/** The realm a cultivator stands in to attempt Nascent Soul. The curve's zero. */
+const CORE_FORMATION_REALM_INDEX = REALM_TIERS.findIndex(t => t.key === 'core_formation');
 
 /**
  * What this rung ACTUALLY asks for right now - the curve, behind the switch.
  *
- * Zero everywhere while `DAO_GATE_FROM_ORDINAL` sits above the ladder. Read
- * `daoRequirementCurve` for what the design says, and see that constant for
- * what has to be reachable in play before the two become the same function.
+ * Zero everywhere while `DAO_GATE_ENFORCED` is false. Read
+ * `daoRequirementCurve` for what the design says, and that constant for what
+ * has to exist before the two become the same function.
  */
 export function daoRequirementFor(ordinal: number): number {
-    if (ordinal < DAO_GATE_FROM_ORDINAL) return 0;
+    if (!DAO_GATE_ENFORCED) return 0;
     return daoRequirementCurve(ordinal);
 }
 
