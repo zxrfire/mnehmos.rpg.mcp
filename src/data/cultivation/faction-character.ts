@@ -86,6 +86,31 @@
  * repeat. Two ascending houses ascend for unrelated reasons and two declining
  * houses lost different things, which is the same standard the catalog test
  * already holds `distinctSentence` to.
+ *
+ * A STARVING TIGER IS STILL STRONGER THAN A HORSE
+ * -----------------------------------------------
+ * `declining` is a statement about a house's trajectory against ITS OWN past
+ * and says nothing whatever about where it stands against anybody else. A house
+ * falling from 44 toward 36 is categorically beyond a house climbing from 13
+ * toward 21, and the second must never read as catching up. What a great house
+ * in decline has lost is the ability to MAKE MORE - not the people it already
+ * has, who will end anybody who comes to test the point for centuries yet.
+ *
+ * The test for a note on a high house: could it be moved onto a mid-tier house
+ * without sounding wrong? If yes it is describing ordinary diminishment and it
+ * is the wrong note. The register is a great house that is worried, never a
+ * great house that is vulnerable.
+ *
+ * And decline at the top is not the default. The Azure Cloud Pavilion's founder
+ * crossed within living memory and is still sending single-use material down
+ * (`single-use-dao-comprehension-materials.ts`: `made_above` supply depends
+ * entirely on somebody up there still caring), which puts a house with a recent
+ * ascendant in a completely different position from one whose ancestor crossed
+ * nine centuries ago. Note what that does NOT license: ascending moves the
+ * STATE and the DIRECTION, never the whole distance. The Pavilion's 41-against-
+ * 17 gap is documented as intentional in `docs/world/manuals.md` and stays
+ * exactly where it is - a house can climb from a low base and still stand
+ * twenty rungs under its own strongest member.
  */
 
 /**
@@ -255,7 +280,8 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Deference. The Pavilion keeps no ledger of favours and an exact mental account of who stood up.',
         production: {
             reliableOrdinal: 17, currentCount: 6, peakOrdinal: 44, peakCount: 2, yearsSinceLastPeak: 380,
-            note: 'Reliably turns out Core Formation and has not produced above Nascent Soul in three centuries. Its standing is entirely inherited and the gap is visible in the data.'
+            climbingToward: 21, waitingOn: 'access',
+            note: 'The widest gap in the catalog outside the Hollow Court, and it is being read backwards. The Pavilion reliably turns out Core Formation and has not produced above Nascent Soul in three centuries - and its founder crossed the Lid inside the memory of people still working the terraces, and has been sending things down since. Single-use material made above and addressed to a house that still exists is a supply nobody else in either province has at any price, and there is enough of it arriving now for Nascent Soul to become a matter of course rather than an event. What would end it is not a rival and not the gorge. The Pavilion is frightened of spending the Standing Edge and has not noticed that the Edge is the inheritance and the post is the asset - and a post is a relationship, three hundred years is not three thousand, and attention is the one thing in the world that cannot be secured.'
         },
         distinctSentence: 'The only institution in the world holding a parting gift from the last confirmed crossing, and it has refused itself permission to draw it nine times.'
     },
@@ -587,7 +613,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Nothing at all. They cannot be paid, and the only currency that moves them is a question worth answering.',
         production: {
             reliableOrdinal: 0, currentCount: 0, peakOrdinal: 40, peakCount: 4, yearsSinceLastPeak: 900,
-            note: 'Produces nobody, by construction: it takes no disciples, so its production tier is zero while its power ordinal is forty. The extreme case of the two metrics disagreeing.'
+            note: 'Produces nobody, by construction: it takes no disciples, so its production tier is zero while four of the highest people alive sit on the ground it holds. The extreme case of the two metrics disagreeing, and the one where reading production as strength goes furthest wrong - nothing here is falling, because nothing here is doing anything.'
         },
         distinctSentence: 'Four people who reached the top of the ladder, declined to pay for the last step, and have not stood up since - and cannot be paid in anything but a good question.'
     },
@@ -687,7 +713,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Collections. Standing is measured in cultivators the Court has taken and kept, and refusal is treated as a scheduling matter rather than an answer.',
         production: {
             reliableOrdinal: 21, currentCount: 4, peakOrdinal: 44, peakCount: 1, yearsSinceLastPeak: 3_400,
-            note: 'The mid-curve case in one row: it produced a crossing three and a half thousand years ago, holds a true claim, has lost the gift, and now reliably produces Nascent Soul at best.'
+            note: 'The longest fall on the table, and a fall is a statement about a pipeline rather than about a fight. What the Court can still turn out is Nascent Soul. What it has is the only working lightning curriculum anybody holds, a claim to a crossing that is true, and elders nobody sane walks up to - and not one of those is what thinned. It stopped being able to make more of them, which is exactly why it collects instead of recruiting and treats a refusal as a scheduling matter. A house that takes what it can no longer grow is not a weakened house. It is a house doing arithmetic.'
         },
         distinctSentence: 'Holds the world\'s only lightning curriculum on a mountain fragment hanging from a chain it cannot repair, and describes its vault at successions rather than opening it.'
     },
