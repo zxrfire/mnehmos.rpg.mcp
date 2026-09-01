@@ -178,6 +178,30 @@ export function migrateCultivation(db: Database.Database): void {
       FOREIGN KEY (cultivator_id) REFERENCES cultivators(id) ON DELETE CASCADE
     );
 
+    -- ── DEPARTURES ───────────────────────────────────────────────────────
+    -- A house remembers who used to be in it.
+    --
+    -- removeMember deletes the membership row outright, so a returning member
+    -- was indistinguishable from a stranger - and entry rank is computed from
+    -- ordinal alone, deliberately, because what a stranger is seated by is what
+    -- they visibly are. Put those two together and leaving and re-entering was
+    -- a free promotion: measured in play, Dew Servant out and Dew Elder back in
+    -- on the same turn, three ranks for nothing, bypassing the entire
+    -- contribution economy that missions exist to feed.
+    --
+    -- The entry rule is right and is not changed. What was wrong is that
+    -- somebody who walked out last week is not a stranger to the house they
+    -- walked out of, and the house knows exactly what they were.
+    CREATE TABLE IF NOT EXISTS sect_departures (
+      sect_id TEXT NOT NULL,
+      cultivator_id TEXT NOT NULL,
+      rank_index INTEGER NOT NULL,            -- the seat they held on the way out
+      rank_title TEXT NOT NULL,
+      contribution INTEGER NOT NULL DEFAULT 0,-- forfeited; recorded so it can be said
+      left_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (sect_id, cultivator_id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_injuries_cultivator ON cultivator_injuries(cultivator_id);
     -- "How many untreated injuries does this cultivator carry" is asked before
     -- every fight and every breakthrough. A partial index keeps it O(matches).

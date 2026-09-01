@@ -368,6 +368,31 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
         }
     }
 
+    // ── AND A RETURNING MEMBER IS NOT A STRANGER ─────────────────────────
+    //
+    // Entry rank is computed from ordinal alone, deliberately, for the reason
+    // stated above: what a stranger is seated by is what they visibly are.
+    // Promotion additionally requires contribution, and SPENDS it. Put those
+    // together with a `removeMember` that deleted the row outright and leaving
+    // was a free promotion - measured in play, Dew Servant out and Dew Elder
+    // back in on the same turn, three ranks for nothing, bypassing the entire
+    // contribution economy that missions exist to feed. Worse in a world where
+    // 244 NPCs sit qualified-and-blocked behind seats while the player ranks up
+    // by using the door twice.
+    //
+    // The entry rule is right and is untouched. What was wrong is that somebody
+    // who walked out last week read as a stranger to the house they walked out
+    // of, and the house knows exactly what they were. So: a returning member
+    // cannot re-enter above the seat they left. Their contribution was
+    // forfeited on the way out - the game says so - and it has to be re-earned.
+    //
+    // This caps and never raises: somebody who left as a servant and has since
+    // climbed several rungs still enters at servant, and somebody who left a
+    // house they had never risen in is unaffected.
+    const before = repos.sects.formerMembership(sect.id, cultivator.id);
+    const cappedByReturn = before !== null && entryIndex > before.rankIndex;
+    if (cappedByReturn) entryIndex = before!.rankIndex;
+
     const membership = repos.db.transaction(() => {
         const result = repos.sects.addMember(sect.id, cultivator.id, entryIndex);
         // Joining resets the stipend clock: a new disciple is not owed
@@ -396,6 +421,23 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
         entryRankTitle: sect.ranks[entryIndex] ?? null,
         entryRequiredOrdinal: requiredOrdinalForRank(sect.admissionOrdinal, entryIndex),
         seatedAboveTheDoor: entryIndex > 0,
+        // SAID, not merely applied. A returning member seated below what their
+        // rung would otherwise buy has to be told why, or the house looks as
+        // though it has simply misjudged them.
+        returning: before === null ? null : {
+            leftAsRankTitle: before.rankTitle,
+            leftAsRankIndex: before.rankIndex,
+            contributionForfeited: before.contribution,
+            cappedByReturn,
+            note: cappedByReturn
+                ? `${sect.name} has had ${cultivator.name} before, and takes them back at the seat `
+                  + `they left: ${before.rankTitle}. What a stranger is seated by is what they `
+                  + 'visibly are; somebody who walked out last week is not a stranger. The '
+                  + `${before.contribution} contribution they gave up on the way out is gone, and `
+                  + 'the way back up is the way everybody else goes.'
+                : `${sect.name} has had ${cultivator.name} before, at ${before.rankTitle}, and `
+                  + 'this is not above it.'
+        },
         cultivator: describeCultivator(repos, after, runAfter)
     };
 }

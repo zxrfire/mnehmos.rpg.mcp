@@ -10565,14 +10565,34 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     // The promotion refusal already states both requirements and both current
     // values and is the best sentence of its kind in the codebase. This says
     // the same thing before the player is refused rather than after.
+    // A house taking somebody back at the seat they left. Said, not merely
+    // applied: a returning member seated below what their rung would otherwise
+    // buy has to be told why, or the house looks as though it has misjudged
+    // them. See the entry cap in `sect-manage.ts`.
+    const returning = body.returning as { note?: string } | null | undefined;
+    if (returning?.note) lines.push(returning.note);
+
     const rank = body.rank as { title?: string; stipendPerMonth?: number } | undefined;
     if (body.member === true && rank?.title) {
-        const sect = body.sect as { name?: string; memberCount?: number } | undefined;
+        const sect = body.sect as { id?: string; name?: string; memberCount?: number } | undefined;
         lines.push(
             `${rank.title}${sect?.name ? ` of ${sect.name}` : ''}`
             + `${typeof body.contribution === 'number' ? `, ${body.contribution} contribution` : ''}`
             + `${typeof rank.stipendPerMonth === 'number' ? `, ${rank.stipendPerMonth} spirit stones a month` : ''}.`
         );
+        // WHO LEADS IT. "who leads this sect" came back with the generic
+        // "knowing a name is not an introduction" line - the stranger's answer,
+        // to a member, about their own house - and named two houses when the
+        // player belongs to one. The roll is in the catalog and nothing read it.
+        const head = [...getMembersOf(String(sect?.id ?? ''))]
+            .sort((a, b) => b.realmOrdinal - a.realmOrdinal)[0];
+        if (head) {
+            lines.push(
+                `${head.name} stands highest in it, at ${rankName(head.realmOrdinal)}`
+                + `${head.rank ? ` and titled ${head.rank}` : ''}.`
+            );
+        }
+
         const next = body.nextRank as {
             title?: string; requiredRank?: string; requiredContribution?: number;
             ordinalShortfall?: number; contributionShortfall?: number;
