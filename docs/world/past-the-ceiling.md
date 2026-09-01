@@ -654,12 +654,16 @@ lost anything to a rival.
 
 Three consequences, and they make the Court unlike every other institution in the setting:
 
-- **It has teachers of many kinds, and no books.** Its members arrive from everywhere,
-  carrying the roads of the houses that raised them, so the Court holds a wider spread of
-  roads than any house of its size could ever assemble. And **it does not write them down,
-  out of respect for the house each one came from.** So its whole shelf is oral and personal:
-  transmission there is a person teaching a person, and what is not passed on dies with the
-  one who held it.
+- **Its own shelf is OPEN, and it is large.** Everything the Court has legitimately obtained
+  over its history is available to its members - not gated by rank, not rationed, not held
+  back for favourites. And it has obtained a great deal. **This is the inverse of every other
+  house in the setting**, where the book is the guarded thing.
+- **What its members BROUGHT is oral, and that is a different rule.** People arrive carrying
+  the roads of the houses that raised them, and **the Court does not write those down, out of
+  respect for the house each one came from.** So there are two bodies of knowledge inside it
+  with opposite properties: the Court's own holdings, written and open, and the incoming
+  roads, unwritten and passed person to person - which means an inherited road dies with the
+  member who held it if they never taught it on.
 - **Inside it, everybody shares freely.** A Court disciple teaches the other disciples what
   their original house taught them. That is the exact inverse of the secrecy economy
   everywhere else in this file, and it is why the Court can go where it goes - it is the one
@@ -668,11 +672,18 @@ Three consequences, and they make the Court unlike every other institution in th
   the end of their own house's shelf can reach, in one move, a body holding more roads than
   anyone and giving them away to its own.
 
-Note what the Court does *not* do with any of this: it does not sell, teach outward, or leak.
-The no-books rule and the pooling rule together mean the knowledge is enormously concentrated
-and completely immobile. That is why the houses tolerate it, and it is also the Court's own
-fragility - a body whose entire curriculum lives in the heads of its members loses a road
-every time it loses a member.
+**So the scarce thing in the Hollow Court is not knowledge. It is people's hours.** The shelf
+is open; what is not open is the living False Immortal, and the seats, and an elder's time.
+A disciple's ceiling there is set by whose attention they can get, not by what they are
+allowed to read - which is the exact reverse of the problem everywhere else, where the reader
+is willing and the book is shut. It is the same scarcity the Deep Survey states about its own
+Assessor: the hours he could give a student are the hours he is not doing everything else,
+and nobody is told in advance whether the answer will be yes.
+
+Note also what the Court does *not* do with any of it: it does not sell, teach outward, or
+leak. Open inside and closed outward is why the houses tolerate it. And the unwritten half is
+the Court's own fragility - a road that lives only in one member's head is lost when they
+are.
 
 ### Inside your own apex, none of this applies
 
