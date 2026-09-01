@@ -36,6 +36,7 @@ import {
 } from '../../schema/cultivation.js';
 import { REALM_TIERS, rankName } from './realms.js';
 import { aggregateInjuryPenalties, createInjury } from './injuries.js';
+import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 // Upward in the dependency order and deliberately so: there is one answer in
 // this codebase to what a strike of heavenly lightning costs a body, and the
 // descent has to weather the same one rather than carry a second. Nothing in
@@ -594,11 +595,13 @@ export function resolveDescentStrikes(
         if (rng.next() < perStrike) continue;
         struck++;
         if (struck <= TRIBULATION_LETHAL_STRIKES) {
+            const severity = struck >= TRIBULATION_LETHAL_STRIKES ? 'crippling' : 'serious';
             injuries.push(createInjury(
                 {
-                    severity: struck >= TRIBULATION_LETHAL_STRIKES ? 'crippling' : 'serious',
+                    severity,
                     source: 'tribulation',
                     turn,
+                    woundType: ordinaryWoundFor('tribulation', severity),
                     description:
                         `The seam discharged: strike ${strike + 1} of ${strikes}, coming down.`
                 },

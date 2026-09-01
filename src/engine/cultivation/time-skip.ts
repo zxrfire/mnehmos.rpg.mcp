@@ -114,6 +114,7 @@ import {
 } from './dao.js';
 import { resolveDeviation, rollDeviation } from './deviation.js';
 import { createInjury, untreatedInjuryCount } from './injuries.js';
+import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import {
     bleedOut,
     burnSatiety,
@@ -1440,7 +1441,10 @@ export function skipInjury(
     severity: Injury['severity'],
     source: Injury['source']
 ): Injury {
-    return createInjury({ severity, source, turn }, forStream(seed, 'skip_injury', absDay));
+    return createInjury(
+        { severity, source, turn, woundType: ordinaryWoundFor(source, severity) },
+        forStream(seed, 'skip_injury', absDay)
+    );
 }
 
 /** Ambient band governing a given absolute day of a skip. For UI preview. */

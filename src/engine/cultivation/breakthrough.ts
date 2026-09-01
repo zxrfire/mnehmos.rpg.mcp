@@ -74,6 +74,7 @@ import { getWoundType } from '../../data/cultivation/wounds.js';
 import { readManual } from './manual-quality.js';
 import { ambientBreakthroughMod } from './ambient.js';
 import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
+import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import {
     assessFoundation,
     foundationEffect,
@@ -1525,13 +1526,10 @@ function resolveFailure(
     // sub-rank steps, the tribulation ordinals, and death.
     if (outcome !== 'failure_stable' && injuries.length === 0) {
         const severity = failureInjurySeverity(outcome, frame.odds.isBoundary, ctx.rng);
+        const source = outcome === 'failure_deviation' ? 'qi_deviation' : 'failed_breakthrough';
         injuries.push(
             createInjury(
-                {
-                    severity,
-                    source: outcome === 'failure_deviation' ? 'qi_deviation' : 'failed_breakthrough',
-                    turn: ctx.turn
-                },
+                { severity, source, turn: ctx.turn, woundType: ordinaryWoundFor(source, severity) },
                 ctx.rng
             )
         );
@@ -1691,12 +1689,14 @@ function resolveTribulation(
         if (survived) continue;
         failedStrikes++;
         if (failedStrikes <= TRIBULATION_LETHAL_STRIKES) {
+            const severity = failedStrikes >= TRIBULATION_LETHAL_STRIKES ? 'crippling' : 'serious';
             injuries.push(
                 createInjury(
                     {
-                        severity: failedStrikes >= TRIBULATION_LETHAL_STRIKES ? 'crippling' : 'serious',
+                        severity,
                         source: 'tribulation',
                         turn: ctx.turn,
+                        woundType: ordinaryWoundFor('tribulation', severity),
                         description: `Heavenly lightning, strike ${strike + 1} of ${strikes}, struck home.`
                     },
                     ctx.rng

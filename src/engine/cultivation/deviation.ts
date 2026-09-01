@@ -28,6 +28,7 @@ import {
 } from '../../schema/cultivation.js';
 import { conflictsWithRoot, getSpiritRoot } from './spirit-roots.js';
 import { createInjury, scarTempering, untreatedInjuryCount } from './injuries.js';
+import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import type { CultivationRNG } from './rng.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -267,7 +268,7 @@ export function resolveDeviation(
 ): DeviationResolution {
     const severity = rollDeviationSeverity(rng, ctx.escalate ?? false);
     const injury = createInjury(
-        { severity, source: 'qi_deviation', turn: ctx.turn },
+        { severity, source: 'qi_deviation', turn: ctx.turn, woundType: ordinaryWoundFor('qi_deviation', severity) },
         rng
     );
     const progressLost = cultivator.cultivationProgress * DEVIATION_PROGRESS_LOSS[severity];
