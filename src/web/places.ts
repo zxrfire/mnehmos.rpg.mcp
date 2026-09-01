@@ -84,17 +84,51 @@ export interface PlaceNodeView {
     thresholds: { entry: number; survival: number; operational: number; mastery: number };
 
     hazards: string[];
+    /** How the place treats a particular kind of cultivator, boon or bane. */
+    affinities: { tag: string; multiplier: number; thresholdOffset: number; note: string }[];
     tags: string[];
     resources: string[];
     specialRules: string[];
 
     sealed: boolean;
     sealedOnDay: number | null;
+    /** What opens it, when something does. `architecture.ts` seals vaults with one. */
+    keyId: string | null;
+
+    /** Null when nothing has moved it off what it started as. */
+    origin: PlaceOriginView | null;
+    /** Most recent first, capped. `changeCount` is the true total. */
+    changes: PlaceChangeView[];
+    changeCount: number;
     discovered: boolean;
     discoveredOnDay: number | null;
 
     controllingFactionId: string | null;
+    /** The claim on paper: the faction the record names as holding it. */
     controllingFactionName: string | null;
+    /**
+     * Who runs it on the ground, in the record's own words.
+     *
+     * Carried beside `controllingFactionName` rather than folded into it,
+     * because a house can claim what it does not hold and the two fields
+     * disagreeing is the interesting state, not a data error.
+     */
+    heldBy: string;
+    /** True when the paper claim and the words on the ground do not match. */
+    contested: boolean;
+
+    /**
+     * What the place was cut for, and how many are in it.
+     *
+     * `architecture.ts` stores capacity and deliberately stores no other
+     * measurement, because capacity against occupancy is the fact that
+     * carries: a practice yard cut for six hundred holding ninety says more
+     * about a sect's century than any number written next to it.
+     */
+    capacity: number | null;
+    occupancy: number;
+    /** A house's architectural signature, from `data.styleTags`. */
+    styleTags: string[];
 
     /** Standing open on the world's current day. Sealed places never are. */
     open: boolean;
@@ -106,6 +140,40 @@ export interface PlaceNodeView {
 
     /** Links this record holds, before deduplication. */
     linkCount: number;
+}
+
+/**
+ * One dated thing that was done to a place.
+ *
+ * `locations.ts` stores a location as origin plus an append-only list of
+ * changes plus the materialised present, and the middle layer is the whole of
+ * why the world reads as alive: a valley that was a sect, then a battlefield,
+ * then a merchant city is three facts with dates on them rather than one
+ * adjective. Nothing surfaced it before this view did.
+ *
+ * `causeKnown` is carried because "nobody alive can explain it" is a stored
+ * state of the world and not a gap in the record, and `attributedCauses` are
+ * what the people living there say instead - stories, not truth.
+ */
+export interface PlaceChangeView {
+    onDay: number;
+    kind: string;
+    summary: string;
+    causeKnown: boolean;
+    attributedCauses: string[];
+    fidelity: 'full' | 'partial' | 'rumour' | 'lost';
+    witnessed: boolean;
+}
+
+/** What a place was before anything happened to it, when that differs. */
+export interface PlaceOriginView {
+    kind: LocationKind;
+    name: string;
+    qiDensity: number;
+    ambient: string;
+    fromDay: number | null;
+    /** Which of the four moved. Saves the client diffing it again. */
+    changed: ('kind' | 'name' | 'qiDensity' | 'ambient')[];
 }
 
 export interface PlaceEdgeView {
@@ -191,16 +259,61 @@ function depthOf(id: string, byId: Map<string, LocationRecord>): number {
     return depth;
 }
 
+/**
+ * How much of a place's history travels with the map.
+ *
+ * The whole ledger would be correct and would also be the largest thing in a
+ * payload that already carries eight hundred locations. The most recent eight
+ * is what a panel shows without being asked; `changeCount` says how much more
+ * there is, so the view never implies a short history a place does not have.
+ */
+const CHANGE_LIMIT = 8;
+
+/**
+ * What the place used to be, when that is different from what it is.
+ *
+ * Null when nothing moved, so an ordinary room does not render a section
+ * saying it is still what it was. A valley that was a sect and then a
+ * battlefield returns the four fields that moved and the day it started from.
+ */
+function originView(loc: LocationRecord): PlaceOriginView | null {
+    const o = loc.origin;
+    const changed: PlaceOriginView['changed'] = [];
+    if (o.kind !== loc.kind) changed.push('kind');
+    if (o.name !== loc.name) changed.push('name');
+    if (o.qiDensity !== loc.qiDensity) changed.push('qiDensity');
+    if (o.ambient !== loc.ambient) changed.push('ambient');
+    if (!changed.length) return null;
+    return {
+        kind: o.kind,
+        name: o.name,
+        qiDensity: o.qiDensity,
+        ambient: o.ambient,
+        fromDay: o.fromDay,
+        changed
+    };
+}
+
+/** A `data` value that is meant to be a count, or null when it is not one. */
+function numberField(loc: LocationRecord, key: string): number | null {
+    const raw = loc.data?.[key];
+    const n = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN;
+    return Number.isFinite(n) ? n : null;
+}
+
 function nodeView(
     loc: LocationRecord,
     byId: Map<string, LocationRecord>,
     children: Map<string, string[]>,
     factionNames: Map<string, string>,
+    occupancy: Map<string, number>,
     day: number
 ): PlaceNodeView {
     const open = isOpenOn(loc, day);
     const nextOpen = nextOpeningDay(loc, day);
     const nextClose = nextClosingDay(loc, day);
+    const claim = loc.controllingFactionId ? factionNames.get(loc.controllingFactionId) ?? null : null;
+    const held = loc.environment.politicalControl;
 
     return {
         id: loc.id,
@@ -223,19 +336,40 @@ function nodeView(
         thresholds: { ...loc.thresholds },
 
         hazards: loc.hazards.slice(),
+        affinities: loc.affinities.map(a => ({ ...a })),
         tags: loc.tags.slice(),
         resources: loc.environment.resources.slice(),
         specialRules: loc.environment.specialRules.slice(),
 
         sealed: loc.sealed,
         sealedOnDay: loc.sealedOnDay,
+        keyId: typeof loc.data?.keyId === 'string' ? loc.data.keyId : null,
+
+        origin: originView(loc),
+        changes: loc.changes.slice(-CHANGE_LIMIT).reverse().map(c => ({
+            onDay: c.onDay,
+            kind: c.kind,
+            summary: c.summary,
+            causeKnown: c.causeKnown,
+            attributedCauses: c.attributedCauses.slice(),
+            fidelity: c.fidelity,
+            witnessed: c.witnessed
+        })),
+        changeCount: loc.changes.length,
         discovered: loc.discovered,
         discoveredOnDay: loc.discoveredOnDay,
 
         controllingFactionId: loc.controllingFactionId,
-        controllingFactionName: loc.controllingFactionId
-            ? factionNames.get(loc.controllingFactionId) ?? null
-            : null,
+        controllingFactionName: claim,
+        heldBy: held,
+        // Substring rather than equality: the words on the ground are prose
+        // ("the Azure Cloud Pavilion, thinly"), and a house that is named in
+        // them is holding what it claims however grudgingly.
+        contested: Boolean(claim) && !held.toLowerCase().includes(claim!.toLowerCase()),
+
+        capacity: numberField(loc, 'capacity'),
+        occupancy: occupancy.get(loc.id) ?? 0,
+        styleTags: String(loc.data?.styleTags ?? '').split(/\s+/).filter(Boolean),
 
         open,
         cycle: loc.cycle ? { ...loc.cycle } : null,
@@ -339,7 +473,15 @@ export function placesView(world: WorldState | null): PlacesView {
         bucket.sort((a, b) => (byId.get(a)?.name ?? '').localeCompare(byId.get(b)?.name ?? ''));
     }
 
-    const nodes = locations.map(loc => nodeView(loc, byId, children, factionNames, day));
+    // Occupancy: who is standing in each place right now. Capacity is stored
+    // on the record and this is the other half of it.
+    const occupancy = new Map<string, number>();
+    for (const npc of world.npcs ?? []) {
+        const at = (npc as { locationId?: string | null }).locationId;
+        if (at) occupancy.set(at, (occupancy.get(at) ?? 0) + 1);
+    }
+
+    const nodes = locations.map(loc => nodeView(loc, byId, children, factionNames, occupancy, day));
     const { edges, dangling } = buildEdges(locations, byId);
 
     const byKind: Record<string, number> = {};

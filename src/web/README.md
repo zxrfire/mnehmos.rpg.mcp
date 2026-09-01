@@ -609,13 +609,26 @@ distance.
 
 | | |
 |---|---|
-| `GET /api/admin/places` | the whole map as JSON - admin only |
+| `GET /api/admin/places` | the whole lower world as JSON - admin only |
 | **World Map** in the admin menu | the panel the operator actually opens |
+
+### It is text, and that was a correction
+
+It was a drawn plate for one pass: a deterministic relaxation of the link graph with the
+sites placed by travel time. It read well and it was the wrong medium. This is a text
+game, the register already has a house pattern for a long structured list somebody
+expands - `ncard` in [`register.ts`](register.ts) - and a nested disclosure survives 859
+locations where a diagram does not. The panel now uses that markup in the app's tokens.
+
+What did **not** go with the picture is the data the picture carried. Ground, the four
+thresholds against a chosen ordinal, seal and cycle, control, and the fog of `discovered`
+are facts a reader needs; they are labelled text and small inline markers now, and the
+threshold sweep became a filter, which does more work than the colour did.
 
 ### The map may not invent geography
 
-A line drawn between two places is read by whoever is looking at it as a road, so the
-whole module is arranged around not drawing one that is not there:
+A line between two places is read as a road, and a position on a page is read as a
+position in the world. So:
 
 - **An edge is a `LocationLink` and nothing else.** A link naming a location this world
   does not hold is counted in `danglingLinks` and not drawn; so is a link from a place to
@@ -625,12 +638,38 @@ whole module is arranged around not drawing one that is not there:
   get to pick the cheaper direction's number.
 - **The payload carries no coordinates, and must not start to.** `LocationRecord` has no
   position and has never needed one: containment is `parentId` and distance is
-  `travelDays` on a link. A renderer handed x/y would be laying out a claim about where
-  things are that no part of the world supports. That is why the panel is a containment
-  view with the graph drawn over it rather than a force layout, and why it says *position
-  is containment, not geography* on its own face.
+  `travelDays` on a link.
 
 `tests/web/places.test.ts` pins every one of those.
+
+### Order is distance, and distance is the link graph
+
+Every list is ordered nearest-first from wherever the reader is standing, and banded -
+*within a day*, *two to six days* - rather than printed as a column of integers. The
+figure is the **shortest path over `links` in `travelDays`**, a plain Dijkstra over a
+sub-thousand-node graph, not a straight line: two places either side of a mountain are far
+apart, and the link graph is where that is already written.
+
+**`unreachable` is a real answer** and has its own band. Measured against the seeded world,
+18 of 20 roots - every sealed ruin and every scar - hold no links at all, so most of the
+top level is honestly reported as having no recorded route rather than being sorted quietly
+to the bottom.
+
+The origin is the container the reader has walked into, which is also what puts a
+compound's precincts in the order somebody would actually pass through them. At the top of
+the world there is no such place, so it is the best-connected root, **named in every band
+heading** - an unlabelled origin makes every distance on the page unreadable.
+`cultivator.location` is free text by design (see `schema/cultivation.ts`) and is used only
+on an exact name match to a place that has at least one link. That guard was added after a
+live world matched `Sixmile`, a settlement holding no links, and reported every distance in
+the world as "no route".
+
+### Descent is one click
+
+A row that holds something is a button: clicking it re-roots the panel inside that place,
+and that place's own record heads the level you land on - so descending and reading the
+description are one interaction rather than two. A row that holds nothing opens where it
+stands. The breadcrumb walks back out and every step of it is clickable.
 
 ### Built for the player it does not serve yet
 
@@ -643,10 +682,27 @@ at all.
 
 ### Depth is walked, never assumed
 
-The seeded world was 65 places in two levels; with interiors it is 857 in five, and it
-will move again. `depth` is computed by walking `parentId` with a visited set, the client
-renders containers recursively, and the panel folds everything below the regions by
-default because eight hundred tiles is not a map.
+The seeded world was 65 places in two levels; with interiors it is 859 in five, and it will
+move again. `depth` is computed by walking `parentId` with a visited set, and the panel
+shows one container at a time rather than a tree of eight hundred cards.
+
+### What a place says about itself
+
+The panel is concise by default and expands on request, and **an absent field renders
+nothing at all** - most rooms have no hazards, no cycle and no faction, and nine blank
+labels reads as a broken panel rather than as an ordinary room. Beyond the current state,
+the payload carries three things nothing else surfaced:
+
+- **`origin`**, and only when something moved. A valley that became a city returns the
+  fields that changed and the day it started from; a room that is still what it was
+  returns `null`.
+- **`changes`**, newest first and capped at eight with `changeCount` for the true total.
+  This is the middle of the three layers `locations.ts` describes and it is the best
+  source of "the world is alive" in the whole panel: *day 139,065 - 15 li of ground
+  stopped holding qi, when Yun Zhaoping failed tribulation here.* `causeKnown` is carried
+  because "nobody alive can explain it" is a stored state of the world.
+- **`capacity` against `occupancy`**. `architecture.ts` stores capacity and deliberately
+  stores no other measurement; the other half is a count of NPCs standing there.
 
 ## Related
 

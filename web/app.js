@@ -2417,71 +2417,74 @@ function wireRoster() {
 /* ────────────────────────── admin world map (read-only) ────────────────────────── */
 
 /**
- * The world, as the engine holds it.
+ * The lower world, as a gazetteer you walk down through.
  *
- * WHY CONTAINMENT AND NOT A FORCE GRAPH
- * -------------------------------------
- * `LocationRecord` has no coordinate and never has. What it has is `parentId`
- * - a region holds a seat holds a precinct holds a hall - and `links`, which
- * carry a real cost in days. A spring layout would place 65 nodes at 65
- * positions the engine never computed, and an operator reads position on a map
- * as position in the world. So the frame is the hierarchy, which is real, and
- * the graph is drawn on top of it as edges between the tiles, which is also
- * real. Nothing here is laid out by distance, and the panel says so in as many
- * words, because the one thing this view must never do is invent geography.
+ * ── WHY THIS IS TEXT AND NOT A PICTURE ───────────────────────────────────
+ * It was a drawn plate for one pass - a relaxation of the link graph with the
+ * sites placed by travel time. It read well and it was the wrong medium. This
+ * is a text game, the register already has a house pattern for a long
+ * structured list somebody expands (`ncard` in `src/web/register.ts`), and a
+ * nested disclosure survives 859 locations where a diagram does not. So the
+ * markup here is the register's, in the app's tokens, and nothing on this
+ * panel is drawn that could be written.
  *
- * WHAT IS ENCODED, AND WHY THOSE FOUR
- * -----------------------------------
- *   qi density   -> the bar and its band colour. This is the number that
- *                   decides whether a cultivator standing there ever finishes
- *                   the ladder, and it ranges 1..100 across this world.
- *   thresholds   -> the left edge of every tile, banded against one ordinal.
- *                   Four requirements that fail differently: turned away,
- *                   killed by the air, alive and useless, able to work.
- *   travel days  -> the edge label. It is the only distance in this model, so
- *                   it is written on the only thing that carries it.
- *   seal / cycle -> a state of its own, not a shade of "closed". A ruin that
- *                   opens for ten days a century is a different problem from a
- *                   ruin somebody sealed.
+ * What did NOT get dropped with the picture is the data the picture carried.
+ * Ground, the four thresholds against an ordinal, seal and cycle, control, and
+ * the fog of `discovered` are facts a reader needs; they are labelled text and
+ * small inline markers now instead of colour and position, and the threshold
+ * sweep became a filter, which does more work than the colour ever did.
  *
- * THE FOG IS BUILT IN
- * -------------------
- * Admin mode shows all of them; `docs/world/discovery.md` is emphatic that a
- * player may not be shown what they have not heard of. So `discovered` is a
- * first-class filter here rather than an afterthought: the default marks
- * undiscovered places, and one control drops them entirely, which is exactly
- * what a player-facing map would do at the boundary.
+ * ── ORDER IS DISTANCE, AND DISTANCE IS THE LINK GRAPH ────────────────────
+ * Every list is ordered by how far away things are from wherever the reader is
+ * standing, nearest first, and banded rather than printed as a column of
+ * integers. The distance is the shortest path over `links` measured in
+ * `travelDays` - not a straight line, because there are no coordinates and
+ * there should not be. Two places either side of a mountain are far apart, and
+ * the link graph is exactly where that is already written down.
+ *
+ * `unreachable` is a real answer and gets its own band. A place with no
+ * recorded route is not sorted quietly to the bottom; it is named as having no
+ * route.
+ *
+ * ── DESCENT IS ONE CLICK ─────────────────────────────────────────────────
+ * A row opens onto its own record. A row that holds something also carries one
+ * control that re-roots the whole panel inside it, and the breadcrumb walks
+ * back out. Depth 4 is easy to get lost in, so where you are is stated at the
+ * top at all times and every step of it is clickable.
+ *
+ * ── THE LID IS NOT ON THIS MAP ───────────────────────────────────────────
+ * `layers.ts` is emphatic that the far side of the Lid is a different world
+ * rather than a corner of this one. This panel is the lower world; the count
+ * of what is above it is stated and nothing above it is listed.
  */
 
 const MAP = {
   data: null,
   byId: new Map(),
-  collapsed: new Set(),
-  selected: null,
+  /** id -> [{ to, days, kind, open }]. Built once from the deduplicated edges. */
+  adj: new Map(),
+  /** Ids from the lower world down to the container being read. [] is the top. */
+  path: [],
+  /** The place distances are measured from. Always somewhere real. */
+  originId: null,
+  /** originId -> Map(id -> { days, viaId, kind }). Dijkstra is cheap; repeating it is not. */
+  distCache: new Map(),
+  openRows: new Set(),
   q: '',
-  kind: '',
-  layer: '',
-  /** 'mark' shows undiscovered places as fog; 'hide' is the player's view. */
   fog: 'mark',
-  /**
-   * Containers at a depth below this are open; the rest are folded.
-   *
-   * Not cosmetic. Interiors landed and the seeded world went from 65 places to
-   * 857 - a compound is a precinct is a hall is a chamber - so an
-   * expand-everything default paints eight hundred tiles and measures eight
-   * hundred rectangles to draw the graph over them. One is the useful default:
-   * the regions stand open, and what is inside a sect's walls opens when
-   * somebody asks for it.
-   */
-  unfold: 1,
-  /** Ordinal the thresholds are banded against. null = do not band. */
   ordinal: null,
-  observer: null
+  /** 'all' | 'operate' | 'survive' - what the reader would be able to do there. */
+  reachFilter: 'all',
+  /** Days. Infinity is no limit. */
+  withinDays: Infinity
 };
 
-/** Reading order for containers: the frame first, then what is inside it. */
+/** The pseudo-container above every root. The map's own top. */
+const MAP_ROOT = { id: '__world__', name: 'The lower world', kind: 'region', childIds: [] };
+
+/** Reading order where distance cannot decide: the ground first, then what is on it. */
 const MAP_KIND_ORDER = [
-  'region', 'wilds', 'vein', 'settlement', 'sect_seat', 'precinct', 'hall',
+  'region', 'vein', 'wilds', 'settlement', 'sect_seat', 'precinct', 'hall',
   'chamber', 'vault', 'cave', 'portal', 'secret_realm', 'sealed_domain',
   'forbidden_zone', 'ruin', 'grave', 'scar'
 ];
@@ -2494,45 +2497,17 @@ const MAP_KIND_LABEL = {
   hall: 'Hall', chamber: 'Chamber', vault: 'Vault'
 };
 
-/* Glyphs, 16x16, stroked in currentColor. Form carries `kind` so the eye can
-   sort a map full of ruins from a map full of seats without reading a word. */
-const MAP_GLYPH = {
-  region: 'M2 5.5l6-3 6 3v5l-6 3-6-3z',
-  settlement: 'M2.5 7.5L8 3l5.5 4.5M4 7v6.5h8V7',
-  sect_seat: 'M2 13.5h12M3.5 13.5V7h9v6.5M2 7l6-4.5L14 7M6.5 13.5V10h3v3.5',
-  wilds: 'M1.5 13l3.5-7 2.5 4.5L10 5l4.5 8z',
-  vein: 'M8 2l5 6-5 6-5-6zM5.5 8h5',
-  cave: 'M2.5 13.5V9a5.5 5.5 0 0111 0v4.5M6 13.5V10a2 2 0 014 0v3.5',
-  ruin: 'M2.5 13.5V6l2-2v5.5M7 13.5V4.5l2 2v3M11.5 13.5V8l2-1.5v7M1.5 13.5h13',
-  grave: 'M4.5 13.5V6a3.5 3.5 0 017 0v7.5M6 8h4M2.5 13.5h11',
-  scar: 'M9.5 1.5L4 8.5h3.5L6 14.5l6-7.5H8.5z',
-  forbidden_zone: 'M8 2a6 6 0 100 12A6 6 0 008 2zM4 12L12 4',
-  secret_realm: 'M8 2a6 6 0 100 12A6 6 0 008 2zM8 5.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z',
-  sealed_domain: 'M8 2a6 6 0 100 12A6 6 0 008 2zM3.5 8h9',
-  portal: 'M8 2c2.2 0 4 2.7 4 6s-1.8 6-4 6-4-2.7-4-6 1.8-6 4-6zM2 8h12',
-  precinct: 'M2 2.5h12v11H2zM5 5.5h6v5H5z',
-  hall: 'M2 13.5h12M3 13.5V6h10v7.5M5.5 13.5V8M8 13.5V8M10.5 13.5V8M2 6l6-3.5L14 6',
-  chamber: 'M8 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2',
-  vault: 'M3 7.5h10v6H3zM5.5 7.5V5a2.5 2.5 0 015 0v2.5M8 9.5v2'
-};
-
-/**
- * How far to unfold, as one control rather than thirty clicks.
- *
- * The depths are the world's own: roots are regions and standalone sites,
- * depth 1 is what a region holds, depth 2 and below is what is behind a
- * compound's walls. `Everything` is deliberately last and deliberately warned
- * about - it paints every interior in the world at once.
- */
-const MAP_UNFOLD = [
-  { depth: 1, label: 'Unfold: regions' },
-  { depth: 2, label: 'Unfold: seats' },
-  { depth: 3, label: 'Unfold: precincts' },
-  { depth: 99, label: 'Unfold: everything' }
-];
-
 const MAP_LINK_LABEL = {
   road: 'road', path: 'path', tunnel: 'tunnel', gate: 'gate', portal: 'portal', seam: 'seam'
+};
+
+const MAP_LINK_NOTE = {
+  road: 'A made road. The ordinary way anybody arrives.',
+  path: 'A track. Slower, and nobody is maintaining it.',
+  tunnel: 'Under the ground, and only useful if you know it is there.',
+  gate: 'A door in a wall somebody built. It can be shut.',
+  portal: 'Fast, and not instantaneous. Somebody made it and somebody can close it.',
+  seam: 'A hole in a ward. It puts you inside the wall without passing the gate, which is why it is worth knowing and worth hiding.'
 };
 
 const MAP_BAND_LABEL = {
@@ -2540,13 +2515,36 @@ const MAP_BAND_LABEL = {
 };
 
 /**
+ * Distance bands.
+ *
+ * A reader wants "what is near me", not a sorted column of integers, so the
+ * rows carry the exact figure and the headings carry the shape.
+ */
+const MAP_DIST_BANDS = [
+  { max: 0, label: 'Here, or through a door' },
+  { max: 1, label: 'Within a day' },
+  { max: 6, label: 'Two to six days' },
+  { max: 30, label: 'A week to a month' },
+  { max: 365, label: 'Months away' },
+  { max: Infinity, label: 'The better part of a year or more' }
+];
+
+const MAP_WITHIN = [
+  { days: Infinity, label: 'Any distance' },
+  { days: 1, label: 'Within a day' },
+  { days: 7, label: 'Within a week' },
+  { days: 30, label: 'Within a month' },
+  { days: 365, label: 'Within a year' }
+];
+
+/**
  * What one ordinal can do at one place.
  *
  * Straight off `LocationThresholds`, whose four numbers fail differently and
  * are documented in engine/world/locations.ts: below entry you are turned away
  * and nothing happens; below survival you get in and die; between survival and
- * operational you are alive and useless. This client compares; it does not
- * decide - the numbers are the engine's and are shown unmodified beside them.
+ * operational you are alive and useless. This compares - it does not decide -
+ * and the engine's four numbers are printed unmodified beside the verdict.
  */
 function mapReach(node, ordinal) {
   if (ordinal == null) return 'unbanded';
@@ -2573,6 +2571,7 @@ const MAP_REACH_TEXT = {
  * that takes seventeen days to walk.
  */
 function mapDays(days) {
+  if (!Number.isFinite(days)) return 'no route';
   const total = Math.max(0, Math.round(Number(days) || 0));
   if (total === 0) return 'no time';
   if (total < DAYS_PER_MONTH) return `${total}d`;
@@ -2581,19 +2580,419 @@ function mapDays(days) {
   return `${years >= 10 ? Math.round(years) : years.toFixed(1)}y`;
 }
 
-function mapGlyph(kind) {
-  const d = MAP_GLYPH[kind] || MAP_GLYPH.settlement;
-  return html`<svg class="pglyph" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"
-    fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+/** Everything below the Lid. The other layer is a different world, not a corner. */
+function mapIsHere(n) {
+  return n && n.layer !== 'immortal';
 }
+
+/* ── distance, over the link graph ───────────────────────────────────────── */
+
+function mapBuildAdjacency() {
+  const adj = new Map();
+  const add = (a, b, e) => {
+    const list = adj.get(a) || [];
+    list.push({ to: b, days: Math.max(0, Number(e.travelDays) || 0), kind: e.kind, open: e.open });
+    adj.set(a, list);
+  };
+  for (const e of MAP.data.edges || []) {
+    // A crossing is walkable in both directions: `links` records an end, not a
+    // one-way street, and `mutual` says only whether both ends wrote it down.
+    add(e.fromId, e.toId, e);
+    add(e.toId, e.fromId, e);
+  }
+  MAP.adj = adj;
+}
+
+/**
+ * Shortest path in days from one place to every place it can reach.
+ *
+ * Dijkstra with a linear scan for the minimum. The graph is under a thousand
+ * nodes and the panel recomputes it only when the reader moves, so a heap
+ * would be machinery for nothing. Shut crossings are still walked, at the cost
+ * they carry, and marked - a door that is closed today is a route somebody
+ * plans around rather than a route that does not exist.
+ */
+function mapDistancesFrom(originId) {
+  const cached = MAP.distCache.get(originId);
+  if (cached) return cached;
+
+  const dist = new Map([[originId, { days: 0, viaId: null, kind: null, shut: false }]]);
+  const done = new Set();
+  for (;;) {
+    let best = null;
+    let bestDays = Infinity;
+    for (const [id, d] of dist) {
+      if (done.has(id) || d.days >= bestDays) continue;
+      best = id;
+      bestDays = d.days;
+    }
+    if (best == null) break;
+    done.add(best);
+    for (const step of MAP.adj.get(best) || []) {
+      if (!mapIsHere(MAP.byId.get(step.to))) continue;
+      const days = bestDays + step.days;
+      const prev = dist.get(step.to);
+      if (!prev || days < prev.days) {
+        dist.set(step.to, { days, viaId: best, kind: step.kind, shut: !step.open || (dist.get(best)?.shut ?? false) });
+      }
+    }
+  }
+  MAP.distCache.set(originId, dist);
+  return dist;
+}
+
+function mapDistanceTo(id) {
+  if (!MAP.originId) return null;
+  if (id === MAP.originId) return { days: 0, viaId: null, kind: null, shut: false };
+  return mapDistancesFrom(MAP.originId).get(id) || null;
+}
+
+function mapBandOf(days) {
+  if (!Number.isFinite(days)) return MAP_DIST_BANDS.length;
+  return MAP_DIST_BANDS.findIndex((b) => days <= b.max);
+}
+
+/**
+ * The route, in words.
+ *
+ * A portal at two days and a road at two days are not the same journey, so the
+ * kind of every leg is named. Only the last two legs are spelled out: the
+ * whole chain from a region to a sealed chamber four walls in is six lines
+ * nobody reads, and the ones that matter are the ones nearest the door.
+ */
+function mapRouteText(id) {
+  const dist = MAP.originId ? mapDistancesFrom(MAP.originId) : null;
+  if (!dist) return '';
+  const legs = [];
+  let cur = id;
+  const guard = new Set();
+  while (cur && dist.has(cur) && !guard.has(cur)) {
+    guard.add(cur);
+    const step = dist.get(cur);
+    if (!step || step.viaId == null) break;
+    legs.unshift({ kind: step.kind, from: step.viaId, to: cur });
+    cur = step.viaId;
+  }
+  if (!legs.length) return '';
+  const shown = legs.slice(-2);
+  return shown.map((l) => `${MAP_LINK_LABEL[l.kind] || l.kind} from ${MAP.byId.get(l.from)?.name || 'somewhere'}`).join(', then ')
+    + (legs.length > shown.length ? `, ${legs.length - shown.length} leg${legs.length - shown.length === 1 ? '' : 's'} before that` : '');
+}
+
+/* ── where the reader is ─────────────────────────────────────────────────── */
+
+function mapContainer() {
+  const id = MAP.path[MAP.path.length - 1];
+  return id ? MAP.byId.get(id) || MAP_ROOT : MAP_ROOT;
+}
+
+function mapRootChildren() {
+  return (MAP.data.locations || []).filter((l) => !l.parentId && mapIsHere(l));
+}
+
+function mapFrameNodes() {
+  const container = mapContainer();
+  const list = container === MAP_ROOT
+    ? mapRootChildren()
+    : (container.childIds || []).map((id) => MAP.byId.get(id)).filter(Boolean);
+  return list.filter((n) => mapIsHere(n) && (MAP.fog !== 'hide' || n.discovered));
+}
+
+function mapNodeOrder(a, b) {
+  const ka = MAP_KIND_ORDER.indexOf(a.kind);
+  const kb = MAP_KIND_ORDER.indexOf(b.kind);
+  return (ka < 0 ? 99 : ka) - (kb < 0 ? 99 : kb)
+    || b.qiDensity - a.qiDensity
+    || String(a.name).localeCompare(String(b.name));
+}
+
+/**
+ * Where distances are measured from, and it is never a guess dressed as a fact.
+ *
+ * Inside a container it is the container: walking into a compound, "how far"
+ * means how far from its gate, which is also what puts the precincts in the
+ * order somebody would actually pass through them. At the top of the world
+ * there is no such place, so it is the best-connected root - stated by name in
+ * the heading, because an unlabelled origin makes every distance on the page
+ * unreadable.
+ *
+ * `cultivator.location` is deliberately free text in `schema/cultivation.ts` -
+ * the engine does not own a map - so it is used only on an exact name match
+ * and never fuzzily. Guessing which place `Sixmile` means would be the client
+ * inventing geography.
+ */
+function mapChooseOrigin() {
+  const container = mapContainer();
+  if (container !== MAP_ROOT) return container.id;
+
+  // The player's own place, but only when something is recorded as leading
+  // out of it. Measured against a live world, `Sixmile` matched a real
+  // settlement that holds no links at all, and every distance on the page came
+  // back "no route" - a true statement about Sixmile presented as a fact about
+  // the world. An origin nothing connects to is not an origin.
+  const here = S.cultivator && S.cultivator.location;
+  if (here) {
+    const exact = (MAP.data.locations || []).find((l) => mapIsHere(l) && l.name === here);
+    if (exact && (MAP.adj.get(exact.id) || []).length) return exact.id;
+  }
+  const roots = mapRootChildren();
+  let best = null;
+  let bestDeg = -1;
+  for (const r of roots) {
+    const deg = (MAP.adj.get(r.id) || []).length;
+    if (deg > bestDeg) { best = r; bestDeg = deg; }
+  }
+  return best ? best.id : (roots[0] ? roots[0].id : null);
+}
+
+/* ── one row ─────────────────────────────────────────────────────────────── */
+
+/** Ground, as four cells of text. The only picture on the page, and it is type. */
+function mapDensityMark(n) {
+  const filled = Math.max(1, Math.min(4, Math.ceil((n.qiDensity / 100) * 4)));
+  return html`<span class="dens" data-qi-band="${n.qiBand}" title="Ground ${fmtInt(n.qiDensity)} of 100 - ${MAP_BAND_LABEL[n.qiBand] || n.qiBand}"
+    aria-label="ground ${fmtInt(n.qiDensity)} of 100">${raw('▮'.repeat(filled) + '▯'.repeat(4 - filled))}<b>${fmtInt(n.qiDensity)}</b></span>`;
+}
+
+function mapStateChips(n) {
+  const out = [];
+  if (n.sealed) out.push(html`<span class="chip chip--sealed">${n.keyId ? 'sealed, keyed' : 'sealed'}</span>`);
+  else if (!n.open) out.push(html`<span class="chip chip--shut">shut ${mapDays(n.opensInDays)}</span>`);
+  else if (n.cycle) out.push(html`<span class="chip chip--window">open ${mapDays(n.closesInDays)}</span>`);
+  if (!n.discovered) out.push(html`<span class="chip chip--fog">undiscovered</span>`);
+  if (n.contested) out.push(html`<span class="chip chip--claim">claim disputed</span>`);
+  return out.join('');
+}
+
+/** The first sentence of the description, for the closed row. */
+function mapLede(n) {
+  const d = String(n.description || '').trim();
+  if (!d) return '';
+  const cut = d.search(/[.!?](\s|$)/);
+  return cut > 0 && cut < 160 ? d.slice(0, cut + 1) : d;
+}
+
+/**
+ * The shared face of a row, open or closed.
+ *
+ * Name, how far away it is, and the three facts that decide whether anybody
+ * would go: what the ground is worth, whether it would kill them, and whether
+ * they can get in at all. Then the first sentence of the description, so a
+ * closed list still reads as prose rather than as a schema.
+ */
+function mapSummaryMarkup(n, reach, d, inside, verb) {
+  const lede = mapLede(n);
+  return html`
+    <span class="nhead">
+      <span class="nname">${n.name}</span>
+      <span class="nord" title="${raw(d && Number.isFinite(d.days) ? esc(mapRouteText(n.id) || 'you are here') : 'No crossing links this to where you are standing.')}">${d ? mapDays(d.days) : 'no route'}</span>
+    </span>
+    <span class="nkind">
+      <span>${MAP_KIND_LABEL[n.kind] || n.kind}</span>
+      ${raw(mapDensityMark(n))}
+      ${MAP.ordinal == null ? '' : raw(html`<span class="chip chip--reach reach--${raw(reach)}">${MAP_REACH_TEXT[reach][0]}</span>`)}
+      ${raw(mapStateChips(n))}
+      ${inside ? raw(html`<span class="chip chip--inside">${fmtInt(inside)} inside</span>`) : ''}
+      <span class="ngo">${verb}</span>
+    </span>
+    ${lede ? raw(html`<span class="nwant">${lede}</span>`) : ''}`;
+}
+
+/**
+ * One click, and it does the thing the reader meant.
+ *
+ * A place that holds something is walked INTO on a single click - the panel
+ * re-roots there and that place's own record leads the level you land on, so
+ * descending and reading the description are one interaction rather than two.
+ * A place that holds nothing has nowhere to go, so it opens where it stands.
+ * The distinction is visible before the click: only one of them carries an
+ * `N inside` count.
+ */
+function mapRowMarkup(n) {
+  const reach = mapReach(n, MAP.ordinal);
+  const d = mapDistanceTo(n.id);
+  const inside = (n.childIds || []).length;
+  const cls = `ncard reach--${reach}${n.discovered ? '' : ' is-fogged'}`;
+
+  if (inside) {
+    return html`
+      <button class="${raw(cls)} ncard--go" type="button" data-descend="${n.id}"
+              aria-label="${raw(esc(`Go inside ${n.name}, ${inside} places`))}">
+        ${raw(mapSummaryMarkup(n, reach, d, inside, 'go in'))}
+      </button>`;
+  }
+
+  return html`
+    <details class="${raw(cls)}" data-row="${n.id}" ${raw(MAP.openRows.has(n.id) ? 'open' : '')}>
+      <summary>${raw(mapSummaryMarkup(n, reach, d, 0, 'open'))}</summary>
+      <div class="nbody">${raw(MAP.openRows.has(n.id) ? mapBodyMarkup(n) : '')}</div>
+    </details>`;
+}
+
+/* ── one record ──────────────────────────────────────────────────────────── */
+
+function mapThresholdRow(label, value, note) {
+  const ord = MAP.ordinal;
+  const max = mapMaxOrdinal();
+  const pass = ord != null && ord >= value;
+  return html`
+    <div class="thr ${raw(ord == null ? '' : pass ? 'is-pass' : 'is-fail')}">
+      <span class="thr__label">${label}</span>
+      <span class="thr__track"><i style="width:${raw(String(Math.max(1, Math.min(100, (value / max) * 100))))}%"></i>
+        ${ord == null ? '' : raw(html`<b class="thr__you" style="left:${raw(String(Math.max(0, Math.min(100, (ord / max) * 100))))}%"></b>`)}
+      </span>
+      <span class="thr__num">${fmtInt(value)}</span>
+      <span class="thr__note">${note}</span>
+    </div>`;
+}
+
+function mapHistoryMarkup(n) {
+  if (!n.changes.length && !n.origin) return '';
+  return html`
+    <div class="section__label">What happened here${n.changeCount > n.changes.length ? ` · last ${fmtInt(n.changes.length)} of ${fmtInt(n.changeCount)}` : ''}</div>
+    ${n.origin ? raw(html`<p class="mapinsp__origin">It began as <b>${n.origin.name}</b>${n.origin.kind !== n.kind ? `, ${(MAP_KIND_LABEL[n.origin.kind] || n.origin.kind).toLowerCase()}` : ''}${
+      n.origin.changed.includes('qiDensity') ? `, ground at ${fmtInt(n.origin.qiDensity)}` : ''}${
+      n.origin.fromDay != null ? `, from day ${fmtInt(n.origin.fromDay)}` : ''}.</p>`) : ''}
+    ${n.changes.length ? raw(html`<ol class="hist">${raw(n.changes.map((c) => html`
+      <li class="hist__row hist__row--${raw(c.fidelity)}">
+        <span class="hist__day">day ${fmtInt(c.onDay)}</span>
+        <span class="hist__what">${c.summary}
+          ${c.causeKnown ? '' : raw(html`<span class="hist__why">nobody can say why${c.attributedCauses.length ? `; they blame ${c.attributedCauses.join(', ')}` : ''}</span>`)}
+          ${c.fidelity === 'rumour' || c.fidelity === 'lost' ? raw(html`<span class="hist__fid">the record is ${c.fidelity}</span>`) : ''}
+        </span>
+      </li>`).join(''))}</ol>`) : ''}`;
+}
+
+/**
+ * The record, in two halves.
+ *
+ * The first is what somebody reads: the authored prose, how far away it is,
+ * and one line on whether it would kill them. The second is everything else,
+ * and it is only ever the whole of a row's body - when the same record heads a
+ * level the reader has already walked into, the second half goes behind a
+ * disclosure, because the reason they are on that screen is the list under it.
+ */
+function mapBodyLede(n, { asHere = false } = {}) {
+  const reach = mapReach(n, MAP.ordinal);
+  const inside = (n.childIds || []).length;
+  const d = mapDistanceTo(n.id);
+  const route = mapRouteText(n.id);
+
+  return html`
+    ${n.description
+      ? raw(html`<p class="mapdesc">${n.description}</p>`)
+      : raw(html`<p class="mapdesc mapdesc--none">Nothing is written about this place. Everything known about it is below.</p>`)}
+
+    ${inside && !asHere ? raw(html`<button class="btn btn--primary btn--sm mapgo" type="button" data-descend="${n.id}">
+      Go inside · ${fmtInt(inside)} place${inside === 1 ? '' : 's'}</button>`) : ''}
+
+    ${d && Number.isFinite(d.days) && d.days > 0
+      ? raw(html`<p class="maproute"><b>${mapDays(d.days)}</b> from ${MAP.byId.get(MAP.originId)?.name || 'here'}${route ? `: ${route}` : ''}${d.shut ? '. Part of that route is shut.' : '.'}</p>`)
+      : (!d && !asHere ? raw(html`<p class="maproute maproute--none">No recorded crossing joins this to ${MAP.byId.get(MAP.originId)?.name || 'where you are'}. There may be no way there.</p>`) : '')}
+
+    ${MAP.ordinal == null ? '' : raw(html`<p class="mapverdict reach--${raw(reach)}">${MAP_REACH_TEXT[reach][0]}<span>${MAP_REACH_TEXT[reach][1]}</span></p>`)}`;
+}
+
+function mapBodyMarkup(n, opts = {}) {
+  if (opts.asHere) {
+    return html`${raw(mapBodyLede(n, opts))}
+      <details class="mapmore mapmore--here"><summary>The record for ${n.name}</summary>
+        ${raw(mapBodyRest(n))}
+      </details>`;
+  }
+  return html`${raw(mapBodyLede(n))}${raw(mapBodyRest(n))}`;
+}
+
+function mapBodyRest(n) {
+  const reach = mapReach(n, MAP.ordinal);
+  const edges = (MAP.data.edges || [])
+    .filter((e) => e.fromId === n.id || e.toId === n.id)
+    .map((e) => ({ e, o: MAP.byId.get(e.fromId === n.id ? e.toId : e.fromId) }))
+    .filter((x) => mapIsHere(x.o))
+    .sort((a, b) => a.e.travelDays - b.e.travelDays);
+
+  return html`
+
+    ${n.sealed || n.cycle ? raw(html`
+      <div class="section__label">Getting in</div>
+      <p class="mapdoor">
+        ${n.sealed
+          ? raw(html`Sealed${n.sealedOnDay != null ? ` on day ${fmtInt(n.sealedOnDay)}` : ''}.
+              ${n.keyId ? raw(html`It opens to <code>${n.keyId}</code> and to nothing else.`) : 'No cycle opens it.'}`)
+          : raw(html`Open ${fmtInt(n.cycle.openDays)} day${n.cycle.openDays === 1 ? '' : 's'} in every ${fmtInt(n.cycle.periodDays)}.
+              ${n.open
+                ? raw(html`<b>Standing open now</b>; it shuts in ${mapDays(n.closesInDays)}.`)
+                : raw(html`<b>Shut.</b> It opens in ${mapDays(n.opensInDays)}.`)}`)}
+      </p>`) : ''}
+
+    <div class="section__label">What would kill you${MAP.ordinal == null ? '' : ` · you are ordinal ${fmtInt(MAP.ordinal)}`}</div>
+    <div class="thrs">
+      ${raw(mapThresholdRow('entry', n.thresholds.entry, 'below this, turned away'))}
+      ${raw(mapThresholdRow('survival', n.thresholds.survival, 'below this, in and dead'))}
+      ${raw(mapThresholdRow('operational', n.thresholds.operational, 'below this, alive and useless'))}
+      ${raw(mapThresholdRow('mastery', n.thresholds.mastery, 'above this, yours to hold'))}
+    </div>
+    ${n.hazards.length ? raw(html`<div class="chips">${raw(n.hazards.map((h) => html`<span class="chip chip--hazard" title="${h}">${String(h).replace(/_/g, ' ')}</span>`).join(''))}</div>`) : ''}
+    ${n.affinities.length ? raw(html`<ul class="affs">${raw(n.affinities.map((a) => html`
+      <li class="aff ${raw(a.multiplier >= 1 ? 'is-boon' : 'is-bane')}">
+        <b>${titleise(a.tag)}</b> ${a.multiplier >= 1 ? 'favoured' : 'suppressed'} ×${fmtNum(a.multiplier, 2)}${a.thresholdOffset ? `, ${fmtSigned(-a.thresholdOffset)} to the bar` : ''}
+        ${a.note ? raw(html`<span class="aff__note">${a.note}</span>`) : ''}
+      </li>`).join(''))}</ul>`) : ''}
+
+    ${n.controllingFactionName || n.capacity != null || (n.heldBy && n.heldBy !== 'nobody in particular') ? raw(html`
+      <div class="section__label">Whose it is</div>
+      <dl class="mapfacts">
+        ${n.controllingFactionName ? raw(html`<div><dt>On paper</dt><dd>${n.controllingFactionName}</dd></div>`) : ''}
+        ${n.heldBy ? raw(html`<div><dt>On the ground</dt><dd>${n.heldBy}</dd></div>`) : ''}
+        ${n.capacity != null ? raw(html`<div><dt>Cut for</dt><dd>${fmtInt(n.capacity)}<span class="sub">${fmtInt(n.occupancy)} here now</span></dd></div>`) : ''}
+      </dl>
+      ${n.contested ? raw(html`<p class="mapclaim">A claim its own record does not confirm on the ground.</p>`) : ''}`) : ''}
+
+    ${edges.length ? raw(html`
+      <div class="section__label">From here you can reach · ${fmtInt(edges.length)}</div>
+      <ul class="xings">${raw(edges.map(({ e, o }) => html`
+        <li class="xrow ${raw(e.open ? '' : 'is-shut')}">
+          <span class="xrow__kind xrow__kind--${raw(e.kind)}" title="${MAP_LINK_NOTE[e.kind] || ''}">${MAP_LINK_LABEL[e.kind] || e.kind}</span>
+          <button class="linkish xrow__to" type="button" data-goto="${o.id}">${o.name}</button>
+          <span class="xrow__days">${mapDays(e.travelDays)}</span>
+          ${e.kind === 'seam' ? raw(html`<span class="chip chip--seam" title="${MAP_LINK_NOTE.seam}">past the gate</span>`) : ''}
+          ${e.open ? '' : raw(html`<span class="chip chip--shut">shut</span>`)}
+          ${e.requiresKeyId ? raw(html`<span class="chip chip--key" title="Needs ${esc(e.requiresKeyId)}">keyed</span>`) : ''}
+          ${e.mutual ? '' : raw(html`<span class="chip chip--oneway" title="Only one end records this crossing.">one-sided</span>`)}
+        </li>`).join(''))}</ul>`) : ''}
+
+    ${raw(mapHistoryMarkup(n))}
+
+    ${n.specialRules.length || n.styleTags.length || n.resources.length || n.tags.length ? raw(html`
+      <details class="mapmore">
+        <summary>The rest of the record</summary>
+        ${n.specialRules.length ? raw(html`<div class="section__label">Local law</div>
+          <ul class="maprules">${raw(n.specialRules.map((r) => html`<li>${r}</li>`).join(''))}</ul>`) : ''}
+        ${n.styleTags.length ? raw(html`<div class="section__label">Built like</div>
+          <div class="chips">${raw(n.styleTags.map((t) => html`<span class="chip chip--style">${titleise(t)}</span>`).join(''))}</div>`) : ''}
+        ${n.resources.length ? raw(html`<div class="section__label">Gatherable</div>
+          <div class="chips">${raw(n.resources.map((r) => html`<span class="chip">${r}</span>`).join(''))}</div>`) : ''}
+        ${n.tags.length ? raw(html`<div class="section__label">Tags</div>
+          <div class="chips">${raw(n.tags.map((t) => html`<span class="chip chip--tag">${t}</span>`).join(''))}</div>`) : ''}
+        <dl class="mapfacts">
+          <div><dt>Usable qi</dt><dd>${fmtPct(n.spiritualDensity)}<span class="sub">what somebody standing here can draw, against the ${fmtInt(n.qiDensity)} the ground holds</span></dd></div>
+          <div><dt>Danger</dt><dd>${fmtPct(n.danger)}</dd></div>
+          <div><dt>Climate</dt><dd>${n.climate || '-'}</dd></div>
+          <div><dt>Ambient</dt><dd>${titleise(n.ambient)}</dd></div>
+          ${n.discoveredOnDay != null ? raw(html`<div><dt>Found</dt><dd>day ${fmtInt(n.discoveredOnDay)}</dd></div>`) : ''}
+        </dl>
+      </details>`) : ''}`;
+}
+
+/* ── the panel ───────────────────────────────────────────────────────────── */
 
 async function openMap() {
   openOverlay({
-    title: 'World map',
+    title: 'The lower world',
     body: html`<p class="muted">Reading the world…</p>`,
     wide: 'x',
     foot: html`<button class="btn" type="button" data-overlay-close data-autofocus>Close</button>`,
-    onClose: () => { teardownMapObserver(); focusCommand(); }
+    onClose: () => focusCommand()
   });
 
   const res = await getJSON('/api/admin/places');
@@ -2608,324 +3007,152 @@ async function openMap() {
 
   MAP.data = res.data;
   MAP.byId = new Map((res.data.locations || []).map((l) => [l.id, l]));
-  MAP.selected = null;
-  MAP.unfold = 1;
-  mapRefold();
-  // Band against the cultivator who is actually standing in this world, when
-  // there is one. An operator with no run gets an unbanded map rather than a
-  // map banded against a zero nobody is at.
-  const ord = S.cultivator && Number.isFinite(Number(S.cultivator.realmOrdinal))
+  MAP.distCache = new Map();
+  MAP.openRows = new Set();
+  MAP.path = [];
+  MAP.q = '';
+  MAP.reachFilter = 'all';
+  MAP.withinDays = Infinity;
+  mapBuildAdjacency();
+  MAP.originId = mapChooseOrigin();
+  MAP.ordinal = S.cultivator && Number.isFinite(Number(S.cultivator.realmOrdinal))
     ? Number(S.cultivator.realmOrdinal)
     : null;
-  MAP.ordinal = ord;
   renderMapPanel();
-}
-
-/** Reset every fold to what `MAP.unfold` says, discarding manual toggles. */
-function mapRefold() {
-  MAP.collapsed = new Set(
-    (MAP.data?.locations || [])
-      .filter((n) => (n.childIds || []).length && n.depth >= MAP.unfold)
-      .map((n) => n.id)
-  );
-}
-
-/** Tiles that will actually be painted: keep, minus anything folded away. */
-function mapRenderedIds(keep) {
-  const out = new Set();
-  const walk = (id) => {
-    out.add(id);
-    if (MAP.collapsed.has(id)) return;
-    for (const cid of MAP.byId.get(id)?.childIds || []) if (keep.has(cid)) walk(cid);
-  };
-  for (const n of MAP.data.locations || []) if (keep.has(n.id) && !n.parentId) walk(n.id);
-  return out;
 }
 
 function mapMaxOrdinal() {
   return Array.isArray(S.ladder) && S.ladder.length ? S.ladder.length - 1 : 46;
 }
 
-/** Places this view is allowed to draw at all, before search narrows them. */
-function mapVisibleSet() {
-  const all = MAP.data.locations || [];
-  const out = new Set();
-  for (const n of all) {
-    if (MAP.fog === 'hide' && !n.discovered) continue;
-    if (MAP.layer && n.layer !== MAP.layer) continue;
-    out.add(n.id);
-  }
-  // A child whose container was dropped cannot be drawn inside anything.
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const n of all) {
-      if (out.has(n.id) && n.parentId && !out.has(n.parentId)) { out.delete(n.id); changed = true; }
-    }
-  }
-  return out;
+function mapDescend(id) {
+  const n = MAP.byId.get(id);
+  if (!n || !(n.childIds || []).length) return;
+  MAP.path = [...MAP.path, id];
+  MAP.openRows = new Set();
+  MAP.q = '';
+  MAP.originId = mapChooseOrigin();
+  renderMapPanel();
 }
 
-function mapMatches(n) {
-  if (MAP.kind && n.kind !== MAP.kind) return false;
-  const q = MAP.q.trim().toLowerCase();
-  if (!q) return true;
-  return String(n.name || '').toLowerCase().includes(q)
-    || String(n.kind || '').toLowerCase().includes(q)
-    || (n.tags || []).some((t) => String(t).toLowerCase().includes(q))
-    || (n.hazards || []).some((t) => String(t).toLowerCase().includes(q))
-    || String(n.controllingFactionName || '').toLowerCase().includes(q);
+function mapAscendTo(depth) {
+  MAP.path = MAP.path.slice(0, depth);
+  MAP.openRows = new Set();
+  MAP.q = '';
+  MAP.originId = mapChooseOrigin();
+  renderMapPanel();
 }
 
 /**
- * The set actually rendered: everything that matched, plus every container it
- * sits in. Dropping an unmatched region would put its matched seats nowhere,
- * and a place with no container is a place the engine did not describe.
+ * Walk to wherever a place is and open it.
+ *
+ * A place with something inside it is walked INTO, because that is what the
+ * reader meant by clicking a compound; a leaf is opened where it stands, in
+ * its container, with the row expanded.
  */
-function mapKeepSet(visible) {
-  const all = MAP.data.locations || [];
-  const filtering = Boolean(MAP.q.trim() || MAP.kind);
-  if (!filtering) return { keep: visible, matched: visible };
-
-  const matched = new Set();
-  for (const n of all) if (visible.has(n.id) && mapMatches(n)) matched.add(n.id);
-
-  const keep = new Set(matched);
-  for (const id of matched) {
-    let p = MAP.byId.get(id)?.parentId || null;
+function mapGoTo(id) {
+  const n = MAP.byId.get(id);
+  if (!n) return;
+  if ((n.childIds || []).length) {
+    const chain = [];
+    let p = n.parentId;
     const guard = new Set();
-    while (p && visible.has(p) && !guard.has(p)) { guard.add(p); keep.add(p); p = MAP.byId.get(p)?.parentId || null; }
+    while (p && MAP.byId.has(p) && !guard.has(p)) { guard.add(p); chain.unshift(p); p = MAP.byId.get(p).parentId; }
+    MAP.path = [...chain, id];
+  } else {
+    const chain = [];
+    let p = n.parentId;
+    const guard = new Set();
+    while (p && MAP.byId.has(p) && !guard.has(p)) { guard.add(p); chain.unshift(p); p = MAP.byId.get(p).parentId; }
+    MAP.path = chain;
+    MAP.openRows = new Set([id]);
   }
-  return { keep, matched };
+  MAP.q = '';
+  MAP.originId = mapChooseOrigin();
+  renderMapPanel();
+  requestAnimationFrame(() => {
+    const row = $(`[data-row="${CSS.escape(id)}"]`);
+    if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  });
 }
 
-function mapChildrenOf(id, keep) {
-  const node = MAP.byId.get(id);
-  if (!node) return [];
-  return (node.childIds || [])
-    .filter((cid) => keep.has(cid))
-    .map((cid) => MAP.byId.get(cid))
-    .filter(Boolean)
-    .sort(mapNodeOrder);
+function mapCrumbMarkup() {
+  const bits = [html`<button class="crumb ${raw(MAP.path.length ? '' : 'is-here')}" type="button" data-ascend="0">${MAP_ROOT.name}</button>`];
+  MAP.path.forEach((id, i) => {
+    const n = MAP.byId.get(id);
+    if (!n) return;
+    bits.push(html`<span class="crumb__sep" aria-hidden="true">›</span>`);
+    bits.push(html`<button class="crumb ${raw(i === MAP.path.length - 1 ? 'is-here' : '')}" type="button" data-ascend="${raw(String(i + 1))}">${n.name}</button>`);
+  });
+  return html`<nav class="crumbs" aria-label="Where you are in the world">${raw(bits.join(''))}</nav>`;
 }
 
-function mapNodeOrder(a, b) {
-  const ka = MAP_KIND_ORDER.indexOf(a.kind);
-  const kb = MAP_KIND_ORDER.indexOf(b.kind);
-  return (ka < 0 ? 99 : ka) - (kb < 0 ? 99 : kb)
-    || b.qiDensity - a.qiDensity
-    || String(a.name).localeCompare(String(b.name));
-}
+/** Rows that survive the filters, and why the others did not. */
+function mapVisibleRows() {
+  const all = mapFrameNodes();
+  const q = MAP.q.trim().toLowerCase();
+  const rows = [];
+  let hiddenReach = 0;
+  let hiddenFar = 0;
 
-/** The one line of state a tile shows without being asked. */
-function mapStateChip(n) {
-  if (n.sealed) return html`<span class="pstate pstate--sealed" title="Sealed. No cycle opens it.">sealed</span>`;
-  if (!n.open && n.opensInDays != null) {
-    return html`<span class="pstate pstate--shut" title="Shut now. The cycle reopens it.">shut · ${mapDays(n.opensInDays)}</span>`;
-  }
-  if (!n.open) return html`<span class="pstate pstate--shut">shut</span>`;
-  if (n.cycle && n.closesInDays != null) {
-    return html`<span class="pstate pstate--window" title="Open on a cycle. This window closes.">open · ${mapDays(n.closesInDays)}</span>`;
-  }
-  return '';
-}
+  for (const n of all) {
+    if (q && !(String(n.name).toLowerCase().includes(q)
+      || String(n.kind).toLowerCase().includes(q)
+      || (n.tags || []).some((t) => String(t).toLowerCase().includes(q))
+      || (n.hazards || []).some((t) => String(t).toLowerCase().includes(q))
+      || String(n.controllingFactionName || '').toLowerCase().includes(q))) continue;
 
-function mapPlaceMarkup(n, opts = {}) {
-  const reach = mapReach(n, MAP.ordinal);
-  const cls = [
-    'place',
-    `place--${n.kind}`,
-    `reach--${reach}`,
-    n.discovered ? '' : 'is-fogged',
-    n.sealed ? 'is-sealed' : '',
-    MAP.selected === n.id ? 'is-selected' : '',
-    opts.head ? 'place--head' : ''
-  ].filter(Boolean).join(' ');
+    if (MAP.ordinal != null && MAP.reachFilter !== 'all') {
+      const r = mapReach(n, MAP.ordinal);
+      const ok = MAP.reachFilter === 'operate'
+        ? (r === 'operate' || r === 'master')
+        : (r === 'operate' || r === 'master' || r === 'survive');
+      if (!ok) { hiddenReach += 1; continue; }
+    }
 
-  const qi = Math.max(0, Math.min(100, Number(n.qiDensity) || 0));
-  const reachTitle = MAP_REACH_TEXT[reach][1];
+    const d = mapDistanceTo(n.id);
+    if (Number.isFinite(MAP.withinDays) && (!d || d.days > MAP.withinDays)) { hiddenFar += 1; continue; }
 
-  return html`
-    <button class="${raw(cls)}" type="button" data-place-id="${n.id}"
-            data-qi-band="${n.qiBand}" style="--qi:${raw(String(qi / 100))}"
-            title="${raw(esc(`${n.name} - ${MAP_KIND_LABEL[n.kind] || n.kind}. qi ${qi}/100${reachTitle ? `. ${reachTitle}` : ''}`))}">
-      <span class="place__row">
-        <span class="place__glyph">${raw(mapGlyph(n.kind))}</span>
-        <span class="place__name">${n.name}</span>
-        ${n.discovered ? '' : raw(html`<span class="place__fog" title="Not discovered. A player has never heard this name.">unknown</span>`)}
-      </span>
-      <span class="place__meta">
-        <span class="place__kind">${MAP_KIND_LABEL[n.kind] || n.kind}</span>
-        ${raw(mapStateChip(n))}
-        ${n.linkCount ? raw(html`<span class="place__links" title="${n.linkCount} link${n.linkCount === 1 ? '' : 's'} recorded on this place">· ${fmtInt(n.linkCount)}↔</span>`) : ''}
-      </span>
-      <span class="place__qi" aria-hidden="true"><i style="width:${raw(String(qi))}%"></i></span>
-      <span class="place__qinum">${fmtInt(qi)}<span class="place__qiband">${MAP_BAND_LABEL[n.qiBand] || n.qiBand}</span></span>
-    </button>`;
-}
-
-/** Recursive, because interiors nest and the seed will not stay two deep. */
-function mapGroupMarkup(n, keep, depth = 0) {
-  const kids = mapChildrenOf(n.id, keep);
-  if (!kids.length) return html`<div class="pgroup pgroup--leaf">${raw(mapPlaceMarkup(n))}</div>`;
-
-  const collapsed = MAP.collapsed.has(n.id);
-  return html`
-    <div class="pgroup ${raw(collapsed ? 'is-collapsed' : '')}" data-group-id="${n.id}" data-depth="${raw(String(Math.min(depth, 3)))}">
-      <div class="pgroup__head">
-        <button class="pgroup__toggle" type="button" data-toggle-group="${n.id}"
-                aria-expanded="${raw(collapsed ? 'false' : 'true')}"
-                aria-label="${raw(collapsed ? 'Expand' : 'Collapse')} ${esc(n.name)}">${collapsed ? '▸' : '▾'}</button>
-        ${raw(mapPlaceMarkup(n, { head: true }))}
-      </div>
-      ${collapsed
-        ? raw(html`<div class="pgroup__folded">${fmtInt(kids.length)} inside</div>`)
-        : raw(html`<div class="pgroup__kids">${raw(kids.map((k) => mapGroupMarkup(k, keep, depth + 1)).join(''))}</div>`)}
-    </div>`;
-}
-
-function mapLegendMarkup() {
-  const bands = ['thin', 'normal', 'dense', 'spirit_tide'];
-  const reaches = MAP.ordinal == null ? [] : ['master', 'operate', 'survive', 'lethal', 'barred'];
-  const linkKinds = Object.keys(MAP.data.counts.byLinkKind || {});
-  return html`
-    <div class="maplegend">
-      <div class="maplegend__group">
-        <span class="maplegend__label">qi</span>
-        ${raw(bands.map((b) => html`<span class="lg lg--qi" data-qi-band="${b}"><i></i>${MAP_BAND_LABEL[b]}</span>`).join(''))}
-      </div>
-      ${reaches.length ? raw(html`
-      <div class="maplegend__group">
-        <span class="maplegend__label">at ordinal ${fmtInt(MAP.ordinal)}</span>
-        ${raw(reaches.map((r) => html`<span class="lg lg--reach reach--${raw(r)}" title="${MAP_REACH_TEXT[r][1]}"><i></i>${MAP_REACH_TEXT[r][0]}</span>`).join(''))}
-      </div>`) : ''}
-      ${linkKinds.length ? raw(html`
-      <div class="maplegend__group">
-        <span class="maplegend__label">crossings</span>
-        ${raw(linkKinds.map((k) => html`<span class="lg lg--link"><svg width="22" height="8" aria-hidden="true"><line class="edge edge--${raw(k)}" x1="1" y1="4" x2="21" y2="4"/></svg>${MAP_LINK_LABEL[k] || k}</span>`).join(''))}
-      </div>`) : ''}
-    </div>`;
-}
-
-function mapThresholdRow(label, value, note) {
-  const ord = MAP.ordinal;
-  const max = mapMaxOrdinal();
-  const pass = ord != null && ord >= value;
-  return html`
-    <div class="thr ${raw(ord == null ? '' : pass ? 'is-pass' : 'is-fail')}" title="${note}">
-      <span class="thr__label">${label}</span>
-      <span class="thr__track"><i style="width:${raw(String(Math.max(1, Math.min(100, (value / max) * 100))))}%"></i>
-        ${ord == null ? '' : raw(html`<b class="thr__you" style="left:${raw(String(Math.max(0, Math.min(100, (ord / max) * 100))))}%"></b>`)}
-      </span>
-      <span class="thr__num">${fmtInt(value)}</span>
-    </div>`;
-}
-
-function mapEdgesOf(id) {
-  return (MAP.data.edges || []).filter((e) => e.fromId === id || e.toId === id);
-}
-
-function mapInspectorMarkup() {
-  const n = MAP.selected ? MAP.byId.get(MAP.selected) : null;
-  if (!n) {
-    const c = MAP.data.counts;
-    return html`
-      <div class="mapinsp mapinsp--empty">
-        <p class="mapinsp__hint">Pick a place. Everything below is the record the engine holds for it, unedited.</p>
-        <dl class="mapinsp__facts">
-          <div><dt>Places</dt><dd>${fmtInt(c.total)}</dd></div>
-          <div><dt>Containers</dt><dd>${fmtInt(c.roots)} at the top, ${fmtInt(c.maxDepth)} deep</dd></div>
-          <div><dt>Crossings</dt><dd>${fmtInt((MAP.data.edges || []).length)}</dd></div>
-          <div><dt>Discovered</dt><dd>${fmtInt(c.discovered)} of ${fmtInt(c.total)}</dd></div>
-          <div><dt>Sealed</dt><dd>${fmtInt(c.sealed)}</dd></div>
-          <div><dt>Shut today</dt><dd>${fmtInt(c.closed)}</dd></div>
-        </dl>
-        ${MAP.data.danglingLinks || MAP.data.orphanedParents ? raw(html`
-          <p class="mapinsp__warn">${fmtInt(MAP.data.danglingLinks)} link${MAP.data.danglingLinks === 1 ? '' : 's'} and
-          ${fmtInt(MAP.data.orphanedParents)} parent reference${MAP.data.orphanedParents === 1 ? '' : 's'} name a place this world
-          does not hold. They are counted and not drawn.</p>`) : ''}
-      </div>`;
+    rows.push({ n, d });
   }
 
-  const reach = mapReach(n, MAP.ordinal);
-  const edges = mapEdgesOf(n.id).slice().sort((a, b) => a.travelDays - b.travelDays);
-  const other = (e) => MAP.byId.get(e.fromId === n.id ? e.toId : e.fromId);
+  rows.sort((a, b) => {
+    const da = a.d ? a.d.days : Infinity;
+    const db = b.d ? b.d.days : Infinity;
+    return da - db || mapNodeOrder(a.n, b.n);
+  });
+  return { rows, hiddenReach, hiddenFar, total: all.length };
+}
 
-  return html`
-    <div class="mapinsp">
-      <div class="mapinsp__head">
-        <span class="mapinsp__glyph reach--${raw(reach)}">${raw(mapGlyph(n.kind))}</span>
-        <div>
-          <h3 class="mapinsp__name">${n.name}</h3>
-          <p class="mapinsp__kind">${MAP_KIND_LABEL[n.kind] || n.kind}
-            ${n.parentId && MAP.byId.get(n.parentId) ? raw(html` · inside <button class="linkish" type="button" data-place-id="${n.parentId}">${MAP.byId.get(n.parentId).name}</button>`) : ''}
-            ${n.layer === 'immortal' ? raw(html` · <span class="pstate pstate--layer">above the Lid</span>`) : ''}
-          </p>
-        </div>
-      </div>
+function mapListMarkup() {
+  const { rows, hiddenReach, hiddenFar, total } = mapVisibleRows();
+  if (!rows.length) {
+    return html`<p class="empty">${total
+      ? 'Every place here is filtered out. Widen the distance, or clear the threshold filter.'
+      : `Nothing is recorded inside ${mapContainer().name}.`}</p>`;
+  }
 
-      ${n.description ? raw(html`<p class="mapinsp__desc">${n.description}</p>`) : ''}
+  const origin = MAP.byId.get(MAP.originId);
+  let out = '';
+  let band = -1;
+  for (const { n, d } of rows) {
+    const b = mapBandOf(d ? d.days : Infinity);
+    if (b !== band) {
+      band = b;
+      const label = MAP_DIST_BANDS[b] ? MAP_DIST_BANDS[b].label : 'No route recorded';
+      out += html`<div class="bandhead"><span>${label}</span>
+        <span class="bandhead__from">${b < MAP_DIST_BANDS.length && origin ? `from ${origin.name}` : 'nothing links these to where you are'}</span></div>`;
+    }
+    out += mapRowMarkup(n);
+  }
 
-      ${n.discovered ? '' : raw(html`<p class="mapinsp__fog">Not discovered. A player has never heard this name, and the narrator may not say it.
-        ${n.discoveredOnDay != null ? raw(html`<br />Recorded found on day ${fmtInt(n.discoveredOnDay)}.`) : ''}</p>`)}
-
-      <div class="section__label">Ground</div>
-      <div class="mapqi" data-qi-band="${n.qiBand}" style="--qi:${raw(String((Number(n.qiDensity) || 0) / 100))}">
-        <div class="mapqi__bar"><i style="width:${raw(String(Math.max(0, Math.min(100, Number(n.qiDensity) || 0))))}%"></i></div>
-        <div class="mapqi__read"><b>${fmtInt(n.qiDensity)}</b><span>/100 · ${MAP_BAND_LABEL[n.qiBand] || n.qiBand}</span></div>
-      </div>
-      <dl class="mapinsp__facts">
-        <div><dt>Usable qi</dt><dd>${fmtPct(n.spiritualDensity)}<span class="sub">what somebody standing there can draw</span></dd></div>
-        <div><dt>Danger</dt><dd>${fmtPct(n.danger)}</dd></div>
-        <div><dt>Climate</dt><dd>${n.climate || '-'}</dd></div>
-        <div><dt>Held by</dt><dd>${n.controllingFactionName || n.politicalControl || 'nobody in particular'}</dd></div>
-      </dl>
-
-      <div class="section__label">Thresholds${MAP.ordinal == null ? '' : ` · you are ordinal ${fmtInt(MAP.ordinal)}`}</div>
-      ${MAP.ordinal == null ? '' : raw(html`<p class="mapinsp__verdict reach--${raw(reach)}">${MAP_REACH_TEXT[reach][0]}<span>${MAP_REACH_TEXT[reach][1]}</span></p>`)}
-      <div class="thrs">
-        ${raw(mapThresholdRow('entry', n.thresholds.entry, 'Below this you are turned away and nothing happens.'))}
-        ${raw(mapThresholdRow('survival', n.thresholds.survival, 'Below this you get in and die.'))}
-        ${raw(mapThresholdRow('operational', n.thresholds.operational, 'Below this you are alive and useless.'))}
-        ${raw(mapThresholdRow('mastery', n.thresholds.mastery, 'Above this the place can be exploited or held.'))}
-      </div>
-
-      ${n.sealed || n.cycle ? raw(html`
-        <div class="section__label">The door</div>
-        <p class="mapinsp__door">
-          ${n.sealed
-            ? raw(html`Sealed${n.sealedOnDay != null ? ` on day ${fmtInt(n.sealedOnDay)}` : ''}. No cycle opens it.`)
-            : raw(html`Open ${fmtInt(n.cycle.openDays)} day${n.cycle.openDays === 1 ? '' : 's'} in every ${fmtInt(n.cycle.periodDays)}.
-                ${n.open
-                  ? raw(html`<b>Standing open now</b>, and it closes in ${mapDays(n.closesInDays)}.`)
-                  : raw(html`<b>Shut now.</b> It opens in ${mapDays(n.opensInDays)}.`)}`)}
-        </p>`) : ''}
-
-      ${(n.hazards || []).length ? raw(html`<div class="section__label">Hazards</div>
-        <div class="chips">${raw(n.hazards.map((h) => html`<span class="chip chip--hazard">${h}</span>`).join(''))}</div>`) : ''}
-      ${(n.specialRules || []).length ? raw(html`<div class="section__label">Local law</div>
-        <ul class="mapinsp__rules">${raw(n.specialRules.map((r) => html`<li>${r}</li>`).join(''))}</ul>`) : ''}
-      ${(n.resources || []).length ? raw(html`<div class="section__label">Gatherable</div>
-        <div class="chips">${raw(n.resources.map((r) => html`<span class="chip">${r}</span>`).join(''))}</div>`) : ''}
-      ${(n.tags || []).length ? raw(html`<div class="section__label">Tags</div>
-        <div class="chips">${raw(n.tags.map((t) => html`<span class="chip chip--tag">${t}</span>`).join(''))}</div>`) : ''}
-
-      <div class="section__label">Crossings${edges.length ? ` · ${fmtInt(edges.length)}` : ''}</div>
-      ${edges.length ? raw(html`<ul class="xings">${raw(edges.map((e) => {
-        const o = other(e);
-        if (!o) return '';
-        return html`<li class="xing ${raw(e.open ? '' : 'is-shut')}">
-          <span class="xing__kind"><svg width="26" height="8" aria-hidden="true"><line class="edge edge--${raw(e.kind)}" x1="1" y1="4" x2="25" y2="4"/></svg>${MAP_LINK_LABEL[e.kind] || e.kind}</span>
-          <button class="linkish xing__to" type="button" data-place-id="${o.id}">${o.name}</button>
-          <span class="xing__days">${mapDays(e.travelDays)}</span>
-          ${e.open ? '' : raw(html`<span class="pstate pstate--shut">shut</span>`)}
-          ${e.requiresKeyId ? raw(html`<span class="pstate pstate--key" title="Needs ${esc(e.requiresKeyId)}">keyed</span>`) : ''}
-          ${e.mutual ? '' : raw(html`<span class="pstate pstate--oneway" title="Only one end of this crossing records it.">one-sided</span>`)}
-          ${e.asymmetric ? raw(html`<span class="pstate pstate--oneway" title="The two ends disagree about the cost. The larger is shown.">disputed cost</span>`) : ''}
-        </li>`;
-      }).join(''))}</ul>`)
-      : raw(html`<p class="muted mapinsp__none">No crossing is recorded to this place. It is not drawn with one.</p>`)}
-    </div>`;
+  if (hiddenReach || hiddenFar) {
+    out += html`<p class="maphidden">${
+      [hiddenReach ? `${fmtInt(hiddenReach)} hidden by the threshold filter` : '',
+        hiddenFar ? `${fmtInt(hiddenFar)} further away than the distance filter allows` : ''].filter(Boolean).join(' · ')
+    }.</p>`;
+  }
+  return out;
 }
 
 function renderMapPanel() {
@@ -2934,227 +3161,87 @@ function renderMapPanel() {
 
   if (!d.world) {
     $('#overlay-body').innerHTML = html`
-      <div class="mapv mapv--nothing">
+      <div class="mapv">
         <p class="mapv__nothing">No world has been instantiated. The world is rebuilt per run from its seed, so
         there is nothing to draw until a run exists. Begin one and reopen this panel.</p>
       </div>`;
     return;
   }
 
-  const visible = mapVisibleSet();
-  const { keep, matched } = mapKeepSet(visible);
-  const rendered = mapRenderedIds(keep);
-  const folded = keep.size - rendered.size;
-  const roots = (d.locations || [])
-    .filter((n) => keep.has(n.id) && !n.parentId)
-    .sort(mapNodeOrder);
-
-  const kinds = Object.keys(d.counts.byKind || {}).sort(
-    (a, b) => (MAP_KIND_ORDER.indexOf(a) + 1 || 99) - (MAP_KIND_ORDER.indexOf(b) + 1 || 99)
-  );
+  const container = mapContainer();
   const max = mapMaxOrdinal();
+  const below = (d.locations || []).filter(mapIsHere).length;
+  const above = (d.locations || []).length - below;
+  const origin = MAP.byId.get(MAP.originId);
 
-  const byLayer = d.layers.map((l) => {
-    const layerRoots = roots.filter((n) => n.layer === l.key);
-    if (!layerRoots.length) return '';
-    return html`
-      <section class="maplayer" data-layer="${l.key}">
-        ${d.layers.length > 1 ? raw(html`<div class="maplayer__head"><span class="maplayer__name">${l.label}</span>
-          <span class="maplayer__count">${fmtInt(l.count)} place${l.count === 1 ? '' : 's'}</span>
-          ${l.key === 'immortal' ? raw(html`<span class="maplayer__note">the far side of the Lid. Nothing crosses to the map below.</span>`) : ''}
-        </div>`) : ''}
-        <div class="maplayer__roots">${raw(layerRoots.map((n) => mapGroupMarkup(n, keep, 0)).join(''))}</div>
-      </section>`;
-  }).join('');
+  $('#overlay-title').textContent = container === MAP_ROOT ? 'The lower world' : container.name;
 
   $('#overlay-body').innerHTML = html`
     <div class="mapv">
-      <div class="mapv__note">
-        <span class="roster__readonly">read-only</span>
-        <span>Every place the engine holds, nested the way it holds them. <b>Position is containment, not geography</b> -
-        the only distance in this world is the day count on a crossing, and it is written on the crossing.</span>
-      </div>
+      ${raw(mapCrumbMarkup())}
+
+      ${container === MAP_ROOT
+        ? raw(html`<p class="mapv__lede">Everything below the Lid: ${fmtInt(below)} places, on day ${fmtInt(d.world.currentDay)}.
+            What is on the far side of the Lid is a different world rather than a corner of this one, and this map stops
+            here${above ? ` - ${fmtInt(above)} place${above === 1 ? '' : 's'} above it are not listed` : ''}.</p>`)
+        : raw(html`<div class="mapv__here">${raw(mapBodyMarkup(container, { asHere: true }))}</div>`)}
 
       <div class="mapv__controls">
-        <input class="input" id="m-q" type="search" placeholder="Search name, kind, tag, hazard…" value="${MAP.q}" aria-label="Search places" />
-        <select id="m-kind" aria-label="Filter by kind">
-          <option value="">All kinds</option>
-          ${raw(kinds.map((k) => html`<option value="${k}" ${raw(MAP.kind === k ? 'selected' : '')}>${MAP_KIND_LABEL[k] || k} (${fmtInt(d.counts.byKind[k])})</option>`).join(''))}
+        <input class="input" id="m-q" type="search" placeholder="Search this level…" value="${MAP.q}" aria-label="Search this level" />
+        <select id="m-within" aria-label="Only places within this many days">
+          ${raw(MAP_WITHIN.map((w) => html`<option value="${raw(String(w.days))}" ${raw(MAP.withinDays === w.days ? 'selected' : '')}>${w.label}</option>`).join(''))}
         </select>
-        ${d.layers.length > 1 ? raw(html`<select id="m-layer" aria-label="Filter by layer">
-          <option value="">Both layers</option>
-          ${raw(d.layers.map((l) => html`<option value="${l.key}" ${raw(MAP.layer === l.key ? 'selected' : '')}>${l.label}</option>`).join(''))}
-        </select>`) : ''}
+        <select id="m-reach" aria-label="Filter by what you could do there" ${raw(MAP.ordinal == null ? 'disabled' : '')}>
+          <option value="all" ${raw(MAP.reachFilter === 'all' ? 'selected' : '')}>Anywhere, survivable or not</option>
+          <option value="survive" ${raw(MAP.reachFilter === 'survive' ? 'selected' : '')}>Only what would not kill me</option>
+          <option value="operate" ${raw(MAP.reachFilter === 'operate' ? 'selected' : '')}>Only where I could work</option>
+        </select>
         <select id="m-fog" aria-label="How undiscovered places are shown">
           <option value="mark" ${raw(MAP.fog === 'mark' ? 'selected' : '')}>Admin: show the fog</option>
           <option value="hide" ${raw(MAP.fog === 'hide' ? 'selected' : '')}>As the player sees it</option>
         </select>
-        <select id="m-unfold" aria-label="How far to unfold the containment tree">
-          ${raw(MAP_UNFOLD.map((u, i) => html`<option value="${raw(String(u.depth))}" ${raw(MAP.unfold === u.depth ? 'selected' : '')}>${u.label}</option>`).join(''))}
-        </select>
         <div class="mapv__ord">
-          <label for="m-ord">reach at ordinal</label>
+          <label for="m-ord">as ordinal</label>
           <input id="m-ord" type="range" min="0" max="${raw(String(max))}" step="1"
                  value="${raw(String(MAP.ordinal == null ? 0 : MAP.ordinal))}"
-                 ${raw(MAP.ordinal == null ? 'disabled' : '')} aria-label="Band thresholds against this ordinal" />
+                 ${raw(MAP.ordinal == null ? 'disabled' : '')} aria-label="Judge every place against this ordinal" />
           <output id="m-ord-out">${MAP.ordinal == null ? 'off' : fmtInt(MAP.ordinal)}</output>
-          <button class="btn btn--ghost btn--sm" type="button" id="m-ord-toggle">${MAP.ordinal == null ? 'band it' : 'clear'}</button>
+          <span class="mapv__ordname">${MAP.ordinal == null ? 'unbanded' : (ladderName(MAP.ordinal) || '')}</span>
+          <button class="btn btn--ghost btn--sm" type="button" id="m-ord-toggle">${MAP.ordinal == null ? 'band' : 'clear'}</button>
         </div>
       </div>
 
-      ${raw(mapLegendMarkup())}
+      <div class="maplist" id="map-list">${raw(mapListMarkup())}</div>
 
-      <div class="mapv__count">
-        ${fmtInt(rendered.size)} tile${rendered.size === 1 ? '' : 's'} drawn
-        ${folded ? raw(html`· ${fmtInt(folded)} folded inside them`) : ''}
-        · ${fmtInt(matched.size)} of ${fmtInt(d.counts.total)} places match${MAP.fog === 'hide' ? ', undiscovered dropped as a player would see it' : ''}
-        · day ${fmtInt(d.world.currentDay)} · seed <code>${d.world.seed}</code>
-      </div>
-
-      <div class="mapv__split">
-        <div class="mapv__canvas" id="map-canvas">
-          <svg class="mapedges" id="map-edges" width="0" height="0" aria-hidden="true"></svg>
-          <div class="mapv__layers">
-            ${raw(byLayer || html`<p class="empty">No place matches those filters.</p>`)}
-          </div>
-        </div>
-        <aside class="mapv__rail" id="map-rail">${raw(mapInspectorMarkup())}</aside>
-      </div>
+      <p class="mapv__foot">Ordered by the shortest recorded route${origin ? ` from ${esc(origin.name)}` : ''}, in days over
+        <code>links</code>. There are no coordinates in this world and none are invented here${
+        d.danglingLinks || d.orphanedParents
+          ? ` · ${fmtInt(d.danglingLinks)} link${d.danglingLinks === 1 ? '' : 's'} and ${fmtInt(d.orphanedParents)} parent reference${d.orphanedParents === 1 ? '' : 's'} name a place this world does not hold, counted and not followed`
+          : ''}.</p>
     </div>`;
 
   wireMap();
-  requestAnimationFrame(drawMapEdges);
-}
-
-/**
- * The graph, over the tiles.
- *
- * Every edge is a link one of these records holds. When one end is folded away
- * inside a collapsed container the line is anchored to the container that
- * holds it and marked as such - the crossing exists, and hiding it because the
- * operator collapsed a card would misreport the world as less connected than
- * it is. Two crossings that collapse onto the same pair become one line, which
- * is why the count in the legend is of crossings and the count on a tile is of
- * links.
- */
-function drawMapEdges() {
-  const canvas = $('#map-canvas');
-  const svg = $('#map-edges');
-  if (!canvas || !svg || !MAP.data) return;
-
-  const base = canvas.getBoundingClientRect();
-  const ox = canvas.scrollLeft - base.left;
-  const oy = canvas.scrollTop - base.top;
-
-  const anchors = new Map();
-  $$('[data-place-id]', canvas).forEach((el) => {
-    const r = el.getBoundingClientRect();
-    anchors.set(el.dataset.placeId, { x: r.left + ox + r.width / 2, y: r.top + oy + r.height / 2 });
-  });
-
-  const resolve = (id) => {
-    const guard = new Set();
-    let cur = id;
-    while (cur && !guard.has(cur)) {
-      if (anchors.has(cur)) return cur;
-      guard.add(cur);
-      cur = MAP.byId.get(cur)?.parentId || null;
-    }
-    return null;
-  };
-
-  const lit = MAP.selected;
-  const drawn = new Map();
-  for (const e of MAP.data.edges || []) {
-    const a = resolve(e.fromId);
-    const b = resolve(e.toId);
-    if (!a || !b || a === b) continue;
-    const key = a < b ? `${a}|${b}` : `${b}|${a}`;
-    const via = a !== e.fromId || b !== e.toId;
-    const touched = lit != null && (e.fromId === lit || e.toId === lit || a === lit || b === lit);
-    const prev = drawn.get(key);
-    if (prev) {
-      prev.folded = prev.folded && via;
-      prev.touched = prev.touched || touched;
-      prev.days = Math.max(prev.days, e.travelDays);
-      prev.count += 1;
-      continue;
-    }
-    drawn.set(key, { a, b, kind: e.kind, days: e.travelDays, open: e.open, folded: via, touched, count: 1 });
-  }
-
-  const paths = [];
-  const labels = [];
-  for (const d of drawn.values()) {
-    const p = anchors.get(d.a);
-    const q = anchors.get(d.b);
-    const dx = q.x - p.x;
-    const dy = q.y - p.y;
-    const len = Math.hypot(dx, dy) || 1;
-    // A constant bow, capped, so short hops inside one card do not become
-    // circles and long ones across the panel do not become straight lines that
-    // hide each other.
-    const bow = Math.min(26, len * 0.16);
-    const cx = (p.x + q.x) / 2 - (dy / len) * bow;
-    const cy = (p.y + q.y) / 2 + (dx / len) * bow;
-    const cls = ['edge', `edge--${d.kind}`, d.open ? '' : 'edge--shut',
-      d.folded ? 'edge--folded' : '', lit == null ? '' : d.touched ? 'is-lit' : 'is-dim'].filter(Boolean).join(' ');
-    paths.push(`<path class="${cls}" d="M${p.x.toFixed(1)} ${p.y.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${q.x.toFixed(1)} ${q.y.toFixed(1)}"/>`);
-    if (d.touched) {
-      const mx = (p.x + 2 * cx + q.x) / 4;
-      const my = (p.y + 2 * cy + q.y) / 4;
-      labels.push(`<text class="edgelabel" x="${mx.toFixed(1)}" y="${my.toFixed(1)}">${esc(mapDays(d.days))}${d.count > 1 ? esc(` ·${d.count}`) : ''}</text>`);
-    }
-  }
-
-  svg.setAttribute('width', String(canvas.scrollWidth));
-  svg.setAttribute('height', String(canvas.scrollHeight));
-  svg.innerHTML = paths.join('') + labels.join('');
-}
-
-function teardownMapObserver() {
-  if (MAP.observer) { MAP.observer.disconnect(); MAP.observer = null; }
-}
-
-function selectPlace(id) {
-  MAP.selected = MAP.selected === id ? null : id;
-  $$('#map-canvas [data-place-id]').forEach((el) => {
-    el.classList.toggle('is-selected', el.dataset.placeId === MAP.selected);
-  });
-  const rail = $('#map-rail');
-  if (rail) { rail.innerHTML = mapInspectorMarkup(); rail.scrollTop = 0; }
-  drawMapEdges();
 }
 
 function wireMap() {
-  teardownMapObserver();
-
   const q = $('#m-q');
   if (q) {
     q.addEventListener('input', () => {
       MAP.q = q.value;
-      const pos = q.selectionStart;
-      renderMapPanel();
-      const nq = $('#m-q');
-      if (nq) { nq.focus(); try { nq.setSelectionRange(pos, pos); } catch { /* search inputs may refuse */ } }
+      const list = $('#map-list');
+      if (list) list.innerHTML = mapListMarkup();
     });
   }
-  const bind = (sel, key) => {
-    const el = $(sel);
-    if (el) el.addEventListener('change', () => { MAP[key] = el.value; renderMapPanel(); });
-  };
-  bind('#m-kind', 'kind');
-  bind('#m-layer', 'layer');
-  bind('#m-fog', 'fog');
 
-  const unfold = $('#m-unfold');
-  if (unfold) {
-    unfold.addEventListener('change', () => {
-      MAP.unfold = Number(unfold.value);
-      mapRefold();
-      renderMapPanel();
-    });
-  }
+  const relist = (el, apply) => {
+    if (!el) return;
+    el.addEventListener('change', () => { apply(el.value); const list = $('#map-list'); if (list) list.innerHTML = mapListMarkup(); });
+  };
+  relist($('#m-within'), (v) => { MAP.withinDays = Number(v); });
+  relist($('#m-reach'), (v) => { MAP.reachFilter = v; });
+
+  const fog = $('#m-fog');
+  if (fog) fog.addEventListener('change', () => { MAP.fog = fog.value; renderMapPanel(); });
 
   const ord = $('#m-ord');
   const out = $('#m-ord-out');
@@ -3162,17 +3249,11 @@ function wireMap() {
     ord.addEventListener('input', () => {
       MAP.ordinal = Number(ord.value);
       if (out) out.textContent = fmtInt(MAP.ordinal);
-      // Rebanding touches every tile's class and the rail, and nothing moves,
-      // so the edges do not need recomputing.
-      $$('#map-canvas [data-place-id]').forEach((el) => {
-        const n = MAP.byId.get(el.dataset.placeId);
-        if (!n) return;
-        el.className = el.className.replace(/\breach--\S+/g, '').trim() + ` reach--${mapReach(n, MAP.ordinal)}`;
-      });
-      const rail = $('#map-rail');
-      if (rail) rail.innerHTML = mapInspectorMarkup();
+      const nm = $('.mapv__ordname');
+      if (nm) nm.textContent = ladderName(MAP.ordinal) || '';
+      const list = $('#map-list');
+      if (list) list.innerHTML = mapListMarkup();
     });
-    ord.addEventListener('change', () => renderMapPanel());
   }
   const toggle = $('#m-ord-toggle');
   if (toggle) {
@@ -3184,42 +3265,37 @@ function wireMap() {
     });
   }
 
-  const canvas = $('#map-canvas');
-  if (canvas) {
-    canvas.addEventListener('click', (e) => {
-      const fold = e.target.closest('[data-toggle-group]');
-      if (fold) {
-        const id = fold.dataset.toggleGroup;
-        if (MAP.collapsed.has(id)) MAP.collapsed.delete(id); else MAP.collapsed.add(id);
-        renderMapPanel();
-        return;
-      }
-      const tile = e.target.closest('[data-place-id]');
-      if (tile) selectPlace(tile.dataset.placeId);
-    });
-  }
+  // Bound to `.mapv`, which is rebuilt on every render, rather than to
+  // `#overlay-body`, which is not: the overlay host outlives the panel, so a
+  // listener attached to it accumulates one copy per navigation.
+  const body = $('.mapv');
+  if (!body) return;
 
-  const rail = $('#map-rail');
-  if (rail) {
-    rail.addEventListener('click', (e) => {
-      const jump = e.target.closest('[data-place-id]');
-      if (!jump) return;
-      const id = jump.dataset.placeId;
-      MAP.selected = null;
-      selectPlace(id);
-      const tile = $(`#map-canvas [data-place-id="${CSS.escape(id)}"]`);
-      if (tile) tile.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    });
-  }
+  body.addEventListener('click', (e) => {
+    const crumb = e.target.closest('[data-ascend]');
+    if (crumb) { mapAscendTo(Number(crumb.dataset.ascend)); return; }
+    const down = e.target.closest('[data-descend]');
+    if (down) { mapDescend(down.dataset.descend); return; }
+    const go = e.target.closest('[data-goto]');
+    if (go) { e.preventDefault(); mapGoTo(go.dataset.goto); }
+  });
 
-  // The cards reflow with the panel, so the lines have to be recomputed from
-  // the DOM rather than remembered from the last layout.
-  if (canvas && typeof ResizeObserver === 'function') {
-    MAP.observer = new ResizeObserver(() => drawMapEdges());
-    MAP.observer.observe(canvas);
-    const layers = $('.mapv__layers');
-    if (layers) MAP.observer.observe(layers);
-  }
+  // A row's body is built when it opens rather than with the list: eight
+  // hundred records of history, crossings and thresholds rendered up front is
+  // most of a second of work nobody asked for.
+  body.addEventListener('toggle', (e) => {
+    const row = e.target.closest('[data-row]');
+    if (!row || !row.matches('[data-row]')) return;
+    const id = row.dataset.row;
+    if (row.open) {
+      MAP.openRows.add(id);
+      const host = row.querySelector('.nbody');
+      const n = MAP.byId.get(id);
+      if (host && n && !host.innerHTML.trim()) host.innerHTML = mapBodyMarkup(n);
+    } else {
+      MAP.openRows.delete(id);
+    }
+  }, true);
 }
 
 /* ──────────────────────────── death screen ──────────────────────────── */

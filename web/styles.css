@@ -2094,41 +2094,86 @@ kbd {
 .dao__note, .dao__empty { margin-top: 8px; font-size: 12px; line-height: 1.45; color: var(--text-3, #8b9a91); }
 
 /* ══════════════════════════════════════════════════════════════════════
-   Admin world map
+   Admin world map - the lower world, as a gazetteer
 
-   Containment, not geography. Position on this panel means "inside", and
-   nothing else - the only distance the engine holds is the day count on a
-   crossing, and it is drawn on the crossing. See web/app.js, `openMap`.
+   Text first. This was a drawn plate for a pass and the picture was the wrong
+   medium for a text game; the register already has a house pattern for a long
+   structured list somebody expands, so the markup here is `ncard` from
+   src/web/register.ts rendered in this app's tokens. Nothing on this panel is
+   drawn that could be written.
 
-   Three quantities carry colour and they are all real numbers off the
-   record: qi density bands the tile, the four thresholds band its left
-   edge against one ordinal, and the link kind styles the line.
+   What survived the picture is the data it carried: ground, the four
+   thresholds, seal and cycle, control, and the fog of `discovered`. They are
+   labelled text and small inline markers, and the threshold sweep became a
+   filter, which does more work than the colour did.
+
+   Rows are ordered by shortest path over `links` in travelDays. See web/app.js.
    ══════════════════════════════════════════════════════════════════════ */
 
 .mapv { display: grid; gap: 12px; min-height: 0; }
 
-.mapv__note {
-  font-size: 12.5px;
-  color: var(--paper-far);
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.mapv__note b { color: var(--paper-dim); font-weight: 600; }
-
-.mapv__nothing {
+.mapv__nothing,
+.mapv__lede {
   font-family: var(--font-read);
-  font-size: 15px;
+  font-size: 14.5px;
   color: var(--paper-dim);
   line-height: 1.6;
-  padding: 30px 4px;
-  max-width: 60ch;
+  max-width: 78ch;
 }
+.mapv__nothing { padding: 30px 4px; font-size: 15px; }
+
+.mapv__foot {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--paper-far);
+}
+.mapv__foot code { color: var(--brass-600); }
+
+/* ── where you are ── */
+
+.crumbs {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: var(--font-read);
+  font-size: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--ink-800);
+  padding: 2px 0 6px;
+  border-bottom: 1px solid var(--line);
+}
+.crumb {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--paper-mut);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+}
+.crumb:hover { color: var(--jade-300); border-bottom-color: var(--jade-700); }
+.crumb.is-here { color: var(--paper); cursor: default; }
+.crumb.is-here:hover { border-bottom-color: transparent; }
+.crumb__sep { color: var(--paper-far); font-size: 12px; }
+
+/* The container's own record, above the list of what is in it. */
+.mapv__here {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--jade-700);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.016);
+  padding: 13px 15px;
+}
+
+/* ── controls ── */
 
 .mapv__controls {
   display: grid;
-  grid-template-columns: minmax(150px, 1.4fr) repeat(3, minmax(110px, 1fr)) minmax(190px, 1.1fr);
+  grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.8fr) minmax(180px, 1.1fr) minmax(150px, 0.9fr);
   gap: 8px;
   align-items: center;
 }
@@ -2143,6 +2188,7 @@ kbd {
   padding: 7px 9px;
   width: 100%;
 }
+.mapv__controls select:disabled { opacity: 0.45; }
 .mapv__controls select:focus,
 .mapv__controls .input:focus {
   outline: none;
@@ -2151,9 +2197,10 @@ kbd {
 }
 
 .mapv__ord {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.06em;
@@ -2161,418 +2208,299 @@ kbd {
   background: var(--ink-850);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
-  padding: 5px 8px;
+  padding: 5px 9px;
 }
 .mapv__ord label { white-space: nowrap; }
-.mapv__ord input[type="range"] { flex: 1 1 auto; min-width: 60px; accent-color: var(--jade-500); }
+.mapv__ord input[type="range"] { flex: 1 1 120px; min-width: 80px; accent-color: var(--jade-500); }
 .mapv__ord input[type="range"]:disabled { opacity: 0.35; }
-.mapv__ord output { color: var(--jade-300); min-width: 22px; text-align: right; }
-.mapv__ord .btn { padding: 2px 7px; font-size: 11px; }
-
-.mapv__count {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--paper-far);
-}
-.mapv__count code { color: var(--brass-400); }
-
-/* ── legend ── */
-
-.maplegend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.015);
-}
-.maplegend__group { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 10px; }
-.maplegend__label {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--paper-far);
-}
-.lg {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  color: var(--paper-mut);
-  white-space: nowrap;
-}
-.lg i { display: inline-block; width: 16px; height: 4px; border-radius: 2px; background: var(--paper-far); }
-.lg--reach i { width: 4px; height: 12px; border-radius: 1px; }
-
-/* ── the canvas: cards in front, the graph behind ── */
-
-.mapv__split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 310px;
-  gap: 12px;
-  min-height: 0;
-}
-.mapv__canvas {
-  position: relative;
-  overflow: auto;
-  /* Wide content scrolls in here. The page body never moves sideways. */
-  max-height: min(62vh, 660px);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background:
-    radial-gradient(700px 380px at 20% -10%, rgba(79, 180, 148, 0.045), transparent 70%),
-    var(--ink-850);
-  padding: 12px;
-}
-.mapedges { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 0; overflow: visible; }
-.mapv__layers { position: relative; z-index: 1; display: grid; gap: 16px; }
-
-.edge { fill: none; stroke-width: 1.1; stroke-linecap: round; transition: opacity var(--dur); }
-.edge--road   { stroke: rgba(207, 169, 95, 0.42); }
-.edge--path   { stroke: rgba(232, 230, 223, 0.20); stroke-dasharray: 3 4; }
-.edge--tunnel { stroke: rgba(127, 209, 185, 0.30); stroke-dasharray: 1 4; }
-.edge--gate   { stroke: rgba(207, 169, 95, 0.55); stroke-dasharray: 7 3; }
-.edge--portal { stroke: rgba(165, 138, 232, 0.58); stroke-width: 1.4; }
-.edge--seam   { stroke: rgba(226, 104, 92, 0.52); stroke-dasharray: 9 3 2 3; }
-.edge--shut   { opacity: 0.3; }
-/* One end folded into a container: the crossing is real, the endpoint is not shown. */
-.edge--folded { stroke-width: 2.4; opacity: 0.45; }
-.edge.is-dim  { opacity: 0.09; }
-.edge.is-lit  { stroke-width: 2.2; opacity: 1; }
-.edgelabel {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  fill: var(--brass-300);
-  text-anchor: middle;
-  paint-order: stroke;
-  stroke: var(--ink-850);
-  stroke-width: 3.5px;
-  stroke-linejoin: round;
-}
-
-/* ── a layer of the world ── */
-
-.maplayer__head {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 5px;
-  margin-bottom: 10px;
-}
-.maplayer__name { font-family: var(--font-read); font-size: 15px; color: var(--paper-dim); }
-.maplayer__count { font-family: var(--font-mono); font-size: 10.5px; color: var(--paper-far); }
-.maplayer__note { font-size: 11.5px; color: var(--violet-300); font-style: italic; }
-.maplayer[data-layer="immortal"] .maplayer__name { color: var(--violet-300); }
-.maplayer__roots {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
-  gap: 10px;
-  align-items: start;
-}
-
-/* ── containment: a card holds a card holds a tile, to any depth ── */
-
-.pgroup { min-width: 0; }
-.pgroup:not(.pgroup--leaf) {
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.014);
-  padding: 7px;
-}
-.pgroup[data-depth="1"] { background: rgba(255, 255, 255, 0.02); }
-.pgroup[data-depth="2"] { background: rgba(255, 255, 255, 0.028); }
-.pgroup[data-depth="3"] { background: rgba(255, 255, 255, 0.034); }
-
-.pgroup__head { display: flex; align-items: stretch; gap: 4px; }
-.pgroup__toggle {
-  flex: 0 0 auto;
-  width: 18px;
-  border: none;
-  background: none;
-  color: var(--paper-far);
-  cursor: pointer;
-  font-size: 11px;
-  line-height: 1;
-  padding: 0;
-  border-radius: var(--r-sm);
-}
-.pgroup__toggle:hover { color: var(--jade-400); background: rgba(255, 255, 255, 0.04); }
-.pgroup__head .place { flex: 1 1 auto; min-width: 0; }
-
-.pgroup__kids {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 6px;
-  margin: 7px 0 0 6px;
-  padding-left: 8px;
-  border-left: 1px solid var(--line);
-}
-.pgroup__folded {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  color: var(--paper-far);
-  margin: 5px 0 1px 22px;
-}
-
-/* ── the tile ── */
-
-.place {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "name name" "meta qinum" "qi qi";
-  gap: 2px 6px;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-  color: var(--paper);
-  cursor: pointer;
-  padding: 6px 8px 5px;
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--line-strong);
-  border-radius: var(--r-sm);
-  /* Ground tint by qi density, over ink. --qi is 0..1, set per tile. */
-  background:
-    linear-gradient(rgba(var(--jade-500-rgb), calc(var(--qi, 0) * 0.13)),
-                    rgba(var(--jade-500-rgb), calc(var(--qi, 0) * 0.13))),
-    var(--ink-800);
-  transition: border-color var(--dur), background var(--dur), transform var(--dur);
-}
-.place:hover { border-color: var(--line-strong); transform: translateY(-1px); }
-.place.is-selected {
-  border-color: var(--jade-400);
-  box-shadow: 0 0 0 1px var(--jade-600), 0 0 26px var(--jade-glow);
-}
-.place--head {
-  background:
-    linear-gradient(rgba(var(--jade-500-rgb), calc(var(--qi, 0) * 0.10)),
-                    rgba(var(--jade-500-rgb), calc(var(--qi, 0) * 0.10))),
-    var(--ink-750);
-}
-
-.place__row { grid-area: name; display: flex; align-items: center; gap: 5px; min-width: 0; }
-.place__glyph { flex: 0 0 auto; display: inline-flex; color: var(--paper-mut); }
-.place--head .place__glyph { color: var(--jade-400); }
-.place__name {
+.mapv__ord output { color: var(--jade-300); min-width: 20px; text-align: right; }
+.mapv__ordname {
   font-family: var(--font-read);
-  font-size: 13px;
-  line-height: 1.25;
+  font-size: 12.5px;
+  letter-spacing: 0;
+  color: var(--paper-mut);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.place--head .place__name { font-size: 14.5px; }
-.place__fog {
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--paper-far);
-  border: 1px dashed var(--line-strong);
-  border-radius: 2px;
-  padding: 0 4px;
-}
+.mapv__ord .btn { padding: 2px 8px; font-size: 11px; }
 
-.place__meta {
-  grid-area: meta;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.05em;
-  color: var(--paper-far);
-}
-.place__kind { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.place__links { color: var(--brass-600); white-space: nowrap; }
+/* ── the list ── */
 
-.place__qinum {
-  grid-area: qinum;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  color: var(--paper-mut);
-  white-space: nowrap;
+.maplist { display: grid; gap: 5px; }
+
+.bandhead {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
 }
-.place__qiband { font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper-far); }
-.place__qi { grid-area: qi; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.05); overflow: hidden; margin-top: 2px; }
-.place__qi i { display: block; height: 100%; background: var(--paper-far); }
-
-/* Qi bands. Discrete because the engine's bands are discrete
-   (QI_BAND_FLOORS in engine/world/qi-scale.ts); the bar length is the
-   raw 1..100 number underneath them. */
-[data-qi-band="thin"]        .place__qi i, .lg--qi[data-qi-band="thin"] i        { background: var(--paper-far); }
-[data-qi-band="normal"]      .place__qi i, .lg--qi[data-qi-band="normal"] i      { background: var(--jade-700); }
-[data-qi-band="dense"]       .place__qi i, .lg--qi[data-qi-band="dense"] i       { background: var(--jade-500); }
-[data-qi-band="spirit_tide"] .place__qi i, .lg--qi[data-qi-band="spirit_tide"] i { background: var(--jade-300); box-shadow: 0 0 8px var(--jade-glow); }
-[data-qi-band="spirit_tide"].place .place__qinum { color: var(--jade-300); }
-
-/* Reach: the left edge, banded against one ordinal. */
-.reach--master  { border-left-color: var(--jade-300); }
-.reach--operate { border-left-color: var(--jade-500); }
-.reach--survive { border-left-color: var(--brass-400); }
-.reach--lethal  { border-left-color: var(--blood-400); }
-.reach--barred  { border-left-color: var(--ink-500); }
-.lg--reach.reach--master i  { background: var(--jade-300); }
-.lg--reach.reach--operate i { background: var(--jade-500); }
-.lg--reach.reach--survive i { background: var(--brass-400); }
-.lg--reach.reach--lethal  i { background: var(--blood-400); }
-.lg--reach.reach--barred  i { background: var(--ink-500); }
-
-/* Undiscovered: present and visibly not known. Never absent - an operator
-   has to be able to see the fog the player is standing in. */
-.place.is-fogged {
-  opacity: 0.5;
-  border-style: dashed;
-  border-left-style: solid;
-}
-.place.is-fogged .place__name { font-style: italic; }
-.place.is-fogged:hover { opacity: 0.85; }
-
-/* Sealed: a state of its own, not a shade of shut. */
-.place.is-sealed {
-  background-image:
-    repeating-linear-gradient(135deg, rgba(226, 104, 92, 0.07) 0 4px, transparent 4px 9px),
-    linear-gradient(rgba(var(--jade-500-rgb), calc(var(--qi, 0) * 0.13)),
-                    rgba(var(--jade-500-rgb), calc(var(--qi, 0) * 0.13)));
-}
-
-.pstate {
+.bandhead:first-child { margin-top: 0; }
+.bandhead > span:first-child {
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  border-radius: 2px;
-  padding: 1px 4px;
-  white-space: nowrap;
-  border: 1px solid transparent;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brass-400);
 }
-.pstate--sealed  { color: var(--blood-300); background: var(--blood-dim); border-color: rgba(226, 104, 92, 0.3); }
-.pstate--shut    { color: var(--amber-400); background: var(--amber-dim); border-color: rgba(224, 164, 74, 0.28); }
-.pstate--window  { color: var(--jade-300); background: var(--jade-glow); border-color: var(--jade-700); }
-.pstate--key     { color: var(--brass-300); background: var(--brass-dim); border-color: var(--brass-600); }
-.pstate--oneway  { color: var(--paper-far); border-color: var(--line-strong); }
-.pstate--layer   { color: var(--violet-300); background: var(--violet-dim); border-color: rgba(165, 138, 232, 0.3); }
+.bandhead__from { font-family: var(--font-mono); font-size: 9.5px; color: var(--paper-far); }
 
-/* ── the rail ── */
+.maphidden { font-family: var(--font-mono); font-size: 10.5px; color: var(--paper-far); margin-top: 8px; }
 
-.mapv__rail {
-  overflow: auto;
-  max-height: min(62vh, 660px);
+/* ── one place, in the register's card pattern ── */
+
+.ncard {
+  background: var(--ink-850);
   border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--ink-800);
-  padding: 12px;
-  min-width: 0;
-}
-.mapinsp { display: block; }
-.mapinsp__hint { font-size: 12.5px; color: var(--paper-mut); line-height: 1.5; margin-bottom: 12px; }
-.mapinsp__warn { margin-top: 12px; font-size: 12px; color: var(--amber-400); line-height: 1.5; }
-
-.mapinsp__head { display: flex; gap: 9px; align-items: flex-start; margin-bottom: 8px; }
-.mapinsp__glyph {
-  flex: 0 0 auto;
-  width: 30px; height: 30px;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--line-strong);
-  border-left-width: 3px;
+  border-left: 3px solid var(--line-strong);
   border-radius: var(--r-sm);
-  color: var(--jade-400);
-  background: var(--ink-750);
 }
-.mapinsp__name { font-family: var(--font-read); font-size: 17px; line-height: 1.2; }
-.mapinsp__kind { font-family: var(--font-mono); font-size: 10.5px; color: var(--paper-far); margin-top: 3px; }
-.mapinsp__desc {
+.ncard > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 9px 12px;
+  display: grid;
+  gap: 3px;
+}
+.ncard > summary::-webkit-details-marker { display: none; }
+.ncard > summary:hover { background: rgba(255, 255, 255, 0.03); }
+.ncard > summary:focus-visible { outline: 2px solid var(--jade-400); outline-offset: -2px; }
+.ncard[open] { border-color: var(--line-strong); background: var(--ink-800); }
+.ncard[open] > summary { border-bottom: 1px solid var(--line); }
+.ncard[open] .ngo::after { content: " (open)"; }
+.ncard:hover .ngo, .ncard > summary:focus-visible .ngo { opacity: 1; }
+.nbody { padding: 13px 14px 15px; }
+
+/* A row that holds something is a button, not a disclosure: one click walks
+   into it, and the place's own record leads the level you land on. */
+.ncard--go {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--paper);
+  cursor: pointer;
+  padding: 9px 12px;
+}
+.ncard--go:hover { background: rgba(255, 255, 255, 0.03); border-color: var(--line-strong); }
+.ncard--go:focus-visible { outline: 2px solid var(--jade-400); outline-offset: -2px; }
+.ncard--go:hover .ngo { opacity: 1; }
+.ncard--go .ngo::after { content: " 92"; }
+
+.nhead { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; }
+.nname { font-family: var(--font-read); font-size: 15.5px; line-height: 1.25; }
+.nord {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass-300);
+  white-space: nowrap;
+}
+.nkind {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--paper-far);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.ngo { font-family: var(--font-mono); font-size: 10px; color: var(--jade-400); opacity: 0; transition: opacity var(--dur); margin-left: auto; }
+/* The closed row shows the first sentence; the open one shows the whole
+   description a few lines below it, so the teaser stops earning its place. */
+.ncard[open] > summary .nwant { display: none; }
+.nwant {
   font-family: var(--font-read);
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--paper-dim);
-  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--paper-mut);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.mapinsp__fog {
+
+/* Undiscovered: present and visibly not known. Never absent - an operator has
+   to be able to see the fog the player is standing in. */
+.ncard.is-fogged { opacity: 0.62; border-left-style: dashed; }
+.ncard.is-fogged .nname { font-style: italic; }
+.ncard.is-fogged:hover { opacity: 1; }
+
+/* Reach: the card's left edge, against the ordinal on the slider. */
+.ncard.reach--master  { border-left-color: var(--jade-300); }
+.ncard.reach--operate { border-left-color: var(--jade-500); }
+.ncard.reach--survive { border-left-color: var(--brass-400); }
+.ncard.reach--lethal  { border-left-color: var(--blood-400); }
+.ncard.reach--barred  { border-left-color: var(--ink-500); }
+
+/* Ground, as four cells of type. The only picture on the page, and it is text. */
+.dens {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  letter-spacing: 0.5px;
+  color: var(--paper-far);
+}
+.dens b { font-weight: 400; color: var(--paper-mut); }
+.dens[data-qi-band="normal"]      { color: var(--jade-700); }
+.dens[data-qi-band="dense"]       { color: var(--jade-500); }
+.dens[data-qi-band="spirit_tide"] { color: var(--jade-300); }
+.dens[data-qi-band="spirit_tide"] b { color: var(--jade-300); }
+
+/* ── chips ── */
+
+.chip--sealed { border-color: rgba(226, 104, 92, 0.32); color: var(--blood-300); background: var(--blood-dim); }
+.chip--shut   { border-color: rgba(224, 164, 74, 0.3); color: var(--amber-400); background: var(--amber-dim); }
+.chip--window { border-color: var(--jade-700); color: var(--jade-300); background: var(--jade-glow); }
+.chip--fog    { border-style: dashed; color: var(--paper-far); }
+.chip--claim  { border-color: rgba(224, 164, 74, 0.3); color: var(--amber-400); }
+.chip--inside { border-color: var(--line-strong); color: var(--paper-mut); }
+.chip--hazard { border-color: rgba(226, 104, 92, 0.35); color: var(--blood-300); background: var(--blood-dim); }
+.chip--seam   { border-color: rgba(226, 104, 92, 0.45); color: var(--blood-300); }
+.chip--key    { border-color: var(--brass-600); color: var(--brass-300); background: var(--brass-dim); }
+.chip--oneway { border-color: var(--line-strong); color: var(--paper-far); }
+.chip--style  { font-family: var(--font-read); font-style: italic; color: var(--paper-mut); }
+.chip--tag    { font-family: var(--font-mono); font-size: 10.5px; }
+.chip--reach.reach--master,
+.chip--reach.reach--operate { border-color: var(--jade-700); color: var(--jade-300); }
+.chip--reach.reach--survive { border-color: var(--brass-600); color: var(--brass-300); }
+.chip--reach.reach--lethal  { border-color: var(--blood-500); color: var(--blood-300); }
+.chip--reach.reach--barred  { border-color: var(--line-strong); color: var(--paper-far); }
+.nkind .chip { font-size: 9.5px; letter-spacing: 0.06em; padding: 1px 6px; text-transform: none; }
+
+/* ── a record ── */
+
+.mapdesc {
+  font-family: var(--font-read);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--paper-dim);
+  margin-bottom: 11px;
+  max-width: 76ch;
+}
+.mapdesc--none { color: var(--paper-far); font-style: italic; }
+.mapgo { margin-bottom: 12px; }
+.maproute { font-size: 12.5px; line-height: 1.5; color: var(--paper-mut); margin-bottom: 12px; }
+.maproute b { color: var(--brass-300); font-family: var(--font-mono); }
+.maproute--none { color: var(--paper-far); font-style: italic; }
+.mapdoor { font-size: 12.5px; line-height: 1.55; color: var(--paper-dim); margin-bottom: 12px; }
+.mapdoor b { color: var(--paper); }
+.mapdoor code { color: var(--brass-300); }
+.mapclaim {
   font-size: 12px;
   line-height: 1.5;
-  color: var(--paper-mut);
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r-sm);
-  padding: 7px 9px;
-  margin-bottom: 12px;
+  color: var(--amber-400);
+  border-left: 2px solid var(--amber-400);
+  padding-left: 8px;
+  margin: -6px 0 12px;
 }
-.mapinsp__none { font-size: 12.5px; }
+.maprules { display: grid; gap: 3px; margin-bottom: 12px; }
+.maprules li { font-size: 12.5px; color: var(--paper-dim); padding-left: 11px; position: relative; line-height: 1.45; }
+.maprules li::before { content: "\00B7"; position: absolute; left: 2px; color: var(--paper-far); }
 
-.mapinsp__facts { display: grid; gap: 4px; margin: 0 0 12px; }
-.mapinsp__facts > div { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; align-items: baseline; }
-.mapinsp__facts dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-far); }
-.mapinsp__facts dd { margin: 0; font-size: 12.5px; color: var(--paper-dim); }
-.mapinsp__facts dd .sub { display: block; font-size: 10.5px; color: var(--paper-far); }
+.mapfacts { display: grid; gap: 4px; margin: 0 0 12px; }
+.mapfacts > div { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.mapfacts dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-far); }
+.mapfacts dd { margin: 0; font-size: 12.5px; color: var(--paper-dim); }
+.mapfacts dd .sub { display: block; font-size: 10.5px; color: var(--paper-far); }
 
-.mapqi { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
-.mapqi__bar { flex: 1 1 auto; height: 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.05); overflow: hidden; }
-.mapqi__bar i { display: block; height: 100%; }
-[data-qi-band="thin"]        .mapqi__bar i { background: var(--paper-far); }
-[data-qi-band="normal"]      .mapqi__bar i { background: var(--jade-700); }
-[data-qi-band="dense"]       .mapqi__bar i { background: var(--jade-500); }
-[data-qi-band="spirit_tide"] .mapqi__bar i { background: var(--jade-300); box-shadow: 0 0 10px var(--jade-glow); }
-.mapqi__read { font-family: var(--font-mono); font-size: 11px; color: var(--paper-mut); white-space: nowrap; }
-.mapqi__read b { font-size: 15px; color: var(--paper); }
-
-.mapinsp__verdict {
+.mapverdict {
   font-family: var(--font-mono);
   font-size: 11.5px;
   border-left: 3px solid var(--line-strong);
-  padding: 5px 0 5px 9px;
+  padding: 4px 0 4px 9px;
   margin-bottom: 9px;
   color: var(--paper-dim);
 }
-.mapinsp__verdict span { display: block; font-family: var(--font-ui); font-size: 11.5px; color: var(--paper-far); line-height: 1.45; margin-top: 2px; }
-.mapinsp__verdict.reach--master,
-.mapinsp__verdict.reach--operate { color: var(--jade-300); }
-.mapinsp__verdict.reach--survive { color: var(--brass-300); }
-.mapinsp__verdict.reach--lethal  { color: var(--blood-300); }
-.mapinsp__verdict.reach--barred  { color: var(--paper-mut); }
+.mapverdict span { display: block; font-family: var(--font-ui); font-size: 11.5px; color: var(--paper-far); line-height: 1.45; margin-top: 2px; }
+.mapverdict.reach--master, .mapverdict.reach--operate { color: var(--jade-300); border-left-color: var(--jade-500); }
+.mapverdict.reach--survive { color: var(--brass-300); border-left-color: var(--brass-400); }
+.mapverdict.reach--lethal  { color: var(--blood-300); border-left-color: var(--blood-400); }
+.mapverdict.reach--barred  { color: var(--paper-mut); }
 
-.thrs { display: grid; gap: 3px; margin-bottom: 12px; }
-.thr { display: grid; grid-template-columns: 74px minmax(0, 1fr) 26px; gap: 7px; align-items: center; }
+.thrs { display: grid; gap: 3px; margin-bottom: 11px; }
+.thr { display: grid; grid-template-columns: 74px minmax(60px, 1fr) 26px minmax(0, 1.5fr); gap: 8px; align-items: center; }
 .thr__label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-far); }
 .thr__track { position: relative; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.05); }
 .thr__track i { display: block; height: 100%; border-radius: 3px; background: var(--ink-500); }
 .thr.is-pass .thr__track i { background: var(--jade-700); }
 .thr.is-fail .thr__track i { background: var(--blood-500); }
-/* Where the viewer stands, on the same scale as the requirement. */
+/* Where the reader stands, on the same scale as the requirement. */
 .thr__you { position: absolute; top: -3px; width: 2px; height: 12px; background: var(--brass-300); border-radius: 1px; }
 .thr__num { font-family: var(--font-mono); font-size: 11px; color: var(--paper-mut); text-align: right; }
+.thr__note { font-size: 11.5px; color: var(--paper-far); }
+.thr.is-fail .thr__note { color: var(--blood-300); }
 
-.mapinsp__door { font-size: 12.5px; line-height: 1.55; color: var(--paper-dim); margin-bottom: 12px; }
-.mapinsp__door b { color: var(--paper); }
-.mapinsp__rules { display: grid; gap: 3px; margin-bottom: 12px; }
-.mapinsp__rules li { font-size: 12.5px; color: var(--paper-dim); padding-left: 11px; position: relative; line-height: 1.45; }
-.mapinsp__rules li::before { content: "\00B7"; position: absolute; left: 2px; color: var(--paper-far); }
-.mapinsp .chips { margin-bottom: 12px; }
-.chip--hazard { border-color: rgba(226, 104, 92, 0.35); color: var(--blood-300); background: var(--blood-dim); }
-.chip--tag { font-family: var(--font-mono); font-size: 10.5px; }
+.affs { display: grid; gap: 3px; margin-bottom: 12px; }
+.aff { font-size: 12.5px; color: var(--paper-dim); border-left: 2px solid var(--line-strong); padding-left: 8px; line-height: 1.45; }
+.aff.is-boon { border-left-color: var(--jade-600); }
+.aff.is-bane { border-left-color: var(--blood-500); }
+.aff__note { display: block; font-size: 11.5px; color: var(--paper-far); }
 
-.xings { display: grid; gap: 3px; }
-.xing {
+/* ── what is inside, and where you can go ── */
+
+.xings { display: grid; gap: 3px; margin-bottom: 12px; }
+.xrow {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr) auto;
-  gap: 7px;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 8px;
   align-items: center;
-  padding: 4px 6px;
+  padding: 4px 7px;
   border-radius: var(--r-sm);
   background: rgba(255, 255, 255, 0.022);
-  font-size: 12px;
+  font-size: 12.5px;
 }
-.xing.is-shut { opacity: 0.6; }
-.xing__kind { display: flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9.5px; color: var(--paper-far); }
-.xing__to { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
-.xing__days { font-family: var(--font-mono); font-size: 11px; color: var(--brass-300); white-space: nowrap; }
-.xing .pstate { grid-column: 2 / -1; justify-self: start; }
+.xrow.is-shut { opacity: 0.65; }
+.xrow__kind {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-far);
+  border-left: 2px solid var(--line-strong);
+  padding-left: 6px;
+}
+.xrow__kind--road   { border-left-color: var(--brass-400); }
+.xrow__kind--path   { border-left-color: var(--paper-far); }
+.xrow__kind--tunnel { border-left-color: var(--jade-600); }
+.xrow__kind--gate   { border-left-color: var(--brass-600); }
+.xrow__kind--portal { border-left-color: var(--violet-400); }
+/* A seam is a tear in somebody's ward, and the one route here nobody built. */
+.xrow__kind--seam   { border-left-color: var(--blood-400); color: var(--blood-300); }
+.xrow__to { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.xrow__days { font-family: var(--font-mono); font-size: 11px; color: var(--brass-300); white-space: nowrap; }
+.xrow .chip { grid-column: 2 / -1; justify-self: start; }
+
+/* ── history ── */
+
+.mapinsp__origin { font-size: 12.5px; line-height: 1.55; color: var(--paper-mut); margin-bottom: 8px; }
+.mapinsp__origin b { color: var(--paper-dim); font-weight: 400; font-family: var(--font-read); }
+.hist { display: grid; gap: 4px; margin-bottom: 12px; }
+.hist__row { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 9px; align-items: baseline; }
+.hist__day { font-family: var(--font-mono); font-size: 10px; color: var(--paper-far); font-variant-numeric: tabular-nums; }
+.hist__what { font-size: 12.5px; line-height: 1.5; color: var(--paper-dim); }
+.hist__why, .hist__fid { display: block; font-size: 11.5px; color: var(--paper-far); font-style: italic; }
+.hist__row--rumour .hist__what, .hist__row--lost .hist__what { color: var(--paper-mut); }
+
+.mapmore { margin-top: 4px; }
+.mapmore > summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-far);
+  padding: 5px 0;
+}
+.mapmore > summary:hover { color: var(--jade-400); }
+.mapmore[open] > summary { color: var(--paper-mut); }
 
 .linkish {
   border: none;
@@ -2587,18 +2515,16 @@ kbd {
 }
 .linkish:hover { color: var(--jade-400); text-decoration-color: var(--jade-400); }
 
-@media (max-width: 1080px) {
-  .mapv__split { grid-template-columns: minmax(0, 1fr); }
-  .mapv__rail { max-height: none; }
-  .mapv__controls { grid-template-columns: 1fr 1fr; }
-  .mapv__ord { grid-column: 1 / -1; }
+@media (max-width: 860px) {
+  .mapv__controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
 
-@media (max-width: 720px) {
-  .mapv__canvas { max-height: none; padding: 8px; }
-  .maplayer__roots { grid-template-columns: minmax(0, 1fr); }
-  .pgroup__kids { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 640px) {
   .mapv__controls { grid-template-columns: minmax(0, 1fr); }
-  .thr { grid-template-columns: 66px minmax(0, 1fr) 24px; }
-  .mapinsp__facts > div { grid-template-columns: 80px minmax(0, 1fr); }
+  .mapv__ordname { display: none; }
+  .nhead { flex-wrap: wrap; gap: 4px 10px; }
+  .thr { grid-template-columns: 68px minmax(0, 1fr) 24px; }
+  .thr__note { grid-column: 1 / -1; }
+  .mapfacts > div { grid-template-columns: 88px minmax(0, 1fr); }
+  .hist__row { grid-template-columns: minmax(0, 1fr); gap: 1px; }
 }

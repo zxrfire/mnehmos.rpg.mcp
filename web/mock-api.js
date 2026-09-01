@@ -524,15 +524,25 @@ function mockPlace(id, name, kind, over = {}) {
     politicalControl: 'nobody in particular',
     thresholds: { entry: 0, survival: 0, operational: 0, mastery: 0 },
     hazards: [],
+    affinities: [],
     tags: [],
     resources: [],
     specialRules: [],
     sealed: false,
     sealedOnDay: null,
+    keyId: null,
+    origin: null,
+    changes: [],
+    changeCount: 0,
     discovered: true,
     discoveredOnDay: 0,
     controllingFactionId: null,
     controllingFactionName: null,
+    heldBy: 'nobody in particular',
+    contested: false,
+    capacity: null,
+    occupancy: 0,
+    styleTags: [],
     open: true,
     cycle: null,
     opensInDays: null,
@@ -560,6 +570,10 @@ function placesPayload() {
       parentId: 'r-fall', depth: 1, qiDensity: 89, linkCount: 3,
       childIds: ['h-azure-gate', 'p-azure-outer'],
       controllingFactionName: 'Azure Cloud Pavilion',
+      heldBy: 'several sects, none of them decisively',
+      contested: true,
+      capacity: 1400, occupancy: 380,
+      styleTags: ['walled_court', 'dressed_stone', 'bronze_trim'],
       thresholds: { entry: 0, survival: 0, operational: 22, mastery: 38 },
       hazards: ['formation'], tags: ['sect_ground', 'recruits'], resources: ['qi', 'teaching'],
       description: 'The ground the Azure Cloud Pavilion holds: gate, forecourt, halls, and the vein the compound was built on top of.'
@@ -578,7 +592,7 @@ function placesPayload() {
     }),
     mockPlace('x-azure-vault', 'Azure Cloud Pavilion: the inner vault', 'vault', {
       parentId: 'p-azure-outer', depth: 3, qiDensity: 89, linkCount: 1,
-      sealed: true, sealedOnDay: 1180, open: false,
+      sealed: true, sealedOnDay: 1180, open: false, keyId: 'key-azure-vault',
       thresholds: { entry: 26, survival: 26, operational: 33, mastery: 41 }
     }),
     mockPlace('u-drowned', 'The Drowned Terrace', 'ruin', {
@@ -596,7 +610,14 @@ function placesPayload() {
     }),
     mockPlace('sc-ashfield', 'The Ashfield', 'scar', {
       qiDensity: 1, linkCount: 1, hazards: ['thin_qi'],
-      description: 'Nothing grows and nothing gathers. Something drank it.'
+      description: 'Nothing grows and nothing gathers. Something drank it.',
+      affinities: [{ tag: 'thin_qi', multiplier: 0.25, thresholdOffset: -4, note: 'There is nothing here to draw on.' }],
+      origin: { kind: 'wilds', name: 'Ashfield', qiDensity: 44, ambient: 'normal', fromDay: -3200, changed: ['kind', 'name', 'qiDensity'] },
+      changeCount: 2,
+      changes: [
+        { onDay: 3980, kind: 'depleted', summary: 'The last of the ground stopped holding qi.', causeKnown: false, attributedCauses: ['the Pavilion', 'a tribulation nobody saw'], fidelity: 'rumour', witnessed: false },
+        { onDay: 1102, kind: 'destroyed', summary: 'Eleven li of forest burned in a night and did not come back.', causeKnown: true, attributedCauses: [], fidelity: 'full', witnessed: true }
+      ]
     }),
     mockPlace('a-abode', 'A borrowed abode', 'settlement', { layer: 'immortal', qiDensity: 100, linkCount: 0 })
   ];
