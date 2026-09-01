@@ -229,6 +229,28 @@ import type { CultivationRNG } from './rng.js';
 // `classifyCrossingResult` asks which of the five this was. Different
 // questions, and neither answers the other.
 //
+// ── THE ONE THING OUTSIDE THE WOUND LIST THAT CLOSES A ROAD ──────────────
+//
+// A False Immortal, and it belongs to the same family rather than being an
+// exception to it. `canAttemptBreakthrough` refuses them outright with
+// `barred:the_lid_opened_once`, and they carry no wound at all.
+//
+// Read against the rule, it fits exactly. A broken status is somebody who
+// crossed and did not complete the construction that crossing was for. A False
+// Immortal is somebody who crossed the LAST wall and did not complete it - the
+// Lid opened against their name, once, and will not open again. Both are half
+// states: across, holding the rung, and finished. What differs is only where
+// the incompleteness is recorded, and that follows from what the crossing was.
+// Every crossing below builds a structure IN a person, so its failure is a
+// wound on them. The last crossing is not a construction at all; it is the Lid
+// deciding, so there is nothing in the body to mark and the fact lives in
+// `immortalStatus` instead.
+//
+// So it is special rather than an exception, and it does not license a second
+// route for anything below it. The test remains what it has been: a road is
+// closed by a half-completed CROSSING and never by damage. Nothing that merely
+// hurt somebody may be added here, whatever it cost them.
+//
 // ── THE SYMMETRY, WHICH IS HOW TO HOLD THE SET IN MIND ───────────────────
 //
 // 3 and 4 land the person in the same PLACE - the previous Perfection, the
