@@ -114,6 +114,10 @@ import {
 } from './an-npc-striking-at-the-next-wall.js';
 import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
 import { getOrigin } from '../cultivation/origin.js';
+import {
+    groundRateAt, groundTimeShares, houseFallbackRate, rateOverTheYear, roomsHeldBy,
+    type GroundClaimant
+} from './the-ground-somebody-is-actually-standing-on.js';
 import { manualQualityRank } from '../cultivation/manual-quality.js';
 import {
     applyRoadsComprehended,
@@ -820,6 +824,27 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
     // reviewed NPC would turn a linear pass quadratic over five hundred people
     // for the whole life of the world.
     const byId = new Map(state.npcs.map(n => [n.id, n]));
+    // GROUND TIME, INDEXED ONCE PER PASS.
+    //
+    // Every house allocates days in its own chambers by standing, and this is
+    // asked of every living cultivator every year - a per-person recomputation
+    // would be quadratic over the whole life of the world, the same reason
+    // `shelfOf` and `teachableIn` are indexed.
+    const roomsByFaction = new Map<string, ReturnType<typeof roomsHeldBy>>();
+    const membersByFaction = new Map<string, GroundClaimant[]>();
+    for (const n of state.npcs) {
+        if (n.status !== 'alive' || !n.factionId) continue;
+        const at2 = membersByFaction.get(n.factionId);
+        if (at2) at2.push(n); else membersByFaction.set(n.factionId, [n]);
+    }
+    const groundShare = new Map<string, number>();
+    const bestRoomRate = new Map<string, number | null>();
+    for (const [factionId, members] of membersByFaction) {
+        const rooms = roomsHeldBy(state.locations, factionId);
+        roomsByFaction.set(factionId, rooms);
+        bestRoomRate.set(factionId, groundRateAt(rooms[0]));
+        for (const [id, share] of groundTimeShares(members, rooms)) groundShare.set(id, share);
+    }
 
     for (const at of due) {
         const npc = state.npcs[at];
@@ -830,7 +855,39 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
                 String(l.data.catalogRegionId ?? '') === regionTag
         ) ?? state.locations.find(l => l.id === npc.locationId);
         const regionCeiling = Number(region?.data.localCeilingOrdinal ?? 20);
-        const rateMultiplier = Number(region?.data.ambientRateMultiplier ?? 1);
+        // THE GROUND THEY ACTUALLY GET, WHICH IS A FRACTION OF A YEAR.
+        //
+        // This read the region's ambient off the `region:` tag and nothing
+        // else, so a house's own chambers were not an input to how fast its
+        // people climbed. Ground is the largest term in the model at x8 and
+        // measured, not one person in the world was drawing on any of the good
+        // ground - 434 dense and spirit-tide locations stood empty, and those
+        // locations ARE the sect chambers.
+        //
+        // A house grants days rather than a residence, so this is the year
+        // averaged over the chamber and ordinary ground. Somebody in no house
+        // gets a share of zero and the region rate exactly, unchanged.
+        const provinceRate = Number(region?.data.ambientRateMultiplier ?? 1);
+
+        // The days they are NOT in the vein chamber are spent on their own
+
+        // house ordinary ground, not in a field outside it. See
+
+        // `houseFallbackRate` - without this an apex outer disciple came out
+
+        // worse than a village one, measured.
+
+        const rooms = npc.factionId ? roomsByFaction.get(npc.factionId) ?? [] : [];
+
+        const rateMultiplier = rateOverTheYear(
+
+            groundShare.get(npc.id) ?? 0,
+
+            npc.factionId ? bestRoomRate.get(npc.factionId) ?? null : null,
+
+            houseFallbackRate(rooms, provinceRate)
+
+        );
         const age = Math.floor((day - npc.identity.bornOnDay) / 365);
 
         // THE BOOK IS THE HARDER OF THE TWO CEILINGS.
