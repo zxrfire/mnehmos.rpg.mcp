@@ -5927,7 +5927,31 @@ ${noticed}`;
      */
     private async train(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
         const query = (target ?? '').trim();
-        const technique = query.length >= 2 ? resolveTechnique(this.repos, query, cultivator.id) : null;
+        let technique = query.length >= 2 ? resolveTechnique(this.repos, query, cultivator.id) : null;
+
+        // THE ONE ART THEY HAVE.
+        //
+        // "I train" names nothing, and a cultivator who knows exactly one
+        // method has said everything that needs saying. This refused with "you
+        // cannot decide which of the things you know you meant to practise" to
+        // somebody holding a single manual, which is not a choice they were
+        // failing to make. Found by playing: learn the first book, type "I
+        // train", get told you are undecided between one thing.
+        //
+        // Only when the naming is genuinely empty. A query that resolved to
+        // nothing is a different failure and keeps its own refusal below,
+        // because guessing at what somebody meant to type is worse than saying
+        // it did not resolve.
+        if (!technique && query.length === 0) {
+            const held = this.repos.techniques.listKnown(cultivator.id);
+            // Resolved by name through the same path a typed name takes, so the
+            // sole art arrives as the same shape and nothing downstream has to
+            // know it was inferred.
+            if (held.length === 1) {
+                technique = resolveTechnique(this.repos, held[0].name, cultivator.id);
+            }
+        }
+
         const known = technique ? this.repos.techniques.getKnown(cultivator.id, technique.id) : null;
 
         if (!technique || !known) {
@@ -5939,8 +5963,10 @@ ${noticed}`;
                       `taught you ${technique.name}, and going through the motions of something you ` +
                       'have not been shown is just moving.'
                     : knows.length > 0
-                        ? 'You settle to practise, and then cannot decide which of the things you ' +
-                          'know you meant to practise.'
+                        // Name them. A player told they are undecided, without
+                        // being told between what, has to go and look.
+                        ? 'You settle to practise, and then cannot decide which of them you meant: ' +
+                          `${knows.join(', ')}.`
                         : 'You settle to practise, and it comes to you that you have never actually ' +
                           'been taught anything.',
                 `Unresolved or unlearned technique. Known: ${knows.join(', ') || 'none'}.`
