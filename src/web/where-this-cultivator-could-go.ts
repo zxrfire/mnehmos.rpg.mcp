@@ -92,6 +92,20 @@ export interface Destination {
     hereNow: boolean;
     /** True when it lies in the province they are already in. */
     sameProvince: boolean;
+    /**
+     * How many are drawing on that ground, and what it carries - null where the
+     * world holds no record of the place and the honest answer is nothing.
+     *
+     * The band alone is HALF the answer and it is the smaller half. Measured:
+     * occupancy moves the rate 4.5x between the emptiest and busiest ground,
+     * wider than the whole thin-to-normal band range, and `thin` ground with
+     * nobody on it beat `normal` ground with a crowd by 2.7x. A player choosing
+     * where to spend forty years off the band alone is choosing on the wrong
+     * number.
+     */
+    occupants: number | null;
+    /** Mortal-equivalent draw the ground carries comfortably. */
+    supportedDraw: number | null;
 }
 
 export interface DestinationsInput {
@@ -207,6 +221,26 @@ function distance(place: Destination): string {
  * carry the same distance. Not by name, and not by discovery order - both of
  * those are orderings about the record rather than about the decision.
  */
+/**
+ * Who else is on that ground, in the half-sentence a chooser needs.
+ *
+ * Silent where the world holds no record, because "nobody is there" and
+ * "nobody has looked" are different facts and only one of them is measured.
+ * Deliberately not a multiplier: this read prices roads, and a number that
+ * looked like a rate here would be a second opinion about one the sheet already
+ * states. What it says is empty, comfortable, or over - which is the shape of
+ * the decision.
+ */
+function crowd(place: Destination): string {
+    if (place.occupants === null || place.supportedDraw === null) return '';
+    if (place.occupants === 0) return ' Nobody is drawing on it.';
+    const over = place.occupants > place.supportedDraw;
+    return over
+        ? ` ${place.occupants} are drawing on ground that comfortably carries `
+          + `${place.supportedDraw}, and every one of them is slowing the rest.`
+        : ` ${place.occupants} drawing on it, which it carries comfortably.`;
+}
+
 export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
     const lines: string[] = [];
     const structure: string[] = [];
@@ -289,12 +323,15 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
             + `${place.sameProvince ? '' : `, ${place.regionName}`}, `
             + `${distance(place)}.`
             + `${place.ambient ? ` ${QI[place.ambient]}.` : ''}`
+            + crowd(place)
             + ceiling
         );
         structure.push(
             `${place.name}: region=${place.regionName}, `
             + `travelDays=${place.travelDays ?? 'unstated'}, `
             + `ambient=${place.ambient ?? 'unstated'}, `
+            + `occupants=${place.occupants ?? 'unstated'}, `
+            + `supportedDraw=${place.supportedDraw ?? 'unstated'}, `
             + `localCeilingOrdinal=${place.localCeilingOrdinal}`
         );
     }

@@ -80,7 +80,7 @@ import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { capOf, classOf } from '../data/cultivation/techniques.js';
-import { NO_MANUAL_CEILING, techniqueCeiling } from '../engine/cultivation/cultivation.js';
+import { NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import {
@@ -320,6 +320,9 @@ import {
 import { whyProgressHasStopped, type SeatStanding } from './why-progress-has-stopped.js';
 import { whoWouldTeach, type SomebodyAbove } from './who-would-teach-this-cultivator.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
+// The strongest environmental lever in the game, stated in the one place the
+// rate itself reads. See the file header for the measurement that forced it.
+import { howCrowdedThisGroundIs, type CrowdingRead } from './how-crowded-this-ground-is.js';
 import { assessAcquisition, sealedDoorFraction, concealmentScale, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
@@ -342,6 +345,11 @@ import { createGrudge, type Severity } from '../engine/social/grudges.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt } from '../engine/world/world-state.js';
+import type { LocationRecord } from '../engine/world/locations.js';
+// The ONE banding table, from `qi-scale.ts`. A second one in the encounter
+// tokens is how an encounter line and the sheet beside it came to disagree
+// about the same ground; this read is not going to be the third.
+import { ordinaryBandFor } from '../engine/world/qi-scale.js';
 import { DEATH_IN_WORLD,
     factsForBreakthrough,
     factsForEat,
@@ -1987,6 +1995,28 @@ ${noticedWaiting}`;
                 // are physical, and the cause is knowledge.
                 if (action.intent === 'history') {
                     return this.placeHistory(run, cultivator, action.target);
+                }
+
+                // WHO ELSE IS DRAWING ON THIS GROUND.
+                //
+                // The question a player asks the moment they learn occupancy
+                // matters, and it reached nothing at all: "how crowded is it
+                // here" did not resolve into any action in the set. Answered
+                // off the same `GroundConditions` the rate is computed from,
+                // and free, because looking around you costs nothing.
+                if (action.intent === 'crowding') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    const crowding = this.crowdingHere(cultivator);
+                    return this.freeAction(run, 'look', crowding
+                        ? factsForToolResult(
+                            `${crowding.heads === 1 ? 'You have it to yourself.' : 'You are not alone on it.'}`,
+                            [crowding.line]
+                        )
+                        : factsForRefusal(
+                            'Nothing here is measurable.',
+                            'You take the measure of the ground and of who is standing on it, and '
+                            + 'there is nothing here the engine holds a reading for.'
+                        ));
                 }
 
                 const company = this.company(cultivator);
@@ -8247,7 +8277,13 @@ ${noticed}`;
                         : cost.get(province.id) ?? null,
                     localCeilingOrdinal: province.localCeilingOrdinal,
                     hereNow: false,
-                    sameProvince: province.id === fromRegion.id
+                    sameProvince: province.id === fromRegion.id,
+                    // A province is a container; nobody stands in one, so there
+                    // is no occupancy to report and inventing an average across
+                    // its settlements would be the same error as flattening
+                    // their ambient bands.
+                    occupants: null,
+                    supportedDraw: null
                 });
                 continue;
             }
@@ -8274,7 +8310,43 @@ ${noticed}`;
                     : cost.get(found.region.id) ?? null,
                 localCeilingOrdinal: found.region.localCeilingOrdinal,
                 hereNow: wanted === loosePlaceKey(cultivator.location ?? ''),
-                sameProvince: found.region.id === fromRegion.id
+                sameProvince: found.region.id === fromRegion.id,
+                ...this.occupancyOf(found.place.name)
+            });
+        }
+
+        // ── GROUND THAT IS NOT A TOWN ────────────────────────────────────
+        //
+        // The read listed settlements and nothing else, so a player asking
+        // where they could go was answered with the two market towns they had
+        // names for - both crowded, both thin - while a DENSE vein with nobody
+        // on it sat in the same province. Measured on a live world: 34 caves,
+        // wilds and veins, all of them already `discovered` by the world, 31 of
+        // them with zero occupancy, the best at qiDensity 70 against a
+        // settlement's 35.
+        //
+        // Nothing was stopping the player travelling there either - `move`
+        // accepts any world location by name, and has all along. They were
+        // simply never told the names, so "I look for a quiet cave in the
+        // mountains" and "I seek an uninhabited place to cultivate" both
+        // reached nothing and the busiest ground in the world stayed the only
+        // ground they could name.
+        //
+        // Own province only, and only what the world has already discovered.
+        // This is local geography - a farm boy knows where the caves are - and
+        // not the hard discovery that finding a lone rich cave is meant to be.
+        for (const record of this.quietGroundIn(fromRegion.name)) {
+            if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
+            reachable.push({
+                name: record.name,
+                kind: record.kind,
+                ambient: ordinaryBandFor(record.qiDensity),
+                regionName: fromRegion.name,
+                travelDays: null,
+                localCeilingOrdinal: fromRegion.localCeilingOrdinal,
+                hereNow: loosePlaceKey(record.name) === loosePlaceKey(cultivator.location ?? ''),
+                sameProvince: true,
+                ...this.occupancyOf(record.name)
             });
         }
 
@@ -8886,6 +8958,81 @@ ${fit.line}`;
      * behaviour, and honest about being a lack of information rather than a
      * measurement of an empty valley.
      */
+    /**
+     * Who else is drawing on this ground, as a sentence and as numbers.
+     *
+     * Reads `groundFor` - the SAME `GroundConditions` the rate is computed
+     * from - so the sheet and the engine cannot come to disagree about how
+     * crowded a place is. That is not a hypothetical: the encounter line said
+     * "Sweptground comfortably carries 3 cultivators and currently holds 9"
+     * while the sheet said `Ambient qi: THIN` and nothing else, and a player
+     * had no way to know the second sentence was the smaller half of the story.
+     *
+     * Null without a loaded world, which is honest and not a failure.
+     */
+    /**
+     * Who is drawing on a named place, for the destinations read.
+     *
+     * Both fields or neither: a row with a headcount and no capacity is a
+     * number with nothing to compare it to. Nulls where the world holds no
+     * record, which is the honest answer for a settlement the gazetteer names
+     * and the world has not instantiated.
+     */
+    private occupancyOf(name: string): { occupants: number | null; supportedDraw: number | null } {
+        const record = this.atHand ? worldLocationFor(this.atHand, name) : null;
+        if (!record) return { occupants: null, supportedDraw: null };
+        return {
+            occupants: npcsAt(this.atHand!, record.id).length,
+            supportedDraw: carryingCapacityFor(record.environment.spiritualDensity)
+        };
+    }
+
+    /**
+     * Caves, wilds and veins in one province - the ground that is not a town.
+     *
+     * Only what the world has already discovered, which is every one of them on
+     * a fresh world: these are local geography rather than the hard find a rich
+     * lone cave is supposed to be. Sorted by what the ground holds, because the
+     * question this answers is where to go and sit.
+     */
+    private quietGroundIn(regionName: string): LocationRecord[] {
+        if (!this.atHand) return [];
+        const region = this.atHand.locations.find(
+            row => row.kind === 'region' && loosePlaceKey(row.name) === loosePlaceKey(regionName)
+        );
+        if (!region) return [];
+        return this.atHand.locations
+            .filter(row =>
+                (row.kind === 'wilds' || row.kind === 'cave' || row.kind === 'vein')
+                && row.discovered !== false
+                && row.parentId === region.id)
+            .sort((a, b) => b.qiDensity - a.qiDensity || (a.name < b.name ? -1 : 1));
+    }
+
+    private crowdingHere(cultivator: Cultivator): CrowdingRead | null {
+        const ground = this.groundFor(cultivator);
+        if (!ground) return null;
+        return howCrowdedThisGroundIs({
+            placeName: placeName(cultivator),
+            density: ground.density,
+            occupantOrdinals: ground.occupantOrdinals ?? []
+        });
+    }
+
+    /**
+     * Load the world if it is not already loaded, and answer nothing.
+     *
+     * `state()` is synchronous and has 64 call sites in the tests alone, so it
+     * is not becoming async for this. The endpoint awaits this first instead,
+     * which puts the ground read on the sheet from the first paint rather than
+     * from the first action.
+     */
+    async warmWorld(): Promise<void> {
+        this.useOwnDb();
+        if (!this.worldEnabled || this.atHand) return;
+        this.atHand = await this.loadWorld();
+    }
+
     private groundFor(cultivator: Cultivator): GroundConditions | null {
         if (!this.atHand) return null;
         const record = worldLocationFor(this.atHand, cultivator.location);
@@ -9740,7 +9887,12 @@ ${fit.line}`;
             ambient: this.ambientFor(cultivator, run),
             derived: derivedView(cultivator, {
                 sectName: this.sectNameFor(cultivator),
-                nameTaken: this.nameTaken(cultivator)
+                nameTaken: this.nameTaken(cultivator),
+                // The strongest environmental lever in the game, and it was on
+                // no screen anywhere. Null rather than zeroes when no world is
+                // loaded: "nobody is here" and "nobody has looked" are
+                // different facts and only one of them is measured.
+                ground: this.crowdingHere(cultivator)
             }),
             // "You can look at the ledger and see the shape of who you used to
             // be" is a design requirement, so the ledger is on the wire.

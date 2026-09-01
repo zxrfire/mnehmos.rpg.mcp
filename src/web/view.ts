@@ -20,6 +20,7 @@ import {
 } from '../engine/cultivation/understanding.js';
 import { hasCrossedTheLid } from '../engine/cultivation/realms.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
+import type { CrowdingRead } from './how-crowded-this-ground-is.js';
 import { getSect } from '../data/cultivation/sects.js';
 import {
     MAX_ORDINAL,
@@ -283,11 +284,22 @@ export interface DerivedView {
     foundationQuality: Cultivator['foundationQuality'];
     /** True once a crossing has taken the name. People have to be told it. */
     nameTaken: boolean;
+    /**
+     * Who else is drawing on the ground under them, and what it costs.
+     *
+     * Null when there is no world loaded to read it from - a state the sheet
+     * renders as absent rather than as "nobody", because those are different
+     * facts and only one of them is measured. See
+     * `how-crowded-this-ground-is.ts` for why this is on the sheet at all: it
+     * is the strongest environmental lever in the game and was invisible.
+     */
+    ground: CrowdingRead | null;
 }
 
 export interface DerivedContext {
     sectName?: string | null;
     nameTaken?: boolean;
+    ground?: CrowdingRead | null;
 }
 
 /** Everything the sheet needs that is a function of the cultivator, not a field of it. */
@@ -334,7 +346,8 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         dao: daoView(cultivator),
         sectName: context.sectName ?? null,
         foundationQuality: cultivator.foundationQuality,
-        nameTaken: context.nameTaken ?? false
+        nameTaken: context.nameTaken ?? false,
+        ground: context.ground ?? null
     };
 }
 

@@ -132,7 +132,10 @@ describe('GET /api/state', () => {
 
         expect(Object.keys(res.body.derived).sort()).toEqual([
             'bleedOutTurns', 'breakthroughBlockedReason', 'breakthroughReady', 'dao',
-            'foundationQuality', 'lifespanPressure', 'lifespanPressureFromAge',
+            // `ground` is who else is drawing on the ground under them. It is
+            // on the sheet because occupancy moves the rate more than the
+            // ambient band does and was on no screen anywhere.
+            'foundationQuality', 'ground', 'lifespanPressure', 'lifespanPressureFromAge',
             'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextRankName',
             'progressRequired', 'rankName', 'realmName', 'sectName', 'stagnationYears',
             'turnsUntilBleedOut', 'untreatedInjuries'
