@@ -643,7 +643,24 @@ The Court is not looking for strong people - it is looking for people whose *tra
 above the Lid, and the only way to read a trajectory is against the clock.
 
 It also explains how a body this attractive stays small without turning anybody away
-arbitrarily: the bar is objective, it is knowable in advance, and almost nobody clears it. A member
+arbitrarily: the bar is objective, it is knowable in advance, and almost nobody clears it.
+
+**And there is a second reason for the bar, which is arithmetic rather than judgement: the
+Court does not want to share.** Its ground is the best in the world, and ground is finite -
+the more people draw on a vein, the less each of them gets. So **every additional member
+lowers the odds of every existing member reaching immortality.** Admitting somebody is not
+a kindness the Court extends at no cost to itself; it is spending the thing it is made of.
+
+That makes the admission bar a rationing rule as much as a prediction. The Court takes
+somebody only when they raise the expected number of ascensions - which means the candidate
+has to be good enough that their presence is worth more than the dilution their presence
+causes. A merely excellent cultivator fails that test even though they would be the best
+person in most houses in the world.
+
+It is also why waiting costs the Court nothing. With lifespans in the tens of thousands of
+years, holding four seats open for two centuries until the right person appears is cheaper
+than filling them with three people who will not make it and who will thin the vein for
+everybody who might. A member
 leaving for it is not a defection and is not treated as one: **the original house gains
 standing by having produced somebody the Court wanted**, and the Court makes that explicit -
 rewards, a celebration, sometimes a dao artifact sent back down. Nobody swears an oath,
