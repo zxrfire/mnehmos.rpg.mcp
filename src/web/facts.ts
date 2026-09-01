@@ -135,7 +135,14 @@ export const DEATH_IN_WORLD: Record<DeathCause, string> = {
     combat_defeat: 'killed in combat',
     obviously_fatal_choice: 'forced a fight while barely able to stand',
     lifespan_exhausted: 'lifespan exhausted - died of old age at the ceiling of the realm',
-    stagnation_aging: 'settled: fifty years at one realm, and the qi already inside them finished working on them instead',
+    // The figure is the RUNG'S, not fifty. `stagnationYearsForOrdinal` is
+    // max(50, lifespan / 5), so fifty is only true through Foundation
+    // Establishment - it is a hundred at Core Formation and twenty thousand at
+    // Tribulation Transcendence. This entry said fifty to everybody, which made
+    // it a lie about most of the ladder in the one sentence a player reads
+    // about their own death. `describeDeathCause` takes the ordinal now and
+    // this row is a function of it, the way `standingStructure` already does it.
+    stagnation_aging: 'settled - the years this rung credits ran out, and the qi already inside them finished working on them instead',
     untreated_injuries: 'the meridians gave out, untreated',
     starvation: 'starved - the flesh keeps its mortal arithmetic',
     failed_breakthrough: 'the meridians ruptured mid-breakthrough',
@@ -153,9 +160,23 @@ export function describeAmbientPerceived(ambient: AmbientQi): string {
     return AMBIENT_PERCEIVED[ambient];
 }
 
-export function describeDeathCause(cause: DeathCause | null | undefined): string {
+export function describeDeathCause(
+    cause: DeathCause | null | undefined,
+    /**
+     * The rung they died at, where it is known. Only settling reads it, and
+     * only to say how many years that rung actually credited - a figure that
+     * ranges from fifty to twenty thousand across the ladder. Omitted, the
+     * sentence stays true and simply does not quote a number.
+     */
+    atOrdinal?: number
+): string {
     if (!cause) return 'cause unrecorded';
-    return DEATH_IN_WORLD[cause] ?? cause.replace(/_/g, ' ');
+    const said = DEATH_IN_WORLD[cause] ?? cause.replace(/_/g, ' ');
+    if (cause !== 'stagnation_aging' || atOrdinal === undefined) return said;
+    return said.replace(
+        'the years this rung credits',
+        `the ${Math.round(stagnationYearsForOrdinal(atOrdinal)).toLocaleString('en-GB')} years this rung credits`
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -331,7 +352,7 @@ export function factsForTimeSkip(
     );
     if (skip.died) {
         // Required. A player who is not told they are dead is not playing.
-        const death = `${after.name} is dead: ${describeDeathCause(skip.deathCause)}. `
+        const death = `${after.name} is dead: ${describeDeathCause(skip.deathCause, after.realmOrdinal)}. `
             + 'The run is closed. There is no reload.';
         lines.push(death);
         required.push(death);
@@ -466,7 +487,7 @@ function timeSkipProse(
 
     if (skip.died) {
         paragraphs.push(
-            `${after.name} is dead - ${describeDeathCause(skip.deathCause)}. The run is closed and written to the ledger. There is no reload and no revival.`
+            `${after.name} is dead - ${describeDeathCause(skip.deathCause, after.realmOrdinal)}. The run is closed and written to the ledger. There is no reload and no revival.`
         );
     }
 
