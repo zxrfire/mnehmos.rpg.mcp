@@ -6298,9 +6298,13 @@ function tieCard(p: TiePair): string {
     return `<details class="ncard tie rel--${esc(p.stance)}" id="${esc(p.anchor)}">
     <summary>
       <span class="nhead"><span class="nname">${esc(p.aName)}</span>`
-        + '<span class="nsep"> &middot; </span>'
+        // Clipped rather than printed on this line only. The two names and the
+        // two warmth marks are their own boxes and separate on sight; at a
+        // narrow width each falls on its own line, and a visible middot then
+        // dangles at the end of one. The mark stays in the text for the copy.
+        + '<span class="rsep"> &middot; </span>'
         + `<span class="nname">${esc(p.bName)}</span>`
-        + '<span class="nsep"> &middot; </span>'
+        + '<span class="rsep"> &middot; </span>'
         // The whole of the asymmetry, on the closed line. The first word is the
         // first-named body's regard for the second and the second word is the
         // answer back; which is which is said once in the section header rather
@@ -6726,7 +6730,7 @@ function historyCard(d: SectDossier): string {
 
     return `<details class="ncard" id="hist-${esc(d.id)}">
     <summary>
-      <span class="nhead"><span class="nname">${esc(d.name)}</span><span class="nsep"> &middot; </span>`
+      <span class="nhead"><span class="nname">${esc(d.name)}</span><span class="rsep"> &middot; </span>`
         + `<span class="nord"><span class="nfl">ord</span> ${d.ordinal}</span></span>`
         + nfacts([
             nfact('shares', `${h.shared.length} dated event${h.shared.length === 1 ? '' : 's'}`),
