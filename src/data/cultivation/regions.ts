@@ -1165,7 +1165,7 @@ export const REGIONS: readonly Region[] = [
             'Status is elevation. A holding is a band of altitude rather than an area, everybody\'s band moves uphill by inches a year, and a house that cannot follow the ice up is finished inside three generations - so nobody in the North has ever argued about a boundary',
             'Nothing is built to last, because a hall at the working face is thirty years from being below it, which is why the province has no ruins worth robbing, no inheritance worth suing over and no architecture anybody would cross a pass to see',
             'The whole province is on a clock every party can read: the face figure is published annually and can be gone and looked at, so it is the only number in the world that nobody in a province disputes',
-            'A discipline that requires the ground to stay where it was put does not work here at all, which removes formations, containment and survey in one stroke and leaves the North with no way to hold anything except by standing on it'
+            'A discipline that requires the ground to stay where it was put cannot be practised on ice, so no array has been laid in four hundred years and the two courts that have one inherited it cut into rock - which means a newcomer to the North cannot build a compound, only occupy one'
         ],
         register: {
             colour: 'white, and then blue where the ice is old, and nothing else at all except paint, which is why every worked thing in the province is painted',
@@ -1192,7 +1192,7 @@ export const REGIONS: readonly Region[] = [
             missingDisciplines: [
                 {
                     discipline: 'formations',
-                    reason: 'An array is laid on ground that stays where it is put, and nothing here does: stones set in ice go out of square inside a decade and out of use inside two. There is not one working formation anywhere in the White Stair, which is the same absence the Quiet Marches has for the exactly opposite reason - there they have no qi to draw on, here they will not hold still.'
+                    reason: 'An array is laid on ground that stays where it is put, and ice does not: stones set in ice go out of square inside a decade and out of use inside two. The exception is the one the Quiet Marches already uses - a node cut into rock holds - so the two courts that predate the retreat have working perimeters on stone and nobody has laid a new array in the province in four hundred years. Nothing can be laid at the working face at all, which is the part that matters, because the face is where the qi is and it is the one place in the province a formation could not be worth having.'
                 }
             ],
             strongDisciplines: [
@@ -1280,7 +1280,7 @@ export const REGIONS: readonly Region[] = [
         ],
         trueHereFalseThere: [
             'A holding is an elevation rather than an area, and every one of them moves uphill about forty spans in a working lifetime, so nobody in this province has ever argued about a boundary with anybody.',
-            'Not one formation in the province holds true for a decade, because array stones set in ice go out of square - so there is no working array anywhere here, in a world where an array is what a compound is.',
+            'Nobody can lay an array. Stones set in ice go out of square inside a decade, so the only working perimeters in the province are two that were cut into rock before the retreat began, and nothing has been laid here in four hundred years - least of all at the face, which is the one place worth defending.',
             'The dead come back. The ice returns what was put into it about a century later, at a lower band, in good condition and recognisable, and there is an ordinary administrative form for what to do about it.',
             'Everybody agrees the year to within twenty years and nobody agrees it closer, because the year here is a measurement of a moving face rather than a count of anything.'
         ],
