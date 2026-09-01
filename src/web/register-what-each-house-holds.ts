@@ -351,7 +351,19 @@ function houseDetail(h: HouseHoldings): string {
         parts.push(`<dt>What it pays</dt><dd>${stones(h.topStipend)} spirit stones a month at ${esc(h.topRank)}, its top rank.</dd>`);
     }
     if (h.compound) {
-        parts.push(`<dt>The building</dt><dd>${h.compound.lit} of ${h.compound.total} formation nodes lit${h.compound.inherited ? ', in a compound it did not build' : ', in a compound it built itself'}. That fraction is how much of its own inheritance it can still operate.</dd>`);
+        // A house with no nodes at all is not a fraction. "0 of 0 formation
+        // nodes lit... that fraction is how much of its own inheritance it can
+        // still operate" says nothing, because nought over nought is not a
+        // proportion of anything - and it rendered four times on the sheet.
+        // What is true about such a house is that its compound was never
+        // formed, which is a different and more interesting fact than a house
+        // that has lost its lights.
+        const whose = h.compound.inherited
+            ? 'a compound it did not build'
+            : 'a compound it built itself';
+        parts.push(h.compound.total === 0
+            ? `<dt>The building</dt><dd>No formation nodes at all, in ${whose}. Nothing here was ever lit, so there is nothing for it to have lost.</dd>`
+            : `<dt>The building</dt><dd>${h.compound.lit} of ${h.compound.total} formation nodes lit, in ${whose}. That fraction is how much of its own inheritance it can still operate.</dd>`);
     }
     if (h.holds) {
         parts.push(`<dt>The ground</dt><dd>${esc(h.holds)}${h.holdsFromName ? ` In the gift of ${esc(h.holdsFromName)}.` : ''}</dd>`);
