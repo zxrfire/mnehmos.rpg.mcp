@@ -46,6 +46,8 @@ export class RunRepository {
     private readonly endRunStmt: Database.Statement;
     private readonly peakStmt: Database.Statement;
     private readonly ledgerStmt: Database.Statement;
+    private readonly cleanLedgerStmt: Database.Statement;
+    private readonly latestFinishedStmt: Database.Statement;
     private readonly stampCultivatorRunStmt: Database.Statement;
 
     constructor(private db: Database.Database) {
@@ -93,11 +95,35 @@ export class RunRepository {
 
         // Finished runs only. An in-progress run has not yet earned a place in
         // the "how cultivators die" ledger.
+        //
+        // ADMIN-FLAGGED RUNS ARE NOT IN IT, AND THAT IS THE LEDGER'S CONTRACT
+        // rather than a caller's preference. `admin_manage.set_realm` has always
+        // promised in so many words that "this run is now excluded from the
+        // death ledger", `run_manage.ledger` filters them out, the migration
+        // that added the column says the same - and this statement, which is
+        // what /api/ledger actually reads, did not. A run called "Scenario Rig"
+        // that had been stood at ordinal 45 by hand sat at the top of the
+        // ledger with a starvation death against it, in the statistics, as
+        // balance data. A rigged run is not evidence about anything.
         this.ledgerStmt = db.prepare(`
             SELECT * FROM runs
             WHERE status != 'active'
             ORDER BY ended_at DESC, rowid DESC
             LIMIT ?
+        `);
+
+        this.cleanLedgerStmt = db.prepare(`
+            SELECT * FROM runs
+            WHERE status != 'active' AND admin = 0
+            ORDER BY ended_at DESC, rowid DESC
+            LIMIT ?
+        `);
+
+        this.latestFinishedStmt = db.prepare(`
+            SELECT * FROM runs
+            WHERE status != 'active'
+            ORDER BY ended_at DESC, rowid DESC
+            LIMIT 1
         `);
 
         this.stampCultivatorRunStmt = db.prepare('UPDATE cultivators SET run_id = ? WHERE id = ?');
@@ -209,9 +235,33 @@ export class RunRepository {
      * by ended_at so the ledger reads as a chronicle of endings rather than of
      * beginnings.
      */
-    deathLedger(limit = 20): Run[] {
-        const rows = this.ledgerStmt.all(Math.max(1, Math.round(limit))) as RunRow[];
+    /**
+     * The death ledger: finished runs, admin-flagged ones left out.
+     *
+     * `includeAdmin` exists for the one caller that legitimately wants them -
+     * `run_manage.ledger({ includeAdminRuns: true })`, an operator asking to
+     * see the rigged runs on purpose. Everything else gets the ledger the rest
+     * of the codebase already describes.
+     */
+    deathLedger(limit = 20, options: { includeAdmin?: boolean } = {}): Run[] {
+        const stmt = options.includeAdmin ? this.ledgerStmt : this.cleanLedgerStmt;
+        const rows = stmt.all(Math.max(1, Math.round(limit))) as RunRow[];
         return rows.map(rowToRun);
+    }
+
+    /**
+     * The most recent finished run, whatever it was - rigged runs included.
+     *
+     * NOT the ledger, and deliberately a separate method. Several callers want
+     * "the run that just ended" so they can keep showing its world, its roster
+     * marker or its lineage after it closes, and they had been reaching for
+     * `deathLedger(1)[0]` to get it. That is a different question from "what
+     * does this world's record of deaths say", and answering both from one
+     * statement is how an admin-flagged run ended up in the statistics.
+     */
+    latestFinishedRun(): Run | null {
+        const row = this.latestFinishedStmt.get() as RunRow | undefined;
+        return row ? rowToRun(row) : null;
     }
 }
 
