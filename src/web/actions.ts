@@ -179,6 +179,25 @@ export const ACTION_NAMES = [
      */
     'inventory',
     /**
+     * Swallowing a pill.
+     *
+     * `alchemy_manage.consume_pill` is complete - the catalog row decides the
+     * effect, toxicity accumulates on the body whether anybody wanted it to,
+     * and a breakthrough pill is RECORDED for the next attempt rather than
+     * asserted at it - and no sentence reached it. Two consequences, and the
+     * second is the bigger:
+     *
+     *   The six `heal_hp` pills could be bought and never swallowed. A new
+     *   cultivator could spend 28 of their 30 stones on a Minor Healing Pill
+     *   and carry it to their death.
+     *
+     *   `handleConsumePill` is the ONLY writer of `FLAG_PENDING_PILL`, so
+     *   `ctx.pill` at a breakthrough was always null and `MAX_PILL_BONUS` -
+     *   0.35, the largest modifier in the game and the intended way past the
+     *   rungs that kill - had never once fired in play.
+     */
+    'consume_pill',
+    /**
      * The arts that could be learned, and the learning of one.
      *
      * `technique_manage.handleListAvailable` and `handleLearn` are complete -
@@ -408,6 +427,15 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
      */
     'learn_technique',
     /**
+     * And this one, which is even less obvious. Swallowing a pill spends no
+     * day at all - and toxicity crossing `TOXICITY_TOLERANCE` mints a real
+     * poison injury through the same path every other wound takes, with
+     * `evaluateDeathConditions` running on the far side of it. This list is a
+     * floor on what a MISPARSE may reach, not a description of what each
+     * action costs, and a verb that can write a wound belongs on it.
+     */
+    'consume_pill',
+    /**
      * Here for exactly the same reason, and it is the strongest case on the
      * list. Nine strikes of the heaviest tribulation in the game, weathered by
      * somebody who has already spent a life reaching the point where they could
@@ -458,6 +486,9 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     // `handleLearn`, which owns every gate - so naming one out of reach is
     // refused with the measured reason rather than dropped here.
     'learn_technique',
+    // The pill, by name. Resolved against the POUCH, so a pill nobody is
+    // carrying is refused with what they are carrying attached.
+    'consume_pill',
     /**
      * The other party, by name: the institution being asked, the house being
      * declared against, the mountain with something under it, the line an
@@ -873,6 +904,46 @@ export const DUTY_TAKING_VERBS =
 
 /** The nouns that make a taking verb a duty rather than a purchase. */
 export const DUTY_NOUNS = /\b(?:commissions?|assignments?|dut(?:y|ies)|missions?)\b/;
+
+/**
+ * Swallowing, which is not buying and is not eating.
+ *
+ * "I eat a healing pill" reached the meal branch; "I buy a healing pill"
+ * correctly reached the board; nothing at all reached the swallow.
+ */
+export const PILL_TAKING_VERBS =
+    'take|takes|taking|swallow|swallows|swallowing|eat|eats|eating|consume|consumes|'
+    + 'consuming|use|uses|using|down|downs|dose|doses|dosing';
+
+export const PILL_NOUNS = /\b(?:pills?|elixirs?|medicines?|tablets?|pellets?)\b/;
+
+export const PILL_SUBJECT_VERBS = /take|swallow|eat|consume|use|down|dose/;
+
+/**
+ * Taking up an art for the first time.
+ *
+ * Narrow on purpose, because it carries the sentence WITHOUT a class noun -
+ * see the branch for the measurement that made that necessary. Every verb here
+ * in verb position is unambiguously about acquiring a method.
+ */
+export const LEARNING_VERBS =
+    'learn|learns|learning|take up|takes up|master|masters|acquire|acquires';
+
+/**
+ * The ambiguous half, which still needs the noun.
+ *
+ * "study the formation" is an examination and "study the Iron Bell Manual" is
+ * an acquisition, and the only thing separating them is what is being studied.
+ * So `study` keeps the class-noun requirement and the four unambiguous verbs
+ * above do not - which is the whole of what the relaxation had to be, and
+ * broadening it further took "study the formation" away from `investigate`.
+ */
+export const LEARNING_VERBS_NEEDING_A_NOUN = 'study|studies|studying|read|reads|reading';
+
+export const TECHNIQUE_CLASS_NOUNS =
+    /\b(?:arts?|techniques?|manuals?|methods?|scriptures?|canons?)\b/;
+
+export const LEARNING_SUBJECT_VERBS = /learn|study|read|take up|master|acquire/;
 
 /** The verbs a line is taken off the board with. */
 export const DUTY_SUBJECT_VERBS =
@@ -2565,16 +2636,45 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'list_techniques' };
     }
 
+    // ── swallowing a pill ──
+    //
+    // Ahead of `eat`, which took "I eat a healing pill" and answered it with a
+    // meal, and beside `buy`, which owns the purchase and not the swallow.
+    // `consume_pill` had no member in the closed set at all, so the six heal_hp
+    // pills were purchasable and unusable - and `handleConsumePill` is the ONLY
+    // writer of `FLAG_PENDING_PILL`, which means the breakthrough pill bonus,
+    // the largest modifier in the game, had never once fired in play.
+    if (usedAsVerb(text, PILL_TAKING_VERBS) && PILL_NOUNS.test(text)) {
+        return {
+            action: 'consume_pill',
+            target: extractSubject(input, PILL_SUBJECT_VERBS)
+        };
+    }
+
     // ── learning one, which is not practising one ──
     //
     // `train_technique` raises mastery in something already held; this is the
     // first acquisition, and it is the only route to an art outside a site.
     // Ahead of `investigate`, whose verb list contains "study".
-    if (usedAsVerb(text, 'learn|learns|learning|study|studies|studying|take up|takes up|master|masters|acquire|acquires')
-        && /\b(?:art|arts|technique|techniques|manual|manuals|method|methods|scripture|scriptures)\b/.test(text)) {
+    //
+    // THE CLASS NOUN IS NOT REQUIRED, and requiring it was a measured defect:
+    // 92 of 103 catalog names fail "I learn the <name>" when the sentence also
+    // has to contain "art", "manual" or "technique", because most arts are not
+    // called any of those things - and the listing prints their names without
+    // one. Most of the corridor above the middle of the ladder was therefore
+    // unlearnable by typing its own name back at the game.
+    //
+    // The learning verbs carry it on their own: "learn", "study", "take up"
+    // and "master" in VERB POSITION are not sentences about anything else this
+    // parser owns. The subject is resolved against the technique catalog in
+    // `GameService.learnTechnique`, so a sentence naming something that is not
+    // an art is refused there with the listing attached rather than guessed at
+    // here.
+    if (usedAsVerb(text, LEARNING_VERBS)
+        || (usedAsVerb(text, LEARNING_VERBS_NEEDING_A_NOUN) && TECHNIQUE_CLASS_NOUNS.test(text))) {
         return {
             action: 'learn_technique',
-            target: extractSubject(input, /learn|study|take up|master|acquire/)
+            target: extractSubject(input, LEARNING_SUBJECT_VERBS)
         };
     }
 
