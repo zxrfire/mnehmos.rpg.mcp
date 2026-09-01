@@ -10,14 +10,18 @@ about qi.
 Read alongside [`techniques.md`](techniques.md), which covers what an art can *do*, and
 [`escapes.md`](escapes.md), which covers what somebody does when their book runs out.
 
-| Section | The scene it answers |
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
 |---|---|
-| [A manual is an item with a count](#a-manual-is-an-item-with-a-count) | Somebody wants a copy, or a house is asked to hand one over |
-| [Who can make another one](#who-can-make-another-one) | A copy is being written, sold, or refused |
-| [Where books stop](#where-books-stop) | Anybody asks how far a manual goes, or why it stops there |
-| [A shelf, and who reaches up it](#a-shelf-and-who-reaches-up-it) | A disciple is admitted, promoted, or passed over |
-| [What a house can teach and what it can supply](#what-a-house-can-teach-and-what-it-can-supply) | A house's strongest member is far above what it produces |
-| [An art is a signature](#an-art-is-a-signature) | Somebody is seen practising, or a stolen book is on offer |
+| [A manual is an item with a count](#a-manual-is-an-item-with-a-count) | somebody asks a house for a manual, or a book changes hands |
+| [Who can make another one](#who-can-make-another-one) | a cultivator considers copying a manual, or a house's last master of an art dies |
+| [Where books stop](#where-books-stop) | a manual's ceiling is reached, quoted, or compared to another's |
+| [A shelf, and who reaches up it](#a-shelf-and-who-reaches-up-it) | a disciple is admitted, promoted, favoured, or refused a book |
+| [What a house can teach and what it can supply](#what-a-house-can-teach-and-what-it-can-supply) | a house's strongest member stands far above what it can produce, or a cultivator needs materials |
+| [An art is a signature](#an-art-is-a-signature) | somebody is seen practising, or a manual is stolen, sold, or offered on a black market |
 
 ---
 
