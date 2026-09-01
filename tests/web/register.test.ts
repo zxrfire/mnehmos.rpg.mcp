@@ -25,11 +25,10 @@ import { ARTIFACTS, artifactsOwnedBy } from '../../src/data/cultivation/artifact
 import {
     APEX_INSTITUTIONS,
     COURTS,
-    FACTION_PARENTAGE,
     getApexInstitution,
     idsForFaction,
     strongestOfficerOf,
-    THE_KILN_SCHISM
+    FACTION_PARENTAGE
 } from '../../src/data/cultivation/hierarchy';
 import { TECHNIQUES, GRADE_ORDER } from '../../src/data/cultivation/techniques';
 import {
@@ -899,21 +898,47 @@ describe('the entries that were weakest', () => {
     });
 });
 
-describe('one house, two names, two patrons', () => {
-    // A catalog record the sheet was dropping in its entirety, which is exactly
-    // the failure this suite exists for: `THE_KILN_SCHISM` is exported, it
-    // explains how two of the three bodies under one apex came to be there, and
-    // it reached no page at all.
-    it('carries every field of the record, quoted rather than summarised', () => {
-        const source = Object.entries(THE_KILN_SCHISM);
-        expect(reg.schism).toHaveLength(source.length);
-        for (const [key, value] of source) {
-            const built = reg.schism.find(s => s.key === key);
-            expect(built, `${key} dropped`).toBeDefined();
-            expect(built!.text, `${key} paraphrased`).toBe(value);
-            expect(built!.heading, `${key} has no heading`).not.toBe(key);
-            expect(flat, `${key} not rendered`).toContain(text(String(value)).slice(0, 60).trim());
+describe('two bodies, one lineage, and no joint record', () => {
+    // This used to be a top-level `schism` section built from a single
+    // standalone catalog record narrating both sides from outside, and before
+    // that the record reached no page at all - which is the failure this suite
+    // exists for. The record is gone. Each claimant now carries its own
+    // partisan account on its own entry, because two bodies four provinces
+    // apart under different patrons have no shared vantage to narrate from, and
+    // the sheet's job is to make both reachable rather than to reconcile them.
+    it('gives each claimant its own account, quoted rather than summarised', () => {
+        const withDispute = [
+            ...reg.courts.filter(c => c.lineageDispute),
+            ...reg.dossiers.filter(d => d.lineageDispute)
+        ];
+        expect(withDispute.length, 'nobody disputes a lineage').toBeGreaterThanOrEqual(2);
+
+        for (const body of withDispute) {
+            const d = body.lineageDispute!;
+            expect(d.fields.length, `${body.id} has an empty account`).toBeGreaterThan(0);
+            for (const f of d.fields) {
+                expect(f.heading, `${body.id}/${f.key} has no heading`).not.toBe(f.key);
+                expect(flat, `${body.id}/${f.key} not rendered`)
+                    .toContain(text(f.text).slice(0, 60).trim());
+            }
+            // The join is not an argument and must not be printed as one.
+            expect(d.fields.some(f => f.key === 'againstId'), `${body.id} prints its join`).toBe(false);
         }
+    });
+
+    it('lets a reader get from either account to the other', () => {
+        // The whole of what makes two partisan accounts fair. An account that
+        // says the other side exists without a way to go and read it is asking
+        // the reader to take one side's word for it.
+        const kiln = reg.courts.find(c => c.id === 'court-kiln');
+        const walked = reg.dossiers.find(d => d.id === 'sect-kiln-wardens');
+        expect(kiln?.lineageDispute, 'the standing half has no account').toBeTruthy();
+        expect(walked?.lineageDispute, 'the walking half has no account').toBeTruthy();
+        expect(kiln!.lineageDispute!.againstId).toBe('sect-kiln-wardens');
+        expect(walked!.lineageDispute!.againstId).toBe('court-kiln');
+        expect(kiln!.lineageDispute!.againstName).toBe(walked!.name);
+        expect(walked!.lineageDispute!.againstAnchor, 'no way back to the standing half')
+            .toBeTruthy();
     });
 
     it('names both halves of the split house on the page', () => {

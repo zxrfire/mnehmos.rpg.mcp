@@ -38,8 +38,7 @@ import {
     strongestOfficerOf,
     leaderTitleOfCourt,
     getParentage,
-    APEX_INSTITUTIONS,
-    THE_KILN_SCHISM
+    APEX_INSTITUTIONS
 } from '../../src/data/cultivation/hierarchy.js';
 import {
     SECTS,
@@ -233,9 +232,23 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
             getParentage('sect-kiln-wardens')?.parentFactionId,
             'the half that walked went to the Long Cut'
         ).toBe('apex-long-cut');
-        // And the prose says the same thing the rows do.
-        expect(THE_KILN_SCHISM.whoIsWhere).toContain('The Kiln Court holds the datum');
-        expect(THE_KILN_SCHISM.whoIsWhere).toContain('The Root Sill Court is four provinces away');
+        // And each body says the same thing the rows do, in its own words. The
+        // joint record that used to be asserted here is gone on purpose: there
+        // is no vantage from which both halves are narrated, so each carries
+        // its own partisan account and the test checks that both exist, that
+        // each names the other, and that they are not the same text.
+        const kilnSide = kiln.lineageDispute;
+        const walkedSide = getParentage('sect-kiln-wardens')?.lineageDispute;
+        expect(kilnSide, 'the standing half has no account of the split').toBeDefined();
+        expect(walkedSide, 'the walking half has no account of the split').toBeDefined();
+        expect(kilnSide!.againstId, 'the Kiln does not know who disputes it').toBe('sect-kiln-wardens');
+        expect(walkedSide!.againstId, 'the Root Sill does not know who disputes it').toBe('court-kiln');
+        expect(kilnSide!.whyWeAreTheHouse).not.toBe(walkedSide!.whyWeAreTheHouse);
+        // The ground argument and the roll argument, one each and not swapped.
+        expect(kilnSide!.whyWeAreTheHouse, 'the standing half should argue the ground')
+            .toMatch(/ground|datum|nodes/i);
+        expect(walkedSide!.whyWeAreTheHouse, 'the walking half should argue the roll')
+            .toMatch(/roll|people|posting order/i);
 
         const titles = kiln.roster.map(o => o.title);
         expect(titles.some(t => /Keeper of the Kiln/.test(t)), 'the Keeper stayed').toBe(true);
