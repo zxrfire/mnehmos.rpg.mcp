@@ -942,6 +942,58 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             note: 'It loses about one in nine a season and the one Keystone in its history left for the Low Fall within a year - and it is rising anyway, on ground it is not supposed to be on. The Factors have worked two live burn edges without a rotation entry and paid the shares out of the general fund; live ground yields grades the nine-year cycle never turns up, and on that material a gleaner reaches Foundation Establishment instead of stopping at Chipping. What ends it is not the Weir Office. It is one season where the losses outrun the fund and a family goes unpaid, which has never happened and is the whole of what the Company is.'
         },
         distinctSentence: 'Pays a dead digger\'s share to their family without exception, will not open a sealed door in the first hour of a shift, and works a rotation whose stated purpose it has misremembered as mercy.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // THE TWO WITH NOBODY ABOVE THEM
+    //
+    // Both unbacked, for opposite reasons, and the two `unitOfValue` lines
+    // are where the difference actually shows: the port counts turnover and
+    // the shed counts returns. Everything else about them follows from that
+    // one difference, including which of them can afford to be honest.
+    // ═══════════════════════════════════════════════════════════════════
+
+    'sect-halfwater-rail': {
+        knownFor: {
+            outside: 'Being cheap and being safe, in that order, which is the order a factor cares about and the reverse of the order that made the port.',
+            actuallyGoodAt: 'Being a counterparty who does not rob a weak seller. That is the whole product: an institution that pays a Qi Condensation nobody for a thing worth more than they are, because it has a rate book with ninety unbroken years in it and one person who did not want that record to have her name on the year it broke.',
+            theGap: 'Everybody at the quay explains the port by its rate. The rate is the advertisement. What people are actually buying is the certainty that the transaction ends with them walking away holding money, and almost nobody says that out loud because saying it means admitting what happens everywhere else.'
+        },
+        practice: 'A price given at the rail is held for the length of a tide and not one hour longer, said aloud, in front of whoever is standing there, and written into the book the same minute. The port has never negotiated in a room.',
+        grievance: 'That the Thousand Treasure Pavilion sends buyers to Halfwater, uses the peace the Rail pays for, and posts its own auction terms on the quay without contributing a stone to the watch.',
+        fear: 'Becoming worth taking. Every proposal that would make the port larger is heard by the Factors as a proposal to make it a party, and a party has enemies, and enemies is the one thing the Rail cannot hold forty acres against.',
+        lateness: 'Not late at all, and it is the only body in the catalog of which that is true: it inherited nothing, built what it stands in, and has no dark nodes because it has no diagram. Which is also its weakness - there is no ancestor to wake and no gift to spend, so a bad decade ends it.',
+        disagreement: 'Whether to open a second anchorage on the northern crossing. The Rail Master says a network is a party and a party gets taken; two Factors say a port that cannot grow is a port waiting for somebody to build a better one.',
+        wrongAbout: 'That the watch is what makes the quay safe. The watch makes the quay safe up to Foundation Establishment, and above that the quay is safe because the people on it are mutually deterred - which means the port\'s peace is not the port\'s achievement and is not the port\'s to keep.',
+        unitOfValue:
+            'Turnover. The Rail counts what crossed the rail this season and nothing else - not standing, not obligations owed, not who was pleased. It is the only body in the catalog that will take a worse price to keep a party trading, because a party that stops coming is a permanent subtraction from the only figure it keeps.',
+        production: {
+            reliableOrdinal: 13, currentCount: 34, peakOrdinal: 21, peakCount: 1, yearsSinceLastPeak: 22,
+            climbingToward: 17, waitingOn: 'access',
+            note: 'There is no ground under the port, so nobody at Halfwater advances on the air: every rung anybody there has climbed was bought out of a chest, which makes this the only house in the catalog whose production is a straight function of its wage bill. The watch sits at Foundation because that is what the port pays for, and it will sit there until either the rate or the traffic changes.'
+        },
+        distinctSentence: 'Says its price out loud in front of whoever is standing there, holds it for one tide, and has never once revised the book after the fact.'
+    },
+    'sect-sink-carriers': {
+        knownFor: {
+            outside: 'Taking anybody. Nine eastern gates describe it as where the unregistered go, and they are right about the fact and wrong about the reason, which they assume is charity.',
+            actuallyGoodAt: 'Arriving. A string that says it will reach a show on the seventh day reaches it on the seventh day or turns round on the fourth, and in ninety years nobody has ever been left standing at a surfacing waiting for water that did not come.',
+            theGap: 'Being taken in is free and is what everybody talks about. Staying is priced by the cup at four days\' distance from the only well, and nobody outside the shed has ever done that arithmetic before arriving.'
+        },
+        practice: 'A string is counted out of the shed by name and counted back in by name, aloud, at the door, and a name that does not come back stays on the board rather than being wiped. There are nine boards and the shed was rebuilt around them.',
+        grievance: 'That the Bone Lantern Cult works the ground behind its strings, waiting on the ones who did not make the return leg, and has twice been found doing it before the year was out.',
+        fear: 'A season where the cover moves early and closes three shows at once. The Carriers can walk a string to a show that has shut; what they cannot do is walk three strings back on the water they left with.',
+        lateness: 'It has nothing to be late about: no inheritance, no compound, no diagram, no hall. What it has instead is a shed that has been rebuilt four times around a stack of boards, which is the only continuity anybody there claims.',
+        disagreement: 'Whether to sound for a second well. Two Route Elders are paying a Marches carver out of their own shares without telling the Waterman, who holds that a fixed point on that ground is a thing the cover reaches in a decade and a debt that outlives it.',
+        wrongAbout: 'That the three conditions are minimal. They are minimal at the door and the water is not, and the shed has never quite registered that it selects its people by who can afford to stay rather than by who it lets in - which is a harder filter than most gates in the world.',
+        unitOfValue:
+            'Returns. Not finds, not shares, not stones - the figure the shed keeps is how many went out and how many came back, and every argument inside it is ultimately conducted in that number. It is the only house in the catalog whose central measure counts nothing it owns.',
+        production: {
+            reliableOrdinal: 5, currentCount: 11, peakOrdinal: 19, peakCount: 1, yearsSinceLastPeak: 30,
+            climbingToward: 13, waitingOn: 'access',
+            note: 'Two past Core Formation in ninety years and both stayed, which is the only endorsement the shed has. What holds the rest down is not talent and not teaching: a carrier spends the season walking, and the ground with the good air on it is the ground they are delivering to rather than sitting on.'
+        },
+        distinctSentence: 'Leaves the names of the strings that did not come back up on the board rather than wiping them, and has nine boards.'
     }
 };
 

@@ -117,6 +117,11 @@ const OCCUPATION_DATA: readonly Occupation[] = [
     { id: 'job-herb-picker', name: 'Herb picker', kind: 'either', minOrdinal: 0, cashPerMonth: 220, settlements: ['hamlet', 'village', 'market_town'], risk: 'moderate', note: 'Mortal-grade herbs off safe ground. The Cinnabar Crucible Guild buys at a fixed rate and does not haggle, which pickers regard as fair and dull.' },
     { id: 'job-corpse-carrier', name: 'Corpse carrier', kind: 'mortal', minOrdinal: 0, cashPerMonth: 210, settlements: ['market_town', 'sect_town', 'city'], risk: 'low', note: 'Steady work near sects, and the Bone Lantern Cult recruits from it openly enough that the trade is watched.' },
     { id: 'job-tax-clerk', name: 'Tax clerk', kind: 'mortal', minOrdinal: 0, cashPerMonth: 500, settlements: ['market_town', 'city'], risk: 'low', note: 'Safe, literate, despised, and the only mortal profession with a reliable view of who actually owns what.' },
+    // ── work that only exists where there is no ground ─────────────────
+    { id: 'job-deckhand', name: 'Deckhand', kind: 'either', minOrdinal: 0, cashPerMonth: 340, settlements: ['market_town', 'city'], risk: 'moderate', note: 'Paid by the passage rather than the month, and the figure here is a passage annualised. A hull will take anybody who can pay the burn or work it off, and asks where you came aboard and nothing past that.' },
+    { id: 'job-water-carrier', name: 'Water carrier', kind: 'either', minOrdinal: 0, cashPerMonth: 380, settlements: ['hamlet', 'village'], risk: 'high', note: 'Sink Carriers work on the Blown Ground: forty to sixty skins in a string, four days from the only well. Better paid than a porter and it kills about one in six a season, and the shed publishes the figure at the door.' },
+    { id: 'job-quay-watch', name: 'Quay watch', kind: 'cultivator', minOrdinal: 3, cashPerMonth: 1_300, settlements: ['market_town', 'city'], risk: 'moderate', note: 'The Halfwater Rail\'s funded order, and the only paid watch in the world that is honest about where its writ stops. It handles theft, brawls and short weight, and is told at hiring that it does not go above Foundation Establishment.' },
+    { id: 'job-shipmaster', name: 'Shipmaster', kind: 'either', minOrdinal: 0, cashPerMonth: 2_600, settlements: ['market_town', 'city'], risk: 'high', note: 'Owns or commands a hull, which is the largest thing anybody in the province owns. The whole of the job is a sum done ashore about how many days of water to load, and the whole of the risk is being wrong about it once.' },
 
     // ── work a Qi Condensation cultivator can realistically take ───────
     { id: 'job-beast-culler', name: 'Spirit-beast culler', kind: 'cultivator', minOrdinal: 3, cashPerMonth: 1_200, settlements: ['village', 'market_town', 'sect_town'], risk: 'high', note: 'Paid per head on a village contract. The standard living for an unaffiliated Qi Condensation cultivator, and the standard way one dies at twenty-six.' },
@@ -200,6 +205,22 @@ export const PRICES: readonly Price[] = [
     { id: 'price-mule', name: 'Mule', category: 'transport', cash: 1_400, unit: 'each', note: 'Fourteen stones on four legs, and the single largest purchase most mortals ever make.' },
     { id: 'price-cart', name: 'Cart', category: 'transport', cash: 3_000, unit: 'each', note: 'Thirty stones: exactly the starting purse of a cultivator, which is a comparison mortals make bitterly and often.' },
     { id: 'price-span-courier', name: 'Measured Span courier', category: 'transport', cash: 900, unit: 'per true li', note: 'Priced by true rather than walked distance, which nobody outside the Span can verify and everybody pays.' },
+
+    // ── the water, which is priced in a different unit and should be ──
+    //
+    // A ferry is a crossing you can see both banks of and a caravan is priced
+    // by the hundred li of road, because on a road you are buying DISTANCE.
+    // Sea passage is quoted per head per day, everywhere in the Drowned
+    // Reach, and the unit change is the whole difference: what a passenger is
+    // actually buying out there is somebody else's provisioning risk over a
+    // stretch of time nobody can promise the length of. The three rows below
+    // are the same vocabulary as the ferry and the caravan, extended - not a
+    // second transport system beside them.
+    { id: 'price-sea-passage', name: 'Sea passage', category: 'transport', cash: 45, unit: 'per head per day', note: 'Quoted on the expected passage and never on the tail, which is where the arguments come from. Twenty-one days to the eastern shore is nine hundred and forty-five cash before anybody has burned a stone.' },
+    { id: 'price-deck-passage-open-water', name: 'Deck passage, no landfall in it', category: 'transport', cash: 70, unit: 'per head per day', note: 'Half again, for a lane with nowhere to stop. The surcharge is not for the danger - it is because a hull on that water carries provisions for people it cannot put ashore, and everybody aboard is loaded for.' },
+    { id: 'price-water-jar', name: 'Fresh water, sealed stone jar', category: 'food', cash: 30, unit: 'jar', note: 'Six days for one person at the standing ration, and the actual binding constraint on every passage in the province. Halfwater sells it at a margin nobody argues about, because a shipmaster haggling over water in front of a crew has already lost the crew.' },
+    { id: 'price-hull-repair', name: 'Hull repair at a quay', category: 'service', cash: 2_200, unit: 'per call', note: 'Caulking, cordage and canvas. The Halfwater Rail keeps eleven caulkers and does not price them to profit, on the reasoning that a hull that cannot be repaired there is a hull that stops coming.' },
+    { id: 'price-port-rate', name: 'Port rate on a cargo', category: 'service', cash: 25, unit: 'per stone of value per 40', note: 'A fortieth of what crosses the rail, published, unchanged in ninety years and refused upward four times in writing. It is light because the traffic is where the profit is and squeezing the traffic moves it.' },
 
     // ── medicine: where the two currencies meet ───────────────────────
     { id: 'price-doctor-visit', name: 'Mortal physician, one visit', category: 'medicine', cash: 40, unit: 'visit', note: 'Sets a bone, stitches a cut, cannot touch a meridian.' },

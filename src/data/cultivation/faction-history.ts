@@ -766,6 +766,41 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'Bo Ai\'s founding note says the nine-year rotation exists to let the previous crew\'s survivors die off before the next pass. The Company reads it as metaphor and holds that the rotation lets a site recover - and reading it as metaphor is not stupidity, it is what you do with a sentence that would otherwise mean your founder scheduled around your own losses. The same substitution has happened independently to the Bone Lantern Cult, which neither body knows.',
         sharedEvents: ['event-the-undercut-border']
     },
+
+    // ── the two with nobody above them ────────────────────────────────
+    //
+    // Both are recent by the standards of this catalog - ninety years each
+    // against four hundred for an ordinary sect and thousands for a house -
+    // and that is not a coincidence. A body with no patron is a body nobody
+    // has been renewing, so it has to have been founded inside the span of
+    // its own record, and neither of them has an inheritance to have lost.
+    // The `whatTheUnlitNodesWere` field is null for both, and for once the
+    // null means what it says rather than covering a gap: there are no unlit
+    // nodes because there is no diagram, because nobody built anything on
+    // either piece of ground before them.
+    'sect-halfwater-rail': {
+        factionId: 'sect-halfwater-rail',
+        origin:
+            'A weigh house and a cistern cut into rock, put up by a Watering factor who had worked out that the middle of the eastern passage was the only place in the world where four parties who would not sit in a room together all had to stop anyway. The founding decision was the rate: a fortieth, published, and never raised, on the argument that the port is worth exactly what passes through it. Nobody granted the ground and nobody has ever been asked to, because nobody had a use for forty acres of rock with no vein under it until there was a quay on it.',
+        whyTheGapIs:
+            'There is no ground under Halfwater, so nothing there advances on the air. Every rung anybody at the port has climbed came out of a chest, which makes the pipeline a straight function of the wage bill: the watch sits at Foundation Establishment because Foundation Establishment is what the port pays for. The one person above it is not a product of the pipeline and never was - she was bought in, at a wage nobody at the quay is told, for the specific purpose of being somebody a disappointed buyer cannot quietly make disappear.',
+        whatTheUnlitNodesWere: null,
+        whereTheWrongBeliefComesFrom:
+            'The port believes the watch is what makes the quay safe, and the belief is honestly come by, because the watch does make the quay safe up to the rung it can hold and everybody can see it working. What holds above that rung is that the people up there are mutually deterred, which is not the Rail\'s doing and is not the Rail\'s to keep. The gap between the two is where the last three killings on the quay happened, and all three were the same shape - somebody above the watch and below anybody who would have come for them - and the Factors have discussed each one as an incident rather than as the pattern it is.',
+        sharedEvents: []
+    },
+    'sect-sink-carriers': {
+        factionId: 'sect-sink-carriers',
+        origin:
+            'A shed and a stockyard a day past the last painted stake, put up by people the Weir Office had no record of, to carry water to people the eastern gates had a bounty on. The founding decision was the tally board: names counted out and counted in, and the ones that did not come back left up instead of wiped. It was not intended as a memorial and has become one, which is the only thing about the shed that was not deliberate.',
+        whyTheGapIs:
+            'Not talent and not teaching. A carrier spends the season walking, and the ground with the good air on it is the ground they are delivering to rather than the ground they are sitting on - so the shed hands its people access to the best air in three provinces and gives them no hours in which to use it. The two who got past Core Formation in ninety years both did it in seasons the cover shut the routes early, which the Route Elders have noticed and have not been able to do anything with.',
+        whatTheUnlitNodesWere: null,
+        whereTheWrongBeliefComesFrom:
+            'The shed says its conditions are minimal and means it: three, at the door, no questions. What it has never registered is that the water is a fourth condition and a far harder one, bought by the cup at four days\' distance from the only well, so the body that prides itself on letting anybody in is in fact selecting hard - by who can afford to stay rather than by who it admits. Everybody outside reads the open door as charity and everybody inside reads it as the obvious way to run a carry, and neither has looked at who is actually still there after two seasons.',
+        sharedEvents: []
+    },
+
     // ── the dao houses ────────────────────────────────────────────────
     'house-ninefold-ledger': {
         factionId: 'house-ninefold-ledger',

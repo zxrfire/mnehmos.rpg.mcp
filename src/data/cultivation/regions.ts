@@ -21,6 +21,17 @@
  *     SOUTH   The Drowned Reach open water. There is no ground under it, so
  *                               there is no vein under it, so there is nothing
  *                               in the air. Nobody holds it and nobody can.
+ *                               The one exception is forty acres of island in
+ *                               the middle of it - see `Halfwater` in the
+ *                               places list - and the exception proves the
+ *                               rule, because what makes that island holdable
+ *                               is that holding it would make it worthless.
+ *
+ * Those five words are now a FIELD rather than a comment. `Region.bearing`
+ * carries them, `regionsByBearing` and `factionsByBearing` read the world as
+ * five columns, and `apexSeats` states where the three apexes actually stand
+ * instead of leaving a reader to assume they divide the compass. See
+ * `BearingSchema`, which is also the record of why this was missing.
  *
  * And one thing that is not a province, in the wedge the four arms leave
  * between them:
@@ -129,6 +140,31 @@ export const RegionPoliticsSchema = z.enum([
     'no_authority'
 ]);
 export type RegionPolitics = z.infer<typeof RegionPoliticsSchema>;
+
+/**
+ * WHERE A PLACE IS, WHICH THE MAP COULD NOT SAY UNTIL NOW.
+ *
+ * The header of this file has described a spine - centre, west, east, north,
+ * water to the south, and a wedge in the interior - since the day the fifth
+ * province was written. None of that was ever in the DATA. `Region` carried a
+ * `role` of `home` or `adjacent`, which is a statement about the player and
+ * not about the world, so every consumer of this catalog saw five provinces
+ * in array order with no bearing on any of them and no way to derive one.
+ *
+ * The cost was not theoretical. The lower world map in the web client groups
+ * by containment and by kind, so it could show that eleven houses are in the
+ * Low Fall and could not show that the Low Fall is in the MIDDLE. Everything
+ * the setting says about the centre - four roads meeting in one gorge, no
+ * fifth road, every province resenting the same toll in the same words - is a
+ * fact about bearings, and the only place it was written down was a comment.
+ *
+ * `interior` is not a compass point and is deliberately in the same enum. The
+ * Blown Ground is between the four arms and inside none of them, which is a
+ * position, and giving it its own word keeps it from being filed north or east
+ * by somebody who wanted a complete set.
+ */
+export const BearingSchema = z.enum(['centre', 'north', 'east', 'south', 'west', 'interior']);
+export type Bearing = z.infer<typeof BearingSchema>;
 
 /**
  * A local name for one band of the shared ladder. `fromOrdinal`/`toOrdinal`
@@ -298,6 +334,12 @@ export const RegionSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
     role: z.enum(['home', 'adjacent']),
+    /**
+     * Where it is. `role` says what the province is to the player; this says
+     * what it is to the map, and the two are different questions. See
+     * `BearingSchema`.
+     */
+    bearing: BearingSchema,
     /** The cultivation tradition seated here. See `traditions.ts`. */
     traditionId: TraditionIdSchema,
     summary: z.string().min(80),
@@ -650,6 +692,7 @@ export const REGIONS: readonly Region[] = [
         id: HOME_REGION_ID,
         name: 'The Low Fall',
         role: 'home',
+        bearing: 'centre',
         traditionId: 'tradition-drawn',
         summary:
             'The centre, and the only province with a road to every other one: nine river towns, four sect mountains, a live trade in medicine and manuals, and seventeen institutions with overlapping claims on eleven veins. What limits a cultivator here is talent and money, not the ground.',
@@ -847,6 +890,7 @@ export const REGIONS: readonly Region[] = [
         id: ADJACENT_REGION_ID,
         name: 'The Quiet Marches',
         role: 'adjacent',
+        bearing: 'west',
         traditionId: 'tradition-cut',
         summary:
             'The province people leave: the western end of the world, the last of five driven provinces, and the only place in it where cultivation is a trade with tools. Something broke here nine hundred years ago and drove the qi out of the air and into the rock, so the Marches does not breathe qi - it cuts it out of stone, and everything about the place follows from that. It has one road, it goes east, and there is nothing on the other side of the Marches but four more provinces like it that nobody here has seen.',
@@ -910,7 +954,8 @@ export const REGIONS: readonly Region[] = [
         factionIds: [
             'sect-weir-office',
             'sect-sixmile-wardens',
-            'sect-gleaners-company'
+            'sect-gleaners-company',
+            'sect-sink-carriers'
         ],
         branches: [
             {
@@ -1010,6 +1055,7 @@ export const REGIONS: readonly Region[] = [
         id: EAST_REGION_ID,
         name: 'The Wide Field',
         role: 'adjacent',
+        bearing: 'east',
         traditionId: 'tradition-drawn',
         summary:
             'The eastern plain: nine walled cities on flat ground over shallow veins, two thousand years of engagements fought across it, and not one institution in it that holds a foot of land. Everything here is rented, priced and renewable, and the ground is rich because of what has died on it.',
@@ -1174,6 +1220,7 @@ export const REGIONS: readonly Region[] = [
         id: NORTH_REGION_ID,
         name: 'The White Stair',
         role: 'adjacent',
+        bearing: 'north',
         traditionId: 'tradition-drawn',
         summary:
             'Above the snowline, past a pass that is shut five months a year: the richest air anybody has ever stood in, in a band forty paces wide, moving uphill. Two institutions, no court, no register, no market and no arbitration, on ground that is measurably worth less every year and knows the figure.',
@@ -1330,6 +1377,7 @@ export const REGIONS: readonly Region[] = [
         id: SOUTH_REGION_ID,
         name: 'The Drowned Reach',
         role: 'adjacent',
+        bearing: 'south',
         traditionId: 'tradition-drawn',
         summary:
             'Open water south of everything, with a drowned mountain range under it whose peaks are the islands. There is no vein within reach of anybody, so there is nothing in the air; cultivation out here is bought by the day out of a stone chest, and every institution that has ever tried to hold a strait has held it on paper.',
@@ -1390,10 +1438,11 @@ export const REGIONS: readonly Region[] = [
             'There are veins under the Drowned Reach and every one of them is a hundred fathoms down. What put them there is not recorded anywhere anybody has read; what is recorded is the shape, which is a mountain range with its peaks above water, so every island in the province is a vein head with the whole of its vein out of reach beneath it.',
         politics: 'no_authority',
         politicsNote:
-            'Nothing at all: no grant book, no bench, no court, no survey, no apex and no province in the administrative sense, because nothing here can be held and therefore nothing here can be given. Four straits are claimed by parties ashore and all four claims are sentences in documents. Two institutions operate on this water and neither holds anything - one because its whole doctrine is leaving, one because it never had anywhere to be - and that is not a gap in the province, it is the only kind of institution the province can support.',
+            'Nothing at all: no grant book, no bench, no court, no survey, no apex and no province in the administrative sense, because nothing here can be held and therefore nothing here can be given. Four straits are claimed by parties ashore and all four claims are sentences in documents. Three institutions operate on this water and none of them holds a strait - one because its whole doctrine is leaving, one because it never had anywhere to be, and one because it holds forty acres of island instead and would be worth nothing if it held any more. That is not a gap in the province, it is the only kind of institution the province can support, and the third of them is the interesting case: the Halfwater Rail is unbacked not because nobody could take it but because everybody would lose by it, which is the only security arrangement in the world that nobody signed and nobody can withdraw from unilaterally.',
         factionIds: [
             'house-measured-span',
-            'sect-hollow-bell-wanderers'
+            'sect-hollow-bell-wanderers',
+            'sect-halfwater-rail'
         ],
         branches: [
             {
@@ -1414,7 +1463,21 @@ export const REGIONS: readonly Region[] = [
             { name: 'Bellhead', kind: 'waystation', ambient: 'thin', note: 'A headland with a bell on it. A hull that rings it has come through, and a hull that does not is counted, and the counting is the only record anybody keeps out here.' },
             { name: 'The Sounding', kind: 'site', ambient: 'dense', note: 'One rock stands on a vein head that breaks the surface at low water. It is the best ground in the province, it is about forty paces across, and everybody waters at it.' },
             { name: 'Dryrun', kind: 'site', ambient: 'thin', note: 'The stretch of the eastern passage with no landfall in it. The name is a joke about the water ration and nobody finds it funny after the fourth day.' },
-            { name: 'Farside', kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Low Fall, when it opens, which is four days in nine and never in a storm.' }
+            { name: 'Farside', kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Low Fall, when it opens, which is four days in nine and never in a storm.' },
+            // ── the middle of the water, which was a gap in the map ────────
+            //
+            // The province was written as coasts and the water between them
+            // was nothing: Watering and Bellhead and Farside are all edges,
+            // and Dryrun - the one entry that is actually open sea - is named
+            // for the absence of anything. So the busiest water in the world
+            // had no place on it a narrator could put a scene, and a crossing
+            // was a number of days between two landfalls with a blank in the
+            // middle. These four are that blank, and every one of them is
+            // somewhere a hull is rather than somewhere a hull calls.
+            { name: 'Halfwater', kind: 'city', ambient: 'thin', note: 'An island at the middle of the eastern passage with a deep anchorage, no vein and no patron, where every party in the world buys and sells because none of them owns it. The largest market outside the nine cities and the only one an apex has never had a seat at.' },
+            { name: 'The Roads', kind: 'site', ambient: 'thin', note: 'The anchorage off Halfwater, where forty hulls lie waiting on wind, water or a price, close enough to hear each other\'s bells. A quarter of the port\'s business is done between hulls without anybody going ashore.' },
+            { name: 'The Long Middle', kind: 'site', ambient: 'thin', note: 'Eleven days of the northern crossing with no landfall, no bottom a line will reach and nothing on the horizon in any direction. What everybody at sea means when they say they were out.' },
+            { name: 'Salt Reach', kind: 'site', ambient: 'thin', note: 'Shoal water on the western capes where the salt is raked off drying flats a hull can stand into, and where four claims overlap and none of them has ever been enforced for a season.' }
         ],
         exports: [
             'passage, priced in stones per head per day, which is the only thing this province sells that anybody ashore actually wants',
@@ -1539,6 +1602,105 @@ export function getHomeRegion(): Region {
 export function getRegionForFaction(factionId: string): Region | undefined {
     const id = REGION_BY_FACTION.get(factionId);
     return id ? REGION_BY_ID.get(id) : undefined;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE MAP BY BEARING
+//
+// Reading the world as five columns rather than as one list. The arrangement
+// these produce is the answer to a specific complaint - that the lower world
+// map showed a heap of houses with no compass on it - and the numbers are
+// worth having in front of you when you edit a seating list, because the
+// shape of the world is legible in them and is not otherwise legible
+// anywhere:
+//
+//   centre    the Low Fall, and the majority of the catalog, because every
+//             road in the world meets in one gorge and an institution goes
+//             where the traffic is
+//   east      the Wide Field, nine cities, and every body whose business is
+//             a counter: the assay, the auction, the register, the reading
+//             hall, the cutting house
+//   west      the Quiet Marches, the driven ground, and the bodies that work
+//             it or work its edge
+//   north     the White Stair, two courts and nothing else, which is not an
+//             oversight - the province is emptying and two is what is left
+//   south     the water, and three bodies none of which holds a strait
+//
+// The apexes are deliberately NOT one per bearing and `apexSeats` says so
+// plainly rather than leaving a reader to infer a symmetry that is not there.
+// ─────────────────────────────────────────────────────────────────────────
+
+export function regionsByBearing(): Record<Bearing, Region[]> {
+    const out = {
+        centre: [], north: [], east: [], south: [], west: [], interior: []
+    } as Record<Bearing, Region[]>;
+    for (const r of REGIONS) out[r.bearing].push(r);
+    return out;
+}
+
+export function regionAtBearing(bearing: Bearing): Region | undefined {
+    return REGIONS.find(r => r.bearing === bearing);
+}
+
+/** Every seated house, grouped by where on the map it sits. */
+export function factionsByBearing(): Record<Bearing, string[]> {
+    const out = {
+        centre: [], north: [], east: [], south: [], west: [], interior: []
+    } as Record<Bearing, string[]>;
+    for (const r of REGIONS) out[r.bearing].push(...r.factionIds);
+    return out;
+}
+
+export function bearingOfFaction(factionId: string): Bearing | undefined {
+    return getRegionForFaction(factionId)?.bearing;
+}
+
+/**
+ * Where the three apexes actually stand, and the honest statement that they
+ * do not divide the compass between them.
+ *
+ * Two of the three are in the centre and one is in the west, and that is the
+ * arrangement rather than an untidiness: the Deep Survey administers the
+ * arterial system the eleven Low Fall veins branch from, the Pavilion holds
+ * the gorge outright, and the Long Cut holds driven ground of which the Quiet
+ * Marches is one province and not the largest. Nothing seats an apex in the
+ * north or the east, and both absences are load-bearing - the Wide Field is
+ * the province where nobody holds land, and the White Stair is administered
+ * from over a pass by a body seated somewhere else.
+ *
+ * `seatedIn` is null for a body that holds provinces rather than a seat a
+ * province contains, which is two of the three.
+ */
+export function apexSeats(): {
+    apexId: string;
+    name: string;
+    bearing: Bearing;
+    seatedIn: string | null;
+    why: string;
+}[] {
+    return [
+        {
+            apexId: 'apex-deep-survey',
+            name: 'The Deep Survey',
+            bearing: 'centre',
+            seatedIn: null,
+            why: 'It holds the four arterial veins the eleven surveyed ones branch from, and the datum every survey in the province is measured against. Its seat is a vault under the centre and it appears in no province\'s seating list, because a province seats houses and the Survey is what the houses hold from.'
+        },
+        {
+            apexId: 'apex-azure-cloud',
+            name: 'The Azure Cloud Pavilion',
+            bearing: 'centre',
+            seatedIn: HOME_REGION_ID,
+            why: 'The only apex that is also a sect anybody can walk up to, holding the gorge vein at Low Fall outright and on no grant from anyone. It is in the Low Fall seating list because it is genuinely a house in the province as well as a power above it.'
+        },
+        {
+            apexId: 'apex-long-cut',
+            name: 'The Long Cut',
+            bearing: 'west',
+            seatedIn: null,
+            why: 'It administers driven ground face by face, across five provinces of which the Quiet Marches is the nearest and the smallest. It has no client sects, no leases and no vassals, so there is nothing to seat: what it holds is a schedule, and the schedule is worked from a seat built around something that cannot be moved.'
+        }
+    ];
 }
 
 export function getBranchesOf(factionId: string): { region: Region; branch: RegionBranch }[] {
@@ -2680,6 +2842,12 @@ export type Leakage = z.infer<typeof LeakageSchema>;
 export const UngovernedGroundSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
+    /**
+     * Always `interior`, and typed rather than assumed so that the map has a
+     * position for a thing that is in none of the four arms. See
+     * `BearingSchema`.
+     */
+    bearing: z.literal('interior'),
     /** Provinces it touches. It is between them and inside none of them. */
     borderingRegionIds: z.array(z.string()).min(3),
     summary: z.string().min(120),
@@ -2746,6 +2914,7 @@ export const BLOWN_GROUND_ID = 'ungoverned-blown-ground';
 export const THE_BLOWN_GROUND: UngovernedGround = {
     id: BLOWN_GROUND_ID,
     name: 'The Blown Ground',
+    bearing: 'interior',
     borderingRegionIds: [
         HOME_REGION_ID,
         ADJACENT_REGION_ID,
@@ -2866,6 +3035,15 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'Nothing, in person. It posts a standing rate at nine city gates for an unregistered cultivator brought in upright, and this ground is where the unregistered are. The house has never sent anybody in and has no intention of doing so.',
             whyHere:
                 'It is not here. It is the reason a proportion of the people here cannot leave, which is a different kind of presence and is the one that shapes the population.'
+        },
+        {
+            who: 'The Sink Carriers',
+            factionId: 'sect-sink-carriers',
+            holds: 'nothing',
+            doesHere:
+                'Runs water out from the Sink to whatever shows are open, in strings of forty to sixty skins, and takes a share of what comes off the ground it watered rather than a price at the well. It holds neither the water nor the show and could not hold either: the Sink is the one thing on this ground nobody has ever fought over and a show is gone inside nine years, so what the Carriers actually own is a route that has to be rewalked every season and a reputation for arriving.',
+            whyHere:
+                'It is the only ground in the world where carrying water is a trade rather than a chore, because it is the only ground with rich air on it and no well within four days of the air. Everywhere else the two things are in the same place.'
         }
     ],
     howManyNote:
