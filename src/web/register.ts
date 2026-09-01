@@ -54,6 +54,7 @@ import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from '../data/cultivation/immortal-
 import { WANDERERS } from '../data/cultivation/wanderers.js';
 import { MEMBERS } from '../data/cultivation/members.js';
 import { HERBS } from '../data/cultivation/herbs.js';
+import { ARTERIALS, PROVINCES } from '../data/cultivation/regions.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import {
     TECHNIQUES,
@@ -3842,6 +3843,104 @@ function techniqueTables(list: RegisterTechnique[]): string {
 
 
 // ─────────────────────────────────────────────────────────────────────────
+// WHO ADMINISTERS WHOSE GROUND
+//
+// Two facts nobody in the world has written down, both of them ordinary joins
+// between catalogs that already exist. Derived here rather than stored, for the
+// reason the arts tab already gives: the interesting figure is a join and
+// either side of it can move, so the claim should be falsifiable on the page
+// instead of going quietly stale.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Every arterial, the apex whose province it sits in, and who the court that
+ * administers it actually answers to.
+ *
+ * The row that matters is the one where those last two are different houses.
+ * A holding is administered THROUGH a court, courts answer to an apex, and
+ * nothing anywhere requires the two apexes to be the same - so an apex can be
+ * dependent on a rival for the working of its own ground without a single
+ * document saying so, because there is no document that would say it. Neither
+ * house has an interest in writing it down and neither has ever been asked.
+ */
+function groundTable(): string {
+    const apexName = (id: string | null): string =>
+        id === null ? '' : APEX_INSTITUTIONS.find(a => a.id === id)?.name ?? id;
+
+    const rows = ARTERIALS.map(a => {
+        const province = PROVINCES.find(p => p.id === a.provinceId) ?? null;
+        const court = a.administeredByCourtId === null
+            ? null
+            : COURTS.find(c => c.id === a.administeredByCourtId) ?? null;
+        const holder = province ? province.heldByApexId : null;
+        const patron = court ? court.apexId : null;
+        return {
+            arterial: a.name,
+            province: province ? province.name : '(no province)',
+            holder,
+            court: court ? court.name : null,
+            patron,
+            crossed: holder !== null && patron !== null && holder !== patron
+        };
+    });
+
+    const crossed = rows.filter(r => r.crossed);
+
+    return `<div class="scroll"><table class="arts">
+    <caption>Arterials, their holder, and who administers them &middot; ${rows.length}</caption>
+    <thead><tr><th>Arterial</th><th>In</th><th>Held by</th><th>Administered through</th><th>Which answers to</th></tr></thead>
+    <tbody>${rows.map(r => `<tr${r.crossed ? ' class="orphan"' : ''}>`
+        + `<td class="nm">${esc(r.arterial)}</td>`
+        + `<td class="m">${esc(r.province)}</td>`
+        + `<td class="nm">${esc(apexName(r.holder))}</td>`
+        + `<td class="q">${r.court === null
+            ? '<span class="dim">nobody; the holder works it directly</span>'
+            : esc(r.court)}</td>`
+        + `<td class="nm">${r.patron === null
+            ? '<span class="dim">&mdash;</span>'
+            : r.crossed
+                ? `<strong>${esc(apexName(r.patron))}</strong>`
+                : esc(apexName(r.patron))}</td></tr>`).join('')}</tbody></table></div>
+  ${crossed.length === 0
+        ? '<p class="note">Every arterial here is administered through a court answering to the house that holds the ground. Nothing crosses.</p>'
+        : `<p class="note"><strong>${crossed.length === 1 ? 'One arterial is' : `${crossed.length} arterials are`} administered through a court that answers to somebody else.</strong> ${crossed.map(r =>
+            `${esc(r.arterial)} sits in ${esc(r.province)}, which ${esc(apexName(r.holder))} holds, and is run through ${esc(r.court ?? '')} - and ${esc(r.court ?? '')} answers to ${esc(apexName(r.patron))}.`).join(' ')} A holding is administered <em>through</em> a court, courts answer to an apex, and nothing requires the two to be the same house. So an apex can depend on a rival for the working of its own ground, and <strong>no document anywhere says so</strong> - not because it is hidden, but because there is no document whose job it would be, and neither house has ever had a reason to ask for one.</p>`}`;
+}
+
+/**
+ * How much ground each apex actually holds, including the ones holding none.
+ *
+ * The zero is the point. An empty territory list is `heritage: 'recent'` stated
+ * as geography rather than as prose: a house can sit at the top of the power
+ * table and hold no province at all, which says something about how it got
+ * there that no ordinal does.
+ */
+function apexGroundTable(): string {
+    const rows = APEX_INSTITUTIONS
+        .map(apex => ({
+            name: apex.name,
+            provinces: PROVINCES.filter(p => p.heldByApexId === apex.id)
+        }))
+        .sort((a, b) => b.provinces.length - a.provinces.length
+            || a.name.localeCompare(b.name));
+
+    const landless = rows.filter(r => r.provinces.length === 0);
+
+    return `<div class="scroll"><table class="arts">
+    <caption>Provinces held, by house &middot; ${rows.length} houses</caption>
+    <thead><tr><th>House</th><th class="pw">Provinces</th><th>Which</th></tr></thead>
+    <tbody>${rows.map(r => `<tr${r.provinces.length === 0 ? ' class="orphan"' : ''}>`
+        + `<td class="nm">${esc(r.name)}</td>`
+        + `<td class="pw">${r.provinces.length}</td>`
+        + `<td class="q">${r.provinces.length === 0
+            ? '<span class="dim">none at all</span>'
+            : r.provinces.map(p => esc(p.name)).join(', ')}</td></tr>`).join('')}</tbody></table></div>
+  ${landless.length === 0
+        ? ''
+        : `<p class="note"><strong>${landless.map(r => esc(r.name)).join(' and ')} hold${landless.length === 1 ? 's' : ''} no province at all.</strong> Not a small one - none. An empty territory list is a recent heritage stated as geography rather than as prose, and it is the fact the power table cannot show you: a house can stand near the top of it and own no ground, which says how it got there. What such a house has instead is whatever its entry says it has, and every bit of that is the kind of thing that can be taken away in a season.</p>`}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE LAST AGE LEFT, AND WHO IS SITTING ON IT
 //
 // Three ledgers that between them say something no power ordinal says: a house
@@ -3935,12 +4034,15 @@ function medicineTable(): string {
         : ''}</p>`;
 }
 
-/** What the extinctions closed downstream, in recipes, arts and objects. */
+/** What the extinctions closed downstream, and how much is left, and where. */
 function lostMaterialTable(): string {
     const rows = LOST_MATERIALS;
+    const total = rows.reduce((n, r) => n + r.remaining.inArchives + r.remaining.unfound, 0);
+    const unfound = rows.reduce((n, r) => n + r.remaining.unfound, 0);
+
     return `<div class="scroll"><table class="arts">
     <caption>Materials nobody can gather, and what went with them &middot; ${rows.length}</caption>
-    <thead><tr><th>Material</th><th>Recipes</th><th>Arts it feeds</th><th>Objects</th><th>What is left, and where</th></tr></thead>
+    <thead><tr><th>Material</th><th>Recipes</th><th>Arts it feeds</th><th class="pw">In archives</th><th class="pw">Unfound</th><th>Where the unfound are</th></tr></thead>
     <tbody>${rows.map(r => '<tr>'
         + `<td class="nm">${esc(herbNameOf(r.herbId))}</td>`
         + `<td class="m">${r.closedRecipeIds.length
@@ -3949,11 +4051,16 @@ function lostMaterialTable(): string {
         + `<td class="q">${r.gatesTechniqueIds.length
             ? r.gatesTechniqueIds.map(id => esc(techniqueNameOf(id))).join(', ')
             : '<span class="dim">none</span>'}</td>`
-        + `<td class="q">${r.closedObjectKinds.length
-            ? r.closedObjectKinds.map(k => esc(k)).join(', ')
-            : '<span class="dim">none</span>'}</td>`
-        + `<td class="q">${esc(r.remainingStock)}</td></tr>`).join('')}</tbody></table></div>
-  <p class="note">An extinction is not one loss, it is a list. Each row is something nobody can gather any more and everything downstream that closed with it - and what is left is always in an archive and never on a market, which is what makes the houses in the table above worth reading twice.</p>`;
+        + `<td class="pw">${r.remaining.inArchives}</td>`
+        + `<td class="pw">${r.remaining.unfound}</td>`
+        + `<td class="q">${r.remaining.placements.length === 0
+            ? '<span class="dim">nowhere anybody has placed</span>'
+            : r.remaining.placements.map(p =>
+                `<strong>${p.units}</strong> at ${esc(p.siteId)} &mdash; ${esc(p.note)}`).join('<br>')}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note"><strong>${total} units of this material exist in the world, and ${unfound} of them are in ground nobody has opened.</strong> The figure is small on purpose. "Nobody has any" is a wall; a number with placements against it is a search with a destination and an end - and every unit somebody finds is one nobody else can ever have, which is a kind of consequence a world otherwise has to fake. What each row also closed is beside it: an extinction is not one loss, it is a list.</p>
+  ${rows.map(r => `<p class="note"><strong>${esc(herbNameOf(r.herbId))}.</strong> ${esc(r.remaining.whatIsKnownOfTheCount)}${r.closedObjectKinds.length
+        ? ` What can no longer be made with it: ${r.closedObjectKinds.map(k => esc(k)).join('; ')}.`
+        : ''}</p>`).join('')}`;
 }
 
 /** A technique id resolved to what people call it. Falls back to the id, visibly. */
@@ -4771,6 +4878,13 @@ export function renderRegisterHtml(
       return `<p class="note"><strong>${untaught.length} of the ${c.techniques} arts are on no house's teach list</strong>, and ${shownWithNobody.length === 0 ? 'every one of them is a <em>read</em> art' : `${shownWithNobody.length} of them are <em>shown</em> arts, which should not happen`}: the two figures agreeing is what says the catalog is whole. An art nobody teaches is not a hole in the world, it is what makes a grave worth opening - and ${noCopy === 0 ? 'every art below still has a copy somewhere' : `${noCopy} ${noCopy === 1 ? 'art has' : 'arts have'} no surviving copy at all, which is the one state a grave cannot fix`}.</p>`;
   })()}
   ${techniqueQuadrants(reg.techniques)}
+</section>
+
+<section>
+  <div class="sh"><h2>Who administers whose ground</h2><span class="r">${ARTERIALS.length} arterials &middot; ${PROVINCES.length} provinces</span></div>
+  <p class="note">A province is <em>held</em> by an apex and <em>administered through</em> a court, and those are two different relations that the world keeps in two different places. Reading them together is what this section is for, and it produces two facts that nobody in the world has ever written down - not because they are secret, but because no document exists whose job it would be.</p>
+  ${groundTable()}
+  ${apexGroundTable()}
 </section>
 
 <section>
