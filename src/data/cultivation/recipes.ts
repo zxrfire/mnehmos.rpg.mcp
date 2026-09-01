@@ -197,6 +197,30 @@ const RECIPE_DATA: readonly Recipe[] = [
         baseSuccessRate: 0.75,
         requiredOrdinal: 11
     },
+    {
+        // The hardest mortal-grade refinement in the catalog, mirroring the
+        // Grain Abstinence Formula's place at the top of the heaven tier. The
+        // pill that buys a year of not eating should be the last thing a
+        // village alchemist learns to make, not the first - and unlike its
+        // heaven-grade cousin it is `known` rather than `recovered`, because
+        // this one nobody had to dig up. Somebody worked it out from the
+        // reed and the mushroom, which is what a mortal grade means.
+        id: 'recipe-hollow-reed-fasting',
+        name: 'Hollow Reed Fasting Pill Formula',
+        producesPillId: 'pill-hollow-reed-fasting',
+        ingredients: [
+            // Fills the belly for a day raw; "refined properly it does rather
+            // better than that", says the herb's own entry. This is that.
+            { itemId: 'herb-cloudcap-mushroom', quantity: 3 },
+            // The carrier: the stem is empty and holds qi the way a jar holds
+            // water, which is the whole trick of going a year without a meal.
+            { itemId: 'herb-hollow-reed', quantity: 2 },
+            // And the duration. "The wait is the whole product."
+            { itemId: 'herb-thousand-day-root', quantity: 1 }
+        ],
+        baseSuccessRate: 0.75,
+        requiredOrdinal: 8
+    },
 
     // ═══════════════════════════════════════════════════════════════════
     // EARTH - a proper cauldron, a spirit fire, and a real chance of loss

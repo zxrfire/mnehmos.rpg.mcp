@@ -27,6 +27,7 @@ import {
     getTechnique
 } from '../../src/data/cultivation/techniques.js';
 import { houseTeachingCeiling } from '../../src/data/cultivation/index.js';
+import { PILLS, isAdvancement } from '../../src/data/cultivation/pills.js';
 import { SECTS } from '../../src/data/cultivation/sects.js';
 import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
 import {
@@ -299,5 +300,77 @@ describe('the manuals a player can actually reach', () => {
         const top = MANUALS.filter(t => (t.cap ?? MAX_ORDINAL) >= MAX_ORDINAL - 1);
         expect(top.length).toBeGreaterThan(0);
         for (const t of top) expect(t.provenance).not.toBe('taught');
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ADVANCEMENT RULE
+//
+// `docs/world/economy.md`: "Buying advancement always costs more than buying
+// survival. Within a grade, the things that touch progression - breakthrough
+// odds, cultivation progress, lifespan, and freedom from having to eat - sit
+// at the top of both the value and the danger ranges."
+//
+// The rule was being contradicted in two grades by a catalog that was in fact
+// obeying it: the abstinence pills sit at the very top of their grades, above
+// lifespan, and only the doc's ENUMERATION disagreed. See ADVANCEMENT_EFFECTS.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('advancement costs more than survival, in every grade', () => {
+    const GRADES = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'] as const;
+
+    it('puts the cheapest advancement pill above the dearest survival pill', () => {
+        for (const grade of GRADES) {
+            const inGrade = PILLS.filter(p => p.grade === grade);
+            const advancement = inGrade.filter(p => isAdvancement(p.effect));
+            const survival = inGrade.filter(p => !isAdvancement(p.effect));
+            if (advancement.length === 0 || survival.length === 0) continue;
+            const cheapestAdvancement = Math.min(...advancement.map(p => p.value));
+            const dearestSurvival = Math.max(...survival.map(p => p.value));
+            expect(cheapestAdvancement, `${grade}: advancement must top survival`)
+                .toBeGreaterThan(dearestSurvival);
+        }
+    });
+
+    it('classes abstinence as advancement, on the same argument as lifespan', () => {
+        // Lifespan is the plainest survival there is and has always been filed
+        // as advancement, because what it buys is years to cultivate in.
+        // Abstinence is that argument at a shorter horizon.
+        expect(isAdvancement('extend_lifespan')).toBe(true);
+        expect(isAdvancement('grain_abstinence')).toBe(true);
+        // And the line holds where it should: a meal is not a decade.
+        expect(isAdvancement('sate_hunger')).toBe(false);
+        expect(isAdvancement('heal_hp')).toBe(false);
+        expect(isAdvancement('treat_injury')).toBe(false);
+    });
+
+    it('gives the abstinence ladder a rung a poor cultivator can reach', () => {
+        // The heaven-grade pill is ninety-six years of a best-case village
+        // wage for one purchase, against a Qi Condensation lifespan of a
+        // hundred. It is the designed answer to long seclusion and it was the
+        // ONLY answer, which put it out of reach of everybody who needs it.
+        const ladder = PILLS.filter(p => p.effect === 'grain_abstinence')
+            .sort((a, b) => a.value - b.value);
+        expect(ladder.length, 'more than one rung').toBeGreaterThan(1);
+        const bottom = ladder[0];
+        expect(bottom.grade).toBe('mortal');
+        // Reachable: about a year of a villager's savings, not a century of it.
+        expect(bottom.value).toBeLessThan(100);
+        // And it buys real time rather than a gesture.
+        expect(bottom.potency).toBeGreaterThanOrEqual(365);
+        // Assemblable: ten of the bottom rung is a decade, and costs an order
+        // of magnitude less than buying the decade in one swallow.
+        const decade = ladder.find(p => p.potency >= 3_650)!;
+        expect(bottom.value * 10).toBeLessThan(decade.value);
+    });
+
+    it('keeps every abstinence pill at the top of its own grade', () => {
+        // The catalog's own instinct, now asserted: the pill that buys
+        // uninterrupted time is the dearest thing in its tier.
+        for (const pill of PILLS.filter(p => p.effect === 'grain_abstinence')) {
+            const inGrade = PILLS.filter(p => p.grade === pill.grade);
+            expect(pill.value, `${pill.id} tops ${pill.grade}`)
+                .toBe(Math.max(...inGrade.map(p => p.value)));
+        }
     });
 });
