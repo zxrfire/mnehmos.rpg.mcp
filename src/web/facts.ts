@@ -333,7 +333,20 @@ export function factsForTimeSkip(
     after: Cultivator,
     skip: TimeSkipResult,
     ambient: AmbientQi,
-    label = 'Seclusion'
+    label = 'Seclusion',
+    /**
+     * What the PLAYER asked for, where that is not what the skip was given.
+     *
+     * A seclusion can be shortened before it starts - the encounter layer
+     * decides somebody arrives in year two, and the skip is handed the
+     * truncated span. `skip.requestedDays` is then the truncated figure, so
+     * asking for five years and being told "Seclusion of 2 years was intended"
+     * is the engine reporting its own arithmetic as the player's intention.
+     *
+     * Omitted where the two agree, which is every caller that does not
+     * pre-truncate.
+     */
+    askedForDays?: number
 ): EngineFacts {
     const lines: string[] = [];
     const required: string[] = [];
@@ -377,7 +390,7 @@ export function factsForTimeSkip(
         headline: timeSkipHeadline(skip, before, after),
         lines,
         structure: standingStructure(after, ambient),
-        prose: timeSkipProse(before, after, skip, ambient, label),
+        prose: timeSkipProse(before, after, skip, ambient, label, askedForDays),
         required
     };
 }
@@ -437,7 +450,8 @@ function timeSkipProse(
     after: Cultivator,
     skip: TimeSkipResult,
     ambient: AmbientQi,
-    label: string
+    label: string,
+    askedForDays?: number
 ): string {
     const paragraphs: string[] = [];
     const where = placeName(before);
@@ -478,7 +492,21 @@ function timeSkipProse(
                 : ambient === 'dense'
                     ? `${where}. There is a vein under this ground, close enough to feel. ${before.name} sat down on top of it.`
                     : `${where}. ${before.name} sat down and began to breathe.`;
-    paragraphs.push(`${opening} ${label} of ${humanDays(skip.requestedDays)} was intended.`);
+    // What was INTENDED is what the player asked for, not what the engine
+    // decided to run after it had already shortened the span. Asking for five
+    // years and reading "Seclusion of 2 years was intended" is the game telling
+    // somebody their own intention, wrongly, and then never mentioning the
+    // three years it removed - the "you came out early" line below cannot fire,
+    // because both its figures come from the truncated span.
+    const asked = askedForDays ?? skip.requestedDays;
+    paragraphs.push(`${opening} ${label} of ${humanDays(asked)} was intended.`);
+    if (asked > skip.requestedDays) {
+        paragraphs.push(
+            `It was never going to be ${humanDays(asked)}. Something was already coming that `
+            + `would end it at ${humanDays(skip.requestedDays)}, and the door was shut on that `
+            + 'understanding whether or not anybody said so.'
+        );
+    }
 
     if (skip.events.length === 0) {
         paragraphs.push(

@@ -6417,7 +6417,11 @@ ${noticed}`;
 
         const facts = factsForTimeSkip(
             provisioned, applied.cultivator, skip, ambient,
-            sealed ? 'Closed-door seclusion' : 'Seclusion'
+            sealed ? 'Closed-door seclusion' : 'Seclusion',
+            // `lived` was already cut down by the encounter layer before the
+            // skip saw it, so the skip's own idea of what was requested is the
+            // truncated figure. `days` is what the player actually said.
+            days
         );
         facts.lines.unshift(provisioning.line);
 
