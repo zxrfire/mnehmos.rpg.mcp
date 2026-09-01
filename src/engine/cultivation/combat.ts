@@ -66,6 +66,7 @@ import {
     type ImmortalStatus
 } from './realms.js';
 import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
+import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import { blocksAdvancement, brokenStatusOf } from './what-goes-wrong-at-a-realm-boundary.js';
 import { foundationEffect, foundationOf } from './foundation.js';
 import { understandingEffects, type RelevanceContext } from './understanding.js';
@@ -1027,12 +1028,10 @@ export function resolveExchange(
     let injury: Injury | null = null;
     const injuryThreshold = injuryChance(advantage, fraction);
     if (ctx.rng.next() < injuryThreshold) {
+        const severity = exchangeInjurySeverity(advantage, ctx.rng);
+        const source = ctx.attackerEdges?.includes('poison') ? 'poison' : 'combat';
         injury = createInjury(
-            {
-                severity: exchangeInjurySeverity(advantage, ctx.rng),
-                source: ctx.attackerEdges?.includes('poison') ? 'poison' : 'combat',
-                turn: ctx.turn
-            },
+            { severity, source, turn: ctx.turn, woundType: ordinaryWoundFor(source, severity) },
             ctx.rng
         );
     }
@@ -1502,7 +1501,7 @@ function oneSided(
     } else {
         hp[defenderInput.id] = Math.max(1, Math.floor(defenderInput.maxHp * 0.2));
         injuries[defenderInput.id].push(
-            createInjury({ severity: 'serious', source: 'combat', turn: ctx.turn }, ctx.rng)
+            createInjury({ severity: 'serious', source: 'combat', turn: ctx.turn, woundType: ordinaryWoundFor('combat', 'serious') }, ctx.rng)
         );
     }
 
@@ -1656,7 +1655,7 @@ export function attemptFlight(
     // Turning your back on somebody costs something whether or not it works.
     const damage = Math.max(1, Math.round(ctx.maxHp * (escaped ? 0.08 : 0.22)));
     const injury = !escaped && ctx.rng.next() < 0.4
-        ? createInjury({ severity: 'serious', source: 'combat', turn: ctx.turn }, ctx.rng)
+        ? createInjury({ severity: 'serious', source: 'combat', turn: ctx.turn, woundType: ordinaryWoundFor('combat', 'serious') }, ctx.rng)
         : null;
 
     return {
@@ -2332,7 +2331,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
             } else {
                 hp[f.input.id] = Math.max(1, Math.floor(f.input.maxHp * 0.2));
                 injuries[f.input.id].push(
-                    createInjury({ severity: 'serious', source: 'combat', turn: ctx.turn }, ctx.rng)
+                    createInjury({ severity: 'serious', source: 'combat', turn: ctx.turn, woundType: ordinaryWoundFor('combat', 'serious') }, ctx.rng)
                 );
             }
         }

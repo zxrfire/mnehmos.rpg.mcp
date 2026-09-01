@@ -30,6 +30,7 @@ import {
     evaluateDeathConditions,
     forStream,
     rankName,
+    ordinaryWoundFor,
     rollInjurySeverity,
     treatWorstInjury
 } from '../../engine/cultivation/index.js';
@@ -383,12 +384,14 @@ export async function handleConsumePill(
     const poisoned = toxicityAfterRaw >= TOXICITY_TOLERANCE;
     const toxicityAfter = poisoned ? toxicityAfterRaw - TOXICITY_TOLERANCE : toxicityAfterRaw;
     const toxicityRng = forStream(run.seed, 'pill_toxicity', run.turn, pill.id);
+    const poisonSeverity = rollInjurySeverity(toxicityRng);
     const poisonInjury = poisoned
         ? createInjury(
             {
-                severity: rollInjurySeverity(toxicityRng),
+                severity: poisonSeverity,
                 source: 'poison',
                 turn: nextTurn,
+                woundType: ordinaryWoundFor('poison', poisonSeverity),
                 description: `Accumulated pill toxicity finally told. ${pill.name} was one too many.`
             },
             toxicityRng

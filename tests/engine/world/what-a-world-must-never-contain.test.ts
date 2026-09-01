@@ -14,6 +14,8 @@
  *   TIES RESOLVE      a relationship whose target is nobody the world holds, and
  *                     a renderer that reads the dead as if they were living.
  *   FACTS FIND PEOPLE a killing recoverable only from a string on the corpse.
+ *   TYPED WOUNDS      two thirds of everything anybody carried was a wound with
+ *                     no name and a description composed out of two enums.
  *
  * Run against a seeded world and against one that has been advanced, because
  * seeding and advancement write these fields through completely different code
@@ -27,6 +29,8 @@ import { advanceWorldYears } from '../../../src/engine/world/driver.js';
 import { markDead, setExistence } from '../../../src/engine/world/npc-state.js';
 import { expelsOrdinal } from '../../../src/engine/world/layers.js';
 import { readTies } from '../../../src/engine/world/reading-a-tie-against-the-roster.js';
+import { ordinaryWoundFor } from '../../../src/engine/cultivation/which-wound-an-ordinary-injury-is.js';
+import { getWoundType } from '../../../src/data/cultivation/wounds.js';
 import {
     continuityCeilingFor,
     reconcileSoulAndSelf,
@@ -188,6 +192,42 @@ describe('a world must never contain', () => {
             }
         }
         expect(orphaned).toEqual([]);
+    });
+
+    it('a wound nobody can name', () => {
+        // Two thirds of everything anybody was carrying used to be a row with
+        // `woundType: null` and a description composed out of two enums. Every
+        // one of those was a real minted injury from a real event - not a
+        // fabrication from a count - which the engine knew everything about
+        // except what to call it.
+        const state = advanced();
+        const untyped: string[] = [];
+        for (const npc of state.npcs) {
+            for (const injury of npc.cultivation.injuries) {
+                if (!injury.woundType) untyped.push(`${npc.name}: ${injury.severity} ${injury.source}`);
+                else if (!getWoundType(injury.woundType)) {
+                    untyped.push(`${npc.name}: unknown key ${injury.woundType}`);
+                }
+            }
+        }
+        expect(untyped.slice(0, 5)).toEqual([]);
+    });
+
+    it('a bar-room brawl that hands out a permanent maiming', () => {
+        // The default must never reach the permanent band or the broken
+        // statuses. Those are outcomes something DECIDED, and a default that
+        // could produce one would let ordinary combat produce the population
+        // the crossing-failure table exists to produce.
+        for (const source of ['combat', 'qi_deviation', 'tribulation', 'poison',
+            'backlash', 'failed_breakthrough', 'other'] as const) {
+            for (const severity of ['minor', 'serious', 'crippling'] as const) {
+                const key = ordinaryWoundFor(source, severity);
+                const row = getWoundType(key);
+                expect(row, `${source}/${severity} names ${key}`).not.toBeNull();
+                expect(row!.permanent, `${source}/${severity} -> ${key}`).toBe(false);
+                expect(row!.severities, `${source}/${severity} -> ${key}`).toContain(severity);
+            }
+        }
     });
 
     it('a tie pointing at somebody the world does not hold', () => {
