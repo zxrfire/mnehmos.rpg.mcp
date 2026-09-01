@@ -89,6 +89,7 @@ import {
     type CultivationOptions
 } from './cultivation.js';
 import { attemptBreakthrough, canAttemptBreakthrough } from './breakthrough.js';
+import type { RoadWithinReach } from './what-a-road-in-reach-costs-to-walk.js';
 import type { FoundationConditions } from './foundation.js';
 import type { TollConditions } from './toll.js';
 import {
@@ -328,6 +329,22 @@ export interface TimeSkipContext {
      */
     understanding?: Omit<DiscoveryContext, 'survived'>;
     /**
+     * Roads the WORLD has put within this cultivator's reach - ground they can
+     * stand on, a carving they can read, a spent material, an object fit for
+     * their path. Not the arts in their hands: the gate reads those off
+     * `knownTechniques` itself, for a player and an NPC alike.
+     *
+     * The caller supplies it because the engine holds no map, exactly as
+     * `understanding` and `thresholds` are supplied. `discoveryContextFor` in
+     * `server/consolidated/cultivation-support.ts` builds it from the same rows
+     * it builds `daoGrounds` from, so the thing a player can COMPREHEND at a
+     * place and the thing that place lets them WALK cannot disagree.
+     *
+     * Omitted means the world put nothing in reach, which is the honest answer
+     * for a caller with no world and the right one for a test harness.
+     */
+    roadsWithinReach?: readonly RoadWithinReach[];
+    /**
      * What standing here does to a body that has no business being here.
      *
      * The four location thresholds - entry, survival, operational, mastery -
@@ -540,6 +557,18 @@ export function simulateTimeSkip(
         attributes: cultivator.attributes,
         foundationQuality: foundation,
         insights,
+        // THE TWO FIELDS THE DAO GATE READS BESIDES `insights`, and they have
+        // to travel with every subject built in this file or the player is
+        // back on a rule of their own. Comprehension is no longer only what
+        // survived something: an art practised for years and ground stood on
+        // for years walk a road too, by the same function the world layer
+        // asks - see `what-a-road-in-reach-costs-to-walk.ts`. Before this the
+        // player's list held only event-formed insights, which measured
+        // between 0.6% and 3.4% a year, and every completed playtest run
+        // ended with `insights: []` while every NPC was handed one per art at
+        // birth.
+        knownTechniques: cultivator.knownTechniques,
+        roadsWithinReach: ctx.roadsWithinReach ?? [],
         immortalStatus,
         name: cultivator.name,
         injuries,
@@ -658,6 +687,10 @@ export function simulateTimeSkip(
                     alive: true,
                     spiritRoot: cultivator.spiritRoot,
                     insights,
+                    // See `snapshot` - the gate reads all three of these.
+                    knownTechniques: cultivator.knownTechniques,
+                    roadsWithinReach: ctx.roadsWithinReach ?? [],
+                    age: currentAge(),
                     // A False Immortal is refused here for the rest of the
                     // skip, so the loop stops re-attempting the last crossing.
                     immortalStatus
@@ -1012,6 +1045,9 @@ export function simulateTimeSkip(
                         cultivationProgress: progress,
                         spiritRoot: cultivator.spiritRoot,
                         insights,
+                        knownTechniques: cultivator.knownTechniques,
+                        roadsWithinReach: ctx.roadsWithinReach ?? [],
+                        age: currentAge(),
                         alive: true
                     }).eligible
                 }

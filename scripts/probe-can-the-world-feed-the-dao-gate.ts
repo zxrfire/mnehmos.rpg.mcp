@@ -46,7 +46,11 @@ import {
     roadsInReachOf,
     DAO_GROUND_TAG
 } from '../src/engine/world/how-a-cultivator-comes-by-a-road.js';
-import { roadsWalkedBy } from '../src/engine/world/an-npc-striking-at-the-next-wall.js';
+import { ageOf } from '../src/engine/world/an-npc-striking-at-the-next-wall.js';
+import {
+    roadsTaughtByPractice,
+    roadsWalkedBy
+} from '../src/engine/cultivation/what-a-road-in-reach-costs-to-walk.js';
 import { isUnspent } from '../src/engine/world/single-use-dao-comprehension-materials.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 
@@ -114,8 +118,16 @@ function measure(state: WorldState, seededIds: Set<string>, rows: Row[]): void {
         const at = BANDS.findIndex(b => ordinal >= b.lo && ordinal <= b.hi);
         if (at < 0) continue;
         const row = rows[at];
-        const roads = roadsInReachOf(state, npc);
-        const held = roadsWalked(roads);
+        // THE ONE RULE, asked exactly the way the wall asks it: the arts in
+        // their hands plus what the world put in reach, charged against the
+        // years they have actually been cultivating. Counting the reach list
+        // itself - which this probe used to do - reports roads nobody has paid
+        // for yet.
+        const held = roadsWalked(roadsWalkedBy({
+            knownTechniques: npc.cultivation.techniqueIds,
+            roadsWithinReach: roadsInReachOf(state, npc),
+            age: ageOf(npc, state.currentDay)
+        }));
         // The requirement they will meet at the TOP of their band, which is the
         // wall between this band and the next one.
         const needed = daoRequirementCurve(BANDS[at].hi);
@@ -123,7 +135,7 @@ function measure(state: WorldState, seededIds: Set<string>, rows: Row[]): void {
         row.roads += held;
         if (held >= needed) row.pass++;
         if (!seededIds.has(npc.id)) row.arrived++;
-        row.fromPractice += roadsWalked(roadsWalkedBy(npc));
+        row.fromPractice += roadsTaughtByPractice(npc.cultivation.techniqueIds).length;
         row.fromGround += daoGroundsInReachOf(state, npc).length;
         row.fromMaterial += roadsBoughtWithMaterialsBy(state, npc.id).length;
         for (let k = 1; k <= 8; k++) if (held >= k) row.atLeast[k]++;

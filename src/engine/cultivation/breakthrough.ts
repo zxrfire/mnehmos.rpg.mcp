@@ -70,6 +70,11 @@ import {
     type RealmKey
 } from './realms.js';
 import { getSpiritRoot, type SpiritRootGrade } from './spirit-roots.js';
+import {
+    roadsWalkedBy,
+    type RoadBearer,
+    type RoadWithinReach
+} from './what-a-road-in-reach-costs-to-walk.js';
 import { getWoundType } from '../../data/cultivation/wounds.js';
 import { readManual } from './manual-quality.js';
 import { ambientBreakthroughMod } from './ambient.js';
@@ -1048,6 +1053,40 @@ export function roadsWalked(insights: readonly Insight[] | undefined): number {
 }
 
 /**
+ * What the gate ACTUALLY asks, for anybody: comprehension that happened, plus
+ * whatever access and years between them have paid for.
+ *
+ * ── THE ASYMMETRY THIS REPLACES ──────────────────────────────────────────
+ *
+ * `roadsWalked` above counts a finished list, and until this function existed
+ * the two sides of the wall filled that list by rules that had nothing in
+ * common. A player's list held only insights formed by surviving something -
+ * measured at between 0.6% and 3.4% a year, so one road per 35 years at the
+ * absolute best and none at all in every completed playtest run. An NPC's list
+ * was SYNTHESISED at the moment of asking: one road per art held, dated to the
+ * day they were born, plus one for every dao ground they could get at and every
+ * material ever spent on them, none of it charged for. Standing in Nascent Soul
+ * at 800 years an NPC held 2.09 roads and a player held none.
+ *
+ * There is now one rule and it is in
+ * `what-a-road-in-reach-costs-to-walk.ts`: access puts a road in reach, years
+ * of practice are what walk it, and an insight that actually happened counts
+ * free because the event was the price. Both sides hand this the same two
+ * fields. Neither has a path of its own any more.
+ *
+ * The caller supplies `roadsWithinReach` from wherever their world lives - a
+ * SQLite row for a player, `WorldState` for everybody else. Omitting it is
+ * legitimate and means "nothing is in reach", which is the right answer for an
+ * odds harness and for a subject built without a world to look at.
+ */
+export function roadsWalkedIncludingExposure(
+    bearer: RoadBearer,
+    bornOnDay = 0
+): number {
+    return roadsWalked(roadsWalkedBy(bearer, bornOnDay));
+}
+
+/**
  * Roads besides their own that a cultivator must hold to attempt this rung.
  *
  * ── WHERE IT STARTS ──────────────────────────────────────────────────────
@@ -1179,10 +1218,28 @@ export interface EligibilityCheck {
  */
 export function canAttemptBreakthrough(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'alive'> &
-        Partial<Pick<Cultivator, 'immortalStatus' | 'spiritRoot' | 'insights' | 'injuries'>>,
+        Partial<Pick<
+            Cultivator,
+            'immortalStatus' | 'spiritRoot' | 'insights' | 'injuries' | 'age' | 'knownTechniques'
+        >> & {
+            /**
+             * Roads access has put in reach and that years have not yet paid
+             * for. THE FIELD THAT MAKES THE GATE ONE RULE - see
+             * `roadsWalkedIncludingExposure`. Supplied by whichever adapter
+             * can see this person's world; absent means nothing is in reach,
+             * which is the honest answer for an odds harness.
+             */
+            roadsWithinReach?: readonly RoadWithinReach[];
+        },
     ctx: Pick<BreakthroughContext, 'ranksGainedThisTurn' | 'relevance'> = {}
 ): EligibilityCheck {
     const required = progressRequiredForOrdinal(cultivator.realmOrdinal);
+    // ONE RULE, BOTH SIDES, and it is computed once and then read three times
+    // below. Not `cultivator.insights`: that is only comprehension that has
+    // already HAPPENED, which a player could reach at between 0.6% and 3.4% a
+    // year and which the world layer got round by synthesising an insight per
+    // art held, at birth, free. See `roadsWalkedIncludingExposure`.
+    const comprehension = roadsWalkedBy(cultivator);
     // Understanding stands in for accumulation at a bottleneck. A caller that
     // has no root to hand (an NPC stub) simply gets no substitution rather
     // than an error - the effect is opt-in by having the data, never assumed.
@@ -1190,12 +1247,13 @@ export function canAttemptBreakthrough(
         cultivator.spiritRoot === undefined
             ? { substituted: 0 }
             : bottleneckSubstitution(
-                  cultivator as Parameters<typeof bottleneckSubstitution>[0],
+                  { ...cultivator, insights: comprehension } as
+                      Parameters<typeof bottleneckSubstitution>[0],
                   ctx.relevance
               );
     const available = cultivator.cultivationProgress + substitution.substituted;
     const daoRequired = daoRequirementFor(cultivator.realmOrdinal);
-    const daoHeld = roadsWalked(cultivator.insights);
+    const daoHeld = roadsWalked(comprehension);
     const base = {
         progressRequired: required,
         progressAvailable: available,
@@ -1415,7 +1473,11 @@ export function overflowBonus(ordinal: number, cultivationProgress?: number): nu
  */
 export function computeBreakthroughOdds(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'spiritRoot' | 'attributes' | 'injuries'> &
-        Partial<Pick<Cultivator, 'foundationQuality' | 'insights' | 'age' | 'cultivationProgress'>>,
+        Partial<Pick<
+            Cultivator,
+            'foundationQuality' | 'insights' | 'age' | 'cultivationProgress' | 'knownTechniques'
+        >>
+        & { roadsWithinReach?: readonly RoadWithinReach[] },
     ctx: Pick<BreakthroughContext, 'ambient' | 'pill' | 'manualQuality'>
         & { relevance?: Partial<RelevanceContext> }
 ): BreakthroughOdds {
@@ -1425,7 +1487,14 @@ export function computeBreakthroughOdds(
     const injuries = aggregateInjuryPenalties(cultivator.injuries ?? []);
     const foundation = foundationOf(cultivator);
     const tempering = scarTempering(cultivator.injuries ?? []);
-    const understanding = understandingEffects(cultivator.insights ?? [], {
+    // The same merged list the gate counts, for the same reason. A road walked
+    // by standing somewhere for forty years is comprehension at the shallowest
+    // degree, and the odds have always priced degree - so reading only
+    // `insights` here would have paid a player nothing for the exposure the
+    // gate had just accepted, and would have quietly taken the odds bonus away
+    // from every NPC in the world, who used to get it off insights this layer
+    // synthesised for them at birth.
+    const understanding = understandingEffects(roadsWalkedBy(cultivator), {
         rootElements: getSpiritRoot(cultivator.spiritRoot).elements,
         techniqueElement: ctx.relevance?.techniqueElement ?? null,
         techniqueSubject: ctx.relevance?.techniqueSubject ?? null
@@ -1618,7 +1687,13 @@ export function computeBreakthroughOdds(
 export type BreakthroughSubject = Pick<
     Cultivator,
     'realmOrdinal' | 'cultivationProgress' | 'spiritRoot' | 'attributes' | 'injuries' | 'alive'
-> & Partial<Pick<Cultivator, 'foundationQuality' | 'name' | 'insights' | 'immortalStatus' | 'age'>>;
+> & Partial<Pick<
+    Cultivator,
+    'foundationQuality' | 'name' | 'insights' | 'immortalStatus' | 'age' | 'knownTechniques'
+>>
+    // What the world put in reach. Carried through to the gate and the odds by
+    // the same rule that answers for an NPC. See `roadsWalkedIncludingExposure`.
+    & { roadsWithinReach?: readonly RoadWithinReach[] };
 
 export function attemptBreakthrough(
     cultivator: BreakthroughSubject,
