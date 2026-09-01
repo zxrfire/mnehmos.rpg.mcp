@@ -45,7 +45,14 @@ import {
     SOUTH_REGION_ID,
     RUIN_NAMES,
     SCAR_NAMES,
-    GeneratedPlaceNameSchema
+    GeneratedPlaceNameSchema,
+    UNGOVERNED_GROUND,
+    UngovernedGroundSchema,
+    THE_BLOWN_GROUND,
+    BLOWN_GROUND_ID,
+    ungovernedGroundBordering,
+    leakageInto,
+    canAdvanceOnUngoverned
 } from '../../src/data/cultivation/regions.js';
 import {
     TRADITIONS,
@@ -338,6 +345,152 @@ describe('regions', () => {
         // Every one of the five naming sources is actually used.
         const sources = new Set([...RUIN_NAMES, ...SCAR_NAMES].map(e => e.source));
         expect(sources.size).toBe(5);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+describe('ungoverned ground is not a sixth province', () => {
+    it('is a different kind of object, and stays out of the spine', () => {
+        expect(UNGOVERNED_GROUND.length).toBeGreaterThanOrEqual(1);
+        for (const g of UNGOVERNED_GROUND) {
+            expect(() => UngovernedGroundSchema.parse(g), g.id).not.toThrow();
+            // It is between provinces and inside none of them.
+            expect(REGIONS.some(r => r.id === g.id), `${g.id} is in the spine`).toBe(false);
+            expect(getRegion(g.id), `${g.id} resolves as a region`).toBeUndefined();
+            for (const id of g.borderingRegionIds) {
+                expect(getRegion(id), `${g.id} borders unknown ${id}`).toBeDefined();
+            }
+            // A vacuum with two borders is a corridor. It has to touch enough
+            // of the world for the leak to be everybody's problem.
+            expect(g.borderingRegionIds.length).toBeGreaterThanOrEqual(3);
+            expect(new Set(g.borderingRegionIds).size).toBe(g.borderingRegionIds.length);
+            // And every border it claims is a border it accounts for.
+            for (const id of g.borderingRegionIds) {
+                expect(leakageInto(g.id, id), `${g.id} leaks into ${id} for free`).toBeDefined();
+            }
+        }
+        // The spine is still five, and the ground did not become one of them.
+        expect(REGIONS.length).toBe(5);
+        expect(ungovernedGroundBordering(HOME_REGION_ID).map(g => g.id))
+            .toContain(BLOWN_GROUND_ID);
+        expect(ungovernedGroundBordering('region-does-not-exist')).toEqual([]);
+    });
+
+    it('is unholdable for a reason that is not the sea\'s reason', () => {
+        const sand = THE_BLOWN_GROUND;
+        const sea = getRegion(SOUTH_REGION_ID)!;
+        // The water is ungoverned by subtraction: nothing there, lowest
+        // ceiling in the world, worst air in the world. If the sand reads the
+        // same way it is the sea with sand in it, which is the failure this
+        // object exists to avoid.
+        expect(sea.localCeilingOrdinal).toBeLessThan(sand.ceilingOrdinal);
+        expect(sea.cultivation.ambientRateMultiplier).toBeLessThan(sand.ambientRateMultiplier);
+        // Above both of the provinces anybody calls poor: poverty is not what
+        // is wrong with it. The ceilings are 46, 38, 36, 6 and 2, so this is
+        // two rather than three - the prose in `regions.ts` said three and was
+        // corrected against this line.
+        expect(REGIONS.filter(r => r.localCeilingOrdinal < sand.ceilingOrdinal).length)
+            .toBeGreaterThanOrEqual(2);
+        expect(sand.ceilingOrdinal).toBeGreaterThan(getRegion(ADJACENT_REGION_ID)!.localCeilingOrdinal);
+        // Rich ground, unowned. The best band in the world by share, and the
+        // least ordinary ground of any land in the world.
+        for (const r of REGIONS) {
+            expect(sand.ambientProfile.spirit_tide ?? 0,
+                `${r.id} has more tide than the unowned ground`)
+                .toBeGreaterThanOrEqual(r.ambientProfile.spirit_tide ?? 0);
+        }
+        // No local method, so no modifier. The only other 1 in the world is
+        // the Low Fall's, and the two places are nothing alike.
+        expect(sand.ambientRateMultiplier).toBe(1);
+        const ones = REGIONS.filter(r => r.cultivation.ambientRateMultiplier === 1);
+        expect(ones.length).toBe(1);
+        expect(ones[0].id).toBe(HOME_REGION_ID);
+        // The two accounts must actually be written and must differ.
+        expect(sand.whyItCannotBeHeld).not.toBe(sand.andWhyThatIsNotTheSeasReason);
+        expect(sand.andWhyThatIsNotTheSeasReason).toMatch(/Drowned Reach|water|sea/i);
+        // The mechanism is the term of the instrument, not strength.
+        expect(sand.theShows.againstTheGrantCycle).toMatch(/twelve/i);
+    });
+
+    it('is possible to fix, and priced, and declined', () => {
+        const why = THE_BLOWN_GROUND.whyNobodyFixesIt;
+        // "Nobody could" is the sea's answer and is not available here. The
+        // whole doctrine depends on this being a decision.
+        expect(why.whatOrderWouldTake.length).toBeGreaterThan(80);
+        expect(why.whatItWouldCost.length).toBeGreaterThan(200);
+        expect(why.whatItWouldReturn.length).toBeGreaterThan(80);
+        // Two reasons, held by different parties, one of them unstated.
+        expect(why.theInterestedReason).not.toBe(why.whatItWouldCost);
+        expect(why.whoBelievesWhich).toMatch(/Wide Field|Low Fall|Marches/);
+        // And the payoff: the vacuum is what makes the comparison a comparison.
+        expect(THE_BLOWN_GROUND.whatItMakesTrue.length).toBeGreaterThan(150);
+    });
+
+    it('is full of people, and none of them hold it', () => {
+        const sand = THE_BLOWN_GROUND;
+        expect(sand.whoIsOnIt.length).toBeGreaterThanOrEqual(5);
+        for (const person of sand.whoIsOnIt) {
+            expect(person.holds, `${person.who} holds something`).toBe('nothing');
+            if (person.factionId) {
+                expect(getSect(person.factionId) ?? getDaoHouse(person.factionId),
+                    `${person.who} is a house nobody has heard of`).toBeDefined();
+            }
+        }
+        // Somebody unaffiliated has to be here, and somebody institutional,
+        // or it is either a wilderness or a province with the label filed off.
+        expect(sand.whoIsOnIt.some(p => p.factionId === null)).toBe(true);
+        expect(sand.whoIsOnIt.some(p => p.factionId !== null)).toBe(true);
+        // No house may be seated here. Being present is not holding, and the
+        // seating lists in REGIONS are where holding is recorded.
+        const seated = new Set(REGIONS.flatMap(r => r.factionIds));
+        for (const person of sand.whoIsOnIt) {
+            if (!person.factionId) continue;
+            expect(seated.has(person.factionId),
+                `${person.factionId} is present here and must be seated elsewhere`).toBe(true);
+        }
+    });
+
+    it('has a road that is shorter than the one everybody uses', () => {
+        const route = THE_BLOWN_GROUND.theRouteNobodyTakes;
+        expect(getRegion(route.fromRegionId)).toBeDefined();
+        expect(getRegion(route.toRegionId)).toBeDefined();
+        expect(route.directDays).toBeLessThan(route.throughTheCentreDays);
+        // And the long way must actually be the sum of the two legs through
+        // the centre, or the eight days saved are a number somebody made up.
+        const leg = (from: string, to: string): number =>
+            getRegion(from)!.connections.find(c => c.otherRegionId === to)!.travelDays;
+        expect(route.throughTheCentreDays)
+            .toBe(leg(route.fromRegionId, HOME_REGION_ID) + leg(HOME_REGION_ID, route.toRegionId));
+    });
+
+    it('passes the three-things test against every province', () => {
+        const sand = THE_BLOWN_GROUND;
+        expect(sand.trueHereFalseThere.length).toBeGreaterThanOrEqual(3);
+        expect(new Set(sand.trueHereFalseThere).size).toBe(sand.trueHereFalseThere.length);
+        expect(sand.crossingNotes.length).toBeGreaterThanOrEqual(4);
+        expect(sand.derivations.length).toBeGreaterThanOrEqual(4);
+        // The register and customs must not be copied off a province, or the
+        // place is scenery with a different colour.
+        for (const r of REGIONS) {
+            expect(sand.register.sound).not.toBe(r.register.sound);
+            expect(sand.customs.death).not.toBe(r.customs.death);
+            expect(sand.customs.threatModel).not.toBe(r.customs.threatModel);
+            expect(sand.governingFact).not.toBe(r.governingFact);
+        }
+        // Place names must not collide with a province's, which would put two
+        // different places in front of a narrator under one word.
+        const authored = new Set(REGIONS.flatMap(r => r.places.map(p => p.name.toLowerCase())));
+        for (const p of sand.places) expect(authored.has(p.name.toLowerCase()), p.name).toBe(false);
+        const generated = new Set([...RUIN_NAMES, ...SCAR_NAMES].map(e => e.name.toLowerCase()));
+        for (const p of sand.places) expect(generated.has(p.name.toLowerCase()), p.name).toBe(false);
+    });
+
+    it('reads its ceiling the same way a province does', () => {
+        expect(canAdvanceOnUngoverned(BLOWN_GROUND_ID, 27)).toBe(true);
+        expect(canAdvanceOnUngoverned(BLOWN_GROUND_ID, 28)).toBe(false);
+        expect(canAdvanceOnUngoverned('nowhere', 0)).toBe(false);
+        expect(leakageInto(BLOWN_GROUND_ID, 'region-does-not-exist')).toBeUndefined();
+        expect(leakageInto('nowhere', HOME_REGION_ID)).toBeUndefined();
     });
 });
 
