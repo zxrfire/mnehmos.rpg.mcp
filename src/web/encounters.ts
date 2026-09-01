@@ -343,6 +343,66 @@ export function daysActuallySpent(roll: EncounterRoll, startDay: number, request
 }
 
 /**
+ * The roll, cut down to the days that were actually LIVED.
+ *
+ * There are two truncations in a seclusion and only one of them was being
+ * applied. `rollEncounters` cuts its own window at its own first interrupt, and
+ * `daysActuallySpent` reads that day - but then `simulateTimeSkip` runs and
+ * stops WHERE IT LIKES: a wound, a deviation threshold, a major encounter of
+ * its own, a death. Everything between the day the skip stopped and the day the
+ * encounter layer expected to stop is a span the cultivator never reached, and
+ * every occurrence sitting in it was being recorded, narrated, and consumed off
+ * the pending-arrivals list anyway.
+ *
+ * Three independent playtests found it, at three different scales:
+ *
+ *     broke at day 163   ...  contact filed at day 853
+ *                             plague at day 2983, marked INTERRUPTS
+ *     seclusion 1 year   ...  a combat narrated at day 7590, for a 17-year-old
+ *     died on day 5      ...  a mission board read at day 2995
+ *
+ * A dead cultivator reading a notice board 2,990 days after their own funeral
+ * is the clearest statement of the bug there is.
+ *
+ * Legal because every roll in `window.ts` is keyed to an ABSOLUTE day - its own
+ * header says a caller may compute a window and re-cut it without any surviving
+ * day changing what it was going to produce. So this drops; it never re-rolls.
+ */
+export function cutTo(roll: EncounterRoll, startDay: number, lived: number): EncounterRoll {
+    const lastDay = Math.floor(startDay) + Math.max(0, Math.floor(lived));
+    const kept = roll.occurrences.filter(o => o.absoluteDay <= lastDay);
+    if (kept.length === roll.occurrences.length) return roll;
+
+    const interrupt = kept.find(o => o.interrupts) ?? null;
+    return {
+        ...roll,
+        occurrences: kept,
+        firstInterruptDay: interrupt ? interrupt.absoluteDay : null
+    };
+}
+
+/**
+ * What the occurrences this roll no longer contains had already been credited.
+ *
+ * `withEncounterDeltas` is applied BEFORE the skip, because the skip needs a
+ * starting HP - so by the time the lived span is known, the deltas of things
+ * that never happened are already folded in. Returning them lets the caller
+ * hand them back rather than leaving the sheet disagreeing with the account the
+ * player just read.
+ */
+export function deltasDroppedBy(full: EncounterRoll, cut: EncounterRoll): { hp: number; spiritStones: number } {
+    const survived = new Set(cut.occurrences.map(o => o.id));
+    let hp = 0;
+    let spiritStones = 0;
+    for (const occurrence of full.occurrences) {
+        if (survived.has(occurrence.id)) continue;
+        hp += occurrence.deltas.hp;
+        spiritStones += occurrence.deltas.spiritStones;
+    }
+    return { hp, spiritStones };
+}
+
+/**
  * Fold what the engine settled on its own into the cultivator.
  *
  * Only non-interrupting occurrences carry deltas - an interruption is a
@@ -478,18 +538,46 @@ export function recordEncounters(
  * Shaped for `ToolCallRecord` without importing it, because `game.ts` imports
  * this module and a value import back the other way would be a cycle.
  */
-export function encounterCalls(roll: EncounterRoll, verb: string): {
+export function encounterCalls(
+    roll: EncounterRoll,
+    verb: string,
+    /**
+     * The roll before {@link cutTo}, when the caller made one.
+     *
+     * The inspector reports what HAPPENED, which is why the cut roll is what
+     * gets mapped - an occurrence dated after the stretch ended is not a thing
+     * the engine did, and printing it there is how the defect was found in the
+     * first place. But a roll that produced six things and lived none of them
+     * still happened, and a developer reading an empty inspector cannot tell
+     * that from a roll that was never made. So the drop gets a row of its own.
+     */
+    rolled?: EncounterRoll
+): {
     name: string;
     action: string;
     summary: string;
     ok: boolean;
 }[] {
-    return roll.occurrences.map(o => ({
+    const rows = roll.occurrences.map(o => ({
         name: 'encounters.rollEncounters',
         action: verb,
         summary: o.event.summary,
         ok: true
     }));
+
+    const dropped = rolled ? rolled.occurrences.length - roll.occurrences.length : 0;
+    if (dropped > 0) {
+        rows.push({
+            name: 'encounters.rollEncounters',
+            action: verb,
+            summary:
+                `The window was rolled and ${dropped} of its ${rolled!.occurrences.length} `
+                + 'occurrence(s) fell after the day the stretch actually ended. They did not '
+                + 'happen and are not reported: the skip stopped before them.',
+            ok: true
+        });
+    }
+    return rows;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
