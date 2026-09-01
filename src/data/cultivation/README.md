@@ -37,6 +37,7 @@ contract and the tests are the validator.
 | `catastrophe.ts` | What a disaster can end, who answers it, and who pays | A catastrophe destroys a sect or a court and cannot reach an apex head. What it costs is paid by the people with the least, and the elders walk out |
 | `standoff.ts` | The top of the world, and whether it can be moved | One argument in several parts: the margin, the stall, the conspiracy, the revolt, and why none of it happens. Nothing here decides a fight - every figure is measured by the resolver and the prose yields when it disagrees |
 | `crossings.ts` | Who crossed, who still answers, and what comes back down | `count` is not a roster: every crossing is on a `roll`, titled, even where the name is withheld. An ascended ancestor who might answer is a deterrent whose willingness nobody can verify |
+| `structural-repair-medicine.ts` | The four medicines that mend a cultivator who crossed and arrived broken, and who is holding them | Grade is a CEILING, not a band: nothing refined below the Lid reaches a break above the end of Deity Transformation, and nothing anywhere reaches the crossing into Tribulation Transcendence. The sent-down grade's count is fixed and only falls |
 | `index.ts` | Barrel export and cross-catalog lookups | All lookups O(1) against prebuilt Maps; provenance always available |
 
 Do not hardcode entry counts anywhere. The catalogs grow, and a number written into prose

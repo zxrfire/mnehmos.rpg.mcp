@@ -225,6 +225,7 @@ export * from './named-figures.js';
 export * from './inheritance-trials.js';
 export * from './lost-ages.js';
 export * from './rumours-and-what-they-get-wrong.js';
+export * from './structural-repair-medicine.js';
 
 export {
     ENCOUNTERS,

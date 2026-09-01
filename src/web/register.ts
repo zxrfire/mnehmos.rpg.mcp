@@ -51,6 +51,13 @@ import {
 import { ARTIFACTS, artifactsOwnedBy } from '../data/cultivation/artifacts.js';
 import { IMMORTAL_CHANNELS, LINEAGE_STANDINGS } from '../data/cultivation/crossings.js';
 import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from '../data/cultivation/immortal-items.js';
+// Built and rendered in its own module, so adding the section to the sheet is
+// one call rather than an edit inside this file. See its header.
+import {
+    buildRepairMedicineRegister,
+    renderRepairMedicineSection,
+    type RegisterRepairMedicine
+} from './register-structural-repair-medicine.js';
 import { WANDERERS } from '../data/cultivation/wanderers.js';
 import { MEMBERS } from '../data/cultivation/members.js';
 import { rollOf } from '../data/cultivation/faction-roll.js';
@@ -1397,6 +1404,12 @@ export interface WorldRegister {
         /** Arts no house in the world will hand over. Not a fault; a fact. */
         untaughtTechniques: number;
     };
+    /**
+     * The medicine that mends a cultivator who crossed and arrived broken,
+     * and - the figure this section exists for - how many sent-down doses are
+     * left. Nobody below the Lid can make another, so that number only falls.
+     */
+    repairMedicine: RegisterRepairMedicine;
     ladder: { key: string; name: string; start: number; end: number }[];
     apexes: RegisterApex[];
     rows: RegisterRow[];
@@ -4070,6 +4083,7 @@ export function buildRegister(): WorldRegister {
             techniques: techniques.length,
             untaughtTechniques: techniques.filter(t => t.taughtBy.length === 0).length
         },
+        repairMedicine: buildRepairMedicineRegister(),
         ladder: REALM_TIERS.map(t => ({
             key: t.key, name: t.name, start: t.ordinalStart, end: t.ordinalEnd
         })),
@@ -6467,6 +6481,8 @@ export function renderRegisterHtml(
 </div>
 
 <div class="pane" data-pane="key" hidden>
+${renderRepairMedicineSection()}
+
 <section class="legend">
   <div class="sh"><h2>How to read this</h2><span class="r">Column meanings</span></div>
   <div class="keys">${glossaryGroups().map(g => `<div class="key">
