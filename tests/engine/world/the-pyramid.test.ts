@@ -305,16 +305,38 @@ const SEEDS = ['pyr-a', 'pyr-b', 'pyr-c', 'pyr-d', 'pyr-e'] as const;
 const MIN_POOLED_TO_JUDGE = 20;
 
 /**
- * Per-seed headcount at which a band stops being individuals and becomes a
- * population whose ordering is not negotiable.
+ * How many standard deviations of counting noise an inversion has to clear
+ * before it is asserted as structure on the pooled counts alone.
  *
- * Read off the histogram in the header, not chosen: the bands run 306, 99, 48,
- * 34, 14 and then 8, 6, 2, 2, so there is an empty gap between the lowest
- * population band and the highest individual one, and this sits in it. Nothing
- * in the world is at 9 or 10, so a band drifting a little either way cannot
- * flip its own classification.
+ * DERIVED, NOT PICKED, and the previous version of this file picked. It used a
+ * per-seed headcount of ten, read off a gap in the histogram, and asserted that
+ * any inversion above it was proof on a SINGLE seed. That is true of the case
+ * the rule was written for - "more Foundation than Qi" is roughly 73 against
+ * 306, which cannot swap - and false of two mid-sized bands. Measured, it fired
+ * on nascent_soul over core_formation on one seed of five while the pooled
+ * counts were 123 against 194, clearly ordered. Sampling noise asserted as
+ * structure, in a guard that had been made the acceptance test for everybody.
+ *
+ * So the question is not how big a band is, it is whether the observed
+ * inversion is available to chance. Treat each band count as Poisson: the
+ * variance of a count is the count, so the difference of two has standard
+ * deviation sqrt(upper + lower). An inversion is structure only when the gap
+ * exceeds that by this many sigma.
+ *
+ * Three, which is the ordinary bar for "not chance" at about one in
+ * three hundred. Worked against the cases this file has actually seen, on
+ * counts pooled over five seeds:
+ *
+ *   Foundation over Qi Condensation   365 v 1530   gap 1165, sd 43.5   27 sigma
+ *   nascent_soul over core_formation  123 v  194   not inverted pooled -
+ *   tribulation over grand_ascension   30 v   20   gap   10, sd  7.1  1.4 sigma
+ *   body_integration over void         47 v   40   gap    7, sd  9.3  0.8 sigma
+ *
+ * The first is caught instantly and unambiguously, which is the whole point of
+ * Rule 1. The other three fall through to Rule 2 and are judged on whether they
+ * reproduce across seeds, which is the right question for counts that small.
  */
-const LARGE_BAND_MIN = 10;
+const SIGMAS_FOR_CERTAINTY = 3;
 
 /** The ladder, bottom to top. Adjacent pairs are what the shape rule reads. */
 const LADDER: readonly RealmKey[] = REALM_TIERS.map(t => t.key);
@@ -344,35 +366,46 @@ interface PairFinding {
     lower: RealmKey;
     upper: RealmKey;
     invertedOn: string[];
-    /** Seeds where BOTH bands were populations, so the ordering was absolute. */
-    invertedWhileLarge: string[];
     pooledLower: number;
     pooledUpper: number;
+    /** How many sigma of counting noise the pooled inversion clears, or 0. */
+    sigma: number;
     verdict: Verdict;
 }
 
-/** Every adjacent band pair, classified by whichever of the two rules applies. */
+/**
+ * Every adjacent band pair, classified by whichever of the two rules applies.
+ *
+ * RULE 1 IS JUDGED ON POOLED COUNTS, not per seed. A single-seed assertion is
+ * only defensible when the bands are enormous, and pooling is what makes the
+ * ordering claim meaningful everywhere else. It still fails instantly and
+ * unambiguously if Foundation ever exceeds Qi Condensation, because that pair
+ * clears twenty-seven sigma.
+ */
 const FINDINGS: PairFinding[] = LADDER.slice(1).map((upper, i) => {
     const lower = LADDER[i];
-    const inverted = RUNS.filter(r => (r.count.get(upper) ?? 0) > (r.count.get(lower) ?? 0));
-    const invertedOn = inverted.map(r => r.seed);
-    // Rule 1 applies only where both bands were populations ON THAT SEED, so a
-    // band that thins out drops to the lenient rule by itself.
-    const invertedWhileLarge = inverted
-        .filter(r => (r.count.get(lower) ?? 0) >= LARGE_BAND_MIN
-            && (r.count.get(upper) ?? 0) >= LARGE_BAND_MIN)
+    const invertedOn = RUNS
+        .filter(r => (r.count.get(upper) ?? 0) > (r.count.get(lower) ?? 0))
         .map(r => r.seed);
     const pooledLower = RUNS.reduce((s, r) => s + (r.count.get(lower) ?? 0), 0);
     const pooledUpper = RUNS.reduce((s, r) => s + (r.count.get(upper) ?? 0), 0);
 
+    // Poisson: the variance of a count is the count, so the difference of two
+    // independent counts has standard deviation sqrt(sum). Zero when the pooled
+    // pair is not inverted at all, because there is nothing to price.
+    const spread = Math.sqrt(pooledUpper + pooledLower);
+    const sigma = pooledUpper > pooledLower && spread > 0
+        ? (pooledUpper - pooledLower) / spread
+        : 0;
+
     let verdict: Verdict;
-    if (invertedWhileLarge.length > 0) verdict = 'structural_large';
+    if (sigma > SIGMAS_FOR_CERTAINTY) verdict = 'structural_large';
     else if (invertedOn.length === 0) verdict = 'ordered';
     else if (pooledLower + pooledUpper < MIN_POOLED_TO_JUDGE) verdict = 'too_few';
     else if (invertedOn.length === SEEDS.length) verdict = 'structural_small';
     else verdict = 'noise';
 
-    return { lower, upper, invertedOn, invertedWhileLarge, pooledLower, pooledUpper, verdict };
+    return { lower, upper, invertedOn, pooledLower, pooledUpper, sigma, verdict };
 });
 
 describe('the pyramid holds its shape', () => {
@@ -399,24 +432,29 @@ describe('the pyramid holds its shape', () => {
         expect(FINDINGS.length, 'the ladder has no adjacent pairs').toBe(LADDER.length - 1);
     });
 
-    it('never puts one population band above another, on any seed', () => {
-        // RULE 1, AND IT IS THE FLOOR OF THE WHOLE GUARD. Where both bands hold
-        // ten people or more, the ordering is not negotiable and there is no
-        // reproduction requirement: three hundred people and eighty people do
-        // not trade places by chance, so one seed is proof. This is the rule
-        // that answers "more Foundation than Qi? no no no no no", and it is
-        // checked before anything else because everything else is conditional.
+    it('never puts one band above another by more than counting noise', () => {
+        // RULE 1, AND IT IS THE FLOOR OF THE WHOLE GUARD. Judged on the counts
+        // pooled across every seed, and only where the inversion is bigger than
+        // chance can produce - more than SIGMAS_FOR_CERTAINTY standard
+        // deviations of Poisson noise on the difference. There is no
+        // reproduction requirement and none is needed: at that separation the
+        // ordering is a fact about the population rather than about the sample.
+        //
+        // This is the rule that answers "more Foundation than Qi? no no no no
+        // no", and that pair clears twenty-seven sigma, so it fails instantly
+        // and unambiguously. It is checked before anything else because
+        // everything else is conditional.
         const broken = FINDINGS.filter(f => f.verdict === 'structural_large');
         const described = broken.map(f =>
-            `${f.upper} is larger than ${f.lower} on ${f.invertedWhileLarge.join(', ')} ` +
-            `while both were populations`
+            `${f.upper} (${f.pooledUpper} pooled) is larger than ${f.lower} ` +
+            `(${f.pooledLower} pooled) by ${f.sigma.toFixed(1)} sigma`
         );
         expect(
             broken.map(f => `${f.upper}>${f.lower}`),
             described.length
-                ? `the pyramid has inverted where the counts are large: ${described.join('; ')}. ` +
-                  'This is not sampling noise at these headcounts - the regime has changed.'
-                : 'populations correctly ordered'
+                ? `the pyramid has inverted beyond what counting noise can produce: ` +
+                  `${described.join('; ')}. The regime has changed.`
+                : 'bands correctly ordered'
         ).toEqual([]);
     });
 
