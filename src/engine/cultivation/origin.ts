@@ -252,6 +252,23 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         // A hall copy, written out by relatives who never finished it.
         roadQuality: 'crude',
         placement: {
+            // TWELVE BUYS NOTHING, AND THAT IS THE POINT. DO NOT "FIX" IT.
+            //
+            // `placementsWithinReach` filters houses by `powerOrdinal <= reach`,
+            // and the weakest house in the entire catalog stands at 14. So a
+            // small cultivating family's name opens exactly as many doors as a
+            // farmer's, which is none, at every age, forever.
+            //
+            // It looks like an off-by-one and it is a decision. A family like
+            // this has a shopfront, letters, a hall copy of a manual somebody's
+            // relatives never finished, and no sway whatsoever - they are the
+            // rung where a family believes it has standing and does not. What
+            // they actually buy is above, in the stones, the ground and the
+            // book, and none of that needs anybody to take their word.
+            //
+            // Raising this to reach the Sixmile Wardens would delete the one
+            // origin in the table that says something true about the difference
+            // between having a little and having any.
             reach: 12,
             atAge: 14,
             entryRankIndex: 0,
