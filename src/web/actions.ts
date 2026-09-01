@@ -2783,7 +2783,7 @@ function leadershipIntent(text: string, input: string): PlannedAction | null {
     //
     // `handleCurriculum` with neither `teach` nor `retire` is already the free
     // read; it had no sentence pointing at it. Ahead of the decree branch and
-    // gated on a question shape, so "I stop teaching the Ash Form" is untouched.
+    // gated on a question shape, so "I stop teaching the Cinder Form" is untouched.
     //
     // Vetoed by the learning verbs for the same reason the decree branch below
     // is: "I train in what the sect teaches" satisfies the noun and the
