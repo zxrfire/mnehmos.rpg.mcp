@@ -831,7 +831,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 kind: 'rivals',
                 source: 'the rivalry lists',
                 what: `A standing feud, carried on both rolls. ${sect.name} stands at ${sect.powerOrdinal} and ${rival?.name ?? rivalId} at ${rival?.powerOrdinal ?? '?'}, and a feud the other party has not heard about is not a feud, which is why this one appears on both.`,
-                since: 'The catalog does not date it. What it records is that both houses carry it, which is the whole of what makes it a feud rather than a complaint.',
+                since: 'Nobody wrote a date on it. What is remembered is that both houses carry it, which is the whole of what makes it a feud rather than a complaint.',
                 a: {
                     warmth: 'hostile',
                     howTheyPutIt: `${sect.name} carries ${rival?.name ?? rivalId} on its own rivals list, which is a statement it made about itself rather than one made about it.`,
@@ -861,7 +861,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 kind: 'contested_claim',
                 source: 'the contested claims',
                 what: `Both houses have a hand on the same thing, and both entries describe it from their own side. ${sect.name} wants: ${ambition.wants}`,
-                since: 'Undated in the catalog. What is recorded is how far each of them has actually got, which is usually not far.',
+                since: 'Nobody wrote a date on it. What is remembered is how far each of them has actually got, which is usually not far.',
                 a: {
                     warmth: 'wary',
                     howTheyPutIt: ambition.wants,

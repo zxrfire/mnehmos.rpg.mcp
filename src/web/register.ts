@@ -58,6 +58,20 @@ import {
     renderRepairMedicineSection,
     type RegisterRepairMedicine
 } from './register-structural-repair-medicine.js';
+// Two more sections in their own modules, for the same reason. The items pane
+// answers what KINDS of thing the world tracks - which is nine kinds the
+// objects pane does not cover - and the holdings pane answers what is actually
+// inside each house, read across seven catalogs that have never been joined.
+import {
+    buildItemsRegister,
+    renderItemsSection,
+    type RegisterItems
+} from './register-items.js';
+import {
+    buildHoldings,
+    renderHoldingsSection,
+    type RegisterHoldings
+} from './register-what-each-house-holds.js';
 import { WANDERERS } from '../data/cultivation/wanderers.js';
 import { MEMBERS } from '../data/cultivation/members.js';
 import { rollOf } from '../data/cultivation/faction-roll.js';
@@ -1403,7 +1417,37 @@ export interface WorldRegister {
         techniques: number;
         /** Arts no house in the world will hand over. Not a fault; a fact. */
         untaughtTechniques: number;
+        /** Kinds of thing the engine can track at all, catalogued or not. */
+        itemKinds: number;
+        /** Authored rows across every item catalog that is not the artifacts. */
+        catalogued: number;
     };
+    /**
+     * Every kind of thing the world can hold, and every catalogued instance.
+     *
+     * The objects section is ONE of the kinds - the artifact table, sorted on a
+     * combat rating. This is the other nine, which is most of what somebody can
+     * actually pick up: manuals, medicine, ingredients, the comprehension
+     * pieces that are gone once understood, lots of currency, graves and ground.
+     *
+     * NOT `items`, which on this record is the two immortal objects and has
+     * been for a long time. Renaming that field would move a name three tests
+     * and the served JSON already read.
+     */
+    trackedItems: RegisterItems;
+    /**
+     * What is inside each house, joined across the seven catalogs that hold it.
+     *
+     * Nothing else on the sheet answers "if I walk in, what is in it and what
+     * can it do for me or to me", because the inventory is scattered: the owner
+     * is a field on the object, the arts are a teach list, the doses are a
+     * third table, the ground is a grant, and what is asleep is in the
+     * ancestral records.
+     *
+     * NOT `holdings`, which on this record is the immortal-object holdings
+     * table and is read by name elsewhere.
+     */
+    whatEachHouseHolds: RegisterHoldings;
     /**
      * The medicine that mends a cultivator who crossed and arrived broken,
      * and - the figure this section exists for - how many sent-down doses are
@@ -4061,6 +4105,7 @@ export function buildRegister(): WorldRegister {
         if (a.ownerLinkId === null && a.ownerId !== null) a.ownerLinkId = entryFor(a.ownerId);
     }
 
+    const trackedItems = buildItemsRegister();
     const courts = buildCourts();
     // Courts get the same treatment for the same reason. A court with no
     // faction row is still a body other entries link to, and the one contested
@@ -4081,9 +4126,13 @@ export function buildRegister(): WorldRegister {
             artifacts: artifacts.length,
             courtOfficers: courts.reduce((n, c) => n + c.officers.length, 0),
             techniques: techniques.length,
-            untaughtTechniques: techniques.filter(t => t.taughtBy.length === 0).length
+            untaughtTechniques: techniques.filter(t => t.taughtBy.length === 0).length,
+            itemKinds: trackedItems.counts.kinds,
+            catalogued: trackedItems.rows.length
         },
         repairMedicine: buildRepairMedicineRegister(),
+        trackedItems,
+        whatEachHouseHolds: buildHoldings(dossiers),
         ladder: REALM_TIERS.map(t => ({
             key: t.key, name: t.name, start: t.ordinalStart, end: t.ordinalEnd
         })),
@@ -4367,6 +4416,37 @@ color:var(--datum);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid va
 .grades{margin:0;display:grid;grid-template-columns:78px 1fr;gap:8px 16px}
 .grades dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--datum);padding-top:3px}
 .grades dd{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
+/* ── One house's inventory ───────────────────────────────────────────────
+   The same definition grammar as .grades and .relsides, at a wider label
+   column because these labels are phrases rather than one word. Thirty-odd
+   disclosures on one pane, so the summary is a row rather than a heading and
+   the whole thing collapses to a list somebody can scan. */
+/* ── The two listing tables ──────────────────────────────────────────────
+   FIXED LAYOUT, because auto layout on a hundred rows of free text sizes
+   every column to its longest cell. Measured on the first draft: one table
+   4,058px wide holding three rows, and a forty-one row one 13,280px tall.
+   Widths are declared per table in its own colgroup; this rule is only what
+   makes the browser honour them. */
+.itemtbl,.holdtbl{table-layout:fixed;width:100%}
+.itemtbl td,.holdtbl td{vertical-align:top;word-break:normal;overflow-wrap:anywhere}
+/* td.nm and td.m are nowrap everywhere else on the sheet, which is right for a
+   name column sized to its content and wrong inside a fixed table: the cell
+   cannot grow, so the text runs out over the column beside it. Scoped to these
+   two tables rather than relaxed globally. */
+.itemtbl td.nm,.itemtbl td.m,.holdtbl td.nm,.holdtbl td.m{white-space:normal}
+.itemtbl td.nm .dim,.holdtbl td.nm .dim{display:block;margin-top:2px}
+.holdset{margin:6px 0 2px;display:grid;grid-template-columns:200px 1fr;gap:7px 16px}
+.holdset dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
+text-transform:uppercase;color:var(--faint);padding-top:3px}
+.holdset dd{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
+.holddrill{border-top:1px solid var(--rule);padding:9px 0 10px}
+.holddrill>summary{cursor:pointer;font-size:15px;color:var(--ink);list-style:none}
+.holddrill>summary::-webkit-details-marker{display:none}
+.holddrill>summary::after{content:" +";color:var(--faint);font:600 12px "IBM Plex Mono",ui-monospace,Menlo,monospace}
+.holddrill[open]>summary::after{content:" -"}
+.holddrill>summary:hover{color:var(--datum)}
+@media (max-width:640px){.holdset{grid-template-columns:1fr;gap:2px}
+.holdset dt{padding-top:9px}}
 .jump{color:var(--datum);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .dos:target,.dos.flash{border-left-color:var(--datum);box-shadow:0 0 0 2px var(--datum-soft)}
 .tabs{display:flex;gap:2px;margin-top:clamp(22px,3vw,32px);border-bottom:2px solid var(--ink)}
@@ -4618,8 +4698,17 @@ color:var(--faint);white-space:nowrap}
 .reldir.above{color:var(--datum);border-color:var(--datum);background:var(--datum-soft)}
 .reldir.below{color:var(--bar-brass);border-color:var(--bar-brass);background:var(--bar-brass-dim)}
 .reldir.alongside{color:var(--quiet);border-color:var(--strong)}
-.relkey{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin-left:4px;
-font-size:11.5px;color:var(--faint)}
+/* The key, as three sample cards rather than three loose badges. It shows the
+   RULE as well as the badge, because the rule is the mark a reader decodes
+   scanning from a distance and the badge was the only thing the old key
+   taught. Cards, so it is built by the same function the rows are and cannot
+   drift from them - and a block, so nothing can fold it away. */
+.relkey{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+gap:6px 14px;margin:8px 0 2px}
+.relkey .rel{margin:0}
+.relkey .relh{margin-bottom:0}
+.relkey .relwho{font:400 12px "IBM Plex Mono",ui-monospace,Menlo,monospace;
+letter-spacing:.02em;color:var(--quiet)}
 /* The reading line: who stands where, and how each end feels about it. */
 .relsay{margin:0 0 6px;font-size:14.5px;line-height:1.55;color:var(--ink)}
 .relsay b{font-weight:600}
@@ -5356,6 +5445,40 @@ const STANCE_HEADS: Record<RegisterRelationship['stance'], { label: string; glos
     }
 };
 
+type RelStance = RegisterRelationship['stance'];
+
+/**
+ * One relationship card, and the only place a direction is written down.
+ *
+ * A tie states its direction TWICE, on purpose: as the colour of the card's own
+ * left rule, which is what a reader decodes scanning the page from a distance,
+ * and as a badge repeating that colour, because a coloured bar on its own is a
+ * legend lookup. Both class strings are spelled here and nowhere else, so a
+ * card cannot carry the badge without the rule or the rule without the badge.
+ *
+ * IT IS ONE FUNCTION RATHER THAN A CLASS STRING AT EACH SITE because it was
+ * previously the latter, and the page could not then be counted. The key at the
+ * head of the section drew three sample badges of its own, so a census of the
+ * rendered sheet found 238 badges against 124 coloured containers and read as
+ * 114 rows that had lost their rule. Every one of the 114 was a key sample
+ * (38 entries carry the section, three badges apiece) and no row was ever
+ * missing its colour - but nothing in the markup distinguished the two cases,
+ * which is the defect this closes. The key now renders through this function
+ * like everything else, so badges and containers reconcile per direction by
+ * construction rather than by argument, and the key gains the thing it was
+ * missing: it shows the RULE as well as the badge, which is the mark a reader
+ * is actually decoding.
+ */
+function relCard(stance: RelStance, who: string, body: string): string {
+    return `<div class="rel rel--${esc(stance)}">`
+        + `<div class="relh">`
+        + `<span class="relwho">${who}</span>`
+        + `<span class="reldir ${esc(stance)}">${esc(STANCE_HEADS[stance].badge)}</span>`
+        + `</div>`
+        + body
+        + `</div>`;
+}
+
 /**
  * What the tie IS, as a noun phrase, read from the other body's side.
  *
@@ -5473,11 +5596,15 @@ function standingSentence(r: RegisterRelationship, name: string): string {
  */
 function warmthSentence(r: RegisterRelationship, name: string): string {
     const mine = `${esc(name)} is <b>${esc(r.warmth)}</b> toward them (${esc(WARMTH_GLOSS[r.warmth])})`;
+    // The gloss and then stop. A mismatch used to be followed by two lines
+    // explaining that warmth is stored at each end and a tie is stored once -
+    // true, worth saying, and a fact about the DATABASE rather than about the
+    // world. It rendered 28 times on one sheet. The reader can see that the two
+    // words differ; being told what that means about the schema is the machine
+    // talking. Said once now, in the section note above.
     const theirs = r.warmth === r.theirWarmth
         ? ', and is met with the same.'
-        : `, and is met with <b>${esc(r.theirWarmth)}</b> (${esc(WARMTH_GLOSS[r.theirWarmth])}). `
-            + 'The two do not match, and the mismatch is the fact rather than a fault: what a tie IS is stored '
-            + 'once and shared, and what each side feels about it is stored twice.';
+        : `, and is met with <b>${esc(r.theirWarmth)}</b> (${esc(WARMTH_GLOSS[r.theirWarmth])}).`;
     return mine + theirs;
 }
 
@@ -5532,16 +5659,12 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
             const other = r.anchor
                 ? `<span class="jump" data-goto="${esc(r.anchor)}">${esc(r.otherName)}</span>`
                 : esc(r.otherName);
-            return `<div class="rel rel--${esc(r.stance)}">`
-                + `<div class="relh">`
-                + `<span class="relwho">${other}</span>`
-                + `<span class="reldir ${esc(r.stance)}">${esc(STANCE_HEADS[r.stance].badge)}</span>`
-                + `</div>`
+            return relCard(r.stance, other,
                 // "stands above X, as the apex that appoints into its posting" reads
                 // as a role and is right for a vertical tie. It is wrong for a level
                 // one, where neither party IS anything to the other, so that case
                 // takes its own connector rather than being forced into "as".
-                + `<p class="relsay">${esc(standingSentence(r, name))}${r.stance === 'alongside'
+                `<p class="relsay">${esc(standingSentence(r, name))}${r.stance === 'alongside'
                     ? `. Between them: ${esc(tiePhrase(r))}. `
                     : `, as ${esc(tiePhrase(r))}. `}`
                 + `${warmthSentence(r, name)}</p>`
@@ -5553,8 +5676,7 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
                 + (r.grievance
                     ? `<dt>The grievance</dt>${chunkedDd(r.grievance)}`
                     : '')
-                + `</dl>`
-                + `</div>`;
+                + `</dl>`);
         }).join('')
         + `</div>`).join('');
 
@@ -5566,20 +5688,38 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
         .join(', ');
 
     return sectionHead('How it stands with everybody', `${counts} - and how warm each end of it is`)
-        + '<p class="note"><strong>What a tie is, is one fact. How the two sides feel about it is two.</strong> '
-        + 'Direction and substance are stored once and shared, so a patron and a client cannot disagree about who '
-        + 'holds from whom. The warmth is stored separately at each end and is allowed to differ - a house can be '
-        + 'warm to a patron that is only correct back, or dutiful upward and cold to everything under it, and '
-        + 'neither of those can be read off an org chart. '
-        + '<span class="relkey"><span class="reldir above">backs it</span> stands over this house '
-        + '<span class="reldir alongside">level</span> neither '
-        + '<span class="reldir below">it backs</span> answers to this house</span></p>'
+        // ONE SENTENCE, AND IT IS ABOUT HOUSES RATHER THAN ABOUT STORAGE.
+        // This ran to five lines explaining that direction is held once and
+        // warmth twice - true, and a fact about the database. Every faction
+        // entry carries this section, so it rendered 38 times on one sheet
+        // against 3,798 substantial lines, and the register's whole claim is to
+        // be a reflection of the world rather than of the code. The in-world
+        // half is the half that survives: a house can be warm to a patron that
+        // is only correct back, and no org chart shows that.
+        + '<p class="note"><strong>A house can be warm to a patron that is only correct back, '
+        + 'or dutiful upward and cold to everything under it.</strong> Neither is on any org chart.</p>'
+        // THE KEY IS A SIBLING OF THE PARAGRAPH, NOT A SPAN INSIDE IT, and that
+        // is the whole of the bug this closes. It used to be three badges at the
+        // tail of the note above. `enforceChunkLimit` only declines to split a
+        // paragraph that already holds a BLOCK tag, a span is not one, and the
+        // note runs past the limit - so on all 38 entries that carry this
+        // section the key was pushed into the continuation and shipped closed.
+        // A reader landed on cards ruled in teal and brass with the legend for
+        // them folded away, which is how a working colour system reads as
+        // decoration applied to some rows and not others.
+        + `<div class="relkey">${([
+            ['above', 'Stands over this house'],
+            ['alongside', 'Neither above nor below'],
+            ['below', 'Answers to this house']
+        ] as [RelStance, string][]).map(([stance, gloss]) => relCard(stance, esc(gloss), '')).join('')}</div>`
         + `<div class="rels">${body}</div>`
         + '<details class="context"><summary>Where these came from</summary>'
-        + `<p class="desc">${esc(bySource)}. An authored tie was written because no table in the catalog `
-        + 'carries it; every other one restates a row that already exists - a grant, a court posting, a rivalry '
-        + 'list, a contested claim, a dao house counter, or an event both parties have an account of - so each '
-        + 'can be checked against the table it came from.</p></details>';
+        // The counts stay - they are this house's own provenance and differ per
+        // entry. The paragraph explaining what "authored" means as an authoring
+        // convention does not: it was identical on all 12 entries that carry
+        // one, and it describes how the catalog was written rather than how the
+        // world is.
+        + `<p class="desc">${esc(bySource)}.</p></details>`;
 }
 
 /** Who it answers to, on what terms, and what leaving would cost. */
@@ -5940,7 +6080,7 @@ function historyBlock(h: RegisterHistory): string {
     return sectionHead('History', 'how it came to be here, and what that accounts for')
         + `<dl class="hist">${rows.join('')}</dl>`
         + (shared
-            ? `<div class="evts"><p class="note">Dated once and told twice. The neutral line is the minimum every party would concede happened; the second paragraph is this house speaking for itself, and the others are one click away saying something else about the same year.</p>${shared}</div>`
+            ? `<div class="evts"><p class="note">The neutral line is the minimum every party would concede happened. The second paragraph is this house speaking for itself.</p>${shared}</div>`
             : '');
 }
 
@@ -6702,6 +6842,8 @@ export function renderRegisterHtml(
   <button class="tab" role="tab" data-tab="people" aria-selected="true">People &ge; Grand Ascension <span>${reg.high.length}</span></button>
   <button class="tab" role="tab" data-tab="factions" aria-selected="false">Factions <span>${c.factions}</span></button>
   <button class="tab" role="tab" data-tab="objects" aria-selected="false">Objects <span>${c.artifacts}</span></button>
+  <button class="tab" role="tab" data-tab="items" aria-selected="false">Items <span>${c.catalogued}</span></button>
+  <button class="tab" role="tab" data-tab="holdings" aria-selected="false">Holdings <span>${reg.whatEachHouseHolds.counts.houses}</span></button>
   <button class="tab" role="tab" data-tab="arts" aria-selected="false">Arts <span>${c.techniques}</span></button>
   <button class="tab" role="tab" data-tab="key" aria-selected="false">Key</button>
 </nav>
@@ -6779,7 +6921,21 @@ export function renderRegisterHtml(
     </dl>
   </div>`).join('')}
   ${prose(blocks, 'items')}
+  <p class="note">Both of the tables above are one <em>kind</em> of thing out of the ten the engine can track, and they are the kind with a combat rating. Everything else somebody can hold - manuals, medicine, ingredients, the comprehension pieces that are gone once understood, lots of currency, graves and ground - is on the Items tab, along with the one line that governs all of them: whether a thing is a quantity or a row with a history.</p>
 </section>
+</div>
+
+<!-- Every other kind of thing. The objects pane is the artifact table sorted on
+     a combat rating, which is one ObjectKind out of ten; this is the other
+     nine, and the counted/tracked line that governs every one of them. -->
+<div class="pane" data-pane="items" hidden>
+${renderItemsSection()}
+</div>
+
+<!-- What is in the building, joined across the seven catalogs that hold it.
+     Nothing else on the sheet answers the question somebody at the gate has. -->
+<div class="pane" data-pane="holdings" hidden>
+${renderHoldingsSection(reg.dossiers)}
 </div>
 
 <!-- The third column of force, and the one the sheet had nowhere. A person, an
