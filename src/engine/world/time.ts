@@ -56,6 +56,7 @@ import {
     type Observer
 } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { recordMasterLost } from './recording-where-somebody-stands-in-a-house.js';
 import { openingsBetween, type LocationRecord } from './locations.js';
 // The two standings at which the world calls a tie something. Imported from
 // where they are defined rather than retyped here: `gatherings.ts` states in
@@ -786,6 +787,24 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
         }
     }
 
+    // A teaching line that ended today.
+    //
+    // The other half of `applyTeachingLines`, which records the day a master was
+    // taken and had no way to record the day one was lost. Written here rather
+    // than in the teaching pass because a death settles exactly once, so the row
+    // is written exactly once, and because the reason is knowable here and not
+    // there: this is a master who died, which is a different ending from a
+    // disciple who outgrew one.
+    //
+    // Read off the DECEASED's own disciple ties, so one walk covers every
+    // student they were carrying.
+    for (const tie of deceased.relationships) {
+        if (tie.kind !== 'disciple') continue;
+        const student = state.npcs.find(n => n.id === tie.targetId);
+        if (!student || student.status !== 'alive') continue;
+        recordMasterLost(state, student, deceased, 'died', onDay);
+    }
+
     // An estate that went somewhere is a fact about the world, and it is the
     // one a descendant three centuries later is standing on.
     if (primary && (inherited.length > 0 || heirs.length > 0)) {
@@ -960,7 +979,10 @@ function factKindFor(kind: ScheduledEffectKind): HistoricalEventKind {
         case 'debt_due': return 'debt_incurred';
         case 'promise_due': return 'oath_sworn';
         case 'war_resolves': return 'war';
-        case 'assessment': return 'promotion';
+        // An assessment on the books is a grant on a vein coming up for
+        // renewal. Filing it as 'promotion' made that kind the third-heaviest
+        // in the ledger with nothing in it about anybody.
+        case 'assessment': return 'grant_renewed';
         case 'construction_finishes': return 'territory_changed';
         case 'concurrent_event': return 'catastrophe';
         case 'meeting':

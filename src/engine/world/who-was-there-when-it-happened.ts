@@ -218,7 +218,22 @@ export function linkFactToWhoItNames(
     fact: HistoricalFact,
     onDay = fact.day
 ): void {
-    const named = new Set<string>([...fact.actors.map(a => a.id), ...fact.witnessIds]);
+    // ── ACTORS ONLY, and the distinction is the whole point ──────────────
+    //
+    // `historyFactIds` is the trajectory: what happened TO this person.
+    // `witnessIds` is who was standing there. Linking both put every bystander's
+    // record on every fact they were near, and the result was measurable and
+    // ruinous - the most-documented person in a six-hundred-year world carried
+    // 131 rows of which about a dozen were about them, and the rest were
+    // strangers dying and strangers taking masters in the same market town. A
+    // life read as a police blotter for a postcode.
+    //
+    // Nothing is lost by not linking them, because nothing was reading it:
+    // `visibilityOf` answers "did this person witness this" off `witnessIds`
+    // itself, which is still written in full and still unioned across a
+    // recurrence. Presence is a fact about the world; the trajectory is a fact
+    // about the person; and they were never the same list.
+    const named = new Set<string>(fact.actors.map(a => a.id));
     if (named.size === 0) return;
     const byId = npcIndexFor(state);
     for (const id of named) {

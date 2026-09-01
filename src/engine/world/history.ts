@@ -72,6 +72,15 @@ export type HistoricalEventKind =
     | 'death'
     | 'breakthrough'
     | 'realm_crossing'
+    /**
+     * A wound nothing in the world closes, on the day it was taken.
+     *
+     * Only the permanent band. A bruise is not a life event; a severed meridian
+     * is the day somebody's art changed shape forever, and it used to be a field
+     * on the record with no date and no cause attached. See
+     * `recording-the-day-a-wound-was-taken.ts`.
+     */
+    | 'injury'
     | 'toll_paid'
     | 'marriage'
     | 'inheritance'
@@ -100,6 +109,15 @@ export type HistoricalEventKind =
     // Institutions
     | 'faction_founded'
     | 'faction_fallen'
+    /**
+     * A house's hold on ground it does not own came up for renewal.
+     *
+     * Its own kind because it used to be filed as `promotion`, which made
+     * `promotion` the third-heaviest kind in the ledger without a single row in
+     * it being about a person - every one was a grant on a vein. See
+     * `factKindFor` in `time.ts`.
+     */
+    | 'grant_renewed'
     | 'war'
     | 'succession'
     | 'promotion'

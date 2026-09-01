@@ -132,6 +132,7 @@ import { getTechnique } from '../../data/cultivation/techniques.js';
 import { isBelowTheLid } from './layers.js';
 import { fillConsequences, makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { recordPermanentWounds } from './recording-the-day-a-wound-was-taken.js';
 import type { LocationRecord } from './locations.js';
 import {
     expectationsFor,
@@ -358,6 +359,60 @@ export function alliesOf(state: WorldState, faction: FactionRecord): FactionReco
 }
 
 /**
+ * Houses this one would sit down with because they share a province.
+ *
+ * ── The measurement this exists for ──────────────────────────────────────
+ *
+ * A gathering fired nineteen times in two thousand years, and the frequency
+ * constant was not why. Circles were counted:
+ *
+ *     year    0   32 live houses, 15 ally edges, 4 circles
+ *     year  200   28 live houses,  8 ally edges, 1 circle
+ *     year 1000   19 live houses,  5 ally edges, 1 circle
+ *
+ * Every ally edge in the world is written by the catalog at seeding, and NOTHING
+ * creates one afterwards. Houses dissolve and take their edges with them, and
+ * `applyFactionFounding` raises new houses that hold no catalog standing toward
+ * anybody - so a house founded in year 300 could never be in a circle for the
+ * rest of the run. The alliance graph is a fixed endowment being spent, and by
+ * the middle of a long world it is spent.
+ *
+ * Raising `GATHERING_YEARS` would have hidden that behind a bigger number while
+ * leaving one circle in the world holding every gathering in it, which is a
+ * worse world than the rare one. What the supply needed was a source that
+ * regenerates, and the world already has one: houses that hold ground in the
+ * same province know each other, whether or not a catalog ever said so.
+ *
+ * Hostility still vetoes, in either direction and by the same bar as an
+ * alliance, so this cannot put two houses at war in a room. It is a weaker claim
+ * than an alliance and deliberately so - neighbours who are not enemies, which
+ * is the ordinary case and the reason a provincial gathering exists at all.
+ */
+export function neighboursOf(state: WorldState, faction: FactionRecord): FactionRecord[] {
+    const home = regionOf(state, faction.seatLocationId);
+    if (home === null) return [];
+    const out: FactionRecord[] = [];
+    for (const other of state.factions) {
+        if (other.id === faction.id) continue;
+        if (other.dissolvedOnDay !== null || !isBelowTheLid(other)) continue;
+        if (regionOf(state, other.seatLocationId) !== home) continue;
+        const forward = faction.standing[other.id] ?? 0;
+        const back = other.standing[faction.id] ?? 0;
+        if (forward <= -ALLIED_STANDING || back <= -ALLIED_STANDING) continue;
+        out.push(other);
+    }
+    return out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/** Everybody a house would sit down with: its allies and its neighbours. */
+export function circleCandidatesFor(state: WorldState, faction: FactionRecord): FactionRecord[] {
+    const seen = new Map<string, FactionRecord>();
+    for (const f of alliesOf(state, faction)) seen.set(f.id, f);
+    for (const f of neighboursOf(state, faction)) seen.set(f.id, f);
+    return [...seen.values()].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/**
  * Every circle the world currently contains, one per group.
  *
  * A house hosts when it has more allies than anybody else in its own circle,
@@ -372,7 +427,9 @@ export function alliesOf(state: WorldState, faction: FactionRecord): FactionReco
 export function circlesOf(state: WorldState): Circle[] {
     const live = state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f));
     const allies = new Map<string, FactionRecord[]>();
-    for (const f of live) allies.set(f.id, alliesOf(state, f));
+    // Allies AND provincial neighbours. See `neighboursOf` for why the alliance
+    // graph alone leaves one circle in the world by the middle of a long run.
+    for (const f of live) allies.set(f.id, circleCandidatesFor(state, f));
 
     const seats: Circle[] = [];
     for (const f of live) {
@@ -913,6 +970,10 @@ function applyWounds(
     const at = state.npcs.findIndex(n => n.id === npc.id);
     if (at < 0) return;
     state.npcs[at] = carryingWounds(state.npcs[at], wounds, day);
+    // A maiming taken at a gathering is a day in a life. Only the permanent
+    // band - everything that heals stays a field on the record, where the count
+    // already lives. See `recording-the-day-a-wound-was-taken.ts`.
+    recordPermanentWounds(state, state.npcs[at], wounds, day);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
