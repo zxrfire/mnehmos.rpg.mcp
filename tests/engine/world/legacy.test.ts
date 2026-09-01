@@ -416,35 +416,60 @@ describe('ladder odds: three numbers that are allowed to disagree', () => {
      * A measurement, kept as a test so a change to the cultivation constants
      * shows up here rather than in somebody's surprise a month later.
      *
-     * The sweep reaches Core Formation and stops. Nothing above it is produced
-     * by ordinary cultivation in any ambient band, because `STAGNATION_YEARS`
-     * (50) collides with a rank cost growing at 1.35^ordinal: past roughly
-     * ordinal 17 a single rank costs more years than settling allows, so every
-     * cultivator dies of the clock rather than of the ladder. The outcome mix
-     * says the same thing - `lifespan` and `settling` account for essentially
-     * all of it, and failed breakthroughs are a rounding error by comparison.
+     * ── WHAT THIS USED TO ASSERT, AND WHY IT WAS WRONG ────────────────────
      *
-     * That is consistent with the setting, where the upper realms are nearly
-     * mythical and nobody has ascended in living memory. It is NOT the same as
-     * the theoretical curve, which still gives Nascent Soul one in four
-     * thousand - so the two disagree by a factor that is effectively infinite,
-     * and the gap is the survival layer, not the breakthrough roll.
+     * It asserted `highest.ordinal < 29` and explained the bar from arithmetic:
+     * "past roughly ordinal 17 a single rank costs more years than settling
+     * allows, so every cultivator dies of the clock rather than of the ladder".
      *
-     * The assertion is deliberately loose in the reachable direction: it fails
-     * if the ladder ever becomes reachable to the top (which would mean the
-     * clocks stopped biting) or unreachable below Foundation (which would mean
-     * the game has no progression at all).
+     * That was true of the sweep and false of the game. `measureLadderReach`
+     * called `computeCultivationRate` without `realmOrdinal`, which that
+     * function reads as ordinal zero and warns about in its own comment: the
+     * realm intake multiplier doubles every realm - 1, 2, 4, up to 256 at
+     * Tribulation Transcendence - and exists precisely to offset a requirement
+     * growing at the same pace. Priced flat, ordinal 44 needs 442,644 years
+     * against a 20,000-year settling clock. Priced at the rung it needs 1,729.
+     * So the harness was measuring a ladder that stops dead at Core Formation
+     * and the setting was being calibrated against it.
+     *
+     * ── WHAT IT ASSERTS NOW ───────────────────────────────────────────────
+     *
+     * The same two things the comment always claimed to be checking, stated as
+     * shares rather than as a ceiling, because the ceiling of a stochastic
+     * sweep is a point value on one sample and moves between seeds without
+     * anything changing. Measured on the corrected sweep, 3,000 lives per band,
+     * three seeds each - and this IS the unaided climb, with no teacher and no
+     * book ceiling anywhere in it:
+     *
+     *     thin     nothing above Qi Condensation at all, on any seed
+     *     normal   Found 14%   Core 3.3-4.2%  Nascent ~1%   Deity 0.3%
+     *              Void 0-0.07%   Body 0-0.03%   top rung 25 / 29 / 33
+     *     dense    Found 44-46% Core 18%       Nascent 7.3% Deity 2.4-2.8%
+     *              Void 0.5-0.8% Body 0.2%     Grand 0.03-0.07%
+     *              Tribulation 0 / 0 / 0.03%   top rung 37 / 37 / 41
+     *
+     * So the top of the ladder IS reachable unaided on the best ordinary
+     * ground, at about one life in ten thousand, and that is the designer's
+     * own bar for it: obscenely hard without somebody showing you the way,
+     * and about one in a generation for somebody with nobody.
      */
     it('measures where the ladder actually stops, and it is not the top', () => {
         const sweep = measureLadderReach('sweep-5', { sampleSize: 1500, ambient: 'dense' });
         const reachable = sweep.tiers.filter(t => t.share > 0);
-        const highest = reachable[reachable.length - 1];
+        const share = (ordinal: number) =>
+            sweep.tiers.find(t => t.ordinal === ordinal)?.share ?? 0;
 
         expect(reachable.length).toBeGreaterThanOrEqual(2);
-        expect(highest.ordinal).toBeGreaterThanOrEqual(13);
-        expect(highest.ordinal).toBeLessThan(29);
+        // There is progression at all.
+        expect(share(13), 'nobody reaches Foundation Establishment').toBeGreaterThan(0.1);
+        // And the upper ladder stays what the setting says it is. Not "nobody
+        // gets there" - a share, so a run that produces one is not a failure
+        // and a run that produces a stratum is.
+        expect(share(29), 'Void Refinement has stopped being rare').toBeLessThan(0.03);
+        expect(share(41), 'the last realm has stopped being nearly mythical')
+            .toBeLessThan(0.005);
 
-        // The clocks are what stop people, not the breakthrough roll.
+        // The clocks are still what stop people, not the breakthrough roll.
         const { settling, lifespan, died_in_breakthrough } = sweep.outcomes;
         expect(settling + lifespan).toBeGreaterThan(died_in_breakthrough * 2);
     });

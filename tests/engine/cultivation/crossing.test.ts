@@ -573,15 +573,39 @@ describe('what the mountains believe', () => {
 });
 
 describe('the population curve is a different shape from the prodigy curve', () => {
-    it('produces nobody at the top of the ladder, at any ordinary density', () => {
+    it('all but never produces anybody at the top of the ladder, unaided', () => {
         // The sweep above is P(outcome | everything went right). This is the
-        // unconditional figure, and it is zero: an ordinarily-rolled cultivator
-        // in ordinary qi does not reach Void Refinement, let alone the last
-        // realm. That is the Late Age working, and it is why the five to eight
-        // people standing at Tribulation Transcendence in the present day are
-        // CONTENT - named, placed, mostly sealed or withdrawn - rather than a
-        // product of this curve. Reading the prodigy sweep as a population rate
-        // is the single easiest way to misread the balance of this engine.
+        // unconditional figure, and an ordinarily-rolled cultivator in ordinary
+        // qi all but never reaches Void Refinement, let alone the last realm.
+        // That is the Late Age working, and it is why the people standing at
+        // Tribulation Transcendence in the present day are CONTENT - named,
+        // placed, mostly sealed or withdrawn - rather than a product of this
+        // curve. Reading the prodigy sweep as a population rate is the single
+        // easiest way to misread the balance of this engine.
+        //
+        // ── WHY THIS NO LONGER ASSERTS ZERO ───────────────────────────────
+        //
+        // It used to, and zero was a defect rather than a design point.
+        // `measureLadderReach` called `computeCultivationRate` without
+        // `realmOrdinal`, which prices every rung as Qi Condensation and drops
+        // the realm intake multiplier - a factor of 256 by the top. Against a
+        // requirement growing at the same pace, ordinal 44 came out needing
+        // 442,644 years to a 20,000-year settling clock, so nobody in nine
+        // thousand lives passed Core Formation at any band and this test was
+        // pinning that in place.
+        //
+        // Corrected, and measured across three seeds at 3,000 lives per band,
+        // the shares at the two rungs this asks about are:
+        //
+        //     thin     Void 0        Tribulation 0        (nothing above 12)
+        //     normal   Void 0-0.07%  Tribulation 0
+        //     dense    Void 0.5-0.8% Tribulation 0-0.03%
+        //
+        // So the bar is a SHARE and not a zero. What the setting requires is
+        // that the top of the ladder stays nearly mythical for somebody with
+        // nobody teaching them - which is what this harness models, since it
+        // supplies no master, no house and no book - and one life in a few
+        // thousand on the best ground in the world is that.
         for (const ambient of ['thin', 'normal', 'dense'] as const) {
             const measured = measureLadderReach(`unconditional-${ambient}`, {
                 sampleSize: 600,
@@ -589,9 +613,20 @@ describe('the population curve is a different shape from the prodigy curve', () 
             });
             const tribulation = measured.tiers.find(t => t.realm === 'tribulation_transcendence')!;
             const voidRefinement = measured.tiers.find(t => t.realm === 'void_refinement')!;
-            expect(tribulation.share, `${ambient} put somebody at the last realm`).toBe(0);
-            expect(voidRefinement.share).toBe(0);
+            expect(
+                tribulation.share,
+                `${ambient} puts people at the last realm as a matter of course`
+            ).toBeLessThan(0.01);
+            expect(
+                voidRefinement.share,
+                `${ambient} makes Void Refinement an ordinary outcome`
+            ).toBeLessThan(0.03);
         }
+        // And thin ground still produces nothing at all above Qi Condensation,
+        // which is the half of this that has to stay absolute: most of the
+        // world stands on thin ground and it is why most of the world stops.
+        const thin = measureLadderReach('unconditional-thin', { sampleSize: 600, ambient: 'thin' });
+        expect(thin.tiers.find(t => t.realm === 'foundation_establishment')!.share).toBe(0);
     });
 
 

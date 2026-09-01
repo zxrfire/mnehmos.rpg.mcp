@@ -629,6 +629,7 @@ describe('both layers keep running', () => {
         ascend(state, { npcId: npc.id, onDay: state.currentDay });
 
         const before = worldShape(state);
+        const heirWas = getNpc(state, heir.id)!.cultivation.realmOrdinal;
         advanceWorldYears(state, 300);
         const after = worldShape(state);
 
@@ -641,7 +642,25 @@ describe('both layers keep running', () => {
             after.factionIds.join() !== before.factionIds.join()
         ).toBe(true);
         // Including the disciple, who has had three centuries of their own.
-        expect(getNpc(state, heir.id)!.status).not.toBe('alive');
+        //
+        // This used to assert simply that they were dead, on the arithmetic
+        // that a Qi Condensation life is a hundred years and three hundred had
+        // passed. That stopped being the only way the three centuries can show:
+        // the world now rolls real breakthroughs for NPCs, so a disciple who
+        // crossed into Foundation Establishment has two hundred years and one
+        // who reached Core Formation has five hundred, and being alive at the
+        // end is then a fact about what they did rather than a failure of the
+        // clock. See `an-npc-striking-at-the-next-wall.ts`.
+        //
+        // The claim was always "three centuries happened to them too", so that
+        // is what it asks: they are gone, or they are not the person the
+        // ancestor left behind.
+        const heirNow = getNpc(state, heir.id)!;
+        expect(
+            heirNow.status !== 'alive' || heirNow.cultivation.realmOrdinal !== heirWas,
+            `the disciple is still alive at ordinal ${heirNow.cultivation.realmOrdinal}, `
+            + `exactly where they were three hundred years ago`
+        ).toBe(true);
     });
 
     it('advances the far side on the same call as the near one', () => {
