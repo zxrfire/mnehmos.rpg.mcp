@@ -91,12 +91,35 @@ describe('a newborn is born somewhere somebody can stand', () => {
     }, 180_000);
 
     it('puts nobody on a region node after the original cohort is gone', async () => {
-        const { state } = await advancedWorld(250);
-        // Anyone still standing on a container is a survivor of the old
-        // placement, not a new birth. Long enough and there should be almost
-        // none - and crucially the count must FALL, never climb.
-        expect(headcount(state, 'region')).toBeLessThan(20);
-    }, 240_000);
+        // Anyone still standing on a container is a survivor of the ORIGINAL
+        // placement rather than a new birth, so the real invariant is that the
+        // count only ever falls. This used to assert a threshold at one point in
+        // time instead, which measured the wrong thing in both directions: it
+        // went red when promotion lengthened lifespans and left more of the
+        // seeded cohort alive at 250 years, and it stayed green through a real
+        // defect that only showed up later - births fell back to the region node
+        // whenever a province ran out of habitable ground, so the count fell to
+        // 14 by year 250 and then climbed to 265 by year 600.
+        //
+        // Now it walks the clock and demands monotonic decline, which is the
+        // thing the comment always claimed to be checking.
+        const marks = [100, 250, 400, 600];
+        const counts: number[] = [];
+        for (const years of marks) {
+            const { state } = await advancedWorld(years);
+            counts.push(headcount(state, 'region'));
+        }
+        for (let i = 1; i < counts.length; i++) {
+            expect(
+                counts[i],
+                `people on region containers climbed between year ${marks[i - 1]} `
+                + `and ${marks[i]}: ${counts.join(' -> ')}. Something is placing `
+                + 'newborns on a map node nobody can stand on.'
+            ).toBeLessThanOrEqual(counts[i - 1]);
+        }
+        // And it has to actually drain, not merely stop growing.
+        expect(counts[counts.length - 1]).toBeLessThan(counts[0] / 2);
+    }, 600_000);
 });
 
 describe('who lives where is decided by a weight, not by a coin flip', () => {
