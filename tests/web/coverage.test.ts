@@ -282,6 +282,43 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I take a Minor Healing Pill',
         'I eat a healing pill',
         'I use the pill'
+    ],
+    /**
+     * The three questions `scripts/playtest-the-drive.mjs` measured as dead.
+     *
+     * The first five of each set are the harness's own phrasings, so this file
+     * and that one fail together rather than drifting: a regex change that
+     * takes a phrasing away from the parser fails here in milliseconds instead
+     * of failing there behind a build and a server.
+     */
+    ceiling: [
+        'why am I not making progress',
+        'am I stuck',
+        'how far will my technique take me',
+        'what is my ceiling',
+        'what is stopping me',
+        'what is holding me back',
+        'why has my cultivation stalled',
+        'have I hit a wall'
+    ],
+    teacher: [
+        'who can teach me',
+        'I look for a master',
+        'is there anyone here stronger than me',
+        'I ask about a teacher',
+        'who could guide my cultivation',
+        'can anyone here teach me',
+        'is there a master here',
+        'who stands above me'
+    ],
+    destinations: [
+        'where can I go',
+        'I want to travel somewhere else',
+        'where is there better spiritual energy',
+        'what is nearby',
+        'where could I go',
+        'what other places can I reach',
+        'where are the qi denser'
     ]
 };
 

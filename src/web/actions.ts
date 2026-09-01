@@ -223,6 +223,52 @@ export const ACTION_NAMES = [
      * the content, so the comparison must not itself cost a decade.
      */
     'acquisition',
+    /**
+     * ── THE THREE QUESTIONS A DRIVEN PLAYER ASKS AND COULD NOT ────────────
+     *
+     * Added together because they are one measurement.
+     * `scripts/playtest-the-drive.mjs` puts the four questions a player asks
+     * when they want something, in five plain phrasings each, over the real
+     * `/api/act` endpoint. Joining a sect scored 5/5. These three scored 0/5,
+     * 0/5 and 2/5, and the middle column was the finding: three of the five
+     * "who can teach me" phrasings were DEFLECTED rather than refused - the
+     * engine replied, the reply looked like an answer, and it was about
+     * something else. "who could guide my cultivation" returned the character
+     * sheet. "I look for a master" returned the room.
+     *
+     * A deflection is worse than a refusal because a player cannot tell it
+     * from the game being small. All three route to a READ, so a misfire costs
+     * nothing but a moment.
+     */
+    /**
+     * Why nothing is accumulating, with the binding gate named.
+     *
+     * The engine has known the answer the whole time and said it in one place:
+     * `techniqueCeiling(...).line` on the STATUS read, forty lines down a sheet
+     * a player asks for when they want their hit points. Everything else - the
+     * province's `localCeilingOrdinal`, the seat's two bars, the stagnation
+     * clock that `stagnation_aging` kills on - was reachable by no sentence at
+     * all. Twelve honest lives ended at ordinal 0 after fifty years of
+     * two-year seclusions with nothing anywhere saying why.
+     */
+    'ceiling',
+    /**
+     * Who stands above them and would teach, said only of people they know of.
+     *
+     * `members.ts` has carried `role: 'master'` and a three-limit `teaching`
+     * object on every person in the catalog since it was written, and
+     * `rosterFor` already joins it to the player's own knowledge rows. Nothing
+     * asked for it.
+     */
+    'teacher',
+    /**
+     * Where they could go, priced, with the qi and the province's ceiling.
+     *
+     * Distinct from `recall`, which reads their own head and answers "what
+     * have I heard of". A name is not a destination until it has a cost and a
+     * reason next to it, and the catalog holds both.
+     */
+    'destinations',
     'wait',
     // The mortal economy. Half the deaths in this world are logistical, and
     // these are the two verbs that answer that - so they must be reachable
@@ -386,6 +432,11 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
     // strictest sense in the package: it touches no catalog the holder has no
     // record for, so it cannot even accidentally become a way to learn.
     'recall',
+    // The three reads that answer a stuck player. Every line each of them
+    // produces is a restatement of a number the engine already computed, so
+    // none of them can teach, spend, move or kill - and a player at a wall
+    // must be able to ask what it is a hundred times for nothing.
+    'ceiling', 'teacher', 'destinations',
     /**
      * Asking is free. Getting is not, and nobody has ever got.
      *
@@ -973,6 +1024,94 @@ export const ACQUISITION_PATTERN =
     /\b(?:how (?:do|can) i (?:get|go) (?:any )?further|what (?:are|is) my options|how does (?:this|my) (?:manual|method|art|book) (?:go|get) further|next volume|go further with|carry me further|what would (?:it )?take to (?:get|go) (?:past|further|beyond)|my options at this (?:ceiling|wall)|how do i pass this (?:ceiling|wall))\b/;
 
 export const ACQUISITION_SUBJECT_VERBS = /further with|with|past|beyond|of/;
+
+// ─── THE THREE QUESTIONS A STUCK PLAYER ASKS ──────────────────────────────
+//
+// Written from the outside in: what a person types when they want something
+// and cannot get it. Every phrasing here was either measured as dead by
+// `scripts/playtest-the-drive.mjs` or is a neighbour of one that was.
+//
+// All three are QUESTION shapes rather than verb shapes, which is why they do
+// not go through `usedAsVerb`: nobody commands "ceiling". The risk that rule
+// guards against - a common noun in object position being read as a command -
+// does not apply to a sentence that opens "why am I".
+
+/**
+ * Why nothing is accumulating.
+ *
+ * `ACQUISITION_PATTERN` is the neighbour of this one and they are deliberately
+ * different questions: acquisition presupposes a method and asks how the BOOK
+ * goes further, while this asks what is stopping the PERSON and has to answer
+ * for somebody who holds no book at all. The two overlap on "how do I pass
+ * this ceiling", and acquisition keeps it, because a player who says "ceiling"
+ * has already worked out that they have one.
+ */
+export const CEILING_QUESTION = new RegExp([
+    // the measured five
+    /\bwhy (?:am i|are we|is my cultivation|am i still|can'?t i|cannot i|do i)\b[^.?!]*\b(?:not (?:making |getting )?(?:progress|anywhere|any further)|stuck|stalled|not advancing|not improving|no progress|not progressing|not getting anywhere|not moving)\b/,
+    /\bam i (?:stuck|stalled|capped|blocked|at (?:a|my) (?:wall|ceiling|limit))\b/,
+    /\bhow far (?:will|does|can)\b[^.?!]*\b(?:technique|manual|method|art|book|scripture|cultivation)\b[^.?!]*\b(?:take|carry|go|get)\b/,
+    /\bwhat (?:is|'s) (?:my|the) (?:ceiling|limit|cap|wall)\b/,
+    /\bwhat (?:is|'s) (?:stopping|blocking|holding) me\b/,
+    // the neighbours a player reaches for next
+    /\bwhat(?:'s| is) holding me back\b/,
+    /\bwhy (?:can'?t|cannot) i (?:break through|breakthrough|advance|progress|rise|go (?:any )?(?:further|higher))\b/,
+    /\bwhy (?:has|have) my cultivation (?:stopped|stalled)\b/,
+    /\bwhy (?:is|am) (?:nothing|my progress) (?:happening|accumulating|moving)\b/,
+    /\bhow far (?:does|will) my (?:manual|book|method|art) go\b/,
+    /\bwhat (?:is|'s) (?:in my way|my bottleneck)\b/,
+    /\b(?:am i|have i) (?:hit|reached|run into) (?:a|my|the) (?:wall|ceiling|limit|cap)\b/
+].map(r => r.source).join('|'));
+
+/**
+ * Who stands above them and would teach.
+ *
+ * The teaching nouns are required rather than optional in most of these, and
+ * that is what keeps it away from `sect`: "who would take me" is a house
+ * question and "who would teach me" is a person question, and the difference
+ * is the verb. `master` is the one word that leaks - it is also a LEARNING
+ * verb ("master the Iron Bell Manual") - so every branch carrying it here
+ * either puts it after a seeking verb or in front of a question word, never
+ * bare.
+ */
+export const TEACHER_QUESTION = new RegExp([
+    /\bwho (?:can|could|would|will|might|is (?:able|willing) to)\b[^.?!]*\b(?:teach|guide|instruct|train|tutor|mentor|show me|take me on|take me as)\b/,
+    /\b(?:can|could|would|will) (?:anyone|anybody|somebody|someone) (?:here |about |around |nearby )?teach\b/,
+    /\b(?:look|looking|looks|search|searching|seek|seeking|find|finding|want|wanted|need|needing) (?:for |out )?(?:a |an |any |some |the )?(?:master|teacher|mentor|tutor|instructor|shifu|sifu)\b/,
+    /\b(?:ask|asking|asks|enquire|inquire) (?:about|after|for) (?:a |an |the |any )?(?:master|teacher|mentor|tutor|instructor)\b/,
+    /\bis there (?:a |an |any )?(?:master|teacher|mentor|tutor|instructor)\b/,
+    /\b(?:a|any) (?:master|teacher|mentor) (?:here|about|around|nearby|in this)\b/,
+    /\bis there (?:anyone|anybody|somebody|someone)\b[^.?!]*\b(?:stronger|higher|deeper|above me|further along|more advanced|senior to me)\b/,
+    /\bwho (?:is|are|stands?) (?:above|over) me\b/,
+    /\bwho (?:here )?(?:is|are) (?:stronger|higher|deeper|more advanced) than me\b/,
+    /\bwho could guide my cultivation\b/,
+    /\bteach me\b/
+].map(r => r.source).join('|'));
+
+/**
+ * Where they could go.
+ *
+ * Kept off bare `travel` and bare `go`, which belong to `move` and must
+ * continue to: "I travel to Barrow Hand" names a place and is a journey, and
+ * stealing it here would be the exact failure this block was written to fix,
+ * pointed the other way. Every branch below either asks a question word or
+ * names a NON-place ("somewhere else", "anywhere else"), which is precisely
+ * the sentence `move` cannot resolve and answers badly.
+ */
+export const DESTINATIONS_QUESTION = new RegExp([
+    /\bwhere (?:can|could|should|might|would) i (?:go|travel|head|walk)\b/,
+    /\bwhere (?:else )?(?:is there|are there|could i)\b/,
+    /\bwhat(?:'s| is| are)? ?(?:nearby|near here|near by|around here|close by|hereabouts)\b/,
+    /\bwhat (?:other )?places?\b[^.?!]*\b(?:can|could|should) i\b/,
+    /\bwhat (?:else )?is (?:there )?(?:nearby|around|out there|beyond)\b/,
+    /\bwhere is (?:there|the)\b[^.?!]*\b(?:better|stronger|denser|thicker|richer|more)\b[^.?!]*\b(?:qi|spiritual energy|spirit energy|energy|cultivation)\b/,
+    /\bwhere (?:is|are) the (?:qi|spiritual energy|spirit energy|energy) (?:better|stronger|denser|thicker|richer)\b/,
+    /\b(?:travel|go|move|head) (?:somewhere|anywhere) (?:else|better|new)\b/,
+    /\b(?:somewhere|anywhere) else to (?:go|cultivate|be)\b/,
+    /\bwhat (?:are )?my (?:travel )?options\b[^.?!]*\bwhere\b/,
+    /\bwhere (?:could|can) i cultivate (?:better|faster)\b/,
+    /\bwhat (?:towns?|villages?|cities|regions?|provinces?) (?:are|can i reach)\b/
+].map(r => r.source).join('|'));
 
 /** The verbs a line is taken off the board with. */
 export const DUTY_SUBJECT_VERBS =
@@ -1924,7 +2063,21 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
  * attack rule rather than after it, because the attack rule has to stay first:
  * every sentence about a fight is full of other verbs' nouns.
  */
-const AIMED_AT_THE_LADDER = /\b(?:the )?(?:barrier|bottleneck|blockage|realm boundary|next (?:rank|realm))\b/;
+/**
+ * Nouns that look like something to hit and are the bottleneck.
+ *
+ * Sole job: keep the attack branch off a sentence about the ladder. "I strike
+ * at the barrier" is a breakthrough attempt and reads as assault.
+ *
+ * `wall` and `ceiling` were added when the drive harness measured "have I hit
+ * a wall" routing to `attack` - `hit` is an attack verb and `usedAsVerb`
+ * correctly found it in verb position, so the sentence was a fight against a
+ * noun the object model does not contain. Nothing in this world is a wall or a
+ * ceiling that anybody could swing at, so exempting both costs the attack verb
+ * nothing and returns four phrasings of the commonest question in the game.
+ */
+const AIMED_AT_THE_LADDER =
+    /\b(?:the )?(?:barrier|bottleneck|blockage|realm boundary|wall|ceiling|next (?:rank|realm))\b/;
 
 const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|set upon|set on|jump|ambush|assault|take on|put down|finish/;
 
@@ -2508,6 +2661,32 @@ export function parseIntent(input: string): PlannedAction {
     {
         const between = institutionalAct(text, input);
         if (between) return between;
+    }
+
+    // ── the three questions a stuck player asks ──
+    //
+    // High in the table, and every one of them is free, which is what makes
+    // that safe. They sit ABOVE `assess`, `status`, `look`, `move` and
+    // `breakthrough` because those five are precisely what was eating these
+    // sentences: "am I stuck" was answered by a senior's opinion of the
+    // player, "who could guide my cultivation" by the character sheet, "I look
+    // for a master" by the room, and "I want to travel somewhere else" by the
+    // travel verb going looking for a place called "somewhere else". Each of
+    // those is a good answer to a question nobody asked.
+    //
+    // They sit BELOW the institutional block and the attack block, on the same
+    // reasoning those give: a sentence that files a petition or starts a fight
+    // is still doing that when it also contains the word "teacher".
+    if (CEILING_QUESTION.test(text)) {
+        return { action: 'ceiling' };
+    }
+
+    if (TEACHER_QUESTION.test(text)) {
+        return { action: 'teacher' };
+    }
+
+    if (DESTINATIONS_QUESTION.test(text)) {
+        return { action: 'destinations' };
     }
 
     // ── what am I carrying in my head ──

@@ -25,6 +25,10 @@ import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import {
     SATIETY_MAX,
+    // The settling clock, which `stagnation_aging` kills on. Read for the
+    // ceiling report so a player is told about it before it is spent, rather
+    // than in the death line.
+    stagnationYearsForOrdinal,
     // `STARTING_SPIRIT_STONES` is deliberately gone from here: what a run opens
     // with is now a property of the birth rather than a constant, and nine
     // births in ten still draw about that figure. The constant stays exported
@@ -58,7 +62,9 @@ import {
     findWorkForOrdinal,
     getPrice
 } from '../data/cultivation/mortal-world.js';
-import { localPrice } from '../data/cultivation/regions.js';
+import {
+    localPrice, canAdvanceHere, requireRegion, REGIONS
+} from '../data/cultivation/regions.js';
 import {
     treatWorstInjuries,
     untreatedInjuries,
@@ -113,7 +119,12 @@ import {
     handleList,
     handlePromote,
     handleStanding,
-    handleStipend
+    handleStipend,
+    // The two bars `handlePromote` itself gates on. Read rather than restated,
+    // so what the ceiling report tells a player about their next seat and what
+    // the promotion actually enforces cannot drift apart.
+    requiredOrdinalForRank,
+    requiredContributionForRank
 } from '../server/consolidated/sect-manage.js';
 import {
     handleAdmission,
@@ -282,10 +293,17 @@ import {
     seekerFor,
     sectBoardFor,
     writeObligation,
+    rosterFor,
     type DatabaseHandle,
     withEncounterDeltas,
     type DutyLedgerInput
 } from './encounters.js';
+// The three reads that answer a stuck player. Each is a renderer over numbers
+// computed elsewhere; see the banner in each file for what it may and may not
+// say. Wired here because this is where the state they restate is already read.
+import { whyProgressHasStopped, type SeatStanding } from './why-progress-has-stopped.js';
+import { whoWouldTeach, type SomebodyAbove } from './who-would-teach-this-cultivator.js';
+import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
 import { assessAcquisition, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type {
     ArrivableFact,
@@ -1802,6 +1820,20 @@ ${noticedWaiting}`;
 
             case 'acquisition':
                 return this.acquisition(run, cultivator, action.target);
+
+            // ── the three questions a stuck player asks ──
+            //
+            // All reads, all free. See the ACTION_NAMES entries for the
+            // measurement that made them necessary, and the banner in each
+            // module for what it may and may not say.
+            case 'ceiling':
+                return this.ceiling(run, cultivator, ambient);
+
+            case 'teacher':
+                return this.teacher(run, cultivator);
+
+            case 'destinations':
+                return this.destinations(run, cultivator);
 
             case 'learn_technique':
                 return this.learnTechnique(cultivator, action.target);
@@ -7399,6 +7431,325 @@ ${noticed}`;
         );
         const execution = this.freeAction(run, 'acquisition', facts);
         execution.calls = calls;
+        return execution;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // THE THREE QUESTIONS A STUCK PLAYER ASKS
+    //
+    // Measured dead by `scripts/playtest-the-drive.mjs` over the real
+    // endpoint, in the words a person types. Every one of the three is a
+    // GATHERING of state this class already reads for other purposes, handed
+    // to a renderer that holds no thresholds of its own. Nothing below
+    // computes a ceiling, decides who teaches, or prices a road; it reads six
+    // engine functions and repeats what they said.
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Why nothing is accumulating, with the binding gate named first.
+     *
+     * The pieces were all present and none of them was reachable. The manual
+     * axis was on the STATUS read - forty lines down a sheet a player asks for
+     * when they want their hit points - and the province, the seat and the
+     * settling clock were reachable by no sentence at all.
+     *
+     * Free, and that is load-bearing: a player at a wall has to be able to ask
+     * what it is as many times as they like. The whole design rests on the
+     * pressure being legible, and pressure a player is charged to look at is
+     * pressure they will stop looking at.
+     */
+    private ceiling(run: Run, cultivator: Cultivator, ambient: AmbientQi): Execution {
+        const terms = this.rateTermsFor(cultivator);
+        const manual = techniqueCeiling(cultivator.realmOrdinal, terms.techniqueCap);
+        const eligibility = canAttemptBreakthrough(cultivator);
+        const where = standingOf(cultivator);
+        const region = requireRegion(where.regionId);
+
+        // The seat, read off the same two functions `handlePromote` gates on.
+        // Absent for somebody who serves nobody, which is not a gate - it is
+        // the ordinary condition of most people alive.
+        let seat: SeatStanding | null = null;
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        if (membership) {
+            const sect = this.repos.sects.getById(membership.sectId);
+            if (sect) {
+                const next = membership.rankIndex + 1;
+                const atTop = next >= sect.ranks.length;
+                seat = {
+                    sectName: sect.name,
+                    rankTitle: membership.rankTitle,
+                    nextRankTitle: atTop ? null : sect.ranks[next],
+                    requiredOrdinal: atTop
+                        ? 0
+                        : requiredOrdinalForRank(sect.admissionOrdinal, next),
+                    requiredContribution: atTop ? 0 : requiredContributionForRank(next),
+                    contribution: membership.contribution
+                };
+            }
+        }
+
+        const read = whyProgressHasStopped({
+            name: cultivator.name,
+            ordinal: cultivator.realmOrdinal,
+            manual,
+            manualCap: terms.techniqueCap,
+            regionName: region.name,
+            localCeilingOrdinal: region.localCeilingOrdinal,
+            canAdvanceHere: canAdvanceHere(where.regionId, cultivator.realmOrdinal),
+            ambient,
+            seat,
+            progressRequired: eligibility.progressRequired,
+            progressAvailable: eligibility.progressAvailable,
+            eligible: eligibility.eligible,
+            yearsAtCurrentRealm: cultivator.yearsAtCurrentRealm,
+            stagnationYears: stagnationYearsForOrdinal(cultivator.realmOrdinal)
+        });
+
+        const facts = factsForToolResult(read.headline, read.lines);
+        facts.structure.push(...read.structure);
+        // A hard gate is exactly the kind of fact `required` was built for: the
+        // measured failure was a model receiving "without a manual there is no
+        // road for the qi to take" inside a long digest and dropping it, after
+        // which a cultivator sat for fifty years and was never told why.
+        if (read.required.length > 0) facts.required = read.required;
+
+        const execution = this.freeAction(run, 'ceiling', facts);
+        execution.calls = [{
+            name: 'engine.whyProgressHasStopped',
+            action: 'ceiling',
+            summary:
+                `${read.gates.length} gate(s) read, `
+                + `${read.gates.filter(g => g.hard).length} hard. `
+                + `Every figure restated from techniqueCeiling, canAdvanceHere, `
+                + `requiredOrdinalForRank, canAttemptBreakthrough and `
+                + `stagnationYearsForOrdinal. Nothing computed here.`,
+            ok: true
+        }];
+        return execution;
+    }
+
+    /**
+     * Who stands above them and would teach, said only of people they know of.
+     *
+     * Two populations, joined and then gated the same way:
+     *
+     *   THE ROLL   `rosterFor` returns the house's catalog roster with `known`
+     *              already resolved against the knowledge rows, plus the
+     *              `master` role and the three teaching limits.
+     *   THE ROOM   `present()` is who is physically here, which includes
+     *              people from no house at all. Gated on `isAwareOf`, the same
+     *              predicate `company()` uses for a face in a square.
+     *
+     * Somebody in both is reported once, from the roster, because the roster
+     * row carries strictly more - and `here` is set from the room, so "they
+     * are here" is a fact about the present rather than about the catalog.
+     */
+    private teacher(run: Run, cultivator: Cultivator): Execution {
+        const inTheRoom = new Map(this.present(cultivator).map(row => [row.id, row]));
+        const above: SomebodyAbove[] = [];
+        const counted = new Set<string>();
+
+        const deps = { repos: this.repos, knowledge: this.knowledge, world: this.atHand };
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        // The catalog rows behind the roster, indexed once. `rosterFor` carries
+        // the role and `teaching.knows`; the other two limits and the seat
+        // title are only on the catalog entry, and reading them per person
+        // through `getMembersOf` was a scan of the whole house per member.
+        const catalog = new Map(
+            getMembersOf(membership?.sectId ?? '').map(m => [m.id, m])
+        );
+
+        for (const person of rosterFor(deps, cultivator)) {
+            if (person.id === cultivator.id) continue;
+            if (person.realmOrdinal <= cultivator.realmOrdinal) continue;
+            counted.add(person.id);
+            const member = catalog.get(person.id);
+            above.push({
+                // The gate. A roster row is not permission to say a name.
+                name: person.known ? person.name : null,
+                realmOrdinal: person.realmOrdinal,
+                rankTitle: person.known ? (member?.rank ?? null) : null,
+                willTeach: person.role === 'master',
+                // The three limits stay separate - merging them is how a
+                // master becomes an oracle. Null when they are not one.
+                knows: person.known ? (member?.teaching?.knows ?? null) : null,
+                mayNotSay: person.known ? (member?.teaching?.mayNotSay ?? null) : null,
+                costsThem: person.known ? (member?.teaching?.costsThem ?? null) : null,
+                here: inTheRoom.has(person.id)
+            });
+        }
+
+        // Anybody standing here who is not on the roll. A wanderer four rungs
+        // up is as real a teacher as an elder, and a rogue cultivator has no
+        // roster to read at all - which is most of the reason this half exists.
+        for (const [id, row] of inTheRoom) {
+            if (counted.has(id)) continue;
+            if (row.realmOrdinal <= cultivator.realmOrdinal) continue;
+            above.push({
+                name: this.knowledge.isAwareOf(cultivator.id, 'cultivator', id)
+                    ? row.name
+                    : null,
+                realmOrdinal: row.realmOrdinal,
+                rankTitle: null,
+                // Nothing on the roster row says they teach, and this layer
+                // will not guess. `willTeach` is a catalog fact or it is false.
+                willTeach: false,
+                knows: null,
+                mayNotSay: null,
+                costsThem: null,
+                here: true
+            });
+        }
+
+        above.sort((a, b) =>
+            Number(b.willTeach) - Number(a.willTeach)
+            || Number(b.here) - Number(a.here)
+            || a.realmOrdinal - b.realmOrdinal);
+
+        const terms = this.rateTermsFor(cultivator);
+        const read = whoWouldTeach({
+            name: cultivator.name,
+            ordinal: cultivator.realmOrdinal,
+            placeName: placeName(cultivator),
+            sectName: membership
+                ? this.repos.sects.getById(membership.sectId)?.name ?? null
+                : null,
+            above,
+            manualState: techniqueCeiling(cultivator.realmOrdinal, terms.techniqueCap).state
+        });
+
+        const facts = factsForToolResult(read.headline, read.lines);
+        facts.structure.push(...read.structure);
+
+        const execution = this.freeAction(run, 'teacher', facts);
+        execution.calls = [{
+            name: 'engine.whoWouldTeach',
+            action: 'teacher',
+            summary:
+                `${above.length} above this cultivator, ${read.nameable} of them nameable. `
+                + `Every name gated on isAwareOf; the rest reported as a count and an `
+                + `altitude. Teaching limits read from members.ts, never composed.`,
+            ok: true
+        }];
+        return execution;
+    }
+
+    /**
+     * Where they could go, priced, with the qi and the province's ceiling.
+     *
+     * The discovery gate here is `canPointAt` rather than `isAwareOf`, and the
+     * difference is the whole point: `REACHABLE_FROM` is `placed`, and a name
+     * caught through a wall is a name and not a destination. `somewhereReal`
+     * already applies exactly this predicate when the player tries to TRAVEL
+     * to a place, so listing on any looser rule would advertise destinations
+     * the move verb would then refuse.
+     *
+     * The names below `placed` are counted and never listed. Listing them would
+     * quietly promote a whisper into a road and spend a discovery the player
+     * was supposed to earn.
+     */
+    private destinations(run: Run, cultivator: Cultivator): Execution {
+        const here = standingOf(cultivator);
+        const fromRegion = requireRegion(here.regionId);
+
+        // What it costs to reach each other province, off the region's own
+        // `connections`. Absent means no stated road, which is a real state.
+        const cost = new Map<string, number>();
+        for (const link of fromRegion.connections) {
+            const known = cost.get(link.otherRegionId);
+            if (known === undefined || link.travelDays < known) {
+                cost.set(link.otherRegionId, link.travelDays);
+            }
+        }
+
+        const reachable: Destination[] = [];
+        let unplaceable = 0;
+
+        for (const row of this.knowledge.awareness(cultivator.id, 'place')) {
+            if (!this.knowledge.canPointAt(cultivator.id, 'place', row.id)) {
+                unplaceable++;
+                continue;
+            }
+            const wanted = loosePlaceKey(row.name);
+
+            // A PROVINCE, which is the scale the catalog actually prices. This
+            // half was missing from the first build and it was the whole of the
+            // travel answer: "The Low Fall" and "The Drowned Reach" are names
+            // in the knowledge table like any other, they are the only names
+            // with a stated `travelDays` beside them, and looking up
+            // settlements only dropped every one of them on the floor. The
+            // read listed five towns in the player's own province, each of them
+            // zero days away, and the cost map below never once returned a row.
+            const province = REGIONS.find(region => loosePlaceKey(region.name) === wanted);
+            if (province) {
+                reachable.push({
+                    name: province.name,
+                    kind: 'province',
+                    // Deliberately null. A region's `ambientProfile` is a
+                    // distribution across its settlements, and flattening it to
+                    // one band would state a fact about ground nobody has stood
+                    // on. The settlements inside it carry their own.
+                    ambient: null,
+                    regionName: province.name,
+                    travelDays: province.id === fromRegion.id
+                        ? null
+                        : cost.get(province.id) ?? null,
+                    localCeilingOrdinal: province.localCeilingOrdinal,
+                    hereNow: false,
+                    sameProvince: province.id === fromRegion.id
+                });
+                continue;
+            }
+
+            // A SETTLEMENT. A place the player has a record for that the
+            // catalog does not describe is skipped rather than guessed at:
+            // this read prices roads, and it has no price for somewhere it
+            // cannot find.
+            const found = REGIONS
+                .flatMap(region => region.places.map(place => ({ region, place })))
+                .find(candidate => loosePlaceKey(candidate.place.name) === wanted);
+            if (!found) continue;
+
+            reachable.push({
+                name: found.place.name,
+                kind: found.place.kind,
+                ambient: found.place.ambient,
+                regionName: found.region.name,
+                // Never zero for "somewhere in this province". Nothing in the
+                // catalog prices a road between two settlements of one region,
+                // and a fabricated zero is a number a player plans around.
+                travelDays: found.region.id === fromRegion.id
+                    ? null
+                    : cost.get(found.region.id) ?? null,
+                localCeilingOrdinal: found.region.localCeilingOrdinal,
+                hereNow: wanted === loosePlaceKey(cultivator.location ?? ''),
+                sameProvince: found.region.id === fromRegion.id
+            });
+        }
+
+        const read = whereCouldTheyGo({
+            ordinal: cultivator.realmOrdinal,
+            placeName: placeName(cultivator),
+            regionName: fromRegion.name,
+            localCeilingOrdinal: fromRegion.localCeilingOrdinal,
+            reachable,
+            unplaceable
+        });
+
+        const facts = factsForToolResult(read.headline, read.lines);
+        facts.structure.push(...read.structure);
+
+        const execution = this.freeAction(run, 'destinations', facts);
+        execution.calls = [{
+            name: 'engine.whereCouldTheyGo',
+            action: 'destinations',
+            summary:
+                `${reachable.length} place(s) this cultivator can point at, `
+                + `${unplaceable} name(s) held and unplaceable. Gated on canPointAt, the `
+                + `same predicate the move verb enforces. Travel days off region `
+                + `connections; qi bands off the region catalog.`,
+            ok: true
+        }];
         return execution;
     }
 
