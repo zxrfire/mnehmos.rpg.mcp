@@ -96,6 +96,7 @@ import {
 } from './npc-state.js';
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
+import { manualCeilingOf, newlyEntitled, BOOKLESS_CEILING } from './manuals.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
     makeFaction,
@@ -245,6 +246,7 @@ export function applyPressure(
         // Then the parts of a year that are arithmetic rather than incident:
         // people advance, institutions pay their bills, and children are born.
         // Births last, so a year's dead are counted before its replacements.
+        applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
         applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
         applyFactionEconomy(state);
@@ -565,9 +567,25 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
             l => l.kind === 'region' && isBelowTheLid(l) &&
                 String(l.data.catalogRegionId ?? '') === regionTag
         ) ?? state.locations.find(l => l.id === npc.locationId);
-        const ceiling = Number(region?.data.localCeilingOrdinal ?? 20);
+        const regionCeiling = Number(region?.data.localCeilingOrdinal ?? 20);
         const rateMultiplier = Number(region?.data.ambientRateMultiplier ?? 1);
         const age = Math.floor((day - npc.identity.bornOnDay) / 365);
+
+        // THE BOOK IS THE HARDER OF THE TWO CEILINGS.
+        //
+        // The province says what has ever been done here; the manual says what
+        // THIS person can do at all. Without a road there is no progress - not
+        // slow progress, none - which is the player's rule (`NO_MANUAL_CEILING`)
+        // and the world was not playing by it, because until `manuals.ts` ran
+        // nobody in the world held a book at all.
+        //
+        // A capped cultivator is not stuck by accident. They are standing in
+        // the situation the escape routes exist for, and the right outcome is
+        // that they stop here until they find a later volume, are taught, or
+        // write one.
+        const manualCeiling = manualCeilingOf(npc) || BOOKLESS_CEILING;
+        const ceiling = Math.min(regionCeiling, manualCeiling);
+        if (ceiling <= npc.cultivation.realmOrdinal) continue;
 
         const derived = deriveOrdinal(
             npc.cultivation.spiritRoot,
@@ -596,6 +614,45 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
  *
  * A flow, not a decision: nobody here weighs whether to apply.
  */
+/**
+ * Books move after seeding, and not because anybody joined anything.
+ *
+ * Promotion inside a house reaches further up its shelf; the unbacked buy what
+ * a stall sells. Both are additions only, so this is safe to run over and over,
+ * and it is what turns a static shelf into the thing that lets a population
+ * pyramid actually flow - somebody climbs to a house's admission bar, is taken
+ * on, sweeps for forty years, and only then is handed the book that lets them
+ * pass the ceiling the last one gave them.
+ */
+function applyBookAcquisition(state: WorldState, year: number, day: number): number {
+    const rng = forStream(state.seed, 'books', year);
+    const living: number[] = [];
+    for (let i = 0; i < state.npcs.length; i++) {
+        if (state.npcs[i].status === 'alive' && isBelowTheLid(state.npcs[i])) living.push(i);
+    }
+    if (living.length === 0) return 0;
+
+    let handed = 0;
+    const looks = Math.max(1, Math.round(living.length / 8));
+    for (let s = 0; s < looks; s++) {
+        const at = living[rng.int(0, living.length - 1)];
+        const npc = state.npcs[at];
+        if (npc.status !== 'alive') continue;
+        const gained = newlyEntitled(state, npc);
+        if (gained.length === 0) continue;
+        state.npcs[at] = {
+            ...npc,
+            cultivation: {
+                ...npc.cultivation,
+                techniqueIds: [...npc.cultivation.techniqueIds, ...gained]
+            },
+            updatedOnDay: day
+        };
+        handed++;
+    }
+    return handed;
+}
+
 function applyRecruitment(state: WorldState, year: number, day: number): number {
     const admitting = state.factions.filter(
         f => f.dissolvedOnDay === null && isBelowTheLid(f) && f.tags.includes('recruits')
