@@ -898,3 +898,68 @@ immortal-world.ts the far side: arrival, standing, perils, and its own clock
 - [`../social/README.md`](../social/README.md) - belief, grudges, secrets
 - [`../../storage/README.md`](../../storage/README.md) - how these tables are migrated
 - [`../../../docs/world/`](../../../docs/world/) - the setting these mechanics express
+
+---
+
+## Ruins, convergence, and chains of forced choices
+
+Four modules landed together and are one subject observed at different moments. The
+authoring guide is [`../../../docs/world/ruins.md`](../../../docs/world/ruins.md); this is
+the contract.
+
+**`cascade.ts` - the world changing itself, in more than one step.** `pressure.ts` fires
+events that are complete on their own, which is right for institutional churn and wrong
+for the thing the setting is actually about: a house is destroyed, its survivors choose,
+and one of the options is the gravest thing a house can do. Each step's options are
+produced by the state the previous step left. **There is no branch anywhere on a faction
+id, a tier or a title**, and a protector spending itself on an enemy's ground is `expend` -
+the generic option "spend the whole of an asset at a target, once" - priced off the
+asset's own ordinal. The exposure that follows is *derived*: `couldDieToADisaster` is
+asked of each person actually standing there, so `catastrophe.ts`'s three tiers reproduce
+themselves without the table being read.
+
+**`provenance.ts` - four axes that must stay independent.** `identifyBuilder` never reads
+wing state and `wingsOf` never reads provenance. If those cross, the axes have collapsed.
+Everything lives on `location.data` as flat scalars plus one JSON string, so no
+`LocationRecord` field, migration or repo changed, and a site seeded before the module
+existed reads as anonymous and untouched - the honest default.
+
+**`convergence.ts` - the consequence half of `OpeningCycle`.** That field has been on the
+record since the location layer was written and nothing in play consumed it. The escape
+from a closing window is `spatial_folding`, an existing Void Refinement grant, and its two
+properties do all the work: it is too high for anybody who explores ruins, and it is
+short-range, so it narrows as the window wanes and fails when it would matter most. **Do
+not add a consumable version.**
+
+**`ruin-mechanics.ts` - the test for anything added here.** *Does it change what the player
+knows, what they are, or what the rules of the place are - rather than how much damage
+they take?* If it is a number, it belongs in the encounter layer.
+
+### Two guards that were paid for by measurement
+
+- **A region is a container and must never be a catastrophe's target.** `faction_founded`
+  seats a splinter at its founder's location, which can be a region node, so `expend` was
+  forbidding whole provinces. `birthplacesIn` then found nowhere habitable, births stopped
+  dead, and the world aged out: 486 living at year 400, 250 at 450, **1 at 500**, with the
+  roster frozen and 3,206 of 3,207 people dead. `zone_forbidden` has always filtered to
+  `wilds` and `vein` for exactly this reason. The guard is now stated at both consumption
+  sites.
+- **A wing's `sealed` is a separate door from the site's.** Deriving wings from
+  `location.sealed` meant breaking a site's outer seal left a place nobody could enter any
+  part of. Only the deepest wing is separately sealed; whether the site is shut is
+  `evaluateAccess`'s question.
+
+### The measurement, and what it is
+
+[`scripts/audit-standoff-drift.ts`](../../../scripts/audit-standoff-drift.ts) runs the
+standoff question against a **live world** at day 0, 50, 200 and 500. This is deliberately
+not `playtest-conspiracy.ts`, which reads the catalogs and answers identically every time.
+
+**Equilibrium is the initial condition, not an invariant.** A seeded world at day zero must
+read the way the setting says it reads; a world that has run forward is *expected* to
+differ, and a tilt that produces a war is the system working. What would be a defect is a
+figure that moves with nothing to point at - so the audit prints the causes beside the
+rate (seals still held, ground forbidden, ruins in existence). If the rate moves while
+those hold flat, something changed in the combat arithmetic and that is a different
+finding.
+

@@ -13,6 +13,13 @@
  *
  * Reading order for anyone new to the module:
  *
+ *   layers.ts        the one point where progression is also geography. Two
+ *                    layers, ordered, and reaching ordinal 46 MOVES you to the
+ *                    second one. Also the single statement of what crosses the
+ *                    Lid in either direction, for people, objects, manuals and
+ *                    information - the boundary is restricted both ways, and
+ *                    that is what makes it mean anything.
+ *
  *   history.ts       ground truth and what survives of it. The three event
  *                    kinds (historical / concurrent / witnessed) are computed
  *                    per observer, never stored. `truth` can say `unresolved`,
@@ -79,7 +86,35 @@
  *                    bind to real entities and write real state: a vein changes
  *                    hands, an elder dies, a border moves, a faction folds. It
  *                    schedules THAT something happened; it never simulates why
- *                    anybody did it.
+ *                    anybody did it. Also the convergence pass, which is
+ *                    deliberately NOT a weighted draw: something sealed opens
+ *                    on its own schedule whether or not the year had a slot.
+ *
+ *   cascade.ts       the one thing pressure cannot do in a single step: a chain
+ *                    of forced choices. A house is destroyed, the survivors
+ *                    choose from options the world already prices, and if they
+ *                    wake what is under the hall, that chooses too. Usually
+ *                    stops at the first link; when it does not, the map is
+ *                    permanently different. No branch on any faction id.
+ *
+ *   provenance.ts    ruins along four independent axes - who left it, how much
+ *                    has been gone through, how long ago it fell, and who holds
+ *                    the door. Reading a site is a skill answered by the
+ *                    `understand` predicate rather than by rank, and knowledge
+ *                    of a site is a RELATION rather than a flag, because what a
+ *                    house knows is the residue of what it has done.
+ *
+ *   convergence.ts   a ruin is not a place you can go; it is a place that is
+ *                    periodically reachable. The clock, what overstaying costs,
+ *                    the space-folding escape that is never available to the
+ *                    person who needs it, and whether anybody would come for
+ *                    you - which makes a relationship a survival asset.
+ *
+ *   ruin-mechanics.ts  things a ruin does that are not damage: a map that
+ *                    records rooms and never the edges, an identity worn in its
+ *                    own era, qi as the only light, and a routine kept by the
+ *                    dead. Each changes what the player knows, what they are,
+ *                    or what the rules of the place are.
  *
  *   digest.ts        what the player actually learns, gated on channel and then
  *                    on attribution. An event involving a faction they have
@@ -93,6 +128,14 @@
  *                    next run starts in that world - descendant, disciple, or
  *                    most often a stranger who finds the bones. Nothing
  *                    resurrects.
+ *
+ *   immortal-world.ts  the far side, materialised on contact and never before.
+ *                    Ascension stops being an ending and becomes a transition:
+ *                    the person keeps their id, their lineage, their grudges
+ *                    and their history, loses everything they were carrying
+ *                    because nothing goes through with them, and arrives
+ *                    somewhere they are nobody. Both readings of them are
+ *                    computed rather than asserted, and both are true at once.
  *
  *   ladder-odds.ts   how many people ever get this far, in three numbers that
  *                    are allowed to disagree: what the world BELIEVES (vague,
@@ -129,6 +172,7 @@
  *     scales an outcome to how a run is going.
  */
 
+export * from './layers.js';
 export * from './history.js';
 export * from './locations.js';
 export * from './capability.js';
@@ -141,9 +185,14 @@ export * from './world-state.js';
 export * from './time.js';
 export * from './catalog.js';
 export * from './seeding.js';
+export * from './provenance.js';
+export * from './convergence.js';
+export * from './ruin-mechanics.js';
+export * from './cascade.js';
 export * from './pressure.js';
 export * from './digest.js';
 export * from './driver.js';
 export * from './legacy.js';
+export * from './immortal-world.js';
 export * from './ladder-odds.js';
 export * from './origin-odds.js';

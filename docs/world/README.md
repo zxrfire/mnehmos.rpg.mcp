@@ -57,6 +57,7 @@ converge on `NARRATOR-CORE.md`.
 | [`qi.md`](qi.md) | Qi, spiritual veins, regional density, thin-region ceilings, contested qi, spirit stones | 1 and 2 |
 | [`the-late-age.md`](the-late-age.md) | The aged world, depletion and monopoly, ruins, what survives, the texture to aim for | 2 |
 | [`ancient.md`](ancient.md) | Authoring guide: the ancient tier. Modern is elemental and ancient is categorical; the three kinds of absence; what an ancient art costs and who can pay it; the thousand-year medicine | 2 |
+| [`ruins.md`](ruins.md) | Authoring guide: ruins. The four axes (who left it, how gone-over, how long ago, who holds the door); convergence and the self-cancelling escape; loot as a record rather than a table; access; why a stripped ruin still teaches; mechanics that change the terms | 2 |
 | [`techniques.md`](techniques.md) | What an art can DO, by height: the ladder that escalates in kind rather than magnitude, ending in causal speech; how it composes with class and era; dormant archives; what runs out | 2 |
 | [`sects.md`](sects.md) | Sects as political institutions, factions, succession, ancestral records, dormant and ascended ancestors, the standing powers | 2 |
 | [`dao-houses.md`](dao-houses.md) | The ancient houses, specialisation without ownership, civil authority, counters and blind spots, rewritten histories | 2 |

@@ -618,7 +618,12 @@ function seedFactions(
                 // the record rather than looked up, so the world stays
                 // self-contained once the catalog is out of the picture.
                 production: cf.production,
-                admission_ordinal: cf.admissionOrdinal
+                admission_ordinal: cf.admissionOrdinal,
+                // What it fields every day, which `cascade.ts` compares against
+                // whoever came for it.
+                power_ordinal: cf.powerOrdinal,
+                // And what it holds asleep, once. Spent to zero on waking.
+                sealed_ceiling_ordinal: cf.sealedCeilingOrdinal
             },
             description: cf.description,
             foundedOnDay: presentDay - years(rng.int(60, 900)),

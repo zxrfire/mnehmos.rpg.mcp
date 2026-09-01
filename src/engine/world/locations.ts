@@ -88,6 +88,7 @@
 
 import type { AmbientQi } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, clampOrdinal, rankName } from '../cultivation/realms.js';
+import { forStream } from '../cultivation/rng.js';
 import { yearOfDay, type PriorAges, type Ruin, type Scar } from './history.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MIN, clampQiDensity, qiFraction } from './qi-scale.js';
@@ -1564,11 +1565,81 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
                 sealedYear: ruin.sealedYear,
                 formerFactionId: ruin.formerFactionId,
                 techniqueCount: ruin.techniqueIds.length,
-                treasureCount: ruin.treasureIds.length
+                treasureCount: ruin.treasureIds.length,
+                ...ruinProvenance(ruin),
+                ...ruinConvergence(ruin)
             }
         }
     });
-    return location;
+    return { ...location, cycle: cycleForRuin(ruin) };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// NOT EVERY RUIN IS ANONYMOUS, AND NOT EVERY ONE IS REACHABLE
+//
+// Two independent draws off the ruin's own id, so a site is the same site in
+// every run of the same world and the two axes do not correlate: a documented
+// ruin is as likely to be on a four-hundred-year cycle as a nameless one, and
+// a site nobody can place may be one anybody can walk to.
+//
+// The consumers are `provenance.ts` and `convergence.ts`; everything written
+// here is plain scalars on `data` plus the `cycle` field that has been on the
+// record since the location layer was written and has never been populated.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Shares of the ruin population at each provenance standing. */
+const PROVENANCE_MIX = { documented: 12, attributed: 28, rumoured: 30, anonymous: 30 };
+
+function ruinProvenance(ruin: Ruin): Record<string, string | number | boolean | null> {
+    const rng = forStream('ruin-provenance', ruin.id);
+    // A site whose builder the world never recorded cannot be documented
+    // however the draw lands, because there is nothing to have recorded.
+    const standing = ruin.formerFactionId === null
+        ? 'anonymous'
+        : rng.weighted(PROVENANCE_MIX);
+    const bar = { documented: 0, attributed: 6, rumoured: 14, anonymous: MAX_ORDINAL }[standing];
+
+    return {
+        provenanceStanding: standing,
+        builderId: standing === 'anonymous' ? null : ruin.formerFactionId,
+        builderName: standing === 'anonymous' ? null : ruin.name,
+        builtInYear: ruin.sealedYear,
+        // Keyed the way an insight is keyed, so an ordinary `knowledgeIds`
+        // entry satisfies it and no second vocabulary was invented.
+        provenanceKey: standing === 'anonymous' ? null : `ruins:${ruin.id}`,
+        provenanceReadOrdinal: bar
+    };
+}
+
+/** Share of ancient sites that are reachable only when the convergence comes. */
+const CONVERGENT_SHARE = 0.4;
+/** Years between openings, at the short and long end. */
+const CONVERGENCE_PERIOD_YEARS = { min: 120, max: 600 };
+/** Days a window runs. Short, and short is the whole mechanic. */
+const CONVERGENCE_WINDOW_DAYS = { min: 20, max: 90 };
+
+function cycleForRuin(ruin: Ruin): OpeningCycle | null {
+    const rng = forStream('ruin-convergence', ruin.id);
+    if (!rng.chance(CONVERGENT_SHARE)) return null;
+    const periodDays = rng.int(CONVERGENCE_PERIOD_YEARS.min, CONVERGENCE_PERIOD_YEARS.max) * 365;
+    return {
+        periodDays,
+        openDays: rng.int(CONVERGENCE_WINDOW_DAYS.min, CONVERGENCE_WINDOW_DAYS.max),
+        // Phased off the day it was sealed, so the schedule is a property of
+        // the site's own history rather than of when the simulation started.
+        phaseDay: ruin.sealedYear * 365 + rng.int(0, periodDays - 1)
+    };
+}
+
+function ruinConvergence(ruin: Ruin): Record<string, string | number | boolean | null> {
+    const cycle = cycleForRuin(ruin);
+    if (!cycle) return {};
+    return {
+        // Working out when a site is next due takes records going back further
+        // than anybody keeps them, so it is its own reading with its own key.
+        scheduleKey: `cycles:${ruin.id}`,
+        scheduleReadOrdinal: 10
+    };
 }
 
 export function locationFromScar(scar: Scar): LocationRecord {
