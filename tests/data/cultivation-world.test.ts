@@ -17,9 +17,10 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { REALM_TIERS } from '../../src/engine/cultivation/realms.js';
+import { MAX_ORDINAL, REALM_TIERS } from '../../src/engine/cultivation/realms.js';
 import { STARTING_SPIRIT_STONES } from '../../src/schema/cultivation.js';
 import { SECTS, getSect, getDaoHouse } from '../../src/data/cultivation/sects.js';
+import { getApexInstitution } from '../../src/data/cultivation/hierarchy.js';
 import { getPill, MINOR_HEALING_PILL_ID, GRAIN_ABSTINENCE_PILL_ID } from '../../src/data/cultivation/pills.js';
 import {
     REGIONS,
@@ -38,7 +39,13 @@ import {
     regionContrast,
     RANK_MISREADINGS,
     TITLE_TRANSLATIONS,
-    PLACERS
+    PLACERS,
+    EAST_REGION_ID,
+    NORTH_REGION_ID,
+    SOUTH_REGION_ID,
+    RUIN_NAMES,
+    SCAR_NAMES,
+    GeneratedPlaceNameSchema
 } from '../../src/data/cultivation/regions.js';
 import {
     TRADITIONS,
@@ -86,18 +93,59 @@ function expectUniqueIds(entries: readonly { id: string }[], label: string): voi
 
 // ─────────────────────────────────────────────────────────────────────────
 describe('regions', () => {
-    it('holds exactly two, and does not grow a third', () => {
-        expect(REGIONS.length).toBe(2);
+    it('holds the five of the spine, one of them home', () => {
+        expect(REGIONS.length).toBe(5);
         for (const r of REGIONS) expect(() => RegionSchema.parse(r), r.id).not.toThrow();
         expectUniqueIds(REGIONS, 'region');
         expect(REGIONS.filter(r => r.role === 'home').length).toBe(1);
+        for (const id of [HOME_REGION_ID, ADJACENT_REGION_ID, EAST_REGION_ID, NORTH_REGION_ID, SOUTH_REGION_ID]) {
+            expect(getRegion(id), `${id} is not in the catalog`).toBeDefined();
+        }
     });
 
-    it('makes the adjacent region less densely authored, on purpose', () => {
+    it('spreads the factions out instead of stacking them in one province', () => {
+        // The defect this split exists to fix: 32 of 32 houses in two
+        // provinces meant every house shared ground with almost every other
+        // one, and territory, rivalry and distance had nothing to measure
+        // against. No province may hold a majority of the catalog.
+        const total = SECTS.length;
+        for (const r of REGIONS) {
+            expect(r.factionIds.length, `${r.id} holds too much of the world`)
+                .toBeLessThanOrEqual(Math.ceil(total * 0.6));
+            expect(r.factionIds.length, `${r.id} is seated by nobody`)
+                .toBeGreaterThanOrEqual(2);
+        }
+        // And the home province is still the densest, because it is the centre
+        // and every road in the world runs through it.
         const home = getRegion(HOME_REGION_ID)!;
-        const away = getRegion(ADJACENT_REGION_ID)!;
-        expect(away.factionIds.length).toBeLessThan(home.factionIds.length / 4);
-        expect(away.factionIds.length).toBeGreaterThanOrEqual(3);
+        for (const r of REGIONS) {
+            if (r.id === HOME_REGION_ID) continue;
+            expect(r.factionIds.length).toBeLessThan(home.factionIds.length);
+        }
+    });
+
+    it('gives every province a ceiling that means something, and the apex one that does not', () => {
+        // `localCeilingOrdinal` caps NPC advancement in pressure.ts and sets
+        // trial thresholds in seeding.ts, so a flat gradient is a flat world.
+        const ceilings = REGIONS.map(r => r.localCeilingOrdinal);
+        expect(new Set(ceilings).size, 'two provinces share a ceiling').toBe(REGIONS.length);
+        // Exactly one province has no ceiling at all, and it is the one the
+        // world's apex stands in. This is readable from the number alone.
+        const uncapped = REGIONS.filter(r => r.localCeilingOrdinal >= MAX_ORDINAL);
+        expect(uncapped.length).toBe(1);
+        expect(uncapped[0].id).toBe(HOME_REGION_ID);
+        expect(uncapped[0].factionIds).toContain('sect-hollow-court');
+        // Every other province has a real ceiling, and it is not a rounding of
+        // the top: a province capped one rung below the ladder is not capped.
+        for (const r of REGIONS) {
+            if (r.id === HOME_REGION_ID) continue;
+            expect(r.localCeilingOrdinal, `${r.id} has a nominal ceiling`)
+                .toBeLessThan(MAX_ORDINAL - 4);
+            expect(r.ceilingNote.length, `${r.id} does not say why`).toBeGreaterThan(60);
+        }
+        // And the water is the floor of the world.
+        expect(getRegion(SOUTH_REGION_ID)!.localCeilingOrdinal)
+            .toBeLessThan(getRegion(ADJACENT_REGION_ID)!.localCeilingOrdinal);
     });
 
     it('seats every faction in the catalog in exactly one region', () => {
@@ -126,13 +174,21 @@ describe('regions', () => {
                 expect(r.customs[key].length, `${r.id} customs.${key}`).toBeGreaterThan(40);
             }
         }
-        const [home, away] = REGIONS;
-        for (const key of ['colour', 'sound', 'smell', 'food'] as const) {
-            expect(home.register[key]).not.toBe(away.register[key]);
+        // No two provinces may share a sensory identity or a custom. With two
+        // regions this was one comparison; with five it is the assertion that
+        // actually stops the map blurring, which is what
+        // `making-places-different.md` exists to prevent.
+        for (const key of ['colour', 'light', 'sound', 'smell', 'food'] as const) {
+            const seen = new Set(REGIONS.map(r => r.register[key]));
+            expect(seen.size, `two provinces share register.${key}`).toBe(REGIONS.length);
         }
         for (const key of ['socialPrinciple', 'death', 'taboo', 'threatModel', 'naming', 'time'] as const) {
-            expect(home.customs[key]).not.toBe(away.customs[key]);
+            const seen = new Set(REGIONS.map(r => r.customs[key]));
+            expect(seen.size, `two provinces share customs.${key}`).toBe(REGIONS.length);
         }
+        // Governing facts, too. A province that borrows another's governing
+        // fact has no reason to exist separately from it.
+        expect(new Set(REGIONS.map(r => r.governingFact)).size).toBe(REGIONS.length);
     });
 
     it('passes the region test: three things true here and false one province over', () => {
@@ -149,13 +205,55 @@ describe('regions', () => {
         expect(getRegion(HOME_REGION_ID)!.crossingNotes.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('connects the two regions in both directions and in several ways', () => {
+    it('connects the provinces symmetrically, through a centre, and by water past it', () => {
+        const byId = new Map(REGIONS.map(r => [r.id, r]));
         for (const r of REGIONS) {
-            const other = r.id === HOME_REGION_ID ? ADJACENT_REGION_ID : HOME_REGION_ID;
             expect(r.connections.length, `${r.id} connections`).toBeGreaterThanOrEqual(2);
-            for (const c of r.connections) expect(c.otherRegionId).toBe(other);
             expect(new Set(r.connections.map(c => c.kind)).size).toBeGreaterThanOrEqual(2);
+            for (const c of r.connections) {
+                expect(c.otherRegionId, `${r.id} connects to itself`).not.toBe(r.id);
+                const other = byId.get(c.otherRegionId);
+                expect(other, `${r.id} connects to unknown ${c.otherRegionId}`).toBeDefined();
+                // Symmetric, and at the same cost. A road that is eleven days
+                // one way and six the other is a bug, not a gradient.
+                const back = other!.connections.filter(b => b.otherRegionId === r.id);
+                expect(back.length, `${c.otherRegionId} does not connect back to ${r.id}`)
+                    .toBeGreaterThan(0);
+                for (const b of back) {
+                    expect(b.travelDays, `${r.id}<->${other!.id} disagree on distance`)
+                        .toBe(c.travelDays);
+                }
+            }
         }
+
+        // Every province reaches the home province directly, which is what
+        // makes it the centre rather than merely the first entry.
+        for (const r of REGIONS) {
+            if (r.id === HOME_REGION_ID) continue;
+            expect(
+                r.connections.some(c => c.otherRegionId === HOME_REGION_ID),
+                `${r.id} cannot reach the centre`
+            ).toBe(true);
+        }
+
+        // And the only links that bypass the centre are by water. This is the
+        // whole reason the sea is in the catalog: it opens a route between two
+        // coasts that no road makes.
+        const bypasses = REGIONS.flatMap(r => r.connections
+            .filter(c => r.id !== HOME_REGION_ID && c.otherRegionId !== HOME_REGION_ID)
+            .map(c => ({ from: r.id, c })));
+        expect(bypasses.length, 'nothing goes round the centre at all').toBeGreaterThan(0);
+        for (const b of bypasses) {
+            expect(b.c.kind, `${b.from} bypasses the centre overland`).toBe('sea_crossing');
+        }
+        // A crossing is slower than any road in the world, without exception.
+        const longestRoad = Math.max(...REGIONS.flatMap(r => r.connections
+            .filter(c => c.kind !== 'sea_crossing').map(c => c.travelDays)));
+        for (const b of bypasses) {
+            expect(b.c.travelDays, 'a sea crossing is quicker than a road')
+                .toBeGreaterThan(longestRoad);
+        }
+
         for (const r of REGIONS) {
             for (const b of r.branches) {
                 expect(getSect(b.parentSectId), `${r.id} branch of unknown ${b.parentSectId}`).toBeDefined();
@@ -178,6 +276,68 @@ describe('regions', () => {
         expect(canAdvanceHere(ADJACENT_REGION_ID, 3)).toBe(true);
         expect(canAdvanceHere(ADJACENT_REGION_ID, 12)).toBe(false);
         expect(regionContrast().length).toBeGreaterThanOrEqual(5);
+        for (const row of regionContrast()) {
+            expect(Object.keys(row.byRegion).length, `${row.aspect} omits a province`)
+                .toBe(REGIONS.length);
+        }
+    });
+
+    it('THE WATER IS NOT A PROVINCE WITH A DIFFERENT COLOUR', () => {
+        const sea = getRegion(SOUTH_REGION_ID)!;
+        // No vein under it, so the standard method is not slow here, it is
+        // absent - which is what `docs/world/qi.md` already says about ground
+        // with no vein, applied rather than waived.
+        expect(disciplineWorksIn(SOUTH_REGION_ID, 'ordinary drawing')).toBe(false);
+        expect(disciplineWorksIn(HOME_REGION_ID, 'ordinary drawing')).toBe(true);
+        // The thinnest air and the lowest rate in the world, and the dearest
+        // goods, because everything is carried and nothing is made.
+        for (const r of REGIONS) {
+            if (r.id === SOUTH_REGION_ID) continue;
+            expect(sea.cultivation.ambientRateMultiplier)
+                .toBeLessThan(r.cultivation.ambientRateMultiplier);
+            expect(sea.priceMultiplier).toBeGreaterThan(r.priceMultiplier);
+        }
+        // Nobody holds it, and it is the only province where that is true.
+        expect(sea.politics).toBe('no_authority');
+        expect(REGIONS.filter(r => r.politics === 'no_authority').length).toBe(1);
+        // Only water carries a sea crossing, and it carries more than one.
+        for (const r of REGIONS) {
+            const crossings = r.connections.filter(c => c.kind === 'sea_crossing');
+            if (r.id === SOUTH_REGION_ID) expect(crossings.length).toBeGreaterThanOrEqual(2);
+            for (const c of crossings) {
+                expect(
+                    r.id === SOUTH_REGION_ID || c.otherRegionId === SOUTH_REGION_ID,
+                    `${r.id} has a sea crossing that does not touch the water`
+                ).toBe(true);
+            }
+        }
+    });
+
+    it('names the generated half of the map without putting the kind in the name', () => {
+        // `history.ts` and `locations.ts` currently build ruin and scar names
+        // by concatenating a LocationKind onto a generated toponym. These
+        // tables are what they should draw from instead; the rule is that a
+        // reader must not be able to recover the kind from the name.
+        const forbidden = /\b(ruin|scar|compound|sealed|precinct|chamber|vault|settlement|wilds|vein|hall)\b/i;
+        for (const table of [RUIN_NAMES, SCAR_NAMES]) {
+            expect(table.length).toBeGreaterThanOrEqual(14);
+            for (const entry of table) {
+                expect(() => GeneratedPlaceNameSchema.parse(entry), entry.name).not.toThrow();
+                expect(forbidden.test(entry.name), `${entry.name} carries its own kind`).toBe(false);
+                // Plain. A place name that runs to five words is a description.
+                expect(entry.name.split(' ').length, `${entry.name} is not a name`)
+                    .toBeLessThanOrEqual(3);
+            }
+        }
+        const all = [...RUIN_NAMES, ...SCAR_NAMES].map(e => e.name);
+        expect(new Set(all).size, 'a generated name is reused').toBe(all.length);
+        // And no generated name may collide with an authored place, which
+        // would put two different places in front of a narrator under one word.
+        const authored = new Set(REGIONS.flatMap(r => r.places.map(p => p.name.toLowerCase())));
+        for (const name of all) expect(authored.has(name.toLowerCase()), name).toBe(false);
+        // Every one of the five naming sources is actually used.
+        const sources = new Set([...RUIN_NAMES, ...SCAR_NAMES].map(e => e.source));
+        expect(sources.size).toBe(5);
     });
 });
 
@@ -297,7 +457,13 @@ describe('faction distinctness pass', () => {
             expect(getFactionCharacter(s.id), `${s.id} has no character record`).toBeDefined();
         }
         for (const id of Object.keys(FACTION_CHARACTER)) {
-            expect(getSect(id), `character for unknown faction ${id}`).toBeDefined();
+            // Apexes are factions too. The two ancient ones have no sect row
+            // because nobody can join them, and they carried no character
+            // record at all until it turned out that left the sheet unable to
+            // say how either could be paid - which is the one question a
+            // reader has about an institution they can never be a member of.
+            const known = getSect(id) ?? getApexInstitution(id);
+            expect(known, `character for unknown faction ${id}`).toBeDefined();
         }
     });
 
@@ -374,7 +540,7 @@ describe('faction distinctness pass', () => {
             expect(p.reliableOrdinal, `${s.id} produces above its strongest member`)
                 .toBeLessThanOrEqual(s.powerOrdinal);
             expect(p.note.length).toBeGreaterThan(40);
-            expect(p.peakOrdinal).toBeLessThanOrEqual(45);
+            expect(p.peakOrdinal).toBeLessThanOrEqual(MAX_ORDINAL);
         }
     });
 

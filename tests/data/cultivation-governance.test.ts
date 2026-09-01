@@ -130,8 +130,23 @@ describe('the pyramid', () => {
                 expect(getSect(c.embodiedByFactionId)).toBeDefined();
             }
         }
-        // Two provinces stay two provinces.
-        expect(REGIONS.length).toBe(2);
+        // Above the map means above it: no apex and no court is a province,
+        // and no province is seated by one. The map grew from two provinces to
+        // five and that is the invariant the count was standing in for.
+        const regionIds = new Set(REGIONS.map(r => r.id));
+        const seated = new Set(REGIONS.flatMap(r => r.factionIds));
+        for (const a of APEX_INSTITUTIONS) {
+            expect(regionIds.has(a.id), `${a.id} is a province`).toBe(false);
+            expect(seated.has(a.id), `${a.id} is seated in a province`).toBe(false);
+        }
+        for (const c of COURTS) {
+            expect(regionIds.has(c.id), `${c.id} is a province`).toBe(false);
+            expect(seated.has(c.id), `${c.id} is seated in a province`).toBe(false);
+        }
+        // The two provinces the governance catalog actually describes are
+        // still described, and the three it does not are honestly absent
+        // rather than silently defaulted - see REGION_GOVERNANCE.
+        expect(REGIONS.length).toBeGreaterThanOrEqual(5);
     });
 });
 

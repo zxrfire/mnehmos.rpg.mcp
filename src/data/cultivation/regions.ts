@@ -1,9 +1,50 @@
 /**
- * Regions - two of them, and the contrast between them is the content.
+ * Regions - five of them, and the contrast between them is the content.
  *
  * "Depth, not scale" is meaningless while every faction stands in one
- * province, because then it just means "small". It needs a second place where
+ * province, because then it just means "small". It needs other places where
  * the assumptions are different - not the scenery, the assumptions.
+ *
+ * THE SPINE
+ * ---------
+ * Four provinces around a centre, and water to the south:
+ *
+ *     CENTRE  The Low Fall      horizontal surveyable veins, held for four
+ *                               hundred years. The world's apex sits here.
+ *     WEST    The Quiet Marches driven stone, cut with tools. The last of the
+ *                               five driven provinces, and the one people leave.
+ *     EAST    The Wide Field    flat, dug over, nine cities, and no high ground
+ *                               anybody could fortify. Nobody holds land; every
+ *                               institution in it holds a lease.
+ *     NORTH   The White Stair   the qi is in the ice and the ice is going. A
+ *                               holding is an elevation, and it moves uphill.
+ *     SOUTH   The Drowned Reach open water. There is no ground under it, so
+ *                               there is no vein under it, so there is nothing
+ *                               in the air. Nobody holds it and nobody can.
+ *
+ * Every region connects to the Low Fall, which is what makes it the centre.
+ * The only route between two provinces that does not pass through it is by
+ * water, and the water is the slowest, most expensive and least reliable way
+ * to get anywhere in the world - see `sea_crossing` below.
+ *
+ * THE CEILINGS ARE THE GRADIENT
+ * -----------------------------
+ * `localCeilingOrdinal` means nobody in this province has passed it in living
+ * memory. It caps NPC advancement in `pressure.ts` and sets trial thresholds in
+ * `seeding.ts`, so it is the single number that decides what a province is for.
+ *
+ *     Low Fall       MAX_ORDINAL   no ceiling. The only province in the world
+ *                                  with none, which is how you can tell from
+ *                                  one number where the apex is.
+ *     Wide Field     38            the strongest thing in nine cities, and it
+ *                                  rents its rooms.
+ *     White Stair    36            a person, not a property of the ground.
+ *     Quiet Marches   6            the loose stone within reach is worked out.
+ *     Drowned Reach   2            three layers on the islands and nothing at
+ *                                  all on open water.
+ *
+ * The cliff between 36 and 6 is the border between the traditions. The cliff
+ * between 6 and 2 is the edge of the land.
  *
  * ONE LADDER, ALWAYS
  * ------------------
@@ -32,6 +73,18 @@
  * `traditions.ts`. The border between the regions is also the border between
  * the traditions, which is why crossing it changes what the people are and not
  * merely where they live.
+ *
+ * The count is still two. Four of the five regions are Drawn and one is Cut,
+ * which is not a taxonomy - it is the score. The Cut hold five driven
+ * provinces and the Drawn hold everything a person can breathe in, and both
+ * sides teach an account of the war that explains why.
+ *
+ * The exception is the water, and it follows from the traditions rather than
+ * being written next to them: a Drawn cultivator takes qi out of the air and
+ * there is none over deep water, while a Cut cultivator works qi out of stone
+ * and stone can be carried. The open sea is the one place in the world where
+ * the losing tradition is the stronger of the two, and neither of them has a
+ * province on it to make anything of that.
  *
  * THE TRANSLATION IS THE CONTENT
  * ------------------------------
@@ -136,8 +189,51 @@ export const RegionCultivationSchema = z.object({
 });
 export type RegionCultivation = z.infer<typeof RegionCultivationSchema>;
 
+/**
+ * How two provinces are joined.
+ *
+ * `sea_crossing` IS NOT A ROUTE WITH A DIFFERENT NUMBER ON IT
+ * ----------------------------------------------------------
+ * The five land kinds all describe a relationship between two places that are
+ * both on the ground: a road somebody maintains, people walking off one and
+ * onto the other, a quarrel, an office with two doors, a line nobody has
+ * agreed. A sea crossing is a different sort of object and the difference is
+ * mechanical rather than atmospheric:
+ *
+ *   - It is not there when the weather says it is not. Every other connection
+ *     in this catalog is open unless a party closes it. A crossing is closed by
+ *     a season and by a storm, which is nobody's decision and cannot be
+ *     appealed to, bought off or arbitrated.
+ *   - Nothing is maintained. A road is worked on. A crossing is provisioned
+ *     against, which is a different verb and a different profession.
+ *   - It joins two coasts that no road joins, and it is the only kind here
+ *     that does. Every land connection in the world runs through the Low Fall.
+ *
+ * WHAT THIS DOES NOT DO, AND WHAT IT WOULD TAKE.
+ * `LinkKind` in `engine/world/locations.ts` is `road|path|tunnel|gate|portal|
+ * seam`, and `seeding.ts` links EVERY region connection as `'road'` regardless
+ * of kind - so in a seeded world today an eleven-day cart road and a
+ * thirty-four-day open-water passage are the same object with different
+ * numbers. A sea crossing is not a `path` either: a path in that file is short
+ * unmaintained GROUND between a seat and its vein.
+ *
+ * It wants its own `LinkKind`, and the reason is exactly the first bullet:
+ * `crossing` would be the only link whose `open` flag is set by the world
+ * rather than by a holder or a key, which is what `OpeningCycle` in that same
+ * file already exists to express. That is two lines of somebody else's file -
+ * one union member and one ternary at the `linkLocations` call - and it is
+ * deliberately not made here. The geography declares the crossing; the engine
+ * has not learned to read it yet, and this comment is the record of that.
+ */
 export const RegionConnectionSchema = z.object({
-    kind: z.enum(['trade_route', 'refugee_flow', 'shared_feud', 'shared_institution', 'unsettled_border']),
+    kind: z.enum([
+        'trade_route',
+        'refugee_flow',
+        'shared_feud',
+        'shared_institution',
+        'unsettled_border',
+        'sea_crossing'
+    ]),
     otherRegionId: z.string(),
     description: z.string().min(40),
     travelDays: z.number().int().min(0)
@@ -220,24 +316,140 @@ export type Region = z.infer<typeof RegionSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────
 // LOCAL VOCABULARY
-// Both regions relabel the same ladder. The Low Fall's labels happen to be
+// Every region relabels the same ladder. The Low Fall's labels happen to be
 // the standard ones, because the standard vocabulary is the Low Fall's.
+//
+// Three of the five speak that vocabulary and two do not, and WHICH three is
+// content rather than economy: the Wide Field speaks it because every lease in
+// nine cities is written in it and no landlord signs a grade he cannot look up,
+// and the Drowned Reach speaks it because it has no locals to have a word of
+// its own. The Marches and the White Stair each reached the same rungs by a
+// different road, so each named them.
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Standard names, band for band, from the one ladder. */
-const STANDARD_BANDS: LocalRankBand[] = REALM_TIERS.map(tier => ({
-    fromOrdinal: tier.ordinalStart,
-    toOrdinal: tier.ordinalEnd,
-    standardName: tier.name,
-    localName: tier.name,
-    localTheory:
-        'The Low Fall wrote the standard vocabulary and has never had cause to notice that it is a vocabulary rather than the thing itself.',
-    localSubdivisions: tier.subRanks.length,
-    standardSubdivisions: tier.subRanks.length,
-    subRankCorrespondence: 'none',
-    subRankNote:
-        'Trivially self-consistent here, and the Low Fall mistakes that for the sub-ranks being real. Asked to place a foreign cultivator inside a realm, its experts guess, and are confident.'
-}));
+/**
+ * Standard names, band for band, from the one ladder, with the local account
+ * of why the standard names are the ones being used here.
+ */
+function standardBandsWith(localTheory: string, subRankNote: string): LocalRankBand[] {
+    return REALM_TIERS.map(tier => ({
+        fromOrdinal: tier.ordinalStart,
+        toOrdinal: tier.ordinalEnd,
+        standardName: tier.name,
+        localName: tier.name,
+        localTheory,
+        localSubdivisions: tier.subRanks.length,
+        standardSubdivisions: tier.subRanks.length,
+        subRankCorrespondence: 'none' as const,
+        subRankNote
+    }));
+}
+
+const STANDARD_BANDS: LocalRankBand[] = standardBandsWith(
+    'The Low Fall wrote the standard vocabulary and has never had cause to notice that it is a vocabulary rather than the thing itself.',
+    'Trivially self-consistent here, and the Low Fall mistakes that for the sub-ranks being real. Asked to place a foreign cultivator inside a realm, its experts guess, and are confident.'
+);
+
+const FIELD_BANDS: LocalRankBand[] = standardBandsWith(
+    'The Wide Field uses the Low Fall words because every lease in nine cities is written in them, and a landlord will not put his seal on a grade he cannot look up in a table somebody else keeps.',
+    'The East is the only place where the sub-ranks have a price attached, because a lease is graded by them - which means everybody here has a commercial reason to be confident about a distinction that does not survive a border.'
+);
+
+const REACH_BANDS: LocalRankBand[] = standardBandsWith(
+    'Everybody on this water learned their words somewhere else and brought them aboard, so the Drowned Reach has no vocabulary of its own and never developed one. There are no locals here to have invented anything.',
+    'A hull carrying four provinces\' worth of titles settles a disagreement about rank the way a hull settles everything, which is by finding out what each of them can actually do before the weather does it for them.'
+);
+
+/**
+ * The White Stair counts the same rungs against a wall of ice.
+ *
+ * Every band maps one to one onto `REALM_TIERS`. The argument in the North is
+ * never about how many rungs there are, it is about where the face was when
+ * somebody reached one - which is a question about a date, and the North does
+ * not keep dates.
+ */
+const STAIR_BANDS: LocalRankBand[] = [
+    {
+        fromOrdinal: 0, toOrdinal: 12,
+        standardName: 'Qi Condensation', localName: 'Below the Face',
+        localTheory: 'Anybody drawing on ice that has already melted, which is everybody at every band the province still lives at. Most northerners are here when the cold takes them and the Court has no interest in them.',
+        localSubdivisions: 5, standardSubdivisions: 13,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Five hands against thirteen layers, and a hand is a measurement off the ice rather than a stage of anything. No table converts them and the North has never wanted one.'
+    },
+    {
+        fromOrdinal: 13, toOrdinal: 16,
+        standardName: 'Foundation Establishment', localName: 'At the Face',
+        localTheory: 'Somebody permitted to stand in the forty paces. It is a place before it is a rank, and the North does not really distinguish the two: to be At the Face is to have been let in, and nobody is let in who could not survive it.',
+        localSubdivisions: 2, standardSubdivisions: 4,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Two states, admitted and kept, against four stages. A visitor who hears "kept" as a probationary grade has it backwards - kept is the higher of the two and is where the Court stops explaining itself.'
+    },
+    {
+        fromOrdinal: 17, toOrdinal: 20,
+        standardName: 'Core Formation', localName: 'Standing Ice',
+        localTheory: 'The cold holds inside the body without being maintained. The North is content to be told this is a golden core and will not argue about it, on the grounds that arguing with the Low Fall about words has never once changed a working face.',
+        localSubdivisions: 3, standardSubdivisions: 4,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Three courses of ice against four stages. Both traditions can see instantly that somebody has crossed into the realm; where inside it they sit is not observable across the border and no correspondence exists.'
+    },
+    {
+        fromOrdinal: 21, toOrdinal: 24,
+        standardName: 'Nascent Soul', localName: 'Blue',
+        localTheory: 'Old ice is blue, and so is a northerner at this realm, visibly, at the hands and around the mouth. It is the only rank in the world an illiterate can read off a stranger across a room.',
+        localSubdivisions: 2, standardSubdivisions: 4,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Two shades against four stages, and the shades are not halves of the same span - the second is what a person goes when they have stopped needing to be near the face at all.'
+    },
+    {
+        fromOrdinal: 25, toOrdinal: 28,
+        standardName: 'Deity Transformation', localName: 'Unmelting',
+        localTheory: 'Ice on a person that the summer does not take. Three are recorded in four hundred years, all three in the same Court, and the province regards the word as an administrative term rather than an achievement.',
+        localSubdivisions: 0, standardSubdivisions: 4,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Undivided. The North has three instances and no basis on which to sort them, and would not sort them if it had.'
+    },
+    {
+        fromOrdinal: 29, toOrdinal: 32,
+        standardName: 'Void Refinement', localName: 'The Cold Below',
+        localTheory: 'What is under the ice rather than in it. The Court holds that the curriculum it dug out describes this state and that nobody now alive has reached it, and the Court is the only party that has read the curriculum.',
+        localSubdivisions: 0, standardSubdivisions: 4,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Curriculum vocabulary with one living claimant and no second party competent to check her. Any northern claim inside this realm rests entirely on the Frostmirror agreeing with it.'
+    },
+    {
+        fromOrdinal: 33, toOrdinal: 36,
+        standardName: 'Body Integration', localName: 'The Whole Winter',
+        localTheory: 'Person and cold are one weather. This is the top of the province and it is occupied, which is the single most important political fact in the North and the reason nobody else here is going anywhere.',
+        localSubdivisions: 0, standardSubdivisions: 4,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Undivided, with exactly one instance, and the instance declines to say where inside it she is on the grounds that nobody could check.'
+    },
+    {
+        fromOrdinal: 37, toOrdinal: 40,
+        standardName: 'Grand Ascension', localName: 'Above the Stair',
+        localTheory: 'The curriculum names it and does not describe it. The Court teaches the word because the ice had the word in it, and teaches nothing else about it because there was nothing else.',
+        localSubdivisions: 0, standardSubdivisions: 4,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Curriculum vocabulary, undivided and unattested anywhere north of the pass.'
+    },
+    {
+        fromOrdinal: 41, toOrdinal: 44,
+        standardName: 'Tribulation Transcendence', localName: 'The Last Winter',
+        localTheory: 'A winter with nothing after it. The North assumes this means an ending and the Low Fall knows it means a beginning, and neither has ever put the question to anybody who would know.',
+        localSubdivisions: 0, standardSubdivisions: 4,
+        subRankCorrespondence: 'none',
+        subRankNote: 'Curriculum vocabulary. The Low Fall divides this realm into four and the White Stair into none, and the disagreement has never cost anybody anything because no northerner has been near it.'
+    },
+    {
+        fromOrdinal: 45, toOrdinal: 46,
+        standardName: 'Immortal', localName: 'Gone Up',
+        localTheory: 'Two words, and the North means them the way it means anything about altitude: literally, and with no theory attached whatsoever.',
+        localSubdivisions: 0, standardSubdivisions: 2,
+        subRankCorrespondence: 'none',
+        subRankNote: 'One phrase against two states, and the two states are not degrees of each other - one of them is over the Lid and one is through it. The North has never had occasion to want the distinction.'
+    }
+];
 
 /**
  * The Marches counts the same rungs in cut stone. Every band below maps one
@@ -405,7 +617,15 @@ export const PLACERS = {
 // ─────────────────────────────────────────────────────────────────────────
 
 export const HOME_REGION_ID = 'region-low-fall';
+/**
+ * The Quiet Marches, and the name is historical: it was the only adjacent
+ * region when there were two. It is now the western one of four, and the id is
+ * left alone because a great deal of content outside this file names it.
+ */
 export const ADJACENT_REGION_ID = 'region-quiet-marches';
+export const EAST_REGION_ID = 'region-wide-field';
+export const NORTH_REGION_ID = 'region-white-stair';
+export const SOUTH_REGION_ID = 'region-drowned-reach';
 
 export const REGIONS: readonly Region[] = [
     {
@@ -414,13 +634,15 @@ export const REGIONS: readonly Region[] = [
         role: 'home',
         traditionId: 'tradition-drawn',
         summary:
-            'A drawn-down but working province: nine river towns, four sect mountains, a live trade in medicine and manuals, and twenty-six institutions with overlapping claims on eleven veins. What limits a cultivator here is talent and money, not the ground.',
+            'The centre, and the only province with a road to every other one: nine river towns, four sect mountains, a live trade in medicine and manuals, and seventeen institutions with overlapping claims on eleven veins. What limits a cultivator here is talent and money, not the ground.',
         governingFact:
             'The veins here are horizontal, shallow and surveyable, so the qi belongs to whoever holds the surface above it - and the surface has been held continuously for four hundred years.',
         derivations: [
             'Territory is the only currency of standing, so every border is an argument about a survey line rather than about strength',
             'Institutions outlast people, because a vein outlasts the cultivator who took it, so a sect can be formidable with no formidable members',
-            'The whole apparatus of arbitration, oath-witnessing and certification exists because holdings must be provable to be defensible'
+            'The whole apparatus of arbitration, oath-witnessing and certification exists because holdings must be provable to be defensible',
+            'A surveyable vein is a vein that can be granted, so this is the only province in the world with a grant book, and therefore the only one with tenants, renewals, and a reason to be polite',
+            'Everything that has to cross the world crosses here: four roads meet in one gorge and there is no fifth, which is why the Low Fall taxes traffic it never generated and why every other province resents it in the same words'
         ],
         register: {
             colour: 'green-grey: wet slate roofs, river haze, terraced hillsides that stay green into autumn',
@@ -462,7 +684,7 @@ export const REGIONS: readonly Region[] = [
             'Eleven surveyed veins, four of them rich, all claimed. The great sects are old because they hold veins and hold veins because they were old enough to take them.',
         politics: 'competing_sects',
         politicsNote:
-            'Federated. Twenty-seven institutions holding single veins on twelve-year grants from something none of them names in public, competing for standing with whoever renews them rather than for the veins themselves - which is why the province argues constantly and burns rarely. A newcomer with talent has options here, and every one of them is somebody else\'s tenant.',
+            'Federated. Seventeen institutions holding single veins on twelve-year grants from something none of them names in public, competing for standing with whoever renews them rather than for the veins themselves - which is why the province argues constantly and burns rarely. It is the only province in the world where a holding can be granted at all, because it is the only one where a vein can be surveyed, and the four provinces around it each solved the same problem a different way. A newcomer with talent has options here, and every one of them is somebody else\'s tenant.',
         factionIds: [
             'sect-azure-cloud-pavilion',
             'sect-azure-mist-court',
@@ -471,27 +693,15 @@ export const REGIONS: readonly Region[] = [
             'sect-nine-peaks-ascetic-order',
             'sect-clear-river-alliance',
             'sect-sweptground-temple',
-            'sect-lantern-hall',
             'sect-standing-grove',
-            'sect-stonewright-consortium',
-            'sect-thousand-treasure-pavilion',
             'sect-cinnabar-crucible-guild',
             'sect-ashen-forge-clan',
-            'sect-hollow-bell-wanderers',
-            'sect-frostmirror-court',
-            'sect-storm-tyrant-court',
             'sect-kiln-wardens',
             'sect-hollow-court',
-            'sect-the-severed',
             'sect-crimson-abyss-hall',
-            'sect-bone-lantern-cult',
             'sect-nine-abyss-flame-sect',
             'house-ninefold-ledger',
-            'house-narrow-hour',
             'house-bound-word',
-            'house-quiet-cut',
-            'house-held-names',
-            'house-measured-span',
             'house-anchorhold'
         ],
         branches: [
@@ -500,6 +710,18 @@ export const REGIONS: readonly Region[] = [
                 localName: 'The Hollowmarket Factor at Scarwater',
                 doesHere:
                     'Sells Marches salvage into the Low Fall market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Marches has no teacher for. Buys nothing and is watched by the Bone Lantern Cult, which considers the trade its own.'
+            },
+            {
+                parentSectId: 'sect-stonewright-consortium',
+                localName: 'The Gorge Assay',
+                doesHere:
+                    'Assays and cuts to the Stonewright standard at the head of the eleven veins, and is the only reason a Low Fall grant can be priced at all. It holds no ground, sets the rate from nine cities away, and every sect in the province quotes a figure it did not set.'
+            },
+            {
+                parentSectId: 'sect-hollow-bell-wanderers',
+                localName: 'The Ford Bells',
+                doesHere:
+                    'Four bells on four fords, rehung whenever a member passes. It is the only current record of who is on the roads of this province and the only one nobody has thought to ask for.'
             }
         ],
         places: [
@@ -552,17 +774,54 @@ export const REGIONS: readonly Region[] = [
                 description:
                     'The Anchorhold has surveyed to the burn edge and no further, so the last forty li before Kettle are on nobody\'s survey. Oaths sworn there do not bind, which several parties on both sides find useful.',
                 travelDays: 11
+            },
+            {
+                kind: 'trade_route',
+                otherRegionId: EAST_REGION_ID,
+                description:
+                    'Six days down the gorge road to Ninewatch, and it is the busiest stretch of ground in the world: every pill, manual and assayed stone the Low Fall sells goes east, and every stone it uses to price them was rated in an eastern assay hall.',
+                travelDays: 6
+            },
+            {
+                kind: 'unsettled_border',
+                otherRegionId: EAST_REGION_ID,
+                description:
+                    'The Anchorhold has never carried a survey past the watershed, so the whole eastern boundary is a matter of habit. Nothing sworn on the far side binds, which is why every arrangement the Low Fall makes with a city is a lease with a deposit rather than an oath.',
+                travelDays: 6
+            },
+            {
+                kind: 'trade_route',
+                otherRegionId: NORTH_REGION_ID,
+                description:
+                    'Seventeen days over the pass to Rimefall, shut five months a year, carrying grain and timber up and ice-cut stones down. Everything the White Stair eats comes over this road and everybody in the Low Fall knows it.',
+                travelDays: 17
+            },
+            {
+                kind: 'shared_institution',
+                otherRegionId: NORTH_REGION_ID,
+                description:
+                    'The Cinnabar Crucible Guild stands on the Ashfall flank and holds its grant from the Frostmirror Court, which is over the pass and on the other arterial - so an alchemy guild in this province answers to a court in that one, and neither province has a document that says so.',
+                travelDays: 17
+            },
+            {
+                kind: 'trade_route',
+                otherRegionId: SOUTH_REGION_ID,
+                description:
+                    'Nine days down the river to the mouth and out to Watering, which is where the Low Fall\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Alliance will take a hull that far and refuses to go further.',
+                travelDays: 9
             }
         ],
         trueHereFalseThere: [
-            'A pill above mortal grade can be bought over a counter, today, in four towns.',
-            'A cultivator\'s rank is stated in a vocabulary every party to a contract already agrees on.',
-            'Sitting still on ordinary ground, in the open, makes measurable progress.'
+            'A holding can be granted. This is the only province with a surveyed vein under it, so it is the only one with a grant book, a renewal cycle, a tenant, and a reason for anybody to be polite to anybody.',
+            'A pill above mortal grade can be bought over a counter, today, in four towns, and the counter is not a monopoly.',
+            'An oath binds. The Bound Word witnesses on certified ground and there is certified ground here, which there is nowhere else in the world.',
+            'Sitting still on ordinary ground, in the open, makes measurable progress - and it goes on making it all the way to the top of the ladder, which no other province can say at any rung.'
         ],
         crossingNotes: [
-            'Coming the other way, the noise is the first thing: sect patrols, courier traffic, and four separate parties claiming the same road.',
+            'Coming in from anywhere, the noise is the first thing: sect patrols, courier traffic, and four separate parties claiming the same road.',
             'The air is wet. A carver arriving from the Marches usually stops within sight of the ford and has to be told what they are feeling.',
-            'Medicine is purchasable. A Clear Meridian Pill is sixty stones and in stock, which no shop in the Marches can say.'
+            'Medicine is purchasable. A Clear Meridian Pill is sixty stones and in stock, which no shop in three of the four provinces around this one can say.',
+            'Somebody asks whose you are within an hour, and the question is not rude and is not idle: there is a book, your answer goes in it, and the answer decides which of eleven veins you are allowed to sit on.'
         ]
     },
 
@@ -572,7 +831,7 @@ export const REGIONS: readonly Region[] = [
         role: 'adjacent',
         traditionId: 'tradition-cut',
         summary:
-            'The province people leave, and the only place in the world where cultivation is a trade with tools. Something broke here nine hundred years ago and drove the qi out of the air and into the rock, so the Marches does not breathe qi - it cuts it out of stone, and everything about the place follows from that.',
+            'The province people leave: the western end of the world, the last of five driven provinces, and the only place in it where cultivation is a trade with tools. Something broke here nine hundred years ago and drove the qi out of the air and into the rock, so the Marches does not breathe qi - it cuts it out of stone, and everything about the place follows from that. It has one road, it goes east, and there is nothing on the other side of the Marches but four more provinces like it that nobody here has seen.',
         governingFact:
             'The qi is not gone; it was driven into the stone. There is nothing in the air and a great deal in the rock, and the only way to get at it is to cut.',
         derivations: [
@@ -720,6 +979,485 @@ export const REGIONS: readonly Region[] = [
             'No shop sells a pill above mortal grade, and no alchemist in the region can make one, because refinements do not set in air with nothing in it.',
             'Every carver has split white hands and a cough, including the rich ones, and a visitor with soft hands is assumed to be from the assay house or the mission.'
         ]
+    },
+
+    // ── EAST ─────────────────────────────────────────────────────────────
+    // The province the catalog has been implying for a long time without ever
+    // saying where it was. Six of the thirty-two houses describe themselves as
+    // holding rooms in cities - nine reading halls, nine register houses,
+    // auction floors in every city of consequence, cutting houses at the edge
+    // of six of them - and there was one city in the world for all of it to be
+    // in. This is where those rooms are.
+    {
+        id: EAST_REGION_ID,
+        name: 'The Wide Field',
+        role: 'adjacent',
+        traditionId: 'tradition-drawn',
+        summary:
+            'The eastern plain: nine walled cities on flat ground over shallow veins, two thousand years of engagements fought across it, and not one institution in it that holds a foot of land. Everything here is rented, priced and renewable, and the ground is rich because of what has died on it.',
+        governingFact:
+            'There is no high ground. The Wide Field is one flat alluvial plain over veins that run everywhere and deep nowhere, so nothing here can be fortified and nothing here has ever been held for long.',
+        derivations: [
+            'An institution holds rooms rather than ground - a hall, a floor, a gate house, a stack room - all of it leased from a city that has outlived its last nine tenants, so the unit of value is the lease and a house that misses a renewal has nothing to fall back on',
+            'The cities are mortal, ancient and enormous, and every cultivator institution inside one is the tenant of people it could kill in an afternoon; everybody has done that arithmetic, and the answer is that killing your landlord costs you the lease',
+            'Ground that cannot be fortified gets fought over instead, so the East has more battlefields than the rest of the world together, and battlefield ground fruits herbs nothing else grows - which makes a killing field an asset with a harvest date',
+            'Nothing is granted and nothing is sworn, so obligation here is priced rather than witnessed, and the house that sets the price of a spirit stone is the nearest thing the province has to a government'
+        ],
+        register: {
+            colour: 'brown and gold: dust, wheat, brick, and roof tile that was glazed nine hundred years ago and has not been reglazed since',
+            light: 'an enormous flat sky with sunrise and sunset visible end to end, and from the sixth month a permanent haze of field dust that turns the sun orange by noon',
+            sound: 'people, and the bells. Nine cities, nine watches a day, and every gate in the province opening and shutting to a schedule a visitor can hear from a li out',
+            smell: 'coal smoke, night soil, hot oil, cut wheat, and under all of it in certain fields a sweetness that everybody can identify and nobody names',
+            food: 'wheat in every form - hand-pulled noodles, flatbread, boiled dumplings - with mutton, black vinegar, raw garlic, and tea drunk salted'
+        },
+        customs: {
+            socialPrinciple: 'Tenancy. Nobody holds ground, everybody holds a lease, and the lease is priced in assayed stones by a house that holds no ground either. The whole of politics here is the renewal calendar, and it is public.',
+            death: 'Burned outside the wall the same day, ashes broadcast on the field, because nine cities on a plain cannot bury two thousand years of people. Anybody who keeps a body is doing something, and everybody assumes the worst of them.',
+            taboo: 'Never ask what a field grew before. Everyone knows which fields are battlefields, the price of the crop depends on nobody saying so at the gate, and a visitor who asks in a market has emptied it.',
+            threatModel: 'People, in numbers, and the numbers are mortal. What kills a cultivator in the Wide Field is a city deciding it has had enough of them, which it does about once a century and does thoroughly.',
+            naming: 'A wall before a clan: Ci of the Fourth Gate, Wan Hongfu out of Ninewatch, Shu Threewall. An easterner who gives a clan name first is either very old money or lying about where they are from.',
+            time: 'Nine watches to the day, rung, so the whole province agrees on the hour to a few minutes. It does not agree on the year at all: each city counts from its own charter, and a contract carries three dates and a bell.'
+        },
+        cultivation: {
+            method:
+                'Ordinary drawing, on shallow veins that run under everything and are deep under nothing. It is the same road as the Low Fall, it starts faster because the ground is everywhere, and it stops earlier because the ground is thin - which the East explains as talent and which is in fact the plain.',
+            ambientRateMultiplier: 0.85,
+            methodRateMultiplier: 0.85,
+            deviationRiskModifier: 0.01,
+            harderBoundaries: [24, 32],
+            missingDisciplines: [
+                {
+                    discipline: 'oath-binding',
+                    reason: 'A Bound Word oath binds to certified ground and the Anchorhold has never carried a survey east of the watershed. An oath sworn in the Wide Field is a promise and nothing else, which is why every arrangement here is a lease with a deposit and why the province regards the Low Fall habit of swearing things as a charming affectation.'
+                },
+                {
+                    discipline: 'containment',
+                    reason: 'A perimeter needs a datum that stays where it was put, and two thousand years of ploughing, digging, walling and rewalling have left nothing in the East that has been in one place for a century. The Anchorhold maintains no perimeter here, has never applied to, and says so in writing when asked.'
+                }
+            ],
+            strongDisciplines: [
+                'appraisal and provenance, because the province is armed and furnished out of its own ground and somebody has to say which age a thing came out of',
+                'grave and battlefield reading, which is a real science here with a rotation, a calendar and a price list',
+                'severance arts, which work best where there is no certified ground for a cut to be traced across'
+            ],
+            costNote:
+                'Advancement costs rent. There is no cave on a vein to hold and no grant to apply for; there is a room over an assay hall at a rate somebody else sets, and the difference between an easterner who rises and one who does not is almost entirely whether their house made its renewal.',
+            localRankNames: FIELD_BANDS
+        },
+        ambientProfile: { thin: 44, normal: 41, dense: 14, spirit_tide: 1 },
+        localCeilingOrdinal: 38,
+        ceilingNote:
+            'Thirty-eight, and it holds a rented room. Nobody in nine cities has passed the founder of the Severed in living memory, and the reason is the ground rather than the people: the East reliably makes Core Formation in quantity and Nascent Soul rarely, and every single thing above that arrived from somewhere else and is paying rent.',
+        veinStatus:
+            'Shallow and universal. There is a vein under almost every field in the Wide Field and not one of them is deep enough to be worth a war, which is why the province has never had a vein war and has had two thousand years of every other kind. The rich ground is battlefield ground, and it is rich for the reason everybody knows and nobody states at a market.',
+        politics: 'single_hegemon',
+        politicsNote:
+            'One holder, and what it holds is the rate. Nobody in the Wide Field holds ground, so nobody can be leaned on through a grant; what can be leaned on is the price of an assayed stone, and one house sets that at the head of nine veins and in the assay hall of every city. It is a hegemony that has never fought anybody: it buys the seniors of houses it wants quiet, three of them now have none, and every institution in the province quotes a figure it did not set to pay a rent it cannot refuse.',
+        factionIds: [
+            'sect-stonewright-consortium',
+            'sect-thousand-treasure-pavilion',
+            'sect-lantern-hall',
+            'sect-the-severed',
+            'sect-bone-lantern-cult',
+            'house-held-names',
+            'house-narrow-hour',
+            'house-quiet-cut'
+        ],
+        branches: [
+            {
+                parentSectId: 'house-ninefold-ledger',
+                localName: 'The Eastern Circuit',
+                doesHere:
+                    'Nine of the forty-one arbitration benches, sitting in cities where nothing can be sworn and everything has to be proved. It is the busiest half of the Ledger\'s work and the half its auditors least want, because an eastern case is a lease dispute rather than a thread and there is no karma in a lease.'
+            },
+            {
+                parentSectId: 'sect-crimson-abyss-hall',
+                localName: 'The Wheatgate Table',
+                doesHere:
+                    'A table and a cash box outside the admission days of every city hall that runs one, paying the first month in advance to whoever was refused inside that morning. The eastern cities are the only place in the world where a recruiter can sit outside nine doors in one season.'
+            }
+        ],
+        places: [
+            { name: 'Ninewatch', kind: 'city', ambient: 'normal', note: 'The largest of the nine, and the city the whole province sets its clocks by. Every hall in it is leased and the leases are public.' },
+            { name: 'Thirdwall', kind: 'city', ambient: 'thin', note: 'Walled three times in two thousand years, each wall further out, all three still standing. A third of the city lives between walls nobody defends.' },
+            { name: 'Wheatgate', kind: 'market_town', ambient: 'normal', note: 'Where the crop off the old ground is sold, and where nobody at the counter asks what the field grew before it grew this.' },
+            { name: 'Mudsummer', kind: 'site', ambient: 'dense', note: 'Twelve thousand died here in one afternoon a hundred and forty years ago, and the ground has been fruiting ever since. The name is what that season was called before it happened.' },
+            { name: 'Millrun', kind: 'village', ambient: 'thin', note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
+        ],
+        exports: [
+            'assayed spirit stones and the rate they are assayed at, which is the only export in the world that arrives before the goods do',
+            'battlefield herbs on a hundred-and-forty-year rotation, which will not fruit on ground nothing died on',
+            'dug goods of every age, with a provenance opinion attached and no question asked about the hole',
+            'grain, in the quantity that feeds three provinces, which is why nobody has ever burned a field here'
+        ],
+        imports: [
+            'refined pills and the manuals to make them, all of it out of the Low Fall, because an alchemist needs a still room and rents are what they are',
+            'ice-cut stones out of the White Stair, which assay high and are bought at a discount justified by the carriage',
+            'anybody who can teach above Core Formation, hired rather than raised, and never for long'
+        ],
+        priceMultiplier: 0.9,
+        hazards: [
+            'people in numbers: a city that has decided about you is not a fight, and there is no rank at which it becomes one',
+            'battlefield ground, which is corrupt in a way that is worth money and kills the diggers who work it wrong',
+            'formations left standing on ground nobody has surveyed since, still lit, still keyed to a house that is nine centuries gone',
+            'the renewal calendar, which is not a hazard anywhere else and is the leading cause of institutional death here'
+        ],
+        connections: [
+            {
+                kind: 'trade_route',
+                otherRegionId: HOME_REGION_ID,
+                description:
+                    'Six days up the gorge road, and it is the busiest ground in the world: pills, manuals and teachers coming east, stones and grain and appraised loot going west, and four parties taking a cut of each direction.',
+                travelDays: 6
+            },
+            {
+                kind: 'unsettled_border',
+                otherRegionId: HOME_REGION_ID,
+                description:
+                    'No certified survey has ever crossed the watershed, so the whole boundary is habit. The Low Fall reads that as the East being lawless and the East reads it as the Low Fall being superstitious about paper.',
+                travelDays: 6
+            },
+            {
+                kind: 'shared_feud',
+                otherRegionId: HOME_REGION_ID,
+                description:
+                    'The Bone Lantern Cult works the old grounds on both sides of the watershed and the Verdant Spring Hall has been trying to have it stopped for sixty years, in a province where nothing it says has any force at all.',
+                travelDays: 6
+            },
+            {
+                kind: 'sea_crossing',
+                otherRegionId: SOUTH_REGION_ID,
+                description:
+                    'Twenty-one days from the eastern shore to Watering, three seasons in four, and every hull of it is provisioned against a passage with no landfall in the middle. It is how salt reaches nine cities and how what comes off drowned ground reaches an auction floor.',
+                travelDays: 21
+            }
+        ],
+        trueHereFalseThere: [
+            'Nothing anybody swears binds. There is no certified ground east of the watershed, so an oath is a promise, a treaty is a lease, and every arrangement in the province carries a deposit instead of a witness.',
+            'No institution holds a foot of land. Nine cities, thirty-odd halls, floors, gate houses and stack rooms, and every one of them rented from mortals who could evict the strongest thing in the province and have.',
+            'A battlefield is an asset with a harvest date, worked on a published rotation by people the rest of the world will not sit next to, and the crop is sold at a market where asking about it empties the room.',
+            'The hour is agreed to a few minutes across a whole province and the year is not agreed at all, because the bells are rung and the charters are not.'
+        ],
+        crossingNotes: [
+            'The horizon arrives first. A Low Fall cultivator coming down the gorge road spends the first day unable to judge distance, because nothing here interrupts anything and the sky goes all the way down.',
+            'Nobody asks what sect you are. They ask what you are paying and until when, and if the answer is nothing the conversation ends politely and immediately.',
+            'The bells. Nine watches a day in nine cities, all of them audible from the road, and a visitor who has not learned the schedule inside a week is late to everything.',
+            'Every wall in sight is older than every institution behind it, and the locals will tell you so, unprompted, in a tone the Low Fall finds insufferable.',
+            'Somewhere in the second day somebody offers to buy something off you, sight unseen, at a price that is either insulting or extremely good, and there is no way for an outsider to know which.'
+        ]
+    },
+
+    // ── NORTH ────────────────────────────────────────────────────────────
+    // A wasting asset with two institutions standing on it. The governing fact
+    // was already in `sects.ts`: the Frostmirror's glacier retreats forty spans
+    // below its own working face. A province that knows exactly how long it has
+    // is a different sort of place from one that does not.
+    {
+        id: NORTH_REGION_ID,
+        name: 'The White Stair',
+        role: 'adjacent',
+        traditionId: 'tradition-drawn',
+        summary:
+            'Above the snowline, past a pass that is shut five months a year: the richest air anybody has ever stood in, in a band forty paces wide, moving uphill. Two institutions, no court, no register, no market and no arbitration, on ground that is measurably worth less every year and knows the figure.',
+        governingFact:
+            'The qi here is in the ice rather than under it, and the ice is going. What a northerner draws on is the melt face, which has retreated about forty spans in a working lifetime and is still retreating.',
+        derivations: [
+            'Status is elevation. A holding is a band of altitude rather than an area, everybody\'s band moves uphill by inches a year, and a house that cannot follow the ice up is finished inside three generations - so nobody in the North has ever argued about a boundary',
+            'Nothing is built to last, because a hall at the working face is thirty years from being below it, which is why the province has no ruins worth robbing, no inheritance worth suing over and no architecture anybody would cross a pass to see',
+            'The whole province is on a clock every party can read: the face figure is published annually and can be gone and looked at, so it is the only number in the world that nobody in a province disputes',
+            'A discipline that requires the ground to stay where it was put does not work here at all, which removes formations, containment and survey in one stroke and leaves the North with no way to hold anything except by standing on it'
+        ],
+        register: {
+            colour: 'white, and then blue where the ice is old, and nothing else at all except paint, which is why every worked thing in the province is painted',
+            light: 'enormous and flat and coming from underneath as well as above, with no shadow at noon and a glare that blinds anybody who has not blackened under the eyes',
+            sound: 'the ice, which is never quiet: a crack carries four li on cold air and everybody stops for a moment and then goes on with what they were doing',
+            smell: 'nothing whatsoever, which visitors find distressing inside a day and cannot explain, and which is the first thing a northerner notices about anywhere else',
+            food: 'hard cheese, blood, fat, boiled snow, and imported grain that arrives seventeen days old and is rationed against the five months the pass is shut'
+        },
+        customs: {
+            socialPrinciple: 'One curriculum and one holder of it. There is no politics of territory because the territory moves, and no politics of patronage because there is nothing to grant; there is only whether the Court will teach you, which your root decides and nothing you can offer changes.',
+            death: 'The dead go into the ice at the face, and the ice gives them back about a century later at a lower band, in good condition, still recognisable. This is ordinary, there is a form for it, and the rest of the world regards it as the single most disturbing thing about the province.',
+            taboo: 'Never cut below the working face. Taking ice that has not melted yet is stealing from the next century, and it is the one offence the North punishes rather than merely disapproving of.',
+            threatModel: 'The ground, which is not ground. Crevasse fields under new snow that move every year and are surveyed by nobody, and cold that kills a Foundation cultivator in an afternoon if they stop walking.',
+            naming: 'Elevation names: a person carries the band they were born at. Nine Hundred Ren, Above-the-Face Bai, Low Xu. A name goes down over a lifetime as the bands do, and everybody can hear how far.',
+            time: 'Counted in retreats rather than years - four retreats ago is about a century - so two northerners can disagree about the date by twenty years without either of them being wrong or thinking the question interesting.'
+        },
+        cultivation: {
+            method:
+                'Drawing off the melt face: the qi comes out of the ice as the ice goes, in a band about forty paces wide that moves uphill every year. Everybody in the province cultivates inside that band or does not cultivate, and the band is not large enough for the province.',
+            ambientRateMultiplier: 0.6,
+            methodRateMultiplier: 1.8,
+            deviationRiskModifier: 0.02,
+            harderBoundaries: [12, 24],
+            missingDisciplines: [
+                {
+                    discipline: 'formations',
+                    reason: 'An array is laid on ground that stays where it is put, and nothing here does: stones set in ice go out of square inside a decade and out of use inside two. There is not one working formation anywhere in the White Stair, which is the same absence the Quiet Marches has for the exactly opposite reason - there they have no qi to draw on, here they will not hold still.'
+                }
+            ],
+            strongDisciplines: [
+                'ice arts, which exist nowhere else in the world because the curriculum was sealed in the ice and was dug out rather than inherited from anybody',
+                'cold work on the body, which every northerner has whether they cultivate or not and which visitors mistake for a discipline',
+                'reading a moving face, which is a survey trade practised on something that will not hold still and is the one skill the province sells'
+            ],
+            costNote:
+                'Advancement costs altitude and a root. A season in the forty paces costs about what a season costs anywhere, and the Court will not sell one to anybody without a mutated ice root on the stated grounds that the arts kill everyone else. There is no second seller and there has never been one.',
+            localRankNames: STAIR_BANDS
+        },
+        ambientProfile: { thin: 55, normal: 18, dense: 22, spirit_tide: 5 },
+        localCeilingOrdinal: 36,
+        ceilingNote:
+            'Thirty-six, and it is a person rather than a property of the ground. Nobody in the White Stair has passed the Frostmirror Sovereign in living memory, and the ceiling is not the air, which is the best in the world: it is that one Court holds the only curriculum that survives standing in it, and everyone else in the province stops where the cold does.',
+        veinStatus:
+            'The cold vein is in the ice rather than under it, which is why nobody else can work it and why it is going. The face has retreated about forty spans in a working lifetime, the Court publishes the figure every year and anybody can walk up and check it, so the White Stair is the only province in the world that knows exactly how long it has left.',
+        politics: 'competing_sects',
+        politicsNote:
+            'Two institutions and nothing else. Neither is granted through a court - both hold directly from an apex, on the one arterial in the world that has no administrator - so the province has no arbitration bench, no register, no assay house, no grant book and no third party of any kind to appeal to. What it has instead of politics is one running quarrel between a court that is climbing and a court that is falling, and neither can finish the other: one cannot reach a floating stone and the other cannot hold a glacier.',
+        factionIds: [
+            'sect-frostmirror-court',
+            'sect-storm-tyrant-court'
+        ],
+        branches: [
+            {
+                parentSectId: 'sect-cinnabar-crucible-guild',
+                localName: 'The Cold Crucible at Rimefall',
+                doesHere:
+                    'Four furnaces and a price list, and the only alchemy in the province. It stands here because the Guild\'s grant comes from the Frostmirror rather than from the Third Sill, which is an arrangement neither province has a document for and neither has asked about.'
+            },
+            {
+                parentSectId: 'house-measured-span',
+                localName: 'The Fourhands Terminal',
+                doesHere:
+                    'One of the nine stations, at the head of the pass, an hour from a station seventeen days\' walk away. It is the only reason anything reaches the North in the five months the road is shut, it opens four days in nine, and the Frostmirror pays for it in stones without ever having said what for.'
+            }
+        ],
+        places: [
+            { name: 'Rimefall', kind: 'sect_town', ambient: 'dense', note: 'The Frostmirror\'s town, moved uphill four times in four hundred years and carrying its name with it each time. Nothing in it is more than a century old.' },
+            { name: 'The Giving', kind: 'site', ambient: 'spirit_tide', note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Giving and nobody says what it is giving, or for how much longer.' },
+            { name: 'Underhang', kind: 'site', ambient: 'thin', note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
+            { name: 'Undersnow', kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.' },
+            { name: 'Fourhands', kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, named for the four men who kept it the winter it was cut. Three of them are in the wall and there were five.' }
+        ],
+        exports: [
+            'ice-cut stones, which assay high and shatter if they are cut warm, so the whole trade moves in winter or not at all',
+            'the only complete ice curriculum in the world, which is not for sale and is the reason anybody crosses the pass',
+            'the face figure, published annually, which two provinces now use to price a carriage contract nobody in the North is party to'
+        ],
+        imports: [
+            'grain, all of it, because nothing grows above the last inhabited band and the last band is going',
+            'timber and every worked thing, since a province that moves uphill builds nothing twice and repairs nothing at all',
+            'people with mutated ice roots, who are sent here from every province the moment somebody identifies one, and who mostly arrive alone'
+        ],
+        priceMultiplier: 1.7,
+        hazards: [
+            'cold that kills a Foundation Establishment cultivator in an afternoon if they stop walking, and does not care what realm anybody is',
+            'crevasse fields under new snow, which move every year, are surveyed by nobody, and are the reason the road is staked and the stakes are not enough',
+            'beasts that follow the face uphill and are only ever met above the last inhabited band, where there is nobody to tell anybody afterwards',
+            'the working face itself, which calves without warning and has taken eleven people in nine years, all of them at the same band'
+        ],
+        connections: [
+            {
+                kind: 'trade_route',
+                otherRegionId: HOME_REGION_ID,
+                description:
+                    'Seventeen days over the pass, shut five months a year: grain and timber up, ice-cut stones down, and a five-month gap every winter that the whole province is provisioned against and occasionally gets wrong.',
+                travelDays: 17
+            },
+            {
+                kind: 'shared_institution',
+                otherRegionId: HOME_REGION_ID,
+                description:
+                    'The Frostmirror grants to an alchemy guild standing on a volcanic flank in another province, on the arterial that runs under both of them. It is the only lease in the world that crosses a provincial border, and neither province has a document that admits it exists.',
+                travelDays: 17
+            },
+            {
+                kind: 'sea_crossing',
+                otherRegionId: SOUTH_REGION_ID,
+                description:
+                    'Thirty-four days round the western capes to a northern inlet, open two months a year, and the only route into the White Stair that does not pass through the Low Fall. Everything the Court would rather not have counted at a gorge counter comes this way, and about one hull in five does not arrive.',
+                travelDays: 34
+            }
+        ],
+        trueHereFalseThere: [
+            'A holding is an elevation rather than an area, and every one of them moves uphill about forty spans in a working lifetime, so nobody in this province has ever argued about a boundary with anybody.',
+            'Not one formation in the province holds true for a decade, because array stones set in ice go out of square - so there is no working array anywhere here, in a world where an array is what a compound is.',
+            'The dead come back. The ice returns what was put into it about a century later, at a lower band, in good condition and recognisable, and there is an ordinary administrative form for what to do about it.',
+            'Everybody agrees the year to within twenty years and nobody agrees it closer, because the year here is a measurement of a moving face rather than a count of anything.'
+        ],
+        crossingNotes: [
+            'The air gets better and then it turns out to be useless. A visitor notices the density climbing on the pass and assumes their luck has changed; it has not, because the qi is in a band forty paces wide that somebody else stands in.',
+            'Nothing is square. Every wall leans, every door sticks, and the locals stopped treating either as a defect several centuries ago.',
+            'The first question is not what realm you are and not whether you hold a grant. It is what your root is, and if the answer is not ice the conversation ends and nobody involved was being rude.',
+            'There is no smell. A visitor from anywhere finds this distressing inside a day and usually cannot work out what is wrong with them until somebody tells them.',
+            'Somebody says a year and means a face position, and a visitor who converts it to a date has just made an error of about twenty years that nobody local will think to correct.'
+        ]
+    },
+
+    // ── SOUTH: THE WATER ─────────────────────────────────────────────────
+    // This is not a fifth landmass. Every fact below follows from one sentence
+    // in `docs/world/qi.md` - qi pools in veins, and veins are features of the
+    // LAND - taken seriously rather than waived. There is no ground under the
+    // open sea, so there is no vein, so there is nothing in the air; a
+    // cultivator out here is on the same footing as a cultivator anywhere the
+    // ambient will not carry them, which is to say they are burning stones.
+    //
+    // NOTHING HERE IS A MARITIME SUBSYSTEM. There are no ships in this file,
+    // no hull rules, no weather table and no navigation. What is here is a
+    // province whose numbers make maritime play possible and obviously wanted:
+    // the lowest ceiling and the lowest rate in the world, the highest price
+    // multiplier, a link kind the engine cannot yet read, and two institutions
+    // that hold nothing. What it would need is named in `RegionConnectionSchema`
+    // above and in `hazards` below, and it is somebody else's task.
+    {
+        id: SOUTH_REGION_ID,
+        name: 'The Drowned Reach',
+        role: 'adjacent',
+        traditionId: 'tradition-drawn',
+        summary:
+            'Open water south of everything, with a drowned mountain range under it whose peaks are the islands. There is no vein within reach of anybody, so there is nothing in the air; cultivation out here is bought by the day out of a stone chest, and every institution that has ever tried to hold a strait has held it on paper.',
+        governingFact:
+            'There is no ground under you. Qi pools in veins and a vein is a feature of the land, and the land here is a hundred fathoms down, so the ambient over open water is not thin - it is absent, and it does not vary, season or run out, because there is none of it.',
+        derivations: [
+            'Cultivation at sea is purchased rather than drawn: a cultivator on open water burns assayed stones to hold what they have and burns more to gain anything, so a passage is priced in stones per head per day before it is priced in anything else',
+            'Territory over water is a claim and never a fact, because closing a strait means keeping a hull on it in the weather every day of the year and nobody does - so a house that claims a strait and a house that can close one are different houses, and the second kind has never existed here',
+            'The only ground is the islands, and an island is a drowned mountain with its vein under the sea, so every scrap of workable ground in the province is small, is somebody\'s, and is also the only place anybody can take on fresh water',
+            'A Cut cultivator carries their vein in the stone they work and a Drawn cultivator carries theirs in a chest that empties, which makes this the one province in the world where the losing tradition is the stronger of the two, and neither of them holds a foot of it'
+        ],
+        register: {
+            colour: 'grey and white with no line between them for days at a time, and the only strong colour anywhere in the province is paint on a hull',
+            light: 'too much of it, and half of it from underneath: everybody at sea squints, and anybody who has been out five years has white lines at the corners of their eyes',
+            sound: 'one sound, continuously, that a passenger stops hearing on the third day and then cannot sleep without for the rest of their life',
+            smell: 'salt, tar, wet rope, and fish drying on every rail from the day a hull leaves to the day it makes a landfall',
+            food: 'fish, fish, and rice carried in sealed stone jars, with fresh water rationed by the cup and counted aloud at the same hour every day'
+        },
+        customs: {
+            socialPrinciple: 'None. Nothing on this water is granted, arbitrated, surveyed or certified, and the only two institutions that function here are the two whose entire doctrine was never holding anything in the first place.',
+            death: 'Over the side, weighted, with the name said once and not written down. The Drowned Reach is the only province in the world that keeps no record of its dead, and all four of the others regard this as barbarism and say so.',
+            taboo: 'Never count the stone chest aloud. What is in it is what everybody aboard is standing on, and saying the figure where it can be heard is the moment a crew stops being a crew and becomes a number of people with an interest.',
+            threatModel: 'The weather and the arithmetic, in that order and usually together. Most people who die in the South die because a passage took eleven days longer than it was provisioned for, which is not misfortune, it is a sum somebody did wrong ashore.',
+            naming: 'Hulls and landfalls instead of clans: Bell of the Third Landfall, Ma out of Kettle, Watering Xu. A person at sea is named for where they came aboard, and nobody asks past that.',
+            time: 'Counted in passages and in stones burned. Nine passages is a career; a hull\'s age is the number of stones it has gone through, cut into the mast where anybody can read it, and it is the one figure in the province nobody argues with.'
+        },
+        cultivation: {
+            method:
+                'Burning. There is nothing in the air, so a cultivator at sea spends assayed stones to make progress exactly the way anybody anywhere spends them where the ground will not carry them. That is the ordinary rule from the ordinary system, and out here it is the whole of the rule rather than the exception to it.',
+            ambientRateMultiplier: 0.05,
+            methodRateMultiplier: 1,
+            deviationRiskModifier: 0.06,
+            harderBoundaries: [],
+            missingDisciplines: [
+                {
+                    discipline: 'ordinary drawing',
+                    reason: 'The standard method is taking qi out of the air and the air over deep water has none in it - not thin, absent. A Drawn cultivator on open water does not slow down, they stop, and everything they do from that hour on is paid for out of the chest. This is the single most important fact about the province and it is not a rule about the province: it is what the ambient system already says about ground with no vein under it.'
+                },
+                {
+                    discipline: 'formations',
+                    reason: 'A formation is laid on ground, and the ground is a hundred fathoms down. Every array anybody has tried to carry on a hull has failed the same way - it holds while the hull is still and comes apart the moment it is not, and there is no still hull.'
+                }
+            ],
+            strongDisciplines: [
+                'the stone economy, which everybody at sea can do in their head to a day, because a mistake in it is not a loss, it is the manner of death',
+                'weather reading, which is not a cultivation art in any other province and is treated as one here by people who would be insulted to be told otherwise',
+                'the Cut method, which is the only method that works out here and which nobody in the Drowned Reach was ever taught'
+            ],
+            costNote:
+                'Advancement costs stones and costs nothing else, because nothing else is for sale. A day at sea is a fixed burn against a fixed chest, which makes this the only province where a cultivator\'s progress can be worked out exactly, in advance, on a counting board, by somebody who has never met them.',
+            localRankNames: REACH_BANDS
+        },
+        ambientProfile: { thin: 96, normal: 3, dense: 1 },
+        localCeilingOrdinal: 2,
+        ceilingNote:
+            'Three layers on the islands and nothing at all on open water, which makes it the lowest ceiling in the world by a distance. Nobody born in the Drowned Reach has passed Qi Condensation Layer 3 without leaving or without a chest somebody else paid for, and the reason is not that the ceiling is low: it is that there is no ground underneath it.',
+        veinStatus:
+            'There are veins under the Drowned Reach and every one of them is a hundred fathoms down. What put them there is not recorded anywhere anybody has read; what is recorded is the shape, which is a mountain range with its peaks above water, so every island in the province is a vein head with the whole of its vein out of reach beneath it.',
+        politics: 'no_authority',
+        politicsNote:
+            'Nothing at all: no grant book, no bench, no court, no survey, no apex and no province in the administrative sense, because nothing here can be held and therefore nothing here can be given. Four straits are claimed by parties ashore and all four claims are sentences in documents. Two institutions operate on this water and neither holds anything - one because its whole doctrine is leaving, one because it never had anywhere to be - and that is not a gap in the province, it is the only kind of institution the province can support.',
+        factionIds: [
+            'house-measured-span',
+            'sect-hollow-bell-wanderers'
+        ],
+        branches: [
+            {
+                parentSectId: 'sect-clear-river-alliance',
+                localName: 'The Mouth Ferries',
+                doesHere:
+                    'Takes a hull from the river mouth as far as Watering and refuses to go one landfall further, on the stated principle that a ferryman who cannot see both banks is a passenger. It is the only regular service between the land and the water and it has never lost a hull, which is the same fact twice.'
+            },
+            {
+                parentSectId: 'sect-thousand-treasure-pavilion',
+                localName: 'The Watering Floor',
+                doesHere:
+                    'One auction floor on one island, sitting three weeks from the nearest city, buying what comes off drowned ground and asking nothing about which island it came off. Its appraisers are the only people in the world who can date something that has been underwater and they will not say how.'
+            }
+        ],
+        places: [
+            { name: 'Watering', kind: 'market_town', ambient: 'thin', note: 'The only island on the eastern passage with fresh water on it, which is the entire reason there is a town there and the entire reason four parties claim it.' },
+            { name: 'Bellhead', kind: 'waystation', ambient: 'thin', note: 'A headland with a bell on it. A hull that rings it has come through, and a hull that does not is counted, and the counting is the only record anybody keeps out here.' },
+            { name: 'The Sounding', kind: 'site', ambient: 'dense', note: 'One rock stands on a vein head that breaks the surface at low water. It is the best ground in the province, it is about forty paces across, and everybody waters at it.' },
+            { name: 'Dryrun', kind: 'site', ambient: 'thin', note: 'The stretch of the eastern passage with no landfall in it. The name is a joke about the water ration and nobody finds it funny after the fourth day.' },
+            { name: 'Farside', kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Low Fall, when it opens, which is four days in nine and never in a storm.' }
+        ],
+        exports: [
+            'passage, priced in stones per head per day, which is the only thing this province sells that anybody ashore actually wants',
+            'salt, in quantity, which is why four straits are claimed at all and why the claims are worth writing down even though they are worth nothing else',
+            'what comes off drowned ground, since an island is the top of something people used to walk on and they left things there before the water arrived'
+        ],
+        imports: [
+            'every grain of food beyond what a rail can dry, and it arrives salted and is eaten salted',
+            'fresh water in sealed stone jars, which is the actual binding constraint on every passage in the province and the reason the map is a list of wells',
+            'spirit stones, which here are not savings and not fuel: they are the ground, and a hull with an empty chest is standing on nothing'
+        ],
+        priceMultiplier: 2.2,
+        hazards: [
+            'storms that shut a passage for a season at a time, and are the only authority on this water that anybody obeys',
+            'water with no vein under it, where the ambient is thinner than any land in the world and a cultivator who stops paying stops',
+            'beasts in deep water, which are ordinary beasts met on ground nobody can retreat across, at a distance from help measured in weeks',
+            'a stone chest that runs out, which is the ordinary cause of death here, is arithmetic rather than misfortune, and is always somebody ashore having been wrong'
+        ],
+        connections: [
+            {
+                kind: 'trade_route',
+                otherRegionId: HOME_REGION_ID,
+                description:
+                    'Nine days down the river and out to Watering, which is where the Low Fall\'s river stops being a river. Salt and drowned goods up, pills and grain down, and the Alliance turns round at the first landfall every time.',
+                travelDays: 9
+            },
+            {
+                kind: 'sea_crossing',
+                otherRegionId: EAST_REGION_ID,
+                description:
+                    'Twenty-one days from Watering to the eastern shore, three seasons in four, across a stretch with no landfall in the middle of it. It is the busiest water in the province and every hull on it is a sum that has to come out right.',
+                travelDays: 21
+            },
+            {
+                kind: 'sea_crossing',
+                otherRegionId: NORTH_REGION_ID,
+                description:
+                    'Thirty-four days round the western capes to a northern inlet, open two months a year, and the only route between two provinces that does not pass through the Low Fall. About one hull in five does not arrive and the trade continues, which says exactly what the alternative is worth.',
+                travelDays: 34
+            },
+            {
+                kind: 'refugee_flow',
+                otherRegionId: HOME_REGION_ID,
+                description:
+                    'People who have run out of provinces. Nobody is born onto this water in any number, so the Reach is populated almost entirely by arrivals, and a hull will take anybody who can pay the burn and asks nothing whatever about why.',
+                travelDays: 9
+            }
+        ],
+        trueHereFalseThere: [
+            'The standard method does not work. There is no vein within reach of anybody, so a Drawn cultivator on open water does not progress slowly, they progress not at all, and everything they gain is bought out of a chest that empties.',
+            'Nothing is held. Four straits are claimed and no claim has ever been enforced for a single season, because closing water means keeping a hull on it in the weather every day and no institution in the world has ever done that.',
+            'A cultivator\'s progress can be calculated exactly, in advance, by a stranger with a counting board, because it is a fixed burn against a fixed chest and there is no other term in the sum.',
+            'The dead are not written down. This is the only province that keeps no record of them at all, and the other four have separate and equally confident explanations of what that says about the people out here.'
+        ],
+        crossingNotes: [
+            'It goes first and it goes all at once. Within half a day of losing the coast the ambient is not thin, it is gone, and a cultivator who has never been out feels it as an injury and reaches for a physician.',
+            'Somebody explains the burn on the first evening, with a board, and the number is per head per day and does not care what realm anybody is. It is the only place in the world where a Core Formation cultivator and a porter are quoted the same figure.',
+            'The water ration is counted aloud at the same hour every day and everybody stops to hear it, including people who have made the passage forty times.',
+            'Nobody asks what sect you are, what grant you hold or what your root is. They ask where you came aboard, and that is the whole of your name for the length of the passage.',
+            'There is no horizon to judge anything against and no sound but the one, and a passenger from any province ashore sleeps badly for three nights and then better than they have in years.'
+        ]
     }
 ];
 
@@ -831,24 +1569,147 @@ export function disciplineWorksIn(regionId: string, discipline: string): boolean
         .some(m => m.discipline.toLowerCase() === discipline.trim().toLowerCase());
 }
 
-/** The two regions' contrast, as a table a tool can render directly. */
+/**
+ * The provinces' contrast, as a table a tool can render directly.
+ *
+ * One row per aspect, one column per region, in catalog order. It was two
+ * columns while there were two provinces; the shape had to change because a
+ * `home`/`adjacent` pair silently stops being the world the moment there is a
+ * third province, and a table that quietly omits three fifths of the map is
+ * worse than no table.
+ */
 export function regionContrast(): {
     aspect: string;
-    home: string | number;
-    adjacent: string | number;
+    byRegion: Record<string, string | number>;
 }[] {
-    const home = getHomeRegion();
-    const away = requireRegion(ADJACENT_REGION_ID);
+    const row = (
+        aspect: string,
+        pick: (r: Region) => string | number
+    ): { aspect: string; byRegion: Record<string, string | number> } => ({
+        aspect,
+        byRegion: Object.fromEntries(REGIONS.map(r => [r.id, pick(r)]))
+    });
     return [
-        { aspect: 'factions seated', home: home.factionIds.length, adjacent: away.factionIds.length },
-        { aspect: 'method', home: 'ordinary drawing', adjacent: 'carving' },
-        { aspect: 'politics', home: home.politics, adjacent: away.politics },
-        { aspect: 'local ceiling (ordinal)', home: home.localCeilingOrdinal, adjacent: away.localCeilingOrdinal },
-        { aspect: 'ambient rate multiplier', home: home.cultivation.ambientRateMultiplier, adjacent: away.cultivation.ambientRateMultiplier },
-        { aspect: 'disciplines that do not work', home: home.cultivation.missingDisciplines.length, adjacent: away.cultivation.missingDisciplines.length },
-        { aspect: 'price multiplier', home: home.priceMultiplier, adjacent: away.priceMultiplier }
+        row('factions seated', r => r.factionIds.length),
+        row('tradition', r => r.traditionId),
+        row('politics', r => r.politics),
+        row('local ceiling (ordinal)', r => r.localCeilingOrdinal),
+        row('ambient rate multiplier', r => r.cultivation.ambientRateMultiplier),
+        row('disciplines that do not work', r => r.cultivation.missingDisciplines.length),
+        row('price multiplier', r => r.priceMultiplier),
+        row('places written', r => r.places.length),
+        row('reachable provinces', r => new Set(r.connections.map(c => c.otherRegionId)).size)
     ];
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// PLACE NAMES FOR THE GENERATED HALF OF THE MAP
+//
+// A seeded world holds twelve ruins and eight scars, and every one of them is
+// currently called `the sealed compound at Lowhollow` or `the scar at
+// Coldmouth`. That is the LocationKind leaking into the fiction: nobody in this
+// world calls a place a sealed compound, and a scar is not called a scar by the
+// people who watched it happen.
+//
+// WHERE IT COMES FROM, EXACTLY. Not this file. Two call sites, both in the
+// world engine:
+//
+//   src/engine/world/history.ts:1221   name: `the sealed compound at ${seat}`
+//   src/engine/world/locations.ts:1709 name: `the scar at ${scar.location}`
+//
+// `seat` and `scar.location` are themselves generated, by PLACE_HEAD x
+// PLACE_TAIL at history.ts:864-871, and that half is fine: Sweptfall and
+// Coldmouth sit beside Sweptground and Scarwater without embarrassing
+// themselves. The defect is the concatenated kind in front of them, and it
+// cannot be fixed from here because `src/engine/world/` is not this file's to
+// edit. Both lines should draw from the tables below instead - the bridge is
+// `loadCultivationCatalog()` in `engine/world/catalog.ts`, which is already the
+// one sanctioned place content reaches the world layer.
+//
+// THE RULE THE TABLES OBEY, so a later addition matches:
+//
+//   1. Never the kind. No "Ruin of", no "Sealed Compound of", no "the X Scar".
+//      If a reader cannot tell what sort of place it is without a label, that
+//      is what the description field is for.
+//   2. One of five sources, and the source is recorded per entry so the rule
+//      stays checkable: what is visibly there, what happened, who held it (in
+//      the possessive, and only where the holder is gone), what people do there
+//      now, or a name that is wrong.
+//   3. Slightly too plain for what it describes. The province kept saying it
+//      because the province was there, not because it was apt.
+//   4. It must not sound like a faction. `sects.ts` names are very good and the
+//      registers must not blur - a place is duller than a house, always.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const PlaceNameSourceSchema = z.enum([
+    'what_is_visibly_there',
+    'what_happened',
+    'who_held_it',
+    'what_people_do_there_now',
+    'a_name_that_is_wrong'
+]);
+export type PlaceNameSource = z.infer<typeof PlaceNameSourceSchema>;
+
+export const GeneratedPlaceNameSchema = z.object({
+    name: z.string().min(1),
+    source: PlaceNameSourceSchema,
+    /** What the name is actually recording, in one line. */
+    records: z.string().min(20)
+});
+export type GeneratedPlaceName = z.infer<typeof GeneratedPlaceNameSchema>;
+
+/**
+ * Names for a sealed compound: the walled seat of a house that fell, shut from
+ * the inside in a richer age, with its manuals and its people still in it.
+ *
+ * Twenty against a draw of twelve, so a seeded world does not repeat.
+ */
+export const RUIN_NAMES: readonly GeneratedPlaceName[] = [
+    { name: 'Ninebell', source: 'what_happened', records: 'The bells were counted on the last night and the count was passed outward. There were seven.' },
+    { name: 'Quan\'s Shelf', source: 'who_held_it', records: 'A surname nobody in the province can now attach to anything else, on a terrace anybody can see from the road.' },
+    { name: 'The Warm Gate', source: 'a_name_that_is_wrong', records: 'It has been cold for nine hundred years. The name is older than the sealing and was never revised.' },
+    { name: 'Halfroof', source: 'what_is_visibly_there', records: 'What is left standing above the wall line, which is about half of one roof.' },
+    { name: 'Threestone', source: 'what_is_visibly_there', records: 'Three array stones out of a ring nobody has ever counted the rest of.' },
+    { name: 'The Millet Yard', source: 'a_name_that_is_wrong', records: 'Nothing has grown in it in an age, and the surrounding villages still call it that at market.' },
+    { name: 'Digging', source: 'what_people_do_there_now', records: 'The only thing that has happened there for four hundred years, done by whoever is broke that season.' },
+    { name: 'Nothing Standing', source: 'what_happened', records: 'What the first party back reported, which turned out to be wrong by about eleven buildings.' },
+    { name: 'Muyang', source: 'who_held_it', records: 'The house name, used flat, with no honorific and no form of words around it.' },
+    { name: 'Sixty Doors', source: 'what_is_visibly_there', records: 'Counted from outside by somebody who could not get through any of them.' },
+    { name: 'The Long Rota', source: 'what_happened', records: 'The duty roster was still being kept for two years after the sealing, and the last page is legible.' },
+    { name: 'Went Under', source: 'what_happened', records: 'Said of the seat rather than of the ground, and said the same way about a person.' },
+    { name: 'Coldwell', source: 'what_is_visibly_there', records: 'The only well outside the wall, still good, and the reason anybody camps there at all.' },
+    { name: 'Bai\'s Shortcut', source: 'who_held_it', records: 'A path around the perimeter named for the last steward, who was not using it to get anywhere.' },
+    { name: 'The Wide Door', source: 'a_name_that_is_wrong', records: 'It is narrow, it faces the wrong way, and every account since the fall has called it wide.' },
+    { name: 'Fivewinter', source: 'what_happened', records: 'How long the compound answered after it was shut, counted by the people who kept coming back to check.' },
+    { name: 'Hookyard', source: 'what_people_do_there_now', records: 'Where the diggers dress and sort before they go in, named for the tools they leave in it.' },
+    { name: 'The Second Wall', source: 'what_is_visibly_there', records: 'There is no first wall any more, so the surviving one is still called the second.' },
+    { name: 'Ren\'s Landing', source: 'who_held_it', records: 'A stair head that carries the name of a Warden nobody can now place in any roll.' },
+    { name: 'The Quiet Course', source: 'a_name_that_is_wrong', records: 'It is not quiet, it has never been quiet, and everybody who has been in says so and goes on calling it that.' }
+];
+
+/**
+ * Names for a scar: ground something did to, permanently thin, that people
+ * were standing near enough to name.
+ *
+ * Fourteen against a draw of eight. A scar name should be plainer than a ruin
+ * name, because the people who chose it were describing weather.
+ */
+export const SCAR_NAMES: readonly GeneratedPlaceName[] = [
+    { name: 'The Burn', source: 'what_happened', records: 'What the nearest village called it that week, and did not stop calling it.' },
+    { name: 'Fourdays', source: 'what_happened', records: 'How long it took, counted from a hill by people who could not do anything else.' },
+    { name: 'The Flat', source: 'what_is_visibly_there', records: 'It was not flat before, and the word does the whole of the work.' },
+    { name: 'Nothing Grows', source: 'what_is_visibly_there', records: 'Stated as a fact rather than as a name, and used as one for two hundred years.' },
+    { name: 'Wenzhi\'s Field', source: 'who_held_it', records: 'The farmer who held the ground, named because nobody could name what did it.' },
+    { name: 'The Good Ground', source: 'a_name_that_is_wrong', records: 'It was, and the surveys still carry the old entry, and every local knows better.' },
+    { name: 'Standing Water', source: 'what_is_visibly_there', records: 'It has not drained since, and nothing will drink it.' },
+    { name: 'Threeyear', source: 'what_happened', records: 'The interval before anybody would cross it, agreed by nobody and observed by everybody.' },
+    { name: 'The Short Way', source: 'a_name_that_is_wrong', records: 'It is the short way and it costs a day to go round, which is the joke and the warning at once.' },
+    { name: 'Gleaning', source: 'what_people_do_there_now', records: 'People still work the edges for what the ground gives up, and are known by it.' },
+    { name: 'Cutbank', source: 'what_is_visibly_there', records: 'The edge is sharp, and the sharpness of the edge is the thing everybody remarks on.' },
+    { name: 'The Old Crossing', source: 'a_name_that_is_wrong', records: 'Nobody has crossed it in two centuries and the road signs have never been changed.' },
+    { name: 'Hemu\'s Rest', source: 'who_held_it', records: 'A waystation keeper who did not leave, whose name outlasted the waystation and the road.' },
+    { name: 'Whitewater', source: 'what_is_visibly_there', records: 'The stream that comes off it runs pale and has done since, and the colour is the name.' }
+];
 
 /** Ambient states present in a region at all, commonest first. */
 export function ambientStatesIn(regionId: string): AmbientQi[] {
@@ -1203,10 +2064,10 @@ const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'The glacier and the cold vein under it, on a grant nobody else has ever applied for, held directly from the Survey rather than through the Sill.',
         onTheGround:
-            'The same, and the Frostmirror has been writing to the Third Sill about the cold-arterial figures for eleven years and has had four replies drafted and none of them sent.',
+            'The same, and the Frostmirror has been writing to the Third Sill about the cold-arterial figures for eleven years and has had four replies drafted and none of them sent. The glacier itself is seventeen days over the pass in the White Stair, and the Court has never sat in the province the register puts it in.',
         discrepancy: 'none',
         note:
-            'One of the two catchments that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere.'
+            'One of the two catchments that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere - and both of them are exclaves. The Long Cold runs under the glacier and out beneath the floating stone, so it leaves the province, and the Survey carries the two catchments over it on the Low Fall book because the arterial is Low Fall rather than because the ground is. Nobody has ever proposed correcting it, because correcting it would mean stating in writing that the Survey holds one province, four arterials and two pieces of somewhere else.'
     },
     {
         id: 'prefecture-floating-stone',
@@ -1230,7 +2091,7 @@ const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'The Court can no longer reach the bottom of its own vein and has not said so upward. The eleventh share has not been drawn in sixty years and the Keeper is fairly sure somebody is drawing it.',
         discrepancy: 'holds_less_than_recorded',
         note:
-            'The one place in the province where the register and the ground disagree by an amount somebody has actually measured, and the man who measured it has been a Second Mark for nineteen walks because his figures keep disagreeing with the apportionment calculated off them.'
+            'The one place in the province where the register and the ground disagree by an amount somebody has actually measured, and the man who measured it has been a Second Mark for nineteen walks because his figures keep disagreeing with the apportionment calculated off them. Like the Cold Head it is an exclave: the stone hangs over a storm in the White Stair, on the far side of a pass that is shut five months a year, and the Court\'s one Low Fall tenant is a sinkhole hall under a town nine days from anything the Court can see.'
     },
     {
         id: 'prefecture-scarwater',
@@ -1459,9 +2320,9 @@ export const PROVINCES: readonly Province[] = [
         governingFact:
             'The veins here are horizontal, shallow and surveyable, so the qi belongs to whoever holds the surface above it - and the surface has been held continuously for four hundred years.',
         onPaper:
-            'The Deep Survey holds the arterial system and the province standing on it: four arterials, eleven surveyed veins, twenty-seven institutions, and a datum nobody local can place.',
+            'The Deep Survey holds the arterial system and the province standing on it: four arterials, eleven surveyed veins, seventeen institutions, and a datum nobody local can place.',
         onTheGround:
-            'Two of the four arterials have no administrator, one is a datum nobody draws on, and the fourth - the only one anything branches from - is administered by a court that answers to the Long Cut. The Survey holds one province and is present on two catchments of it.',
+            'Two of the four arterials have no administrator, one is a datum nobody draws on, and the fourth - the only one anything branches from - is administered by a court that answers to the Long Cut. The Survey holds one province and is present on two catchments of it, and both of those two are over the northern watershed and have been for as long as anybody has walked them.',
         prefectureIds: LOW_FALL_PREFECTURES.map(p => p.id),
         whatIsKnownOfIt: null,
         startingAwareness: 'known'
