@@ -2559,9 +2559,30 @@ ${noticed}`;
             ));
         }
 
+        // ── SOMEBODY OF MY OWN HEIGHT ────────────────────────────────────
+        //
+        // `somebodyAtHand` answers a gesture with whoever is NEAREST, which for
+        // a fight is the wrong body: the nearest person is usually far above,
+        // and the categorical-gap rule then correctly declines. So every route
+        // into combat was suicide or a refusal and a player never fought
+        // anybody, in a setting where a bout between equals is how a disciple
+        // measures themselves.
+        //
+        // A peer phrase asks for a HEIGHT rather than a person, so it is
+        // answered with the closest match on the ladder among the people
+        // actually here. It never invents anybody: an empty square still falls
+        // through to the same refusal below.
+        const peer = GameService.SOMEBODY_OF_MY_OWN_HEIGHT.test(query)
+            ? [...this.present(cultivator)]
+                .sort((a, b) =>
+                    Math.abs(a.realmOrdinal - cultivator.realmOrdinal)
+                    - Math.abs(b.realmOrdinal - cultivator.realmOrdinal)
+                    || (a.id < b.id ? -1 : 1))[0]
+            : undefined;
+
         // A gesture at somebody in the square resolves to somebody in the
         // square. A name resolves to that name or to nothing.
-        const pointed = this.somebodyAtHand(query, cultivator);
+        const pointed = peer ?? this.somebodyAtHand(query, cultivator);
         const party = pointed
             ? { kind: 'cultivator' as const, id: pointed.id, name: pointed.name }
             : resolveCultivator(this.repos, query, cultivator.id, scope, cultivator.realmOrdinal);
@@ -9420,6 +9441,21 @@ ${fit.line}`;
      */
     private static readonly THE_ONE_ON_THE_BOARD =
         /^(?:the |that |this |it|one)?\s*(?:mission|missions|commission|job|duty|task|assignment|errand|contract|one|it)?\s*$/i;
+
+    /**
+     * A phrase that names a HEIGHT rather than a person.
+     *
+     * "somebody of my own realm", "a disciple of my rank", "someone my equal" -
+     * all of them are a request for a fair fight rather than for a particular
+     * body, and answering them with whoever happened to be nearest is what made
+     * every duel in the game either suicide or a refusal.
+     *
+     * Deliberately requires the possessive or the word `equal`: "a Nascent Soul
+     * cultivator" names a height too and names a DIFFERENT one, and must go on
+     * resolving the way it always has.
+     */
+    private static readonly SOMEBODY_OF_MY_OWN_HEIGHT =
+        /\b(?:my (?:own )?(?:realm|rank|rung|level|height|standing)|my equal|an equal|someone equal|of equal (?:rank|realm)|the same (?:realm|rank|rung) as me|my own kind)\b/i;
 
     /** "the board", "sect work", "whatever is going" - a wall, not a line. */
     private static readonly BOARD_IN_GENERAL =
