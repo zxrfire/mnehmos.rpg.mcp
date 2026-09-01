@@ -137,3 +137,45 @@ describe('an arrival is rolled once per fact, for ever', () => {
         expect(left).toEqual(pending);
     });
 });
+
+/**
+ * A run is reproducible from its seed. The encounter layer included.
+ *
+ * `window.ts` mixes `cultivator.id` into seven RNG streams, which is correct
+ * for its own purpose - two cultivators standing in one world must not draw the
+ * same encounters - and wrong as a default for a played run, because a
+ * cultivator's row id is a `randomUUID()` and is not derived from the seed.
+ *
+ * Measured before the fix, same seed and same everything a caller supplies:
+ * `requestedDays` 1215 on one run and 3650 on the next. The rule in AGENTS.md
+ * is not "mostly reproducible".
+ */
+describe('the same seed is the same life', () => {
+    async function oneLife() {
+        const { db, game } = makeGame({ seed: 'reproducible' });
+        const { cultivator } = await game.newRun('Twin');
+        db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+        // With a book, so the decade is a decade of something.
+        await game.act('I learn the Lesser Qi-Gathering Manual');
+        const { timeSkip } = await game.cultivate(3650);
+        return {
+            requested: timeSkip.requestedDays,
+            simulated: timeSkip.simulatedDays,
+            events: timeSkip.events.map(event => event.summary)
+        };
+    }
+
+    it('rolls the same encounters across separate runs in one process', async () => {
+        const first = await oneLife();
+        const second = await oneLife();
+        const third = await oneLife();
+
+        // `requestedDays` is what the encounter window truncated the span to,
+        // so it is the field that moved when this was broken.
+        expect(second.requested).toBe(first.requested);
+        expect(third.requested).toBe(first.requested);
+        expect(second.simulated).toBe(first.simulated);
+        expect(second.events).toEqual(first.events);
+        expect(third.events).toEqual(first.events);
+    });
+});
