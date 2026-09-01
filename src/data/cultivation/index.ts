@@ -209,6 +209,7 @@ export * from './traditions.js';
 export * from './mortal-world.js';
 export * from './faction-character.js';
 export * from './faction-history.js';
+export * from './placed-on-somebody-s-word.js';
 export * from './demonic-sects-and-what-they-are-willing-to-do.js';
 export * from './hierarchy.js';
 export * from './immortal-items.js';
@@ -222,6 +223,7 @@ export * from './sealed-ancestors.js';
 export * from './named-figures.js';
 export * from './inheritance-trials.js';
 export * from './lost-ages.js';
+export * from './rumours-and-what-they-get-wrong.js';
 
 export {
     ENCOUNTERS,

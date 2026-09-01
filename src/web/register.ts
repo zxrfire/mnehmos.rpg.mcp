@@ -46,7 +46,8 @@ import {
     getApexInstitution,
     getCourt,
     getParentage,
-    type LineageDispute
+    type LineageDispute,
+    type Posting
 } from '../data/cultivation/hierarchy.js';
 import { ARTIFACTS, artifactsOwnedBy } from '../data/cultivation/artifacts.js';
 import { IMMORTAL_CHANNELS, LINEAGE_STANDINGS } from '../data/cultivation/crossings.js';
@@ -63,6 +64,10 @@ import {
     type SharedEvent
 } from '../data/cultivation/faction-history.js';
 import { demonicStandingOf } from '../data/cultivation/demonic-sects-and-what-they-are-willing-to-do.js';
+import {
+    PLACEMENT_REACH,
+    THE_HOLLOW_COURT_AND_ITS_CHILDREN
+} from '../data/cultivation/placed-on-somebody-s-word.js';
 import {
     TECHNIQUES,
     GRADE_ORDER,
@@ -333,6 +338,23 @@ export interface RegisterLineageDispute {
     fields: { key: string; heading: string; text: string }[];
 }
 
+/**
+ * How a body nobody can join comes to have anybody in it.
+ *
+ * On two entries. Read it beside an ordinary house's admission ordinal and the
+ * difference is the whole point: every other institution in the world states a
+ * bar and waits, and these two state nothing, because there is no application
+ * to make. The decision is taken by somebody else, about you, elsewhere.
+ */
+export interface RegisterPosting {
+    appointedBy: string;
+    whatItIsWorthFromBelow: string;
+    whatItIsWorthFromAbove: string;
+    andAfterwards: string;
+    andBeingPassedOver: string;
+    andWhatTheTermIsWorthAfterwards: string;
+}
+
 export interface RegisterCourt {
     id: string;
     name: string;
@@ -411,6 +433,19 @@ export interface RegisterCourt {
      * argument is how a register starts adjudicating.
      */
     lineageDispute: RegisterLineageDispute | null;
+    /**
+     * How a body that takes nobody comes to have anybody in it. Null on most.
+     *
+     * EVERY OTHER COURT ON THIS SHEET IS A SECT - members, an intake, a ladder,
+     * a seat, a sub-sect or tributary sect of something larger - and "court"
+     * describes what it administers rather than what kind of institution it is.
+     * Two bodies are not: they are organisations with postings, they take
+     * nobody at all, and somebody stands there because they were appointed.
+     * Which is also the only reason the reposting at the centre of the largest
+     * unresolved question in the region was a thing anybody could do - you can
+     * repost a posting, and you cannot repost a sect.
+     */
+    posting: RegisterPosting | null;
     /**
      * Catalog order, deliberately unsorted.
      *
@@ -603,9 +638,29 @@ export interface RegisterFielded {
     /**
      * What it can make, as against what it happens to contain.
      *
-     * A house can stand at a rung because somebody walked in. This is the rung
-     * it reaches from its own intake, which is the number that says whether it
-     * will still be standing there in a century.
+     * A house can stand at a rung because somebody walked in. `reliableOrdinal`
+     * is the rung it reaches from its own intake, which is the number that says
+     * whether it will still be standing there in a century.
+     *
+     * AND IT IS NOT A CEILING. Three different quantities were being flattened
+     * into that one figure, and the sheet was reading the lowest of them as a
+     * limit on the other two:
+     *
+     *   reliable      what it turns out routinely. A low figure here is not an
+     *                 embarrassment and on several houses it is a policy.
+     *   taughtCeiling what is realistically available to somebody there now,
+     *                 bounded by who is alive to teach them - which is the
+     *                 strongest living member and nothing else.
+     *   everReached   what has actually been reached from inside this house,
+     *                 off its own ancestral roll. Bounded by nothing but the
+     *                 ladder, because a book carries you to the end of a realm
+     *                 and the crossing is not in any book: everything past a
+     *                 house's shelf came from somewhere else, so a house that
+     *                 produced somebody who went all the way has demonstrated
+     *                 that its ceiling was never its pipeline.
+     *
+     * The house where all three disagree most is the sharpest entry on the
+     * sheet and must read as remarkable rather than as a contradiction.
      */
     produces: {
         reliableOrdinal: number;
@@ -616,6 +671,29 @@ export interface RegisterFielded {
         peakCount: number;
         yearsSinceLastPeak: number;
         note: string;
+        /**
+         * True where the house takes nobody at all.
+         *
+         * On those, `reliableOrdinal` is arithmetically correct and says
+         * nothing: a body with no intake produces nothing from an intake it
+         * does not have, which is not the same statement as producing nobody.
+         * The register printed the second sentence for a long time about a
+         * house whose own roll holds people who crossed the Lid.
+         */
+        takesNobody: boolean;
+        /**
+         * The gate, repeated here because it is what the routine figure means.
+         *
+         * A house whose routine figure sits BELOW its own admission bar is not
+         * describing a pipeline - it is describing a door that only opens to
+         * people who are already past where a pipeline would start.
+         */
+        gateOpensAt: number;
+        /** Strongest living member: what is realistically reachable here now. */
+        taughtCeiling: number;
+        taughtCeilingRank: string;
+        /** The furthest anybody produced here ever went. Off the ancestral roll. */
+        everReached: { ordinal: number; rank: string; name: string; yearsAgo: number } | null;
     } | null;
 }
 
@@ -925,6 +1003,16 @@ export interface SectDossier {
     history: RegisterHistory | null;
     /** What it is willing to do that the others are not. Null on all but six. */
     demonic: RegisterDemonic | null;
+    /**
+     * How it is staffed, where it is staffed rather than joined. Null on most.
+     *
+     * It sits in the ranks-and-people part of the entry rather than with the
+     * history, because it is a fact about who is next rather than about how the
+     * body came to be here - and the precedence a completed term buys is a fact
+     * about a promotion queue, which is exactly what that part of the entry is
+     * for. See `RegisterPosting`.
+     */
+    posting: RegisterPosting | null;
     /** What it is trying to become. Null on the four that want nothing. */
     ambition: RegisterAmbition | null;
     /**
@@ -1125,6 +1213,22 @@ export interface WorldRegister {
     artifactCeiling: RegisterArtifactCeiling | null;
     /** Every court, with the people standing in its offices. */
     courts: RegisterCourt[];
+    /**
+     * The second way anybody gets into a house, which no faction entry can show.
+     *
+     * Global rather than per-faction, and the placement is the argument. Every
+     * entry on this sheet states an admission bar, and a reader who has read
+     * thirty-four of them has quietly concluded that the bars are what the
+     * rolls are made of. They are not: two disciples at the same rank, one
+     * admitted on the figure and one placed on somebody's word, are identical
+     * on the roll and identical on this page. There is no faction this belongs
+     * to, because it is true of all of them - so it goes once, near the
+     * admission tables, as the correction to the thing those tables imply.
+     */
+    placement: {
+        bands: { patron: string; reaches: string; andNoFurtherBecause: string; howOften: string }[];
+        theRareEnd: { key: string; heading: string; text: string }[];
+    };
     /** Every art, with every house that teaches it. Grade descending. */
     techniques: RegisterTechnique[];
     /** Every house with a teach list, and what is on it. */
@@ -1324,6 +1428,19 @@ function buildHistory(factionId: string): RegisterHistory | null {
     };
 }
 
+/** How a body that takes nobody is staffed. Null on all but two. */
+function buildPosting(d: Posting | undefined): RegisterPosting | null {
+    if (!d) return null;
+    return {
+        appointedBy: d.appointedBy,
+        whatItIsWorthFromBelow: d.whatItIsWorthFromBelow,
+        whatItIsWorthFromAbove: d.whatItIsWorthFromAbove,
+        andAfterwards: d.andAfterwards,
+        andBeingPassedOver: d.andBeingPassedOver,
+        andWhatTheTermIsWorthAfterwards: d.andWhatTheTermIsWorthAfterwards
+    };
+}
+
 /** What a demonic faction is willing to do. Null on everything else. */
 function buildDemonic(factionId: string): RegisterDemonic | null {
     const d = demonicStandingOf(factionId);
@@ -1391,6 +1508,7 @@ function buildCourts(): RegisterCourt[] {
                 : null,
             transferNote: court.transferNote ?? null,
             lineageDispute: buildLineageDispute(court.lineageDispute),
+            posting: buildPosting(court.posting),
             // `court.roster` rather than `courtOfficers()`, and the difference
             // is the whole reason this field exists: the helper sorts by
             // ordinal, and an ordinal sort on a court roster invents a chain of
@@ -1640,10 +1758,50 @@ function buildFielded(factionId: string, acting: number): RegisterFielded {
                 peakRank: rankName(p.peakOrdinal),
                 peakCount: p.peakCount,
                 yearsSinceLastPeak: p.yearsSinceLastPeak,
-                note: p.note
+                note: p.note,
+                takesNobody: intakeRouteOf(factionId) === 'closed',
+                gateOpensAt: getSect(factionId)?.admissionOrdinal ?? 0,
+                // The strongest living member, which is the real bound on what
+                // is available to somebody standing there now: past the end of
+                // the house's shelf there is nothing but a person who has been
+                // further, and this is the furthest person there is.
+                taughtCeiling: acting,
+                taughtCeilingRank: rankName(acting),
+                everReached: furthestEverProducedHere(factionId)
             }
             : null
     };
+}
+
+/**
+ * The furthest anybody produced inside this house ever went.
+ *
+ * Read off the ancestral roll rather than off `production`, because the two
+ * answer different questions and the sheet was letting the second answer the
+ * first. `peakOrdinal` is the best a house's PIPELINE ever did; this is the
+ * best anybody who came out of it ever did, which on a handful of houses is a
+ * completely different figure and on one of them is the whole entry.
+ *
+ * Ancestors with no recorded ordinal are skipped rather than counted as zero -
+ * an absent field reading as zero is a mistake this repo has already made.
+ */
+function furthestEverProducedHere(
+    factionId: string
+): { ordinal: number; rank: string; name: string; yearsAgo: number } | null {
+    const roll = SECT_ANCESTRY[factionId]?.ancestors ?? [];
+    let best: { ordinal: number; rank: string; name: string; yearsAgo: number } | null = null;
+    for (const a of roll) {
+        if (a.realmOrdinal === null || a.realmOrdinal === undefined) continue;
+        if (best === null || a.realmOrdinal > best.ordinal) {
+            best = {
+                ordinal: a.realmOrdinal,
+                rank: rankName(a.realmOrdinal),
+                name: a.name,
+                yearsAgo: a.yearsAgo
+            };
+        }
+    }
+    return best;
 }
 
 /** Who it answers to, on what terms, and what it would cost to stop. */
@@ -2955,7 +3113,11 @@ function buildDossiers(
             fielded,
             holdsFrom: buildHoldsFrom(row.id),
             capability: buildCapability(row.id),
-            wayIn: buildWayIn(row.id),
+            // Null where the body is a posting, and the null is the fact
+            // rather than the view hiding something: there is no way in,
+            // because there is no application anybody could make. `posting`
+            // carries what replaces it - see `RegisterPosting`.
+            wayIn: getParentage(row.id)?.posting ? null : buildWayIn(row.id),
             flags: buildFlags(row.id, fielded),
             // A court that is also a sect: the apex's name for the posting,
             // shown beside the name everybody actually uses.
@@ -3017,6 +3179,7 @@ function buildDossiers(
             lineageDispute: buildLineageDispute(getParentage(row.id)?.lineageDispute),
             history: buildHistory(row.id),
             demonic: buildDemonic(row.id),
+            posting: buildPosting(getParentage(row.id)?.posting),
             house: buildHouse(row.id),
             people: {
                 active: MEMBERS
@@ -3113,7 +3276,14 @@ function buildDossiers(
                     peakRank: rankName(a.powerOrdinal),
                     peakCount: a.lastRealm.count,
                     yearsSinceLastPeak: 0,
-                    note: a.depthNote
+                    note: a.depthNote,
+                    // An apex with no sect row has no gate at all; one with a
+                    // sect row is read through it.
+                    takesNobody: a.factionId === null || intakeRouteOf(a.factionId) === 'closed',
+                    gateOpensAt: a.factionId ? getSect(a.factionId)?.admissionOrdinal ?? 0 : 0,
+                    taughtCeiling: a.powerOrdinal,
+                    taughtCeilingRank: rankName(a.powerOrdinal),
+                    everReached: a.factionId ? furthestEverProducedHere(a.factionId) : null
                 }
             },
             holdsFrom: buildHoldsFrom(a.id),
@@ -3177,6 +3347,7 @@ function buildDossiers(
             lineageDispute: buildLineageDispute(getParentage(a.id)?.lineageDispute),
             history: buildHistory(a.id),
             demonic: buildDemonic(a.id),
+            posting: buildPosting(getParentage(a.id)?.posting),
             house: null,
             people: {
                 active: [
@@ -3414,6 +3585,26 @@ export function buildRegister(): WorldRegister {
         artifacts,
         artifactCeiling: findArtifactCeiling(artifacts),
         courts,
+        placement: {
+            bands: PLACEMENT_REACH.map(b => ({
+                patron: b.patron,
+                reaches: b.reaches,
+                andNoFurtherBecause: b.andNoFurtherBecause,
+                howOften: b.howOften
+            })),
+            // Headings derived from the record's own keys, so a field added to
+            // the catalog turns up here instead of being silently dropped.
+            theRareEnd: Object.entries(THE_HOLLOW_COURT_AND_ITS_CHILDREN).map(([key, text]) => ({
+                key,
+                heading: key
+                    .replace(/([A-Z]+)/g, ' $1')
+                    .replace(/\s+/g, ' ')
+                    .toLowerCase()
+                    .trim()
+                    .replace(/^./, c => c.toUpperCase()),
+                text: String(text)
+            }))
+        },
         techniques,
         teaching,
         stack: buildStack(dossierIds),
@@ -4367,11 +4558,52 @@ function fieldedBlock(f: RegisterFielded): string {
             + (f.wakeCondition ? `<dt>What makes it real</dt><dd>${esc(f.wakeCondition)}</dd>` : '')
             + (f.wakeCost ? `<dt>What it costs</dt><dd>${esc(f.wakeCost)}</dd>` : '');
 
-    const produces = f.produces
-        ? `<dt>Produces</dt><dd>Reaches <b>${f.produces.reliableOrdinal}</b> (${esc(f.produces.reliableRank)}) from its own intake, `
-            + `with ${f.produces.currentCount} at or above it. Its best ever was `
-            + `<b>${f.produces.peakOrdinal}</b> (${esc(f.produces.peakRank)}), ${f.produces.peakCount} of them, `
-            + `${f.produces.yearsSinceLastPeak.toLocaleString()} years ago. ${esc(f.produces.note)}</dd>`
+    // Three rows rather than one, and the split is the correction. The sheet
+    // printed `reliableOrdinal` as though it were a limit and it is not: it is
+    // what a house turns out ROUTINELY. What is available to somebody standing
+    // there now is bounded by who is alive to teach them, and what has been
+    // reached from inside the house at all is bounded by nothing but the
+    // ladder. On the sharpest entry in the catalog all three disagree wildly,
+    // and that has to read as remarkable rather than as a contradiction.
+    const p = f.produces;
+    const produces = p
+        ? `<dt>Turns out routinely</dt><dd>`
+            + (p.takesNobody
+                // Arithmetically correct and completely misleading as a
+                // sentence: a body with no intake produces nothing from an
+                // intake it does not have. It has not produced nobody.
+                ? `<span class="dim">Nothing, and the figure is not a measurement. `
+                    + `It takes nobody, so there is no intake for a pipeline to run on - `
+                    + `what this house has produced is on the roll below, not in this row.</span>`
+                // The same failure from the other direction, on a house that
+                // does admit and admits nobody who needs the pipeline: a
+                // routine figure below the gate is a statement about the gate.
+                : p.reliableOrdinal < p.gateOpensAt
+                ? `<span class="dim">Nothing that means anything. `
+                    + `Its gate opens at <b>${p.gateOpensAt}</b>, so everybody who has ever walked in `
+                    + `was already past where a pipeline would start, and nothing has been walked up from `
+                    + `the bottom because there is no bottom here.</span>`
+                : `<b>${p.reliableOrdinal}</b> (${esc(p.reliableRank)}), `
+                    + `with ${p.currentCount} at or above it. Its pipeline's best was `
+                    + `<b>${p.peakOrdinal}</b> (${esc(p.peakRank)}), ${p.peakCount} of them, `
+                    + `${p.yearsSinceLastPeak.toLocaleString()} years ago.`)
+            + ` ${esc(p.note)}</dd>`
+            + `<dt>Reachable here now</dt><dd><b>${p.taughtCeiling}</b> (${esc(p.taughtCeilingRank)}) - `
+            + `bounded by who is alive to teach it and by nothing else. `
+            + (p.takesNobody
+                ? 'Nobody is being taught here, so this is what the house could walk somebody to if it ever chose to.'
+                : p.taughtCeiling > p.reliableOrdinal
+                    ? `The routine figure is ${p.taughtCeiling - p.reliableOrdinal} rungs under this and is not a ceiling on it: `
+                        + 'it is what happens without a prodigy, without a matched root and without anything arriving from outside.'
+                    : 'Which is the routine figure, so this house walks everybody as far as anybody here has been.')
+            + `</dd>`
+            + (p.everReached && p.everReached.ordinal > p.taughtCeiling
+                ? `<dt>Reached from here, ever</dt><dd><b>${p.everReached.ordinal}</b> (${esc(p.everReached.rank)}) - `
+                    + `${esc(p.everReached.name)}, ${p.everReached.yearsAgo.toLocaleString()} years ago. `
+                    + 'Bounded by the ladder and nothing else. A book carries somebody to the end of a realm and the '
+                    + 'crossing is in no book, so everything past this house\'s own shelf came from somewhere else - '
+                    + 'which is exactly why the first figure is not a limit on this one.</dd>'
+                : '')
         : '';
 
     const withdrawn = f.withdrawn
@@ -4642,6 +4874,28 @@ function demonicBlock(x: RegisterDemonic, name: string): string {
 }
 
 /**
+ * How a body nobody can join is staffed, and what a term there is worth.
+ *
+ * Rendered in the ranks-and-people part, in place of the gate an ordinary house
+ * has - because for these two the gate IS the answer and the answer is that
+ * there is not one. The last row is the one that makes the arrangement
+ * self-sustaining rather than merely strange: a returning appointee comes back
+ * at the height they left at and ahead of everybody who stayed, which is why a
+ * body with no intake has never been short of people.
+ */
+function postingBlock(x: RegisterPosting, name: string): string {
+    return `<div class="assess"><dl>
+    <dt>Nobody joins it</dt><dd>${esc(x.appointedBy)}</dd>
+    <dt>Worth it from below</dt><dd>${esc(x.whatItIsWorthFromBelow)}</dd>
+    <dt>Worth it from the top</dt><dd>${esc(x.whatItIsWorthFromAbove)}</dd>
+    <dt>Where they go after</dt><dd>${esc(x.andAfterwards)}</dd>
+    <dt>What the term is worth</dt><dd>${esc(x.andWhatTheTermIsWorthAfterwards)}</dd>
+    <dt>Being passed over</dt><dd>${esc(x.andBeingPassedOver)}</dd>
+  </dl>
+  <p class="note">${esc(name)} is one of two bodies in the world that work this way. Every other court on this sheet is a sect - it has members, an intake and a ladder, and the word court says what it administers rather than what kind of institution it is.</p></div>`;
+}
+
+/**
  * One body's side of a contested lineage, quoted whole and never summarised.
  *
  * It carries a link to the other claimant, which is the whole of what makes
@@ -4698,6 +4952,7 @@ function courtPanel(court: RegisterCourt): string {
         ? `<p class="terr"><b>The one who got furthest.</b> ${esc(court.highWaterMark.name)}, ${esc(court.highWaterMark.rank)} at ${court.highWaterMark.ordinal}, ${court.highWaterMark.yearsAgo.toLocaleString()} years ago - and ${court.highWaterMark.end === 'attempted' ? 'attempted the crossing' : 'declined it and died of old age at the rung'}. ${esc(court.highWaterMark.note)}</p>`
         : '<p class="note">No high-water mark. This court has never produced somebody at the last realm, which is the ordinary case and is the whole difference between a court and an apex.</p>'}
     <p class="terr">${esc(court.officesNote)}</p>
+    ${court.posting ? postingBlock(court.posting, court.name) : ''}
     ${court.lineageDispute ? lineageDisputeBlock(court.lineageDispute, court.name) : ''}
     <div class="scroll"><table>
       <caption>Offices &middot; ${court.officers.length} &middot; catalog order, not a ladder</caption>
@@ -4903,7 +5158,13 @@ function dossier(d: SectDossier): string {
 
   ${sectionHead('Ranks and people', 'who is in it, and what it can put in a room')}
   ${fieldedBlock(d.fielded)}
-  ${d.wayIn ? wayInBlock(d.wayIn) : ''}
+  ${d.posting
+      // In place of the gate rather than beside it, and `wayIn` is null on
+      // these two rather than merely unrendered: there is no application
+      // anybody could make, so an admission block would be printing a bar that
+      // does not exist.
+      ? postingBlock(d.posting, d.name)
+      : d.wayIn ? wayInBlock(d.wayIn) : ''}
   ${d.house ? houseBlock(d.house) : ''}
   ${people.length ? `<div class="grps">${people.join('')}</div>` : ''}
 
@@ -5290,6 +5551,22 @@ export function renderRegisterHtml(
       if (!capped.length) return '';
       return `<p class="note"><strong>The ceiling in the arts table is what the world believes, not a bar anything applies.</strong> ${capped.length} ancient ${capped.length === 1 ? 'art has' : 'arts have'} a figure, expressed on the same 0-100% mastery scale the engine uses - and NOTHING CURRENTLY READS IT. No upkeep is consulted anywhere in the technique layer, so an elder saying <em>you will not get past the fifth level</em> is a person describing their own house's history with the material, and the catalog recording that they are right, rather than a rule reading itself out loud. When it is enforced it should be enforced the honest way: an upkeep nobody can meet, not a rule saying you may not.</p>`;
   })()}
+</section>
+
+<section>
+  <div class="sh"><h2>The other way in</h2><span class="r">${reg.placement.bands.length} bands &middot; not on any entry</span></div>
+  <p class="note"><strong>Every entry on this sheet states an admission bar, and the bars are not what the rolls are made of.</strong> Two disciples at the same rank, one admitted on the figure and one placed because somebody with standing asked somebody they know personally, are identical on the roll and identical on this page - so anybody in any house might be somebody's, and the record cannot be read as evidence of how they got there. The route is the same at every height; what changes is how far up it reaches, and that is set by the standing of whoever is calling in the favour. The favour runs through the friendship and never through the institution: nobody writes to a house about a child, one person asks another person, and the patron's own body is frequently not told. Wherever this sheet shows somebody at a rank their height does not obviously justify, this is an available explanation rather than a data error.</p>
+  <div class="scroll"><table>
+    <caption>What a favour is worth &middot; coarse on purpose, because the real variable is which specific person owes you one</caption>
+    <thead><tr><th>Who is asking</th><th>What it reaches</th><th>And no further, because</th><th>How often</th></tr></thead>
+    <tbody>${reg.placement.bands.map(b => `<tr>`
+      + `<td class="nm">${esc(b.patron)}</td>`
+      + `<td class="q">${esc(b.reaches)}</td>`
+      + `<td class="q">${esc(b.andNoFurtherBecause)}</td>`
+      + `<td class="q">${esc(b.howOften)}</td>`
+      + '</tr>').join('')}</tbody></table></div>
+  <p class="note">And the rare end of the same rule, which is one house's version of what every house does. It contradicts nothing established about that house: none of it happens at the Court or through it.</p>
+  <dl class="dispute">${reg.placement.theRareEnd.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
 </section>
 
 <section>

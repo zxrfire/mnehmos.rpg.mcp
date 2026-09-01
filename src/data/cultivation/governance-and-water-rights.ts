@@ -153,6 +153,84 @@ export const GrantTermsSchema = z.object({
 export type GrantTerms = z.infer<typeof GrantTermsSchema>;
 
 /**
+ * How a body that takes nobody comes to have anybody in it.
+ *
+ * Set on exactly two bodies. Read it beside an ordinary sect's
+ * `admissionOrdinal` and the difference is the whole point: every other house
+ * in the world states a bar and waits for somebody to meet it, and these two
+ * state nothing, because there is no application to make. The decision is taken
+ * by somebody else, about you, elsewhere.
+ *
+ * AND IT IS NOT A DUTY BEING DISTRIBUTED. The posting is wanted, at both ends of
+ * the ladder and for different reasons, which is why a body with no intake has
+ * never once been short of people:
+ *
+ *   - From a sect below it is a step up that house could never have given
+ *     anybody. A rung of standing reached by being sent rather than by climbing,
+ *     and the only career route in this world where the decision is somebody
+ *     else's.
+ *   - From the top it is a credential nothing else supplies. An apex's chosen
+ *     does not need another book or another elder; what they cannot get inside
+ *     their own house is a mark the OTHER apexes read as meaning something, and
+ *     a posting is one of very few things all three recognise, because all three
+ *     are entangled in the arrangement that produced it.
+ *
+ * So the queue is fierce at both ends and the two ends are competing for the
+ * same seats, and the power to nominate is real patronage: a house that can
+ * place somebody is doing something for them it could not otherwise do, which
+ * is what "friendly to the apex" is actually worth and why it is maintained.
+ */
+export const PostingSchema = z.object({
+    /** Who may appoint, and on what basis. Never a bar an applicant could meet. */
+    appointedBy: z.string().min(120),
+    /** What it is worth to somebody sent up from a sect below. */
+    whatItIsWorthFromBelow: z.string().min(120),
+    /** What it is worth to somebody already at the top. The stranger half. */
+    whatItIsWorthFromAbove: z.string().min(120),
+    /**
+     * Where an appointee goes afterwards, which is what separates an honour
+     * from a trophy.
+     *
+     * A service record is worth what somebody reads it for. If nobody ever
+     * reads it the posting is a career rather than a step, and the two are very
+     * different institutions to be inside.
+     */
+    andAfterwards: z.string().min(120),
+    /** What being passed over does, because a wanted thing has losers. */
+    andBeingPassedOver: z.string().min(120),
+    /**
+     * What a completed term is worth in a promotion queue, and why.
+     *
+     * The reason the arrangement sustains itself, and it is a fact about
+     * PRECEDENCE rather than about power. A returning appointee comes back at
+     * the height they left at - a term on somebody else's datum moves nobody up
+     * a ladder - holding one thing the chosen who stayed do not have: a
+     * completed posting on the record. When the next seat opens they are ahead.
+     *
+     * And it is respected because the posting is not glamorous from the inside.
+     * A body with no intake, staffed by other people's decisions, doing an
+     * assigned job on ground it does not own. Going is a choice to be useful in
+     * a way that cannot be faked, and everybody senior enough to promote you
+     * knows what it cost.
+     *
+     * WHICH CLOSES THE LOOP without anybody having designed it: the sending
+     * house gets its person back better placed, so sending is not a loss; the
+     * appointee gets a rung they could not have climbed to, so going is not a
+     * sacrifice; the two postings stay staffed by people who want to be there;
+     * and it produces the passed-over, who watched somebody leave for a decade
+     * and come back ahead of them. That grievance is specific and dated, which
+     * is what makes it inheritable.
+     *
+     * NOTHING HERE IS A MECHANIC. This is the fact. The candidate ordering it
+     * describes belongs in the promotion module as one more sort key of the
+     * same kind as 'chosen' - a boolean on a candidate, read after chosen and
+     * before seniority. Do not put a queue in this catalog.
+     */
+    andWhatTheTermIsWorthAfterwards: z.string().min(150)
+});
+export type Posting = z.infer<typeof PostingSchema>;
+
+/**
  * One body's own account of a lineage two bodies claim, written from inside it.
  *
  * There is deliberately no joint record. A single shared account standing
@@ -222,6 +300,15 @@ export const ParentageSchema = z.object({
      * in. See `LineageDisputeSchema`.
      */
     lineageDispute: LineageDisputeSchema.optional(),
+    /**
+     * Set on the walking half of the split posting, and on nothing else here.
+     *
+     * Same field as `Court.posting` and the same rules. It is on both schemas
+     * because the two bodies that work this way have a row in two different
+     * tables, and how a body is staffed belongs to the body rather than to the
+     * table it happens to sit in. See `PostingSchema`.
+     */
+    posting: PostingSchema.optional(),
     note: z.string().min(40)
 });
 export type Parentage = z.infer<typeof ParentageSchema>;
@@ -602,6 +689,7 @@ export const CourtOfficerSchema = z.object({
 });
 export type CourtOfficer = z.infer<typeof CourtOfficerSchema>;
 
+
 export const CourtSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -672,6 +760,31 @@ export const CourtSchema = z.object({
      * reconciled.
      */
     lineageDispute: LineageDisputeSchema.optional(),
+    /**
+     * Set on the two bodies nobody can join, and on nothing else.
+     *
+     * EVERY OTHER COURT IN THIS CATALOG IS A SECT. It has members, an intake, a
+     * ladder and a seat, and it is a sub-sect or a tributary sect of something
+     * larger. The word "court" describes what it administers, not what kind of
+     * institution it is, and a court read as a set of offices with role-holders
+     * is a court read wrongly.
+     *
+     * Two bodies are the exception and they are the exception on purpose: the
+     * Kiln Court and the Root Sill Court are ORGANISATIONS WITH POSTINGS. They
+     * take nobody. Somebody stands there because they were appointed - by the
+     * apex above, or sent by a sect below that is under that apex or friendly
+     * to it - and that is the whole of the intake.
+     *
+     * WHICH IS WHY THE SCHISM WAS POSSIBLE AT ALL. A posting is a thing that
+     * can be reposted. A sect cannot be: its members are its members, and there
+     * is no letter anybody could write that would reassign them. The single
+     * event at the centre of the largest unresolved question in the region is
+     * only available to these two bodies, and what it produced was two halves
+     * of a posting rather than two halves of a house - one keeping the ground
+     * the posting was FOR and the other keeping the roll of everybody who had
+     * HELD it. On any ordinary sect that question could not even be asked.
+     */
+    posting: PostingSchema.optional(),
     /**
      * The court's own name for its top office, where it has one.
      *
@@ -933,7 +1046,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         instability:
             'The Nail cannot be moved, so the Long Cut cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
         whatItHasTakenFromOtherPatrons:
-            'Two of the Deep Survey\'s administrations, in living memory, and it did not send anybody for either of them. The Third Sill left over a grant book and the Root Sill Court left over a name; both walked rather than fought, both were offered a place, and both took it. The Long Cut got a claim on the strongest sealed thing anybody has established the existence of - by taking in some disaffected administrators, without a word having to be said out loud. And it has posted the two of them beside each other. Nothing in the Long Cut\'s records says that was arranged, the schedule that put them there is an ordinary schedule, and the effect is that the Survey now faces its own two defectors standing together, each of whom privately considers the other\'s reason for leaving the lesser one.',
+            'One of the Deep Survey\'s administrations, in living memory, and it did not send anybody for it. The Root Sill Court walked rather than fought, over a reposting nobody standing in it had been consulted about, and it was offered a place and took it. What the Long Cut got was a claim on the strongest sealed thing anybody has established the existence of, acquired by taking in some disaffected appointees, without a word having to be said out loud. It is the only administration in the world that has ever changed patrons. The Long Cut has never acknowledged it and neither has the Survey, and both of them understand that as the arrangement working rather than as hostility.',
         lastRealm: {
             count: 1,
             pinned: true,
@@ -1097,17 +1210,22 @@ export const COURTS: readonly Court[] = [
     {
         id: 'court-third-sill',
         name: 'The Third Sill Court',
-        // Transferred. The Third Sill administered the third arterial under
-        // the Deep Survey for nine hundred years and does not any more, and the
-        // reason is in this catalog rather than in a chronicle: three of its
-        // own clients - the Frostmirror, the Storm Tyrant and the Nine Abyss -
-        // have been contesting the third arterial's grant book for two
-        // centuries (see `contestedClaimsOf`), the Survey declined to settle it
-        // on the standing ground that a grant dispute among clients is the
-        // court's own business, and the Long Cut offered to settle it. That is
-        // the whole of it. No fighting, no betrayal, no announcement - an
-        // administration went where its problem could be solved, which is the
-        // only thing an administration has ever done.
+        // Not transferred, and this comment used to say it was. The Third Sill
+        // has administered the third arterial under the Long Cut for longer
+        // than either apex keeps a record of, inside a province the Deep Survey
+        // holds - which is an anomaly nobody has ever raised and is the closest
+        // thing in the catalog to a fact about how the two old apexes actually
+        // get on. Both list it in their own papers as ordinary. Neither has
+        // explained it. The province has never noticed, because the province
+        // does not know either apex exists.
+        //
+        // The defection this used to describe was real and belongs to a
+        // different body: the Root Sill Court, which walked, and which is the
+        // only administration in the catalog that has ever changed patrons.
+        // Two bodies with "Sill" in the name under two different apexes is a
+        // trap and it has already caught somebody - anything about the ground,
+        // the datum or the nodes means the Kiln; anything about the third
+        // arterial and the grants hanging off it means this one.
         apexId: 'apex-long-cut',
         // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Court at
         // Body Integration Perfection, and a court that could not answer its own
@@ -1228,6 +1346,23 @@ export const COURTS: readonly Court[] = [
         // bodies now and the join would be a lie.
         embodiedByFactionId: null,
         leaderTitle: 'Keeper of the Kiln',
+        // Nobody joins it. One of exactly two bodies in the world that work
+        // this way, and the reason the reposting was a thing the Survey could
+        // do at all - see `PostingSchema`.
+        posting: {
+            appointedBy:
+                'The Deep Survey, by letter, or a sect under the Survey or friendly to it, by nomination. There is no application, no bar, no admission ordinal and no gate anybody has ever been through - Che Yuan has turned away something over four thousand people and can name the eleven who came back, and not one of the four thousand was ever going to be admitted, because there is no procedure by which they could have been. What the bar looks like from outside is fifteen rungs of distance. What it actually is, is that the question is decided elsewhere, about you.',
+            whatItIsWorthFromBelow:
+                'The only rung of standing in the province that a house cannot give anybody and can nevertheless get for them. A Warden sent up from a sect below arrives holding a title the province has been reading off this gate for nine hundred years, which their own ladder does not contain and could not have reached - and their house has done something for them it had no other way of doing, which is what makes the nomination worth having and why the sects that hold it are careful about the friendship that supplies it.',
+            whatItIsWorthFromAbove:
+                'A mark the other apexes read. This is the part that surprises people, because an apex\'s chosen wants for nothing: they have the best books in the world in front of them and an elder at the last realm to open them. What they cannot get inside their own house is a credential anybody outside it recognises, and a posting on the datum is one of the very few things all three recognise, because all three are entangled in the arrangement that produced it. So the top of the world competes for these seats against people being sent up from a hill village, and both parties know it.',
+            andAfterwards:
+                'They go back, and they go back higher. A Kiln term is read - by the Survey, which posted them, and by every house that has ever wanted the Survey to read something of theirs - and the reading is the whole value: a term that nobody looked at afterwards would make this a career rather than a step, and the Kiln has never been a career for anybody except the Keeper. What complicates it, and what the Court has never resolved, is that an appointee spends that term inside a body whose own claim to be the house is disputed, and comes back holding a service record with a contested name at the top of it.',
+            andBeingPassedOver:
+                'Happens far more often than being chosen, and to people who had every reason to expect it. The Kiln takes four. There is no list of the ones who were considered and there has never been an explanation given to any of them, because the Survey does not explain and the nominating houses cannot say what they were not told - so what a passed-over candidate has is a certainty they cannot check, held for a lifetime, about a decision nobody will confirm was ever taken. And then they watch the one who went come back ahead of them.',
+            andWhatTheTermIsWorthAfterwards:
+                'Precedence, not height. A returning Warden comes back at exactly the rung they left at - a decade of walking a node rota moves nobody up a ladder - and comes back ahead of every chosen who stayed, because when the next seat opens they are the one who went and did the work somewhere that was not comfortable while the others were at home being promising. Nobody grants that. It is simply what everybody senior enough to promote them already thinks, and it holds precisely because the posting is unglamorous from the inside: a body with no intake, staffed by other people\'s decisions, doing an assigned job on ground it does not own. Going is a way of being useful that cannot be faked. For an apex\'s chosen, precedence is the one thing their own house cannot simply hand them, which is why the favoured compete for a seat at a gate that turns four thousand people away.'
+        },
         // Partisan, because there is nobody left to be even-handed on behalf
         // of. The facts here are the same facts the Root Sill states four
         // provinces away; what differs is which of them is put first and what
@@ -1545,7 +1680,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'Nothing recurring, which is what Ru Anjing actually bought with her last decades. She did not make the Pavilion strong - it was already respectable - she made its independence not worth contesting, settled what was outstanding, and left the position standing without her in it. Nineteen grant renewals are still in the archive and the twentieth was never issued or asked for.',
         unbackedReason: null,
         independenceStance: 'proud',
-        note: 'The Third Sill Court has never formally acknowledged that the grant lapsed and the Pavilion has never formally asserted that it did. Both parties have found this comfortable for three hundred and eighty years, and the Low Fall reads the silence as whatever suits the speaker.'
+        note: 'The Third Sill Court has never formally acknowledged that the grant lapsed and the Pavilion has never formally asserted that it did, and for three hundred and eighty years both parties found this comfortable. It has since stopped being a question at all. What settles the Pavilion\'s independence is what the Pavilion now is, and a body that is one of the three does not need a former landlord to write anything down - the last time anybody at the terraces raised the paperwork was two centuries ago, they were not answered, and nobody has raised it since.'
     },
     'sect-nine-peaks-ascetic-order': {
         factionId: 'sect-nine-peaks-ascetic-order',
@@ -1557,7 +1692,13 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             tributeStonesPerYear: 0,
             inKind: ['the entire vein output above a fixed local allowance, taken quarterly', 'maintenance of the workings, at the Order\'s own cost'],
             disciplesPerCycle: 3,
-            buys: ['the deepest vein in the province, and the only pipeline in the Low Fall that reliably produces Nascent Soul', 'the right to refuse every lease request without giving reasons, which the Order has exercised for two centuries and is not the Order\'s right to exercise'],
+            // Was "the only pipeline in the Low Fall that reliably produces
+            // Nascent Soul", which the production catalog shows is false: six
+            // other Low Fall houses reliably reach that realm and three reach
+            // the one above it. What is true of the Order and of nothing else
+            // is the second half of the first clause - it is the one house in
+            // the catalog waiting on nothing except years.
+            buys: ['the deepest vein anybody has surveyed and kept, and the one pipeline in the province that is short of nothing except time', 'the right to refuse every lease request without giving reasons, which the Order has exercised for two centuries and is not the Order\'s right to exercise'],
             renewal: 'Twelve years, and the Order has never seen a renewal document, because the grant is administered through the Root Sill directly and arrives as a spoken confirmation from somebody who walks in without being announced.'
         },
         standing: 'good',
@@ -1645,7 +1786,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'Promoted out of the Third Sill once the ice curriculum turned out to be the one thing in the province nobody could replace. It administers the cold arterial and grants to the Cinnabar Crucible Guild, which needs the cold more than it admits.'
+        note: 'Raised from an ordinary Third Sill tenancy to a court under the same patron, once the ice curriculum turned out to be the one thing in the province nobody could replace. It administers the cold arterial and grants to the Cinnabar Crucible Guild, which needs the cold more than it admits.'
     },
     'sect-nine-abyss-flame-sect': {
         factionId: 'sect-nine-abyss-flame-sect',
@@ -1685,7 +1826,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'Held on probation by the Third Sill for two centuries and promoted over its head, because the lightning curriculum is the one thing in the Low Fall nobody can replace and the Survey would rather administer such a thing than lease it. The probation came with it: a court on probation is a new arrangement and nobody is comfortable with it, least of all the Third Sill, which was not asked.'
+        note: 'The Deep Survey\'s second body in the Low Fall, and the only one of the two that does anything. It held on probation directly from the Survey for two centuries and was then raised to answer as a court, because the lightning curriculum is the one thing in the province nobody can replace and the Survey would rather administer such a thing than lease it - and the probation was carried across rather than lifted, which is a shape nobody is comfortable with. It stands beside the Kiln Court, which takes nothing, issues nothing and answers nothing downward, and the Storm Tyrant finds that intolerable in a way it has never put in writing. The Kiln has never commented.'
     },
     'sect-crimson-abyss-hall': {
         factionId: 'sect-crimson-abyss-hall',
@@ -1768,6 +1909,23 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
+        // Nobody joins it either, and it is the other of the two. What it took
+        // when it walked was not a membership - a posting has none - it was the
+        // roll of everybody who had ever held one. See `PostingSchema`.
+        posting: {
+            appointedBy:
+                'The Long Cut, by schedule, or a sect under the Long Cut or friendly to it, by nomination - which is the change nobody outside has registered and the sharpest fact about this body. The people standing here were appointed by one apex and are now appointed by another, into the same posting, under the same title, on the strength of a roll that predates both arrangements. The admission figure on its own row is what a posting requires rather than what an applicant could meet, and there has been no applicant in nine hundred years because there is no way to be one.',
+            whatItIsWorthFromBelow:
+                'The same step up, from a different set of houses. A carver sent from a Long Cut face arrives holding a Warden rank that the Long Cut\'s own ladder does not contain, in a body whose roll goes back to the first four - and the Long Cut, which ranks people by faces worked and deaths avoided and nothing else, has quietly acquired the one posting in its whole arrangement that confers a standing rather than a record. It has never commented on that either.',
+            whatItIsWorthFromAbove:
+                'More, not less, and for a reason the Kiln cannot match: this is the half holding the founding posting order that names the first four Wardens, and a term entered on that roll is entered on the only continuous document either claimant has. An apex\'s chosen who takes it is buying nine hundred years of names above their own. What they are also buying, and what nobody says at the ceremony, is a position in a dispute - the Survey has never referred to this body in correspondence, so a term here is a credential that one of the three apexes behaves as though does not exist.',
+            andAfterwards:
+                'They go back higher, into a Long Cut arrangement that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Kiln. The Root Sill is closer to being a career here than it is four provinces away, and the roll is why.',
+            andBeingPassedOver:
+                'Cuts deeper here, because the roll is public and the Kiln\'s is not. Everybody who was ever appointed is a name somebody can read, so everybody who was not is a person standing next to a document with a gap where they should be. Two of the grievances in the Marches that nobody has traced run back to a nomination that went to somebody else, and one of them has been inherited twice.',
+            andWhatTheTermIsWorthAfterwards:
+                'The same precedence, and a sharper version of it, because the Long Cut ranks people by faces worked and deaths avoided and has no vocabulary for standing at all. A returning appointee is a Hand again on paper and is first in the queue in every room, and nobody has ever written down why - the Course Keepers have simply started giving them the faces nobody else is given. What the Long Cut has acquired without noticing is a credential its own ladder cannot express, held by the only people in its whole arrangement who went somewhere uncomfortable on purpose, and it is the one thing across five provinces of driven ground that is not decided by a schedule.'
+        },
         // The mirror of `court-kiln`'s, and deliberately not a balanced
         // version of it. Same facts, other vantage. The one asymmetry that is
         // real rather than rhetorical: this body has the roll and the people
@@ -1784,7 +1942,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             andNothingDecidesIt:
                 'Nine hundred years on both sides and no instrument anywhere that settles it. The Survey has never once referred to this court in correspondence, which is what the Survey does instead of answering, and which is awkward for it in a way it has not acknowledged: the name being ignored is the Survey\'s own, invented by the Survey, for a posting the Survey created. There is a reading of that silence as composure and a reading of it as having no answer, and the Survey has lost two administrations to the Long Cut in living memory and acknowledged neither.',
             whatIsActuallyAtStake:
-                'The First Warden, asleep at the world-heart, which is the strongest sealed thing anybody has ever established the existence of and has never moved, because it never does. That is the whole of why a question about a name is a question the province asks. And the live quarrel it produced is not this patron against that one: it is court against court. The Third Sill was the first administration to leave the Survey for the Long Cut and this court is the second, so the two of us are the two halves of one patron\'s answer to another, standing beside each other and measured against each other - one left over a grant book and one left over a name, and each is privately of the view that the other\'s reason was the lesser one.'
+                'The First Warden, asleep at the world-heart, which is the strongest sealed thing anybody has ever established the existence of and has never moved, because it never does. That is the whole of why a question about a name is a question the province asks. And what the Survey has never allowed itself to hear is what was actually declined. A posting here is not a duty handed out - it is wanted, at both ends of the ladder, by people at the top of the world who cannot buy the equivalent anywhere; every Warden who walked had competed for the thing they were walking away from. Declining an assignment is a disagreement. Declining an honour is a verdict, and the Survey has spent nine hundred years filing it as the first.'
         },
         note: 'Not a faction. A posting. Every unexplained thing about the Wardens - the lit nodes, the refusal to recruit, the absent grievance, the nine hundred years without a single recorded exchange - is what an outside observer sees when they mistake staff for an institution.'
     },
