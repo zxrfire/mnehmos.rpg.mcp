@@ -10,8 +10,10 @@
 import { describe, it, expect } from 'vitest';
 
 import {
-    canDerive,
-    deriveContinuation,
+    canExtend,
+    writeNextStage,
+    stagesWrittenOf,
+    contiguousRun,
     effectiveCapOf,
     manualDaoRequirement,
     manualGate,
@@ -26,7 +28,7 @@ import {
     precedentAt,
     thinnessAt,
     derivationYears,
-    type DerivableManual,
+    type ExtendableManual,
     type GatedManual
 } from '../../../src/engine/cultivation/escapes.js';
 import {
@@ -75,7 +77,7 @@ function leaningIn(subject: string, domain: Insight['domain'] = 'element') {
     return daoOf([insight(subject, domain, 3)]);
 }
 
-const SCATTERED: GatedManual & DerivableManual = {
+const SCATTERED: GatedManual & ExtendableManual = {
     id: 'scattered-canon',
     name: 'A Scattered Canon',
     requiredOrdinal: 37,
@@ -85,7 +87,7 @@ const SCATTERED: GatedManual & DerivableManual = {
     element: 'fire',
     subject: 'fire',
     category: 'cultivation',
-    derivable: true
+    notExtendableReason: null
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -206,6 +208,41 @@ describe('E1 - effectiveCapOf, the scattered set', () => {
             const held = SCATTERED.volumes!.slice(0, 3 - missing);
             expect(effectiveCapOf(SCATTERED, held).cap).toBe(expected);
         }
+    });
+
+    it('a later volume is worth nothing without the one before it', () => {
+        // CONTIGUITY, and the reason stages are numbered at all. Holding the
+        // first and third volumes is holding the first volume plus a book you
+        // cannot read yet - a different and more interesting position than
+        // "one volume short", and the one the old arithmetic reported.
+        const gapped = effectiveCapOf(SCATTERED, ['vol-one', 'vol-three']);
+        const firstOnly = effectiveCapOf(SCATTERED, ['vol-one']);
+        expect(gapped.cap).toBe(firstOnly.cap);
+        expect(gapped.volumesHeld).toBe(2);
+        expect(gapped.line).toContain('cannot be read past the gap');
+    });
+
+    it('an unbroken run is worth every volume in it', () => {
+        expect(effectiveCapOf(SCATTERED, ['vol-one', 'vol-two']).cap).toBe(40);
+        // And holding the tail without the head is worth nothing at all.
+        expect(effectiveCapOf(SCATTERED, ['vol-two', 'vol-three']).cap)
+            .toBe(effectiveCapOf(SCATTERED, []).cap);
+    });
+
+    it('stages are derived from the cap, so nothing has to be kept in sync', () => {
+        // A manual IS its written stages; the cap is how far it has been
+        // written. No new field, nothing for an author to forget.
+        expect(stagesWrittenOf(SCATTERED)).toBe(4);
+        expect(stagesWrittenOf({ requiredOrdinal: 13, cap: 17 })).toBe(4);
+        expect(stagesWrittenOf({ requiredOrdinal: 13, cap: 13 })).toBe(0);
+    });
+
+    it('volumes and stages are the same idea and NOT the same number', () => {
+        // Stated because the tidy version is false and would be easy to
+        // "fix" into a bug: the one scattered work in the catalog is 3 volumes
+        // across 4 rungs. A volume is a container, a stage is a unit of method.
+        expect(SCATTERED.volumes!.length).toBe(3);
+        expect(stagesWrittenOf(SCATTERED)).toBe(4);
     });
 
     it('a partial set of an UNCAPPED work is capped, which is the point of route 1b', () => {
@@ -458,21 +495,20 @@ describe('the opening is uphill - the price of a wide book', () => {
 // ─────────────────────────────────────────────────────────────────────────
 describe('E2 - canDerive', () => {
     it('refuses a manual the catalog says cannot be reconstructed, with its reason', () => {
-        const notDerivable: DerivableManual = {
+        const notDerivable: ExtendableManual = {
             ...SCATTERED,
-            derivable: false,
-            notDerivableReason: 'It is a transcript of one side of a conversation.'
+            notExtendableReason: 'It is a transcript of one side of a conversation.'
         };
-        const check = canDerive(daoIn('fire'), notDerivable);
+        const check = canExtend(daoIn('fire'), notDerivable);
         expect(check.permitted).toBe(false);
-        expect(check.reason).toBe('not_derivable');
+        expect(check.reason).toBe('not_extendable');
         expect(check.detail).toContain('one side of a conversation');
     });
 
     it('a leaning READS an immortal art and does not EXTEND one', () => {
         // `escapes.md`: "It should also fail loudly for `leaning`." This is the
         // distinction the whole route turns on.
-        const check = canDerive(leaningIn('fire'), SCATTERED);
+        const check = canExtend(leaningIn('fire'), SCATTERED);
         expect(check.permitted).toBe(false);
         expect(check.reason).toBe('leaning_only');
         expect(check.requiredStanding).toBe('dao');
@@ -480,23 +516,23 @@ describe('E2 - canDerive', () => {
     });
 
     it('refuses the wrong road in daoGate vocabulary, and does not imply depth would fix it', () => {
-        const check = canDerive(daoIn('water'), SCATTERED);
+        const check = canExtend(daoIn('water'), SCATTERED);
         expect(check.reason).toBe('wrong_dao');
         expect(check.detail).toContain('no depth on this one ever will');
     });
 
     it('permits a full Dao on the manual\'s own road', () => {
-        expect(canDerive(daoIn('fire'), SCATTERED).permitted).toBe(true);
+        expect(canExtend(daoIn('fire'), SCATTERED).permitted).toBe(true);
     });
 
     it('refuses a manual that does not stop - there is no continuation to write', () => {
-        const check = canDerive(daoIn('fire'), { ...SCATTERED, cap: null });
+        const check = canExtend(daoIn('fire'), { ...SCATTERED, cap: null });
         expect(check.reason).toBe('nothing_above');
     });
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-describe('E3 - deriveContinuation, the one thing that writes a manual at runtime', () => {
+describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book', () => {
     // A well-walked height: plenty stands above the target, so the new-ground
     // curve sits at its floor and these tests measure everything else.
     const WELL_WALKED = { artsAtOrAbove: PRECEDENT_WELL_WALKED };
@@ -514,23 +550,25 @@ describe('E3 - deriveContinuation, the one thing that writes a manual at runtime
         // corridor. Writing a realm's worth of method from your own road would
         // make derivation the best route in the game rather than the most
         // desperate one.
-        const result = deriveContinuation(request);
-        expect(result.derived).toBe(true);
-        if (!result.derived) return;
-        expect(result.manual.requiredOrdinal).toBe(41);
-        expect(result.manual.cap).toBe(42);
-        expect(realmsSpannedBy(result.manual)).toBe(ORDINARY_REALM_SPAN);
+        const result = writeNextStage(request);
+        expect(result.written).toBe(true);
+        if (!result.written) return;
+        // What comes out is a STAGE OF the source manual, not a second book.
+        expect(result.stage.manualId).toBe(SCATTERED.id);
+        expect(result.stage.number).toBe(stagesWrittenOf(SCATTERED) + 1);
+        // And the manual it belongs to now reaches exactly one rung further.
+        expect(result.newCap).toBe(42);
     });
 
     it('the step it buys never reaches the top of the ladder', () => {
         for (let sourceCap = 1; sourceCap < MAX_ORDINAL; sourceCap++) {
-            const result = deriveContinuation({
+            const result = writeNextStage({
                 ...request,
                 source: { ...SCATTERED, requiredOrdinal: sourceCap - 1, cap: sourceCap }
             });
-            if (!result.derived) continue;
-            expect(result.manual.cap, `from ${sourceCap}`).toBe(sourceCap + 1);
-            expect(result.manual.cap).toBeLessThanOrEqual(MAX_ORDINAL);
+            if (!result.written) continue;
+            expect(result.newCap, `from ${sourceCap}`).toBe(sourceCap + 1);
+            expect(result.newCap).toBeLessThanOrEqual(MAX_ORDINAL);
         }
     });
 
@@ -538,62 +576,85 @@ describe('E3 - deriveContinuation, the one thing that writes a manual at runtime
         // The founding rule. Same seed and input, identical result - including
         // the id, which is why `uuid()` draws from the stream rather than from
         // crypto. A cultivator who tries again gets the same book.
-        expect(deriveContinuation(request)).toEqual(deriveContinuation(request));
-        expect(deriveContinuation({ ...request, runSeed: 'seed-beta' }))
-            .not.toEqual(deriveContinuation(request));
-        expect(deriveContinuation({ ...request, cultivatorId: 'other' }))
-            .not.toEqual(deriveContinuation(request));
+        expect(writeNextStage(request)).toEqual(writeNextStage(request));
+        expect(writeNextStage({ ...request, runSeed: 'seed-beta' }))
+            .not.toEqual(writeNextStage(request));
+        expect(writeNextStage({ ...request, cultivatorId: 'other' }))
+            .not.toEqual(writeNextStage(request));
     });
 
-    it('is suited BY CONSTRUCTION - the element is the deriver\'s own road', () => {
-        // This is what makes derivation legitimately bypass the 0.2 suitability
-        // draw, and it is precisely what makes it the one door money cannot
-        // open. A found book might be for somebody else; a written one cannot.
-        const fire = deriveContinuation(request);
-        expect(fire.derived && fire.manual.element).toBe('fire');
-
-        const water = deriveContinuation({ ...request, dao: daoIn('water') });
-        // The wrong road cannot derive this manual at all, which is the point.
-        expect(water.derived).toBe(false);
+    it('is suited BY CONSTRUCTION, enforced at the gate rather than in the output', () => {
+        // Under the stage model a stage has no element of its own - it belongs
+        // to a manual that already has one. So "suited by construction" is now
+        // a property of WHICH manuals can be extended: `daoMatches` refuses
+        // every road but the manual's own, so the only stage anybody can write
+        // is a stage of a book already on their road.
+        //
+        // That is a STRONGER guarantee than the old one. The old model let a
+        // fire road produce a brand-new fire book out of a water source; this
+        // one will not let them touch the water source at all.
+        expect(writeNextStage(request).written).toBe(true);
+        expect(writeNextStage({ ...request, dao: daoIn('water') }).written).toBe(false);
+        expect(canExtend(daoIn('water'), SCATTERED, WELL_WALKED).reason).toBe('wrong_dao');
     });
 
-    it('a road that is not an element yields an elementless method any root may work', () => {
+    it('a road that is not an element extends the manual on that road', () => {
         const bodyRoad = daoIn('the meridians', 'body');
-        const source: DerivableManual = { ...SCATTERED, element: null, subject: 'the meridians' };
-        const result = deriveContinuation({ ...request, source, dao: bodyRoad });
-        expect(result.derived).toBe(true);
-        if (!result.derived) return;
-        expect(result.manual.element).toBeNull();
+        const source: ExtendableManual = { ...SCATTERED, element: null, subject: 'the meridians' };
+        const result = writeNextStage({ ...request, source, dao: bodyRoad });
+        expect(result.written).toBe(true);
+        if (!result.written) return;
+        expect(result.stage.manualId).toBe(source.id);
     });
 
     it('prices the work in years, readable before it is committed', () => {
-        const result = deriveContinuation(request);
-        expect(result.derived && result.years).toBe(DERIVATION_YEARS_PER_RUNG);
+        const result = writeNextStage(request);
+        expect(result.written && result.years).toBe(DERIVATION_YEARS_PER_RUNG);
         // And it is not drawn from the stream: a price a player can only
         // discover by paying it is the same failure as a hidden ceiling.
-        expect(deriveContinuation({ ...request, runSeed: 'other-seed' }).years)
-            .toBe(result.derived ? result.years : 0);
+        expect(writeNextStage({ ...request, runSeed: 'other-seed' }).years)
+            .toBe(result.written ? result.years : 0);
     });
 
     it('comes out harder for anybody else to read than the book it continues', () => {
         // One person's working notes are not a house's polished canon. This is
         // the one thing the seeded stream decides, and it is a real consequence
         // rather than decoration.
-        const result = deriveContinuation(request);
-        expect(result.derived && result.manual.opacity).toBeGreaterThanOrEqual(0.35);
-        expect(result.derived && result.manual.opacity).toBeLessThanOrEqual(0.7);
+        const result = writeNextStage(request);
+        expect(result.written && result.stage.opacity).toBeGreaterThanOrEqual(0.35);
+        expect(result.written && result.stage.opacity).toBeLessThanOrEqual(0.7);
     });
 
-    it('carries a provenance of its own and does not pretend to be found', () => {
-        const result = deriveContinuation(request);
-        expect(result.derived && result.manual.provenance).toBe('derived');
-        expect(result.derived && result.manual.sourceNote).toContain('nobody');
+    it('records who wrote it, which is what makes a library a history', () => {
+        // The field that lets a house hold stage 14 of something written four
+        // hundred years ago by somebody whose name is on it - a fact this
+        // column produces rather than one anybody authored.
+        const result = writeNextStage(request);
+        expect(result.written && result.stage.authorId).toBe('cultivator-1');
+        expect(result.written && result.stage.manualId).toBe(SCATTERED.id);
+    });
+
+    it('a written stage is transmissible - it is not a private escape', () => {
+        // "It can be passed on from master to student personally (or even
+        // written down)." A stage somebody wrote is a stage like any other, so
+        // nothing special-cases it: the manual's cap moved, and `canTransmit`
+        // carries the manual as it always did. This asserts the ABSENCE of a
+        // barrier, which is the whole of what the ruling asked for.
+        const result = writeNextStage(request);
+        expect(result.written).toBe(true);
+        if (!result.written) return;
+        expect(Object.keys(result.stage)).not.toContain('bound');
+        expect(Object.keys(result.stage)).not.toContain('private');
+        // The stage names its manual, so what gets taught is that manual now
+        // reaching one rung further - not a separate secret book.
+        expect(result.stage.manualId).toBe(SCATTERED.id);
+        expect(result.line).toContain('it can be taught, or copied out');
     });
 
     it('returns the refusal rather than throwing, so one verb covers both', () => {
-        const refused = deriveContinuation({ ...request, dao: leaningIn('fire') });
-        expect(refused.derived).toBe(false);
-        expect(refused.manual).toBeNull();
+        const refused = writeNextStage({ ...request, dao: leaningIn('fire') });
+        expect(refused.written).toBe(false);
+        expect(refused.stage).toBeNull();
         expect(refused.years).toBe(0);
         expect(refused.line).toBe(refused.check.detail);
     });
@@ -602,9 +663,9 @@ describe('E3 - deriveContinuation, the one thing that writes a manual at runtime
         // "Obviously it gets harder as you go up cuz you're on new ground."
         // Derived rather than tuned: the cost keys off how much the world holds
         // at or above the target, so it moves on its own as the catalog does.
-        const walked = deriveContinuation({ ...request, precedent: { artsAtOrAbove: 12 } });
-        const thinning = deriveContinuation({ ...request, precedent: { artsAtOrAbove: 4 } });
-        const lonely = deriveContinuation({ ...request, precedent: { artsAtOrAbove: 1 } });
+        const walked = writeNextStage({ ...request, precedent: { artsAtOrAbove: 12 } });
+        const thinning = writeNextStage({ ...request, precedent: { artsAtOrAbove: 4 } });
+        const lonely = writeNextStage({ ...request, precedent: { artsAtOrAbove: 1 } });
 
         expect(walked.years).toBeLessThan(thinning.years);
         expect(thinning.years).toBeLessThan(lonely.years);
@@ -616,7 +677,7 @@ describe('E3 - deriveContinuation, the one thing that writes a manual at runtime
     it('refuses outright where nobody has ever been', () => {
         // The far end, and a refusal rather than a very large price - which is
         // what stops derivation being a general escape from the corridor.
-        const check = canDerive(daoIn('fire'), SCATTERED, { artsAtOrAbove: 0 });
+        const check = canExtend(daoIn('fire'), SCATTERED, { artsAtOrAbove: 0 });
         expect(check.permitted).toBe(false);
         expect(check.reason).toBe('no_precedent');
         expect(check.detail).toContain('Nobody has been here');
@@ -629,16 +690,16 @@ describe('E3 - deriveContinuation, the one thing that writes a manual at runtime
         // What changes between attempts is the cultivator, never the dice.
         for (const artsAtOrAbove of [0, 1, 4, 12]) {
             const precedent = { artsAtOrAbove };
-            expect(deriveContinuation({ ...request, precedent }))
-                .toEqual(deriveContinuation({ ...request, precedent }));
+            expect(writeNextStage({ ...request, precedent }))
+                .toEqual(writeNextStage({ ...request, precedent }));
         }
     });
 
     it('the price is years and possibility, never resources', () => {
         // The moment difficulty becomes a resource cost this stops being the
         // one door money cannot open. Nothing in the result names a currency.
-        const lonely = deriveContinuation({ ...request, precedent: { artsAtOrAbove: 1 } });
-        expect(lonely.derived).toBe(true);
+        const lonely = writeNextStage({ ...request, precedent: { artsAtOrAbove: 1 } });
+        expect(lonely.written).toBe(true);
         expect(JSON.stringify(lonely).toLowerCase()).not.toContain('stone');
         expect(JSON.stringify(lonely).toLowerCase()).not.toContain('contribution');
     });
@@ -671,10 +732,52 @@ describe('E3 - deriveContinuation, the one thing that writes a manual at runtime
         const manuals = TECHNIQUES.filter(t => classOf(t) === 'cultivation');
         const derivable = manuals.filter(t => t.derivable);
         expect(derivable.length / manuals.length).toBeLessThan(0.25);
-        // And specifically: no choke point above the middle of the ladder is
-        // derivable. The corridor must still be walked.
-        for (const manual of derivable) {
-            expect(manual.requiredOrdinal, `${manual.id} is a high derivable`).toBeLessThan(29);
+        // And specifically: a choke point above the middle of the ladder is
+        // derivable only at a price that is most of a life. The corridor must
+        // still be walked, and this used to be enforced as a flat ban on any
+        // derivable at or above ordinal twenty-nine.
+        //
+        // THAT BAN PREDATED THE DIFFICULTY CURVE, and the curve is a better
+        // instrument than the ban was. When derivation cost a flat twelve years
+        // at every height, a high derivable genuinely was a hole-closer and the
+        // only safe answer was to forbid it. Now the price is keyed to how much
+        // precedent stands above the target - and above the middle of the
+        // ladder there is almost none, so the same act costs a third to a half
+        // of a mortal lifespan. That is not a hole in the corridor. It is the
+        // second of two things a cultivator will regret: spend forty years
+        // writing it yourself, or spend them looking for the one somebody else
+        // already wrote.
+        //
+        // What the ban was protecting is protected better by asserting the
+        // price, because a ban can be satisfied by a catalog with nothing at
+        // those rungs at all - which is exactly the state that made the curve
+        // inert. Note also `no_precedent`, which still closes the door
+        // completely where nobody has ever stood: the expensive case and the
+        // impossible case are different, and only one of them is a price.
+        const priceOf = (manual: { requiredOrdinal: number }): number => {
+            const above = TECHNIQUES.filter(
+                t => classOf(t) === 'cultivation' && t.requiredOrdinal >= manual.requiredOrdinal
+            ).length;
+            return derivationYears({ artsAtOrAbove: above });
+        };
+        const high = derivable.filter(m => m.requiredOrdinal >= 29);
+        for (const manual of high) {
+            // Never the floor. A derivation at the choke points is always
+            // paying for new ground, and the floor is what it costs where the
+            // road is already walked.
+            expect(
+                priceOf(manual),
+                `${manual.id} derives at ${manual.requiredOrdinal} for the floor price`
+            ).toBeGreaterThan(DERIVATION_YEARS_PER_RUNG);
+        }
+        // And the curve is felt rather than merely present: the deepest thing
+        // anybody may derive costs multiples of the floor, not a premium on it.
+        if (high.length > 0) {
+            const deepest = high.reduce((a, b) => (a.requiredOrdinal > b.requiredOrdinal ? a : b));
+            expect(
+                priceOf(deepest),
+                `the deepest derivable (${deepest.id}) is not expensive enough to hurt`
+            ).toBeGreaterThanOrEqual(DERIVATION_YEARS_PER_RUNG * 3);
         }
     });
 });
