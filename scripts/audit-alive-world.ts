@@ -101,7 +101,7 @@ async function main(): Promise<void> {
         + 'by 1000'.padStart(9) + 'ever'.padStart(7));
     line('  ' + '─'.repeat(56));
     const backed: Record<string, number> = {};
-    for (const origin of ['thin_county', 'sect_retainer', 'great_house'] as const) {
+    for (const origin of ['thin_county', 'sect_retainer', 'dao_house_bloodline'] as const) {
         const at = (age: number) => {
             try {
                 return deriveOrdinal(root, attrs, age, 1, MAX_ORDINAL, rng(), { ambient: 'normal', origin });
@@ -111,7 +111,7 @@ async function main(): Promise<void> {
         line('  ' + origin.padEnd(20) + String(at(60)).padStart(11) + String(at(200)).padStart(9)
             + String(at(1000)).padStart(9) + String(backed[origin]).padStart(7));
     }
-    const guided = Math.max(backed.sect_retainer ?? -1, backed.great_house ?? -1);
+    const guided = Math.max(backed.sect_retainer ?? -1, backed.dao_house_bloodline ?? -1);
     record('backing shortens the road', guided > (backed.thin_county ?? 0),
         guided > (backed.thin_county ?? 0)
             ? `unbacked reaches ${backed.thin_county}, backed reaches ${guided}`
@@ -131,7 +131,23 @@ async function main(): Promise<void> {
         + 'like 29\n         is crazy rare"');
     state = advanceWorldYears(state, 300).state;
     const living = state.npcs.filter(n => n.status === 'alive');
-    const rogues = living.filter(n => !n.factionId);
+    // OUTLIVING YOUR HOUSE IS NOT THE SAME AS NEVER HAVING ONE.
+    //
+    // `!npc.factionId` was the whole test, and it counted as rogues three
+    // people who were nothing of the kind: a Stonewright principal, a Flame
+    // Sovereign still tagged `chosen` of the Nine Abyss, and a Hollow Court
+    // apex aged twenty-five thousand. All three were seeded into a house, all
+    // three still carry the `faction:` tag naming it, and all three are
+    // houseless because the house DISSOLVED underneath them.
+    //
+    // That is a different and rather good state - the survivor of a fallen
+    // institution, who had everything a house gives and now has none of it -
+    // and calling them rogue cultivators made the claim about rogues read as
+    // broken when the world was behaving correctly. A rogue is somebody who
+    // never had a house, not somebody who outlasted theirs.
+    const everBelonged = (n: NpcRecord) => n.tags.some(t => t.startsWith('faction:'));
+    const rogues = living.filter(n => !n.factionId && !everBelonged(n));
+    const orphaned = living.filter(n => !n.factionId && everBelonged(n));
     const backedFolk = living.filter(n => n.factionId);
     const above = (people: typeof living, n: number) =>
         people.filter(p => p.cultivation.realmOrdinal > n).length;
@@ -152,7 +168,11 @@ async function main(): Promise<void> {
     record('rogues are ordinary', lowRogues > 0.2,
         `${Math.round(100 * lowRogues)}% of the living carry no house`);
     record('high rogues are crazy rare', highRogues <= 2,
-        `${highRogues} unbacked cultivator(s) stand above ordinal 29`);
+        `${highRogues} cultivator(s) who never had a house stand above ordinal 29`
+        + (orphaned.length > 0
+            ? `; a further ${orphaned.length} are houseless because their house fell, `
+              + `${above(orphaned, 29)} of them above 29`
+            : ''));
 
     // ── THINGS ──────────────────────────────────────────────────────────────
     rule('THINGS: IS THE WORLD PHYSICALISED?');
