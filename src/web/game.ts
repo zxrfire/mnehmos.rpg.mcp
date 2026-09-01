@@ -4616,7 +4616,8 @@ ${noticed}`;
                     severity: injury.severity,
                     source: injury.source,
                     description: injury.description,
-                    sustainedOnTurn: injury.sustainedOnTurn
+                    sustainedOnTurn: injury.sustainedOnTurn,
+                    woundType: injury.woundType
                 });
             }
             this.repos.runs.incrementTurn(run.id, 1);
@@ -5452,7 +5453,8 @@ ${noticed}`;
                     severity: exchange.injury.severity,
                     source: exchange.injury.source,
                     description: exchange.injury.description,
-                    sustainedOnTurn: exchange.injury.sustainedOnTurn
+                    sustainedOnTurn: exchange.injury.sustainedOnTurn,
+                    woundType: exchange.injury.woundType
                 });
             }
             this.repos.cultivators.applyDeltas(cultivator.id, { hp: -exchange.damage });
@@ -6705,7 +6707,8 @@ ${noticed}`;
                     severity: injury.severity,
                     source: injury.source,
                     description: injury.description,
-                    sustainedOnTurn: injury.sustainedOnTurn
+                    sustainedOnTurn: injury.sustainedOnTurn,
+                    woundType: injury.woundType
                 });
             }
 

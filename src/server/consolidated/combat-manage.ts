@@ -488,6 +488,7 @@ export async function handleStrike(args: z.infer<typeof StrikeSchema>): Promise<
                     source: result.injury.source,
                     description: result.injury.description,
                     sustainedOnTurn: result.injury.sustainedOnTurn,
+                    woundType: result.injury.woundType,
                     cultivationPenalty: result.injury.cultivationPenalty,
                     breakthroughPenalty: result.injury.breakthroughPenalty
                 });
@@ -590,6 +591,7 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
                 source: injury.source,
                 description: injury.description,
                 sustainedOnTurn: injury.sustainedOnTurn,
+                woundType: injury.woundType,
                 cultivationPenalty: injury.cultivationPenalty,
                 breakthroughPenalty: injury.breakthroughPenalty
             });
@@ -609,6 +611,7 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
                         source: injury.source,
                         description: injury.description,
                         sustainedOnTurn: injury.sustainedOnTurn,
+                        woundType: injury.woundType,
                         cultivationPenalty: injury.cultivationPenalty,
                         breakthroughPenalty: injury.breakthroughPenalty
                     });
@@ -749,6 +752,7 @@ export async function handleFlee(args: z.infer<typeof FleeSchema>): Promise<obje
                 source: result.injury.source,
                 description: result.injury.description,
                 sustainedOnTurn: result.injury.sustainedOnTurn,
+                woundType: result.injury.woundType,
                 cultivationPenalty: result.injury.cultivationPenalty,
                 breakthroughPenalty: result.injury.breakthroughPenalty
             });

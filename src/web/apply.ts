@@ -81,7 +81,11 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
                 severity: injury.severity,
                 source: injury.source,
                 description: injury.description,
-                sustainedOnTurn: injury.sustainedOnTurn
+                sustainedOnTurn: injury.sustainedOnTurn,
+                // What the wound is called. The engine mints it and this layer
+                // used to drop it, so every wound a player carried read
+                // `woundType: null` and nothing could name it.
+                woundType: injury.woundType
             });
         }
 

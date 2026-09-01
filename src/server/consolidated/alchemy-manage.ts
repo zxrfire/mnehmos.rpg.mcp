@@ -420,6 +420,7 @@ export async function handleConsumePill(
                 source: poisonInjury.source,
                 description: poisonInjury.description,
                 sustainedOnTurn: poisonInjury.sustainedOnTurn,
+                woundType: poisonInjury.woundType,
                 cultivationPenalty: poisonInjury.cultivationPenalty,
                 breakthroughPenalty: poisonInjury.breakthroughPenalty
             });

@@ -513,6 +513,7 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
                     source: injury.source,
                     description: injury.description,
                     sustainedOnTurn: injury.sustainedOnTurn,
+                    woundType: injury.woundType,
                     cultivationPenalty: injury.cultivationPenalty,
                     breakthroughPenalty: injury.breakthroughPenalty
                 });
@@ -661,6 +662,7 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
                     source: injury.source,
                     description: injury.description,
                     sustainedOnTurn: injury.sustainedOnTurn,
+                    woundType: injury.woundType,
                     cultivationPenalty: injury.cultivationPenalty,
                     breakthroughPenalty: injury.breakthroughPenalty
                 });

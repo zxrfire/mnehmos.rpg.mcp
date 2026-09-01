@@ -74,6 +74,7 @@ interface InjuryRow {
     cultivation_penalty: number;
     breakthrough_penalty: number;
     treated_on_turn: number | null;
+    wound_type: string | null;
     created_at: string;
 }
 
@@ -95,6 +96,19 @@ export interface AddInjuryInput {
     cultivationPenalty?: number;
     breakthroughPenalty?: number;
     treated?: boolean;
+    /**
+     * Which authored wound this is, as a key into `data/cultivation/wounds.ts`.
+     *
+     * Pass it through wherever the engine minted one. `resolveDeviation` and
+     * the crossing path have both been setting it since `ordinaryWoundFor`
+     * landed, and this layer had nowhere to put it - so every wound a player
+     * carried came back unnamed. A live qi-deviation injury read
+     * `woundType: null` and nothing could say what it was.
+     *
+     * Null still means an ordinary wound of its severity, which is what every
+     * row written before the column was.
+     */
+    woundType?: string | null;
 }
 
 /**
@@ -262,11 +276,11 @@ export class CultivatorRepository {
             INSERT INTO cultivator_injuries (
                 id, cultivator_id, severity, source, description,
                 sustained_on_turn, treated, cultivation_penalty, breakthrough_penalty,
-                treated_on_turn, created_at
+                treated_on_turn, wound_type, created_at
             ) VALUES (
                 @id, @cultivatorId, @severity, @source, @description,
                 @sustainedOnTurn, @treated, @cultivationPenalty, @breakthroughPenalty,
-                @treatedOnTurn, @createdAt
+                @treatedOnTurn, @woundType, @createdAt
             )
         `);
 
@@ -634,7 +648,8 @@ export class CultivatorRepository {
             sustainedOnTurn: input.sustainedOnTurn,
             treated: input.treated ?? false,
             cultivationPenalty: input.cultivationPenalty ?? weights.cultivationPenalty,
-            breakthroughPenalty: input.breakthroughPenalty ?? weights.breakthroughPenalty
+            breakthroughPenalty: input.breakthroughPenalty ?? weights.breakthroughPenalty,
+            woundType: input.woundType ?? null
         });
 
         this.insertInjuryStmt.run(
@@ -747,6 +762,7 @@ export class CultivatorRepository {
             cultivationPenalty: injury.cultivationPenalty,
             breakthroughPenalty: injury.breakthroughPenalty,
             treatedOnTurn: null,
+            woundType: injury.woundType ?? null,
             createdAt
         };
     }
@@ -856,7 +872,8 @@ function rowToInjury(row: InjuryRow): Injury {
         sustainedOnTurn: row.sustained_on_turn,
         treated: row.treated === 1,
         cultivationPenalty: row.cultivation_penalty,
-        breakthroughPenalty: row.breakthrough_penalty
+        breakthroughPenalty: row.breakthrough_penalty,
+        woundType: row.wound_type ?? null
     });
 }
 

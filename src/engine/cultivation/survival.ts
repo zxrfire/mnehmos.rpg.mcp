@@ -12,7 +12,7 @@
  * The five ways the survival layer kills you, and where each threshold comes
  * from (all constants live in `schema/cultivation.ts`):
  *
- *   combat_defeat       hp reaches 0
+ *   combat_defeat       hp reaches 0 and nothing said what took it
  *   starvation          STARVATION_TURNS consecutive turns at 0 satiety
  *   lifespan_exhausted  age reaches the realm's lifespanYears
  *   stagnation_aging    stagnationYearsForOrdinal() without advancing a rank
@@ -648,6 +648,23 @@ export interface DeathContext {
      * chooses to do, including nothing.
      */
     forcingCombat?: boolean;
+
+    /**
+     * What emptied the HP bar, when the caller knows and it was not violence.
+     *
+     * An empty bar is a state and not a story, and this gate had exactly one
+     * story for it. Found by playing: a cultivator who sat in a cave for a
+     * seclusion, took three qi deviations and died of them went into the death
+     * ledger as `combat_defeat` - "killed in combat" - in a run in which no
+     * combat occurred at any point. In a permadeath game the ledger is the only
+     * surviving account of a life, so it was the permanent record that was
+     * wrong.
+     *
+     * Only the loss that actually reaches zero sets this. A caller that does
+     * not know leaves it unset and gets `combat_defeat`, which is right for
+     * every path where something hit the cultivator.
+     */
+    hpDepletedBy?: DeathCause;
 }
 
 /**
@@ -655,9 +672,9 @@ export interface DeathContext {
  *
  * Returns the cause, or `null` if the cultivator lives. Checks run in a fixed
  * order and the FIRST match wins, so a cultivator who is simultaneously at 0 HP
- * and out of lifespan is recorded as having died in combat. The ordering is
- * most-immediate-cause-first: what actually stopped the heart this turn beats
- * the slow condition that would have stopped it eventually.
+ * and out of lifespan is recorded as having died of whatever emptied the bar.
+ * The ordering is most-immediate-cause-first: what actually stopped the heart
+ * this turn beats the slow condition that would have stopped it eventually.
  *
  * Each threshold is `>=`, so death lands exactly ON the documented number: the
  * fifth consecutive starving turn, the fiftieth stagnant year, the hundredth
@@ -683,7 +700,10 @@ export function evaluateDeathConditions(
     // without one does not starve and cannot be stabbed; it is killed by other
     // things, resolved elsewhere.
     if (hasBody(existence)) {
-        if (cultivator.hp <= 0) return 'combat_defeat';
+        // `combat_defeat` is the DEFAULT for an empty bar, not the meaning of
+        // one. See `hpDepletedBy`: a caller that watched the last point go
+        // says what took it, and only that caller can know.
+        if (cultivator.hp <= 0) return ctx.hpDepletedBy ?? 'combat_defeat';
 
         // Starvation cannot kill somebody who has stopped eating. The counter
         // is not reset here on purpose - `burnSatiety` clears it the moment the

@@ -671,6 +671,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
                 source: injury.source,
                 description: injury.description,
                 sustainedOnTurn: injury.sustainedOnTurn,
+                woundType: injury.woundType,
                 cultivationPenalty: injury.cultivationPenalty,
                 breakthroughPenalty: injury.breakthroughPenalty,
                 treated: injury.treated
@@ -968,6 +969,7 @@ export async function handleBreakthrough(
                 source: injury.source,
                 description: injury.description,
                 sustainedOnTurn: injury.sustainedOnTurn,
+                woundType: injury.woundType,
                 cultivationPenalty: injury.cultivationPenalty,
                 breakthroughPenalty: injury.breakthroughPenalty,
                 treated: injury.treated
