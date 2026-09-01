@@ -37,6 +37,12 @@ import { AGES, DEAD_CIVILISATIONS, LID_THEORIES, ORIGIN_ACCOUNTS, CALENDARS } fr
 import { CONTINGENCIES } from './contingencies.js';
 import { HELD_INSTRUMENTS, UNOWNED_ANCESTORS } from './sealed-ancestors.js';
 import { INHERITANCE_TRIALS, GRAVES } from './inheritance-trials.js';
+import {
+    HOUSE_ARTISANS,
+    SEA_LANES,
+    SEA_CARGO,
+    SEA_TRADERS
+} from './what-each-house-makes-and-what-crosses-the-water.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RE-EXPORTS
@@ -223,6 +229,7 @@ export * from './contingencies.js';
 export * from './sealed-ancestors.js';
 export * from './named-figures.js';
 export * from './inheritance-trials.js';
+export * from './what-each-house-makes-and-what-crosses-the-water.js';
 export * from './lost-ages.js';
 export * from './rumours-and-what-they-get-wrong.js';
 export * from './structural-repair-medicine.js';
@@ -321,6 +328,14 @@ export interface CultivationCatalogCounts {
     inheritanceTrials: number;
     /** Sites nobody arranged. What is in one depends on how the occupant died. */
     graves: number;
+    /** Houses whose craft is specific enough to be written out rather than derived. */
+    houseArtisans: number;
+    /** Named stretches of open water, with the middle of each one in them. */
+    seaLanes: number;
+    /** What is actually on the hulls, each row a maker, a lane and a buyer. */
+    seaCargo: number;
+    /** Bodies that move goods across water, no two the same kind of operator. */
+    seaTraders: number;
     /** Named people inside the factions, at the scale a player can know. */
     members: number;
     /** Named ages, including the present one. */
@@ -370,6 +385,10 @@ export function getCultivationCatalogCounts(): CultivationCatalogCounts {
         unownedAncestors: UNOWNED_ANCESTORS.length,
         inheritanceTrials: INHERITANCE_TRIALS.length,
         graves: GRAVES.length,
+        houseArtisans: HOUSE_ARTISANS.length,
+        seaLanes: SEA_LANES.length,
+        seaCargo: SEA_CARGO.length,
+        seaTraders: SEA_TRADERS.length,
         members: MEMBERS.length,
         ages: AGES.length,
         deadCivilisations: DEAD_CIVILISATIONS.length,

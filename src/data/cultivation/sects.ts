@@ -1094,7 +1094,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             blockedBy: ['sect-stonewright-consortium', 'house-ninefold-ledger'],
             wouldCost:
                 'The Consortium\'s underwriting, without which the Pavilion cannot carry a large lot, and an almost certain Ledger audit of the tablet hall in retaliation. The house has priced that risk internally and the figure is kept by three people.',
-            contestedWith: ['sect-stonewright-consortium', 'sect-clear-river-alliance'],
+            contestedWith: ['sect-stonewright-consortium', 'sect-clear-river-alliance', 'sect-halfwater-rail'],
             movedOn:
                 'It has honoured an unpublished floor on four lots in two years to see whether anybody noticed, and nobody did.'
         }
@@ -1489,7 +1489,12 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'corpse-lantern-soul-forging',
         specialities: ['forbidden', 'defense'],
-        rivals: ['sect-verdant-spring-hall', 'sect-crimson-abyss-hall'],
+        // The Sink Carriers are the third, and it is a quarrel about the same
+        // bodies from two directions: the sand keeps a corpse and gives it
+        // back a decade later with its possessions on it, so a carrier who
+        // does not make the return leg is Cult stock, and the Carriers count
+        // that person on their board as a name rather than as a supply.
+        rivals: ['sect-verdant-spring-hall', 'sect-crimson-abyss-hall', 'sect-sink-carriers'],
         territory: 'Old battlefields, worked in rotation, in the third year after any large engagement.',
         recruits: true,
         compound: {
@@ -1506,7 +1511,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             blockedBy: ['sect-gleaners-company', 'sect-weir-office'],
             wouldCost:
                 'Crossing a border neither region polices into ground the Gleaners have worked for forty years, against a company that has never defaulted on a dead digger\'s share and would be defending its people\'s living. The Cult already undercuts them there using finds the Company located, which is the grievance from the other side.',
-            contestedWith: ['sect-gleaners-company'],
+            contestedWith: ['sect-gleaners-company', 'sect-sink-carriers'],
             movedOn:
                 'Two Lantern Bearers have been working the Marches edge for three seasons without a rotation entry, which the Pale Elders have not sanctioned and have not stopped.'
         }
@@ -1783,6 +1788,148 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             contestedWith: ['sect-bone-lantern-cult'],
             movedOn:
                 'The Factors have worked two live edges without an entry and paid the shares out of the general fund, which is the first time the fund has been used for anything.'
+        }
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // TWO BODIES WITH NO APEX OVER THEM
+    //
+    // Every other house in this catalog holds from somebody. A Low Fall sect
+    // holds a twelve-year grant, a Wide Field body holds a lease with a
+    // deposit on it, a Marches district holds a face the Long Cut scheduled,
+    // a northern court holds an elevation and pays for the pass. The apexes
+    // divide the land between them and nominate whoever holds the ground,
+    // and the reason they prefer a bad holder to an empty seat is written out
+    // at length in `APEX_INSTITUTIONS`: a seat with somebody in it is a
+    // counterparty and an empty one is not.
+    //
+    // These two are outside that arrangement, and they are outside it for
+    // OPPOSITE reasons, which is the whole reason both exist rather than one.
+    //
+    //   The Halfwater Rail  is unowned because owning it would destroy it.
+    //                       Its entire value is that no party holds it, so
+    //                       the moment one does, the other parties stop
+    //                       coming and what was taken is forty acres of rock
+    //                       with no fresh water on it. Its security is not
+    //                       strength and not distance - it is that every
+    //                       power in the world is worse off the day it falls,
+    //                       including the power that would take it.
+    //
+    //   The Sink Carriers   are unowned because nothing on the Blown Ground
+    //                       outlives the instrument that would hold it. A
+    //                       grant runs twelve years and a surfacing is gone
+    //                       inside nine, so there is nothing there that can
+    //                       be the subject of a document. Nobody has declined
+    //                       to take them. Nobody has had anything to take.
+    //
+    // The first is unheld because it is too useful to own. The second is
+    // unheld because there is nothing there to own. Neither is a hero and
+    // neither is a haven, and the difference between them should be legible
+    // from the two descriptions without either of them saying so.
+    //
+    // NEITHER IS AN EXCEPTION TO A RULE. Every mechanic below is the ordinary
+    // one: the Rail's watch is cultivators on a wage, its income is a margin,
+    // its records are the same records anybody keeps. The Carriers' water is
+    // the water already priced in `mortal-world.ts`. Take the arrangement away
+    // and both price out as ordinary houses at their ordinals, which is the
+    // test in AGENTS.md and the one worth re-running on anything added here.
+    // ─────────────────────────────────────────────────────────────────────
+
+    {
+        id: 'sect-halfwater-rail',
+        name: 'The Halfwater Rail',
+        alignment: 'neutral',
+        // One Nascent Soul, and the number is doing something specific. It is
+        // NOT what defends the port - the port is defended by everybody
+        // else's interest in it - and it is not what enforces order either,
+        // because the watch tops out five rungs below her and she does not
+        // work it. What it is, is the guarantee behind the institution's own
+        // word: somebody who cannot be quietly made to disappear by a buyer
+        // who did not like a price. See `seam` in the description.
+        powerOrdinal: 21,
+        ranks: ['Rail Hand', 'Watch', 'Weigher', 'Rail Factor', 'Rail Master'],
+        admissionOrdinal: 0,
+        stipend: [4, 14, 45, 150, 520],
+        teaches: [
+            'cross-meridian-strike',
+            'iron-shirt-tempering',
+            'reed-crossing-qinggong',
+            'clear-spring-detoxification',
+            'still-water-mirror-guard',
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture'
+        ],
+        // A guard art, and the whole doctrine of the watch is in the choice:
+        // the port trains people to stop a thing without ending anybody,
+        // because a death at Halfwater is a party ashore with a grievance and
+        // that is the one commodity the port cannot afford to stock.
+        signatureTechniqueId: 'still-water-mirror-guard',
+        specialities: ['defense', 'movement', 'support'],
+        // None, and the absence is the institution. A feud is a party you
+        // will not trade with, and the Rail's entire business is being the
+        // counter that both parties to any feud will still stand at.
+        rivals: [],
+        territory: 'Forty acres of island at the middle of the eastern passage, a deep anchorage, and no claim to one foot of water beyond the shoal line.',
+        recruits: true,
+        compound: {
+            inherited: false,
+            formationNodesTotal: 0,
+            formationNodesLit: 0,
+            remnant: 'Nothing inherited and nothing lit. The port stands on ground with no vein under it, so there is no diagram to have lost: what it built, it built - a stone quay, a weigh house, a water cistern cut into the rock, and a bell that is rung for arrivals and for nothing else.'
+        },
+        description:
+            'An island port at the middle of the eastern passage, holding forty acres and no water beyond the shoal line, where every party in the world buys and sells because none of them owns it. It is the only market of consequence with no apex seat at it: demonic houses, righteous houses, all three apexes\' factors and four courts\' buyers do business across the same rail within sight of each other, and the arrangement holds because taking the port destroys the port. Whoever held it would be holding forty acres of rock with a cistern on it, because the traffic is the asset and the traffic is there for the neutrality. Its income is the spread and not the tax: it buys from people who have no other buyer and sells on at what a thing is worth, and it taxes the traffic lightly on purpose, because the traffic is where the profit already is and squeezing it moves it. The service it actually sells is being a counterparty a weak seller can approach - a Qi Condensation cultivator holding something valuable cannot sell it to an individual, since the individual can simply take it and nobody is coming for them, and the Rail is an institution with a reputation and a funded watch, which is a different proposition. Discretion is priced into the margin rather than offered as a courtesy: a seller who wants no name attached takes less, knows they are taking less, and pays it gladly. Order is bought as far as money buys it and no further. The watch is thirty-odd cultivators on a wage, none above Foundation Establishment, and it handles theft, brawls, debt and the ordinary business of a crowded quay competently. Above that rung the port does not police anybody and says so at the gate: a high cultivator at Halfwater is protected by what they are and by who would come for them, and a theft at that level becomes a private war the Rail does not stop and is not party to. The seam between the two is the thing nobody at the port has solved - somebody at Core Formation, above what the watch can hold, with nobody in the world who would come for them, is exactly the person the Rail has no answer for, and the last three killings on the quay were all of that shape.',
+        ambition: {
+            wants:
+                'A second anchorage on the northern crossing, so that a hull out of the capes has somewhere to make a market before it reaches anybody\'s coast.',
+            blockedBy: ['sect-thousand-treasure-pavilion', 'house-measured-span'],
+            wouldCost:
+                'The thing it is. A second port is a network, a network is a body with reach, and a body with reach is a party rather than a counter - at which point the powers who currently protect the Rail by not touching it acquire a reason to. The Rail Master has put this to the Factors in exactly those words twice and been outvoted once.',
+            contestedWith: ['sect-thousand-treasure-pavilion'],
+            movedOn:
+                'Two Factors have been buying salt flats at Salt Reach in their own names rather than the port\'s, which is either prudence or the first move of the thing the Rail Master warned about, and nobody has established which.'
+        }
+    },
+
+    {
+        id: 'sect-sink-carriers',
+        name: 'The Sink Carriers',
+        alignment: 'neutral',
+        powerOrdinal: 19,
+        ranks: ['Skin', 'Carrier', 'String Head', 'Route Elder', 'Waterman'],
+        admissionOrdinal: 0,
+        stipend: [2, 6, 22, 75, 260],
+        teaches: [
+            'cross-meridian-strike',
+            'iron-shirt-tempering',
+            'stone-hide-mantle',
+            'clear-spring-detoxification',
+            'warm-current-qi-transfer',
+            'five-breath-circulation-scripture',
+            'lesser-qi-gathering-manual'
+        ],
+        signatureTechniqueId: 'five-breath-circulation-scripture',
+        specialities: ['defense', 'support', 'cultivation'],
+        rivals: ['sect-bone-lantern-cult'],
+        territory: 'A shed and a stockyard a day past the last painted stake in the Marches, and a route across the sand that has to be rewalked every season.',
+        recruits: true,
+        compound: {
+            inherited: false,
+            formationNodesTotal: 0,
+            formationNodesLit: 0,
+            remnant: 'A tally board under the shed roof with every string that has gone out on it, and the ones that did not come back left up rather than wiped, which is the only record of the dead anywhere on this ground.'
+        },
+        description:
+            'Water carried out onto the Blown Ground in strings of forty to sixty skins, from the Sink to whatever surfacings are open, by people who could not be taken anywhere else. It asks three things and no more: that you carry your own load, that you do not touch another string\'s water, and that you come back to the shed to be counted or be marked as not having. It does not ask where you came from, what you did, or whose art you are practising, and those three omissions are exactly the three questions a rogue cannot answer at any gate in the world, which is why the shed is full. What it lives on is the carry and a share of what comes off the ground it watered - never a price at the well, because the Sink is the one thing on that ground nobody has ever fought over and a body that started selling it would be the first party to try. So the entry is cheap and the staying is not: water on the sand is bought by the cup at four days\' distance from the only well, and a carrier who cannot make the return leg is not thrown out, they simply run out, and everybody standing there can do the arithmetic before it happens. Losses run about one in six a season and the Carriers publish the figure at the shed door, on the reasonable view that somebody who cannot face the number should not be told it later. It teaches nothing anybody would want except what keeps a body walking - the strike, the shirt, the stone hide, detoxification, the warm current, the five-breath circulation - and it has produced exactly two cultivators past Core Formation in ninety years, both of whom stayed, which the Route Elders regard as the only endorsement the shed has ever had.',
+        ambition: {
+            wants:
+                'A second well. One dug, anywhere on the sand, of its own, so that the four-day figure stops being the thing that kills its people.',
+            blockedBy: ['sect-thousand-treasure-pavilion', 'sect-bone-lantern-cult'],
+            wouldCost:
+                'Everything the shed has and probably the shed. A well is a fixed point and a fixed point on the Blown Ground is a thing the cover reaches in a decade, so the Carriers would be spending the whole of what they have on something with a shorter life than the debt - which is the province\'s own argument for why nobody holds anything here, made against the only body that has ever wanted to.',
+            contestedWith: ['sect-bone-lantern-cult'],
+            movedOn:
+                'Two Route Elders have been paying a Marches carver out of their own shares to sound for water at a point nine days out, without telling the Waterman, and have four soundings and no water.'
         }
     }
 ] as const;
@@ -2845,6 +2992,21 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         requirement: 'A mutated lightning root. Everyone else the Court speaks to is not an applicant.'
     },
 
+    // The two unbacked bodies, and both doors are low for reasons that are
+    // not generosity. The port needs hands and cannot buy loyalty from
+    // anybody who has a better offer; the shed needs bodies at a rate that
+    // would end a house with a reputation to keep.
+    'sect-halfwater-rail': {
+        minOrdinal: 0,
+        preferredRoots: [],
+        requirement: 'Anything that can work a quay. The port hires on the day, pays on the day, and asks for a name it can shout across a deck rather than one anybody can check.'
+    },
+    'sect-sink-carriers': {
+        minOrdinal: 0,
+        preferredRoots: [],
+        requirement: 'Carry your own load, leave another string\'s water alone, and come back to the shed to be counted. Three conditions, no questions, and the board at the door says what the odds are.'
+    },
+
     // Dao houses. Note how little any of them cares about combat talent, and
     // how much they care about literacy, patience and staying put.
     'house-ninefold-ledger': {
@@ -3731,6 +3893,40 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         lastOffering: null,
         discoverableTraces: [],
         standingNote: 'Two hundred years of records and one Core Formation cultivator in all of it. The Office does not claim ancestors and would not be believed if it did.'
+    },
+    // The two unbacked bodies, and both walls are nearly bare, which is the
+    // honest position for a house that has not been anywhere long. Neither
+    // claims a living ancestor and neither has a gift, because neither has
+    // ever had anybody above the Lid to be given one by - which is the
+    // ordinary condition of a house with no apex over it, and is most of
+    // what the word "unbacked" costs.
+    'sect-halfwater-rail': {
+        ancestors: [
+            { name: 'Weigher Duan Xi', fate: 'dead', realmOrdinal: 19, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Set the rate at a fortieth and refused four separate offers to raise it, on the argument that the port is worth what passes through it and nothing else. The rate has not moved since and the argument is repeated at every Factors\' table as though somebody had just thought of it.' },
+            { name: 'The Rail Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Deep Survey was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Halfwater is worth remarking on.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'Ninety years old, no hall of tablets and no wall of names - what it keeps instead is the rate book, unbroken, which is the only continuous record in the province and is worth more to the port than any ancestor would be.'
+    },
+    'sect-sink-carriers': {
+        ancestors: [
+            { name: 'The Waterman who cut the first tally board', fate: 'dead', realmOrdinal: null, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Left the names of strings that did not come back up on the board instead of wiping them, and the board has never been wiped since. It is now nine boards and the shed was rebuilt around them.' },
+            { name: 'Route Elder Ma out of Kettle', fate: 'lost', realmOrdinal: 17, yearsAgo: 11, afterCrossing: null, rememberedFor: 'Walked a string to a show that had closed and turned it round on the fourth day with two thirds of the water gone, bringing back every carrier and none of the load. It is the only decision anybody at the shed can name.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'No tablets, no hall and no graves, because the sand keeps its own and gives them back. The tally boards are the whole of the ancestry and they are a list of the missing rather than of the honoured.'
     },
     'sect-sixmile-wardens': {
         ancestors: [

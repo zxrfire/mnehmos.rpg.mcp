@@ -134,7 +134,21 @@ export const UnbackedReasonSchema = z.enum([
     'useful_to_everyone_aligned_with_none',
     'holding_something',
     'arrangement_that_is_not_patronage',
-    'not_worth_the_trouble_yet'
+    'not_worth_the_trouble_yet',
+    /**
+     * Added for the Sink Carriers, and the existing six could not carry it.
+     *
+     * Every other reason here is about the BODY - too poor, too far, too
+     * useful, holding something nobody wants to disturb. This one is about
+     * the GROUND, and the distinction is the whole of why the Blown Ground
+     * is a different object from the Drowned Reach: a grant runs twelve years
+     * and a surfacing is open for one season to about nine, so there is
+     * nothing there that could be the subject of the instrument. Nobody has
+     * declined to take the Carriers. Nobody has had anything to take, and
+     * `not_worth_the_trouble_yet` would say the opposite of that - it implies
+     * a decision somebody could reverse.
+     */
+    'nothing_there_a_document_could_hold'
 ]);
 export type UnbackedReason = z.infer<typeof UnbackedReasonSchema>;
 
@@ -1976,6 +1990,59 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         unbackedReason: 'arrangement_that_is_not_patronage',
         independenceStance: 'would_take_a_backer',
         note: 'Holds nothing from anybody and never has. The paint and the stakes are the whole of the institution, and the burn edge does not care whose name is on a grant.'
+    },
+
+    // ── the two the pyramid does not reach ────────────────────────────
+    //
+    // Read these two side by side. Both are `unbacked` and `unaffiliated`,
+    // both have `parentFactionId: null`, and the `unbackedReason` on each is
+    // the only field that separates them - which is exactly the load that
+    // field was added to carry.
+    //
+    // The Rail is unbacked because it is USEFUL to everybody, so taking it
+    // costs the taker more than it gains: whoever held Halfwater would hold
+    // forty acres of rock, because the traffic is the asset and the traffic
+    // is there for the neutrality. Its protection is not a garrison and not
+    // a patron, it is the standing interest of every party that trades there,
+    // and it is fragile in the specific way that arrangement is fragile - it
+    // holds exactly as long as it stays useful to all sides, and any party
+    // that stopped needing it stops having a reason to protect it.
+    //
+    // The Carriers are unbacked because there is nothing there to hold. Not
+    // poverty: the Blown Ground has the best air outside the White Stair on
+    // it. It is that a surfacing is open for a season to about nine years and
+    // every holding instrument in this world runs twelve, so the apparatus
+    // that turns force into authority has nothing to bite on. Nobody has
+    // declined to take them and nobody has been able to formulate the taking.
+    'sect-halfwater-rail': {
+        factionId: 'sect-halfwater-rail',
+        governance: 'unbacked',
+        relation: 'unaffiliated',
+        parentFactionId: null,
+        holds: 'Forty acres of island with no vein under it, a quay, a weigh house and a cistern, none of it granted by anybody and none of it claimed beyond the shoal line.',
+        terms: NO_TERMS,
+        standing: 'not_applicable',
+        awarenessOfApex: 'known',
+        costOfIndependence:
+            'No grant, so no vein, so nothing in the air: every rung anybody at the port climbs is bought out of a chest, and the port pays that wage bill itself out of the spread. It also means the Rail has no recourse. When somebody above the watch takes what is not theirs, there is nobody it can write to, and it has never pretended otherwise - the alternative is calling on an apex, which would end the neutrality in the same afternoon it was used.',
+        unbackedReason: 'useful_to_everyone_aligned_with_none',
+        independenceStance: 'proud',
+        note: 'The one body in the catalog whose independence is an asset rather than a cost, and the Factors know precisely why: the port is worth what passes through it, what passes through it comes because no party owns it, and the day a party owns it the traffic goes and the rock stays. Every apex has a factor on the quay, all three know where it is, and none of them has ever needed to be told any of the above.'
+    },
+    'sect-sink-carriers': {
+        factionId: 'sect-sink-carriers',
+        governance: 'unbacked',
+        relation: 'unaffiliated',
+        parentFactionId: null,
+        holds: 'A shed and a stockyard a day past the last painted stake, and a route across ground where a route has to be rewalked every season to still exist.',
+        terms: NO_TERMS,
+        standing: 'not_applicable',
+        awarenessOfApex: 'unaware',
+        costOfIndependence:
+            'Nobody is owed anything and nobody owes them anything, which cuts both ways and cuts harder in one direction: the shed has no arbitration, no escort underwriting, no valuation it can dispute and nobody to appeal a bounty to. About a fifth of the people in it cannot leave the sand at all, because nine eastern gates post a standing rate for an unregistered cultivator brought in upright, and the shed is where the unregistered are.',
+        unbackedReason: 'nothing_there_a_document_could_hold',
+        independenceStance: 'indifferent',
+        note: 'Nobody has refused to back them and nobody has offered. The Weir Office has no record of the shed, the Long Cut schedules faces and there is no face, and the eastern cities deal with the ground by posting a rate at nine gates rather than by administering it. The Carriers have never applied to anybody and could not say who they would apply to.'
     },
 
     'sect-standing-grove': {

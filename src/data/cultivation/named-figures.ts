@@ -572,6 +572,43 @@ export const SEALED_FIGURE_NAMES: readonly NamedFigure[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export const FOUNDERS: readonly NamedFigure[] = [
+    // ── the two unbacked bodies, ninety years each ────────────────────
+    //
+    // Both founders are within living memory, both are securely attested,
+    // and both are attested by the SAME KIND of document: a running record
+    // the body has kept from the first day. That is what a house has instead
+    // of an ancestor when there is nobody above it to have been given one by.
+    // The Rail has a rate book and the Carriers have a tally board, and each
+    // of those is worth more to its holder than a wall of tablets, because it
+    // is the thing the body is actually trusted for.
+    {
+        id: 'figure-duan-xi',
+        name: 'Duan Xi',
+        alsoCalled: 'the first Weigher',
+        kind: 'founder',
+        factionId: 'sect-halfwater-rail',
+        whatTheyWere: 'A Watering factor who worked out that the middle of the eastern passage was the only place four parties who would not sit in a room together all had to stop anyway, and put a weigh house on it.',
+        yearsAgo: 90,
+        attestation: 'secure',
+        attestationNote: 'Attested by the rate book, which begins in her hand on a dated page and has not been broken since, and by four separate refusals to raise the rate recorded in the margins with the names of the parties who asked.',
+        answers: null,
+        juniority: null,
+        note: 'She set the rate at a fortieth and refused every offer to raise it on the argument that the port is worth exactly what passes through it. Everybody at the quay repeats the argument as though it were obvious; it was not obvious to any of the four who tried to buy her off it.'
+    },
+    {
+        id: 'figure-the-first-waterman',
+        name: 'The first Waterman, name cut on the oldest board',
+        alsoCalled: 'the one who would not wipe it',
+        kind: 'founder',
+        factionId: 'sect-sink-carriers',
+        whatTheyWere: 'Somebody the Weir Office had no record of, who put a shed a day past the last painted stake and started carrying water to people the eastern cities had a rate posted on.',
+        yearsAgo: 90,
+        attestation: 'secure',
+        attestationNote: 'Attested by the boards themselves, which are physical, dated by the seasons cut into their edges, and were the reason the shed had to be rebuilt around them rather than moved. Nothing else about him is recorded and the shed has never looked.',
+        answers: null,
+        juniority: null,
+        note: 'The founding decision was leaving the names of strings that did not come back up on the board instead of wiping them. It was a bookkeeping choice about knowing how many skins were still out, and it became the only memorial anybody on that ground has.'
+    },
     {
         id: 'figure-the-first-mist-warden',
         name: 'The first Mist Warden',
