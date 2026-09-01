@@ -157,6 +157,37 @@ export function sealedDoorFraction(): number {
     return PROFILES.sealed.exposure / PROFILES.seclusion.exposure;
 }
 
+/**
+ * What is left of the world once you have hidden the door.
+ *
+ * Concealing an entrance is not a rate reduction, it is a RUNG FILTER: after
+ * it, only somebody standing at your own realm or above can find the place at
+ * all. Everybody below simply walks past a hillside.
+ *
+ * So the value of hiding scales with who you are, which is the right shape and
+ * costs nothing to state - a Qi Condensation cultivator hiding their cave has
+ * excluded almost nobody, because almost everybody is at or above them; a Void
+ * Refinement cultivator hiding theirs has excluded the world.
+ *
+ * The fraction is read off the ladder's own population shape rather than
+ * chosen. The realm bands fall by roughly an order of magnitude as they climb -
+ * measured across seeded worlds as 306, 73, 33, 22, 11, 7, 4, 2, 2 - so the
+ * share standing at or above a given rung falls off a cliff in the middle of
+ * the ladder, which is exactly where hiding a door starts being worth the
+ * trouble.
+ *
+ * Returns the share of cultivators at or above `ordinal`, floored so that a
+ * hidden door is never perfectly safe: somebody is always above you, and near
+ * the top the people who remain are precisely the ones you cannot refuse.
+ */
+export function concealmentScale(ordinal: number): number {
+    // Cumulative share at or above the first rung of each realm, from the
+    // measured band counts. Index is the realm, not the rung.
+    const AT_OR_ABOVE = [1, 0.335, 0.155, 0.085, 0.045, 0.026, 0.013, 0.008, 0.004];
+    const realm = Math.max(0, Math.min(AT_OR_ABOVE.length - 1, Math.floor(ordinal / 4)));
+    return Math.max(0.004, AT_OR_ABOVE[realm]);
+}
+
 export function arrivalExposure(activity: EncounterActivity): number {
     return ARRIVAL_EXPOSURE[activity] ?? 1;
 }
