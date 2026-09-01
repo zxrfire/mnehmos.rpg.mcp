@@ -487,13 +487,152 @@ export const FAILURE_TABLE = {
     lastCrossing: { stable: 0.05, injured: 0.3, deviation: 0.55 }
 } as const;
 
-/** Fraction of the required progress burned by each failure outcome. */
+/**
+ * The DEEPEST a failure of each severity costs, as a fraction of the rung's
+ * requirement. The top of the range; `failureProgressLoss` decides where in it
+ * a given failure actually lands.
+ */
 export const FAILURE_PROGRESS_LOSS: Record<BreakthroughFailure, number> = {
     failure_stable: 0.25,
     failure_injured: 0.5,
     failure_deviation: 0.75,
     death: 1
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE SHAPE OF THE LOSS, WHICH IS THE PYRAMID'S STRONGEST LEVER
+//
+// READ THIS BEFORE CHANGING FAILURE_LOSS_SHAPE. It is not a flavour constant.
+// It silently decides how many cultivators the world ever produces, and it was
+// arrived at by measurement rather than chosen.
+//
+// ── What the lever is ────────────────────────────────────────────────────
+//
+// A failed crossing costs a RANGE, not a figure. The severity above sets the
+// deep end of that range; `SHALLOWEST_LOSS` sets the shallow end; and what
+// decides where inside it a particular failure lands is HOW FAR SHORT THE
+// ATTEMPT FELL. A near miss disperses a little; a rout disperses most of it.
+// That reads off the roll already made, so this adds no draw to the stream and
+// no caller's stream ordering moves.
+//
+// The lever is not the endpoints. It is how probability is spread across them:
+//
+//     loss = deepEnd * (SHALLOWEST_LOSS + (1 - SHALLOWEST_LOSS) * shortfall^k)
+//
+// with `k` = FAILURE_LOSS_SHAPE. `shortfall` is uniform on [0,1) - it is the
+// primary roll rescaled past the odds - so `k` is exactly the shape of the
+// distribution over the range:
+//
+//     k > 1   mass toward the SHALLOW end. Most failures cost little, careers
+//             survive several of them, and the pyramid widens at every rung.
+//     k = 1   flat. Every depth in the range equally likely.
+//     k < 1   mass toward the DEEP end. A failure is usually most of a career's
+//             accumulation and the pyramid narrows hard.
+//
+// ── What it was tuned against, and the numbers ───────────────────────────
+//
+// The standing distribution of the living world, not a per-attempt feel.
+// Measured with `scripts/probe-does-the-world-produce-its-apex.ts` and the
+// unaided sweep in `ladder-odds.ts`, and the two shapes below bracket it.
+//
+// Three shapes, 3,000 lives per band on each of three seeds, unaided climb, and
+// the two rejected ones bracket the one that is here. Ranges are across seeds.
+//
+//   shape                 band     Found     Core    Nascent  Deity      Void
+//   ------------------------------------------------------------------------
+//   k = 1.8, THIS ONE     dense   46-48%   19-20%   7.7-8.0%  2.5-3.0%  0.5-0.8%
+//                         normal  16-17%   3.8-4.6% 0.9-1.3%  0.3-0.4%  0.0-0.1%
+//   flat at the deep end  dense   44-46%   18.0%    7.3%      2.4-2.8%  0.5-0.8%
+//   (what this had        normal  14.4%    3.7%     0.9%      0.27%     0.0-0.1%
+//    before, i.e. k -> 0)
+//   the whole requirement dense   38-39%   14.3%    5.7%      1.8-2.3%  0.5-0.6%
+//   at every severity     normal  10.5%    2.7%     0.6%      0.18%     -
+//
+// AND ABOVE DEITY TRANSFORMATION ALL THREE ARE THE SAME. Body Integration sits
+// at 0.17-0.27%, Grand Ascension at 0.03-0.07% and Tribulation Transcendence at
+// 0-0.03% under every one of them, and the origin sweep's share reaching
+// ordinal 41 moved from 0.475% to 0.431% across 120,000 and 200,000 lives,
+// which is inside the noise on a tail that thin.
+//
+// That is the finding that decided which end of the ladder this lever controls.
+// At a high rung the limit is the settling allowance's total SPAN rather than
+// how many attempts fit inside it, so a harsher failure cannot make the apex
+// rarer - it only thins Foundation Establishment. The third shape is what a
+// plain reading of "you lose the qi" implies and it costs the bottom of the
+// ladder a quarter of its throughput to buy nothing at the top.
+//
+// Which is why the shape leans shallow. The pyramid needs its lower-middle
+// bands populated, the apex is kept rare by the book and the clock rather than
+// by the cost of failing, and a lever that only punishes beginners is not the
+// lever anybody wanted.
+//
+// ── If you move it ───────────────────────────────────────────────────────
+//
+// Raising `k` widens Foundation Establishment and Core Formation and does very
+// little above Deity Transformation. Lowering it empties the middle of the
+// ladder first and the top last. Re-run both probes and put the new table here;
+// a figure without its measurement does not survive the next content pass.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The shallow end of the range, as a fraction of the severity's deep end.
+ *
+ * Never zero. A failure that cost nothing at all would make striking at a wall
+ * free, and the whole reason a cultivator waits and prepares is that it is not.
+ */
+export const SHALLOWEST_LOSS = 0.4;
+
+/**
+ * How probability is spread across the loss range. See the banner above.
+ *
+ * 1.8 leans clearly shallow: the median failure costs about 57% of its
+ * severity's deep end rather than 100%, so a stable boundary failure disperses
+ * roughly 14% of the requirement instead of 25% and a cultivator gets about
+ * half again as many attempts inside the same settling clock.
+ */
+export const FAILURE_LOSS_SHAPE = 1.8;
+
+/**
+ * How much preparation moves the mass toward the shallow end.
+ *
+ * "More prepared, less loss." Preparation already buys the ODDS; this is its
+ * second payoff, and it is the one that matters to somebody who has already
+ * failed once - what they brought to the wall decides how much of the last
+ * eighty years it took with it.
+ *
+ * Additive on the exponent rather than multiplicative on the result, so a fully
+ * prepared cultivator faces a different SHAPE rather than a discount on a rolled
+ * number. That is the same thing preparation does everywhere else in this file.
+ *
+ * INTEGRATION POINT. Anything that counts as having prepared for a crossing
+ * feeds `BreakthroughContext.preparation` and nothing else - a pill, a chosen
+ * site, an unhurried foundation, and whoever is standing guard over the
+ * attempt. There must not be a second preparation term beside this one.
+ */
+export const PREPARED_LOSS_SHAPE_BONUS = 1.4;
+
+/**
+ * Where in the range this particular failure landed.
+ *
+ * `roll` is the primary breakthrough roll and `finalChance` the odds it was
+ * measured against, so `shortfall` is how far past the line it fell, rescaled
+ * to [0,1). Reading the roll rather than drawing again is deliberate: it costs
+ * no sample, it keeps every caller's stream ordering exactly where it was, and
+ * it means the same attempt always costs the same amount.
+ */
+export function failureProgressLoss(
+    outcome: BreakthroughFailure,
+    roll: number,
+    finalChance: number,
+    preparation = 0
+): number {
+    const deepEnd = FAILURE_PROGRESS_LOSS[outcome];
+    const room = Math.max(1e-9, 1 - finalChance);
+    const shortfall = Math.min(1, Math.max(0, (roll - finalChance) / room));
+    const shape = FAILURE_LOSS_SHAPE
+        + PREPARED_LOSS_SHAPE_BONUS * Math.min(1, Math.max(0, preparation));
+    return deepEnd * (SHALLOWEST_LOSS + (1 - SHALLOWEST_LOSS) * Math.pow(shortfall, shape));
+}
 
 /**
  * A failed last crossing costs the whole accumulation, whatever the severity.
@@ -609,6 +748,37 @@ export interface BreakthroughContext {
      * `manual-quality.ts`; omitted contributes no line at all.
      */
     manualQuality?: ManualQuality | null;
+    /**
+     * How much was done before the attempt, 0..1. THE ONE PREPARATION TERM.
+     *
+     * Preparation already buys the odds through the ordinary modifiers - a
+     * pill, a settled foundation, a manual that built the realm properly. This
+     * is the same fact expressed once, as a number, for the thing the modifiers
+     * cannot express: how much a FAILURE costs. See `PREPARED_LOSS_SHAPE_BONUS`.
+     *
+     * Anything that counts as having prepared feeds this and nothing else - a
+     * chosen site, an unhurried approach, and whoever is standing guard over
+     * the crossing. There must not be a second preparation term beside it.
+     *
+     * Omitted is not zero: `preparationOf` reads what the context already
+     * carries, so a caller that supplies a pill and a foundation is credited
+     * for them without having to say so twice. Supply it to override.
+     */
+    preparation?: number;
+    /**
+     * How much of a watch is standing over this crossing, 0..1.
+     *
+     * THE PROTECTOR LAYER'S INTEGRATION POINT, and the reason it is a separate
+     * field rather than folded into `preparation` by the caller: a caller with
+     * a watch should not have to recompute the pill, the site and the
+     * foundation in order to say so. `standing-guard-over-somebody-elses-crossing.ts`
+     * owns what a watch is worth to the ODDS and this is the same fact reaching
+     * the other half - what a failure costs - so
+     * `protectionBonus(watch, ordinal) / MAX_PROTECTION_BONUS` is the value to
+     * pass. There is no second protection term in this file and there must not
+     * be one.
+     */
+    protection?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1447,6 +1617,49 @@ interface AttemptFrame {
 // FAILURE
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * What this cultivator brought to the wall, as one number in 0..1.
+ *
+ * Read off what the context already carries rather than asked for separately,
+ * so a caller that bought a pill and prepared a site is credited for it without
+ * having to state the same fact twice and without any risk of the two
+ * disagreeing. An explicit `ctx.preparation` overrides the reading, which is
+ * how a layer that knows something this cannot see - somebody standing guard
+ * over the crossing - supplies it.
+ *
+ * Three terms, evenly weighted, because there is no evidence for weighting them
+ * and an invented weighting would be a balance decision hiding inside a helper:
+ *
+ *   the pill     bought and consumed for this attempt
+ *   the site     `foundation.preparation`, which is already "a chosen site, a
+ *                cleared schedule, nobody hunting you"
+ *   the body     a foundation better than the ordinary good outcome
+ *
+ * A watch is folded in afterwards rather than averaged with them, and it closes
+ * a share of whatever preparation is still missing rather than counting as a
+ * fourth quarter. That is what somebody standing guard actually does - they
+ * cover the part you could not cover yourself - and it means adding the term
+ * moved nobody who has no protector, which every existing caller is.
+ */
+function preparationOf(
+    cultivator: BreakthroughSubject,
+    ctx: BreakthroughContext
+): number {
+    if (typeof ctx.preparation === 'number') {
+        return Math.min(1, Math.max(0, ctx.preparation));
+    }
+    const pill = ctx.pill ? Math.min(1, Math.max(0, Number(ctx.pill.potency ?? 0))) : 0;
+    const site = Math.min(1, Math.max(0, Number(ctx.foundation?.preparation ?? 0)));
+    const foundation = foundationOf(cultivator);
+    const body = foundation === 'exceptional' ? 1
+        : foundation === 'transformed' ? 0.6
+            : foundation === 'stable' ? 0.4
+                : 0;
+    const alone = (pill + site + body) / 3;
+    const watch = Math.min(1, Math.max(0, Number(ctx.protection ?? 0)));
+    return Math.min(1, alone + watch * (1 - alone));
+}
+
 function resolveFailure(
     cultivator: BreakthroughSubject,
     ctx: BreakthroughContext,
@@ -1535,9 +1748,18 @@ function resolveFailure(
         );
     }
 
+    // The last crossing costs the whole accumulation whatever the severity and
+    // whatever was brought to it - see `LAST_CROSSING_PROGRESS_LOSS`. Every
+    // other failure costs somewhere in a range, and where in it is decided by
+    // how far short the attempt fell and by what the cultivator prepared. See
+    // THE SHAPE OF THE LOSS.
     const progressConsumed =
         frame.required *
-        (lastCrossing ? LAST_CROSSING_PROGRESS_LOSS : FAILURE_PROGRESS_LOSS[outcome]);
+        (lastCrossing
+            ? LAST_CROSSING_PROGRESS_LOSS
+            : failureProgressLoss(
+                outcome, frame.roll, frame.odds.finalChance, preparationOf(cultivator, ctx)
+            ));
 
     return {
         outcome,
