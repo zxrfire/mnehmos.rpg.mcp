@@ -1741,7 +1741,10 @@ export class GameService {
                 return this.gather(run, cultivator, ambient, action.target);
 
             case 'wait': {
-                const waiting = await this.shortSkip(run, cultivator, ambient, WAITING_FOCUS, 'Waiting');
+                const waiting = await this.shortSkip(
+                    run, cultivator, ambient, WAITING_FOCUS, 'Waiting',
+                    action.days ?? SHORT_ACTION_DAYS
+                );
                 const noticedWaiting = this.notice(cultivator, run, 'wait');
                 if (noticedWaiting) {
                     waiting.facts.lines.push(noticedWaiting);
