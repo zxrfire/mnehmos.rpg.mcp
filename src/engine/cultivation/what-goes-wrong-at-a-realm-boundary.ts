@@ -24,6 +24,13 @@
  * cultivator who crossed and can never cross again. Alive, at the new rung,
  * finished. Nothing in this engine could produce that person before.
  *
+ * And that person is a SUCCESS, which is the thing most easily got wrong about
+ * this file. A crossing ends in one of five ways and only one of them cracks
+ * anybody; the failure table below is a different pair of outcomes entirely,
+ * and it leaves people structurally intact at the rung they set out from. See
+ * THE FIVE WAYS A CROSSING ENDS, immediately below the imports, before adding
+ * anything to `CROSSING_OUTCOMES`.
+ *
  * ═════════════════════════════════════════════════════════════════════════
  * WHICH TRIAL YOU FACE IS DECIDED BY WHERE YOU STAND
  * ═════════════════════════════════════════════════════════════════════════
@@ -109,6 +116,155 @@ import { isRealmBoundary, realmForOrdinal, triggersHeavenlyTribulation } from '.
 import { createInjury } from './injuries.js';
 import { foundationOf, rebuildFoundation } from './foundation.js';
 import type { CultivationRNG } from './rng.js';
+
+// ═════════════════════════════════════════════════════════════════════════
+// THE FIVE WAYS A CROSSING ENDS
+//
+// The taxonomy this whole file sits inside, written down here because this is
+// where the two interesting ones are produced and because it was previously
+// only implicit in the shape of `BreakthroughResult`. Read it before adding an
+// outcome to the registry below: knowing which of the five a new row belongs to
+// is most of knowing whether it is a legitimate row at all.
+//
+// They are five KINDS of thing, not five points on a scale of badness. The
+// ordering below is roughly by how much of the life is spent, and the second
+// and fourth are the ones that get confused with each other.
+//
+//   1  CLEAN SUCCESS. Across, and possibly hurt on the way. Torn meridians, a
+//      scorched channel, a heart demon that surfaced and can still be settled -
+//      all real, all costly, and all things ORDINARY MEDICINE MENDS. That is
+//      what makes this the clean outcome: not that nothing happened, but that
+//      what happened has an answer somebody can afford.
+//
+//   2  BROKEN SUCCESS. Across, and the structure the crossing was FOR did not
+//      set. A core that formed with a fault, an infant soul that was born and
+//      did not take. They hold the new rung and they hold it permanently,
+//      because the road onward is closed behind the rarest medicine in the
+//      world - `REPAIRED_IN_THE_CRUCIBLE` and the treatment fields in
+//      `data/cultivation/wounds.ts` say for each break what would answer it and
+//      how nearly nothing that is.
+//
+//      THIS IS THE ONLY SOURCE OF A STRUCTURAL BREAK, and it is the single most
+//      important sentence here. Every broken cultivator in the world is
+//      somebody who SUCCEEDED and paid for it. That is why they price above the
+//      realm below them - they genuinely made it, and `assessPower` gives them
+//      their rung's own spine - and why they will not go further.
+//
+//   3  CLEAN FAILURE. It did not take, and nothing is carried away from it but
+//      the loss. That loss is not small: the accumulated qi is spent, they are
+//      back at the bottom of the Perfection rung they set out from, and the
+//      whole accumulation has to be made again. Against
+//      `stagnationYearsForOrdinal` and a finite span, this is what actually
+//      ends most careers - not the dramatic outcomes, the repetition.
+//
+//   4  FAILURE WITH SEQUELAE. The same failure, and something is carried away
+//      from it: a heart demon, a parted meridian, a stretch of the life the
+//      crossing took with it, years burned to survive the attempt. The
+//      registry below is the table of these.
+//
+//      IT DOES NOT CRACK THEM, and this is the distinction that is easiest to
+//      get wrong. Somebody who fails badly is at the previous Perfection,
+//      structurally intact, carrying what the wall did to them. They are NOT a
+//      broken version of the rung below - there is nothing there to have
+//      broken, because the structure the crossing would have built was never
+//      built. Nothing in `CROSSING_OUTCOMES` mints a row from
+//      `BROKEN_STATUSES`, and nothing should be added that does.
+//
+//   5  DEATH. The wall was the end of it.
+//
+// Note the symmetry the middle two have with each other, because it is the
+// clearest way to hold the set in mind: 3 and 4 land the person in exactly the
+// same PLACE - previous Perfection, qi spent, road still open - and differ only
+// in what they are carrying afterwards. 1 and 2 land the person in the same
+// place too - the new rung - and differ in whether the road onward is still
+// there. The failures differ in cargo; the successes differ in future.
+//
+// WHERE EACH ONE IS PRODUCED. This file owns 4 and the wound rows behind 2.
+// `breakthrough.ts` owns which of the five happened: `rollArrivesBroken` is
+// consulted on the SUCCESS path and is what separates 1 from 2, and its
+// failure table separates 3 from 4 from 5. Nothing here decides; this module is
+// asked what a failure was made of, and hands back deltas.
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * The five, as data, so a narrator reads them out of a row rather than
+ * inventing the distinction between a broken success and a bad failure - which
+ * is exactly the distinction a narrator is most likely to blur.
+ *
+ * Inert. Nothing here decides anything; `classifyCrossingResult` below is the
+ * only consumer and it only names what already happened.
+ */
+export type CrossingResultKind =
+    | 'clean_success'
+    | 'broken_success'
+    | 'clean_failure'
+    | 'failure_with_sequelae'
+    | 'death';
+
+export const CROSSING_RESULTS: readonly {
+    kind: CrossingResultKind;
+    name: string;
+    /** Factual. Engine-authored, narrator-rendered, like every description here. */
+    description: string;
+}[] = [
+    {
+        kind: 'clean_success',
+        name: 'Across',
+        description:
+            'The crossing took. Anything sustained on the way is an ordinary wound with an ordinary answer, and the road onward is open.'
+    },
+    {
+        kind: 'broken_success',
+        name: 'Across, and finished',
+        description:
+            'The crossing took and the structure it was for did not set. They hold the new rung permanently, and nothing below the rarest medicine in the world opens the road onward again.'
+    },
+    {
+        kind: 'clean_failure',
+        name: 'It did not take',
+        description:
+            'The accumulation was spent and the wall did not open. Nothing is carried away but the loss, and the loss is the years it will take to gather the price a second time.'
+    },
+    {
+        kind: 'failure_with_sequelae',
+        name: 'It did not take, and it left something',
+        description:
+            'The same failure, at the same rung, carrying whatever the wall did on the way past. The structure is intact - there was never one at the rung above to break - and the road onward is still open to somebody who can afford to try again.'
+    },
+    {
+        kind: 'death',
+        name: 'The wall was the end of it',
+        description: 'The attempt was not survived.'
+    }
+] as const;
+
+/**
+ * Name which of the five a crossing was, from what the crossing produced.
+ *
+ * Derived, never stored: everything it reads is already on the result and on
+ * the person, so there is no second field anywhere that could disagree with the
+ * wound list. Takes plain values rather than a `BreakthroughResult` so that
+ * `breakthrough.ts` can keep importing this module and not the other way about.
+ */
+export function classifyCrossingResult(result: {
+    succeeded: boolean;
+    survived: boolean;
+    /** The break this crossing left, from `rollArrivesBroken`. Only ever on a success. */
+    brokenStatus?: string | null;
+    /** Wounds this crossing produced. Only their presence is read. */
+    injuriesSustained?: readonly Injury[];
+}): CrossingResultKind {
+    if (!result.survived) return 'death';
+    if (result.succeeded) {
+        return result.brokenStatus ? 'broken_success' : 'clean_success';
+    }
+    return (result.injuriesSustained?.length ?? 0) > 0 ? 'failure_with_sequelae' : 'clean_failure';
+}
+
+/** The authored row for a result kind. Total - every kind has one. */
+export function getCrossingResult(kind: CrossingResultKind) {
+    return CROSSING_RESULTS.find(r => r.kind === kind)!;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE TRIALS
