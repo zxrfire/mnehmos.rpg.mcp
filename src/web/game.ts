@@ -9806,6 +9806,43 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
         if (typeof body.note === 'string') lines.push(body.note);
     }
 
+    // ── a petition, and how far it actually got ──
+    //
+    // `sect_politics.petition` returns where it went, how far up it climbed,
+    // every stop on the way, what asking is like in that house's own terms and
+    // when an answer might come - and none of it reached the player, because
+    // this function had no branch for it. Petitioning a sect came back as "It
+    // is done. Nothing about it drew attention.", which is the last-resort line
+    // this file already calls out as a defect: a sentence about the software,
+    // shipped to somebody who had just asked an institution for something.
+    //
+    // Found by playing. Same shape as combat and the work board before them.
+    if (body.petitioned === true) {
+        const from = body.from as { name?: string } | undefined;
+        const stops = typeof body.chainLength === 'number' ? body.chainLength : null;
+        const reached = typeof body.reachedTier === 'string' ? body.reachedTier : null;
+
+        lines.push(
+            `Put to ${from?.name ?? 'them'}`
+            + `${stops !== null ? `, and passed along ${stops === 1 ? 'once' : `${stops} times`}` : ''}`
+            + `${reached ? `, reaching ${reached}` : ''}.`
+        );
+        // The house's own account of what asking is like. Written in the
+        // world's voice by the tool layer, so it goes through as it stands.
+        if (typeof body.whatAskingIsLike === 'string') lines.push(body.whatAskingIsLike);
+        if (typeof body.howLong === 'string') lines.push(body.howLong);
+
+        // A petition that travelled learned you names on the way, which is the
+        // one thing a player takes from it whatever the answer.
+        const learned = body.namesLearned;
+        if (Array.isArray(learned) && learned.length > 0) {
+            lines.push(
+                `Names picked up passing it along: ${learned.map(n => String(n)).join(', ')}.`
+            );
+        }
+        if (typeof body.note === 'string') lines.push(body.note);
+    }
+
     if (body.paid === true) {
         const payingSect = body.sect as { name?: string } | undefined;
         const stones = typeof body.spiritStonesPaid === 'number' ? body.spiritStonesPaid : 0;
