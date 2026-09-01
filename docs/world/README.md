@@ -56,6 +56,7 @@ converge on `NARRATOR-CORE.md`.
 | [`NARRATOR-CORE.md`](NARRATOR-CORE.md) | The always-loaded core: authority, permadeath, qi, register | 1 |
 | [`qi.md`](qi.md) | Qi, spiritual veins, regional density, thin-region ceilings, contested qi, spirit stones | 1 and 2 |
 | [`the-late-age.md`](the-late-age.md) | The aged world, depletion and monopoly, ruins, what survives, the texture to aim for | 2 |
+| [`ancient.md`](ancient.md) | Authoring guide: the ancient tier. Modern is elemental and ancient is categorical; the three kinds of absence; what an ancient art costs and who can pay it; the thousand-year medicine | 2 |
 | [`sects.md`](sects.md) | Sects as political institutions, factions, succession, ancestral records, dormant and ascended ancestors, the standing powers | 2 |
 | [`dao-houses.md`](dao-houses.md) | The ancient houses, specialisation without ownership, civil authority, counters and blind spots, rewritten histories | 2 |
 | [`economy.md`](economy.md) | Scarcity, resources, spirit stones, provenance, possession and ownership and claim, trade, graves, inheritances | 2 |
@@ -99,3 +100,4 @@ authority on the ladder's bounds; the catalogs are the authority on their own si
 - [discovery.md](discovery.md) - how the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of.
 - [asking.md](asking.md) - who you ask and what you say; genuine ignorance versus deflection, the right words, and why the player rather than the character is what improves across runs.
 - [origin.md](origin.md) - where you were born and what it was worth; privilege buys inputs and never rank, and the children of great houses mostly fail anyway.
+- [escapes.md](escapes.md) - what a capped cultivator does next; the nine routes past a manual's ceiling, who each one is open to, and what every layer must supply to make them playable.

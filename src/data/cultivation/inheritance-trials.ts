@@ -886,6 +886,12 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             prize: {
                 techniqueIds: [
                     'nameless-witness-stance',
+                    // The art that makes a person act, in the one room in the
+                    // world whose whole subject is what a person said and
+                    // whether they meant it. Whoever put the log here also
+                    // left the thing that would have made the log worthless,
+                    // and did not explain the pairing.
+                    'sixteen-thread-command',
                     // The wide-span treasure, and the only door onto it.
                     //
                     // It is here rather than anywhere else because the gates
@@ -1145,7 +1151,13 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'By the ground, and only by the ground. Nothing on this site is hostile, nothing is concealed and nothing was set for anybody: a claimant walks in, begins reading, spends at a rate they have not budgeted for because the ring gives nothing back, and sits down. Six bodies have been recovered inside the ring in four hundred years and every one of them was found sitting, upright, facing a stone, at a distance from the line they could have walked twice over on the morning they arrived.',
             prize: {
-                techniqueIds: ['calamity-word-of-the-open-sky'],
+                techniqueIds: [
+                    'calamity-word-of-the-open-sky',
+                    // Four faces looking inward, and the art in the room with
+                    // them is the one for making a second body. Whoever set
+                    // this did not think that needed explaining.
+                    'hollow-second-body'
+                ],
                 other: [
                     'Four names, four dates and four ranks at the moment of attempt, cut small at the foot of each face, which is a better record of what the last crossing takes than anything the Long Cut has ever published.',
                     'The plain fact that the four hands agree, which is worth more to the House of Held Names than the art is, and which the Long Cut would prefer stayed on the stones.'
@@ -1374,6 +1386,13 @@ export const GRAVES: readonly Grave[] = [
             gateOrigin: 'accreted',
             contents: [
                 {
+                    what: 'A second slip in his left hand, unremarked in every account of the site, on a method for taking a piece of ground out of the world for an hour. It is the more useful of the two and nobody has ever mentioned it.',
+                    proven: true,
+                    survived: 'The tribulation that ended him, in his closed left hand, which is the only warranty any object in this world can carry and is one no forge can issue.',
+                    techniqueId: 'sealed-field-of-the-shut-hour',
+                    immortalItemId: null
+                },
+                {
                     what: 'A jade slip in his right hand, whole, containing a chaos-grade art that no institution below the Lid can transmit and that the Ledger\'s own index does not list.',
                     proven: true,
                     survived: 'The tribulation at the last mortal boundary, in a closed hand, which is a warranty nobody in either province can issue about anything and the reason a single slip off this scar is worth more than the eleven-man haul out of a maintained interment.',
@@ -1429,6 +1448,13 @@ export const GRAVES: readonly Grave[] = [
             ],
             gateOrigin: 'placed',
             contents: [
+                {
+                    what: 'A manual at the back of the vault, older than the clan, describing how to put spears into the ground out of nothing - which the clan has held for four hundred years without a single member ever having had the rung to open it.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: 'thousand-spear-summoning',
+                    immortalItemId: null
+                },
                 {
                     what: 'His working tools, complete, which are a forge master\'s and are the best set anybody in the province has seen.',
                     proven: false,
@@ -1530,6 +1556,13 @@ export const GRAVES: readonly Grave[] = [
             gateOrigin: 'placed',
             contents: [
                 {
+                    what: 'A slim ancient volume kept separately from the notebooks, on a method for moving vitality out of one body and into another, with her own annotations arguing against it in the margins of every page.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: 'vessel-borrowing-palm',
+                    immortalItemId: null
+                },
+                {
                     what: 'Eleven years of working notebooks in a shorthand she invented, in order, with the year-five change of subject clearly marked.',
                     proven: false,
                     survived: null,
@@ -1609,6 +1642,13 @@ export const GRAVES: readonly Grave[] = [
             ],
             gateOrigin: 'accreted',
             contents: [
+                {
+                    what: 'A folded manual in the bottom of the kit, kept with the tools rather than with the valuables, in a hand and a vocabulary that is not modern. He had it for thirty years and used it as equipment.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: 'hundred-pace-step',
+                    immortalItemId: null
+                },
                 {
                     what: 'A full deep-diving kit, thirty years old, complete, of the quality a Company Deep Gleaner buys with his own money.',
                     proven: false,

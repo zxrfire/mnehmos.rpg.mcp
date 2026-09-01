@@ -92,6 +92,13 @@ import { ordinaryCapFor } from '../../engine/cultivation/cultivation.js';
  */
 export type TechniqueProvenance = 'taught' | 'ruin' | 'grave' | 'derived';
 
+/**
+ * Which age an art was written in. See `era` on `TechniqueEntry` for why this
+ * is independent of `class` and of `provenance`, and `docs/world/ancient.md`
+ * for what the distinction is for.
+ */
+export type TechniqueEra = 'modern' | 'ancient';
+
 // ─────────────────────────────────────────────────────────────────────────
 // SHOWN OR READ - the rule underneath provenance
 //
@@ -240,6 +247,42 @@ export interface TechniqueEntry extends Technique {
      * of any dependency on the faction catalog.
      */
     fragmentOf: string | null;
+    /**
+     * Which age the art was written in, and it is a SECOND AND INDEPENDENT
+     * AXIS from `class`.
+     *
+     * `class` splits an art by what it is for - a manual you practise to rank
+     * up against a dao art you use to fight. `era` splits it by what kind of
+     * thing it does at all, and the two cut across each other, so all four
+     * quadrants are real and occupied:
+     *
+     *   modern  + cultivation   the elemental ladder every house teaches
+     *   modern  + dao           fire, ice, lightning, and at the top of the
+     *                           ladder something a province still names
+     *   ancient + cultivation   a road with a different bargain: lifespan, or
+     *                           blood, for something the elemental line has no
+     *                           way of asking for
+     *   ancient + dao           spears somebody else can carry; a piece of
+     *                           ground taken out of the world; a second body
+     *
+     * MODERN IS ELEMENTAL AND SCALES. ANCIENT IS CATEGORICAL. Neither is the
+     * stronger; the comparison is not coherent. A cultivator at the top of the
+     * elemental line who becomes lightning is one of the most dangerous things
+     * alive, and a cultivator who can put a spear into twenty other people's
+     * hands has changed what their house can do, and there is no exchange rate
+     * between those. What is forbidden is a strict upgrade - an ancient art
+     * better in every situation - because then the abandonment makes no sense
+     * and the whole tier collapses into "old is stronger".
+     *
+     * Resolved in `art()` from `ANCIENT_TECHNIQUE_IDS`, in the same block as
+     * provenance and surviving copies, so a new entry cannot forget it. The
+     * membership is authored rather than inferred because no property of a row
+     * distinguishes a categorical effect from an elementless modern one - but
+     * the catalog test holds the set to the one thing that IS checkable: an
+     * ancient art is never elemental, because carrying an element is what the
+     * other era does.
+     */
+    era: TechniqueEra;
 }
 
 /**
@@ -287,6 +330,19 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'immovable-heaven-pillar',
     'one-thought-ten-thousand-li',
     'rebirth-in-the-lotus-furnace',
+    // ── the ancient roads ────────────────────────────────────────────────
+    // Written for a richer age, intact, and not taught anywhere, because the
+    // era that could feed them is over and the era that followed built the
+    // elemental line instead. Ruin provenance is the whole of what places
+    // them: no living teacher, copies in sealed sites and in a small number of
+    // very old archives, and nothing about them that a sect could transmit
+    // even if it wanted to. See `docs/world/ancient.md` and `lost-ages.ts`.
+    'hundred-pace-step',
+    'sealed-field-of-the-shut-hour',
+    'thousand-spear-summoning',
+    'vessel-borrowing-palm',
+    'sixteen-thread-command',
+    'hollow-second-body',
     // Above the Lid, and here for the same reason everything else in this list
     // is: no living institution transmits them. The two rungs differ in where
     // the copy is rather than in what kind of thing it is - three faces one man
@@ -443,6 +499,33 @@ export const NO_SURVIVING_COPY_NOTES: Readonly<Record<string, string>> = {
     'word-of-continuance':
         'Attested and unobtainable. What survives is the outcome record and nothing else: a short list of occasions on which somebody standing at the last crossing argued for a death that had already been decided, kept by the parties who were watching rather than by the parties who spoke. Everyone who could perform it was at the top of the ladder with their own crossing still ahead of them, and not one of them wrote the working out, because at that rung the reader they would have been writing for does not exist. There is no manual, no fragment and no site, and a cultivator who reaches the rung the art asks for will find nothing there to read.'
 } as const;
+
+/**
+ * The arts written in the prosperous age.
+ *
+ * Small, and it should stay small: the tier is worth what its scarcity is
+ * worth, and an ancient section the size of the modern one is just a second
+ * catalog. Every member does something with no elemental reading at all - it
+ * moves a resource between bodies, it makes a person act, it puts objects into
+ * the world that somebody else can pick up, it takes ground out of the world,
+ * it makes a second body - and every member costs the practitioner something
+ * they will miss. See `ANCIENT_ARTS` in `lost-ages.ts` for what each one costs
+ * and why the era stopped paying it.
+ *
+ * The set is authored rather than derived, for the reason on the `era` field:
+ * nothing about a row distinguishes a categorical effect from an elementless
+ * modern one. What the catalog test DOES enforce is the half that is
+ * checkable - no member of this set carries an element - because an art with a
+ * fire in it is doing the thing the other era does.
+ */
+export const ANCIENT_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
+    'hundred-pace-step',
+    'sealed-field-of-the-shut-hour',
+    'thousand-spear-summoning',
+    'vessel-borrowing-palm',
+    'sixteen-thread-command',
+    'hollow-second-body'
+]);
 
 const SOURCE_NOTES: Record<TechniqueProvenance, string> = {
     taught: 'Transmitted by at least one living sect. A teacher exists and can be paid, joined, or robbed.',
@@ -808,6 +891,10 @@ function art(
         // copies are, so a new entry cannot forget them.
         volumes: SCATTERED_MANUAL_VOLUMES[t.id] ? [...SCATTERED_MANUAL_VOLUMES[t.id]] : null,
         derivable: DERIVABLE_TECHNIQUE_IDS.has(t.id),
+        // Same block as provenance and surviving copies, and for the same
+        // reason: a hundred and some entries, and none of them has to
+        // remember. See `ANCIENT_TECHNIQUE_IDS`.
+        era: ANCIENT_TECHNIQUE_IDS.has(t.id) ? 'ancient' : 'modern',
         opening: t.opening ?? null,
         // The road the art is on. Defaults from the category, so the ninety
         // entries that never named one still answer the question, and an
@@ -2240,6 +2327,136 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         cooldown: 10,
         description:
             'Spends years off the end of the user\'s own allotted lifespan as ammunition. At Tribulation Transcendence there is a great deal of lifespan to spend, and cultivators who reach the tribulation with this art rarely have enough left to survive it.'
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // THE ANCIENT ROADS - categorical, costly, and frequently the wrong
+    // thing to be holding
+    //
+    // The axis is CATEGORICAL versus ELEMENTAL, and it is the spine of
+    // `docs/world/ancient.md`. Everything above this block is elemental or is
+    // the elementless refinement of an elemental idea: fire, ice, wind, a
+    // blade, a shield, a step. That line scales to the horizon and nothing
+    // about it is modest - at the top of the ladder it is somebody throwing
+    // lightning from their fingers, or becoming it, and leaving ground a
+    // province still names three hundred years later.
+    //
+    // These six are the other kind, and the difference is not size. Each does
+    // something that no amount of taking an elemental art up the ladder would
+    // produce: it moves a resource between bodies, it makes a person act, it
+    // puts objects into the world that SOMEBODY ELSE CAN PICK UP AND CARRY, it
+    // takes a piece of ground out of the world, it puts you somewhere else, it
+    // makes a second body. None of them is a bigger anything.
+    //
+    // NEITHER SIDE IS THE STRONGER, and the comparison is not coherent. A
+    // cultivator at the top of the elemental line who becomes lightning is one
+    // of the most dangerous things alive; a cultivator who can put a spear into
+    // twenty other people's hands has changed what their house can do. There is
+    // no exchange rate between those and the choice is a use case, not a rank -
+    // an ancient art is sometimes plainly the better thing to be holding and
+    // sometimes plainly useless.
+    //
+    // WHAT IS FORBIDDEN IS A STRICT UPGRADE. An ancient art that is better in
+    // every situation makes the abandonment nonsense, and the whole tier
+    // collapses into "old is stronger". Each entry below therefore states, in
+    // its own description, the situation where the ordinary art at its rung is
+    // the thing you would rather have - and the era that walked away from these
+    // was not being squeamish. It was right about its own circumstances: they
+    // cost more, they were running out of inputs, and they answered questions
+    // that age had stopped being asked.
+    //
+    // The costs are stated in the descriptions, in the idiom the Crimson Tithe
+    // Palm already established, because a cost is content and not a second
+    // mechanic. Nothing in this block adds a rule.
+    // ═══════════════════════════════════════════════════════════════════
+    art({
+        id: 'hundred-pace-step',
+        name: 'Hundred-Pace Step',
+        category: 'movement',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 16,
+        // Nearly the top of the earth band, against about twenty-six for the
+        // ordinary movement art at this ordinal. It is expensive because it is
+        // not a fast way of running; it is not running.
+        qiCost: 46,
+        damage: null,
+        cooldown: 4,
+        description:
+            'The user is somewhere else, about a hundred paces off, without having crossed the distance. Ordinary qinggong at this rung is faster over any journey, cheaper, and can be done all day; this can be done four or five times before the user starts coughing, and each use takes a little off the far end of their life. What it is for is the hundred paces that cannot be crossed - a closed gate, a collapsed shaft, the far side of a formation, a room with one door and somebody standing in it.'
+    }),
+    art({
+        id: 'sealed-field-of-the-shut-hour',
+        name: 'Sealed Field of the Shut Hour',
+        category: 'defense',
+        grade: 'heaven',
+        element: null,
+        requiredOrdinal: 26,
+        qiCost: 128,
+        damage: null,
+        cooldown: 10,
+        description:
+            'Takes a piece of ground out of the world for an hour. Nothing enters it, nothing leaves it, and nothing outside it can be reached from within - no messenger, no formation, no ally, no retreat. It is not a shield and it will not stop anything already standing inside with you, which is the mistake people make about it: raised badly it is a way of being alone with a stronger opponent and no road out. The coating the working needs comes off a fern that stopped growing eleven hundred years ago, so each raising spends a measure of something nobody can replace.'
+    }),
+    art({
+        id: 'thousand-spear-summoning',
+        name: 'Thousand-Spear Summoning',
+        category: 'attack',
+        grade: 'immortal',
+        element: null,
+        requiredOrdinal: 31,
+        // Against the ordinary immortal art at this exact ordinal - twelve
+        // dice of twelve plus forty-five, at a hundred and ninety qi, on a
+        // four-round cooldown. This does less, costs more and waits longer.
+        qiCost: 320,
+        damage: '9d10+25',
+        cooldown: 6,
+        description:
+            'Spears. Real ones, of a metal nobody smelts, standing in the ground where they fall and remaining there. As a way of hurting one person it is plainly worse than the elemental arts of its own rung and every practitioner knows it. What it is for is that the spears are still there afterwards: they hold a line, they close a road, they can be pulled out of the ground and handed to somebody, and a wall of them across a valley is a thing no fire art of any grade has ever left behind. The user pays in blood, at the moment of the summoning, and it does not come back quickly.'
+    }),
+    art({
+        id: 'vessel-borrowing-palm',
+        name: 'Vessel-Borrowing Palm',
+        category: 'attack',
+        grade: 'heaven',
+        element: null,
+        requiredOrdinal: 24,
+        qiCost: 110,
+        damage: '5d8+10',
+        cooldown: 5,
+        description:
+            'Takes vitality out of the person struck and puts it into the person striking. Nothing in the modern catalogue moves a resource between two bodies at all, which is the whole of what it is; as a way of winning a fight it is worse than the ordinary heaven-grade palm at the same rung, which hits harder for less qi on a shorter cooldown. What it buys is fights you should not have survived. The borrowing does not settle cleanly - what is taken sits badly, and the taker is a little less able to hold what is theirs each time they do it.'
+    }),
+    art({
+        id: 'sixteen-thread-command',
+        name: 'Sixteen-Thread Command',
+        category: 'attack',
+        grade: 'immortal',
+        element: null,
+        requiredOrdinal: 33,
+        qiCost: 340,
+        damage: null,
+        cooldown: 9,
+        description:
+            'Makes a person do something. Not persuasion and not illusion: the body acts and the person inside it watches. It does no damage, cannot be used twice in a fight worth the name, and against anybody within a rung of the user it usually fails outright - so as a weapon it is poor and unreliable. As a problem for a world that runs on oaths, testimony and witnessed agreement it is close to unanswerable, which is why the era that could use it stopped, and why every institution that keeps a treaty vault has an opinion about it. Each use costs the user a measure of their own span, and the measure gets larger the more of them there have been.'
+    }),
+    art({
+        // THE CLONE, and it is the entry where the material requirement stops
+        // needing to be argued for. A second body is not a bigger anything; it
+        // is a categorical impossibility for the elemental line, and a reader
+        // supplies the judgement that of course it would consume something
+        // extraordinary without the catalog having to say so.
+        id: 'hollow-second-body',
+        name: 'Hollow Second Body',
+        category: 'support',
+        grade: 'immortal',
+        element: null,
+        requiredOrdinal: 35,
+        qiCost: 348,
+        damage: null,
+        cooldown: 12,
+        description:
+            'A second body, standing where it was made, doing what the practitioner does. It is not a duplicate and it is not the person: it holds nothing of what they know, cannot be left alone with a decision, and what it feels is not reported back. What it can do is be in a second place, which is a thing no art of the elemental line has ever offered at any rung. It is also, obviously and immediately, a question every house and every oath has to answer about the person who made it - whether the thing that signed is the thing that swore - and no two houses have answered it the same way. Making one consumes a lotus that stopped growing before any institution now standing was founded, and the practitioner does not get back what the making takes out of them.'
     }),
 
     // ═══════════════════════════════════════════════════════════════════

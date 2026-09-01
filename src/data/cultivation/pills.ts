@@ -640,6 +640,55 @@ export const PILLS: readonly Pill[] = [
         value: 880_000,
         description:
             'Three thousand years, refined with a chaos seed, at a toxicity that has killed the recipient outright on at least one recorded occasion. It is still bought.'
+    },
+    {
+        // THE THOUSAND-AUTUMN PILL, and it is a pill.
+        //
+        // The question of whether the setting's most significant object should
+        // be a pill, an artifact or a third kind of thing was settled by
+        // AGENTS.md before it was asked: no parallel catalogs for important
+        // things. `extend_lifespan` already existed, the lifespan ladder
+        // already ran five, twenty, a hundred, five hundred and three thousand
+        // years, and a sixth rung of an existing ladder is a row. An "immortal
+        // medicines" table beside this one is the exact mistake that rule
+        // exists to prevent, and the rung the object sits on is legible only
+        // because it is in the same column as the Decade-Lengthening Pill.
+        //
+        // WHAT MAKES IT REMARKABLE IS NOT THE NUMBER. It is not even the
+        // largest lifespan figure in this catalog - the Immortal Longevity
+        // Pill above it is three times as long. It is different in kind on two
+        // ordinary fields:
+        //
+        //   toxicity 0   Every other rung of this ladder is a bargain. Twenty
+        //                years at a toxicity that makes the third dose worth
+        //                nothing; three thousand at a toxicity that has killed
+        //                the recipient. This one costs the taker nothing at
+        //                all, at any rung, and no living alchemist can explain
+        //                how, because the method is in `recipes.ts` and the
+        //                ingredient is not in the world.
+        //   value        The band ceiling. It is the most valuable object the
+        //                pill catalog can price, and it is not for sale
+        //                anywhere, by anyone, at any figure.
+        //
+        // A FLAT THOUSAND AT ANY LEVEL, and that flatness is the whole design.
+        // Nothing here branches on the taker's ordinal, because nothing needs
+        // to: a thousand years is a rounding error to somebody with a century
+        // of ambition and it is decisive to somebody at the top of the ladder
+        // looking at a crossing that consumes tens of thousands of years of
+        // their allotted span. The object prices itself against the taker's
+        // own situation without a single line of code knowing who they are.
+        //
+        // See `lost-ages.ts` for who is holding one, who has spent theirs, and
+        // why no more are coming.
+        id: 'pill-thousand-autumn',
+        name: 'Thousand-Autumn Pill',
+        grade: 'chaos',
+        effect: 'extend_lifespan',
+        potency: 1_000,
+        toxicity: 0,
+        value: 1_000_000,
+        description:
+            'A thousand years, flat, to anybody who swallows it, and it does no harm on the way in. The formula survives complete and is not even secret; the flower it is refined from stopped growing before any institution now standing was founded, so every one still in the world was made in an age that could make them, and nobody is counting up.'
     }
 ] as const;
 

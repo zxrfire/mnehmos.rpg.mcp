@@ -50,6 +50,15 @@
 
 import type { Sect, SpiritRootKey, TechniqueCategory } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, TRUE_IMMORTAL_ORDINAL } from '../../engine/cultivation/realms.js';
+import {
+    delegatedFrom,
+    getPrefecture,
+    getProvince,
+    prefectureForFaction,
+    provinceForFaction,
+    type Prefecture,
+    type Province
+} from './regions.js';
 
 export interface SectAdmission {
     /** Mirrors `admissionOrdinal`; kept beside the prose so both are visible. */
@@ -4155,4 +4164,94 @@ export function formationIntegrity(sectId: string): number {
     const sect = requireSect(sectId);
     if (sect.compound.formationNodesTotal === 0) return 0;
     return sect.compound.formationNodesLit / sect.compound.formationNodesTotal;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// TERRITORY
+//
+// The vocabulary existed on one side of the hierarchy and not the other. A
+// court has carried `grantsInRegionId` since it was written; a sect had no
+// field at all saying where it stands, so "the Ashen Forge Clan holds the
+// volcanic flank" was a sentence in a `holds` string and nothing a query could
+// reach. These four functions are that field, on this side.
+//
+// THEY ARE LOOKUPS AND NOT A SECOND COPY, deliberately. `PREFECTURES` in
+// `regions.ts` is the single authority for who holds what ground, and the
+// alternative - a `SECT_TERRITORY` record beside `SECT_ADMISSION` - would have
+// been a second place entitled to an opinion about the same fact, which is
+// exactly the failure `ADVANCEMENT_EFFECTS` was written to end in `pills.ts`.
+// A sect's ground is stated once, in the file that owns ground.
+//
+// `delegatedFromSect` returning null is a real answer and the most interesting
+// one in the catalog: it is what the Azure Cloud Pavilion, the Hollow Court,
+// the Standing Grove, the Clear River Alliance and the Sixmile Wardens have in
+// common, and it is the only thing they have in common. An apex that answers
+// to nobody, an occupation nothing can move, a zone held by a belief, a toll
+// nobody authorised and six people repainting stakes are five completely
+// different reasons for the same empty field.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The prefecture a sect holds, or sits inside as a sub-holder. */
+export function prefectureOfSect(sectId: string): Prefecture | undefined {
+    return prefectureForFaction(sectId);
+}
+
+/** The province a sect's ground is in. */
+export function provinceOfSect(sectId: string): Province | undefined {
+    return provinceForFaction(sectId);
+}
+
+/**
+ * Whose gift a sect's ground is in - a court, an apex, or another sect where
+ * the holding is at one remove. Null where nothing granted it.
+ */
+export function delegatedFromSect(sectId: string): string | null {
+    return delegatedFrom(sectId);
+}
+
+/**
+ * Everything a sect's ground amounts to in one object, including whether the
+ * record and the ground agree. The `discrepancy` is the field worth reading:
+ * per `the-late-age.md` every institution is operating a fraction of what it
+ * inherited, so a holder whose paper and ground read the same is the case that
+ * needs no explanation and the other four are the content.
+ */
+export function territoryOfSect(sectId: string): {
+    province: Province;
+    prefecture: Prefecture;
+    /** True where this sect holds the prefecture rather than sitting in it. */
+    isPrincipalHolder: boolean;
+    delegatedFromId: string | null;
+    onPaper: string;
+    onTheGround: string;
+    discrepancy: Prefecture['discrepancy'];
+} | undefined {
+    const prefecture = prefectureForFaction(sectId);
+    if (!prefecture) return undefined;
+    const province = getProvince(prefecture.provinceId);
+    if (!province) return undefined;
+    const isPrincipalHolder = prefecture.heldByFactionId === sectId;
+    const sub = prefecture.subHoldings.find(s => s.factionId === sectId);
+    return {
+        province,
+        prefecture,
+        isPrincipalHolder,
+        delegatedFromId: delegatedFrom(sectId),
+        // A sub-holder's paper is its own line in the grant, not the
+        // prefecture's; the prefecture's is what its principal holds.
+        onPaper: isPrincipalHolder ? prefecture.onPaper : (sub?.holds ?? prefecture.onPaper),
+        onTheGround: prefecture.onTheGround,
+        discrepancy: prefecture.discrepancy
+    };
+}
+
+/** Every sect standing in a prefecture, holder first. */
+export function sectsSeatedIn(prefectureId: string): SectEntry[] {
+    const prefecture = getPrefecture(prefectureId);
+    if (!prefecture) return [];
+    const ids = [
+        ...(prefecture.heldByFactionId ? [prefecture.heldByFactionId] : []),
+        ...prefecture.subHoldings.map(s => s.factionId)
+    ];
+    return ids.map(id => getSect(id)).filter((s): s is SectEntry => s !== undefined);
 }
