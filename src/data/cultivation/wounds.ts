@@ -48,6 +48,44 @@
  * rooted heart demon should be told the second thing, and told it out of this
  * table.
  *
+ * ── STRUCTURAL-REPAIR MEDICINE, AND WHY MOST PEOPLE NEVER SEE ANY ────────
+ *
+ * NOT YET BUILT. Specified here because this is the file the wounds it would
+ * answer live in, and because the design point matters more than the item.
+ *
+ * The broken statuses below - a cracked core, an unformed nascent soul, a
+ * failed body joining - each name a pill grade that would repair them. That
+ * medicine is meant to be RARE TO A DEGREE WHERE MOST PEOPLE JUST LIVE WITH IT.
+ * The test is not what a dose costs; it is what fraction of the cultivators
+ * carrying a structural break are ever repaired, and the answer has to be
+ * almost none. If a meaningful share of them get fixed, the medicine is too
+ * available whatever its price in stones.
+ *
+ * That is what makes it an apex advantage, and the advantage is sharper than
+ * affordability: apex clans and Dao houses are very nearly the only places the
+ * stuff EXISTS, so for everybody else the question of paying for it never comes
+ * up. A dose handed to a promising junior is access to an outcome that is
+ * otherwise unavailable at any price, which is why that favour is worth what it
+ * is worth.
+ *
+ * Four grades - mortal, earth, heaven, immortal - matching the scheme every
+ * other consumable uses. The immortal grade is sent down from above the Lid and
+ * cannot be made on this side. Repair reaches ordinal 40 and stops: getting to
+ * 41 is your own effort, helpers are allowed at that crossing and medicine is
+ * not, which is why `unformed-tribulation-body` is the one break with no
+ * treatment behind it at all.
+ *
+ * WHEN IT IS BUILT, THE HIGH GRADES MUST BE TRACKED. `docs/world/items.md`'s
+ * term of art: a heaven- or immortal-grade repair pill is a ROW with a holder
+ * and a provenance, never a fungible count, because where a specific one went
+ * is exactly the sort of thing somebody should be able to find out two
+ * centuries later. Low grades may be counted.
+ *
+ * The population consequence is the point and should be allowed to stand: the
+ * provinces are full of people at every rung who quietly stopped, at an ordinal
+ * far below their age, who do not attempt anything any more and have a reason
+ * nobody asks about.
+ *
  * ── THE TABLE IS EXPECTED TO GROW ────────────────────────────────────────
  *
  * Adding a wound is adding a row. Nothing indexes this table positionally,
