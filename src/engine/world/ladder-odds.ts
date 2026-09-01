@@ -537,6 +537,14 @@ export function measureLadderReach(seed: string, opts: SweepOptions = {}): Sweep
             const eligible = canAttemptBreakthrough({
                 realmOrdinal: ordinal,
                 cultivationProgress: progress,
+                // The wounds have to be here. `attemptBreakthrough` runs this
+                // same gate against the full cultivator, so a check made
+                // against a subject missing a field the gate reads says
+                // "eligible" and is then refused a line later - which is a
+                // throw rather than an outcome. That went unnoticed while every
+                // refusal was about progress; a cultivator halted at a wall
+                // carries the reason in their wound list.
+                injuries,
                 alive: true
             });
             if (!eligible.eligible) break;

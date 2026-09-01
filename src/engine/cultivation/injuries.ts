@@ -24,6 +24,7 @@ import {
     type InjurySeverity,
     type InjurySource
 } from '../../schema/cultivation.js';
+import { getWoundType, isPermanentWound, woundNature } from '../../data/cultivation/wounds.js';
 import type { CultivationRNG } from './rng.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -60,10 +61,24 @@ export interface CreateInjuryParams {
     /** Turn on which the injury was sustained. */
     turn: number;
     /**
-     * Optional override for the factual description. When omitted a default is
-     * composed from severity and source - engine-authored, narrator-rendered.
+     * Optional override for the factual description. When omitted the authored
+     * text from the wound table is used, and failing that a default composed
+     * from severity and source - engine-authored, narrator-rendered throughout.
      */
     description?: string;
+    /**
+     * Which authored wound this is, as a key into `data/cultivation/wounds.ts`.
+     *
+     * Supply it wherever the engine knows what it just did to somebody. It is
+     * what makes the wound a record the narrator reads rather than a phrase it
+     * invents, and it is how a mental wound gets into this list at all - a
+     * heart demon is a row in that table, minted through this same function,
+     * carried in this same array.
+     *
+     * Omitted is legitimate and means an ordinary wound of its severity, which
+     * is what every wound the engine minted before the table existed was.
+     */
+    woundType?: string | null;
 }
 
 /**
@@ -79,15 +94,24 @@ export interface CreateInjuryParams {
  */
 export function createInjury(params: CreateInjuryParams, rng: CultivationRNG): Injury {
     const weights = INJURY_WEIGHTS[params.severity];
+    const woundType = params.woundType ?? null;
+    // The authored row wins over the composed default, and an explicit
+    // description wins over both - a caller that knows the specifics (which
+    // strike, which channel) is saying something the table cannot.
+    const authored = getWoundType(woundType);
     return {
         id: rng.uuid(),
         severity: params.severity,
         source: params.source,
-        description: params.description ?? defaultInjuryDescription(params.severity, params.source),
+        description:
+            params.description ??
+            authored?.description ??
+            defaultInjuryDescription(params.severity, params.source),
         sustainedOnTurn: Math.max(0, Math.floor(params.turn)),
         treated: false,
         cultivationPenalty: weights.cultivationPenalty,
-        breakthroughPenalty: weights.breakthroughPenalty
+        breakthroughPenalty: weights.breakthroughPenalty,
+        woundType
     };
 }
 
@@ -145,6 +169,53 @@ export function untreatedInjuryCount(injuries: readonly Injury[]): number {
     return count;
 }
 
+/**
+ * Untreated wounds that are actually still OPEN - the ones the bleed-out clock
+ * is about.
+ *
+ * A permanent wound is untreated for life by definition: nothing closes a
+ * severed meridian or a rooted heart demon, so `treated` stays false forever
+ * and the wound goes on costing, correctly. What it must not do is push
+ * somebody into the three-untreated-wounds state that kills them, because that
+ * state is "you are bleeding and nobody has stopped it" and a maiming is not
+ * that. Counted the old way, a cultivator who came out of the Deity
+ * Transformation wall maimed, half mad and short a span would have had ninety
+ * days to live - from three conditions none of which is a bleed.
+ *
+ * So the ratchet keeps its teeth on open wounds and stops charging rent on
+ * permanent ones. `aggregateInjuryPenalties` deliberately still counts them:
+ * they are supposed to make everything harder forever. Only the CLOCK skips
+ * them.
+ */
+export function bleedingInjuryCount(injuries: readonly Injury[]): number {
+    let count = 0;
+    for (const injury of injuries) {
+        if (injury.treated) continue;
+        if (isPermanentWound(injury.woundType)) continue;
+        count++;
+    }
+    return count;
+}
+
+/** Untreated wounds of a given nature. The mental half is the new one. */
+export function woundsOfNature(
+    injuries: readonly Injury[],
+    nature: 'physical' | 'mental'
+): Injury[] {
+    return injuries.filter(i => woundNature(i.woundType) === nature);
+}
+
+/**
+ * Whether this person carries a wound nothing in the world closes.
+ *
+ * The predicate the world layer wants when it asks "is this somebody who was
+ * ruined by a crossing rather than merely hurt recently", and the one a
+ * narrator should consult before writing anybody as recovering.
+ */
+export function hasPermanentWound(injuries: readonly Injury[]): boolean {
+    return injuries.some(i => isPermanentWound(i.woundType));
+}
+
 export interface InjuryPenalties {
     /** Fraction of cultivation rate lost, in [0, MAX_INJURY_CULTIVATION_PENALTY]. */
     cultivationPenalty: number;
@@ -153,8 +224,14 @@ export interface InjuryPenalties {
     untreatedCount: number;
     /** Multiplier form of `cultivationPenalty`, ready to fold into a rate. */
     cultivationMultiplier: number;
-    /** True once the count reaches the lethal-if-you-fight threshold. */
+    /**
+     * True once the count of OPEN wounds reaches the lethal-if-you-fight
+     * threshold. Permanent wounds are excluded - they cost forever and they are
+     * not a bleed. See `bleedingInjuryCount`.
+     */
     lethalThresholdReached: boolean;
+    /** Untreated wounds nothing in the world closes. They never stop costing. */
+    permanentCount: number;
 }
 
 /**
@@ -167,10 +244,17 @@ export function aggregateInjuryPenalties(injuries: readonly Injury[]): InjuryPen
     let cultivation = 0;
     let breakthrough = 0;
     let untreatedCount = 0;
+    let permanentCount = 0;
+    let bleedingCount = 0;
 
     for (const injury of injuries) {
         if (injury.treated) continue;
         untreatedCount++;
+        // Permanent wounds are priced exactly like open ones - they are
+        // supposed to make everything harder for the rest of the life. They
+        // are only held back from the bleed clock.
+        if (isPermanentWound(injury.woundType)) permanentCount++;
+        else bleedingCount++;
         cultivation += injury.cultivationPenalty;
         breakthrough += injury.breakthroughPenalty;
     }
@@ -182,8 +266,9 @@ export function aggregateInjuryPenalties(injuries: readonly Injury[]): InjuryPen
         cultivationPenalty,
         breakthroughPenalty,
         untreatedCount,
+        permanentCount,
         cultivationMultiplier: 1 - cultivationPenalty,
-        lethalThresholdReached: untreatedCount >= LETHAL_UNTREATED_INJURIES
+        lethalThresholdReached: bleedingCount >= LETHAL_UNTREATED_INJURIES
     };
 }
 
@@ -198,7 +283,7 @@ export function aggregateInjuryPenalties(injuries: readonly Injury[]): InjuryPen
  * clock. `evaluateDeathConditions` decides both.
  */
 export function isLethalInjuryState(cultivator: Pick<Cultivator, 'injuries'>): boolean {
-    return untreatedInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES;
+    return bleedingInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -372,10 +457,26 @@ export function scarRateMultiplier(injuries: readonly Injury[]): number {
 // Pure: every function returns a new array; the input is never mutated.
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Mark one injury treated by id. Unknown ids are a no-op, not an error. */
+/**
+ * Mark one injury treated by id. Unknown ids are a no-op, not an error.
+ *
+ * A PERMANENT WOUND IS NEVER TREATED, and refusing it here rather than in the
+ * callers is what makes the wound table's word good. Every permanent row says
+ * in its own `treatment` field that nothing in the world closes it - a parted
+ * meridian, a ruined dantian, a rooted heart demon - and a treatment path that
+ * quietly closed one anyway would make that text a decoration.
+ *
+ * It also had teeth beyond the prose: `isHalted` reads an untreated ruined
+ * dantian, so a healer being handed enough money could have undone a permanent
+ * bar by accident. Caught by the ceiling sweep, which heals everything it can
+ * every iteration and would have walked a halted cultivator straight back onto
+ * the ladder.
+ */
 export function treatInjury(injuries: readonly Injury[], injuryId: string): Injury[] {
     return injuries.map(injury =>
-        injury.id === injuryId && !injury.treated ? { ...injury, treated: true } : injury
+        injury.id === injuryId && !injury.treated && !isPermanentWound(injury.woundType)
+            ? { ...injury, treated: true }
+            : injury
     );
 }
 
@@ -394,6 +495,11 @@ export function treatWorstInjury(injuries: readonly Injury[]): TriageResult {
     let worst: Injury | null = null;
     for (const injury of injuries) {
         if (injury.treated) continue;
+        // Not a candidate for triage at all. Spending a pill on a severed
+        // meridian is not a worse use of the pill than spending it on a tear -
+        // it is not a use of it, and picking it as "the worst one" would waste
+        // the pill and leave the tear open. See `treatInjury`.
+        if (isPermanentWound(injury.woundType)) continue;
         if (
             worst === null ||
             severityRank(injury.severity) > severityRank(worst.severity) ||

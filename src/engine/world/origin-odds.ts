@@ -666,6 +666,13 @@ export function simulateLife(
             cultivationProgress: progress,
             spiritRoot: root.key,
             insights,
+            // The same subject the attempt below is made with. `attemptBreakthrough`
+            // runs this gate again against the full cultivator, so checking it
+            // here against a subject that omits a field the gate reads reports
+            // "eligible" and then throws a line later. Harmless while every
+            // refusal was about progress; a cultivator halted at a wall carries
+            // the reason in their wound list.
+            injuries,
             alive: true
         });
         if (!gate.eligible) {

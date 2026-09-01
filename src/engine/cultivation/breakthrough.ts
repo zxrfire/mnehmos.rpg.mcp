@@ -70,6 +70,7 @@ import {
     type RealmKey
 } from './realms.js';
 import { getSpiritRoot, type SpiritRootGrade } from './spirit-roots.js';
+import { getWoundType } from '../../data/cultivation/wounds.js';
 import { readManual } from './manual-quality.js';
 import { ambientBreakthroughMod } from './ambient.js';
 import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
@@ -81,6 +82,16 @@ import {
     type FoundationConditions
 } from './foundation.js';
 import { evaluateToll, isTolled, type TollConditions } from './toll.js';
+import {
+    BROKEN_STATUS_STRAIN,
+    brokenStatusOf,
+    brokenStatusRepairedBy,
+    resolveCrossingFailure,
+    rollArrivesBroken,
+    trialForOrdinal,
+    type CrossingConsequence,
+    type TrialKind
+} from './what-goes-wrong-at-a-realm-boundary.js';
 import {
     bottleneckSubstitution,
     understandingEffects,
@@ -801,7 +812,7 @@ export interface EligibilityCheck {
  */
 export function canAttemptBreakthrough(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'alive'> &
-        Partial<Pick<Cultivator, 'immortalStatus' | 'spiritRoot' | 'insights'>>,
+        Partial<Pick<Cultivator, 'immortalStatus' | 'spiritRoot' | 'insights' | 'injuries'>>,
     ctx: Pick<BreakthroughContext, 'ranksGainedThisTurn' | 'relevance'> = {}
 ): EligibilityCheck {
     const required = progressRequiredForOrdinal(cultivator.realmOrdinal);
@@ -847,6 +858,19 @@ export function canAttemptBreakthrough(
     if ((ctx.ranksGainedThisTurn ?? 0) >= MAX_RANKS_PER_TURN) {
         return { eligible: false, reason: 'rank_cap_reached_this_turn', ...base };
     }
+    // NOTE: a broken status is deliberately NOT a gate here.
+    //
+    // Trying to advance on a broken foundation or a cracked core is suicidal,
+    // and suicidal is not the same as forbidden. The engine lets them strike;
+    // what stops people is the arithmetic, which `BROKEN_STATUS_STRAIN` makes
+    // appalling and `computeBreakthroughOdds` itemises before anybody commits.
+    // The correct play is to stop and live out a long life at the rung, and
+    // that has to be a decision somebody can refuse to take rather than a
+    // refusal the engine hands them - the same reason `assessLastCrossing`
+    // exists instead of the engine declining the last crossing on your behalf.
+    //
+    // And the desperate path is not merely survivable, it is curative: clearing
+    // a crossing while carrying the status removes it. See THE CRUCIBLE below.
     if (required === null || available < required) {
         return { eligible: false, reason: 'insufficient_progress', ...base };
     }
@@ -991,9 +1015,9 @@ export function computeBreakthroughOdds(
     const ordinal = cultivator.realmOrdinal;
     const boundary = isRealmBoundary(ordinal);
     const root = getSpiritRoot(cultivator.spiritRoot);
-    const injuries = aggregateInjuryPenalties(cultivator.injuries);
+    const injuries = aggregateInjuryPenalties(cultivator.injuries ?? []);
     const foundation = foundationOf(cultivator);
-    const tempering = scarTempering(cultivator.injuries);
+    const tempering = scarTempering(cultivator.injuries ?? []);
     const understanding = understandingEffects(cultivator.insights ?? [], {
         rootElements: getSpiritRoot(cultivator.spiritRoot).elements,
         techniqueElement: ctx.relevance?.techniqueElement ?? null,
@@ -1014,6 +1038,15 @@ export function computeBreakthroughOdds(
 
     if (isLastCrossing(ordinal)) {
         modifiers.push({ source: 'last_crossing_strain', delta: LAST_CROSSING_STRAIN });
+    }
+
+    // Striking on a structure that did not set. Booked as its own enormous line
+    // so a player weighing it sees exactly what it costs before committing -
+    // the attempt is legal, it is suicidal, and the ledger is where that gets
+    // said. Success would repair the break; almost nothing succeeds.
+    const brokenStatus = brokenStatusOf(cultivator.injuries ?? []);
+    if (brokenStatus) {
+        modifiers.push({ source: `broken:${brokenStatus}`, delta: BROKEN_STATUS_STRAIN });
     }
 
     modifiers.push({
@@ -1212,7 +1245,7 @@ export function attemptBreakthrough(
     }
 
     if (!succeeded) {
-        return resolveFailure(ctx, { fromOrdinal, required, odds, roll });
+        return resolveFailure(cultivator, ctx, { fromOrdinal, required, odds, roll });
     }
 
     // ── Success path. Tribulation ordinals still have to survive the sky. ──
@@ -1268,6 +1301,41 @@ function finishSuccess(
         foundationHint = ` ${assessment.narrationHint}`;
     }
 
+    // ── Did the crossing land clean? ──
+    //
+    // The success side of the boundary trial, and the half the whole design is
+    // actually for: a cultivator who CROSSED and can never cross again. They
+    // are at the new rung. They made it. They are finished.
+    //
+    // One sample on every boundary crossing, whatever it decides, so the stream
+    // stays aligned. Not rolled on a sub-rank step, and not on the last
+    // crossing - 44 lands on its own two rungs and has its own answer.
+    // ── The crucible. ──
+    //
+    // A crossing cleared while carrying a repairable break REPAIRS it. The same
+    // pressure that failed to seat the structure is the only thing that reseats
+    // it, which is what makes the suicidal attempt tempting to somebody with
+    // nothing left. Legend-rare, because `BROKEN_STATUS_STRAIN` puts the
+    // attempt at the floor - but when it lands, it lands.
+    //
+    // Reported rather than applied: the caller drops the wound with
+    // `clearBrokenStatus`, the same way it applies every other delta here.
+    const brokenStatusCleared = brokenStatusRepairedBy(cultivator.injuries ?? []);
+
+    const brokenInjuries: Injury[] = [];
+    let brokenStatus: string | null = null;
+    if (isRealmBoundary(fromOrdinal) && !isLastCrossing(fromOrdinal)) {
+        brokenStatus = rollArrivesBroken(fromOrdinal, ctx.rng, foundationOf(cultivator));
+        if (brokenStatus) {
+            brokenInjuries.push(
+                createInjury(
+                    { severity: 'crippling', source: 'failed_breakthrough', turn: ctx.turn, woundType: brokenStatus },
+                    ctx.rng
+                )
+            );
+        }
+    }
+
     // ── The price of the crossing, if this one is charged. ──
     // Never on a sub-rank step. Always on a boundary, whether or not the caller
     // remembered to supply candidates - the crossing does not wait to be ready.
@@ -1295,7 +1363,7 @@ function finishSuccess(
         finalChance: odds.finalChance,
         modifiers: odds.modifiers,
         roll: frame.roll,
-        injuriesSustained: frame.injuries,
+        injuriesSustained: [...frame.injuries, ...brokenInjuries],
         progressConsumed: frame.required,
         tribulation: frame.tribulation,
         toll,
@@ -1303,12 +1371,26 @@ function finishSuccess(
         // Only the last crossing confers a status, and it does not route
         // through here - it has its own resolution.
         immortalStatusGained: null,
+        // Lightning and successful crossings are authored elsewhere; the
+        // boundary trial table is only consulted for a survived failure.
+        crossing: null,
+        arrivedBroken: brokenStatus,
+        brokenStatusCleared,
         narrationHint:
             `Breakthrough succeeded: ${rankName(fromOrdinal)} to ${rankName(toOrdinal)}` +
             `${odds.isBoundary ? ', crossing into a new realm' : ''}. ` +
             `Odds were ${(odds.finalChance * 100).toFixed(1)}%.` +
             foundationHint +
-            tollHint
+            tollHint +
+            (brokenStatus
+                ? ` The crossing did not land clean: ${getWoundType(brokenStatus)?.name ?? brokenStatus}. ` +
+                  'They are at the new rung, and striking at the next wall on this would be suicide.'
+                : '') +
+            (brokenStatusCleared
+                ? ` They carried ${getWoundType(brokenStatusCleared)?.name ?? brokenStatusCleared} into this ` +
+                  'and the crossing reseated it. The structure is whole. This is the kind of thing a ' +
+                  'prefecture is still talking about a century later.'
+                : '')
     };
 }
 
@@ -1323,7 +1405,11 @@ interface AttemptFrame {
 // FAILURE
 // ─────────────────────────────────────────────────────────────────────────
 
-function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): BreakthroughResult {
+function resolveFailure(
+    cultivator: BreakthroughSubject,
+    ctx: BreakthroughContext,
+    frame: AttemptFrame
+): BreakthroughResult {
     const lastCrossing = isLastCrossing(frame.fromOrdinal);
     const table = lastCrossing
         ? FAILURE_TABLE.lastCrossing
@@ -1338,8 +1424,65 @@ function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): Breakthr
     else if (severityRoll < table.deviation) outcome = 'failure_deviation';
     else outcome = 'death';
 
+    const wounds = outcome === 'failure_injured' || outcome === 'failure_deviation' || outcome === 'death';
+
+    // ── What KIND of ruin this was. ──
+    //
+    // Consulted only for a SURVIVED, WOUNDING failure at a realm boundary that
+    // is not a tribulation ordinal. Three exclusions, each deliberate:
+    //
+    //   not a stable failure  `failure_stable` means the qi dispersed without
+    //                         damage, and it still does. A trial that attached
+    //                         a heart demon to a clean miss would contradict
+    //                         the narration on the same line.
+    //   not a death           somebody who did not survive the wall is not also
+    //                         half mad. The one thing that happened already
+    //                         happened.
+    //   not lightning         `trialForOrdinal` returns 'heavenly_lightning'
+    //                         for 40-44 and 'none' for a sub-rank step, and
+    //                         `resolveCrossingFailure` hands back a null
+    //                         outcome for both.
+    //
+    // And it REPLACES the generic wound rather than adding to it. Failing a
+    // realm boundary was always where torn meridians came from; the table's job
+    // is to say which wound this particular wall leaves, not to leave two.
+    const trial: TrialKind = trialForOrdinal(frame.fromOrdinal);
+    const consultTrial =
+        wounds && outcome !== 'death' && trial !== 'none' && trial !== 'heavenly_lightning';
+
     const injuries: Injury[] = [];
-    if (outcome === 'failure_injured' || outcome === 'failure_deviation' || outcome === 'death') {
+    let crossing: BreakthroughResult['crossing'] = null;
+    let consequence: CrossingConsequence | null = null;
+
+    if (consultTrial) {
+        const failure = resolveCrossingFailure(
+            {
+                realmOrdinal: frame.fromOrdinal,
+                injuries: cultivator.injuries,
+                foundationQuality: cultivator.foundationQuality,
+                age: cultivator.age
+            },
+            ctx.rng,
+            { turn: ctx.turn }
+        );
+        if (failure.outcome) {
+            consequence = failure.consequence;
+            injuries.push(...failure.consequence.injuries);
+            crossing = {
+                trial: failure.trial,
+                outcome: failure.outcome.key,
+                foundationQuality: failure.consequence.foundationQuality ?? null,
+                yearsBurned: failure.consequence.yearsBurned ?? 0,
+                soulState: failure.consequence.soulState ?? null,
+                identityContinuity: failure.consequence.identityContinuity ?? null,
+                halted: failure.consequence.halted ?? false
+            };
+        }
+    }
+
+    // The generic wound, for every failure the trial table did not speak for:
+    // sub-rank steps, the tribulation ordinals, and death.
+    if (outcome !== 'failure_stable' && injuries.length === 0) {
         const severity = failureInjurySeverity(outcome, frame.odds.isBoundary, ctx.rng);
         injuries.push(
             createInjury(
@@ -1372,8 +1515,28 @@ function resolveFailure(ctx: BreakthroughContext, frame: AttemptFrame): Breakthr
         toll: null,
         foundationEstablished: null,
         immortalStatusGained: null,
-        narrationHint: failureNarration(outcome, frame, injuries)
+        crossing,
+        arrivedBroken: null,
+        brokenStatusCleared: null,
+        narrationHint:
+            failureNarration(outcome, frame, injuries) +
+            (consequence && crossing ? ` ${crossingNarration(crossing)}` : '')
     };
+}
+
+/** Factual account of the ruin, appended to the ordinary failure line. */
+function crossingNarration(crossing: NonNullable<BreakthroughResult['crossing']>): string {
+    const parts: string[] = [];
+    if (crossing.foundationQuality) {
+        parts.push(`The foundation is now ${crossing.foundationQuality}.`);
+    }
+    if (crossing.yearsBurned > 0) {
+        parts.push(`${Math.round(crossing.yearsBurned)} years of the span were spent getting through it.`);
+    }
+    if (crossing.halted) {
+        parts.push('They will not cross another realm boundary.');
+    }
+    return parts.join(' ');
 }
 
 /**
@@ -1459,7 +1622,7 @@ export function tribulationStrikeSurvival(
     cultivator: Pick<Cultivator, 'attributes' | 'injuries'>,
     ambient: AmbientQi
 ): number {
-    const injuries = aggregateInjuryPenalties(cultivator.injuries);
+    const injuries = aggregateInjuryPenalties(cultivator.injuries ?? []);
     const raw =
         TRIBULATION_BASE_SURVIVAL +
         cultivator.attributes.might * 0.02 +
@@ -1519,6 +1682,11 @@ function resolveTribulation(
             toll: null,
             foundationEstablished: null,
             immortalStatusGained: null,
+        // Lightning and successful crossings are authored elsewhere; the
+        // boundary trial table is only consulted for a survived failure.
+        crossing: null,
+        arrivedBroken: null,
+        brokenStatusCleared: null,
             narrationHint:
                 `Heavenly tribulation was not survived: ${failedStrikes} of ${strikes} strikes struck home ` +
                 `(${(perStrike * 100).toFixed(0)}% survival per strike). The cultivator was destroyed by the lightning.`
@@ -1587,7 +1755,7 @@ export function completionChance(
     failedStrikes: number
 ): { chance: number; modifiers: BreakthroughModifier[] } {
     const foundation = foundationOf(cultivator);
-    const injuries = aggregateInjuryPenalties(cultivator.injuries);
+    const injuries = aggregateInjuryPenalties(cultivator.injuries ?? []);
 
     const modifiers: BreakthroughModifier[] = [
         { source: 'base:completion', delta: TRUE_IMMORTAL_BASE_COMPLETION },
@@ -1833,6 +2001,9 @@ function resolveLastCrossing(
             toll,
             foundationEstablished: null,
             immortalStatusGained: 'true_immortal',
+            crossing: null,
+            arrivedBroken: null,
+            brokenStatusCleared: null,
             narrationHint:
                 `${weathered} The crossing completed: ${rankName(MAX_ORDINAL)}. ${toll.narrationHint}`
         };
@@ -1867,6 +2038,9 @@ function resolveLastCrossing(
         toll,
         foundationEstablished: null,
         immortalStatusGained: 'false_immortal',
+        crossing: null,
+        arrivedBroken: null,
+        brokenStatusCleared: null,
         narrationHint:
             `${weathered} The crossing did not complete: ${rankName(FALSE_IMMORTAL_ORDINAL)}, ` +
             `over the Lid and not through it, barred from ever attempting again. ${toll.narrationHint}`

@@ -145,6 +145,15 @@ function perfectLife(seed: string): PerfectLife {
         yearsAtRank += years;
         progress += need;
 
+        // Re-checked with the wounds, against the same subject the attempt is
+        // made with. A crossing can now halt somebody permanently, and a halted
+        // cultivator is refused rather than merely made unlikely - so a loop
+        // that attempts anyway gets a throw instead of an outcome. Stopping
+        // here is the right reading: they are alive, at this rung, and finished.
+        if (!canAttemptBreakthrough({ ...subject, cultivationProgress: progress }).eligible) {
+            return { peak, landing: landingAt(ordinal, attemptedCrossing), attemptedCrossing };
+        }
+
         if (ordinal === LAST_CROSSING_ORDINAL) attemptedCrossing = true;
 
         const r = attemptBreakthrough(
