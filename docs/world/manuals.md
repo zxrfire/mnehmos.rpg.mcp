@@ -124,8 +124,20 @@ choice the ladder offers, and it is available at every boundary.**
 **Then it lands you on the first rung of the next realm, and that is where the `cap` sits.**
 The number in the catalog is not where the paper stops - the paper stopped at Perfection.
 It is where the crossing leaves you standing, which is why complete books cap at 13, 17, 21,
-25, 29, 33 and 37 rather than at 12, 16 and 20. The realms run 0-12, 13-16, 17-20, 21-24,
-25-28, 29-32, 33-36, 37-40 and 41-44.
+25, 29, 33, 37, 41 and 45 rather than at 12, 16 and 20. The realms run 0-12, 13-16, 17-20,
+21-24, 25-28, 29-32, 33-36, 37-40 and 41-44.
+
+**Including the last one, and that is the number people keep wanting to lower.** A book
+covering the final realm caps at 45, and the reflex on reading that is to correct it to 44,
+because 44 is the last rung anybody climbs to and 45 is the rung
+[the crossing](immortals.md) lands on. The sentence is right and the correction is not: a
+cap is the first rung at which the paper stops carrying you, so a book capped at 44 stops
+the reader who is *standing* on 44 - the only person in the world who is gathering for the
+last crossing, since the attempt is made from there. Write 44 on those books and the
+Immortal realm becomes unreachable by every route at once. Measured in
+`scripts/probe-what-cap-44-would-do-to-the-last-crossing.ts`; the catalog suites do catch
+the edit, five tests across two files, so this is a note about why they are right rather
+than a hole in the guards.
 
 **And there you are stuck.** You have never been higher and you have never been less able to
 say what to do next: the realm you have just entered is a different thing, and the book that

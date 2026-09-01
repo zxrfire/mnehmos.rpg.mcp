@@ -2344,6 +2344,41 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // because the crossing is in no book. What separates them is what it costs
     // to walk them, which is the `opening` field and nothing else:
     //
+    // ── THE CAP IS 45 AND IT MUST NOT BE WRITTEN AS 44 ───────────────────
+    // This has now been read twice as an overshoot, both times by somebody
+    // reasoning correctly from the wrong definition, so it is written out
+    // here in the terms the misreading uses. The last climbable rung is 44,
+    // the four roads take a reader to it, and 45 is the False Immortal rung
+    // that `realms.ts` says can be arrived at no way but the crossing - so
+    // "the road ends at 44" is a true sentence, and `cap: 44` is not how the
+    // engine says it.
+    //
+    // `techniqueExhausted` is `realmOrdinal >= cap`. A cap is therefore the
+    // first rung at which the paper stops carrying you, never the last rung
+    // it teaches. Write 44 and the person it stops is the person STANDING on
+    // 44 - which is the only person in the world who is gathering for the
+    // last crossing, because `LAST_CROSSING_ORDINAL` is 44 and the attempt is
+    // made FROM there. Measured in
+    // `scripts/probe-what-cap-44-would-do-to-the-last-crossing.ts`: at cap 44
+    // the rate at ordinal 44 is x0 against x1 at cap 45, and the crossing
+    // costs a hundred and sixty million qi-units nobody could then accrue. The
+    // whole Immortal realm would become unreachable by any route in the game.
+    //
+    // The guards do hold, and that was checked rather than assumed - the first
+    // draft of this comment claimed the change would pass silently, which was
+    // wrong and would have been a worse thing to leave here than nothing.
+    // Writing 44 on the 41-band entries turns five tests red across two
+    // suites, the load-bearing one being "hands each book off to the next at a
+    // realm boundary", which asserts `realmEnd + 1` for every book opening on
+    // a realm's first rung. So the guards are there; what was missing was any
+    // statement of WHY they are right, and a reader who found them failing had
+    // nothing to read but an arithmetic rule that looks like an off-by-one at
+    // the top of the ladder.
+    //
+    // So 45 here is the ordinary rule doing the ordinary thing - a cap is
+    // where the crossing leaves the reader standing - and it is load-bearing
+    // rather than an artifact of `ordinaryCapFor` running off the end.
+    //
     //   The three apex roads are authored with a hard opening. Each was
     //   written by one person for one successor and never revised by anybody
     //   who had to read it cold, so the first rungs are somebody else's
