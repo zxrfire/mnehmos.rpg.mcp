@@ -208,10 +208,13 @@ rather than as *wrong*, which is why it can sit there for months.
 
 Two consequences worth holding on to:
 
-- **A fungible thing has an almanac entry and no ledger row.** Nobody tracks which low-grade
-  pill it is, so there is nothing for the ledger to say. Asking the ledger about it is asking a
-  question the world has deliberately declined to store - and that is a correct answer, not a
-  gap to be filled in.
+- **The two lines are related and they are not the same line.** This one was overstated when
+  it was first written here, and the register caught it: a **counted** thing still has a holder.
+  A house's twenty intake primers are one fact about the house, and *whose* twenty they are is
+  exactly the sort of thing the ledger should say. So the ledger carries rows AND counts held
+  against named bodies. What is exclusive to tracked rows is **provenance** - the history of how
+  this particular object came to be where it is. Aggregate the singular and you lose that
+  history; you never lose the holder.
 - **A singular thing has both, and they must not repeat each other.** The almanac describes the
   kind once; the ledger names the holder and the history. When a fact is duplicated across the
   two, the copies drift, and the reader learns not to trust either.
