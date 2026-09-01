@@ -34,6 +34,7 @@ import { insightName } from '../engine/cultivation/understanding.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
+import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
 import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
@@ -2020,4 +2021,103 @@ export function factsForGather(
             outcome
         ].join('\n\n')
     };
+}
+
+/**
+ * What a house's ground is worth to the person standing in the queue for it.
+ *
+ * Ground is the largest multiplier in the model - ordinal 29 costs 317 years on
+ * ordinary ground against 79 on a sealed vein - and a member's rank already
+ * decides how much of the year they get on the good ground. Every NPC in the
+ * world was getting that and the player had no sentence that reached it.
+ *
+ * Said in DAYS PER YEAR rather than as a fraction, because it is an entitlement
+ * and not a resource: "fifty-one days a year on the vein" is a thing a person
+ * can plan a life around, and "0.14" is not.
+ *
+ * The poor-house answer reads bleak on purpose. Unlimited access to ground
+ * worth nothing is the honest description of a small house, and a player who
+ * reads it as generous will stay somewhere that cannot carry them - which is
+ * the difference between understanding why to leave and thinking you are fine.
+ */
+export function factsForGroundTime(
+    cultivator: Cultivator,
+    sectName: string | null,
+    entitlement: GroundEntitlement | null
+): EngineFacts {
+    if (!sectName) {
+        return factsForRefusal(
+            'You are in nobody\'s queue.',
+            'Ground like that is allocated by houses to their own, in days, by standing. You '
+            + 'belong to none, so there is no allocation with your name on it and nobody to ask. '
+            + 'What a rogue cultivator gets is whatever ground they can find and hold themselves.',
+            `${cultivator.name} holds no membership; ground-time allocation is per-faction.`
+        );
+    }
+    if (!entitlement || !entitlement.room) {
+        return factsForRefusal(
+            `${sectName} has no ground to give.`,
+            `${sectName} holds no chamber, vein or cave worth allocating - so there is no queue, `
+            + 'no schedule and nothing your rank could move you up. Whatever else belonging here '
+            + 'buys, it is not ground. That is a fact about the house rather than about you.',
+            `No rooms with a priced qiDensity are controlled by this faction.`
+        );
+    }
+
+    const { room, daysPerYear, chamberRate, fallbackRate, effectiveRate, atNextRank } = entitlement;
+    const lines: string[] = [];
+
+    // The whole year on ground worth nothing is not a gift, and must not read
+    // as one. `daysPerYear` at 365 with a rate at or below the fallback means
+    // nobody is competing for it, which is the bleak answer.
+    const unlimited = daysPerYear >= 360;
+    const worthHaving = chamberRate !== null && chamberRate > fallbackRate * 1.05;
+
+    lines.push(
+        unlimited && !worthHaving
+            ? `${sectName} gives you ${room.name} for as much of the year as you want - ${daysPerYear} `
+              + `days of it. Nobody is queueing, because ${room.band} ground is not worth queueing `
+              + 'for. What the house has, you may have all of, and it is not much.'
+            : `${sectName} allots you ${daysPerYear} days a year on ${room.name}: ${room.band} `
+              + `ground, measured at ${Math.round(room.density)}. The rest of the year is spent on `
+              + 'whatever the house has that nobody is competing for.'
+    );
+
+    if (chamberRate !== null) {
+        lines.push(
+            `In the room the qi comes at ${chamberRate.toFixed(2)} a day against ${fallbackRate.toFixed(2)} `
+            + `off it, so across the whole year your climb runs at ${effectiveRate.toFixed(2)}.`
+        );
+    }
+
+    // The refusal that teaches. Deliberately "what would a promotion get me"
+    // rather than "what does the person above me have": those differ whenever a
+    // house is lopsided, and only the first is a thing a player can act on.
+    if (atNextRank) {
+        lines.push(
+            atNextRank.daysPerYear > daysPerYear
+                ? `One rung up is ${atNextRank.daysPerYear} days a year rather than ${daysPerYear}, `
+                  + `and a year that runs at ${atNextRank.effectiveRate.toFixed(2)}. That is what the `
+                  + 'next promotion is actually worth, in the only currency that matters here.'
+                : 'The rung above allots no more of it than this one does. Whatever a promotion '
+                  + 'buys in this house, it is not more time on the ground.'
+        );
+    } else {
+        lines.push('There is no rung above yours here, so there is no more of it to be had.');
+    }
+
+    const facts = observable(
+        `${daysPerYear} days a year on ${room.name}.`,
+        lines,
+        lines.join(' '),
+        [
+            `groundEntitlementFor: room=${room.id} density=${room.density} band=${room.band}, `
+            + `daysPerYear=${daysPerYear}, chamberRate=${chamberRate ?? 'none'}, `
+            + `fallbackRate=${fallbackRate}, effectiveRate=${effectiveRate}`
+            + (atNextRank
+                ? `, atNextRank[${atNextRank.rankIndex}]=${atNextRank.daysPerYear}d/${atNextRank.effectiveRate}`
+                : ', atTop')
+        ]
+    );
+    return facts;
 }

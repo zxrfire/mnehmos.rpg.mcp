@@ -344,12 +344,19 @@ import type { WorldState } from '../engine/world/world-state.js';
 import { createGrudge, type Severity } from '../engine/social/grudges.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
-import { npcsAt } from '../engine/world/world-state.js';
+import { npcsAt, npcsInFaction } from '../engine/world/world-state.js';
+// The first concrete thing rank buys: days a year on the house's own ground.
+import {
+    groundEntitlementFor,
+    roomsHeldBy,
+    type GroundClaimant,
+    type GroundEntitlement
+} from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 // The ONE banding table, from `qi-scale.ts`. A second one in the encounter
 // tokens is how an encounter line and the sheet beside it came to disagree
 // about the same ground; this read is not going to be the third.
-import { ordinaryBandFor } from '../engine/world/qi-scale.js';
+import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX, ordinaryBandFor } from '../engine/world/qi-scale.js';
 import { DEATH_IN_WORLD,
     factsForBreakthrough,
     factsForEat,
@@ -374,6 +381,7 @@ import { DEATH_IN_WORLD,
     type SiteFace,
     factsForRefusal,
     factsForStatus,
+    factsForGroundTime,
     factsForTimeSkip,
     factsForToolResult,
     humanDays,
@@ -2091,6 +2099,22 @@ ${noticedWaiting}`;
                 // here" did not resolve into any action in the set. Answered
                 // off the same `GroundConditions` the rate is computed from,
                 // and free, because looking around you costs nothing.
+                // WHAT MY STANDING BUYS ME ON MY HOUSE'S GROUND.
+                //
+                // "I ask for time on the vein", "where can I cultivate in the
+                // sect" and "I go to the sect cultivation chamber" all reached
+                // nothing - the last one refused as a name that is not a place,
+                // which is true and useless, because the chamber is real and
+                // the player's standing already entitles them to days in it.
+                if (action.intent === 'ground_time') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return this.freeAction(run, 'look', factsForGroundTime(
+                        cultivator,
+                        this.sectNameFor(cultivator),
+                        this.groundEntitlement(cultivator)
+                    ));
+                }
+
                 if (action.intent === 'crowding') {
                     this.atHand = this.atHand ?? await this.loadWorld();
                     const crowding = this.crowdingHere(cultivator);
@@ -6379,7 +6403,22 @@ ${noticed}`;
         const wanted = (target ?? '').trim().length >= 2 ? resolveHerb(target!.trim()) : null;
         const rng = forStream(run.seed, 'web_forage', startDay, placeName(cultivator));
         const rolled = rollHerb(applied.cultivator.realmOrdinal, rng.next());
-        const found = wanted && rolled && rolled.id === wanted.id ? rolled : rolled;
+        // NAMING A HERB HAS TO NARROW THE DRAW, and this line used to return
+        // `rolled` from both branches - so "I gather Blood Millet" rolled the
+        // weighted table and handed back Qi Grass, and the comment above it
+        // described a behaviour the code did not have.
+        //
+        // It matters more than it did: the alchemy refusal is the thing that
+        // tells a player which herb a formula wants, and the game was then
+        // ignoring the name it had just told them to go and pick.
+        //
+        // Still gated on reach below - naming a herb you cannot harvest yet
+        // does not make it harvestable, it just means you looked for the right
+        // thing and could not take it.
+        const named = wanted ? getHerb(wanted.id) : undefined;
+        const found = named && named.harvestOrdinal <= applied.cultivator.realmOrdinal
+            ? named
+            : rolled;
 
         const pouched = found && found.harvestOrdinal <= applied.cultivator.realmOrdinal ? found : null;
         if (pouched) {
@@ -9130,6 +9169,62 @@ ${fit.line}`;
                 && row.discovered !== false
                 && row.parentId === region.id)
             .sort((a, b) => b.qiDensity - a.qiDensity || (a.name < b.name ? -1 : 1));
+    }
+
+    /**
+     * What this cultivator's standing entitles them to on their house's ground.
+     *
+     * THE FIRST CONCRETE THING RANK HAS EVER BOUGHT IN THIS GAME. The world
+     * seeds hundreds of chambers, each with a controlling house and its own
+     * qiDensity; houses allocate days on them by standing; and ground is the
+     * largest multiplier in the model - reaching ordinal 29 costs 317 years on
+     * ordinary ground against 79 on a sealed vein. Every NPC in the world was
+     * already getting this and the player had no route to it at all, which is
+     * the AGENTS.md defect running in the direction nobody watches for: not the
+     * world binding NPCs and sparing the player, but the world REWARDING NPCs
+     * and excluding them.
+     *
+     * `groundEntitlementFor` is the identical arithmetic the advancement pass
+     * runs for every member of the same house on the same day, so the player is
+     * told about the world they are actually in rather than a parallel one.
+     * It decides nothing about what may be asked for and writes no prose; the
+     * phrasing and the refusals are this layer's.
+     *
+     * Null for anybody in no house, or where the world is not loaded.
+     */
+    private groundEntitlement(cultivator: Cultivator): GroundEntitlement | null {
+        if (!this.atHand) return null;
+        const held = this.repos.sects.getMembership(cultivator.id);
+        if (!held) return null;
+        const sect = this.repos.sects.getById(held.sectId);
+        if (!sect) return null;
+
+        const rooms = roomsHeldBy(this.atHand.locations, held.sectId);
+        if (rooms.length === 0) return null;
+
+        // The house's own people, the player included, because a share is a
+        // share OF something and everybody standing in the queue counts.
+        const others: GroundClaimant[] = npcsInFaction(this.atHand, held.sectId).map(npc => ({
+            id: npc.id,
+            tags: npc.tags ?? [],
+            factionRankIndex: npc.factionRankIndex,
+            cultivation: { realmOrdinal: npc.cultivation.realmOrdinal }
+        }));
+        const me: GroundClaimant = {
+            id: cultivator.id,
+            tags: [],
+            factionRankIndex: held.rankIndex,
+            cultivation: { realmOrdinal: cultivator.realmOrdinal }
+        };
+
+        return groundEntitlementFor(
+            me,
+            held.sectId,
+            [...others.filter(o => o.id !== cultivator.id), me],
+            rooms,
+            groundDensityFor(placeName(cultivator)) ?? QI_DENSITY_DEFAULT / QI_DENSITY_MAX,
+            sect.ranks.length
+        );
     }
 
     private crowdingHere(cultivator: Cultivator): CrowdingRead | null {
