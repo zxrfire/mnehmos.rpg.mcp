@@ -36,6 +36,7 @@ import {
     isBareDuration,
     parseCount,
     parseIntent,
+    siteNamed,
     type ActionName
 } from '../../src/web/actions';
 import { makeGame, planned, engineCalls, refusedCall, cultivatorRow, injuryCount } from './harness';
@@ -2763,5 +2764,52 @@ describe('the noun is right and the verb is wrong', () => {
         expect(parseIntent('I look around').action).toBe('look');
         expect(parseIntent('I attack Cao Nuozhi').action).toBe('attack');
         expect(parseIntent('where can I go').action).toBe('destinations');
+    });
+});
+
+describe('a site can be named the way the game named it', () => {
+    /**
+     * Found by playing, and it was a closed loop the player could not solve.
+     *
+     * "what ruins are near" prints the places by NAME - "The ones you have
+     * names for are The Outer Gate of a Sect That No Longer Exists, The Bench
+     * at the Burned Seat, The Gate Frame With No Gate In It..." - and the
+     * parser accepted only the id slug, which is never shown anywhere. So
+     * typing back a name the game had just printed reached nothing at all,
+     * while `trial-the-swept-frame` answered to "swept frame".
+     *
+     * SITE_PHRASES was ids-only on the reasoning that site names are English
+     * sentences and matching a player's prose against the WORDS in them would
+     * fire on half the game. True of words, and not true of whole names:
+     * `siteNamed` tests `text.includes(phrase)`, so a complete name is one long
+     * specific substring rather than a bag of common words.
+     */
+    it('accepts the name the listing prints, with or without the article', () => {
+        expect(siteNamed('i approach the gate frame with no gate in it')).toBeDefined();
+        expect(siteNamed('i approach gate frame with no gate in it')).toBeDefined();
+        expect(siteNamed('i go into the cave that checks the work')).toBeDefined();
+    });
+
+    /** The id slug kept working. It is the short form people actually type. */
+    it('still accepts the id slug it always accepted', () => {
+        expect(siteNamed('i approach the swept frame')).toBeDefined();
+        expect(siteNamed('i approach the eighth stone')).toBeDefined();
+    });
+
+    /**
+     * The guard the ids-only rule existed to provide. An ordinary sentence
+     * that happens to share words with a site name must not resolve to it.
+     */
+    it('does not fire on ordinary sentences that share words with a name', () => {
+        expect(siteNamed('i look at the gate')).toBeUndefined();
+        expect(siteNamed('i check the work i did')).toBeUndefined();
+        expect(siteNamed('i walk into the cave')).toBeUndefined();
+        expect(siteNamed('what is the count here')).toBeUndefined();
+    });
+
+    /** And the whole sentence still routes, not just the name lookup. */
+    it('routes an approach to a named site to the site verb', () => {
+        expect(parseIntent('I approach The Cave That Checks the Work').action).toBe('site');
+        expect(parseIntent('I go into The Gate Frame With No Gate In It').action).toBe('site');
     });
 });
