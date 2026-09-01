@@ -88,7 +88,13 @@ import {
     techniqueCeiling,
     type CultivationOptions
 } from './cultivation.js';
-import { attemptBreakthrough, canAttemptBreakthrough } from './breakthrough.js';
+import {
+    attemptBreakthrough,
+    canAttemptBreakthrough,
+    computeBreakthroughOdds,
+    overflowBonus,
+    MAX_OVERFLOW_BONUS
+} from './breakthrough.js';
 import type { RoadWithinReach } from './what-a-road-in-reach-costs-to-walk.js';
 import type { FoundationConditions } from './foundation.js';
 import type { TollConditions } from './toll.js';
@@ -510,6 +516,8 @@ export function simulateTimeSkip(
     let hpDepletedBy: DeathCause | null = null;
     /** Fractional HP mended but not yet whole. See the recovery block below. */
     let mending = 0;
+    /** Said once. See the deferral block: the condition is standing, not momentary. */
+    let crossingDeferred = false;
     /**
      * Every wound the skip produced, in the order it happened. This is the
      * authoritative record the caller persists; `deltas.injuriesGained` is
@@ -722,7 +730,62 @@ export function simulateTimeSkip(
                 },
                 { ranksGainedThisTurn: ranksOnDay }
             );
-            if (eligibility.eligible) {
+            // ── WAITING IS STILL WORTH MORE THAN STRIKING ────────────────
+            //
+            // An unattended skip used to strike the instant the gate opened,
+            // which is by construction the WORST legal moment: no overflow has
+            // accumulated, so the odds are at their minimum for that rung.
+            // Played live, that meant a realm boundary attempted at 2% - the
+            // floor of the entire scale - on a healthy, fully provisioned
+            // cultivator who had never chosen it and was never told it was
+            // coming. A boundary failure inflicts qi deviation and meridian
+            // injuries, and the injuries killed the run.
+            //
+            // The rule is derived rather than picked, because a threshold in
+            // percent would be a number nobody could defend. `overflowBonus`
+            // saturates towards MAX_OVERFLOW_BONUS, so at any moment the most
+            // that CONTINUING TO SIT could still add is the headroom left in
+            // it. While that headroom is worth more than the whole attempt is
+            // worth, striking is the dominated move and the engine will not
+            // make it on somebody's behalf.
+            //
+            // It always resolves: sitting raises the chance and shrinks the
+            // headroom at the same time, so the two cross. From a 2% floor
+            // that is about 1.4x the requirement - a modest extra wait that
+            // takes the crossing from 2% to roughly 8.5%. Nobody is trapped,
+            // and a player who wants the gamble can still take it deliberately
+            // through `breakthrough`, which this does not touch.
+            const odds = eligibility.eligible
+                ? computeBreakthroughOdds(snapshot(), { ambient })
+                : null;
+            const headroom = odds
+                ? Math.max(0, MAX_OVERFLOW_BONUS - overflowBonus(ordinal, progress))
+                : 0;
+            const worthWaiting = odds !== null && odds.finalChance <= headroom;
+
+            if (worthWaiting && !crossingDeferred) {
+                // Once. A line every chunk would bury the digest, and the
+                // condition is standing rather than momentary.
+                crossingDeferred = true;
+                push(
+                    'crossing_deferred',
+                    `The gate is open and was not struck. From here the crossing to `
+                    + `${rankName(ordinal + 1)} prices at ${(odds!.finalChance * 100).toFixed(1)}%, `
+                    + 'and sitting on a full gate is still worth more than that: accumulated '
+                    + 'progress beyond the price is the one thing that improves it. The attempt '
+                    + 'is yours to make whenever you want it.',
+                    false,
+                    {
+                        finalChance: odds!.finalChance,
+                        fromOrdinal: ordinal,
+                        headroom,
+                        progress,
+                        deferred: true
+                    }
+                );
+            }
+
+            if (eligibility.eligible && !worthWaiting) {
                 const result = attemptBreakthrough(snapshot(), {
                     rng: forStream(ctx.seed, 'breakthrough', absDay, ordinal),
                     ambient,
