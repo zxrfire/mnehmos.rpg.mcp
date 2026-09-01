@@ -88,6 +88,7 @@ import { addGoal, createNpc, setRealm, upsertRelationship, type NpcRecord } from
 import { addLineageEdge, createLineageRecord, type LineageRecord } from './lineage.js';
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
 import { dayOfYear, makeFact, appendFact } from './history.js';
+import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
 import {
     createWorld,
     makeFaction,
@@ -227,6 +228,31 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const lineages = seedLineages(state, npcs, presentDay);
     const opportunities = seedOpportunities(state, opts.catalog, regionLocations, presentDay);
     const effects = seedGrantSchedule(state, opts.catalog, presentDay);
+
+    // Books last, because who holds what depends on everything above it: the
+    // factions have to be seated before their libraries have anywhere to sit,
+    // and the people have to be placed and ranked before the shelf can be
+    // gated by rank.
+    //
+    // Until this ran, a seeded world contained no objects at all and every NPC
+    // held `techniqueIds: []` - so `applyAdvancement` had no manual to read,
+    // fell back on `deriveOrdinal`, and nobody in the world gained a rung in
+    // two hundred years. See `manuals.ts`.
+    state.objects.push(...seedSectLibraries(state));
+    const npcAt = new Map(state.npcs.map((n, i) => [n.id, i]));
+    for (const grant of grantBooksToMembers(state)) {
+        const at = npcAt.get(grant.npcId);
+        if (at === undefined) continue;
+        const npc = state.npcs[at];
+        state.npcs[at] = {
+            ...npc,
+            cultivation: {
+                ...npc.cultivation,
+                techniqueIds: [...grant.techniqueIds, ...grant.artIds]
+            },
+            tags: grant.chosen && !npc.tags.includes('chosen') ? [...npc.tags, 'chosen'] : npc.tags
+        };
+    }
 
     return {
         state,
@@ -831,17 +857,36 @@ export function deriveLife(
     const maxAttempts = Math.max(1, opts.maxAttemptsPerRank ?? 12);
 
     const focus = Math.min(1, effort);
-    const rate = computeCultivationRate({ spiritRoot: root, injuries: [] }, ambient, {
-        focusMultiplier: focus,
-        locationBonus: Math.max(0.1, regionRateMultiplier) * era,
-        techniqueBonus: 1 + attributes.insight * 0.06,
-        // Placement: arrays, elder guidance, and a stipend that means this
-        // person is not foraging. 1 for the nine births in ten that have none.
-        sectBonus: origin.placement.sectBonus
-    }).perDay;
-    if (rate <= 0) return { ordinal: 0, spiritStones: Math.max(0, Math.round(origin.spiritStones)) };
 
-    const perYear = rate * DAYS_PER_YEAR;
+    // Priced at the rung the walker is standing on, not at the bottom.
+    //
+    // This was computed ONCE, before the climb, and `realmOrdinal` was never
+    // passed - which `computeCultivationRate` documents as reading "as ordinal
+    // 0... a multiplier of 1". So an entire life ran at Qi Condensation intake
+    // while `progressRequiredForOrdinal` climbed underneath it, and the walk
+    // stalled the moment the cost curve outran a rate that could never move.
+    //
+    // Measured before this fix: the best spirit root in the catalog reached
+    // ordinal 16 at age 120 and never moved again - not at 300, not at 3000 -
+    // and no NPC anywhere in the world gained a single rung in two hundred
+    // simulated years. It is the same defect that was found and fixed on the
+    // player's side; the derivation kept its own copy of it.
+    const perYearAt = (at: number): number => computeCultivationRate(
+        { spiritRoot: root, injuries: [], realmOrdinal: at },
+        ambient,
+        {
+            focusMultiplier: focus,
+            locationBonus: Math.max(0.1, regionRateMultiplier) * era,
+            techniqueBonus: 1 + attributes.insight * 0.06,
+            // Placement: arrays, elder guidance, and a stipend that means this
+            // person is not foraging. 1 for the nine births in ten that have none.
+            sectBonus: origin.placement.sectBonus
+        }
+    ).perDay * DAYS_PER_YEAR;
+
+    if (perYearAt(0) <= 0) {
+        return { ordinal: 0, spiritStones: Math.max(0, Math.round(origin.spiritStones)) };
+    }
     // The province's ceiling is absolute, and placement does NOT lift it.
     //
     // That is deliberate and it is the harder of the two readings. A fostered
@@ -865,6 +910,7 @@ export function deriveLife(
         const cost = progressRequiredForOrdinal(ordinal);
         // Above the Lid nothing is priced in qi, so the walk stops here.
         if (cost === null) break;
+        const perYear = perYearAt(ordinal);
         const allowance = stagnationYearsForOrdinal(ordinal);
         const lifespan = lifespanForOrdinal(ordinal);
         let yearsAtRank = 0;
