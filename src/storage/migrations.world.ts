@@ -348,11 +348,13 @@ export function migrateWorld(db: Database.Database): void {
       spirit_root TEXT NOT NULL,
       attributes TEXT NOT NULL DEFAULT '{}',         -- JSON might/insight/fortune/charm
       foundation TEXT NOT NULL DEFAULT 'incomplete', -- a history, not a rank
-      untreated_injuries INTEGER NOT NULL DEFAULT 0,
+      untreated_injuries INTEGER NOT NULL DEFAULT 0,  -- a count OF the rows below
+      wounds TEXT NOT NULL DEFAULT '[]',             -- JSON Injury rows; woundType keys wounds.ts
       technique_ids TEXT NOT NULL DEFAULT '[]',      -- JSON
       specialties TEXT NOT NULL DEFAULT '[]',        -- JSON; matched against location affinities
       lifespan_ends_on_day INTEGER NOT NULL,         -- a stored date, so time advance is one pass
-      last_advanced_on_day INTEGER NOT NULL DEFAULT 0,
+      last_advanced_on_day INTEGER NOT NULL DEFAULT 0,   -- the settling clock
+      accumulating_since_day INTEGER NOT NULL DEFAULT 0, -- the progress clock; 0 reads as the above
 
       location_id TEXT,
       -- Which side of the Lid this person is on. Stored rather than derived
@@ -926,5 +928,28 @@ function addWorldColumns(db: Database.Database): void {
             console.error(`[Migration] Adding memory_ids column to ${table} table`);
             db.exec(`ALTER TABLE ${table} ADD COLUMN memory_ids TEXT NOT NULL DEFAULT '[]';`);
         }
+    }
+
+    // What an NPC is actually carrying, as rows. `untreated_injuries` beside it
+    // is a COUNT and stays one - the roster view and the web layer read it -
+    // but a count cannot say that somebody is carrying a cracked core, and the
+    // whole authored wound table was therefore unreachable from the world.
+    //
+    // Empty is the honest reading of every row written before this: those
+    // records genuinely do not know what their count was counting, and
+    // `woundsCarriedBy` reconstructs generic rows for the shortfall rather than
+    // silently healing them on load.
+    // The progress clock, which a failed crossing moves and the settling clock
+    // beside it does not. Zero is the honest reading of every row written
+    // before the world struck at a wall: they have been accumulating since
+    // they last advanced, which is what `lastAdvancedOnDay` already says.
+    if (!columnsOf('world_npcs').includes('accumulating_since_day')) {
+        console.error('[Migration] Adding accumulating_since_day column to world_npcs table');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN accumulating_since_day INTEGER NOT NULL DEFAULT 0;');
+    }
+
+    if (!columnsOf('world_npcs').includes('wounds')) {
+        console.error('[Migration] Adding wounds column to world_npcs table');
+        db.exec("ALTER TABLE world_npcs ADD COLUMN wounds TEXT NOT NULL DEFAULT '[]';");
     }
 }

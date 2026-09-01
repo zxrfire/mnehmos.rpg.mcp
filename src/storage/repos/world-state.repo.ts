@@ -19,6 +19,7 @@ import { runSeedFor } from '../../engine/world/legacy.js';
 import { makeAscensionRecord, toLayerKey, type AscensionRecord } from '../../engine/world/layers.js';
 import { yearOfDay } from '../../engine/world/history.js';
 import { DEFAULT_ORIGIN, isOriginTierKey } from '../../engine/cultivation/origin.js';
+import type { Injury } from '../../schema/cultivation.js';
 
 /**
  * Persistence for the world layer.
@@ -225,7 +226,8 @@ export class WorldStateRepository {
                 id, world_id, name,
                 born_on_day, origin_tier, occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
-                technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
+                wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
+                accumulating_since_day,
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
@@ -234,7 +236,8 @@ export class WorldStateRepository {
                 @id, @worldId, @name,
                 @bornOnDay, @origin, @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
-                @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
+                @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
+                @accumulatingSinceDay,
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
@@ -900,10 +903,12 @@ export class WorldStateRepository {
                 attributes: JSON.stringify(npc.cultivation.attributes),
                 foundation: npc.cultivation.foundation,
                 untreatedInjuries: npc.cultivation.untreatedInjuries,
+                wounds: JSON.stringify(npc.cultivation.injuries),
                 techniqueIds: JSON.stringify(npc.cultivation.techniqueIds),
                 specialties: JSON.stringify(npc.cultivation.specialties),
                 lifespanEndsOnDay: npc.cultivation.lifespanEndsOnDay,
                 lastAdvancedOnDay: npc.cultivation.lastAdvancedOnDay,
+                accumulatingSinceDay: npc.cultivation.accumulatingSinceDay,
                 locationId: npc.locationId,
                 layer: npc.layer,
                 factionId: npc.factionId,
@@ -1277,6 +1282,24 @@ function parseRecord<T>(json: string): Record<string, T> {
     return JSON.parse(json) as Record<string, T>;
 }
 
+/**
+ * Wound rows off a row written before the column existed.
+ *
+ * The ALTER defaults to '[]', so this only has to be defensive about a save
+ * that predates the ALTER entirely and hands back undefined. An absent list is
+ * not "no wounds" - `woundsCarriedBy` reads the count beside it and
+ * reconstructs generic rows for the shortfall.
+ */
+function parseWounds(json: string | null | undefined): Injury[] {
+    if (!json) return [];
+    try {
+        const parsed = JSON.parse(json);
+        return Array.isArray(parsed) ? parsed as Injury[] : [];
+    } catch {
+        return [];
+    }
+}
+
 function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {
     const out = new Map<string, T[]>();
     for (const row of rows) {
@@ -1445,10 +1468,14 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
             attributes: JSON.parse(row.attributes),
             foundation: row.foundation,
             untreatedInjuries: row.untreated_injuries,
+            injuries: parseWounds(row.wounds),
             techniqueIds: parseArray(row.technique_ids),
             specialties: parseArray(row.specialties),
             lifespanEndsOnDay: row.lifespan_ends_on_day,
-            lastAdvancedOnDay: row.last_advanced_on_day
+            lastAdvancedOnDay: row.last_advanced_on_day,
+            // Zero means the column predates the two clocks being told apart.
+            accumulatingSinceDay:
+                row.accumulating_since_day || row.last_advanced_on_day
         },
         locationId: row.location_id,
         layer: toLayerKey(row.layer),
@@ -1947,10 +1974,12 @@ interface NpcRow {
     attributes: string;
     foundation: string;
     untreated_injuries: number;
+    wounds: string;
     technique_ids: string;
     specialties: string;
     lifespan_ends_on_day: number;
     last_advanced_on_day: number;
+    accumulating_since_day: number;
     location_id: string | null;
     layer: string;
     faction_id: string | null;
