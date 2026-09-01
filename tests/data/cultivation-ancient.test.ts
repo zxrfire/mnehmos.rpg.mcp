@@ -58,6 +58,7 @@ import {
     ANCIENT_ARTS,
     ANCIENT_TECHNIQUE_IDS,
     ARCHIVE_COPIES,
+    DORMANT_HOLDERS,
     LOST_MATERIALS,
     MEDICINE_HOLDINGS,
     MODERN_AND_ANCIENT,
@@ -93,9 +94,14 @@ import {
     lifespanYearsFor
 } from '../../src/data/cultivation/pills.js';
 import { getRecipe } from '../../src/data/cultivation/recipes.js';
-import { TECHNIQUES, getTechnique } from '../../src/data/cultivation/techniques.js';
+import {
+    MODERN_ABOVE_THE_LID_NOTES,
+    TECHNIQUES,
+    getTechnique
+} from '../../src/data/cultivation/techniques.js';
+import { addressOf } from '../../src/schema/cultivation.js';
 import { SITES } from '../../src/data/cultivation/inheritance-trials.js';
-import { MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
+import { FALSE_IMMORTAL_ORDINAL, MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
 
 /** Everything that can legitimately hold or grant ground. */
 const HOLDER_IDS: ReadonlySet<string> = new Set<string>([
@@ -345,14 +351,53 @@ describe('the ancient tier', () => {
         expect(unresolvedAncientReferences()).toEqual([]);
     });
 
-    it('the era axis covers the whole catalog and agrees with the set', () => {
-        expect(new Set(ANCIENT_ARTS.map(a => a.techniqueId))).toEqual(
-            new Set([...ANCIENT_TECHNIQUE_IDS])
-        );
+    it('the era axis covers the whole catalog, and the categorical line is a subset of it', () => {
+        // `ANCIENT_ARTS` is the CATEGORICAL record - the roads with a cost, a
+        // capability and a reason the era stopped paying for them. The era set
+        // is wider, because everything above the Lid is ancient too and is not
+        // a road anybody down here can walk. They used to be the same list and
+        // that was the conflation: era is WHEN, categorical is WHAT.
+        for (const a of ANCIENT_ARTS) {
+            expect(ANCIENT_TECHNIQUE_IDS.has(a.techniqueId), `${a.techniqueId} is not filed ancient`)
+                .toBe(true);
+        }
         for (const t of TECHNIQUES) {
             expect(t.era, `${t.id} era`).toBe(ANCIENT_TECHNIQUE_IDS.has(t.id) ? 'ancient' : 'modern');
         }
         expect(ancientTechniques().length).toBe(ANCIENT_ARTS.length);
+    });
+
+    it('HEIGHT IS EVIDENCE OF IDIOM, NEVER A DEFINITION OF IT', () => {
+        // The guard that keeps a modern art above the Lid expressible.
+        //
+        // `era` was briefly derived from `requiredOrdinal >= FALSE_IMMORTAL_ORDINAL`,
+        // on the reasoning that a list can be forgotten and a rule cannot. True,
+        // and still wrong: it makes a modern art written above the Lid
+        // impossible to state, and that case has been ruled on directly -
+        // somebody up there can make an elemental art, it is merely ill-suited
+        // to a realm that changes slowly, and its natural home is downward
+        // where it would be earth-shaking.
+        //
+        // So the forgetting problem lives here instead of in the resolver:
+        // every art above the Lid is either filed ancient or says why it is
+        // not. That catches the omission without forbidding the case.
+        const aboveTheLid = TECHNIQUES.filter(t => t.requiredOrdinal >= FALSE_IMMORTAL_ORDINAL);
+        expect(aboveTheLid.length).toBeGreaterThan(0);
+        for (const t of aboveTheLid) {
+            const declared = ANCIENT_TECHNIQUE_IDS.has(t.id)
+                || MODERN_ABOVE_THE_LID_NOTES[t.id] !== undefined;
+            expect(declared, `${t.id} is above the Lid and nobody has decided its era`).toBe(true);
+            if (!ANCIENT_TECHNIQUE_IDS.has(t.id)) {
+                // A marker with no reason attached is the same silence
+                // somewhere else.
+                expect(MODERN_ABOVE_THE_LID_NOTES[t.id].length, `${t.id} reason is too thin`)
+                    .toBeGreaterThan(80);
+            }
+        }
+        // And the door is a door rather than a formality: the record exists,
+        // it is empty today, and emptiness here is a fact about the catalog
+        // rather than a fact about what is permitted.
+        expect(typeof MODERN_ABOVE_THE_LID_NOTES).toBe('object');
     });
 
     it('CATEGORICAL, NOT ELEMENTAL: no ancient art carries an element', () => {
@@ -411,11 +456,44 @@ describe('the ancient tier', () => {
         }
     });
 
-    it('sorts absence into the three tiers, and puts material before choice', () => {
+    it('sorts absence into its tiers, and puts a sleeping holder before either cause', () => {
         expect(absenceTierOf('word-of-continuance')).toBe('no_surviving_copy');
         expect(absenceTierOf('sealed-field-of-the-shut-hour')).toBe('lost');
         expect(absenceTierOf('sixteen-thread-command')).toBe('abandoned');
         expect(absenceTierOf('cross-meridian-strike')).toBe('present');
+        // The fifth tier, where nothing about the ART is missing at all.
+        expect(absenceTierOf('paired-breath-canon')).toBe('dormant');
+    });
+
+    it('DORMANT is about a person, and stays one decision rather than a library', () => {
+        const ids = Object.keys(DORMANT_HOLDERS);
+        expect(ids.length, 'nothing is dormant').toBeGreaterThan(0);
+        // A second sealed teacher makes sealed ancestors a shelf to be browsed
+        // rather than an instrument spent once. Keep this at one.
+        expect(ids.length, 'sealed ancestors have become a library').toBe(1);
+        for (const id of ids) {
+            expect(getTechnique(id), `${id} does not exist`).toBeDefined();
+            expect(ANCIENT_TECHNIQUE_IDS.has(id), `${id} is dormant and not ancient`).toBe(true);
+            expect(DORMANT_HOLDERS[id].length, `${id} names no holder`).toBeGreaterThan(150);
+        }
+    });
+
+    it('THE QUADRANT THAT WAS EMPTY: an ancient road you practise, not one you use', () => {
+        // All six ancient arts were `class: 'dao'`, so the era axis rendered as
+        // a fact about combat. An ancient cultivation road is the other half
+        // and arguably the more interesting one: a dao art changes what you can
+        // do in a fight, and a road changes what kind of cultivator you become.
+        const roads = ancientTechniques().filter(t => t.class === 'cultivation');
+        expect(roads.length, 'the ancient cultivation quadrant is empty').toBeGreaterThan(0);
+        for (const t of roads) {
+            // The invariant, not a preference: what you practise to rank up
+            // never escalates in kind, at any rung, for ever.
+            expect(addressOf(t), `${t.id} escalates`).toBe('body');
+            const record = ANCIENT_ARTS.find(a => a.techniqueId === t.id)!;
+            expect(record.costToTheUser.length, `${t.id} costs nothing`).toBeGreaterThan(40);
+            expect(record.whenTheModernArtWins.length, `${t.id} is a strict upgrade`)
+                .toBeGreaterThan(40);
+        }
     });
 });
 
@@ -562,6 +640,19 @@ describe('the thousand-year medicine', () => {
             }
         }
         expect(housesStillHoldingMedicine().length).toBeGreaterThan(0);
+        // THE UNCONFIRMED STANDING HAS A HOLDER, and it needs one. A house
+        // that MAY hold one, where nobody can establish it either way, is the
+        // same shape as `claimsLivingAncestor` against `claimIsTrue` - a claim
+        // the world cannot audit and people act on anyway. It briefly emptied
+        // when the Pavilion's answer turned out to be structural, and an empty
+        // standing reads as a loss rather than a decision.
+        const unconfirmed = MEDICINE_HOLDINGS.filter(h => h.standing === 'believed_to_hold');
+        expect(unconfirmed.length, 'nobody is unconfirmed and the standing is dead')
+            .toBeGreaterThan(0);
+        // It stays scarce: the whole point is that almost everything in this
+        // table is knowable and this is the exception.
+        expect(unconfirmed.length, 'the register cannot settle anything any more')
+            .toBeLessThanOrEqual(2);
         expect(housesThatSpentTheirs().length, 'nobody has ever spent one').toBeGreaterThan(0);
         // The supply is fixed and small. If this list ever grows past a
         // handful, "ancient sects hold exactly one" has stopped being true.
@@ -625,6 +716,23 @@ describe('copies, stock and stocked inheritances', () => {
         // material, who has told nobody. Allowed once. Sparingly means once.
         const remnants = ARCHIVE_COPIES.filter(c => c.stock === 'remnant');
         expect(remnants.length, 'more than one house is quietly holding material').toBe(1);
+        // And the holder can name its own figure, which is what makes it a
+        // remnant rather than a rumour. Above the world's open supply, because
+        // a private stock that carried somebody less far than the open market
+        // would not be worth keeping quiet about.
+        const remnant = remnants[0];
+        expect(remnant.carriesToMastery, 'the remnant holder has no figure').toBeDefined();
+        expect(remnant.carriesToMastery!).toBeGreaterThan(0);
+        expect(remnant.carriesToMastery!, 'a house remnant carries somebody to the end of the art')
+            .toBeLessThan(1);
+        const gated = ANCIENT_ARTS.find(a => a.techniqueId === remnant.techniqueId)!;
+        expect(remnant.carriesToMastery!, 'the private stock is worse than the open one')
+            .toBeGreaterThan(gated.worldSupplyCeiling!);
+        // Nobody else carries a figure, because nobody else has anything.
+        for (const c of ARCHIVE_COPIES) {
+            if (c.stock === 'remnant') continue;
+            expect(c.carriesToMastery, `${c.factionId} has no stock and a figure`).toBeUndefined();
+        }
     });
 
     it('keeps stocked inheritances rare, and their ceilings honest', () => {
