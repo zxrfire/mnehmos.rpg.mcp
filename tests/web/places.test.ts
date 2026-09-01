@@ -287,3 +287,70 @@ describe('GET /api/admin/places', () => {
         expect(JSON.stringify(res.body)).not.toMatch(/"(x|y|lat|lon|coord|coordinates)"/);
     });
 });
+
+describe('what a gazetteer entry needs', () => {
+    it('reports the origin only when something actually moved', () => {
+        const still = makeLocation({ id: 'a', name: 'A', kind: 'settlement', qiDensity: 40 });
+        expect(placesView(world([still])).locations[0].origin).toBeNull();
+
+        const moved = makeLocation({ id: 'b', name: 'Blackwater City', kind: 'settlement', qiDensity: 12 });
+        // What it was: an ordinary valley, before a sect and a battle and a city.
+        moved.origin = { ...moved.origin, name: 'Blackwater Valley', kind: 'wilds', qiDensity: 40, fromDay: -4000 };
+        const view = placesView(world([moved])).locations[0];
+        expect(view.origin).not.toBeNull();
+        expect(view.origin!.name).toBe('Blackwater Valley');
+        expect(view.origin!.changed.sort()).toEqual(['kind', 'name', 'qiDensity']);
+    });
+
+    it('carries the most recent history, newest first, and says how much it left behind', () => {
+        const loc = makeLocation({ id: 'a', name: 'A', kind: 'ruin' });
+        for (let i = 1; i <= 12; i++) {
+            loc.changes.push({
+                id: `c${i}`, onDay: i * 100, kind: 'other', summary: `thing ${i}`,
+                causeFactId: null, causeKnown: i % 2 === 0, attributedCauses: [],
+                fidelity: 'full', witnessed: true, patch: {}
+            });
+        }
+        const view = placesView(world([loc])).locations[0];
+        expect(view.changeCount).toBe(12);
+        expect(view.changes).toHaveLength(8);
+        expect(view.changes[0].summary).toBe('thing 12');
+        expect(view.changes[7].summary).toBe('thing 5');
+    });
+
+    it('separates the claim on paper from who runs it on the ground', () => {
+        const claimed = makeLocation({
+            id: 'a', name: 'A vein', kind: 'vein', controllingFactionId: 'f1',
+            environment: { ...makeLocation({ id: 'x', name: 'x', kind: 'vein' }).environment, politicalControl: 'several sects, none of them decisively' }
+        });
+        const held = makeLocation({
+            id: 'b', name: 'B vein', kind: 'vein', controllingFactionId: 'f1',
+            environment: { ...makeLocation({ id: 'y', name: 'y', kind: 'vein' }).environment, politicalControl: 'the Azure Cloud Pavilion, thinly' }
+        });
+        const w = { ...world([claimed, held]), factions: [{ id: 'f1', name: 'Azure Cloud Pavilion' }] } as unknown as WorldState;
+        const byId = new Map(placesView(w).locations.map(l => [l.id, l]));
+        expect(byId.get('a')!.contested).toBe(true);
+        expect(byId.get('b')!.contested).toBe(false);
+        expect(byId.get('b')!.controllingFactionName).toBe('Azure Cloud Pavilion');
+    });
+
+    it('reads capacity, the key and the style off the record data', () => {
+        const vault = makeLocation({
+            id: 'v', name: 'The vault', kind: 'vault', sealed: true,
+            data: { capacity: 600, keyId: 'key-azure', styleTags: 'walled_court dressed_stone' }
+        });
+        const view = placesView(world([vault])).locations[0];
+        expect(view.capacity).toBe(600);
+        expect(view.keyId).toBe('key-azure');
+        expect(view.styleTags).toEqual(['walled_court', 'dressed_stone']);
+    });
+
+    it('counts who is standing in a place against what it was cut for', () => {
+        const yard = makeLocation({ id: 'y', name: 'Yard', kind: 'hall', data: { capacity: 600 } });
+        const w = {
+            ...world([yard]),
+            npcs: [{ locationId: 'y' }, { locationId: 'y' }, { locationId: 'elsewhere' }, { locationId: null }]
+        } as unknown as WorldState;
+        expect(placesView(w).locations[0].occupancy).toBe(2);
+    });
+});
