@@ -62,7 +62,8 @@ import { clampOrdinal, rankName } from '../cultivation/realms.js';
 import { UNTOUCHED_BY_DISASTER_ORDINAL, couldDieToADisaster } from '../../data/cultivation/catastrophe.js';
 import { QI_DENSITY_MIN } from './qi-scale.js';
 import { isBelowTheLid } from './layers.js';
-import { appendFact, makeFact, type HistoricalFact } from './history.js';
+import { makeFact, type HistoricalFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { applyLocationChange, forbidZone, type LocationRecord } from './locations.js';
 import { createNpc, markDead, markMissing, setRealm, type NpcRecord } from './npc-state.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
@@ -893,7 +894,7 @@ type EmitInput = Omit<Parameters<typeof makeFact>[0], 'data'> & {
 
 function emit(state: WorldState, input: EmitInput): HistoricalFact {
     const { unattributed, data, ...rest } = input;
-    return appendFact(state.history, makeFact({
+    return appendWorldFact(state, makeFact({
         ...rest,
         data: { ...(data ?? {}), unattributed }
     }));

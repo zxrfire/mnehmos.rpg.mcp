@@ -11,7 +11,9 @@
  *                     four-hundred-year run - 2,054 of them.
  *   BORN INTO HISTORY an ordinal 44 born in year -24,008, in a world whose
  *                     earliest era opens in -1,700.
- *   TIES RESOLVE      a relationship whose target is nobody the world holds.
+ *   TIES RESOLVE      a relationship whose target is nobody the world holds, and
+ *                     a renderer that reads the dead as if they were living.
+ *   FACTS FIND PEOPLE a killing recoverable only from a string on the corpse.
  *
  * Run against a seeded world and against one that has been advanced, because
  * seeding and advancement write these fields through completely different code
@@ -24,6 +26,7 @@ import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
 import { markDead, setExistence } from '../../../src/engine/world/npc-state.js';
 import { expelsOrdinal } from '../../../src/engine/world/layers.js';
+import { readTies } from '../../../src/engine/world/reading-a-tie-against-the-roster.js';
 import {
     continuityCeilingFor,
     reconcileSoulAndSelf,
@@ -74,6 +77,38 @@ describe('how much of a person is left', () => {
     });
 });
 
+describe('reading a tie against the roster', () => {
+    it('tells the living, the dead and the unaccounted apart', () => {
+        const state = advanced();
+        const seen = new Set<string>();
+        for (const npc of state.npcs) {
+            for (const read of readTies(state, npc)) seen.add(read.standing);
+        }
+        // An advanced world holds all three. If it only held one, the reading
+        // would be doing nothing and the test would be measuring itself.
+        expect(seen.has('living')).toBe(true);
+        expect(seen.has('dead')).toBe(true);
+        expect(seen.has('unrecorded')).toBe(false);
+    });
+
+    it('dates a death rather than saying the person is gone', () => {
+        const state = advanced();
+        const toDead = state.npcs
+            .flatMap(n => readTies(state, n))
+            .find(r => r.standing === 'dead' && r.year !== null);
+        expect(toDead).toBeDefined();
+        expect(toDead!.description).toMatch(/dead since year -?\d+$/);
+    });
+
+    it('does not drop a tie because the other end died', () => {
+        // The tie is the world's memory. Resolving it must not prune it.
+        const state = advanced();
+        const npc = state.npcs.reduce((best, n) =>
+            n.relationships.length > best.relationships.length ? n : best);
+        expect(readTies(state, npc)).toHaveLength(npc.relationships.length);
+    });
+});
+
 describe('a world must never contain', () => {
     it('a dead person who is still entirely themselves', () => {
         const state = seeded();
@@ -88,7 +123,7 @@ describe('a world must never contain', () => {
         const alive = state.npcs.find(n => n.status === 'alive')!;
         // The caller names the soul and forgets the other half, which is exactly
         // how the world filled up with intact selves in ruined souls.
-        const after = setExistence(alive, { to: 'soul_only', onDay: 400000, soulState: 'fragmented' });
+        const after = setExistence(alive, { to: 'soul_preserved', onDay: 400000, soulState: 'fragmented' });
         expect(soulAndSelfDisagree(after)).toBe(false);
     });
 
@@ -120,6 +155,39 @@ describe('a world must never contain', () => {
         const state = advanced();
         const wrong = state.npcs.filter(n => expelsOrdinal(n.layer, n.cultivation.realmOrdinal));
         expect(wrong.map(n => `${n.name} ${n.layer} ${n.cultivation.realmOrdinal}`)).toEqual([]);
+    });
+
+    it('a fact that names people and cannot be reached from any of them', () => {
+        const state = advanced();
+        const unreachable: string[] = [];
+        for (const fact of state.history.facts) {
+            for (const named of [...fact.actors.map(a => a.id), ...fact.witnessIds]) {
+                const npc = state.npcs.find(n => n.id === named);
+                if (npc && !npc.historyFactIds.includes(fact.id)) {
+                    unreachable.push(`${fact.id} names ${npc.name}, who does not carry it`);
+                }
+            }
+        }
+        expect(unreachable.slice(0, 5)).toEqual([]);
+    });
+
+    it('a killing known only from the victim\'s end note', () => {
+        // The defect this was reported as: the killer had no record of having
+        // done it, and the only trace was a string on the corpse.
+        const state = advanced();
+        const orphaned: string[] = [];
+        for (const victim of state.npcs.filter(n => /^Killed by /.test(n.endNote))) {
+            const fact = state.history.facts.find(f =>
+                f.actors.some(a => a.role === 'victim' && a.id === victim.id));
+            if (!fact) { orphaned.push(`${victim.name}: no fact at all`); continue; }
+            const killerId = fact.actors.find(a => a.role === 'killer')?.id;
+            const killer = state.npcs.find(n => n.id === killerId);
+            if (!killer) { orphaned.push(`${victim.name}: killer does not resolve`); continue; }
+            if (!killer.historyFactIds.includes(fact.id)) {
+                orphaned.push(`${victim.name}: ${killer.name} does not carry ${fact.id}`);
+            }
+        }
+        expect(orphaned).toEqual([]);
     });
 
     it('a tie pointing at somebody the world does not hold', () => {

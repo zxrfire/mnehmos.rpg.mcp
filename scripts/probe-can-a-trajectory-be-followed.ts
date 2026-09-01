@@ -71,13 +71,28 @@ async function main(): Promise<void> {
     // victim's endNote?
     const killed = state.npcs.filter(n => /^Killed by /.test(n.endNote));
     let killerOnRecord = 0;
+    let killerCarriesIt = 0;
+    let sample = '';
     for (const victim of killed) {
-        const named = facts.some(f =>
+        const fact = facts.find(f =>
             f.actors.some(a => a.role === 'victim' && a.id === victim.id) &&
             f.actors.some(a => a.role === 'killer'));
-        if (named) killerOnRecord++;
+        if (!fact) continue;
+        killerOnRecord++;
+        const killer = state.npcs.find(n => n.id === fact.actors.find(a => a.role === 'killer')!.id);
+        if (killer?.historyFactIds.includes(fact.id)) {
+            killerCarriesIt++;
+            if (!sample) {
+                sample = `    ${killer.name} carries ${fact.id}: "${fact.summary}" ` +
+                    `(${killer.historyFactIds.length} facts on their record)`;
+            }
+        }
     }
-    line(`  killings with a killer on the fact  ${killerOnRecord} / ${killed.length}`);
+    line(`  killings with a killer on the fact              ${killerOnRecord} / ${killed.length}`);
+    line(`  killings the killer's OWN record carries        ${killerCarriesIt} / ${killed.length}`);
+    if (sample) line(sample);
+    const withFacts = state.npcs.filter(n => n.historyFactIds.length > 0).length;
+    line(`  people with any fact on their record            ${withFacts} / ${state.npcs.length}`);
 
     // ── TIES RESOLVE ──────────────────────────────────────────────────────
     rule('TIES RESOLVE');

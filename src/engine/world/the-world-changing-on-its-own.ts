@@ -67,13 +67,13 @@ import {
 } from '../cultivation/realms.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import {
-    appendFact,
     fillConsequences,
     makeFact,
     yearOfDay,
     type EventConsequences,
     type HistoricalFact
 } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
     applyLocationChange,
     forbidZone,
@@ -1685,7 +1685,7 @@ function emit(
     deaths: DeathHandoff[] = []
 ): PressureEvent {
     const { consequences, unattributed, ...rest } = fact;
-    const stored = appendFact(state.history, makeFact({
+    const stored = appendWorldFact(state, makeFact({
         ...rest,
         consequences: consequences ? fillConsequences(consequences) : null,
         data: { ...(rest.data ?? {}), unattributed, pressure: kind }

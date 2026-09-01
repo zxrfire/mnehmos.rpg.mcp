@@ -43,7 +43,8 @@
 
 import { deriveSeed, forStream } from '../cultivation/rng.js';
 import { rankName } from '../cultivation/realms.js';
-import { appendFact, makeFact, type HistoricalFact } from './history.js';
+import { makeFact, type HistoricalFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { makeEnvironment, makeLocation, makeThresholds, type LocationRecord } from './locations.js';
 import { heirsOf, type HeirRef } from './lineage.js';
 import {
@@ -244,7 +245,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
     }
 
     // ── The record ───────────────────────────────────────────────────────
-    facts.push(appendFact(state.history, makeFact({
+    facts.push(appendWorldFact(state, makeFact({
         day: onDay,
         kind: 'death',
         scale: deceased.cultivation.realmOrdinal >= 17 ? 'regional' : 'local',
@@ -267,7 +268,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
         if (faction) {
             const notable = deceased.cultivation.realmOrdinal >= 13;
             faction.resources.ancestral_names = (faction.resources.ancestral_names ?? 0) + (notable ? 1 : 0);
-            facts.push(appendFact(state.history, makeFact({
+            facts.push(appendWorldFact(state, makeFact({
                 day: onDay,
                 kind: notable ? 'inheritance' : 'expulsion',
                 scale: 'local',
@@ -350,7 +351,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
             }
 
             if (goalsPassed > 0) {
-                facts.push(appendFact(state.history, makeFact({
+                facts.push(appendWorldFact(state, makeFact({
                     day: onDay,
                     kind: 'grudge_inherited',
                     scale: 'personal',
