@@ -64,7 +64,19 @@ describe('privilege is visible in the opening position', () => {
 
 describe('and most people born to enormous advantage still fail', () => {
     it('leaves the overwhelming majority of Dao house children short of Core Formation', () => {
-        expect(row('dao_house_bloodline').reachedAtLeast[21]).toBeLessThan(0.05);
+        // The bar was 5% and the measurement is now 9.4%. It moved because
+        // `computeCultivationRate` is finally being told which rung the
+        // cultivator is standing on - see the long note at the call site in
+        // `origin-odds.ts`. The realm intake term compounds upward, and the
+        // well-born are exactly the people standing high enough to collect it,
+        // so correcting it moves this row and only this kind of row.
+        //
+        // The claim being defended is "the overwhelming majority still fail",
+        // and 90.6% is still overwhelming. The bar is set where the claim stops
+        // being true rather than where the measurement happens to sit: at one
+        // in five, a Dao house childhood has become a route to Core Formation
+        // rather than a head start on the road to it.
+        expect(row('dao_house_bloodline').reachedAtLeast[21]).toBeLessThan(0.2);
     });
 
     it('ends the great majority of privileged lives on a clock, not at the top', () => {
@@ -125,29 +137,88 @@ describe('the last realm is reachable, and only as a conjunction', () => {
         }
     });
 
-    it('is reached when the whole conjunction lands, and not otherwise', () => {
-        // A targeted search rather than a sweep: walk lives until one arrives.
-        // Every summit found must carry every term - a sealed vein it walked
-        // into, comprehension deep enough to substitute at a bottleneck, and a
-        // ruin entered more than once.
-        let found = 0;
-        for (let i = 0; i < 30_000 && found < 1; i++) {
-            const life = simulateLife('conjunction', i, 'dao_house_bloodline');
-            if (life.peakOrdinal < 45) continue;
-            found++;
-            expect(life.foundVein, 'reached the last realm without a vein').toBe(true);
-            expect(life.ruinsEntered).toBeGreaterThan(0);
-            expect(life.degreeTotal).toBeGreaterThan(20);
-            // Either landing of the last crossing satisfies the conjunction -
-            // the terms above are what it takes to STAND at 44 with the price
-            // paid, and the completion roll afterwards is a separate question.
-            // Asserting 'summit' here was only ever passing because the False
-            // Immortal landing was being discarded; see the header of
-            // `origin-odds.ts`.
-            expect(['summit', 'false_immortal']).toContain(life.end);
-            expect(life.immortalStatus).not.toBe('none');
+    /**
+     * WHAT THIS USED TO ASSERT, AND WHY IT NO LONGER HOLDS.
+     *
+     * It walked lives until one reached ordinal 45 and then demanded that that
+     * single life carried every term of an authored conjunction: a sealed vein
+     * walked into, a ruin entered, comprehension deep enough to substitute at a
+     * bottleneck. It passed, and it was pinning a defect.
+     *
+     * `computeCultivationRate` was being called without `realmOrdinal`, which
+     * prices every rung as Qi Condensation and drops a multiplier that reaches
+     * 256 by the top of the ladder. With the rate that low, only a sealed vein
+     * could close the gap, so the vein LOOKED like a required term when it was
+     * standing in for a missing factor of two hundred.
+     *
+     * Measured with the rate corrected, over 120,000 lives of the most
+     * privileged origin in the table:
+     *
+     *     peak >= 41   570 lives (0.475%), 35 of them carrying a vein
+     *     peak >= 45    35 lives (0.029%)
+     *        of those:  vein 6/35   ruin 6/35   deep comprehension 25/35
+     *        landing:   false_immortal 34, summit 1
+     *
+     * So the vein is carried by one summit in six rather than by all of them,
+     * and the term that actually carries most of them is understanding. The
+     * conjunction was real; it was not the conjunction that was written down.
+     *
+     * ── AND THE TERM THIS HARNESS DOES NOT MODEL ──────────────────────────
+     *
+     * A teacher. `simulateLife` supplies ground, stones, placement, access,
+     * supplied risk and a book, and never once passes `guideOrdinal` - so every
+     * life in this file is the UNAIDED climb, and its summit rate is the answer
+     * to "how often does somebody get there with nobody showing them the way".
+     * The designer's bar for that case is about one in a generation, and one
+     * life in three and a half thousand of the best-born in the world - against
+     * one in sixty thousand for the ordinary-born - is the right order for it.
+     *
+     * What replaces the old assertion is the shape rather than the checklist:
+     * the summit is reachable, it is a tail, and privilege is visible at the
+     * very top and only there. That is what `origin.md` actually claims.
+     */
+    it('is reached as a tail, and privilege is visible there and only there', () => {
+        const walk = (tier: string, n: number) => {
+            let atLast = 0, summits = 0, withDepth = 0;
+            for (let i = 0; i < n; i++) {
+                const life = simulateLife('conjunction', i, tier as never);
+                if (life.peakOrdinal >= 41) atLast++;
+                if (life.peakOrdinal < 45) continue;
+                summits++;
+                if (life.degreeTotal > 20) withDepth++;
+                // Either landing of the last crossing counts. Asserting
+                // 'summit' here was only ever passing because the False
+                // Immortal landing was being discarded; see the header of
+                // `origin-odds.ts`.
+                expect(['summit', 'false_immortal']).toContain(life.end);
+                expect(life.immortalStatus).not.toBe('none');
+            }
+            return { atLast, summits, withDepth };
+        };
+
+        const N = 30_000;
+        const born = walk('dao_house_bloodline', N);
+        const nobody = walk('thin_county', N);
+
+        // It is reachable at all, which is the half that has to stay true.
+        expect(born.atLast, 'nobody reached the last realm from any origin')
+            .toBeGreaterThan(0);
+        // And it is a tail rather than an outcome. One life in two hundred of
+        // the best-born in the world would already be a stratum.
+        expect(born.atLast / N, 'the last realm has become an ordinary destination')
+            .toBeLessThan(0.005 * 4);
+        // Visible at the very top, which is the one place `origin.md` permits
+        // it to be. Measured 0.475% against 0.013%, a factor of about thirty.
+        expect(
+            born.atLast,
+            `dao house ${born.atLast} vs thin county ${nobody.atLast} at ordinal 41+`
+        ).toBeGreaterThan(nobody.atLast * 3);
+        // Understanding is what carries most of them. Not a required term -
+        // measured 25 of 35 - but the commonest one, and the one a player can
+        // actually go and get.
+        if (born.summits >= 4) {
+            expect(born.withDepth / born.summits).toBeGreaterThan(0.4);
         }
-        expect(found, 'the last realm was not reachable at all').toBe(1);
     });
 
     it('lands False Immortal more often than True, which is what the Lid does', () => {
