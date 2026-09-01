@@ -354,3 +354,57 @@ describe('what a gazetteer entry needs', () => {
         expect(placesView(w).locations[0].occupancy).toBe(2);
     });
 });
+
+describe("a place gives the ground it has, not its province's average", () => {
+    /**
+     * Found by playing. Two consecutive looks at the same square described the
+     * air as "thick enough to notice on the first breath" and then as
+     * "unremarkable", and every settlement in the game read the same way
+     * afterwards.
+     *
+     * The cause was one line in `seeding.ts`: a place's
+     * `environment.spiritualDensity` was `qiFraction(region.qiDensity)`, so
+     * every settlement in a province got its province's average, while the
+     * `ambient` band the catalog declares for each one was written onto the
+     * record two lines above and read by nothing. `Game.ambientFor` prefers
+     * that record over the catalog, so the flat value won everywhere.
+     *
+     * The stakes are not description. Where to sit is one of the few real
+     * decisions a low cultivator has, and Nine Peaks - "the deepest vein
+     * anyone has kept, and the Ascetic Order sitting on it" - was
+     * arithmetically identical to a thin ford town.
+     *
+     * This asserts through the played game rather than the catalog, because
+     * the catalog was right the whole time and that is exactly why nothing
+     * caught it.
+     */
+    const AIR = /The air here ([^.]*)\./;
+
+    async function airAt(where: string): Promise<string> {
+        const { game } = makeGame({ seed: 'ground-truth' });
+        await game.newRun('Air Check');
+        await game.act(`I travel to ${where}`);
+        const said = (await game.act('I look around')).narration ?? '';
+        const m = said.match(AIR);
+        return m ? m[1] : '(nothing said about the air)';
+    }
+
+    it('says thick ground is thick and thin ground is thin', async () => {
+        // Declared dense in the catalog, and the deepest vein in the province.
+        expect(await airAt('Nine Peaks')).toMatch(/thick enough to notice/i);
+        // Declared thin: a ford town and a temple ground with no vein.
+        expect(await airAt('Scarwater')).toMatch(/gives very little back/i);
+        expect(await airAt('Sweptground')).toMatch(/gives very little back/i);
+    }, 120_000);
+
+    it('and does not flatten them into each other', async () => {
+        // The real regression. Three places in one province, and the failure
+        // mode was every one of them reading identically.
+        const said = new Set([
+            await airAt('Nine Peaks'),
+            await airAt('Scarwater'),
+            await airAt('Low Fall')
+        ]);
+        expect(said.size).toBeGreaterThan(1);
+    }, 120_000);
+});

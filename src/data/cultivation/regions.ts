@@ -1493,6 +1493,35 @@ const REGION_BY_FACTION: ReadonlyMap<string, string> = (() => {
     return map;
 })();
 
+/**
+ * The band a named settlement's ground ordinarily gives.
+ *
+ * Every place in `places` declares one, and until this existed nothing read
+ * them at the point a cultivator was standing there. `currentAmbient` fell
+ * through to `impliedDensityFor`, which is a hash of the run seed and the
+ * location STRING - so Nine Peaks, "the deepest vein anyone has kept", rolled
+ * its qi off its own name and came out indistinguishable from a thin market
+ * town. Found by playing: two consecutive looks at the same square described
+ * the air as thick enough to notice on the first breath, and then as
+ * unremarkable.
+ *
+ * Returns undefined for anything not in the catalog - a compound, a site, an
+ * admin alias - and that is the honest answer rather than a default. The
+ * implied guess is correct exactly where the ground genuinely is not known.
+ */
+const AMBIENT_BY_PLACE_NAME: ReadonlyMap<string, AmbientQi> = (() => {
+    const map = new Map<string, AmbientQi>();
+    for (const region of REGIONS) {
+        for (const place of region.places) map.set(place.name.toLowerCase(), place.ambient);
+    }
+    return map;
+})();
+
+export function declaredAmbientAt(placeName: string | null | undefined): AmbientQi | undefined {
+    if (!placeName) return undefined;
+    return AMBIENT_BY_PLACE_NAME.get(placeName.trim().toLowerCase());
+}
+
 export function getRegion(id: string): Region | undefined {
     return REGION_BY_ID.get(id);
 }

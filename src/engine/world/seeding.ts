@@ -54,7 +54,7 @@ import {
     FAILURE_PROGRESS_LOSS,
     MAX_PILL_BONUS
 } from '../cultivation/breakthrough.js';
-import { eraAmbientMultiplier } from '../cultivation/ambient.js';
+import { densityForBand, eraAmbientMultiplier } from '../cultivation/ambient.js';
 import {
     AMBIENT_QI_RATE_MULTIPLIER,
     stagnationYearsForOrdinal,
@@ -368,7 +368,22 @@ function seedRegions(
                 thresholds: makeThresholds(0, 0, 0, Math.max(0, ceiling - 4)),
                 hazards: region.hazards.slice(),
                 environment: makeEnvironment({
-                    spiritualDensity: qiFraction(region.qiDensity),
+                    // THE PLACE'S OWN GROUND, not its province's average.
+                    //
+                    // This read `qiFraction(region.qiDensity)`, so every
+                    // settlement in a province got an identical density and the
+                    // `ambient` band two lines up was written to the record and
+                    // never used for anything. Measured: Nine Peaks - "the
+                    // deepest vein anyone has kept, and the Ascetic Order
+                    // sitting on it" - and Scarwater, a thin ford town, both
+                    // came out at 0.35, and `Game.ambientFor` prefers this
+                    // record over the catalog, so the played game described
+                    // both as air that neither helps nor gets in the way.
+                    //
+                    // Found by playing: two looks at the same square, one
+                    // calling the air thick enough to notice on the first
+                    // breath and the next calling it unremarkable.
+                    spiritualDensity: densityForBand(place.ambient),
                     danger: place.kind === 'site' ? 0.5 : 0.1,
                     resources: region.exports.slice(0, 2),
                     politicalControl: politicalControlOf(region),

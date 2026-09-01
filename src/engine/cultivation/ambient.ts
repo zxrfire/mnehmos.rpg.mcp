@@ -286,6 +286,29 @@ export function impliedDensityFor(runSeed: string, locationId: string): number {
 }
 
 /**
+ * The geology a declared band implies - the inverse of `typicalAmbientFor`.
+ *
+ * A catalog says what a place IS ("the deepest vein anyone has kept" is dense);
+ * the engine works in densities. This is the one conversion between them, and
+ * it exists so the two scales cannot drift: the centres here are the same
+ * constants the weather kernel varies around.
+ *
+ * `spirit_tide` is not a geology - it is a fixed share of every month at any
+ * density - so a place that declares it is read as rich ground that tides
+ * often, which is the only sense the word has as a standing property.
+ * `sealed_vein` reads the same, and sealing itself travels separately as
+ * `SiteConditions.sealed`, because whether a pocket is open is a fact about the
+ * world rather than about the rock.
+ */
+export function densityForBand(band: AmbientQi): number {
+    switch (band) {
+        case 'thin': return BAND_DENSITY_CENTRE.thin;
+        case 'normal': return BAND_DENSITY_CENTRE.normal;
+        default: return BAND_DENSITY_CENTRE.dense;
+    }
+}
+
+/**
  * The band this ground gives in an ordinary month - its geology, as opposed to
  * this month's weather.
  */

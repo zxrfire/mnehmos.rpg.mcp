@@ -80,11 +80,13 @@ import {
     type TollTaken,
     type VisionSeed
 } from '../../schema/cultivation.js';
+import { declaredAmbientAt } from '../../data/cultivation/regions.js';
 import {
     DAYS_PER_YEAR,
     ambientForBlock,
     ambientBlockStart,
     AMBIENT_REFRESH_DAYS,
+    densityForBand,
     getSpiritRoot,
     openingPosition,
     originDiscoveryContext,
@@ -549,13 +551,40 @@ export function effectiveLocationId(
     return alias ? alias.alias : base;
 }
 
+/**
+ * The band the ground gives today, anchored to the ground it actually is.
+ *
+ * `ambientForLocationOnDay` takes a `density` and says of it: "This is the
+ * CENTRE the month's weather varies around. Omit it only when the location
+ * genuinely is not known." This call omitted it always, so every square in the
+ * game fell through to `impliedDensityFor` - a hash of the run seed and the
+ * location string. The catalog has declared a band for every named settlement
+ * since it was written and nothing read it here.
+ *
+ * Found by playing. Nine Peaks is "the deepest vein anyone has kept, and the
+ * Ascetic Order sitting on it", and standing in it was arithmetically
+ * indistinguishable from standing in a thin market town - which makes the
+ * choice of where to cultivate, one of the few real decisions a low cultivator
+ * has, into noise.
+ *
+ * Unknown places still get the guess, and that is correct rather than a
+ * fallback: a compound, a site or an admin alias genuinely has no declared
+ * ground, and `aliasForAmbient` depends on the implied path continuing to work.
+ */
 export function currentAmbient(
     db: Database.Database,
     run: Run,
     location: string | null,
     day: number
 ): AmbientQi {
-    return ambientForBlock(run.seed, effectiveLocationId(db, run.id, location, day), day);
+    const where = effectiveLocationId(db, run.id, location, day);
+    const declared = declaredAmbientAt(where);
+    return ambientForBlock(
+        run.seed,
+        where,
+        day,
+        declared ? { density: densityForBand(declared) } : {}
+    );
 }
 
 /**
