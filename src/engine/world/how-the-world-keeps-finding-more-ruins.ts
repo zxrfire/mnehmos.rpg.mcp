@@ -725,6 +725,144 @@ export function nameForFind(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// A NAMER MUST NEVER BE FED ITS OWN OUTPUT
+//
+// This is written down because it happened. The inner-room namer built from
+// `seat.name`, and the inner room it minted was itself tagged `ruined` and left
+// undiscovered - which is exactly the pool `findFallenSeatUnder` draws from. So
+// every pass wrapped the previous pass's output, and a live world log produced
+// this on one location:
+//
+//   The Door At The Door At The Door At ... Frostmirror Court grounds
+//   That Nobody Left Could Open That Nobody Left Could Open ...
+//
+// Fourteen prefixes and fourteen suffixes. The template is fine - one pass
+// gives "The Door At Frostmirror Court grounds That Nobody Left Could Open",
+// which is a name somebody would use. It was a FIXPOINT bug, not a naming bug,
+// and it had three independent causes, every one of which is fixed here because
+// any one of them left alone keeps the pattern latent:
+//
+//   1. THE POOL LEAKED. An inner room is not a fallen seat and must never be
+//      selectable as one. It carries `INNER_ROOM_TAG` now and the selector
+//      excludes it, which is the real fix - the other two are belt and braces.
+//   2. THE NAMER READ A FIELD IT WRITES. It builds from the UNDERLYING PLACE
+//      now, via `baseNameOf`, and every minted place stores `data.baseName` so
+//      later passes have a clean root instead of having to recover one.
+//   3. NOTHING NOTICED. `decorateOnce` refuses to re-apply a wrapper that is
+//      already present, so even a caller that gets both of the above wrong
+//      produces one layer rather than fourteen.
+//
+// The general rule, for anything added here later: A GENERATOR MUST NOT READ THE
+// FIELD IT WRITES. If it has to, unwrap to the base first and assert the result
+// is stable under a second application.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Marks a place minted as a room INSIDE another. Never a seat in its own right. */
+export const INNER_ROOM_TAG = 'inner-room';
+
+/**
+ * Wrappers this module applies to a place name, so they can be recognised and
+ * stripped rather than stacked.
+ *
+ * Only wrappers built from a LOCATION name belong here. "The Door <person> Did
+ * Not Open Again" is not in the table and must not be: it composes a person's
+ * name, which is never re-read off a location, so it cannot recurse - and
+ * stripping it would damage a legitimately named place.
+ */
+const NAME_WRAPPERS: readonly { prefix: string; suffix: string }[] = [
+    { prefix: 'The Door At ', suffix: ' That Nobody Left Could Open' }
+];
+
+/**
+ * The underlying place, with any decoration this module applied taken back off.
+ *
+ * Prefers the stored `data.baseName`, which minted places carry precisely so
+ * this never has to guess. Falls back to unwrapping, repeatedly, which is what
+ * repairs a world that is already carrying a compounded name.
+ */
+export function baseNameOf(location: LocationRecord): string {
+    const stored = location.data.baseName;
+    if (typeof stored === 'string' && stored.length > 0) return stored;
+    return undecorate(location.name);
+}
+
+/** Strip every layer of every known wrapper. Terminates: each pass shortens. */
+export function undecorate(name: string): string {
+    let out = name;
+    for (let guard = 0; guard < 64; guard++) {
+        let changed = false;
+        for (const { prefix, suffix } of NAME_WRAPPERS) {
+            if (out.startsWith(prefix) && out.endsWith(suffix)) {
+                out = out.slice(prefix.length, out.length - suffix.length);
+                changed = true;
+            }
+        }
+        if (!changed) break;
+    }
+    return out.trim();
+}
+
+/**
+ * Apply a wrapper exactly once, whatever it is handed.
+ *
+ * Idempotent by construction: `decorateOnce(decorateOnce(x)) === decorateOnce(x)`,
+ * which is the property the test asserts and the property whose absence produced
+ * fourteen layers.
+ */
+export function decorateOnce(base: string, wrapper: { prefix: string; suffix: string }): string {
+    const root = undecorate(base);
+    return `${wrapper.prefix}${root}${wrapper.suffix}`;
+}
+
+/** The inner-room name, built from the underlying place and never from itself. */
+export function nameForInnerRoom(seat: LocationRecord): string {
+    return decorateOnce(baseNameOf(seat), NAME_WRAPPERS[0]);
+}
+
+/**
+ * Repair a world that is already carrying compounded names.
+ *
+ * Worlds are in flight and their locations are persisted, so fixing the
+ * generator does not fix the rows it already wrote. This is idempotent and
+ * cheap, and it runs at the top of the yearly pass so an affected world heals
+ * itself on its next tick rather than needing anybody to migrate it.
+ *
+ * It also repairs `daoSubject`, which is set from `location.name` when a found
+ * place turns out to teach a road and would otherwise keep a copy of the
+ * compounded string after the name itself was fixed.
+ */
+export function repairCompoundedNames(state: WorldState): number {
+    let repaired = 0;
+    for (let i = 0; i < state.locations.length; i++) {
+        const location = state.locations[i];
+        // ONLY DECORATED PLACES. An earlier draft of this fell through to every
+        // location in the world so that it could stamp `baseName` on all of
+        // them, which writes a key onto seven hundred settlements and provinces
+        // that have nothing to do with this module. A repair pass should touch
+        // what is broken and nothing else.
+        const decorated = NAME_WRAPPERS.some(
+            w => location.name.startsWith(w.prefix) && location.name.endsWith(w.suffix)
+        );
+        if (!decorated) continue;
+
+        // One layer is correct and is left alone. More than one is the defect.
+        const root = undecorate(location.name);
+        const wanted = decorateOnce(root, NAME_WRAPPERS[0]);
+        const subjectStale = typeof location.data.daoSubject === 'string'
+            && location.data.daoSubject !== wanted;
+        if (wanted === location.name && typeof location.data.baseName === 'string' && !subjectStale) {
+            continue;
+        }
+
+        const data: LocationRecord['data'] = { ...location.data, baseName: root };
+        if (subjectStale) data.daoSubject = wanted;
+        if (wanted !== location.name) repaired++;
+        state.locations[i] = { ...location, name: wanted, data };
+    }
+    return repaired;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // THE PASS
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -788,6 +926,10 @@ export function applyRuinProspecting(
     day: number
 ): ProspectingResult {
     const result: ProspectingResult = { found: [], provincesWorked: 0, provincesWorkedOut: 0 };
+    // Worlds are persisted, so fixing the generator does not fix the rows it
+    // already wrote. Idempotent and cheap, so an affected world heals on its
+    // next tick rather than needing anybody to migrate it by hand.
+    repairCompoundedNames(state);
     const rng = forStream(state.seed, 'ruins-found', year);
     // Bodies whose ground the world has already turned up. Read off the
     // locations rather than kept, so a reload cannot lose it and two finds can
@@ -895,7 +1037,9 @@ export function applyRuinProspecting(
                 if (!state.locations.some(l => l.id === vaultId)) {
                     const vault = makeLocation({
                         id: vaultId,
-                        name: `The Door At ${seat.name} That Nobody Left Could Open`,
+                        // From the UNDERLYING PLACE, never from whatever the
+                        // last pass wrote here. See `nameForInnerRoom`.
+                        name: nameForInnerRoom(seat),
                         kind: 'ruin',
                         parentId: seat.id,
                         layer: seat.layer,
@@ -920,14 +1064,23 @@ export function applyRuinProspecting(
                         // thing the mountain has instead of a bottom, and it
                         // becomes findable when its own formation thins.
                         discovered: false,
-                        tags: ['ruin', 'ruined', 'ruin-character:vault'],
+                        // NOT `ruined`. An inner room is not a fallen seat, and
+                        // tagging it as one put it straight back into the pool
+                        // `findFallenSeatUnder` draws from - so the next pass
+                        // treated this vault as a seat, minted a vault inside
+                        // it, and wrapped the name again. That is the whole of
+                        // the fourteen-layer defect and this line is the fix.
+                        tags: ['ruin', INNER_ROOM_TAG, 'ruin-character:vault'],
                         data: {
                             ruinCharacter: 'vault',
                             ruinOrigin: 'abandoned_by_a_house',
                             ruinScale: 'a_building',
                             intentStanding: 'never_addressed',
                             setByOrdinal: vaultOrdinal,
-                            depthBand: depthBandReachableBy(vaultOrdinal)
+                            depthBand: depthBandReachableBy(vaultOrdinal),
+                            // The clean root, so no later pass has to recover
+                            // one by unwrapping.
+                            baseName: baseNameOf(seat)
                         }
                     });
                     vault.origin.fromDay = seat.origin.fromDay;
@@ -1288,6 +1441,14 @@ function findFallenSeatUnder(state: WorldState, regionId: string): LocationRecor
         if (!location.tags.includes('ruined')) continue;
         if (location.discovered) continue;
         if (location.tags.includes('emptied')) continue;
+        // A room inside a seat is not a seat. Without this the pass mints an
+        // inner room, finds it again next year as though it were a fallen
+        // house, and mints a room inside THAT - which is how one location
+        // ended up with fourteen layers of name on it. Checked here as well as
+        // at the tag, because a world already in flight is carrying rooms that
+        // were tagged `ruined` before the tag was corrected.
+        if (location.tags.includes(INNER_ROOM_TAG)) continue;
+        if (location.id.endsWith('-vault')) continue;
         if (regionIdOf(state, location.parentId ?? location.id) !== regionId) continue;
         return location;
     }

@@ -26,7 +26,10 @@ import {
     RUINS_ARE_A_RESERVE_NOT_AN_ENDOWMENT,
     RUNG_AT_WHICH_SOMEBODY_HAS_A_DOOR,
     applyRuinProspecting,
+    decorateOnce,
     depthBandReachableBy,
+    repairCompoundedNames,
+    undecorate,
     foundUnder,
     howTheHouseEnded,
     isSomebodyStillAliveInThere,
@@ -569,6 +572,107 @@ describe('how a house ended decides the shape of what it leaves', () => {
             expect(ending.theRecordsSurvive).toBe(true);
             expect(ending.strippedShare).toBeLessThan(0.5);
         }
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// NAMES DO NOT GROW
+//
+// A live world log produced one location called:
+//
+//   The Door At The Door At The Door At ... Frostmirror Court grounds
+//   That Nobody Left Could Open That Nobody Left Could Open ...
+//
+// Fourteen prefixes and fourteen suffixes. The template was fine; it was being
+// fed its own output, because the inner room it minted was tagged `ruined` and
+// left undiscovered, which is exactly the pool the seat selector draws from.
+// These are the cheapest possible guards and any one of them catches it.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('a namer is never fed its own output', () => {
+    it('does not grow a name when the pass runs many times over the same world', () => {
+        // Driven through `applyPressure` rather than by calling the pass
+        // directly. Calling it directly never reaches the fallen-seat branch,
+        // because a seat has to be emptied by the simulation first - so a
+        // direct-drive version of this test passed against the defect and only
+        // the nesting assertion below caught it. Checked by reintroducing the
+        // bug and confirming both fail.
+        const state = world('fixpoint');
+        const from = state.currentDay;
+        applyPressure(state, from, from + 600 * YEAR, { maxEvents: 1_000_000 });
+        for (const location of state.locations) {
+            // One layer is correct. Two is the defect.
+            const layers = location.name.split('The Door At ').length - 1;
+            expect(layers, `${location.id} accumulated name layers: ${location.name}`)
+                .toBeLessThanOrEqual(1);
+            expect(location.name.length, `${location.id} has a runaway name`).toBeLessThan(160);
+        }
+    }, 60_000);
+
+    it('never mints a room inside a room', () => {
+        const state = world('no-nesting');
+        const from = state.currentDay;
+        applyPressure(state, from, from + 600 * YEAR, { maxEvents: 1_000_000 });
+        for (const location of state.locations) {
+            expect(location.id, 'an inner room was treated as a seat')
+                .not.toMatch(/-vault-vault/);
+        }
+    }, 60_000);
+
+    it('applies a wrapper exactly once, however many times it is applied', () => {
+        const once = decorateOnce('Frostmirror Court grounds', {
+            prefix: 'The Door At ', suffix: ' That Nobody Left Could Open'
+        });
+        const twice = decorateOnce(once, {
+            prefix: 'The Door At ', suffix: ' That Nobody Left Could Open'
+        });
+        expect(once).toBe('The Door At Frostmirror Court grounds That Nobody Left Could Open');
+        expect(twice).toBe(once);
+    });
+
+    it('unwraps a name that is already compounded, however deep', () => {
+        let name = 'Frostmirror Court grounds';
+        for (let i = 0; i < 14; i++) {
+            name = `The Door At ${name} That Nobody Left Could Open`;
+        }
+        expect(undecorate(name)).toBe('Frostmirror Court grounds');
+    });
+
+    it('repairs a world that is already carrying a compounded name', () => {
+        const state = world('repair');
+        const victim = state.locations.findIndex(l => l.kind === 'ruin');
+        if (victim < 0) return;
+        let name = 'Frostmirror Court grounds';
+        for (let i = 0; i < 14; i++) {
+            name = `The Door At ${name} That Nobody Left Could Open`;
+        }
+        state.locations[victim] = {
+            ...state.locations[victim],
+            name,
+            tags: [...state.locations[victim].tags, 'inner-room'],
+            data: { ...state.locations[victim].data, daoSubject: name }
+        };
+
+        expect(repairCompoundedNames(state)).toBeGreaterThan(0);
+        const fixed = state.locations[victim];
+        expect(fixed.name).toBe('The Door At Frostmirror Court grounds That Nobody Left Could Open');
+        expect(fixed.data.daoSubject).toBe(fixed.name);
+        expect(fixed.data.baseName).toBe('Frostmirror Court grounds');
+
+        // Idempotent: a second run changes nothing.
+        expect(repairCompoundedNames(state)).toBe(0);
+        expect(state.locations[victim].name).toBe(fixed.name);
+    });
+
+    it('leaves an ordinary name completely alone', () => {
+        // The one-pass form is good and the repair must not touch anything
+        // that was never decorated.
+        expect(undecorate('The Door Liang Xuru Did Not Open Again'))
+            .toBe('The Door Liang Xuru Did Not Open Again');
+        expect(undecorate('The Curriculum Cut Above the Ice Field'))
+            .toBe('The Curriculum Cut Above the Ice Field');
+        expect(undecorate('The Store Door That Never Heard of Elders'))
+            .toBe('The Store Door That Never Heard of Elders');
     });
 });
 
