@@ -874,6 +874,53 @@ time-skip primitive in [`../cultivation/README.md`](../cultivation/README.md).
 
 ---
 
+## Gatherings: the chosen of allied houses meet each other
+
+`gatherings.ts`. The world simulated deaths, births, goals, grudges and disasters and its
+people never **met**: measured before this module existed, 221 inherited grudges after five
+centuries and not one of them originating in two people who had been in a room together.
+
+A gathering is an event that puts a defined set of people in one place for a defined time
+and produces outcomes that persist. Four kinds, differing in what they write:
+
+```text
+meeting      introductions. Ties, and nothing else. The floor and the commonest.
+challenge    resolveConfrontation with intent 'subdue'. The interesting endings are
+             the ones where nobody-gets-hurt fails, and the one where the gap turns out
+             to be categorical - which opens a GOAL, and goals inherit.
+competition  ranked on assessPower times a seeded showing. Moves resources.prestige,
+             and can select the winner UPWARD into the host house at its lowest rank.
+expedition   several houses' chosen enter a site and are scored on the HAUL (wings
+             worked, weighted by depth - rewards spreading out) or on a PROOF (who
+             reaches a named room first - rewards reading the place, because
+             identifyBuilder either places the builder or does not).
+```
+
+Three rules bind it, and they are the ones worth checking before changing anything here:
+
+- **Who is allied comes from `FactionRecord.standing` and nowhere else.** Seeded from the
+  catalog's `rivalIds` and `parentFactionId`. `ALLIED_STANDING` is `pressure.ts`'s own
+  `rivalsOf` threshold with the sign flipped, so the two questions cannot drift apart.
+  There is no alliance table and there must never be one.
+- **Exclusion is the point.** A house with no living `chosen` sends nobody; a house nobody
+  is allied to is never invited; a host that cannot pay `HOSTING_COST_PER_HEAD` does not
+  gather. Measured, the difference is 2.2 cross-house ties per head for somebody who was in
+  the room at least once against 0.17 for a chosen who never was.
+- **Outcomes are readable later.** Every relationship row a gathering writes carries the
+  gathering's fact id in `factIds`, so "did this tie begin at a gathering or at a death" is
+  answerable from the row alone two centuries afterwards. `write()` moves an existing
+  standing rather than replacing it, so a polite afternoon cannot overwrite a blood feud.
+
+Scheduled from `applyPressure` on the same yearly line as `applyAdvancement` and
+`applyRecruitment`, and deliberately **not** in the weighted event table - for the reason
+`applyConvergences` gives, a calendar that only fires when the year had a slot free is not
+a calendar.
+
+`scripts/audit-gatherings.ts` measures the rate, the supply of attendees, where
+relationships originate, whether the same houses always win, and what exclusion costs.
+
+---
+
 ## Reading order
 
 ```text
@@ -888,6 +935,8 @@ npc-state.ts     NPCs as small durable records; goals outlive their holder
 memory.ts        durable memories, search, and the LLM-driven compression write path
 world-state.ts   the authoritative store; plain serialisable data, pure mutations
 time.ts          advanceTime: what fell due, what was running, what was missed
+manuals.ts       who holds a book, and who a house has decided is worth its top shelf
+gatherings.ts    the chosen of allied houses meet; meetings, bouts, rankings, sites
 immortal-world.ts the far side: arrival, standing, perils, and its own clock
 ```
 
