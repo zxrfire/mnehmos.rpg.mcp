@@ -14,6 +14,7 @@ import {
     writeNextStage,
     stagesWrittenOf,
     contiguousRun,
+    writtenTo,
     effectiveCapOf,
     manualDaoRequirement,
     manualGate,
@@ -227,6 +228,65 @@ describe('E1 - effectiveCapOf, the scattered set', () => {
         // And holding the tail without the head is worth nothing at all.
         expect(effectiveCapOf(SCATTERED, ['vol-two', 'vol-three']).cap)
             .toBe(effectiveCapOf(SCATTERED, []).cap);
+    });
+
+    it('a written stage moves the ceiling, and the catalog alone no longer knows it', () => {
+        // THE SEAM. `stagesWrittenOf` is `cap - requiredOrdinal`, exact for a
+        // catalog row precisely BECAUSE nothing has been written yet. The
+        // moment a stage exists the two disagree, and the catalog is what the
+        // rate layer reaches - so anything resolving `techniqueCap` must
+        // compose, never read `manual.cap`.
+        const whole = { id: 'w', name: 'Whole', cap: 21, volumes: null };
+        expect(writtenTo(whole, 0)).toBe(21);
+        expect(writtenTo(whole, 1)).toBe(22);
+        expect(writtenTo(whole, 3)).toBe(24);
+        expect(effectiveCapOf(whole, [], 2).cap).toBe(23);
+        expect(effectiveCapOf(whole, [], 2).writtenTo).toBe(23);
+        expect(effectiveCapOf(whole, [], 2).line).toContain('written since');
+    });
+
+    it('a stage past the end of the book is worth nothing to somebody not at the end', () => {
+        // Contiguity again, and the same answer it gives volumes. Nobody
+        // practises stage 14 while stuck at stage 2 for want of volume two.
+        const partial = effectiveCapOf(SCATTERED, ['vol-one'], 5);
+        expect(partial.cap).toBe(39);
+        expect(partial.stagesHeld).toBe(0);
+        // But the world fact is still reported, so a caller can say the book
+        // goes further than this holder can follow it.
+        expect(partial.writtenTo).toBe(46);
+    });
+
+    it('a complete holder stands on every stage written since', () => {
+        const complete = effectiveCapOf(SCATTERED, ['vol-one', 'vol-two', 'vol-three'], 2);
+        expect(complete.cap).toBe(43);
+        expect(complete.stagesHeld).toBe(2);
+    });
+
+    it('extending twice writes the SECOND stage, not the first again', () => {
+        // Without `stagesWrittenSince` the ceiling would never move past the
+        // first derivation: every attempt would rewrite the stage that exists.
+        const base = {
+            runSeed: 'seed-alpha', cultivatorId: 'c1',
+            source: SCATTERED, dao: daoIn('fire'),
+            precedent: { artsAtOrAbove: PRECEDENT_WELL_WALKED }
+        };
+        const first = writeNextStage({ ...base, stagesWrittenSince: 0 });
+        const second = writeNextStage({ ...base, stagesWrittenSince: 1 });
+        expect(first.written && second.written).toBe(true);
+        if (!first.written || !second.written) return;
+        expect(second.stage.number).toBe(first.stage.number + 1);
+        expect(second.newCap).toBe(first.newCap + 1);
+    });
+
+    it('refuses once the manual has been written to the top of the ladder', () => {
+        const result = writeNextStage({
+            runSeed: 'seed-alpha', cultivatorId: 'c1',
+            source: SCATTERED, dao: daoIn('fire'),
+            precedent: { artsAtOrAbove: PRECEDENT_WELL_WALKED },
+            stagesWrittenSince: MAX_ORDINAL
+        });
+        expect(result.written).toBe(false);
+        expect(result.check.reason).toBe('nothing_above');
     });
 
     it('stages are derived from the cap, so nothing has to be kept in sync', () => {

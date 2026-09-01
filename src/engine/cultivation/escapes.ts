@@ -328,6 +328,16 @@ export interface EffectiveCap {
     cap: number | null;
     /** The complete work's own ceiling, for comparison. */
     wholeCap: number | null;
+    /**
+     * How far the manual has been written BY ANYBODY, catalog plus every stage
+     * added since. The world fact, as against `cap`, which is this holder's.
+     *
+     * These two used to be the same number and silently stopped being one the
+     * first time a stage was written. See {@link writtenTo}.
+     */
+    writtenTo: number | null;
+    /** Stages beyond the catalog's that this holder actually stands on. */
+    stagesHeld: number;
     volumesHeld: number;
     volumesTotal: number;
     /** Volume ids the holder is missing. Empty for a complete or single work. */
@@ -353,26 +363,78 @@ export interface EffectiveCap {
  * be unsuited and you now own three quarters of something you cannot read, is
  * `assessFit`'s to say and not this function's.
  */
+/**
+ * How far this manual has been written BY ANYBODY.
+ *
+ * ── THE FACT THAT STOPPED BEING FREE ─────────────────────────────────────
+ *
+ * `stagesWrittenOf(manual)` is `cap - requiredOrdinal`, and that is exact for a
+ * catalog row precisely BECAUSE no stage has been written yet. The moment one
+ * is, the catalog's cap and the manual's real ceiling disagree - and the
+ * catalog is the only thing the rate layer can currently reach, so a manual
+ * that just gained a stage would go on reporting the ceiling it had before.
+ *
+ * That is the stage model's version of a defect the row model had in a worse
+ * form: a runtime-written art was not in the compiled catalog at all, so
+ * `getTechnique` missed it, `techniqueCap` fell to `NO_MANUAL_CEILING` and a
+ * cultivator who wrote their own continuation was bricked by it. Measured by
+ * the verb layer as `PROGRESS 0 -> 0`. A manual that GAINS A STAGE stays
+ * catalogued, which is most of why this model is the right one - but "stays
+ * catalogued" is not "the catalog knows how far it now goes", and this is the
+ * seam.
+ *
+ * So the ceiling is composed rather than read: the catalog's own written
+ * stages, plus every stage recorded against the manual since. Whatever
+ * resolves `techniqueCap` must call this, not `manual.cap`.
+ */
+export function writtenTo(
+    manual: Pick<CappedManual, 'cap'>,
+    stagesWrittenSince = 0
+): number | null {
+    if (manual.cap === null) return null;
+    const added = Math.max(0, Math.floor(stagesWrittenSince));
+    const to = clampOrdinal(manual.cap) + added;
+    return to > MAX_ORDINAL ? null : to;
+}
+
 export function effectiveCapOf(
     manual: Pick<CappedManual, 'id' | 'name' | 'cap' | 'volumes'>,
-    heldVolumeIds: readonly string[] = []
+    heldVolumeIds: readonly string[] = [],
+    /**
+     * Stages written beyond the catalog's that THIS holder stands on.
+     *
+     * Contiguity applies here exactly as it does to volumes: a stage past the
+     * end of the book is worth nothing to somebody who has not got to the end
+     * of the book, so this is ignored for a holder missing any part of the
+     * work. Ignoring it is the honest answer rather than a simplification -
+     * nobody practises stage 14 while stuck at stage 2.
+     */
+    stagesHeldSince = 0
 ): EffectiveCap {
     const title = manual.name ?? manual.id;
     const volumes = manual.volumes ?? null;
     const wholeCap = manual.cap === null ? null : clampOrdinal(manual.cap);
+    const added = Math.max(0, Math.floor(stagesHeldSince));
+    const reached = writtenTo(manual, added);
 
     if (volumes === null || volumes.length === 0) {
         return {
-            cap: wholeCap,
+            cap: reached,
             wholeCap,
+            writtenTo: reached,
+            stagesHeld: added,
             volumesHeld: 0,
             volumesTotal: 0,
             missing: [],
             rungsLost: 0,
             line: `${title} is one work and it is whole. ` +
-                (wholeCap === null
+                (reached === null
                     ? 'Nothing in it stops.'
-                    : `It ends at ${rankName(wholeCap)}.`)
+                    : added > 0
+                        ? `It was written as far as ${rankName(wholeCap ?? 0)}, and ` +
+                          `${added} further ${added === 1 ? 'stage has' : 'stages have'} been ` +
+                          `written since: it ends at ${rankName(reached)}.`
+                        : `It ends at ${rankName(reached)}.`)
         };
     }
 
@@ -388,18 +450,25 @@ export function effectiveCapOf(
     const unusable = volumes.length - run;
 
     if (missing.length === 0) {
+        // The complete work IS the whole book, so stages written since count.
         return {
-            cap: wholeCap,
+            cap: reached,
             wholeCap,
+            writtenTo: reached,
+            stagesHeld: added,
             volumesHeld,
             volumesTotal: volumes.length,
             missing: [],
             rungsLost: 0,
             line: `${title} is complete in ${volumes.length} volumes and all ${volumes.length} ` +
                 `are in hand. ` +
-                (wholeCap === null
+                (reached === null
                     ? 'Nothing in it stops.'
-                    : `It ends at ${rankName(wholeCap)}, which is where the work ends.`)
+                    : added > 0
+                        ? `The work ended at ${rankName(wholeCap ?? 0)} and ${added} further ` +
+                          `${added === 1 ? 'stage has' : 'stages have'} been written since: ` +
+                          `it now carries to ${rankName(reached)}.`
+                        : `It ends at ${rankName(reached)}, which is where the work ends.`)
         };
     }
 
@@ -421,6 +490,11 @@ export function effectiveCapOf(
     return {
         cap,
         wholeCap,
+        // The world may have written further; this holder cannot stand on it
+        // while any part of the book itself is missing. Reported anyway, so a
+        // caller can say "it goes further than you can follow it".
+        writtenTo: reached,
+        stagesHeld: 0,
         volumesHeld,
         volumesTotal: volumes.length,
         missing: [...missing],
@@ -960,6 +1034,15 @@ export interface DerivationRequest {
      * whole curve exists to prevent. Build it with {@link precedentAt}.
      */
     precedent: Precedent;
+    /**
+     * Stages already written against this manual beyond the catalog's own.
+     *
+     * REQUIRED IN EFFECT even though it defaults to 0: without it a cultivator
+     * extending a manual that somebody already extended would write the stage
+     * that exists rather than the one after it, and the ceiling would never
+     * move past the first derivation. Read it off the stages table.
+     */
+    stagesWrittenSince?: number;
 }
 
 export type DerivationResult =
@@ -1013,14 +1096,37 @@ export function writeNextStage(request: DerivationRequest): DerivationResult {
     }
 
     // Guarded by `canExtend`'s `nothing_above` branch; narrowed for the type.
-    const sourceCap = source.cap as number;
+    //
+    // Composed rather than read straight off the row: the manual may already
+    // have been extended, in which case the next stage is the one after THAT
+    // and not the one after the catalog's. See `writtenTo`.
+    const already = Math.max(0, Math.floor(request.stagesWrittenSince ?? 0));
+    const reached = writtenTo(source, already);
+    // `canExtend` refuses a manual whose CATALOG cap runs off the ladder, and
+    // cannot see the stages written since. A manual extended to the summit by
+    // earlier hands hits the same wall for the same reason, and gets the same
+    // refusal rather than silently writing a stage that goes nowhere.
+    if (reached === null || reached >= MAX_ORDINAL) {
+        const detail =
+            `${source.name ?? source.id} has been written as far as anything on this ladder ` +
+            'goes. Whatever is above it is not a stage and not a book.';
+        return {
+            written: false,
+            check: { ...check, permitted: false, reason: 'nothing_above', detail },
+            stage: null,
+            newCap: reached,
+            years: 0,
+            line: detail
+        };
+    }
+    const sourceCap = reached;
     // ONE STAGE IS ONE RUNG, which is the whole model rather than a balance
     // choice. The manual stopped at its last written stage; this is the next
     // one. Every further rung needs its own, written against thinner ground
     // than the last, so the new-ground cost is paid again each time rather
     // than once.
     const newCap = Math.min(MAX_ORDINAL, sourceCap + 1);
-    const number = stagesWrittenOf(source) + 1;
+    const number = stagesWrittenOf(source) + already + 1;
     const subject = dao.subject ?? 'the method';
     const road = dao.name ?? daoName(subject, dao.domain ?? 'element');
 
