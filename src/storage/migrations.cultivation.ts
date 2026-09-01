@@ -566,6 +566,18 @@ function addCultivationColumns(db: Database.Database): void {
         db.exec("ALTER TABLE cultivators ADD COLUMN origin_tier TEXT NOT NULL DEFAULT 'thin_county';");
     }
 
+// The bleed clock. NOT NULL defaulting to 0, which is the honest reading
+    // of every row written before it existed: nobody was bleeding out, because
+    // until this column there was no such thing. A cultivator already sitting
+    // at three untreated injuries starts their ninety days from the next turn
+    // rather than retroactively, which is the forgiving reading and the only
+    // one the data supports - the row does not record when the third wound was
+    // taken, and inventing that date would be the engine asserting history.
+    if (!cultivatorColumns.includes('bleeding_turns')) {
+        console.error('[Migration] Adding bleeding_turns column to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN bleeding_turns INTEGER NOT NULL DEFAULT 0;');
+    }
+
     const runColumns = (
         db.prepare('PRAGMA table_info(runs)').all() as { name: string }[]
     ).map(col => col.name);

@@ -25,6 +25,7 @@
 
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import { PLAYER_ROLL_IDENTITY } from '../../web/encounters.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
@@ -605,6 +606,24 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     // ── THE SIMULATION. One call, however long the duration. ──
     const result = simulateTimeSkip(cultivator, days, {
         seed: run.seed,
+        // Judged rather than copied, because the field defaults to the row id
+        // and a caller with a stable id should pass nothing.
+        //
+        // This one is not stable. `create_cultivator` above mints the id with
+        // `randomUUID()`, and `resolveActiveRun` resolves a RUN - so what
+        // reaches here is always a player character with a random id, never a
+        // catalog NPC. The "two cultivators in one world must not draw alike"
+        // case that justifies the per-cultivator component cannot arise here,
+        // because a run has exactly one player.
+        //
+        // The second reason is the stronger one. This is the SAME cultivator
+        // the command bar drives through `GameService`, reached through the
+        // other door, and that door now passes the identity. Leaving this one
+        // alone would mean the same character comprehending different things
+        // depending on which surface advanced their clock - the identical
+        // defect as the two cultivate paths computing disjoint halves of one
+        // options object, which is a bug this file has already had once.
+        rollIdentity: PLAYER_ROLL_IDENTITY,
         locationId,
         turn: run.turn,
         startDay,

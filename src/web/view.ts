@@ -13,6 +13,12 @@
  * about.
  */
 
+import {
+    insightName,
+    isUniversalDomain,
+    understandingEffects
+} from '../engine/cultivation/understanding.js';
+import { hasCrossedTheLid } from '../engine/cultivation/realms.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { getSect } from '../data/cultivation/sects.js';
 import {
@@ -32,6 +38,8 @@ import {
 } from '../engine/cultivation/spirit-roots.js';
 import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
+import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
+import { BLEED_OUT_TURNS } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 
@@ -138,24 +146,76 @@ export function cultivatorView(cultivator: Cultivator): Cultivator {
     return cultivator;
 }
 
+/** One comprehended thing, as the sheet names it. */
+export interface DaoInsightView {
+    name: string;
+    domain: string;
+    degree: number;
+    /** True for the four domains that bear on everything a cultivator does. */
+    universal: boolean;
+}
+
+/**
+ * The other axis.
+ *
+ * Rank and dao are separate, and only one of them can be shut. `realmOrdinal`
+ * stops at the Lid; understanding does not - `discoverableInsights` reads the
+ * spirit root and nothing else, and degree has no ceiling tied to the ladder.
+ * So a False Immortal, whose rank is finished permanently, still has this one
+ * open in front of them, and it is the only thing a span that long can be spent
+ * on. The sheet has to show it or their whole page reads as absences.
+ */
+export interface DaoView {
+    insights: DaoInsightView[];
+    /** Degrees summed across every insight held. The single "how deep" number. */
+    totalDegrees: number;
+    /** Multiplier the universal insights fold into the cultivation rate. */
+    cultivationMultiplier: number;
+    /** Flat modifier they put on a breakthrough attempt. */
+    breakthroughModifier: number;
+    /**
+     * True when the ladder is shut and this is all that is left moving. Read off
+     * the same predicate the engine gates the re-attempt with, so the sheet and
+     * the refusal can never disagree.
+     */
+    theOnlyAxisLeft: boolean;
+}
+
 export interface DerivedView {
     rankName: string;
     nextRankName: string | null;
     realmName: string;
-    progressRequired: number;
+    /** Null above the Lid, where progress is not denominated in qi at all. */
+    progressRequired: number | null;
     breakthroughReady: boolean;
     /**
      * Years left before the ceiling, which may be negative for a cultivator
      * living past it.
      *
      * Read through `effectiveLifespanYears` rather than `lifespanForOrdinal`,
-     * because a False Immortal sits at ordinal 44 and does NOT carry
+     * because a False Immortal sits at ordinal 45 and does NOT carry
      * Tribulation Transcendence's ceiling: they carry the False Immortal one.
      * That number is the whole point of the state - vast, finite, and
      * countable - so it has to be right here rather than corrected downstream.
      */
     lifespanRemaining: number;
     untreatedInjuries: number;
+    /**
+     * Turns left before the open meridians give out on their own, or null when
+     * the untreated count is under the lethal threshold and no clock is
+     * running.
+     *
+     * Null rather than Infinity because this crosses a JSON boundary and
+     * `JSON.stringify(Infinity)` is the literal `null` regardless; saying so in
+     * the type beats shipping a value that silently changes shape on the wire.
+     * A client that renders this as a countdown is rendering the engine's own
+     * number - `turnsUntilBleedOut` - not one it worked out for itself.
+     */
+    turnsUntilBleedOut: number | null;
+    /** The full window, so a client can show "62 of 90" without knowing 90. */
+    bleedOutTurns: number;
+    /** What is still moving, whether or not the rank is. */
+    dao: DaoView;
     /**
      * The sect's display name, resolved server-side from `cultivator.sectId`.
      *
@@ -194,7 +254,25 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
 
     return {
         rankName: rankName(ordinal),
-        nextRankName: ordinal >= MAX_ORDINAL ? null : rankName(ordinal + 1),
+        /**
+         * Null where there is no next rank, which is TWO different states and
+         * used to be one.
+         *
+         * The obvious one is the top of the ladder. The other is a cultivator
+         * whose ladder is shut below it: a False Immortal survived the crossing
+         * without completing it, the Lid does not open twice for the same name,
+         * and there is no second attempt. Found by playing at ordinal 45, where
+         * the sheet read "next: True Immortal" while `breakthrough` said in as
+         * many words that this crossing was survived and not completed - the
+         * engine right and the label promising a rung that is gone.
+         *
+         * Read off the same predicate `DaoView.theOnlyAxisLeft` uses, which is
+         * the same one the engine gates the re-attempt with, so the label, the
+         * panel and the refusal cannot disagree.
+         */
+        nextRankName: ordinal >= MAX_ORDINAL || hasCrossedTheLid(cultivator.immortalStatus ?? 'none')
+            ? null
+            : rankName(ordinal + 1),
         realmName: realmForOrdinal(ordinal).name,
         progressRequired: eligibility.progressRequired,
         breakthroughReady: eligibility.eligible,
@@ -204,9 +282,44 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         lifespanRemaining:
             effectiveLifespanYears(ordinal, cultivator.immortalStatus) - cultivator.age,
         untreatedInjuries: untreatedInjuryCount(cultivator.injuries),
+        turnsUntilBleedOut: finiteOrNull(turnsUntilBleedOut(bleedStateOf(cultivator))),
+        bleedOutTurns: BLEED_OUT_TURNS,
+        dao: daoView(cultivator),
         sectName: context.sectName ?? null,
         foundationQuality: cultivator.foundationQuality,
         nameTaken: context.nameTaken ?? false
+    };
+}
+
+/**
+ * The dao side of the sheet.
+ *
+ * The effects are computed against the cultivator's own root and no technique,
+ * which is the honest neutral reading: what their understanding is worth to
+ * them standing still, rather than what it would be worth mid-practice of some
+ * particular art. Anything element-specific that does not match their own root
+ * is listed but not counted, because it is not doing anything at this moment.
+ */
+export function daoView(cultivator: Cultivator): DaoView {
+    const insights = cultivator.insights ?? [];
+    const ctx = {
+        rootElements: getSpiritRoot(cultivator.spiritRoot).elements,
+        techniqueElement: null,
+        techniqueSubject: null
+    };
+    const effects = understandingEffects(insights, ctx);
+
+    return {
+        insights: insights.map(i => ({
+            name: insightName(i),
+            domain: i.domain,
+            degree: i.degree,
+            universal: isUniversalDomain(i.domain)
+        })),
+        totalDegrees: insights.reduce((sum, i) => sum + i.degree, 0),
+        cultivationMultiplier: effects.cultivationMultiplier,
+        breakthroughModifier: effects.breakthroughModifier,
+        theOnlyAxisLeft: hasCrossedTheLid(cultivator.immortalStatus ?? 'none')
     };
 }
 
@@ -218,9 +331,28 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
  * the same sentence. Two wordings for one engine verdict is how a UI starts
  * disagreeing with the rules it is displaying.
  */
-export function refusalText(reason: string | null, available: number, required: number): string {
+/**
+ * `Infinity` means "no clock is running", and JSON cannot say that - it
+ * serialises to `null` and arrives as one anyway. Doing the conversion here
+ * keeps the wire type honest instead of leaving the client to discover it.
+ */
+function finiteOrNull(n: number): number | null {
+    return Number.isFinite(n) ? n : null;
+}
+
+export function refusalText(
+    reason: string | null,
+    available: number,
+    required: number | null
+): string {
     switch (reason) {
         case 'insufficient_progress':
+            // Above the Lid the refusal is the same one, and quoting a figure
+            // would invent an exchange rate that does not exist.
+            if (required === null) {
+                return 'Whatever is above this is not bought with qi, and there is no amount of it ' +
+                    'that would do.';
+            }
             return `Not enough has accumulated: ${Math.round(available)} of ${required} qi-units. ` +
                 'The barrier does not care how badly you want it.';
         case 'barred:the_lid_opened_once':

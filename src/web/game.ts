@@ -1922,6 +1922,9 @@ ${noticed}`;
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, SHORT_ACTION_DAYS, {
             seed: run.seed,
+            // The row id is a randomUUID; without this the run is not
+            // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
+            rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(cultivator),
             turn: run.turn,
             startDay,
@@ -5021,6 +5024,9 @@ ${noticed}`;
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, ENTERING_DAYS, {
             seed: run.seed,
+            // The row id is a randomUUID; without this the run is not
+            // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
+            rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(cultivator),
             turn: run.turn,
             startDay,
@@ -5900,6 +5906,9 @@ ${noticed}`;
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, GATHERING_DAYS, {
             seed: run.seed,
+            // The row id is a randomUUID; without this the run is not
+            // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
+            rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(cultivator),
             turn: run.turn,
             startDay,
@@ -6129,6 +6138,9 @@ ${noticed}`;
 
         const skip = simulateTimeSkip(provisioned, lived, {
             seed: run.seed,
+            // The row id is a randomUUID; without this the run is not
+            // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
+            rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(provisioned),
             turn: run.turn,
             startDay,
@@ -6260,6 +6272,9 @@ ${noticed}`;
 
         const skip = simulateTimeSkip(before, lived, {
             seed: run.seed,
+            // The row id is a randomUUID; without this the run is not
+            // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
+            rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(cultivator),
             turn: run.turn,
             startDay,
@@ -6735,6 +6750,9 @@ ${noticed}`;
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(paid, TREATMENT_DAYS, {
             seed: run.seed,
+            // The row id is a randomUUID; without this the run is not
+            // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
+            rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(paid),
             turn: run.turn,
             startDay,

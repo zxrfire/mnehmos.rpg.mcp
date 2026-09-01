@@ -48,8 +48,9 @@ import {
     SECTS,
     TECHNIQUES
 } from '../data/cultivation/index.js';
+import { PRICES, type Price } from '../data/cultivation/mortal-world.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
-import { placeKey, type KnowledgeGate } from './knowledge.js';
+import { loosePlaceKey, placeKey, type KnowledgeGate } from './knowledge.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { WorldState } from '../engine/world/world-state.js';
 
@@ -60,7 +61,9 @@ export type EntityKind =
     | 'pill'
     | 'herb'
     | 'recipe'
-    | 'place';
+    | 'place'
+    /** A line on the mortal price board. Not gated: the player was shown it. */
+    | 'price';
 
 /**
  * Who is asking, and what they have heard of.
@@ -109,9 +112,22 @@ export function worldLocationFor(world: WorldState, place: string | null): Locat
 
     // "the Low Fall" against "Low Fall", and the id form for anything that
     // reached us already keyed.
+    //
+    // This comment was here before the code did it. `placeKey` keeps the
+    // article and the parser strips it, so the two sides could never agree for
+    // any location whose name begins with "the" - which in a generated world is
+    // 26 of 33, including every ruin, every scar and all four sites at the qi
+    // ceiling. `loosePlaceKey` drops the article on BOTH sides; the stored key
+    // is untouched, because changing that orphans every knowledge record ever
+    // written.
     const key = placeKey(wanted);
+    const loose = loosePlaceKey(wanted);
     return world.locations.find(l =>
-        placeKey(l.name) === key || l.id === wanted || l.id.endsWith(`-${key}`)) ?? null;
+        placeKey(l.name) === key
+        || loosePlaceKey(l.name) === loose
+        || l.id === wanted
+        || l.id.endsWith(`-${key}`)
+        || l.id.endsWith(`-${loose}`)) ?? null;
 }
 
 export interface ResolvedEntity {
@@ -164,6 +180,19 @@ export function matchScore(query: string, candidate: string): number {
 
 /** Lowest score that counts as a match. Below this the target is unresolved. */
 export const MATCH_THRESHOLD = 55;
+
+/**
+ * The ways somebody refers to their own house without naming it.
+ *
+ * Anchored, so a real house called "The Sect of Our Own Making" is still
+ * matched by name rather than swallowed here. `own` is included because "my own
+ * sect" is as natural as "my sect"; a bare "the sect" is NOT, and deliberately:
+ * standing in front of a stranger's compound and saying "the sect" means that
+ * one, and answering with the player's own would be the substitution bug in a
+ * different coat.
+ */
+export const MY_OWN_HOUSE =
+    /^(?:my|our)\s+(?:own\s+)?(?:sect|house|order|school|clan|hall|pavilion|court)$/i;
 
 function best<T>(query: string, items: readonly T[], nameOf: (item: T) => string): T | null {
     let winner: T | null = null;
@@ -349,6 +378,35 @@ export function resolveSect(
 ): ResolvedEntity | null {
     const heard = (id: string): boolean =>
         !scope || scope.gate.isAwareOf(scope.holderId, 'sect', id);
+
+    // ── "my sect" ──
+    //
+    // A possessive is not a name and cannot be matched like one, so "I ask my
+    // sect for a technique" resolved to nobody while the refusal printed
+    // "Known to this cultivator: Azure Dew Sect" in the same breath - the
+    // membership row was right there. Nobody says the name of their own house
+    // when they mean their own house.
+    //
+    // It bypasses the knowledge gate, and that is correct rather than a leak:
+    // the gate exists so a name has to reach a cultivator before they can use
+    // it, and somebody's own house is the one name they cannot fail to hold.
+    // A possessive from somebody who serves nothing still resolves to nothing.
+    if (memberOf && MY_OWN_HOUSE.test(query.trim())) {
+        const own = repos.sects.getById(memberOf);
+        if (own) {
+            return {
+                kind: 'sect',
+                id: own.id,
+                name: own.name,
+                facts: sectFacts(own.name, own.admissionOrdinal, true, own.ranks),
+                structure: [
+                    `Resolved the possessive "${query.trim()}" to sect_members.sect_id=${own.id}. `
+                    + 'Not gated on awareness: a member holds their own house\'s name by standing '
+                    + 'in it.'
+                ]
+            };
+        }
+    }
 
     const stored = best(query, repos.sects.list().filter(sect => heard(sect.id)), sect => sect.name);
     if (stored) {
@@ -539,6 +597,50 @@ export function resolvePill(query: string): ResolvedEntity | null {
 }
 
 /**
+ * A line on the price board.
+ *
+ * The board is the only list in the game the player has actually been shown -
+ * `market` prints it verbatim - so a name off it is the one free-text subject
+ * a player can be sure they typed correctly, and it must resolve. Until this
+ * existed "a visit from the mortal physician" went to the party resolver,
+ * which looked for somebody standing in the square with that name and reported
+ * that nobody by it was there.
+ *
+ * Matched against the name and against the name with its qualifying clause
+ * stripped, because the board reads "Mortal physician, one visit" and nobody
+ * types the comma.
+ */
+export function resolvePrice(query: string): ResolvedEntity | null {
+    const wanted = query.trim();
+    if (wanted.length < 3) return null;
+
+    let winner: Price | null = null;
+    let winning = 0;
+    for (const price of PRICES) {
+        const score = Math.max(
+            matchScore(wanted, price.name),
+            matchScore(wanted, price.name.replace(/,.*$/, '').trim())
+        );
+        if (score > winning) {
+            winner = price;
+            winning = score;
+        }
+    }
+    if (!winner || winning < MATCH_THRESHOLD) return null;
+
+    return {
+        kind: 'price',
+        id: winner.id,
+        name: winner.name,
+        facts: [`${winner.name}, ${winner.cash} cash the ${winner.unit}. ${winner.note}`],
+        structure: [
+            `price ${winner.id}: category=${winner.category}, base cash=${winner.cash}, unit=${winner.unit}. `
+            + 'Base figure; the region multiplier is applied where it is charged.'
+        ]
+    };
+}
+
+/**
  * A place.
  *
  * The deliberate exception to "resolve or fail". `Cultivator.location` is
@@ -617,6 +719,17 @@ export function resolveKnownPlace(
     if (!scope) return null;
 
     const known = scope.gate.awareness(scope.holderId, 'place');
+    // The key comparison first, and it is not a fallback. `best` scores on the
+    // words, and a two-word settlement scores easily while "the sealed compound
+    // at Blackbank" - typed correctly, held as a knowledge record - scored
+    // below the threshold against its own name because the parser had already
+    // taken the article off one side. Twenty-six of thirty-three locations in a
+    // generated world are in that shape.
+    const wanted = loosePlaceKey(query);
+    const keyed = known.find(row =>
+        loosePlaceKey(row.name) === wanted || loosePlaceKey(row.id) === wanted);
+    if (keyed) return resolvePlace(keyed.name);
+
     const match = best(query, known, row => row.name);
     return match ? resolvePlace(match.name) : null;
 }
