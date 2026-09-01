@@ -683,13 +683,23 @@ export function applyRoadsComprehended(
 
         state.locations[i] = {
             ...location,
-            tags: [...location.tags, DAO_GROUND_TAG, 'buried', `road:${domain}`],
+            // Deduplicated rather than appended. This reads a field it writes,
+            // which is the shape that produced a location carrying fourteen
+            // layers of its own name elsewhere in this pass - see the fixpoint
+            // note in `how-the-world-keeps-finding-more-ruins.ts`. The two
+            // guards above already stop it running twice on one location, so
+            // this is not a live bug; it is the latent pattern removed, because
+            // one instance of self-composition usually means it was copied.
+            tags: [...new Set([...location.tags, DAO_GROUND_TAG, 'buried', `road:${domain}`])],
             data: {
                 ...location.data,
                 catalogRegionId: region.data.catalogRegionId ?? null,
                 daoDomain: domain,
                 daoAccess: 'buried',
                 daoFromOrdinal: Number(location.data.floorOrdinal ?? 0),
+                // Safe to take the name directly: `applyRuinProspecting` runs
+                // earlier in the same year (day+40 against day+110) and repairs
+                // any compounded name before this pass can copy one.
                 daoSubject: location.name,
                 daoStandingRequired: 0
             }
