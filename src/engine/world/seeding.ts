@@ -70,6 +70,7 @@ import {
     getOrigin,
     type OriginTierKey
 } from '../cultivation/origin.js';
+import { drawOriginForSomebodyAlreadyAtOrdinal } from './where-the-seeded-population-was-born.js';
 import { purchasedQiPerYear } from '../cultivation/buying-and-bartering-pills.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
@@ -1344,16 +1345,27 @@ function seedNamedFigures(
             MIN_AGE + Math.round(member.realmOrdinal * NAMED_YEARS_PER_ORDINAL) + rng.int(0, 40)
         );
 
+        // Their birth follows from the seat they are already sitting in, not
+        // from a lottery that knows nothing about it. See
+        // `where-the-seeded-population-was-born.ts`: this person is not being
+        // born here, they already exist and already hold this rank, so the
+        // question is which births PRODUCE somebody standing at this rung -
+        // which is the birth table reweighted, not replaced. Its own stream, so
+        // no root, attribute, name or ordinal in any existing world moves.
+        const ordinal = clampOrdinal(member.realmOrdinal);
         let npc = createNpc(state.seed, {
             id,
             bornOnDay: presentDay - years(age),
             onDay: presentDay,
             locationId: seatLocationId(catalog, faction),
             occupation: 'unknown',
+            origin: drawOriginForSomebodyAlreadyAtOrdinal(
+                forStream(state.seed, 'seed-origin', id).next(), ordinal
+            ).key,
             tags: ['catalog:member', `faction:${faction.id}`]
         });
 
-        npc = setRealm(npc, clampOrdinal(member.realmOrdinal), presentDay - years(rng.int(0, 12)));
+        npc = setRealm(npc, ordinal, presentDay - years(rng.int(0, 12)));
         npc = {
             ...npc,
             name: member.name,
@@ -1458,6 +1470,12 @@ function seedFactionApex(
             locationId: seatLocationId(catalog, faction),
             occupation: 'unknown',
             takenNames: taken,
+            // As above: the strongest person in a house is somebody who
+            // finished a climb, and which births produce somebody who finished
+            // one is not the same question as which births happen.
+            origin: drawOriginForSomebodyAlreadyAtOrdinal(
+                forStream(state.seed, 'seed-origin', id).next(), declared
+            ).key,
             tags: ['catalog:apex', `faction:${faction.id}`]
         });
         taken.add(npc.name);
