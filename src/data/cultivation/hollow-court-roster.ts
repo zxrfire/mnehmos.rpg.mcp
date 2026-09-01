@@ -210,6 +210,96 @@ export const HOLLOW_COURT_ROSTER: readonly HollowCourtMember[] = [
             'Comes back. Nobody sends for him, nobody can, and nobody outside the four mountains can establish that any visit ever happened - and the Third Seat delivers a dao sermon on obligation at him, at length, every single time.'
     },
 
+    // ── Seat. Tribulation Transcendence, 41-44. Lifespan 100,000. ──────
+    //
+    // THE FOUR ARE MEMBERS AND THE ROLL HAS TO SHOW THEM. They were left off
+    // it at first on the reasoning that the catalog leaves the Seats unnamed on
+    // purpose, and that was the wrong conclusion from a true premise: a roll
+    // that omits the four people the entire house is about is not discretion,
+    // it is a hole - the entry said "four of its seats are out of the world
+    // entirely" over a list with no seats on it, and nothing reconciled the two.
+    //
+    // They are still unnamed. `name` carries the OFFICE, because that is what
+    // the world has for them and what the Court itself uses; nobody outside the
+    // four mountains has ever had a personal name for any of these people, and
+    // the register does not invent one. The ordinals are read off
+    // `WITHDRAWN_POWERS['sect-hollow-court'].seats` - 44, 43, 43, 42 - rather
+    // than restated, and the ages carry the ordering rule that record states:
+    // by ordinal descending, then by youth, so the Second is younger than the
+    // Third they stand level with.
+    {
+        id: 'hollow-court-first-seat',
+        name: 'First Seat',
+        tier: 'Seat',
+        rankIndex: 3,
+        realmOrdinal: 44,
+        ageYears: 5_400,
+        whatIsAskedOfThem:
+            'To stand protector when the rota reaches them, and to be the last answer on anything the four cannot settle between them. Neither is a duty anybody imposed; they are what the seat is.',
+        knownForBefore:
+            'Nothing the province can name, and the blank is old rather than concealed. Whoever walked up that mountain did it long enough ago that the houses which would have known are gone, and the Court has never supplied the gap.',
+        worksOutsideAs: null,
+        howFarAlong:
+            'At the last rung of the ladder, which is where the road ends and the crossing begins, and has been for longer than anybody outside can date. Holds that a free answer from something like them is a form of interference, and has not resolved that with the Second Seat in six hundred years.',
+        detail:
+            'Has never been recorded leaving the four mountains, and no account of a masked figure anywhere has ever been credibly matched to this seat.'
+    },
+    {
+        id: 'hollow-court-second-seat',
+        name: 'Second Seat',
+        tier: 'Seat',
+        rankIndex: 3,
+        realmOrdinal: 43,
+        // Level with the Third and younger, which is why this is the higher
+        // seat. The ordering rule is in SEAT_ORDER and this is it applied.
+        ageYears: 3_900,
+        whatIsAskedOfThem:
+            'The rota, like the others, and one thing the others are not asked for: the argument. The Second holds that the Court should answer questions freely and keeps saying so.',
+        knownForBefore:
+            'Nothing the record carries. The Court took them at a point far enough back that the only surviving statement about it is the Court\'s own, which is that they met the bar.',
+        worksOutsideAs: null,
+        howFarAlong:
+            'One rung under the top of the ladder and level with the Third, which the seats treat as a fact about two people rather than as a race. Wants Bai Ruozhen moved up and has said so where she could hear it.',
+        detail:
+            'The only one of the four who has ever proposed that the Court do something outward, and has proposed it repeatedly for six hundred years without once acting on it alone.'
+    },
+    {
+        id: 'hollow-court-third-seat',
+        name: 'Third Seat',
+        tier: 'Seat',
+        rankIndex: 3,
+        realmOrdinal: 43,
+        ageYears: 4_600,
+        whatIsAskedOfThem:
+            'The rota. Beyond it, nothing - and the Third has filled the space with a subject of her own, which the other three tolerate at length.',
+        knownForBefore:
+            'Nothing the province can name. What is known of her outside is second-hand and entirely from one source, and that source has never confirmed any of it.',
+        worksOutsideAs: null,
+        howFarAlong:
+            'Level with the Second and older, which is what puts her one seat below somebody standing at the same rung. She has never treated the ordering as anything but an arrangement.',
+        detail:
+            'Delivers a dao sermon on obligation, at length, to the Guest of the Court on every visit he makes, to a man permanently barred from the only obligation that would have mattered. He sits through it for the other three.'
+    },
+    {
+        id: 'hollow-court-fourth-seat',
+        name: 'Fourth Seat',
+        tier: 'Seat',
+        rankIndex: 3,
+        realmOrdinal: 42,
+        // The youngest of the four by a wide margin, which is the whole reason
+        // this is the seat a disciple actually deals with.
+        ageYears: 2_300,
+        whatIsAskedOfThem:
+            'The rota, and the teaching. The Fourth walked the stretch an outer disciple is on more recently than anybody else here, so the Court has decided that is who should be walking it with them.',
+        knownForBefore:
+            'The most recent admission the province was able to watch, and even that is beyond living memory for everybody except cultivators who are themselves exceptions. What it remembers is that somebody went up and did not come back down.',
+        worksOutsideAs: null,
+        howFarAlong:
+            'Two rungs under the top and the furthest from it of the four, which is why the road below is fresher to this seat than to any of them. Carries the weakest of the Court\'s four objects and is still the equal of what the Long Cut is holding.',
+        detail:
+            'The only one of the four who still occasionally answers the gate, which is why every account of meeting a Seat is probably an account of meeting this one.'
+    },
+
     // ── Outer Disciple. Void Refinement, 29-32. Lifespan 5,000. ────────
     {
         id: 'hollow-court-huang-shu',

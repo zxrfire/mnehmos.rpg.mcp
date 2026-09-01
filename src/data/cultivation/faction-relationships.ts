@@ -531,9 +531,75 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
                 'Does not petition it, does not cite it, and does not include it on the list it keeps and has never published.',
             grievance: null
         }
-    }
-];
+    },
 
+    // ════════════════════════════════════════════════════════════════════
+    // TWO HOUSES CUT OFF FROM ABOVE, TREATED DIFFERENTLY FOR ONE REASON
+    //
+    // Both have lost the object their line ran through. The difference is
+    // whether the province KNOWS or merely suspects, and it shows up here
+    // rather than in either house's own description, because it is not a
+    // fact about either of them - it is a fact about how everybody else
+    // behaves toward them. A patron renews one without asking and prices the
+    // other; a tenant pays one on time and has begun testing the other.
+    // ════════════════════════════════════════════════════════════════════
+    {
+        id: 'rel-the-storm-tyrant-and-the-tenant-that-has-started-counting',
+        aId: 'sect-storm-tyrant-court',
+        bId: 'sect-crimson-abyss-hall',
+        aStandsTo: 'above',
+        kind: 'patron_and_client',
+        what:
+            'The Court holds the Hall\'s grant and takes a tithe on it, and the tithe schedule has been raised twice in ten years to fund a candidate the Court has never named. The Hall has been under-declaring by about a fifth for six years. Neither of those is a secret from the other party and neither has been said out loud, which is the ordinary condition of a grant between two demonic houses in the same province.',
+        since:
+            'As long as the Hall has held the caldera. What changed recently is not the arrangement but the arithmetic on both sides of it.',
+        a: {
+            warmth: 'wary',
+            howTheyPutIt:
+                'A tenant is a tenant and the schedule is the schedule. The Court has raised it twice for a stated purpose and considers the purpose its own business.',
+            andSoTheyDo:
+                'Raises the schedule, does not open the vault, and describes what is in it at successions from the record rather than showing anybody. The two things are connected and the Court has never said so.',
+            grievance: null
+        },
+        b: {
+            warmth: 'cold',
+            howTheyPutIt:
+                'Nobody has seen the Tally in four hundred years, and a house that describes a thing instead of showing it is a house that cannot show it. The Hall is not going to be the one that finds out whether that is true.',
+            andSoTheyDo:
+                'Under-declares by about a fifth and has done for six years, which is a test of exactly the size somebody runs when they are fairly sure and not sure enough. It has not missed a payment and does not intend to.',
+            grievance:
+                'That the schedule has gone up twice in ten years to pay for a candidate nobody has been named, out of a house that will not open its own storeroom - so the Hall is funding a demonstration it has no reason to believe is coming.'
+        }
+    },
+    {
+        id: 'rel-the-frostmirror-and-the-apex-that-stopped-writing',
+        aId: 'apex-deep-survey',
+        bId: 'sect-frostmirror-court',
+        aStandsTo: 'above',
+        kind: 'apex_and_court',
+        what:
+            'The Frostmirror administers the cold vein and issues grant paper of its own in a format copying its landlord\'s, and has spent eleven years asking to be treated as a peer rather than a junior. The letters are addressed upward and are not answered. The Court reads the silence as weakness; the province reads it as the arrangement having read the Court correctly.',
+        since:
+            'Eleven years of correspondence, and longer than that as an arrangement nobody has needed to revisit.',
+        a: {
+            warmth: 'correct',
+            howTheyPutIt:
+                'The curriculum is the one thing in the province nobody can replace and the arrangement holding it is working. There is nothing in the letters that requires an answer, and answering would make the question a question.',
+            andSoTheyDo:
+                'Renews, does not reply, and prices the house the way everybody else does now: as a body that lost the object its line ran through, in public, and therefore has nothing above it anybody has to account for.',
+            grievance: null
+        },
+        b: {
+            warmth: 'cold',
+            howTheyPutIt:
+                'A house holding a complete curriculum nobody else has is a peer. What was lost was an object, and an object is not a lineage - the Sovereign is still up there and the Court would reach her tomorrow if it had the means.',
+            andSoTheyDo:
+                'Writes, is not answered, writes again, and keeps the cold hall ready. It has never been told what everybody above it concluded when the loss was minuted, and it has never asked.',
+            grievance:
+                'That the loss was witnessed, assayed and written down, so the whole province got to watch it happen and then price the house on it - while the Storm Tyrant Court, which lost the same kind of thing and simply stopped showing anybody, is treated as still armed.'
+        }
+    },
+];
 // ─────────────────────────────────────────────────────────────────────────
 // RESOLUTION
 //

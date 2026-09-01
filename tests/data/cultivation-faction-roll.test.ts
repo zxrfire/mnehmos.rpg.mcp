@@ -97,13 +97,41 @@ describe('the Hollow Court - the house that had nobody', () => {
         expect(rollSizeOf(HOLLOW), 'the Court has nobody on it').toBeGreaterThan(0);
     });
 
-    it('leaves the four Seats unnamed, where the catalog has always left them', () => {
-        // The roster the Court was missing is the one UNDER the Seats. The
-        // Seats are enumerated with their ordinals in `WITHDRAWN_POWERS` and
-        // are unnamed everywhere on purpose; naming them here would be the one
-        // thing this file must not do.
-        expect(HOLLOW_COURT_ROSTER.some(m => m.tier === 'Seat'), 'a Seat has been named').toBe(false);
-        expect(WITHDRAWN_POWERS[HOLLOW].seats).toHaveLength(4);
+    it('has all four Seats on the roll, and none of them named', () => {
+        // Both halves matter and they used to be confused for each other. The
+        // Seats ARE members and the roll has to show them - a roster that omits
+        // the four people the whole house is about is a hole, and the entry was
+        // saying "four of its seats are out of the world entirely" over a list
+        // with no seats on it. But they stay UNNAMED, which the catalog has done
+        // deliberately since it was written: the name field carries the OFFICE,
+        // because that is all anybody has ever had for these people.
+        const seats = HOLLOW_COURT_ROSTER.filter(m => m.tier === 'Seat');
+        expect(seats).toHaveLength(4);
+        for (const seat of seats) {
+            expect(seat.name, `${seat.id} has acquired a personal name`)
+                .toMatch(/^(First|Second|Third|Fourth) Seat$/);
+            expect(seat.worksOutsideAs, `${seat.id} works outside`).toBeNull();
+        }
+
+        // And the ordinals are the withdrawn record's, not a second copy of it.
+        const withdrawn = WITHDRAWN_POWERS[HOLLOW].seats;
+        expect(withdrawn).toHaveLength(4);
+        for (const seat of withdrawn) {
+            const onRoll = seats.find(m => m.name === seat.position);
+            expect(onRoll, `${seat.position} is withdrawn and not on the roll`).toBeDefined();
+            expect(onRoll!.realmOrdinal, seat.position).toBe(seat.ordinal);
+        }
+
+        // The ordering rule that record states, applied: by ordinal descending,
+        // then by youth. So the Second is younger than the Third it stands level
+        // with, and the Fourth is the youngest of the four.
+        const byName = new Map(seats.map(m => [m.name, m]));
+        expect(byName.get('Second Seat')!.realmOrdinal)
+            .toBe(byName.get('Third Seat')!.realmOrdinal);
+        expect(byName.get('Second Seat')!.ageYears)
+            .toBeLessThan(byName.get('Third Seat')!.ageYears);
+        expect(Math.min(...seats.map(m => m.ageYears)))
+            .toBe(byName.get('Fourth Seat')!.ageYears);
     });
 
     it('stands everybody in the realm band their own rung gives them', () => {
@@ -177,6 +205,11 @@ describe('the Hollow Court - the house that had nobody', () => {
         const roll = rollOf(HOLLOW);
         expect(roll[0].name).toBe('Lu Sheng');
         expect(roll[0].rank).toBe('Guest of the Court');
+        // And he stands above the figure the house answers with, which is the
+        // one place on the sheet where somebody on a roll outranks their own
+        // house. It is correct: he is not of them and does not answer for them.
+        expect(roll[0].realmOrdinal).toBeGreaterThan(requireSect(HOLLOW).powerOrdinal);
+        expect(roll[1].rank).toBe('Seat');
     });
 
     it('describes how they are seen without claiming anybody can be sure', () => {

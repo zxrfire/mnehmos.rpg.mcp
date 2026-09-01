@@ -3247,6 +3247,35 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-frostmirror-court': {
         ancestors: [
+            // THE DEAD FORTY-SIX, AND THE ONLY ONE IN THE CATALOG.
+            //
+            // Every other house claiming a living ancestor has one: the
+            // Pavilion's answers, the Storm Tyrant's is alive and silent, the
+            // Sweptground Temple's is alive and in meditation. This is the
+            // case none of those cover - a claim that is false because the
+            // person on the far end died up there - and it is what
+            // `afterCrossing` was put on this schema for. That field has
+            // always carried the note that it is ground truth and unknowable
+            // in the world, and this is the row that makes the note matter.
+            //
+            // THE COURT DOES NOT KNOW AND CANNOT FIND OUT. It believes its
+            // silence has a communications cause, because the object its line
+            // ran through was lost in public and everybody watched. The cause
+            // is mortality and the loss is redundant on it: there has been
+            // nobody at the other end to reach for a long time, and the thing
+            // the Court grieves losing access to had already stopped existing.
+            //
+            // Nothing anywhere lets a cultivator establish this. It is true in
+            // the register because the register is the record; it is not true
+            // in any document, any rumour, or any account inside the world.
+            {
+                name: 'Sovereign Yun Cangyi, who went up from the working face',
+                fate: 'ascended',
+                realmOrdinal: TRUE_IMMORTAL_ORDINAL,
+                yearsAgo: 1_400,
+                afterCrossing: 'died_above',
+                rememberedFor: 'Crossed from the working face with the glacier at its greatest recorded extent, and sent one object down in the century after. She is dead. What killed her is not recorded anywhere on this side and would not be: the far side is not a place anybody here has an account of, and the only thing the record carries is that the sending stopped. The Court reads the stop as the object at this end failing, because the object at this end did fail, in public, and the two events are close enough together in its own annals to look like one.'
+            },
             {
                 name: 'The First Sovereign, called the Mirror',
                 fate: 'dormant',
@@ -3264,9 +3293,17 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
                 rememberedFor: 'Turned away forty applicants with clean roots and no ice, all of whom would have died learning it.'
             }
         ],
-        claimsLivingAncestor: false,
+        // The claim is made and the claim is wrong, which is a state the
+        // catalog had nowhere else. The Thousand Treasure Pavilion holds a
+        // false claim because it bought somebody else's; this house holds one
+        // because its own ancestor died where nobody could see it happen.
+        // `auditAncestralClaim` is what exposes the difference, and it needs
+        // no new machinery to do it.
+        claimsLivingAncestor: true,
         claimIsTrue: false,
-        recency: 'none',
+        // The object came down within a century of the crossing and there has
+        // been nothing since, so what the house holds is a claim and a gap.
+        recency: 'several_ages',
         dormant: {
             name: 'The Mirror',
             restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
@@ -3280,13 +3317,38 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             publiclyKnown: false
         },
         partingGift: null,
-        lastOffering: null,
+        lastOffering: {
+            yearsAgo: 300,
+            cost: 'Eleven years of the Court\'s reserves and the working face left unquarried for two of them, which for a house this size was most of what it had to spend.',
+            response: null,
+            consequence:
+                'Nothing came back, and the Court filed the silence as a failure of the instrument rather than as an answer - which is the reading its own loss makes available and the only one anybody here has ever proposed. It has not held another and has not said it will not.'
+        },
+        // WHAT A RIVAL CAN ACTUALLY FIND, AND WHAT NOBODY CAN.
+        //
+        // Every false claim in this catalog carries traces, because a claim
+        // nobody can check is an assertion rather than a claim. The three
+        // added here do the job the rule wants without doing a job the design
+        // forbids: they are enough for an auditor to establish that the claim
+        // is UNSUPPORTED, and not one of them establishes that the ancestor is
+        // DEAD. Nobody on this side of the Lid ever finds that out - the two
+        // dates, the conflation and the unanswered offering are equally
+        // consistent with a woman who stopped sending and a woman who stopped
+        // existing, and there is no instrument anywhere that separates them.
+        //
+        // That is the whole shape of the thing. The Court is wrong about why
+        // it is alone, its rivals can prove it has no case, and the actual
+        // answer stays out of reach of everybody including the register's
+        // readers in the world.
         discoverableTraces: [
             'the Court fields a fraction of the defence its holdings warrant and has never lost the library',
-            'two forced entries are recorded by outside parties; the parties are not recorded as having left'
+            'two forced entries are recorded by outside parties; the parties are not recorded as having left',
+            'the assay minute dates the loss of the object to a century after the last thing that came down it, so the two events the Court\'s annals treat as one are a hundred years apart in its own record',
+            'nothing has been received on this line in thirteen centuries, against a sending that ran for a hundred years and then stopped inside a single generation, which is not the shape a line going quiet usually makes',
+            'an offering was held three hundred years ago at a cost the Court minuted in full, and the minute records no response and no second attempt'
         ],
         standingNote:
-            'The Court is small, isolated and treated as a curiosity with a good collection. The Storm Tyrant Court, which has raided it twice and stopped, does not agree with that assessment and has not explained why.'
+            'The Court is small, isolated and treated as a curiosity with a good collection, and it holds the one ancestral claim in the world that is both made and false. It believes it cannot reach Yun Cangyi because the object that reached her was lost, which everybody watched and nobody disputes; what it does not know, and has no route to knowing, is that she has been dead for most of the silence. The Storm Tyrant Court, which has raided it twice and stopped, does not agree with the province\'s assessment of the Frostmirror and has not explained why - and is in the same position from the other side, holding a true claim it cannot use while everybody guesses about an object it will not show.'
     },
     'house-anchorhold': {
         ancestors: [

@@ -279,22 +279,26 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         wrongAbout: 'It teaches that Ru Anjing\'s two words were an instruction to wait for a specific event. The offering record shows the words were answered to a question about a border dispute nobody now remembers asking.',
         unitOfValue: 'Deference. The Pavilion keeps no ledger of favours and an exact mental account of who stood up.',
         production: {
-            // Was 17, which is the end of Foundation Establishment, in a record
-            // whose own note says in its second sentence that the house
-            // reliably turns out Core Formation. Core Formation begins at 21.
-            // The prose was right and the figure was a realm low, and it
-            // mattered more once the shelf was corrected: a house recorded as
-            // routinely producing Foundation Establishment while holding the
-            // road to the top of the ladder is the exact shape of a register
-            // that asserts rather than reflects.
+            // 17 IS CORE FORMATION EARLY AND THE FIGURE IS RIGHT. It was
+            // briefly moved to 21 on the reasoning that the note beside it says
+            // the house reliably turns out Core Formation and 21 is where that
+            // begins. It is not: `REALM_TIERS` puts Core Formation at 17-20 and
+            // Nascent Soul at 21-24, so 21 quietly promoted the whole pipeline
+            // a realm and contradicted the same record's next clause, which is
+            // that nothing above Nascent Soul has come out of here in three
+            // centuries. Read the ladder before correcting a figure against
+            // prose; the prose was right both times.
             //
-            // It rises by one realm and no further. Holding a deep road is a
-            // ceiling and not a rate - what decides how many people get up it
-            // is teaching capacity, and this house has one teacher available
-            // sometimes. See `THE_DEEPEST_ROADS`.
-            reliableOrdinal: 21, currentCount: 6, peakOrdinal: 44, peakCount: 2, yearsSinceLastPeak: 380,
-            climbingToward: 25, waitingOn: 'access',
-            note: 'The widest gap in the catalog outside the Hollow Court, and it is being read backwards. The Pavilion reliably turns out Core Formation and has not produced above Nascent Soul in three centuries - and its founder crossed the Lid inside the memory of people still working the terraces, and has been sending things down since. Single-use material made above and addressed to a house that still exists is a supply nobody else in either province has at any price, and there is enough of it arriving now for Nascent Soul to become a matter of course rather than an event. What would end it is not a rival and not the gorge. The Pavilion is frightened of spending the Standing Edge and has not noticed that the Edge is the inheritance and the post is the asset - and a post is a relationship, three hundred years is not three thousand, and attention is the one thing in the world that cannot be secured.'
+            // AND HOLDING A ROAD DOES NOT MOVE THIS NUMBER. The Pavilion holds
+            // the Clear Terrace Ascension Canon, which ends at the top of the
+            // ladder, and still routinely produces Core Formation - because a
+            // shelf is a ceiling and not a rate. What decides how many people
+            // get up a road is teaching capacity, and this house has one
+            // teacher, available sometimes, and two copies that do not leave
+            // the hall. See `THE_DEEPEST_ROADS`.
+            reliableOrdinal: 17, currentCount: 6, peakOrdinal: 44, peakCount: 2, yearsSinceLastPeak: 380,
+            climbingToward: 21, waitingOn: 'access',
+            note: 'The widest raise-to-hold gap in the catalog, and it is read backwards by almost everybody. The Pavilion RAISES people to Core Formation and has raised nobody past Nascent Soul in three centuries. Neither the forty-one at the top of its entry nor the road on its shelf is a counter-example to that, and both get read as one: Ru Anwei arrived at the last realm rather than being produced there and has not moved in three hundred and eighty years, and the road that ends at the top of the ladder is held in two copies that never leave the inner hall, taught by the one person who has read it, sometimes. A ceiling is not a rate. What the house actually has is a founder who crossed inside the memory of people still working the terraces and has been sending things down since - single-use material made above and addressed to a house that still exists is a supply nobody else in either province has at any price, there is enough of it arriving now for Nascent Soul to become a matter of course rather than an event, and the pipeline is climbing on it. What would end that is not a rival and not the gorge. The Pavilion is frightened of spending the Standing Edge and has not noticed that the Edge is the inheritance and the post is the asset - and a post is a relationship, three hundred years is not three thousand, and attention is the one thing in the world that cannot be secured.'
         },
         distinctSentence: 'The only institution in the world holding a parting gift from the last confirmed crossing, and it has refused itself permission to draw it nine times.'
     },
