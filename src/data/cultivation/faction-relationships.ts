@@ -22,7 +22,7 @@
  *   data makes it unrepresentable rather than merely tested for.
  *
  *   The FEELING is asymmetric and is written twice. `a` and `b` each carry
- *   their own regard, their own account of the tie in their own mouth, what
+ *   their own warmth, their own account of the tie in their own mouth, what
  *   they actually do about it, and a grievance where there is one. A house can
  *   be dutiful upward and brutal downward; a client can be warm to a patron who
  *   is merely correct back. That asymmetry is the interesting part and it is
@@ -52,8 +52,8 @@
  * more. `SOURCE` on the resolved record says which a reader is looking at.
  *
  * NOTHING HERE DECIDES ANYTHING. There is no warmth arithmetic, no threshold at
- * which a cold relationship becomes a war, and no helper that adds regards up.
- * `Regard` is a word from a fixed list, chosen by an author or restated from a
+ * which a cold relationship becomes a war, and no helper that adds warmth words up.
+ * `Warmth` is a word from a fixed list, chosen by an author or restated from a
  * `standing` field, and a grievance with a cause is worth more than any number
  * this file could have carried.
  */
@@ -103,7 +103,7 @@ export type RelationStance = z.infer<typeof RelationStanceSchema>;
  * Both parties do exactly what the arrangement requires; only one of them has
  * decided that is all they will ever do.
  */
-export const RegardSchema = z.enum([
+export const WarmthSchema = z.enum([
     'warm',
     'correct',
     'distant',
@@ -111,7 +111,7 @@ export const RegardSchema = z.enum([
     'cold',
     'hostile'
 ]);
-export type Regard = z.infer<typeof RegardSchema>;
+export type Warmth = z.infer<typeof WarmthSchema>;
 
 /** What kind of tie it is. The factual nature, shared by both sides. */
 export const RelationKindSchema = z.enum([
@@ -150,7 +150,7 @@ export type RelationSource = z.infer<typeof RelationSourceSchema>;
  * which are not on this object at all.
  */
 export const RelationSideSchema = z.object({
-    regard: RegardSchema,
+    warmth: WarmthSchema,
     /** How this body puts the tie, in its own mouth. Partisan on purpose. */
     howTheyPutIt: z.string().min(80),
     /** What this side actually does about it. An act, never a mood. */
@@ -232,7 +232,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Nine hundred years as one posting under two names, and roughly a lifetime as two institutions: the Deep Survey reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Long Cut was waiting for them.',
         a: {
-            regard: 'cold',
+            warmth: 'cold',
             howTheyPutIt:
                 'What was walked out of was an arrangement, not a job. The roll is here, most of the Wardens are here, the founding posting order that names the first four is here, and the people who stayed are welcome to the ground. There is nothing to discuss with them and there has never been an attempt to discuss it.',
             andSoTheyDo:
@@ -241,7 +241,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
                 'Nobody was asked. The reposting arrived by letter about a body that had been walking the same rota for nine hundred years, and what the Wardens declined was not the work but being reassigned to it in writing. The half that stayed accepted the same letter without comment, and that is the part this body has never got past.'
         },
         b: {
-            regard: 'correct',
+            warmth: 'correct',
             howTheyPutIt:
                 'The Kiln is where the datum, the nodes and the perimeter are, and the work is walking all three on a schedule. Some of the people who used to do it went elsewhere and are doing something else now. The province has read four Warden ranks off this gate for nine hundred years and reads them off it today, and none of that was affected.',
             andSoTheyDo:
@@ -260,7 +260,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'The reposting, and the walk that followed it. Living memory by the standards of the bodies involved, and the second administration the Long Cut has taken from the Survey in that span.',
         a: {
-            regard: 'distant',
+            warmth: 'distant',
             howTheyPutIt:
                 'A court was reposted, correctly, on a schedule, and the Survey lists the Kiln Court as its court on the datum. It has never characterised the season otherwise in any document and has never been asked to in a room where it would have to reply.',
             andSoTheyDo:
@@ -268,7 +268,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'cold',
+            warmth: 'cold',
             howTheyPutIt:
                 'What was declined was not an assignment, it was an honour, and there is a difference the Survey has spent nine hundred years filing as the first. Every Warden who walked had competed for the thing they were walking away from. Declining an assignment is a disagreement; declining an honour is a verdict.',
             andSoTheyDo:
@@ -288,7 +288,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'The walk. The Long Cut offered a schedule rather than a rank, which was the only offer in the world that would have been taken, and it has never acknowledged making it.',
         a: {
-            regard: 'correct',
+            warmth: 'correct',
             howTheyPutIt:
                 'A place in the schedule was available and was taken. The Long Cut ranks people by faces worked and deaths avoided, it owns every act it takes by name, and it has never described this one as anything but an ordinary arrangement working.',
             andSoTheyDo:
@@ -296,7 +296,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'warm',
+            warmth: 'warm',
             howTheyPutIt:
                 'A schedule is a thing that can be honoured exactly, which is more than the last arrangement offered. What was wanted was not a rank and not a patron who would explain itself; it was a body that would say what it wanted on a date and then keep to the date.',
             andSoTheyDo:
@@ -315,7 +315,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Nine hundred years, uninterrupted from the Survey side of the record: it posted the court, it named the court, and it lists this body as its court on the datum today.',
         a: {
-            regard: 'correct',
+            warmth: 'correct',
             howTheyPutIt:
                 'A posting on the datum is the most important assignment in the Survey arrangement and the least eventful. It is staffed, the figure arrives, and there is nothing further to administer.',
             andSoTheyDo:
@@ -323,7 +323,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'correct',
+            warmth: 'correct',
             howTheyPutIt:
                 'Staff, posted, doing an assigned job on somebody else datum. Every single thing the province finds inexplicable about the Wardens is explained by that sentence, and the sentence is the Survey.',
             andSoTheyDo:
@@ -342,7 +342,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'The raising of the Storm Tyrant Court to answer the Survey directly, which made it the second Survey body in the province and gave the province its first pair to compare.',
         a: {
-            regard: 'distant',
+            warmth: 'distant',
             howTheyPutIt:
                 'Nothing. The Kiln has never commented on the other court, in writing or otherwise, and has never been asked to by the body that posted them both.',
             andSoTheyDo:
@@ -350,7 +350,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'cold',
+            warmth: 'cold',
             howTheyPutIt:
                 'One of us issues a curriculum nobody else in the province can supply and holds its charter on a probation that was carried across rather than lifted. The other takes nothing out of the richest ground in the world, issues nothing, answers nothing, and is renewed without a question ever being asked.',
             andSoTheyDo:
@@ -380,7 +380,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Longer than either keeps a record of. The Third Sill has administered an arterial for the Long Cut inside a province the Deep Survey holds for longer than either apex can date, and neither has ever explained or raised that either.',
         a: {
-            regard: 'correct',
+            warmth: 'correct',
             howTheyPutIt:
                 'A difference about method between two bodies that have both costed their principles. It is much older than any live question and there is no room in which it would need settling.',
             andSoTheyDo:
@@ -388,7 +388,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'correct',
+            warmth: 'correct',
             howTheyPutIt:
                 'Courteous and total. It has taken two of the other administrations and acknowledged nothing, and nothing has been acknowledged back, and both understand that as the arrangement working rather than as hostility.',
             andSoTheyDo:
@@ -407,7 +407,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Three hundred and eighty years, which is the whole life of the younger party. The Survey has had the same argument put to it before, by bodies that no longer exist, and answers it in the same number of words every time.',
         a: {
-            regard: 'cold',
+            warmth: 'cold',
             howTheyPutIt:
                 'It objects, on the axis the other refuses to price, and it says so where it can be quoted. It is not asking the Survey to change; it is asking it to answer in its own words instead of in a silence, which is the only move available to a body that objects and cannot act.',
             andSoTheyDo:
@@ -416,7 +416,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
                 'That a seat with somebody in it counts as an order however that somebody behaves, and that nobody in the arrangement is required to look at what the somebody does. The Pavilion takes in the people that reasoning ruins, and the Mist recall roll is the running total.'
         },
         b: {
-            regard: 'wary',
+            warmth: 'wary',
             howTheyPutIt:
                 'Unshockable, and specifically not cynical about it: the Survey has principles and has costed them, which is a different thing from not having any. It does not treat the objection as amusing.',
             andSoTheyDo:
@@ -435,7 +435,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Since the Pavilion became an apex and began publishing a standard. The Long Cut has had to answer questions about the Weir Office twice in ninety years that it would not otherwise have been asked.',
         a: {
-            regard: 'cold',
+            warmth: 'cold',
             howTheyPutIt:
                 'An arrangement with nobody in it to be responsible is not an answer to the objection, it is a way of not having to hear it. The Pavilion says so out loud, in a room where saying it out loud is read as a tell.',
             andSoTheyDo:
@@ -443,7 +443,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'wary',
+            warmth: 'wary',
             howTheyPutIt:
                 'Inconvenient rather than absurd. An apex that publishes its standard and refuses on it produces questions elsewhere that would otherwise not have been asked, and questions cost schedule.',
             andSoTheyDo:
@@ -462,7 +462,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Longer than the question has had a form. Nobody at the top of the region has ever pressed the Court on anything, and no document records a first time that was true.',
         a: {
-            regard: 'distant',
+            warmth: 'distant',
             howTheyPutIt:
                 'The Court has no view. It works at a published address on four known mountains, takes nothing out of the ground it sits on, and has never asked anybody above it for anything, because there is nothing it needs that an apex could supply.',
             andSoTheyDo:
@@ -470,7 +470,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'wary',
+            warmth: 'wary',
             howTheyPutIt:
                 'It is not deference and it is not fear. It is an institution being extremely careful never to become interesting to a body that has crossed six times and can put more than one person at the last realm in a room.',
             andSoTheyDo:
@@ -489,7 +489,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Long enough that no record anywhere carries a first instance. The absence of any instrument between them is the whole of the relation.',
         a: {
-            regard: 'distant',
+            warmth: 'distant',
             howTheyPutIt:
                 'A body that ranks people by faces worked and deaths avoided is running a different question. The Court has never needed anything from it and has never been offered anything.',
             andSoTheyDo:
@@ -497,7 +497,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'wary',
+            warmth: 'wary',
             howTheyPutIt:
                 'There is no face there and no schedule to keep, so there is nothing to own by name. A body that owns every act it takes has taken none in that direction.',
             andSoTheyDo:
@@ -516,7 +516,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         since:
             'Three hundred and eighty years at most, because that is the whole age of the younger body. Nothing in either record says the two have ever formally corresponded.',
         a: {
-            regard: 'distant',
+            warmth: 'distant',
             howTheyPutIt:
                 'A house that publishes a standard and refuses on it is doing a legible thing. The Court has no view on it, because having a view is a way of becoming a party.',
             andSoTheyDo:
@@ -524,7 +524,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         },
         b: {
-            regard: 'wary',
+            warmth: 'wary',
             howTheyPutIt:
                 'The Court is the one body at that altitude nobody has an argument with, which is either the strongest position in the world or the emptiest, and the Pavilion has not settled which.',
             andSoTheyDo:
@@ -563,14 +563,25 @@ export interface ResolvedRelationship {
     what: string;
     since: string;
     /** How the body asked about regards the other one. */
-    regard: Regard;
+    warmth: Warmth;
     /** How the other one regards it back. Allowed to differ, and often does. */
-    theirRegard: Regard;
+    theirWarmth: Warmth;
     howTheyPutIt: string;
     andSoTheyDo: string;
     grievance: string | null;
 }
 
+/**
+ * What to call the body on the other end of a tie.
+ *
+ * A BODY, and only ever a body. This module relates institutions to
+ * institutions and to nothing else: a person is not a faction, and neither is
+ * whoever happens to be standing in the same ruin. Facts about what an
+ * individual does, or about how a house behaves when it meets strangers,
+ * belong in that house's own description - they are not ties, and putting one
+ * here makes a section about how bodies stand with each other into a place
+ * where anything can be filed.
+ */
 function nameOfBody(id: string): string {
     return getSect(id)?.name
         ?? getApexInstitution(id)?.name
@@ -583,7 +594,7 @@ function invert(stance: RelationStance): RelationStance {
 }
 
 /**
- * The regard a `standing` value already states, restated in this vocabulary.
+ * The warmth a `standing` value already states, restated in this vocabulary.
  *
  * Not a new fact and not an inference. `Parentage.standing` is the catalog's
  * own word for how a client is doing with its patron, and this is the same word
@@ -593,7 +604,7 @@ function invert(stance: RelationStance): RelationStance {
  * downward tie takes `correct` and an authored one is the only way a patron
  * ever gets a warmer or a colder word than that.
  */
-function regardFromStanding(standing: string): Regard {
+function warmthFromStanding(standing: string): Warmth {
     switch (standing) {
         case 'good': return 'correct';
         case 'strained': return 'cold';
@@ -689,7 +700,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 ? `Renewal: ${terms.renewal}`
                 : 'No terms are recorded, because the arrangement is not a tenancy: this is staff rather than a tenant, and there is nothing on a cycle to renew.',
             a: {
-                regard: 'correct',
+                warmth: 'correct',
                 howTheyPutIt: `An arrangement in ${parentName}'s own book, on the terms in it, standing ${parentage.standing.replace(/_/g, ' ')}.`,
                 andSoTheyDo: terms
                     ? `Takes what the terms say and renews on the stated cycle. ${terms.buys.length} thing${terms.buys.length === 1 ? '' : 's'} are bought by it and ${terms.inKind.length} taken in kind.`
@@ -697,7 +708,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 grievance: null
             },
             b: {
-                regard: regardFromStanding(parentage.standing),
+                warmth: warmthFromStanding(parentage.standing),
                 howTheyPutIt: parentage.note,
                 andSoTheyDo: terms
                     ? `Pays ${terms.tributeStonesPerYear.toLocaleString()} stones a year and sends ${terms.disciplesPerCycle} disciple${terms.disciplesPerCycle === 1 ? '' : 's'} a cycle upward, and is aware of the apex above it at the level of: ${parentage.awarenessOfApex}.`
@@ -726,7 +737,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
             since: court.transferNote
                 ?? 'No record anywhere says it ever answered anywhere else.',
             a: {
-                regard: 'correct',
+                warmth: 'correct',
                 howTheyPutIt: `One of ${(getApexInstitution(court.apexId)?.courtIds.length ?? 1)} court${(getApexInstitution(court.apexId)?.courtIds.length ?? 1) === 1 ? '' : 's'} standing between this apex and the ground it holds.`,
                 andSoTheyDo: court.posting
                     ? 'Appoints into it. There is no application anybody could make, so every person standing there is somebody this house or a house friendly to it decided about, elsewhere.'
@@ -734,7 +745,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 grievance: null
             },
             b: {
-                regard: 'correct',
+                warmth: 'correct',
                 howTheyPutIt: court.officesNote,
                 andSoTheyDo: `Administers on the apex's behalf and reports upward. Awareness of the body above it, in the province: ${court.startingAwareness}.`,
                 grievance: null
@@ -756,13 +767,13 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 what: `A standing feud, carried on both rolls. ${sect.name} stands at ${sect.powerOrdinal} and ${rival?.name ?? rivalId} at ${rival?.powerOrdinal ?? '?'}, and a feud the other party has not heard about is not a feud, which is why this one appears on both.`,
                 since: 'The catalog does not date it. What it records is that both houses carry it, which is the whole of what makes it a feud rather than a complaint.',
                 a: {
-                    regard: 'hostile',
+                    warmth: 'hostile',
                     howTheyPutIt: `${sect.name} carries ${rival?.name ?? rivalId} on its own rivals list, which is a statement it made about itself rather than one made about it.`,
                     andSoTheyDo: 'Acts against them where the cost falls in its favour, and says so.',
                     grievance: null
                 },
                 b: {
-                    regard: 'hostile',
+                    warmth: 'hostile',
                     howTheyPutIt: `${rival?.name ?? rivalId} carries ${sect.name} on its own list too. Neither entry was written to answer the other.`,
                     andSoTheyDo: 'The same, from the other side.',
                     grievance: null
@@ -786,13 +797,13 @@ const DERIVED: readonly DerivedPair[] = (() => {
                 what: `Both houses have a hand on the same thing, and both entries describe it from their own side. ${sect.name} wants: ${ambition.wants}`,
                 since: 'Undated in the catalog. What is recorded is how far each of them has actually got, which is usually not far.',
                 a: {
-                    regard: 'wary',
+                    warmth: 'wary',
                     howTheyPutIt: ambition.wants,
                     andSoTheyDo: ambition.movedOn,
                     grievance: null
                 },
                 b: {
-                    regard: 'wary',
+                    warmth: 'wary',
                     howTheyPutIt: getSect(otherId)?.ambition?.wants
                         ?? `${nameOfBody(otherId)} carries the same contest on its own entry.`,
                     andSoTheyDo: getSect(otherId)?.ambition?.movedOn
@@ -818,13 +829,13 @@ const DERIVED: readonly DerivedPair[] = (() => {
             what: `${nameOfBody(holderId)} holds ${house.counter.name}, which is the thing that beats ${house.name}'s principle. ${house.counter.description}`,
             since: 'Structural rather than dated. Every house has a named counter and wherever possible a rival house holds it, so that specialisation is an advantage and never ownership.',
             a: {
-                regard: 'wary',
+                warmth: 'wary',
                 howTheyPutIt: `Holding the answer to somebody else's dao is not the same as being stronger than them, and ${holder?.name ?? holderId} has its own counter held by somebody else.`,
                 andSoTheyDo: 'Keeps it, and is careful about who is told what it can actually do.',
                 grievance: null
             },
             b: {
-                regard: 'wary',
+                warmth: 'wary',
                 howTheyPutIt: `${house.name} knows exactly what beats it and knows exactly who is holding it, which is the ordinary condition of every house in the catalog.`,
                 andSoTheyDo: 'Works around it, and does not test it.',
                 grievance: null
@@ -846,13 +857,13 @@ const DERIVED: readonly DerivedPair[] = (() => {
             what: `${event.what} It happened ${event.yearsAgo.toLocaleString()} years ago, both bodies have an account of it, and the two accounts are of the same event.`,
             since: `${event.yearsAgo.toLocaleString()} years ago. What it explains about the world today: ${event.explains.replace(/_/g, ' ')}.`,
             a: {
-                regard: 'wary',
+                warmth: 'wary',
                 howTheyPutIt: event.accounts[firstId] ?? `${nameOfBody(firstId)} was a party to it.`,
                 andSoTheyDo: 'Carries its own account of it, and has never had to reconcile it with the other.',
                 grievance: null
             },
             b: {
-                regard: 'wary',
+                warmth: 'wary',
                 howTheyPutIt: event.accounts[secondId] ?? `${nameOfBody(secondId)} was a party to it.`,
                 andSoTheyDo: 'Carries its own account of it, and has never had to reconcile it with the other.',
                 grievance: null
@@ -921,8 +932,8 @@ export function relationshipsOf(factionId: string, alsoKnownAsIds: readonly stri
             source: pair.source,
             what: pair.what,
             since: pair.since,
-            regard: side.regard,
-            theirRegard: otherSide.regard,
+            warmth: side.warmth,
+            theirWarmth: otherSide.warmth,
             howTheyPutIt: side.howTheyPutIt,
             andSoTheyDo: side.andSoTheyDo,
             grievance: side.grievance

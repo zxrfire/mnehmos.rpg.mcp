@@ -358,11 +358,11 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
     // Beside Standing above rather than folded into it, because they measure
     // different things and a reader who conflates them will misread both.
     // Standing is a property of a GRANT and runs one way: it says how a
-    // client's lease is going. A regard is a property of a PARTY and there are
+    // client's lease is going. A warmth is a property of a PARTY and there are
     // always two of them on a tie, so the interesting rows are the ones where
     // the two words differ.
     {
-        group: 'How two bodies regard each other',
+        group: 'How two bodies warmth each other',
         intro:
             'One word per side of a relationship, and the two sides are allowed to disagree. It is '
             + 'deliberately about conduct rather than feeling, because conduct is what an outsider can '

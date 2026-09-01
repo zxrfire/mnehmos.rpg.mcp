@@ -53,6 +53,11 @@ import { IMMORTAL_CHANNELS, LINEAGE_STANDINGS } from '../data/cultivation/crossi
 import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from '../data/cultivation/immortal-items.js';
 import { WANDERERS } from '../data/cultivation/wanderers.js';
 import { MEMBERS } from '../data/cultivation/members.js';
+import { rollOf } from '../data/cultivation/faction-roll.js';
+import {
+    HOW_THE_COURT_IS_SEEN,
+    getHollowCourtMember
+} from '../data/cultivation/hollow-court-roster.js';
 import { HERBS } from '../data/cultivation/herbs.js';
 import { ARTERIALS, PROVINCES } from '../data/cultivation/regions.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
@@ -107,7 +112,7 @@ import {
 } from '../engine/cultivation/realms.js';
 import {
     relationshipsOf,
-    type Regard,
+    type Warmth,
     type ResolvedRelationship
 } from '../data/cultivation/faction-relationships.js';
 import {
@@ -852,7 +857,7 @@ export interface RegisterHoldsFrom {
  * merely correct back.
  *
  * Every field here is quoted from `faction-relationships.ts` and none is
- * assembled at render time. `theirRegard` is the other body's word for the same
+ * assembled at render time. `theirWarmth` is the other body's word for the same
  * tie, printed beside this body's, so an asymmetry is visible on the entry
  * rather than requiring a reader to go and open the other one.
  */
@@ -1240,7 +1245,32 @@ export interface SectDossier {
     /** The family, and the door. Null on everything that is not a dao house. */
     house: RegisterHouseAdmission | null;
     people: {
-        active: { name: string; rank: string; ordinal: number; role: string; wants: string; detail: string }[];
+        /**
+         * Everybody on the body's roll, strongest first.
+         *
+         * Read from `rollOf` rather than by filtering the member catalog here.
+         * Membership used to be a property of each PERSON and nothing could ask
+         * a HOUSE who was in it, so three readers rebuilt it three different
+         * ways by scanning - and one house's people were in a catalog none of
+         * them read, which is how the highest acting body in the world had an
+         * entry with nobody on it. `source` says which catalog a row came out
+         * of, so the sheet reports state rather than restating it.
+         */
+        active: {
+            name: string;
+            rank: string;
+            ordinal: number;
+            role: string;
+            wants: string;
+            detail: string;
+            source: string;
+            /** The name they use outside, on the one body that needs one. */
+            worksOutsideAs: string | null;
+            /** What the world knew about them before they went in. */
+            knownForBefore: string | null;
+            /** What the body can actually require of them. Null where nothing records it. */
+            askedOf: string | null;
+        }[];
         sealed: RegisterSealed | null;
         /**
          * What the ancestral roll says about the same person, which is not what
@@ -3575,17 +3605,25 @@ function buildDossiers(
             ),
             house: buildHouse(row.id),
             people: {
-                active: MEMBERS
-                    .filter(m => has(m.factionId))
-                    .sort((a, b) => b.realmOrdinal - a.realmOrdinal)
-                    .map(m => ({
-                        name: m.name,
-                        rank: m.rank,
-                        ordinal: m.realmOrdinal,
-                        role: m.role,
-                        wants: m.wants,
-                        detail: m.detail
-                    })),
+                active: rollOf(row.id).map(entry => {
+                    // The thin roll row plus whatever its own catalog carries.
+                    // The join is by id rather than by name, because a roll is
+                    // a union and two catalogs spell people differently.
+                    const member = MEMBERS.find(m => m.id === entry.id);
+                    const court = getHollowCourtMember(entry.id);
+                    return {
+                        name: entry.name,
+                        rank: entry.rank,
+                        ordinal: entry.realmOrdinal,
+                        role: member?.role ?? (court ? 'on the road' : 'office'),
+                        wants: entry.doing,
+                        detail: member?.detail ?? court?.detail ?? '',
+                        source: entry.source,
+                        worksOutsideAs: court?.worksOutsideAs ?? null,
+                        knownForBefore: court?.knownForBefore ?? null,
+                        askedOf: court?.whatIsAskedOfThem ?? null
+                    };
+                }),
                 sealed: mine,
                 sealedOnTheRoll: mine ? rollNoteFor(ancestors, mine) : null,
                 ascended: ancestors
@@ -3757,7 +3795,11 @@ function buildDossiers(
                         ordinal: a.powerOrdinal,
                         role: 'pinned',
                         wants: 'not to be required elsewhere',
-                        detail: a.lastRealm.note
+                        detail: a.lastRealm.note,
+                        source: 'the apex catalog',
+                        worksOutsideAs: null,
+                        knownForBefore: null,
+                        askedOf: null
                     },
                     {
                         name: secondTitleOf(a),
@@ -3765,7 +3807,11 @@ function buildDossiers(
                         ordinal: a.secondStrongestOrdinal,
                         role: 'senior',
                         wants: 'the position to hold without anybody testing what is behind it',
-                        detail: a.depthNote
+                        detail: a.depthNote,
+                        source: 'the apex catalog',
+                        worksOutsideAs: null,
+                        knownForBefore: null,
+                        askedOf: null
                     }
                 ],
                 sealed: null,
@@ -4514,14 +4560,14 @@ text-transform:uppercase;color:var(--faint);margin:0 0 6px;display:flex;gap:8px;
 .relkind,.relsrc{font:400 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
 letter-spacing:.06em;color:var(--faint)}
 .relsrc{margin-left:auto}
-.regard{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
+.warmth{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
 text-transform:uppercase;padding:2px 6px;border-radius:3px;border:1px solid var(--rule);color:var(--quiet)}
-.regard.warm{color:var(--datum);border-color:var(--datum);background:var(--datum-soft)}
-.regard.correct{color:var(--quiet)}
-.regard.distant{color:var(--faint);border-style:dashed}
-.regard.wary{color:var(--signal);border-color:var(--signal)}
-.regard.cold{color:var(--signal);border-color:var(--signal);background:var(--signal-soft)}
-.regard.hostile{color:var(--signal);border-color:var(--signal);background:var(--signal-soft);
+.warmth.warm{color:var(--datum);border-color:var(--datum);background:var(--datum-soft)}
+.warmth.correct{color:var(--quiet)}
+.warmth.distant{color:var(--faint);border-style:dashed}
+.warmth.wary{color:var(--signal);border-color:var(--signal)}
+.warmth.cold{color:var(--signal);border-color:var(--signal);background:var(--signal-soft)}
+.warmth.hostile{color:var(--signal);border-color:var(--signal);background:var(--signal-soft);
 text-decoration:underline}
 .relwhat{margin:0 0 6px;font-size:14px;line-height:1.55;color:var(--quiet)}
 .relsides{margin:0;display:grid;grid-template-columns:190px 1fr;gap:6px 16px}
@@ -5154,6 +5200,33 @@ function fieldedBlock(f: RegisterFielded): string {
 }
 
 /**
+ * How the one body that hardly ever appears is nevertheless known.
+ *
+ * On one entry, because it is one house's practice. It sits with the people
+ * rather than with the history, because every sentence in it is about what
+ * happens when one of them is in a room with somebody who is not - which is a
+ * fact about the roster above it and about nothing else.
+ */
+function howTheCourtIsSeenBlock(): string {
+    const rows: [string, string][] = [
+        ['Where they are seen at all', HOW_THE_COURT_IS_SEEN.whereTheyAreSeenAtAll],
+        ['Masked', HOW_THE_COURT_IS_SEEN.masked],
+        ['Why the anonymity is worth having', HOW_THE_COURT_IS_SEEN.whyItIsWorthIt],
+        ['Why they do not talk', HOW_THE_COURT_IS_SEEN.whyTheyDoNotTalk],
+        ['And sometimes they do', HOW_THE_COURT_IS_SEEN.andSometimesTheyDo],
+        ['Why nobody can be sure which is which', HOW_THE_COURT_IS_SEEN.andWhyNobodyCanBeSure]
+    ];
+    return '<div class="grp"><h4>How they are seen <span>6</span>'
+        + '<span class="gap">famous, and impossible to place</span></h4>'
+        + '<p class="note">Admission is public: somebody watched each of these people walk up the mountain, and '
+        + 'the province can name every one of them. What it cannot do is join that list to the working names it '
+        + 'hears afterwards. <strong>This sheet carries both, because it is the record rather than a thing '
+        + 'anybody in the world is reading.</strong></p>'
+        + `<dl class="hist">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`
+        + '</div>';
+}
+
+/**
  * The road to the top of the ladder, and what stands between it and a reader.
  *
  * Three figures lead, because they are the ones a reader would otherwise take
@@ -5202,7 +5275,7 @@ function deepRoadBlock(r: RegisterDeepRoad): string {
  * What each warmth word means, printed where it is used rather than only in the
  * key, because a one-word column that needs a lookup is a column nobody reads.
  */
-const REGARD_GLOSS: Record<Regard, string> = {
+const WARMTH_GLOSS: Record<Warmth, string> = {
     warm: 'glad of them, and will spend on them unasked',
     correct: 'the forms observed exactly, and nothing past them',
     distant: 'no ill will and no contact; nobody maintains this one',
@@ -5268,9 +5341,9 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
             return `<div class="rel">`
                 + `<div class="relh">`
                 + `<span class="relwho">${other}</span>`
-                + `<span class="regard ${esc(r.regard)}">${esc(r.regard)}</span>`
+                + `<span class="warmth ${esc(r.warmth)}">${esc(r.warmth)}</span>`
                 + `<span class="relarrow">and back</span>`
-                + `<span class="regard ${esc(r.theirRegard)}">${esc(r.theirRegard)}</span>`
+                + `<span class="warmth ${esc(r.theirWarmth)}">${esc(r.theirWarmth)}</span>`
                 + `<span class="relkind">${esc(r.kind.replace(/_/g, ' '))}</span>`
                 + `<span class="relsrc">from ${esc(r.source)}</span>`
                 + `</div>`
@@ -5283,9 +5356,9 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
                     ? `<dt>The grievance</dt><dd>${esc(r.grievance)}</dd>`
                     : '')
                 + `</dl>`
-                + `<p class="relgloss"><b>${esc(r.regard)}</b>: ${esc(REGARD_GLOSS[r.regard])}. `
-                + `The other side reads it as <b>${esc(r.theirRegard)}</b>: ${esc(REGARD_GLOSS[r.theirRegard])}.`
-                + (r.regard === r.theirRegard
+                + `<p class="relgloss"><b>${esc(r.warmth)}</b>: ${esc(WARMTH_GLOSS[r.warmth])}. `
+                + `The other side reads it as <b>${esc(r.theirWarmth)}</b>: ${esc(WARMTH_GLOSS[r.theirWarmth])}.`
+                + (r.warmth === r.theirWarmth
                     ? ''
                     : ' The two do not match, and both are the catalog\'s own word rather than this sheet\'s.')
                 + `</p>`
@@ -5752,12 +5825,36 @@ function dossier(d: SectDossier): string {
     // ── 2. who is in it ──────────────────────────────────────────────
     const people: string[] = [];
     if (d.people.active.length) {
-        people.push(`<div class="grp healthy"><h4>Members <span>${d.people.active.length}</span></h4>`
+        // The roll, in one list, however many catalogs it came out of. The
+        // `from` chip is the same discipline the relationships section uses:
+        // every row says which table it was read from, so a reader can go and
+        // check it rather than taking the sheet's word for the union.
+        const sources = [...new Set(d.people.active.map(p => p.source))];
+        people.push(`<div class="grp healthy"><h4>The roll <span>${d.people.active.length}</span>`
+            + `<span class="gap">${esc(sources.join(', '))}</span></h4>`
             + d.people.active.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span>`
                 + `<span class="wo">${p.ordinal}</span>`
                 + `<span class="wr">${esc(p.rank)} · ${esc(p.role)}</span>`
-                + `<span class="wd">wants ${esc(p.wants)}</span></div>`).join('')
+                + `<span class="wd">${esc(p.wants)}`
+                // Both names, and the register is the only place they appear
+                // together. Being seen to go in is public; which of the working
+                // names belongs to which of the people who went in is what
+                // nobody in the world can establish, and the concealment is a
+                // fact about the province rather than about this sheet.
+                + (p.worksOutsideAs
+                    ? ` <span class="chip">works outside as ${esc(p.worksOutsideAs)}</span>`
+                    : '')
+                + (p.knownForBefore
+                    ? `<span class="dim"> Known before the gate: ${esc(p.knownForBefore)}</span>`
+                    : '')
+                // What the house can actually require. On one body it is the
+                // whole of the arrangement, and on one person inside it the
+                // honest answer is nothing at all.
+                + (p.askedOf
+                    ? `<span class="dim"> Asked of them: ${esc(p.askedOf)}</span>`
+                    : '')
+                + `</span></div>`).join('')
             + '</div>');
     }
 
@@ -5923,6 +6020,7 @@ function dossier(d: SectDossier): string {
   ${d.favour ? favourBlock(d.favour) : ''}
   ${d.noPlaceForItsOwn ? noPlaceBlock(d.noPlaceForItsOwn, d.name) : ''}
   ${d.house ? houseBlock(d.house) : ''}
+  ${d.id === 'sect-hollow-court' ? howTheCourtIsSeenBlock() : ''}
   ${people.length ? `<div class="grps">${people.join('')}</div>` : ''}
   ${d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''}
 
