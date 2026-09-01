@@ -568,7 +568,9 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'Slowly and without any drama at all. Nobody is struck. People walk in, get a third of the way, stop being able to stand, and are still alive when they stop being able to breathe, which takes long enough that every recovery attempt in the site\'s history was launched on good information and arrived too late anyway.',
             prize: {
-                techniqueIds: ['anchor-nail-of-the-broken-girdle'],
+                techniqueIds: [
+                    'anchor-nail-of-the-broken-girdle',
+                ],
                 other: [
                     'The containment method cut in full on the far wall, which is the partial manual the Anchorhold will not cite, complete, with the section the Anchorhold\'s copy is missing.',
                     'The load figures for all nine stones as they were before the eastern nail went, which is the only document in the world that proves the Girdle\'s containment was intact when it was broken.'
@@ -666,7 +668,13 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'It does not, and that is the trap. Nobody has ever died at the bench. What it costs is the thing a karma house always charged: a reader who gets far enough to be entered as having read, and then stops, is entered as having taken the matter up, and the Sweptground ground does not discharge what is sworn on it. Two of the four people known to have got that far carry an obligation they cannot identify and cannot pay, and one of them is a bloodline in the eastern towns.',
             prize: {
-                techniqueIds: ['severed-thread-audit', 'unpayable-tally-brand'],
+                techniqueIds: [
+                    // Forty-one benches for settling what is owed between people, and
+                    // the art for cutting the thread instead. The Tally Court kept
+                    // both and used only one.
+                    'severance-of-the-standing-thread',
+                    'severed-thread-audit', 'unpayable-tally-brand',
+                ],
                 other: [
                     'The page itself, which is the Tally Court\'s total, and the identity of the party it entered as owing it. The Ledger has nine sealed volumes and has never opened them; this is the other half of that.',
                     'Standing, at the bench, to hear anything sworn on that ground. It is a real office with no institution behind it and no way to resign.'
@@ -736,7 +744,13 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'By offering nine doors when four are doors. There is no violence in the hall and nothing pursues anybody: the claimant reaches a terminal that opens onto vacuum, or onto pressure, or onto somewhere that is not a place, and the arch does not close behind them because it was never closed. Five of the twenty-two shut terminals were shut from this side by somebody who had been through them.',
             prize: {
-                techniqueIds: ['gate-that-was-closed'],
+                techniqueIds: [
+                    // A room swept, left tidy, and still exactly as it was left. The art
+                    // in it is the reason, and nobody who has catalogued the site has
+                    // connected the two facts.
+                    'stillness-of-the-turning-year',
+                    'gate-that-was-closed',
+                ],
                 other: [
                     'The house\'s terminal convention, on the hall floor, which is what makes the nine answering gates in the world usable rather than lethal by anyone who holds it.',
                     'Four working terminals, and the standing ability to reach a courier yard in the Low Fall from wherever the other ends of them are. The Measured Span has spent nine hundred years and a great deal of money on the problem this solves.'
@@ -885,6 +899,10 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             howItKills: 'It does not, and nothing in the room is dangerous. What it costs is what the log costs: it is dated, specific, and directly contradicts the founding account of a house that administers eleven perimeters and employs most of the people who live near this wall. Both people who have read it understood inside a page what carrying it would mean, and one of them left it where it was.',
             prize: {
                 techniqueIds: [
+                    // A door that opens for somebody a house wrote an account of without
+                    // troubling to name, holding the art for taking a name back. The
+                    // pairing is not commented on anywhere in the room.
+                    'unsaying-of-a-given-name',
                     'nameless-witness-stance',
                     // The art that makes a person act, in the one room in the
                     // world whose whole subject is what a person said and
@@ -990,7 +1008,12 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'It does not, and the elder was specific about that in the note: he did not want a guarded thing, he wanted an unspendable one. The cost is entirely in what opening it makes true about the claimant, because the Pavilion knows what is in the box and will know within a season who has it, and the House of the Narrow Hour has had a standing sighting on the cave for four hundred years.',
             prize: {
-                techniqueIds: [],
+                techniqueIds: [
+                    // A door that opens only for somebody who refuses it, holding the art
+                    // for returning a chooser to the doorway. Whoever set this was
+                    // making a point and left no note explaining it.
+                    'the-hour-that-was-not-taken',
+                ],
                 other: [
                     'A lower-grade Unearned Step, unspent, which is the object `immortal-items.ts` says never appears in an inheritance and which is here for the only reason that rule allows: it was not left as a prize, it was put down by somebody who did not want it, and the box is not a cache because there is not and never will be a second one.',
                     'The elder\'s four lines, which are the only first-hand account in either province of being offered one and declining, written by the person who did it.'
@@ -1031,7 +1054,14 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'By completing. Nobody is attacked and nothing resists: the working takes the claimant because that is what it is for, and what comes out the other side is a question about identity continuity rather than about survival. The sixth is not recorded as dead anywhere. She is also not recorded as anything else, and the Lantern Hall, which keeps the lists of people no longer remembered by anyone who knew them, has an entry.',
             prize: {
-                techniqueIds: ['severed-fate-mending-art'],
+                techniqueIds: [
+                    // Ground that will not accept the claimant it was left
+                    // for, holding the art for unsetting a mark somebody set
+                    // on purpose. Every claim in the room is resting on a line
+                    // and the thing behind the door dissolves lines.
+                    'unfixing-of-the-set-mark',
+                    'severed-fate-mending-art'
+                ],
                 other: [
                     'The working, complete, which is a method for a transfer with an open vessel condition and is the thing the Bone Lantern Cult has been trying to reconstruct for four hundred years.',
                     'Whatever the person in the stone was, at whatever fraction of themselves survived four thousand years of an unfinished preparation, and no guarantee whatever about which party the result answers to.'
@@ -1098,7 +1128,13 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'By the descent, in almost every case, and by the sump gate in the rest. The gate opens onto water at the head of a branch that has never been lifted, and a reader who has the sequence and not the timing opens a hand-span hole into it inside a twelve-pace room with one stair out. The room fills in under a minute. Three of the four bodies the Survey recovered in two centuries were recovered from the stair rather than the room, because they had got most of the way up.',
             prize: {
-                techniqueIds: ['abyssal-gate-torrent', 'dragonbone-severing-decree'],
+                techniqueIds: [
+                    // The art for taking the qi out of a place, in a station built to
+                    // measure how much of it a branch was carrying. Whoever shelved it
+                    // here filed it with the surveys rather than with the weapons.
+                    'quenching-of-the-standing-air',
+                    'abyssal-gate-torrent', 'dragonbone-severing-decree',
+                ],
                 other: [
                     'Two hundred and ten years of readings off the fourth branch, in sequence, which is the only continuous record of an arterial branch anybody has ever taken and is the document the Deep Survey has been quietly reconstructing from memory for eight hundred years.',
                     'The last surveyor\'s closing note, four lines, giving the date the station was shut and the reason, and the reason is not the one the Survey now records.'
@@ -1820,6 +1856,21 @@ export const GRAVES: readonly Grave[] = [
             gates: [],
             gateOrigin: 'none',
             contents: [
+                {
+                    // The manual that makes the site read differently, on the
+                    // body of one of the two. Both of them were at the same
+                    // rung, both died on the same afternoon, and the canon says
+                    // the pairing ends when one of you does and that the
+                    // survivor does not reliably survive it. The official
+                    // account is a duel over a survey line, everybody local can
+                    // name both parties, and nobody has ever asked why the
+                    // second cairn was needed.
+                    what: 'A worn earth-grade canon in the pouch of the cairn on the western side, on a method for two people cultivating as one circuit, with two names written inside the cover in the same hand.',
+                    proven: false,
+                    survived: null,
+                    techniqueId: 'paired-breath-canon',
+                    immortalItemId: null
+                },
                 {
                     what: 'Two swords, both good, both Core Formation working weapons of the kind a sect issues and expects back.',
                     proven: false,

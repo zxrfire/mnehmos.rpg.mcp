@@ -343,6 +343,18 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'vessel-borrowing-palm',
     'sixteen-thread-command',
     'hollow-second-body',
+    'paired-breath-canon',
+    'quenching-of-the-standing-air',
+    'stillness-of-the-turning-year',
+    'unsaying-of-a-given-name',
+    'severance-of-the-standing-thread',
+    'the-hour-that-was-not-taken',
+    'unfixing-of-the-set-mark',
+    // The two decrees. Ruin-only is a structural requirement of the top rung
+    // rather than a flavour choice: nothing alive teaches a decree, and the
+    // guard in the escalation suite asserts it.
+    'the-road-that-was-always-there',
+    'the-witness-who-was-always-there',
     // Above the Lid, and here for the same reason everything else in this list
     // is: no living institution transmits them. The two rungs differ in where
     // the copy is rather than in what kind of thing it is - three faces one man
@@ -441,7 +453,44 @@ export const DERIVABLE_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // your own meridians is arrived at by experiment on the only subject
     // available, which is how it keeps being reinvented by people who were
     // not taught it and did not need to be.
-    'meridian-devouring-art'
+    'meridian-devouring-art',
+
+    // ── THE RUNGS WHERE DERIVATION COSTS SOMETHING ───────────────────────
+    //
+    // The three above all sit under ordinal twenty-nine, where the precedent
+    // above the target is thick and the price is the floor. So the difficulty
+    // curve existed, was correct, and had nothing to bite on: every derivation
+    // anybody could actually attempt cost the same twelve years, and nobody was
+    // ever going to feel it.
+    //
+    // These two are on the curve, and they are two rather than three because
+    // the ratio guard in the escapes suite is right: a derivable set that grows
+    // to cover the choke points has abolished the corridor rather than opened
+    // it. Two points, far apart - a fifth of a life, then most of one - is
+    // enough to demonstrate a curve without becoming a second road.
+    //
+    // AND THE PRICE IS ALWAYS THE SAME KIND OF THING. Years and possibility,
+    // never stones, never rank, never standing. That is what keeps derivation
+    // the one door money cannot open, and it is also why the door is worth
+    // having: above ordinal thirty-seven nothing is taught at all, so the only
+    // other route is a physical object in a place somebody sealed.
+
+    // Taught, and not to you. The Rime Heart is transmitted by houses with
+    // admission standards, so a cultivator those houses will not take has
+    // exactly one other way to it - and stillness is the most walkable road in
+    // the catalog, arrived at by sitting still for a very long time, which is
+    // a thing nobody can be prevented from doing.
+    'rime-heart-stillness-canon',
+
+    // The clearest case in the catalog, and the one that composes with
+    // everything else the entry says about itself. Spending your own allotted
+    // years as ammunition is a thing a person arrives at alone, at the top of
+    // the ladder, with nothing left to spend but time - and there is no victim
+    // in it anywhere, which is why it reads as abandoned rather than condemned
+    // and why it keeps being rewritten by people who would have been appalled
+    // to be handed it. Two books stand above the rung it is written for. It
+    // costs most of what a mortal life would have been.
+    'lifespan-devouring-heaven-theft'
 ]);
 
 /**
@@ -501,31 +550,100 @@ export const NO_SURVIVING_COPY_NOTES: Readonly<Record<string, string>> = {
 } as const;
 
 /**
- * The arts written in the prosperous age.
+ * The arts written in the categorical idiom.
  *
- * Small, and it should stay small: the tier is worth what its scarcity is
- * worth, and an ancient section the size of the modern one is just a second
- * catalog. Every member does something with no elemental reading at all - it
- * moves a resource between bodies, it makes a person act, it puts objects into
- * the world that somebody else can pick up, it takes ground out of the world,
- * it makes a second body - and every member costs the practitioner something
- * they will miss. See `ANCIENT_ARTS` in `lost-ages.ts` for what each one costs
- * and why the era stopped paying it.
+ * Every member does something with no elemental reading at all - it moves a
+ * resource between bodies, it makes a person act, it puts objects into the world
+ * that somebody else can pick up, it takes ground out of the world, it makes a
+ * second body, it couples two cultivators, it states a thing and the thing is
+ * so - and every member costs the practitioner something they will miss. See
+ * `ANCIENT_ARTS` in `lost-ages.ts` for what each of the low ones costs.
  *
- * The set is authored rather than derived, for the reason on the `era` field:
- * nothing about a row distinguishes a categorical effect from an elementless
- * modern one. What the catalog test DOES enforce is the half that is
- * checkable - no member of this set carries an element - because an art with a
- * fire in it is doing the thing the other era does.
+ * A MEMBERSHIP SET RATHER THAN A RULE, and that is a deliberate and twice-made
+ * decision rather than laziness. See `eraOf`.
  */
 export const ANCIENT_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
+    // The categorical roads, at rungs the modern line also reaches. Small on
+    // purpose: an ancient art at a low rung is a thing a player can be handed,
+    // and the tier is worth what its scarcity is worth.
     'hundred-pace-step',
     'sealed-field-of-the-shut-hour',
     'thousand-spear-summoning',
     'vessel-borrowing-palm',
     'sixteen-thread-command',
-    'hollow-second-body'
+    'hollow-second-body',
+    'paired-breath-canon',
+    // Above the Lid. Every one of these was filed `modern` BY OMISSION for as
+    // long as the era axis has existed - the set was written before they were
+    // and never extended upward - so the axis has been reporting the opposite
+    // of the design at the top of the ladder, and the register has been
+    // rendering that. They are categorical on their face: a seam held open
+    // from underneath, a defence made of being permitted to remain, a strike
+    // that arrives before the answer to the first.
+    'the-seam-that-did-not-close',
+    'what-came-back-instead',
+    'the-second-question',
+    'one-crossing-of-a-courtyard',
+    'canon-of-the-unwritten-span',
+    'the-fifteenth-breath',
+    // The two decrees, which are categorical by definition: a statement, and
+    // the world is obliged.
+    'the-road-that-was-always-there',
+    'the-witness-who-was-always-there'
 ]);
+
+/**
+ * Arts above the Lid that are deliberately MODERN, with the reason each.
+ *
+ * Empty, and the emptiness is a fact rather than a gap: everything currently
+ * written up there is categorical. The record exists because the case must stay
+ * expressible - see `eraOf` - and because a marker with no reason attached is
+ * the same silence in a different place, which is the discipline
+ * `NO_SURVIVING_COPY_NOTES` is held to next door.
+ *
+ * An entry here says: somebody made an elemental art at that height on purpose.
+ * It is ill-suited to where it was written rather than impossible, and its
+ * natural destination is downward, where it would be earth-shaking.
+ */
+export const MODERN_ABOVE_THE_LID_NOTES: Readonly<Record<string, string>> = {};
+
+/**
+ * When an art was written, and it is a statement about IDIOM rather than about
+ * a century or a height.
+ *
+ * HEIGHT IS EVIDENCE OF IDIOM, NEVER A DEFINITION OF IT. This resolver was
+ * briefly changed to read `requiredOrdinal >= FALSE_IMMORTAL_ORDINAL`, on the
+ * reasoning that a list can be forgotten and a rule cannot. The reasoning is
+ * true and the change was still wrong, because of what it makes inexpressible:
+ * a modern art written above the Lid. That is a design possibility that has
+ * been ruled on directly - somebody up there can still make an elemental art,
+ * it is merely ill-suited to a realm that changes slowly, and its natural
+ * destination is downward where it would be earth-shaking. A derivation from
+ * height closes that door permanently and silently, which is the worst way for
+ * a door to close.
+ *
+ * So a membership set is the right instrument precisely BECAUSE it can express
+ * an exception. The correlation is real - almost everything above the Lid is
+ * categorical, and all six things currently up there are - and a correlation is
+ * not a definition.
+ *
+ * The forgetting problem is real too, and it belongs in a test rather than in
+ * the resolver: the escalation suite asserts that every art above the Lid is
+ * either in the set above or carries a note in `MODERN_ABOVE_THE_LID_NOTES`
+ * saying why it is not. That catches the omission without forbidding the case.
+ */
+export function eraOf(t: Pick<Technique, 'id'>): TechniqueEra {
+    return ANCIENT_TECHNIQUE_IDS.has(t.id) ? 'ancient' : 'modern';
+}
+
+/**
+ * Every art the prosperous age wrote, derived rather than listed.
+ *
+ * Kept as an export because it is the era axis a register renders off, and
+ * because a name that used to mean "the six categorical arts" quietly meaning
+ * something wider is worth stating: this is now the whole tier.
+ */
+
 
 const SOURCE_NOTES: Record<TechniqueProvenance, string> = {
     taught: 'Transmitted by at least one living sect. A teacher exists and can be paid, joined, or robbed.',
@@ -777,7 +895,11 @@ const CULTIVATION_CLASS_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'nine-abyss-demon-transformation',
     'heart-of-the-ten-thousand-corpses',
     'lifespan-devouring-heaven-theft',
-    'meridian-devouring-art'
+    'meridian-devouring-art',
+    // An ancient road you practise rather than use. It is filed `cultivation`
+    // by category too, so this entry is belt and braces - but the set is what
+    // `classOf` reads first and a road this unusual should be named in it.
+    'paired-breath-canon'
 ]);
 
 /** Which of the two kinds an art is. One rule, plus a named override set. */
@@ -893,8 +1015,8 @@ function art(
         derivable: DERIVABLE_TECHNIQUE_IDS.has(t.id),
         // Same block as provenance and surviving copies, and for the same
         // reason: a hundred and some entries, and none of them has to
-        // remember. See `ANCIENT_TECHNIQUE_IDS`.
-        era: ANCIENT_TECHNIQUE_IDS.has(t.id) ? 'ancient' : 'modern',
+        // remember. See `eraOf` and `MODERN_GRADE_CEILING`.
+        era: eraOf(t),
         opening: t.opening ?? null,
         // The road the art is on. Defaults from the category, so the ninety
         // entries that never named one still answer the question, and an
@@ -2391,6 +2513,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'defense',
         grade: 'heaven',
         element: null,
+        // It lands on a location and everybody in it is in it, which is the
+        // definition of the second rung. Legal at twenty-six and not a gift
+        // for being ancient: a fire art at the same rung may address a place
+        // too. What is ancient about this one is what it does to the place.
+        reach: 'field',
+        addresses: 'place',
         requiredOrdinal: 26,
         qiCost: 128,
         damage: null,
@@ -2404,6 +2532,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'attack',
         grade: 'immortal',
         element: null,
+        // The spears are still there afterwards, which is what makes the
+        // subject the ground rather than whoever was standing on it.
+        reach: 'field',
+        addresses: 'place',
         requiredOrdinal: 31,
         // Against the ordinary immortal art at this exact ordinal - twelve
         // dice of twelve plus forty-five, at a hundred and ninety qi, on a
@@ -2457,6 +2589,193 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         cooldown: 12,
         description:
             'A second body, standing where it was made, doing what the practitioner does. It is not a duplicate and it is not the person: it holds nothing of what they know, cannot be left alone with a decision, and what it feels is not reported back. What it can do is be in a second place, which is a thing no art of the elemental line has ever offered at any rung. It is also, obviously and immediately, a question every house and every oath has to answer about the person who made it - whether the thing that signed is the thing that swore - and no two houses have answered it the same way. Making one consumes a lotus that stopped growing before any institution now standing was founded, and the practitioner does not get back what the making takes out of them.'
+    }),
+
+    // ── an ancient road you PRACTISE ─────────────────────────────────────
+    // The quadrant that was empty, and the more interesting half. An ancient
+    // dao art changes what you can do in a fight; an ancient cultivation road
+    // changes what kind of cultivator you become, permanently, at a price.
+    //
+    // It addresses a BODY and always will - `addressIsLegal` makes that an
+    // invariant rather than a choice, because what you practise to rank up
+    // never escalates in kind. Only what you USE does.
+    art({
+        id: 'paired-breath-canon',
+        name: 'Paired-Breath Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 15,
+        qiCost: 34,
+        damage: null,
+        cooldown: 0,
+        description:
+            'Two people cultivate as one circuit. Progress is drawn twice and divided once, so a pair climbs faster than either would alone - and everything else is shared on the same terms. A deviation is both of your deviations. An injury takes its years off both clocks. What one of you spends of a life, the other has spent. The canon is explicit that it cannot be undone and does not soften it: the pairing outlives falling out, outlives distance, and ends when one of you does, which the survivor does not reliably survive. Nothing in the modern catalogue couples two cultivators at all, and no orthodox road asks you to decide at Foundation Establishment who you are willing to be half of for the rest of your life.'
+    }),
+
+    // ── CONDITION: what a place is LIKE, rather than who is standing in it ──
+    // The third rung, and the floor is Body Integration for the reason the
+    // schema gives: damage stops meaning what it used to mean, and an art whose
+    // subject is no longer damage has stopped addressing what is standing
+    // there. Both entries below take a location and change a property of it
+    // that outlasts everybody who was present.
+    //
+    // BOTH ARE MODERN, and that is the interesting part rather than an
+    // oversight. `era` is a membership decision about idiom and neither of
+    // these is categorical: they are the late age's own high arts, elementless
+    // the way a great many modern arts are, and they are the reason the world
+    // is full of dead ground and famine districts. The scars are recent. An
+    // ancient tier that owned the whole top of the address ladder would make
+    // "old is stronger" true by distribution even with every entry legal.
+    art({
+        id: 'quenching-of-the-standing-air',
+        name: 'Quenching of the Standing Air',
+        category: 'attack',
+        grade: 'immortal',
+        element: null,
+        reach: 'field',
+        addresses: 'condition',
+        requiredOrdinal: 34,
+        qiCost: 330,
+        damage: null,
+        cooldown: 12,
+        description:
+            'The qi goes out of the air over a stretch of ground and does not come back. Nobody present is harmed and nothing is destroyed; what changes is what the place IS, permanently, for everybody who ever stands there afterwards. It does not win a fight - anybody it was used against walks away, and walks away able to fight - so as a weapon it is close to useless and was never meant as one. What it is for is denying ground to whoever comes next, which is a thing an age with sieges wanted and this one has no use for. The practitioner cannot draw there either, ever again, and the quenching takes a share of their own span on the way out. Every dead zone anybody has ever surveyed is either this art or something that behaved exactly like it.'
+    }),
+    art({
+        id: 'stillness-of-the-turning-year',
+        name: 'Stillness of the Turning Year',
+        category: 'support',
+        grade: 'chaos',
+        element: null,
+        reach: 'field',
+        addresses: 'condition',
+        requiredOrdinal: 38,
+        qiCost: 470,
+        damage: null,
+        cooldown: 14,
+        description:
+            'The season stops turning over a place. Nothing grows there and nothing rots, wounds neither heal nor worsen, and food keeps for as long as it is inside. It is not a stopping of time and anybody who describes it that way has misunderstood it: people age normally, and only the ground has been taken out of the year. Held for a season it is the single best thing in the catalog for a siege, an archive or a sickbed. Held for a decade it kills a district, because a field that does not turn does not crop, and the places it has been used are known by their famines rather than by their battles. The practitioner holds it, continuously, and holds nothing else while they do.'
+    }),
+
+    // ── SETTLED: a fact the world has already fixed ──────────────────────
+    // The fourth rung, and the floor is the last crossing: the one place below
+    // the Lid from which somebody is looking at the boundary rather than up at
+    // it. Four arts, one per Dao house principle, and every one of them is
+    // bounded in the way the schema insists on - it needs something to ALREADY
+    // BE TRUE, and no magnitude widens that bound.
+    //
+    // That is the whole reason these are the rung below a decree rather than
+    // small decrees. An infinitely powerful name-severing art still cannot
+    // reach somebody who was never named. Each entry says out loud what had to
+    // already be true, because that sentence is the test the schema applies.
+    art({
+        id: 'unsaying-of-a-given-name',
+        name: 'Unsaying of a Given Name',
+        category: 'support',
+        grade: 'chaos',
+        element: null,
+        addresses: 'settled',
+        requiredOrdinal: 44,
+        qiCost: 860,
+        damage: null,
+        cooldown: 20,
+        description:
+            'A name that was given is ungiven, and everything fastened to it comes loose: the register entry, the inheritance, the oath sworn under it, the debt recorded against it. WHAT HAD TO ALREADY BE TRUE is that somebody named them, once, out loud, and that the naming was kept - so it does nothing whatsoever to a person who was never named, which is most people who have ever lived and every foundling in the province. It does not kill and it does not harm. It removes a person from the paperwork of the world, and the world is largely paperwork.'
+    }),
+    art({
+        id: 'severance-of-the-standing-thread',
+        name: 'Severance of the Standing Thread',
+        category: 'support',
+        grade: 'chaos',
+        element: null,
+        addresses: 'settled',
+        requiredOrdinal: 44,
+        qiCost: 880,
+        damage: null,
+        cooldown: 22,
+        description:
+            'A connection that was made is unmade - a lineage, a master and disciple, a debt, a thing owed between two people who both know it is owed. WHAT HAD TO ALREADY BE TRUE is that the connection exists and that both ends of it are real; it cannot invent a severance where there was no thread, and against two people who merely dislike each other it does precisely nothing. Both ends feel it go. Neither can say afterwards what it was, only that there was one.'
+    }),
+    art({
+        id: 'the-hour-that-was-not-taken',
+        name: 'The Hour That Was Not Taken',
+        category: 'support',
+        grade: 'chaos',
+        element: null,
+        addresses: 'settled',
+        requiredOrdinal: 44,
+        qiCost: 900,
+        damage: null,
+        cooldown: 24,
+        description:
+            'A decision that was taken becomes one that was not taken, and the world proceeds from the other branch. WHAT HAD TO ALREADY BE TRUE is that somebody decided, deliberately, at a moment that can be identified - so it is useless against drift, against accident, against everything that merely happened, and useless against a decision nobody can now point to. It does not choose the other branch on anybody\'s behalf. It returns the chooser to the doorway, and they are perfectly free to walk through it again, which is what most of them do.'
+    }),
+    art({
+        id: 'unfixing-of-the-set-mark',
+        name: 'Unfixing of the Set Mark',
+        category: 'support',
+        grade: 'chaos',
+        element: null,
+        addresses: 'settled',
+        requiredOrdinal: 44,
+        qiCost: 840,
+        damage: null,
+        cooldown: 20,
+        description:
+            'A boundary that was set stops being set. A perimeter, a survey line, a seal, a datum - anything somebody fixed on purpose and that has held because it was fixed. WHAT HAD TO ALREADY BE TRUE is that a person set it, knowing they were setting it; a border that grew out of custom has never been fixed and is untouched, and a wall is just a wall. Nothing moves and nothing falls down. The line simply stops being the line, and every claim that was resting on it is resting on nothing.'
+    }),
+
+    // ── DECREE: a statement, and the world is obliged ────────────────────
+    // The top rung, one ordinal wide, and the thing that separates it from the
+    // rung below is not size. A settled art reaches a fact the world has
+    // already fixed. A decree needs nothing to have been true.
+    //
+    // Three structural requirements, all enforced elsewhere and all satisfied
+    // here: no damage expression, no headcount, and no living teacher. A decree
+    // that kills a number of people is a tier-four art wearing the wrong label.
+    //
+    // And both stay inside `WHAT_A_DECREE_CANNOT_SAY`: neither states a rung,
+    // neither is revisable, and neither requires anybody to administer it
+    // afterwards - each runs on its flat reading for ever, which is most of
+    // what makes them frightening rather than useful.
+    art({
+        id: 'the-road-that-was-always-there',
+        // Declared rather than defaulted, which every art above the Lid is
+        // required to do. A decree has no headcount by construction: it is a
+        // statement, and a statement that kills a number of people is a
+        // tier-four art wearing the wrong label.
+        reach: 'single',
+        name: 'The Road That Was Always There',
+        category: 'movement',
+        grade: 'chaos',
+        element: null,
+        addresses: 'decree',
+        requiredOrdinal: 46,
+        qiCost: 1_400,
+        damage: null,
+        cooldown: 30,
+        description:
+            'There is a road here. There always was; the maps have it, the villages along it remember the tolls, and the families who have kept the waystations have kept them for nine generations. NOTHING HAD TO BE TRUE BEFOREHAND, which is the whole of the difference between this and the rung beneath it - no path, no track, no intention, no surveyor, nobody who ever walked it. The statement is made and the road has been there the entire time. It cannot be revised, so a road laid through a place that later needs to not have a road through it is a permanent fact about that place, and the two occasions anybody can point to are both remembered as disasters rather than as feats.'
+    }),
+    art({
+        id: 'the-witness-who-was-always-there',
+        // Declared rather than defaulted, which every art above the Lid is
+        // required to do. A decree has no headcount by construction: it is a
+        // statement, and a statement that kills a number of people is a
+        // tier-four art wearing the wrong label.
+        reach: 'single',
+        name: 'The Witness Who Was Always There',
+        category: 'support',
+        grade: 'chaos',
+        element: null,
+        addresses: 'decree',
+        requiredOrdinal: 46,
+        qiCost: 1_450,
+        damage: null,
+        cooldown: 32,
+        description:
+            'Somebody saw it. They were standing there, they have always been the person who was standing there, and they will say so - because it is what happened. NOTHING HAD TO BE TRUE BEFOREHAND: no observer, no vantage, no plausible reason for anybody to have been present. In a world whose oaths, inheritances, treaties and executions all rest on testimony, an art that manufactures a witness out of nothing is the most dangerous sentence anybody has ever written down, and every house that keeps a treaty vault has known of it for an age and has never once been able to devise a check against it. The flat reading is the danger: the witness is real, they are not lying, and there is nothing to detect.'
     }),
 
     // ═══════════════════════════════════════════════════════════════════
@@ -2781,6 +3100,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
 // DERIVED INDICES
 // Prebuilt so lookups are O(1) and never re-scan the array.
 // ─────────────────────────────────────────────────────────────────────────
+
 
 const TECHNIQUE_BY_ID: ReadonlyMap<string, TechniqueEntry> = new Map(TECHNIQUES.map(t => [t.id, t]));
 

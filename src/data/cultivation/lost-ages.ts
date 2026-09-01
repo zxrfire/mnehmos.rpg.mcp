@@ -282,6 +282,28 @@ export const ANCIENT_ARTS: readonly AncientArt[] = [
             'Physicians, oddly, and almost nobody else - it is the one place the capability is not about a fight. A copy sits in a channel physician\'s grave with her own annotations in the margin arguing against it on every page.'
     },
     {
+        // THE ONE YOU PRACTISE. Every other entry here is a dao art - a thing
+        // you use - and the quadrant of ancient roads you PRACTISE stood empty
+        // until this, which made the era axis look like a fact about combat.
+        // It is not. An ancient dao art changes what you can do in a fight; an
+        // ancient cultivation road changes what kind of cultivator you are,
+        // permanently, and there is no putting it down afterwards.
+        techniqueId: 'paired-breath-canon',
+        capability:
+            'Two people cultivate as one circuit and climb faster than either would alone. Nothing in the modern catalogue couples two cultivators at all - every orthodox road is a road one person walks.',
+        costToTheUser:
+            'Everything else is shared on the same terms as the progress. A deviation is both of your deviations, an injury takes its years off both clocks, and what one of you spends of a life the other has spent.',
+        compounds: true,
+        upkeepHerbId: null,
+        worldSupplyCeiling: null,
+        whyTheEraStopped:
+            'It asks a person at Foundation Establishment to decide who they are willing to be half of for the rest of their life, and it cannot be undone. An age with shorter horizons and denser qi could treat that as a reasonable trade for a faster climb; an age where advancement is slow and lives are long worked out that the pairing outlasts every reason anybody ever had for entering one. It was not condemned. It went out of fashion, then out of memory.',
+        whenTheModernArtWins:
+            'Whenever you might one day want to be alone. An ordinary gathering manual at the same rung is slower and asks nothing of you, and the difference in rate stops mattering the first time the other half of your circuit does something you would not have done.',
+        whoPractisesIt:
+            'Almost nobody, and the ones who do are almost always siblings or a married pair who understood exactly what they were signing. The clearest surviving instance is two cairns eleven paces apart above Scarwater, raised on the same afternoon, in a province that has never asked why the second one was needed.'
+    },
+    {
         techniqueId: 'hollow-second-body',
         capability:
             'A second body, standing where it was made, doing what the practitioner does. It knows nothing, decides nothing, and reports nothing back - but it is in a second place, which no art of the elemental line offers at any rung.',
@@ -632,11 +654,23 @@ export const THE_TRADE = {
 } as const;
 
 /**
- * `believed_to_hold` currently has nobody in it, and the variant is kept
- * anyway: a house nobody can confirm either way is a legitimate state of the
- * world and the register has to be able to say it. The one candidate for it
- * was the Azure Cloud Pavilion, and that resolved into a fact with a cause,
- * which is worth more than an unknown.
+ * `believed_to_hold` is a real state of the world and now has a real holder.
+ *
+ * It briefly had none. The Azure Cloud Pavilion sat here until its answer
+ * turned out to be structural - `heritage: 'recent'`, the same fact as its
+ * empty province column - and a fact with a cause is worth more than an
+ * unknown, so it moved to `never_had_one` and the standing emptied.
+ *
+ * That was a loss rather than a decision, and the difference matters: the
+ * uncertainty was doing work. A house that MAY hold one, where nobody can
+ * establish it either way, is the same shape as `claimsLivingAncestor` against
+ * `claimIsTrue` in `sects.ts` - a claim the world cannot audit, believed by
+ * people acting on it, and worth exactly what the belief is worth. It is the
+ * kind of fact the Standing Register exists to argue about.
+ *
+ * The Pavilion was never a good instance of it anyway, because its question
+ * had an answer. The Storm Tyrant Court is a better one, because its question
+ * genuinely does not.
  */
 export type MedicineStanding = 'holds_one' | 'spent_theirs' | 'believed_to_hold' | 'never_had_one';
 
@@ -706,6 +740,23 @@ export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
         whatBecameOfIt: null
     },
     {
+        // THE ONE NOBODY CAN SETTLE, INCLUDING THEM.
+        //
+        // Everything else in this table is known to somebody. This is a house
+        // whose own records say it was given one, whose vault has not been
+        // opened in living memory, and which cannot afford to look - because
+        // the belief that it holds one is currently worth more to it than the
+        // pill would be, and is worth nothing at all the moment it is checked
+        // and is not there. Both outcomes of opening the door are worse than
+        // the door staying shut, which is why it has stayed shut through two
+        // centuries of decline that opening it might have arrested.
+        factionId: 'sect-storm-tyrant-court',
+        standing: 'believed_to_hold',
+        howItIsKnown:
+            'The Court holds a written record that the First Tyrant sent one down at his crossing, in the hand and the form everything else from that estate is in, and nobody now alive has seen the object. The vault was last opened in a year the Court can name and by people it can name, all of whom are dead. Every party that has priced the Court has had to decide what to do about that record, and every one of them has decided the same way: assume it is there, because assuming otherwise costs nothing if you are right and everything if you are wrong.',
+        whatBecameOfIt: null
+    },
+    {
         factionId: 'sect-nine-peaks-ascetic-order',
         standing: 'spent_theirs',
         howItIsKnown:
@@ -734,6 +785,19 @@ export interface ArchiveCopy {
     provenanceNote: string;
     /** Whether the house can still feed it. */
     stock: 'spent' | 'remnant' | 'never_had_any';
+    /**
+     * How far the house's own stock carries somebody, on `mastery`'s [0, 1].
+     *
+     * Set only on a `remnant`, and only because the holder is a house that
+     * measures things. `masteryCeilingFor` returned null here and said why -
+     * inventing a figure would be the engine asserting something the world does
+     * not know - and that was the right call while nobody had established it.
+     * It is establishable: the Quiet Cut leaves nothing behind that could be
+     * surveyed, which is a practice that requires knowing to the measure what
+     * you are carrying. They know. Nobody has asked, and the engine is allowed
+     * to know things the world does not.
+     */
+    carriesToMastery?: number;
     /**
      * What the house does with a book nobody there can use. This is the field
      * that makes an ancient manual reachable: giving away something nobody can
@@ -794,6 +858,11 @@ export const ARCHIVE_COPIES: readonly ArchiveCopy[] = [
         // THE ONE EXCEPTION. A house with the book and material both, and
         // nobody knows. Keep this at one.
         stock: 'remnant',
+        // Higher than the world's open supply and short of the end, which is
+        // the same shape a stocked inheritance has and arrived at from the
+        // other direction: a stocked inheritance is a dead person's judgement,
+        // and this is a living house's inventory.
+        carriesToMastery: 0.85,
         willingToPartWithIt:
             'It has never acknowledged holding either, and the only reason anybody suspects is that a sealed field was raised eleven years ago in a place the Quiet Cut had been working, and four separate accounts of it disagree about everything except that it happened.'
     }
@@ -866,7 +935,36 @@ export { NO_SURVIVING_COPY_TECHNIQUE_IDS, NO_SURVIVING_COPY_NOTES };
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-export type AbsenceTier = 'abandoned' | 'lost' | 'no_surviving_copy' | 'present';
+/**
+ * DORMANT is the fifth, and it is the one where nothing is missing at all.
+ *
+ * The other four are about a thing: a road nobody walks, an input nobody has,
+ * a copy that does not exist, or an art in ordinary circulation. This one is
+ * about a PERSON. The knowledge is intact, complete and in the world - and the
+ * only party who holds it is sealed under somebody's mountain, so it is
+ * unavailable in a way that has nothing to do with the art and everything to
+ * do with the fact that waking her is generally the end of her.
+ *
+ * It belongs in this table because it produces the same sentence from the
+ * outside - you cannot get this - out of a completely different cause, and
+ * because the cause is reversible in a way none of the others is. A lost
+ * material is lost. A sealed holder is a decision somebody could take
+ * tomorrow, once, at a price they can name. See `sealed-ancestors.ts`.
+ */
+export type AbsenceTier = 'abandoned' | 'lost' | 'no_surviving_copy' | 'dormant' | 'present';
+
+/**
+ * Arts whose only holder is asleep, and who is holding each.
+ *
+ * Deliberately tiny and deliberately not derived: an art is dormant because a
+ * specific sealed person is the last one who can perform it, and nothing about
+ * a technique row says that. One entry, which is the right number - a second
+ * would make sealed ancestors a library rather than a decision.
+ */
+export const DORMANT_HOLDERS: Readonly<Record<string, string>> = {
+    'paired-breath-canon':
+        'The last practitioner anybody can name is the other half of a circuit, and she is sealed. Her pair died four hundred years ago and she did not, which the canon says is not the ordinary outcome; the house that holds her has never explained how she survived it and has never been asked the question in a form it would have to answer. Waking her would produce the only living teacher of an ancient road in the world, and would also be the end of her, and her holders have understood both halves of that for four centuries.'
+} as const;
 
 /**
  * Which tier of absence an art sits in. `present` is the ordinary answer for
@@ -881,6 +979,11 @@ export function absenceTierOf(techniqueId: string): AbsenceTier {
     if (NO_SURVIVING_COPY_TECHNIQUE_IDS.has(techniqueId)) return 'no_surviving_copy';
     const ancient = ANCIENT_ARTS.find(a => a.techniqueId === techniqueId);
     if (!ancient) return 'present';
+    // Material before choice, and a sleeping holder before either: a road
+    // nobody walks is a social fact and a road nobody can feed is a material
+    // one, but an art with a living teacher who could be woken is a decision
+    // sitting in front of somebody, which is the most actionable of the three.
+    if (DORMANT_HOLDERS[techniqueId]) return 'dormant';
     return ancient.upkeepHerbId ? 'lost' : 'abandoned';
 }
 

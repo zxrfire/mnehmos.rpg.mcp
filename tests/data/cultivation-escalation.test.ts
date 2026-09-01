@@ -207,10 +207,33 @@ describe('the ladder composes with class and era rather than replacing them', ()
             occupied.get(address)!.add(t.era);
         }
         // Whatever is occupied, `place` and above must not be an ancient-only
-        // preserve wherever more than one entry sits there.
+        // preserve - WHEREVER BOTH ERAS CAN REACH IT.
+        //
+        // The qualifier is the amendment, and it is the ladder's own geometry
+        // rather than an excuse. `decree` opens at the True Immortal rung,
+        // above the Lid, and everything currently written up there is
+        // categorical - so an ancient-only decree rung is what the catalog
+        // says about the top of the world, not a distribution failure that
+        // makes old art stronger. Nobody below the Lid can read any of it at
+        // any mastery, so it buys no one anything either way.
+        //
+        // It is not a permanent exemption. A modern art above the Lid stays
+        // expressible - see `MODERN_ABOVE_THE_LID_NOTES` and the guard in the
+        // ancient suite - and the day one is written this band gets both eras
+        // like every other. What is asserted below the Lid is unchanged and is
+        // where the real risk was: `place` and `condition` and `settled` all
+        // sit at rungs the elemental line reaches, and all three carry modern
+        // entries.
         for (const [address, eras] of occupied) {
             if (addressRank(address) === 0) continue;
-            expect(eras.has('modern'), `${address} is ancient-only`).toBe(true);
+            if (ADDRESS_ORDINAL_FLOORS[address] >= FALSE_IMMORTAL_ORDINAL) continue;
+            expect(eras.has('modern'), `${address} is ancient-only below the Lid`).toBe(true);
+        }
+        // And the below-the-Lid half is asserted positively rather than only
+        // by absence, so this cannot pass by those bands quietly emptying.
+        for (const address of ['place', 'condition', 'settled'] as TechniqueAddress[]) {
+            expect(occupied.get(address)?.has('modern'), `${address} has no modern entry`)
+                .toBe(true);
         }
     });
 
@@ -301,7 +324,14 @@ describe('the ladder composes with class and era rather than replacing them', ()
         // a person to command, a place to seal. That is why a decree is the
         // rung ABOVE the categorical line rather than a parallel to it - it is
         // the one thing on the ladder that needs nothing to already be there.
-        const ancient = TECHNIQUES.filter(t => t.era === 'ancient');
+        // Narrowed to the categorical line BELOW THE LID, which is what the
+        // claim was always about. Above it the distinction stops doing work:
+        // a decree is itself categorical, the arts up there are ancient, and
+        // an art that needs nothing to already be true is exactly the rung
+        // this test says sits above the ones that do.
+        const ancient = TECHNIQUES.filter(
+            t => t.era === 'ancient' && t.requiredOrdinal < FALSE_IMMORTAL_ORDINAL
+        );
         expect(ancient.length).toBeGreaterThan(0);
         for (const t of ancient) {
             expect(addressOf(t), `${t.id} decrees`).not.toBe('decree');

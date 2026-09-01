@@ -2870,6 +2870,13 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
              * and it is the only one this field is allowed to produce.
              */
             techniqueIds: [
+                // The two decrees. She had them and did not use either, which is
+                // the most eloquent thing in her estate: the Pavilion holds the two
+                // most dangerous sentences anybody has ever written down and cannot
+                // read a word of them, because an art buys nothing across the Lid at
+                // any mastery. Five writings, no province, no medicine.
+                'the-road-that-was-always-there',
+                'the-witness-who-was-always-there',
                 'one-crossing-of-a-courtyard',
                 'canon-of-the-unwritten-span',
                 'the-fifteenth-breath'

@@ -41,6 +41,31 @@ and no rung of any modern art becomes them:
 - a person acting while the person inside them watches
 - a second body
 
+### Two kinds of ancient art, and the second is the more interesting
+
+An ancient **dao art** changes what you can do in a fight. An ancient
+**cultivation road** changes *what kind of cultivator you become*, permanently, at a price
+you keep paying.
+
+The quadrant of ancient roads you *practise* stood empty for a while, which made the era
+axis read as a fact about combat. It is not. A road is the harder decision: it cannot be put
+down, it is not situational, and you do not get to choose later whether it was worth it.
+
+> The **Paired-Breath Canon** is the worked example. Two people cultivate as one circuit and
+> climb faster than either would alone - and a deviation is both of your deviations, an
+> injury takes its years off both clocks, and what one of you spends of a life the other has
+> spent. It cannot be undone, it outlives falling out and distance, and it ends when one of
+> you does, which the survivor does not reliably survive. Nothing in the modern catalogue
+> couples two cultivators at all.
+>
+> It was not condemned. It went out of fashion, then out of memory, because an age with long
+> lives and slow advancement worked out that the pairing outlasts every reason anybody ever
+> had for entering one.
+
+A cultivation road always addresses the **practitioner**, at every rung, for ever - that is
+an invariant rather than a design choice. What you practise to rank up never escalates in
+kind. Only what you *use* does.
+
 **The worked example, which says it better than any abstraction.** A cultivator at the top
 of the elemental line becomes lightning. An ancient practitioner makes spears out of qi and
 **hands them to their descendants to carry**. The second half of that sentence is the whole
@@ -86,6 +111,22 @@ in another.
 | **abandoned** | everything - the method works perfectly | nothing; people stopped | **yes** |
 | **lost** | the recipe, in full, readable | the materials | no |
 | **no surviving copy** | the record that it existed | the last copy | no |
+| **dormant** | everything, including a living teacher | nothing - she is asleep | reversible |
+
+### Dormant - nothing is missing, and you still cannot have it
+
+The fifth tier, and the odd one out: **it is about a person rather than a thing.** The
+knowledge is intact, complete and in the world. The only party who holds it is sealed under
+somebody's mountain.
+
+It belongs in this table because it produces the same sentence from the outside - *you
+cannot get this* - out of a completely different cause, and because the cause is
+**reversible in a way none of the others is.** A lost material is lost. A sealed holder is a
+decision somebody could take tomorrow, once, at a price they can name: waking her is
+generally the end of her.
+
+Keep it at one. A second sealed teacher makes sealed ancestors a shelf to be browsed rather
+than an instrument spent once.
 
 ### Abandoned - it still works, and nobody uses it
 
@@ -292,6 +333,28 @@ left to feed it. Four things follow:
 about. A house with the book and no material is a different house from one with neither, and
 from one quietly holding the last of both.
 
+### Derivation: the road money cannot open
+
+Above ordinal thirty-seven nothing is taught at all - every book is `ruin` or `grave` - so
+the only route up that does not depend on finding a physical object is **writing it
+yourself.**
+
+The price is keyed to how much precedent stands above the rung you are aiming at. Where the
+road is well walked it is nearly free; at the top, where four books exist, it is a third to
+half of a mortal lifespan. And where nobody has ever stood it is **refused outright** rather
+than priced, which is what stops derivation becoming a general escape from the corridor.
+
+That is the *"two things you will regret"* shape at its cleanest: **spend forty years writing
+it yourself, or spend them looking for the one somebody else already wrote.**
+
+Two properties are load-bearing and must survive any change near it:
+
+- **Trying again returns the identical book.** There is no fresh roll. What changes between
+  attempts is the cultivator, not the answer.
+- **The price is years and possibility - never stones, rank, or standing.** That is the whole
+  of why derivation is the one door money cannot open, and why it is also the door open to
+  somebody every house has refused.
+
 ### Stocked inheritances
 
 The answer to how anybody without a house behind them gets far up a material-gated art:
@@ -434,6 +497,13 @@ And the **Azure Cloud Pavilion has none**, for the same reason it holds no provi
 ancestor crossed three hundred and eighty years ago, and this is a thing an ancestor
 accumulates over an age. `heritage: 'recent'` now shows up in three independent places - no
 province, no medicine, and no counterparty for the trade. **Three absences, one cause.**
+
+One house is **unconfirmed, and cannot be settled by anybody including itself**: its records
+say it was given one, its vault has not been opened in living memory, and it cannot afford to
+look - because the belief that it holds one is worth more to it than the pill would be, and
+worth nothing at all the moment it is checked and is not there. Both outcomes of opening the
+door are worse than the door staying shut. That is the same shape as `claimsLivingAncestor`
+against `claimIsTrue`: a claim the world cannot audit, that people act on anyway.
 
 **"Sparingly" means it is being held for somebody.** A house sitting on one is waiting for a
 specific person's remaining years to matter. The natural consumer is an elder running out of
