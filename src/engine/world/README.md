@@ -1730,3 +1730,62 @@ rate (seals still held, ground forbidden, ruins in existence). If the rate moves
 those hold flat, something changed in the combat arithmetic and that is a different
 finding.
 
+
+## A house's road decides which roots can be in it, and how high
+
+Two seeded facts used to be rolled independently of the seat they were being placed
+into. Both are now conditioned at placement, and both keep the underlying table exactly
+as it was for everybody being BORN.
+
+- **Origin** - `where-the-seeded-population-was-born.ts`. Measured before: 89.4% of the
+  seniors of apex bodies born `thin_county`, and nobody at all in a living population of
+  2,538 born into a high tier.
+- **Spirit root** - `what-root-a-seeded-house-member-has.ts`. Measured before: root fit
+  with the house's own road was 58-65% at EVERY rung, flat, and 53.3% at ordinal 37 and
+  above - the worst band in the world. A house's own Sword Elder could not practise its
+  own sword road about half the time, on every seed.
+
+The rule needs writing nowhere in the lore: **people self-select, and houses select.**
+Nobody spends a life on a road their root refuses, and no house raises somebody to Sword
+Elder who cannot practise the sword. The mismatch is not forbidden, it is what does not
+survive to the top.
+
+Four regimes, all derived from the catalog at run time so a sect added later lands in the
+right one with nobody editing a list:
+
+| Regime | From | What happens above rung 0 |
+|---|---|---|
+| `single_road` | one distinct element across the whole shelf | a refused root is not there - the house can teach nothing else |
+| `stated_roots` | `SECT_ADMISSION.preferredRoots` | strong but SOFT. `preferredRoots` is who a house recruits, not a bar |
+| `several_roads` | more than one element | soft, and capped by the secondary road's own ceiling |
+| `no_road` | nothing elemental | the lottery, untouched |
+
+Alignment is an **input**, never a rule written per house: a demonic shelf is a trophy
+cabinet rather than a lineage, so it never hard-filters and its seniors may each have come
+up a different road. It is also where the roots a single-road house would only take as
+servants actually get seated, which gives the mismatch an outflow instead of a dead end.
+
+**Rung 0 is never conditioned, in any regime.** Two facts turn out to be one rule: an
+outer disciple among hundreds may be anything because nothing has filtered them yet, and
+more than half the ladders in the catalog open with a rung that is not a cultivating rung
+at all - `Sword Servant`, `Dew Servant`, `Herb Boy`. That rung now has a population and a
+reason, and `assignFactionRoles` keeps refused roots on it rather than promoting them.
+
+`CatalogFaction.teachesRoads` carries each road's ceiling beside its element, because a
+house is a shelf rather than an art: somebody who can only walk a secondary road has a
+real career with a real end to it, and it is their root that put it there.
+
+The decay is **derived, not calibrated** - `1 - CONFLICTING_TECHNIQUE_RISK` from
+`deviation.ts`, read as one road-ending event per rung at the conflict's own price. The
+gradient falls out and nobody wrote it: 1.0 at rung 0, 0.19 at 13, 0.006 at 40.
+
+`scripts/probe-can-a-houses-people-read-its-own-books.ts` reports all of it, including the
+reverse failure - whether the world's ROOT histogram has tilted toward whatever the big
+houses teach. It has not: the derived population sits within half a point of the table.
+
+One thing the engine does not answer yet. `OVERCOMES` maps lightning and ice to null, so
+`conflictsWithRoot` refuses them to NOBODY and an ice or lightning road reads as open to
+the whole world. The narrowness of the Frostmirror Court and the Storm Tyrant Court is
+therefore not in the conflict rule at all - it is in `preferredRoots`, which is exactly
+why `stated_roots` is a regime and why reading only the element would have missed the two
+narrowest houses in the world.
