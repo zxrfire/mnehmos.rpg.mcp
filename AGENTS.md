@@ -396,6 +396,39 @@ Stage explicit paths instead, or make sure every artifact pattern is in `.gitign
 before staging. When a run produces an artifact that is not ignored, **add the pattern**;
 do not delete the file and hope, because the next run recreates it.
 
+### Name the file after what is in it
+
+> **A filename is the only documentation everyone reads. Make it say the subject.**
+
+This project has repeatedly shipped modules whose names told a reader nothing, and the
+cost lands on whoever arrives next and has to open five files to find one behaviour.
+Actual examples from this branch, with what their own header comments already called them:
+
+| Was | Its own first line | Now |
+|---|---|---|
+| `escapes.ts` | "What a capped cultivator does next" | `acquisition.ts` |
+| `toll.ts` | "The Price of Advancement" | `price-of-advancement.ts` |
+| `goods.ts` | two unrelated subjects in one file | split, and both named for their subject |
+
+The test: **a reader who has never opened the file should be able to guess what is in it
+from the name alone.** One-word abstractions - `goods`, `toll`, `pressure`, `standoff` -
+almost always fail it, because the word is doing metaphorical work the filename cannot
+carry. Prefer the plain description, and prefer a long descriptive name over a short
+evocative one: `single-use-dao-comprehension-materials.ts` is not too long, it is correct.
+
+Two corollaries:
+
+- **If the file's own header says what it is, the filename should say the same thing.** In
+  every case above the right name was already sitting in the first line of the comment.
+- **A file with two subjects has the wrong name whatever you call it.** Split it.
+
+**Renaming in a busy tree: rename by re-export, never by rewriting importers.** Every
+import line you touch in somebody else's file is a line you will sweep into your own
+commit, along with whatever else they have unstaged there. Move the module, leave a
+one-line `export * from './new-name.js';` at the old path with a comment saying where it
+went, and let the importers migrate as they come free. Twelve files imported the two
+modules renamed above and nearly every one held another agent's live work.
+
 ### Commit with a pathspec, never a bare `git commit`
 
 Every agent on this tree shares one git index. A bare `git commit` commits **whatever is

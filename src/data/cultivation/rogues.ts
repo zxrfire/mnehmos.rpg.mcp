@@ -123,6 +123,96 @@ export const UNBACKED = {
 } as const;
 
 /** Why they are unaffiliated. The distribution, not the flattering version. */
+/**
+ * What the world calls a rogue who got high, and why it needs a word at all.
+ *
+ * Being unaffiliated is ordinary - roughly a quarter of everybody alive carries
+ * no house, measured, and at the bottom of the ladder nobody remarks on it.
+ * What is not ordinary is getting FAR while unaffiliated, and the reason is in
+ * this file already: no house means no stipend, no elder, no shelf and above
+ * all no access to materials, which are purchasable and sourceable and require
+ * backing to source. Anybody can climb the bottom of the ladder alone. Almost
+ * nobody sources what the upper ladder costs alone.
+ *
+ * So the bands below are not honours anyone confers. They are what a province
+ * starts calling somebody once its usual explanation - "they must be somebody's"
+ * - has been checked and found to be false. The naming happens TO them.
+ *
+ * Above Void Refinement the word turns wary rather than admiring, and that is
+ * the point of having it. An unbacked cultivator at that height has no house to
+ * restrain them and, more to the point, no house to answer for them: there is
+ * nobody to send a letter to, nobody to hold responsible, and nothing to take
+ * away. Every institution in the province finds that alarming, and none of them
+ * can do anything about it, which is precisely why they need a name for it.
+ */
+export interface RogueStanding {
+    /** Lowest ordinal at which the province starts using the word. */
+    fromOrdinal: number;
+    /** What they get called. Never self-chosen. */
+    called: string;
+    /** Why the world reaches for a word here rather than earlier. */
+    because: string;
+}
+
+export const ROGUE_STANDING: readonly RogueStanding[] = [
+    {
+        fromOrdinal: 0,
+        called: 'nobody in particular',
+        because:
+            'Most of the unbacked are here, most of them stay here, and a province that '
+            + 'named them all would be naming a quarter of itself.'
+    },
+    {
+        fromOrdinal: 13,
+        called: 'a loose cultivator',
+        because:
+            'Far enough that somebody has bought a manual and lived long enough to use it. '
+            + 'The word is descriptive and slightly dismissive: loose as in unattached, and '
+            + 'as in not answerable.'
+    },
+    {
+        fromOrdinal: 21,
+        called: 'a wandering senior',
+        because:
+            'The point at which a house would have to be polite. Nascent Soul is where '
+            + 'strangers start being addressed as senior whether or not anybody knows who '
+            + 'they are, and where the province stops assuming somebody is a runaway '
+            + 'disciple and starts wondering.'
+    },
+    {
+        fromOrdinal: 29,
+        called: 'a solitary',
+        because:
+            'Void Refinement without a house is the thing that is not supposed to happen, '
+            + 'because it cannot be done on a book alone. Anybody standing here got the '
+            + 'materials some other way, and the province would very much like to know '
+            + 'which way, and cannot ask.'
+    },
+    {
+        fromOrdinal: 37,
+        called: 'an unowned peak',
+        because:
+            'The word is about property, not respect. Every other cultivator at this height '
+            + 'belongs to somebody - a patriarch, a court elder, an ancestor under a hall - and '
+            + 'is therefore an address you can write to and a thing that can be taken away. '
+            + 'This one is not, and the whole province has to live beside it.'
+    }
+];
+
+/**
+ * What this province would call an unbacked cultivator of this height.
+ *
+ * Backed cultivators are not in scope: somebody with a house is described by
+ * their house, which is the entire social function of having one.
+ */
+export function whatTheyCallARogue(ordinal: number): RogueStanding {
+    let best = ROGUE_STANDING[0];
+    for (const band of ROGUE_STANDING) {
+        if (ordinal >= band.fromOrdinal) best = band;
+    }
+    return best;
+}
+
 export const WhyUnaffiliatedSchema = z.object({
     id: z.string(),
     reason: z.string().min(1),

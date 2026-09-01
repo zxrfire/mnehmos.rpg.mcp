@@ -1,5 +1,5 @@
 /**
- * The things in the world that are not books.
+ * Comprehension materials: the objects that are spent by being understood.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * WHAT THIS CLOSES
@@ -54,35 +54,7 @@
 
 import type { WorldState } from './world-state.js';
 import { makeObject, type ObjectRecord } from './possessions.js';
-import { forStream } from '../cultivation/rng.js';
-import { ARTIFACTS } from '../../data/cultivation/artifacts.js';
-
-/**
- * Put the artifact catalog into the world.
- *
- * The rows already say who owns and who holds each one, and those ids are the
- * catalog's own - so anything naming a party this world does not contain is
- * left where the catalog put it rather than being reassigned to somebody
- * convenient. A weapon whose holder is a figure above the Lid stays with them,
- * which is the correct answer and not a gap: `NOTHING_AT_FORTY_SIX_IS_EVER_LEFT`
- * is a rule about the world, and quietly handing those three rows to a sect
- * because their owner is unreachable would break it.
- */
-export function seedArtifacts(state: WorldState): ObjectRecord[] {
-    const factions = new Set(state.factions.map(f => f.id));
-    const seats = new Map(state.factions.map(f => [f.id, f.seatLocationId]));
-    const out: ObjectRecord[] = [];
-
-    for (const row of ARTIFACTS) {
-        // Seat it where its owner sits, when the owner is a house this world
-        // has. Everything else keeps whatever the catalog said.
-        const locationId = row.ownerId && factions.has(row.ownerId)
-            ? seats.get(row.ownerId) ?? row.locationId
-            : row.locationId;
-        out.push({ ...row, locationId, tags: [...row.tags, 'seeded'] });
-    }
-    return out;
-}
+import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 
 /** How a comprehension material came to exist, which decides whether more can. */
 export type MaterialSource = 'made_above' | 'found_below';
@@ -167,11 +139,76 @@ export function seedComprehensionMaterials(state: WorldState): ObjectRecord[] {
                 locationId: site?.id ?? (holder ? holder.seatLocationId : null),
                 tags: ['comprehension', 'single-use', source,
                     ...(site ? ['unrecovered'] : [])],
-                data: { forOrdinal: band.forOrdinal, source, spent: false }
+                data: {
+                    forOrdinal: band.forOrdinal, source, spent: false,
+                    whyNotSold: holder ? whyNotSold(state, holder.id, band.forOrdinal, rng) : null
+                }
             }));
         }
     }
     return out;
+}
+
+/**
+ * Why a house sits on something nobody in it can use.
+ *
+ * The obvious move is to sell it. A material calibrated to a height your best
+ * disciple will never see is dead capital, somebody two provinces over would
+ * pay enormously, and yet houses hold these for centuries. The reasons are not
+ * sentiment, and each one produces a different institution:
+ *
+ *   AFRAID_TO_SELL   Putting it on a market announces that you have it, and
+ *                    announces the day it leaves your walls with a small escort.
+ *                    A house that cannot defend a sale cannot make one, and a
+ *                    weak house holding a valuable thing is not rich, it is
+ *                    quiet. The fear is specific: not of being robbed, but of
+ *                    the bloodbath that starts when three parties who all want
+ *                    it learn about each other.
+ *   RAINY_DAY        Held deliberately against a future they can name - a
+ *                    succession, a war they expect, a disciple who is eleven.
+ *                    This house has a plan and the material is in it.
+ *   TRIBUTE          Owed upward. A subsidiary holding something its backer
+ *                    would want does not own it in any sense that matters; it
+ *                    is holding it until asked, and the asking is a matter of
+ *                    time. See the feeder relationship in `docs/world/sects.md`.
+ *   A_FAVOUR_OWED    The most interesting one. Given to somebody far stronger,
+ *                    a material buys not money but an obligation - and an
+ *                    obligation from somebody at a height your house cannot
+ *                    reach is worth more than any price, exactly once. Houses
+ *                    hold these waiting for the right person to need one.
+ *
+ * A holder that could actually USE the thing has no reason here and carries
+ * none: the field is only meaningful where the object is beyond its holder.
+ */
+export type WhyNotSold = 'afraid_to_sell' | 'rainy_day' | 'tribute' | 'a_favour_owed';
+
+/**
+ * Which reason a house holds an unusable material for.
+ *
+ * Read off the house rather than rolled freely, so the answer is a fact about
+ * the institution and stays the same whenever anybody asks. A house that owes
+ * tribute upward is holding it for its backer; a house too weak to defend a
+ * sale is afraid of one; the rest are the houses with room to be strategic.
+ */
+export function whyNotSold(
+    state: WorldState,
+    holderId: string,
+    forOrdinal: number,
+    rng: CultivationRNG
+): WhyNotSold | null {
+    const house = state.factions.find(f => f.id === holderId);
+    if (!house) return null;
+    const reach = Number(house.resources.reliable_ordinal ?? house.resources.power_ordinal ?? 0);
+    // They can use it. Nothing to explain.
+    if (reach >= forOrdinal) return null;
+
+    if (house.tags.includes('subsidiary') || Number(house.resources.tribute_per_year ?? 0) > 0) {
+        return 'tribute';
+    }
+    // A house whose own strongest member is far below the thing it is holding
+    // cannot protect a sale, and knows it.
+    if (Number(house.resources.power_ordinal ?? 0) + 8 < forOrdinal) return 'afraid_to_sell';
+    return rng.chance(0.5) ? 'rainy_day' : 'a_favour_owed';
 }
 
 /** A comprehension material that has not yet been understood by anybody. */
