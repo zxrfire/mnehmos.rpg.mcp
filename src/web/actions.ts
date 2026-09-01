@@ -1161,7 +1161,26 @@ export const DESTINATIONS_QUESTION = new RegExp([
     /\b(?:somewhere|anywhere) else to (?:go|cultivate|be)\b/,
     /\bwhat (?:are )?my (?:travel )?options\b[^.?!]*\bwhere\b/,
     /\bwhere (?:could|can) i cultivate (?:better|faster)\b/,
-    /\bwhat (?:towns?|villages?|cities|regions?|provinces?) (?:are|can i reach)\b/
+    /\bwhat (?:towns?|villages?|cities|regions?|provinces?) (?:are|can i reach)\b/,
+    // ── SOMEWHERE QUIET TO SIT ───────────────────────────────────────────
+    //
+    // Every one of these was tried in play and every one of them failed:
+    // "I seek an uninhabited place to cultivate" and "I go into the wilds to
+    // find a secluded spot" did not resolve at all, and "I look for a quiet
+    // cave in the mountains" came back with the room description. Meanwhile
+    // the world held 34 caves, wilds and veins, all already discovered, 31 of
+    // them with nobody on them and the best at nearly twice a market town's
+    // density - and `move` would have accepted any of them by name, because it
+    // resolves world locations directly. The player was never told the names.
+    //
+    // This is the question those sentences are asking, and `destinations` now
+    // answers it: it lists that ground alongside the towns with the occupancy
+    // of each. Narrow on the QUIET nouns rather than on the verb, because
+    // `move` owns "I go into the wilds" as a journey and `gather` owns "I look
+    // for" as a search, and neither may be stolen.
+    /\b(?:quiet|uninhabited|unoccupied|empty|deserted|secluded|isolated|remote|uncrowded|undisturbed|lonely)\b[^.?!]*\b(?:place|places|spot|spots|cave|caves|ground|valley|mountain|mountains|wilds|wilderness|corner|somewhere)\b/,
+    /\b(?:place|spot|cave|ground|somewhere)\b[^.?!]*\b(?:nobody|no one|no-one|nothing)\b[^.?!]*\b(?:else|around|there|nearby)\b/,
+    /\b(?:away from|out of) (?:the )?(?:crowd|crowds|people|town|towns|everyone|everybody)\b/
 ].map(r => r.source).join('|'));
 
 /** The verbs a line is taken off the board with. */
@@ -3225,6 +3244,23 @@ export function parseIntent(input: string): PlannedAction {
     if (/\b(?:join|joining|apply to|applying to|swear to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|give (?:my|our) (?:oath|word) to|bind myself to|take (?:the|their) oath|take me on|taken on|would (?:take|have) me|accept me|admit me|adopt me|take me in|be admitted)\b/.test(text)
         || (/\b(?:sects?|order|school|clan)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who)\b/.test(text))) {
         return { action: 'sect', target: extractSubject(input, /joining|join|applying to|apply to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|swear to|give (?:my|our) (?:oath|word) to|bind myself to|enter|find|look for/) };
+    }
+
+    // ── who else is drawing on this ground ──
+    //
+    // Occupancy is the strongest environmental lever in the game - 4.5x
+    // measured between the emptiest and busiest ground, wider than the whole
+    // thin-to-normal ambient range - and there was no sentence that reached it.
+    // "how crowded is it here" resolved into nothing at all.
+    //
+    // Ahead of the place-history read and of `look`, both of which would take
+    // these: "what is this place like" is a look, and `crowded` appears in no
+    // other pattern. Narrow on the nouns rather than on the verb, because the
+    // question is asked as often with "how many" as with "how crowded".
+    if (/\b(?:how crowded|how busy|how many (?:people|cultivators|others)|crowded here|too many people|who else is (?:here|drawing)|how contested|is it crowded|is this place crowded|how many are (?:here|drawing))\b/.test(text)
+        || (/\b(?:crowd\w*|contested|occupancy|carrying capacity)\b/.test(text)
+            && /\b(?:here|this place|this ground|the ground|is it|how)\b/.test(text))) {
+        return { action: 'look', intent: 'crowding' };
     }
 
     // ── why the ground is like this ──

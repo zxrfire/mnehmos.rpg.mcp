@@ -1175,6 +1175,35 @@ function meter(opts) {
  * and it is what a span that long is actually spent on, so the panel says so
  * rather than leaving their page a list of things they cannot do.
  */
+/**
+ * Who else is drawing on the ground under them.
+ *
+ * The band alone is HALF the answer and it is the smaller half: occupancy moves
+ * the rate 4.5x between the emptiest and busiest ground, which is wider than
+ * the whole thin-to-normal band range, and thin ground with nobody on it beats
+ * normal ground with a crowd by 2.7x. The engine has always known it exactly -
+ * its own encounter line reads "comfortably carries 3 and currently holds 9" -
+ * and the sheet said `Ambient qi: THIN` and stopped there, so the strongest
+ * decision available to a player was on no screen anywhere.
+ *
+ * Absent rather than zeroed when the engine sends null: "nobody is here" and
+ * "nobody has looked" are different facts and only one of them is measured.
+ */
+function groundBlock(d) {
+  const g = d && d.ground;
+  if (!g) return '';
+  const share = Number(g.share);
+  const crowded = Number.isFinite(share) && share < 1;
+  return html`
+    <div class="ambient">
+      <span class="muted">Drawing on this ground</span>
+      <span class="ambient__val ${raw(crowded ? 'amb-thin' : '')}">${
+        crowded ? `${fmtInt(g.heads)} · ${Math.round(share * 100)}% rate` : fmtInt(g.heads)
+      }</span>
+    </div>
+    <div class="meter__note">${g.line}</div>`;
+}
+
 function daoSection(d) {
   const dao = d.dao;
   if (!dao) return '';
@@ -1365,6 +1394,7 @@ function renderSheet() {
         <span class="ambient__val amb-${raw(String(S.ambient))}">${titleise(S.ambient)}</span>
       </div>
       <div class="meter__note">${AMBIENT_TEXT[S.ambient] || ''}</div>
+      ${raw(groundBlock(d))}
       <div class="foundation foundation--${raw(String(foundation))}">
         <div class="foundation__top">
           <span class="muted">Foundation</span>

@@ -307,6 +307,12 @@ export function createApp(options: AppOptions): (req: IncomingMessage, res: Serv
                     sendJson(res, 200, spiritRootsView());
                     return;
                 case '/api/state':
+                    // The sheet now carries who else is drawing on this ground,
+                    // which needs the world. `state()` is synchronous and has
+                    // dozens of call sites, so the endpoint warms the world
+                    // instead - the read is on the sheet from the first paint
+                    // rather than appearing after the first action.
+                    await game.warmWorld();
                     sendJson(res, 200, game.state());
                     return;
                 case '/api/ledger':
