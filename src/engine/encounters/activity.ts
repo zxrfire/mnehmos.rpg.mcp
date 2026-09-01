@@ -81,6 +81,37 @@ export const MAX_OCCURRENCES_PER_WINDOW = 6;
 export const ARRIVAL_PER_FACT_CHANCE = 0.06;
 
 /**
+ * How many unheard facts one window may draw against.
+ *
+ * The per-fact rate above is calibrated on THE WORLD'S EVENT VOLUME - "a quiet
+ * decade produces few candidates, a war produces many". The list it is actually
+ * handed is the unheard BACKLOG, which is a different quantity: a fact from
+ * year three is still a candidate in year ninety, so the set grows for as long
+ * as the run lasts and the rate drifts from "what is happening" to "everything
+ * that ever happened and never reached you".
+ *
+ * What that did to the played game, measured on 20-year windows, 40 seeds:
+ *
+ *     pending    sealed cut    open cut    open median days lived
+ *           0       3 / 40      30 / 40                     2117
+ *          40       5 / 40      38 / 40                     1557
+ *         150      11 / 40      40 / 40                      756
+ *         400      23 / 40      40 / 40                      256
+ *
+ * A player who has been alive a while cannot sit. Reported from live play as
+ * six consecutive twenty-year seclusions, every one truncated, 120 years of
+ * intent buying four years of life against a hundred-year lifespan - at a wall
+ * that is passable if you can spend the time.
+ *
+ * Twenty-four is the volume a window may see at once, and the rest STAY
+ * PENDING - nothing is consumed that did not arrive, so a consequence that
+ * reached nobody in year three can still reach them in year nine, which is the
+ * property `consumeArrivals` exists to keep. The bound is on how much of the
+ * backlog can land on one sitting, not on what the world remembers.
+ */
+export const MAX_ARRIVAL_CANDIDATES = 24;
+
+/**
  * How much a door stops the world, which is much less than it stops the road.
  *
  * A separate exposure from the one above, and the separation is the point.

@@ -41,6 +41,7 @@
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import {
     ARRIVAL_PER_FACT_CHANCE,
+    MAX_ARRIVAL_CANDIDATES,
     locatabilityApplies,
     socialReach,
     ENCOUNTER_GRID_DAYS,
@@ -584,8 +585,42 @@ function rollArrivals(
     const exposure = arrivalExposure(input.activity);
     if (arrivable.length === 0 || exposure <= 0) return [];
 
+    // ── THE BACKLOG IS NOT THE WORLD'S EVENT VOLUME ─────────────────────
+    //
+    // See MAX_ARRIVAL_CANDIDATES. The per-fact rate is calibrated on what is
+    // HAPPENING; the list handed in is everything that ever happened and never
+    // reached this cultivator, which only grows. Unbounded, the chance that at
+    // least one arrival interrupts goes to one and the earliest of many uniform
+    // draws goes to zero, so a long-lived player's every seclusion is cut short
+    // near its start and the ladder becomes unclimbable by arithmetic.
+    //
+    // WHICH of them, drawn per window rather than taken off the top.
+    //
+    // The first version of this took the most recent, and that starves the
+    // backlog: the same tail is examined in every window forever, so anything
+    // below the cap can never arrive at all. That breaks the property this
+    // whole system is built on - "a consequence that reached nobody in year
+    // three can still reach them in year nine" - and a guard caught it.
+    //
+    // Sampled instead, on a stream keyed to the window, so which facts get
+    // looked at rotates while the ARRIVAL roll below stays keyed to the fact
+    // itself. Each fact therefore still has exactly one lifetime answer; the
+    // bound is only on how many of them may be asked at once.
+    const considered = arrivable.length <= MAX_ARRIVAL_CANDIDATES
+        ? [...arrivable]
+        : [...arrivable]
+            .map(fact => ({
+                fact,
+                pick: forStream(
+                    input.seed, 'enc.arrive.pick', fact.factId, startDay, input.cultivator.id
+                ).next()
+            }))
+            .sort((a, b) => a.pick - b.pick || (a.fact.factId < b.fact.factId ? -1 : 1))
+            .slice(0, MAX_ARRIVAL_CANDIDATES)
+            .map(row => row.fact);
+
     const out: EncounterOccurrence[] = [];
-    for (const fact of arrivable) {
+    for (const fact of considered) {
         const rng = forStream(input.seed, 'enc.arrive', fact.factId, input.cultivator.id);
         const came = rng.next();
         const when = rng.next();
