@@ -682,10 +682,11 @@ Three consequences, and they make the Court unlike every other institution in th
   A body that took the books as well would be a thief operating at a height nobody could
   answer - and would be treated as one, standing or no standing.
 
-  **Offer the Court a stolen book and it will cripple your cultivation.** Not confiscate it,
-  not decline it, not report you to the house you took it from - end your climb. And the
-  reason is not that theft offends them. It is that **the Court has no time for people who
-  curry favour.** It is looking for one thing, in a world that produces very few of them:
+  And the response to trying it is severe out of all proportion to the object. Crippling the
+  offerer's cultivation is the illustration to hold in mind rather than a fixed tariff - what
+  the setting fixes is the *severity and the reason*, not the specific act. **The reason is
+  not that theft offends them.** It is that **the Court has no time for people who curry
+  favour.** It is looking for one thing, in a world that produces very few of them:
   somebody who can actually become an immortal. A person who thinks a stolen book buys a
   place there has misread the entire institution - they have offered a bribe to a body that
   cannot be bribed, wasted the hours of people whose hours are the scarcest thing it has, and
