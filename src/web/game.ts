@@ -22,6 +22,8 @@
  */
 
 import { randomUUID } from 'crypto';
+import type { ManualQuality } from '../schema/cultivation.js';
+import type { ManualBand } from '../engine/cultivation/cultivation.js';
 import type Database from 'better-sqlite3';
 import {
     SATIETY_MAX,
@@ -8241,10 +8243,30 @@ ${fit.line}`;
      */
     private multipliersFor(cultivator: Cultivator): {
         techniqueBonus: number;
+        techniqueQuality: ManualQuality | null;
+        techniqueSpan: ManualBand | null;
         sectBonus: number;
     } {
         const root = getSpiritRoot(cultivator.spiritRoot);
         let techniqueBonus = 1;
+        // HOW WELL THE BOOK IS WRITTEN, AND HOW MUCH LADDER IT TRIES TO COVER.
+        //
+        // Two terms `computeCultivationRate` accepts and this path never sent,
+        // so every manual in the played game cultivated at exactly the same
+        // speed however good or bad it was. `manual-quality.ts` calls quality
+        // the largest non-realm term in the game and measures a x2.13 spread
+        // across its five tiers; all of it was being discarded here. The MCP
+        // path in `cultivation-manage.ts` has passed `techniqueQuality` since
+        // it was written, so the two front ends disagreed about the same book.
+        //
+        // Span is the counterweight to quality and was equally absent: nothing
+        // in `src/` passed it, so `OPENING_COST_PER_EXCESS_REALM` never fired
+        // and the three wide-span manuals in the catalog opened at full rate.
+        // One of them reaches nine realms and should open at roughly a seventh
+        // of it. Without the penalty, "find the widest book" is the whole game,
+        // which is exactly what that constant exists to prevent.
+        let techniqueQuality: ManualQuality | null = null;
+        let techniqueSpan: ManualBand | null = null;
 
         // The best cultivation manual they actually hold, at the mastery they
         // actually hold it. Nothing is declared per-action here because
@@ -8259,12 +8281,29 @@ ${fit.line}`;
                 catalog.element !== null && root.elements.includes(catalog.element);
             const bonus =
                 1 + known.mastery * 0.5 * (matched ? root.matchedTechniqueBonus / 2 : 1);
-            techniqueBonus = Math.max(techniqueBonus, bonus);
+            if (bonus >= techniqueBonus) {
+                techniqueBonus = bonus;
+                // Read off the same book the bonus came from, so the three
+                // terms always describe one manual rather than a best-of each.
+                techniqueQuality = catalog.quality ?? null;
+                // A BAND, not a number of rungs. `openingPenalty` needs both
+                // ends and the authored opening, because how much ladder a book
+                // covers is only half the question - where it starts decides
+                // how many realm boundaries the reader is being asked to hold
+                // in their head at once.
+                techniqueSpan = {
+                    requiredOrdinal: catalog.requiredOrdinal ?? 0,
+                    cap: catalog.cap ?? capOf(catalog) ?? null,
+                    opening: catalog.opening ?? null
+                };
+            }
         }
 
         const membership = this.repos.sects.getMembership(cultivator.id);
         return {
             techniqueBonus,
+            techniqueQuality,
+            techniqueSpan,
             sectBonus: membership
                 ? 1 + SECT_BONUS_PER_RANK * (membership.rankIndex + 1)
                 : 1
