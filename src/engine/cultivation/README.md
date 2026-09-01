@@ -913,7 +913,12 @@ that way because the seam closes, not because those people were worse.
 ```text
 realms.ts        the ladder every other system is a function of; owns MAX_ORDINAL
 spirit-roots.ts  the talent you are dealt once and never redraw
-origin.ts        the third dealt thing: where you were born, and what it supplies
+origin.ts        the third dealt thing: where you were born, and what it supplies,
+                 and the income curve every price in the game is quoted against
+buying-and-bartering-pills.ts
+                 which pills have a cash price and which only ever move for a
+                 favour; one threshold, decided by grade, that also decides
+                 whether a pill is stored as a count or as a row
 rng.ts           seeded named sub-streams; why replays are stable
 ambient.ts       where you cultivate, and why the world does not shimmer
 cultivation.ts   progress accrual - an itemised rate, applied per day

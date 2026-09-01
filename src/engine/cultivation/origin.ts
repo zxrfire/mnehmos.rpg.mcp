@@ -431,6 +431,81 @@ export const FOUNDATION_PILL_STONES = 1_200;
 /** Stones a healer wants for one torn meridian, at ordinal zero. */
 export const TREATMENT_STONES = 120;
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT A YEAR OF WORK PAYS
+//
+// The other half of every price on this page, and it lived in
+// `engine/world/seeding.ts` as a private function while three other modules
+// wanted it. It is here now because a price is meaningless without the income
+// it is quoted against, and because the tier split in
+// `buying-and-bartering-pills.ts` is read off exactly this ratio.
+//
+// A SECOND COPY OF THIS CURVE EXISTS, and it is a different curve.
+// `engine/world/origin-odds.ts` has its own `earningsPerYear` at
+// `6 * PRICE_GROWTH_PER_ORDINAL^ordinal` - exponential from a base of six,
+// deliberately tied to the price growth so that affordability is scale-
+// invariant. This one is linear from a base of fifty-four and caps. They
+// disagree by a factor of nine at ordinal zero and they are not reconciled
+// here, because origin-odds is a reporting sweep whose published figures would
+// silently move. It is written down rather than quietly fixed: the world runs
+// on THIS one, through `deriveLife`, and that is the one every price should be
+// checked against.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A working year covers this share of a secluded year's upkeep, at ordinal 0. */
+export const EARNINGS_BASE_SHARE = 0.9;
+/** How much rank adds to earning power, per rung. */
+export const EARNINGS_PER_ORDINAL = 0.35;
+/**
+ * Ceiling on the rank multiplier.
+ *
+ * An apex figure is wealthy rather than absurd. A Grand Ascension cultivator's
+ * holdings are not what makes them dangerous, and the economy should not imply
+ * otherwise - which is also what stops the top of the ladder buying its way up
+ * once progress has a price.
+ */
+export const EARNINGS_RANK_CAP = 9;
+
+/**
+ * Share of a year the ordinary cultivator spends sealed rather than earning.
+ *
+ * Not a design target. It is the middle of the `effort` draw `deriveLife` makes
+ * for every life in the world, written down so that a price quoted "in years of
+ * income" is quoted against the same year the simulation actually runs.
+ */
+export const TYPICAL_SECLUDED_SHARE = 0.45;
+
+/**
+ * What a year of work is worth to somebody at this rank.
+ *
+ * Rank is earning power in this world: a Foundation Establishment cultivator can
+ * take contracts a mortal cannot survive and refuse ones a mortal cannot refuse.
+ * Scaled off the seclusion cost so the two terms stay in proportion when either
+ * is retuned.
+ */
+export function earningsPerYear(ordinal: number): number {
+    const scale = Math.min(EARNINGS_RANK_CAP, 1 + Math.max(0, ordinal) * EARNINGS_PER_ORDINAL);
+    return STONES_PER_YEAR_OF_SECLUSION * EARNINGS_BASE_SHARE * scale;
+}
+
+/**
+ * What is actually left over, after keeping themselves alive.
+ *
+ * The number every price on this page should be read against, and the reason
+ * the bottom of the ladder is poor in a way a gross figure hides: at ordinal
+ * zero this is 2.7 stones a year against upkeep of sixty, so a farm child does
+ * not have a small budget, they have very nearly none. It climbs to 137 by the
+ * time somebody is standing at the Foundation crossing, and that is what makes
+ * the middle of the ladder a market at all.
+ */
+export function netEarningsPerYear(
+    ordinal: number,
+    secludedShare: number = TYPICAL_SECLUDED_SHARE
+): number {
+    const sealed = Math.max(0, Math.min(1, secludedShare));
+    return (1 - sealed) * earningsPerYear(ordinal) - sealed * STONES_PER_YEAR_OF_SECLUSION;
+}
+
 /**
  * How steeply the price of everything climbs with the rank it is for.
  *
