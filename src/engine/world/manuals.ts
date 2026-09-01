@@ -1212,6 +1212,53 @@ export function manualCeilingOf(npc: NpcRecord): number {
  * what their rank reaches on the shelf, and the OBJECT stays where it was.
  * Which is exactly what makes those terms demanding rather than generous.
  */
+/**
+ * Who in a house can actually teach each book on its shelf, once per day.
+ *
+ * This was computed inside `reachableCeilingFor`, which `applyFoundRoads` asks
+ * of every living person every year - so a house of forty people walked its own
+ * membership forty times a year, and did a linear `shelf.find` for every
+ * technique every one of them held. The answer does not depend on who is
+ * asking: it is a property of the house and its people on that day.
+ *
+ * A CPU profile of a thousand-year advance put `reachableCeilingFor` at the top
+ * of the busy list. It is the same shape as `shelvesOf` immediately above, and
+ * it is cached the same way and for the same reason - keyed on the day, and on
+ * the roster length so a founding that adds people inside a year is not read
+ * against a stale set.
+ *
+ * The shelf lookup is a Map rather than a scan, which is the other half of it:
+ * the old inner loop was O(members x techniques x shelf).
+ */
+interface TeachableIndex {
+    day: number;
+    npcs: number;
+    byFaction: Map<string, Set<string>>;
+}
+const TEACHABLE = new WeakMap<WorldState, TeachableIndex>();
+
+function teachableIn(state: WorldState, factionId: string, shelf: Manual[]): Set<string> {
+    let index = TEACHABLE.get(state);
+    if (!index || index.day !== state.currentDay || index.npcs !== state.npcs.length) {
+        index = { day: state.currentDay, npcs: state.npcs.length, byFaction: new Map() };
+        TEACHABLE.set(state, index);
+    }
+    const cached = index.byFaction.get(factionId);
+    if (cached) return cached;
+
+    const required = new Map(shelf.map(m => [m.id, m.requiredOrdinal]));
+    const teachable = new Set<string>();
+    for (const other of state.npcs) {
+        if (other.status !== 'alive' || other.factionId !== factionId) continue;
+        for (const id of other.cultivation.techniqueIds) {
+            const at = required.get(id);
+            if (at !== undefined && other.cultivation.realmOrdinal >= at) teachable.add(id);
+        }
+    }
+    index.byFaction.set(factionId, teachable);
+    return teachable;
+}
+
 export function reachableCeilingFor(state: WorldState, npc: NpcRecord): number {
     const held = manualCeilingOf(npc);
     if (held > 0) return held;
@@ -1229,15 +1276,7 @@ export function reachableCeilingFor(state: WorldState, npc: NpcRecord): number {
     // Somebody has to be able to teach it. A house that lost its last master of
     // a book cannot pass it on however senior the student is - the same rule
     // `newlyEntitled` uses to carry people over a gap in a shelf.
-    const teachable = new Set<string>();
-    for (const other of state.npcs) {
-        if (other.status !== 'alive' || other.factionId !== npc.factionId) continue;
-        if (other.id === npc.id) continue;
-        for (const id of other.cultivation.techniqueIds) {
-            const m = shelf.find(x => x.id === id);
-            if (m && other.cultivation.realmOrdinal >= m.requiredOrdinal) teachable.add(id);
-        }
-    }
+    const teachable = teachableIn(state, npc.factionId, shelf);
 
     let best = 0;
     for (const m of shelf.slice(0, reach)) {
