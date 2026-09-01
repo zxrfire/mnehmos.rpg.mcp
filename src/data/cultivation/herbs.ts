@@ -562,8 +562,105 @@ export const HERBS: readonly Herb[] = [
         harvestOrdinal: 43,
         description:
             'Round, matte, and entirely without qi signature, which is precisely why it terrifies anyone qualified to examine it. Four are known. Three are accounted for.'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // EXTINCT - ordinary rows, and nothing grows any more
+    //
+    // These are herbs in the ordinary sense: a grade, a value, a biome, a
+    // harvest ordinal, read by the same lookups as everything above. What is
+    // different about them is one set membership, `EXTINCT_HERB_IDS`, which
+    // takes them out of the forage pool and nothing else.
+    //
+    // That is the whole mechanism behind "they have the recipe just not the
+    // materials". No new system, no flag on the recipe, no branch in the
+    // refiner. A formula naming one of these is a formula anybody can read,
+    // cost out, and be unable to fill - and the reason it cannot be filled is
+    // that the ground stopped producing an ingredient, which is exactly the
+    // kind of poverty `docs/world/the-late-age.md` is about.
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        id: 'herb-kingfisher-lacquer-fern',
+        name: 'Kingfisher Lacquer Fern',
+        grade: 'immortal',
+        biome: 'lake_bottom',
+        rarityWeight: 1,
+        value: 22_000,
+        harvestOrdinal: 30,
+        description:
+            'Boiled down it made the lacquer that every element-bound blade in the old catalogue was coated with, and the coating is the whole of why those blades carry an element at all. Nobody has found a living stand in eleven hundred years. What is left is jars, in a small number of archives, with the level marked on the outside.'
+    },
+    {
+        id: 'herb-thousand-autumn-chrysanthemum',
+        name: 'Thousand-Autumn Chrysanthemum',
+        grade: 'chaos',
+        biome: 'spirit_vein',
+        rarityWeight: 1,
+        value: 460_000,
+        harvestOrdinal: 40,
+        description:
+            'It grew where an arterial vein came to the surface and stayed there, which is a thing the ground does not do any more, so the last confirmed cutting is older than any institution now standing. Everything anybody knows about it is a drawing and a formula, and the formula still works perfectly.'
+    },
+    {
+        id: 'herb-mirror-heart-lotus',
+        name: 'Mirror-Heart Lotus',
+        grade: 'chaos',
+        biome: 'lake_bottom',
+        rarityWeight: 1,
+        value: 300_000,
+        harvestOrdinal: 38,
+        description:
+            'It came up double: one flower on the water and one beneath it, and neither was the reflection of the other. Nothing has grown one in over a thousand years. What it was for is the only working anybody has ever had for making a second body, which is a thing that used to be rare and is now simply over.'
     }
 ] as const;
+
+// ─────────────────────────────────────────────────────────────────────────
+// EXTINCTION
+//
+// A herb in this set is still a real row and still resolves for every recipe
+// that names it. It is simply not in the world any more, so nothing forages
+// it, and the only supply anywhere is what somebody put in a jar before it
+// stopped growing.
+//
+// The reason is stated per herb rather than implied by membership, on the same
+// discipline `NO_SURVIVING_COPY_NOTES` is held to in `techniques.ts`: a marker
+// with no reason attached is the same silence in a different place.
+//
+// Keep this set SMALL. Extinction is the setting's sharpest scarcity lever and
+// it stops meaning anything the moment half the catalog is unobtainable.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const EXTINCT_HERB_IDS: ReadonlySet<string> = new Set([
+    'herb-kingfisher-lacquer-fern',
+    'herb-thousand-autumn-chrysanthemum',
+    'herb-mirror-heart-lotus'
+]);
+
+/** Why each one stopped, and what went with it. One entry per id above. */
+export const EXTINCTION_NOTES: Readonly<Record<string, string>> = {
+    'herb-kingfisher-lacquer-fern':
+        'It grew on lake floors over live water veins, and the veins under those lakes were drawn down one after another across four centuries by people who were not thinking about a fern. Nobody recorded the last stand because nobody was watching the fern; they were watching the vein. What went with it is a class of object rather than a single item - every method for binding an element into a blade in the old catalogue specifies this lacquer as the coating, and no substitute has ever held.',
+    'herb-thousand-autumn-chrysanthemum':
+        'It required an arterial vein reaching the surface and remaining there, which is a condition the world no longer produces anywhere anybody has looked. The formula that used it survives in full, is not secret, and can be read by any alchemist with the standing to be shown it, which is what makes the loss legible rather than mysterious: a house can price the pill it cannot make, to the stone.',
+    'herb-mirror-heart-lotus':
+        'Nobody knows, which is the honest entry in this table and the reason it is worth having. It stopped coming up double, then it stopped coming up, and the accounts of when disagree by two hundred years. What is not in doubt is what went with it: the only working anybody has ever had for making a second body needs the lotus and nothing else will serve, so the loss of a flower closed a whole question the prosperous age treated as settled.'
+} as const;
+
+/**
+ * Everything still growing. This is the pool the world draws from.
+ *
+ * The filter lives on `findHerbsForOrdinal`, which is the single funnel every
+ * forage path runs through, so no caller has to remember: `rollHerb`,
+ * `findOfferedHerbs` and `forage` all inherit it. `HERBS` itself keeps the
+ * extinct rows, because a recipe naming one must still resolve and a register
+ * must still be able to show a player exactly what they cannot get.
+ */
+export const FORAGEABLE_HERBS: readonly Herb[] = HERBS.filter(h => !EXTINCT_HERB_IDS.has(h.id));
+
+/** Whether the world still produces this herb. */
+export function isExtinct(herbId: string): boolean {
+    return EXTINCT_HERB_IDS.has(herbId);
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // INDICES + LOOKUPS
@@ -609,11 +706,18 @@ export function getHerbsByGrade(grade: TechniqueGrade): readonly Herb[] {
     return HERBS_BY_GRADE.get(grade) ?? [];
 }
 
-/** Everything a cultivator at this ordinal can reach the growing site of. */
+/**
+ * Everything a cultivator at this ordinal can reach the growing site of.
+ *
+ * Extinct herbs are excluded here rather than at each call site, because this
+ * is the one funnel every forage path runs through. There is no reachability
+ * question for something that does not grow: the site is not hard to stand in,
+ * it is not there.
+ */
 export function findHerbsForOrdinal(ordinal: number, biome?: HerbBiome): Herb[] {
     const cap = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
     const pool = biome ? getHerbsByBiome(biome) : HERBS;
-    return pool.filter(h => h.harvestOrdinal <= cap);
+    return pool.filter(h => h.harvestOrdinal <= cap && !EXTINCT_HERB_IDS.has(h.id));
 }
 
 /**

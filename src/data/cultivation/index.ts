@@ -219,6 +219,7 @@ export * from './contingencies.js';
 export * from './sealed-ancestors.js';
 export * from './named-figures.js';
 export * from './inheritance-trials.js';
+export * from './lost-ages.js';
 
 export {
     ENCOUNTERS,

@@ -397,6 +397,29 @@ export const ApexInstitutionSchema = z.object({
     }),
     /** What it holds, which is never a single vein. */
     holds: z.string().min(80),
+    /**
+     * The provinces it holds, by id, from `regions.ts`.
+     *
+     * The prose field above says what an apex holds; this says where, and the
+     * two of them together make the shape of each apex legible for the first
+     * time. The Long Cut is broad and shallow - five driven provinces, forty
+     * posted staff, nothing delegated. The Deep Survey is narrow and deep -
+     * ONE province, four arterials under it, and a court on the only arterial
+     * anything branches from that answers to the other apex.
+     *
+     * And the Azure Cloud Pavilion holds NO province, which is not an omission.
+     * It is the territorial statement of `heritage: 'recent'`: an apex three
+     * hundred and eighty years old holds a catchment, because a province is
+     * something a house accumulates over an age and the Pavilion has not had
+     * one.
+     */
+    holdsProvinceIds: z.array(z.string()),
+    /**
+     * Prefectures held directly rather than through a province. Empty for the
+     * two ancient apexes, which do not stand anywhere in particular, and one
+     * entry for the Pavilion, which stands in a gorge with a gate on it.
+     */
+    holdsPrefectureIds: z.array(z.string()),
     /** Its courts, by id. */
     courtIds: z.array(z.string()),
     /**
@@ -510,6 +533,17 @@ export const CourtSchema = z.object({
     administers: z.string().min(40),
     /** Region id whose sects hold from it. */
     grantsInRegionId: z.string(),
+    /**
+     * The prefectures whose holders hold from it, by id, from `regions.ts`.
+     *
+     * `grantsInRegionId` said which province a court's clients are in and
+     * nothing finer, so "the Third Sill grants in the Low Fall" was true of
+     * four courts at once and named no ground. This is the ground. A court
+     * with an empty list is administering something that is not a tenancy -
+     * the Kiln administers a datum nobody draws on, which is why its list is
+     * empty and why that emptiness is the whole of what the Kiln is.
+     */
+    grantsInPrefectureIds: z.array(z.string()),
     /** A faction in the sect catalog that IS this court, where one is. */
     embodiedByFactionId: z.string().nullable(),
     /**
@@ -666,6 +700,8 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         },
         holds:
             'The arterial system: not the eleven veins of the Low Fall but the four beneath them that the eleven branch from, and the datum every survey in the province is ultimately measured against without knowing whose datum it is.',
+        holdsProvinceIds: ['province-low-fall'],
+        holdsPrefectureIds: [],
         courtIds: ['court-kiln'],
         ranks: [
             { title: 'Unplaced', decidedBy: 'arrival, and nothing else. Everyone begins here and most people stay.', note: 'The class that contains almost everybody, at every realm from Qi Condensation to Deity Transformation.' },
@@ -745,6 +781,14 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         },
         holds:
             'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Quiet Marches is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
+        holdsProvinceIds: [
+            'province-quiet-marches',
+            'province-coldwater-cut',
+            'province-hammerfall',
+            'province-the-sixteen-faces',
+            'province-greyhold'
+        ],
+        holdsPrefectureIds: [],
         courtIds: ['court-ninth-face', 'court-third-sill'],
         ranks: [
             { title: 'Hand', decidedBy: 'being present on a face and working it, and nothing else whatsoever', note: 'Everyone below the top, at every realm, and the Long Cut sees no reason to subdivide people by how much qi they hold.' },
@@ -817,6 +861,10 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         },
         holds:
             'The gorge vein at Low Fall and the terraced peaks above it, held outright and openly, on no grant from anyone, since the year Ru Anjing crossed.',
+        // No province, and the emptiness is `heritage: 'recent'` written as
+        // territory. A province is something a house accumulates over an age.
+        holdsProvinceIds: [],
+        holdsPrefectureIds: ['prefecture-gorge-head'],
         courtIds: ['court-azure-mist'],
         ranks: [
             {
@@ -886,6 +934,14 @@ export const COURTS: readonly Court[] = [
         },
         administers: 'The third arterial vein, which the eleven surveyed veins of the Low Fall branch from.',
         grantsInRegionId: 'region-low-fall',
+        // Two catchments and the sects beneath them. The Gorge Head is NOT
+        // here and is still on the Sill's own book: the page was never struck
+        // and the ground has not been the Sill's for three hundred and eighty
+        // years, which is the difference between a grant book and a map.
+        grantsInPrefectureIds: [
+            'prefecture-nine-peaks',
+            'prefecture-ashfall'
+        ],
         embodiedByFactionId: null,
         officesNote:
             'Four things happen to a grant and the Sill has one person for each: it is measured, it is apportioned, it is drafted, and it is carried. Nobody here is anybody\'s disciple and nobody here teaches, so there is no ladder and never has been - an Assessor does not become a Keeper of the Eleven by being good at assessing, he becomes one because the office fell vacant and somebody had to hold it. Inside the Deep Survey the same five people are a Surveyor, a Sill-Sworn, two First Marks and a Second Mark, which is the standing that would decide a room if they were ever all in one, and they have not been in one in ninety years. The two columns do not agree and the Survey does not expect them to: the courier stands a mark above the man who measures the vein and eight rungs below him on the ladder, which is exactly what a body that ranks by service rather than by realm looks like from close up.',
@@ -973,6 +1029,11 @@ export const COURTS: readonly Court[] = [
         highWaterMark: null,
         administers: 'The datum itself: the deep vein at the world\'s root that the arterial system is measured from.',
         grantsInRegionId: 'region-low-fall',
+        // Empty, and the emptiness is the Kiln. It issues no grants, has no
+        // tenants and holds no catchment: a datum, nine hundred lit nodes and a
+        // perimeter. Everything the province finds inexplicable about the
+        // Wardens is this array being empty.
+        grantsInPrefectureIds: [],
         // Null on purpose, and this is the change. It used to point at
         // `sect-kiln-wardens`, because they were the same people. They are two
         // bodies now and the join would be a lie.
@@ -1050,6 +1111,10 @@ export const COURTS: readonly Court[] = [
         highWaterMark: null,
         administers: 'The mist terraces below the gorge and the runoff of the Pavilion\'s own vein, which is water nobody else wanted and which turns out to have carried two people to the top of the world in one lifetime.',
         grantsInRegionId: 'region-low-fall',
+        // Inside the Gorge Head rather than beside it. The youngest court in
+        // the world administers a sub-holding of its own apex's catchment,
+        // which is why the Low Fall keeps calling it a feeder.
+        grantsInPrefectureIds: ['prefecture-gorge-head'],
         embodiedByFactionId: 'sect-azure-mist-court',
         transferNote:
             'Not a transfer - a promotion, and the only one in the catalog. The Mist was a feeder sect under the Azure Cloud Pavilion and is now the Pavilion\'s court, on the same ground, with the same four people, doing the same work. Nothing about it changed except the figure everybody was using for it, which had been wrong for a hundred and fifty years. The Low Fall has not adjusted and still calls it a feeder.',
@@ -1122,6 +1187,16 @@ export const COURTS: readonly Court[] = [
         },
         administers: 'The driven ground of the Quiet Marches and four provinces beyond it that the Marches has never heard named.',
         grantsInRegionId: 'region-quiet-marches',
+        // Every district in the province, because there is nobody to delegate
+        // to. A federated court grants to sects; this one schedules faces.
+        grantsInPrefectureIds: [
+            'district-gapwater',
+            'district-fourth-face',
+            'district-hollowmarket',
+            'district-sixmile',
+            'district-dead-verge',
+            'district-eleven-li'
+        ],
         embodiedByFactionId: null,
         officesNote:
             'The Long Cut ranks by work and its court does the same, so every office here is a face: one person holds the course, one holds the schedule that is countersigned into the Weir Office book, one assesses faces across the four provinces, and one holds a face that cannot be worked and never will be. Nothing is decided by realm and it shows - the man who signs the only document the Quiet Marches has ever been governed by stands eleven rungs below the woman who walks eleven li of dead ground four times a year and records that it is unchanged. Neither office contains the other and the Long Cut has never seen why one would.',
@@ -1187,9 +1262,11 @@ const NO_TERMS = null;
 export const FACTION_PARENTAGE: Record<string, Parentage> = {
     // ── holders of a Low Fall vein, from the Third Sill ────────────────
     // ── the two Azure feeders ──────────────────────────────────────────
-    // The Pavilion has no courts. It grants to these two and to nobody else,
-    // which makes its structure the smallest of the three apexes and the only
-    // one where the whole arrangement fits on a page.
+    // The Pavilion grants to these two and to nobody else, which makes its
+    // structure the smallest of the three apexes and the only one where the
+    // whole arrangement fits on a page. One of the two is now its court: the
+    // Mist was promoted, on the same ground, with the same four people - see
+    // `court-azure-mist` in COURTS - and the Dew is still a feeder.
     //
     // A feeder is not a court. A court administers an arterial vein on an apex's
     // behalf and issues grants of its own; a feeder administers nothing and

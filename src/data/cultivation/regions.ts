@@ -318,12 +318,12 @@ const MARCHES_BANDS: LocalRankBand[] = [
         subRankNote: 'Inscription vocabulary. The Marches assumes it is one state and the Low Fall knows it is four, and neither has met anyone to ask.'
     },
     {
-        fromOrdinal: 45, toOrdinal: 45,
-        standardName: 'True Immortal', localName: 'Through',
+        fromOrdinal: 45, toOrdinal: 46,
+        standardName: 'Immortal', localName: 'Through',
         localTheory: 'One word, no elaboration, and the inscription does not continue past it.',
-        localSubdivisions: 0, standardSubdivisions: 1,
+        localSubdivisions: 0, standardSubdivisions: 2,
         subRankCorrespondence: 'none',
-        subRankNote: 'One word against one rank, which is the only place the two vocabularies accidentally agree on the shape of anything.'
+        subRankNote: 'One word against two states, and they are not variations on each other - one of them is over the Lid and the other is through it. The Marches has never had to tell them apart, which is a fact about the Marches and not about the Lid.'
     }
 ];
 
@@ -857,4 +857,794 @@ export function ambientStatesIn(regionId: string): AmbientQi[] {
         .filter(([, share]) => share > 0)
         .sort((a, b) => b[1] - a[1])
         .map(([state]) => state);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PROVINCES, ARTERIALS AND PREFECTURES
+//
+// The tier below the apexes, made concrete. `FACTION_PARENTAGE` already says
+// who holds from whom; this says WHERE, so that a grant is a place somebody
+// can stand in rather than a line in a record.
+//
+// NOTHING HERE IS NEW GEOGRAPHY. Every name below was already forced by a
+// number somewhere else in the catalog and has simply never been said out
+// loud:
+//
+//   - the Deep Survey `holds` four arterials beneath the Low Fall, and there
+//     are four Surveyors, one per arterial. So there are four arterials, and
+//     they are named here.
+//   - the Long Cut holds driven ground across FIVE provinces and the Ninth
+//     Face Court administers "the Quiet Marches and four provinces beyond it".
+//     So there are five, and Chi Yuanru's schedule bands are what tells them
+//     apart.
+//   - `court-third-sill` administers the third arterial, sits in the Low Fall,
+//     and its `apexId` is `apex-long-cut`. That is not a note about a court.
+//     It means the arterial that every surveyed vein in the Deep Survey's one
+//     province branches from is administered by the other apex, and neither
+//     of them has ever said so in a document.
+//
+// THE ASYMMETRY IS THE FINDING, and it was sitting in the data. The Long Cut
+// is broad and shallow: five provinces, forty staff, everything administered
+// directly, nothing delegated. The Deep Survey is narrow and deep: ONE
+// province, four arterials under it, a filled ladder, and a storehouse it has
+// already spent. An apex is not a bigger sect, and the two of them are not
+// even the same shape.
+//
+// CONTRAST, NOT ADDITION
+// ----------------------
+// `docs/world/making-places-different.md` names the failure this section is
+// most likely to commit: a gazetteer of interchangeable places with the proper
+// nouns swapped. Two defences are built in.
+//
+//   1. A PREFECTURE IS NOT THE SAME KIND OF OBJECT IN THE TWO PROVINCES, and
+//      the difference falls out of each region's governing fact rather than
+//      being decorated on afterwards. The Low Fall's qi is in horizontal
+//      surveyable veins, so a Low Fall prefecture is a CATCHMENT: a line on a
+//      survey, held by a named institution with a gate, arbitrable, permanent,
+//      inheritable, and argued about in writing. The Marches' qi is in the
+//      stone, so a Marches prefecture is a FACE DISTRICT: a schedule entry
+//      held by an OFFICE rather than by a sect, whose boundary is wherever the
+//      work currently is, which moves when the work moves and stops existing
+//      when the stone runs out. Crossing the border does not change what the
+//      places are called. It changes what a place IS.
+//
+//   2. THE PROVINCES NOBODY HAS BEEN TO ARE THIN ON PURPOSE. The four driven
+//      provinces past the Marches carry a name, a holder and one fact each,
+//      and the one fact is a band in a schedule kept by one woman - which is
+//      a single generic system telling five places apart, not five bespoke
+//      descriptions. Their thinness is also diegetic: it is exactly what
+//      anybody in either played province knows about them, which is a name
+//      and a rumour of a queue position.
+//
+// HOLDING ON PAPER IS NOT HOLDING IN FACT
+// ---------------------------------------
+// `the-late-age.md`: every institution is operating a fraction of what it
+// inherited. So `onPaper` and `onTheGround` are separate fields on every
+// prefecture and they are allowed to disagree, in both directions - a house
+// that holds less than the record says is the common case, and a house that
+// holds more than any document mentions is the Standing Grove. `discrepancy`
+// names which kind, and the catalog test asserts that a prefecture claiming
+// `none` really does read the same in both fields.
+//
+// NO ARITHMETIC HERE. Nothing in this section decides who would win a dispute
+// over a boundary, what a catchment is worth, or how many houses it takes to
+// move one. Those are questions for the resolvers. This is a statement about
+// what is standing where.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Whether a province is written to, or named and nothing else. */
+export const ProvinceStandingSchema = z.enum([
+    /** Written to. It has a `Region` above, with places, customs and a method. */
+    'played',
+    /**
+     * Named and nothing else, deliberately. Somebody in the catalog knows it
+     * exists because a number in their own records refers to it; nobody the
+     * player can reach has been there.
+     */
+    'named_only'
+]);
+export type ProvinceStanding = z.infer<typeof ProvinceStandingSchema>;
+
+export const ProvinceSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1),
+    standing: ProvinceStandingSchema,
+    /** The `REGIONS` row, where one exists. Null for the named-only ones. */
+    regionId: z.string().nullable(),
+    /** The apex that holds it. Never a court: courts administer, apexes hold. */
+    heldByApexId: z.string(),
+    /** The court the holding is administered THROUGH, where there is one. */
+    administeredByCourtId: z.string().nullable(),
+    /**
+     * The one physical fact everything else follows from. For a played
+     * province this restates the region's own `governingFact` so the two
+     * tiers cannot drift; for a named-only one it is all there is.
+     */
+    governingFact: z.string().min(40),
+    /** What the holder's own records say it holds here. */
+    onPaper: z.string().min(40),
+    /** What it actually walks. Frequently smaller. Occasionally larger. */
+    onTheGround: z.string().min(40),
+    /** Prefecture ids seated in it, in the order the local record lists them. */
+    prefectureIds: z.array(z.string()),
+    /**
+     * Named-only provinces: what anybody in a played province actually knows,
+     * which is usually one number out of one schedule. Null for played ones.
+     */
+    whatIsKnownOfIt: z.string().min(40).nullable(),
+    startingAwareness: z.enum(['unaware', 'whisper', 'named', 'placed', 'encountered', 'known'])
+});
+export type Province = z.infer<typeof ProvinceSchema>;
+
+/**
+ * An arterial vein. Not a place - a thing under places, which is why it has a
+ * holder and no prefectures. The Deep Survey's whole position is four of these
+ * and the one province standing on top of them.
+ */
+export const ArterialSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1),
+    /** First through fourth, as the Survey numbers them. */
+    ordinalInSystem: z.number().int().min(1).max(4),
+    provinceId: z.string(),
+    /** Who administers it, or null where nobody does and the Survey says so. */
+    administeredByCourtId: z.string().nullable(),
+    /** Who is actually drawing on it, which is a different question. */
+    drawnOnBy: z.string().min(30),
+    note: z.string().min(60)
+});
+export type Arterial = z.infer<typeof ArterialSchema>;
+
+/**
+ * The two kinds of prefecture, and they are not two words for one thing.
+ * See the section comment: the kind follows from the region's governing fact.
+ */
+export const PrefectureKindSchema = z.enum(['catchment', 'face_district']);
+export type PrefectureKind = z.infer<typeof PrefectureKindSchema>;
+
+/** Which direction the record and the ground disagree in. */
+export const HoldingDiscrepancySchema = z.enum([
+    'none',
+    /** The commonest case in a late age: less is walked than is recorded. */
+    'holds_less_than_recorded',
+    /** Deference. The zone is real and appears on no document anywhere. */
+    'holds_more_than_recorded',
+    /** Ground the record carries with nobody's name against it. */
+    'no_holder_of_record',
+    /** The record names a holder who is not there and has not been for years. */
+    'record_names_the_wrong_holder'
+]);
+export type HoldingDiscrepancy = z.infer<typeof HoldingDiscrepancySchema>;
+
+export const PrefectureSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1),
+    provinceId: z.string(),
+    kind: PrefectureKindSchema,
+    /** The settlement it is run out of. A `RegionPlace` name where one exists. */
+    seat: z.string().min(1),
+    /** `RegionPlace` names inside it. Empty for ground nobody lives on. */
+    places: z.array(z.string()),
+    /**
+     * The faction holding it. Null is a real answer and appears four times:
+     * ground the record carries with no name against it.
+     */
+    heldByFactionId: z.string().nullable(),
+    /**
+     * Whose gift it is in: a court id, an apex id, or a sect id where the
+     * holding is at one remove. Null where nothing granted it to anybody -
+     * which is what the Pavilion, the Hollow Court and the Grove have in
+     * common and is the only thing they have in common.
+     */
+    delegatedFromId: z.string().nullable(),
+    /** Sub-holders inside it, by faction id, with what each holds. */
+    subHoldings: z.array(z.object({
+        factionId: z.string(),
+        holds: z.string().min(20),
+        /**
+         * Whose gift THAT is in, which is not always the prefecture's holder.
+         * Set to the faction's own id where nobody granted it, which is how an
+         * unbacked body standing inside somebody else's catchment is recorded.
+         */
+        delegatedFromId: z.string()
+    })),
+    onPaper: z.string().min(40),
+    onTheGround: z.string().min(40),
+    discrepancy: HoldingDiscrepancySchema,
+    note: z.string().min(40)
+});
+export type Prefecture = z.infer<typeof PrefectureSchema>;
+
+export const LOW_FALL_PROVINCE_ID = 'province-low-fall';
+export const QUIET_MARCHES_PROVINCE_ID = 'province-quiet-marches';
+
+// ─── the four arterials ──────────────────────────────────────────────────
+// One per Surveyor. Three of the four have nothing branching from them, which
+// is why the loss of the third is not a quarter of the Survey's position.
+
+export const ARTERIALS: readonly Arterial[] = [
+    {
+        id: 'arterial-hollow-run',
+        name: 'The Hollow Run',
+        ordinalInSystem: 1,
+        provinceId: LOW_FALL_PROVINCE_ID,
+        administeredByCourtId: null,
+        drawnOnBy: 'The Hollow Court, which was not granted it and did not ask.',
+        note:
+            'The richest of the four and the only one the Survey has never had an administrator for. The first Surveyor is a real office with real duties and none of them are on the arterial itself; what the post actually does is keep a figure current and submit it, which is the same shape as the Kiln and is not admitted to be.'
+    },
+    {
+        id: 'arterial-the-root',
+        name: 'The Root',
+        ordinalInSystem: 2,
+        provinceId: LOW_FALL_PROVINCE_ID,
+        administeredByCourtId: 'court-kiln',
+        drawnOnBy: 'Nobody at all. Nine hundred lit nodes and no draw.',
+        note:
+            'The datum. Every survey in the province is ultimately measured against it without knowing whose datum it is, and the one figure the Kiln reports upward once a year is this arterial\'s, unchanged for the whole of Ji Wanluo\'s tenure.'
+    },
+    {
+        id: 'arterial-the-eleven',
+        name: 'The Eleven',
+        ordinalInSystem: 3,
+        provinceId: LOW_FALL_PROVINCE_ID,
+        administeredByCourtId: 'court-third-sill',
+        drawnOnBy: 'The eleven surveyed veins of the Low Fall, and through them every granted sect in the province.',
+        note:
+            'The only arterial anything branches from, and therefore the only one that generates a grant book, an apportionment, a courier and a queue. It is administered by a court that answers to the Long Cut. The Deep Survey has not stated in any document that its province\'s working arterial is administered by the other apex, the Long Cut has not either, and both are counting on the Low Fall never asking whose name is on the countersignature.'
+    },
+    {
+        id: 'arterial-the-long-cold',
+        name: 'The Long Cold',
+        ordinalInSystem: 4,
+        provinceId: LOW_FALL_PROVINCE_ID,
+        administeredByCourtId: null,
+        drawnOnBy: 'The Frostmirror Court at the head and the Storm Tyrant Court where it goes down, both holding directly from the Survey and neither able to reach the bottom.',
+        note:
+            'Runs under the glacier and out beneath the floating stone. The fourth Surveyor is the one who asked, two hundred and forty years ago, who would be sitting on the vault while the Lamp was walked to a dispute, and the minute records the question and no reply.'
+    }
+];
+
+// ─── prefectures of the Low Fall: catchments ─────────────────────────────
+
+const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
+    {
+        id: 'prefecture-gorge-head',
+        name: 'The Gorge Head',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'Low Fall',
+        places: ['Low Fall'],
+        heldByFactionId: 'sect-azure-cloud-pavilion',
+        delegatedFromId: null,
+        subHoldings: [
+            {
+                factionId: 'sect-azure-mist-court',
+                holds: 'The lower gorge and the mist terraces, on the runoff of the Pavilion\'s own vein.',
+                delegatedFromId: 'sect-azure-cloud-pavilion'
+            },
+            {
+                factionId: 'sect-azure-dew-sect',
+                holds: 'Four hill villages at the head of the gorge, where the vein runs shallow.',
+                delegatedFromId: 'sect-azure-mist-court'
+            }
+        ],
+        onPaper:
+            'Still carried on the Third Sill\'s book as one of the eleven, with nineteen renewals in the archive and no twentieth ever issued or asked for. The Sill has never struck the page and the Pavilion has never asked it to.',
+        onTheGround:
+            'Held outright and openly since the year Ru Anjing crossed, on no grant from anyone, with a front gate, a recruitment cycle and a published rank list.',
+        discrepancy: 'record_names_the_wrong_holder',
+        note:
+            'The only catchment in the province where the paper says tenant and the ground says apex. Both parties have found the silence comfortable for three hundred and eighty years and the Low Fall reads it as whatever suits the speaker.'
+    },
+    {
+        id: 'prefecture-nine-peaks',
+        name: 'The Nine Peaks Catchment',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'Nine Peaks',
+        places: ['Nine Peaks'],
+        heldByFactionId: 'sect-nine-peaks-ascetic-order',
+        delegatedFromId: 'court-third-sill',
+        subHoldings: [
+            {
+                factionId: 'sect-verdant-spring-hall',
+                holds: 'The spring valley and its nine springs, a sub-grant one rung lower than the Hall lets on.',
+                delegatedFromId: 'sect-nine-peaks-ascetic-order'
+            }
+        ],
+        onPaper:
+            'The oldest continuous grant in the Low Fall, twelve-year cycle, whole vein output above a fixed local allowance taken quarterly, three disciples upward per cycle.',
+        onTheGround:
+            'The same, and the Order has never seen a renewal document: the confirmation is spoken, by somebody who walks in without being announced.',
+        discrepancy: 'none',
+        note:
+            'The Order\'s famous refusal to lease its vein is printed as principle and is a term of the grant. Three generations of the province have been allowed to believe otherwise because the alternative is explaining who sets it.'
+    },
+    {
+        id: 'prefecture-ashfall',
+        name: 'The Ashfall Catchment',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'the furnace on the volcanic flank',
+        places: [],
+        heldByFactionId: 'sect-ashen-forge-clan',
+        delegatedFromId: 'court-third-sill',
+        subHoldings: [
+            {
+                factionId: 'sect-nine-abyss-flame-sect',
+                holds: 'The caldera and the vent vein, on a grant the righteous sects of the province do not believe exists.',
+                delegatedFromId: 'court-third-sill'
+            },
+            {
+                factionId: 'sect-cinnabar-crucible-guild',
+                holds: 'The field furnace halls and the refining hall with the method-script on the wall.',
+                delegatedFromId: 'sect-frostmirror-court'
+            }
+        ],
+        onPaper:
+            'A grant that names the furnace as the thing granted and the ground as an appurtenance of it, which is backwards from how the clan understands its own history.',
+        onTheGround:
+            'Three institutions on one flank answering to two different courts on two different arterials, none of which has ever been drawn as a boundary.',
+        discrepancy: 'none',
+        note:
+            'The clearest case in the province of the map and the paper disagreeing without anybody lying. The Crucible Guild stands inside the Ashfall and holds from a court on the fourth arterial, so the flank has no single line anybody could draw around it.'
+    },
+    {
+        id: 'prefecture-cold-head',
+        name: 'The Cold Head',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'the glacier terrace',
+        places: [],
+        heldByFactionId: 'sect-frostmirror-court',
+        delegatedFromId: 'apex-deep-survey',
+        subHoldings: [],
+        onPaper:
+            'The glacier and the cold vein under it, on a grant nobody else has ever applied for, held directly from the Survey rather than through the Sill.',
+        onTheGround:
+            'The same, and the Frostmirror has been writing to the Third Sill about the cold-arterial figures for eleven years and has had four replies drafted and none of them sent.',
+        discrepancy: 'none',
+        note:
+            'One of the two catchments that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere.'
+    },
+    {
+        id: 'prefecture-floating-stone',
+        name: 'The Floating Stone',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'the stone itself',
+        places: [],
+        heldByFactionId: 'sect-storm-tyrant-court',
+        delegatedFromId: 'apex-deep-survey',
+        subHoldings: [
+            {
+                factionId: 'sect-crimson-abyss-hall',
+                holds: 'The sinkhole and the thin vein beneath the town, the least valuable grant in the province.',
+                delegatedFromId: 'sect-storm-tyrant-court'
+            }
+        ],
+        onPaper:
+            'The floating stone and the vein under it, held from the Survey, with an apportionment figure the Keeper of the Eleven revises on the same twelve-year cycle as everything else.',
+        onTheGround:
+            'The Court can no longer reach the bottom of its own vein and has not said so upward. The eleventh share has not been drawn in sixty years and the Keeper is fairly sure somebody is drawing it.',
+        discrepancy: 'holds_less_than_recorded',
+        note:
+            'The one place in the province where the register and the ground disagree by an amount somebody has actually measured, and the man who measured it has been a Second Mark for nineteen walks because his figures keep disagreeing with the apportionment calculated off them.'
+    },
+    {
+        id: 'prefecture-scarwater',
+        name: 'The Scarwater Catchment',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'Scarwater',
+        places: ['Scarwater'],
+        heldByFactionId: null,
+        delegatedFromId: null,
+        subHoldings: [
+            {
+                factionId: 'sect-clear-river-alliance',
+                holds: 'The fords and the traffic over them, which nobody granted and everybody uses.',
+                delegatedFromId: 'sect-clear-river-alliance'
+            },
+            {
+                factionId: 'sect-gleaners-company',
+                holds: 'The Hollowmarket Factor at Scarwater, a shopfront for Marches salvage.',
+                delegatedFromId: 'sect-weir-office'
+            }
+        ],
+        onPaper:
+            'Surveyed by the Anchorhold to the burn edge and no further, so the last forty li before the Marches border sit on no certified survey and the catchment has no closing line.',
+        onTheGround:
+            'Run by the Clear River Alliance, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
+        discrepancy: 'no_holder_of_record',
+        note:
+            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Gleaners and the Quiet Cut both use, for opposite reasons.'
+    },
+    {
+        id: 'prefecture-sweptground',
+        name: 'Sweptground',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'Sweptground',
+        places: ['Sweptground'],
+        heldByFactionId: 'sect-sweptground-temple',
+        delegatedFromId: null,
+        subHoldings: [
+            {
+                factionId: 'house-bound-word',
+                holds: 'The treaty vault, which is a building rather than ground.',
+                delegatedFromId: 'house-bound-word'
+            }
+        ],
+        onPaper:
+            'Carried on the apportionment with a nil figure against it, because there is no vein under it and never was, so the Keeper of the Eleven has nothing to apportion and has printed a zero for two hundred years.',
+        onTheGround:
+            'A temple, a treaty vault, and the largest concentration of Marches refugees in the province, on ground chosen for having nothing anybody needs to grant.',
+        discrepancy: 'none',
+        note:
+            'The one catchment whose security is that it is worthless. Everything else in the province is defended by a document or by a belief; this is defended by a zero in a column.'
+    },
+    {
+        id: 'prefecture-grove-verge',
+        name: 'The Grove Verge',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'the valley of old trees',
+        places: [],
+        heldByFactionId: 'sect-standing-grove',
+        delegatedFromId: null,
+        subHoldings: [],
+        onPaper:
+            'A valley, a mountain and four settlements, on no grant and on nobody\'s book. The Grove has never registered anything and has never been asked to.',
+        onTheGround:
+            'That core, plus a zone about eleven days across in every direction within which nobody encroaches and nobody applies for a grant - which appears on no document in the world, and which two granted sects have quietly moved leases into on the northern side in the last twenty years.',
+        discrepancy: 'holds_more_than_recorded',
+        note:
+            'The only holding in the province that is larger in fact than in any record, and the only one that could evaporate in a season without anybody crossing a line. The zone is worth exactly what the last test was worth, and the last test was forty-one years ago.'
+    },
+    {
+        id: 'prefecture-hollow-reach',
+        name: 'The Hollow Reach',
+        provinceId: LOW_FALL_PROVINCE_ID,
+        kind: 'catchment',
+        seat: 'the four mountains',
+        places: [],
+        heldByFactionId: 'sect-hollow-court',
+        delegatedFromId: null,
+        subHoldings: [],
+        onPaper:
+            'The first arterial\'s catchment, apportioned annually by the Keeper of the Eleven to nobody, on a figure that has not changed in living memory because there is nothing to revise it against.',
+        onTheGround:
+            'Occupied. Four mountains standing on the richest vein anyone has ever surveyed, held by people nothing in the world can make leave, who were not granted it, do not pay for it, and have never been asked.',
+        discrepancy: 'no_holder_of_record',
+        note:
+            'Not a lease, not a claim and not a belief that could decay. Every party in the province has done the arithmetic and nobody raises it, so the register carries a catchment with a blank where the holder goes, and prints it again every twelve years.'
+    }
+];
+
+// ─── prefectures of the Quiet Marches: face districts ────────────────────
+// A different kind of object, for a reason one sentence long: there is nothing
+// in the air, so a holding is not ground, it is work. Every one of these is
+// held by an office or by nobody. Not one is held by a sect, because there are
+// no sects here to hold one, and that absence is the region.
+
+const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
+    {
+        id: 'district-gapwater',
+        name: 'The Gapwater District',
+        provinceId: QUIET_MARCHES_PROVINCE_ID,
+        kind: 'face_district',
+        seat: 'Kettle',
+        places: ['The Gapwater face'],
+        heldByFactionId: 'sect-weir-office',
+        delegatedFromId: 'court-ninth-face',
+        subHoldings: [],
+        onPaper:
+            'One of two workable faces in the province, entered on the Long Cut course schedule in the bottom band, administered by the Weir Office from a counter at Kettle.',
+        onTheGround:
+            'Grant access at forty stones a day and a queue of eleven. The Office holds nothing of its own here: it apportions somebody else\'s face on somebody else\'s schedule and has no authority to make an exception.',
+        discrepancy: 'none',
+        note:
+            'The Office has an unpublished survey of how much workable stone is left. The Assessor of the Four Faces asked for it, was given it, kept the copy, and fears the figure is right.'
+    },
+    {
+        id: 'district-fourth-face',
+        name: 'The Fourth Face District',
+        provinceId: QUIET_MARCHES_PROVINCE_ID,
+        kind: 'face_district',
+        seat: 'Kettle',
+        places: [],
+        heldByFactionId: 'sect-weir-office',
+        delegatedFromId: 'court-ninth-face',
+        subHoldings: [],
+        onPaper:
+            'The second of the two rented faces, on the same schedule line as the Gapwater, administered from the same counter by the same eleven people.',
+        onTheGround:
+            'Thinner than the Gapwater and worked by whoever cannot get onto the Gapwater queue, which the Office does not say out loud and which the queue works out inside a season.',
+        discrepancy: 'none',
+        note:
+            'A district exists here because there is work in it. When the face is out, this entry does not change hands - it stops existing, and the ground under it becomes a cemetery.'
+    },
+    {
+        id: 'district-hollowmarket',
+        name: 'The Hollowmarket District',
+        provinceId: QUIET_MARCHES_PROVINCE_ID,
+        kind: 'face_district',
+        seat: 'Hollowmarket',
+        places: ['Hollowmarket'],
+        heldByFactionId: 'sect-gleaners-company',
+        delegatedFromId: 'sect-weir-office',
+        subHoldings: [],
+        onPaper:
+            'Worked out, struck off the course, and carried on the Weir Office register only as the annual salvage contract over the burn zones inside it.',
+        onTheGround:
+            'A sorting yard, a price list, and several hundred finished faces with the carvers who worked them walled into the stone. The Gleaners will not cut a face that holds somebody without asking the family.',
+        discrepancy: 'none',
+        note:
+            'The plainest statement of what a face district is: the boundary is the work, the work is finished, and what is left is a cemetery with a contract over it.'
+    },
+    {
+        id: 'district-sixmile',
+        name: 'The Sixmile District',
+        provinceId: QUIET_MARCHES_PROVINCE_ID,
+        kind: 'face_district',
+        seat: 'Sixmile',
+        places: ['Sixmile'],
+        heldByFactionId: null,
+        delegatedFromId: null,
+        subHoldings: [
+            {
+                factionId: 'sect-sixmile-wardens',
+                holds: 'Nine hundred painted stakes, a shed and a survey, none of which anybody has thought to grant.',
+                delegatedFromId: 'sect-sixmile-wardens'
+            }
+        ],
+        onPaper:
+            'The staked road corridor. It is on the register as a line of survey with no face in it, and a district with no face has no holder, so the column is blank.',
+        onTheGround:
+            'Repainted every year by six people nobody pays, on ground the Long Cut has never scheduled, and leaving the stakes is how visitors die here.',
+        discrepancy: 'no_holder_of_record',
+        note:
+            'The Marches answer to the Scarwater unsurvey, arrived at from the opposite direction: not ground too disputed to certify, but ground too worthless to schedule, kept alive by people who were never appointed to keep it.'
+    },
+    {
+        id: 'district-dead-verge',
+        name: 'The Dead Verge',
+        provinceId: QUIET_MARCHES_PROVINCE_ID,
+        kind: 'face_district',
+        seat: 'no seat: nobody lives inside it',
+        places: ['The Dead Verge'],
+        heldByFactionId: null,
+        delegatedFromId: 'court-ninth-face',
+        subHoldings: [],
+        onPaper:
+            'The burn edge, redrawn every year, which makes it the only prefecture in either province whose boundary is a date rather than a line.',
+        onTheGround:
+            'It has moved about nine hundred paces since the survey was drawn, at roughly a pace a year, faster after wet winters, and it has taken about a fifth of the arable land with it.',
+        discrepancy: 'no_holder_of_record',
+        note:
+            'A Low Fall catchment is argued about because two parties both want it. This is argued about by nobody, because what is in dispute is not who holds it but how much of the province it will be next century.'
+    },
+    {
+        id: 'district-eleven-li',
+        name: 'The Eleven Li',
+        provinceId: QUIET_MARCHES_PROVINCE_ID,
+        kind: 'face_district',
+        seat: 'no seat: it is walked, not lived in',
+        places: [],
+        heldByFactionId: null,
+        delegatedFromId: 'court-ninth-face',
+        subHoldings: [],
+        onPaper:
+            'A face on the Long Cut course that cannot be worked, held by a Face Master of the Ninth Face Court, with a quarterly return that has read unchanged three hundred and sixty times.',
+        onTheGround:
+            'Eleven li of high Marches that has not held qi in ninety years, since a woman went up alone in the spring and attempted the crossing. There is no body, because a failed crossing does not leave one.',
+        discrepancy: 'none',
+        note:
+            'The only prefecture in the catalog whose entire purpose is to be walked four times a year by somebody who does not want it struck off, and who writes the word out in full every time.'
+    }
+];
+
+// ─── the provinces ───────────────────────────────────────────────────────
+
+export const PROVINCES: readonly Province[] = [
+    {
+        id: LOW_FALL_PROVINCE_ID,
+        name: 'The Low Fall',
+        standing: 'played',
+        regionId: HOME_REGION_ID,
+        heldByApexId: 'apex-deep-survey',
+        administeredByCourtId: 'court-kiln',
+        governingFact:
+            'The veins here are horizontal, shallow and surveyable, so the qi belongs to whoever holds the surface above it - and the surface has been held continuously for four hundred years.',
+        onPaper:
+            'The Deep Survey holds the arterial system and the province standing on it: four arterials, eleven surveyed veins, twenty-seven institutions, and a datum nobody local can place.',
+        onTheGround:
+            'Two of the four arterials have no administrator, one is a datum nobody draws on, and the fourth - the only one anything branches from - is administered by a court that answers to the Long Cut. The Survey holds one province and is present on two catchments of it.',
+        prefectureIds: LOW_FALL_PREFECTURES.map(p => p.id),
+        whatIsKnownOfIt: null,
+        startingAwareness: 'known'
+    },
+    {
+        id: QUIET_MARCHES_PROVINCE_ID,
+        name: 'The Quiet Marches',
+        standing: 'played',
+        regionId: ADJACENT_REGION_ID,
+        heldByApexId: 'apex-long-cut',
+        administeredByCourtId: 'court-ninth-face',
+        governingFact:
+            'The qi is not gone; it was driven into the stone. There is nothing in the air and a great deal in the rock, and the only way to get at it is to cut.',
+        onPaper:
+            'One of five driven provinces held directly by the Long Cut, administered face by face through the Ninth Face Court, with no client sects, no leases and no vassals anywhere in the arrangement.',
+        onTheGround:
+            'Two workable faces, a worked-out cemetery district, a staked corridor nobody scheduled, a burn edge that moves, and a face that cannot be worked and is walked anyway. Eleven people at a counter administer all of it.',
+        prefectureIds: QUIET_MARCHES_PREFECTURES.map(p => p.id),
+        whatIsKnownOfIt: null,
+        startingAwareness: 'known'
+    },
+    // ── the four the Marches has never heard named ────────────────────────
+    // One fact each, and the fact is a band in the Assessor's schedule. A
+    // single generic system telling five places apart is worth more than five
+    // descriptions, and it is the honest amount: this IS what anybody in
+    // either played province knows, which is a name and a queue position.
+    {
+        id: 'province-coldwater-cut',
+        name: 'The Coldwater Cut',
+        standing: 'named_only',
+        regionId: null,
+        heldByApexId: 'apex-long-cut',
+        administeredByCourtId: 'court-ninth-face',
+        governingFact:
+            'The driven stone there is still deep, so the first century of the Long Cut course schedule is almost entirely Coldwater and everything else waits.',
+        onPaper: 'First band of five on the course schedule, and it has held the position for as long as the schedule has existed.',
+        onTheGround: 'Nobody in either played province has been, and the Long Cut does not publish what it takes out.',
+        prefectureIds: [],
+        whatIsKnownOfIt:
+            'A name on a schedule the Weir Office countersigns once every twenty years without reading past its own line, and a rumour among Kettle carvers that there is somewhere the tools are better.',
+        startingAwareness: 'unaware'
+    },
+    {
+        id: 'province-hammerfall',
+        name: 'Hammerfall',
+        standing: 'named_only',
+        regionId: null,
+        heldByApexId: 'apex-long-cut',
+        administeredByCourtId: 'court-ninth-face',
+        governingFact: 'Second band. Worked hard for eleven hundred years and still returning enough to keep a course open.',
+        onPaper: 'Second band of five, and the only one that has ever moved up rather than down.',
+        onTheGround: 'Unknown here. The Assessor of the Four Faces rates it annually and the figure is not circulated.',
+        prefectureIds: [],
+        whatIsKnownOfIt: 'Nothing at all in the Marches. The name appears once on the schedule the Twenty-Year Hand carries and nobody at the Weir Office has ever asked what it is.',
+        startingAwareness: 'unaware'
+    },
+    {
+        id: 'province-the-sixteen-faces',
+        name: 'The Sixteen Faces',
+        standing: 'named_only',
+        regionId: null,
+        heldByApexId: 'apex-long-cut',
+        administeredByCourtId: 'court-ninth-face',
+        governingFact: 'Third band, and the only driven province where more than one face is open at a time, which is what the name is.',
+        onPaper: 'Third band of five, and it has been third for two hundred years.',
+        onTheGround: 'Unknown here, and the Long Cut has never had reason to describe it to anybody in the Marches.',
+        prefectureIds: [],
+        whatIsKnownOfIt: 'A name, and the fact that it is above the Marches in the queue, which is the only comparative figure anybody in Kettle has ever heard.',
+        startingAwareness: 'unaware'
+    },
+    {
+        id: 'province-greyhold',
+        name: 'Greyhold',
+        standing: 'named_only',
+        regionId: null,
+        heldByApexId: 'apex-long-cut',
+        administeredByCourtId: 'court-ninth-face',
+        governingFact: 'Fourth band, one place above the Marches, and it has been sliding for two centuries in the same direction the Marches slid.',
+        onPaper: 'Fourth band of five, and it is the only one of the five that has ever moved downward twice.',
+        onTheGround: 'Unknown here, and the Assessor believes it will change places with the Marches within her tenure and has not written that down.',
+        prefectureIds: [],
+        whatIsKnownOfIt:
+            'The one name a Kettle carver might have heard, because it is the province directly above them in a queue nobody has told them they are in.',
+        startingAwareness: 'unaware'
+    }
+];
+
+export const PREFECTURES: readonly Prefecture[] = [
+    ...LOW_FALL_PREFECTURES,
+    ...QUIET_MARCHES_PREFECTURES
+];
+
+/**
+ * The queue, which is the whole of what tells the five driven provinces apart.
+ *
+ * Not arithmetic and not a rule: a list, in the order the Assessor's schedule
+ * puts them, kept because "the Marches is last of five" is a fact a player can
+ * be told and a fact that explains everything about why nothing arrives.
+ */
+export const DRIVEN_PROVINCE_SCHEDULE_ORDER: readonly string[] = [
+    'province-coldwater-cut',
+    'province-hammerfall',
+    'province-the-sixteen-faces',
+    'province-greyhold',
+    QUIET_MARCHES_PROVINCE_ID
+];
+
+// ─── province + prefecture lookups ───────────────────────────────────────
+
+const PROVINCE_BY_ID: ReadonlyMap<string, Province> = new Map(PROVINCES.map(p => [p.id, p]));
+const PREFECTURE_BY_ID: ReadonlyMap<string, Prefecture> = new Map(PREFECTURES.map(p => [p.id, p]));
+
+/** Every faction with any interest in a prefecture, holder or sub-holder. */
+const PREFECTURE_BY_FACTION: ReadonlyMap<string, string> = (() => {
+    const map = new Map<string, string>();
+    for (const pref of PREFECTURES) {
+        if (pref.heldByFactionId) map.set(pref.heldByFactionId, pref.id);
+    }
+    for (const pref of PREFECTURES) {
+        for (const sub of pref.subHoldings) {
+            if (!map.has(sub.factionId)) map.set(sub.factionId, pref.id);
+        }
+    }
+    return map;
+})();
+
+export function getProvince(id: string): Province | undefined {
+    return PROVINCE_BY_ID.get(id);
+}
+
+export function requireProvince(id: string): Province {
+    const p = PROVINCE_BY_ID.get(id);
+    if (!p) throw new Error(`Unknown province: ${id}`);
+    return p;
+}
+
+export function getPrefecture(id: string): Prefecture | undefined {
+    return PREFECTURE_BY_ID.get(id);
+}
+
+export function prefecturesOf(provinceId: string): Prefecture[] {
+    return PREFECTURES.filter(p => p.provinceId === provinceId);
+}
+
+/** The province a `REGIONS` row stands on. */
+export function provinceForRegion(regionId: string): Province | undefined {
+    return PROVINCES.find(p => p.regionId === regionId);
+}
+
+/** The prefecture a faction holds, or sits inside as a sub-holder. */
+export function prefectureForFaction(factionId: string): Prefecture | undefined {
+    const id = PREFECTURE_BY_FACTION.get(factionId);
+    return id ? PREFECTURE_BY_ID.get(id) : undefined;
+}
+
+/** The province a faction's ground is in. */
+export function provinceForFaction(factionId: string): Province | undefined {
+    const pref = prefectureForFaction(factionId);
+    return pref ? PROVINCE_BY_ID.get(pref.provinceId) : undefined;
+}
+
+/**
+ * Whose gift a faction's ground is in, tracing sub-holdings up. Returns null
+ * where nothing granted it - which is a real and important answer, and the
+ * only thing the Pavilion, the Hollow Court, the Grove, the Clear River
+ * Alliance and the Sixmile Wardens have in common.
+ */
+export function delegatedFrom(factionId: string): string | null {
+    const pref = prefectureForFaction(factionId);
+    if (!pref) return null;
+    if (pref.heldByFactionId === factionId) return pref.delegatedFromId;
+    const sub = pref.subHoldings.find(s => s.factionId === factionId);
+    if (!sub) return null;
+    return sub.delegatedFromId === factionId ? null : sub.delegatedFromId;
+}
+
+/** Arterials under a province, in the Survey's own numbering. */
+export function arterialsOf(provinceId: string): Arterial[] {
+    return ARTERIALS.filter(a => a.provinceId === provinceId)
+        .sort((a, b) => a.ordinalInSystem - b.ordinalInSystem);
+}
+
+/** Prefectures where the record and the ground do not agree. */
+export function contestedGround(): Prefecture[] {
+    return PREFECTURES.filter(p => p.discrepancy !== 'none');
 }
