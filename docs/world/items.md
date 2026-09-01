@@ -21,6 +21,7 @@ Read alongside [`economy.md`](economy.md), which covers price, ownership and pro
 | [Holding is a signature](#holding-is-a-signature) | Somebody is seen with a thing that is not theirs |
 | [Scarcity is measured, not authored](#scarcity-is-measured-not-authored) | Deciding how many of something exist |
 | [The almanac and the ledger](#the-almanac-and-the-ledger) | Deciding which surface a fact about an object belongs on |
+| [How rare a medicine should be](#how-rare-a-medicine-should-be) | Pricing or placing anything that repairs a cultivator |
 
 ---
 
@@ -218,3 +219,47 @@ Two consequences worth holding on to:
 - **A singular thing has both, and they must not repeat each other.** The almanac describes the
   kind once; the ledger names the holder and the history. When a fact is duplicated across the
   two, the copies drift, and the reader learns not to trust either.
+
+---
+
+## How rare a medicine should be
+
+<!-- tier: 2 trigger="a medicine is created, priced, stocked, or refused; or somebody asks how to mend an injury" -->
+
+**Scarcity follows what the injury COSTS, not how alarming it sounds.** That is the whole rule,
+and it puts the obvious-sounding answer the wrong way round often enough to be worth stating.
+
+Two questions decide where a medicine sits:
+
+> **Does the wound take a rung from you, or only a life?**
+> **And how high does the medicine have to reach to act on this patient?**
+
+**A wound that does not block advancement is a SURVIVAL problem, and its medicine belongs at the
+common end.** Meridian injuries are the worked example: a cultivator carrying torn meridians
+still climbs - the rung is not withheld - what the injury does is threaten to kill them. So
+mending them should be *obtainable*. A young cultivator with a minor one should manage it
+easily; a badly torn one should be a matter of cost and effort rather than a hunt.
+
+**The genuinely rare medicines are the ones that give back a ceiling.** Anything that repairs a
+damaged foundation, restores something structurally lost, or lifts a hard block on advancement
+is buying back a *rung*, and that is the scarce article. Those are the ones that should be
+hard to find, expensive out of proportion, and often not for sale at all.
+
+The second axis is the patient. **A medicine has to reach the height of the person it acts on**,
+and the ladder thins as it climbs - the same principle already governing books, roads and
+teachers. So mending a Qi Condensation cultivator's meridians is ordinary work, and mending the
+same wound at Nascent Soul is not.
+
+Together those give a matrix with a live corner and a dead one, and **both corners are correct**:
+a beginner with a minor wound fixes it in an afternoon, and somebody high up with a serious one
+is facing something genuinely hard to obtain. The second failing is not the system breaking -
+it is why sects, favours and inheritances matter.
+
+Above the line, [`economy.md`](economy.md)'s rule applies unchanged: the top-tier repair does not
+carry a price, it moves on a favour owed or on barter or not at all.
+
+**And a cure being rare is never the same as a cure being invisible.** Whatever cannot be had
+must still be *nameable*: somebody who cannot afford the medicine should be told what would mend
+them and why it is out of reach. A refusal that does not name its cause is indistinguishable
+from a missing feature - which is how the commonest cause of death in a playtested build turned
+out to have no reachable cure at all, while the formula for it sat in the catalog the whole time.
