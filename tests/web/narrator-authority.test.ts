@@ -296,7 +296,11 @@ describe('the deterministic path is a first-class way to play', () => {
         const { game } = makeGame();
         await game.newRun('Nobody');
 
-        const acted = await game.act('I sit in seclusion for ten years.');
+        // `anyway` because a fresh cultivator holds no manual, and the engine
+        // now refuses a stretch whose return it has already computed as zero
+        // rather than selling it at full hazard. This test is about the decade
+        // being narrated, so it means to spend it.
+        const acted = await game.act('I sit in seclusion for ten years anyway.');
 
         expect(planned(acted)).toMatchObject({ action: 'cultivate', source: 'fallback' });
         expect(planned(acted).summary).toContain('days=3650');

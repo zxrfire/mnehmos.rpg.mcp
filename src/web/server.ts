@@ -363,7 +363,13 @@ export function createApp(options: AppOptions): (req: IncomingMessage, res: Serv
                 }
                 case '/api/cultivate': {
                     const body = await readJsonBody(req);
-                    sendJson(res, 200, await game.cultivate(requireNumber(body, 'days')));
+                    // `anyway` is the caller confirming a stretch the engine has
+                    // already refused as returning exactly zero. See the zero
+                    // -return gate in `runSeclusion`.
+                    sendJson(res, 200, await game.cultivate(
+                        requireNumber(body, 'days'),
+                        { anyway: (body as { anyway?: unknown }).anyway === true }
+                    ));
                     return;
                 }
                 case '/api/breakthrough':

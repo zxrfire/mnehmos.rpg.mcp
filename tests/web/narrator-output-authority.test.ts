@@ -51,7 +51,7 @@ describe('prose that contradicts the engine is not shown', () => {
         const provider = new ScriptedProvider({ plans: [], narrations: [FABRICATED_ADVANCEMENT] });
         const { game } = await stalledButFunded('fab-guard', provider);
 
-        const result = await game.cultivate(1800);
+        const result = await game.cultivate(1800, { anyway: true });
         const after = game.state().cultivator;
 
         // The engine was untouched, as it always was. This half already held.
@@ -140,7 +140,7 @@ describe('lines the player must read survive a narrator that skips them', () => 
             narrations: ['Years went by. The room was quiet.']
         });
         const { game } = await stalledButFunded('req-guard', provider);
-        const result = await game.cultivate(1800);
+        const result = await game.cultivate(1800, { anyway: true });
         expect(result.narration).toMatch(/no road for the qi/i);
     });
 });
@@ -158,7 +158,7 @@ describe('the ceiling is answerable without spending the decade', () => {
 
     it('is in the seclusion preamble, before the years are spent', async () => {
         const { game } = await stalledButFunded('ceil-pre');
-        const result = await game.cultivate(1800);
+        const result = await game.cultivate(1800, { anyway: true });
         expect(result.narration).toMatch(/no road for the qi/i);
     });
 

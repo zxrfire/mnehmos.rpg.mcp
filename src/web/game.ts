@@ -1517,7 +1517,7 @@ export class GameService {
     }
 
     /** Seclusion, requested directly by the UI rather than through free text. */
-    async cultivate(days: number): Promise<CultivateResult> {
+    async cultivate(days: number, options: { anyway?: boolean } = {}): Promise<CultivateResult> {
         this.useOwnDb();
         const requested = Math.floor(Number(days));
         if (!Number.isFinite(requested) || requested < 1) {
@@ -1529,7 +1529,15 @@ export class GameService {
 
         const { run, cultivator } = this.requireLiveRun();
         const ambient = this.ambientFor(cultivator, run);
-        const execution = await this.runSeclusion(run, cultivator, ambient, requested);
+        const execution = await this.runSeclusion(
+            run, cultivator, ambient, requested, { acknowledged: options.anyway === true }
+        );
+        // The zero-return gate answers here too, and it is a refusal rather
+        // than a failure: the button path has no sentence to put "anyway" into,
+        // so it comes back as the engine's own words for the caller to show and
+        // to offer again with `anyway: true`. Refusing loudly is the same shape
+        // `breakthrough()` takes.
+        if (execution.outcome === 'refused') throw new GameError(execution.facts.prose);
         if (!execution.timeSkip) throw new GameError('The simulation produced no result.', 500);
 
         const after = this.currentRun();
@@ -1731,11 +1739,15 @@ export class GameService {
 
         switch (action.action) {
             case 'cultivate':
-                return this.runSeclusion(run, cultivator, ambient, action.days ?? DEFAULT_CULTIVATION_DAYS);
+                return this.runSeclusion(
+                    run, cultivator, ambient, action.days ?? DEFAULT_CULTIVATION_DAYS,
+                    { acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput) }
+                );
 
             case 'seclude':
                 return this.runSeclusion(
-                    run, cultivator, ambient, action.days ?? DEFAULT_SECLUSION_DAYS, { sealed: true }
+                    run, cultivator, ambient, action.days ?? DEFAULT_SECLUSION_DAYS,
+                    { sealed: true, acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput) }
                 );
 
             case 'breakthrough': {
@@ -6362,10 +6374,48 @@ ${noticed}`;
         cultivator: Cultivator,
         ambient: AmbientQi,
         days: number,
-        options: { sealed?: boolean } = {}
+        options: { sealed?: boolean; acknowledged?: boolean } = {}
     ): Promise<Execution> {
         const sealed = options.sealed ?? false;
         const startDay = Math.floor(run.elapsedDays);
+
+        // ── A STRETCH WHOSE RETURN IS ZERO IS NOT SOLD SILENTLY ──────────
+        //
+        // `techniqueCeiling` is a HARD zero, not a taper, and the engine knows
+        // it on day zero. It used to say so on day zero and then spend the
+        // years anyway, at full hazard, which is the single worst thing this
+        // game does to a player. Two live runs, at opposite ends of the ladder:
+        //
+        //   a beginner with no manual sat 900 days for exactly 0 progress,
+        //   collected a disturbance and a serious deviation on the way, then
+        //   found a manual and died on the next action of the wounds the
+        //   pointless stretch had given them. Turn 9.
+        //
+        //   ordinal 13, healthy, 100 years of rations, sat down for thirty
+        //   years against an exhausted manual. The engine printed "it is
+        //   stopped, and no amount of sitting with it changes that" on Day 0,
+        //   ran thirteen more years, aged them 122 to 148 and killed them by
+        //   stagnation.
+        //
+        // The second case is the general one and it will hit every player
+        // repeatedly, because every cultivator reaches the end of a book many
+        // times in a career. The cost is lifespan, which is the resource the
+        // whole game is about.
+        //
+        // A refusal rather than a free pass. Making a zero-return stretch cost
+        // nothing would be worse: it turns "sit until something happens" into a
+        // dominant move and it lies about the cave, which is dangerous whether
+        // or not anybody is making progress. So the years are still real and
+        // still spendable - the player just has to mean it. Same shape as the
+        // wasted-pill override, and for the same reason: this layer cannot ask
+        // a question and wait for an answer.
+        const wall = techniqueCeiling(
+            cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap
+        );
+        if (wall.multiplier === 0 && !options.acknowledged) {
+            return this.sittingWouldReturnNothing(cultivator, wall, days);
+        }
+
         // `cultivate` reaches here without an action-level world load, and the
         // encounter layer reads the place and the people standing in it.
         this.atHand = await this.loadWorld();
@@ -6542,6 +6592,92 @@ ${noticed}`;
                 ...worldCalls(world)
             ]
         };
+    }
+
+    /**
+     * The zero-return refusal, and where the next volume is.
+     *
+     * Honest was never the problem - `techniqueCeiling.line` is one of the best
+     * sentences in the game and it was already being printed. The problem was
+     * that it was printed and then ignored, and that it stopped at the
+     * diagnosis. "What is missing is the next volume" is true and leaves the
+     * player standing in the same cave with no idea where a volume comes from.
+     *
+     * So the refusal carries the pointer. The candidates come out of the same
+     * catalog read `list_techniques` uses, filtered to cultivation arts that
+     * carry FURTHER than this cultivator currently stands, which is the exact
+     * definition of "the next volume". Naming one is worth more than naming
+     * four: a player who has been stopped needs a next step, not a menu.
+     *
+     * Free, like every refusal: no time, no food, no roll.
+     */
+    private async sittingWouldReturnNothing(
+        cultivator: Cultivator,
+        wall: ReturnType<typeof techniqueCeiling>,
+        days: number
+    ): Promise<Execution> {
+        const next = await this.theNextVolume(cultivator);
+
+        const wouldBe = wall.state === 'no_method'
+            ? 'There is no road for the qi to take, so the whole stretch returns exactly nothing.'
+            : 'The book has ended, so the whole stretch returns exactly nothing.';
+
+        const pointer = next
+            ? `${next} carries further than you stand, and you could be taught it. `
+              + 'Ask who would teach you, or what there is to learn.'
+            : 'Ask what there is to learn, and who would teach you. Neither costs a day.';
+
+        return refused('engine.techniqueCeiling', 'cultivate', factsForRefusal(
+            `${humanDays(days)} of sitting would produce nothing.`,
+            `${wall.line} ${wouldBe} ${pointer} `
+            + 'Say it again with "anyway" and the years go by regardless - they are yours to spend.',
+            `techniqueCeiling state=${wall.state}, multiplier=0 at ordinal `
+            + `${cultivator.realmOrdinal}. ${days} day(s) refused before anything was spent: `
+            + 'no provisioning, no encounter roll, no time.'
+        ));
+    }
+
+    /**
+     * The best art in reach that carries further than this cultivator stands.
+     *
+     * Returns a NAME or null, and nothing else - this is a pointer inside a
+     * refusal, not a second listing verb. Reads through the same handler
+     * `list_techniques` uses so the two cannot come to disagree about what is
+     * available, and stays silent rather than guessing if that read fails.
+     */
+    private async theNextVolume(cultivator: Cultivator): Promise<string | null> {
+        try {
+            const listed = await handleListAvailable({
+                action: 'list_available',
+                cultivatorId: cultivator.id,
+                includeConflicting: false,
+                includeForbidden: false
+            });
+            if (isGuidingErrorBody(listed)) return null;
+
+            const compatible = (listed as {
+                compatible?: {
+                    name?: string;
+                    known?: boolean;
+                    class?: string;
+                    carriesToOrdinal?: number | null;
+                }[];
+            }).compatible ?? [];
+
+            const reaching = compatible
+                .filter(row =>
+                    row.known !== true
+                    && row.class === 'cultivation'
+                    && typeof row.name === 'string'
+                    && (row.carriesToOrdinal ?? -1) > cultivator.realmOrdinal)
+                .sort((a, b) => (b.carriesToOrdinal ?? 0) - (a.carriesToOrdinal ?? 0));
+
+            return reaching[0]?.name ?? null;
+        } catch {
+            // A pointer that cannot be read is a pointer the refusal does
+            // without. It must never be the reason the refusal fails to arrive.
+            return null;
+        }
     }
 
     private async shortSkip(
