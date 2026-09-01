@@ -1569,6 +1569,22 @@ export const RECALL_EVERYTHING =
     /\bwhat do i know\b\s*[.!?]?$|\bwhat do i know at all\b|\bwhat have i heard\b\s*[.!?]?$|\bwhat names do i (?:have|hold|know)\b|\bwhat have i learn(?:ed|t)\b\s*[.!?]?$/;
 
 /**
+ * News, rumour, and what is being said - which in this world IS the holding.
+ *
+ * There was no verb for any of it: "what news is there" and "what is happening
+ * in the world" resolved to nothing, and "I listen for rumours" became a
+ * one-day wait. In a game whose entire knowledge model is names reaching you
+ * through other people - `hearsay.ts`, the overheard channel, the whole
+ * `whisper`/`named`/`placed`/`known` ladder - that is a large missing verb.
+ *
+ * Routed to `recall` with no target, which lists everything that has reached
+ * this cultivator. That is the honest answer: there is no wire service here,
+ * and what a person knows of the world is what somebody said in front of them.
+ */
+export const NEWS_AND_RUMOUR =
+    /\b(?:what news|any news|what(?:'s| is) the news|what(?:'s| is) happening (?:in the world|out there|elsewhere)|what(?:'s| is) going on (?:in the world|out there)|what are people saying|what do people say|listen for (?:rumours?|rumors?|news|talk)|any (?:rumours?|rumors?)|what (?:rumours?|rumors?)|catch up on the news|what have i heard lately)\b/;
+
+/**
  * The other axis, and the one that matters at the ceiling.
  *
  * `DaoView.theOnlyAxisLeft` is read off the same predicate the engine gates a
@@ -2998,6 +3014,11 @@ export function parseIntent(input: string): PlannedAction {
     if (RECALL_DAO.test(text) && !PUTTING_IT_SOMEWHERE_ELSE.test(text)) {
         return { action: 'recall', intent: 'dao' };
     }
+    // News and rumour, which in a world with no wire service is the same read
+    // as "what have I heard". Names nobody, so it lists the whole holding.
+    if (NEWS_AND_RUMOUR.test(text)) {
+        return { action: 'recall', intent: 'knowledge' };
+    }
     if (RECALL_PATTERNS.some(pattern => pattern.test(text))) {
         const named = namedAfter(input, RECALL_SUBJECT);
         return { action: 'recall', intent: 'knowledge', ...(named ? { target: named } : {}) };
@@ -3175,7 +3196,19 @@ export function parseIntent(input: string): PlannedAction {
     // and "I learn the Azure Ripple Art" is an act that can tear meridians.
     // Getting those the wrong way round costs a run.
     if (/\b(?:what|which)\b[^.!?]*\b(?:arts?|techniques?|manuals?|methods?)\b[^.!?]*\b(?:can i (?:learn|study|take up|pick up)|could i (?:learn|study)|are (?:there|available|open to me)|do i have access to|am i able to learn)\b/.test(text)
-        || /\b(?:what (?:arts?|techniques?) can i learn|list (?:the )?(?:available )?(?:arts?|techniques?)|show (?:me )?(?:the )?(?:available )?(?:arts?|techniques?)|what (?:arts?|techniques?) are (?:available|going|about))\b/.test(text)) {
+        || /\b(?:what (?:arts?|techniques?) can i learn|list (?:the )?(?:available )?(?:arts?|techniques?)|show (?:me )?(?:the )?(?:available )?(?:arts?|techniques?)|what (?:arts?|techniques?) are (?:available|going|about))\b/.test(text)
+        // ── THE PHRASING THE GAME ITSELF PROMISES ────────────────────────
+        //
+        // Three refusals in this codebase tell the player, in these words, to
+        // ask "what there is to learn" - and the sentence resolved to nothing.
+        // The game was instructing players into a dead end, which is the
+        // sharpest possible version of the deflection problem, because the
+        // player is doing exactly what they were told.
+        //
+        // `list available techniques` is what actually answered, and no player
+        // types that. Any phrasing the game prints is a phrasing the game must
+        // accept - the same rule as a name on a board or a title on a wall.
+        || /\b(?:what(?:'s| is)? there to learn|what is there to learn|what can i learn|anything to learn|is there anything to learn|what could i be taught|what am i able to learn)\b/.test(text)) {
         return { action: 'list_techniques' };
     }
 
@@ -3366,7 +3399,14 @@ export function parseIntent(input: string): PlannedAction {
     if (/\b(?:practi[cs]e|drill|rehearse|work on)\b.*\b(?:art|technique|manual|stance|form|book|scripture|canon)\b/.test(text)
         || /\b(?:train|practi[cs]e)\s+(?:the\s+)?[a-z-]+\s+(?:art|technique|manual|stance)\b/.test(text)
         || /\b(?:read|study|go (?:over|through))\b[^.?!]*\bmy (?:book|manual|art|technique|scripture|canon)\b/.test(text)
-        || /^(?:i\s+)?(?:practi[cs]e|train|drill|spar)\s*[.!?]?$/.test(text)) {
+        || /^(?:i\s+)?(?:practi[cs]e|train|drill|spar)\s*[.!?]?$/.test(text)
+        // SPARRING WITH SOMEBODY is a core activity of the genre and the safe
+        // way to meet the combat system, and "I spar with someone" resolved to
+        // nothing. It is training - a drill against a partner - rather than an
+        // attack: the categorical-gap rule already handles the dangerous
+        // version, and routing this to `attack` would turn a practice bout into
+        // a fight somebody could die in.
+        || /\b(?:spar|sparring|practi[cs]e|train|drill) (?:with|against)\b/.test(text)) {
         return {
             action: 'train_technique',
             target: extractSubject(input, /practi[cs]e|train|drill|rehearse|work on/)
@@ -3564,7 +3604,26 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
-    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation|reputation|standing)|what rank am i|what realm am i|how old am i|what do i own|check myself|where do i stand|how am i regarded)\b/.test(text)) {
+    // ── REPUTATION IS NOT THE CHARACTER SHEET ────────────────────────────
+    //
+    // "how am I regarded" and "what is my reputation" both returned the stat
+    // block - spirit root, attributes, HP, satiety - which is the DEFLECTIONS
+    // failure `scripts/playtest-the-drive.mjs` documents by name: returning the
+    // sheet to a question about something else looks like an answer and is not
+    // one. Regard is a real modelled system and standing is a real column.
+    //
+    // Routed to the house's own read, which answers both cases honestly: a
+    // member gets their rank, contribution and what the next rung wants, and a
+    // rogue gets "Unaffiliated. No stipend, no array, no elder, and nobody to
+    // notice if this run ends badly" - which is exactly what a rogue's standing
+    // in this world is, and a better answer than their Might score.
+    //
+    // Ahead of the status rule, and the status words are removed from it.
+    if (/\b(?:my reputation|what(?:'s| is) my reputation|how am i regarded|how do (?:they|people|others) (?:see|regard|treat) me|what do people think of me|my standing|what is my standing|how am i seen)\b/.test(text)) {
+        return { action: 'sect', intent: 'standing' };
+    }
+
+    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation)|what rank am i|what realm am i|how old am i|what do i own|check myself|where do i stand)\b/.test(text)) {
         return { action: 'status' };
     }
 

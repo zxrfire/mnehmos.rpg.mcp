@@ -2740,8 +2740,24 @@ describe('the noun is right and the verb is wrong', () => {
         // Your own sheet. `what is my rank` worked; `what rank am I` did not.
         ['what rank am I', 'status'],
         ['what realm am I', 'status'],
-        ['what is my reputation', 'status'],
-        ['how am I regarded', 'status'],
+
+        // ── THESE TWO MOVED, AND THE OLD ROWS ENCODED A DEFECT ───────────
+        //
+        // They asserted `status`, which returned the stat block - spirit root,
+        // attributes, HP, satiety - to a question about how the world receives
+        // you. That is the DEFLECTIONS failure this repo documents by name in
+        // `scripts/playtest-the-drive.mjs`: answering with the character sheet
+        // looks like an answer and is not one, which is why it survived here.
+        //
+        // Regard is a real modelled system and standing is a real column, and
+        // the house's own read answers both cases: a member gets rank,
+        // contribution and what the next rung wants; a rogue gets "Unaffiliated.
+        // No stipend, no array, no elder, and nobody to notice if this run ends
+        // badly" - which is what a rogue's standing actually is, and a better
+        // answer than their Might score. The block above is about near-synonym
+        // coverage FOR THE SHEET, and reputation was never the sheet.
+        ['what is my reputation', 'sect'],
+        ['how am I regarded', 'sect'],
 
         // A disciple asking who their own teacher is.
         ['who is my master', 'teacher'],
