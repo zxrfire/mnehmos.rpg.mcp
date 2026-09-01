@@ -368,6 +368,44 @@ surface sits below a recorded entry, in a method that has already spent the days
 who has not gone in cannot learn what is inside through any phrasing, and there are three
 independent reasons for that rather than one convention.
 
+### A cache is a very small inheritance ground
+
+`leaving-things-for-the-next-life.ts` is `trials.ts`'s sibling and shares its table.
+Burying a cache and lodging a deposit against a phrase are the two ways a cultivator who is
+finished can put possessions beyond their own death, and both write to `cultivation_sites` -
+the same table the trial ledger uses, with `kind = 'cache'` or `kind = 'deposit'`, and **no
+schema change**, because that table already carried a comment saying a site outlives the run
+that turned it up and already had `run_id` deliberately unconstrained.
+
+Four rules hold this together, and breaking any one of them breaks something load-bearing:
+
+- **A claim hands over objects and nothing else.** Stones and pouch stock. Never a rung,
+  progress, a foundation, an insight, standing, a knowledge record or a name.
+  `A_DEPOSIT_IS_NOT_A_LIFE` states it and `applyGoods` is the single writer, so there is one
+  place to check. A death stays final.
+- **The phrase is never stored.** Only a digest salted with the entry id, and no function
+  anywhere reverses it. The player carries the words across the death; that is the mechanic.
+  `hintFor` is handed the entry's facts and not the phrase, so it has nothing in scope to
+  leak, and what a counter may say is the day, the term and the word count.
+- **Neither route is safe, and they fail differently.** A cache is at risk of being found -
+  ground, burial effort, watchers, and a concealment that decays. A deposit is at risk of
+  the holder - Lindy on `foundedYearsAgo`, adjusted by `powerOrdinal`, rivals, decline and
+  whether the catalog gives that house a `quietlyStopped` line. Every input is a figure the
+  catalog already keeps; there is no `reliability` number written next to any house.
+- **Both fates are dealt, not rolled.** One uniform threshold per row, derived from
+  (world seed, row id) and never persisted, with the row lost at the first year the
+  cumulative hazard passes it. Monotone, reproducible, and identical however many times it
+  is asked.
+
+The two routes meet in exactly one place: a house that fails as `destroyed_vault_intact`
+becomes a cache at its own seat, so a burned vault is a hole with things in it rather than a
+third kind of thing.
+
+The clock is `WorldState.currentDay`, not `Run.elapsedDays`, because a run's clock restarts
+every life and the whole feature is about the gap between two of them. Where no world is
+running the day is recorded as null and the span is reported as unmeasurable rather than
+guessed - the direction that never deletes anybody's property.
+
 ---
 
 ## The deterministic fallback is not a stub
