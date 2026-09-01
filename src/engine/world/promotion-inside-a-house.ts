@@ -39,10 +39,13 @@
  *
  * So promotion needs three things at once, and the interesting one is the last:
  *
- *   THE HEIGHT     each rank expects an ordinal, interpolated between what the
- *                  house admits at and what its strongest member stands at. You
- *                  cannot be an elder of a house whose elders are all Core
- *                  Formation while you are still gathering qi.
+ *   THE HEIGHT     `rankRealmBand` in `members.ts`, which is the EXISTING
+ *                  authority on what a rank of a given house may stand at and
+ *                  is already enforced against every seeded member by a catalog
+ *                  test. It caps a rank at what the house can RELIABLY PRODUCE
+ *                  plus a little headroom, not at what its strongest member
+ *                  happens to be - which is the difference between a bar people
+ *                  can clear and one they cannot.
  *   THE MERIT      among everybody who qualifies, the house takes the strongest.
  *                  Favour counts: the chosen are promoted over their seniors,
  *                  which is what being favoured MEANS.
@@ -69,6 +72,7 @@
 import type { NpcRecord } from './npc-state.js';
 import type { FactionRecord } from './world-state.js';
 import type { WorldState } from './world-state.js';
+import { rankRealmBand } from '../../data/cultivation/members.js';
 
 /**
  * How many people a house will seat at each rank.
@@ -106,7 +110,16 @@ export function seatsAtRank(
     // reading a much larger number. `abundance` runs 0..1 and comes off the
     // house's own production and holdings, so any house that got rich would
     // behave the same way, and any apex that lost its ground would stop.
-    const narrowing = Math.pow(2, rankIndex * (1 - abundance));
+    // Halving from a QUARTER of the house, not from half of it.
+    //
+    // Starting the narrowing at `2^rankIndex` let the first rank above the
+    // bottom seat half the membership, which is not an inner circle, it is the
+    // house. Measured with the correct promotion bar in place, rank 0 drained
+    // below rank 1 - {0:69, 1:123, 2:71, ...} - a diamond rather than a
+    // pyramid, because everybody qualified for the second rung and there was
+    // room for them. The outer ranks have to stay the widest part of a house or
+    // nothing is being selected for.
+    const narrowing = Math.pow(2, (rankIndex + 1) * (1 - abundance));
     const share = members / narrowing;
     return Math.max(1, Math.floor(share));
 }
@@ -129,7 +142,10 @@ export function abundanceOf(house: FactionRecord): number {
 }
 
 /**
- * The height a rank expects.
+ * The height a rank expects, for a house the catalog does not know.
+ *
+ * FALLBACK ONLY - `rankRealmBand` is the authority for anything seeded. See
+ * `barFor`.
  *
  * Interpolated between what the house admits at and what its strongest member
  * actually stands at, so a great house's inner disciples are stronger than a
@@ -145,6 +161,39 @@ export function ordinalExpectedAt(
     if (rankCount <= 1) return admissionOrdinal;
     const share = rankIndex / (rankCount - 1);
     return Math.round(admissionOrdinal + share * Math.max(0, powerOrdinal - admissionOrdinal));
+}
+
+/**
+ * The height this rank of this house actually wants.
+ *
+ * DEFERS TO `rankRealmBand`, which is the authority and was here first. I wrote
+ * `ordinalExpectedAt` below without checking, and it was a second opinion beside
+ * a complete system - the exact failure this project keeps having. Measured
+ * across the whole catalog, 148 of 148 rank bars came out higher under mine,
+ * by a mean of 8.8 rungs, and 33 of them landed ABOVE the authority's own
+ * ceiling for that rank, so a promotion under my rule would have put somebody in
+ * a state the catalog test rejects for seeded members.
+ *
+ * The substantive difference is which ceiling the ladder is stretched between.
+ * Mine interpolated up to `powerOrdinal` - the house's strongest member -
+ * where `rankRealmBand` stops at what the house can reliably PRODUCE. Those two
+ * are twelve rungs apart on average, and the gap is a resource statement: a
+ * house at 36 that can only make a 28 has the books and the master and cannot
+ * supply the materials. Pricing its elder seats at 36 asks its disciples to
+ * reach a height the house itself cannot take them to.
+ *
+ * Falls back to interpolation only for a faction the catalog does not know,
+ * which is a runtime splinter rather than a seeded house.
+ */
+function barFor(
+    factionId: string,
+    rankIndex: number,
+    rankCount: number,
+    admissionOrdinal: number,
+    powerOrdinal: number
+): number {
+    return rankRealmBand(factionId, rankIndex)?.minOrdinal
+        ?? ordinalExpectedAt(rankIndex, rankCount, admissionOrdinal, powerOrdinal);
 }
 
 export interface Promotion {
@@ -213,7 +262,7 @@ export function assessPromotions(state: WorldState): {
         const abundance = abundanceOf(house);
         for (let rank = rankCount - 1; rank >= 1; rank--) {
             const seats = seatsAtRank(rank, rankCount, members.length, abundance);
-            const bar = ordinalExpectedAt(rank, rankCount, admission, power);
+            const bar = barFor(house.id, rank, rankCount, admission, power);
 
             const candidates = members
                 .filter(m => m.factionRankIndex === rank - 1)
