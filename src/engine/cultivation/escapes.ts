@@ -485,7 +485,18 @@ export type DerivationRefusal =
     /** A road, and a different one. `daoGate`'s word. */
     | 'wrong_dao'
     /** It ends where the ladder ends. There is no continuation to write. */
-    | 'nothing_above';
+    | 'nothing_above'
+    /**
+     * Nobody has ever written anything at this height, so there is nothing to
+     * compose against.
+     *
+     * The far end of the new-ground curve, and a refusal rather than a very
+     * large price - which is what stops derivation being a general escape from
+     * the corridor. Above the last taught book the world holds almost nothing,
+     * and a road with no precedent at all is not a hard derivation, it is the
+     * crossing, and the crossing is not a book.
+     */
+    | 'no_precedent';
 
 export interface DerivationCheck {
     permitted: boolean;
@@ -506,7 +517,11 @@ export const DERIVATION_STANDING: DaoStanding = 'dao';
  * Shaped exactly like `daoGate` and reusing `daoMatches`, so the two refusals
  * read alike and a caller that already renders one renders the other.
  */
-export function canDerive(dao: DaoAssessment, manual: DerivableManual): DerivationCheck {
+export function canDerive(
+    dao: DaoAssessment,
+    manual: DerivableManual,
+    precedent?: Precedent
+): DerivationCheck {
     const title = manual.name ?? manual.id;
     const base = { requiredStanding: DERIVATION_STANDING, heldStanding: dao.standing };
 
@@ -529,6 +544,27 @@ export function canDerive(dao: DaoAssessment, manual: DerivableManual): Derivati
             reason: 'nothing_above',
             detail: `${title} does not stop, so there is no continuation to write. ` +
                 'Whatever is above it is not a book.'
+        };
+    }
+
+    // New ground, at its far end. Checked after `nothing_above` so a manual
+    // that stops at the top of the ladder is refused for the reason that
+    // actually applies to it, and before the road questions so that a
+    // cultivator is never told their Dao is wrong for a book nobody could
+    // write from where they stand.
+    if (precedent !== undefined && precedent.artsAtOrAbove <= 0) {
+        return {
+            ...base,
+            permitted: false,
+            reason: 'no_precedent',
+            detail:
+                `Nothing anybody has ever written stands at or above ${rankName(
+                    Math.min(MAX_ORDINAL, (manual.cap as number) + 1)
+                )}. ` +
+                'Deriving is composing against what has been done, and at this height ' +
+                'there is nothing to compose against - not a library that is closed, ' +
+                'not a book somebody will not part with. Nobody has been here. What ' +
+                'comes next is not a thing that can be written down in advance.'
         };
     }
 
@@ -616,6 +652,135 @@ export function canDerive(dao: DaoAssessment, manual: DerivableManual): Derivati
  */
 export const DERIVATION_YEARS_PER_RUNG = 12;
 
+// ─────────────────────────────────────────────────────────────────────────
+// NEW GROUND
+//
+// "Obviously it gets harder as you go up cuz you're on new ground."
+//
+// Derivation as first built was equally available at every height, which would
+// have made it a general escape from the corridor rather than a desperate one.
+// It is not equally available, and the reason is not a difficulty dial: the
+// higher the rung, the fewer people have ever been there, the less exists to
+// compose against, and near the top a deriver is genuinely writing something
+// nobody has written.
+//
+// So the difficulty is DERIVED from how much the world holds at or above the
+// target rung, rather than chosen. That makes "new ground" literal and
+// measurable, and it moves on its own as the catalog changes - a house that
+// loses its library makes derivation above it harder for everybody, with
+// nothing anywhere needing to be retuned.
+//
+// It reads the same thinning the corridor already describes, arriving on the
+// authorship axis: taught books run out at 37, above that everything is ruin
+// or grave, and only a handful of arts exist near the Lid at all. Low down the
+// road is well walked and precedent is everywhere, so somebody with real
+// understanding writing the next stretch of an ordinary method is a believable
+// thing. High up there is almost nothing to write from.
+//
+// TWO THINGS IT MUST NOT BREAK, both load-bearing:
+//
+//   Determinism. No new roll. The whole curve is a pure function of the target
+//   rung and what the world holds, so a cultivator who tries again gets the
+//   same answer - and what changes between attempts is them, never the dice.
+//
+//   Suited by construction. The price is years and possibility, never stones,
+//   never rank, never standing in a house. The moment difficulty becomes a
+//   resource cost this stops being the one door money cannot open.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the world holds at or above the rung being written for.
+ *
+ * Supplied by the caller, not read here: `src/engine/cultivation/**` holds no
+ * dependency on `src/data/**` and this does not introduce one. Build it with
+ * {@link precedentAt} from the catalog's own ordinals.
+ */
+export interface Precedent {
+    /**
+     * How many arts in the world are written for the target rung or above.
+     *
+     * The measure of how much there is to compose against. Zero means nobody
+     * has ever written anything at this height, which is a refusal rather than
+     * a penalty - see `no_precedent`.
+     */
+    artsAtOrAbove: number;
+}
+
+/**
+ * Arts at or above the target rung, counted off the ordinals a caller holds.
+ *
+ * PASS CULTIVATION MANUALS, NOT EVERY ART. What a derivation composes against
+ * is the body of work on the road it is extending, and the whole catalog is
+ * mostly dao arts - which have no cap, are not on this ladder, and would
+ * dilute the count past the point of meaning. Measured: counting everything
+ * leaves 13 arts standing at ordinal 44 and the curve inert across the entire
+ * ladder; counting manuals leaves 2, which is the scarcity the corridor
+ * actually describes.
+ *
+ *   precedentAt(
+ *       TECHNIQUES.filter(t => classOf(t) === 'cultivation')
+ *                 .map(t => t.requiredOrdinal),
+ *       targetOrdinal
+ *   )
+ *
+ * Kept here so every caller counts the same thing the same way rather than
+ * each deciding what "precedent" means.
+ */
+export function precedentAt(
+    artOrdinals: readonly number[],
+    targetOrdinal: number
+): Precedent {
+    return {
+        artsAtOrAbove: artOrdinals.filter(o => Number.isFinite(o) && o >= targetOrdinal).length
+    };
+}
+
+/**
+ * Manuals at or above the target that count as a well-walked road.
+ *
+ * Eight, calibrated against the live catalog rather than picked. Counting the
+ * 22 cultivation manuals the world holds, the number standing at or above a
+ * rung runs 18 at Foundation, 9 at 29, 7 at 33, 4 at 37, 2 at 42 and 1 at the
+ * summit - so eight puts the floor of the curve just below the middle of the
+ * ladder and lets it bite exactly where the corridor narrows.
+ *
+ * The resulting price: 12 years anywhere below rung 33, 18 at 33, 36 at 37,
+ * and 54 near the top. Low down that is a long project on a road with
+ * precedent everywhere; high up it is most of a mortal life spent writing
+ * where four books exist.
+ */
+export const PRECEDENT_WELL_WALKED = 8;
+
+/**
+ * How much thin ground multiplies the work, at its very thinnest.
+ *
+ * Four, so a derivation with one lonely precedent costs about five times what
+ * one with a full shelf behind it costs. Sized against the price it scales:
+ * `DERIVATION_YEARS_PER_RUNG` is 12, so the range runs from twelve years low
+ * on the ladder to sixty near the top of what is writable at all - the
+ * difference between a long project and most of a mortal life.
+ */
+export const DERIVATION_THINNESS_COST = 4;
+
+/**
+ * How much of the work is the ground being new, 0..1.
+ *
+ * 0 where the road is well walked, 1 where a single art stands above the
+ * target. Pure, and the reason no roll is needed anywhere in this curve.
+ */
+export function thinnessAt(precedent: Precedent): number {
+    const held = Math.max(0, precedent.artsAtOrAbove);
+    if (held >= PRECEDENT_WELL_WALKED) return 0;
+    return 1 - held / PRECEDENT_WELL_WALKED;
+}
+
+/** What deriving at this height costs in years. */
+export function derivationYears(precedent: Precedent): number {
+    return Math.round(
+        DERIVATION_YEARS_PER_RUNG * (1 + DERIVATION_THINNESS_COST * thinnessAt(precedent))
+    );
+}
+
 /**
  * The shape of a manual this module wrote.
  *
@@ -679,6 +844,15 @@ export interface DerivationRequest {
     source: DerivableManual;
     /** What the deriver turns out to have been doing. `daoOf(insights)`. */
     dao: DaoAssessment;
+    /**
+     * What the world holds at or above the rung being written for.
+     *
+     * REQUIRED, and deliberately not optional with a generous default: a
+     * caller that forgot it would get the cheapest derivation in the game at
+     * the exact height where it should be hardest, which is the failure this
+     * whole curve exists to prevent. Build it with {@link precedentAt}.
+     */
+    precedent: Precedent;
 }
 
 export type DerivationResult =
@@ -698,14 +872,25 @@ export type DerivationResult =
  */
 export function deriveContinuation(request: DerivationRequest): DerivationResult {
     const { runSeed, cultivatorId, source, dao } = request;
-    const check = canDerive(dao, source);
+    const check = canDerive(dao, source, request.precedent);
     if (!check.permitted) {
         return { derived: false, check, manual: null, years: 0, line: check.detail };
     }
 
     // Guarded by `canDerive`'s `nothing_above` branch; narrowed for the type.
     const sourceCap = source.cap as number;
-    const cap = ordinaryCapFor(sourceCap);
+    // ONE RUNG, and not one realm.
+    //
+    // A derived book is a step off a ceiling, not a leapfrog over the
+    // corridor. Writing a realm's worth of method from your own road would
+    // make derivation the best route in the game rather than the most
+    // desperate, and it would hand the prodigy in a cave what the Frostmirror
+    // Court's entire library is for.
+    //
+    // It also puts the new-ground curve where it can be felt: every further
+    // rung needs its own derivation, and each one is written against thinner
+    // ground than the last. The cost is not paid once.
+    const cap = Math.min(MAX_ORDINAL, sourceCap + 1);
     const subject = dao.subject ?? 'the method';
     const road = dao.name ?? daoName(subject, dao.domain ?? 'element');
 
@@ -722,8 +907,8 @@ export function deriveContinuation(request: DerivationRequest): DerivationResult
     const parsedElement = dao.domain === 'element' ? ElementSchema.safeParse(dao.subject) : null;
     const element: Element | null = parsedElement?.success ? parsedElement.data : null;
 
-    const rungs = cap === null ? Math.max(1, MAX_ORDINAL + 1 - sourceCap) : Math.max(1, cap - sourceCap);
-    const years = rungs * DERIVATION_YEARS_PER_RUNG;
+    const years = derivationYears(request.precedent);
+    const thinness = thinnessAt(request.precedent);
 
     const sourceTitle = source.name ?? source.id;
     const name = `${road}: What Follows ${sourceTitle}`;
@@ -741,10 +926,12 @@ export function deriveContinuation(request: DerivationRequest): DerivationResult
         class: 'cultivation',
         description:
             `Written rather than found. ${sourceTitle} ends at ${rankName(sourceCap)}, and ` +
-            `${road} does not. These are the pages that come after, worked out by somebody ` +
-            'who had walked far enough along that road to say where it went next rather than ' +
-            'read it somewhere. They are notes and not a canon: everything in them is ' +
-            'correct and a great deal of it is only legible to the person who wrote it.',
+            `${road} does not. This is the single rung that comes after, worked out by ` +
+            'somebody who had walked far enough along that road to say where it went next ' +
+            'rather than read it somewhere. It goes one step and stops: what lies past it ' +
+            'would have to be written too, against ground thinner than this. They are notes ' +
+            'and not a canon - everything in them is correct and a great deal of it is only ' +
+            'legible to the person who wrote it.',
         mastery: 0,
         qiCost: 0,
         damage: null,
@@ -772,10 +959,17 @@ export function deriveContinuation(request: DerivationRequest): DerivationResult
         years,
         line:
             `${sourceTitle} ends at ${rankName(sourceCap)}. ${road} does not, and this ` +
-            `cultivator has walked it far enough to write what comes after: ` +
-            `${name}, carrying to ${cap === null ? 'the top of the ladder' : rankName(cap)}. ` +
-            `${years} years of work, and it is theirs by construction - nobody had to ` +
-            'have written it for them, because they wrote it.'
+            'cultivator has walked it far enough to write what comes after: ' +
+            `${name}, carrying to ${rankName(cap)} and no further. ` +
+            `${years} years of work` +
+            `${thinness > 0
+                ? `, most of it because almost nothing stands at this height to compose ` +
+                  `against - ${request.precedent.artsAtOrAbove} ` +
+                  `${request.precedent.artsAtOrAbove === 1 ? 'art' : 'arts'} in the whole ` +
+                  'world, and the next rung will be worse'
+                : ', on a road well enough walked that the precedent is there to build on'}` +
+            '. It is theirs by construction - nobody had to have written it for them, ' +
+            'because they wrote it.'
     };
 }
 
