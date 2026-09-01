@@ -74,6 +74,8 @@ import {
     type HerbBiome
 } from '../../data/cultivation/herbs.js';
 import { forStream } from '../../engine/cultivation/rng.js';
+import { untreatedInjuryCount } from '../../engine/cultivation/injuries.js';
+import { LETHAL_UNTREATED_INJURIES } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
 import { RATION_COST_STONES } from './cultivation-manage.js';
 import {
@@ -418,6 +420,18 @@ export async function handleWork(
         // food. And death here was reported nowhere at all.
         hp: after.hp,
         maxHp: after.maxHp,
+        // AND WHAT THE SPAN DID TO THEM.
+        //
+        // A work span runs the ordinary event layer, so a labourer picks up
+        // wounds across years the same way anybody else does - and this path
+        // reported wages, food and health while saying nothing whatsoever
+        // about them. Found by playing: an innkeeper worked three spans across
+        // four years, was told the pay each time, and died of
+        // `untreated_injuries` without one sentence about a wound. Untreated is
+        // the state that kills, nothing closes them on its own, and a player
+        // who is never told cannot decide to have them treated.
+        untreatedInjuries: untreatedInjuryCount(after.injuries),
+        lethalInjuryThreshold: LETHAL_UNTREATED_INJURIES,
         alive: after.alive,
         deathCause: after.deathCause ?? null,
         purse: describePurse(after),

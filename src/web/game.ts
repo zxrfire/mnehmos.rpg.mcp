@@ -5394,7 +5394,12 @@ ${noticed}`;
             const result = await handleLearn({
                 action: 'learn',
                 techniqueId,
-                cultivatorId: cultivator.id
+                cultivatorId: cultivator.id,
+                // A prize out of a sealed place. The book is IN THE ROOM,
+                // which is the whole reason anybody goes into one - so this
+                // path says where it came from and the ownership gate in
+                // `handleLearn` stands aside for it.
+                provenance: 'found_in_place'
             });
             const name = getTechnique(techniqueId)?.name ?? techniqueId;
             if (isGuidingErrorBody(result)) {
@@ -9486,6 +9491,33 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
                 + (hpNow !== null && hpMax !== null && hpNow < hpMax
                     ? ` It is being taken out of you: ${hpNow} of ${hpMax} left.`
                     : '')
+            );
+        }
+
+        // AND THE WOUNDS THE SPAN LEFT BEHIND.
+        //
+        // Work runs the ordinary event layer, so a labourer picks up wounds
+        // across years like anybody else. This branch reported wages, food and
+        // health and said nothing about them at all.
+        //
+        // Found by playing. An innkeeper worked three spans across four years,
+        // was told the pay every time, and died of `untreated_injuries` without
+        // one sentence about a wound. The satiety warning above was written
+        // after the same discovery about hunger; the wounds were the other half
+        // of it and are the faster killer, because untreated is a state that
+        // does not improve and the count that kills is small.
+        const carried = typeof body.untreatedInjuries === 'number'
+            ? body.untreatedInjuries : null;
+        const lethalAt = typeof body.lethalInjuryThreshold === 'number'
+            ? body.lethalInjuryThreshold : null;
+        if (carried !== null && carried > 0) {
+            lines.push(
+                lethalAt !== null && carried >= lethalAt
+                    ? `${carried} untreated wounds, which is the count that kills. `
+                      + 'Nothing about the work will close them.'
+                    : `${carried} untreated wound${carried === 1 ? '' : 's'}`
+                      + `${lethalAt !== null ? ` of the ${lethalAt} that kill` : ''}, `
+                      + 'picked up along the way. They do not close on their own.'
             );
         }
     }
