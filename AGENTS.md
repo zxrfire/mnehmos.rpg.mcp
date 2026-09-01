@@ -568,6 +568,32 @@ is not possible, do not report the delta. Prove correctness a different way inst
 functions returning identical output for every input, or a test suite giving the same
 pass/fail count with and without the change, both of which are immune to a moving tree.
 
+### Pool the sample. Never widen the bar
+
+A threshold on a rare or varied outcome, asserted on too small a sample, reports **the world
+moving as the world breaking** - and then gets widened by whoever happens to be holding the
+good reason at the time. That is how a guard becomes decoration.
+
+This bit three separate files in a single day. A ruins test required four kinds of closed
+ground and got three, on one seed, twice - once after a technique-catalog change and once
+after a ground change, neither of which went anywhere near ruins. A pyramid guard asserted
+that two adjacent bands were ordered, on one seed, and went red because bands of 25 and 30
+traded places by chance. A leverage guard sampled three seeds and concluded a working
+subsystem did nothing, when eight seeds showed it landing.
+
+**Pooling is the fix in every case. Widening is never it.** Run more seeds, pool the counts,
+and judge the claim over a sample big enough to carry it - the bar itself usually turns out
+to be right. The ruins test kept its four; it simply stopped asking one seed to prove it.
+
+The tell that you are about to make this mistake is the sentence *"it is only just under, and
+my change is obviously fine"*. You are the person holding the good reason. Everybody who
+widened one of these was.
+
+And the same arithmetic decides the other direction: **where the counts are enormous, one
+seed is proof.** Three hundred against eighty do not trade places by chance, and a guard on
+those two should fail instantly and unpooled. Sample size is not a global setting; it is a
+property of the claim being made.
+
 ### A single measurement off a shared tree is already somebody else's unfinished work
 
 The lesson above is about the gap BETWEEN two readings, and that framing is too narrow. It
