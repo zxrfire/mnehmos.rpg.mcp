@@ -36,6 +36,7 @@ import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import type { AttemptResult } from '../engine/social-leverage/index.js';
+import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
 import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
@@ -1825,7 +1826,12 @@ export function factsForSiteFace(
  */
 export function factsForSiteListing(
     cultivator: Cultivator,
-    known: ReadonlyArray<{ name: string; kind: 'trial' | 'grave' }>
+    /**
+     * Trial and grave are the authored catalog's two kinds; ground the world
+     * found carries its own character instead - a vault, a compound, a cave -
+     * so this is a string rather than the union it used to be.
+     */
+    known: ReadonlyArray<{ name: string; kind: string }>
 ): EngineFacts {
     if (known.length === 0) {
         return factsForRefusal(
@@ -1849,9 +1855,10 @@ export function factsForSiteListing(
     return {
         headline: `${known.length} you could put a name to.`,
         structure: [
-            `site listing: ${known.length} nameable by ${cultivator.name} `
-            + `(${graves} grave(s), ${known.length - graves} trial(s)). `
-            + 'Filtered by awareness, not by distance - the catalog holds no locations.'
+            `site listing: ${known.length} nameable by ${cultivator.name}, of which `
+            + `${graves} grave(s). Filtered by awareness rather than by distance - the authored `
+            + 'catalog holds no locations. Ground the world found carries its own character as '
+            + 'its kind, and its own structure lines below this one.'
         ],
         lines,
         prose: lines.join('\n\n')
@@ -2191,6 +2198,76 @@ export function factsForAttempt(
             + `days=${result.days}, stonesSpent=${result.stonesSpent}, `
             + `theyKnowWhatYouTried=${result.marks.theyKnowWhatYouTried}, `
             + `reachedTheHouse=${result.marks.reachedTheHouse}.`
+        ]
+    );
+}
+
+/**
+ * Ground that would not have them, and who should go instead.
+ *
+ * The CAP, which is one of three ways the catalog closes ground and the only
+ * one whose whole point is that somebody else must go. Nothing player-facing
+ * ever read it, so a site written to say "this is not for you, send your
+ * junior" had never once said it to anybody.
+ *
+ * THE PROSE IS THE CATALOG'S. `readAdmission` composes `account` out of the
+ * site's own `whatReadsThePerson`, `whyItRefusesPower` and `soWhoGoesInstead` -
+ * three strings written for that place and no other - and this renders it
+ * unchanged. Composing a sentence here from `admits` and a ceiling would give
+ * every capped site in the world the same voice, which is exactly the
+ * difference between this surface and a template.
+ *
+ * It costs the days and nothing else. Being measured at a threshold and found
+ * too large is not an injury: `groundForceOrdinalOf` returns null above the
+ * line for that reason.
+ */
+export function factsForGroundRefused(
+    cultivator: Cultivator,
+    siteName: string,
+    reading: AdmissionReading,
+    days: number
+): EngineFacts {
+    const lines = [
+        `${siteName} would not have ${cultivator.name}.`,
+        reading.account,
+        `${humanDays(days)} spent going and coming back, and nothing else was taken.`
+    ];
+    return observable(
+        `${siteName}: closed, from above.`,
+        lines,
+        lines.join(' '),
+        [
+            `readAdmission: admitted=false, closedBy=above_the_line at ordinal `
+            + `${cultivator.realmOrdinal}. No gate consulted, no force applied, `
+            + `${days} day(s) spent.`
+        ]
+    );
+}
+
+/**
+ * Ground that let them in, and what being at its depth is like.
+ *
+ * The other side of the same read, and it exists so that clearing a floor is
+ * an event rather than silence. `whatIsDownThere` and `whatComesBackForThatPerson`
+ * are written per site; an elder floor in particular says who the errand is FOR,
+ * which is the sentence that makes a senior's trip somebody else's inheritance.
+ */
+export function factsForGroundSurvived(
+    cultivator: Cultivator,
+    siteName: string,
+    reading: AdmissionReading
+): EngineFacts {
+    const lines = [
+        `${siteName} admits ${cultivator.name}, and does not close behind them.`,
+        reading.account
+    ];
+    return observable(
+        `${siteName}: the ground holds.`,
+        lines,
+        lines.join(' '),
+        [
+            `readAdmission: admitted=true, survives=true at ordinal `
+            + `${cultivator.realmOrdinal}. The floor is not what stops them.`
         ]
     );
 }
