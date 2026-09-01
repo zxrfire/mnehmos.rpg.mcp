@@ -56,8 +56,15 @@ import { rankName } from '../cultivation/realms.js';
 // has been running uninterrupted for a very long time and is not something this
 // module gets to reorganise on a fifty-five-events-per-century budget. The far
 // side is `advanceImmortalLayer`, which the driver runs on the same slice.
-import { isBelowTheLid } from './layers.js';
-import { lifespanForOrdinal } from '../cultivation/realms.js';
+import { IMMORTAL_LAYER, isBelowTheLid } from './layers.js';
+import {
+    FALSE_IMMORTAL_ORDINAL,
+    LAST_CROSSING_ORDINAL,
+    TRUE_IMMORTAL_ORDINAL,
+    baseBreakthroughChance,
+    lifespanForOrdinal,
+    realmForOrdinal
+} from '../cultivation/realms.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import {
     appendFact,
@@ -205,6 +212,9 @@ export function applyPressure(
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
         applyFactionEconomy(state);
         born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
+        // The longest project in the world, on its own clock. It will almost
+        // never fire in five hundred years, and that is the point of it.
+        applyLastCrossing(state, year, withinSpan(year * 365 + 200, fromDay, toDay));
     }
 
     return { events, yearsStepped, born };
@@ -727,6 +737,132 @@ function couldKill(killer: NpcRecord, victim: NpcRecord): boolean {
     return killer.cultivation.realmOrdinal >= victim.cultivation.realmOrdinal - CASUAL_KILL_MAX_GAP;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// THE LONGEST PROJECT IN THE WORLD
+//
+// A cultivator at Tribulation Transcendence has a hundred thousand years and
+// is spending twenty to fifty thousand of them on one attempt at the last
+// crossing - twenty only for a prodigy. Five centuries is half a per cent of
+// that. So the top of the ladder should be very nearly STATIC across any
+// horizon a run reaches, and a figure dropping off it should be a named event
+// with a cause somebody could tell you, not attrition.
+//
+// It was attrition. Measured over 500 years, the strongest went 44 to 38, and
+// the two that went were taken by generic pools: an ordinal 41 by
+// `technique_lost` ("went out and did not come back") and an ordinal 38 by
+// `elder_died`. Those events are about ordinary institutional life - a senior
+// retires, somebody wanders off, an art stops being transmitted - and somebody
+// in the middle of the last crossing is not in that category and should not be
+// in those pools.
+//
+// Two things follow, and they are the whole of this block.
+//
+// FIRST, they come out of the AGE pool, and only that one. Dying of age at a
+// quarter of a hundred-thousand-year span is not a thing that happens.
+//
+// They stay in the disappearance and lost-art pools deliberately, because being
+// unaccounted for is the ORDINARY condition of somebody at this height: at 44
+// almost nobody is seen from one century to the next, and `missing` says
+// exactly that - whereabouts unknown, aliveness genuinely unresolved. What had
+// to change for that to be survivable was the INSTRUMENT rather than the event.
+// `worldShape` counted only `alive`, so an ordinary disappearance read as the
+// ceiling dropping. See `EXTANT_STATES` in `driver.ts`.
+//
+// SECOND, they get the project. Nothing advanced a high-ordinal NPC at all -
+// `applyAdvancement` caps everybody at their region's `localCeilingOrdinal`,
+// which is about twenty - so a 44 was a body waiting to die rather than
+// somebody a long way into something. `applyLastCrossing` is that something,
+// and it fires at the rate the attempt actually takes, which means it will
+// almost never fire in five hundred years. That is the point: the event exists
+// so that when the top of the world does change, there is a reason with a name
+// on it.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The realm at which somebody stops being ordinary institutional life. */
+const LAST_PROJECT_REALM = 'tribulation_transcendence';
+
+/** Whether this person is in the middle of the longest project in the world. */
+function isOnTheLastProject(npc: NpcRecord): boolean {
+    return realmForOrdinal(npc.cultivation.realmOrdinal).key === LAST_PROJECT_REALM;
+}
+
+/**
+ * Years one attempt at the last crossing consumes.
+ *
+ * The user's figure, and it is the number the whole timescale rests on: twenty
+ * thousand for a prodigy, fifty for everybody else, out of a hundred thousand
+ * year lifespan. The midpoint is used because the world layer does not model
+ * who is a prodigy; `deriveLife` already spent that distinction at creation.
+ */
+const LAST_CROSSING_YEARS = 35_000;
+
+/**
+ * The attempt, and its three endings.
+ *
+ * Rare to the point of being almost theoretical on a five-century horizon -
+ * about one chance in seventy per figure - which is exactly right. The value of
+ * this pass is not that it fires; it is that when the top of the world changes
+ * there is a named cause rather than a pool.
+ *
+ * The three outcomes are the ones the setting already models:
+ *
+ *   TRUE IMMORTAL   they cross, and leave. `IMMORTAL_LAYER` takes them out of
+ *                   every below-the-Lid pool in the engine, which is what
+ *                   crossing means - the world does not keep them.
+ *   FALSE IMMORTAL  the half-failure `false-immortals.ts` is about. They
+ *                   survive, they are still here, and they are no longer on
+ *                   the ladder. A house has not lost them; it has lost what
+ *                   they were FOR, which is a better story than a headcount.
+ *   DEATH           the tribulation takes them, which is the ordinary result.
+ */
+function applyLastCrossing(
+    state: WorldState,
+    year: number,
+    day: number
+): NpcRecord[] {
+    const out: NpcRecord[] = [];
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        if (npc.status !== 'alive' || !isBelowTheLid(npc)) continue;
+        if (npc.cultivation.realmOrdinal !== LAST_CROSSING_ORDINAL) continue;
+
+        const rng = forStream(state.seed, 'last-crossing', year, npc.id);
+        if (!rng.chance(1 / LAST_CROSSING_YEARS)) continue;
+
+        // The engine's own figure for what the crossing is worth, rather than
+        // one invented here. Everything it does not take is split between the
+        // half-failure and the tribulation, weighted toward the tribulation,
+        // because seven of the eight False Immortals anybody can name are
+        // historical and the graveyard is not enumerable at all.
+        const roll = rng.next();
+        const crossed = baseBreakthroughChance(LAST_CROSSING_ORDINAL);
+        const halfFailed = crossed + (1 - crossed) * 0.35;
+
+        if (roll < crossed) {
+            state.npcs[i] = {
+                ...npc,
+                cultivation: { ...npc.cultivation, realmOrdinal: TRUE_IMMORTAL_ORDINAL },
+                layer: IMMORTAL_LAYER,
+                updatedOnDay: day
+            };
+        } else if (roll < halfFailed) {
+            state.npcs[i] = {
+                ...npc,
+                cultivation: { ...npc.cultivation, realmOrdinal: FALSE_IMMORTAL_ORDINAL },
+                updatedOnDay: day
+            };
+        } else {
+            state.npcs[i] = markDead(
+                npc,
+                day,
+                'Did not survive the last crossing.'
+            );
+        }
+        out.push(state.npcs[i]);
+    }
+    return out;
+}
+
 /** How much of their own realm's span this person has spent, 0..1. */
 function lifeSpent(npc: NpcRecord, day: number): number {
     const span = lifespanForOrdinal(npc.cultivation.realmOrdinal);
@@ -995,7 +1131,11 @@ const TEMPLATES: Template[] = [
         apply(state, day, rng) {
             const seniors = state.npcs.filter(
                 n => n.status === 'alive' && isBelowTheLid(n) &&
-                    n.factionId != null && n.factionRankIndex >= 3
+                    n.factionId != null && n.factionRankIndex >= 3 &&
+                    // Not somebody on the last project. Dying of age at a
+                    // quarter of a hundred thousand years is not a thing that
+                    // happens, and this event is where it was happening.
+                    !isOnTheLastProject(n)
             );
             const npc = pickByMortality(rng, seniors, day);
             if (!npc) return null;

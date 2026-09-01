@@ -26,7 +26,7 @@
 import { describe, it, expect } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
-import { advanceWorldForPlay } from '../../../src/engine/world/driver.js';
+import { advanceWorldForPlay, worldShape } from '../../../src/engine/world/driver.js';
 import { npcsAt, type WorldState } from '../../../src/engine/world/world-state.js';
 
 const YEAR = 365;
@@ -196,9 +196,19 @@ describe('the top of the world survives its own clock', () => {
         return { state, before, after: topOrdinals(state) };
     }
 
+    // Counts everybody the ENGINE knows is out there, not everybody the world
+    // can currently account for. At 44 almost nobody is seen from one century
+    // to the next, so `missing` is the ordinary condition rather than a loss -
+    // and a measure that dropped them reported an entirely correct
+    // disappearance as the ceiling collapsing. See `EXTANT_STATES`.
+    const EXTANT = new Set([
+        'alive', 'missing', 'sealed',
+        'soul_preserved', 'possessing', 'reconstructed'
+    ]);
+
     function topOrdinals(state: WorldState): number[] {
         return state.npcs
-            .filter(n => n.status === 'alive')
+            .filter(n => EXTANT.has(n.status))
             .map(n => n.cultivation.realmOrdinal)
             .sort((a, b) => b - a)
             .slice(0, 6);
@@ -220,7 +230,7 @@ describe('the top of the world survives its own clock', () => {
         // A world with a 32 and nothing above it is not this setting either.
         // The apex tier has to survive as a tier.
         const { before, after } = await soaked();
-        expect(after[0]).toBeGreaterThanOrEqual(before[0] - 6);
+        expect(after[0]).toBeGreaterThanOrEqual(before[0] - 1);
     }, 600_000);
 
     it('still lets the world decline, because decline is correct', async () => {
@@ -263,4 +273,58 @@ describe('the top of the world survives its own clock', () => {
             ).toBeGreaterThanOrEqual(npc.cultivation.realmOrdinal - 3);
         }
     }, 600_000);
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// MISSING IS NOT GONE
+//
+// At the top of the ladder almost nobody is seen from one century to the next,
+// so being unaccounted for is the ordinary condition of a Tribulation
+// Transcendence figure rather than a loss. `ExistenceState` already said so -
+// "whereabouts unknown; aliveness genuinely unresolved" - and the measure did
+// not read it, so a perfectly ordinary disappearance reported as the world's
+// ceiling collapsing.
+//
+// The engine is allowed to know things the world cannot. That is the same
+// licence `afterCrossing` takes when it records `still_above` about somebody
+// no house alive can confirm.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the world can lose sight of somebody without losing them', () => {
+    it('keeps a missing figure in the ceiling and out of the headcount', async () => {
+        const catalog = await loadCultivationCatalog();
+        const { state } = seedWorld({ seed: 'missing-guard', catalog });
+        const top = [...state.npcs].sort(
+            (a, b) => b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
+        )[0];
+        const ceiling = top.cultivation.realmOrdinal;
+
+        const before = worldShape(state);
+        expect(before.strongestOrdinal).toBe(ceiling);
+
+        // Exactly the thing that used to read as collapse.
+        const at = state.npcs.findIndex(n => n.id === top.id);
+        state.npcs[at] = { ...state.npcs[at], status: 'missing' };
+        const after = worldShape(state);
+
+        expect(after.strongestOrdinal, 'the ceiling is what the engine knows')
+            .toBe(ceiling);
+        expect(after.livingNpcs, 'the headcount is what the world can see')
+            .toBe(before.livingNpcs - 1);
+        expect(after.unaccountedFor).toBe(before.unaccountedFor + 1);
+    });
+
+    it('does drop the ceiling when somebody is established dead', async () => {
+        // The other half: this must still be able to fall, or it is not a
+        // measure of anything.
+        const catalog = await loadCultivationCatalog();
+        const { state } = seedWorld({ seed: 'missing-guard', catalog });
+        const top = [...state.npcs].sort(
+            (a, b) => b.cultivation.realmOrdinal - a.cultivation.realmOrdinal
+        )[0];
+        const at = state.npcs.findIndex(n => n.id === top.id);
+        state.npcs[at] = { ...state.npcs[at], status: 'physically_dead' };
+        expect(worldShape(state).strongestOrdinal)
+            .toBeLessThan(top.cultivation.realmOrdinal);
+    });
 });
