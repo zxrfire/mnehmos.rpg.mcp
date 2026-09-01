@@ -1481,6 +1481,29 @@ export function applyManualCopying(
         const people = members.get(faction.id);
         if (!people) continue;
 
+        // How many people in this house could be taught each art and are not
+        // holding it, counted ONCE per art rather than once per master of it.
+        // Two masters of the same book in one hall would otherwise each walk
+        // the whole membership, which is quadratic in a house's size for as
+        // long as the world runs.
+        // The writer is never in the count: they hold the book, which is what
+        // `canReproduce` required of them, so the same number is correct for
+        // every master of it and one walk answers all of them.
+        const waitingFor = new Map<string, number>();
+        const shortageOf = (techniqueId: string): number => {
+            const cached = waitingFor.get(techniqueId);
+            if (cached !== undefined) return cached;
+            const element = manualElementOf(techniqueId);
+            let waiting = 0;
+            for (const p of people) {
+                if (p.cultivation.techniqueIds.includes(techniqueId)) continue;
+                if (!suitsRoot(p.cultivation.spiritRoot, element)) continue;
+                waiting++;
+            }
+            waitingFor.set(techniqueId, waiting);
+            return waiting;
+        };
+
         for (const master of people) {
             for (const techniqueId of master.cultivation.techniqueIds) {
                 if (!canReproduce(master, techniqueId)) continue;
@@ -1494,14 +1517,7 @@ export function applyManualCopying(
                 // shortage and a copy already on the shelf, no copy written - a
                 // master does not spend a decade on a book nobody is waiting
                 // for.
-                const element = manualElementOf(techniqueId);
-                let waiting = 0;
-                for (const p of people) {
-                    if (p.id === master.id) continue;
-                    if (p.cultivation.techniqueIds.includes(techniqueId)) continue;
-                    if (!suitsRoot(p.cultivation.spiritRoot, element)) continue;
-                    waiting++;
-                }
+                const waiting = shortageOf(techniqueId);
                 if (have > 0 && (waiting === 0 || have >= Math.min(waiting, MOST_COPIES_WORTH_KEEPING))) {
                     continue;
                 }
