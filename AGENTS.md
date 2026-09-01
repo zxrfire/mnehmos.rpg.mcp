@@ -517,6 +517,77 @@ closed run, and using `factionId` and `techniqueIds` where the player row carrie
 and `knownTechniques`. Before reporting engine behaviour as a defect, check that the thing
 you are driving it with is configured the way the real caller configures it.
 
+### A number taken across a gap is worthless while other agents are committing
+
+Two measurements of the same thing, minutes apart, are not a before-and-after when four
+agents are landing catalog changes between them.
+
+Measured: a world advanced to the same horizon on the same seed gave 506 alive, then 513.
+That reads exactly like a determinism bug, and it is not - the simulation is deterministic
+within a process (three runs in one command gave identical results). What moved was the
+catalog underneath it. The same trap caught a timing comparison in the same hour.
+
+So **the only trustworthy comparison is back-to-back in a single command**: save the file,
+`git checkout --` the one file, measure, restore, measure, all in one invocation. If that
+is not possible, do not report the delta. Prove correctness a different way instead - two
+functions returning identical output for every input, or a test suite giving the same
+pass/fail count with and without the change, both of which are immune to a moving tree.
+
+### An aggregate can be measuring the seeder rather than the thing you changed
+
+A band histogram said 123 cultivators above Core Formation with the dao gate off and 130
+with it on - reassuring, and meaningless. The upper bands were overwhelmingly people the
+SEEDER placed, and only 1 NPC in 32 alive from seeding ever climbs past ordinal 21. The
+table was measuring world creation.
+
+Its sibling: a column named `arrivedAt` counted people *not present at world creation*,
+which after ten thousand years is nearly everyone alive. It was reported as a turnover
+measure and read 82-94% before the change it was offered as evidence for.
+
+Two habits fix both. **Split what you are counting from where it came from** - seeded
+versus arrived, and for a band, inflow and outflow and volume separately rather than one
+share. And **run the control arm**: the same probe with your change switched off. That is
+one edit and one command, and it is what established that the dao gate is not what limits
+this world's apex and never was.
+
+### A fallback written in ordinary English is invisible
+
+`summariseToolBody` turns a tool result into prose through branches keyed on what the
+result carries. A verb whose shape has no branch does not fail - it falls through to
+"It is done. Nothing about it drew attention.", which reads like a sentence and says
+nothing.
+
+Three verbs sat there in one session. Combat reported "both parties are worse than they
+were" while omitting that it took two thirds of the HP and left an untreated wound. Work
+reported wages across four years while wounds accumulated silently. A petition's whole
+journey - how far it climbed, every stop, the names learned carrying it - came back as
+"It is done."
+
+All three were found by playing, because nothing else notices. A test asserting "the verb
+returned prose" passes on the shrug. `scripts/probe-does-every-verb-say-what-happened.ts`
+is the cheap version of a person reading the answer and asking "and then what happened?" -
+run it after adding a verb.
+
+### Escapes die on the way through a heredoc
+
+Writing a file with `python - <<'PYEOF'` and a regex in it: `\\b` reaches Python as `\b`,
+Python's string escape turns it into a BACKSPACE (0x08), and the file gets a control
+character where the word boundary should be. The regex then reads `/\x08(?:anyway)\x08/`,
+matches nothing, and looks perfectly correct in the editor, in `tsc`, in `grep` and in code
+review.
+
+This happened three times in one session and cost hours on the third, because every
+instinct says the problem is elsewhere - the value is right, the function is right, and the
+match simply fails.
+
+Use a raw string (`r'''...'''`) for anything containing a backslash, or write the file with
+the Write tool instead. And when a regex that is obviously correct does not match, check
+the bytes before checking anything else:
+
+```bash
+grep -rlP '[\x08\x0b\x0c]' src/ scripts/ tests/
+```
+
 ### The register is a reflection, not a source
 
 The standing register must be readable off the world's own state. Where it says a house
