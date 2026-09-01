@@ -43,6 +43,7 @@ import {
     homecoming,
     type Absence
 } from '../src/engine/world/when-somebody-does-not-come-back.js';
+import { tieSupply } from '../src/engine/world/the-ties-an-ordinary-life-produces.js';
 import { KnowledgeLedger, type KnowledgeRecord } from '../src/engine/social/knowledge.js';
 import { stageOfRecord } from '../src/engine/social/discovery.js';
 import { worldShape } from '../src/engine/world/driver.js';
@@ -94,10 +95,20 @@ function seclude(base: WorldState, absenteeId: string, absenteeName: string, yea
     const npc = state.npcs.find(n => n.id === absenteeId)!;
 
     // Who saw him go, and who he told. Bound to the world rather than chosen:
-    // the two people at the same place with the strongest ties to him, one of
-    // whom is the worst account he has - so an enemy who happens to have been
-    // standing there ends up the only correct record in the world, which is
-    // exactly the situation the design wants and is not written for.
+    // the people at the same place who hold a tie to him, one of whom is the
+    // worst account he has - so an enemy who happens to have been standing
+    // there ends up the only correct record in the world, which is exactly the
+    // situation the design wants and is not written for.
+    //
+    // THE SIZE OF THE `told` LIST WAS MEASURING THE HARNESS, NOT THE WORLD.
+    // This used to tell the two people with the highest standing, which was
+    // fine while the world contained six friendships and nothing else - the
+    // person had no third tie to tell. Now that households and teaching lines
+    // exist, a cap of two silently held `waiting` at two however large the
+    // absentee's household was, and every consequence downstream is gated on
+    // `waiting`. A cultivator sitting down for forty years tells their
+    // HOUSEHOLD, so the list is everybody positively tied to them who is
+    // standing in the same place.
     const near = state.npcs
         .filter(n => n.id !== npc.id && isActing(n.status) && n.locationId === npc.locationId)
         .filter(n => n.relationships.some(r => r.targetId === npc.id))
@@ -116,8 +127,8 @@ function seclude(base: WorldState, absenteeId: string, absenteeName: string, yea
         locationId: npc.locationId,
         factionId: npc.factionId,
         factionRankIndex: npc.factionRankIndex,
-        // He told the two people closest to him. One enemy watched him go in.
-        toldIds: friends.slice(0, 2).map(n => n.id),
+        // He told everybody at home. One enemy watched him go in.
+        toldIds: friends.map(n => n.id),
         witnessIds: foes.slice(0, 1).map(n => n.id),
         truth: `${npc.name} sat down to cultivate and did not die.`
     });
@@ -154,7 +165,12 @@ function report(run: Run): void {
     const stopped = back.ties.filter(t => t.outcome === 'stopped_waiting');
     const waited = run.absence.ties.filter(t => t.waiting).length;
 
+    const kinds = new Map<string, number>();
+    for (const t of run.absence.ties.filter(t => t.waiting)) {
+        kinds.set(t.kind, (kinds.get(t.kind) ?? 0) + 1);
+    }
     line(`  ties at departure   ${back.ties.length}  (${waited} of them expecting a return)`);
+    line(`  what they are       ${[...kinds].sort().map(([k, n]) => `${k} ${n}`).join(', ') || 'nothing'}`);
     line(`  died or vanished    ${dead.length}`);
     line(`  died still waiting  ${back.diedWaiting.length}${back.diedWaiting.length ? '  ' + back.diedWaiting.join(', ') : ''}`);
     line(`  stopped waiting     ${stopped.length}`);
@@ -196,6 +212,83 @@ function report(run: Run): void {
     line(`    ${truth ? truth.statement : '(none)'}`);
     const wrong = claims.filter(c => run.ledger.isGroundless(c.id));
     line(`    ${wrong.length} of ${claims.length} accounts have nothing behind them at all.`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHO TEACHES YOU, AND WHAT THAT IS WORTH
+//
+// The claim being measured: the quality of instruction does not track the
+// teacher's RANK. It tracks the height of the house, at every rank. A child
+// admitted at rank 0 to an apex sect is taught by that house's outer disciples,
+// and an apex's outer disciples are more formidable than a small sect's elders.
+//
+// `the-ties-an-ordinary-life-produces.ts` never branches on how good a house is.
+// It picks the LOWEST-ranked person in the house who can actually carry this
+// student, and that one rule produces both textures - so this table is the
+// evidence that it does, not the place it is arranged.
+//
+// It is also the return on a favour. A favour skips an admission bar and buys
+// no rank at all; what it buys is the ordinal column below.
+// ─────────────────────────────────────────────────────────────────────────
+
+function bandOf(power: number): string {
+    return power >= 33 ? 'apex   (>= 33)'
+        : power >= 25 ? 'court  (25-32)'
+            : power >= 17 ? 'sect   (17-24)'
+                : 'small  (< 17)';
+}
+
+function teachingTextures(state: WorldState): void {
+    const at = new Map(state.npcs.map(n => [n.id, n]));
+    const lines = new Map<string, { n: number; rank: number; ord: number; gap: number; gone: number }>();
+    const connected = new Map<string, { n: number; ties: number }>();
+    const alive = new Set(state.npcs.filter(n => isActing(n.status)).map(n => n.id));
+
+    for (const npc of state.npcs) {
+        if (!isActing(npc.status) || !npc.factionId) continue;
+        const house = state.factions.find(f => f.id === npc.factionId);
+        const band = bandOf(Number(house?.resources.power_ordinal ?? 0));
+
+        const c = connected.get(band) ?? { n: 0, ties: 0 };
+        c.n++;
+        c.ties += npc.relationships.filter(r => alive.has(r.targetId)).length;
+        connected.set(band, c);
+
+        for (const rel of npc.relationships) {
+            if (rel.kind !== 'master') continue;
+            const teacher = at.get(rel.targetId);
+            if (!teacher) continue;
+            const b = lines.get(band) ?? { n: 0, rank: 0, ord: 0, gap: 0, gone: 0 };
+            b.n++;
+            b.rank += teacher.factionRankIndex;
+            b.ord += teacher.cultivation.realmOrdinal;
+            b.gap += teacher.factionRankIndex - npc.factionRankIndex;
+            if (!isActing(teacher.status)) b.gone++;
+            lines.set(band, b);
+        }
+    }
+
+    if (lines.size === 0) return;
+    line();
+    line('    who is standing in front of a student, by how strong their house is');
+    line('      house             lines   teacher rank   teacher ordinal   rank gap   teacher gone');
+    line('      ---------------   -----   ------------   ---------------   --------   ------------');
+    for (const [band, b] of [...lines].sort()) {
+        line(
+            `      ${band.padEnd(15)}   ${String(b.n).padStart(5)}   ` +
+            `${(b.rank / b.n).toFixed(2).padStart(12)}   ${(b.ord / b.n).toFixed(1).padStart(15)}   ` +
+            `${(b.gap / b.n).toFixed(2).padStart(8)}   ${String(b.gone).padStart(12)}`
+        );
+    }
+    line('    A near-flat rank column beside a steep ordinal column IS the finding: the');
+    line('    teacher is a near-peer everywhere, and what changes with the house is who');
+    line('    that near-peer is. "Teacher gone" is the other half - a teacher who is still');
+    line('    climbing gets promoted, posted or dies, and nothing replaces them.');
+    line();
+    line('    living ties per head, by the same bands');
+    for (const [band, c] of [...connected].sort()) {
+        line(`      ${band.padEnd(15)}   members ${String(c.n).padStart(4)}   ${(c.ties / c.n).toFixed(2)} per head`);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -304,46 +397,94 @@ async function main(): Promise<void> {
     }
 
     // ── SUPPLY ───────────────────────────────────────────────────────────
+    //
+    // WHAT THIS SECTION USED TO SAY, AND WHY IT NO LONGER SAYS IT.
+    //
+    // Until `the-ties-an-ordinary-life-produces.ts` existed this block reported
+    // a shortage rather than a supply, and it was right to. Its exact words
+    // were: "73 ties among 498 living people ... 6 ties in the whole world are
+    // at or above the standing the engine calls a friendship, and none of them
+    // are households or teaching lines - the kinds are only ally / rival /
+    // enemy / acquaintance. So there is nobody for a seclusion to cost you, and
+    // that is a gap in the WORLD rather than in this pass." Every duration run
+    // above it reported `0 of 4 ties expecting a return`, so the consequences
+    // were correct and inert.
+    //
+    // It also said, correctly, that lowering the waiting bar until the number
+    // moved would have made a shortage of relationships look like a working
+    // mechanic. The bar was not lowered. The world was given people.
     rule('SUPPLY - does this world contain anybody who would wait for you?');
-    line('  The runs above show almost nothing happening to the ties, and the reason is');
-    line('  not the absence machinery. It is that the world has barely any positive ties');
-    line('  to act on. Every tie held by a living NPC, by kind and by band:');
+    line('  Every tie held by a living person, at two distances from the seeding.');
+    line('  A LIVE tie is one pointing at somebody who is still in the world; the row');
+    line('  count is higher because a dead master is still a master and the record is');
+    line('  deliberately kept. Only the live ones are people who would notice.');
 
-    const kinds = new Map<string, number>();
-    const bands = new Map<string, number>();
-    let ties = 0;
-    for (const npc of base.npcs) {
-        if (!isActing(npc.status)) continue;
-        for (const rel of npc.relationships) {
-            ties++;
-            kinds.set(rel.kind, (kinds.get(rel.kind) ?? 0) + 1);
-            const band =
-                rel.standing >= 0.8 ? '>= 0.8  defining'
-                : rel.standing >= FRIENDSHIP_STANDING ? '0.4 .. 0.8  a friendship'
-                : rel.standing > 0 ? '0 .. 0.4  civil'
-                : rel.standing > -FRIENDSHIP_STANDING ? '-0.4 .. 0  cool'
-                : '<= -0.4  an account';
-            bands.set(band, (bands.get(band) ?? 0) + 1);
+    const marks: { years: number; state: WorldState }[] = [
+        { years: WARMUP_YEARS, state: base },
+        { years: 500, state: advanceWorldYears(cloneWorld(base), 500 - WARMUP_YEARS).state }
+    ];
+
+    for (const mark of marks) {
+        const supply = tieSupply(mark.state, FRIENDSHIP_STANDING);
+        const bands = new Map<string, number>();
+        for (const npc of mark.state.npcs) {
+            if (!isActing(npc.status)) continue;
+            for (const rel of npc.relationships) {
+                const band =
+                    rel.standing >= 0.8 ? '>= 0.8  defining'
+                    : rel.standing >= FRIENDSHIP_STANDING ? '0.4 .. 0.8  a friendship'
+                    : rel.standing > 0 ? '0 .. 0.4  civil'
+                    : rel.standing > -FRIENDSHIP_STANDING ? '-0.4 .. 0  cool'
+                    : '<= -0.4  an account';
+                bands.set(band, (bands.get(band) ?? 0) + 1);
+            }
+        }
+        sub(`year ${mark.years}`);
+        line(`    ${supply.living} living people`);
+        line(`    ${supply.liveTies} live ties (${supply.perHead} per head), ${supply.ties} rows in total`);
+        for (const [k, n] of Object.entries(supply.byKind).sort((a, b) => b[1] - a[1])) {
+            line(`      ${k.padEnd(14)} ${String(n).padStart(4)}`);
+        }
+        line();
+        for (const [b, n] of [...bands].sort((a, b) => b[1] - a[1])) {
+            line(`      ${b.padEnd(26)} ${String(n).padStart(4)}`);
+        }
+        line();
+        line(`    ${supply.withSomebody} people hold a living tie at or above the friendship standing.`);
+        line(`    ${supply.withNobody} hold none at all - which is a state this world is supposed`);
+        line('    to be able to put somebody in, and is not a failure of supply.');
+        teachingTextures(mark.state);
+
+        // THE NUMBER THAT WAS ZERO.
+        //
+        // The whole point of the section. Every run against a seeded world used
+        // to report `0 of N ties expecting a return`, so nothing downstream
+        // could fire however correct it was.
+        const who = mostConnected(mark.state);
+        line();
+        line(`    what an absence costs the world's most-connected person (${who?.npc.name ?? 'nobody'})`);
+        line('      years   ties   waiting   stopped   died waiting   still waiting   new household   written off');
+        line('      -----   ----   -------   -------   ------------   -------------   -------------   -----------');
+        if (!who) {
+            line('      nobody in this world holds an incoming tie.');
+        } else {
+            for (const years of DURATIONS) {
+                const run = seclude(mark.state, who.npc.id, who.npc.name, years);
+                const back = homecoming(run.state, run.absence, run.state.currentDay);
+                const settled = (k: string) =>
+                    run.absence.ties.filter(t => t.settledAs === k).length;
+                line(
+                    `      ${String(years).padStart(5)}   ${String(back.ties.length).padStart(4)}   ` +
+                    `${String(run.absence.ties.filter(t => t.waiting).length).padStart(7)}   ` +
+                    `${String(settled('stopped_waiting')).padStart(7)}   ` +
+                    `${String(back.diedWaiting.length).padStart(12)}   ` +
+                    `${String(back.stillWaiting.length).padStart(13)}   ` +
+                    `${String(settled('took_another_household')).padStart(13)}   ` +
+                    `${(back.writtenOffInYear === null ? 'no' : `y${back.writtenOffInYear}`).padStart(11)}`
+                );
+            }
         }
     }
-    line();
-    line(`  ${ties} ties among ${shape.livingNpcs} living people, after ${WARMUP_YEARS} years.`);
-    for (const [k, n] of [...kinds].sort((a, b) => b[1] - a[1])) {
-        line(`    ${k.padEnd(14)} ${String(n).padStart(4)}`);
-    }
-    line();
-    for (const [b, n] of [...bands].sort((a, b) => b[1] - a[1])) {
-        line(`    ${b.padEnd(26)} ${String(n).padStart(4)}`);
-    }
-    const waitable = [...bands].filter(([b]) => b.startsWith('>=') || b.startsWith('0.4'))
-        .reduce((s, [, n]) => s + n, 0);
-    line();
-    line(`  ${waitable} ties in the whole world are at or above the standing the engine calls a`);
-    line('  friendship, and none of them are households or teaching lines - the kinds are');
-    line('  only ally / rival / enemy / acquaintance. So there is nobody for a seclusion to');
-    line('  cost you, and that is a gap in the WORLD rather than in this pass. Written down');
-    line('  here rather than tuned around: lowering the bar until the number moved would');
-    line('  have made a shortage of relationships look like a working mechanic.');
 
     // ── THE CONTROLLED TABLE ─────────────────────────────────────────────
     rule('DURATION - the same four people, sixty seeds, four lengths of absence');
@@ -378,6 +519,17 @@ async function main(): Promise<void> {
     line('  The old number needs no measuring: with that condition a positive inherited');
     line('  tie could not be written at all, so it was structurally zero. What the');
     line('  symmetric bar produces, over five centuries on three seeds:');
+
+    line();
+    line('  READ THE RATIO WITH CARE. These three counters walk every NPC record the');
+    line('  world has ever held, living and dead, so they are cumulative over five');
+    line('  centuries rather than a snapshot. Friendships now outnumber grudges by');
+    line('  about seventy to one, and that is not the bar drifting - it is that the');
+    line('  world finally contains households, and a household is a positive tie that');
+    line('  almost everybody has while a blood feud is a thing that happens to a few.');
+    line('  The snapshot figures are in the SUPPLY section above, where the live-tie');
+    line('  count per head is flat at about 4 across the same span.');
+    line();
 
     for (const seed of ['drift-a', 'drift-b', 'drift-c']) {
         let state = seedWorld({ seed, catalog }).state;

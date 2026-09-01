@@ -986,16 +986,144 @@ Four rules bind it:
   and household and teaching kinds pass down as `ally`, because an heir did not marry
   their parent's spouse - what descends is the obligation. `worldShape` counts the two
   sides separately so the asymmetry is visible if it ever returns.
-- **The world has almost nobody to lose.** Measured on a seeded world after 120 years:
-  73 ties among 498 living people, of which 33 are enemies, 19 rivals, and exactly **6**
-  at or above the standing the engine calls a friendship - with no households and no
-  teaching lines anywhere, because the only kinds the world produces are
-  `ally / rival / enemy / acquaintance`. So a seclusion in the world as it currently
-  stands has very little to cost, and that is a gap in the **world** rather than in this
-  pass. It is written down here rather than tuned around: lowering the waiting bar until
-  the number moved would have made a shortage of relationships look like a working
-  mechanic. `scripts/audit-absence.ts` reports both the seeded case and a controlled cast,
-  and the controlled table is the one that measures the mechanism.
+- **The world had almost nobody to lose, and now it has.** Measured on a seeded world
+  after 120 years: 73 ties among 498 living people, of which 33 were enemies, 19 rivals,
+  and exactly **6** at or above the standing the engine calls a friendship - with no
+  households and no teaching lines anywhere, because the only kinds the world produced
+  were `ally / rival / enemy / acquaintance`. Every duration run reported `0 of 4 ties
+  expecting a return`, so the whole pass was correct and inert. It was written down rather
+  than tuned around: lowering the waiting bar until the number moved would have made a
+  shortage of relationships look like a working mechanic. The bar was not lowered; the
+  supply was built, and it is the next section. The same world now holds about **4 live
+  ties per head**, flat across five centuries, and the most-connected person has **nine**
+  people expecting them back. `scripts/audit-absence.ts` reports the seeded case at 120
+  and 500 years alongside the controlled cast, and the controlled table is still the one
+  that measures the mechanism rather than the supply.
+
+---
+
+## The ties an ordinary life produces
+
+`the-ties-an-ordinary-life-produces.ts`. The supply side of the section above, and the
+answer to the finding in it. The rule the whole file holds:
+
+> **Nothing here is authored between two named people.** Every tie is a by-product of
+> something the world was already doing and already had state for.
+
+| Source | What it was already doing | The tie it never wrote |
+|---|---|---|
+| Births | `applyDemography` picks a living parent and writes a lineage edge | `parent` / `child` / `kin`, and the second parent when there is a household |
+| Households | Two unattached adults standing in the same place | `spouse` - the only tie above `DEFINING_STANDING`, and the only one an absence can replace |
+| Teaching | `manuals.ts` carries somebody over a gap in a shelf via "somebody in the house who holds it" | `master` / `disciple` - the same person, named |
+| Service | People at the same rank in the same house, year after year | `acquaintance` deepening slowly to `ally`, capped below the line at which anybody waits a lifetime |
+| Promotion | `assessPromotions` returns everybody it could not raise, and why | `rival` on the person who took the seat, for `outranked` only |
+
+Births write theirs inside `applyDemography`, which has the parent in hand. The other four
+run once a year off `applyOrdinaryLifeTies`.
+
+### Who teaches you is what a house's name actually buys
+
+The teacher is **the lowest-ranked person in the house who can actually carry this
+student**, and that single rule - with no branch anywhere on how good the house is -
+produces two completely different social textures.
+
+A child admitted at rank 0 to an apex sect is not taught by an elder. They are taught by
+that house's outer disciples, and an apex's outer disciples are formidable people because
+`rankRealmBand` prices a rank against what the house can produce. The search stops one rung
+up and the tie is near-peer. A farmer's child at a small sect is taught by its elders,
+because a shallow shelf (`admissionOffer` forces `a_teacher` at one book) puts a high
+`requiredOrdinal` on the only thing the house holds and nobody below the elders meets it.
+The search climbs, and the tie is deep and vertical.
+
+Measured at 120 years, and this table is the evidence rather than the arrangement:
+
+```text
+  house             lines   teacher rank   teacher ordinal   rank gap   teacher gone
+  apex   (>= 33)       20           2.85              19.0       0.90              8
+  court  (25-32)       45           2.38              14.4       0.69             13
+  sect   (17-24)       69           2.06               3.9       1.07             49
+  small  (< 17)        15           1.00               2.3       0.20             10
+```
+
+**A near-flat rank column beside a steep ordinal column is the finding.** The teacher is a
+near-peer everywhere; what changes with the house is who that near-peer is. Instruction
+from the apex's rank-2 outer disciple stands at ordinal 19; instruction from the small
+sect's rank-1 elder stands at 2.3.
+
+Two things follow, and both are consequences of that table rather than rules of their own:
+
+- **A favour buys the teachers, not the rank.** A favour high enough to skip an admission
+  bar can place somebody at the Frostmirror Court, which admits at Foundation
+  Establishment and would otherwise refuse them - and they still enter at the bottom. What
+  the favour buys is the ordinal column. The Azure Cloud Pavilion is the exception and
+  should stay one: its bar is already 0 and it refuses nobody, so a favour is worthless
+  there and a child arrives on exactly the terms a farmer's child does, with the same
+  formidable teachers.
+- **Each tier's floor is stocked from the tier below's ceiling.** An apex's outer
+  disciples are substantially people who were the chosen at a court, taken upward -
+  `gatherings.ts` already moves a competition winner into the host house at rank 0 with
+  the `chosen` tag stripped, and because relationships live on the person's own record
+  they arrive still holding their ties to the house they left. The claim is about
+  *proportion*, not composition: most people at the bottom of an apex walked in the gate.
+  **Measured, this does not currently show up in the connectedness figures** - ties per
+  head at 120 years run apex 3.12, court 4.24, sect 5.02, small 4.92, so the apex is the
+  *least* connected band, because its members are largely catalog figures seeded at a seat
+  with no local household. Selection upward fires about five times per fifteen hundred
+  world-years, which is far too rarely to shape anything. The mechanism is real and the
+  effect is not yet measurable.
+
+### Four bounds, because inflation is worse than shortage
+
+A world where everybody has twenty friends is worse than one with six.
+
+- A household stops at `SIBLINGS_PER_HOUSEHOLD` children, read off the parent's own
+  relationship rows. Unbounded, one long-lived cultivator became the parent of forty.
+- A teacher carries `STUDENTS_AT_ONCE`, counted against students still alive and still in
+  the house. `members.ts` gives every teaching figure three limits and the third - what a
+  straight answer costs them - is the one that binds.
+- The marriage and service rolls are per-year chances, not sweeps, and service deepens an
+  existing tie before opening a new one.
+- **A student is paired once.** When the teacher is promoted, posted or dies, nothing
+  replaces them - 49 of 69 sect-band students at 120 years have a teacher who is gone.
+  Being abandoned by the person who was teaching you is an outcome, not a bug, and it is
+  part of why some people end up with nobody.
+
+At 120 years the result is 4.13 live ties per head with 19 of 498 people holding no living
+tie above the friendship standing; at 500 years, 4.04 per head and 22 of 503. Flat.
+
+### Two defects this exposed, both invisible until there was something to lose
+
+- **`settleNpcDeath` overwrote the heir's own relationships.** `upsertRelationship`
+  replaces `kind` and `standing`, and the primary heir is normally a child of the
+  deceased - so the deceased's other children are the heir's siblings and the deceased's
+  spouse is the heir's other parent, and every one of those rows landed on a tie the heir
+  already held, converted it to `ally` and thinned it by fifteen percent. A son inherited
+  his own mother as an acquaintance of his father's. It also compounded: 4,691 ties among
+  498 living people, climbing every generation. An account is now inherited only where the
+  heir has no view of their own, which is the honest reading - you inherit the strangers
+  who now have a claim on you.
+- **Founding produced only enmity, so the alliance graph decayed to nothing.** A splinter
+  got two edges at `-0.5` and nothing in the yearly pass ever created a positive one, so
+  the graph could only lose partners to dissolution. Over five thousand years allied pairs
+  went 4, 3, 1, 1, 0, 0, 0 while houses churned healthily throughout. Gatherings found the
+  same hole from the other side - 13 of 15 alliance edges had a dissolved partner, its
+  circles ran 11 down to 1 - and a circle needs two houses that can stand each other, so
+  the institutional shortage was producing the personal one. A schism now also writes
+  `SYMPATHY_AT_A_SCHISM` between the splinter and everybody the parent has wronged
+  (`rivalsOf`), deliberately just under `ALLIED_STANDING`: being glad somebody embarrassed
+  your rival is the beginning of an alliance, not one.
+
+### Cost
+
+Ties are the classic O(people-squared) trap and nothing here compares two arbitrary
+people. Each pass does bounded work per house or per drawn person off **one** walk of the
+roster - the `Roster` is built once a year by `applyOrdinaryLifeTies` and threaded
+through. That is not a precaution: four passes each taking their own walk of `state.npcs`
+(which holds the dead and is four thousand records deep by year 500 behind five hundred
+living people) turned `audit-gatherings.ts`'s cost row from a flat 0.4-0.5 seconds per
+hundred simulated years into 0.5 rising to 0.7 across five centuries. A rising row is the
+exact thing that column exists to catch. With the shared walk it is flat again and matches
+the figure from before any of this existed.
 
 ---
 
@@ -1015,6 +1143,9 @@ world-state.ts   the authoritative store; plain serialisable data, pure mutation
 time.ts          advanceTime: what fell due, what was running, what was missed
 manuals.ts       who holds a book, and who a house has decided is worth its top shelf
 gatherings.ts    the chosen of allied houses meet; meetings, bouts, rankings, sites
+the-ties-an-ordinary-life-produces.ts
+                 households, teaching lines, shared service and being passed
+                 over - the supply of people who would notice you were gone
 when-somebody-does-not-come-back.ts
                  an absence as a dated object; who stops waiting, who writes you
                  off, and the incompatible accounts that survive it

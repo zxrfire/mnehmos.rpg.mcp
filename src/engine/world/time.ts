@@ -735,11 +735,38 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
             // same number with the sign flipped and they are imported rather
             // than retyped, because a threshold that exists in two places has
             // already started to drift.
+            //
+            // AND ONLY WHERE THE HEIR HAS NO VIEW OF THEIR OWN.
+            //
+            // `upsertRelationship` REPLACES `kind` and `standing`, so an
+            // unguarded loop does not add an inherited account, it overwrites
+            // whatever the heir already thought. The primary heir is normally a
+            // child of the deceased, which means the deceased's other children
+            // are the heir's siblings and the deceased's spouse is the heir's
+            // other parent - so every one of those rows landed on a tie the heir
+            // already held, converted it to `ally` via `inheritedKind`, and
+            // thinned it by fifteen percent. A son inherited his own mother as
+            // an acquaintance of his father's.
+            //
+            // It compounded, too. Each heir took on the whole of the previous
+            // holder's address book, then handed the union of both to theirs.
+            // Measured the moment households existed to inherit: 4,691 ties
+            // among 498 living people, 1,916 of them carrying an inherited
+            // account, and the number kept climbing with every generation.
+            // Nothing had ever shown it because until now there were no positive
+            // ties in the world to inherit - the asymmetry this loop was fixed
+            // for was hiding a second defect underneath it.
+            //
+            // What is inherited is therefore only what the heir did NOT already
+            // have a view about, which is also the honest reading: you do not
+            // inherit a relationship with somebody you already know. You inherit
+            // the strangers who now have a claim on you.
             for (const account of deceased.relationships) {
                 if (account.standing > GRUDGE_STANDING && account.standing < FRIENDSHIP_STANDING) {
                     continue;
                 }
                 if (account.targetId === primary.id) continue;
+                if (state.npcs[at].relationships.some(r => r.targetId === account.targetId)) continue;
                 state.npcs[at] = upsertRelationship(state.npcs[at], {
                     targetId: account.targetId,
                     targetName: account.targetName,
