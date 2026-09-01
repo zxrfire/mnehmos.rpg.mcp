@@ -279,12 +279,14 @@ import {
     recordEncounters,
     refuseDuty,
     fitOf,
+    seekerFor,
     sectBoardFor,
     writeObligation,
     type DatabaseHandle,
     withEncounterDeltas,
     type DutyLedgerInput
 } from './encounters.js';
+import { assessAcquisition, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type {
     ArrivableFact,
     DutyCandidate,
@@ -351,6 +353,8 @@ import {
     sendAcross as worldSendAcross
 } from '../engine/world/immortal-world.js';
 import { daoOf } from '../engine/cultivation/dao.js';
+import { effectiveCapOf, writtenTo } from '../engine/cultivation/escapes.js';
+import { stagesHeldBy, stagesWrittenSince } from './stages.js';
 import { PlayLog, type LogEntry } from './log.js';
 import type { FiledOutcome, Narrator } from './narrator.js';
 import { composeStateSummary } from './prompt.js';
@@ -759,6 +763,28 @@ const CARE_RESTORES_HP = Math.max(
         .filter(pill => pill.effect === 'heal_hp' && pill.grade === 'mortal')
         .map(pill => pill.potency)
 );
+
+/**
+ * Which volumes of a work a holder has, for a work they already KNOW.
+ *
+ * All of them, and that is a statement rather than a stub. A scattered manual
+ * is scattered at the point of ACQUISITION - the volumes are objects, they sit
+ * in three different places, and finding them is the search. Nothing in the
+ * learning path models that yet: `handleLearn` puts an id in `knownTechniques`
+ * and there is no cultivator-side object table for a volume to live in, so the
+ * only honest reading of "they know it" today is that they have the work.
+ *
+ * Asserting the opposite would be a silent nerf rather than a mechanic: exactly
+ * one cultivation manual in the catalog is scattered, and pretending every
+ * holder of it lacks every volume would quietly drop its ceiling by three rungs
+ * for a reason no player could see or act on.
+ *
+ * When acquisition grows a volume model this becomes a read of it, and
+ * `effectiveCapOf` already computes the unbroken run from a gapped set.
+ */
+function wholeWorkVolumes(art: { volumes?: readonly string[] | null }): readonly string[] {
+    return art.volumes ?? [];
+}
 
 /**
  * The rung a cultivator with no cultivation manual is carried to.
@@ -1773,6 +1799,9 @@ ${noticedWaiting}`;
 
             case 'list_techniques':
                 return this.listTechniques(run, cultivator);
+
+            case 'acquisition':
+                return this.acquisition(run, cultivator, action.target);
 
             case 'learn_technique':
                 return this.learnTechnique(cultivator, action.target);
@@ -7252,6 +7281,165 @@ ${noticed}`;
         /^(?:a |one |the |my |some )?\s*(?:pill|pills|elixir|elixirs|medicine|medicines|tablet|pellet|one|it)\s*$/i;
 
     /**
+     * How a manual could go further, by every route there is.
+     *
+     * ONE COMMAND, THREE COSTS. Finding the next volume, being taught it, and
+     * writing it yourself are the same question - how does this book get
+     * further - asked of a world that answers differently depending on what you
+     * have. `assessAcquisition` funnels all three and returns the same
+     * `AcquisitionReport` whatever the route, so this layer picks no winner: it
+     * asks about each and prints what came back.
+     *
+     * The read is free and it is the point. A player standing at a ceiling has
+     * three things they might do and no way to compare them; the engine has
+     * always been able to price all three and nothing ever asked it to.
+     */
+    private async acquisition(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Promise<Execution> {
+        const held = cultivator.knownTechniques
+            .map(id => getTechnique(id))
+            .filter((t): t is NonNullable<typeof t> => !!t && classOf(t) === 'cultivation');
+
+        if (held.length === 0) {
+            return refused('engine.assessAcquisition', 'acquisition', factsForRefusal(
+                'There is no book to carry further.',
+                'Every one of these routes is about a method you already practise. Without one '
+                + 'the question is not how to go further, it is how to begin.',
+                `No cultivation-class manual known by ${cultivator.id}. Nothing assessed.`
+            ));
+        }
+
+        const wanted = (target ?? '').trim();
+        const named = wanted.length >= 3
+            ? held.find(t => matchScore(wanted, t.name) > MATCH_THRESHOLD)
+            : undefined;
+        // Otherwise the one that has actually stopped carrying them, which is
+        // the occasion for asking at all.
+        const stalled = held
+            .map(art => ({ art, reach: this.reachOf(cultivator, art) }))
+            .filter(row => row.reach.cap !== null && cultivator.realmOrdinal >= row.reach.cap)
+            .sort((a, b) => (b.reach.cap ?? 0) - (a.reach.cap ?? 0))[0];
+        const manual = named ?? stalled?.art ?? held[0];
+
+        const reach = this.reachOf(cultivator, manual);
+        const dao = daoOf(cultivator.insights ?? []);
+        const seeker = seekerFor(cultivator);
+
+        const lines: string[] = [reach.line];
+
+        // The world's ceiling against this holder's, when they differ. A good
+        // sentence to have available and one no single number can say.
+        if (reach.worldWrittenTo !== null && reach.cap !== null && reach.worldWrittenTo > reach.cap) {
+            lines.push(
+                `It has been written as far as ${rankName(reach.worldWrittenTo)} by somebody. `
+                + `It goes further than you can follow it, and the difference is `
+                + `${reach.worldWrittenTo - reach.cap} rung`
+                + `${reach.worldWrittenTo - reach.cap === 1 ? '' : 's'} of somebody else's work.`
+            );
+        }
+
+        const routes: { route: AcquisitionRoute; how: string }[] = [
+            { route: 'found', how: 'Finding the rest of it' },
+            { route: 'taught', how: 'Being taught it' },
+            { route: 'derived', how: 'Writing what comes next yourself' }
+        ];
+
+        const calls: ToolCallRecord[] = [];
+        for (const { route, how } of routes) {
+            const report = assessAcquisition({
+                manual: {
+                    id: manual.id,
+                    name: manual.name,
+                    requiredOrdinal: manual.requiredOrdinal,
+                    cap: manual.cap ?? capOf(manual),
+                    volumes: manual.volumes ?? null,
+                    grade: manual.grade,
+                    element: manual.element ?? null,
+                    subject: manual.subject ?? null,
+                    category: manual.category,
+                    domain: manual.domain ?? null,
+                    domainDegree: manual.domainDegree,
+                    opening: manual.opening ?? null,
+                    derivable: manual.derivable
+                } as never,
+                seeker,
+                route,
+                realmOrdinal: cultivator.realmOrdinal,
+                heldVolumeIds: wholeWorkVolumes(manual),
+                dao
+            });
+
+            lines.push(
+                `${how}: ${report.usable ? 'open.' : 'not open.'} ${report.headline}`
+            );
+            for (const line of report.lines) lines.push(`  ${line}`);
+
+            calls.push({
+                name: 'encounters.assessAcquisition',
+                action: 'acquisition',
+                summary:
+                    `${route}: usable=${report.usable}, `
+                    + `techniqueCap=${report.techniqueCap ?? 'uncapped'}, `
+                    + `raisesTheCeiling=${report.raisesTheCeiling}`
+                    + (report.refusals.length
+                        ? `, refused on ${report.refusals.join(', ')}`
+                        : ''),
+                ok: report.usable
+            });
+        }
+
+        const facts = factsForToolResult(`${manual.name}, and how it could go further.`, lines);
+        facts.structure.push(
+            `acquisition on ${manual.id}: cap ${reach.cap ?? 'uncapped'}, `
+            + `writtenTo ${reach.writtenTo ?? 'uncapped'}, `
+            + `stagesHeld ${reach.stagesHeld}, volumes ${reach.volumesHeld}/${reach.volumesTotal}.`
+        );
+        const execution = this.freeAction(run, 'acquisition', facts);
+        execution.calls = calls;
+        return execution;
+    }
+
+    /**
+     * A manual's real ceiling for this holder, stages and volumes folded in.
+     *
+     * The single place this layer is allowed to answer "how far does this book
+     * carry them". Never `manual.cap`: that is the CATALOG's ceiling and it
+     * stops being the manual's real one the moment anybody writes a stage.
+     */
+    private reachOf(
+        cultivator: Cultivator,
+        art: { id: string; name: string; cap?: number | null; volumes?: readonly string[] | null }
+    ) {
+        const manual = {
+            id: art.id,
+            name: art.name,
+            cap: art.cap ?? capOf(art as never),
+            volumes: art.volumes ?? null
+        };
+        const held = effectiveCapOf(
+            manual,
+            wholeWorkVolumes(art),
+            stagesHeldBy(this.repos, cultivator.id, art.id)
+        );
+
+        // TWO DIFFERENT NUMBERS, and they need two calls.
+        //
+        // `EffectiveCap.writtenTo` is computed from the count it was GIVEN, so
+        // handing it this holder's stages makes both fields the holder's and
+        // the world's ceiling never appears. The world's is `writtenTo` over
+        // the row count, which is what `stagesWrittenSince` is for - and the
+        // gap between them is the sentence worth having: it goes further than
+        // you can follow it.
+        return {
+            ...held,
+            worldWrittenTo: writtenTo(manual, stagesWrittenSince(this.repos, art.id))
+        };
+    }
+
+    /**
      * The arts that could be learned, filtered by everything that decides it.
      *
      * Realm, spirit root, dao standing and the run's own scarcity are all the
@@ -7648,7 +7836,22 @@ ${fit.line}`;
             const art = getTechnique(id);
             if (!art || classOf(art) !== 'cultivation') continue;
             anyManual = true;
-            const theirs = art.cap !== undefined ? art.cap : capOf(art);
+            // THE LINE. Never `art.cap` - that is the CATALOG ceiling, and it
+            // stops being the manual's real one the moment somebody writes a
+            // stage onto it. A derivation does not spawn a book; it extends
+            // this one, so the ceiling has to be composed rather than read.
+            //
+            // `effectiveCapOf` also applies contiguity, which is why the
+            // holder's stage count goes in rather than the world's: a stage
+            // past the end of the book is worth nothing to somebody who has
+            // not reached the end of the book, and `writtenTo` on the report
+            // is the separate number for what the world has managed.
+            const reach = effectiveCapOf(
+                { id: art.id, name: art.name, cap: art.cap ?? capOf(art), volumes: art.volumes ?? null },
+                wholeWorkVolumes(art),
+                stagesHeldBy(this.repos, cultivator.id, art.id)
+            );
+            const theirs = reach.cap;
             // One uncapped manual is enough. A book rated to the top of the
             // ladder ends the question for every other book they own.
             if (theirs === null || theirs === undefined) return {

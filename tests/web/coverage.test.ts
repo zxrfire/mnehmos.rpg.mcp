@@ -271,6 +271,12 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     ],
     // The verb that was missing entirely, and with it the six heal_hp pills
     // and every breakthrough pill bonus ever computed.
+    // One command, three costs. The question a player asks at a ceiling.
+    acquisition: [
+        'how do I get further',
+        'what would it take to go past this',
+        'how does my manual go further'
+    ],
     consume_pill: [
         'I swallow a healing pill',
         'I take a Minor Healing Pill',

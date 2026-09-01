@@ -152,7 +152,11 @@ describe('the fallback is inert', () => {
              * present in the timed one, because an art that fights the root
              * routes through the deviation engine and can end the run.
              */
-            'sell', 'inventory', 'list_techniques'
+            'sell', 'inventory', 'list_techniques',
+            // Pricing three routes is a read of catalogs and rows. The whole
+            // point of it being free is that the comparison must not itself
+            // cost a decade.
+            'acquisition'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -333,7 +337,8 @@ describe('every verb is reachable from plain English', () => {
         inventory: 'what am I carrying',
         list_techniques: 'what arts can I learn',
         learn_technique: 'I learn the Azure Ripple Art',
-        consume_pill: 'I swallow a healing pill'
+        consume_pill: 'I swallow a healing pill',
+        acquisition: 'how do I get further'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {
