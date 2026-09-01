@@ -1373,6 +1373,39 @@ function seedNamedFigures(
  * anywhere a beginner goes and they are not marked important: they are simply
  * the person the faction has always said it had.
  */
+/**
+ * Nobody was born before the world had a history to be born into.
+ *
+ * A lifespan at the top of the ladder is tens of thousands of years, so an age
+ * drawn as a fraction of one - which is the right way to draw it, because the
+ * point is that this person climbed when the climbing was possible - runs
+ * straight past the world's own first era. A seeded world produced an ordinal 44
+ * born in year -24,008 while the earliest era in its ledger opened in year
+ * -1,700: somebody twenty-two thousand years older than anything that could be
+ * said to have happened, whose whole life is off the end of the record.
+ *
+ * So the age is bounded by the span the ledger covers, less one generation, and
+ * the excess is simply not drawn. What that means in the world is not a
+ * compromise: the oldest people alive are as old as history, which is the claim
+ * the apex tier was making all along.
+ *
+ * Returns the age unchanged where the ledger has no era, which is the honest
+ * reading of a world with no recorded past to be older than.
+ */
+export function ageInsideRecordedHistory(
+    state: WorldState,
+    presentDay: number,
+    wantedYears: number
+): number {
+    if (state.history.eras.length === 0) return wantedYears;
+    const firstEraStart = state.history.eras.reduce(
+        (earliest, era) => Math.min(earliest, era.startDay), Infinity);
+    if (!Number.isFinite(firstEraStart)) return wantedYears;
+    const spanYears = Math.floor((presentDay - firstEraStart) / DAYS_PER_YEAR) - MIN_AGE;
+    if (spanYears <= MIN_AGE) return wantedYears;
+    return Math.min(wantedYears, spanYears);
+}
+
 function seedFactionApex(
     state: WorldState,
     catalog: WorldCatalog,
@@ -1397,10 +1430,11 @@ function seedFactionApex(
         const rng = forStream(state.seed, 'seed-apex', id);
         // Somebody at this ordinal climbed when the climbing was possible, so
         // they are old on the scale their realm actually grants.
-        const age = Math.min(
+        const wanted = Math.min(
             Math.max(MIN_AGE + 1, Math.floor(lifespanForOrdinal(declared) * APEX_AGE_FRACTION)),
             Math.floor(lifespanForOrdinal(declared) * 0.9)
         ) + rng.int(0, 200);
+        const age = ageInsideRecordedHistory(state, presentDay, wanted);
 
         let npc = createNpc(state.seed, {
             id,

@@ -35,6 +35,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { reconcileSoulAndSelf, ruinSoul } from '../cultivation/how-much-of-a-person-is-left.js';
 import { clampOrdinal, lifespanForOrdinal, rankName } from '../cultivation/realms.js';
 import {
     rollAttributes,
@@ -785,12 +786,17 @@ export function detachMemories(npc: NpcRecord, memoryIds: readonly string[], onD
  * for this holder specifically so that {@link legacyGoals} can pick them up and
  * hand them on - the goal is not deleted, because a disciple continuing a
  * revenge three hundred years later is the continuity the whole design is for.
+ *
+ * The soul goes through {@link ruinSoul} rather than being assigned, because
+ * `soulState` and `identityContinuity` are two readings of one thing and this
+ * function used to move only the first. Every corpse in a four-hundred-year run
+ * - 2,054 of them - was a fading soul at 100% continuity, which is not a
+ * borderline case but the two fields never having been joined.
  */
 export function markDead(npc: NpcRecord, onDay: number, endNote: string): NpcRecord {
     return {
-        ...npc,
+        ...ruinSoul(npc, 'fading'),
         status: 'physically_dead',
-        soulState: 'fading',
         diedOnDay: onDay,
         endNote,
         updatedOnDay: onDay,
@@ -841,17 +847,24 @@ export interface ExistenceTransition {
  * Reconstruction and possession normally cost something: pass a lowered
  * `identityContinuity` and a `soulState` to say so. The rebuilt body is rarely
  * identical, and a powerful soul does not make every vessel suitable.
+ *
+ * A caller that passes only one of the two gets both moved. The soul is taken as
+ * given and continuity is capped to what that soul can hold - see
+ * `reconcileSoulAndSelf` - so a transition that fragments somebody cannot leave
+ * them wholly themselves just because the caller did not think to say so.
  */
 export function setExistence(npc: NpcRecord, t: ExistenceTransition): NpcRecord {
     const leavingLife = npc.status === 'alive' && t.to !== 'alive';
     return {
-        ...npc,
+        ...reconcileSoulAndSelf({
+            ...npc,
+            soulState: t.soulState ?? npc.soulState,
+            identityContinuity: t.identityContinuity !== undefined
+                ? Math.max(0, Math.min(1, t.identityContinuity))
+                : npc.identityContinuity
+        }),
         status: t.to,
         bodyId: t.bodyId !== undefined ? t.bodyId : npc.bodyId,
-        soulState: t.soulState ?? npc.soulState,
-        identityContinuity: t.identityContinuity !== undefined
-            ? Math.max(0, Math.min(1, t.identityContinuity))
-            : npc.identityContinuity,
         diedOnDay: leavingLife && npc.diedOnDay === null ? t.onDay : npc.diedOnDay,
         endNote: t.note ?? npc.endNote,
         updatedOnDay: t.onDay,
