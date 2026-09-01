@@ -69,6 +69,18 @@ function text(source: string): string {
 const flat = text(html);
 
 /**
+ * The page's prose with its navigation removed.
+ *
+ * A field longer than a short paragraph is rendered as a lead and a disclosure
+ * holding the rest, so the sheet now has a summary label sitting between the
+ * two halves of a sentence run. `flat` keeps that label, which is right for
+ * anything asking what a reader sees - and wrong for anything asking whether a
+ * catalog field reached the page, because the label breaks the field in two.
+ * This view drops the summaries so a split field reads contiguously again.
+ */
+const flatProse = text(html.replace(/<summary[^>]*>[\s\S]*?<\/summary>/g, ''));
+
+/**
  * Just the artifact table, by its own caption.
  *
  * The page now carries several tables whose first column is a bare number -
@@ -403,7 +415,7 @@ describe('what a faction entry actually says', () => {
             const joined = d.synopsis.join(' ');
             expect(joined, `${d.id} precis is just its territory`).not.toBe(d.territory);
             expect(d.description.startsWith(joined), `${d.id} precis is just its prose`).toBe(false);
-            expect(flat, `${d.id} precis not rendered`).toContain(joined);
+            expect(flatProse, `${d.id} precis not rendered`).toContain(joined);
         }
     });
 
@@ -940,7 +952,7 @@ describe('the entries that were weakest', () => {
                 expect(joined, `${court.id} does not carry the second standing`)
                     .toContain(answering.apexRank);
             }
-            expect(flat, `${court.id} precis not rendered`).toContain(text(joined).trim());
+            expect(flatProse, `${court.id} precis not rendered`).toContain(text(joined).trim());
         }
     });
 });
@@ -972,8 +984,8 @@ describe('two bodies that used to be one posting', () => {
         expect(ours!.stance).toBe('alongside');
         expect(theirs!.stance).toBe('alongside');
         // The feeling is allowed to differ and does. That is the content.
-        expect(ours!.regard).not.toBe(theirs!.regard);
-        expect(ours!.regard).toBe(theirs!.theirRegard);
+        expect(ours!.warmth).not.toBe(theirs!.warmth);
+        expect(ours!.warmth).toBe(theirs!.theirWarmth);
 
         // And both sides are on the page, with a way from each to the other.
         expect(flat).toContain(text(ours!.what).slice(0, 60).trim());

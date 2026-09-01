@@ -4500,7 +4500,7 @@ color:var(--signal);margin:0 0 8px;display:flex;gap:8px}
 .flag{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:5px 0;border-top:1px solid var(--rule)}
 .flag:first-of-type{border-top:none}
 .fk{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--signal)}
-.ft{font-size:14.5px;line-height:1.55;color:var(--quiet)}
+.ft{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
 /* The narrative prose, folded. It is context under the assessment rather than
    the entry itself, and an entry that opened with it buried every fact. */
 .context>summary{cursor:pointer;font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
@@ -4509,6 +4509,20 @@ text-transform:uppercase;color:var(--faint);padding:6px 0;list-style:none}
 .context>summary::after{content:" +"}
 .context[open]>summary::after{content:" -"}
 .context>summary:hover{color:var(--datum)}
+/* The continuation of an oversized field. No chunk on this sheet is longer
+   than a short paragraph, so a field that runs past it becomes a lead and a
+   disclosure holding the rest in paragraphs of the same size. It is drawn
+   quieter than the context disclosure above, because it is the same material
+   continuing rather than a different kind of material. */
+.more{margin:4px 0 0}
+.more>summary{cursor:pointer;font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
+letter-spacing:.1em;text-transform:uppercase;color:var(--faint);list-style:none}
+.more>summary::-webkit-details-marker{display:none}
+.more>summary::after{content:" +"}
+.more[open]>summary::after{content:" -"}
+.more>summary:hover{color:var(--datum)}
+.more p{margin:6px 0 0}
+dd .more{margin-top:5px}
 @media (max-width:640px){
 .assess dl,.holds dl,.cap dl,.wayin dl,.flag{grid-template-columns:1fr;gap:2px}
 .assess dt,.holds dt,.cap dt,.wayin dt{padding-top:9px}}
@@ -4524,7 +4538,7 @@ text-transform:uppercase;color:var(--faint);padding:6px 0;list-style:none}
 .who.sole .wn{font-weight:600}
 .who.sole{border-left:2px solid var(--datum);padding-left:8px;margin-left:-10px}
 .part{display:flex;align-items:baseline;gap:10px;margin:20px 0 8px;
-padding-bottom:5px;border-bottom:1px solid var(--line)}
+padding-bottom:5px;border-bottom:1px solid var(--rule)}
 .part h4{margin:0;font:600 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
 letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
 .part span{font-size:11.5px;color:var(--faint)}
@@ -4535,8 +4549,21 @@ letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
 text-transform:uppercase;color:var(--faint);padding-top:2px}
 .hist dd{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
 @media (max-width:640px){.hist{grid-template-columns:1fr;gap:2px}.hist dt{padding-top:9px}}
-.evts{margin:6px 0 4px}
-.evt{border-left:2px solid var(--line);padding:0 0 0 12px;margin:10px 0}
+/* One rule for the section, a thinner one per item inside it.
+   THE BUG THIS FIXES. Both rules below were drawn against var(--line), which
+   is not a variable this sheet defines and never was - so the whole
+   declaration was invalid, no bar was ever painted, and the events ran
+   together as one undifferentiated wall of prose. var(--rule) is the token
+   that exists. The .part divider above had the same fault on its bottom
+   border, so the rules between the six parts of an entry were invisible too.
+   NOTE: no backticks in this comment. It lives inside a template literal and
+   one backtick here terminates the whole stylesheet - see AGENTS.md.
+   The structure is reused by the relationships section, because they are the
+   same kind of material: records about this house and somebody else. One
+   heavier rule down the left says where the group starts and stops; a lighter
+   rule on each item separates them inside it. Two weights, not two layouts. */
+.evts{margin:8px 0 4px;border-left:3px solid var(--rule);padding-left:14px}
+.evt{border-left:2px solid var(--rule);padding:0 0 0 12px;margin:10px 0}
 .evth{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;margin-bottom:4px}
 .evty{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;color:var(--ink)}
 .evtx,.evtw{font-size:11px;color:var(--faint)}
@@ -4561,37 +4588,48 @@ text-transform:uppercase;color:var(--signal);padding-top:3px}
    without the reader having to open the other entry. Colour is taken from the
    existing tokens rather than a new palette, so the six words theme with
    everything else on the sheet. */
-.rels{margin:4px 0 0}
+/* The relationships section. Same two-weight rule grammar as the events block
+   above: one heavier rule down the left of the whole section, one lighter rule
+   per row inside it, and the row rule carries the direction as colour.
+   DIRECTION IS THE COLOUR AXIS and warmth is not. A reader arrives wanting to
+   know who backs this house and whom it backs, so that is what is legible from
+   across the page: teal for a body standing over this one, brass for a body
+   answering to it, and a plain grey for level. Warmth is a word in the
+   sentence, because six shades of warmth on top of three of direction is two
+   colour systems fighting over one row and neither of them readable. */
+.rels{margin:8px 0 4px;border-left:3px solid var(--rule);padding-left:14px}
 .relgrp{margin:14px 0 0}
+.relgrp:first-child{margin-top:2px}
 .relgrp h4{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
 text-transform:uppercase;color:var(--faint);margin:0 0 6px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .relgrp h4 span{color:var(--datum)}
 .relgrp h4 .gap{color:var(--faint);font-weight:400;letter-spacing:.04em;text-transform:none}
-.rel{border-left:2px solid var(--line,var(--rule));padding:0 0 0 12px;margin:10px 0}
+.rel{border-left:2px solid var(--rule);padding:0 0 0 12px;margin:10px 0}
+.rel--above{border-left-color:var(--datum)}
+.rel--below{border-left-color:var(--bar-brass)}
+.rel--alongside{border-left-color:var(--strong)}
 .relh{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:5px}
 .relwho{font:600 14px Newsreader,Georgia,serif;color:var(--ink)}
-.relarrow{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-.relkind,.relsrc{font:400 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
-letter-spacing:.06em;color:var(--faint)}
-.relsrc{margin-left:auto}
-.warmth{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
-text-transform:uppercase;padding:2px 6px;border-radius:3px;border:1px solid var(--rule);color:var(--quiet)}
-.warmth.warm{color:var(--datum);border-color:var(--datum);background:var(--datum-soft)}
-.warmth.correct{color:var(--quiet)}
-.warmth.distant{color:var(--faint);border-style:dashed}
-.warmth.wary{color:var(--signal);border-color:var(--signal)}
-.warmth.cold{color:var(--signal);border-color:var(--signal);background:var(--signal-soft)}
-.warmth.hostile{color:var(--signal);border-color:var(--signal);background:var(--signal-soft);
-text-decoration:underline}
+/* The badge repeats the rule colour, because a coloured bar alone is a legend
+   lookup and this has to be readable without one. */
+.reldir{font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
+text-transform:uppercase;padding:2px 6px;border-radius:3px;border:1px solid var(--rule);
+color:var(--faint);white-space:nowrap}
+.reldir.above{color:var(--datum);border-color:var(--datum);background:var(--datum-soft)}
+.reldir.below{color:var(--bar-brass);border-color:var(--bar-brass);background:var(--bar-brass-dim)}
+.reldir.alongside{color:var(--quiet);border-color:var(--strong)}
+.relkey{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin-left:4px;
+font-size:11.5px;color:var(--faint)}
+/* The reading line: who stands where, and how each end feels about it. */
+.relsay{margin:0 0 6px;font-size:14.5px;line-height:1.55;color:var(--ink)}
+.relsay b{font-weight:600}
 .relwhat{margin:0 0 6px;font-size:14px;line-height:1.55;color:var(--quiet)}
 .relsides{margin:0;display:grid;grid-template-columns:190px 1fr;gap:6px 16px}
 .relsides dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
 text-transform:uppercase;color:var(--faint);padding-top:2px}
 .relsides dd{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
 @media (max-width:640px){.relsides{grid-template-columns:1fr;gap:2px}
-.relsides dt{padding-top:9px}
-.relsrc{margin-left:0}}
-.relgloss{margin:6px 0 0;font-size:12.5px;line-height:1.5;color:var(--faint)}
+.relsides dt{padding-top:9px}}
 /* ── A court's offices ───────────────────────────────────────────────────
    The two standing columns sit side by side and are given the same weight,
    because neither is the real one. */
@@ -5236,7 +5274,7 @@ function howTheCourtIsSeenBlock(): string {
         + 'the province can name every one of them. What it cannot do is join that list to the working names it '
         + 'hears afterwards. <strong>This sheet carries both, because it is the record rather than a thing '
         + 'anybody in the world is reading.</strong></p>'
-        + `<dl class="hist">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`
+        + `<dl class="hist">${rows.map(([k, v]) => `<dt>${esc(k)}</dt>${chunkedDd(v)}`).join('')}</dl>`
         + '</div>';
 }
 
@@ -5258,9 +5296,11 @@ function deepRoadBlock(r: RegisterDeepRoad): string {
         + `<span class="wd">${esc(t.availability)}</span></div>`).join('');
 
     const rows: string[] = [
-        `<dt>Copies in the house</dt><dd><b>${r.copies}</b>. ${esc(r.whyThatManyCopies)}</dd>`,
-        `<dt>How a reader gets one</dt><dd>${r.access === 'lent' ? 'Lent, and it goes back.' : 'Read where it sits; it does not leave the room.'} ${esc(r.accessTerms)}</dd>`,
-        `<dt>Who can teach it</dt><dd><b>${r.teachers.length}</b>. ${esc(r.capacityNote)}</dd>`,
+        `<dt>Copies in the house</dt><dd><b>${r.copies}</b>.</dd>`,
+        `<dt>Why that many</dt>${chunkedDd(r.whyThatManyCopies)}`,
+        `<dt>How a reader gets one</dt>${chunkedDd((r.access === 'lent' ? 'Lent, and it goes back. ' : 'Read where it sits; it does not leave the room. ') + r.accessTerms)}`,
+        `<dt>Who can teach it</dt><dd><b>${r.teachers.length}</b>.</dd>`,
+        `<dt>What that is worth</dt>${chunkedDd(r.capacityNote)}`,
         `<dt>How far they can take you</dt><dd><b>${r.carriesTo}</b> &middot; ${esc(r.carriesToRank)}`
             + (r.cap === null
                 ? ', against a book that ends nowhere.'
@@ -5271,10 +5311,10 @@ function deepRoadBlock(r: RegisterDeepRoad): string {
         `<dt>What the opening costs</dt><dd>${r.opening
             ? `The first ${r.opening.rungs} rungs run at ${Math.round(r.opening.rateMultiplier * 100)}% of ordinary progress. A hard stretch of somebody else's shorthand before the road opens up.`
             : 'Nothing. There is no bad stretch anywhere in it, which is what separates this road from every other one at its height - the same reach, and a fraction of the cost to walk.'}</dd>`,
-        `<dt>Where the teaching comes from</dt><dd>${esc(r.whereTheTeachingComesFrom)}</dd>`
+        `<dt>Where the teaching comes from</dt>${chunkedDd(r.whereTheTeachingComesFrom)}`
     ];
     if (r.gradedByStanding) {
-        rows.push(`<dt>And who gets how much</dt><dd>${esc(r.gradedByStanding)}</dd>`);
+        rows.push(`<dt>And who gets how much</dt>${chunkedDd(r.gradedByStanding)}`);
     }
 
     return `<div class="grp deeproad"><h4>The road to the top of the ladder <span>1</span>`
@@ -5298,38 +5338,171 @@ const WARMTH_GLOSS: Record<Warmth, string> = {
     hostile: 'acted against, or would be if the cost fell'
 };
 
-const STANCE_HEADS: Record<RegisterRelationship['stance'], { label: string; gloss: string }> = {
+const STANCE_HEADS: Record<RegisterRelationship['stance'], { label: string; gloss: string; badge: string }> = {
     above: {
-        label: 'Above it',
-        gloss: 'what it answers to, and how warm that is from each end'
+        label: 'Who backs it',
+        gloss: 'the bodies it answers to, and how warm that is from each end',
+        badge: 'backs it'
     },
     alongside: {
-        label: 'Beside it',
-        gloss: 'level with it - rivals, claimants, and bodies under the same roof'
+        label: 'Who stands level with it',
+        gloss: 'neither above nor below - rivals, claimants, and bodies under the same roof',
+        badge: 'level'
     },
     below: {
-        label: 'Under it',
-        gloss: 'what answers to it, and how it treats them'
+        label: 'Who it backs',
+        gloss: 'the bodies that answer to it, and how it treats them',
+        badge: 'it backs'
     }
 };
 
 /**
+ * What the tie IS, as a noun phrase, read from the other body's side.
+ *
+ * The register used to print `kind` raw - "apex and court", "patron and
+ * client" - which is a token out of an enum and not a sentence. It told a
+ * reader who already knew the schema nothing new and a reader who did not know
+ * it nothing at all. The same tie also reads differently from each end, so
+ * there are two phrasings and the stance picks one: the body above is the apex
+ * a court answers to, and the body below is a court administering one of its
+ * veins. One fact, two sentences, and neither of them is an enum.
+ */
+const TIE_PHRASE: Record<string, { fromBelow: string; fromAbove: string; level: string }> = {
+    patron_and_client: {
+        fromBelow: 'the house it holds its ground from, on stated terms',
+        fromAbove: 'a tenant holding ground from it on stated terms',
+        level: 'a grant between them'
+    },
+    apex_and_court: {
+        fromBelow: 'the apex whose arterial vein it administers',
+        fromAbove: 'a court administering one of its arterial veins',
+        level: 'a court and the apex over it'
+    },
+    apex_and_posting: {
+        fromBelow: 'the apex that appoints into its posting',
+        fromAbove: 'a posting it appoints into, staffed by nobody who applied',
+        level: 'a posting and the apex that fills it'
+    },
+    severed_patronage: {
+        fromBelow: 'the apex it answered for nine hundred years and does not any more',
+        fromAbove: 'a body that used to answer to it and walked',
+        level: 'a patronage that ended'
+    },
+    administration: {
+        fromBelow: 'the house it is the staff of, rather than a tenant of',
+        fromAbove: 'its own staff, rather than a tenant',
+        level: 'an administration and the house it works for'
+    },
+    contracted: {
+        fromBelow: 'the house it works for under contract, rather than under a lease',
+        fromAbove: 'a contractor rather than a tenant',
+        level: 'a contract between them'
+    },
+    two_bodies_nobody_joins: {
+        fromBelow: 'the only other body in the world nobody joins',
+        fromAbove: 'the only other body in the world nobody joins',
+        level: 'the only other body in the world nobody joins'
+    },
+    same_patron: {
+        fromBelow: 'another body answering the same house',
+        fromAbove: 'another body answering the same house',
+        level: 'another body answering the same house'
+    },
+    rivals: {
+        fromBelow: 'a standing feud, carried on both rolls',
+        fromAbove: 'a standing feud, carried on both rolls',
+        level: 'a standing feud, carried on both rolls'
+    },
+    contested_claim: {
+        fromBelow: 'a second hand on the same thing',
+        fromAbove: 'a second hand on the same thing',
+        level: 'a second hand on the same thing'
+    },
+    counter: {
+        fromBelow: 'the house holding the thing that beats its own dao',
+        fromAbove: 'a house whose dao it holds the answer to',
+        level: 'each of them holding part of the answer to the other'
+    },
+    service_and_dependent: {
+        fromBelow: 'a service it cannot function without',
+        fromAbove: 'a house that cannot function without what it supplies',
+        level: 'a service between them'
+    },
+    shared_event: {
+        fromBelow: 'a party to the same event, with its own account of it',
+        fromAbove: 'a party to the same event, with its own account of it',
+        level: 'a party to the same event, with its own account of it'
+    },
+    tolerated: {
+        fromBelow: 'a body it holds nothing over and asks nothing of',
+        fromAbove: 'a body that holds nothing over it and asks nothing of it',
+        level: 'a body neither of them holds anything over'
+    }
+};
+
+function tiePhrase(r: RegisterRelationship): string {
+    const entry = TIE_PHRASE[r.kind];
+    if (!entry) return 'a tie the catalog records and this sheet has no phrasing for';
+    return r.stance === 'above'
+        ? entry.fromBelow
+        : r.stance === 'below'
+            ? entry.fromAbove
+            : entry.level;
+}
+
+/**
+ * The one sentence that says who stands where, in words rather than in fields.
+ *
+ * `stance` is stored from the point of view of the OTHER body - above means
+ * they are above this one - so a sentence that named only one party would read
+ * backwards half the time. It names both.
+ */
+function standingSentence(r: RegisterRelationship, name: string): string {
+    if (r.stance === 'above') return `${r.otherName} stands above ${name}`;
+    if (r.stance === 'below') return `${name} stands above ${r.otherName}`;
+    return `${r.otherName} stands level with ${name}`;
+}
+
+/**
+ * How each side feels, as a sentence, with the meaning of the word beside it.
+ *
+ * The two warmth words used to be printed as bare tokens with the string "and
+ * back" between them, which is internal bookkeeping wearing a label. A reader
+ * has one question here - do these two like each other, and does it run both
+ * ways - and it is answered in a sentence or it is not answered.
+ */
+function warmthSentence(r: RegisterRelationship, name: string): string {
+    const mine = `${esc(name)} is <b>${esc(r.warmth)}</b> toward them (${esc(WARMTH_GLOSS[r.warmth])})`;
+    const theirs = r.warmth === r.theirWarmth
+        ? ', and is met with the same.'
+        : `, and is met with <b>${esc(r.theirWarmth)}</b> (${esc(WARMTH_GLOSS[r.theirWarmth])}). `
+            + 'The two do not match, and the mismatch is the fact rather than a fault: what a tie IS is stored '
+            + 'once and shared, and what each side feels about it is stored twice.';
+    return mine + theirs;
+}
+
+/**
  * How a body stands with everything around it. Last on the entry.
  *
- * The order inside a group is authored ties first and derived ties behind them,
- * and the `from` chip says which a reader is looking at: an authored tie is one
- * somebody wrote because no table held it, and a derived one is a row that
- * already existed in the grant table, the rivalry lists, the contested claims,
- * the dao house counters or the shared events, restated here. Neither is
- * invented by this function - the section prints what the catalog holds and
- * would print nothing if the catalog held nothing.
+ * WHAT A READER SEES AND WHAT THEY DO NOT. Everything in the reading line is a
+ * sentence. The stored fields - the warmth enum, the tie kind, and which table
+ * the row came out of - are this sheet's own bookkeeping, and printing them raw
+ * was the defect this replaces: an entry that read "correct / and back /
+ * correct / apex and court / from authored" was showing somebody the shape of
+ * the record instead of telling them anything. Provenance is collapsed into one
+ * line at the foot of the section, which is where this sheet puts detail only
+ * somebody checking the data wants.
  *
- * WHY BOTH REGARDS ARE ON EVERY ROW. The facts of a tie are shared and written
- * once; the feelings are two and are allowed to disagree. A house can be warm
- * to a patron that is merely correct back, and dutiful upward while being cold
- * to everything under it, and that asymmetry is the most useful thing on the
- * row. Printing only this body's half would hide exactly the half a reader
- * cannot infer.
+ * DIRECTION IS COLOUR, not a heading. The question a reader arrives with is who
+ * backs this house and whom it backs, and three headed lists do not answer that
+ * until they have been read. Every row carries its stance on its own left rule
+ * and in a badge, so the two directions separate before a word is read - and
+ * the grouping stays, because a reader comparing all the patrons wants them
+ * adjacent.
+ *
+ * THE RULES MATCH THE EVENTS BLOCK. One heavier rule down the left of the whole
+ * section and a lighter one on each row, which is the grammar `.evts` and
+ * `.evt` already use for the same kind of material. No new layout.
  */
 function relationshipsBlock(rels: RegisterRelationship[], name: string): string {
     if (!rels.length) {
@@ -5343,7 +5516,14 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
         .map(stance => ({ stance, rows: rels.filter(r => r.stance === stance) }))
         .filter(g => g.rows.length);
 
-    const counts = groups.map(g => `${g.rows.length} ${STANCE_HEADS[g.stance].label.toLowerCase()}`).join(', ');
+    const above = rels.filter(r => r.stance === 'above').length;
+    const below = rels.filter(r => r.stance === 'below').length;
+    const level = rels.filter(r => r.stance === 'alongside').length;
+    const counts = [
+        above ? `${above} above it` : '',
+        level ? `${level} level with it` : '',
+        below ? `${below} under it` : ''
+    ].filter(Boolean).join(', ');
 
     const body = groups.map(g => `<div class="relgrp">`
         + `<h4>${esc(STANCE_HEADS[g.stance].label)} <span>${g.rows.length}</span>`
@@ -5352,41 +5532,54 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
             const other = r.anchor
                 ? `<span class="jump" data-goto="${esc(r.anchor)}">${esc(r.otherName)}</span>`
                 : esc(r.otherName);
-            return `<div class="rel">`
+            return `<div class="rel rel--${esc(r.stance)}">`
                 + `<div class="relh">`
                 + `<span class="relwho">${other}</span>`
-                + `<span class="warmth ${esc(r.warmth)}">${esc(r.warmth)}</span>`
-                + `<span class="relarrow">and back</span>`
-                + `<span class="warmth ${esc(r.theirWarmth)}">${esc(r.theirWarmth)}</span>`
-                + `<span class="relkind">${esc(r.kind.replace(/_/g, ' '))}</span>`
-                + `<span class="relsrc">from ${esc(r.source)}</span>`
+                + `<span class="reldir ${esc(r.stance)}">${esc(STANCE_HEADS[r.stance].badge)}</span>`
                 + `</div>`
-                + `<p class="relwhat">${esc(r.what)}</p>`
+                // "stands above X, as the apex that appoints into its posting" reads
+                // as a role and is right for a vertical tie. It is wrong for a level
+                // one, where neither party IS anything to the other, so that case
+                // takes its own connector rather than being forced into "as".
+                + `<p class="relsay">${esc(standingSentence(r, name))}${r.stance === 'alongside'
+                    ? `. Between them: ${esc(tiePhrase(r))}. `
+                    : `, as ${esc(tiePhrase(r))}. `}`
+                + `${warmthSentence(r, name)}</p>`
+                + chunked(r.what, 'the rest of what the tie is', 'relwhat')
                 + `<dl class="relsides">`
-                + `<dt>Since</dt><dd>${esc(r.since)}</dd>`
-                + `<dt>How ${esc(name)} puts it</dt><dd>${esc(r.howTheyPutIt)}</dd>`
-                + `<dt>And so it does</dt><dd>${esc(r.andSoTheyDo)}</dd>`
+                + `<dt>Since</dt>${chunkedDd(r.since)}`
+                + `<dt>How ${esc(name)} puts it</dt>${chunkedDd(r.howTheyPutIt)}`
+                + `<dt>And so it does</dt>${chunkedDd(r.andSoTheyDo)}`
                 + (r.grievance
-                    ? `<dt>The grievance</dt><dd>${esc(r.grievance)}</dd>`
+                    ? `<dt>The grievance</dt>${chunkedDd(r.grievance)}`
                     : '')
                 + `</dl>`
-                + `<p class="relgloss"><b>${esc(r.warmth)}</b>: ${esc(WARMTH_GLOSS[r.warmth])}. `
-                + `The other side reads it as <b>${esc(r.theirWarmth)}</b>: ${esc(WARMTH_GLOSS[r.theirWarmth])}.`
-                + (r.warmth === r.theirWarmth
-                    ? ''
-                    : ' The two do not match, and both are the catalog\'s own word rather than this sheet\'s.')
-                + `</p>`
                 + `</div>`;
         }).join('')
         + `</div>`).join('');
 
-    return sectionHead('How it stands with everybody', `${counts} - the structure, and how warm each end of it is`)
-        + '<p class="note"><strong>The structure of a tie is one fact and the warmth of it is two.</strong> '
-        + 'Direction, kind and what the tie is about are stored once and shared, so a patron and a client cannot '
-        + 'disagree about who holds from whom. The two warmth words are stored separately and are allowed to '
-        + 'differ, which is the point of the section: a house can be warm to a patron that is only correct back, '
-        + 'or dutiful upward and cold to everything under it, and neither of those could be read off the org chart.</p>'
-        + `<div class="rels">${body}</div>`;
+    // Provenance, collapsed. Which table a tie was read out of is a fact about
+    // the catalog rather than about the world, and somebody checking one can
+    // open this. It never sits in the reading line.
+    const bySource = [...new Set(rels.map(r => r.source))]
+        .map(src => `${rels.filter(r => r.source === src).length} from ${src}`)
+        .join(', ');
+
+    return sectionHead('How it stands with everybody', `${counts} - and how warm each end of it is`)
+        + '<p class="note"><strong>What a tie is, is one fact. How the two sides feel about it is two.</strong> '
+        + 'Direction and substance are stored once and shared, so a patron and a client cannot disagree about who '
+        + 'holds from whom. The warmth is stored separately at each end and is allowed to differ - a house can be '
+        + 'warm to a patron that is only correct back, or dutiful upward and cold to everything under it, and '
+        + 'neither of those can be read off an org chart. '
+        + '<span class="relkey"><span class="reldir above">backs it</span> stands over this house '
+        + '<span class="reldir alongside">level</span> neither '
+        + '<span class="reldir below">it backs</span> answers to this house</span></p>'
+        + `<div class="rels">${body}</div>`
+        + '<details class="context"><summary>Where these came from</summary>'
+        + `<p class="desc">${esc(bySource)}. An authored tie was written because no table in the catalog `
+        + 'carries it; every other one restates a row that already exists - a grant, a court posting, a rivalry '
+        + 'list, a contested claim, a dao house counter, or an event both parties have an account of - so each '
+        + 'can be checked against the table it came from.</p></details>';
 }
 
 /** Who it answers to, on what terms, and what leaving would cost. */
@@ -5522,7 +5715,11 @@ function wayInBlock(w: RegisterWayIn): string {
 function flagBlock(flags: RegisterFlag[]): string {
     if (!flags.length) return '';
     return `<div class="flags"><h4>Do not take at face value <span>${flags.length}</span></h4>`
-        + flags.map(f => `<div class="flag"><span class="fk">${esc(f.kind)}</span><span class="ft">${esc(f.text)}</span></div>`).join('')
+        // The text is a paragraph rather than a span, so the page-level size
+        // rule reaches it. A flag is prose and some of them run long; as a span
+        // inside a grid cell it was the one piece of an entry the limit could
+        // not see.
+        + flags.map(f => `<div class="flag"><span class="fk">${esc(f.kind)}</span><p class="ft">${esc(f.text)}</p></div>`).join('')
         + '</div>';
 }
 
@@ -5573,6 +5770,123 @@ function houseBlock(h: RegisterHouseAdmission): string {
  * Both are true, neither contains the other, and the table refuses to pick.
  */
 /**
+ * THE SIZE LIMIT, AND WHY IT IS A RENDER RULE RATHER THAN AN EDITING RULE.
+ *
+ * No chunk on this sheet may be longer than a short paragraph - four or five
+ * lines. That is a reading constraint and it applies to every part of an entry
+ * and to every sub-part inside one: a history, a relationship, a want, a road.
+ *
+ * The catalog does not obey it and should not be made to. Its fields are the
+ * record, they are written at the length the thing takes, and shortening them
+ * in place would mean deleting the world to fit the page. So the limit is
+ * enforced HERE, once, at the point where prose becomes something a person
+ * reads - and the way it is enforced is by making more chunks rather than
+ * shorter ones. A field that runs long becomes a lead paragraph inside the
+ * limit and a disclosure holding the rest, itself split into paragraphs inside
+ * the limit. Nothing is discarded and nothing on the page is oversized.
+ *
+ * SPLITTING IS AT SENTENCE BOUNDARIES, never mid-sentence, because a chunk cut
+ * in the middle of a clause is worse than a long one. The consequence is that a
+ * single sentence longer than the limit comes through whole, which is correct:
+ * the alternative is breaking the catalog's own prose, and a sentence is the
+ * smallest unit this sheet is allowed to have an opinion about.
+ */
+const CHUNK_LIMIT = 360;
+
+/**
+ * One field, as paragraphs that each fit the limit.
+ *
+ * Greedy by sentence: keep adding sentences while they fit, start a new
+ * paragraph when the next one would not. Returns at least one entry, so a
+ * caller never has to check for empty.
+ */
+function chunkParagraphs(text: string, limit = CHUNK_LIMIT): string[] {
+    const trimmed = text.trim();
+    if (trimmed.length <= limit) return [trimmed];
+
+    // Sentence ends, keeping the terminator. Abbreviations are not a hazard in
+    // this catalog's prose, which is why this is a split rather than a parser.
+    //
+    // THE CLOSING TAG IS THE PART THAT CAUGHT ME OUT. This ran on a match of
+    // 'run of non-terminators, then terminators, then whitespace', which does
+    // not fire on a sentence that ends inside markup - '...opened.</strong> The
+    // figure...' has a tag between the full stop and the space, so the whole
+    // paragraph came through as one sentence and was left oversized. The split
+    // now looks behind a terminator across any number of closing tags.
+    const sentences = trimmed.split(/(?<=[.!?](?:<\/[a-z]+>)*)\s+/);
+
+    // A SENTENCE LONGER THAN THE LIMIT IS SPLIT AT ITS CLAUSES, not left whole.
+    // This catalog writes long, and several of its best sentences run past a
+    // short paragraph on their own - so refusing to cut inside a sentence at
+    // all left a handful of chunks nobody could read. The second-level cut is
+    // at a colon, a semicolon or a spaced hyphen, which is where this prose
+    // actually breathes, and the separator stays with the half it belongs to.
+    // Below that there is no further cut: a clause is the smallest unit this
+    // sheet is allowed to have an opinion about.
+    const clauses = (sentence: string): string[] => {
+        if (sentence.length <= limit) return [sentence];
+        const pieces = sentence.split(/(?<=[:;]|\s-)\s+/);
+        const merged: string[] = [];
+        let held = '';
+        for (const piece of pieces) {
+            if (!held) { held = piece; continue; }
+            if (held.length + 1 + piece.length <= limit) held = `${held} ${piece}`;
+            else { merged.push(held); held = piece; }
+        }
+        if (held) merged.push(held);
+        return merged;
+    };
+
+    const out: string[] = [];
+    let current = '';
+    for (const raw of sentences.flatMap(x => clauses(x.trim()))) {
+        const sentence = raw.trim();
+        if (!sentence) continue;
+        if (!current) {
+            current = sentence;
+            continue;
+        }
+        if (current.length + 1 + sentence.length <= limit) {
+            current = `${current} ${sentence}`;
+        } else {
+            out.push(current);
+            current = sentence;
+        }
+    }
+    if (current) out.push(current);
+    return out.length ? out : [trimmed];
+}
+
+/**
+ * A field as a lead paragraph and, where there is more, a disclosure holding
+ * the rest in paragraphs of the same size.
+ *
+ * `label` is what the disclosure is called. It should say what is behind it
+ * rather than "more", because a reader deciding whether to open something is
+ * entitled to know what it is.
+ */
+function chunked(text: string, label = 'the rest of it', cls = ''): string {
+    const parts = chunkParagraphs(text);
+    const attr = cls ? ` class="${cls}"` : '';
+    const lead = `<p${attr}>${esc(parts[0])}</p>`;
+    if (parts.length === 1) return lead;
+    return lead
+        + `<details class="more"><summary>${esc(label)} &middot; ${parts.length - 1} more</summary>`
+        + parts.slice(1).map(part => `<p${attr}>${esc(part)}</p>`).join('')
+        + '</details>';
+}
+
+/** The same, for the value side of a definition list. */
+function chunkedDd(text: string): string {
+    const parts = chunkParagraphs(text);
+    if (parts.length === 1) return `<dd>${esc(parts[0])}</dd>`;
+    return `<dd>${esc(parts[0])}`
+        + `<details class="more"><summary>the rest of it &middot; ${parts.length - 1} more</summary>`
+        + parts.slice(1).map(part => `<p>${esc(part)}</p>`).join('')
+        + '</details></dd>';
+}
+
+/**
  * The divider between the five parts of an entry.
  *
  * A label and one line of what the part is for. It exists because the parts are
@@ -5602,13 +5916,13 @@ function sectionHead(label: string, gloss: string): string {
  */
 function historyBlock(h: RegisterHistory): string {
     const rows: string[] = [
-        `<dt>How it got here</dt><dd>${esc(h.origin)}</dd>`,
-        `<dt>Why it makes what it makes</dt><dd>${esc(h.whyTheGapIs)}</dd>`
+        `<dt>How it got here</dt>${chunkedDd(h.origin)}`,
+        `<dt>Why it makes what it makes</dt>${chunkedDd(h.whyTheGapIs)}`
     ];
     if (h.whatTheUnlitNodesWere) {
-        rows.push(`<dt>What the dark nodes were</dt><dd>${esc(h.whatTheUnlitNodesWere)}</dd>`);
+        rows.push(`<dt>What the dark nodes were</dt>${chunkedDd(h.whatTheUnlitNodesWere)}`);
     }
-    rows.push(`<dt>Where the false belief comes from</dt><dd>${esc(h.whereTheWrongBeliefComesFrom)}</dd>`);
+    rows.push(`<dt>Where the false belief comes from</dt>${chunkedDd(h.whereTheWrongBeliefComesFrom)}`);
 
     const shared = h.shared.map(e => {
         const others = e.others.map(o => o.anchor
@@ -5618,8 +5932,9 @@ function historyBlock(h: RegisterHistory): string {
             + `<div class="evth"><span class="evty">${e.yearsAgo.toLocaleString()} yr ago</span>`
             + `<span class="evtx">explains ${esc(e.explains)}</span>`
             + `<span class="evtw">with ${others}</span></div>`
-            + `<p class="evtn">${esc(e.what)}</p>`
-            + `<p class="evta">${esc(e.ourAccount)}</p></div>`;
+            + chunked(e.what, 'the rest of what happened', 'evtn')
+            + chunked(e.ourAccount, 'the rest of this house\'s account', 'evta')
+            + '</div>';
     }).join('');
 
     return sectionHead('History', 'how it came to be here, and what that accounts for')
@@ -5844,6 +6159,29 @@ function dossier(d: SectDossier): string {
         // every row says which table it was read from, so a reader can go and
         // check it rather than taking the sheet's word for the union.
         const sources = [...new Set(d.people.active.map(p => p.source))];
+        // NAMED PEOPLE ONLY, AND THE ENTRY MUST SAY SO WHERE IT MATTERS. The
+        // member catalog is weighted hard to the bottom of the ladder and does
+        // not name everybody a house has - so an entry could print "the next
+        // strongest at 37" in its own precis and then list a roll whose second
+        // name stands at 24, with nothing anywhere reconciling the two. That is
+        // not a hole in the roll: it is what a roll of NAMED people looks like
+        // under a house that is deeper than its named people. The gap is only
+        // worth a sentence where it is actually visible, so the note is
+        // computed from the two figures rather than printed on every entry.
+        const rollTop = d.people.active[0]?.ordinal ?? 0;
+        const rollSecond = d.people.active[1]?.ordinal ?? 0;
+        const houseSecond = d.apex ? d.apex.secondSeat : 0;
+        const unnamedAbove = rollTop < d.ordinal
+            ? `the strongest member this house answers with stands at ${d.ordinal} and is not named here`
+            : houseSecond > rollSecond
+                ? `this house's second is at ${houseSecond} and the strongest named after the first is at ${rollSecond}`
+                : '';
+        // The other direction, and it happens exactly once in the world: a
+        // person on a roll standing ABOVE the figure their own house answers
+        // with. It is not an error and it is not a stronger house - it is
+        // somebody who holds a position that carries no obligation either way,
+        // so the house cannot send them anywhere and does not answer with them.
+        const overTheHouse = rollTop > d.ordinal ? d.people.active[0] : undefined;
         people.push(`<div class="grp healthy"><h4>The roll <span>${d.people.active.length}</span>`
             + `<span class="gap">${esc(sources.join(', '))}</span></h4>`
             + d.people.active.map(p =>
@@ -5869,6 +6207,20 @@ function dossier(d: SectDossier): string {
                     ? `<span class="dim"> Asked of them: ${esc(p.askedOf)}</span>`
                     : '')
                 + `</span></div>`).join('')
+            + (overTheHouse
+                ? `<p class="note"><strong>${esc(overTheHouse.name)} stands at ${overTheHouse.ordinal}, above the `
+                    + `${d.ordinal} this house answers with.</strong> That is not a stronger house than its own `
+                    + 'figure says. The ordinal is the strongest ACTING member - the person who answers a '
+                    + 'challenge, walks a border, sits at a negotiation - and the position above it here carries '
+                    + 'no obligation in either direction, so there is nobody the house could send and nothing it '
+                    + 'could require. A roll is who is on it; the ordinal is who answers.</p>'
+                : '')
+            + (unnamedAbove
+                ? `<p class="note">Named people only - ${esc(unnamedAbove)}. `
+                    + 'The member catalog is weighted to the bottom of the ladder, where the player starts and '
+                    + 'where almost everybody is, so a house is routinely deeper than the names under it. An '
+                    + 'unnamed figure quoted above this list is the house\'s own and is not a gap in the roll.</p>'
+                : '')
             + '</div>');
     }
 
@@ -6013,13 +6365,13 @@ function dossier(d: SectDossier): string {
   ${d.demonic ? demonicBlock(d.demonic, d.name) : ''}
 
   ${sectionHead('What they are', 'the fuller version, and then the catalog in its own words')}
-  ${d.synopsis.length ? `<p class="synop">${d.synopsis.map(esc).join(' ')}</p>` : ''}
+  ${d.synopsis.length ? chunked(d.synopsis.join(' '), 'the rest of the precis', 'synop') : ''}
   ${d.description
       // Moved up into this chunk from the foot of the entry. It is the
       // catalog's narrative prose - written to be read rather than used - and
       // it belongs with the description rather than after everything else,
       // collapsed so it never costs a reader who does not want it.
-      ? `<details class="context"><summary>In the catalog's own words</summary><p class="desc">${esc(d.description)}</p></details>`
+      ? `<details class="context"><summary>In the catalog's own words</summary>${chunkParagraphs(d.description).map(part => `<p class="desc">${esc(part)}</p>`).join('')}</details>`
       : ''}
 
   ${sectionHead('Who is in it', 'the people and their ranks, how you get in, and who it answers to')}
@@ -6221,6 +6573,61 @@ function byGovernance(
         .sort((a, b) => b.members[0].ordinal - a.members[0].ordinal);
 }
 
+/**
+ * The size limit, enforced once on the finished page.
+ *
+ * WHY HERE AND NOT AT EVERY CALL SITE. The rule is that no chunk a reader
+ * lands on runs past a short paragraph, and this sheet emits prose from
+ * something like two hundred places. Applying the rule at each of them means
+ * remembering it at each of them, and the next block anybody adds will be the
+ * one that forgets. Applying it to the assembled document means it holds for
+ * everything, including material nobody has written yet.
+ *
+ * The explicit `chunked` calls upstream are not redundant: they produce a
+ * disclosure LABELLED for what is behind it, which reads better than the
+ * generic label this pass can supply. This is the floor, not the design.
+ *
+ * IT ONLY TOUCHES SIMPLE BLOCKS. A paragraph or a definition value whose
+ * content is text and inline markup gets split; anything containing a nested
+ * block or a disclosure is left exactly as it is, because that one has
+ * already been chunked by somebody who knew what it was.
+ */
+function enforceChunkLimit(html: string): string {
+    // A DISCLOSURE INSIDE A PARAGRAPH IS NOT A PARAGRAPH. The continuation
+    // holds paragraphs, and a `p` may not contain one - a browser closes the
+    // outer element at the inner tag and the markup a reader gets is not the
+    // markup this function wrote. So for a paragraph the disclosure is emitted
+    // as a SIBLING, after the lead is closed, and for a definition value it is
+    // emitted inside, where paragraphs are legal.
+    const split = (open: string, close: string, body: string): string => {
+        const parts = chunkParagraphs(body);
+        if (parts.length === 1) return `${open}${body}${close}`;
+        const rest = `<details class="more">`
+            + `<summary>the rest of it &middot; ${parts.length - 1} more</summary>`
+            + parts.slice(1).map(part => `<p>${part}</p>`).join('')
+            + `</details>`;
+        return close === '</p>'
+            ? `${open}${parts[0]}${close}${rest}`
+            : `${open}${parts[0]}${rest}${close}`;
+    };
+
+    // Measured on the text a reader sees rather than on the markup, so a
+    // paragraph carrying links or emphasis is not penalised for the tags.
+    const visible = (fragment: string): string =>
+        fragment.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const rewrite = (source: string, pattern: RegExp): string =>
+        source.replace(pattern, (whole, open: string, body: string, close: string) => {
+            // Already structured, or already short enough. Leave both alone.
+            if (/<(details|p|dl|div|ul|table)\b/i.test(body)) return whole;
+            if (visible(body).length <= CHUNK_LIMIT) return whole;
+            return split(open, close, body);
+        });
+
+    let out = rewrite(html, /(<p\b[^>]*>)([\s\S]*?)(<\/p>)/g);
+    out = rewrite(out, /(<dd\b[^>]*>)([\s\S]*?)(<\/dd>)/g);
+    return out;
+}
 /** The whole sheet as one self-contained document. */
 export function renderRegisterHtml(
     reg: WorldRegister,
@@ -6243,7 +6650,7 @@ export function renderRegisterHtml(
 
 
 
-    return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+    return enforceChunkLimit(`<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Standing Register</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6571,7 +6978,7 @@ document.querySelectorAll('.tab').forEach(function (tab) {
   });
 });
 </script>
-</body></html>`;
+</body></html>`);
 }
 
 /** One call: read the catalogs, return the sheet. */
