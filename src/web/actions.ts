@@ -2901,6 +2901,39 @@ export function parseIntent(input: string): PlannedAction {
         };
     }
 
+    // ── A FIGHT SOMEBODY WOULD CHOOSE TO HAVE ────────────────────────────
+    //
+    // Every route into combat was either suicide or refused. Attacking resolves
+    // only to whoever is NEAREST, who is usually far above; the categorical-gap
+    // rule then correctly declines - "3 major realms is not a fight" - so a
+    // player never got to fight anybody. Meanwhile a duel between equals is one
+    // of the commonest things two cultivators do in this setting, it is how a
+    // disciple measures themselves, and it is the only safe way to meet a
+    // system that otherwise only appears when something much stronger has
+    // decided to kill you.
+    //
+    // `subdue` rather than a new goal: an agreed bout ends when one party
+    // yields, which is exactly what `subdue` already means to the resolver, and
+    // it needs no change to the combat tool's closed set.
+    //
+    // The PEER phrase is carried through as the target so the handler can pick
+    // somebody the gap rule will actually permit, rather than the nearest body.
+    if (/\b(?:duel|spar|sparring|challenge)\b/.test(text)
+        && /\b(?:with|against|to a duel|him|her|them|someone|somebody|anyone|anybody|a |the )\b/.test(text)) {
+        // "I challenge him TO A DUEL" puts the challenge word after the person,
+        // so the extracted subject came out as "him to a duel" and resolved to
+        // nobody. The trailing form of the ask is not part of who was asked.
+        const challenged = (extractSubject(
+            input,
+            /duel|spar with|spar against|sparring with|challenge/
+        ) ?? '').replace(/\s+to\s+(?:a|an)\s+(?:duel|spar|bout|match|contest).*$/i, '').trim();
+        return {
+            action: 'attack',
+            ...(challenged.length >= 2 ? { target: challenged } : {}),
+            intent: 'subdue'
+        };
+    }
+
     // Sect promotion and stipend, before anything that could read them as
     // asking a person a question or as going out to collect something.
     {
