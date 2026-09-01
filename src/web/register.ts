@@ -65,6 +65,12 @@ import {
 } from '../data/cultivation/faction-history.js';
 import { demonicStandingOf } from '../data/cultivation/demonic-sects-and-what-they-are-willing-to-do.js';
 import {
+    A_NEWBORN_WITH_POTENTIAL,
+    THE_APEXES_THAT_TRADE,
+    favourStanceOf,
+    willNotBeMoved
+} from '../data/cultivation/a-favour-skips-the-admission-bar.js';
+import {
     NO_PLACE_FOR_THEIR_OWN,
     THE_MEMENTO_AND_THE_SEARCH,
     WASHING_OUT,
@@ -367,6 +373,23 @@ export interface RegisterPosting {
  * child knows exactly who their parent is, and the Court's discretion is
  * absolute so the child never learns a name.
  */
+/**
+ * Whether a word from somebody high enough gets somebody in here.
+ *
+ * `answer` is the headline and the rest is why. `andWhetherItsOwnWordMoves`
+ * is the other direction and frequently the other answer - a house that cannot
+ * be moved may still be able to move somebody else, and the one house that
+ * could move almost anybody has never once tried.
+ */
+export interface RegisterFavour {
+    answer: string;
+    why: string;
+    andWhatItTakes: string | null;
+    andWhetherItsOwnWordMoves: string | null;
+    /** Apex only: the same question asked of a body nobody joins. */
+    apexStance: string | null;
+}
+
 export interface RegisterNoPlace {
     reason: string;
     whyItCannotKeepThem: string;
@@ -1046,6 +1069,18 @@ export interface SectDossier {
      * the child afterwards.
      */
     noPlaceForItsOwn: RegisterNoPlace | null;
+    /**
+     * Whether somebody can get in here on a favour, which is the question an
+     * ordinary person is actually asking.
+     *
+     * A favour skips the admission ordinal - that is the whole of what one
+     * does, and it is the only thing that makes a name worth anything before a
+     * child has an ordinal at all. It sits beside the gate rather than in the
+     * global section because the answer is a fact about this house, and the two
+     * "no" answers are not the same no: one house has nothing to skip and
+     * another has something and will not skip it.
+     */
+    favour: RegisterFavour | null;
     /** What it is trying to become. Null on the four that want nothing. */
     ambition: RegisterAmbition | null;
     /**
@@ -1280,6 +1315,27 @@ export interface WorldRegister {
      * the sharpest thing about it.
      */
     washingOut: { key: string; heading: string; text: string }[];
+    /**
+     * What a favour is for, and which doors it does not open.
+     *
+     * Global because the mechanic is, and because the useful facts are
+     * comparisons no single entry can carry: five houses admit at the floor and
+     * a favour buys nothing at any of them, five have a bar that will not move
+     * and each for a different reason, and the three apexes differ on this axis
+     * far more sharply than on their alignments.
+     */
+    theFavour: {
+        /** Houses where a word buys nothing, because the door is already open. */
+        noBarToSpeakOf: { id: string; name: string; anchor: string | null }[];
+        /** Houses where a word buys the bar, which is the ordinary case. */
+        movesForOne: { id: string; name: string; anchor: string | null; bar: number }[];
+        /** Houses whose bar does not move, and why each one cannot. */
+        willNotMove: { id: string; name: string; anchor: string | null; why: string }[];
+        /** The two apexes that trade a word, and the one that will not. */
+        apexes: { key: string; heading: string; text: string }[];
+        /** The extreme case the whole mechanic exists for. */
+        theNewborn: { key: string; heading: string; text: string }[];
+    };
     /** The object at the centre of the one storyline this produces. */
     theMemento: { key: string; heading: string; text: string }[];
     /** Every art, with every house that teaches it. Grade descending. */
@@ -1478,6 +1534,25 @@ function buildHistory(factionId: string): RegisterHistory | null {
                 anchor: null as string | null
             }))
         }))
+    };
+}
+
+/**
+ * Whether a favour gets somebody in here, and whether this house spends one.
+ *
+ * Read off the favour catalog, which authors the unusual answers and derives
+ * the ordinary one from `SECT_ADMISSION` - so a house whose bar moves cannot
+ * drift out of step with the bar it states.
+ */
+function buildFavour(factionId: string, apexStance: string | null): RegisterFavour | null {
+    const f = favourStanceOf(factionId);
+    if (!f && !apexStance) return null;
+    return {
+        answer: f?.answer ?? 'nobody joins it',
+        why: f?.why ?? 'Nobody is admitted here on any terms, so there is no bar for a word to skip.',
+        andWhatItTakes: f?.andWhatItTakes ?? null,
+        andWhetherItsOwnWordMoves: f?.andWhetherItsOwnWordMovesAnybody ?? null,
+        apexStance
     };
 }
 
@@ -3249,6 +3324,14 @@ function buildDossiers(
             demonic: buildDemonic(row.id),
             posting: buildPosting(getParentage(row.id)?.posting),
             noPlaceForItsOwn: buildNoPlace(row.id),
+            // The apex stance has to be looked up by faction id, not skipped:
+            // the one apex with a sect row is rendered from `rows` rather than
+            // from the apex-only builder, and it is the apex whose answer to
+            // this question matters most.
+            favour: buildFavour(
+                row.id,
+                APEX_INSTITUTIONS.find(a => a.factionId === row.id)?.whetherItsWordSkipsABar ?? null
+            ),
             house: buildHouse(row.id),
             people: {
                 active: MEMBERS
@@ -3418,6 +3501,7 @@ function buildDossiers(
             demonic: buildDemonic(a.id),
             posting: buildPosting(getParentage(a.id)?.posting),
             noPlaceForItsOwn: buildNoPlace(a.id),
+            favour: buildFavour(a.factionId ?? a.id, a.whetherItsWordSkipsABar),
             house: null,
             people: {
                 active: [
@@ -3565,6 +3649,46 @@ export function buildRegister(): WorldRegister {
      * filled in the second pass and a literal inside the returned object cannot
      * be reached from it.
      */
+    /**
+     * The favour, arranged as the three comparisons that are worth making.
+     *
+     * Built here rather than inline, because the anchors are filled in the
+     * second pass once the entries exist. The three lists are derived from the
+     * catalog rather than written out, so a house whose bar changes moves
+     * between them on its own.
+     */
+    const heading = (key: string): string => key
+        .replace(/([A-Z]+)/g, ' $1')
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+        .trim()
+        .replace(/^./, c => c.toUpperCase());
+
+    const favourRows = {
+        noBarToSpeakOf: SECTS
+            .filter(x => favourStanceOf(x.id)?.answer === 'no bar to speak of')
+            .map(x => ({ id: x.id, name: x.name, anchor: null as string | null })),
+        movesForOne: SECTS
+            .filter(x => favourStanceOf(x.id)?.answer === 'yes, at a price')
+            .map(x => ({
+                id: x.id,
+                name: x.name,
+                anchor: null as string | null,
+                bar: SECT_ADMISSION[x.id]?.minOrdinal ?? x.admissionOrdinal
+            }))
+            .sort((a, b) => b.bar - a.bar),
+        willNotMove: willNotBeMoved().map(f => ({
+            id: f.factionId,
+            name: nameOf(f.factionId),
+            anchor: null as string | null,
+            why: f.why
+        })),
+        apexes: Object.entries(THE_APEXES_THAT_TRADE)
+            .map(([key, text]) => ({ key, heading: heading(key), text: String(text) })),
+        theNewborn: Object.entries(A_NEWBORN_WITH_POTENTIAL)
+            .map(([key, text]) => ({ key, heading: heading(key), text: String(text) }))
+    };
+
     const noPlaceRows = NO_PLACE_FOR_THEIR_OWN.map(x => ({
         factionId: x.factionId,
         name: nameOf(x.factionId),
@@ -3621,6 +3745,9 @@ export function buildRegister(): WorldRegister {
     // entry, because that section is a comparison and a reader has to be able
     // to get from it to any of the three.
     for (const x of noPlaceRows) x.anchor = anchorFor(x.factionId);
+    for (const x of favourRows.noBarToSpeakOf) x.anchor = anchorFor(x.id);
+    for (const x of favourRows.movesForOne) x.anchor = anchorFor(x.id);
+    for (const x of favourRows.willNotMove) x.anchor = anchorFor(x.id);
 
     // The same for the artifact table's owner column, where the id may belong
     // to a body filed under a different one.
@@ -3680,6 +3807,7 @@ export function buildRegister(): WorldRegister {
         artifactCeiling: findArtifactCeiling(artifacts),
         courts,
         noPlaceForTheirOwn: noPlaceRows,
+        theFavour: favourRows,
         // Headings derived from the record's own keys, so a field added to the
         // catalog turns up here instead of being silently dropped.
         washingOut: Object.entries(WASHING_OUT).map(([key, text]) => ({
@@ -4971,6 +5099,25 @@ function demonicBlock(x: RegisterDemonic, name: string): string {
 }
 
 /**
+ * Whether somebody gets in here on a word, beside the gate the word would skip.
+ *
+ * The sharpest axis on the sheet for an ordinary reader, and a better
+ * distinction between the three apexes than the alignment beside them: no,
+ * because we do not do that; yes, and here is what it costs. The two "no"
+ * answers are rendered differently on purpose - a house with nothing to skip is
+ * not making a decision, and a house that will not move is making one every
+ * time it is asked.
+ */
+function favourBlock(f: RegisterFavour): string {
+    return `<div class="assess"><dl>
+    <dt>In on somebody's word?</dt><dd><b>${esc(f.answer)}</b>. ${esc(f.why)}</dd>
+    ${f.andWhatItTakes ? `<dt>And what it takes</dt><dd>${esc(f.andWhatItTakes)}</dd>` : ''}
+    ${f.apexStance ? `<dt>Whether its word skips a bar</dt><dd>${esc(f.apexStance)}</dd>` : ''}
+    ${f.andWhetherItsOwnWordMoves ? `<dt>Whether its own word moves anybody</dt><dd>${esc(f.andWhetherItsOwnWordMoves)}</dd>` : ''}
+  </dl></div>`;
+}
+
+/**
  * Why a house has no place for its own members' children.
  *
  * On three entries and nowhere else, and the absence everywhere else is the
@@ -5287,6 +5434,7 @@ function dossier(d: SectDossier): string {
       // does not exist.
       ? postingBlock(d.posting, d.name)
       : d.wayIn ? wayInBlock(d.wayIn) : ''}
+  ${d.favour ? favourBlock(d.favour) : ''}
   ${d.noPlaceForItsOwn ? noPlaceBlock(d.noPlaceForItsOwn, d.name) : ''}
   ${d.house ? houseBlock(d.house) : ''}
   ${people.length ? `<div class="grps">${people.join('')}</div>` : ''}
@@ -5674,6 +5822,33 @@ export function renderRegisterHtml(
       if (!capped.length) return '';
       return `<p class="note"><strong>The ceiling in the arts table is what the world believes, not a bar anything applies.</strong> ${capped.length} ancient ${capped.length === 1 ? 'art has' : 'arts have'} a figure, expressed on the same 0-100% mastery scale the engine uses - and NOTHING CURRENTLY READS IT. No upkeep is consulted anywhere in the technique layer, so an elder saying <em>you will not get past the fifth level</em> is a person describing their own house's history with the material, and the catalog recording that they are right, rather than a rule reading itself out loud. When it is enforced it should be enforced the honest way: an upkeep nobody can meet, not a rule saying you may not.</p>`;
   })()}
+</section>
+
+<section>
+  <div class="sh"><h2>What a favour is for</h2><span class="r">it skips the admission ordinal &middot; nothing else</span></div>
+  <p class="note"><strong>A favour is not money, standing, or a recommendation that makes a good impression. It makes a house take somebody it would otherwise refuse on the bar.</strong> That is the whole of the mechanism, and it is the only thing that makes a name worth anything before a child has an ordinal at all - because every house states a minimum, no origin waives one, and a seven-year-old is at zero. Without it the greatest name in the province could only place a child at the ${reg.theFavour.noBarToSpeakOf.length} houses that admit at the floor, all of which would have taken a farmer's child that morning. Who can grant one is not a rule: it is somebody at Tribulation Transcendence or comparably placed, and there are very few of those.</p>
+  <div class="scroll"><table>
+    <caption>Where a word buys nothing &middot; ${reg.theFavour.noBarToSpeakOf.length} houses, and the reason the mechanic had to exist</caption>
+    <thead><tr><th>House</th></tr></thead>
+    <tbody>${reg.theFavour.noBarToSpeakOf.map(x => `<tr><td class="nm">${x.anchor ? `<a href="#${esc(x.anchor)}">${esc(x.name)}</a>` : esc(x.name)}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note">And the ${reg.theFavour.willNotMove.length} whose bar does not move - never out of fastidiousness. A bar that cannot be waived is a bar whose waiving would break something: kill the applicant, dissolve the thing the house runs on, or admit a contribution the house has no use for.</p>
+  <div class="scroll"><table>
+    <caption>Where a word buys nothing because it is refused &middot; a different no from the table above</caption>
+    <thead><tr><th>House</th><th>Why it does not move</th></tr></thead>
+    <tbody>${reg.theFavour.willNotMove.map(x => `<tr>`
+      + `<td class="nm">${x.anchor ? `<a href="#${esc(x.anchor)}">${esc(x.name)}</a>` : esc(x.name)}</td>`
+      + `<td class="q">${esc(x.why)}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note">Everywhere else - <strong>${reg.theFavour.movesForOne.length} houses</strong> - a word moves the bar, at a price, and the price is generally an obligation nobody names at the time. The bar is what is being bought and nothing else: the child still has to survive the teaching.</p>
+  <div class="scroll"><table>
+    <caption>Where a word buys the bar &middot; highest bar first, because that is where a favour is worth most</caption>
+    <thead><tr><th>House</th><th class="pw">Bar</th></tr></thead>
+    <tbody>${reg.theFavour.movesForOne.map(x => `<tr>`
+      + `<td class="nm">${x.anchor ? `<a href="#${esc(x.anchor)}">${esc(x.name)}</a>` : esc(x.name)}</td>`
+      + `<td class="pw">${x.bar}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note"><strong>And the three apexes differ on exactly this</strong>, which is a far more useful distinction than the alignment word beside them, because it is the one an ordinary person is actually asking about: no, because we do not do that - or yes, and here is what it costs.</p>
+  <dl class="dispute">${reg.theFavour.apexes.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
+  <p class="note">The extreme case, and the reason anybody spends one.</p>
+  <dl class="dispute">${reg.theFavour.theNewborn.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
 </section>
 
 <section>

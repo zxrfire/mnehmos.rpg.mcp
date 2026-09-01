@@ -2693,7 +2693,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         minMight: 2,
         preferredRoots: ['single_metal', 'dual_metal_wood'],
         requirement:
-            'To be a disciple: Qi Condensation Layer 4 or better, and one clean strike shown to a Sword Elder. That bar has never moved and is not the door most people come through. The Pavilion also tests uncultivated mortals, takes the best of them onto probation at the very bottom of the ladder, and carries them for years before deciding - wide intake, narrow conversion, and the requirement above still waiting at the far end. See `AZURE_CLOUD_INTAKE` in `hierarchy.ts`.'
+            'To be a disciple: Qi Condensation Layer 4 or better, and one clean strike shown to a Sword Elder. That bar has never moved and is not the door most people come through. The Pavilion also tests uncultivated mortals, takes the best of them onto probation at the very bottom of the ladder, and carries them for years before deciding - wide intake, narrow conversion, and the requirement above still waiting at the far end. And it will not be skipped: the Pavilion is asked perhaps twice a decade to take somebody under the bar on the word of a person who could make it awkward to refuse, and it refuses, in the same words each time, on the stated ground that a bar it moves once is not a bar. Being handed a child by somebody at the top of the world gets you what walking up the mountain gets you, which is a probation place and an honest look. See `AZURE_CLOUD_INTAKE` in `hierarchy.ts` and `a-favour-skips-the-admission-bar.ts`.'
     },
     'sect-verdant-spring-hall': {
         minOrdinal: 2,
