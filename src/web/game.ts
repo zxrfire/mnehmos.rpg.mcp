@@ -600,6 +600,41 @@ function boardSample(prices: MarketPrice[]): MarketPrice[] {
     return prices.filter(item => chosen.has(item));
 }
 
+/**
+ * Whether what somebody typed names a title by a piece of it.
+ *
+ * The commission titles in this game are long and good - "What a Poor District
+ * Has Instead of Monsters" - and a player refers to one the way people refer to
+ * anything long: by the memorable part. Whole-string matching made the best
+ * writing in the content files into an obstacle.
+ *
+ * Two words or more, and only words that carry meaning: a shared "the" or "of"
+ * is not a reference to anything, and one shared noun would collide the moment
+ * two commissions both mention a village. Three or more letters per word, and
+ * at least two of them adjacent in the title, which is what makes it a phrase
+ * rather than a bag of coincidences.
+ */
+function sharesADistinctivePhrase(query: string, title: string): boolean {
+    const words = (s: string) => s.toLowerCase().match(/[a-z]{3,}/g) ?? [];
+    const asked = words(query).filter(w => !DUTY_STOPWORDS.has(w));
+    const named = words(title).filter(w => !DUTY_STOPWORDS.has(w));
+    if (asked.length < 2 || named.length < 2) return false;
+
+    for (let i = 0; i < asked.length - 1; i++) {
+        for (let j = 0; j < named.length - 1; j++) {
+            if (asked[i] === named[j] && asked[i + 1] === named[j + 1]) return true;
+        }
+    }
+    return false;
+}
+
+/** Words that name nothing on their own, so a shared one means nothing. */
+const DUTY_STOPWORDS: ReadonlySet<string> = new Set([
+    'the', 'and', 'for', 'has', 'have', 'that', 'this', 'with', 'from', 'what',
+    'into', 'take', 'taking', 'accept', 'one', 'ones', 'job', 'jobs', 'mission',
+    'missions', 'commission', 'duty', 'task', 'work', 'sect', 'house'
+]);
+
 function priceOf(item: MarketPrice): string {
     const unit = item.unit ? ` the ${item.unit}` : '';
     const mortal = item.category === undefined || MORTAL_CATEGORIES.has(item.category);
@@ -8730,8 +8765,24 @@ ${fit.line}`;
         }
 
         // ── a line, taken ──
-        const chosen = board.offers.find(offer =>
-            matchScore(wanted, offer.entry.name) > MATCH_THRESHOLD);
+        //
+        // THE DEFINITE ARTICLE RESOLVES WHEN THERE IS ONE THING TO RESOLVE TO.
+        //
+        // "I take the mission" against a board holding exactly one commission
+        // was refused with "You read it twice and it is not there" - and then
+        // named it in the next clause, which is a refusal arguing with itself.
+        // A player should not have to retype a seven-word title to accept the
+        // only job on the wall. Same rule `consume_pill` already follows for a
+        // pouch holding one pill.
+        //
+        // And a DISTINCTIVE FRAGMENT is a name. The board prints "What a Poor
+        // District Has Instead of Monsters"; "the poor district one" is how a
+        // person refers to it, and matching only the whole string made the
+        // titles - which are one of the best things in the game - a liability.
+        const chosen = board.offers.length === 1 && GameService.THE_ONE_ON_THE_BOARD.test(wanted)
+            ? board.offers[0]
+            : board.offers.find(offer => matchScore(wanted, offer.entry.name) > MATCH_THRESHOLD)
+                ?? board.offers.find(offer => sharesADistinctivePhrase(wanted, offer.entry.name));
         if (!chosen) {
             const going = board.offers.map(offer => offer.entry.name).join(', ');
             return refused('encounters.sectBoardFor', 'sect', factsForRefusal(
@@ -8812,6 +8863,16 @@ ${fit.line}`;
         });
         return execution;
     }
+
+    /**
+     * "the mission", "it", "that one" - a line, when there is only one line.
+     *
+     * Distinct from BOARD_IN_GENERAL, which is a request to READ the wall.
+     * These are somebody pointing at the single thing on it, which is only
+     * ambiguous when there is more than one, and the caller checks that first.
+     */
+    private static readonly THE_ONE_ON_THE_BOARD =
+        /^(?:the |that |this |it|one)?\s*(?:mission|missions|commission|job|duty|task|assignment|errand|contract|one|it)?\s*$/i;
 
     /** "the board", "sect work", "whatever is going" - a wall, not a line. */
     private static readonly BOARD_IN_GENERAL =
@@ -10091,6 +10152,48 @@ export function withoutTheOverride(target: string): string {
 
 function summariseToolBody(body: Record<string, unknown>): string[] {
     const lines: string[] = [];
+
+    // ── WHERE SOMEBODY STANDS IN THEIR OWN HOUSE ─────────────────────────
+    //
+    // `handleStanding` returns rank, contribution and exactly what the next
+    // rung wants, and this function had no branch for that shape - so asking
+    // came back "It is done. Nothing about it drew attention." The fallback
+    // defect again, on the read that answers "how much contribution do I have",
+    // which is the number gating every promotion in the game.
+    //
+    // The promotion refusal already states both requirements and both current
+    // values and is the best sentence of its kind in the codebase. This says
+    // the same thing before the player is refused rather than after.
+    const rank = body.rank as { title?: string; stipendPerMonth?: number } | undefined;
+    if (body.member === true && rank?.title) {
+        const sect = body.sect as { name?: string; memberCount?: number } | undefined;
+        lines.push(
+            `${rank.title}${sect?.name ? ` of ${sect.name}` : ''}`
+            + `${typeof body.contribution === 'number' ? `, ${body.contribution} contribution` : ''}`
+            + `${typeof rank.stipendPerMonth === 'number' ? `, ${rank.stipendPerMonth} spirit stones a month` : ''}.`
+        );
+        const next = body.nextRank as {
+            title?: string; requiredRank?: string; requiredContribution?: number;
+            ordinalShortfall?: number; contributionShortfall?: number;
+        } | null | undefined;
+        if (next?.title) {
+            const wants: string[] = [];
+            if ((next.ordinalShortfall ?? 0) > 0 && next.requiredRank) {
+                wants.push(`${next.requiredRank}, which is ${next.ordinalShortfall} rung(s) up`);
+            }
+            if ((next.contributionShortfall ?? 0) > 0) {
+                wants.push(`${next.requiredContribution} contribution, which is ${next.contributionShortfall} more`);
+            }
+            lines.push(wants.length === 0
+                ? `${next.title} is open: the house has no further requirement to state.`
+                : `${next.title} wants ${wants.join(' and ')}.`);
+        } else if (body.nextRank === null) {
+            lines.push('There is no rung above this one in the house.');
+        }
+    }
+    if (body.member === false && typeof body.note === 'string') {
+        lines.push(body.note);
+    }
 
     const odds = body.odds as { finalChancePercent?: number; roll?: number } | undefined;
     if (odds && typeof odds.finalChancePercent === 'number') {
