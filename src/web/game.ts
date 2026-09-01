@@ -1831,7 +1831,7 @@ ${noticedWaiting}`;
                 return this.inventory(run, cultivator);
 
             case 'consume_pill':
-                return this.consumePill(cultivator, action.target);
+                return this.consumePill(cultivator, action.target, rawInput);
 
             case 'list_techniques':
                 return this.listTechniques(run, cultivator);
@@ -7438,7 +7438,8 @@ ${noticed}`;
      */
     private async consumePill(
         cultivator: Cultivator,
-        target: string | undefined
+        target: string | undefined,
+        rawInput = ''
     ): Promise<Execution> {
         const held = listPouch(this.db, cultivator.id).filter(row => row.kind === 'pill');
         if (held.length === 0) {
@@ -7450,7 +7451,11 @@ ${noticed}`;
             ));
         }
 
-        const query = (target ?? '').trim();
+        // The override word is not part of the pill's name. "I take the pill
+        // anyway" extracted `the pill anyway`, which matched no pouch row and
+        // no category, so confirming a wasted pill refused a second time for an
+        // entirely different reason.
+        const query = withoutTheOverride(target ?? '');
         // A bare "I take a pill" with exactly one in the pouch is not
         // ambiguous, and refusing it to make a player retype the name they can
         // already see in their inventory is the same defect as a board that
@@ -7470,6 +7475,40 @@ ${noticed}`;
         }
 
         const name = this.lotFor(chosen)?.name ?? chosen.itemId;
+
+        // ── ASK BEFORE WASTING IT ──
+        //
+        // A restorative swallowed at full does nothing, is gone anyway, and
+        // leaves toxicity - so it is strictly worse than not taking it. The
+        // engine says so afterwards now, which was an improvement on saying
+        // nothing, but afterwards is the wrong moment: the pill is already
+        // spent. Found by playing, at eighteen of the thirty spirit stones a
+        // cultivator starts with.
+        //
+        // A refusal rather than a prompt, because this layer has no way to ask
+        // a question and wait. The player says it again with `anyway` and it
+        // goes through, which is the same shape every other deliberate
+        // override in this game takes.
+        const pill = getPill(chosen.itemId);
+        const wasted =
+            (pill?.effect === 'restore_qi' && cultivator.qi >= cultivator.maxQi)
+                ? { what: 'qi', at: cultivator.qi, of: cultivator.maxQi }
+                : (pill?.effect === 'heal_hp' && cultivator.hp >= cultivator.maxHp)
+                    ? { what: 'HP', at: cultivator.hp, of: cultivator.maxHp }
+                    : null;
+
+        if (wasted && !GameService.TAKE_IT_ANYWAY.test(rawInput)) {
+            return refused('engine.pillWouldBeWasted', 'consume_pill', factsForRefusal(
+                `${name} would do nothing.`,
+                `Your ${wasted.what} is already ${wasted.at} of ${wasted.of}. `
+                + `${name} restores ${wasted.what} and there is none to restore, so it would be `
+                + 'gone for nothing and the toxicity would stay. Say it again with "anyway" and '
+                + 'it goes down.',
+                `${chosen.itemId} is ${pill?.effect} and ${wasted.what} is at maximum. `
+                + 'Nothing swallowed, nothing spent.'
+            ));
+        }
+
         const result = await handleConsumePill({
             action: 'consume_pill',
             pillId: chosen.itemId,
@@ -7477,6 +7516,9 @@ ${noticed}`;
         });
         return this.fromToolResult('alchemy_manage.consume_pill', 'consume_pill', result, name);
     }
+
+    /** The word that turns the wasted-pill refusal into a deliberate act. */
+    private static readonly TAKE_IT_ANYWAY = /\b(?:anyway|anyhow|regardless|even so|i don'?t care)\b/i;
 
     /** "a pill", "one", "the medicine" - a category, not a name. */
     private static readonly PILL_IN_GENERAL =
@@ -9478,6 +9520,22 @@ function skipCalls(action: string, skip: TimeSkipResult, provisioning: string | 
  * results are large, and everything not listed here is either an id the player
  * cannot use or a projection the sheet already shows.
  */
+/**
+ * Strip the deliberate-override word out of a named target.
+ *
+ * "I take the pill anyway" parses to `target: "pill anyway"`, and the override
+ * is not part of the pill's name - left in, confirming a wasted pill refused a
+ * second time for an entirely different reason ("no pill called pill anyway on
+ * you"), which is a worse answer than the one being confirmed.
+ *
+ * A module function rather than a static on the class: the same word will want
+ * stripping wherever an override is offered, and a target is a string rather
+ * than anything the game service owns.
+ */
+export function withoutTheOverride(target: string): string {
+    return target.replace(/\b(?:anyway|anyhow|regardless|even so)\b/gi, '').replace(/\s+/g, ' ').trim();
+}
+
 function summariseToolBody(body: Record<string, unknown>): string[] {
     const lines: string[] = [];
 
