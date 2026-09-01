@@ -411,6 +411,15 @@ export async function handleWork(
         // know it: this path reported wages and nothing else while a cultivator
         // went from full health to half across fourteen years of it.
         satiety: after.satiety,
+        // What the hunger is actually costing, and whether they survived it.
+        // Satiety alone tells a player they are hungry and never that it is
+        // taking their health - measured by playing, health slid from thirty to
+        // fifteen across twenty years while the only warning was a number about
+        // food. And death here was reported nowhere at all.
+        hp: after.hp,
+        maxHp: after.maxHp,
+        alive: after.alive,
+        deathCause: after.deathCause ?? null,
         purse: describePurse(after),
         // The whole span, exactly as the cultivation engine resolved it. Wages
         // are the only thing this action adds.

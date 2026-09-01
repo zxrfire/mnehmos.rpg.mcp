@@ -9377,9 +9377,20 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
         // was not.
         const satietyNow = typeof body.satiety === 'number' ? body.satiety : null;
         if (satietyNow !== null && satietyNow <= LOW_SATIETY) {
+            const hpNow = typeof body.hp === 'number' ? body.hp : null;
+            const hpMax = typeof body.maxHp === 'number' ? body.maxHp : null;
             lines.push(
-                `Satiety is down to ${satietyNow}. The work pays and it does not feed you, ` +
-                'and qi feeds the meridians rather than the body.'
+                `Satiety is down to ${satietyNow}. The work pays and it does not feed you, `
+                + 'and qi feeds the meridians rather than the body.'
+                // Name the cost in the same breath. A player told they are
+                // hungry, and separately that they are hurt, has to join the two
+                // themselves - and nothing on the work board suggests they are
+                // the same fact. Measured by playing: health slid from thirty to
+                // fifteen across twenty years and the only warning was a number
+                // about food.
+                + (hpNow !== null && hpMax !== null && hpNow < hpMax
+                    ? ` It is being taken out of you: ${hpNow} of ${hpMax} left.`
+                    : '')
             );
         }
     }
