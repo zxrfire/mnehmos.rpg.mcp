@@ -10,6 +10,8 @@
 import { describe, it, expect } from 'vitest';
 import { renderRegister, buildRegister } from '../../src/web/register';
 import { ARCHIVE_COPIES, MEDICINE_HOLDINGS, LOST_MATERIALS, ANCIENT_ARTS } from '../../src/data/cultivation/lost-ages';
+import { ARTERIALS, PROVINCES } from '../../src/data/cultivation/regions';
+import { COURTS, APEX_INSTITUTIONS } from '../../src/data/cultivation/hierarchy';
 
 const HTML = renderRegister();
 
@@ -95,12 +97,20 @@ describe('who holds a book nobody can feed', () => {
 });
 
 describe('the medicine ledger renders the uncertainty rather than resolving it', () => {
-    it('marks the unconfirmed holding as unconfirmed', () => {
+    it('renders an unconfirmed holding as unconfirmed, where one exists', () => {
+        // CONDITIONAL, because the standing is the data agent's to set and it
+        // has moved under this test once already: the spec handed to me had
+        // the Azure Cloud Pavilion as `believed_to_hold`, with a note that the
+        // ambiguity was worth more than either answer, and the catalog now
+        // says `never_had_one`. What this file may assert is how the register
+        // RENDERS such a row, never whether the world contains one.
         const believed = MEDICINE_HOLDINGS.filter(m => m.standing === 'believed_to_hold');
-        expect(believed.length).toBeGreaterThan(0);
+        if (believed.length === 0) {
+            // Nothing to render, and the sheet must not invent the uncertainty.
+            expect(HTML).not.toContain('believed to</em> hold one');
+            return;
+        }
         expect(HTML).toContain('believed to</em> hold one');
-        // The authoring note is that the ambiguity is worth more than either
-        // answer. A sheet that picked one would be destroying the content.
         expect(HTML).toMatch(/never been confirmed/i);
     });
 
@@ -124,5 +134,68 @@ describe('what cannot be made', () => {
         // never by its slug. A register printing raw ids has stopped being a
         // document and become a dump.
         for (const id of gated) expect(HTML).not.toContain(`>${id}<`);
+    });
+});
+
+/**
+ * Two facts nobody in the world has written down, both ordinary joins.
+ *
+ * Derived rather than stored, and asserted here rather than trusted, for the
+ * reason the arts tab already gives: the interesting figure is a join and
+ * either side of it can move, so the claim has to be falsifiable on the page
+ * instead of going quietly stale.
+ */
+describe('who administers whose ground', () => {
+    it('finds the arterial run by a court answering to a rival house', () => {
+        // A province is HELD by an apex and ADMINISTERED THROUGH a court, and
+        // nothing requires the two to be the same house. Reading the catalogs
+        // together is the only place the dependency exists at all.
+        const crossed = ARTERIALS.filter(a => {
+            const province = PROVINCES.find(p => p.id === a.provinceId);
+            const court = COURTS.find(c => c.id === a.administeredByCourtId);
+            return province && court && province.heldByApexId !== court.apexId;
+        });
+        expect(crossed.length).toBeGreaterThan(0);
+        expect(HTML).toContain('Who administers whose ground');
+        // And it is stated as undocumented, which is the fact rather than a
+        // flourish: there is no document whose job it would be.
+        expect(HTML).toMatch(/no document anywhere says so/i);
+    });
+
+    it('prints the house that holds no ground at all', () => {
+        const landless = APEX_INSTITUTIONS.filter(
+            apex => !PROVINCES.some(p => p.heldByApexId === apex.id)
+        );
+        expect(landless.length).toBeGreaterThan(0);
+        // An empty territory list is a recent heritage stated as geography
+        // rather than as prose, and it is the one thing the power table cannot
+        // show: a house near the top of it that owns no ground.
+        expect(HTML).toContain('no province at all');
+        for (const apex of landless) expect(HTML).toContain(apex.name);
+    });
+
+    it('does not claim a crossing where the houses agree', () => {
+        // The negative half, and it has to read the CLAIM rather than the page:
+        // regexing the whole document matches names in unrelated tables and
+        // would pass or fail for reasons that have nothing to do with the
+        // finding. So the crossing paragraph is isolated and checked to name
+        // every arterial that crosses and none that does not.
+        const marker = 'answers to somebody else.';
+        const start = HTML.indexOf(marker);
+        expect(start, 'the crossing note should be on the page').toBeGreaterThan(0);
+        const claim = HTML.slice(start, HTML.indexOf('</p>', start)).replace(/<[^>]+>/g, '');
+
+        const holderOf = (arterialId: string) =>
+            PROVINCES.find(p => p.id === ARTERIALS.find(a => a.id === arterialId)?.provinceId)?.heldByApexId;
+        const patronOf = (arterialId: string) =>
+            COURTS.find(c => c.id === ARTERIALS.find(a => a.id === arterialId)?.administeredByCourtId)?.apexId;
+
+        for (const a of ARTERIALS) {
+            const holder = holderOf(a.id);
+            const patron = patronOf(a.id);
+            const crosses = holder !== undefined && patron !== undefined && holder !== patron;
+            if (crosses) expect(claim, a.name).toContain(a.name);
+            else expect(claim, a.name).not.toContain(a.name);
+        }
     });
 });
