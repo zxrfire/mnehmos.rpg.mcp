@@ -18,6 +18,35 @@ The field is `addresses`, on `TechniqueSchema` in
 floors and guards are defined in the block above it. Everything below describes what is
 already in that file. Nothing here adds a rule.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [The question the ladder asks](#the-question-the-ladder-asks) | describing what somebody can do at a given height |
+| &nbsp;&nbsp;[The bands narrow as they rise](#the-bands-narrow-as-they-rise) | somebody asks why the top of the ladder has so few rungs, or two adjacent high rungs are compared |
+| &nbsp;&nbsp;[A wide swing is not a rung](#a-wide-swing-is-not-a-rung) | an art lands on many people at once and somebody takes that for height |
+| [What is different at each step, in practice](#what-is-different-at-each-step-in-practice) | the player watches somebody far above them act, or asks what a realm actually buys |
+| [The top rung](#the-top-rung) | **Tier 1** - every turn |
+| &nbsp;&nbsp;[Why it is not a larger `settled` art](#why-it-is-not-a-larger-settled-art) | **Tier 3** - never injected |
+| &nbsp;&nbsp;[The three things a decree cannot say](#the-three-things-a-decree-cannot-say) | a decree is attempted and its limits are being tested |
+| &nbsp;&nbsp;[The word at the top three rungs](#the-word-at-the-top-three-rungs) | somebody at one of the last three rungs states a thing about the world |
+| [How it composes with the two axes that already exist](#how-it-composes-with-the-two-axes-that-already-exist) | comparing an ancient art to a modern one, or a manual to a fighting art |
+| &nbsp;&nbsp;[`class` - and this one is an invariant, not a guard](#class---and-this-one-is-an-invariant-not-a-guard) | somebody expects their cultivation manual to escalate in kind, or a manual is compared to a fighting art |
+| &nbsp;&nbsp;[`era` - and this one is the guard that matters](#era---and-this-one-is-the-guard-that-matters) | an ancient art and a modern one of the same height are set against each other |
+| &nbsp;&nbsp;[Ancient is a paradigm, not a date](#ancient-is-a-paradigm-not-a-date) | anybody asks where an art was written, or why nothing above the Lid looks like what is taught down here |
+| &nbsp;&nbsp;[A modern immortal art is possible, ill-suited, and would belong down here](#a-modern-immortal-art-is-possible-ill-suited-and-would-belong-down-here) | an art written above the Lid turns up down here, or somebody asks whether immortals write elemental arts |
+| &nbsp;&nbsp;[A discrepancy the catalog has not caught up with](#a-discrepancy-the-catalog-has-not-caught-up-with) | **Tier 3** - never injected |
+| &nbsp;&nbsp;[Where the six ancient arts actually sit](#where-the-six-ancient-arts-actually-sit) | **Tier 3** - never injected |
+| [The archive, and what a house holds that it cannot use](#the-archive-and-what-a-house-holds-that-it-cannot-use) | the player is deciding whether to join a faction, or has found a book nobody there can read |
+| &nbsp;&nbsp;["They know it works"](#they-know-it-works) | a house asserts a shelved book works when nobody there can open it |
+| &nbsp;&nbsp;[Three rules](#three-rules) | **Tier 3** - never injected |
+| &nbsp;&nbsp;[The two reasons a house ends up in this state](#the-two-reasons-a-house-ends-up-in-this-state) | a house's library has outrun its living teachers, or a lineage has had a thin generation |
+| &nbsp;&nbsp;[The starkest case, which nobody authored](#the-starkest-case-which-nobody-authored) | a house with no vein and no accounts reliably turns out strong disciples |
+| [And what runs out](#and-what-runs-out) | somebody is practising an art with an upkeep, or an elder predicts how far somebody will get |
+| [Related](#related) | **Tier 3** - never injected |
+
 ---
 
 ## The question the ladder asks
@@ -43,12 +72,16 @@ prose goes stale silently.
 
 ### The bands narrow as they rise
 
+<!-- tier: 2 trigger="somebody asks why the top of the ladder has so few rungs, or two adjacent high rungs are compared" -->
+
 Twenty-one rungs, then twelve, then eleven, then two, then one. Nobody arranged that; it
 falls out of anchoring the floors to realm boundaries, and it is the corridor thesis from
 [`escapes.md`](escapes.md) arriving on a second axis. What a cultivator is permitted to
 address gets rarer the higher they go, and the last two steps are almost nothing wide.
 
 ### A wide swing is not a rung
+
+<!-- tier: 2 trigger="an art lands on many people at once and somebody takes that for height" -->
 
 `several` is a headcount, not a subject. Two palms struck together hard enough to tear the
 air between them lands on three people at ordinal nine and is still addressing three
@@ -96,6 +129,8 @@ nothing that has to already be there.
 
 ### Why it is not a larger `settled` art
 
+<!-- tier: 3 -->
+
 A `settled` art operates on a fact that is **already there**. It needs a name that was
 given, an oath that was sworn, a death that was decided. Everything it can do is bounded
 by what the world has already fixed, and no amount of magnitude widens that bound: an
@@ -114,6 +149,8 @@ is a `settled` art with a large number on it and it belongs a rung down. A decre
 nothing.
 
 ### The three things a decree cannot say
+
+<!-- tier: 2 trigger="a decree is attempted and its limits are being tested" -->
 
 None of these is a balance patch. Each is an existing rule of the setting arriving on the
 axis of the word.
@@ -144,6 +181,8 @@ answer, once, very fast, and then it is gone whether it finished or not.
 
 ### The word at the top three rungs
 
+<!-- tier: 2 trigger="somebody at one of the last three rungs states a thing about the world" -->
+
 The clearest worked example in the setting, and most of it was in the catalog before the
 ladder existed. The **same act** - a person states a thing about the world - at the last
 three rungs:
@@ -171,6 +210,8 @@ This ladder does not replace `class` or `era`. It cuts across both.
 
 ### `class` - and this one is an invariant, not a guard
 
+<!-- tier: 2 trigger="somebody expects their cultivation manual to escalate in kind, or a manual is compared to a fighting art" -->
+
 **A cultivation manual addresses the practitioner, at every rung, for ever.** What you
 practise to rank up never escalates in kind; only what you *use* does. The catalog already
 said this, in the note on the one gathering canon that sits at the very top of the ladder
@@ -180,6 +221,8 @@ So the address ladder is a property of dao arts alone, and the highest book in t
 is still a book about a breath.
 
 ### `era` - and this one is the guard that matters
+
+<!-- tier: 2 trigger="an ancient art and a modern one of the same height are set against each other" -->
 
 Modern is elemental and scales to the horizon. Ancient is categorical: it moves a resource
 between bodies, it puts spears in the ground somebody else can pick up, it takes a piece
@@ -212,6 +255,8 @@ That has a consequence worth stating plainly, because it is the opposite of what
 > people who are not old, in the only idiom that suits where they live.
 
 ### A modern immortal art is possible, ill-suited, and would belong down here
+
+<!-- tier: 2 trigger="an art written above the Lid turns up down here, or somebody asks whether immortals write elemental arts" -->
 
 Not impossible. **Ill-fitting.** Somebody above the Lid could compose in the elemental
 idiom, and the result would sit badly exactly where it was made - an art built for a world
@@ -251,6 +296,8 @@ Recorded here rather than quietly corrected, because the technique catalog is ow
 elsewhere. The prose states the rule; the data has not been changed to match it yet.
 
 ### Where the six ancient arts actually sit
+
+<!-- tier: 3 -->
 
 The six arts currently filed `ancient` are the top of the **categorical** line *below the
 Lid*, and the ladder has to *account* for them rather than sit beside them. It does, and
@@ -308,6 +355,8 @@ prospect than its roster looks**, and that is a fact a player can act on.
 
 ### "They know it works"
 
+<!-- tier: 2 trigger="a house asserts a shelved book works when nobody there can open it" -->
+
 This is not hedged and it is not a rumour. It is deliberately unlike a sect's ancestral
 claim - which is two fields precisely because houses frequently do not know what they are
 claiming. Here they do. Somebody in the house did it, it is written down with names and a
@@ -316,6 +365,8 @@ year, and the house will say so without embellishment and without apology.
 If it reads as *it is said that*, it is in the wrong table.
 
 ### Three rules
+
+<!-- tier: 3 -->
 
 1. **Never on the teach list.** `teaches` is a house's entire *working* library. A shelved
    book nobody can open is not a living transmission and must not create one.
@@ -326,6 +377,8 @@ If it reads as *it is said that*, it is in the wrong table.
    precious about it. Several of these are cheaper to obtain than arts a quarter as good.
 
 ### The two reasons a house ends up in this state
+
+<!-- tier: 2 trigger="a house's library has outrun its living teachers, or a lineage has had a thin generation" -->
 
 **A Dao house** is a lineage, and thousands of years of one principle sit on whoever
 happens to have been born. There is no way to hire around a thin generation, so the
@@ -340,6 +393,8 @@ written one down.**
 somebody who crossed still has what that person was reading.
 
 ### The starkest case, which nobody authored
+
+<!-- tier: 2 trigger="a house with no vein and no accounts reliably turns out strong disciples" -->
 
 A temple that keeps no accounts, takes intake every other institution has refused, sits on
 ground it chose for having no vein, and reliably turns out Foundation Establishment. Its
@@ -383,6 +438,8 @@ quietly holding a remnant it has never acknowledged. Both are authored. Neither 
 ---
 
 ## Related
+
+<!-- tier: 3 -->
 
 - [`ancient.md`](ancient.md) - the era axis, and the failure this page inherits its shape from
 - [`escapes.md`](escapes.md) - the corridor above the middle, which this ladder narrows in parallel

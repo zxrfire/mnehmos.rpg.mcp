@@ -16,6 +16,30 @@ rather than inventing it here.
 
 Nothing in this file is a new subsystem. The last section is the useful part.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [The situation, measured](#the-situation-measured) | **Tier 3** - never injected |
+| [The three rules every route obeys](#the-three-rules-every-route-obeys) | a route past a manual's ceiling is attempted, offered, or refused |
+| [The routes](#the-routes) | the player is choosing how to get past their manual's ceiling |
+| &nbsp;&nbsp;[1. The later volume](#1-the-later-volume) | the player is looking for, buying, or has found a later volume of a manual they hold |
+| &nbsp;&nbsp;[1b. The scattered set](#1b-the-scattered-set) | a manual survives only in scattered volumes, or the player holds a gapped set |
+| &nbsp;&nbsp;[2. The door that tests fit](#2-the-door-that-tests-fit) | the player finds an inheritance trial, a sealed door, or any test of suitability rather than strength |
+| &nbsp;&nbsp;[3. The body](#3-the-body) | the player considers changing their own root or body to fit an art |
+| &nbsp;&nbsp;[4. Being shown by somebody above the Lid](#4-being-shown-by-somebody-above-the-lid) | somebody above the Lid offers to teach, or an immortal takes an interest in the player |
+| &nbsp;&nbsp;[5. Climbing to the shelf](#5-climbing-to-the-shelf) | the player is earning rank inside a house in order to reach its archive |
+| &nbsp;&nbsp;[6. Being let into a house of accumulated knowledge](#6-being-let-into-a-house-of-accumulated-knowledge) | a Dao house or deep-foundation library is opened to the player, or refuses to be |
+| &nbsp;&nbsp;[7. Deducing the next volume](#7-deducing-the-next-volume) | the player attempts to write the next stage of a manual themselves |
+| &nbsp;&nbsp;[8. Taking it](#8-taking-it) | the player considers taking a manual by force or theft, or is accused of having done so |
+| &nbsp;&nbsp;[9. Decreeing the curriculum](#9-decreeing-the-curriculum) | somebody near the top of the ladder changes what may be taught |
+| [Not every door is open to everybody](#not-every-door-is-open-to-everybody) | a route is refused, or the player asks why one is closed to them |
+| [Searching must be rational, not compulsory](#searching-must-be-rational-not-compulsory) | the player is deciding whether to keep searching or accept the ceiling |
+| [What each layer must supply](#what-each-layer-must-supply) | **Tier 3** - never injected |
+| [Related](#related) | **Tier 3** - never injected |
+
 ---
 
 ## The situation, measured

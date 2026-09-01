@@ -9,6 +9,28 @@ Load this whenever a sect or faction is in play.
 The catalog that models all of this is
 [`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md).
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [Sects are institutions](#sects-are-institutions) | a sect's motives, decisions, or internal politics are in play |
+| &nbsp;&nbsp;[What a sect is for, from the disciple's side](#what-a-sect-is-for-from-the-disciples-side) | the player is weighing whether to join, stay in, or leave a house |
+| [Ancestral records and the millennial offering](#ancestral-records-and-the-millennial-offering) | a sect's standing, prestige, ancestry, or vault is in question |
+| &nbsp;&nbsp;[Two kinds of ancestor](#two-kinds-of-ancestor) | a house's ancestors are counted, claimed, or woken |
+| &nbsp;&nbsp;[Recency is most of the prestige](#recency-is-most-of-the-prestige) | two houses' standing is being compared, or a house's decline is in question |
+| &nbsp;&nbsp;[Immortal lineages](#immortal-lineages) | a house claims an ancestor who crossed the Lid |
+| [The standing powers](#the-standing-powers) | one of the named powers appears, is invoked, or is being traded with |
+| [Related](#related) | **Tier 3** - never injected |
+| [Sects are a pyramid, and the pyramid is the vein network](#sects-are-a-pyramid-and-the-pyramid-is-the-vein-network) | the player asks why a house is where it is, or who a house answers to |
+| [Moving up: the feeder relationship](#moving-up-the-feeder-relationship) | a disciple is being sent up, recruited away, or handed over between houses |
+| [At the top, rank stops tracking realm](#at-the-top-rank-stops-tracking-realm) | somebody outranks a person plainly stronger than they are |
+| [Guest elders](#guest-elders) | a cultivator with no lineage holds a post, or is offered one |
+| [The unbacked](#the-unbacked) | the player has no house, or is dealing with somebody who has none |
+| [Direct rule: a backer with no subsidiaries](#direct-rule-a-backer-with-no-subsidiaries) | a house holds territory with nothing beneath it |
+| &nbsp;&nbsp;[Direct rule by deference](#direct-rule-by-deference) | a house is obeyed in territory it does not formally hold |
+
 ---
 
 ## Sects are institutions

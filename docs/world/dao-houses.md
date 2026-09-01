@@ -7,9 +7,28 @@ that have spent thousands of years understanding one fundamental aspect of reali
 than anyone else alive. Load this when a house is in play, or when the player runs into a
 consequence they cannot trace.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [Knowledge accumulated for millennia is itself a form of power](#knowledge-accumulated-for-millennia-is-itself-a-form-of-power) | an old house is weighed against a prodigy, or a faction is formidable without holding the strongest individual |
+| [Specialisation is not ownership](#specialisation-is-not-ownership) | somebody claims a house owns or controls a principle |
+| [The principle must operate outside combat](#the-principle-must-operate-outside-combat) | a house's principle is brought to bear somewhere other than a fight |
+| [Their power should be frightening in a specific way](#their-power-should-be-frightening-in-a-specific-way) | the player is deciding whether it is safe to cross a house |
+| [Blind spots and counters are mandatory](#blind-spots-and-counters-are-mandatory) | the player is looking for a way around a house's specialisation |
+| [What a karma house can see](#what-a-karma-house-can-see) | karma is read, traced, or invoked against somebody |
+| [Houses rise, fall, and rewrite what happened](#houses-rise-fall-and-rewrite-what-happened) | the player is investigating a ruin, a discrepancy in the record, or who used to hold a territory |
+| [Discovery, not exposition](#discovery-not-exposition) | the narrator is about to say what a house specialises in |
+| [And it outlives its experts](#and-it-outlives-its-experts) | a house's greatest living expert dies, or somebody expects a discipline to die with its holder |
+| [Related](#related) | **Tier 3** - never injected |
+
 ---
 
 ## Knowledge accumulated for millennia is itself a form of power
+
+<!-- tier: 2 trigger="an old house is weighed against a prodigy, or a faction is formidable without holding the strongest individual" -->
 
 Not every formidable faction should be "a sect with stronger cultivators." Some ancient
 houses are formidable because of what they understand.
@@ -26,6 +45,8 @@ accumulated weight has to matter. **Civilisation itself is part of power progres
 
 ## Specialisation is not ownership
 
+<!-- tier: 2 trigger="somebody claims a house owns or controls a principle" -->
+
 A house does not "own" karma or "control" fate. It understands a principle
 extraordinarily well and holds an enormous advantage in it. Everyone else still interacts
 with that principle - clumsily, and usually without noticing.
@@ -40,6 +61,8 @@ a founder develops a method -> disciples refine it -> descendants preserve it
 ```
 
 ## The principle must operate outside combat
+
+<!-- tier: 2 trigger="a house's principle is brought to bear somewhere other than a fight" -->
 
 This is the part that is easy to get wrong. A karma specialist must never reduce to
 "karma attack, 900 damage." The specialisation should shape how the house touches
@@ -62,6 +85,8 @@ ancestor - see [`sects.md`](sects.md).
 
 ## Their power should be frightening in a specific way
 
+<!-- tier: 2 trigger="the player is deciding whether it is safe to cross a house" -->
+
 The interesting question is not *can I beat this person*. It is:
 
 > "I could probably kill him. But what happens afterwards?"
@@ -71,6 +96,8 @@ invokes something. Entering their territory means being read by people who under
 that principle better than you do.
 
 ## Blind spots and counters are mandatory
+
+<!-- tier: 2 trigger="the player is looking for a way around a house's specialisation" -->
 
 No specialisation may be an automatic win.
 
@@ -91,6 +118,8 @@ resource shortages, declining branches, incomplete knowledge, failed techniques,
 ancestors who are simply dead.
 
 ## What a karma house can see
+
+<!-- tier: 2 trigger="karma is read, traced, or invoked against somebody" -->
 
 Karma in this world is a **graph of persistent relationships between entities**, not a
 score - and it is mostly invisible to the people inside it, crossing generations without
@@ -142,6 +171,8 @@ timetable, is in
 
 ## Discovery, not exposition
 
+<!-- tier: 2 trigger="the narrator is about to say what a house specialises in" -->
+
 Never announce that a house studies karma. The player arrives at it:
 
 ```text
@@ -151,12 +182,16 @@ a relationship that makes no sense -> an event with no visible cause -> rumours
 
 ## And it outlives its experts
 
+<!-- tier: 2 trigger="a house's greatest living expert dies, or somebody expects a discipline to die with its holder" -->
+
 If the greatest living karma cultivator dies, the discipline does not. It survives in
 disciples, manuals, artifacts, descendants, sealed inheritances and fragments. A house can
 lose its finest expert and remain dangerous, because the thing that made it dangerous was
 never one person.
 
 ## Related
+
+<!-- tier: 3 -->
 
 - [`sects.md`](sects.md) - the other kind of faction, and what houses sell them
 - [`../../src/engine/social/README.md`](../../src/engine/social/README.md) - karma as a graph, secrets, belief

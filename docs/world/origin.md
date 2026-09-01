@@ -5,7 +5,21 @@
 Where you started, and what it was worth. Read with
 [understanding.md](understanding.md) - talent is dealt once, and so is this.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [Birth is the third dealt thing](#birth-is-the-third-dealt-thing) | a character is being made, or somebody's birth is raised as an explanation |
+| [What privilege actually buys](#what-privilege-actually-buys) | a well-born cultivator's advantages are weighed, or somebody expects birth to buy rank |
+| [The shape of an immortal life](#the-shape-of-an-immortal-life) | somebody asks what it actually takes to reach the top of the ladder |
+| [The children of great houses mostly fail anyway](#the-children-of-great-houses-mostly-fail-anyway) | a great house's heir is failing, or the player resents somebody's birth |
+| [And it cuts the other way](#and-it-cuts-the-other-way) | the player has no house, no teacher, and no vein |
+
 ## Birth is the third dealt thing
+
+<!-- tier: 2 trigger="a character is being made, or somebody's birth is raised as an explanation" -->
 
 A cultivator is dealt a spirit root, four attributes, and **a place to be born into**. The
 first two decide what they could become. The third decides whether they will ever be in a
@@ -18,6 +32,8 @@ default and it should stay the default.
 A vanishing few are born somewhere that changes the arithmetic.
 
 ## What privilege actually buys
+
+<!-- tier: 2 trigger="a well-born cultivator's advantages are weighed, or somebody expects birth to buy rank" -->
 
 It does not buy rank, and it must never buy rank. The great institutions admit on what you
 have reached, not on whose child you are - the Hollow Court's bar is a Void Refinement
@@ -44,6 +60,8 @@ closed.
 
 ## The shape of an immortal life
 
+<!-- tier: 2 trigger="somebody asks what it actually takes to reach the top of the ladder" -->
+
 The one path to the top of the ladder in the Late Age is a **conjunction**, and every term
 is required:
 
@@ -67,6 +85,8 @@ lethal when they did not have to.
 
 ## The children of great houses mostly fail anyway
 
+<!-- tier: 2 trigger="a great house's heir is failing, or the player resents somebody's birth" -->
+
 This is the part that keeps it honest, and it must be true in the simulation rather than
 merely asserted.
 
@@ -82,6 +102,8 @@ among several. If being well-born reliably produces high-realm cultivators, the 
 been implemented wrong.
 
 ## And it cuts the other way
+
+<!-- tier: 2 trigger="the player has no house, no teacher, and no vein" -->
 
 A poor origin is not merely harder; it is a different game. No teacher, no library, no
 vein, and a hard local ceiling. What it does have is **ruins**, which do not check who your

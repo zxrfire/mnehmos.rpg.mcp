@@ -18,6 +18,31 @@ was actually measured, twice:
 Everything below is aimed at (2). The machinery for (1) was already in `locations.ts` and
 had been for a long time.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [The rule this file is under](#the-rule-this-file-is-under) | **Tier 3** - never injected |
+| [What is generated, and from what](#what-is-generated-and-from-what) | the player is inside a sect compound, a hall, a vault, or any interior |
+| &nbsp;&nbsp;[Precincts come from the house's own rank ladder](#precincts-come-from-the-houses-own-rank-ladder) | the player moves between precincts, or a compound's internal ladder is in question |
+| &nbsp;&nbsp;[Rooms come from what the house does](#rooms-come-from-what-the-house-does) | the player is looking for a particular room, or asks what a house's buildings say about it |
+| &nbsp;&nbsp;[The sealed ceiling is a place](#the-sealed-ceiling-is-a-place) | a house's sealed one-off power is asked after, or the player finds the vault it sleeps in |
+| &nbsp;&nbsp;[Formation nodes are objects, and dark ones are doors](#formation-nodes-are-objects-and-dark-ones-are-doors) | the player is at a compound's perimeter, or looking for a way in that is not the gate |
+| [House style](#house-style) | the player is looking at a building, a ruin, or trying to identify who built something |
+| &nbsp;&nbsp;[Elemental architecture is a function of intake, not of occupants](#elemental-architecture-is-a-function-of-intake-not-of-occupants) | a building's element is read off it, or somebody assumes a house is built to suit its people |
+| &nbsp;&nbsp;[Where the style is allowed to bend](#where-the-style-is-allowed-to-bend) | a senior figure's own residence is entered, or status is being read off a building |
+| &nbsp;&nbsp;[The style is the archaeological fingerprint](#the-style-is-the-archaeological-fingerprint) | somebody tries to identify who built a ruin from what is left standing |
+| [Access is a chain, not a door](#access-is-a-chain-not-a-door) | the player is trying to get into somewhere they may not be allowed |
+| [Knowledge of a room is not a flag on the room](#knowledge-of-a-room-is-not-a-flag-on-the-room) | the player is somewhere they have not been before, or asking about a place |
+| [What this deliberately does not model](#what-this-deliberately-does-not-model) | **Tier 3** - never injected |
+| &nbsp;&nbsp;[Ruin wings are a separate model, on purpose](#ruin-wings-are-a-separate-model-on-purpose) | **Tier 3** - never injected |
+| [Adding a compound](#adding-a-compound) | **Tier 3** - never injected |
+| [Adding a room purpose](#adding-a-room-purpose) | **Tier 3** - never injected |
+| [Adding a `LocationKind`](#adding-a-locationkind) | **Tier 3** - never injected |
+| [The test](#the-test) | **Tier 3** - never injected |
+
 ---
 
 ## The rule this file is under
@@ -62,6 +87,8 @@ region                                    depth 0
 
 ### Precincts come from the house's own rank ladder
 
+<!-- tier: 2 trigger="the player moves between precincts, or a compound's internal ladder is in question" -->
+
 **One precinct per entry in `CatalogFaction.ranks`.** Nobody chose four tiers or five. A
 house with four ranks gets a four-precinct compound; the Azure Cloud Pavilion has six
 ranks and gets six walls. The bars are interpolated from `admissionOrdinal` at the outer
@@ -74,6 +101,8 @@ physically manifest: an outer disciple walks a shared yard and a Patriarch has a
 that six people have been inside.
 
 ### Rooms come from what the house does
+
+<!-- tier: 2 trigger="the player is looking for a particular room, or asks what a house's buildings say about it" -->
 
 `roomsFor()` is one function, and every line in it reads a column:
 
@@ -96,6 +125,8 @@ and the fix is in the content file, not here.
 
 ### The sealed ceiling is a place
 
+<!-- tier: 2 trigger="a house's sealed one-off power is asked after, or the player finds the vault it sleeps in" -->
+
 `sealedCeilingOrdinal` had been on `CatalogFaction` recording the one-off power a house
 holds asleep and spends once, and **that thing was asleep nowhere.** It is now a `vault`
 under the ancestral hall, sealed, with all four thresholds at the sleeper's own ordinal
@@ -103,6 +134,8 @@ and a `keyId` on it. Six houses in the seeded world have one; they are the only 
 at depth 4, which is the honest shape - the world goes that deep in exactly six places.
 
 ### Formation nodes are objects, and dark ones are doors
+
+<!-- tier: 2 trigger="the player is at a compound's perimeter, or looking for a way in that is not the gate" -->
 
 `formationNodesTotal` over `formationNodesLit` had been read only as a ratio. A node is a
 thing at a point on the perimeter. A **lit** one carries the `formation` hazard. A **dark**
@@ -135,6 +168,8 @@ A rogue cultivator carving their own cave is the other case entirely. There was 
 else to answer to, so their root shows.
 
 ### Elemental architecture is a function of intake, not of occupants
+
+<!-- tier: 2 trigger="a building's element is read off it, or somebody assumes a house is built to suit its people" -->
 
 The rule, and it is derivable rather than declared:
 
@@ -173,6 +208,8 @@ fix is wealth, region, governance, alignment, condition and age - not a splash o
 
 ### Where the style is allowed to bend
 
+<!-- tier: 2 trigger="a senior figure's own residence is entered, or status is being read off a building" -->
+
 Seniority buys deviation, and **the deviation is itself a rank signal** - a player can read
 status off architecture before anybody tells them a rank.
 
@@ -185,6 +222,8 @@ status off architecture before anybody tells them a rank.
 This is a forcing function against a one-trick generator, and it is why the field exists.
 
 ### The style is the archaeological fingerprint
+
+<!-- tier: 2 trigger="somebody tries to identify who built a ruin from what is left standing" -->
 
 The same representation is read from both ends: **generation uses it to build,
 identification uses it to recognise.** Every location the generator produces carries
@@ -305,6 +344,8 @@ oversight.
 
 ### Ruin wings are a separate model, on purpose
 
+<!-- tier: 3 -->
+
 `provenance.ts` has `RuinWing`, and it is **not** an interior in this sense and should not
 be merged with one. A wing is a JSON blob in `location.data.wings` whose load-bearing field
 is `depthDays`, and its whole job is to price an expedition against a convergence window
@@ -337,6 +378,8 @@ The columns that most change what comes out, in rough order of effect:
 
 ## Adding a room purpose
 
+<!-- tier: 3 -->
+
 Each purpose in `RoomPurpose` has a spec that decides behaviour: its `LocationKind`, where
 it sits on the precinct ladder, how obvious it is, whether it concentrates qi, whether it
 starts sealed, and what it is cut for. **Adding a purpose that behaves identically to an
@@ -346,6 +389,8 @@ idiom, so a carved compound has a *reading cut* where a terraced one has a *scri
 pavilion*.
 
 ## Adding a `LocationKind`
+
+<!-- tier: 3 -->
 
 Four interior kinds exist and each changes a behaviour:
 

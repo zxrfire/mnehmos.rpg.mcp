@@ -23,6 +23,21 @@ further accumulation clears. A cultivator with less raw power and a deep grasp o
 own path advances the moment they find the missing piece - and fights far above where
 their rank suggests.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [Personal realms](#personal-realms) | a cultivator forms, enters, or is caught inside a personal realm |
+| [Achievements](#achievements) | something notable happens to a cultivator, or an NPC's history is being weighed against their rank |
+| [Visions, echoes, and other temporal phenomena](#visions-echoes-and-other-temporal-phenomena) | the player receives a vision or echo, or encounters a fragment of another time |
+| [What this is not](#what-this-is-not) | **Tier 3** - never injected |
+| [Your Dao](#your-dao) | a cultivator's Dao, affinity, or chosen path is named, chosen, or challenged |
+| &nbsp;&nbsp;[And it is limited by what you can reach](#and-it-is-limited-by-what-you-can-reach) | a cultivator is deciding what to pursue, or has hit a ceiling they did not expect |
+| &nbsp;&nbsp;[Affinity, and finding out too late](#affinity-and-finding-out-too-late) | a cultivator discovers their path suits them badly, or considers changing it |
+| &nbsp;&nbsp;[What happens next is the story](#what-happens-next-is-the-story) | **Tier 3** - never injected |
+
 ## Personal realms
 
 <!-- tier: 2 trigger="a cultivator forms, enters, or is caught inside a personal realm" -->

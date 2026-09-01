@@ -15,6 +15,40 @@ The material for all of this lives in
 [`../../src/data/cultivation/lost-ages.ts`](../../src/data/cultivation/lost-ages.ts).
 Every object it names is an ordinary row in an ordinary catalog.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [Modern is elemental. Ancient is categorical.](#modern-is-elemental-ancient-is-categorical) | describing an art, or comparing what somebody can do to what somebody else can do |
+| &nbsp;&nbsp;[Two kinds of ancient art, and the second is the more interesting](#two-kinds-of-ancient-art-and-the-second-is-the-more-interesting) | an ancient art is on offer and the question is whether it changes a fight or changes the cultivator permanently |
+| &nbsp;&nbsp;[Neither one is better](#neither-one-is-better) | somebody argues ancient beats modern, or the player is choosing between an ancient art and a modern one |
+| &nbsp;&nbsp;[Why the era changed](#why-the-era-changed) | somebody asks why nobody writes arts the way the old ones were written |
+| [Three tiers of absence](#three-tiers-of-absence) | the player finds something nobody can make, use, or read any more |
+| &nbsp;&nbsp;[Dormant - nothing is missing, and you still cannot have it](#dormant---nothing-is-missing-and-you-still-cannot-have-it) | the only holder of a living knowledge is sealed, imprisoned, or otherwise out of reach |
+| &nbsp;&nbsp;[Abandoned - it still works, and nobody uses it](#abandoned---it-still-works-and-nobody-uses-it) | the player finds a working method everybody stopped using, and has to decide whether to be seen using it |
+| &nbsp;&nbsp;[Lost - they have the recipe, just not the materials](#lost---they-have-the-recipe-just-not-the-materials) | a recipe survives and its ingredient does not |
+| &nbsp;&nbsp;[No surviving copy - the last one is gone](#no-surviving-copy---the-last-one-is-gone) | an art can be named and dated and nobody holds a working copy |
+| [What an ancient art costs](#what-an-ancient-art-costs) | a player picks up, is offered, or is seen practising an ancient art |
+| &nbsp;&nbsp;[The old are the practitioners, and no rule says so](#the-old-are-the-practitioners-and-no-rule-says-so) | everyone practising a given art turns out to be old, or the player is told what an art will cost in years |
+| [The upkeep is legible, and that is the point](#the-upkeep-is-legible-and-that-is-the-point) | a knowledgeable NPC sees what the player is practising |
+| &nbsp;&nbsp;[The four routes to being able to feed one](#the-four-routes-to-being-able-to-feed-one) | the player asks how anybody affords an ancient art's upkeep |
+| &nbsp;&nbsp;[The library that holds the book and none of the material](#the-library-that-holds-the-book-and-none-of-the-material) | a house holds a manual it cannot supply, or the player is offered a book with no stock behind it |
+| &nbsp;&nbsp;[Derivation: the road money cannot open](#derivation-the-road-money-cannot-open) | nothing is taught at the height the player has reached and the only road left is writing it |
+| &nbsp;&nbsp;[Stocked inheritances](#stocked-inheritances) | an inheritance was left stocked with its own supply, or somebody with no house behind them is far up a material-gated art |
+| [The thousand-year medicine](#the-thousand-year-medicine) | the player finds, is offered, or hears of a life-extending medicine, or asks what an old house is holding |
+| &nbsp;&nbsp;[The ladder](#the-ladder) | a longevity pill's grade, price, or the years it buys is in question |
+| &nbsp;&nbsp;[The extinction is symmetric](#the-extinction-is-symmetric) | somebody proposes buying years from above the Lid |
+| &nbsp;&nbsp;[The trade: material up, a pill back](#the-trade-material-up-a-pill-back) | a house finds a lost material and considers sending it up an answering channel |
+| &nbsp;&nbsp;[What is actually left, and where](#what-is-actually-left-and-where) | somebody is counting how many of a lost material remain, or hunting one |
+| &nbsp;&nbsp;[Who holds one](#who-holds-one) | a house's longevity holdings are counted, spent, or bargained over |
+| [Where all of this is, and where it is not](#where-all-of-this-is-and-where-it-is-not) | deciding where to place an ancient object, or whether a low-realm cultivator would know about one |
+| [What this is for, in play](#what-this-is-for-in-play) | **Tier 3** - never injected |
+| [The rule that keeps this honest](#the-rule-that-keeps-this-honest) | **Tier 3** - never injected |
+| [The test](#the-test) | **Tier 3** - never injected |
+| [Related](#related) | **Tier 3** - never injected |
+
 ---
 
 ## Modern is elemental. Ancient is categorical.
@@ -42,6 +76,8 @@ and no rung of any modern art becomes them:
 - a second body
 
 ### Two kinds of ancient art, and the second is the more interesting
+
+<!-- tier: 2 trigger="an ancient art is on offer and the question is whether it changes a fight or changes the cultivator permanently" -->
 
 An ancient **dao art** changes what you can do in a fight. An ancient
 **cultivation road** changes *what kind of cultivator you become*, permanently, at a price
@@ -78,6 +114,8 @@ other people, or leave something behind that outlasts the using.**
 
 ### Neither one is better
 
+<!-- tier: 2 trigger="somebody argues ancient beats modern, or the player is choosing between an ancient art and a modern one" -->
+
 Ancient is not the weaker option and it is not the stronger one. Sometimes it is plainly
 the better thing to be holding and sometimes it is useless, and which one depends entirely
 on the situation. **Grandeur is the wrong axis.** A rung-44 fire art and an art that seals a
@@ -88,6 +126,8 @@ situation - because then the abandonment makes no sense and the whole tier colla
 "old is stronger".
 
 ### Why the era changed
+
+<!-- tier: 2 trigger="somebody asks why nobody writes arts the way the old ones were written" -->
 
 An age that could afford to cut a piece of reality off from the rest wrote its arts on that
 assumption. A poorer age cannot feed them, so it developed the elemental line instead:
@@ -115,6 +155,8 @@ in another.
 
 ### Dormant - nothing is missing, and you still cannot have it
 
+<!-- tier: 2 trigger="the only holder of a living knowledge is sealed, imprisoned, or otherwise out of reach" -->
+
 The fifth tier, and the odd one out: **it is about a person rather than a thing.** The
 knowledge is intact, complete and in the world. The only party who holds it is sealed under
 somebody's mountain.
@@ -129,6 +171,8 @@ Keep it at one. A second sealed teacher makes sealed ancestors a shelf to be bro
 than an instrument spent once.
 
 ### Abandoned - it still works, and nobody uses it
+
+<!-- tier: 2 trigger="the player finds a working method everybody stopped using, and has to decide whether to be seen using it" -->
 
 The interesting one socially, because it poses a question the other two do not: **if it
 still works, why did everybody stop?**
@@ -163,6 +207,8 @@ cost until the last page, and concealment is worth condemning even where the met
 
 ### Lost - they have the recipe, just not the materials
 
+<!-- tier: 2 trigger="a recipe survives and its ingredient does not" -->
+
 The knowledge survived; the inputs did not.
 
 This is a far better scarcity model than "old things are better", and the **recipe being
@@ -191,6 +237,8 @@ is standing in front of. Nobody is standing in front of it. See *the extinction 
 symmetric*, below.
 
 ### No surviving copy - the last one is gone
+
+<!-- tier: 2 trigger="an art can be named and dated and nobody holds a working copy" -->
 
 Declared already, in `NO_SURVIVING_COPY_TECHNIQUE_IDS`, with a reason per entry. An art the
 world can name, date and describe the effect of, and cannot produce, because everybody who
@@ -224,6 +272,8 @@ better engine for expeditions than a treasure hunt, because it never completes.*
 what the user asked the whole tier for: a reason to send people out.
 
 ### The old are the practitioners, and no rule says so
+
+<!-- tier: 2 trigger="everyone practising a given art turns out to be old, or the player is told what an art will cost in years" -->
 
 The cost is years, and years are worth what remains of them.
 
@@ -301,6 +351,8 @@ It should be rare, earned, and visible to everybody who understands what they ar
 
 ### The four routes to being able to feed one
 
+<!-- tier: 2 trigger="the player asks how anybody affords an ancient art's upkeep" -->
+
 - **luck** - a ruin nobody had opened, with the stock still in it
 - **a portal, or an environmental event** that put somebody where the world no longer is
 - **an ancient inheritance**, stocked deliberately by whoever left it
@@ -313,6 +365,8 @@ hold that needs no contract, because the supply is theirs to continue or to stop
 ancient art with a material requirement is a relationship, not an acquisition.**
 
 ### The library that holds the book and none of the material
+
+<!-- tier: 2 trigger="a house holds a manual it cannot supply, or the player is offered a book with no stock behind it" -->
 
 A great house holds a copy, brought back by an expedition generations ago, and has nothing
 left to feed it. Four things follow:
@@ -335,6 +389,8 @@ from one quietly holding the last of both.
 
 ### Derivation: the road money cannot open
 
+<!-- tier: 2 trigger="nothing is taught at the height the player has reached and the only road left is writing it" -->
+
 Above ordinal thirty-seven nothing is taught at all - every book is `ruin` or `grave` - so
 the only route up that does not depend on finding a physical object is **writing it
 yourself.**
@@ -356,6 +412,8 @@ Two properties are load-bearing and must survive any change near it:
   somebody every house has refused.
 
 ### Stocked inheritances
+
+<!-- tier: 2 trigger="an inheritance was left stocked with its own supply, or somebody with no house behind them is far up a material-gated art" -->
 
 The answer to how anybody without a house behind them gets far up a material-gated art:
 **somebody at the top of the ladder planned for it and paid in advance.**
@@ -401,6 +459,8 @@ column as a pill that mortals ruin families for.
 
 ### The ladder
 
+<!-- tier: 2 trigger="a longevity pill's grade, price, or the years it buys is in question" -->
+
 | | |
 |---|---|
 | **modern, refinable today** | 5 → 20 → 100 → **300 years**, and **Nascent Soul and below only** |
@@ -429,6 +489,8 @@ makes it categorical.
 
 ### The extinction is symmetric
 
+<!-- tier: 2 trigger="somebody proposes buying years from above the Lid" -->
+
 The obvious construction is a cross-Lid supply chain: a flower that grew down here, immortals
 who needed it, an extinction that broke the arrangement at the bottom. **That is not the
 world.**
@@ -448,6 +510,8 @@ Three consequences, each better than the dependency version:
   output of an arrangement. They are what was lying around when the flower stopped.
 
 ### The trade: material up, a pill back
+
+<!-- tier: 2 trigger="a house finds a lost material and considers sending it up an answering channel" -->
 
 A house that finds the flower in a sealed site **can** send it up through an answering
 channel and receive a finished pill, because the method survives above and only the material
@@ -476,6 +540,8 @@ discuss it. **The silence is evidence too.**
 
 ### What is actually left, and where
 
+<!-- tier: 2 trigger="somebody is counting how many of a lost material remain, or hunting one" -->
+
 `LOST_MATERIALS[].remaining` carries a **count and a placement**, not a mood. *"Nobody has
 any"* is a wall; *"there are nine left in the world and three of them are behind the last
 gate of a sealed curriculum"* is a search with a destination and an end. Every unit found is
@@ -488,6 +554,8 @@ on a branch of a vein nobody has drawn since**, because that sealed room is the 
 left where the condition it needs still holds. It makes one pill. There is no second.
 
 ### Who holds one
+
+<!-- tier: 2 trigger="a house's longevity holdings are counted, spent, or bargained over" -->
 
 `MEDICINE_HOLDINGS` records it. **A house that has spent its one is a different house from a
 house that has not** - exactly the sort of fact the Standing Register and `standoff.ts` are
@@ -544,6 +612,8 @@ understood at all**, which is a different scene and an equally usable one.
 
 ## What this is for, in play
 
+<!-- tier: 3 -->
+
 | Tier | What it puts in front of a player |
 |---|---|
 | **abandoned** | a choice, with a social cost. The road is open, it works, and taking it marks you. |
@@ -560,6 +630,8 @@ before they could use it.**
 
 ## The rule that keeps this honest
 
+<!-- tier: 3 -->
+
 Per [`../../AGENTS.md`](../../AGENTS.md): **no arithmetic in a lore file.** An object made in
 a richer age is an ordinary row with an ordinary `power`, ordered against everything else by
 the same resolver. What makes it remarkable is that nothing can produce another.
@@ -573,6 +645,8 @@ Take the object away and nothing should be left over.
 ---
 
 ## The test
+
+<!-- tier: 3 -->
 
 For any ancient thing you are about to add, answer both:
 
@@ -591,6 +665,8 @@ whether the world chose this or lost it, and that is the most interesting questi
 If any of them is hard, the thing is not finished.
 
 ## Related
+
+<!-- tier: 3 -->
 
 - [`the-late-age.md`](the-late-age.md) - why the world is poorer than it was, and what a sealed ruin is
 - [`making-places-different.md`](making-places-different.md) - the same argument, applied to regions

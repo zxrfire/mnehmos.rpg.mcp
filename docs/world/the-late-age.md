@@ -6,9 +6,22 @@ Why the world is poorer than it was, what a sealed ruin actually is, and the tex
 aim for when describing anything old. Load this whenever the player is exploring, digging,
 or asking why nobody can do what the ancients did.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [The world is old, and it is not what it was](#the-world-is-old-and-it-is-not-what-it-was) | somebody asks why the world is poorer than it was, or sets the present against the ages behind it |
+| [What ruins are for](#what-ruins-are-for) | the player is exploring, entering a sealed site, or considering grave-reading |
+| [The texture to aim for](#the-texture-to-aim-for) | describing anything old, ruined, inherited, or built by someone else |
+| [Related](#related) | **Tier 3** - never injected |
+
 ---
 
 ## The world is old, and it is not what it was
+
+<!-- tier: 2 trigger="somebody asks why the world is poorer than it was, or sets the present against the ages behind it" -->
 
 This is not a fresh world with its great age ahead of it. The great ages are behind it.
 Cultivators walk through the wreckage of civilisations that were categorically stronger
@@ -81,6 +94,8 @@ art. See
 [`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md).
 
 ## Related
+
+<!-- tier: 3 -->
 
 - [`qi.md`](qi.md) - why thin is the default
 - [`economy.md`](economy.md) - graves, inheritances, and what the digging is worth

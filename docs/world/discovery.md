@@ -7,6 +7,20 @@ How the player learns the world is bigger than they thought, and the rule that p
 Read with [understanding.md](understanding.md) (access gates comprehension) and
 [sects.md](sects.md).
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [You do not start knowing what exists](#you-do-not-start-knowing-what-exists) | the player asks what lies beyond what they have already met |
+| [The ladder of knowing](#the-ladder-of-knowing) | the player learns of something new, or their grasp of it is in question |
+| [Encountering something from above](#encountering-something-from-above) | the player meets something plainly beyond their stratum |
+| [The hard rule for the narrator](#the-hard-rule-for-the-narrator) | the narrator is about to name a place, house, or person |
+| [Why this is the payoff](#why-this-is-the-payoff) | **Tier 3** - never injected |
+| [Characters assume you know](#characters-assume-you-know) | an NPC talks past the player about things the player has never heard of |
+| &nbsp;&nbsp;[Overheard](#overheard) | the player is somewhere people are talking and not to them |
+
 ## You do not start knowing what exists
 
 <!-- tier: 2 trigger="the player asks what lies beyond what they have already met" -->

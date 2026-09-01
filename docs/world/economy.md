@@ -6,9 +6,26 @@ Scarcity, what things cost, who is holding what and whose it actually is, and th
 kinds of site a body-robber can find. Load this when the player is trading, looting, or
 arguing about ownership.
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [Scarcity is the engine](#scarcity-is-the-engine) | the player is priced out of something, or asks why anybody bothers digging |
+| [Spirit stones](#spirit-stones) | spirit stones change hands, or somebody is cultivating where the ambient qi will not support them |
+| [What things cost](#what-things-cost) | a price is quoted, or the player asks what something is worth |
+| [Possession, ownership, and where things came from](#possession-ownership-and-where-things-came-from) | ownership of an object is disputed, or the player acquires something significant |
+| [Graves and grave-readers](#graves-and-grave-readers) | the player is looting a body, entering a sealed site, or considering grave-reading as a profession |
+| &nbsp;&nbsp;[A grave is not an inheritance](#a-grave-is-not-an-inheritance) | the player is standing in front of an opened site and does not know which kind it is |
+| &nbsp;&nbsp;[Inheritances as a mechanism](#inheritances-as-a-mechanism) | an inheritance is being opened, designed, or claimed |
+| [Related](#related) | **Tier 3** - never injected |
+
 ---
 
 ## Scarcity is the engine
+
+<!-- tier: 2 trigger="the player is priced out of something, or asks why anybody bothers digging" -->
 
 Resources are scarce - spirit stones, pills, herbs, cultivation grounds, caves,
 inheritances, techniques, artifacts, rare beasts, secret realms - and **scarcity is what
@@ -26,6 +43,8 @@ economy exist at all.
 
 ## Spirit stones
 
+<!-- tier: 2 trigger="spirit stones change hands, or somebody is cultivating where the ambient qi will not support them" -->
+
 Spirit stones are qi compressed until it holds its shape. They are money, they are fuel,
 and they are the only way to cultivate somewhere the ambient qi will not support you -
 which is why a poor cultivator's stones are never savings. **They are the difference
@@ -36,6 +55,8 @@ means they set the price of everything, including the price of a vein. See
 [`sects.md`](sects.md).
 
 ## What things cost
+
+<!-- tier: 2 trigger="a price is quoted, or the player asks what something is worth" -->
 
 Price follows grade, and grade is one legible axis across every catalog. Two rules govern
 the shape of it:
@@ -118,6 +139,8 @@ sites in the world are baited.
 
 ### A grave is not an inheritance
 
+<!-- tier: 2 trigger="the player is standing in front of an opened site and does not know which kind it is" -->
+
 Knowing which you are standing in front of is most of the skill.
 
 | | **A grave** | **An inheritance** |
@@ -133,6 +156,8 @@ them.
 
 ### Inheritances as a mechanism
 
+<!-- tier: 2 trigger="an inheritance is being opened, designed, or claimed" -->
+
 An inheritance is never "a chest containing experience." It is a mechanism for
 transmitting power and knowledge across ages, and it should be capable of changing a
 cultivator's entire trajectory. It may carry techniques, treasures, bloodline alteration,
@@ -147,6 +172,8 @@ opportunities must stay rare, is in
 [`../../src/engine/world/README.md`](../../src/engine/world/README.md).
 
 ## Related
+
+<!-- tier: 3 -->
 
 - [`qi.md`](qi.md) - the scarce good underneath every other price
 - [`the-late-age.md`](the-late-age.md) - why digging beats cultivating for most people

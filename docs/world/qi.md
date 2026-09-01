@@ -9,6 +9,20 @@ actually is. The compressed always-loaded version of this file is in
 Mechanically this is the ambient system - see
 [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md).
 
+## Sections
+
+<!-- tier: 3 -->
+
+| Section | Loads when |
+|---|---|
+| [The world and the ceiling](#the-world-and-the-ceiling) | the player learns about ascension, the Lid, or the top of the ladder |
+| [Qi is a resource, and it is not evenly distributed](#qi-is-a-resource-and-it-is-not-evenly-distributed) | **Tier 1** - every turn |
+| &nbsp;&nbsp;[Thin regions have a ceiling](#thin-regions-have-a-ceiling) | the player is in, from, or asking about a qi-poor region |
+| &nbsp;&nbsp;[And qi is contested](#and-qi-is-contested) | territory, sect conflict, a massacre, or competition over a region is in play |
+| [Qi density, read mechanically](#qi-density-read-mechanically) | **Tier 1** - every turn |
+| [Spirit roots: how your body takes qi](#spirit-roots-how-your-body-takes-qi) | character creation, talent, or a manual's element is in play |
+| [Related](#related) | **Tier 3** - never injected |
+
 ---
 
 ## The world and the ceiling
@@ -124,6 +138,8 @@ their lives on it anyway. A player who draws a muddled root in a poor region has
 real experience of this world.
 
 ## Related
+
+<!-- tier: 3 -->
 
 - [`NARRATOR-CORE.md`](NARRATOR-CORE.md) - the compressed always-loaded version
 - [`the-late-age.md`](the-late-age.md) - why most of the world is thin now
