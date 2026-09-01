@@ -43,6 +43,11 @@ const EXPECTED_FACTOR_ORDER = [
     // was not one, which is the one thing a rate breakdown may never do.
     'scar_tissue',
     'technique',
+    // How well the book was written, priced against what this reader can take
+    // off the page. Immediately after the manual's own multiplier because it is
+    // the second half of the same object: `technique` is what the caller was
+    // handed, this is what the book actually is. See manual-quality.ts.
+    'manual_quality',
     'sect',
     'location',
     'focus',

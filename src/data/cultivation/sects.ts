@@ -960,8 +960,14 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ranks: ['Dew Servant', 'Outer Disciple', 'Inner Disciple', 'Dew Elder', 'Sect Warden'],
         admissionOrdinal: 0,
         stipend: [2, 8, 26, 85, 260],
-        teaches: ['lesser-qi-gathering-manual', 'foundation-tempering-scripture'],
-        signatureTechniqueId: 'lesser-qi-gathering-manual',
+        // Its own gathering canon rather than the market primer, which is what
+        // "teaches two manuals and no more" below has always meant: the Dew's
+        // trade is finding people, and the thing it hands a find is the four
+        // hundred years of village teaching written into its own copy. Same
+        // rungs as the block-printed book, and not the same object - see
+        // `MANUAL_QUALITY` in `techniques.ts`.
+        teaches: ['azure-dew-gathering-canon', 'foundation-tempering-scripture'],
+        signatureTechniqueId: 'azure-dew-gathering-canon',
         specialities: ['support'],
         rivals: [],
         territory: 'Four hill villages at the head of the gorge, where the vein runs shallow enough that a mortal can feel it on a cold morning.',

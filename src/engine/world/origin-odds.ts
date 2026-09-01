@@ -50,6 +50,7 @@
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
+import { bestReadable } from '../cultivation/manual-quality.js';
 import {
     MAX_ORDINAL,
     lifespanForOrdinal,
@@ -88,7 +89,8 @@ import {
     type AmbientQi,
     type FoundationQuality,
     type Injury,
-    type Insight
+    type Insight,
+    type ManualQuality
 } from '../../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -162,6 +164,21 @@ const EARNINGS_AT_ORDINAL_ZERO = 6;
  * one ladder down.
  */
 const MERIT_ADMISSION_ORDINAL = 5;
+
+/**
+ * How far up the world's shelf somebody climbing on merit can reach.
+ *
+ * The whole of it, and that is not generosity - `bestReadable` still stops them
+ * at what they can actually work, so the limit becomes the reader rather than
+ * their parents. That is precisely the axis `docs/world/origin.md` asks for:
+ * privilege visible in the opening position and not in the outcome.
+ *
+ * A mediocre cultivator who climbs here is handed the working book and takes
+ * the working book. Somebody who has spent a life accumulating comprehension
+ * reaches the top of it, which is the conjunction the last realm already
+ * requires - a vein, a ruin, and twenty degrees of understanding.
+ */
+const MERIT_ROAD: ManualQuality = 'pristine';
 
 /** Support a sect gives anyone it admitted on merit. */
 const MERIT_SECT_BONUS = 1.2;
@@ -381,17 +398,65 @@ export function simulateLife(
                 ? Math.max(MERIT_SECT_BONUS, 1)
                 : origin.placement.sectBonus;
 
+        // AND THE BOOK RETIRES ON THE SAME LINE THE PLACEMENT DOES.
+        //
+        // This was got wrong once and the suite caught it. Feeding
+        // `origin.roadQuality` all the way up made the road a PERMANENT term -
+        // the one thing an origin confers that never expires - and privilege
+        // became visible in the outcome distribution, which `docs/world/origin.md`
+        // says is the failure condition for the whole axis. Measured: 9.8% of
+        // great-house children reached Core Formation against a 5% bar, and a
+        // farmer's best life fell from ordinal 30 to 20 because the stall primer
+        // followed them for a thousand years.
+        //
+        // A book is not a body. Above the merit line the house that admitted
+        // this person opens its shelf to them, and `manuals.md` is explicit that
+        // rank reaches up a shelf - so what they read is the ordinary working
+        // book, whoever their parents were. Below it, they read what their
+        // family could reach. Exactly the shape `sectBonus` already has, for
+        // exactly the same reason.
+        const reader = { spiritRoot: root.key, attributes, insights, foundationQuality: foundation };
+        const road = ordinal >= MERIT_ADMISSION_ORDINAL
+            ? bestReadable(MERIT_ROAD, reader)
+            : bestReadable(origin.roadQuality, reader);
+
         const rate = computeCultivationRate(
             {
                 spiritRoot: root.key,
                 injuries,
                 insights,
-                foundationQuality: foundation
+                foundationQuality: foundation,
+                // Passed so the manual below is priced against a real reader
+                // rather than against the schema pivot. Without it every origin
+                // in this comparison reads a book at insight 2 and the axis
+                // this function exists to measure goes flat.
+                attributes
+                // NOTE: `realmOrdinal` is deliberately NOT passed, which
+                // `computeCultivationRate` reads as ordinal 0 and prices the
+                // whole climb at Qi Condensation intake. That is very probably
+                // a defect - it is the same one `seeding.ts` documents finding
+                // and fixing in `deriveLife`, where it had stalled every NPC in
+                // the world - but supplying it here moves this harness's
+                // outcome distribution hard: measured, great-house children
+                // reaching Core Formation went from 4% to 8% against a 5% bar,
+                // because the realm intake term compounds upward and the
+                // well-born are the ones standing high enough to collect it.
+                // That is a balance decision about what `docs/world/origin.md`
+                // means, not a side effect a manual-quality change should
+                // smuggle in, so it is left alone and written down.
             },
             ambient,
             {
                 focusMultiplier: focus,
-                techniqueBonus: 1 + attributes.insight * 0.06,
+                // An actual book, from the same place the ground and the
+                // stipend come from. Replaces `1 + insight * 0.06`, a proxy for
+                // a manual nobody was holding that also counted insight twice.
+                //
+                // Placement stops mattering at `MERIT_ADMISSION_ORDINAL` above
+                // and the road does NOT: a book is an object somebody was
+                // handed and kept, and reaching the rung a sect recruits at
+                // does not retroactively improve the copy in your bag.
+                techniqueQuality: road,
                 sectBonus
             }
         ).perDay;

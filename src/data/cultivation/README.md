@@ -57,6 +57,30 @@ point on the ladder there is a visible next tier the cultivator cannot yet touch
 are banded the same way, so higher grade means later, costlier and stronger, with no
 exceptions anywhere in the catalog.
 
+### And what grade therefore CANNOT say
+
+Because `GRADE_ORDINAL_BANDS` pins grade to `requiredOrdinal`, grade is a statement about
+**height** and nothing else. It cannot say how well a book is written, and the case that
+proves it is the one the setting most wants: a market primer and an apex house's intake
+canon cover identical rungs, so both open at ordinal 0, so both are necessarily `mortal`.
+Calling the good one `earth` would require moving its `requiredOrdinal` to 13 - a lie about
+what it covers - and repricing a gathering primer at Foundation qi costs.
+
+So cultivation manuals carry a **second, independent axis**: `quality`, in
+`MANUAL_QUALITY` in `techniques.ts`, five tiers named for their cause -
+`corrupt / crude / sound / refined / pristine`. The spread across the catalog is produced
+by four sentences rather than by taste, and the banner above the table states them. Two
+rules to hold onto when adding an entry:
+
+- **Quality must never track grade.** `moonlit-well-absorption-art` is mortal and refined;
+  `iron-silt-settling-canon` is earth and crude. If quality became a function of grade it
+  would be grade with extra steps.
+- **Quality is not rarity.** A trash Core Formation manual is a bad book *and* a hard object
+  to come by, and those are different statements answered by different fields. Rarity is
+  keyed on coverage and lives in `engine/world/manuals.ts`.
+
+`engine/cultivation/manual-quality.ts` is the only place a tier name may be interpreted.
+
 For pills, grade drives value and toxicity together. A higher-grade pill is strictly more
 expensive and may be strictly more poisonous, so spamming heaven-grade medicine at
 Foundation Establishment is a way to die of the cure. Within a grade, the pills that touch

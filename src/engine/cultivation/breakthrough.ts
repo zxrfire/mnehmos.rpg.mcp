@@ -50,6 +50,7 @@ import {
     type TechniqueGrade,
     type Insight,
     type InsightDomain,
+    type ManualQuality,
     InsightDomainSchema
 } from '../../schema/cultivation.js';
 import {
@@ -69,6 +70,7 @@ import {
     type RealmKey
 } from './realms.js';
 import { getSpiritRoot, type SpiritRootGrade } from './spirit-roots.js';
+import { readManual } from './manual-quality.js';
 import { ambientBreakthroughMod } from './ambient.js';
 import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
 import {
@@ -580,6 +582,20 @@ export interface BreakthroughContext {
      * universal domains only.
      */
     relevance?: Partial<RelevanceContext>;
+    /**
+     * How well the manual this cultivator climbed the realm on was written.
+     *
+     * PREPARATION, NEVER INSTRUCTION. The crossing is not in the book and no
+     * book can put it there - `triggersHeavenlyTribulation` takes an ordinal
+     * and nothing else, so two cultivators at the same boundary meet the same
+     * thing whatever they practise. What a better manual contributes is the
+     * foundation it spent the whole realm building, arriving here with them.
+     *
+     * Priced against what the reader could take out of it, so a canon far over
+     * somebody's head arrives having built almost nothing. See
+     * `manual-quality.ts`; omitted contributes no line at all.
+     */
+    manualQuality?: ManualQuality | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -969,7 +985,8 @@ export function overflowBonus(ordinal: number, cultivationProgress?: number): nu
 export function computeBreakthroughOdds(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'spiritRoot' | 'attributes' | 'injuries'> &
         Partial<Pick<Cultivator, 'foundationQuality' | 'insights' | 'age' | 'cultivationProgress'>>,
-    ctx: Pick<BreakthroughContext, 'ambient' | 'pill'> & { relevance?: Partial<RelevanceContext> }
+    ctx: Pick<BreakthroughContext, 'ambient' | 'pill' | 'manualQuality'>
+        & { relevance?: Partial<RelevanceContext> }
 ): BreakthroughOdds {
     const ordinal = cultivator.realmOrdinal;
     const boundary = isRealmBoundary(ordinal);
@@ -1021,6 +1038,25 @@ export function computeBreakthroughOdds(
             source: `foundation:${foundation}`,
             delta: foundationEffect(foundation).breakthroughModifier
         });
+    }
+
+    // What the book made of them, standing here with them.
+    //
+    // Booked immediately after the foundation because it is the same kind of
+    // fact and the two are read together: the foundation is what the crossing
+    // INTO this realm left, and this is what the realm's method built on top of
+    // it. A damaged text leaves gaps a crossing finds; an author's own copy
+    // leaves somebody who has already been shown what the end of this realm
+    // looks like. Neither of them teaches the crossing - see `manualQuality` on
+    // `BreakthroughContext` for why that is not a thing a book can do.
+    if (ctx.manualQuality) {
+        const reading = readManual({ quality: ctx.manualQuality }, cultivator, ctx.relevance);
+        if (reading.breakthroughModifier !== 0) {
+            modifiers.push({
+                source: `manual:${ctx.manualQuality}`,
+                delta: reading.breakthroughModifier
+            });
+        }
     }
 
     if (injuries.untreatedCount > 0) {

@@ -38,7 +38,19 @@ function world(seed = 'leg-a'): WorldState {
 
 /** A cultivator with a sect, a family and an unfinished account. */
 function protagonist(state: WorldState) {
-    const at = state.npcs.findIndex(n => n.factionId !== null && n.status === 'alive');
+    // NOT ALREADY IN A LINEAGE. `enshrineRun` resolves the deceased's family
+    // with `state.lineages.find(l => l.memberIds.includes(id))`, which returns
+    // the FIRST match - so if the seeder has already placed this person in a
+    // house line, the `lin-protagonist` pushed below is never consulted and
+    // `heirs` comes back empty. The test used to pass on the accident that the
+    // first faction member in this fixture had no family; a population shift
+    // elsewhere moved that accident and the test failed with an empty heir
+    // list, which reads as a legacy bug and is not one. Pick somebody
+    // unattached and the fixture says what it means.
+    const at = state.npcs.findIndex(
+        n => n.factionId !== null && n.status === 'alive'
+            && !state.lineages.some(l => l.memberIds.includes(n.id))
+    );
     let npc = state.npcs[at];
     npc = setRealm(npc, 15, state.currentDay - 5 * YEAR);
     npc = addGoal(npc, {

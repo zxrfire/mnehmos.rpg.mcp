@@ -39,6 +39,7 @@
 
 import type {
     InsightDomain,
+    ManualQuality,
     Technique,
     TechniqueClass,
     TechniqueGrade,
@@ -971,6 +972,99 @@ export function isWideSpan(t: Pick<Technique, 'id' | 'category' | 'requiredOrdin
     return ordinary !== null && t.cap > ordinary;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// HOW WELL EACH BOOK IS WRITTEN
+//
+// The second axis, and it is NOT `grade`. Grade is pinned to height by
+// `GRADE_ORDINAL_BANDS` above and by the content suite that checks it, so the
+// market's 0-13 primer and an apex house's 0-13 intake canon are both
+// necessarily `mortal` - which is exactly the pair this table exists to
+// separate. See `ManualQualitySchema` and `engine/cultivation/manual-quality.ts`.
+//
+// THE SPREAD IS A RULE, NOT EIGHTY OPINIONS. Four sentences produce every row
+// below, and a new entry should be placed by applying them rather than by
+// taste:
+//
+//   `crude` IS THE MASS-COPY TIER. It takes a crowd of people who never
+//   mastered the thing writing it out for each other. That crowd requires
+//   masters to be ordinary, which stops being true above Core Formation - so
+//   `crude` appears only at cap <= 21, and the world's stall primer is the
+//   purest case of it. This is `degradedCopy` in the engine seen from the
+//   catalog's side, and it produces the rarity floor as a consequence: nothing
+//   high is ever cheap because nothing high was ever copied enough to wear out.
+//
+//   `corrupt` IS DAMAGE, and damage happens at any height. It is therefore the
+//   only bad tier available above Core Formation, and every row that takes it
+//   carries a reason in its own description - a wrecked set, a grave, an author
+//   who did not survive what they were writing down.
+//
+//   `sound` IS THE DEFAULT and the commonest. A working book with somebody
+//   alive who has read it to the end.
+//
+//   `refined` AND `pristine` CLUSTER UPWARD, because a book that reaches the
+//   top of the ladder was kept rather than copied, and because the houses that
+//   hold one have had centuries of people taking it to its end and writing down
+//   what they found there.
+//
+// The upward drift that falls out of those four is deliberate and matches the
+// ruling that manuals above Qi Condensation generally improve. What must NOT
+// fall out is quality tracking grade: `moonlit-well-absorption-art` is mortal
+// and refined, `iron-silt-settling-canon` is earth and crude, and
+// `heart-of-the-ten-thousand-corpses` is immortal and corrupt.
+//
+// QUALITY IS NOT RARITY. A trash Core Formation manual is a bad book AND a
+// hard object to come by, and those are different statements answered by
+// different fields. Rarity is keyed on coverage and lives in
+// `engine/world/manuals.ts` - `copiesOf` falls steeply in `cap`, and
+// `housesTeaching` says how widely a title is actually held. Nothing here
+// should ever be used as a proxy for either.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** What a row that is not named below is. The identity element. */
+export const DEFAULT_MANUAL_QUALITY: ManualQuality = 'sound';
+
+export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
+    // ── Qi Condensation. The one band where the same rungs are sold at a
+    // stall and taught in a courtyard, so it carries the whole spread. ──
+    'lesser-qi-gathering-manual': 'crude',
+    'azure-dew-gathering-canon': 'refined',
+    'five-breath-circulation-scripture': 'sound',
+    'moonlit-well-absorption-art': 'refined',
+
+    // ── Foundation Establishment. Common at worst: the world's workhorse
+    // crossing, taught everywhere, and nobody's private property. ──
+    'foundation-tempering-scripture': 'sound',
+    'verdant-longevity-canon': 'refined',
+    'paired-breath-canon': 'sound',
+
+    // ── Core Formation. The last band where `crude` is possible at all, and
+    // the poorest road in it is the one that takes it. ──
+    'molten-core-refinement-scripture': 'sound',
+    'iron-silt-settling-canon': 'crude',
+    'undyed-core-canon': 'sound',
+    'standing-mirror-first-register': 'refined',
+
+    // ── Nascent Soul and above. No `crude` past here, by the rule above. ──
+    'nascent-lotus-canon': 'refined',
+    'mountain-vein-devouring-canon': 'sound',
+    'meridian-devouring-art': 'corrupt',
+    'void-tide-breathing-canon': 'pristine',
+    'nine-abyss-demon-transformation': 'corrupt',
+    'rime-heart-stillness-canon': 'refined',
+    'cinder-lung-tempering-canon': 'sound',
+    'heart-of-the-ten-thousand-corpses': 'corrupt',
+    'heaven-conversing-primordial-canon': 'refined',
+    'chaos-origin-scripture': 'pristine',
+    'lifespan-devouring-heaven-theft': 'corrupt',
+
+    // ── The treasures. Wide-span books are pristine BECAUSE they are wide: a
+    // work that carries a reader across a boundary was finished by somebody
+    // who had stood on both sides of it, and nobody has copied it since. ──
+    'single-road-treatise': 'pristine',
+    'first-and-last-breath-canon': 'pristine',
+    'canon-of-the-unwritten-span': 'pristine'
+};
+
 /**
  * The road a category is on, when an entry does not name one itself.
  *
@@ -997,7 +1091,7 @@ const SUBJECT_BY_CATEGORY: Readonly<Record<string, string | null>> = {
  * an art with none carries its own reason in place of the generic note.
  */
 function art(
-    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subject'>
+    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subject'>
         & {
             opacity?: Opacity;
             class?: TechniqueClass;
@@ -1028,6 +1122,11 @@ function art(
         // scattered flags that a new entry could forget.
         class: t.class ?? classOf(t),
         cap: t.cap !== undefined ? t.cap : capOf(t),
+        // The second axis. Resolved from `MANUAL_QUALITY` rather than repeated
+        // on the entries, exactly as provenance and derivability are, so the
+        // whole spread across the catalog reads as one table that can be
+        // argued with instead of eighty scattered opinions.
+        quality: MANUAL_QUALITY[t.id] ?? DEFAULT_MANUAL_QUALITY,
         // Authored per entry: what a manual demands of a reader is content
         // rather than a derivation. Defaulted to "asks nothing", so an art
         // that genuinely takes any reader does not have to say so.
@@ -2004,6 +2103,30 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         cooldown: 0,
         description:
             'Six pages, block-printed, sold at every market town for the price of a meal. It teaches one to draw ambient qi in a way that accumulates rather than dissipates. On thin ground it accumulates nothing, which the manual does not mention, and nine in ten cultivators never learn anything better.'
+    }),
+    // THE COMPARISON THE QUALITY AXIS EXISTS FOR, and the reason it is not
+    // `grade`. Identical coverage to the block-printed primer above - opens at
+    // ordinal 0, stops at Qi Condensation Perfection, elementless so any root
+    // may work it - and both are `mortal`, because `GRADE_ORDINAL_BANDS` binds
+    // grade to `requiredOrdinal` and they open at the same rung. The only thing
+    // that separates them is `MANUAL_QUALITY`: crude against refined.
+    //
+    // Which is the answer to the obvious objection that if a road to Foundation
+    // can be bought at a stall, joining a house buys a beginner nothing. What
+    // the house gives is not a range of rungs. It is a better-taught version of
+    // the same range, and that is what somebody sweeps a courtyard for.
+    art({
+        id: 'azure-dew-gathering-canon',
+        name: 'Azure Dew Gathering Canon',
+        category: 'cultivation',
+        grade: 'mortal',
+        element: null,
+        requiredOrdinal: 0,
+        qiCost: 3,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The same road as the block-printed primer and not the same book. Four hundred years of Dew teachers have written into it what each of them learned working a village: which errors a body makes in its first winter, what a shallow vein feels like on a cold morning and why that is not the same as a deep one, and the eleven pages on settling that the market copy does not have because nobody who sold one ever had to explain it twice. It is issued at the gate rather than earned, which the Dew is quietly proud of and the terraces regard as an eccentricity.'
     }),
     art({
         id: 'five-breath-circulation-scripture',

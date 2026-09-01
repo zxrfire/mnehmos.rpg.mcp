@@ -1048,6 +1048,47 @@ export const TechniqueGradeSchema = z.enum(['mortal', 'earth', 'heaven', 'immort
 export type TechniqueGrade = z.infer<typeof TechniqueGradeSchema>;
 
 /**
+ * HOW WELL THE BOOK IS WRITTEN. The second axis, and it is not the grade.
+ *
+ * A manual has a coverage - `requiredOrdinal` to `cap`, one realm, ending at
+ * Perfection - and it has a quality, and the two are independent. A trash Core
+ * Formation manual and an excellent one carry a reader over exactly the same
+ * rungs; one of them takes eighty years about it.
+ *
+ * WHY THIS IS NOT `grade`. It was tried, and grade cannot express it, because
+ * grade is already a statement about HEIGHT and is pinned there by an enforced
+ * invariant: `GRADE_ORDINAL_BANDS` in `data/cultivation/techniques.ts` binds
+ * every art's grade to its `requiredOrdinal` (mortal 0-12, earth 13-20, ...)
+ * and `GRADE_QI_BANDS` binds it to `qiCost`, and the content suite checks both
+ * on every row. So a market primer and an apex house's intake canon, which
+ * cover identical rungs and therefore both open at ordinal 0, are BOTH
+ * necessarily `mortal`. That is the exact pair the axis exists to separate, and
+ * grade is structurally unable to separate it. Calling the apex book `earth`
+ * would require moving its `requiredOrdinal` to 13 - which is a lie about what
+ * it covers - and repricing a gathering primer at Foundation qi costs.
+ *
+ * Ordered worst to best, and each tier names its CAUSE rather than a quantity,
+ * because the causes are what the world produces:
+ *
+ *   corrupt   the text is damaged. Miscopied by hands that never mastered it,
+ *             fragmentary, reassembled out of a wreck, or set down by somebody
+ *             who did not survive what they were describing.
+ *   crude     plainly set down, and honestly complete. Nothing wrong with it
+ *             and nothing in it either. This is what a market stall sells and
+ *             what a hedge-teacher hands over, and it WORKS - slowly.
+ *   sound     a working book with a lineage behind it. The ordinary good case.
+ *   refined   worked over by generations who each took it to its end and wrote
+ *             down what they found there.
+ *   pristine  the author's own hand, complete, nothing lost in transmission.
+ *
+ * Read by `engine/cultivation/manual-quality.ts`, which is the single authority
+ * on what a tier is worth and on what it demands of a reader. Nothing else may
+ * interpret these names.
+ */
+export const ManualQualitySchema = z.enum(['corrupt', 'crude', 'sound', 'refined', 'pristine']);
+export type ManualQuality = z.infer<typeof ManualQualitySchema>;
+
+/**
  * How many people one use of an art lands on.
  *
  * A property of the ART and never of the person holding it: the same word means
@@ -1443,6 +1484,19 @@ export const TechniqueSchema = z.object({
      * reads as a fact about the book in your hands.
      */
     cap: z.number().int().min(0).max(MAX_ORDINAL).nullable().default(null),
+    /**
+     * HOW WELL THIS PARTICULAR BOOK IS WRITTEN. See `ManualQualitySchema`.
+     *
+     * The second axis, orthogonal to `cap` in exactly the way `cap` is
+     * documented as orthogonal to suitability. Two manuals may cover the same
+     * rungs and be nothing like the same object, which is the whole point: what
+     * a house gives its intake is not a range of rungs - those are for sale at
+     * a stall - it is a better-taught version of the same range.
+     *
+     * Defaulted to `sound`, the identity element: a row that says nothing about
+     * its quality behaves exactly as it did before this field existed.
+     */
+    quality: ManualQualitySchema.default('sound'),
     /**
      * Root grades the manual will take at all. Empty means any root may read it.
      *

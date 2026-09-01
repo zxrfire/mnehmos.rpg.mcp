@@ -34,7 +34,8 @@ import {
     ApproachSchema,
     MAX_RANKS_PER_TURN,
     type Cultivator,
-    type Element
+    type Element,
+    type ManualQuality
 } from '../../schema/cultivation.js';
 import {
     DAYS_PER_YEAR,
@@ -294,6 +295,11 @@ function cultivationOptionsFor(
     let techniqueBonus = 1;
     let techniqueElement: Element | null = null;
     let techniqueName: string | null = null;
+    // How well the book is written, which is a fact about the object rather
+    // than about how much of it you have learned. `techniqueBonus` above is
+    // mastery; this is the other axis, and the engine prices it against what
+    // this cultivator can take off the page. See `manual-quality.ts`.
+    let techniqueQuality: ManualQuality | null = null;
 
     if (techniqueId) {
         const known = repos.techniques.getKnown(cultivator.id, techniqueId);
@@ -301,6 +307,7 @@ function cultivationOptionsFor(
         if (known && catalog) {
             techniqueName = catalog.name;
             techniqueElement = catalog.element ?? null;
+            techniqueQuality = catalog.quality;
             const root = getSpiritRoot(cultivator.spiritRoot);
             const matched =
                 catalog.element !== null && root.elements.includes(catalog.element);
@@ -318,6 +325,7 @@ function cultivationOptionsFor(
     return {
         options: {
             techniqueBonus,
+            techniqueQuality,
             sectBonus,
             locationBonus: 1,
             focusMultiplier: FOCUS_MULTIPLIERS[focus]

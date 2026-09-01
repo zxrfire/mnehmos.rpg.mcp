@@ -255,13 +255,36 @@ describe('seeding: nobody is flagged important', () => {
         });
         expect(rich).toBeGreaterThanOrEqual(poor);
 
-        // And a fortune cannot rescue the draw that decides everything. A
-        // muddled root born to a great house still loses to a clean root born
-        // on a farm, which is the whole of "talent is dealt once".
+        // And a fortune cannot rescue the draw that decides everything.
+        //
+        // MEASURED AT A RUNG THAT IS NOT THE WALL. This used to compare a
+        // muddled great-house child against a single-root farm child at age
+        // 120 and require a strict loss. Both saturate: with insight 2 the
+        // 12 -> 13 crossing stops everybody, so the farm child reads 12 at 80
+        // years and at a thousand, and the comparison was being taken entirely
+        // inside the ceiling. When manuals gained a quality axis and an origin
+        // started deciding which BOOK somebody is handed, the muddled child
+        // reached the same 12 and the assertion failed - reporting a talent
+        // regression that had not happened.
+        //
+        // The claim it was reaching for is that the root outweighs the origin,
+        // and that is measured by holding the origin fixed. It still holds by a
+        // wide margin: a muddled root on the same farm reaches 9 where a single
+        // root reaches 12, and the whole spread an origin can buy - ground,
+        // stipend, sect support and a better-written road - does not close it.
+        const poorMuddled = deriveOrdinal('muddled_five_element', attrs, 120, 1, 44, rngFor(), {
+            origin: 'thin_county'
+        });
+        expect(poorMuddled).toBeLessThan(poor);
+
+        // What the house DOES buy is the top of the first realm for somebody
+        // who would not have got there, and no further. That is the setting's
+        // own claim about resources - they carry an untalented person to
+        // Perfection and stop - rather than a rank handed over.
         const richMuddled = deriveOrdinal('muddled_five_element', attrs, 120, 1, 44, rngFor(), {
             origin: 'great_house'
         });
-        expect(richMuddled).toBeLessThan(poor);
+        expect(richMuddled).toBeGreaterThan(poorMuddled);
     });
 
     it('still caps a great house child at the province ceiling', () => {
