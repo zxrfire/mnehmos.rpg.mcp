@@ -25,6 +25,7 @@
 import { z } from 'zod';
 
 import { SITE_PHRASES } from './trials.js';
+import { legacyStep } from './leaving-things-for-the-next-life.js';
 import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
 
 /** Longest stretch of seclusion that may be requested in one call: 100 years. */
@@ -38,6 +39,9 @@ export const TRAINING_DAYS = 7;
 
 /** Days a stretch of foraging consumes. */
 export const GATHERING_DAYS = 7;
+
+/** Days a burial takes when no duration is named. A week with a spade. */
+export const DEFAULT_BURIAL_DAYS = 7;
 
 /** Days sealed closed-door seclusion runs for when no duration is named. */
 export const DEFAULT_SECLUSION_DAYS = 365;
@@ -296,6 +300,17 @@ export const ACTION_NAMES = [
      */
     'site',
     /**
+     * Putting things beyond your own death, and collecting what somebody else
+     * put beyond theirs.
+     *
+     * Five steps of one act, on the `site` precedent: listing the counters,
+     * burying a cache, digging one up, lodging a deposit against a phrase, and
+     * claiming one. Splitting them across `move`, `interact` and `investigate`
+     * would put the two that spend something behind verbs whose whole design
+     * is that they are cheap.
+     */
+    'legacy',
+    /**
      * ── INSTITUTIONS ACTING ON EACH OTHER, AND ON THE DEAD ────────────────
      *
      * Four verbs added together because they are one discovery, made by
@@ -517,14 +532,17 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
      * not a description of what each intent costs, and the conservative
      * direction is the only safe one to be wrong in.
      */
-    'site'
+    'site',
+    // Burying spends a week or a season with a spade, and the food clock
+    // runs through it. Conservative direction, same as `site`.
+    'legacy',
 ] as const;
 
 /** What an unparseable sentence resolves to. Inert, by construction. */
 export const FALLBACK_ACTION: ActionName = 'unclear';
 
 /** Actions that take a duration in days. Every other action ignores one. */
-export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'work', 'provision'] as const;
+export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'work', 'provision', 'legacy'] as const;
 
 /**
  * Actions that take a subject. The subject must resolve to a real entity - a
@@ -540,6 +558,9 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     // The site, by name. Resolved against the catalog and against what this
     // cultivator may name, so an invented one resolves to nothing.
     'site',
+    // The custody house, by name, resolved against the six that take a
+    // deposit. A cache takes the place instead and needs no target.
+    'legacy',
     // The line on the price board. Resolved against `PRICES`, so a purchase
     // the board never advertised resolves to nothing and is refused with the
     // board attached.
@@ -636,6 +657,13 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
      * listing. See `SITE_INTENTS` and `GameService.site`.
      */
     'site',
+    /**
+     * `legacy` is the fourth, and it carries the site rule exactly: the label
+     * picks which of five steps runs, two of them spend something, and an
+     * unrecognised label falls through to `counters` - the free read of what
+     * the counters here will take - and never to burying.
+     */
+    'legacy',
     /**
      * `recall` is the fourth, picking between what the holder has HEARD and
      * what they have UNDERSTOOD. Two different tables, both theirs, and both
@@ -2669,6 +2697,19 @@ export function parseIntent(input: string): PlannedAction {
     {
         const step = siteStep(text, input);
         if (step) return step;
+    }
+
+    // ── what somebody leaves for whoever comes after ──
+    //
+    // Below the sect block and below the inheritance grounds, and both of
+    // those orderings are load-bearing. "I leave the sect" is resigning and
+    // "I dig up the grave of Shen Guyi" is grave-robbing, and each of them
+    // contains a verb this block also matches on. Above `institutionalAct`,
+    // because lodging goods with a house is not a petition, a posture, a seal
+    // or an offering, and that block matches any sentence naming a faction.
+    {
+        const aside = legacyStep(text, usedAsVerb, parseDuration(text) ?? undefined);
+        if (aside) return aside;
     }
 
     // ── institutions acting on each other, and on the dead ──

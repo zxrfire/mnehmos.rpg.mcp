@@ -204,6 +204,20 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         // implemented, and only the honest verb for it was missing.
         'I rob the grave of Shen Guyi'
     ],
+    // ── what somebody leaves for whoever comes after ──
+    //
+    // Five steps of one act: reading the counters, burying a cache, digging
+    // one up, lodging goods against a phrase, and claiming them. Two of the
+    // five spend days, so an unrecognised intent falls through to the free
+    // read and never to the burial.
+    legacy: [
+        'who holds deposits',
+        'where can I leave things',
+        'I bury my things here',
+        'I dig up the cache',
+        'I lodge my things with the Ninefold Ledger',
+        'I claim the deposit at the Ninefold Ledger'
+    ],
     // ── institutions acting on each other, and on the dead ──
     //
     // Twelve sentences from a sect head who had heard of every faction, all

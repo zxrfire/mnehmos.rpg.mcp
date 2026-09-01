@@ -326,6 +326,7 @@ describe('every verb is reachable from plain English', () => {
         treat: 'I get my injuries treated',
         buy: 'I buy a visit from the mortal physician',
         site: 'I look for the audit bench',
+        legacy: 'I bury my things here',
         // Dead at ordinals 37-46, where it matters most. See the recall block.
         recall: 'what do I know of Lu Sheng',
         // The four institutional verbs, all four found at the top of a house

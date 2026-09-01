@@ -22,7 +22,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import { LOW_SATIETY } from '../engine/cultivation/survival.js';
+import { LOW_SATIETY, stagnationRemaining } from '../engine/cultivation/survival.js';
 import type { ManualQuality } from '../schema/cultivation.js';
 import type { ManualBand } from '../engine/cultivation/cultivation.js';
 import type Database from 'better-sqlite3';
@@ -171,6 +171,7 @@ import {
 } from '../server/consolidated/cultivation-support.js';
 import { applyTimeSkip, tollLine } from './apply.js';
 import {
+    DEFAULT_BURIAL_DAYS,
     DEFAULT_CULTIVATION_DAYS,
     DEFAULT_ERRAND,
     DEFAULT_SECLUSION_DAYS,
@@ -247,6 +248,15 @@ import {
     type KnowledgeScope
 } from './entities.js';
 import { KnowledgeGate, loosePlaceKey, placeKey, type AwarenessRow } from './knowledge.js';
+import {
+    DEFAULT_LEGACY_INTENT,
+    LEGACY_INTENTS,
+    LegacyLedger,
+    handleLegacy,
+    phraseIn,
+    pouchStacks,
+    type LegacyIntent
+} from './leaving-things-for-the-next-life.js';
 import {
     SiteLedger,
     awarenessOfSite,
@@ -1124,6 +1134,7 @@ export class GameService {
      * reader and writer, not a second table.
      */
     private readonly sites: SiteLedger;
+    private readonly legacy: LegacyLedger;
     /** Whether time passing for the cultivator also passes for everyone else. */
     readonly worldEnabled: boolean;
     /**
@@ -1179,6 +1190,7 @@ export class GameService {
         this.log = new PlayLog(this.db);
         this.knowledge = new KnowledgeGate(this.db);
         this.sites = new SiteLedger(this.db);
+        this.legacy = new LegacyLedger(this.db);
         this.worldEnabled = options.worldEnabled ?? true;
     }
 
@@ -1843,6 +1855,11 @@ ${noticedWaiting}`;
 
             case 'site':
                 return this.site(run, cultivator, ambient, action.target, action.intent);
+
+            case 'legacy':
+                return this.legacyAct(
+                    run, cultivator, action.intent, action.target, rawInput, action.days
+                );
 
             case 'assess':
                 return this.assess(cultivator, action.target);
@@ -4918,6 +4935,118 @@ ${noticed}`;
             `Unresolved site "${(query ?? '').trim() || '(none named)'}": no nameable site matched and `
             + 'no site has been approached in this run.'
         ));
+    }
+
+    /**
+     * Putting things beyond your own death, and collecting what somebody else
+     * put beyond theirs.
+     *
+     * The whole surface lives in `leaving-things-for-the-next-life.ts`, on the
+     * `trials.ts` precedent: this method supplies the clock, the mover and the
+     * company, and decides nothing about how a cache or a deposit turns out.
+     *
+     * The phrase comes off the RAW INPUT and never off a planned action's
+     * `topic`. A model asked to fill a field paraphrases, and a paraphrased
+     * phrase does not open the entry - so the one thing a player has to carry
+     * across a death is the one thing no model touches.
+     */
+    private async legacyAct(
+        run: Run,
+        cultivator: Cultivator,
+        intent: string | undefined,
+        target: string | undefined,
+        rawInput: string,
+        days: number | undefined
+    ): Promise<Execution> {
+        const label = (intent ?? '').trim().toLowerCase() as LegacyIntent;
+        const chosen: LegacyIntent =
+            LEGACY_INTENTS.includes(label) ? label : DEFAULT_LEGACY_INTENT;
+
+        const outcome = handleLegacy(
+            {
+                ledger: this.legacy,
+                mover: {
+                    stones: (id, delta) => {
+                        this.repos.cultivators.applyDeltas(id, { spiritStones: delta });
+                    },
+                    add: (id, stack) => addToPouch(this.db, id, stack.itemId, stack.kind, stack.quantity),
+                    take: (id, stack) => removeFromPouch(this.db, id, stack.itemId, stack.quantity)
+                },
+                cultivator,
+                here: cultivator.location ?? '',
+                // The world clock, because a run's clock restarts every life
+                // and the gap between two of them is the whole subject.
+                worldSeed: this.atHand?.seed ?? null,
+                worldDay: this.atHand?.currentDay ?? null,
+                runId: run.id,
+                // Anybody standing close enough to watch, read off the same
+                // roster `look` reads, and recorded once at the moment of
+                // burial rather than re-decided whenever somebody asks.
+                watchers: this.present(cultivator).length,
+                pouch: pouchStacks(this.db, cultivator.id),
+                // Why they are at the counter. Settling is not a mood - it is
+                // the allowance running down at a rung they are not leaving.
+                road: {
+                    settlingYearsLeft: stagnationRemaining(cultivator),
+                    lifespanYearsLeft: null
+                }
+            },
+            chosen,
+            target,
+            phraseIn(rawInput),
+            days ?? DEFAULT_BURIAL_DAYS
+        );
+
+        // A read costs nothing and returns here. Digging and burying spend
+        // days, and days are spent the way `gather` spends them, so the food
+        // clock and the toll run through them exactly as they do anywhere else.
+        if (outcome.daysSpent === 0) {
+            const free = this.freeAction(run, 'legacy', outcome.facts);
+            free.calls = outcome.calls;
+            free.outcome = outcome.refused ? 'refused' : 'executed';
+            return free;
+        }
+
+        // RE-READ BEFORE THE SKIP, because the goods have already moved.
+        //
+        // `handleLegacy` empties the purse into the ground first, and
+        // `applyTimeSkip` writes `end.spiritStones - mid.spiritStones` where
+        // `end` is derived from whatever cultivator it was handed. Handed the
+        // pre-burial row, it computes a delta that puts every buried stone
+        // straight back. Found by playing this integration: buried 28 of 30
+        // stones, came out of the week holding 30.
+        const afterGoods = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
+
+        const skip = simulateTimeSkip(afterGoods, outcome.daysSpent, {
+            seed: run.seed,
+            rollIdentity: PLAYER_ROLL_IDENTITY,
+            locationId: placeName(afterGoods),
+            turn: run.turn,
+            startDay: Math.floor(run.elapsedDays),
+            options: { ...this.rateTermsFor(afterGoods), ground: this.groundFor(afterGoods) },
+            understanding: this.understandingFor(run, afterGoods),
+            rations: this.drawFromPack(afterGoods, outcome.daysSpent),
+            grainAbstinence: false,
+            autoBreakthrough: false,
+            randomEvents: true,
+            toll: tollConditionsFor(this.repos, afterGoods)
+        });
+        const applied = applyTimeSkip(this.repos, { before: afterGoods, run, skip });
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+
+        return {
+            facts: outcome.facts,
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: outcome.refused ? 'refused' : 'executed',
+            calls: [
+                ...outcome.calls,
+                ...skipCalls('legacy', skip, null),
+                ...tollCalls(applied.tollLines),
+                ...worldCalls(world)
+            ]
+        };
     }
 
     /**
