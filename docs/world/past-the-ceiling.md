@@ -625,6 +625,47 @@ yours.** A road in your head is your house's property as much as your own, and w
 it is how a road escapes into the world. So the terms of a departure are negotiated over the
 book, not over the person, and the house's reaction is proportional to what leaves with you.
 
+### The Hollow Court is the exception to all of it
+
+Everything in this section describes leaving as a thing that costs something. **Going to the
+Hollow Court costs nothing and is an honour on the house you leave.**
+
+The Court takes people from about ordinal 29 upward, out of any house anywhere. A member
+leaving for it is not a defection and is not treated as one: **the original house gains
+standing by having produced somebody the Court wanted**, and the Court makes that explicit -
+rewards, a celebration, sometimes a dao artifact sent back down. Nobody swears an oath,
+nobody buys a release, nobody carries a grievance, and no house has ever gone to war over
+one. It is sanctioned by everybody because everybody knows a Court disciple could have come
+from anywhere, and because **nobody would start a war with the Hollow Court over any member
+at all**, down to an outer void disciple.
+
+The reason it can behave this way is that it wants one thing and it is not competing with
+anybody for it. **The Court is trying to reach immortality.** It is not accumulating ground,
+tenants, curriculum or standing in the province, so a house that loses somebody to it has not
+lost anything to a rival.
+
+Three consequences, and they make the Court unlike every other institution in the setting:
+
+- **It has teachers of many kinds, and no books.** Its members arrive from everywhere,
+  carrying the roads of the houses that raised them, so the Court holds a wider spread of
+  roads than any house of its size could ever assemble. And **it does not write them down,
+  out of respect for the house each one came from.** So its whole shelf is oral and personal:
+  transmission there is a person teaching a person, and what is not passed on dies with the
+  one who held it.
+- **Inside it, everybody shares freely.** A Court disciple teaches the other disciples what
+  their original house taught them. That is the exact inverse of the secrecy economy
+  everywhere else in this file, and it is why the Court can go where it goes - it is the one
+  place in the world where roads from every house are pooled rather than guarded.
+- **It is the reason people want in**, and the reason wanting in is reasonable. Somebody at
+  the end of their own house's shelf can reach, in one move, a body holding more roads than
+  anyone and giving them away to its own.
+
+Note what the Court does *not* do with any of this: it does not sell, teach outward, or leak.
+The no-books rule and the pooling rule together mean the knowledge is enormously concentrated
+and completely immobile. That is why the houses tolerate it, and it is also the Court's own
+fragility - a body whose entire curriculum lives in the heads of its members loses a road
+every time it loses a member.
+
 ### Inside your own apex, none of this applies
 
 Moving to a stronger house under the same apex - or to the apex itself - **carries no friction
