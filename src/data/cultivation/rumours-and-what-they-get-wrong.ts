@@ -290,6 +290,67 @@ const ABOUT_CULTIVATORS: readonly Rumour[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 const ABOUT_INSTITUTIONS: readonly Rumour[] = [
+    // -- TWO HOUSES CUT OFF FROM ABOVE, AND THE DIFFERENCE IS WHAT IS KNOWN --
+    //
+    // The pair is the point and the rows should be read together. Both have
+    // lost the object their line ran through and neither can reach the
+    // ancestor above it. What separates them is entirely epistemic:
+    //
+    //   The Storm Tyrant Court. The province SUSPECTS and will not check.
+    //   The suspicion is correct, and the Court keeps most of its standing
+    //   on other people's unwillingness to establish that - which is an
+    //   excellent position and an extremely fragile one, because it is not
+    //   being held by anything the Court does.
+    //
+    //   The Frostmirror Court. The province KNOWS, because the loss was
+    //   public. It gets none of the same protection, since there is nothing
+    //   left to be uncertain about. And the ancestor it is grieving the loss
+    //   of access to has been dead the whole time, which nobody on either
+    //   side knows - so the second loss is redundant on the first.
+    //
+    // The ground truth is in `SECT_ANCESTRY` on both houses, where the
+    // register reads it: `claimIsTrue` and `afterCrossing` carry it, and the
+    // catalog comment on `afterCrossing` has always said it is unknowable in
+    // the world. These rows are what the world says instead.
+    {
+        id: 'rumour-storm-tyrant-tally-is-gone',
+        saying: 'Nobody has seen the Tally in four hundred years. They describe it at successions now. You describe a thing when you cannot show it.',
+        saidBy: 'a Crimson Abyss factor who pays their tithe and resents it, quietly, to other people who pay it',
+        aboutId: 'sect-storm-tyrant-court',
+        aboutName: 'the Storm Tyrants',
+        accuracy: 'true',
+        underneath: 'It is gone, and the reasoning that gets there is sound rather than lucky: the Court stopped opening the vault, started reading the contents off the record, and two of its own Storm Elders privately doubt the list. What nobody has is the one thing that would settle it, because settling it means walking up to a house that holds the only working lightning curriculum in the world and asking it to prove a negative.',
+        consequence: 'Nothing. That is the whole of the Court\'s position and it is not one the Court is maintaining: everybody who could test the belief has worked out that being wrong about it in the wrong direction is fatal, so the deterrent is held up by other people\'s caution rather than by anything in the room. A house whose standing rests on a question nobody will ask is safe exactly until somebody asks it.',
+        floorOrdinal: 12,
+        regionId: 'region-low-fall',
+        insiderFactionId: 'sect-storm-tyrant-court'
+    },
+    {
+        id: 'rumour-storm-tyrant-still-answered',
+        saying: 'The Standing Storm still answers them. That is why nobody moves on the stone, whatever else they have lost.',
+        saidBy: 'a Low Fall grant clerk, explaining to a junior why a probationary court is renewed anyway',
+        aboutId: 'sect-storm-tyrant-court',
+        aboutName: 'the Storm Tyrant Court',
+        accuracy: 'true_and_wrong_about_why',
+        underneath: 'The ancestor is alive and the Court is right to claim it. He has not answered in nine hundred years and the Court cannot reach him, because reaching upward takes an object the Court no longer has. So the saying is right about the man and wrong about the channel, and the Court is in the strange position of holding a true claim it has no way to use and every reason to let people keep misunderstanding.',
+        consequence: 'The Court has never corrected it and never will, because the correction is the admission. Its own stated want is to find out whether the ancestor is still there, and the only bodies that could open that channel are the two it would have to tell.',
+        floorOrdinal: 16,
+        regionId: 'region-low-fall',
+        insiderFactionId: 'sect-storm-tyrant-court'
+    },
+    {
+        id: 'rumour-frostmirror-cannot-reach-hers',
+        saying: 'The Frostmirror lost theirs and everybody watched. They have not been able to send a word upward since, and they still keep the hall ready.',
+        saidBy: 'a Stonewright assayer who was present when it was weighed, and has told the story at every table since',
+        aboutId: 'sect-frostmirror-court',
+        aboutName: 'the Frostmirror',
+        accuracy: 'true',
+        underneath: 'Right, and unusually well attested for a saying about an object: the loss was witnessed, assayed and minuted, so there is no version of this the Court can leave unsettled. What the saying does not contain, because nobody alive holds it, is that the ancestor on the far end has been dead for centuries. The Court is not cut off from somebody who is not answering. It is cut off from nobody.',
+        consequence: 'It gets none of the protection the Storm Tyrant Court gets from the same loss, because there is nothing left to be uncertain about - and the province prices it accordingly. Every judgement made about the Frostmirror on this basis is correct for a reason that stopped being the reason a long time ago.',
+        floorOrdinal: 8,
+        regionId: 'region-low-fall',
+        insiderFactionId: 'sect-frostmirror-court'
+    },
     {
         id: 'rumour-anchorhold-does-nothing',
         saying: 'We pay the levy and they come once a year and walk about and go away. Nothing happens. That is what we are paying for, apparently. Nothing.',
