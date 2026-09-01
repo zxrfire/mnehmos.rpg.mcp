@@ -438,6 +438,38 @@ not demons", and one might show you a thing or two. A rule modelled as an imposs
 throws away the rare event that makes the ordinary case worth having. Build the tendency,
 leave the door open.
 
+### Every realm is a bucket with an inflow and an outflow
+
+The design owner's model for the population, and the one to tune against:
+
+> Think of it as a bucket with an input and an output. The bucket always has some volume to
+> it, but it is shifting.
+
+Nine buckets, one per cultivation stage, and they are CHAINED - the outflow of one is the
+inflow of the next, minus whatever dies or settles on the way. So no band can be tuned in
+isolation: widening Core Formation's outflow fills Nascent Soul, and choking Foundation
+starves everything above it.
+
+The shape wanted at every stage is a steady volume whose contents turn over slowly - some
+residents who arrived recently, many who have been there a long time. Measure **inflow,
+outflow and volume separately** rather than reporting a single share, because the four
+failure modes look different in those three numbers and identical in any one of them:
+
+- volume stable, arrivals near 100% - **too fast a turnover**, the bucket is being flushed.
+  Measured at 90-95% above Void Refinement and rejected: "arrivals should be HARD",
+  "cultivation should not be easy".
+- volume falling - outflow exceeds inflow. This was the original decline.
+- volume healthy, inflow near zero - **living on inheritance**, which is where the apex
+  started: every resident a seeded survivor and nobody new ever arriving.
+- volume climbing without bound - the outflow is too slow. Not yet observed.
+
+Two things make this subtler than it looks. **Settling and the structural breaks are
+outflows that do not remove anybody from the world** - a settled or broken cultivator stays
+in the band forever and stops feeding the one above. So a band's volume can look healthy
+while the outflow that matters, the one that fills the next bucket, is near zero. Measure
+the two kinds of outflow separately. And check what "arrival" counts: somebody who climbed
+one rung and is now recounted in the band above is not the world producing anybody.
+
 ### Decline is correct for a house and wrong for the world
 
 Sects rise and fall; that is the setting working. The world's standing distribution
