@@ -988,6 +988,31 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
 export const POCKET_PICKING =
     /\b(?:pickpocket\w*|(?:pick|picks|picking|picked|lift|lifts|lifting|lifted|cut|cuts|cutting)(?!\s+up\b)\b[^.!?]{0,40}?\b(?:pocket|pockets|purse|purses|sleeve|sleeves))\b/;
 
+/**
+ * Asking what your standing entitles you to on your house's ground.
+ *
+ * Named rather than inline because two places need it: the read itself, and a
+ * veto on the ask branch - "I ask for time on the vein" is not a question put
+ * to a person, and `parseAsk` was taking "for time on the vein" as somebody's
+ * name and putting the words to whoever was nearest.
+ *
+ * Ground is the largest multiplier in the model and houses allocate days on it
+ * by rank, so this is the first concrete thing rank buys. Gated on a house word
+ * beside the ground word, so "I travel to The Cut Face" stays a journey.
+ */
+export const GROUND_TIME_QUESTION = new RegExp([
+    /\b(?:time on the (?:vein|ground|chamber)|my (?:allocation|allotment|days on)|how many days (?:do i get|am i allowed|on the))\b/,
+    /\bwhere (?:can|do|should) i cultivate\b[^.?!]*\b(?:sect|house|here|in the)\b/
+].map(r => r.source).join('|'));
+
+/** The two-noun form: a chamber word, a house word, and something being asked. */
+export function asksAfterGroundTime(text: string): boolean {
+    if (GROUND_TIME_QUESTION.test(text)) return true;
+    return /\b(?:chamber|vein|cave|ground|room)\b/.test(text)
+        && /\b(?:sect|house|clan|school|order)\b/.test(text)
+        && /\b(?:go to|use|ask for|request|time on|cultivate in|cultivate at|sit in|where|what|how much|am i allowed|can i)\b/.test(text);
+}
+
 export const SECT_THEFT_PATTERN =
     /\b(?:steal|stole|stealing|rob|robbing|loot|looting|plunder|pilfer|siphon\w*|skim\w*|embezzl\w*|divert\w*|make off with|help myself to|vault|treasury|strongroom|storehouse|coffers|reserves|take (?:a little|some|the|its|their|everything|all|what))\b/;
 
@@ -3067,7 +3092,14 @@ export function parseIntent(input: string): PlannedAction {
     // Requires a person: `someone`, `the old woman`, `around`, `the locals`.
     // Without one the sentence is a query about the world rather than a
     // question put to anybody, and the surfaces below answer it.
+    //
+    // And "I ask for time on the vein" is not a question put to anybody: it is
+    // the house's own allocation, which has its own read below. `parseAsk`
+    // takes "for time on the vein" as a person, fails to find one, and puts the
+    // words to whoever is nearest - the same failure "tell me about myself"
+    // already has a veto for.
     const asked = /\b(?:ask|asking|asks|enquire|inquire|put it to|question|press)\b/.test(text)
+        && !GROUND_TIME_QUESTION.test(text)
         ? parseAsk(input)
         : null;
     if (asked && !/\bjoin(?:ing)?\b/.test(text)) {
@@ -3237,8 +3269,12 @@ export function parseIntent(input: string): PlannedAction {
     // their realm and therefore could not know which herbs to gather. Ahead of
     // the refining rule because it is the same verb asked as a question, and
     // the question must not be answered by working the cauldron.
-    if (/\b(?:what|which)\b[^.!?]*\b(?:recipes?|formulae?|formulas?|pills?)\b[^.!?]*\b(?:do i (?:know|have)|can i (?:make|refine|brew|attempt)|are (?:there|available)|could i make)\b/.test(text)
-        || /\b(?:what can i (?:make|refine|brew)|what (?:recipes?|formulas?) do i know|list (?:my )?(?:recipes?|formulas?)|show (?:me )?(?:my )?(?:recipes?|formulas?))\b/.test(text)
+    if (/\b(?:what|which)\b[^.!?]*\b(?:recipes?|formulae?|formulas?|pills?)\b[^.!?]*\b(?:do i (?:know|have)|can i (?:make|refine|brew|craft|attempt)|are (?:there|available)|could i make)\b/.test(text)
+        // `craft` is here because a player types it and it reached nothing:
+        // `refine`, `make` and `brew` all worked and "what can I craft" fell to
+        // `unclear`, which is the near-synonym defect this file already has
+        // three worked examples of.
+        || /\b(?:what can i (?:make|refine|brew|craft|concoct)|what (?:recipes?|formulas?) do i know|list (?:my )?(?:recipes?|formulas?)|show (?:me )?(?:my )?(?:recipes?|formulas?))\b/.test(text)
         // Looking for a pill that does something is a question about the
         // catalog, not a verb aimed at the room. It used to reach the bare
         // `look` rule and come back with the weather.
@@ -3251,7 +3287,7 @@ export function parseIntent(input: string): PlannedAction {
     // an alchemical noun. "I make a pill" is what a player types and it reached
     // nothing at all, while "I refine a pill" worked - not a distinction
     // anybody could be expected to guess.
-    if (/\b(?:refine|concoct|brew|distil|distill|alchemy|cauldron|make|cook)\b/.test(text)
+    if (/\b(?:refine|concoct|brew|distil|distill|alchemy|cauldron|make|craft|cook)\b/.test(text)
         && /\b(?:pill|elixir|medicine|formula|recipe|cauldron|alchemy)\b/.test(text)) {
         return { action: 'refine', target: extractSubject(input, /refine|concoct|brew|distil|distill|make/) };
     }
@@ -3288,6 +3324,25 @@ export function parseIntent(input: string): PlannedAction {
             action: 'train_technique',
             target: extractSubject(input, /practi[cs]e|train|drill|rehearse|work on/)
         };
+    }
+
+    // ── WHAT MY STANDING BUYS ME ON MY HOUSE'S GROUND ────────────────────
+    //
+    // The world allocates days on a house's chambers by standing, ground is the
+    // largest multiplier in the model - ordinal 29 costs 317 years on ordinary
+    // ground against 79 on a sealed vein - and every NPC was already getting
+    // it. The player had no sentence that reached it: "I ask for time on the
+    // vein" hit the interact dead end, "where can I cultivate in the sect"
+    // answered about having no manual, and "I go to the sect cultivation
+    // chamber" was refused as a name that is not a place, which is true and
+    // useless when the chamber is real and their rank already entitles them
+    // to days in it.
+    //
+    // Ahead of `move`, which owns going to a NAMED place, and gated on the
+    // house: a chamber, vein or cave named beside a sect word is this question,
+    // and "I travel to The Cut Face" remains a journey.
+    if (asksAfterGroundTime(text)) {
+        return { action: 'look', intent: 'ground_time' };
     }
 
     // ── move: one action, several ways of going ──
