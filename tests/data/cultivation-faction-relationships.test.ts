@@ -96,8 +96,8 @@ describe('faction relationships - one tie, two sides', () => {
 
             // Each side's own word is the other side's report of it, so an
             // entry can print an asymmetry without a reader opening the other.
-            expect(mine.regard, pair.id).toBe(theirs.theirRegard);
-            expect(theirs.regard, pair.id).toBe(mine.theirRegard);
+            expect(mine.warmth, pair.id).toBe(theirs.theirWarmth);
+            expect(theirs.warmth, pair.id).toBe(mine.theirWarmth);
         }
     });
 
@@ -170,7 +170,7 @@ describe('faction relationships - the two bodies nobody joins', () => {
     it('the two of them feel differently about the same tie', () => {
         const ours = relationshipBetween(ROOT_SILL, KILN);
         const theirs = relationshipBetween(KILN, ROOT_SILL);
-        expect(ours?.regard).not.toBe(theirs?.regard);
+        expect(ours?.warmth).not.toBe(theirs?.warmth);
         // One carries a named grievance and the other does not, which is the
         // whole asymmetry: the half that walked has a complaint with a cause
         // and a date, and the half that stayed has nothing to complain about.
@@ -192,8 +192,8 @@ describe('faction relationships - the two bodies nobody joins', () => {
         expect(long?.kind).toBe('apex_and_posting');
         // Warm upward against a patron that is only correct back, which is the
         // shape the section exists to make visible.
-        expect(long?.regard).toBe('warm');
-        expect(long?.theirRegard).toBe('correct');
+        expect(long?.warmth).toBe('warm');
+        expect(long?.theirWarmth).toBe('correct');
 
         const survey = relationshipBetween(ROOT_SILL, 'apex-deep-survey');
         expect(survey?.kind).toBe('severed_patronage');
@@ -211,11 +211,11 @@ describe('faction relationships - the two bodies nobody joins', () => {
 describe('faction relationships - upward and downward warmth', () => {
     it('the register can show a body warm one way and cold the other', () => {
         // Not a hypothetical shape: assert that the catalog actually contains a
-        // body whose regard differs across two of its own ties, because a
+        // body whose warmth differs across two of its own ties, because a
         // section built to show asymmetry and containing none would be a
         // section nobody needs.
         const asymmetric = BODIES.filter(b => {
-            const words = new Set(relsFor(b.id).map(r => r.regard));
+            const words = new Set(relsFor(b.id).map(r => r.warmth));
             return words.size > 1;
         });
         expect(asymmetric.length).toBeGreaterThan(0);
@@ -224,7 +224,7 @@ describe('faction relationships - upward and downward warmth', () => {
     it('at least one tie has the two sides feeling differently', () => {
         const mismatched = allFactionRelationshipPairs().filter(p => {
             const tie = relationshipBetween(p.aId, p.bId);
-            return tie !== undefined && tie.regard !== tie.theirRegard;
+            return tie !== undefined && tie.warmth !== tie.theirWarmth;
         });
         expect(mismatched.length).toBeGreaterThan(0);
     });
@@ -232,7 +232,7 @@ describe('faction relationships - upward and downward warmth', () => {
     it('every body with something under it says how it treats them', () => {
         for (const body of BODIES) {
             for (const rel of relsFor(body.id).filter(r => r.stance === 'below')) {
-                expect(rel.regard, `${body.name} -> ${rel.otherName}`).toBeTruthy();
+                expect(rel.warmth, `${body.name} -> ${rel.otherName}`).toBeTruthy();
                 expect(rel.andSoTheyDo.length, `${body.name} -> ${rel.otherName}`).toBeGreaterThan(0);
             }
         }

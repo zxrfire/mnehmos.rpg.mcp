@@ -195,29 +195,35 @@ export const THE_DEEPEST_ROADS: readonly DeepRoadHolding[] = [
         accessTerms:
             'Lent to whoever is on the road, for as long as they are on it, and returned when they are past that stretch. Nothing leaves the four mountains. A copy is not a possession here and is not treated as one - it is the thing you are currently reading, and somebody else is going to need it.',
         teachers: [
+            // The four are `WITHDRAWN_POWERS['sect-hollow-court'].seats` and the
+            // ordinals are taken from there rather than restated: 44, 43, 43 and
+            // 42, ordered by ordinal descending and then by youth. They are
+            // unnamed across the whole catalog on purpose and stay unnamed here.
+            // The roster the Court was actually missing is the one UNDER them,
+            // and that lives in `hollow-court-roster.ts`.
             {
-                who: 'The first seat',
+                who: 'First Seat',
                 realmOrdinal: 44,
                 availability:
                     'Entirely, apart from a crossing. Presence at the Court is measured in decades of absence because a protector has to be standing there for the whole of somebody\'s attempt, and outside those stretches the seat is on the mountain and is working on this and on nothing else.'
             },
             {
-                who: 'The second seat',
-                realmOrdinal: 44,
+                who: 'Second Seat',
+                realmOrdinal: 43,
                 availability:
                     'Entirely, apart from a crossing. The four take the protecting in turn, which is the arrangement the whole Court is built on, and it is also why teaching capacity here is never zero: one is away and three are not.'
             },
             {
-                who: 'The third seat',
+                who: 'Third Seat',
                 realmOrdinal: 43,
                 availability:
-                    'Entirely. Has not stood protector in this era and has spent the whole of it on the road, which the other three regard as the most useful thing anybody in the Court is currently doing.'
+                    'Entirely. Level with the Second on the ladder and older, which is the whole of why the seats are ordered the way they are, and she has spent this era on the road rather than standing protector.'
             },
             {
-                who: 'The fourth seat',
-                realmOrdinal: 41,
+                who: 'Fourth Seat',
+                realmOrdinal: 42,
                 availability:
-                    'Entirely, and this is the seat a disciple actually sees. The furthest from the top of the four and consequently the one who most recently walked the stretch an outer disciple is on, which the Court has decided makes them the right person to be teaching it.'
+                    'Entirely, and this is the seat a disciple actually sees. The furthest from the top of the four, the youngest, the only one who still occasionally answers the gate, and consequently the one who most recently walked the stretch an outer disciple is on - which the Court has decided makes them the right person to be teaching it.'
             }
         ],
         capacityNote:
