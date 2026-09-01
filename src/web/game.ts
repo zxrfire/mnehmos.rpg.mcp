@@ -71,6 +71,7 @@ import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { capOf, classOf } from '../data/cultivation/techniques.js';
+import { NO_MANUAL_CEILING, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import {
@@ -350,7 +351,7 @@ import {
 } from '../engine/world/immortal-world.js';
 import { daoOf } from '../engine/cultivation/dao.js';
 import { PlayLog, type LogEntry } from './log.js';
-import type { Narrator } from './narrator.js';
+import type { FiledOutcome, Narrator } from './narrator.js';
 import { composeStateSummary } from './prompt.js';
 import { handleAdminManage, isAdminModeEnabled } from '../server/consolidated/admin-manage.js';
 import {
@@ -740,12 +741,12 @@ const CARE_RESTORES_FRACTION = 1;
 /**
  * The rung a cultivator with no cultivation manual is carried to.
  *
- * Zero, and it is a real number rather than an absence. `techniqueExhausted`
- * treats null as "no ceiling declared", so handing it null for somebody
- * practising nothing gave them an unlimited climb and made learning a first
- * book strictly harmful. See `rateTermsFor`.
+ * Re-exported from the cultivation engine rather than restated. It was a local
+ * constant here for one commit, which is exactly the drift AGENTS.md warns
+ * about: `techniqueCeiling` branches on this exact value to tell "there is no
+ * book" apart from "the book is spent", and two copies of it would eventually
+ * disagree about which sentence a player is shown.
  */
-const NO_MANUAL_CEILING = 0;
 
 /**
  * How much of a day sect work leaves for cultivation.
@@ -1375,7 +1376,10 @@ export class GameService {
             // Asking turns on what was said, so the words reach phase 3. They
             // are shown to the narrator and never read back: no key matching,
             // no phrase table, no engine surface. The judgement is narration.
-            playerSaid: trimmed
+            playerSaid: trimmed,
+            // What the engine actually filed. Phase 3 may dress this and may
+            // not contradict it; see the banner in `narrator.ts`.
+            filed: this.filedOutcome(execution)
         };
 
         // ── phase 3 ──
@@ -1419,7 +1423,8 @@ export class GameService {
         const narration = await this.narrator.narrate(execution.facts, {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
-            awareness: this.awarenessOf(after.cultivator)
+            awareness: this.awarenessOf(after.cultivator),
+            filed: this.filedOutcome(execution)
         });
 
         this.log.append(run.id, [
@@ -1455,7 +1460,8 @@ export class GameService {
         const narration = await this.narrator.narrate(execution.facts, {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
-            awareness: this.awarenessOf(after.cultivator)
+            awareness: this.awarenessOf(after.cultivator),
+            filed: this.filedOutcome(execution)
         });
 
         this.log.append(run.id, [
@@ -1679,8 +1685,17 @@ ${noticedWaiting}`;
 
             case 'status': {
                 const eligibility = canAttemptBreakthrough(cultivator);
+                // The ceiling belongs on the status read, not only in a
+                // digest forty lines long that a player sees after the decade
+                // is already spent. Asking "how am I doing" and being told
+                // "0 of 100 toward the next rank" while the true answer is
+                // "nothing will ever accumulate" is a status screen that lies
+                // by omission.
                 return this.freeAction(run, 'status', factsForStatus(
-                    cultivator, ambient, eligibility.progressRequired, eligibility.eligible
+                    cultivator, ambient, eligibility.progressRequired, eligibility.eligible,
+                    techniqueCeiling(
+                        cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap
+                    ).line
                 ));
             }
 
@@ -5383,6 +5398,32 @@ ${noticed}`;
     }
 
     /**
+     * The engine's own account of this turn, for the output-side check.
+     *
+     * Built from the `Execution` the caller already holds, so it cannot drift
+     * from what was actually filed: a rank counted off the skip's own deltas, a
+     * breakthrough attempt counted by whether one was RESOLVED at all, and a
+     * death read off the row rather than off anybody's sentence.
+     *
+     * `breakthroughAttempted` is deliberately true for a FAILURE as well as a
+     * success. Prose about a failed attempt legitimately contains the words a
+     * successful one would, and refusing that would throw away good writing
+     * about the most dramatic thing in the game.
+     */
+    private filedOutcome(execution: Execution): FiledOutcome {
+        return {
+            ranksGained: Math.max(0, execution.timeSkip?.deltas.realmOrdinal ?? 0)
+                + (execution.breakthrough?.outcome === 'success' ? 1 : 0),
+            breakthroughAttempted: execution.breakthrough !== null,
+            // Read off the row rather than off anybody's sentence, which is the
+            // whole point of this object.
+            died: execution.timeSkip?.died === true
+                || execution.breakthrough?.outcome === 'death'
+                || !this.currentRun().cultivator.alive
+        };
+    }
+
+    /**
      * Who notices that a piece of ground was emptied.
      *
      * Every house named on the site, and nobody else. The severity is read off
@@ -6056,6 +6097,10 @@ ${noticed}`;
         const provisioning = this.buyProvisions(cultivator, lived);
         const provisioned = withEncounterDeltas(provisioning.cultivator, enc);
         const prepared = provisioning.covered >= lived;
+        // Held rather than inlined: the ceiling is reported in the preamble
+        // below off the same terms the rate was computed from, so the sentence
+        // a player reads and the number the engine used cannot disagree.
+        const terms = this.rateTermsFor(provisioned);
 
         const skip = simulateTimeSkip(provisioned, lived, {
             seed: run.seed,
@@ -6064,7 +6109,7 @@ ${noticed}`;
             startDay,
             options: {
                 focusMultiplier: 1,
-                ...this.rateTermsFor(provisioned),
+                ...terms,
                 ground: this.groundFor(provisioned)
             },
             understanding: this.understandingFor(run, provisioned),
@@ -6111,6 +6156,25 @@ ${noticed}`;
             sealed ? 'Closed-door seclusion' : 'Seclusion'
         );
         facts.lines.unshift(provisioning.line);
+
+        // ── THE CEILING, BEFORE THE DECADE RATHER THAN AFTER ─────────────
+        //
+        // The engine files a `method_ceiling` event and it arrives inside a
+        // digest of forty other lines, which is the worst possible place for
+        // the only fact in the span a player can act on. Said here as well, at
+        // the top, in its own right - and marked required, so it survives a
+        // narrator that would rather write about the weather.
+        //
+        // Not an interrupt, deliberately. Being told is not a reason to stop a
+        // seclusion out from under somebody who chose it knowingly, and an
+        // interrupt every chunk would leave a stalled cultivator unable to pass
+        // time at all.
+        const ceiling = techniqueCeiling(cultivator.realmOrdinal, terms.techniqueCap);
+        if (ceiling.line !== null) {
+            facts.lines.unshift(ceiling.line);
+            (facts.required ??= []).push(ceiling.line);
+        }
+
         if (sealed) {
             facts.lines.unshift(
                 'The door was sealed: no encounter and no opportunity could reach this stretch. ' +

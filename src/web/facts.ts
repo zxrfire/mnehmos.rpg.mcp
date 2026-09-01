@@ -63,6 +63,28 @@ export interface EngineFacts {
     structure: string[];
     /** The deterministic rendering, ready to show a player as-is. */
     prose: string;
+    /**
+     * Lines the player MUST end up reading, whatever the narrator does.
+     *
+     * A subset of `lines`, not a second channel of content: everything here is
+     * also in `lines`, so a model that renders it well renders it once and this
+     * adds nothing. What it defends against is OMISSION.
+     *
+     * The measurement that made it necessary: the engine files a
+     * `method_ceiling` event saying, in full, "without a manual there is no
+     * road for the qi to take, so nothing accumulates and nothing ever will."
+     * The model receives that whole sentence inside a long digest and drops it,
+     * so a cultivator sits for fifty years gaining nothing and is never told
+     * why. With the deterministic narrator it reaches the player on every seed.
+     * The difference between the two front doors was the model's mood.
+     *
+     * Reserved for facts a player cannot play without: why nothing is
+     * accumulating, that they have died, what a crossing cut away. Not for
+     * anything merely interesting - a required line that arrives stapled to the
+     * end of good prose is a cost, and it is only worth paying where silence
+     * would be a lie by omission.
+     */
+    required?: string[];
 }
 
 /** Build facts with an empty structure channel. Most outcomes have none. */
@@ -250,6 +272,7 @@ export function factsForTimeSkip(
     label = 'Seclusion'
 ): EngineFacts {
     const lines: string[] = [];
+    const required: string[] = [];
 
     lines.push(`${label} at ${placeName(before)}. ${describeAmbientPerceived(ambient)}`);
     lines.push(
@@ -262,7 +285,15 @@ export function factsForTimeSkip(
     }
 
     for (const event of skip.events) {
-        lines.push(`Day ${Math.round(event.dayOffset)}: ${event.summary}`);
+        const line = `Day ${Math.round(event.dayOffset)}: ${event.summary}`;
+        lines.push(line);
+        // Why nothing is accumulating is not an incidental detail of a long
+        // span: it is the only thing in the digest a player has to act on, and
+        // it is the one a model reliably drops. `REQUIRED_EVENT_KINDS` names
+        // the kinds that cannot be left out, and the check is on the kind
+        // rather than on the wording so the engine may rewrite the sentence
+        // without silently losing its guarantee.
+        if (REQUIRED_EVENT_KINDS.has(event.kind)) required.push(line);
     }
 
     lines.push(netChangeLine(skip));
@@ -271,16 +302,43 @@ export function factsForTimeSkip(
         `${untreatedInjuryCount(after.injuries)} untreated injuries, ${after.spiritStones} spirit stones.`
     );
     if (skip.died) {
-        lines.push(`${after.name} is dead: ${describeDeathCause(skip.deathCause)}. The run is closed. There is no reload.`);
+        // Required. A player who is not told they are dead is not playing.
+        const death = `${after.name} is dead: ${describeDeathCause(skip.deathCause)}. `
+            + 'The run is closed. There is no reload.';
+        lines.push(death);
+        required.push(death);
     }
 
     return {
         headline: timeSkipHeadline(skip, before, after),
         lines,
         structure: standingStructure(after, ambient),
-        prose: timeSkipProse(before, after, skip, ambient, label)
+        prose: timeSkipProse(before, after, skip, ambient, label),
+        required
     };
 }
+
+/**
+ * Event kinds whose line a player must end up reading.
+ *
+ * Deliberately short, and every entry earns its place by being something a
+ * player cannot make a decision without.
+ *
+ *   `method_ceiling`  why the years are buying nothing. Measured being dropped
+ *                     from a long digest by a model that had been handed the
+ *                     whole sentence, leaving a cultivator to sit for fifty
+ *                     years and never find out that no manual means no road.
+ *   `ground_ceiling`  the same fact about the ground rather than the book, and
+ *                     the same answer: the thing to do is move, and a player
+ *                     who is not told will sit.
+ *
+ * A death is required too, and is pushed separately below rather than listed
+ * here, because it is not an event kind - it is a property of the skip.
+ */
+const REQUIRED_EVENT_KINDS: ReadonlySet<string> = new Set([
+    'method_ceiling',
+    'ground_ceiling'
+]);
 
 function netChangeLine(skip: TimeSkipResult): string {
     const d = skip.deltas;
@@ -761,7 +819,20 @@ function daoStandingLines(cultivator: Cultivator): string[] {
     ];
 }
 
-export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progressRequired: number | null, ready: boolean): EngineFacts {
+export function factsForStatus(
+    cultivator: Cultivator,
+    ambient: AmbientQi,
+    progressRequired: number | null,
+    ready: boolean,
+    /**
+     * Why nothing is accumulating, when nothing is.
+     *
+     * `techniqueCeiling(...).line`, passed in rather than derived, because the
+     * cap is the caller's to know and this module holds no catalog. Null is the
+     * ordinary case and adds nothing.
+     */
+    ceiling: string | null = null
+): EngineFacts {
     const lines = standingLines(cultivator, ambient);
     if (progressRequired === null) {
         // No figure, because there is no rung above this one priced in qi -
@@ -783,6 +854,12 @@ export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progr
                 : `${Math.round(cultivator.cultivationProgress)} of ${progressRequired} qi-units toward the next rank. Not yet eligible.`
         );
     }
+    // Last, and required. A progress figure with no explanation attached is
+    // worse than no figure: "0 of 100 toward the next rank" invites a player to
+    // spend another decade on it, and the true answer is that no number of
+    // decades will move it.
+    if (ceiling !== null) lines.push(ceiling);
+
     return {
         headline: `${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}.`,
         lines,
@@ -790,7 +867,8 @@ export function factsForStatus(cultivator: Cultivator, ambient: AmbientQi, progr
             ...standingStructure(cultivator, ambient),
             `progress=${Math.round(cultivator.cultivationProgress)}/${progressRequired}, breakthroughReady=${ready}.`
         ],
-        prose: lines.join('\n')
+        prose: lines.join('\n'),
+        ...(ceiling !== null ? { required: [ceiling] } : {})
     };
 }
 

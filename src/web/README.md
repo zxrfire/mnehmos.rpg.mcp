@@ -41,6 +41,47 @@ touched by phase 3.
 Read the method bodies in `game.ts` with one question in mind: *where does a value from a
 model response become a row?* The answer is nowhere.
 
+### Phase 3 is checked against phase 2
+
+Not parsed - **checked**. The distinction matters and it took a measurement to find:
+
+```text
+narration-claims-breakthrough = true
+ordinal-after = 0        progress-after = 0
+```
+
+Prose reading *"Day 91 - Breakthrough succeeded: Qi Condensation Layer 1 to Layer 2. Odds
+were 94.0%."* against a cultivator still at ordinal 0 with zero progress. The engine was
+never touched - "the answer is nowhere" held perfectly - and the player was told two ranks
+had been gained, in the engine's own digest format, down to the day numbers and the odds.
+
+**A player who is told they advanced two ranks has been given an outcome by a model,**
+whether or not a row moved. They will plan the next forty years around it. So the rule
+covers the prose as well as the database, and phase 3 now has a gate of its own:
+
+| Direction | Mechanism | Where |
+|---|---|---|
+| The prose says something the engine did not | `auditNarration` -> discard, render `facts.prose` | `narrator.ts` |
+| The prose omits something the player cannot play without | `EngineFacts.required` -> appended verbatim | `facts.ts`, `narrator.ts` |
+
+Both are narrow on purpose. The audit is **one-directional**: it only ever flags a claim
+the engine did not make, it never requires the prose to say anything, and it never reads a
+value out of the prose and uses it - so the authority line is exactly where it was. It
+covers the two outcomes a player would irreversibly act on, a rank they did not gain and a
+death that did not happen, and a call site that files no account audits nothing.
+
+`required` is the inverse, and it exists because the same measurement found the opposite
+failure: the engine files a `method_ceiling` line saying in full *"without a manual there
+is no road for the qi to take, so nothing accumulates and nothing ever will"*, hands the
+model the whole sentence inside a long digest, and the model drops it. A cultivator sits
+for fifty years gaining nothing and is never told why - and with the deterministic
+narrator the same seed tells them every time. The difference between the two front doors
+was the model's mood.
+
+Reserve `required` for facts a player cannot play without: why nothing is accumulating,
+that they have died, what a crossing cut away. A required line stapled to the end of good
+prose is a cost, and it is only worth paying where silence would be a lie by omission.
+
 ---
 
 ## The closed action enum
@@ -76,9 +117,47 @@ investigate   target            examining a place, record, object, person
 move          target + intent   going somewhere, by whatever means
 ```
 
+One caveat learned the hard way, and it is the reason four members were added at once.
+**`interact` swallows any sentence that names a faction**, which made it the catch-all for a
+whole category the vocabulary did not cover: institutions acting on each other, and on you
+beyond membership. A player filing a Requisition, offering an alliance or asking an apex for
+one of its objects got a bystander, a shrug and a paragraph about the building - text that
+looks like an answer, so they could not tell REFUSED from NOT IMPLEMENTED. That is worse
+than silence. A catch-all is only safe while the things falling into it genuinely have no
+engine behind them, and this one had six catalogs behind it.
+
 alongside the world-facing operations that genuinely are distinct engine routines with
 distinct state effects: cultivate, seclude, breakthrough, train_technique, refine, gather,
-eat, wait, plus the pure reads.
+eat, provision, treat, buy, work, market, attack, sect, site, wait, plus the pure reads.
+
+Three of those were added after the same discovery, made three times: **a mechanic the
+engine has always had, that no typed English sentence could reach.**
+
+| | what was already there | what a player got instead |
+|---|---|---|
+| `treat` | `treatWorstInjuries`, exercised by `playtest.ts` | "The thought does not resolve." while the engine said the injuries were lethal and would not heal |
+| `buy` | twenty-odd priced lines printed by `market` | the party resolver, looking for a person called "visit from the mortal physician" |
+| `site` | ~1,900 lines of trials, graves and three gate kinds | nothing at all; the catalog was unreachable from the command bar |
+| `recall` | `knowledge_records`, and the sheet's own DAO panel | nothing; "what do I know of X" and "what is my dao" both parsed to `unclear` |
+| `petition` | `handlePetition` and `handleWake` in `sect-politics.ts`, complete with the discovery gate applied to tool output | nothing typed reached a line of it |
+| `posture` | `DISASTER_RESPONSES`, `OPENLY_OR_IN_SECRET`, nineteen symmetric `contestedWith` claims, two courts in the catalog's own history that changed patrons | no verb at all |
+| `seal` | six houses holding a sealed ancestor with a written `wakeCondition` and `wakeCost`, the strongest at forty-four | no verb at all |
+| `offer` | `IMMORTAL_CHANNELS`, `MillennialOffering`, `IMMORTAL_MOTIVE` on why an offering buys two words | no verb at all |
+
+The `recall` case is the one that says most about how to look for these. It was found by a
+**rank-band sweep** - standing a character at each rung and typing what somebody at that
+height would actually type - and the three dead sentences were at ordinals 37-46, at the
+very top, where the ladder is finished and comprehension is the only axis still moving.
+Testing the opening moves of a run would never have found it. Reachability has to be checked
+at every height a player can be standing, not only at the one they start at.
+
+The `treat` case is the one to remember, because it was not a missing convenience. Untreated
+injuries raise deviation risk, deviation adds another injury and ejects the cultivator from
+seclusion after about a month, and the next attempt goes wrong sooner - so a hurt cultivator
+could not advance, could not heal, and could not die. **An engine that manufactures a state
+it labels lethal, says the state will not resolve itself, and offers no verb has softlocked
+the run.** When adding a mechanic, the question is not whether it is implemented and tested.
+It is whether a sentence reaches it.
 
 ### `intent` is open, and is never branched on
 
@@ -94,6 +173,138 @@ for the log to record.
 not a schema, and the field accepts any short label. A model that writes a whole sentence
 there has not done anything dangerous, so `validatePlan` truncates it to a label rather
 than rejecting the plan and costing the player a turn.
+
+**Eight actions read `intent`, and every one of them is selecting WHICH READ OR ROUTINE runs
+rather than what came of it.** `sect` uses it to pick between joining, leaving, the stipend,
+the standing, an order to the rung below, a siphon of the reserves, and the four powers a
+seat holds - recruit, admission, curriculum, expel. `look` uses it to pick between the room,
+the faces in it, and what was done to the ground here. `site` uses it to pick between the
+four steps of taking an inheritance - approach, outside, enter, take. `recall` uses it to
+pick between the two things a cultivator carries - what they have HEARD, and what they have
+UNDERSTOOD. `petition` picks which form is being filed, `posture` which stance a house is
+taking, `seal` whether the thing under the mountain is being read or spent, and `offer`
+whether the line upward is being read or paid. All eight are safe for the same reason: the
+label is matched against a closed set of literals, an unrecognised one falls through to the
+default, and every outcome on the far side is computed from state. The rule that still binds
+is the one above - no `intent` value may ever decide a *result*.
+
+**Five of them carry an extra obligation, and it is the same obligation.** `site` has a step
+that spends days and can kill; `posture`, `seal` and `offer` each have a branch that commits
+the house to something it cannot walk back, and one of them changes a power ordinal
+permanently. **Their default must be the cheapest branch they have**, so a model answering
+`{"action":"site","intent":"go in and get it"}` gets the listing rather than the door, and
+one answering `{"action":"posture"}` gets the standing between two houses rather than a war.
+That is `DEFAULT_SITE_INTENT`, `DEFAULT_POSTURE_INTENT`, `DEFAULT_SEAL_INTENT`,
+`DEFAULT_OFFER_INTENT` and `DEFAULT_PETITION_INTENT`, each matched against its own closed
+set, and `tests/web/misparse.test.ts` asserts that every one of them is a read.
+
+### The standing gate, and why it is a file
+
+The four institutional verbs are all one shape - **a party asking something of another
+party, of the dead, or of somebody above the Lid** - and most of them are supposed to be
+REFUSED. A refusal that names its reason is the win condition here rather than a
+consolation: the Requisition Against Standing Stock has been granted once in four hundred
+years and refused ten times, and the catalog says the refusals are filed with the same care
+as the grant.
+
+So the gate is the feature, and [`standing.ts`](standing.ts) is where it lives. It copies
+`noAuthority` in `sect-leadership.ts` sentence for sentence rather than inventing a second
+voice for the same act, because that refusal is already the best-written one in the project
+and three properties make it good:
+
+- **it states the rung it opens at, in that house's own title** - not "you lack authority"
+  but *"It opens at Sect Warden, and not before."* A player learns the ladder by being
+  refused on it, and the title comes off `ranks[]`, so it is right in a four-rung court and
+  a six-rung pavilion with no branch on either;
+- **somebody with no house gets a different refusal from somebody junior in one**, because
+  the first is about position and the second is about rank, and it names what the act would
+  actually require rather than restating that it failed;
+- **what succeeds prices itself in the same breath**, out of the catalog, rather than in a
+  rules note beside the outcome.
+
+Two things this must keep getting right.
+
+**Rank is not realm.** `realmOrdinal` says how hard somebody is to kill; `rankIndex` says
+whether anybody has to do what they say. The catalog is emphatic that the two come apart -
+the Long Cut ranks by work and nothing else, so a Hand may be an apprentice of nineteen or
+an Inner Face cultivator of four hundred. Every gate in `standing.ts` is on the rank.
+
+**The gate goes before the target resolves, for the acting branches.** Both refusals are
+about the speaker and disclose nothing about who was named, so they are safe to give to
+somebody who has never heard of the house in the sentence - and a rogue at the bottom of the
+ladder learns what a declaration would take, which is a thing they can go and get. Resolving
+first answers them with the knowledge gate instead, which is correct and teaches nothing.
+
+### The far side of the Lid is somewhere, not a refusal
+
+Ordinal 46 is the one point where progression is also *geographic*, and the layer on the
+other side is one of the most complete systems in the project. Played cold at 46, every verb
+came back **"Not from here"** and there was no other verb - a correct, well-written refusal
+in front of an empty room, which reads as the game ending rather than as the game moving.
+
+Nothing in the codebase called `ascend`, `descend`, `sendAcross` or `ensureImmortalLayer`.
+That is the same discovery as `treat`, `buy`, `site`, `recall` and the four institutional
+verbs, at the one height where there is nothing else to do at all.
+
+**What an immortal has is an abode and a choice.** [`above.ts`](above.ts) is the whole of the
+wiring:
+
+| | |
+|---|---|
+| `residentAbove` | the player, as somebody the far side has a row for. Same id as the cultivator, so lineage, grudges, facts and object provenance keep resolving across the boundary instead of becoming two people. Settles the abode on the way past |
+| `linesDownward` | channels this resident could actually use. A line is an OBJECT held by somebody below, which is the whole difference between a house that receives and a house that hears nothing |
+| `theTwoWaysDown` | a mortal-world sentence, re-offered rather than refused |
+
+**A mortal-world verb above the Lid is re-offered in the two forms an immortal has**, and
+neither is invented here:
+
+- **by proxy** - `offer` with intent `send`, through `sendAcross`. No tribulation, because
+  nothing of them crosses; and no control, because what happens next is done by people who
+  are not them. `OBJECT_CEILING_BELOW_THE_LID` is what makes it interesting rather than a win
+  button: a 46 cannot stay down there, so what arrives and *remains* is a 45, which is
+  precisely how the best objects in the world came to exist.
+- **in person** - `descend`, through `evaluateLidTransit(down)` at nine strikes, resolved by
+  `resolveDescentStrikes` on the same per-strike odds and the same lethal-at-three rule every
+  tribulation in the game uses. About one attempt in ten arrives. The window on the ground is
+  `BREATHS_IN_THE_LOWER_REALM` and **the expulsion is not a second action**: `descend`
+  resolves the visit atomically, because a True Immortal in the lower world is a thing being
+  pushed back out for the whole time they are there.
+
+`offer` is deliberately *not* in `MORTAL_WORLD_ACTIONS`. It is one verb from both ends - an
+offering going up below the Lid, a thing going down a line above it - and which end the
+speaker is standing at is decided by state rather than by the word they used. Two verbs for
+that would have been two implementations of one relationship.
+
+`look` has its own above-the-Lid branch, and the reason is a bug rather than a preference:
+the ordinary read described the ambient of a province, observed a Dao house's practice among
+people who are not there, and overheard two names through a wall on the other side of the
+Lid. It is enforced by not calling the mortal-layer readers rather than by filtering them.
+
+**One assignment was the reason none of this was reachable through play.**
+`attemptBreakthrough` decides `immortalStatusGained` and `strikeBarrier` was not writing it
+down, so a cultivator could survive the last crossing, be told they had gone through, and
+still be `immortalStatus: 'none'` on the next read. Everything above the Lid gates on that
+field.
+
+### What the write side would need
+
+`recall` reads what a cultivator has comprehended. There is no write, and there is
+deliberately no verb for one. "I carve my dao into the stone" and "I teach the flying blade
+to a disciple" are the two sentences a player at the ceiling reaches for, and both are
+`unclear` on purpose - because **nothing in the engine records a carving, no disciple exists
+as a row that could be taught** (an intake is a count on a house ledger, not a person), and
+`legacy.ts` writes a successor's inheritance at death rather than by anybody's decision.
+
+Both sentences used to be answered by the `recall` panel, which is a well-composed paragraph
+about what the cultivator understands and looks exactly like an answer. That is the same
+failure `interact` was producing for the institutional sentences, and it is worse at the top
+of the ladder, where a player has no way to tell that the carving did not happen. The veto
+is `PUTTING_IT_SOMEWHERE_ELSE` in `actions.ts`.
+
+Making it real needs three things that do not exist: a disciple as an entity rather than a
+count, a technique transfer between two holders, and a carving as something a location can
+carry and a later cultivator can read. The third is the closest - `engine/world/locations.ts`
+already carries a place's change log - and none of it belongs in this package.
 
 ---
 
@@ -114,6 +325,48 @@ lists what is on record nearby.
 The one deliberate exception is a place name, documented at `resolvePlace`.
 `Cultivator.location` is explicitly a name the engine stores and lists but never computes
 with, which is what makes accepting an unrecognised destination safe.
+
+### `recall` resolves against the holder, never against the world
+
+The one target resolution in this package that does **not** consult a catalog. "What do I
+know of X" scores the query against **this cultivator's own `knowledge_records`** and stops
+there, which is what makes the verb structurally incapable of teaching anybody anything: there
+is no code path from a name the player typed to a name they have not been told. Two
+consequences follow, and both are required rather than incidental:
+
+- **An unheard name and an invented one come back identical.** Only the quoted string
+  differs. The shape of the refusal must never be the answer - same discipline as the
+  `causeKnown` gate on place history.
+- **Fragments are never joined up.** A holder carrying several incompatible accounts gets
+  several incompatible accounts, unranked, with the engine saying outright that whether any
+  of them are the same thing is not something they know. Working that out is the prize; a
+  read that merged or ordered them would have handed it over for the price of a question.
+
+The only enrichment is for a record held at stance `knows`, and it goes through the same
+awareness-gated resolvers `investigate` already uses - so it discloses nothing a second
+sentence could not already have got. Anything at a lower stance renders as the record's own
+sentence and nothing else, which for an overheard name is "a name that got said. What it is
+remains unknown." **That thinness is the content**, not a gap for a renderer to fill.
+
+### An inheritance ground has a second gate on top of that one
+
+`trials.ts` resolves a site the way `entities.ts` resolves everything else - against real
+catalog rows, with a near miss refused rather than guessed - and then applies the awareness
+rule from `docs/world/discovery.md` on top: **a site whose awareness is below `named` cannot
+be resolved at all**, because the catalog withholds its name, so there is nothing to type.
+Thirteen of the entries start at `named` and are typeable by a villager; the rest have to
+reach the player from somebody first, exactly as a sect name does.
+
+A specific name that resolves to nothing does **not** fall through to the site at hand. That
+is the elder-dismissal rule applied to doors: naming a grave you have only heard rumoured
+must not quietly open the one you were standing at an hour ago.
+
+The structural gate underneath is the catalog's, and nothing in this package weakens it.
+`outsideViewOf` returns a type with **no `interior` key**; `SiteFace` in `facts.ts` likewise
+has no field that could hold one; and the single call to `enterSite` in the whole reachable
+surface sits below a recorded entry, in a method that has already spent the days. A player
+who has not gone in cannot learn what is inside through any phrasing, and there are three
+independent reasons for that rather than one convention.
 
 ---
 
@@ -350,6 +603,7 @@ above `GameService.sect()`.
 ## Related
 
 - [`../../context.md`](../../context.md) - the authority rule this package enforces
+- [`standing.ts`](standing.ts) - who is entitled to commit a house, and what the refusal says
 - [`register.ts`](register.ts) - the standing register, and the only place to change it
 - [`../engine/cultivation/README.md`](../engine/cultivation/README.md) - what phase 2 actually runs
 - [`../agent/provider/README.md`](../agent/provider/README.md) - provider selection and config precedence
