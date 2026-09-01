@@ -210,6 +210,7 @@ export * from './mortal-world.js';
 export * from './faction-character.js';
 export * from './faction-history.js';
 export * from './bodies-that-cannot-keep-their-members-children.js';
+export * from './a-favour-skips-the-admission-bar.js';
 export * from './demonic-sects-and-what-they-are-willing-to-do.js';
 export * from './hierarchy.js';
 export * from './immortal-items.js';
