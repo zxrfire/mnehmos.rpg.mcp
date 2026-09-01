@@ -190,11 +190,71 @@ is the authority on that distinction.
 be strictly better and the whole era axis would collapse into *old is stronger* - which is
 the exact failure `ancient.md` exists to prevent. The floors bind both eras identically.
 
-### Where the six actually sit
+### Ancient is a paradigm, not a date
 
-The ancient arts are the existing top of the **categorical** line, and the ladder has to
-*account* for them rather than sit beside them. It does, and four of the six land on the
-first rung:
+<!-- tier: 2 trigger="anybody asks where an art was written, or why nothing above the Lid looks like what is taught down here" -->
+
+The field is called `era` and that name misleads. **Ancient names a kind of art, not a
+century.** Something composed above the Lid this morning is ancient, because that is the
+idiom of the place it was composed in.
+
+The mechanism is rate of change. **The immortal realm is closer to the prosperous age than
+the lower world is, because it changes slowly.** The paradigm never ended up there; it
+simply persisted. Down here it did end, and what replaced it was forced rather than
+chosen: a poorer, faster world, short of everything the categorical line consumes, made do
+and developed the elemental one instead. So the two idioms are not early and late. They
+are *two places*, one of which moves.
+
+That has a consequence worth stating plainly, because it is the opposite of what the word
+*ancient* suggests:
+
+> **New ancient arts are still being written.** They are being written above the Lid, by
+> people who are not old, in the only idiom that suits where they live.
+
+### A modern immortal art is possible, ill-suited, and would belong down here
+
+Not impossible. **Ill-fitting.** Somebody above the Lid could compose in the elemental
+idiom, and the result would sit badly exactly where it was made - an art built for a world
+of veins, weather and scarcity, made somewhere none of that is the constraint.
+
+And its natural destination is downward, into the world whose paradigm it actually belongs
+to. That is not a hypothetical the setting has no vocabulary for. **The delivery route
+already exists** and is ordinary: `MANUALS_MAY_EXCEED_THE_LID` says a manual is paper and
+may be rated anywhere, and a True Immortal sending writings down is the whole of the read
+channel at that rung. Every part of the machinery is in place.
+
+It has simply never happened. What it would take is not only the understanding, but
+somebody above the Lid **willing to compose in an idiom that does not suit where they
+live, for the benefit of a world they left**. That is a question about a person rather
+than about a capability, which is why the answer has been no for as long as anybody has
+records.
+
+If one ever came down, it would be earth-shaking - and not because it would be strong.
+Because it would be the first art from up there that the world below was actually built to
+receive.
+
+### A discrepancy the catalog has not caught up with
+
+<!-- tier: 3 -->
+
+Under the rule above, the six arts written for the rungs above the Lid should be `ancient`
+by construction, whatever date is attached to them. **They are currently all filed
+`modern`** - measured, not assumed: six arts above the Lid, six modern, none ancient, and
+the `ancient` set tops out ten rungs below the Lid.
+
+That is an artefact of how `era` is resolved rather than a design position. It comes from a
+hand-authored set of six ids in `techniques.ts` that was never extended upward, and
+everything outside that set defaults to `modern`. All six read categorical and all six are
+elementless, so nothing about them resists the reclassification.
+
+Recorded here rather than quietly corrected, because the technique catalog is owned
+elsewhere. The prose states the rule; the data has not been changed to match it yet.
+
+### Where the six ancient arts actually sit
+
+The six arts currently filed `ancient` are the top of the **categorical** line *below the
+Lid*, and the ladder has to *account* for them rather than sit beside them. It does, and
+four of the six land on the first rung:
 
 | Art | Addresses | Why |
 |---|---|---|
