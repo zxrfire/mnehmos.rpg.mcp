@@ -95,6 +95,17 @@ in it — so a reader who has finished the paper is standing on the first rung o
 realm, and that is where the `cap` sits. The realms run 0–12, 13–16, 17–20, 21–24, 25–28,
 29–32, 33–36, 37–40 and 41–44, so complete books cap at 13, 17, 21, 25, 29, 33 and 37.
 
+**And that is where it abandons you.** The book got you across the boundary and then stopped,
+because the realm you have just entered is a different thing and the book was never about it.
+You are standing on its first rung holding a work that says nothing whatsoever about the
+second — not vague guidance, not a hint, *nothing*, because how to refine a nascent soul is
+not a harder version of how to gather qi. This is the precise moment a cultivator's career
+becomes a problem: they have never been higher, they have never been less able to say what to
+do next, and the paper in their hands has been correct and complete the entire way.
+
+Unless, of course, the book is advanced enough to cover that too — which is what a long
+manual is, and why one is worth so much.
+
 This was got wrong once, in this file, and the correction is worth keeping because the wrong
 version is the intuitive one. Capping at a realm's *last* rung — 12, 16, 20 — and opening
 each successor one rung later puts **a one-rung wall at every realm boundary in the world**:
