@@ -855,6 +855,14 @@ not a decision and it does not require seniority. It happens to outer disciples 
 alike, and for somebody who was qualified and blocked it resolves the problem completely and
 without their consent.
 
+**And a house's last resort may be sealed underneath it.** A great many houses hold an ancestor
+who went into seclusion centuries ago and has not come out - the register carries them, *one
+sealed and still down there* - and an old woman nobody has seen in three hundred years is
+perfectly capable of ending herself and taking a besieging army with her. **This is why
+attacking a house is not a calculation you can complete from outside**: you can count its
+standing members and you cannot count what is under it, and the thing under it has nothing left
+to lose and centuries of reasons to spend itself on the people it raised.
+
 **But a blow does not decide this - the bench does.** Whether a house ends is a question about
 who is left standing, not about how large the thing that hit it was. A house whose second is a
 Deity Transformation elder does not end when its head dies, however spectacularly: the number
