@@ -152,16 +152,28 @@ describe('an arrival is rolled once per fact, for ever', () => {
  */
 describe('the same seed is the same life', () => {
     async function oneLife() {
-        const { db, game } = makeGame({ seed: 'reproducible' });
+        const { db, game, repos } = makeGame({ seed: 'reproducible' });
         const { cultivator } = await game.newRun('Twin');
         db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
         // With a book, so the decade is a decade of something.
         await game.act('I learn the Lesser Qi-Gathering Manual');
         const { timeSkip } = await game.cultivate(3650);
+        const after = repos.cultivators.getById(cultivator.id)!;
         return {
             requested: timeSkip.requestedDays,
             simulated: timeSkip.simulatedDays,
-            events: timeSkip.events.map(event => event.summary)
+            events: timeSkip.events.map(event => event.summary),
+            // What the life UNDERSTOOD, which is the half that matters most and
+            // the half neither of us named at first. `insightSuitability` runs
+            // the 0.2 draw that decides which comprehensions are takeable at
+            // all - upstream of the dao gate, of suitability, and of every
+            // escape route keyed on standing - and it keyed on the row id.
+            insights: (after.insights ?? [])
+                .map(insight => `${insight.domain}:${insight.subject}:${insight.degree}`)
+                .sort(),
+            achievements: (after.achievements ?? []).map(a => a.kind).sort(),
+            ordinal: after.realmOrdinal,
+            progress: Math.round(after.cultivationProgress)
         };
     }
 
@@ -177,5 +189,14 @@ describe('the same seed is the same life', () => {
         expect(second.simulated).toBe(first.simulated);
         expect(second.events).toEqual(first.events);
         expect(third.events).toEqual(first.events);
+
+        // And the whole observable life, not just the span. The identity now
+        // reaches `simulateTimeSkip` as well as the encounter roll, so two runs
+        // from one seed comprehend the same things and stand at the same rung.
+        expect(second.insights).toEqual(first.insights);
+        expect(third.insights).toEqual(first.insights);
+        expect(second.achievements).toEqual(first.achievements);
+        expect(second.ordinal).toBe(first.ordinal);
+        expect(second.progress).toBe(first.progress);
     });
 });
