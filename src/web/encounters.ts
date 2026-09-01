@@ -647,7 +647,14 @@ export function fitOf(cultivator: Cultivator, technique: Parameters<typeof findF
  * `src/storage/repos/obligation.repo.ts` by whoever owns that directory, at
  * which point this function becomes a call to it and nothing else changes.
  */
-function writeObligation(db: DatabaseHandle, record: ObligationRecord): ObligationRecord {
+export function writeObligation(
+    db: DatabaseHandle | { prepare: (sql: string) => never },
+    record: ObligationRecord
+): ObligationRecord {
+    return writeObligationRow(db as DatabaseHandle, record);
+}
+
+function writeObligationRow(db: DatabaseHandle, record: ObligationRecord): ObligationRecord {
     db.prepare(`
         INSERT OR REPLACE INTO obligations (
             id, kind, holder_id, subject_id, cause, severity, incurred_on_day,
@@ -689,7 +696,7 @@ function writeObligation(db: DatabaseHandle, record: ObligationRecord): Obligati
 }
 
 /** Minimal shape of the handle `repos.db` is. Avoids a value import. */
-interface DatabaseHandle {
+export interface DatabaseHandle {
     prepare(sql: string): {
         run(params: Record<string, unknown>): unknown;
         get(...params: unknown[]): unknown;
