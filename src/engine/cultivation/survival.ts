@@ -57,6 +57,21 @@ import { hasBody, isGoingConcern, isTerminal } from './existence.js';
 // the correct answer, and the reason that pill effect exists in the schema.
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * The point at which somebody should be told they are hungry.
+ *
+ * A tenth of a full belly, which at the base burn is five turn-consuming
+ * actions from empty and five more from dead. Late enough that it is not
+ * nagging, early enough to be worth acting on - a meal costs one spirit stone.
+ *
+ * It lives here rather than in a narrator because two paths need it and they
+ * disagreed: the time-skip narration warned at this figure and the work path
+ * had no warning at all. Measured by playing, fourteen straight years of work
+ * took a cultivator from full health to half, satiety to this line, and the
+ * purse past a thousand stones, and never once mentioned food.
+ */
+export const LOW_SATIETY = Math.round(SATIETY_MAX * 0.2);
+
 /** Turn-consuming actions a full belly covers. */
 export const ACTIONS_PER_FULL_SATIETY = Math.floor(SATIETY_MAX / SATIETY_COST_PER_ACTION);
 

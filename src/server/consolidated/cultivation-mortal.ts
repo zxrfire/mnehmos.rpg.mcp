@@ -277,12 +277,29 @@ export async function handleWork(
         standing.settlementKind !== null &&
         !(occupation.settlements as readonly string[]).includes(standing.settlementKind)
     ) {
+        // AND SAY WHAT IS HIRING, because otherwise this is a wall.
+        //
+        // Found by playing: a cultivator standing in a settlement that does not
+        // take innkeepers got this same sentence twenty-five times, no time
+        // passed, and nothing suggested a single thing they could do instead.
+        // The structured payload already carried `offeredIn` and a hint, and
+        // neither reaches a player - they see the sentence.
+        const alsoHere = OCCUPATIONS
+            .filter(o => o.id !== occupation.id)
+            .filter(o => (o.settlements as readonly string[]).includes(standing.settlementKind!))
+            .filter(o => o.minOrdinal === undefined || cultivator.realmOrdinal >= o.minOrdinal)
+            .map(o => o.name);
+
         return guidingError(
             'work_not_offered_here',
-            `Nobody in ${standing.placeName ?? 'this place'} is hiring for ${occupation.name}.`,
+            `Nobody in ${standing.placeName ?? 'this place'} is hiring for ${occupation.name}.`
+            + (alsoHere.length > 0
+                ? ` What is going here: ${alsoHere.slice(0, 6).join(', ')}.`
+                : ' Nothing here is hiring anybody, which is its own answer about the place.'),
             {
                 offeredIn: occupation.settlements,
                 standingIn: standing.settlementKind,
+                offeredHere: alsoHere,
                 hint: 'The work exists; it exists somewhere else.'
             }
         );
@@ -389,6 +406,11 @@ export async function handleWork(
                   + 'advanced against it. Nothing was left to hand over.'
                 : null,
         spiritStonesNow: after.spiritStones,
+        // Carried so the narrator can say whether the work is starving them.
+        // Work pays and does not feed, and the two front ends had no way to
+        // know it: this path reported wages and nothing else while a cultivator
+        // went from full health to half across fourteen years of it.
+        satiety: after.satiety,
         purse: describePurse(after),
         // The whole span, exactly as the cultivation engine resolved it. Wages
         // are the only thing this action adds.
