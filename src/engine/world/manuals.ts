@@ -860,6 +860,44 @@ export function artsKnownAt(ordinal: number): number {
     return Math.min(6, 1 + Math.floor(ordinal / 7));
 }
 
+/**
+ * The road somebody standing this high must have been practising.
+ *
+ * Not a gift and not a reward: it is the reconstruction of a fact the record
+ * was missing. Somebody at ordinal 41 got there on a method that teaches to at
+ * least 41, because the engine says no other kind of climb exists. This
+ * answers WHICH one, from the ordinary catalog, by the ordinary filters - the
+ * same four `roadTheyFound` uses - and takes the LOWEST-capping book that
+ * reaches them, so the reconstruction never hands anybody more headroom than
+ * their own standing already implies.
+ *
+ * Null when the catalog has nothing they could open, which is a legitimate
+ * answer: the three canons above ordinal 41 want 41 and 42 to so much as read.
+ */
+export function roadThatCarriedThemHere(npc: NpcRecord): Manual | null {
+    const ordinal = npc.cultivation.realmOrdinal;
+    const held = new Set(npc.cultivation.techniqueIds);
+    const open = (TECHNIQUES as readonly {
+        id: string; name: string; class?: string; cap?: number | null;
+        requiredOrdinal?: number; element?: string | null;
+    }[])
+        .filter(t => t.class === 'cultivation' && t.cap != null)
+        .filter(t => Number(t.cap) >= ordinal)
+        .filter(t => Number(t.requiredOrdinal ?? 0) <= ordinal)
+        .filter(t => suitsRoot(npc.cultivation.spiritRoot, t.element ?? null))
+        .filter(t => !held.has(t.id))
+        .sort((a, b) => Number(a.cap) - Number(b.cap) || a.id.localeCompare(b.id));
+    if (open.length === 0) return null;
+    const t = open[0];
+    return {
+        id: t.id,
+        name: t.name,
+        cap: Number(t.cap),
+        requiredOrdinal: Number(t.requiredOrdinal ?? 0),
+        element: t.element ?? null
+    };
+}
+
 export interface BookGrant {
     npcId: string;
     /** The road: at most one, and the thing that sets their ceiling. */
@@ -917,10 +955,27 @@ export function grantBooksToMembers(state: WorldState): BookGrant[] {
             // Falling back down the whole shelf rather than only within reach:
             // an elementless primer is what a house gives somebody it cannot
             // otherwise teach, and it is below everybody's reach by definition.
-            const books = within.length > 0
+            const fromShelf = within.length > 0
                 ? [within[within.length - 1]]
                 : shelf.filter(m => m.element === null
                     && m.requiredOrdinal <= npc.cultivation.realmOrdinal).slice(0, 1);
+            // NOBODY STANDS ABOVE THEIR OWN BOOK.
+            //
+            // The rule every other cultivator in the world obeys -
+            // `manualCeilingOf` is a hard stop, and progress without a road is
+            // impossible rather than slow - and the people the catalogs place
+            // at the top were the only ones exempt from it, because a house's
+            // shelf is not what its patriarch cultivates. Measured at seeding:
+            // 29 of 32 houses teach below their own `powerOrdinal`, the Azure
+            // Cloud Pavilion stands at 41 and teaches to 17, and the mean book
+            // held by the world's Tribulation Transcendence figures capped at
+            // ordinal 11.5. Two people at 44 practising a canon that runs out
+            // at 11 is not somebody anybody can believe in, and it is why the
+            // apex could never teach anything: nothing it held reached itself.
+            const books = fromShelf.length > 0
+                && fromShelf[0].cap >= npc.cultivation.realmOrdinal
+                ? fromShelf
+                : [roadThatCarriedThemHere(npc) ?? fromShelf[0]].filter((m): m is Manual => m != null);
 
             // Arts as well as a road, because a hundred years in a house that
             // teaches does not leave somebody knowing nothing. Only what their
@@ -1283,4 +1338,221 @@ export function canReproduce(npc: NpcRecord, techniqueId: string): boolean {
     // holds a finite number of physical objects - and an art becomes scarce,
     // then rare, then lost, with nobody having decided it should.
     return npc.cultivation.realmOrdinal >= Number(t.cap);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// A MASTER WRITES IT OUT FOR THEIR STUDENTS
+//
+// The designer's mechanism, in their own words: "patriarches or TT's will write
+// down more copies, so there is that. they do that for their students, right?"
+//
+// It is right, it was already half-built, and the half that was missing was the
+// half that runs. `canReproduce` has always said WHO may write a book out -
+// somebody who took it to its end - and nothing anywhere ever called it. So a
+// library could only ever shrink: `faction_fell` took shelves out of
+// circulation, `technique_lost` took the last living holder of an art out of
+// the world, and no pass anywhere put a book back.
+//
+// Measured across two seeds before this existed, over five thousand years, and
+// the three columns are the whole diagnosis:
+//
+//                distinct manuals    on live        in library
+//                held by the LIVING  house shelves  objects
+//     year 0            70 / 66          16             16
+//     year 500          44 / 42          10 / 13        17
+//     year 1500         22 / 22          11             17
+//     year 5000          8 / 11           8 / 12        17
+//
+// The libraries were stable. What emptied was PEOPLE: the world's literacy was
+// concentrated in the arts the seeded upper stratum practised, none of those
+// arts was written down anywhere, and every one of them died with its holder.
+//
+// ── WHY THIS IS THE APEX MECHANISM AND NOT A FLAVOUR PASS ────────────────
+//
+// The catalog holds exactly one cultivation manual that carries to ordinal 41
+// and three that carry to 45. Not one of them is on any house's `teaches` list.
+// The deepest shelf in the world stops at 37. So before this, the ONLY route
+// from Grand Ascension to Tribulation Transcendence anywhere in the simulation
+// was `applyFoundRoads` - a one-in-nine-hundred yearly roll halved for every
+// realm above Foundation, which is to say luck, alone, with nobody teaching
+// anybody anything.
+//
+// That is precisely the case the designer says should be almost impossible:
+// "obscenely hard to get to 41+ without someone showing you the way". The other
+// side of that sentence had no implementation at all, because there was nothing
+// for anybody to be shown. A patriarch writing out what they cultivate is that
+// implementation: the art enters the house's ordinary library as an ordinary
+// object, `shelfOf` reads it like any other row, and the house's most senior
+// people become entitled to it by the ordinary rank rule. No branch on tier, no
+// second catalog, no rule that applies to one faction.
+//
+// It is also self-limiting in the way the setting wants. The copy only exists
+// while somebody who mastered the art is alive to write it; the book's own
+// `requiredOrdinal` still gates who can open it - 37 for the ordinal-41 canon,
+// 41 and 42 for the three above it - and `shelfReach` still means only the top
+// of a house ever reaches the top of its shelf. A house whose last master dies
+// before writing it out keeps a finite number of physical objects, and then
+// loses the art, exactly as `canReproduce`'s own comment describes.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Years of work, on average, before a master has written out an art the house
+ * does not otherwise hold.
+ *
+ * The urgent case. A master who is the only reason an art exists is not
+ * casually postponing this, and on the timescale of the people who can do it -
+ * thirty thousand years at Grand Ascension - sixty years is immediate. That is
+ * the intent: the scarcity of the apex must come from the ladder, which is
+ * priced in millennia, and not from the library being arbitrarily empty.
+ */
+export const YEARS_TO_WRITE_THE_FIRST_COPY = 60;
+
+/**
+ * And for a spare, once the house already holds one.
+ *
+ * Slower, because there is no longer an art at risk - only a queue. A house
+ * with one copy of a book six people are entitled to is a house with a waiting
+ * list, and this is how the list shortens.
+ */
+export const YEARS_TO_WRITE_A_SPARE = 250;
+
+/**
+ * Past this many copies a house is not short of a book, it is hoarding paper.
+ *
+ * A ceiling on the count rather than on the act: without one, a house with a
+ * long-lived master accumulates a copy every two hundred and fifty years
+ * forever, and after ten thousand years the archive is a warehouse. It also
+ * keeps `copiesOf`'s statement true - an intake primer is a consumable a house
+ * keeps a shelf of, and the book at the top is one object and everyone knows
+ * where it is.
+ */
+export const MOST_COPIES_WORTH_KEEPING = 20;
+
+export interface WrittenCopy {
+    masterId: string;
+    masterName: string;
+    factionId: string;
+    techniqueId: string;
+    /** True when the house held no copy of this at all until now. */
+    firstInTheHouse: boolean;
+    /** Copies the house holds after this one. */
+    copies: number;
+}
+
+/**
+ * Every copy written out this year, and the library rows they land in.
+ *
+ * Mutates `state.objects`: a new holding where the house had none, and a bumped
+ * count where it had one. Both are additions, so running it twice in a year
+ * only ever writes more copies rather than corrupting anything - but the caller
+ * runs it once, on the yearly line, like every other pass.
+ *
+ * O(members x arts held) with one index of the library built up front, which is
+ * the same order as `grantBooksToMembers` and about a thousand cheap iterations
+ * a year on the reference world.
+ */
+export function applyManualCopying(
+    state: WorldState,
+    year: number,
+    day: number
+): WrittenCopy[] {
+    // ── The library, indexed once. ──
+    const holdingAt = new Map<string, number>();
+    for (let i = 0; i < state.objects.length; i++) {
+        const o = state.objects[i];
+        if (o.kind !== 'manual' || o.possessorId === null) continue;
+        const techniqueId = manualIdOf(o);
+        if (techniqueId === null) continue;
+        holdingAt.set(`${o.possessorId}|${techniqueId}`, i);
+    }
+
+    // ── Who is in each house, so "how many people are waiting for this" is a
+    // lookup rather than a scan. ──
+    const members = new Map<string, NpcRecord[]>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || !npc.factionId) continue;
+        const list = members.get(npc.factionId);
+        if (list) list.push(npc); else members.set(npc.factionId, [npc]);
+    }
+
+    const written: WrittenCopy[] = [];
+    for (const faction of state.factions) {
+        if (faction.dissolvedOnDay !== null) continue;
+        const people = members.get(faction.id);
+        if (!people) continue;
+
+        for (const master of people) {
+            for (const techniqueId of master.cultivation.techniqueIds) {
+                if (!canReproduce(master, techniqueId)) continue;
+                const key = `${faction.id}|${techniqueId}`;
+                const at = holdingAt.get(key);
+                const holding = at === undefined ? null : state.objects[at];
+                const have = holding === null ? 0 : copyCount(holding);
+
+                // A shortage is a fact about the house, not a target: how many
+                // people could be taught this and are not holding it. No
+                // shortage and a copy already on the shelf, no copy written - a
+                // master does not spend a decade on a book nobody is waiting
+                // for.
+                const element = manualElementOf(techniqueId);
+                let waiting = 0;
+                for (const p of people) {
+                    if (p.id === master.id) continue;
+                    if (p.cultivation.techniqueIds.includes(techniqueId)) continue;
+                    if (!suitsRoot(p.cultivation.spiritRoot, element)) continue;
+                    waiting++;
+                }
+                if (have > 0 && (waiting === 0 || have >= Math.min(waiting, MOST_COPIES_WORTH_KEEPING))) {
+                    continue;
+                }
+
+                const rng = forStream(state.seed, 'write-out-a-copy', master.id, techniqueId, year);
+                const years = have === 0
+                    ? YEARS_TO_WRITE_THE_FIRST_COPY
+                    : YEARS_TO_WRITE_A_SPARE;
+                if (!rng.chance(1 / years)) continue;
+
+                if (holding === null || at === undefined) {
+                    const t = getTechnique(techniqueId) as { name: string; cap?: number | null };
+                    const cap = Number(t.cap);
+                    state.objects.push(makeObject({
+                        id: libraryObjectId(faction.id, techniqueId),
+                        name: t.name,
+                        kind: 'manual',
+                        significance: cap >= 29 ? 'significant' : cap >= 17 ? 'notable' : 'mundane',
+                        description:
+                            `The ${faction.name}'s copy of a cultivation manual carrying to ordinal ${cap}, `
+                            + `written out by ${master.name} for the people coming up behind them.`,
+                        possessorId: faction.id,
+                        ownerId: faction.id,
+                        ownerName: faction.name,
+                        locationId: faction.seatLocationId,
+                        tags: ['manual', 'library', 'written-out', `faction:${faction.id}`],
+                        data: { techniqueId, cap, copies: 1, writtenOutBy: master.id, writtenOnDay: day }
+                    }));
+                    holdingAt.set(key, state.objects.length - 1);
+                    written.push({
+                        masterId: master.id, masterName: master.name, factionId: faction.id,
+                        techniqueId, firstInTheHouse: true, copies: 1
+                    });
+                } else {
+                    state.objects[at] = {
+                        ...holding,
+                        data: { ...holding.data, copies: have + 1 }
+                    };
+                    written.push({
+                        masterId: master.id, masterName: master.name, factionId: faction.id,
+                        techniqueId, firstInTheHouse: false, copies: have + 1
+                    });
+                }
+            }
+        }
+    }
+    return written;
+}
+
+/** The element a manual is written in, for asking whether it suits a reader. */
+function manualElementOf(techniqueId: string): string | null {
+    const t = getTechnique(techniqueId) as { element?: string | null } | undefined;
+    return t?.element ?? null;
 }
