@@ -701,6 +701,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'bark-armor-circulation',
             'windborne-willow-step',
             'hundred-herb-restoration-art',
+            // The road up to the Canon, which the Hall did not previously
+            // list and therefore did not have: its wood canon opens at 16 and
+            // nothing on the shelf reached 16, so a Herb Boy admitted at 2
+            // could not open the only manual the Hall owns. Both of these are
+            // ordinary market stock and always were.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
             'verdant-longevity-canon',
             // The Hall's one serious weapon, and it is a physician's weapon:
             // the barbs are shaped so that taking the shaft out is a second
@@ -746,6 +753,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'loam-crusher-fist',
             'stone-hide-mantle',
             'five-breath-circulation-scripture',
+            // The four rungs between the Order's primer and its vein canon.
+            // An ascetic order that has held nine peaks for centuries does not
+            // leave its own people unable to reach the book it is famous for;
+            // it buys the plain editions like everybody else.
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
+            'nascent-lotus-canon',
             'tectonic-seal-palm',
             'unyielding-mountain-body',
             'mountain-vein-devouring-canon',
@@ -787,6 +801,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'gutter-rain-palm',
             'reed-crossing-qinggong',
             'clear-spring-detoxification',
+            // The Alliance's own road wants a cultivator already standing at
+            // 10, and it admits at 1. The market primer is how anybody it
+            // takes in gets as far as its water canon.
+            'lesser-qi-gathering-manual',
             'moonlit-well-absorption-art',
             'nine-rivers-sword-chant',
             'still-water-mirror-guard',
@@ -830,6 +848,8 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'swallow-skimming-step',
             'warm-current-qi-transfer',
             'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
             'formless-severing-intent',
             'nascent-lotus-canon',
             'soul-anchoring-invocation',
@@ -982,6 +1002,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // whole world, so a metal root arrived here with nothing.
             'iron-silt-settling-canon',
             'lesser-qi-gathering-manual',
+            // And the Foundation book between them, without which the metal
+            // road above was unopenable by anybody the Consortium trained
+            // itself: it wants 17 and the primer stops at 13.
+            'foundation-tempering-scripture',
             'shadow-splitting-gait',
             'formless-severing-intent',
             'thousand-li-cloud-tread'
@@ -1061,6 +1085,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'five-breath-circulation-scripture',
             'meridian-knitting-needle-art',
             'hundred-herb-restoration-art',
+            // The Guild's fire road opens at 17 and its primer stopped at 13.
+            // Alchemists buy paper; this is the edition they buy.
+            'foundation-tempering-scripture',
             'molten-core-refinement-scripture'
         ],
         signatureTechniqueId: 'meridian-knitting-needle-art',
@@ -1099,6 +1126,11 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // The forge's own road, taught the way the Consortium does not: slowly,
             // and to people who already work metal.
             'iron-silt-settling-canon',
+            // The Clan held two Core Formation roads and nothing at all below
+            // them, so a coal hand taken on at 5 could open neither. These are
+            // the two everybody sells.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
             'scarlet-ember-palm',
             'ashfall-crescent',
             'cinder-lotus-blossom',
@@ -1182,6 +1214,27 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'glacial-tomb-slash',
             'rimeglass-carapace',
             'frostmirror-displacement',
+            // THE COURT'S ROAD, AND WHY IT IS LONGER THAN ANYBODY ELSE'S.
+            //
+            // The Court admits mutated ice roots and nobody else, and there is
+            // no ice manual anywhere in the world below ordinal 33. So the
+            // ordinary succession - four attuned books in a row - is not
+            // available to a single person it has ever taken in, and it either
+            // writes one long unattuned road or stops producing. It wrote one:
+            // three realms on a single method, where every ordinary book
+            // carries a reader through one.
+            //
+            // The market primer and the Foundation book beneath it are bought,
+            // not written. The road ends at 29, which is exactly where the
+            // world stops teaching anybody anything - `scripts/probe-shelf.ts`
+            // and the caps suite both measure the taught ceiling at 29 - so
+            // the Court is in the same position above it as every other house:
+            // the Second Register is not in its hands, and its people cross
+            // into Body Integration under a living master of the ice canon or
+            // not at all. That last gap is `escapes.ts`, not a broken shelf.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'standing-mirror-first-register',
             'rime-heart-stillness-canon'
         ],
         signatureTechniqueId: 'rime-heart-stillness-canon',
@@ -1296,6 +1349,15 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // Integration manual, and the only alternative anywhere to an ice
             // canon held by a court that admits mutated roots and nobody else.
             'cinder-lung-tempering-canon',
+            // Five orthodox books under the two the house is known for. A
+            // cutting house that admits at 5 and expects Body Integration out
+            // of the far end has to raise people through four realms first,
+            // and none of that is done on a forbidden art: the devouring
+            // method starts at 25, and nothing the house held reached 25.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
+            'nascent-lotus-canon',
             'shadow-splitting-gait',
             'crimson-tithe-palm',
             'meridian-devouring-art',
@@ -1339,6 +1401,15 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'loam-crusher-fist',
             'crimson-tithe-palm',
             'corpse-lantern-soul-forging',
+            // The Hall's signature opens at 25 and the Hall taught nothing at
+            // all below it, which made its own ceiling unreachable from the
+            // inside. Ordinary editions, bought; a blood hall still has to get
+            // an offering as far as Deity Transformation before it can spend
+            // them on anything interesting.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
+            'nascent-lotus-canon',
             'meridian-devouring-art'
         ],
         signatureTechniqueId: 'meridian-devouring-art',
@@ -1375,6 +1446,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         stipend: [7, 22, 75, 260, 800, 2_400],
         teaches: [
             // The house's cultivation manual, and therefore its ceiling. Reliable 13: the Foundation manual is the top of what this cult can actually walk somebody through, and the corpse work is what it does with them afterwards.
+            'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
             'cross-meridian-strike',
             'bark-armor-circulation',
@@ -1415,6 +1487,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         stipend: [12, 40, 140, 480, 1_500, 4_500],
         teaches: [
             'ashfall-crescent',
+            // Kindling is taken on at 8 and the sect's own transformation
+            // wants 32. Six books of ordinary road between the two, four of
+            // them bought off a stall and one of them forbidden - the Sect is
+            // demonic and the devouring method is how its people cross Deity
+            // Transformation, a vent vein being a poor thing to try to eat.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
+            'nascent-lotus-canon',
+            'meridian-devouring-art',
             'molten-core-refinement-scripture',
             // The chant is the contract in miniature and the sect teaches it
             // as such: it lends a hall of people more than they have, states
@@ -1460,6 +1542,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         stipend: [14, 45, 150, 500, 1_600, 5_000],
         teaches: [
             // The house's cultivation manual, and therefore its ceiling. Reliable 21. The court climbs on storm work and this is the gathering canon underneath it.
+            // And the road up to it, which the Court did not list. It admits
+            // at 9 and its canon opens at 21; nothing between the two was on
+            // the shelf, so the storm work above was unreachable by anybody
+            // the Court raised rather than recruited already formed.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
             'nascent-lotus-canon',
             'drumming-thunder-clap',
             'arcstep-thunder-lance',
@@ -1502,6 +1591,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         stipend: [20, 90, 400, 1_600],
         teaches: [
             // The house's cultivation manual, and therefore its ceiling. Reliable 21. The Grove teaches slowly and this is what it teaches from.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
             'nascent-lotus-canon',
             'cross-meridian-strike',
             'iron-shirt-tempering',
@@ -1663,6 +1755,13 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         teaches: [
             'thread-reading-stance',
             'five-breath-circulation-scripture',
+            // The two plain editions between the primer and the Canon. Three
+            // of the four houses that could not cross this gap are each
+            // other's rivals and all four now hold the same two books, which
+            // is not a shared method - it is four ledgers with the same line
+            // item on them.
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
             'meridian-knitting-needle-art',
             'formless-severing-intent',
             'nascent-lotus-canon',
@@ -1784,6 +1883,8 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             'convergence-sighting',
             'five-breath-circulation-scripture',
             'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
             'formless-severing-intent',
             'nascent-lotus-canon'
         ],
@@ -1886,6 +1987,8 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             'iron-shirt-tempering',
             'warm-current-qi-transfer',
             'five-breath-circulation-scripture',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
             'soul-anchoring-invocation',
             'nascent-lotus-canon'
         ],
@@ -1986,6 +2089,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         stipend: [20, 60, 190, 620, 2_000, 6_500],
         teaches: [
             // The house's cultivation manual, and therefore its ceiling. Reliable 24. A house of removal still has to raise the people doing the removing.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
             'nascent-lotus-canon',
             'quiet-cut-severing-stroke',
             'shadow-splitting-gait',
@@ -2192,6 +2298,17 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         stipend: [16, 48, 150, 470, 1_500, 4_600],
         teaches: [
             // The house's cultivation manual, and therefore its ceiling. Reliable 25. Surveyors walk the veins they draw on, which is what this canon is for.
+            // Four ordinary books beneath it, none of them the Anchorhold's.
+            // The two houses stand at opposite ends of the same feud and both
+            // finish on the vein canon, but the Span raises its surveyors on
+            // the elementless editions anybody can buy rather than on the
+            // earth road its rival teaches - which is why a Span chain bearer
+            // and an Anchorhold peg do not look alike until Deity
+            // Transformation, and then suddenly do.
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
+            'nascent-lotus-canon',
             'mountain-vein-devouring-canon',
             'span-folding-survey',
             'swallow-skimming-step',
@@ -2312,6 +2429,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             'stone-hide-mantle',
             'unyielding-mountain-body',
             'five-breath-circulation-scripture',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
+            'nascent-lotus-canon',
             'mountain-vein-devouring-canon'
         ],
         signatureTechniqueId: 'anchor-stance-of-fixed-ground',

@@ -44,7 +44,7 @@ import {
     REALM_TIERS,
     progressRequiredForOrdinal
 } from '../../src/engine/cultivation/realms.js';
-import { techniqueExhausted } from '../../src/engine/cultivation/cultivation.js';
+import { realmsSpannedBy, techniqueExhausted } from '../../src/engine/cultivation/cultivation.js';
 
 const MANUALS = TECHNIQUES.filter(t => t.class === 'cultivation');
 
@@ -131,9 +131,50 @@ describe('only manuals carry a ceiling', () => {
             expect(t.opening, t.id + ' needs a hard opening').not.toBeNull();
             expect(t.opening!.rateMultiplier, t.id).toBeLessThan(0.5);
             expect(t.opening!.rungs, t.id).toBeGreaterThan(0);
-            // Nobody teaches a book that makes four of their own redundant.
-            expect(t.provenance, t.id).not.toBe('taught');
         }
+    });
+
+    it('lets a house teach a long road, but never a treasure', () => {
+        // WHAT CHANGED, AND WHY.
+        //
+        // This used to read `expect(t.provenance).not.toBe('taught')` for
+        // every wide book, on the reasoning that nobody teaches a book making
+        // four of their own redundant. That reasoning is sound about a house
+        // with four books and says nothing about a house that cannot use the
+        // ordinary succession at all - and the catalog contains one, because
+        // the mutated elements are deliberately starved and there is no ice
+        // manual below ordinal 33 for the one house that admits nothing else.
+        // Put to the user in as many words - "who says a sect can't have a
+        // manual going from 13 all the way to 29? some can be longer than
+        // others" - and the answer was that only this assertion did.
+        //
+        // So length is no longer the line. REACH is. A book spanning two or
+        // three realms is a deep house road: longer than ordinary, still a
+        // curriculum, and it ends somewhere a successor volume opens. A book
+        // spanning four or more is a treasure - it does not continue a
+        // succession, it replaces one - and nobody transmits those, which is
+        // the half of the old rule that was always doing the work.
+        //
+        // Everything else the wide books pay is unchanged and asserted above:
+        // a comprehension gate and a hard opening, both, for every one of them
+        // whoever hands it over.
+        const TAUGHT_REALM_LIMIT = 3;
+        for (const t of MANUALS.filter(isWideSpan)) {
+            const realms = realmsSpannedBy({ requiredOrdinal: t.requiredOrdinal, cap: t.cap });
+            if (t.provenance === 'taught') {
+                expect(realms, `${t.id} is taught and reaches ${realms} realms`)
+                    .toBeLessThanOrEqual(TAUGHT_REALM_LIMIT);
+            } else {
+                expect(realms, `${t.id} is a treasure that skips nothing much`)
+                    .toBeGreaterThan(TAUGHT_REALM_LIMIT);
+            }
+        }
+        // And a taught long road is still the exception, not the shelf. If
+        // most houses hold one, the succession of manuals has been abolished
+        // rather than deepened.
+        const taughtWide = MANUALS.filter(t => isWideSpan(t) && t.provenance === 'taught');
+        expect(taughtWide.length / MANUALS.length, 'long roads must stay rare')
+            .toBeLessThan(0.1);
     });
 
     it('stops dead at the cap rather than tapering toward it', () => {
