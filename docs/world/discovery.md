@@ -9,6 +9,8 @@ Read with [understanding.md](understanding.md) (access gates comprehension) and
 
 ## You do not start knowing what exists
 
+<!-- tier: 2 trigger="the player asks what lies beyond what they have already met" -->
+
 A Qi Condensation cultivator in a village does not know the ancient sects exist. Not
 "has not visited" - **does not know**. The names have never been said in front of them.
 Their world is the county, the local sect that takes disciples, the market town, and
@@ -18,6 +20,8 @@ This is not ignorance to be corrected. It is the accurate state of almost everyo
 the world is *designed* so that most people die in it.
 
 ## The ladder of knowing
+
+<!-- tier: 2 trigger="the player learns of something new, or their grasp of it is in question" -->
 
 Awareness moves in stages, and each stage is a different kind of thing:
 
@@ -42,6 +46,8 @@ them at the outer gate" moves a disciple a whole stage in one sentence.
 
 ## Encountering something from above
 
+<!-- tier: 2 trigger="the player meets something plainly beyond their stratum" -->
+
 The texture to aim for when the player finally meets someone from a higher stratum:
 
 **The entourage tells them more than the person does.** Someone from an ancient sect
@@ -65,6 +71,8 @@ Other reliable notes:
   reachable because it was seen. Seeing is a knowledge state, not an access state.
 
 ## The hard rule for the narrator
+
+<!-- tier: 2 trigger="the narrator is about to name a place, house, or person" -->
 
 > **Never reference an entity the player has no knowledge record for.**
 
@@ -91,6 +99,8 @@ not to spend it.
 
 ## Why this is the payoff
 
+<!-- tier: 3 -->
+
 Power progression and world revelation are the same movement. As a cultivator rises they
 do not merely become able to survive more; they become able to **perceive** more, be
 admitted to more, and be told more. The mountain was always a formation node. The ancient
@@ -110,6 +120,8 @@ And the sequence should keep going long enough to be humbling more than once:
 Each rung should arrive rarely, be earned, and cost the player a comfortable belief.
 
 ## Characters assume you know
+
+<!-- tier: 2 trigger="an NPC talks past the player about things the player has never heard of" -->
 
 The rule above governs the **narrator's own voice**. It does not gag the people in the
 world, and it must not.
@@ -150,6 +162,8 @@ Notes:
   true one.
 
 ### Overheard
+
+<!-- tier: 2 trigger="the player is somewhere people are talking and not to them" -->
 
 The sharpest form, because the option to ask is gone.
 
