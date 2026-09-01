@@ -66,6 +66,7 @@ import {
     type ImmortalStatus
 } from './realms.js';
 import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
+import { blocksAdvancement, brokenStatusOf } from './what-goes-wrong-at-a-realm-boundary.js';
 import { foundationEffect, foundationOf } from './foundation.js';
 import { understandingEffects, type RelevanceContext } from './understanding.js';
 import { getSpiritRoot } from './spirit-roots.js';
@@ -368,53 +369,105 @@ export function combatPowerForOrdinal(ordinal: number, status: ImmortalStatus = 
 }
 
 /**
- * The window a broken cultivator's power has to land in.
+ * What a broken cultivator prices at, as a share of the rung they stand on.
  *
- * NOT applied as a bracket - `assessPower` gives them their rung's ordinary
- * figure and lets the ordinary injury penalty do the work, because "41 with
- * cracks IS half-step 41" and a bespoke power band would be a second mechanism
- * for something the wound list already expresses. This function is the TARGET
- * that penalty has to hit, and it is what the tests measure against.
+ * ── WHAT THE ORDERING ACTUALLY HAS TO BE, WHICH IS NOT WHAT IT WAS ───────
  *
- * The ordering the design asks for is strict: WEAKER THAN EVERY OTHER HOLDER OF
- * THEIR OWN RUNG, AND STRONGER THAN EVERY HOLDER OF THE RUNG BELOW. That keeps
- * the crossing worth attempting even when it goes wrong - a broken 41 still
- * outfights any 40 alive, so "never attempt" never becomes the correct play -
- * while making the failure real.
+ * This was written for a strict two-sided ordering: weaker than EVERY intact
+ * holder of their realm and stronger than EVERY intact holder of the realm
+ * below. That is unsatisfiable, and the arithmetic is worth keeping because it
+ * is what a future attempt will rediscover. The ladder is x4 a realm and
+ * `WITHIN_REALM_PEAK` is 2, so the top of one realm sits at exactly half the
+ * bottom of the next: a window of x2.000, measured. The legal attribute range
+ * is worth x1.516, also measured, and it widens BOTH bands the broken holder
+ * has to fit between, so a strict fit needs x2.299 and has x2.000.
  *
- * Placed at the geometric mean of the two things it has to sit between: the
- * weakest rung of its own realm, and the strongest rung of the realm below.
- * Derived rather than picked, so it follows the ladder if the ladder moves, and
- * it lands exactly halfway in the multiplicative space the whole power curve is
- * expressed in.
+ * The design has since said that the case which does not fit is a case it
+ * WANTS. A cracked core who has been fighting for a century should be
+ * dangerous to somebody who formed their core last year, and the model should
+ * be allowed to say so. So the ordering that binds is the one-sided one:
  *
- * ── WHERE THIS ORDERING BREAKS, MEASURED ─────────────────────────────────
+ *   MUST   beat every intact holder of the realm below, at every attribute
+ *          spread, from any rung of their own realm.
+ *   MUST   lose to a typical holder of their own rung.
+ *   MAY    beat a weak one, and does, especially with battle experience behind
+ *          them - which is not compressed and is worth x1.4 on its own.
  *
- * It holds at equal attributes and it does NOT hold across the full attribute
- * spread, and that is a fact about the ladder's geometry rather than about this
- * function. `WITHIN_REALM_PEAK` is 2, so the strongest rung of a realm is twice
- * its weakest, and the next realm's weakest is twice THAT - which leaves a gap
- * of exactly 2x between the top of one realm and the bottom of the next. The
- * legal attribute range is worth about 1.5x. Sitting anything strictly between
- * two bands separated by 2x, such that no 1.5x attribute swing on either side
- * can cross it, needs a gap of 2.25x. There is not one.
+ * Only the first is a constraint on this number, and it is satisfiable with
+ * room: it needs the share to clear the realm below's ceiling widened by the
+ * attribute range, which is 0.5 x 1.516 = 0.758. Anything from there to 1 is
+ * legal, and lower is better for the second requirement.
  *
- * So the honest claim is the one the tests assert: at equal attributes a broken
- * holder loses to every intact holder of their rung and beats every holder of
- * the rung below, with a 1.41x margin either way. A broken 41 with the best
- * attributes in the world can still beat an intact 41 with the worst. Closing
- * that would mean widening the realm gap or narrowing the attribute range, and
- * both are decisions about the whole ladder rather than about this status.
+ * 0.75 with the transmission exponent below lands at x1.088 of what the first
+ * requirement needs while leaving a broken holder a quarter weaker than an
+ * intact peer at equal attributes. It is also, deliberately, what a broken
+ * status has always cost in practice: one crippling permanent wound through the
+ * condition line was `1 - 0.5 x 0.5`, and the level is unchanged. What changed
+ * is that it is now DECLARED here rather than falling out of `INJURY_WEIGHTS`
+ * by coincidence, which is what let it drift below the line it has to clear.
+ *
+ * ── AND IT IS THE RUNG, NOT THE REALM ────────────────────────────────────
+ *
+ * A share of `combatPowerForOrdinal(ordinal)`, so a broken cultivator who
+ * climbs their realm's sub-ranks gets stronger the way anybody does. They may:
+ * `blocksAdvancement` gates realm boundaries and not sub-rank steps, and the
+ * wound rows describe exactly this person - "forty years into being extremely
+ * good at the rung they are on". Anchoring them to the realm floor instead
+ * would have made those forty years worth nothing in a fight, and was only ever
+ * needed for the strict ordering that has now been dropped.
+ */
+export const BROKEN_STATUS_POWER = 0.75;
+
+/**
+ * How much of their own strength a broken cultivator still transmits.
+ *
+ * An exponent rather than a second multiplier, and the difference is what buys
+ * the margin. `BROKEN_STATUS_POWER` slides the broken band down; it does not
+ * narrow it, so the band stays the full x1.516 of the attribute range and its
+ * bottom edge is what has to clear the realm below. At 0.75 flat that edge
+ * lands at x0.989 of where it needs to be - it FAILS, narrowly, and it failed
+ * silently for exactly that reason: the median case looked fine.
+ *
+ * Raising body and comprehension to a power below 1 pulls them toward the point
+ * they are defined around. Both lines are written as deviations from exactly 1
+ * at median attributes, so that point is 1 and the compression is toward the
+ * ordinary rather than toward anything invented. At 0.5 the band narrows to
+ * x1.231 and its bottom edge clears by x1.088.
+ *
+ * Half, which is easy to state and easy to check: half of what this body and
+ * this understanding would otherwise deliver arrives. The whole legal attribute
+ * range is still worth x1.231 to a broken cultivator, so a strong one is
+ * visibly stronger than a weak one, and a broken holder with the best
+ * attributes in the world still prices under a median intact peer - 0.840
+ * against 1.000 - which is the second requirement holding.
+ *
+ * Measured over all twelve legal attribute pairs on both sides at every realm
+ * by `scripts/probe-how-strong-a-broken-cultivator-is.ts`, which is where any
+ * future move of either constant has to be re-argued. The admissible ceiling
+ * at the current attribute range is 0.943.
+ *
+ * What it deliberately does NOT touch: technique, artifacts, battle experience,
+ * ground and condition. An art is an art, an object is worth what it is worth
+ * in anybody's hand, and a bleeding cultivator is a bleeding cultivator. The
+ * break is in the structure a person's OWN strength has to pass through, so
+ * that is the only thing it is charged against - and leaving experience out of
+ * it is what lets a broken veteran overturn a fresh peer, which the design
+ * asks for by name.
+ */
+export const BROKEN_TRANSMISSION = 0.5;
+
+/**
+ * What a broken holder of this rung prices at, at median attributes.
+ *
+ * The figure the tests measure against and the one to quote when asking whether
+ * somebody is worth fighting. It is a share of the rung rather than a bracket
+ * of its own: `assessPower` gives a broken cultivator their rung's ordinary
+ * spine and charges the break as one more line of the ordinary breakdown, so
+ * "41 with cracks IS half-step 41" still holds and there is no second power
+ * scale anywhere in this module.
  */
 export function brokenCombatPowerForOrdinal(ordinal: number): number {
-    const tier = realmForOrdinal(ordinal);
-    const ownFloor = combatPowerForOrdinal(tier.ordinalStart);
-    const belowIndex = REALM_TIERS.findIndex(t => t.key === tier.key) - 1;
-    // The bottom realm has nothing below it to sit above, so a broken holder
-    // there is simply at the floor of their own realm.
-    if (belowIndex < 0) return ownFloor;
-    const belowCeiling = combatPowerForOrdinal(REALM_TIERS[belowIndex].ordinalEnd);
-    return Math.sqrt(ownFloor * belowCeiling);
+    return combatPowerForOrdinal(ordinal) * BROKEN_STATUS_POWER;
 }
 
 function realmIndexOf(ordinal: number): number {
@@ -439,22 +492,45 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     const status = combatant.immortalStatus ?? 'none';
     const tradition = traditionOrDefault(combatant.traditionId);
     const tier = realmForOrdinal(ordinal);
-    // NO SPECIAL BRACKET FOR A BROKEN CULTIVATOR.
-    //
-    // "41 with cracks IS half-step 41" - they are at the rung, they carry a
-    // structural injury, and the ORDINARY injury penalty is what stops them
-    // using the full power of it. That is the whole mechanism, and it
-    // generalises to every boundary somebody crosses carrying a break rather
-    // than being a rule about one rung.
-    //
-    // The ordering it has to produce - weaker than every intact holder of their
-    // rung, stronger than every holder of the rung below - therefore falls out
-    // of `aggregateInjuryPenalties` rather than being asserted here. See
-    // `brokenCombatPowerForOrdinal` for the window that penalty has to land in
-    // and for where the ordering provably cannot hold.
     const realmBase = combatPowerForOrdinal(ordinal, status);
 
-    const injuries = aggregateInjuryPenalties(combatant.injuries);
+    // A BROKEN STATUS IS STILL NOT A RANK, AND IT IS NOT PRICED AS ONE.
+    //
+    // "41 with cracks IS half-step 41" - they are at the rung, they carry a
+    // structural injury, and they are read out of the same wound list as
+    // everybody else. What follows is not a bracket for a special kind of
+    // person; it is one more line of the ordinary breakdown, minted from a
+    // wound row the same way the condition line is.
+    //
+    // It exists because leaving the break to the ordinary injury penalty could
+    // not quite do the job, and the way it failed is worth recording. That
+    // penalty is FLAT - one crippling wound costs x0.750 through the condition
+    // line whoever you are - and a flat penalty slides the broken band down
+    // without narrowing it, so the band stays the full width of the attribute
+    // range and its bottom edge is what has to clear the realm below. Measured:
+    // that edge landed at x0.989 of where it needed to be. The weakest broken
+    // holder lost to the strongest holder of the realm under them, which is the
+    // one ordering the whole status exists to protect, and it went unnoticed
+    // because the median case looked fine. See `BROKEN_TRANSMISSION`.
+    const brokenStatus = brokenStatusOf(combatant.injuries);
+
+    // ONE WOUND, ONE PRICE, PER SYSTEM. The structural break is held out of the
+    // condition line because the `broken` line below is what it costs in a
+    // fight. Charged in both places it would compound to x0.750 x x0.750 =
+    // x0.563 against a declared x0.750, which puts a broken holder below the
+    // ceiling of the realm under them - the same inversion, arrived at from the
+    // other direction.
+    //
+    // It is held out of this line and nowhere else. It still drags on the
+    // cultivation rate and on every subsequent crossing through
+    // `aggregateInjuryPenalties` where those are computed, and it is still a
+    // permanent wound excluded from the bleed clock. This is the combat layer
+    // declining to charge for it twice, not the wound getting cheaper.
+    const conditionInjuries = brokenStatus === null
+        ? combatant.injuries
+        : combatant.injuries.filter(i => !blocksAdvancement(i));
+
+    const injuries = aggregateInjuryPenalties(conditionInjuries);
     const tempering = scarTempering(combatant.injuries);
     const root = getSpiritRoot(combatant.spiritRoot);
     const understanding = understandingEffects(combatant.insights ?? [], {
@@ -476,9 +552,10 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         (combatant.attributes.might - 2) * 0.12 +
         tempering.breakthroughBonus * 2 +
         (tradition === 'tradition-cut' ? 0.15 : 0);
+    const bodyFactor = clampFactor(bodyRaw, MAX_BODY_FACTOR);
     factors.push({
         source: 'body',
-        factor: clampFactor(bodyRaw, MAX_BODY_FACTOR),
+        factor: bodyFactor,
         note:
             `Might ${combatant.attributes.might}, ${tempering.scars} closed wound(s)` +
             (tradition === 'tradition-cut' ? ', and a body built by working a face' : '')
@@ -505,9 +582,10 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     // why the same cultivator prices differently against different opponents.
     const comprehensionRaw =
         1 + understanding.breakthroughModifier * 3 + (combatant.attributes.insight - 2) * 0.06;
+    const comprehensionFactor = clampFactor(comprehensionRaw, MAX_COMPREHENSION_FACTOR);
     factors.push({
         source: 'comprehension',
-        factor: clampFactor(comprehensionRaw, MAX_COMPREHENSION_FACTOR),
+        factor: comprehensionFactor,
         note: `Insight ${combatant.attributes.insight}, ${understanding.contributing.length} bearing insight(s)`
     });
 
@@ -612,8 +690,45 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         factor: clampFactor(conditionRaw, 1.5),
         note:
             `HP ${combatant.hp}/${combatant.maxHp}, qi ${combatant.qi}/${combatant.maxQi}, ` +
-            `${injuries.untreatedCount} untreated injuries, foundation ${foundation}`
+            `${injuries.untreatedCount} untreated injuries` +
+            (brokenStatus === null ? '' : ' besides the break, priced on its own line below') +
+            `, foundation ${foundation}`
     });
+
+    // ── THE BREAK ────────────────────────────────────────────────
+    // Last, because it is charged against lines already computed, and one line
+    // rather than two so a player who asks what the break costs gets a single
+    // number back rather than having to diff two breakdowns.
+    //
+    // It does two things and they are different:
+    //
+    //   level     `BROKEN_STATUS_POWER`, a flat share of the rung. This is what
+    //             the break costs somebody of ordinary attributes, and it is
+    //             what the break has always cost - the level is unchanged.
+    //   transmit  body and comprehension - the two lines a cultivator's own
+    //             strength enters through, both written as deviations from
+    //             exactly 1 - are raised to `BROKEN_TRANSMISSION`, which pulls
+    //             them toward that 1 rather than sliding them down. This is the
+    //             part that is new, and it is what makes the one ordering the
+    //             design requires - beating every intact holder of the realm
+    //             below - hold at every attribute spread instead of at 99.3% of
+    //             them.
+    //
+    // Written as a ratio against what the ordinary breakdown already produced,
+    // so the multiply-in-listed-order identity still reproduces `total` exactly
+    // and every other line still reads as itself.
+    if (brokenStatus !== null) {
+        const own = bodyFactor * comprehensionFactor;
+        factors.push({
+            source: 'broken',
+            factor: BROKEN_STATUS_POWER * Math.pow(own, BROKEN_TRANSMISSION - 1),
+            note:
+                `${brokenStatus}: the structure the crossing was for did not set. ` +
+                `They hold ${rankName(ordinal)} and carry ` +
+                `${(100 * BROKEN_TRANSMISSION).toFixed(0)}% of what this body and this understanding ` +
+                'would otherwise deliver through it'
+        });
+    }
 
     // The reported total is the running product in listed order, so replaying
     // the list reproduces it exactly rather than approximately.
