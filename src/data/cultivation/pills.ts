@@ -26,9 +26,11 @@
  * more expensive (disjoint, ascending value bands) and may be strictly more
  * poisonous (rising toxicity ceilings), so spamming heaven-grade medicine at
  * Foundation Establishment is a way to die of the cure. Within a grade, the
- * pills that touch progression - breakthrough odds, cultivation progress,
- * lifespan - sit at the top of both the value and toxicity ranges, because
- * buying advancement should always cost more than buying survival.
+ * pills that touch progression sit at the top of both the value and toxicity
+ * ranges, because buying advancement should always cost more than buying
+ * survival. Which effects those are is `ADVANCEMENT_EFFECTS` below, and it is
+ * exported rather than restated so that the doc, the tests and the lore audit
+ * cannot each hold a different opinion about it.
  *
  * THE TWO THE GAME NAMES DIRECTLY
  * -------------------------------
@@ -75,11 +77,72 @@ export const PILL_TOXICITY_CEILING: Record<TechniqueGrade, number> = {
     chaos: 40
 } as const;
 
+/**
+ * The effects that buy ADVANCEMENT rather than survival.
+ *
+ * One exported set, because three places were entitled to an opinion about
+ * this and two of them were wrong. `economy.md` enumerated it in prose, the
+ * lore audit hardcoded its own copy, and the catalog was priced to a third
+ * reading - which is how "buying advancement always costs more than buying
+ * survival" came to be contradicted in two grades by a catalog that was
+ * actually obeying it.
+ *
+ * THE TEST THAT SEPARATES THEM is not "does it keep you alive". It is: does
+ * this return you to where you were, or take you somewhere you could not
+ * otherwise get?
+ *
+ *   survival     heal, treat, cleanse, restore qi, a meal. You are back where
+ *                you started, which is the whole of what you paid for.
+ *   advancement  progress, breakthrough odds, lifespan - and abstinence.
+ *
+ * `extend_lifespan` is the precedent and it settles the argument. Lifespan is
+ * the plainest survival there is - it is literally not dying - and the doc has
+ * always filed it under advancement, because what it actually buys is YEARS TO
+ * CULTIVATE IN. Grain abstinence is the identical argument at a shorter
+ * horizon: it converts stones directly into uninterrupted cultivation, and
+ * mechanically it is the precise thing that makes a decade of seclusion
+ * possible instead of a death by starvation around day fifty-five.
+ *
+ * The catalog had already decided this. In every grade where one exists, the
+ * abstinence pill is the single most expensive pill in its grade, above even
+ * lifespan. The author priced it as advancement; only the enumeration said
+ * otherwise. So the rule was never wrong - its list was incomplete.
+ *
+ * `sate_hunger` stays survival, and the line between them is exactly the test
+ * above: filling a belly for a day returns you to where you were, and removing
+ * hunger for a year does not.
+ */
+export const ADVANCEMENT_EFFECTS: ReadonlySet<PillEffect> = new Set<PillEffect>([
+    'boost_breakthrough',
+    'advance_progress',
+    'extend_lifespan',
+    'grain_abstinence'
+]);
+
+/** Whether this effect buys advancement. The one place that decides. */
+export function isAdvancement(effect: PillEffect): boolean {
+    return ADVANCEMENT_EFFECTS.has(effect);
+}
+
 /** Every run starts holding exactly one of these. */
 export const MINOR_HEALING_PILL_ID = 'pill-minor-healing';
 
 /** The hunger problem's real solution, and a genuine mid-game objective. */
 export const GRAIN_ABSTINENCE_PILL_ID = 'pill-grain-abstinence';
+
+/**
+ * The one a poor cultivator can actually buy.
+ *
+ * The abstinence ladder has three rungs and this is the bottom one: a year at
+ * ninety stones, against ten years at nine thousand and a lifetime at ninety
+ * thousand. Without it the whole mechanism was a heaven-grade purchase, which
+ * put the answer to long seclusion out of reach of exactly the people whose
+ * only asset is time.
+ */
+export const MORTAL_GRAIN_ABSTINENCE_PILL_ID = 'pill-hollow-reed-fasting';
+
+/** Days granted by the mortal-grade pill. One year, and then it is over. */
+export const MORTAL_GRAIN_ABSTINENCE_DAYS = 365;
 
 /**
  * Days of grain abstinence granted by the immortal-grade pill. Long enough
@@ -189,6 +252,37 @@ export const PILLS: readonly Pill[] = [
         value: 80,
         description:
             'Five more years, bought with thousand-day root. Mortals ruin families for these. Cultivators past Foundation Establishment consider them a rounding error.'
+    },
+    {
+        // THE BOTTOM RUNG OF THE ABSTINENCE LADDER, and it was missing.
+        //
+        // The Grain Abstinence Pill at 9,000 stones is the designed answer to
+        // long seclusion, and it was the ONLY answer. Measured against a best
+        // village wage of 108 stones a year with 15 going on food, it is
+        // ninety-six years of unbroken full-time labour for one pill - against
+        // a Qi Condensation lifespan of a hundred years. The thing every poor
+        // cultivator needs most was priced beyond every poor cultivator, with
+        // nothing under it.
+        //
+        // This is what is under it. One year, ninety stones, about a year of a
+        // villager's savings, and ten of them are a decade - at a tenth of the
+        // heaven-grade pill's convenience and rather more than a tenth of its
+        // cost in health. That premium is the right shape: the expensive pill
+        // buys ten uninterrupted years in one swallow, and this one buys the
+        // same decade in ten instalments, each of which has to be planned for
+        // and paid for again.
+        id: MORTAL_GRAIN_ABSTINENCE_PILL_ID,
+        name: 'Hollow Reed Fasting Pill',
+        grade: 'mortal',
+        effect: 'grain_abstinence',
+        potency: MORTAL_GRAIN_ABSTINENCE_DAYS,
+        // The dearest and the hardest on the body of any mortal pill, which is
+        // what the advancement rule requires of it and also simply what it is:
+        // a crude version of a heaven-grade art, and the body notices.
+        toxicity: 0.7,
+        value: 90,
+        description:
+            'A year without eating, compressed into something a village alchemist can actually make. It works, it is unpleasant for the first month, and it has to be taken again next year. Everybody who has spent a decade in a cave has a drawer of the empty jars.'
     },
 
     // ═══════════════════════════════════════════════════════════════════

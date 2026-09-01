@@ -41,8 +41,8 @@ Price follows grade, and grade is one legible axis across every catalog. Two rul
 the shape of it:
 
 - **Buying advancement always costs more than buying survival.** Within a grade, the
-  things that touch progression - breakthrough odds, cultivation progress, lifespan - sit
-  at the top of both the value and the danger ranges.
+  things that touch progression - breakthrough odds, cultivation progress, lifespan, and
+  freedom from having to eat - sit at the top of both the value and the danger ranges.
 - **Refinement adds value.** The combined market value of a recipe's ingredients is
   strictly less than the pill's, otherwise no alchemist would exist and the ingredient
   market would be the whole economy.
