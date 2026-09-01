@@ -80,7 +80,8 @@ import {
     type TollTaken,
     type VisionSeed
 } from '../../schema/cultivation.js';
-import { declaredAmbientAt } from '../../data/cultivation/regions.js';
+import { declaredAmbientAt, regionIdOfPlace } from '../../data/cultivation/regions.js';
+import { daoGroundsIn } from '../../data/cultivation/places-that-teach-a-dao.js';
 import {
     DAYS_PER_YEAR,
     ambientForBlock,
@@ -1711,6 +1712,47 @@ export function discoveryContextFor(
         sources.push({ kind: 'site', label: tag.replace(/_/g, ' '), id: tag });
     }
 
+    // ── GROUND THAT TEACHES A ROAD, for the player ──
+    //
+    // Twenty authored grounds each teach one domain. The world layer reaches
+    // them through `roadsInReachOf`; the player reached none of them, because
+    // this function built its location exposure from `siteTagsAt` - the
+    // `cultivation_sites` table - and a dao ground is a place in the region
+    // catalog. So the dao gate could be satisfied by every NPC in the world
+    // and by nobody holding the controller, which is the split this repo keeps
+    // finding and AGENTS.md now names first.
+    //
+    // Reachability is decided HERE rather than in the engine, because whether
+    // a house lets somebody onto its cliff is a fact about the world.
+    const daoGrounds: NonNullable<DiscoveryContext['daoGrounds']>[number][] = [];
+    const standingRegion = regionIdOfPlace(cultivator.location);
+    if (standingRegion) {
+        const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
+        // A rank INDEX, from the house's own ladder, because `standingRequired`
+        // is an index and `sectRank` is the title.
+        const rank = house && cultivator.sectRank
+            ? house.ranks.indexOf(cultivator.sectRank)
+            : -1;
+
+        for (const ground of daoGroundsIn(standingRegion)) {
+            if (cultivator.realmOrdinal < ground.fromOrdinal) continue;
+            // Buried ground teaches nobody until the world digs it out, and
+            // finding one is the site layer's business rather than this one's.
+            if (ground.access === 'buried') continue;
+            if (ground.access === 'held') {
+                if (!house || ground.heldBy !== house.id) continue;
+                if (rank < ground.standingRequired) continue;
+            }
+            daoGrounds.push({
+                domain: ground.domain,
+                subject: ground.subject,
+                label: ground.name,
+                id: ground.id
+            });
+            sources.push({ kind: 'site', label: ground.name, id: ground.id });
+        }
+    }
+
     const practised = options.practisingTechniqueId
         ? getTechnique(options.practisingTechniqueId)
         : undefined;
@@ -1725,6 +1767,7 @@ export function discoveryContextFor(
         readableManuals,
         teachers,
         locationTags,
+        ...(daoGrounds.length > 0 ? { daoGrounds } : {}),
         techniqueElement: practised?.element ?? null
     });
     const born = originDiscoveryContext(cultivator.origin);

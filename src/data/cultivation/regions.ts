@@ -1580,6 +1580,28 @@ const AMBIENT_BY_PLACE_NAME: ReadonlyMap<string, AmbientQi> = (() => {
     return map;
 })();
 
+/**
+ * The province a named settlement sits in.
+ *
+ * Same index as the ambient lookup above and built for the same reason: the
+ * engine holds no map, so anything that needs to know where a place IS has to
+ * ask the catalog that authored it. Returns undefined for a compound, a site
+ * or anything the catalog has never named, which is the honest answer rather
+ * than a guess at the nearest province.
+ */
+const REGION_BY_PLACE_NAME: ReadonlyMap<string, string> = (() => {
+    const map = new Map<string, string>();
+    for (const region of REGIONS) {
+        for (const place of region.places) map.set(place.name.toLowerCase(), region.id);
+    }
+    return map;
+})();
+
+export function regionIdOfPlace(placeName: string | null | undefined): string | undefined {
+    if (!placeName) return undefined;
+    return REGION_BY_PLACE_NAME.get(placeName.trim().toLowerCase());
+}
+
 export function declaredAmbientAt(placeName: string | null | undefined): AmbientQi | undefined {
     if (!placeName) return undefined;
     return AMBIENT_BY_PLACE_NAME.get(placeName.trim().toLowerCase());

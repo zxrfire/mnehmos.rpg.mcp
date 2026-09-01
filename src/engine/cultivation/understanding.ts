@@ -459,6 +459,27 @@ export interface DiscoveryContext {
      * real world state; the engine holds no map.
      */
     locationTags?: readonly string[];
+    /**
+     * Ground that teaches a road, and that this cultivator can actually reach.
+     *
+     * Its own channel rather than a `locationTag`, because a tag carries only
+     * a name and `LOCATION_OPENINGS` then decides what it opens - which works
+     * for nine fixed kinds of place and cannot carry twenty authored grounds
+     * that each name their own domain AND their own subject. Flattening them
+     * through the tag table would throw the subject away and force eight
+     * synthetic tags, one per domain.
+     *
+     * The CALLER decides reachability. Whether a house lets somebody onto its
+     * cliff, whether a province leaves its ford open, and whether a buried one
+     * has been dug out are all facts about the world, and this module holds no
+     * map - the same division every other field here observes.
+     */
+    daoGrounds?: readonly {
+        domain: InsightDomain;
+        subject: string;
+        label: string;
+        id?: string | null;
+    }[];
     /** Something extraordinary happened in front of them. */
     survived?: 'tribulation' | 'deviation' | 'near_death' | null;
 
@@ -718,6 +739,18 @@ export function discoverableInsights(
     }
     for (const inheritance of ctx.inheritances ?? []) {
         exposureCandidates(inheritance, 'inheritance', add);
+    }
+
+    // Ground that teaches a road. The domain and the subject are the catalog's
+    // own, passed through untouched rather than inferred from the subject
+    // string, because a ground that says it teaches karma teaches karma.
+    for (const ground of ctx.daoGrounds ?? []) {
+        add(
+            ground.domain,
+            ground.subject,
+            { kind: 'site', label: ground.label, ...(ground.id ? { id: ground.id } : {}) },
+            `stood on ${ground.label}, which is ground that teaches it`
+        );
     }
 
     // A house's principle, reachable only from inside the house.
