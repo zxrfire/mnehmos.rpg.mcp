@@ -2390,8 +2390,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // case of the corridor being too thin to be a world: a fire root
         // arriving at Body Integration had nothing at all in front of it, in
         // any house, at any price.
-        id: 'ash-lung-tempering-canon',
-        name: 'Ash-Lung Tempering Canon',
+        id: 'cinder-lung-tempering-canon',
+        name: 'Cinder-Lung Tempering Canon',
         category: 'cultivation',
         grade: 'immortal',
         element: 'fire',
@@ -2402,7 +2402,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         domain: 'body',
         domainDegree: 2,
         description:
-            'The body integrated through heat rather than through stillness, which the orthodox road regards as a shortcut and which is in fact simply a different and worse-documented amount of work. The practitioner breathes fire-ash until the lungs stop objecting, and the ones it does not kill come out the far side able to do something the still road cannot teach at all.'
+            'The body integrated through heat rather than through stillness, which the orthodox road regards as a shortcut and which is in fact simply a different and worse-documented amount of work. The practitioner breathes hot cinder until the lungs stop objecting, and the ones it does not kill come out the far side able to do something the still road cannot teach at all.'
     }),
     art({
         // THE WIDE-SPAN BOOK. The one manual in the catalog that lets somebody
@@ -2777,7 +2777,7 @@ export const LIVING_TRANSMISSIONS: readonly LivingTransmission[] = [
         // who has not stood where the book ends cannot take a student there,
         // and the whole value of a person over a shelf is that they have.
         memberId: 'member-the-one-who-introduces-herself-as-four-bonds-and-a-name',
-        techniqueIds: ['ash-lung-tempering-canon'],
+        techniqueIds: ['cinder-lung-tempering-canon'],
         wants:
             'That the student keeps whatever they came in holding. She will not take a severance and will not witness one, and she has never explained why to anybody who did not already know.',
         whyNotTheShelf:

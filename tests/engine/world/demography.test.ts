@@ -145,3 +145,122 @@ describe('the other two filters that meant "under this region"', () => {
         expect(affiliated / Math.max(1, before.alive)).toBeGreaterThan(0.2);
     }, 180_000);
 });
+
+/**
+ * The world must still have a top after five hundred years.
+ *
+ * THE FAILURE THIS PINS
+ * ---------------------
+ * `tone.md` promises that a player can vanish for decades and return to a
+ * substantially different world. Measured, the world drifted in exactly one
+ * direction and it was fatal: the six strongest living people went
+ * 44,41,38,37,36,36 at seeding to a flat 12 by year 300, with every apex head,
+ * court seat and named figure dead and nothing above ordinal 20 alive anywhere.
+ * Population held steady throughout - people were being born and placed
+ * correctly - they simply stopped existing at the top.
+ *
+ * `the-late-age.md` says figures older than anything now living walk through
+ * this world constantly. The simulation produced the opposite: a world that had
+ * giants at seeding and none a century later, whose entire institutional layer
+ * was a snapshot that decayed on contact with its own clock.
+ *
+ * THE CAUSE was not that cultivation fails to advance. It is that a realm's
+ * LIFESPAN is the whole of what a high realm buys - an ordinal 44 has a hundred
+ * thousand years - and three separate removal events ignored it and picked
+ * uniformly:
+ *
+ *   elder_died      everybody at a senior rank
+ *   disappearance   everybody above ordinal 13, a pool of about fifty that the
+ *                   world's entire high-realm cohort lives in
+ *   technique_lost  every holder of a technique nobody else has, which is
+ *                   structurally the high-realm figures
+ *
+ * and `killing` picked a victim uniformly from every living person and then a
+ * killer from whoever was standing nearby, without ever asking whether they
+ * could do it. That last one was the sharpest contradiction in the repo:
+ * `standoff.ts` spends four hundred lines measuring who could kill an apex head
+ * off the real resolver and concluding almost nobody, while this rolled eleven
+ * times a century and did it for free.
+ */
+describe('the top of the world survives its own clock', () => {
+    const HORIZON_YEARS = 500;
+
+    // The real catalog, as the rest of this file uses, because the shape being
+    // pinned only exists in the world that ships: the fixture has no apex tier
+    // to lose.
+    async function soaked() {
+        const catalog = await loadCultivationCatalog();
+        const { state } = seedWorld({ seed: 'drift-guard', catalog });
+        const before = topOrdinals(state);
+        advanceWorldForPlay(state, { days: 365 * HORIZON_YEARS, stopOnInterrupt: false });
+        return { state, before, after: topOrdinals(state) };
+    }
+
+    function topOrdinals(state: WorldState): number[] {
+        return state.npcs
+            .filter(n => n.status === 'alive')
+            .map(n => n.cultivation.realmOrdinal)
+            .sort((a, b) => b - a)
+            .slice(0, 6);
+    }
+
+    it('does not converge on a uniform floor', async () => {
+        const { before, after } = await soaked();
+        expect(before[0], 'the world starts with somebody at the top').toBeGreaterThan(40);
+        // The exact failure: after 500 years the strongest person alive was at
+        // ordinal 13, in a world whose institutions the lore describes as
+        // having stood for millennia.
+        expect(
+            after[0],
+            `strongest alive after ${HORIZON_YEARS} years is ordinal ${after[0]}`
+        ).toBeGreaterThan(30);
+    }, 600_000);
+
+    it('keeps somebody at the very top, not merely somebody high', async () => {
+        // A world with a 32 and nothing above it is not this setting either.
+        // The apex tier has to survive as a tier.
+        const { before, after } = await soaked();
+        expect(after[0]).toBeGreaterThanOrEqual(before[0] - 6);
+    }, 600_000);
+
+    it('still lets the world decline, because decline is correct', async () => {
+        // The other half, and the one easy to break while fixing the first.
+        // Houses are "operating a fraction of what they inherited"; a world
+        // where the elite is preserved intact for five centuries would be a
+        // worse setting than one that decays. What must not happen is total
+        // collapse to the floor.
+        const { state, before } = await soaked();
+        const aliveHigh = state.npcs.filter(
+            n => n.status === 'alive' && n.cultivation.realmOrdinal > 30
+        ).length;
+        const seededHigh = before.filter(o => o > 30).length;
+        expect(aliveHigh, 'the high tier must thin').toBeLessThan(seededHigh + 6);
+    }, 600_000);
+
+    it('never lets somebody be killed by a person who could not do it', async () => {
+        // The contradiction with `standoff.ts`, made permanent. A killer more
+        // than `CASUAL_KILL_MAX_GAP` rungs below cannot get there however the
+        // day goes - that is the combat layer's own edge cap - so a world event
+        // must not do for free what the resolver says is out of reach.
+        const { state } = await soaked();
+        // Looked up by name, which is the only handle the record keeps - so
+        // names that are not unique are skipped rather than guessed at. A
+        // newborn inheriting a parent's surname can collide, and a guess there
+        // would report a killing that never happened.
+        const counts = new Map<string, number>();
+        for (const n of state.npcs) counts.set(n.name, (counts.get(n.name) ?? 0) + 1);
+        const byName = new Map(state.npcs.map(n => [n.name, n]));
+        for (const npc of state.npcs) {
+            const match = /^Killed by (.+)\.$/.exec(npc.endNote ?? '');
+            if (!match) continue;
+            if ((counts.get(match[1]) ?? 0) !== 1) continue;
+            const killer = byName.get(match[1]);
+            if (!killer) continue;
+            expect(
+                killer.cultivation.realmOrdinal,
+                `${killer.name} (${killer.cultivation.realmOrdinal}) killed `
+                + `${npc.name} (${npc.cultivation.realmOrdinal})`
+            ).toBeGreaterThanOrEqual(npc.cultivation.realmOrdinal - 3);
+        }
+    }, 600_000);
+});

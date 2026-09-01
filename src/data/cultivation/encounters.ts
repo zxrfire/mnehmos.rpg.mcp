@@ -632,7 +632,15 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         summaryTemplate:
             'A cultivator dead approximately {days} days is found at {place}, at {threatRank} in life. Storage pouch intact: {stones} spirit stones and {loot}. Cause of death: {cause}.',
         tokens: ['days', 'place', 'threatRank', 'stones', 'loot', 'cause'],
-        tags: ['loot', 'safe', 'foreshadowing']
+        // `corpse` because it is one, and `technique` because it HOLDS one.
+        // The two tags mean different things and the distinction is worth
+        // keeping: `corpse` and `grave` say what a row is ABOUT, and
+        // `technique` says the row can actually hand a method over. A row that
+        // concerns a grave without holding anything - enforcers arriving over
+        // a robbed one, somebody offering terms outside one - carries the
+        // first and not the second, which is what keeps `mayHoldAFit` honest
+        // about the difference.
+        tags: ['loot', 'safe', 'foreshadowing', 'corpse', 'technique']
     },
     {
         id: 'enc-sealed-tomb',
@@ -928,7 +936,11 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         summaryTemplate:
             'A body seated in the inner chamber at {place} is still cultivating - slowly, badly, and for roughly {years} years. Current output: {threatRank}. It has not registered the door being opened.',
         tokens: ['place', 'years', 'threatRank'],
-        tags: ['ruin', 'hostile', 'avoidable', 'high-risk']
+        // The better of the two, and the one the escape-route design wants at
+        // the top of the corridor: a body still working, in an inner chamber,
+        // holding the method that killed it. What it was practising is on it,
+        // it is written for whoever that was, and it does not assess anybody.
+        tags: ['ruin', 'hostile', 'avoidable', 'high-risk', 'corpse', 'technique']
     },
     {
         id: 'enc-inheritance-trial-dead-sect',
