@@ -35,6 +35,7 @@ import { rankName } from '../engine/cultivation/realms.js';
 import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
+import { getSect } from '../data/cultivation/sects.js';
 import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 
@@ -242,8 +243,34 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
             : `${untreated} meridian injur${untreated === 1 ? 'y has' : 'ies have'} been open ` +
               'since the day it was taken, and nothing has closed it.',
         `${cultivator.yearsAtCurrentRealm.toFixed(1)} years at this realm without advancing.`,
+        // WHOSE ROLL THEY ARE ON.
+        //
+        // The sheet listed root, attributes, qi, health, hunger and money and
+        // never once said what house the cultivator serves - so somebody who
+        // had joined a sect could read their own status and find no trace of
+        // it. Standing is most of what a person IS in this setting: it decides
+        // what they are taught, what they are owed and what is asked of them.
+        //
+        // Found by playing, twice over. "What is my reputation" routed here
+        // correctly and came back with a sheet containing no reputation, which
+        // is the deflection this file already treats as a defect elsewhere.
+        cultivator.sectId
+            ? `On the roll of ${sectNameFor(cultivator.sectId)}`
+              + `${cultivator.sectRank ? `, ranked ${cultivator.sectRank}` : ''}.`
+            : 'Serves no house. Nothing is owed to them and nothing is asked of them.',
         describeAmbientPerceived(ambient)
     ];
+}
+
+/**
+ * A house's name from its id, falling back to the id itself.
+ *
+ * The catalog is the only place the pretty name lives, and a run may carry a
+ * house the catalog has never heard of - one the world founded for itself. The
+ * id is a poor name but it is a true one, and it beats printing nothing.
+ */
+function sectNameFor(sectId: string): string {
+    return getSect(sectId)?.name ?? sectId;
 }
 
 /** The thresholds behind those numbers. Inspector only. */
