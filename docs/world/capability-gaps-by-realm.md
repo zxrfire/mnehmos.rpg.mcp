@@ -97,30 +97,42 @@ summons entries are pitched inside Qi Condensation. Whatever is wrong at ordinal
 not a shortage of things to do. The dead zone is **13 through 20** - past the content, short
 of the grants.
 
-### And one measurement that contradicts the setting
+### And one measurement that confirms the setting, after one that did not
 
 `sects.md` and `realms.ts` both say Core Formation is where *"sects stop recruiting you and
-start negotiating with you."* Read against the only number in the catalog that says what
-rung a house can seat somebody at - `rankRealmBand` in `members.ts`, over all 32 houses -
-that is not where it happens:
+start negotiating with you."* Read against `rankRealmBand` in `members.ts` - the only number
+in the catalog that says what rung a house may seat a given realm at - over all 32 houses:
 
 ```text
-ordinal 13   29 houses would seat you as an ordinary disciple, 2 at an elder rung
-ordinal 17   29 as a disciple, 0 at an elder rung, 3 have no seat at all
-ordinal 20   23 as a disciple, 6 at an elder rung, 3 no seat
-ordinal 24   16 as a disciple, 7 elder, 1 top seat, 8 no seat
-ordinal 28   the majority no longer have a disciple's seat for you
+ordinal 12   19 houses would recruit,  6 court,  3 defer,  4 turn away
+ordinal 13   17 recruit,              10 court,  3 defer
+ordinal 16    8 recruit,              14 court,  8 defer
+ordinal 17    6 recruit,              12 court, 12 defer      <- the crossover
+ordinal 20    0 recruit,               9 court, 21 defer
+ordinal 24    1 recruit,               1 court, 29 defer
 ```
 
-At Core Formation Perfection, **twenty-three of thirty-two houses would still take you in
-at the bottom.** The crossover the prose describes lands somewhere in Deity Transformation.
+**At Core Formation Perfection no house in the world has a disciple's place for you.** The
+prose is right, it is right at the rung it names, and nothing was tuned to make it so.
 
-The caveat, stated honestly: `rankRealmBand` was written to bound what a house can
-*reliably produce*, for validating seeded members. Using it as a recruitment ceiling is an
-inference, and it is the only inference available, because nothing in the catalog answers
-the question directly. Either the prose moves to Deity Transformation, or `sects.ts` grows
-a number that says where a house stops offering a disciple's place - and the second is the
-better fix, because the sentence is a good sentence.
+*Recruited* is a rung below the house's elder line; *courted* is an elder's rung, because
+offering somebody leadership is a negotiation whatever it is called; *deferred to* is the
+top rung or past the whole ladder, where nothing the house says is an instruction. The
+elder line is `elderRungOf` from `leadership.ts`, so a four-rung court and a six-rung
+pavilion are handled identically.
+
+**The retraction.** The first version of this section reported the opposite - *"at Core
+Formation Perfection, twenty-three of thirty-two houses would still take you in at the
+bottom"* - and concluded the crossover landed in Deity Transformation and the prose should
+move. That was a harness error of exactly the kind `AGENTS.md` warns about, and it was in
+the question rather than in the data. It asked for the **lowest** rank whose band could
+still *hold* the cultivator (`maxOrdinal >= ordinal`), which for a house with a high
+`powerOrdinal` is rank 0 at almost any realm, because those bands are wide. The question an
+institution actually asks is the **highest** rung the person's weight justifies
+(`minOrdinal <= ordinal`), and asking it that way produces the table above. The wrong
+reading is preserved here because a number nobody can trace is worth less than a number
+with its retraction attached, and because the two differ by a factor that would have got
+the setting rewritten.
 
 ---
 
@@ -181,19 +193,29 @@ The realm the setting says the most about and the engine says the least.
 | 1 | perceive | **absent** | Nothing |
 | 2 | survive | **indirect** | `SATIETY_BURN_BY_REALM.core_formation = 1/120` - roughly sixteen years of belly. Lifespan 500. No environment opens |
 | 3 | do | **absent** | `CLASS_GRANTS.core = []`. Address band still `body`. `realmClassForOrdinal` returns `'core'` and the class carries nothing |
-| 4 | asked of | **absent, and this is the largest single gap in the audit** | `summonsPool` returns `[]` when `membership` is null. `petition`, `posture`, `seal` and `offer` are gated on `rankIndex` inside a house and never on realm - `src/web/standing.ts` says so in as many words: *"Every gate in this file is on the RANK"*. So a Core Formation cultivator with no house can be asked for nothing by anybody, and can ask nothing of anybody |
+| 4 | asked of | **was absent, and was the largest single gap in the audit** | `summonsPool` returns `[]` when `membership` is null. `petition`, `posture`, `seal` and `offer` are gated on `rankIndex` inside a house and never on realm - `src/web/standing.ts` says so in as many words: *"Every gate in this file is on the RANK"*. So a Core Formation cultivator with no house could be asked for nothing by anybody, and could ask nothing of anybody. Now answered by `what-a-house-asks-of-somebody-it-cannot-order.ts` |
 | 5 | risk | **indirect** | `legacy.ts` scales your death fact to `regional` at `>= 17`. Nothing while alive. "Power creates problems" is stated in the cultivation README and modelled at no rung |
 | 6 | opportunity | **indirect** | The regard bands. That is the whole of what changes at 17 |
 
 **The lore claim, mechanically:** *"you are no longer merely a person in the world, you are
-an institutionally relevant individual."* The engine has one direction of that arrow
-(`duties.ts` - the house asks you for work, if it owns you) and none of the other (houses
-approaching somebody they do not own, with terms). Every item on the brief's list -
-commissions of a different kind, political attention, discipleship offers, sect
-negotiations, territorial claims, enemies, inheritance requests, assassination attempts,
-alliance offers, founding a family or a house - is a variation on **an institution putting
-terms to somebody it cannot command**, and there is no object in the engine that represents
-one.
+an institutionally relevant individual."* The engine had one direction of that arrow
+(`duties.ts` - the house asks you for work, if it owns you) and none of the other. Political
+attention, discipleship offers, sect negotiations, territorial claims, inheritance requests,
+alliance offers and founding a house are all variations on **an institution putting terms to
+somebody it cannot command**, and there was no object in the engine that represented one.
+
+`src/engine/encounters/what-a-house-asks-of-somebody-it-cannot-order.ts` is that object. It
+is the mirror of `duties.ts`, authors no content, names no faction, and derives every part
+of an offer from a column the house already carries: the rung from `rankRealmBand`, its pay
+from `stipend[]`, what the house can shield from `powerOrdinal`, what accepting costs from
+`rivals` and `ambition.contestedWith`. The most valuable thing on the table is
+`sectProtection` - the 0..1 input `computePriceOdds` has taken since it was written, worth
+`MAX_SECT_PROTECTION` and the single largest relief at a realm boundary, which until now
+only a membership rank could supply. A house cannot shield past its own reach, so the strong
+houses' offers are worth more and their terms are worse, and that is the decision.
+
+What is still absent at Core Formation: perception, environment, and any realm-keyed change
+to what an art may be about.
 
 ---
 
@@ -325,7 +347,15 @@ of new machinery. Nothing here is bespoke; every item reads columns that already
    it produces decisions rather than bonuses (which terms, from which house, knowing the
    rivals are watching), and it rides on `opportunities.ts` windows, so a Fortune-rich
    cultivator gets more approaches and a Fortune-poor one misses them - the measured result
-   the design already likes, applied to politics. **Implemented, see below.**
+   the design already likes, applied to politics.
+
+   **Done, as arithmetic:** `src/engine/encounters/what-a-house-asks-of-somebody-it-cannot-order.ts`.
+   **Not done, and next:** the draw site. It is `attemptSummons` in `window.ts`, which is
+   where a summons already becomes an occurrence that interrupts a time-skip. An approach
+   should arrive the same way and on a Fortune-weighted chance, and it should carry a window
+   that closes - a house that put terms to somebody and was not answered does not ask twice,
+   which is already what `Approach.declining` says. Held out of this change because
+   `window.ts` and the encounter payload types are in flight.
 2. **A residence below the Lid.** `settleAbode` generalised off the immortal layer. Gives
    Foundation Establishment a place, a store, and something to lose. Locations, objects and
    access gates are all already generic; this is call sites and a migration.

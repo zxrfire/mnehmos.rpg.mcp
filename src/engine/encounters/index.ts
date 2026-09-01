@@ -68,6 +68,21 @@ export {
 } from './duties.js';
 
 export {
+    PROTECTION_REACH_RUNGS,
+    approachFrom,
+    approachesTo,
+    beyondRecruiting,
+    houseStanding,
+    protectionOffered,
+    recruitmentShapeAt,
+    seatOfferedBy,
+    type Approach,
+    type HouseStanding,
+    type OfferKind,
+    type RecruitmentShape
+} from './what-a-house-asks-of-somebody-it-cannot-order.js';
+
+export {
     THREAT_BAND_WEIGHT,
     drawEncounter,
     encounterPool,
