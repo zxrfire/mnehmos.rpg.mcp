@@ -101,6 +101,29 @@ export interface EncounterPlace {
     controllingFactionId?: string | null;
     /** A sealed pocket. Nothing walks in; the site itself is the hazard. */
     sealed?: boolean;
+    /**
+     * How many are standing on this ground, and how many of them are sitting.
+     *
+     * The design owner's rule, in their words: "the encounter rate isn't simply
+     * a function of people - it's a function of people / people in seclusion."
+     * People behind their own doors are inert. They are not walking into
+     * anybody's cave, and their presence is the mass that makes the place
+     * unattractive to anybody who might.
+     *
+     * Both halves are needed because the same headcount means opposite things:
+     * a mountain of a hundred all sealed is almost nobody moving, and a market
+     * town of a hundred is everybody moving. Population alone cannot tell them
+     * apart, which is why a sect's own cultivation ground came out as the most
+     * dangerous place in the world to sit - measured, and exactly backwards.
+     *
+     * Omitted is legal and reads as ordinary traffic. See `companyEffect`.
+     */
+    company?: {
+        /** Bodies on this ground, the cultivator included. */
+        heads: number;
+        /** 0..1 - the share of them who are sitting rather than moving about. */
+        settledShare: number;
+    };
 }
 
 /**

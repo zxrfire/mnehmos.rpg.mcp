@@ -479,6 +479,110 @@ export function interruptsThrough(entry: EncounterEntry, activity: EncounterActi
     return entry.simEventKind === 'qi_deviation' || entry.simEventKind === 'injury_sustained';
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHO ELSE IS ON THE GROUND, AND WHICH WAY IT CUTS
+//
+// The design owner's rule: "the encounter rate isn't simply a function of
+// people - it's a function of people / people in seclusion." And, separately:
+// "two people could fight outside your cave and spill poison gas, so being the
+// only cave in an area isn't BAD, especially cuz its concealed."
+//
+// Those are three different things and they do not move together, which is why
+// a single "danger" number could never express any of them correctly:
+//
+//   TARGETED     somebody comes for YOU. Falls as the place fills up and as
+//                more of it sits: nobody walks into a mountain of sealed
+//                cultivators to rob one of them. `bandits`, `rival_cultivator`.
+//   COLLATERAL   you were simply near something. Rises with how much is
+//                HAPPENING - the numerator, not the denominator - because a
+//                fight outside your door does not care that you were not in it.
+//                `misfortune`, `spirit_beast`.
+//   CONCEALMENT  nothing finds you because nothing is looking. Already
+//                modelled: `locatability` is `hidden` on undiscovered ground
+//                and `locatabilityApplies` gates on it. Not duplicated here.
+//
+// So a mountain full of sealed cultivators is the slowest ground AND the safest
+// from being singled out; a busy unsealed market is poor on rate and the worst
+// for collateral; and the only cave in an empty region is close to best on
+// every count - which is correct, because FINDING one is the hard part.
+//
+// DELIBERATELY SMALL. The owner's scoping note: "its not as bad as it looks cuz
+// the danger encounter rate in a cave is already low." A sealed door already
+// passes about 8.6% of an open cave's rate, and a year behind one is silent
+// across 40 seeds. These are modifiers on an already-tiny base, meant to make
+// the choice legible and correct in DIRECTION rather than to create a swing.
+// Both terms are clamped so a sealed cave can never reach zero - a shut door is
+// not a ward, that is committed and tested, and this must not make it one by
+// arithmetic.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Kinds that come looking for a person. Bounded below by COMPANY_FLOOR. */
+const TARGETED_KINDS: ReadonlySet<EncounterKind> = new Set<EncounterKind>([
+    'bandits',
+    'rival_cultivator'
+]);
+
+/** Kinds that were going to happen anyway and you were near them. */
+const COLLATERAL_KINDS: ReadonlySet<EncounterKind> = new Set<EncounterKind>([
+    'misfortune',
+    'spirit_beast'
+]);
+
+/**
+ * The company a place is keeping, as a headcount the terms below can read.
+ *
+ * Twelve is "a busy place" rather than a tuned figure: it is about the
+ * population of the market towns in the shipped world, so a town saturates the
+ * curve and a cave with two people in it barely moves it.
+ */
+const COMPANY_FULL_AT = 12;
+
+/** Neither term may move a weight further than this, in either direction. */
+const COMPANY_FLOOR = 0.55;
+const COMPANY_CEILING = 1.45;
+
+/**
+ * What the company on this ground does to one entry's weight.
+ *
+ * Returns 1 - no opinion - for a place with no company recorded, which is every
+ * caller that has not loaded a world and is the honest answer rather than a
+ * guess. Also 1 for every kind that is neither targeted nor collateral: sect
+ * business, commerce and dao houses are not what anybody is being protected
+ * FROM, and a busy house arguably carries more of them, not less.
+ */
+export function companyEffect(entry: EncounterEntry, place: EncounterPlace): number {
+    const company = place.company;
+    if (!company) return 1;
+
+    const heads = Math.max(0, company.heads);
+    if (heads <= 1) return 1;
+
+    // How full, and how much of it is moving about. `settled` is the
+    // denominator the owner named: people in seclusion draw hardest and bother
+    // you least.
+    const busy = Math.min(1, heads / COMPANY_FULL_AT);
+    const settled = Math.max(0, Math.min(1, company.settledShare));
+    const moving = busy * (1 - settled);
+
+    if (TARGETED_KINDS.has(entry.kind)) {
+        // Mass deters, and mass that is sitting deters most: an intruder there
+        // is not picking on one person, they are walking into a house full of
+        // them. Scaled by how full the place is so an empty cave is untouched.
+        return clampCompany(1 - busy * (0.35 + 0.35 * settled));
+    }
+    if (COLLATERAL_KINDS.has(entry.kind)) {
+        // The numerator. What can spill on you is what is actually happening,
+        // which is the people who are OUT - so a hundred sealed cultivators
+        // raise this barely at all and a hundred moving ones raise it a lot.
+        return clampCompany(1 + moving * 0.45);
+    }
+    return 1;
+}
+
+function clampCompany(n: number): number {
+    return Math.max(COMPANY_FLOOR, Math.min(COMPANY_CEILING, n));
+}
+
 /** The weight multiplier this activity and place put on an entry's kind. */
 export function biasFor(
     entry: EncounterEntry,
@@ -487,7 +591,7 @@ export function biasFor(
 ): number {
     const fromActivity = activityProfile(activity).kindBias[entry.kind] ?? 1;
     const fromPlace = placeKindBias(place)[entry.kind] ?? 1;
-    return fromActivity * fromPlace;
+    return fromActivity * fromPlace * companyEffect(entry, place);
 }
 
 function clamp01(n: number): number {
