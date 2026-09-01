@@ -74,6 +74,7 @@ converge on `NARRATOR-CORE.md`.
 | [`origin.md`](origin.md) | Where you were born and what it was worth; privilege buys inputs and never rank | 2 and 3 |
 | [`past-the-ceiling.md`](past-the-ceiling.md) | What a capped cultivator does next: the routes past a manual's ceiling, who each is open to, and what every layer must supply | 2 and 3 |
 | [`making-places-different.md`](making-places-different.md) | Authoring guide: how to keep regions and factions from being interchangeable | 3 |
+| [`capability-gaps-by-realm.md`](capability-gaps-by-realm.md) | Design audit: the six capability questions answered for every realm, measured against the code, with what is built, what is indirect and what is absent; the same test applied to the four attributes | 3 |
 
 Every file carries markers at section level, so a prompt builder may select on tier and
 take paragraphs rather than files. A tier-2 section without a `trigger` is a bug; the
@@ -142,6 +143,9 @@ Tier 3 is for humans and for agents adding content. It is never injected:
 
 - [`making-places-different.md`](making-places-different.md) - before writing a new region
   or faction, so the next one is not the last one with the nouns swapped.
+- [`capability-gaps-by-realm.md`](capability-gaps-by-realm.md) - before adding anything to a
+  realm, so the addition is a decision rather than a multiplier, and so it is not something
+  the engine already does under another name.
 - [`architecture.md`](architecture.md) - its authoring sections, before writing a new
   compound. Its descriptive sections are tier 2 and do route.
 
