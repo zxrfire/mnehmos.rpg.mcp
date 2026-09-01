@@ -45,7 +45,7 @@
  * player their map has holes in it without filling one of them in.
  */
 
-import { rankName } from '../engine/cultivation/realms.js';
+import { MAX_ORDINAL, rankName } from '../engine/cultivation/realms.js';
 import type { AmbientQi } from '../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -146,6 +146,44 @@ const QI: Record<AmbientQi, string> = {
  * unpriced - and printing "0 days away" against both, which the first build
  * did, is a number a player would plan around and the engine never said.
  */
+/**
+ * What a place is, in words somebody would use.
+ *
+ * `LocationKind` is an engine enum and it was being printed raw, so the player
+ * was told a place was a `sect_town`. That is the same failure as naming a ruin
+ * "the sealed compound at X": the type system leaking into the fiction. Nobody
+ * in this world says sect_town.
+ *
+ * Unknown kinds fall through to the raw value rather than to a guess, so a kind
+ * added later reads oddly instead of reading wrongly.
+ */
+const KIND_LABEL: Record<string, string> = {
+    settlement: 'a town',
+    sect_town: 'a town grown up around a sect',
+    market_town: 'a market town',
+    city: 'a city',
+    hamlet: 'a hamlet',
+    village: 'a village',
+    waystation: 'a waystation',
+    sect_seat: 'ground a sect holds',
+    province: 'a province',
+    region: 'a province',
+    vein: 'a spirit vein',
+    wilds: 'open country',
+    ruin: 'a ruin',
+    grave: 'a grave',
+    scar: 'dead ground',
+    forbidden_zone: 'ground nobody goes into',
+    secret_realm: 'a sealed realm',
+    sealed_domain: 'a sealed domain',
+    cave: 'a cave',
+    portal: 'a portal'
+};
+
+function kindLabel(kind: string): string {
+    return KIND_LABEL[kind] ?? kind;
+}
+
 function distance(place: Destination): string {
     if (place.hereNow) return 'where you are standing';
     // The player's own province is a name in their knowledge table like any
@@ -203,15 +241,40 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
     // question was about; then the province that carries furthest; then the
     // nearest of those. Sorting by name would be an ordering about the record
     // rather than about the decision.
-    const sorted = [...input.reachable].sort((a, b) =>
+    // The province you are standing in is not somewhere you can set out for.
+    // It arrives in this list because it is a name in the player's knowledge
+    // table like any other, and it rendered as "The Low Fall: a province, the
+    // province you are in" - which is true, tautological, and sits above real
+    // destinations. The header already says where they are.
+    const elsewhere = input.reachable.filter(
+        p => !(p.kind === 'province' && p.sameProvince) && !p.hereNow
+    );
+
+    const sorted = [...elsewhere].sort((a, b) =>
         Number(a.sameProvince) - Number(b.sameProvince)
         || b.localCeilingOrdinal - a.localCeilingOrdinal
         || (a.travelDays ?? Number.MAX_SAFE_INTEGER) - (b.travelDays ?? Number.MAX_SAFE_INTEGER)
         || a.name.localeCompare(b.name));
 
+    // "You are in Low Fall, The Low Fall" - a settlement and the province it
+    // sits in often share a name, and printing both reads as a stutter. Say the
+    // place, and only add the province when it is telling you something new.
+    const bare = (s: string) => s.replace(/^[Tt]he\s+/, '').toLowerCase();
+    const where = bare(input.placeName) === bare(input.regionName)
+        ? input.regionName
+        : `${input.placeName}, ${input.regionName}`;
+
+    // And a province with no ceiling must not be described as if it had one.
+    // "The Low Fall carries nobody past True Immortal" is true, absurd, and
+    // exactly backwards: this is the one province in the world that stops
+    // nobody, which is the single most important thing about it.
+    const uncapped = input.localCeilingOrdinal >= MAX_ORDINAL;
     lines.push(
-        `You are in ${input.placeName}, ${input.regionName}, standing at ${standing}. `
-        + `${input.regionName} carries nobody past ${rankName(input.localCeilingOrdinal)}.`
+        `You are in ${where}, standing at ${standing}. `
+        + (uncapped
+            ? `${input.regionName} has no ceiling: the ground here carries anybody `
+              + 'as far as they can go.'
+            : `${input.regionName} carries nobody past ${rankName(input.localCeilingOrdinal)}.`)
     );
 
     for (const place of sorted) {
@@ -222,7 +285,7 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
             ? ''
             : ` Carries nobody past ${rankName(place.localCeilingOrdinal)}.`;
         lines.push(
-            `${place.name}${place.hereNow ? ' (where you are)' : ''}: ${place.kind}`
+            `${place.name}${place.hereNow ? ' (where you are)' : ''}: ${kindLabel(place.kind)}`
             + `${place.sameProvince ? '' : `, ${place.regionName}`}, `
             + `${distance(place)}.`
             + `${place.ambient ? ` ${QI[place.ambient]}.` : ''}`
