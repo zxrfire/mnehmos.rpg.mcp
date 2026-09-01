@@ -58,6 +58,33 @@ import {
     type CultivationRepos
 } from './cultivation-support.js';
 import { describeDeath } from '../../engine/cultivation/survival.js';
+import {
+    UNPROVISIONED,
+    isSupplyStalled,
+    masteryCeilingFor,
+    practiceCeilingFor,
+    type Provisioning
+} from '../../engine/cultivation/upkeep.js';
+
+/**
+ * Who is feeding this cultivator the material an ancient art consumes.
+ *
+ * WORLD, ALWAYS, FOR NOW, AND THIS IS AN ABSENCE RATHER THAN A DECISION.
+ * The two provisionings that beat the world's supply are both authored - a
+ * stocked cellar in one grave, and one house quietly holding a remnant - and
+ * neither is anything the run currently records. Nothing tracks which site a
+ * cultivator emptied or which house is spending on them, so there is no
+ * honest way to hand `masteryCeilingFor` anything but the open supply.
+ *
+ * The consequence is worth stating plainly rather than leaving to be
+ * discovered: today every practitioner in the game stops where the world stops.
+ * When provisioning becomes state a run holds, this function is where it
+ * arrives, and it is one line - return the site or the faction the cultivator
+ * is drawing on. Nothing else in this file needs to change.
+ */
+function provisioningFor(_cultivatorId: string): Provisioning {
+    return UNPROVISIONED;
+}
 
 const ACTIONS = ['list_available', 'learn', 'practise', 'use', 'forget'] as const;
 
@@ -500,6 +527,30 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
         );
     }
 
+    // ── WHAT THERE IS LEFT TO FEED IT WITH ───────────────────────────────
+    // The upkeep, and it is a different refusal from the one above. "There is
+    // nothing further to understand" is the art ending. This is the material
+    // ending, with the art perfectly intact and the practitioner perfectly
+    // capable, and the two must not sound alike - one of them is a problem
+    // somebody can do something about.
+    const provisioning = provisioningFor(cultivator.id);
+    const supply = masteryCeilingFor(technique.id, provisioning);
+    const ceiling = practiceCeilingFor(technique.id, provisioning);
+    if (isSupplyStalled(technique.id, known.mastery, provisioning)) {
+        return guidingError(
+            'upkeep_exhausted',
+            `${technique.name} does not stop here because ${cultivator.name} has understood all of it. ` +
+            `It stops here because the practice consumes something there is no more of. ${supply.note}`,
+            {
+                mastery: round4(known.mastery),
+                ceiling: supply.ceiling,
+                upkeepHerbId: supply.upkeepHerbId,
+                supply: supply.source,
+                hint: 'Somebody would have to be spending on you. Find a stock, or find whoever still has one.'
+            }
+        );
+    }
+
     const days = totalPractiseDays(args);
     if (days <= 0) {
         return guidingError('no_duration', 'Practising for no time at all does nothing.');
@@ -516,7 +567,10 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
         (matched ? root.matchedTechniqueBonus / 2 : 1) *
         (conflicts ? CONFLICT_MASTERY_FACTOR : 1);
 
-    const gain = Math.min(1 - known.mastery, perDay * days);
+    // Saturates at the supply rather than at full mastery. The days are still
+    // spent, the deviation is still rolled and the years still pass - running
+    // out of the material is not a way of getting the time back.
+    const gain = Math.min(ceiling - known.mastery, perDay * days);
 
     const day = Math.floor(run.elapsedDays);
     const nextTurn = run.turn + 1;
@@ -588,6 +642,17 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
         masteryAfter: round4(nowKnown?.mastery ?? known.mastery),
         masteryGained: round4(gain),
         masteryPerDay: round4(perDay),
+        // Present on every art so the narrator never has to infer it, and null
+        // on the overwhelming majority, which consume nothing.
+        upkeep: supply.ceiling === null
+            ? null
+            : {
+                ceiling: supply.ceiling,
+                herbId: supply.upkeepHerbId,
+                supply: supply.source,
+                reached: round4(nowKnown?.mastery ?? known.mastery) >= supply.ceiling,
+                note: supply.note
+            },
         factors: {
             insight: round2(insightFactor(cultivator.attributes.insight)),
             grade: round2(gradeFactor(technique.grade)),

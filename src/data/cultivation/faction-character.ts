@@ -996,6 +996,253 @@ export function survivorsOfARicherAge(aboveOrdinal: number = HIGH_REALM_THRESHOL
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// DORMANT ARTS - present, complete, proven, and unperformed
+//
+// The fourth state of an absent art, and the least dramatic of the four, which
+// is exactly why it is the most useful. The other three are all about something
+// being GONE:
+//
+//   abandoned          The era moved on, by choice. It works; nobody wants the
+//                      bargain. `ANCIENT_ARTS` in `lost-ages.ts`.
+//   lost               The method survives, the material does not. Involuntary.
+//                      The same file, where `upkeepHerbId` is set.
+//   no surviving copy  The last copy is gone. `NO_SURVIVING_COPY_TECHNIQUE_IDS`
+//                      in `techniques.ts`, with a stated reason each.
+//
+//   dormant            Nothing is missing. The book is on the shelf, it is
+//                      complete, the house knows it works, and there is nobody
+//                      there who can perform it.
+//
+// WHY THIS ONE IS WORTH HAVING. It makes an institution's HISTORY load-bearing
+// in the present. `production` already records the gap between what a house can
+// reliably turn out and what it once could, and for most of the catalog that
+// gap is atmosphere - a number that says which kind of decline somebody is in.
+// A dormant holding converts it into an object: the person at the peak
+// practised something, the archive kept it, and it is still there. A house at
+// the bottom of a long fall is therefore a better prospect than its roster
+// looks, and that is a strategic fact a player can act on rather than a mood.
+//
+// "THEY KNOW IT WORKS" IS THE POINT, AND IT IS NOT HEDGED.
+// This is deliberately unlike `claimsLivingAncestor` and `claimIsTrue` in
+// `sects.ts`, which are two fields precisely because houses frequently do not
+// know what they are claiming. Here they do. Somebody in this house did it, it
+// is written down with the names and the year, and the house will say so
+// without embellishment and without apology. `evidence` is that certainty and
+// it must always be a specific record rather than a tradition - the moment it
+// becomes "it is said that", this is a rumour and belongs somewhere else.
+//
+// THREE RULES.
+//
+//   1. NOT ON THE TEACH LIST. `SECTS[].teaches` is a house's entire WORKING
+//      library and no sect teaches a ruin- or grave-provenance art. A dormant
+//      holding is by definition not working, so it never appears there, and
+//      the catalog suite checks it. That is what keeps `provenance` honest:
+//      a shelved book nobody can open is not a living transmission and does
+//      not make one exist.
+//
+//   2. OUT OF REACH IN FACT, NOT IN POLICY. The art's `requiredOrdinal` stands
+//      above the faction's `powerOrdinal` - above its strongest living member,
+//      not merely above what it reliably produces. Nobody is refusing anybody.
+//      There is simply no hand in the building high enough, and the house is
+//      the party most aware of it.
+//
+//   3. LEARNABLE. Every row says what it would take, because a destination
+//      nobody can reach is scenery. The terms are the interesting part: a house
+//      that cannot use a thing has very little reason to be precious about it,
+//      and several of these are cheaper to obtain than arts a quarter as good.
+//
+// It composes with the other three rather than replacing them, and the overlap
+// is real: the Measured Span's holding is dormant AND lost, because the house
+// is short of the rung and short of the material, and either shortage alone
+// would be enough. `ARCHIVE_COPIES` in `lost-ages.ts` already covers houses
+// that hold an ancient book they cannot FEED - the Ashen Forge and its spears,
+// which nobody there has ever had the rung to open - so those are not repeated
+// here. That row is the same idea reached from the material side, and one fact
+// in two tables is one too many.
+//
+// NO NUMBERS IN THE PROSE. How many rungs short a house is, and how long it has
+// been, are both derivable - from `requiredOrdinal` against `powerOrdinal`, and
+// from `production.yearsSinceLastPeak` - so neither is written down here. A
+// figure restated in a description is a figure that goes stale silently.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface DormantArt {
+    /** The institution holding it. A sect or a Dao house; the form does not matter. */
+    factionId: string;
+    /** The art, by its row in `techniques.ts`. */
+    techniqueId: string;
+    /**
+     * How the art came to be on these shelves. Always a specific event with a
+     * party attached, never "it has always been here".
+     */
+    howItGotHere: string;
+    /**
+     * WHY THEY ARE CERTAIN IT WORKS. The load-bearing field, and the one that
+     * separates this state from a legend. A record with names, an outcome, and
+     * a date - not a tradition and not a claim. If this reads as belief rather
+     * than as evidence, the row is in the wrong table.
+     */
+    evidence: string;
+    /**
+     * What the house says about not being able to perform it, in its own voice.
+     * Institutions are rarely neutral about their own ceiling and the variety
+     * is the content: one is embarrassed, one is indifferent, one has built a
+     * ceremony out of it.
+     */
+    howTheHouseTalksAboutIt: string;
+    /**
+     * What it would take for an outsider to be taught it. Never money alone -
+     * the same rule `LIVING_TRANSMISSIONS` is held to - and never impossible,
+     * because a learnable art nobody can learn is a locked door with a sign on
+     * it.
+     */
+    terms: string;
+}
+
+export const DORMANT_ARTS: readonly DormantArt[] = [
+    // ── DAO HOUSES: the discipline outlived the capacity ─────────────────
+    // A house is a lineage and its accumulated understanding sits on whoever
+    // happens to have been born. Thousands of years of one principle, and no
+    // way to hire around a thin generation - so the archive routinely holds
+    // the far end of a road the family is no longer walking. The houses are
+    // not distressed about this in the way a sect would be. It is the form
+    // working as designed, and they say so.
+    {
+        factionId: 'house-bound-word',
+        techniqueId: 'sixteen-thread-command',
+        howItGotHere:
+            'Deposited in the treaty vault by the parties to a nullification, four ages ago, as part of the settlement - the House took custody of the method on the understanding that custody is not use, and has held it under the same terms ever since. It is catalogued as an exhibit rather than as a book.',
+        evidence:
+            'Three voided agreements in its own vault, each with the sworn party named, the witnessing oathwright named, and a marginal note in the oathwright\'s hand recording that the signatory\'s hand moved and the signatory did not. The House does not treat these as disputed. It treats them as the reason the method is in the vault.',
+        howTheHouseTalksAboutIt:
+            'Plainly, and slightly too often. The Bound Word regards holding the one art that makes a witnessed agreement meaningless as the strongest possible argument for its own necessity, and every oathwright can recite what it does. None of them can do it, and the House has never pretended the two facts are related.',
+        terms:
+            'Swear to the House first - a real oath, witnessed, with a penalty clause the House writes - and then ask. It will teach on those terms to almost anybody, because a party bound by an oathwright\'s own clause is the one kind of person it is not afraid to hand this to. What it will not do is teach somebody who has sworn nothing, and that refusal is doctrine rather than caution.'
+    },
+    {
+        factionId: 'house-ninefold-ledger',
+        techniqueId: 'debt-collection-in-arrears',
+        howItGotHere:
+            'Inherited with everything else when the Ledger took the Tally Court\'s position. The official version is that the method was seized and sealed; the archive shelf-mark is continuous with the Tally Court\'s own numbering, which is what a transfer looks like rather than what a seizure looks like.',
+        evidence:
+            'The Tally Court\'s case books came across with it, and they are not summaries. Forty-one collections, each with the original transaction, the generations it crossed, the person it was finally taken out of, and what was left of them. The Ledger audits its own archive on a cycle and the case books are audited with everything else, which is how it knows the run is complete.',
+        howTheHouseTalksAboutIt:
+            'It does not. The Ledger will confirm the holding to anybody who asks in the correct form and will not discuss it otherwise, and the internal position - that a house of karma is obliged to understand the instrument that turns inherited obligation into a single ruinous demand - is written down in one place and read by successors.',
+        terms:
+            'Bring it a debt it cannot trace. The Ledger has never been able to reconstruct what the Tally Court was actually dissolved for, and the one thing it wants more than stones is the end of a thread it has followed twice and lost twice in the same century.'
+    },
+    {
+        factionId: 'house-measured-span',
+        techniqueId: 'hollow-second-body',
+        howItGotHere:
+            'Carried back from the terminal network in the age the road itself was rich, by a Keeper who was surveying gates that no longer open and appears to have collected it the way surveyors collect things - because it was there, and because it was about being in two places.',
+        evidence:
+            'The survey of record. A Keeper\'s route book from that age logs two simultaneous measurements at terminals nine days apart, in one hand, initialled at both ends, and the Span has never had any instrument that would let it lie to itself about where something was. Every Surveyor who has read the route book has reached the same conclusion and none of them enjoyed it.',
+        howTheHouseTalksAboutIt:
+            'As the sharpest thing in the archive and the most useless. The house that understands space better than anybody alive holds the one method for occupying two pieces of it, and is a rung under the hand it needs - a fact the Long Measure faction raises at every opportunity and the Freight faction regards as the whole argument against them.',
+        terms:
+            'Open a terminal. Not find one, not survey one - open one, and let the house watch. Twenty-two of them are closed and the Span cannot reopen a single one, and it has said in writing that anybody who can will be given whatever they ask for out of the archive.'
+    },
+
+    // ── SECTS: a deep foundation, and the shelf that proves it ───────────
+    // The other half, and the coordinator's phrase for it is exact: a sect
+    // with a deep enough foundation holds techniques nobody currently
+    // practises, and they know it works. `production.peakOrdinal` against
+    // `reliableOrdinal` is where these come from - the house produced somebody
+    // once, that person practised something, and the archive is the evidence.
+    {
+        factionId: 'sect-sweptground-temple',
+        techniqueId: 'canon-of-the-unwritten-span',
+        howItGotHere:
+            'Sent down. The First Abbot crossed and afterwards writings arrived, in a hand the Temple has always maintained is his, addressed to a place that had no name yet and left where anybody could pick them up. The Temple has never had a story about how they arrived and has never felt it needed one.',
+        evidence:
+            'The founding record, which is the only document the Temple keeps and the only thing it has ever been careful with. It is contemporaneous, it names the Abbot, it dates the arrival, and the province\'s objection to it has always been that a poor temple would say that - never that the document is wrong. Nobody has ever examined it and found a problem, largely because nobody has ever asked to examine it.',
+        howTheHouseTalksAboutIt:
+            'Without embarrassment and without any interest in being believed. The Abbot will hand the writings to a visitor who asks, will confirm that no monk in twenty-six centuries has got past the opening, and considers both facts unremarkable. The younger monks want the whole holding submitted to the Ninefold Ledger for certification. The Abbot refuses, on the ground that a certified archive would change who comes to the gate.',
+        terms:
+            'Ask, and be the sort of person who was going to be let in anyway. There is no price, no service and no test - the Temple takes intake nobody else will accept and hands its writings to anybody who wants to sit with them, which is why nobody in either province takes the holding seriously. What it does not offer is a teacher, because it has never had one.'
+    },
+    {
+        factionId: 'sect-sweptground-temple',
+        techniqueId: 'the-fifteenth-breath',
+        howItGotHere:
+            'The same delivery, and the Temple has always held that this one is the reason for the others - a man explaining, to nobody in particular, how he left.',
+        evidence:
+            'It is internally consistent with the founding record\'s account of the departure in three details the founding record does not explain and this does, and the founding record was closed and shelved before the writings arrived. The Temple noticed this four hundred years ago, wrote it in the margin, and did nothing else about it.',
+        howTheHouseTalksAboutIt:
+            'It is read aloud once a year, in full, to monks who cannot perform a word of it, and the Temple does not describe this as a ceremony. It describes it as making sure somebody has read it recently.',
+        terms:
+            'The same as the rest: sit down and ask. It is the least guarded writing above the Lid in the world, and the reason is that the Temple keeps no accounts and has never worked out that a thing can be worth something.'
+    },
+    {
+        factionId: 'sect-sweptground-temple',
+        techniqueId: 'one-crossing-of-a-courtyard',
+        howItGotHere:
+            'Third of the same delivery and the one the Temple is least comfortable with, because it is not an explanation of anything - it is a working, set down in order, for a reader who is not there.',
+        evidence:
+            'Three archives hold the incident the art is named after and none of them holds the method. The Temple holds the method and has never held the incident, keeps no accounts, and has therefore never once been in a position to connect the two - which is the strongest argument anybody has that the writings were not assembled after the fact by somebody who had read the accounts.',
+        howTheHouseTalksAboutIt:
+            'It is shelved with the others and is not read aloud. Pressed, the Abbot says the Temple does not have an opinion about it, which is the only question in the catalog he answers shortly.',
+        terms:
+            'Ask. And the Temple will mention, without being asked, that the last three people who came specifically for this one did not come back to say how they got on.'
+    },
+    {
+        factionId: 'sect-storm-tyrant-court',
+        techniqueId: 'calamity-word-of-the-open-sky',
+        howItGotHere:
+            'It is the second item on the vault list, and the vault list is read out at every succession in order, from the record. The Court cannot say how it was acquired, because the acquisition entry is one of the ones that has been read aloud so many times it has stopped being a sentence anybody parses.',
+        evidence:
+            'The Court produced somebody who could use it, and the outcome is on the ground. There is a stretch of the eastern approach where nothing has grown in three and a half thousand years and the Court has never claimed it as a monument, because claiming it would invite the question of who was standing in it. Two Storm Elders have surveyed it privately and neither published.',
+        howTheHouseTalksAboutIt:
+            'It has built a ceremony out of describing the thing instead of opening the door to it. The vault has not been opened in four centuries and the description has become the succession, which is a comfortable arrangement right up against a genuine fear - at least two Storm Elders privately doubt the book is still in the room, and the Court has arranged its own institutions so that nobody has to find out.',
+        terms:
+            'Get the vault opened, which nobody inside the Court can do without ending a career. The Thunder Wardens would hand the book to a competent outsider in exchange for the door being opened in front of witnesses, and have said as much to two people. The Storm Tyrant\'s position is that the claim is the Court\'s only remaining asset, and he is not wrong about that either.'
+    },
+    {
+        factionId: 'sect-the-severed',
+        techniqueId: 'rebirth-in-the-lotus-furnace',
+        howItGotHere:
+            'It was on the road. The Severed do not acquire things so much as arrive at them, and this one came in with somebody who had already paid for it somewhere else and did not survive long enough to be asked where.',
+        evidence:
+            'Itemised, like everything here. The house takes payment in advance and writes down what it took, and there are two ledger entries from before the drawdown recording a Nameless who paid for the furnace, went in, and was afterwards billed for a different body. The Severed cut their own records as a matter of doctrine and these two were not cut, which inside the house is the strongest possible statement about their accuracy.',
+        howTheHouseTalksAboutIt:
+            'As patience. The house presents its whole ceiling as patience, and this is the item that makes the presentation hardest to sustain, because the furnace is not a road anybody is on - it is a thing one person did once and nobody since has been able to pay for, in the currency the house is actually short of, which is rungs rather than stones.',
+        terms:
+            'The ordinary Severed price, taken first and itemised in advance, and the house will not tell an applicant what it intends to take until the list is written. It is the only faction in the catalog that will hand over an art above its own ceiling as a matter of routine, and the reason is that the price is collected either way.'
+    }
+];
+
+const DORMANT_BY_FACTION: ReadonlyMap<string, readonly DormantArt[]> = (() => {
+    const map = new Map<string, DormantArt[]>();
+    for (const row of DORMANT_ARTS) {
+        const bucket = map.get(row.factionId);
+        if (bucket) bucket.push(row);
+        else map.set(row.factionId, [row]);
+    }
+    return map;
+})();
+
+/** What this institution holds, complete and proven, that nobody there can perform. */
+export function dormantArtsOf(factionId: string): readonly DormantArt[] {
+    return DORMANT_BY_FACTION.get(factionId) ?? [];
+}
+
+/** Everywhere a given art is sitting on a shelf nobody in the building can open. */
+export function whoHoldsDormant(techniqueId: string): readonly DormantArt[] {
+    return DORMANT_ARTS.filter(d => d.techniqueId === techniqueId);
+}
+
+/**
+ * Institutions worth more than their roster, because the archive outlived the
+ * capacity. The single most useful read on this table: it is the list of houses
+ * a player should join for what is on the shelf rather than for who is standing
+ * in the yard.
+ */
+export function factionsHoldingDormantArts(): string[] {
+    return [...DORMANT_BY_FACTION.keys()];
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 
 export function getFactionCharacter(factionId: string): FactionCharacter | undefined {
     return FACTION_CHARACTER[factionId];

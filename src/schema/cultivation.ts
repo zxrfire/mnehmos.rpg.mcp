@@ -10,7 +10,13 @@
  */
 
 import { z } from 'zod';
-import { MAX_ORDINAL, lifespanForOrdinal } from '../engine/cultivation/realms.js';
+import {
+    FALSE_IMMORTAL_ORDINAL,
+    LAST_CROSSING_ORDINAL,
+    MAX_ORDINAL,
+    TRUE_IMMORTAL_ORDINAL,
+    lifespanForOrdinal
+} from '../engine/cultivation/realms.js';
 import { TraditionIdSchema } from '../engine/cultivation/tradition.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1066,6 +1072,290 @@ export const TechniqueReachSchema = z.enum([
 ]);
 export type TechniqueReach = z.infer<typeof TechniqueReachSchema>;
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT AN ART IS ALLOWED TO ADDRESS
+//
+// The one ladder in the catalog that escalates IN KIND rather than in
+// magnitude, and the reason it exists is that nothing else here does. Grade
+// says how late and how costly. `reach` says how many people. Dice say how
+// hard. All three are quantities, and a catalog built only out of quantities
+// produces a top rung that is the bottom rung with more zeroes on it - which
+// is exactly what the arts above ordinal thirty had become.
+//
+// This field answers a different question: what is the art AIMED AT. Not how
+// big the effect is, but what kind of thing the effect is allowed to be about.
+// And that is a question with a small number of answers, they are ordered, and
+// the higher ones cannot be reached from the lower ones at any magnitude.
+//
+//   body       A body. Yours, or the one in front of you. The art is made of
+//              fire or metal or nothing in particular, it happens, and then it
+//              has happened. Everything at the bottom of the ladder is here and
+//              most of the middle is too.
+//
+//   place      A place, and a span of it. Several people because they were
+//              standing together, ground because it is ground, an hour because
+//              the art holds for an hour. The effect is the same KIND of thing
+//              a `body` art does; what changed is that it landed on a location
+//              instead of a person.
+//
+//   condition  What a place is LIKE, rather than what is standing in it. The
+//              qi in a valley, what the weather over a province does, whether
+//              a road can be walked, whether an art of a given element works
+//              here at all. Nobody is the target. The target is the terms
+//              everybody in that space is operating under, and the people are
+//              affected the way people are affected by a drought.
+//
+//   settled    What is already FIXED about somebody: a name that was given, an
+//              oath that was sworn, a debt that was inherited, a span that was
+//              granted, a death that has already been decided. It is not a
+//              larger effect than `condition` and it is frequently a smaller
+//              one - a single person, no display, nothing visible from a
+//              distance. What makes it a rung up is that no `condition` art of
+//              any size reaches a fact. Widen a drought as far as you like and
+//              it never becomes a thing that unmakes an oath.
+//
+//              And it has no small version. You cannot slightly sever a name.
+//              An art here either reaches the fact or does not, which is why
+//              the rung it opens at is the rung it opens at and there is
+//              nothing beneath it that is a weaker attempt at the same thing.
+//
+//   decree     A statement, and the world is obliged. There is no target, no
+//              medium, no delivery and nothing that has to already be there.
+//              See `DECREE_IS_NOT_A_LARGER_SETTLED` below, which is the whole
+//              of why the top rung is not the rung below it with more behind
+//              it - and `WHAT_A_DECREE_CANNOT_SAY`, which is what keeps it
+//              inside the rules the ladder already had.
+//
+// INDEPENDENT OF `era`, AND THIS IS THE GUARD THAT MATTERS.
+// An ancient art does something categorical - it moves a resource between
+// bodies, it puts spears in the ground that somebody else can pick up, it
+// makes a second body - and a modern art does something elemental that scales
+// to the horizon. Neither is the stronger and the comparison is not coherent.
+// What an ancient art must NEVER buy is a higher rung on THIS ladder, because
+// that would make old art strictly better and collapse the whole era axis into
+// "old is stronger". The floors below bind both eras identically. An ancient
+// art at ordinal twenty-six addresses a place, the same as a fire art at
+// twenty-six; what is ancient about it is what it does to that place.
+//
+// INDEPENDENT OF `class`, AND THAT ONE IS AN INVARIANT RATHER THAN A GUARD.
+// A cultivation manual addresses the person practising it, at every rung, for
+// ever. The catalog already said so in the note on the Canon of the Unwritten
+// Span - a gathering canon lands on one person and stays one person at every
+// rung of the ladder - and this is that sentence made checkable. What you
+// practise to rank up never escalates in kind. Only what you USE does.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const TechniqueAddressSchema = z.enum([
+    'body',
+    'place',
+    'condition',
+    'settled',
+    'decree'
+]);
+export type TechniqueAddress = z.infer<typeof TechniqueAddressSchema>;
+
+/** The ladder, lowest first. Index is the comparison. */
+export const ADDRESS_ORDER: readonly TechniqueAddress[] = [
+    'body',
+    'place',
+    'condition',
+    'settled',
+    'decree'
+] as const;
+
+/** Index of an address on the ladder, for comparisons. */
+export function addressRank(address: TechniqueAddress): number {
+    return ADDRESS_ORDER.indexOf(address);
+}
+
+/**
+ * The rung at which each address becomes permissible, anchored on realm
+ * boundaries rather than on round numbers.
+ *
+ *   body       0   Qi Condensation. Where everybody starts and most people
+ *                  stay.
+ *   place     21   Nascent Soul. The realm where the soul becomes a thing that
+ *                  survives the body, and the first realm at which a cultivator
+ *                  stops being a local matter. An art that lands on a location
+ *                  rather than a person starts here.
+ *   condition 33   Body Integration. "Damage stops meaning what it used to
+ *                  mean" - and an art whose subject is no longer damage is an
+ *                  art that has stopped addressing what is standing there.
+ *   settled   44   Tribulation Transcendence Perfection: the last crossing
+ *                  rung. The one place below the Lid from which somebody is
+ *                  looking at the boundary rather than up at it, and the only
+ *                  rung at which the world's fixed facts are legible enough to
+ *                  be argued with.
+ *   decree    46   True Immortal, and nothing under it. See below.
+ *
+ * The bands narrow as they rise - twenty-one rungs, twelve, eleven, two, one -
+ * which is the corridor thesis arriving on a second axis without anybody
+ * arranging it.
+ */
+export const ADDRESS_ORDINAL_FLOORS: Record<TechniqueAddress, number> = {
+    body: 0,
+    place: 21,
+    condition: 33,
+    settled: LAST_CROSSING_ORDINAL,
+    decree: TRUE_IMMORTAL_ORDINAL
+} as const;
+
+/**
+ * The highest address a rung permits. An art may always address something
+ * SMALLER than its rung allows - most do, and a quiet single-target finger at
+ * ordinal twenty-eight is one of the better entries in the catalog - and no art
+ * may ever address something larger.
+ */
+export function addressCeilingForOrdinal(ordinal: number): TechniqueAddress {
+    let ceiling: TechniqueAddress = 'body';
+    for (const address of ADDRESS_ORDER) {
+        if (ordinal >= ADDRESS_ORDINAL_FLOORS[address]) ceiling = address;
+    }
+    return ceiling;
+}
+
+/**
+ * What an art addresses when it has not said.
+ *
+ * Deliberately conservative, and deliberately NOT the ceiling for the rung. A
+ * catalog row that says nothing is a row nobody has thought about on this axis,
+ * and defaulting those to the top of what their rung allows would silently
+ * declare that the ladder is already climbed. It is not: read this way the
+ * existing catalog tops out at `place`, which is a true and useful statement of
+ * where the work is.
+ *
+ * `reach` carries the body/place distinction already, so it is read rather than
+ * duplicated - but only at `field`, and the catalog is what settled that.
+ *
+ * `several` IS STILL A BODY ART, and the two mortal-grade entries that forced
+ * the question are the reason to say so: a thunder clap at ordinal nine and a
+ * swept fire arc at ordinal eleven both land on three people, and neither is
+ * addressing anything but the three people. Three bodies is three bodies. What
+ * `TechniqueReachSchema` says about `field` is the actual line - "it lands on a
+ * PLACE rather than a person" - and only that crosses onto the second rung.
+ *
+ * Which is the distinction working rather than a patch: reach is a headcount
+ * and address is a subject, and a wide swing raises the first without touching
+ * the second. If `several` had implied `place`, every roadside bandit art with
+ * a broad stroke in it would have been claiming a rung it has no business at.
+ */
+export function defaultAddressFor(
+    t: Pick<Technique, 'class' | 'reach'>
+): TechniqueAddress {
+    // The invariant, not a default: a manual you practise addresses you.
+    if (t.class === 'cultivation') return 'body';
+    return t.reach === 'field' ? 'place' : 'body';
+}
+
+/** What this art addresses: its own answer where it has one, otherwise the default. */
+export function addressOf(
+    t: Pick<Technique, 'class' | 'reach' | 'addresses'>
+): TechniqueAddress {
+    return t.addresses ?? defaultAddressFor(t);
+}
+
+/**
+ * Whether an art's declared address is legal for the rung it is written for
+ * and the kind of art it is. Asserted by the catalog suite rather than by a
+ * Zod refinement, in the same place and for the same reason the grade bands
+ * are: the bands are a statement about content, and content is where a
+ * violation should be reported.
+ */
+export function addressIsLegal(
+    t: Pick<Technique, 'class' | 'reach' | 'addresses' | 'requiredOrdinal'>
+): boolean {
+    const address = addressOf(t);
+    if (t.class === 'cultivation') return address === 'body';
+    return addressRank(address) <= addressRank(addressCeilingForOrdinal(t.requiredOrdinal));
+}
+
+/**
+ * Why the top rung is not the rung below it with more behind it.
+ *
+ * This is the failure the whole ladder exists to prevent, so it is written
+ * down where the field is defined rather than left to the entries to imply.
+ *
+ * A `settled` art operates on a fact that is ALREADY THERE. It needs a name
+ * that was given, an oath that was sworn, a death that was decided. Everything
+ * it can do is bounded by what the world has already fixed, and no amount of
+ * magnitude widens that bound: an infinitely powerful art for severing names
+ * still cannot reach a person who was never named.
+ *
+ * A `decree` has no such requirement, and that is the entire difference. It
+ * addresses nothing that is there. It states a thing, and the statement becomes
+ * the case - about somebody who was never named, about a place that has not
+ * been visited, about a condition nobody had thought to fix. The rung below
+ * EDITS the record. This one WRITES it.
+ *
+ * So the two are not two sizes of one act, and the test of whether a given
+ * entry has fallen back down the ladder is blunt: ask what already had to be
+ * true for it to work. If the answer is anything at all, it is a `settled` art
+ * with a large number on it and it belongs a rung down.
+ */
+export const DECREE_IS_NOT_A_LARGER_SETTLED = {
+    settled: 'reaches a fact the world has already fixed, and can reach nothing else at any magnitude',
+    decree: 'fixes one, and needs nothing to have been true beforehand',
+    theTest: 'ask what had to already be true. A decree answers nothing.'
+} as const;
+
+/**
+ * The three things a decree may not say, and none of them is a balance patch.
+ *
+ * 1. IT CANNOT SPEAK A RUNG. A statement that somebody is at an ordinal, or is
+ *    above the Lid, or is not, does nothing - because a rung is not an opinion
+ *    the world holds about a body, it is what the body is. This is the same
+ *    ruling `WHAT_AN_ART_BUYS` already made from the other direction: an art is
+ *    worth most of a rung inside a realm and nothing at all across the Lid, at
+ *    any mastery. A decree is an art. It buys what an art buys.
+ *
+ * 2. IT CANNOT BE AMENDED. It is spoken inside `BREATHS_IN_THE_LOWER_REALM` and
+ *    the speaker is gone before the world has finished complying. Nothing can
+ *    be added, corrected, revoked or explained afterwards, by them or by
+ *    anybody. Every ambiguity in the sentence resolves the way the world
+ *    resolves it rather than the way it was meant, and the record of decrees
+ *    below the Lid is substantially a record of that going badly.
+ *
+ * 3. IT CANNOT GOVERN. The world complies with the statement, not with the
+ *    speaker, so a decree that would need somebody to keep judging it gets no
+ *    judgement at all - it gets the flat reading, for ever. Ten to fifteen
+ *    breaths is enough to fix a fact and is not enough to hold a province, and
+ *    a fixed sentence cannot administer one afterwards. That is why the world
+ *    below survives the existence of the rung, and it is the same sentence
+ *    `BREATHS_IN_THE_LOWER_REALM` already says about retaliation, arriving on
+ *    the axis of the word.
+ */
+export const WHAT_A_DECREE_CANNOT_SAY = {
+    aRung: 'A rung is what a body is, not a thing the world has an opinion about. Stating one changes nothing, in either direction, about anybody.',
+    anAmendment: 'One sentence, spoken inside the breaths. There is no second one, and no revision, ever, by anyone.',
+    anAdministration: 'The world obeys the statement and not the speaker, so a decree that needs ongoing judgement receives none and runs on its flat reading for ever.'
+} as const;
+
+/**
+ * The word at the top three rungs, which is the ladder's clearest worked
+ * example and was already half-written in the catalog before this field
+ * existed.
+ *
+ * The same act - a person states a thing about the world - at forty-four,
+ * forty-five and forty-six, and what changes is not volume:
+ *
+ *   44  It is heard. The heavens are not obliged, and the record of outcomes
+ *       is not encouraging and is not empty either. The Word of Continuance is
+ *       this rung and has been in the catalog all along.
+ *   45  It is heard and the answer is no. The one rung in the world at which a
+ *       statement reliably gets a reply and the reply is a refusal - which is
+ *       not a design flourish, it is what a False Immortal IS, said in the
+ *       vocabulary of the word rather than in the vocabulary of the crossing.
+ *   46  The world is obliged.
+ *
+ * Two rungs apart, three categorically different outcomes, and no quantity
+ * anywhere in the progression.
+ */
+export const THE_WORD_AT_THE_TOP = {
+    petition: { ordinal: LAST_CROSSING_ORDINAL, outcome: 'heard, and the heavens are not obliged' },
+    refusal: { ordinal: FALSE_IMMORTAL_ORDINAL, outcome: 'heard, answered, and the answer is no' },
+    decree: { ordinal: TRUE_IMMORTAL_ORDINAL, outcome: 'obliged' }
+} as const;
+
 export const TechniqueSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -1106,6 +1396,17 @@ export const TechniqueSchema = z.object({
      * the catalog keeps exactly the behaviour it had before this field existed.
      */
     reach: TechniqueReachSchema.optional(),
+    /**
+     * What the art is aimed at, on the ladder that escalates in kind. Absent
+     * means `defaultAddressFor` reads `class` and `reach`, so every art written
+     * before this field existed keeps exactly the behaviour it had - and the
+     * catalog reads, correctly, as one that tops out at `place`.
+     *
+     * Declared only where an entry genuinely reaches higher, and never higher
+     * than `addressCeilingForOrdinal` allows for its rung. See the block above
+     * `TechniqueAddressSchema`.
+     */
+    addresses: TechniqueAddressSchema.optional(),
     /**
      * The generic column. Absent means the ordinary bands read `requiredOrdinal`,
      * which is what an art is pitched at. A manual that keeps being worth
