@@ -45,7 +45,7 @@ import {
     realmForOrdinal,
     type RealmKey
 } from './realms.js';
-import { untreatedInjuryCount } from './injuries.js';
+import { bleedingInjuryCount, untreatedInjuryCount } from './injuries.js';
 import { hasBody, isGoingConcern, isTerminal } from './existence.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -560,7 +560,9 @@ export function bleedStateOf(
     cultivator: Pick<Cultivator, 'injuries' | 'bleedingTurns'>
 ): BleedState {
     return {
-        untreatedInjuries: untreatedInjuryCount(cultivator.injuries),
+        // Open wounds only. A permanent wound is untreated for life by
+        // definition and is not a bleed - see `bleedingInjuryCount`.
+        untreatedInjuries: bleedingInjuryCount(cultivator.injuries),
         bleedingTurns: cultivator.bleedingTurns
     };
 }
@@ -694,7 +696,7 @@ export function evaluateDeathConditions(
         }
 
         if (ctx.forcingCombat) {
-            if (untreatedInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES) {
+            if (bleedingInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES) {
                 return 'untreated_injuries';
             }
             const hpFraction = cultivator.maxHp > 0 ? cultivator.hp / cultivator.maxHp : 0;
@@ -709,7 +711,7 @@ export function evaluateDeathConditions(
         // not. `>=` like every other threshold here, so death lands exactly on
         // the ninetieth turn.
         if (
-            isBleedingOut(untreatedInjuryCount(cultivator.injuries)) &&
+            isBleedingOut(bleedingInjuryCount(cultivator.injuries)) &&
             (cultivator.bleedingTurns ?? 0) >= BLEED_OUT_TURNS
         ) {
             return 'untreated_injuries';

@@ -1440,7 +1440,13 @@ function combatantOf(npc: NpcRecord): CombatantInput {
             sustainedOnTurn: 0,
             treated: false,
             cultivationPenalty: 0.25,
-            breakthroughPenalty: 0.15
+            breakthroughPenalty: 0.15,
+            // Null because there is nothing to name: this wound is synthesised
+            // from `untreatedInjuries`, which is a COUNT rather than a list, so
+            // the world layer genuinely does not know what any of these are.
+            // Once NPCs carry a real wound list this whole `Array.from` goes
+            // away and the actual rows are passed through.
+            woundType: null
         })
     );
 

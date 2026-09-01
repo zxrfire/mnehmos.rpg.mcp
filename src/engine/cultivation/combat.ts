@@ -71,6 +71,7 @@ import { understandingEffects, type RelevanceContext } from './understanding.js'
 import { getSpiritRoot } from './spirit-roots.js';
 import { readManual } from './manual-quality.js';
 import { ambientBreakthroughMod } from './ambient.js';
+import { brokenStatusOf } from './what-goes-wrong-at-a-realm-boundary.js';
 import {
     killRequirement,
     soulAttacksAffect,
@@ -367,6 +368,50 @@ export function combatPowerForOrdinal(ordinal: number, status: ImmortalStatus = 
     return base * (1 + position * (WITHIN_REALM_PEAK - 1));
 }
 
+/**
+ * What a cultivator carrying a broken status is worth, in raw realm terms.
+ *
+ * The ordering the design asks for is strict: WEAKER THAN EVERY OTHER HOLDER OF
+ * THEIR OWN RUNG, AND STRONGER THAN EVERY HOLDER OF THE RUNG BELOW. That keeps
+ * the crossing worth attempting even when it goes wrong - a broken 41 still
+ * outfights any 40 alive, so "never attempt" never becomes the correct play -
+ * while making the failure real.
+ *
+ * Placed at the geometric mean of the two things it has to sit between: the
+ * weakest rung of its own realm, and the strongest rung of the realm below.
+ * Derived rather than picked, so it follows the ladder if the ladder moves, and
+ * it lands exactly halfway in the multiplicative space the whole power curve is
+ * expressed in.
+ *
+ * ── WHERE THIS ORDERING BREAKS, MEASURED ─────────────────────────────────
+ *
+ * It holds at equal attributes and it does NOT hold across the full attribute
+ * spread, and that is a fact about the ladder's geometry rather than about this
+ * function. `WITHIN_REALM_PEAK` is 2, so the strongest rung of a realm is twice
+ * its weakest, and the next realm's weakest is twice THAT - which leaves a gap
+ * of exactly 2x between the top of one realm and the bottom of the next. The
+ * legal attribute range is worth about 1.5x. Sitting anything strictly between
+ * two bands separated by 2x, such that no 1.5x attribute swing on either side
+ * can cross it, needs a gap of 2.25x. There is not one.
+ *
+ * So the honest claim is the one the tests assert: at equal attributes a broken
+ * holder loses to every intact holder of their rung and beats every holder of
+ * the rung below, with a 1.41x margin either way. A broken 41 with the best
+ * attributes in the world can still beat an intact 41 with the worst. Closing
+ * that would mean widening the realm gap or narrowing the attribute range, and
+ * both are decisions about the whole ladder rather than about this status.
+ */
+export function brokenCombatPowerForOrdinal(ordinal: number): number {
+    const tier = realmForOrdinal(ordinal);
+    const ownFloor = combatPowerForOrdinal(tier.ordinalStart);
+    const belowIndex = REALM_TIERS.findIndex(t => t.key === tier.key) - 1;
+    // The bottom realm has nothing below it to sit above, so a broken holder
+    // there is simply at the floor of their own realm.
+    if (belowIndex < 0) return ownFloor;
+    const belowCeiling = combatPowerForOrdinal(REALM_TIERS[belowIndex].ordinalEnd);
+    return Math.sqrt(ownFloor * belowCeiling);
+}
+
 function realmIndexOf(ordinal: number): number {
     const key = realmForOrdinal(ordinal).key;
     return REALM_TIERS.findIndex(t => t.key === key);
@@ -389,7 +434,13 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     const status = combatant.immortalStatus ?? 'none';
     const tradition = traditionOrDefault(combatant.traditionId);
     const tier = realmForOrdinal(ordinal);
-    const realmBase = combatPowerForOrdinal(ordinal, status);
+    // A broken status is read off the wound list and replaces the rung's own
+    // figure: they are at this rung, and they are the weakest thing on it. See
+    // `brokenCombatPowerForOrdinal`.
+    const broken = status === 'none' ? brokenStatusOf(combatant.injuries ?? []) : null;
+    const realmBase = broken
+        ? brokenCombatPowerForOrdinal(ordinal)
+        : combatPowerForOrdinal(ordinal, status);
 
     const injuries = aggregateInjuryPenalties(combatant.injuries);
     const tempering = scarTempering(combatant.injuries);

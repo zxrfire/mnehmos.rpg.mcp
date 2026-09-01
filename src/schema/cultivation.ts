@@ -278,7 +278,27 @@ export const InjurySchema = z.object({
     /** Multiplier penalty applied to cultivation speed while untreated. */
     cultivationPenalty: z.number().min(0).max(1).default(0.1),
     /** Flat penalty to breakthrough odds while untreated. */
-    breakthroughPenalty: z.number().min(0).max(1).default(0.05)
+    breakthroughPenalty: z.number().min(0).max(1).default(0.05),
+    /**
+     * Which authored wound this is, as a key into `data/cultivation/wounds.ts`.
+     *
+     * THE FIELD THAT STOPS WOUNDS BEING INVENTED. A wound is a row with a name,
+     * a nature, an authored description, a permanence and a stated treatment;
+     * the narrator reads it and may not make one up. Heart demons, madness and
+     * half-madness are rows in that table with `nature: 'mental'`, carried in
+     * THIS array alongside the physical ones - one list, two natures - because
+     * a second list beside this one is a list nothing downstream would read.
+     *
+     * Nullable and defaulted so every row written before the table existed
+     * still parses. Null means "an ordinary wound of its severity", which is
+     * exactly what those rows are; `getWoundType` returns null for it and every
+     * caller treats that as the plain case rather than as an error.
+     *
+     * Only the KEY is persisted. Nature, permanence, treatment and presentation
+     * are read from the catalog, so there is one source of truth for what a
+     * wound is and no way for a stored row to drift from it.
+     */
+    woundType: z.string().nullable().default(null)
 });
 export type Injury = z.infer<typeof InjurySchema>;
 
@@ -1990,6 +2010,53 @@ export const BreakthroughResultSchema = z.object({
      * that permanently bars any further attempt.
      */
     immortalStatusGained: ImmortalStatusSchema.nullable().default(null),
+    /**
+     * What a FAILED realm boundary did to this cultivator, beyond the wound
+     * already in `injuriesSustained`.
+     *
+     * Present only on a boundary failure below Tribulation Transcendence -
+     * lightning is authored separately and never fills this in, and a sub-rank
+     * step has no trial. Null everywhere else.
+     *
+     * Every field is a write to state that existed before this did: the
+     * foundation quality the crossing left, years to add to `age`, the soul
+     * state and identity continuity of somebody who came back wrong, and
+     * whether they will ever cross another boundary. The caller applies them
+     * the way it applies `foundationEstablished`. See
+     * `engine/cultivation/what-goes-wrong-at-a-realm-boundary.ts`.
+     */
+    crossing: z.object({
+        /** Which trial this wall is. Decided by ordinal alone. */
+        trial: z.string(),
+        /** Which row of the outcome registry was drawn. */
+        outcome: z.string(),
+        foundationQuality: FoundationQualitySchema.nullable().default(null),
+        /** Years to ADD to age. The span spent rather than lived. */
+        yearsBurned: z.number().min(0).default(0),
+        soulState: SoulStateSchema.nullable().default(null),
+        identityContinuity: z.number().min(0).max(1).nullable().default(null),
+        /** True when this cultivator will never cross a realm boundary again. */
+        halted: z.boolean().default(false)
+    }).nullable().default(null),
+    /**
+     * A broken status this crossing ARRIVED with, when it did not land clean.
+     *
+     * The cultivator is at `toOrdinal` carrying it. They crossed, they made it,
+     * and the structure that crossing was for did not set - see the broken
+     * statuses in `data/cultivation/wounds.ts`. The wound itself is already in
+     * `injuriesSustained`; this names it so a caller does not have to search.
+     */
+    arrivedBroken: z.string().nullable().default(null),
+    /**
+     * A broken status this crossing REPAIRED, which the caller must now drop
+     * from the wound list with `clearBrokenStatus`.
+     *
+     * The crucible: clearing a crossing while carrying a repairable break
+     * reseats the structure that broke. Legend-rare, because the odds of
+     * clearing anything while carrying one are at the floor. Never set for a
+     * broken step, which no crossing repairs.
+     */
+    brokenStatusCleared: z.string().nullable().default(null),
     narrationHint: z.string().default('')
 });
 export type BreakthroughResult = z.infer<typeof BreakthroughResultSchema>;

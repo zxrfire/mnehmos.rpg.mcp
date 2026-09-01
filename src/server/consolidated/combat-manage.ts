@@ -299,7 +299,10 @@ function combatantFromOpponent(
             sustainedOnTurn: 0,
             treated: false,
             cultivationPenalty: 0.25,
-            breakthroughPenalty: 0.12
+            breakthroughPenalty: 0.12,
+            // An opponent described rather than stored: the caller gave a
+            // count, so there is no authored wound to name here.
+            woundType: null
         })),
         hp: spec.hp ?? maxHp,
         maxHp,
