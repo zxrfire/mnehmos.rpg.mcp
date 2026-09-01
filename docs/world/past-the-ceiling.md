@@ -814,6 +814,7 @@ options are *stay* and *defect* is missing most of the board.
 | **Be named heir** | you become the thing others are measured against | the house has a successor posting and you can be the one demonstrably worth it |
 | **Contest the seat** | you have to win, and losing is not neutral | the person in the way will not move and the gap is small enough to be a fight |
 | **Be expelled** | chosen for you, and it takes your standing with it | you became a problem, which a blocked person eventually does |
+| **Your house is destroyed** | everything except what you carry and what you know | war or disaster ended it, and you are free because there is nobody left to owe |
 | **Go rogue** | no shelf, no backing, no materials | every door above is shut, or you want none of them |
 
 ### Three of these do not wait for a seat, which is the commonest reason to be stuck
@@ -838,6 +839,26 @@ Three exits sidestep the queue rather than joining it:
   happens to a blocked person who becomes a problem. It is an exit that is taken *for* you,
   it costs the standing you were waiting to spend, and the leadership surface already has the
   verb.
+
+### The house ending frees you, however it ends
+
+Disbanding is the version you choose. **The commoner version is that somebody else ends it** -
+a war lost, a vein exhausted, a disaster, a succession that failed - and the effect on a
+survivor is the same and completely legitimate: **there is no house left to owe anything to.**
+No oath binds, no release is needed, no grievance can be carried, because the party that would
+have carried it does not exist. A survivor walks away free, holding whatever they were
+carrying and everything they know.
+
+This is worth stating as its own route rather than folding it into disbanding, because it is
+not a decision and it does not require seniority. It happens to outer disciples and elders
+alike, and for somebody who was qualified and blocked it resolves the problem completely and
+without their consent.
+
+It is also **how roads actually move through history.** A house that falls scatters its people,
+and its people are carrying its curriculum in their heads - so the fall of a house is one of
+the largest transmission events this world has, and the only one nobody negotiated. See
+[`closed-ground.md`](closed-ground.md) for the other half of the same event: the place it
+leaves behind, with whatever nobody could carry still in it.
 
 ### Money cannot buy a house, and it can buy the people in one
 
