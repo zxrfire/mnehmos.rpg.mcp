@@ -103,7 +103,7 @@ describe('the holdings are live state', () => {
         const state = world();
         const spent = spendRepairDose(
             state, 'apex-deep-survey', 'npc-first-mark', 'A First Mark',
-            'unsealed-seam', 33, 900
+            'unstable-joining', 33, 900
         );
         expect(spent?.doseId).not.toBeNull();
         const row = state.objects.find(o => o.id === spent!.doseId)!;

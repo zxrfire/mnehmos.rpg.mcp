@@ -466,11 +466,22 @@ export function scarRateMultiplier(injuries: readonly Injury[]): number {
  * meridian, a ruined dantian, a rooted heart demon - and a treatment path that
  * quietly closed one anyway would make that text a decoration.
  *
- * It also had teeth beyond the prose: `isHalted` reads an untreated ruined
- * dantian, so a healer being handed enough money could have undone a permanent
- * bar by accident. Caught by the ceiling sweep, which heals everything it can
- * every iteration and would have walked a halted cultivator straight back onto
- * the ladder.
+ * It had teeth beyond the prose, and the shape of those teeth has changed. It
+ * used to be that `isHalted` read an untreated ruined dantian, so a healer
+ * being handed enough money could have undone a permanent BAR by accident -
+ * caught by the ceiling sweep, which heals everything it can every iteration.
+ * A ruined dantian no longer halts anybody: only a realm's own break closes a
+ * road, and nothing closes one of those except a crossing or the rarest
+ * medicine there is. So the sweep can no longer walk somebody back onto the
+ * ladder through this door.
+ *
+ * The refusal still matters, and now for the plain reason rather than the
+ * mechanical one: a permanent wound is permanent. A parted meridian, a ruined
+ * reservoir and a rooted heart demon each say in their own `treatment` field
+ * that nothing in the world closes them, and they go on costing rate, odds and
+ * combat power for the rest of the life. Being un-halting does not make a
+ * ruined dantian survivable or cheap; it means the ladder is open to somebody
+ * who will find the next wall far worse than it was.
  */
 export function treatInjury(injuries: readonly Injury[], injuryId: string): Injury[] {
     return injuries.map(injury =>

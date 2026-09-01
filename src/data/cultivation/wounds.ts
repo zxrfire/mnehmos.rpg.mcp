@@ -254,9 +254,13 @@ export const WOUND_TYPES: readonly WoundType[] = [
     //     rung on the ladder has.
     //   - 'A failed body joining' named the right realm and said it in plain
     //     English, and 'failed' is a verdict rather than a diagnosis. It is
-    //     now 'An unsealed seam' - the seam is the setting's own word for what
-    //     that crossing welds, and `killRequirement` has been returning
-    //     'seam' as a remnant kind since long before this table existed.
+    //     now 'An unstable joining'. The first attempt at this said 'unsealed
+    //     seam', on the grounds that `killRequirement` has returned 'seam' as
+    //     a remnant kind since long before this table existed - but the seam
+    //     is the MECHANISM the crossing welds, not the thing it builds, and
+    //     every other row here names the thing. The joining is what Body
+    //     Integration constructs, and `the_joining` is already the trial's
+    //     name in the engine.
     //
     // The same principle got 'a spoiled temper' rejected for 'damaged spirit
     // sense': name the failure of the SPECIFIC FORMATION, never a mood and
@@ -334,9 +338,9 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Void Refinement, and a reach that reports things which are not there and misses things that are. They compensate by never relying on it - they ask, they send people, they check twice - and it makes them look either extraordinarily careful or extraordinarily suspicious depending on who is describing them.'
     },
     {
-        key: 'unsealed-seam',
+        key: 'unstable-joining',
         nature: 'physical',
-        name: 'An unsealed seam',
+        name: 'An unstable joining',
         description:
             'Soul and body were welded from the sinew inward and one seam did not close. Everything moving through this cultivator is enormous, and there is a place where it is not held.',
         severities: ['crippling'],
