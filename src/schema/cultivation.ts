@@ -953,7 +953,18 @@ export const ApproachLeverageSchema = z.enum([
     'name',    // the asker's own reputation
     'sect',    // an affiliation standing behind the ask
     'force',   // the credible ability to take it
-    'secret'   // something the other party would pay not to have said aloud
+    'secret',  // something the other party would pay not to have said aloud
+    /**
+     * The asker themselves - an attachment, offered or already standing.
+     *
+     * A member of this enum rather than a subsystem of its own, and that is
+     * the whole design: seduction is then priced by the machine that already
+     * prices a purse and a threat, and no code anywhere branches on the word
+     * a player typed to decide what came of it. Like every other entry, it is
+     * a claim about what is actually behind the ask, and leverage the asker
+     * does not have is a lie the room will price.
+     */
+    'attachment'
 ]);
 export type ApproachLeverage = z.infer<typeof ApproachLeverageSchema>;
 
@@ -1017,7 +1028,14 @@ export const APPROACH_LEVERAGE_PRESSURE: Record<ApproachLeverage, number> = {
     name: 1,
     sect: 2,
     force: 2,
-    secret: 2
+    secret: 2,
+    /**
+     * One, the same as coin and a favour. An attachment moves how somebody is
+     * met by about as much as a purse does and no more - the ladder is still
+     * not negotiable, and somebody four rungs above you is still four rungs
+     * above you however they feel about it.
+     */
+    attachment: 1
 } as const;
 
 /**
@@ -1654,6 +1672,7 @@ export type Recipe = z.infer<typeof RecipeSchema>;
 // ─────────────────────────────────────────────────────────────────────────
 
 export const SectAlignmentSchema = z.enum(['righteous', 'neutral', 'demonic']);
+export type SectAlignment = z.infer<typeof SectAlignmentSchema>;
 
 export const SectSchema = z.object({
     id: z.string(),
