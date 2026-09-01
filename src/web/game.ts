@@ -192,6 +192,7 @@ import {
     SEAL_INTENTS,
     SITE_INTENTS,
     parseCount,
+    durationAskedFor,
     type ActionName,
     type OfferIntent,
     type PetitionIntent,
@@ -1741,16 +1742,30 @@ export class GameService {
         }
 
         switch (action.action) {
+            // `durationAskedFor` is the UNCLAMPED span in the sentence.
+            // `action.days` has already been through `parseDuration`, which
+            // silently caps at MAX_CULTIVATION_DAYS - so "I cultivate for
+            // 100000 years" arrived here as 36500 and the player was told
+            // "Seclusion of 100 years was intended", which is the engine
+            // reporting its own ceiling as somebody else's intention. Carried
+            // so the account can say what was asked and what was capped.
             case 'cultivate':
                 return this.runSeclusion(
                     run, cultivator, ambient, action.days ?? DEFAULT_CULTIVATION_DAYS,
-                    { acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput) }
+                    {
+                        acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput),
+                        askedFor: durationAskedFor(rawInput) ?? undefined
+                    }
                 );
 
             case 'seclude':
                 return this.runSeclusion(
                     run, cultivator, ambient, action.days ?? DEFAULT_SECLUSION_DAYS,
-                    { sealed: true, acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput) }
+                    {
+                        sealed: true,
+                        acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput),
+                        askedFor: durationAskedFor(rawInput) ?? undefined
+                    }
                 );
 
             case 'breakthrough': {
@@ -2513,7 +2528,24 @@ ${noticed}`;
         // village does not offer should reach the tool's own refusal, which
         // knows why, rather than being silently dropped here.
         const wanted = (target ?? '').trim();
-        const offered = findWorkForOrdinal(cultivator.realmOrdinal);
+        // ── WHAT IS GOING *HERE* ─────────────────────────────────────────
+        //
+        // The settlement argument is not optional in practice and omitting it
+        // was fatal. `findWorkForOrdinal(ordinal)` answers for the whole world
+        // at that rung, so "take any work" picked the best-paying line
+        // anywhere - Shipmaster, at 2,600 cash a month - and `handleWork`,
+        // which DOES filter by settlement, then refused it. Eighteen
+        // consecutive attempts across two towns, every one burning a turn and
+        // earning nothing, each refusal listing the jobs that were on offer in
+        // the same sentence that declined to give one:
+        //
+        //   "Nobody in Nine Peaks is hiring for Shipmaster. What is going
+        //    here: Porter, Scribe, Physician (mortal), Innkeeper..."
+        //
+        // Work is the only income an unbacked cultivator has, so this killed
+        // a run by starvation while the answer was on screen throughout.
+        const here = standingOf(cultivator).settlementKind ?? undefined;
+        const offered = findWorkForOrdinal(cultivator.realmOrdinal, here);
         const named = wanted.length >= 3
             ? offered.find(o => wanted.toLowerCase().includes(o.name.toLowerCase())
                 || o.name.toLowerCase().includes(wanted.toLowerCase()))
@@ -2530,9 +2562,9 @@ ${noticed}`;
         // from.
         //
         // The engine picks, not this layer: the best-paying line on the board
-        // that is actually being PUT TO THEM, which is `findWorkForOrdinal`'s
-        // own answer narrowed by its own regard. A tie is broken by id so the
-        // choice is reproducible.
+        // that is actually being PUT TO THEM HERE, which is
+        // `findWorkForOrdinal`'s own answer narrowed by its own regard and by
+        // the settlement. A tie is broken by id so the choice is reproducible.
         const anyWork = named === undefined && GameService.WORK_UNSPECIFIED.test(wanted);
         const occupation = named ?? (anyWork
             ? [...offered].sort((a, b) =>
@@ -6377,7 +6409,7 @@ ${noticed}`;
         cultivator: Cultivator,
         ambient: AmbientQi,
         days: number,
-        options: { sealed?: boolean; acknowledged?: boolean } = {}
+        options: { sealed?: boolean; acknowledged?: boolean; askedFor?: number } = {}
     ): Promise<Execution> {
         const sealed = options.sealed ?? false;
         const startDay = Math.floor(run.elapsedDays);
@@ -6559,7 +6591,12 @@ ${noticed}`;
             // `lived` was already cut down by the encounter layer before the
             // skip saw it, so the skip's own idea of what was requested is the
             // truncated figure. `days` is what the player actually said.
-            days
+            days,
+            // And what they said before the parser's own ceiling took a
+            // thousandfold bite out of it without mentioning that it had.
+            options.askedFor !== undefined && options.askedFor > days
+                ? options.askedFor
+                : undefined
         );
         facts.lines.unshift(provisioning.line);
 

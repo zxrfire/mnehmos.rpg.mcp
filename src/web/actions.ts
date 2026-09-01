@@ -960,6 +960,22 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
     ['teach', /\b(?:teach|teaches|teaching|add|adds|adding|put (?:it )?on the shelf|start teaching|hand them)\b/]
 ];
 
+/**
+ * Taking something off a person, which is not gathering.
+ *
+ * `gather` matches on the bare verb `pick`, which is the right word for a herb
+ * and is also half of the commonest way anybody says this: "I pick her
+ * pocket". Played live, "I pick Xiao Suiya's pocket" answered "Cloudcap
+ * Mushroom, pouched" and charged seven days of foraging for it.
+ *
+ * Kept to the idiom on purpose. The lesson this file has learned twice is that
+ * widening a pattern to cover the case you imagined steals sentences from the
+ * verb next door - "I pick the mushrooms" and "I pick a fight" must both go on
+ * reaching what they reached.
+ */
+export const POCKET_PICKING =
+    /\b(?:pickpocket\w*|(?:pick|picks|picking|picked|lift|lifts|lifting|lifted|cut|cuts|cutting)(?!\s+up\b)\b[^.!?]{0,40}?\b(?:pocket|pockets|purse|purses|sleeve|sleeves))\b/;
+
 export const SECT_THEFT_PATTERN =
     /\b(?:steal|stole|stealing|rob|robbing|loot|looting|plunder|pilfer|siphon\w*|skim\w*|embezzl\w*|divert\w*|make off with|help myself to|vault|treasury|strongroom|storehouse|coffers|reserves|take (?:a little|some|the|its|their|everything|all|what))\b/;
 
@@ -2029,6 +2045,44 @@ export function parseDuration(input: string): number | null {
 }
 
 /**
+ * The span the sentence ASKED for, with no ceiling applied.
+ *
+ * `parseDuration` clamps to {@link MAX_CULTIVATION_DAYS} and says nothing about
+ * having done so, which is the invisible-fallback defect in numeric form:
+ * "I cultivate for 100000 years" came back as "Seclusion of 100 years was
+ * intended", a thousandfold silent correction that reads like the engine
+ * agreeing with you. The ceiling is real - it is the longest stretch this
+ * engine resolves in a single pass - and it has to be SAID.
+ *
+ * Returns null on the same sentences `parseDuration` returns null for, so a
+ * caller can compare the two and only speak when they differ.
+ */
+export function durationAskedFor(input: string): number | null {
+    const text = input.toLowerCase().replace(/\bhalf\s+an?\b/g, '0.5');
+
+    for (const [unitPattern, unitDays] of DURATION_UNITS) {
+        const match = unitPattern.exec(text);
+        if (!match) continue;
+
+        const before = text.slice(0, match.index).trim();
+        const tail = before.split(/[\s,]+/).filter(Boolean).slice(-2);
+
+        let count = 1;
+        for (const token of tail.reverse()) {
+            const digits = Number(token.replace(/[^0-9.]/g, ''));
+            if (Number.isFinite(digits) && digits > 0) { count = digits; break; }
+            if (token === 'half') { count = 0.5; break; }
+            const word = WORD_NUMBERS[token];
+            if (word !== undefined) { count = word; break; }
+        }
+
+        return Math.max(1, Math.round(count * unitDays));
+    }
+
+    return null;
+}
+
+/**
  * How many were asked for, or null when the sentence does not say.
  *
  * Separate from {@link parseDuration} because a count is not a span and must
@@ -3067,7 +3121,19 @@ export function parseIntent(input: string): PlannedAction {
     if ((/\b(?:gather|forage|harvest|pick|collect|dig up)\b/.test(text)
             || (/\b(?:look|looking|hunt|hunting|search|searching|out) for\b/.test(text)
                 && /\b(?:herbs?|roots?|plants?|ingredients?|reagents?|flowers?|mushrooms?|grasses|moss)\b/.test(text)))
-        && !/\bgather (?:qi|energy|my qi)\b/.test(text)) {
+        && !/\bgather (?:qi|energy|my qi)\b/.test(text)
+        // A pocket is not a plant. `pick` carried this branch, so "I pick Xiao
+        // Suiya's pocket" - a theft aimed at a named person - came back
+        // "Cloudcap Mushroom, pouched" and "7 days bent over the ground around
+        // Kettle". The player attempted a crime against somebody and the engine
+        // charged them a week of foraging for it, which is the worst answer
+        // available: not a refusal, not the act, and irreversible.
+        //
+        // There is no theft-from-a-person action in the closed set, so this
+        // falls through to `unclear`, which costs no time, no food and no roll.
+        // Deliberately narrow - only the pocket-picking idiom, because `pick`
+        // is the right verb for a herb and must keep working for one.
+        && !POCKET_PICKING.test(text)) {
         return { action: 'gather', target: extractSubject(input, /gather|forage|harvest|pick|collect|dig up/) };
     }
 
