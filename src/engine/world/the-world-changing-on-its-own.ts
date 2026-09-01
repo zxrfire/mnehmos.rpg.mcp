@@ -50,7 +50,7 @@
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
-import { rankName } from '../cultivation/realms.js';
+import { rankName, triggersHeavenlyTribulation } from '../cultivation/realms.js';
 // Pressure is the LOWER world's own affairs, and only its own. Every selection
 // in this file is filtered to the mortal layer, because politics above the Lid
 // has been running uninterrupted for a very long time and is not something this
@@ -74,6 +74,8 @@ import {
     type HistoricalFact
 } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { recordCrossing } from './recording-what-a-crossing-did.js';
+import { recordPromotion } from './recording-where-somebody-stands-in-a-house.js';
 import {
     applyLocationChange,
     forbidZone,
@@ -868,15 +870,38 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         );
         if (!strike) continue;
 
+        // The ledger gets the crossing whichever way it went. This is the single
+        // richest event in a cultivator's life and it used to leave no trace at
+        // all: `attemptBreakthrough` returned the trial, the roll, the wound,
+        // the years burned and whether they would ever cross again, the record
+        // took every one of them, and the world's own history said nothing
+        // happened. A failure is written as fully as a success, because a
+        // cultivator who cracked at a wall and is standing at their rung
+        // finished is the population the failure table exists to produce.
+        //   See `recording-what-a-crossing-did.ts`.
         if (strike.died) {
             state.npcs[at] = markDead(
                 npc,
                 day,
-                'The wall did not open. It closed.'
+                // NAME WHAT KILLED THEM. A death at this height has to be an
+                // event the world can account for rather than an entry in a
+                // pool: the design's rule is that nothing ordinary may end
+                // somebody at Tribulation Transcendence, and "the wall did not
+                // open" said nothing about which wall or what came down. At
+                // ordinals 40 to 44 every step summons lightning, so a death
+                // there IS the tribulation - one of the ends the design
+                // permits - and below that it is the crossing itself.
+                triggersHeavenlyTribulation(npc.cultivation.realmOrdinal)
+                    ? `Called down the tribulation at ${rankName(npc.cultivation.realmOrdinal)} `
+                      + 'and did not hold it.'
+                    : `The crossing out of ${rankName(npc.cultivation.realmOrdinal)} `
+                      + 'did not open, and closed.'
             );
+            recordCrossing(state, npc, strike.result, day);
             continue;
         }
         state.npcs[at] = strike.npc;
+        recordCrossing(state, state.npcs[at], strike.result, day);
         if (strike.result.outcome === 'success') advanced.push(state.npcs[at]);
     }
     return advanced;
@@ -1057,6 +1082,7 @@ function applyPromotions(state: WorldState, day: number): number {
         const i = at.get(p.npcId);
         if (i === undefined) continue;
         state.npcs[i] = { ...state.npcs[i], factionRankIndex: p.toRank, updatedOnDay: day };
+        recordPromotion(state, state.npcs[i], p, day);
     }
     // The other half of a promotion, which this call has always computed and
     // always discarded: everybody who had met the bar and watched somebody else
@@ -1715,6 +1741,18 @@ function withinSpan(day: number, fromDay: number, toDay: number): number {
     return Math.max(fromDay, Math.min(toDay, day));
 }
 
+/**
+ * A house name with its article stripped, for summaries that supply their own.
+ *
+ * Catalog names are inconsistent about it by design - "the Kang Hall", "The
+ * Severed", "Bone Lantern Cult" - and a summary that writes "of the ${name}"
+ * against the first two produced "of the the Kang Hall" in the middle of
+ * somebody's biography.
+ */
+function houseName(name: string): string {
+    return name.replace(/^[Tt]he\s+/, '');
+}
+
 function clamp(n: number, lo: number, hi: number): number {
     if (!Number.isFinite(n)) return lo;
     return Math.max(lo, Math.min(hi, n));
@@ -1770,7 +1808,7 @@ const TEMPLATES: Template[] = [
             );
             const deaths: DeathHandoff[] = [];
             for (const npc of losses) {
-                replaceNpc(state, markDead(npc, day, `Killed when the ${aggressor.name} came.`));
+                replaceNpc(state, markDead(npc, day, `Killed when the ${houseName(aggressor.name)} came.`));
                 deaths.push(settleNpcDeath(state, npc, day));
             }
             const severity = before.length === 0
@@ -1805,7 +1843,7 @@ const TEMPLATES: Template[] = [
                 kind: 'catastrophe',
                 scale: 'regional',
                 summary:
-                    `The ${aggressor.name} came for the ${victim.name}. `
+                    `The ${houseName(aggressor.name)} came for the ${houseName(victim.name)}. `
                     + `${losses.length} of ${before.length} dead.`
                     + (changeIds.length > 0 ? ` The compound is a ruin.` : ''),
                 locationId: seat?.id ?? null,
@@ -1873,8 +1911,8 @@ const TEMPLATES: Template[] = [
                 onDay: day,
                 kind: 'conquered',
                 summary: winner
-                    ? `${vein.name} passed to the ${winner.name}.`
-                    : `${vein.name} was withdrawn from the ${loser.name}; the grant was not renewed.`,
+                    ? `${vein.name} passed to the ${houseName(winner.name)}.`
+                    : `${vein.name} was withdrawn from the ${houseName(loser.name)}; the grant was not renewed.`,
                 causeKnown: true,
                 patch: {
                     controllingFactionId: winner ? winner.id : null,
@@ -1917,7 +1955,7 @@ const TEMPLATES: Template[] = [
                     relationshipChanges: winner
                         ? [{ aId: loser.id, bId: winner.id, change: 'open hostility' }] : [],
                     opportunitiesOpened: ['Work for anyone who can survey a vein.'],
-                    opportunitiesClosed: [`Admission to the ${loser.name} on the old terms.`],
+                    opportunitiesClosed: [`Admission to the ${houseName(loser.name)} on the old terms.`],
                     rumours: ['That the grant was sold rather than lost.'],
                     tenYearsLater:
                         `The ${loser.name} produces fewer cultivators every decade, and everyone local knows it.`
@@ -1958,7 +1996,7 @@ const TEMPLATES: Template[] = [
                 scale: 'local',
                 summary:
                     `${npc.name}, ${rankName(npc.cultivation.realmOrdinal)}` +
-                    (faction ? ` of the ${faction.name}` : '') + `, died of ${cause}.`,
+                    (faction ? ` of the ${houseName(faction.name)}` : '') + `, died of ${cause}.`,
                 actors: [{ id: npc.id, name: npc.name, role: 'deceased' }],
                 locationId: npc.locationId,
                 factionIds: faction ? [faction.id] : [],
@@ -2041,7 +2079,7 @@ const TEMPLATES: Template[] = [
                 scale: 'personal',
                 summary:
                     `${killer.name} killed ${victim.name}` +
-                    (victimFaction ? ` of the ${victimFaction.name}` : '') + '.',
+                    (victimFaction ? ` of the ${houseName(victimFaction.name)}` : '') + '.',
                 actors: [
                     { id: killer.id, name: killer.name, role: 'killer' },
                     { id: victim.id, name: victim.name, role: 'victim' }
@@ -2075,10 +2113,26 @@ const TEMPLATES: Template[] = [
         kind: 'ruin_opened',
         weight: 8,
         apply(state, day, rng) {
-            const sealed = state.locations.filter(
-                l => l.kind === 'ruin' && l.sealed && isBelowTheLid(l)
+            // ── What is left to be opened ────────────────────────────────
+            //
+            // This used to read the sealed ruins alone, which is a FIXED
+            // endowment: the prior ages seed them, nothing ever makes another,
+            // and the template empties one per firing. Measured over two
+            // thousand years it fired thirteen times, which is not a weight
+            // problem - it is the stock running out around year four hundred
+            // and the template returning null for the rest of the run.
+            //
+            // The world does keep making places worth going into; it just was
+            // not counting them. `faction_fell` leaves a compound standing and
+            // empty with its formations unlit and tagged `ruined`, which is a
+            // ruin by every reading except the one this filter used. Adding it
+            // makes the supply regenerate from something the world already does,
+            // which is the same shape as the fix in `neighboursOf`.
+            const openable = state.locations.filter(l =>
+                isBelowTheLid(l) && !l.tags.includes('emptied') &&
+                ((l.kind === 'ruin' && l.sealed) || l.tags.includes('ruined'))
             );
-            const ruin = pick(rng, sealed);
+            const ruin = pick(rng, openable);
             if (!ruin) return null;
             const opener = pick(rng, state.npcs.filter(
                 n => n.status === 'alive' && isBelowTheLid(n) &&
@@ -2199,11 +2253,11 @@ const TEMPLATES: Template[] = [
             const changed = applyLocationChange(place, {
                 onDay: day,
                 kind: 'conquered',
-                summary: `${place.name} answers to the ${claimant.name} now.`,
+                summary: `${place.name} answers to the ${houseName(claimant.name)} now.`,
                 causeKnown: true,
                 patch: {
                     controllingFactionId: claimant.id,
-                    environment: { politicalControl: `the ${claimant.name}` }
+                    environment: { politicalControl: `the ${houseName(claimant.name)}` }
                 }
             });
             replaceLocation(state, changed.location);
@@ -2276,8 +2330,8 @@ const TEMPLATES: Template[] = [
                 kind: 'territory_changed',
                 scale: 'local',
                 summary: holds
-                    ? `The ${tester.name} moved a lease inward on the ${held.name} and was made to move it back.`
-                    : `The ${tester.name} moved a lease inward on the ${held.name} and nothing happened.`,
+                    ? `The ${houseName(tester.name)} moved a lease inward on the ${houseName(held.name)} and was made to move it back.`
+                    : `The ${houseName(tester.name)} moved a lease inward on the ${houseName(held.name)} and nothing happened.`,
                 factionIds: [held.id, tester.id],
                 visibility: 'faction',
                 magnitude: holds ? 0.35 : 0.55,
@@ -2390,7 +2444,11 @@ const TEMPLATES: Template[] = [
 
             const splinter = makeFaction({
                 id,
-                name: `the ${founder.name.split(' ')[0]} Hall`,
+                // No article INSIDE the name. Every summary in this layer
+                // supplies its own - "of the ${name}" - so a name carrying one
+                // produced "of the the Wei Hall" in the middle of a biography,
+                // and the catalog's own names do not carry one either.
+                name: `${founder.name.split(' ')[0]} Hall`,
                 kind: 'sect',
                 alignment: parent.alignment,
                 seatLocationId: founder.locationId,
@@ -2400,7 +2458,7 @@ const TEMPLATES: Template[] = [
                     veins: 0,
                     power_ordinal: founder.cultivation.realmOrdinal
                 },
-                description: `Split from the ${parent.name}.`,
+                description: `Split from the ${houseName(parent.name)}.`,
                 foundedOnDay: day,
                 tags: ['unbacked', 'recruits', 'splinter']
             });
@@ -2475,7 +2533,7 @@ const TEMPLATES: Template[] = [
                 kind: 'faction_founded',
                 scale: 'regional',
                 summary:
-                    `${founder.name} left the ${parent.name} with ${leavers.length} others and ` +
+                    `${founder.name} left the ${houseName(parent.name)} with ${leavers.length} others and ` +
                     `set up on their own.`,
                 actors: [{ id: founder.id, name: founder.name, role: 'founder' }],
                 locationId: founder.locationId,
@@ -2634,7 +2692,7 @@ const TEMPLATES: Template[] = [
                 id: `e${state.nextEffectSeq++}`,
                 kind: 'war_resolves',
                 dueOnDay: day + resolvesIn,
-                summary: `The war between the ${a.name} and the ${b.name} came to an end.`,
+                summary: `The war between the ${houseName(a.name)} and the ${houseName(b.name)} came to an end.`,
                 actorIds: [],
                 locationId: null,
                 factionId: a.id,
@@ -2651,7 +2709,7 @@ const TEMPLATES: Template[] = [
                 day,
                 kind: 'war',
                 scale: 'regional',
-                summary: `The ${a.name} and the ${b.name} are openly fighting.`,
+                summary: `The ${houseName(a.name)} and the ${houseName(b.name)} are openly fighting.`,
                 factionIds: [a.id, b.id],
                 visibility: 'public',
                 magnitude: 0.7,

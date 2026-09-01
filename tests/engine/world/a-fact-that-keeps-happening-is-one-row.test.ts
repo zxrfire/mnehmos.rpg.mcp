@@ -144,18 +144,36 @@ describe('the ledger stays walkable', () => {
         expect(doubled.slice(0, 5)).toEqual([]);
     });
 
-    it('confirms somebody alive on the day they stood there, not the day the row opened', () => {
+    it('confirms somebody alive on the day it happened, not the day the row opened', () => {
+        // The link is written once and the confirmation day still moves, which
+        // is the part a fold could silently lose: the row is dated year 1004
+        // and the person was demonstrably standing there in year 2465.
         const state = world();
         state.npcs.push({
             ...JSON.parse(JSON.stringify({})),
             id: 'npc-w', name: 'Watcher', historyFactIds: [], lastConfirmedOnDay: 0,
             relationships: [], cultivation: {}, identity: {}, goals: []
         } as never);
-        appendWorldFact(state, renewal(400_000, { witnessIds: ['npc-w'] }));
-        appendWorldFact(state, renewal(900_000, { witnessIds: ['npc-w'] }));
+        const named = { actors: [{ id: 'npc-w', name: 'Watcher', role: 'involved' }] };
+        appendWorldFact(state, renewal(400_000, named));
+        appendWorldFact(state, renewal(900_000, named));
         const watcher = state.npcs.find(n => n.id === 'npc-w')!;
+        expect(state.history.facts).toHaveLength(1);
         expect(watcher.historyFactIds).toHaveLength(1);
         expect(watcher.lastConfirmedOnDay).toBe(900_000);
+    });
+
+    it('does not put a bystander on the record of what they merely saw', () => {
+        const state = world();
+        state.npcs.push({
+            ...JSON.parse(JSON.stringify({})),
+            id: 'npc-b', name: 'Bystander', historyFactIds: [], lastConfirmedOnDay: 0,
+            relationships: [], cultivation: {}, identity: {}, goals: []
+        } as never);
+        const fact = appendWorldFact(state, renewal(400_000, { witnessIds: ['npc-b'] }));
+        // Present on the fact, absent from the life. Two different questions.
+        expect(fact.witnessIds).toContain('npc-b');
+        expect(state.npcs.find(n => n.id === 'npc-b')!.historyFactIds).toEqual([]);
     });
 
     it('still holds a row for every distinct thing that happened', () => {

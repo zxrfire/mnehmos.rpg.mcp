@@ -159,6 +159,7 @@ import {
     type Manual
 } from './manuals.js';
 import type { Blocked, Promotion } from './promotion-inside-a-house.js';
+import { recordMasterTaken } from './recording-where-somebody-stands-in-a-house.js';
 import {
     upsertRelationship,
     type NpcRecord,
@@ -720,6 +721,11 @@ export function applyTeachingLines(
             bind(state, at, teacher.id, student, 'disciple', DISCIPLE_STANDING,
                 `Carrying them through ${taught.name}.`, day);
             load.set(teacher.id, (load.get(teacher.id) ?? 0) + 1);
+            // The tie carried `sinceDay` and the ledger said nothing, so a life
+            // could hold a master and never record having taken one. Taking a
+            // master is a life event at every altitude, and there is exactly one
+            // at a time, so this is not the kind of row that accumulates.
+            recordMasterTaken(state, student, teacher, taught.name, day);
 
             lines.push({
                 studentId: student.id,

@@ -46,16 +46,34 @@ function build(opts: {
     /** faction id -> how many chosen it has alive. */
     chosen?: Record<string, number>;
     purse?: number;
+    /** Give every house its own province, so nobody is anybody's neighbour. */
+    eachInOwnProvince?: boolean;
 } = {}): Built {
     const state = createWorld({ seed: 'gather-test', skipPriorAges: true, regionCount: 0 });
 
+    // TWO provinces, because a circle is now allies OR provincial neighbours.
+    // `house-lonely` is seated in the far one so that "nobody would sit down
+    // with it" stays expressible: in a single province it would be everybody's
+    // neighbour, which is the new rule working rather than a test failing. See
+    // `neighboursOf` for the measurement that rule came out of.
     state.locations.push(makeLocation({
         id: 'loc-region', name: 'The Province', kind: 'region', qiDensity: 0.4
     }));
+    state.locations.push(makeLocation({
+        id: 'loc-far', name: 'The Far Province', kind: 'region', qiDensity: 0.4
+    }));
+    const provinceOf = (id: string) =>
+        opts.eachInOwnProvince ? `loc-own-${id}`
+            : id === 'house-lonely' ? 'loc-far' : 'loc-region';
     for (const id of ['house-a', 'house-b', 'house-c', 'house-lonely']) {
+        if (opts.eachInOwnProvince) {
+            state.locations.push(makeLocation({
+                id: `loc-own-${id}`, name: `${id} province`, kind: 'region', qiDensity: 0.4
+            }));
+        }
         state.locations.push(makeLocation({
             id: `seat-${id}`, name: `${id} seat`, kind: 'sect_seat',
-            parentId: 'loc-region', qiDensity: 0.4
+            parentId: provinceOf(id), qiDensity: 0.4
         }));
         state.factions.push(makeFaction({
             id,
@@ -132,7 +150,11 @@ describe('who is allied', () => {
     it('leaves a dissolved house out of every circle', () => {
         const { state } = build({ edges: [['house-b', 'house-a', 0.4]] });
         state.factions.find(f => f.id === 'house-a')!.dissolvedOnDay = state.currentDay;
-        expect(circlesOf(state)).toEqual([]);
+        // The circle survives - b and c still share a province - but the house
+        // that ended is in none of it.
+        const seated = circlesOf(state).flatMap(c => c.members.map(f => f.id));
+        expect(seated).not.toContain('house-a');
+        expect(circlesOf(state).map(c => c.host.id)).not.toContain('house-a');
     });
 });
 
@@ -147,18 +169,28 @@ describe('who is invited', () => {
         expect(holdGathering(state, circle, state.currentDay, rng())).toBeNull();
     });
 
-    it('a house nobody is allied to is never in a circle', () => {
+    it('a house nobody would sit down with is never in a circle', () => {
+        // Hostile AND in the same province, so it is near enough to have been
+        // asked and was not. Distance and hostility are the two ways out of a
+        // circle, and this is the one that reads as a decision - which is why
+        // it is the one the fact names.
         const { state } = build({
-            edges: [['house-b', 'house-a', 0.4]],
-            chosen: { 'house-a': 1, 'house-b': 1, 'house-lonely': 4 }
+            // Hostile to both, or it simply joins the other one's circle -
+            // which is itself the rule working: a veto is per pair.
+            edges: [
+                ['house-b', 'house-a', 0.4],
+                ['house-c', 'house-a', -0.9],
+                ['house-c', 'house-b', -0.9]
+            ],
+            chosen: { 'house-a': 1, 'house-b': 1, 'house-c': 4 }
         });
         const seated = new Set(circlesOf(state).flatMap(c => c.members.map(f => f.id)));
-        expect(seated.has('house-lonely')).toBe(false);
+        expect(seated.has('house-c')).toBe(false);
         const held = holdGathering(state, circlesOf(state)[0], state.currentDay, rng())!;
         expect(held.attendeeIds.length).toBe(2);
-        expect(held.factionIds).not.toContain('house-lonely');
+        expect(held.factionIds).not.toContain('house-c');
         // And it is named, so the exclusion is readable rather than implied.
-        expect(held.excludedFactionIds).toContain('house-lonely');
+        expect(held.excludedFactionIds).toContain('house-c');
     });
 
     it('a host that cannot pay does not gather', () => {
@@ -236,7 +268,10 @@ describe('what a gathering leaves behind', () => {
         expect(state.history.facts.some(f => f.id === held.fact.id)).toBe(true);
         const stored = state.history.facts.find(f => f.id === held.fact.id)!;
         expect(stored.factionIds.sort()).toEqual(['house-a', 'house-b', 'house-c']);
-        expect(String(stored.data.excludedFactionIds)).toContain('house-lonely');
+        // Every house in the province is here, so nobody near was left out.
+        // `house-lonely` is a province away, and `uninvitedNear` is explicit
+        // that being somewhere else is not being snubbed.
+        expect(String(stored.data.excludedFactionIds ?? '')).not.toContain('house-lonely');
         expect(stored.consequences).not.toBeNull();
     });
 
@@ -420,8 +455,11 @@ describe('the yearly pass', () => {
         expect(count).toBeLessThan(200);
     });
 
-    it('does nothing at all in a world with no alliances', () => {
-        const { state } = build({ chosen: { 'house-a': 3, 'house-lonely': 3 } });
+    it('does nothing at all where nobody shares an alliance or a province', () => {
+        const { state } = build({
+            chosen: { 'house-a': 3, 'house-lonely': 3 },
+            eachInOwnProvince: true
+        });
         let count = 0;
         for (let year = 1; year <= 300; year++) count += applyGatherings(state, year, year * 365).length;
         expect(count).toBe(0);

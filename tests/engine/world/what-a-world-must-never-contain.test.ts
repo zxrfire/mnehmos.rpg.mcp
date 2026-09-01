@@ -161,12 +161,17 @@ describe('a world must never contain', () => {
         expect(wrong.map(n => `${n.name} ${n.layer} ${n.cultivation.realmOrdinal}`)).toEqual([]);
     });
 
-    it('a fact that names people and cannot be reached from any of them', () => {
+    it('a fact about somebody that cannot be reached from them', () => {
+        // ACTORS, not witnesses. `historyFactIds` is the trajectory - what
+        // happened to this person - and `witnessIds` is who was standing there.
+        // Linking both put every bystander's record on every fact they were
+        // near and turned the most-documented life in the world into a police
+        // blotter for a postcode. Presence is still stored, in full, on the fact.
         const state = advanced();
         const unreachable: string[] = [];
         for (const fact of state.history.facts) {
-            for (const named of [...fact.actors.map(a => a.id), ...fact.witnessIds]) {
-                const npc = state.npcs.find(n => n.id === named);
+            for (const actor of fact.actors) {
+                const npc = state.npcs.find(n => n.id === actor.id);
                 if (npc && !npc.historyFactIds.includes(fact.id)) {
                     unreachable.push(`${fact.id} names ${npc.name}, who does not carry it`);
                 }
