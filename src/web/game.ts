@@ -73,6 +73,8 @@ import {
     untreatedInjuries,
     untreatedInjuryCount
 } from '../engine/cultivation/injuries.js';
+import { isPermanentWound } from '../data/cultivation/wounds.js';
+import { FOUNDATION_ORDINAL } from '../engine/cultivation/realms.js';
 import type { Injury } from '../schema/cultivation.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
 import { round2 } from '../server/consolidated/cultivation-support.js';
@@ -279,6 +281,9 @@ import { assessPower, resolveExchange } from '../engine/cultivation/combat.js';
 import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
 import { getHerb } from '../data/cultivation/herbs.js';
 import { PILLS, getPill } from '../data/cultivation/pills.js';
+// Above a certain grade a pill has a value and no price. The refusal that says
+// so already existed and nothing asked it.
+import { cashRefusalReason } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { askedAbout } from './asked.js';
 import {
     hearingProse,
@@ -345,6 +350,12 @@ import { createGrudge, type Severity } from '../engine/social/grudges.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt, npcsInFaction } from '../engine/world/world-state.js';
+// The owner's two axes: severity of the wound, realm of the wounded.
+import {
+    medicineNeededFor,
+    medicineRank,
+    medicineReaches
+} from '../engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
 // The first concrete thing rank buys: days a year on the house's own ground.
 import {
     groundEntitlementFor,
@@ -7406,6 +7417,38 @@ ${noticed}`;
         // impossible.
         const battered = cultivator.hp < cultivator.maxHp;
 
+        // ── WHAT A PHYSICIAN CAN ACTUALLY REACH, PRICED BEFORE IT IS SOLD ──
+        //
+        // The two axes gate what mortal care closes, and a gate without a price
+        // change reintroduces the exact defect the whole meridian pass was for:
+        // eleven stones taken, a month spent, "Nothing closed." A treatment
+        // sold against a wound it cannot touch is worse than a refusal, and the
+        // refusal has to name the grade that would work.
+        const reachable = hurt.filter(injury =>
+            !isPermanentWound(injury.woundType)
+            && medicineReaches('mortal', injury.severity, cultivator.realmOrdinal));
+        const outOfReach = hurt.filter(injury =>
+            !isPermanentWound(injury.woundType)
+            && !medicineReaches('mortal', injury.severity, cultivator.realmOrdinal));
+
+        if (reachable.length === 0 && outOfReach.length > 0 && !battered) {
+            const needed = outOfReach
+                .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
+                .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
+            return refused('engine.medicineNeededFor', 'treat', factsForRefusal(
+                'Past what a physician can do.',
+                `They look at what you are carrying and put their hands in their sleeves. `
+                + `${cultivator.realmOrdinal >= FOUNDATION_ORDINAL
+                    ? 'A body at this height does not mend on splints and boiled roots'
+                    : 'Damage this deep does not close under ordinary care'}`
+                + `: it wants ${needed}-grade medicine, and nothing below it will reach. `
+                + 'They will not take money for a month that would change nothing.',
+                `${outOfReach.length} untreated wound(s) beyond mortal grade at ordinal `
+                + `${cultivator.realmOrdinal}; highest requirement ${needed}. `
+                + 'Nothing bought, nothing spent, no time passed.'
+            ));
+        }
+
         if (hurt.length === 0 && !battered) {
             return refused('engine.untreatedInjuries', 'treat', factsForRefusal(
                 'Nothing to see to.',
@@ -7423,7 +7466,9 @@ ${noticed}`;
         // second one.
         const visitCash = localPrice(regionId, visit.cash);
         const restingPrice = Math.max(1, Math.ceil(cashToStones(visitCash)));
-        const dueNow = hurt.length === 0 ? restingPrice : perWound;
+        // Priced on what can be REACHED, not on what is being carried: a wound
+        // past mortal grade is not a course anybody is going to sell.
+        const dueNow = reachable.length === 0 ? restingPrice : perWound;
 
         if (cultivator.spiritStones < dueNow) {
             return refused('engine.localPrice', 'treat', factsForRefusal(
@@ -7442,7 +7487,7 @@ ${noticed}`;
         // How many meridians get closed, and what the whole stay costs. A stay
         // with no wounds in it still costs the visit: somebody was paid to keep
         // a body alive for a month.
-        const courses = Math.min(hurt.length, Math.floor(cultivator.spiritStones / perWound));
+        const courses = Math.min(reachable.length, Math.floor(cultivator.spiritStones / perWound));
         const cost = Math.max(restingPrice, courses * perWound);
 
         // A month under somebody's roof, fed out of the purse the same way a
@@ -7505,7 +7550,28 @@ ${noticed}`;
 
         // The engine's own triage decides which wounds, worst first. This
         // layer decides only how many were paid for.
-        const triage = treatWorstInjuries(applied.cultivator.injuries, courses);
+        // MORTAL GRADE, because that is what a village physician is. The two
+        // axes are the owner's ruling - the rarity of the medicine scales with
+        // the severity of the injury and the realm of the injured - and before
+        // this the resolver had neither, so a Nascent Soul with crippling torn
+        // meridians bought thirty days of splints for fourteen stones and
+        // walked out whole. See `what-grade-of-medicine-a-wound-needs.ts`.
+        //
+        // Nothing here narrows the bottom of the ladder: at Qi Condensation and
+        // Foundation Establishment a minor or serious tear is still mortal
+        // grade, still a month and a few stones, and still the cheapest cure in
+        // the game. What is gated is height and severity.
+        //
+        // Passed as a PREDICATE rather than as a grade, so `injuries.ts` never
+        // has to know what a pill grade is. It imports the wound table and the
+        // schema and nothing else; the medicine ladder lives one layer out and
+        // reaches `breakthrough.ts`, which imports `injuries.ts` back. Handing
+        // the rule down as a function is what keeps that from being a cycle.
+        const triage = treatWorstInjuries(
+            applied.cultivator.injuries,
+            courses,
+            severity => medicineReaches('mortal', severity, applied.cultivator.realmOrdinal)
+        );
         const treated = applied.cultivator.injuries.filter(
             (before: Injury) => !before.treated
                 && triage.injuries.some((closed: Injury) => closed.id === before.id && closed.treated)
@@ -7553,6 +7619,34 @@ ${noticed}`;
             mended
         });
         facts.lines.unshift(provisioning.line);
+
+        // ── WHAT THE STAY COULD NOT REACH, AND WHAT WOULD ────────────────
+        //
+        // A wound left open by a mortal physician must say so and must name the
+        // grade that would close it, or the player pays, reads a success, and
+        // walks out still carrying the thing that is going to kill them. This
+        // is the same rule the technique ceiling and the bleed warning now
+        // follow: name the blocker AND the fix.
+        const beyond = untreatedInjuries(after.injuries)
+            .filter(injury => !isPermanentWound(injury.woundType))
+            .filter(injury => !medicineReaches('mortal', injury.severity, after.realmOrdinal));
+        if (beyond.length > 0) {
+            const needed = beyond
+                .map(injury => medicineNeededFor(injury.severity, after.realmOrdinal))
+                .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
+            facts.lines.push(
+                `${beyond.length} of them ${beyond.length === 1 ? 'is' : 'are'} past what a `
+                + `physician can do. ${after.realmOrdinal >= FOUNDATION_ORDINAL
+                    ? 'A body at this height does not mend on splints and boiled roots'
+                    : 'Damage this deep does not close under ordinary care'}`
+                + `: it wants ${needed}-grade medicine, and nothing below it will reach.`
+            );
+            facts.structure.push(
+                `medicineNeededFor: ${beyond.length} wound(s) beyond mortal grade at ordinal `
+                + `${after.realmOrdinal}; highest requirement ${needed}.`
+            );
+        }
+
         facts.lines.push(...applied.tollLines);
         facts.lines.push(...world.lines);
         facts.structure.push(...world.structure);
@@ -7634,6 +7728,31 @@ ${noticed}`;
         const price = resolved ? getPrice(resolved.id) : undefined;
 
         if (!price) {
+            // ── ABOVE A CERTAIN LINE, CASH IS NOT THE MEDIUM ─────────────
+            //
+            // `pillTradeTier` already computes that heaven grade and above is
+            // not for sale at any price, and gives the reason. The refusal
+            // never asked it, so "I buy a Meridian Rebirth Pill" - the medicine
+            // the catalog says is the only thing below immortal grade that
+            // touches crippling damage - answered "a thing that is not sold"
+            // and listed millet and ferry crossings.
+            //
+            // This is the sentence the high corner wanted: told what would mend
+            // you and why you cannot have it yet. It is also the `items.md`
+            // rule reaching a player for the first time.
+            const asPill = query.length >= 3 ? resolvePill(query) : null;
+            const pill = asPill ? getPill(asPill.id) : undefined;
+            const notForSale = pill ? cashRefusalReason(pill) : null;
+            if (pill && notForSale) {
+                return refused('engine.pillTradeTier', 'buy', factsForRefusal(
+                    `${pill.name} is not bought with money.`,
+                    `${notForSale} What ${pill.name} does is not in question, and neither is your `
+                    + 'purse: it is that a counter is the wrong place to be standing.',
+                    `pillTradeTier(${pill.id}) = barter at ${pill.grade} grade. No cash price `
+                    + 'exists to quote. Nothing bought, nothing spent, no time passed.'
+                ));
+            }
+
             // One line per category, not the first eight rows of the catalog.
             //
             // `PRICES` is authored in category order, so slicing the top of it

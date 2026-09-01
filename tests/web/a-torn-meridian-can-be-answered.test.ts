@@ -110,3 +110,60 @@ describe('mortal care and a torn meridian', () => {
         expect(acted.narration).toMatch(/pill|alchem|refine/i);
     }, 60_000);
 });
+
+describe('the owner\'s two axes, at the seam where a player meets them', () => {
+    /** Restore `hp` full, set a realm, and carry one wound of `severity`. */
+    async function carrying(seed: string, ordinal: number, severity: string) {
+        const { db, game } = makeGame({ seed, worldEnabled: true });
+        const { cultivator } = await game.newRun('Hurt');
+        db.prepare(
+            'UPDATE cultivators SET spirit_stones = 5000, realm_ordinal = ?, max_hp = 200, hp = 200 WHERE id = ?'
+        ).run(ordinal, cultivator.id);
+        db.prepare(
+            `INSERT INTO cultivator_injuries (id, cultivator_id, severity, source, description,
+             sustained_on_turn, treated, cultivation_penalty, breakthrough_penalty, wound_type)
+             VALUES (?, ?, ?, 'qi_deviation', ?, 1, 0, 0.1, 0.05, 'torn-meridians')`
+        ).run(randomUUID(), cultivator.id, severity, `A ${severity} meridian injury.`);
+        return { db, game, cultivator };
+    }
+
+    it('still closes an ordinary tear on an ordinary cultivator, cheaply', async () => {
+        const { db, game, cultivator } = await carrying('axes-novice', 3, 'minor');
+        await game.act('I treat my injuries');
+        expect(untreated(db, cultivator.id), 'the beginner cure was gated out').toBe(0);
+    }, 60_000);
+
+    /**
+     * The reported case. And critically it must not TAKE THE MONEY: charging
+     * for a treatment the game knows cannot work is the defect this whole pass
+     * exists to remove, and a gate without a price change reintroduces it.
+     */
+    it('refuses a stay it cannot use, names the grade, and charges nothing', async () => {
+        const { db, game, cultivator } = await carrying('axes-nascent', 26, 'crippling');
+        const before = stones(db, cultivator.id);
+
+        const acted = await game.act('I treat my injuries');
+
+        expect(untreated(db, cultivator.id)).toBe(1);
+        expect(stones(db, cultivator.id), 'took money for a month that changed nothing')
+            .toBe(before);
+        expect(acted.narration).toMatch(/heaven-grade/);
+        expect(acted.narration).toMatch(/will not take money|nothing below it will reach/);
+    }, 60_000);
+
+    /**
+     * Above a certain line cash is not the medium, `pillTradeTier` has always
+     * known it, and the refusal never asked. This is the sentence the high
+     * corner wanted: told what would mend you and why you cannot have it yet.
+     */
+    it('says why the medicine that would work is not for sale', async () => {
+        const { db, game, cultivator } = await carrying('axes-barter', 26, 'crippling');
+        db.prepare('UPDATE cultivators SET spirit_stones = 500000 WHERE id = ?').run(cultivator.id);
+
+        const acted = await game.act('I buy a Meridian Rebirth Pill');
+
+        expect(acted.narration).not.toMatch(/thing that is not sold/);
+        expect(acted.narration).toMatch(/Nobody sells one of these for stones/);
+        expect(stones(db, cultivator.id)).toBe(500000);
+    }, 60_000);
+});

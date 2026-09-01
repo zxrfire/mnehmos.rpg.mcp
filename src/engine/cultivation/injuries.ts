@@ -502,7 +502,24 @@ export interface TriageResult {
  * pill. Ties break toward the oldest wound, because a wound that has been open
  * longer has had longer to do damage.
  */
-export function treatWorstInjury(injuries: readonly Injury[]): TriageResult {
+export function treatWorstInjury(
+    injuries: readonly Injury[],
+    /**
+     * What is being applied, and to whom.
+     *
+     * Omitted means "no grade stated", which treats everything triable - the
+     * behaviour every caller had before the two axes existed, kept so that a
+     * harness or a design guard can still ask "what is the worst one" without
+     * pricing medicine.
+     *
+     * Supplied, it enforces the design owner's ruling: the rarity of the
+     * medicine scales with the severity of the injury AND the realm of the
+     * injured. Before it, a Nascent Soul with crippling torn meridians bought
+     * thirty days of village splints for fourteen stones and walked out whole.
+     * See `what-grade-of-medicine-a-wound-needs.ts`.
+     */
+    reaches?: (severity: InjurySeverity) => boolean
+): TriageResult {
     let worst: Injury | null = null;
     for (const injury of injuries) {
         if (injury.treated) continue;
@@ -511,6 +528,10 @@ export function treatWorstInjury(injuries: readonly Injury[]): TriageResult {
         // it is not a use of it, and picking it as "the worst one" would waste
         // the pill and leave the tear open. See `treatInjury`.
         if (isPermanentWound(injury.woundType)) continue;
+        // Out of this medicine's reach. Skipped rather than picked-and-failed,
+        // for exactly the reason above: choosing a wound the treatment cannot
+        // close would waste the treatment and leave a closable one open.
+        if (reaches && !reaches(injury.severity)) continue;
         if (
             worst === null ||
             severityRank(injury.severity) > severityRank(worst.severity) ||
@@ -532,12 +553,17 @@ export function treatWorstInjury(injuries: readonly Injury[]): TriageResult {
  * Treat up to `count` injuries, worst first. Models a long seclusion or a
  * healer's course of treatment rather than a single pill.
  */
-export function treatWorstInjuries(injuries: readonly Injury[], count: number): TriageResult & { treatedCount: number } {
+export function treatWorstInjuries(
+    injuries: readonly Injury[],
+    count: number,
+    /** See `treatWorstInjury`. Omitted keeps the ungraded behaviour. */
+    reaches?: (severity: InjurySeverity) => boolean
+): TriageResult & { treatedCount: number } {
     let current = [...injuries];
     let treatedCount = 0;
     let last: Injury | null = null;
     for (let i = 0; i < Math.max(0, Math.floor(count)); i++) {
-        const step = treatWorstInjury(current);
+        const step = treatWorstInjury(current, reaches);
         if (step.treated === null) break;
         current = step.injuries;
         last = step.treated;
