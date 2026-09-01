@@ -296,7 +296,9 @@ import {
     arrivableForSpan,
     completeDuty,
     consumeArrivals,
+    cutTo,
     daysActuallySpent,
+    deltasDroppedBy,
     dutyFromOffer,
     encounterCalls,
     encountersFor,
@@ -318,6 +320,7 @@ import { whyProgressHasStopped, type SeatStanding } from './why-progress-has-sto
 import { whoWouldTeach, type SomebodyAbove } from './who-would-teach-this-cultivator.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
 import { assessAcquisition, sealedDoorFraction, type AcquisitionRoute } from '../engine/encounters/index.js';
+import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
 import type {
     ArrivableFact,
@@ -6528,13 +6531,27 @@ ${noticed}`;
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const verb: ActionName = sealed ? 'seclude' : 'cultivate';
 
+        // ── WHAT ACTUALLY HAPPENED, AGAINST WHAT WAS GOING TO ───────────
+        //
+        // `lived` is the encounter layer's own truncation and it is not the
+        // last word: `simulateTimeSkip` then stops wherever IT likes - a wound,
+        // a deviation threshold, a major encounter, a death - and everything
+        // rolled between the two is a span nobody reached. Until this cut, all
+        // of it was recorded, narrated and consumed off the arrivals list
+        // anyway. Three playtests found it independently; the plainest was a
+        // cultivator who died on day 5 and read a mission board on day 2995.
+        //
+        // Everything downstream reads `happened` rather than `enc`.
+        const happened = cutTo(enc, startDay, skip.simulatedDays);
+        this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
+
         // AFTER the skip, because a knowledge grant is a write and writes belong
         // in phase 2. Phase 3 then only ever gets a licence to mention something
         // that is already true.
         const enc2 = recordEncounters(
-            this.knowledge, applied.cultivator, applied.run.elapsedDays, enc, this.repos
+            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos
         );
-        this.pendingArrivals = consumeArrivals(this.pendingArrivals, enc);
+        this.pendingArrivals = consumeArrivals(this.pendingArrivals, happened);
 
         const facts = factsForTimeSkip(
             provisioned, applied.cultivator, skip, ambient,
@@ -6588,10 +6605,42 @@ ${noticed}`;
             calls: [
                 ...skipCalls(verb, skip, provisioning.line),
                 ...tollCalls(applied.tollLines),
-                ...encounterCalls(enc, verb),
+                ...encounterCalls(happened, verb, enc),
                 ...worldCalls(world)
             ]
         };
+    }
+
+    /**
+     * Take back what the cultivator was credited for a span they never spent.
+     *
+     * `withEncounterDeltas` runs BEFORE the skip, because the skip needs a
+     * starting HP and a starting purse. So by the time `cutTo` works out which
+     * days were actually lived, the HP and stones of occurrences that never
+     * happened are already folded in. Left alone, the sheet would disagree with
+     * the account the player just read - which is the same defect as the events
+     * themselves, one layer down.
+     *
+     * A write rather than a re-run of the skip: re-running it with different
+     * starting HP is a balance change wearing a bug fix's clothes, and it can
+     * shift where the skip stops, which is the very thing being measured here.
+     *
+     * Silent when nothing was dropped, which is the ordinary case. Never on a
+     * cultivator the run has already closed: a death is final and the repo
+     * refuses the write in any case.
+     */
+    private handBackWhatNeverHappened(
+        after: Cultivator,
+        rolled: EncounterRoll,
+        happened: EncounterRoll
+    ): void {
+        if (!after.alive) return;
+        const dropped = deltasDroppedBy(rolled, happened);
+        if (dropped.hp === 0 && dropped.spiritStones === 0) return;
+        this.repos.cultivators.applyDeltas(after.id, {
+            hp: -dropped.hp,
+            spiritStones: -dropped.spiritStones
+        });
     }
 
     /**
@@ -6734,10 +6783,16 @@ ${noticed}`;
         const applied = applyTimeSkip(this.repos, { before, run, skip });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
+        // The same cut the long path takes, and for the same reason: a short
+        // action can still be stopped early by the skip, and an occurrence past
+        // that day did not happen. See `cutTo`.
+        const happened = cutTo(enc, startDay, skip.simulatedDays);
+        this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
+
         const enc2 = recordEncounters(
-            this.knowledge, applied.cultivator, applied.run.elapsedDays, enc, this.repos
+            this.knowledge, applied.cultivator, applied.run.elapsedDays, happened, this.repos
         );
-        this.pendingArrivals = consumeArrivals(this.pendingArrivals, enc);
+        this.pendingArrivals = consumeArrivals(this.pendingArrivals, happened);
 
         const facts = factsForTimeSkip(before, applied.cultivator, skip, ambient, label);
         facts.lines.push(...enc2.lines);
@@ -6756,7 +6811,7 @@ ${noticed}`;
             outcome: 'executed',
             calls: [
                 ...skipCalls(label.toLowerCase().startsWith('practice') ? 'train_technique' : 'wait', skip, null),
-                ...encounterCalls(enc, label.toLowerCase()),
+                ...encounterCalls(happened, label.toLowerCase(), enc),
                 ...worldCalls(world)
             ]
         };
