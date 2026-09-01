@@ -19,8 +19,12 @@
  *
  *   POPULATION   do people live, die and get replaced, or does a cohort simply
  *                age out? A world that empties is not drifting, it is dying.
- *   ALTITUDE     does the ladder's shape move? Somebody has to be rising, and
- *                the strongest person alive should not be immortal furniture.
+ *   ALTITUDE     is anybody CLIMBING? Not "does the maximum move" - the maximum
+ *                is the province's own ceiling and it is supposed to sit still,
+ *                so reading it as drift was a mistake this file used to make.
+ *                The question is turnover: are the people standing at the top
+ *                in five hundred years the same people who were standing there
+ *                at the start? A ladder nobody climbs still reports a maximum.
  *   INHERITANCE  goals and grudges carried past their owner's death are the
  *                mechanism the setting has for history mattering. Zero of them
  *                means every generation starts the argument again.
@@ -58,6 +62,13 @@ async function main(): Promise<void> {
     let state = seeded.state;
     const first = worldShape(state);
 
+    /** Everybody standing in the top quarter of the ladder, by identity. */
+    const highBand = (s: typeof state): Set<string> => new Set(
+        s.npcs.filter(n => n.status === 'alive' && n.cultivation.realmOrdinal >= 30).map(n => n.id)
+    );
+    const startedHigh = highBand(state);
+    let replacedAtTheTop = 0;
+
     line(`  ${'after'.padEnd(22)}${'living'.padStart(7)}${'strongest'.padStart(11)}`
         + `${'inherited goals'.padStart(17)}${'grudges'.padStart(9)}${'events'.padStart(8)}`);
     line('  ' + '-'.repeat(74));
@@ -87,6 +98,10 @@ async function main(): Promise<void> {
             + `${String(events).padStart(8)}`);
     }
 
+    const endedHigh = highBand(state);
+    for (const id of endedHigh) if (!startedHigh.has(id)) replacedAtTheTop++;
+    const survivors = [...endedHigh].filter(id => startedHigh.has(id)).length;
+
     const last = shapes[shapes.length - 1];
     const flat: string[] = [];
     const moved: string[] = [];
@@ -95,13 +110,22 @@ async function main(): Promise<void> {
         (from === to ? flat : moved).push(`${name} ${from} -> ${to}`);
 
     note('living', first.livingNpcs, last.livingNpcs);
-    note('strongest', first.strongestOrdinal, last.strongestOrdinal);
+    // Deliberately NOT `strongest`. See ALTITUDE above: the maximum is the
+    // region ceiling and holding still is the correct behaviour for it.
+    note('the high band, by name', 0, replacedAtTheTop);
     note('inherited goals', first.inheritedGoals, last.inheritedGoals);
     note('inherited grudges', first.inheritedGrudges, last.inheritedGrudges);
     if (totalEvents === 0) flat.push('events 0 across every era');
     else moved.push(`${totalEvents} events filed across ${ERAS[ERAS.length - 1].years} years`);
 
     rule('WHAT A RETURNING CULTIVATOR WOULD FIND');
+    line();
+    line(`  At the top of the ladder (ordinal 30+): ${startedHigh.size} at the seeding, `
+        + `${endedHigh.size} at the end.`);
+    line(`  ${survivors} of them are the same people. ${replacedAtTheTop} are new.`);
+    line(replacedAtTheTop === 0
+        ? '  Nobody climbed into the high band in five centuries: the ladder is furniture.'
+        : '  The high band turns over, so somebody is climbing it rather than sitting on it.');
 
     if (moved.length > 0) {
         line();

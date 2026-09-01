@@ -293,6 +293,57 @@ export function admissionOffer(factionId: string, seed: string): AdmissionOffer 
 }
 
 /**
+ * A house that has lost its favourite picks another.
+ *
+ * `chosen` was set once, at seeding, and never again - so the world's favoured
+ * disciples aged, died, and were not replaced. Measured across five centuries:
+ * 32 chosen at the seeding, 10 at year 50, none at all by year 300, and with
+ * them went every route to the top of a shelf. By the end not one living
+ * cultivator anywhere held a book that reached even ordinal 20, and the high
+ * band emptied from seventeen people to one.
+ *
+ * That is the difference between a pyramid and a monument. A pyramid is
+ * maintained: somebody is always being brought up to replace the person who
+ * died, and a house that stops doing it stops mattering within a century -
+ * which is a real thing that should be able to happen to a house, but not to
+ * every house at once, silently, because a designation was only ever written
+ * at world creation.
+ *
+ * Returns whoever was newly favoured, so the caller can tag them.
+ */
+export function refreshChosen(state: WorldState): NpcRecord[] {
+    const members = new Map<string, NpcRecord[]>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || !npc.factionId) continue;
+        const list = members.get(npc.factionId);
+        if (list) list.push(npc); else members.set(npc.factionId, [npc]);
+    }
+
+    const named: NpcRecord[] = [];
+    for (const [factionId, people] of members) {
+        const shelf = manualsOf(factionId);
+        if (shelf.length === 0) continue;
+        const faction = state.factions.find(f => f.id === factionId);
+        if (!faction || faction.dissolvedOnDay !== null) continue;
+
+        const standing = people.filter(p => p.tags.includes('chosen')).length;
+        const topCopies = copiesOf(
+            shelf[shelf.length - 1].cap,
+            forStream(state.seed, 'library', factionId)
+        );
+        const want = chosenCount(topCopies, people.length);
+        if (standing >= want) continue;
+
+        const rankCount = Math.max(1, faction.ranks.length);
+        for (const pick of chooseTheChosen(people, rankCount, want - standing)) {
+            if (pick.tags.includes('chosen')) continue;
+            named.push(pick);
+        }
+    }
+    return named;
+}
+
+/**
  * Books somebody has become entitled to since they were last looked at.
  *
  * Joining a house IS one of the ways - an outer disciple is taught, that is
@@ -329,9 +380,35 @@ export function newlyEntitled(state: WorldState, npc: NpcRecord): string[] {
         const reach = npc.tags.includes('chosen')
             ? shelf.length
             : shelfReach(npc.factionRankIndex, rankCount, shelf.length);
+        // A SHELF IS NOT A STAIRCASE, AND SOMEBODY HAS TO CARRY YOU OVER THE GAP.
+        //
+        // Measured: 20 of 32 houses hold a shelf a disciple cannot walk end to
+        // end. The usual shape is a primer capping at 13 and the next book
+        // wanting 21 - an eight-rung dead zone that no amount of favour or
+        // patience crosses, because the requirement is on the book. Left alone
+        // it means most houses structurally cannot produce anybody above 13,
+        // and the world's high band drained from seventeen people to one inside
+        // five centuries.
+        //
+        // The setting's own answer is a person, not a book: you need guidance
+        // from somebody of an appropriate level, and a method can be passed
+        // master to student directly. So a house that still HAS a living master
+        // of the higher manual can bring somebody across the gap, and a house
+        // that has lost its last master of it cannot - which turns the gap from
+        // a silent arithmetic dead end into the thing it should be, a fact
+        // about who is still alive in the building.
+        const teachable = new Set<string>();
+        for (const other of state.npcs) {
+            if (other.status !== 'alive' || other.factionId !== npc.factionId) continue;
+            if (other.id === npc.id) continue;
+            for (const id of other.cultivation.techniqueIds) {
+                const m = shelf.find(x => x.id === id);
+                if (m && other.cultivation.realmOrdinal >= m.requiredOrdinal) teachable.add(id);
+            }
+        }
         const open = shelf
             .slice(0, reach)
-            .filter(m => m.requiredOrdinal <= ordinal
+            .filter(m => (m.requiredOrdinal <= ordinal || teachable.has(m.id))
                 && suitsRoot(npc.cultivation.spiritRoot, m.element)
                 && !held.has(m.id));
         return open.length > 0 ? [open[open.length - 1].id] : [];
