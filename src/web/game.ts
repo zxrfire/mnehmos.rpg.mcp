@@ -271,12 +271,21 @@ import {
     prizeImmortalItemIds,
     prizeOther,
     prizeTechniqueIds,
+    // What the GROUND does, before any gate somebody built. Two of the three
+    // ways the catalog closes ground had never fired for a player.
+    readAccess,
+    groundForceOrdinalOf,
     readGates,
     resolveSite,
     type FateEvidence,
     type GateVerdict
 } from './trials.js';
-import { SITES, enterSite, type Site } from '../data/cultivation/inheritance-trials.js';
+import {
+    SITES,
+    enterSite,
+    type AdmissionReading,
+    type Site
+} from '../data/cultivation/inheritance-trials.js';
 import { assessPower, resolveExchange } from '../engine/cultivation/combat.js';
 import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
 import { getHerb } from '../data/cultivation/herbs.js';
@@ -328,6 +337,14 @@ import { whereCouldTheyGo, type Destination } from './where-this-cultivator-coul
 // The strongest environmental lever in the game, stated in the one place the
 // rate itself reads. See the file header for the measurement that forced it.
 import { howCrowdedThisGroundIs, type CrowdingRead } from './how-crowded-this-ground-is.js';
+// The world uncovers closed ground and nothing player-facing read it.
+import {
+    describeFoundGround,
+    foundGroundIn,
+    readFoundGroundAccess,
+    resolveFoundGround,
+    type FoundGround
+} from './ground-the-world-found.js';
 import { assessAcquisition, sealedDoorFraction, concealmentScale, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
@@ -399,6 +416,8 @@ import { DEATH_IN_WORLD,
     type SiteFace,
     factsForRefusal,
     factsForStatus,
+    factsForGroundRefused,
+    factsForGroundSurvived,
     factsForGroundTime,
     factsForTimeSkip,
     factsForToolResult,
@@ -5287,6 +5306,79 @@ ${noticed}`;
         return { site, namedSomethingUnknown: false };
     }
 
+    /**
+     * Ground the world found, in this province, that this cultivator may name.
+     *
+     * Gated on `isAwareOf` exactly as the authored sites are: the world knowing
+     * about a ruin is not the player knowing about it, and listing every find
+     * the moment it is uncovered would spend somebody else's discovery.
+     */
+    private foundGroundFor(cultivator: Cultivator): FoundGround[] {
+        if (!this.atHand) return [];
+        const region = this.atHand.locations.find(
+            row => row.kind === 'region'
+                && loosePlaceKey(row.name) === loosePlaceKey(standingOf(cultivator).regionName)
+        );
+        return foundGroundIn(
+            this.atHand,
+            region?.id ?? null,
+            id => this.knowledge.isAwareOf(cultivator.id, 'place', id)
+        );
+    }
+
+    /**
+     * Standing outside something the world uncovered.
+     *
+     * Free, like the authored approach: looking at a door costs nothing. What
+     * it reports is STRUCTURE - character, scale, whose it was, what the ground
+     * does - because that is what a find carries. There is no authored interior
+     * to quote and none is invented; see `ground-the-world-found.ts`.
+     *
+     * The access read is the same `readAdmission` the authored sites use, so a
+     * cap here refuses for the same reason a cap there does and the player
+     * learns one rule rather than two.
+     */
+    private approachFoundGround(
+        run: Run,
+        cultivator: Cultivator,
+        ground: FoundGround
+    ): Execution {
+        const lines = describeFoundGround(ground);
+        const reading = readFoundGroundAccess(ground, cultivator.realmOrdinal);
+        if (reading) {
+            lines.push(
+                reading.admitted && reading.survives
+                    ? 'At your rung it would let you in, and let you out again.'
+                    : reading.admitted
+                        ? 'At your rung it would let you in. It would not let you out.'
+                        : 'At your rung it would not have you at all.'
+            );
+        }
+
+        const facts = factsForToolResult(`${ground.name}, from outside.`, lines);
+        facts.structure.push(
+            `foundGround ${ground.id}: character=${ground.character}, `
+            + `origin=${ground.origin ?? 'unrecorded'}, scale=${ground.scale ?? 'unrecorded'}, `
+            + `admits=${ground.access?.admits ?? 'unread'}, `
+            + `floorOrdinal=${ground.access?.floorOrdinal ?? 'unread'}, `
+            + `discoveredOnDay=${ground.discoveredOnDay ?? 'unrecorded'}.`
+        );
+
+        const execution = this.freeAction(run, 'site', facts);
+        execution.calls = [{
+            name: 'engine.foundGroundIn',
+            action: 'site',
+            summary:
+                `${ground.id} was found by the world's own prospecting and is nameable by this `
+                + `cultivator. ${reading
+                    ? `readAdmission at ordinal ${cultivator.realmOrdinal}: `
+                      + `admitted=${reading.admitted}, survives=${reading.survives}.`
+                    : 'No access recorded on the find; nothing read.'}`,
+            ok: true
+        }];
+        return execution;
+    }
+
     /** The pre-entry face, at whatever awareness this cultivator holds. */
     private faceFor(site: Site, cultivator: Cultivator): SiteFace | null {
         const awareness = awarenessOfSite(site, this.knowledge.isAwareOf(cultivator.id, 'place', site.id));
@@ -5475,22 +5567,48 @@ ${noticed}`;
             // Naming none is a question rather than a failure: it asks what
             // there is, and the honest answer is what has reached this person.
             const known = this.nameableFor(cultivator);
+
+            // ── AND WHAT THE WORLD HAS FOUND SINCE ───────────────────────
+            //
+            // This read used to be the catalog and nothing else, so the
+            // thirty authored sites were the only places that could ever be
+            // named - while the discovery engine steadily uncovered ground into
+            // a table nothing player-facing read. See
+            // `ground-the-world-found.ts` for the measurement.
+            const found = this.foundGroundFor(cultivator);
             const facts = factsForSiteListing(
                 cultivator,
-                known.map(entry => ({ name: entry.name, kind: entry.kind }))
+                [
+                    ...known.map(entry => ({ name: entry.name, kind: entry.kind })),
+                    ...found.map(entry => ({ name: entry.name, kind: entry.character }))
+                ]
             );
+            for (const ground of found) facts.structure.push(...describeFoundGround(ground));
+
             const listing = this.freeAction(run, 'site', facts);
-            listing.outcome = known.length === 0 ? 'refused' : 'executed';
+            const total = known.length + found.length;
+            listing.outcome = total === 0 ? 'refused' : 'executed';
             listing.calls = [{
                 name: 'engine.nameableSites',
                 action: 'site',
                 summary:
                     `${known.length} of ${SITES.length} catalogued site(s) are nameable by this `
-                    + 'cultivator. Filtered by awareness; the catalog holds no locations, so nothing '
-                    + 'here was filtered by distance.',
-                ok: known.length > 0
+                    + `cultivator, plus ${found.length} the world has found and this cultivator `
+                    + 'has a record for. Filtered by awareness; the catalog holds no locations, so '
+                    + 'nothing here was filtered by distance.',
+                ok: total > 0
             }];
             return listing;
+        }
+
+        // A find, named. Answered before the catalog's own refusal, because a
+        // place the world uncovered is a real place and "no site by that name"
+        // would be false about it.
+        if (!site) {
+            const named = resolveFoundGround(
+                (target ?? '').trim(), this.foundGroundFor(cultivator)
+            );
+            if (named) return this.approachFoundGround(run, cultivator, named);
         }
 
         if (!site) return this.noSiteAtHand('site', target);
@@ -5657,6 +5775,47 @@ ${noticed}`;
             yearsCultivated: applied.cultivator.age - STARTING_AGE,
             fate: this.fateEvidence(applied.cultivator)
         });
+        // ── WHAT THE GROUND DOES, BEFORE ANY GATE ────────────────────────
+        //
+        // `readGates` answers whether this claimant satisfies the locks
+        // somebody built. This is the prior question - what the place does to a
+        // body of this size - and nothing player-facing read it, so two of the
+        // three ways the catalog closes ground had never once fired for a
+        // player. The catalog holds 30 sites across 14 characters, 6 origins
+        // and 4 scales, and all of the cap and elder-floor writing in it was
+        // unreachable.
+        //
+        // Above the line first, because a cap turns somebody away at the
+        // threshold and a gate inside is not consulted for somebody who never
+        // got in. It costs the days and nothing else: being measured and found
+        // too large is not an injury, which is why `groundForceOrdinalOf`
+        // returns null for it.
+        const access = readAccess(site, claimant);
+        if (!access.admitted) {
+            const facts = factsForGroundRefused(
+                applied.cultivator, site.name, access, skip.simulatedDays
+            );
+            facts.lines.push(...world.lines);
+            facts.structure.push(...world.structure);
+            return {
+                facts,
+                events: skip.events,
+                timeSkip: skip,
+                breakthrough: null,
+                outcome: 'executed',
+                calls: [...baseCalls, {
+                    name: 'engine.readAdmission',
+                    action: 'ground_capped',
+                    summary:
+                        `${site.id} admits ${site.access.admits}; ordinal `
+                        + `${applied.cultivator.realmOrdinal} is above the line. Turned away at `
+                        + 'the threshold, no gate consulted, no force applied.',
+                    ok: false
+                }]
+            };
+        }
+
+
         const reading = readGates(site, claimant);
         const gateCalls: ToolCallRecord[] = reading.verdicts.map(verdict => ({
             name: 'engine.evaluateGate',
@@ -5692,6 +5851,50 @@ ${noticed}`;
             };
         }
 
+        // ── AND THEN THE DEPTH, WHICH IS AFTER THE DOOR AND NOT BEFORE IT ──
+        //
+        // Admitted and not surviving is the ORDINARY case for a minimum, and it
+        // is not a locked door: `readAdmission` says so in as many words - "the
+        // door is not what stops them". So it is read AFTER the gates rather
+        // than before them, which is not where this was first written.
+        //
+        // The specification said to put the whole access check ahead of
+        // `readGates`, and half of it belongs there: a CAP turns somebody away
+        // at the threshold, so no lock inside is consulted for a body that
+        // never got in. A FLOOR is the opposite - the door opened, they walked
+        // through it, and the place is deeper than they are. Evaluating it
+        // first made the gate unreachable for anybody under the floor, and
+        // `misparse.test.ts` caught it immediately: a strength gate stopped
+        // producing a reading at all.
+        //
+        // The two halves are ordered by what physically happens: refused at the
+        // door, then the lock, then the depth beyond it.
+        if (!access.survives) {
+            const hurt = await this.groundForce(run, applied.cultivator, ambient, site, access);
+            const facts = factsForGroundRefused(
+                applied.cultivator, site.name, access, skip.simulatedDays
+            );
+            facts.lines.push(...hurt.lines);
+            facts.lines.push(...world.lines);
+            facts.structure.push(...world.structure);
+            if (hurt.lines.length > 0) facts.prose = `${facts.prose}\n\n${hurt.lines.join('\n\n')}`;
+            return {
+                facts,
+                events: skip.events,
+                timeSkip: skip,
+                breakthrough: null,
+                outcome: 'executed',
+                calls: [...baseCalls, {
+                    name: 'engine.readAdmission',
+                    action: 'ground_floor',
+                    summary:
+                        `${site.id} floor is ${site.access.floorOrdinal}; ordinal `
+                        + `${applied.cultivator.realmOrdinal} is under it. Admitted and not `
+                        + 'survived - the door is not what stops them.',
+                    ok: false
+                }, ...hurt.calls]
+            };
+        }
         // Every gate opened. This is the one place in the package that calls
         // `enterSite`, and it is below a recorded entry by construction.
         const record = this.sites.write(run.id, site, run.elapsedDays, {
@@ -5721,6 +5924,17 @@ ${noticed}`;
             onOffer: [...prizeOther(whole), ...this.prizeNames(whole)],
             afterwards: record.takenOnDay !== null ? whole.interior.afterwards : null
         });
+        // WHAT STANDING AT ITS DEPTH IS LIKE, before the room is described.
+        //
+        // Clearing a floor is an event, not silence. An elder floor in
+        // particular says who the errand is FOR - the sentence that makes a
+        // senior's trip somebody else's inheritance - and it is written per
+        // site, so it goes in ahead of the interior rather than being folded
+        // into it.
+        const held = factsForGroundSurvived(applied.cultivator, site.name, access);
+        facts.lines.unshift(...held.lines);
+        facts.structure.push(...held.structure);
+
         facts.lines.unshift(spentLine);
         facts.lines.push(...world.lines);
         facts.structure.push(...world.structure);
@@ -5764,8 +5978,44 @@ ${noticed}`;
     ): Promise<{ lines: string[]; calls: ToolCallRecord[] }> {
         const ordinal = forceOrdinalOf(site, blocked);
         if (ordinal === null) return { lines: [], calls: [] };
+        return this.forceAtOrdinal(run, cultivator, ambient, site, ordinal, 'site_gate');
+    }
 
-        const rng = forStream(run.seed, 'site_gate', Math.floor(run.elapsedDays), site.id);
+    /**
+     * The depth of the ground itself, applied to somebody short of it.
+     *
+     * The sibling `gateForce` needed and did not have. A GATE is something a
+     * person built and is priced off a gate ordinal; a FLOOR is geology, and is
+     * priced off the floor. Same exchange, same resolver, same writes - what
+     * differs is only where the number comes from, which is why this splits at
+     * the ordinal rather than duplicating the body.
+     *
+     * A separate RNG stream from the gate's, so that a place which both has a
+     * floor and has gates does not draw the same sample twice for two different
+     * hazards.
+     */
+    private async groundForce(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        site: Site,
+        access: AdmissionReading
+    ): Promise<{ lines: string[]; calls: ToolCallRecord[] }> {
+        const ordinal = groundForceOrdinalOf(site, access);
+        if (ordinal === null) return { lines: [], calls: [] };
+        return this.forceAtOrdinal(run, cultivator, ambient, site, ordinal, 'site_ground');
+    }
+
+    private async forceAtOrdinal(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        site: Site,
+        ordinal: number,
+        stream: string
+    ): Promise<{ lines: string[]; calls: ToolCallRecord[] }> {
+
+        const rng = forStream(run.seed, stream, Math.floor(run.elapsedDays), site.id);
         const context = { ambient };
         const gate = assessPower(forceAt(site, ordinal), context);
         const body = assessPower(

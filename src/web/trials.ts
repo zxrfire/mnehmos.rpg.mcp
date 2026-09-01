@@ -59,6 +59,10 @@ import {
     SITES,
     getSite,
     outsideViewOf,
+    // What the GROUND does, as opposed to what a gate somebody built does.
+    // See `readAccess` at the foot of this file for why the two are separate.
+    readAdmission,
+    type AdmissionReading,
     type Gate,
     type GateKind,
     type Site,
@@ -631,4 +635,60 @@ function hardestOrdinal(site: Site): number {
  */
 export function faceOf(site: Site, awareness: Awareness): SiteOutsideView | undefined {
     return outsideViewOf(site.id, awareness);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT THE GROUND ITSELF DOES, BEFORE ANY GATE
+//
+// `readGates` answers "does this claimant satisfy the locks somebody built".
+// This answers the prior question: what does the ground do to a body of this
+// size standing in it, which is a fact about the place rather than a puzzle
+// anybody set. The catalog closes ground three genuinely different ways and
+// NONE of the second two could ever fire for a player, because nothing read
+// `access`:
+//
+//   anyone_who_survives_it  a minimum. Everybody is let in; below the floor
+//                           they do not come out. The gamble.
+//   nobody_above_the_line   a CAP. Too strong and the ground refuses you, and
+//                           the point of it is that somebody else must go.
+//   elders_and_above        an errand. High enough that only a senior lives,
+//                           and the senior is not who gains by it.
+//
+// A cap and an elder floor are the two shapes where the body that goes in is
+// not the body that gains - `entrantIsTheBeneficiary` says so - and both were
+// unreachable, so the whole "send somebody else" half of the design had never
+// once happened in a played game.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What this ground does to this claimant, before any gate is consulted.
+ *
+ * A thin wrapper over `readAdmission`, and deliberately thin: the catalog owns
+ * every sentence, and composing prose here from `admits` and a floor would be
+ * the template this whole surface exists to avoid. What this adds is the
+ * ordinal, taken off the claimant rather than passed in twice.
+ */
+export function readAccess(site: Site, claimant: Claimant): AdmissionReading {
+    return readAdmission(site.access, claimant.realmOrdinal);
+}
+
+/**
+ * The ordinal the GROUND applies to somebody short of its floor.
+ *
+ * The sibling of {@link forceOrdinalOf}, which prices a GATE. The difference
+ * matters: a gate is something a person built and only a strength gate hits
+ * anybody, so `forceOrdinalOf` returns null for the audit bench. A floor is
+ * geology - what is down there is down there - so the force is the floor
+ * itself, which is what `whatItDoesToSomebodyShortOfIt` describes.
+ *
+ * Null where the ground is not what stopped them: a body at or above the floor
+ * takes nothing from the place, and a body turned away by a CAP never went in.
+ * Being refused at the threshold costs the days and nothing else.
+ */
+export function groundForceOrdinalOf(
+    site: Site,
+    reading: AdmissionReading
+): number | null {
+    if (reading.closedBy !== 'below_the_floor') return null;
+    return site.access.floorOrdinal;
 }
