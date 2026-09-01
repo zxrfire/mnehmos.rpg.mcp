@@ -23,9 +23,11 @@
 import {
     type AmbientQi,
     type Cultivator,
-    type Element
+    type Element,
+    type ManualQuality
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from './spirit-roots.js';
+import { readManual } from './manual-quality.js';
 import {
     FOUNDATION_ORDINAL,
     MAX_ORDINAL,
@@ -790,6 +792,19 @@ export interface CultivationOptions {
      */
     techniqueSpan?: ManualBand | null;
     /**
+     * HOW WELL THE MANUAL IS WRITTEN, as the catalog fact rather than as a
+     * computed number - the same contract `techniqueSpan` uses, and for the
+     * same reason: a caller that could hand in the multiplier directly would be
+     * a caller that could invent it.
+     *
+     * The engine prices it against what the reader can take out of it, which is
+     * why this is a tier name and not a bonus. See `manual-quality.ts`.
+     *
+     * Omitted reads as `sound`, the identity element, so every existing caller
+     * keeps exactly the behaviour it had.
+     */
+    techniqueQuality?: ManualQuality | null;
+    /**
      * The ordinal of whoever is guiding this cultivator, if anyone is. A soft
      * rate term: somebody well above you teaches you a great deal, somebody at
      * or below you teaches you nothing about where you are standing.
@@ -810,7 +825,7 @@ const DEFAULT_OPTIONS: Required<
     Omit<
         CultivationOptions,
         'techniqueElement' | 'techniqueSubject' | 'techniqueCap' | 'techniqueSpan'
-        | 'guideOrdinal' | 'ground'
+        | 'techniqueQuality' | 'guideOrdinal' | 'ground'
     >
 > = {
     techniqueBonus: 1,
@@ -834,7 +849,7 @@ const DEFAULT_OPTIONS: Required<
  */
 export function computeCultivationRate(
     cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries'> &
-        Partial<Pick<Cultivator, 'foundationQuality' | 'insights' | 'realmOrdinal'>>,
+        Partial<Pick<Cultivator, 'foundationQuality' | 'insights' | 'realmOrdinal' | 'attributes'>>,
     ambient: AmbientQi,
     opts: CultivationOptions = {}
 ): CultivationRateBreakdown {
@@ -856,6 +871,14 @@ export function computeCultivationRate(
     // caller that forgot can see it in the breakdown rather than discovering it
     // as a flat ladder six months later.
     const ordinal = cultivator.realmOrdinal ?? 0;
+
+    // Priced once, here, so the rate line and anything else that asks about
+    // this pairing get the same judgement rather than two copies of it.
+    const manualReading = readManual(
+        opts.techniqueQuality ? { quality: opts.techniqueQuality } : null,
+        cultivator,
+        { techniqueElement: opts.techniqueElement ?? null, techniqueSubject: opts.techniqueSubject ?? null }
+    );
 
     const factors: RateFactor[] = [
         {
@@ -920,6 +943,20 @@ export function computeCultivationRate(
             source: 'technique',
             label: 'Cultivation manual',
             multiplier: nonNegative(options.techniqueBonus)
+        },
+        {
+            // HOW WELL THE BOOK IS WRITTEN, priced against what this reader can
+            // take out of it. The second axis of a manual and the largest
+            // non-realm term in the list: a damaged text and an author's own
+            // copy of the SAME rungs are x0.45 and x1.8.
+            //
+            // Under 1 for a reader the book is over the head of, which is the
+            // point - the years were spent and nothing was understood, so a
+            // great canon in the wrong hands is worse than a plain one in the
+            // right hands. 1 when no quality is declared. See manual-quality.ts.
+            source: 'manual_quality',
+            label: manualReading.label,
+            multiplier: manualReading.rateMultiplier
         },
         {
             source: 'sect',

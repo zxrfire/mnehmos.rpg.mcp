@@ -42,6 +42,7 @@
  */
 
 import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
+import { bestReadable } from '../cultivation/manual-quality.js';
 import {
     MAX_ORDINAL,
     clampOrdinal,
@@ -890,13 +891,30 @@ export function deriveLife(
     // and no NPC anywhere in the world gained a single rung in two hundred
     // simulated years. It is the same defect that was found and fixed on the
     // player's side; the derivation kept its own copy of it.
+    // What this person was actually handed, and can actually work. A shelf is
+    // not a book: an origin reaches a level of shelf, and the reader takes the
+    // best thing on it they can read. See `bestReadable`.
+    const road = bestReadable(origin.roadQuality, { spiritRoot: root, attributes });
+
     const perYearAt = (at: number): number => computeCultivationRate(
-        { spiritRoot: root, injuries: [], realmOrdinal: at },
+        // `attributes` is passed now, and it is not decoration: the manual
+        // quality below is priced against what this reader can take out of the
+        // book, so a walk that withheld the attribute block would price every
+        // life in the world at the pivot and lose the whole talent axis.
+        { spiritRoot: root, injuries: [], realmOrdinal: at, attributes },
         ambient,
         {
             focusMultiplier: focus,
             locationBonus: Math.max(0.1, regionRateMultiplier) * era,
-            techniqueBonus: 1 + attributes.insight * 0.06,
+            // AN ACTUAL BOOK, rather than the insight proxy that stood here.
+            //
+            // `1 + insight * 0.06` was a placeholder for a manual nobody was
+            // holding, and it did two things wrong at once: it counted insight
+            // a second time (insight is already in the odds and is now in what
+            // a reader can take off a page), and it made every life in the
+            // world practise the same imaginary average book. What somebody was
+            // handed is a fact about their origin, so the origin says it.
+            techniqueQuality: road,
             // Placement: arrays, elder guidance, and a stipend that means this
             // person is not foraging. 1 for the nine births in ten that have none.
             sectBonus: origin.placement.sectBonus
@@ -976,7 +994,12 @@ export function deriveLife(
 
             const odds = computeBreakthroughOdds(
                 { realmOrdinal: ordinal, spiritRoot: root, attributes, injuries: [] },
-                { ambient, pill }
+                // The same book that built this realm is standing at the
+                // crossing with them. Preparation, not instruction - see
+                // `manualQuality` on `BreakthroughContext`. Without this the
+                // walk priced the manual on the road and forgot it at the one
+                // moment the road was for.
+                { ambient, pill, manualQuality: road }
             );
             if (rng.next() < odds.finalChance) {
                 crossed = true;

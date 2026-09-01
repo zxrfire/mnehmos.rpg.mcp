@@ -41,6 +41,7 @@ export * from './rng.js';
 export * from './origin.js';
 export * from './ambient.js';
 export * from './foundation.js';
+export * from './manual-quality.js';
 export * from './existence.js';
 export * from './understanding.js';
 export * from './dao.js';

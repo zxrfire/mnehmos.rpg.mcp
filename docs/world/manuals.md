@@ -19,6 +19,7 @@ Read alongside [`techniques.md`](techniques.md), which covers what an art can *d
 | [A manual is an item with a count](#a-manual-is-an-item-with-a-count) | somebody asks a house for a manual, or a book changes hands |
 | [Who can make another one](#who-can-make-another-one) | a cultivator considers copying a manual, or a house's last master of an art dies |
 | [Where books stop](#where-books-stop) | a manual's ceiling is reached, quoted, or compared to another's |
+| [How well the book is written](#how-well-the-book-is-written) | two books cover the same rungs, or somebody complains their method is slow |
 | [A shelf, and who reaches up it](#a-shelf-and-who-reaches-up-it) | a disciple is admitted, promoted, favoured, or refused a book |
 | [What a house can teach and what it can supply](#what-a-house-can-teach-and-what-it-can-supply) | a house's strongest member stands far above what it can produce, or a cultivator needs materials |
 | [An art is a signature](#an-art-is-a-signature) | somebody is seen practising, or a manual is stolen, sold, or offered on a black market |
@@ -177,6 +178,101 @@ real advantage, since every switch is a risk. A short book is cheap and replacea
 sometimes safer, because a long one whose later stages nobody in the building has actually
 walked is a promise the house cannot keep. **No book is a whole career.** However far one
 carries, the ceiling arrives; a good manual only decides when.
+
+---
+
+## How well the book is written
+
+<!-- tier: 2 trigger="two books cover the same rungs, or somebody complains their method is slow" -->
+
+Everything above is **coverage** - which rungs a book carries you over, and where it
+stops. Coverage is one axis. **Quality is a second, and they are independent.**
+
+> **A trash Core Formation manual and an excellent one carry a reader over exactly the
+> same rungs.** One of them takes eighty years about it.
+
+That sentence is the whole of it. A bad manual does not stop anybody - it is slow, and
+being slow is fatal only because the clocks above are already running. *"I have a trash
+Core Formation technique. I can continue, but it's going to take eighty years"* is the
+situation the axis exists to produce, and both halves of it are load-bearing.
+
+`quality` on the catalog row, in five tiers, each named for its **cause** rather than for
+a quantity, because the causes are what the world actually produces:
+
+| | what makes a book this |
+|---|---|
+| **corrupt** | The text is damaged. Miscopied by hands that never mastered it, fragmentary, reassembled out of a wreck, or set down by somebody who did not survive what they were describing. |
+| **crude** | Plainly set down and honestly complete. Nothing wrong with it and nothing in it either. This is what a market stall sells. |
+| **sound** | A working book with a lineage behind it and somebody alive who has read it to the end. |
+| **refined** | Worked over by generations who each took it to its end and wrote down what they found there. |
+| **pristine** | The author's own hand, complete, nothing lost in transmission. |
+
+**This is not the grade, and it cannot be.** `grade` is a statement about HEIGHT and is
+pinned there: `GRADE_ORDINAL_BANDS` binds every art's grade to its `requiredOrdinal` and
+the content suite checks it on every row. So a market primer and an apex house's intake
+canon, which cover identical rungs and therefore both open at ordinal 0, are **both
+necessarily `mortal`** - and that is exactly the pair worth separating.
+
+**Which is the answer to the obvious objection.** If a road to Foundation can be bought at
+a stall for the price of a meal, what does joining a house buy a beginner? Not a range of
+rungs - those are for sale. **A better-taught version of the same range.** The Azure Dew
+Sect's gathering canon opens at 0 and stops at 13 exactly as the block-printed primer
+does, and four hundred years of Dew teachers have written into it what each of them
+learned working a village. Measured, it clears Qi Condensation in 66 years where the stall
+copy takes 88. That is what somebody sweeps a courtyard for.
+
+**A better book does three things, and none of them is teaching the crossing.**
+
+- **You climb faster.** The largest single term in the rate that is not a realm.
+- **You arrive better prepared.** Not better instructed - see above; the crossing is not in
+  the book and no book can put it there. What arrives with you is the foundation the book
+  spent the whole realm building. Measured at Core Formation Perfection, a damaged text
+  leaves an ordinary cultivator on 9.9% and an author's own copy on 19.3%.
+- **You are stronger at the same rung.** A better-explained method makes a better
+  cultivator, which is the genre's own claim.
+
+### And a great book in the wrong hands is a paperweight
+
+**A better book is denser, not longer, so the better it is the more it asks of whoever
+opens it.** A mediocre person would not understand a manual from a Tribulation
+Transcendence cultivator either. They spend the years and take almost nothing out, and the
+arithmetic says so: a mediocre reader gets **less** out of an author's own canon than out
+of a plain working book - 49% of it lands, and 49% of something excellent is worse than all
+of something ordinary. **This is what stops "find the best book" being the whole game.**
+
+The bottom two tiers ask nothing at all, and that is deliberate: **nobody is ever punished
+for reading a bad book.** They are simply slow. It is the only guarantee that keeps
+ordinary cultivators in the world, and it must not be traded away.
+
+Three outcomes, and all three have to be real at once:
+
+- **A prodigy with a great manual is transformed.**
+- **A mediocre person with the same manual is stuck** - and would have done better with a
+  plain one.
+- **A mediocre person with a plain manual gets there slowly, and gets there.**
+
+### A shelf is not a book
+
+An institution holds a shelf, and rank reaches up it - so what a house hands a disciple is
+the best thing on it they can actually work, never the top of it. This matters: pricing a
+house at the top of its shelf made a mediocre child of a great house climb *slower* than a
+retainer's child, because the worked canon was over their head and the working book was
+not. The paperweight rule is correct for a book somebody **holds** - a ruin find, a stolen
+canon, the one object in the room - because there is nothing else to read. It is wrong for
+an institution.
+
+### Bad copies happen on their own
+
+Nobody authors a bad copy. **Common books are copyable by anybody holding one**, most of
+whom never mastered the thing, and a copy written out by somebody who did not reach the end
+of it comes out one tier down. That is the copying rule above meeting this axis, and two
+consequences fall out of it with nothing else written:
+
+- **The market primer is the worst-worn book in the world**, because it is the most copied.
+- **Nothing high is ever merely plain.** `crude` is the mass-copy tier and mass copying
+  needs masters; anybody who reached Nascent Soul is already an exception, so above Core
+  Formation the crowd that wears a book down does not exist. A bad book up there is
+  **damaged**, and it has a story.
 
 ---
 

@@ -55,7 +55,7 @@
  * Pure. Deterministic. No I/O, no database, no LLM.
  */
 
-import type { AmbientQi } from '../../schema/cultivation.js';
+import type { AmbientQi, ManualQuality } from '../../schema/cultivation.js';
 import type { DiscoveryContext, ExposureInput } from './understanding.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -139,6 +139,26 @@ export interface OriginTier {
     spiritStones: number;
     /** Best ground the family can put them on. Never `sealed_vein`. */
     ground: AmbientQi;
+    /**
+     * WHAT BOOK THEY ARE ACTUALLY HANDED, on the quality axis rather than the
+     * coverage one - see `engine/cultivation/manual-quality.ts`.
+     *
+     * The same kind of fact as `ground` and `placement.sectBonus`: a material
+     * circumstance of the life, decided before the person had any say in it,
+     * and the single most consequential of the three because it is what they
+     * spend every day on. Coverage is NOT here on purpose. The rungs a road
+     * covers are for sale at a stall - `lesser-qi-gathering-manual` costs the
+     * price of a meal - so what an origin buys is not access to a range but a
+     * better-taught version of the same range.
+     *
+     * It also stops being worth anything to somebody who cannot read it. A
+     * great house hands out a worked canon whose demand a mediocre child of the
+     * house cannot meet, so the house's advantage is CONDITIONAL ON TALENT
+     * rather than flat - which is the correct answer to "a mediocre person
+     * wouldn't understand a manual from a Tribulation Transcendence cultivator
+     * either", applied at the bottom of the ladder where most lives happen.
+     */
+    roadQuality: ManualQuality;
     placement: OriginPlacement;
     access: OriginAccess;
     /**
@@ -185,6 +205,8 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         weight: 90_000,
         spiritStones: 30,
         ground: 'thin',
+        // The block-printed primer off a market stall, if anything at all.
+        roadQuality: 'crude',
         placement: {
             reach: 0,
             atAge: 0,
@@ -205,6 +227,8 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         weight: 8_000,
         spiritStones: 150,
         ground: 'thin',
+        // The same six pages the farm has. Money is not a shelf.
+        roadQuality: 'crude',
         placement: {
             reach: 0,
             atAge: 0,
@@ -225,6 +249,8 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         weight: 1_700,
         spiritStones: 900,
         ground: 'normal',
+        // A hall copy, written out by relatives who never finished it.
+        roadQuality: 'crude',
         placement: {
             reach: 12,
             atAge: 14,
@@ -251,6 +277,8 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         weight: 260,
         spiritStones: 1_800,
         ground: 'normal',
+        // The outer library's working book, with somebody alive who read it to the end.
+        roadQuality: 'sound',
         placement: {
             reach: 20,
             atAge: 11,
@@ -279,6 +307,8 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         weight: 36,
         spiritStones: 15_000,
         ground: 'normal',
+        // A catalogued library, and the road in it is a proper one.
+        roadQuality: 'sound',
         placement: {
             reach: 29,
             atAge: 9,
@@ -309,6 +339,8 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         weight: 4,
         spiritStones: 90_000,
         ground: 'normal',
+        // The house's own worked canon - and a demand most of its children cannot meet.
+        roadQuality: 'refined',
         placement: {
             reach: 38,
             atAge: 7,
