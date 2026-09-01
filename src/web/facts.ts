@@ -346,7 +346,18 @@ export function factsForTimeSkip(
      * Omitted where the two agree, which is every caller that does not
      * pre-truncate.
      */
-    askedForDays?: number
+    askedForDays?: number,
+    /**
+     * The span the SENTENCE asked for, before the engine's own ceiling.
+     *
+     * `parseDuration` clamps at MAX_CULTIVATION_DAYS and said nothing about it,
+     * so "I cultivate for 100000 years" answered "Seclusion of 100 years was
+     * intended" - a thousandfold correction that reads like agreement. The
+     * ceiling is real; being silent about it is the invisible-fallback defect
+     * in numeric form. Omitted where nothing was clamped, which is almost
+     * always.
+     */
+    ceilingCutFrom?: number
 ): EngineFacts {
     const lines: string[] = [];
     const required: string[] = [];
@@ -390,7 +401,7 @@ export function factsForTimeSkip(
         headline: timeSkipHeadline(skip, before, after),
         lines,
         structure: standingStructure(after, ambient),
-        prose: timeSkipProse(before, after, skip, ambient, label, askedForDays),
+        prose: timeSkipProse(before, after, skip, ambient, label, askedForDays, ceilingCutFrom),
         required
     };
 }
@@ -451,7 +462,9 @@ function timeSkipProse(
     skip: TimeSkipResult,
     ambient: AmbientQi,
     label: string,
-    askedForDays?: number
+    askedForDays?: number,
+    /** The sentence's own span, before MAX_CULTIVATION_DAYS took a bite. */
+    ceilingCutFrom?: number
 ): string {
     const paragraphs: string[] = [];
     const where = placeName(before);
@@ -499,6 +512,19 @@ function timeSkipProse(
     // three years it removed - the "you came out early" line below cannot fire,
     // because both its figures come from the truncated span.
     const asked = askedForDays ?? skip.requestedDays;
+
+    // THE CEILING, SAID RATHER THAN APPLIED IN SILENCE.
+    //
+    // Said first, because it is a correction to the player's own sentence and
+    // everything below is about the span that was actually sat.
+    if (ceilingCutFrom !== undefined && ceilingCutFrom > asked) {
+        paragraphs.push(
+            `${humanDays(ceilingCutFrom)} was asked for. The longest stretch this engine will `
+            + `resolve in one sitting is ${humanDays(asked)}, and that is what was sat. `
+            + 'Sit again when it ends.'
+        );
+    }
+
     paragraphs.push(`${opening} ${label} of ${humanDays(asked)} was intended.`);
     if (asked > skip.requestedDays) {
         paragraphs.push(
@@ -508,7 +534,21 @@ function timeSkipProse(
         );
     }
 
-    if (skip.events.length === 0) {
+    // "Nothing found you" is a claim about the whole stretch and this function
+    // can only see half of it: the encounter layer's own occurrences arrive
+    // later, appended by the caller. Where the span was shortened BEFORE the
+    // skip - `asked > skip.requestedDays` - something demonstrably did find
+    // them, and saying otherwise produced the flat contradiction a playtester
+    // reported: "Something was already coming that would end it at 1.7 years"
+    // followed immediately by "Nothing found you. 1.7 years went by in the
+    // ordinary way." The player planned thirty years, got 1.7, and was told
+    // nothing happened, which is strictly worse than either outcome.
+    if (skip.events.length === 0 && asked > skip.requestedDays) {
+        paragraphs.push(
+            `${humanDays(skip.simulatedDays)} of it were quiet, and then the stretch ended `
+            + 'because the thing that was coming arrived.'
+        );
+    } else if (skip.events.length === 0) {
         paragraphs.push(
             `Nothing found you. ${humanDays(skip.simulatedDays)} went by in the ordinary way.`
         );

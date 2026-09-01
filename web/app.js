@@ -1661,6 +1661,20 @@ async function submitAction(ev) {
   setBusy(false);
 
   if (!res.ok) {
+    // Into the log as well as the toast. A refusal from `/api/act` is often
+    // the most useful thing on screen - the endpoint answers a bad shape with
+    // its full help text - and a toast puts it on screen for nine seconds and
+    // then takes it away. A tester lost an hour to exactly that, concluding
+    // the client had swallowed the response; it had not, it had expired it.
+    //
+    // Client-local: the server owns the transcript and has not recorded this,
+    // so it is marked and it does not survive a refresh. That is the right
+    // lifetime for it - nothing happened in the world.
+    S.log = S.log.concat([
+      { role: 'player', text, turn: S.run ? S.run.turn : 0 },
+      { role: 'engine', text: res.error, turn: S.run ? S.run.turn : 0, local: true }
+    ]);
+    renderLog();
     toast('Action refused', res.error);
     input.value = text;         // give it back rather than eating it
     focusCommand();
