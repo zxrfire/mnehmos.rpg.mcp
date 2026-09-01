@@ -65,9 +65,10 @@ import {
 } from '../data/cultivation/faction-history.js';
 import { demonicStandingOf } from '../data/cultivation/demonic-sects-and-what-they-are-willing-to-do.js';
 import {
-    PLACEMENT_REACH,
-    THE_HOLLOW_COURT_AND_ITS_CHILDREN
-} from '../data/cultivation/placed-on-somebody-s-word.js';
+    NO_PLACE_FOR_THEIR_OWN,
+    THE_MEMENTO_AND_THE_SEARCH,
+    noPlaceForTheirOwn
+} from '../data/cultivation/bodies-that-cannot-keep-their-members-children.js';
 import {
     TECHNIQUES,
     GRADE_ORDER,
@@ -355,6 +356,25 @@ export interface RegisterPosting {
     andWhatTheTermIsWorthAfterwards: string;
 }
 
+/**
+ * Why a body has no place for its own members' children.
+ *
+ * On three entries. Two of them have no intake at all - people arrive by
+ * appointment to a posting and a child cannot be appointed - and one has a bar
+ * nothing else in the world applies. Same situation, opposite causes, and
+ * different stories downstream: the postings are public appointments so the
+ * child knows exactly who their parent is, and the Court's discretion is
+ * absolute so the child never learns a name.
+ */
+export interface RegisterNoPlace {
+    reason: string;
+    whyItCannotKeepThem: string;
+    whereTheChildGoes: string;
+    whatTheChildKnows: string;
+    andWhetherItIsPermanent: string;
+    whatItCostsTheParent: string;
+}
+
 export interface RegisterCourt {
     id: string;
     name: string;
@@ -446,6 +466,8 @@ export interface RegisterCourt {
      * repost a posting, and you cannot repost a sect.
      */
     posting: RegisterPosting | null;
+    /** Why it has no place for a member's child. Null on all but one court. */
+    noPlaceForItsOwn: RegisterNoPlace | null;
     /**
      * Catalog order, deliberately unsorted.
      *
@@ -1013,6 +1035,16 @@ export interface SectDossier {
      * for. See `RegisterPosting`.
      */
     posting: RegisterPosting | null;
+    /**
+     * Why this body has no place for its own members' children. Null on all but three.
+     *
+     * It sits with the ranks and the people, because it is a fact about who is
+     * in the house and who is conspicuously not. Everywhere else a cultivator
+     * raises their child in their own house and no field is needed; these three
+     * cannot, for two opposite reasons, and the reason decides what happens to
+     * the child afterwards.
+     */
+    noPlaceForItsOwn: RegisterNoPlace | null;
     /** What it is trying to become. Null on the four that want nothing. */
     ambition: RegisterAmbition | null;
     /**
@@ -1213,22 +1245,33 @@ export interface WorldRegister {
     artifactCeiling: RegisterArtifactCeiling | null;
     /** Every court, with the people standing in its offices. */
     courts: RegisterCourt[];
-    /**
-     * The second way anybody gets into a house, which no faction entry can show.
+/**
+     * The three bodies with no place for their own members' children.
      *
-     * Global rather than per-faction, and the placement is the argument. Every
-     * entry on this sheet states an admission bar, and a reader who has read
-     * thirty-four of them has quietly concluded that the bars are what the
-     * rolls are made of. They are not: two disciples at the same rank, one
-     * admitted on the figure and one placed on somebody's word, are identical
-     * on the roll and identical on this page. There is no faction this belongs
-     * to, because it is true of all of them - so it goes once, near the
-     * admission tables, as the correction to the thing those tables imply.
+     * Global AND per-entry, and both are needed. Each of the three carries its
+     * own account on its own entry, because the reason differs and the
+     * downstream story differs with it. This section is the comparison, which
+     * no single entry can show: two of them get there because there is no door
+     * at all, one because of a bar nothing else in the world applies, and the
+     * contrast is the fact rather than either half of it.
+     *
+     * Everywhere else a cultivator simply raises their child in their own
+     * house, which needs no mechanism and gets no section. That sentence is
+     * here because an earlier draft made this universal and it was wrong.
      */
-    placement: {
-        bands: { patron: string; reaches: string; andNoFurtherBecause: string; howOften: string }[];
-        theRareEnd: { key: string; heading: string; text: string }[];
-    };
+    noPlaceForTheirOwn: {
+        factionId: string;
+        name: string;
+        anchor: string | null;
+        reason: string;
+        whyItCannotKeepThem: string;
+        whereTheChildGoes: string;
+        whatTheChildKnows: string;
+        andWhetherItIsPermanent: string;
+        whatItCostsTheParent: string;
+    }[];
+    /** The object at the centre of the one storyline this produces. */
+    theMemento: { key: string; heading: string; text: string }[];
     /** Every art, with every house that teaches it. Grade descending. */
     techniques: RegisterTechnique[];
     /** Every house with a teach list, and what is on it. */
@@ -1428,6 +1471,20 @@ function buildHistory(factionId: string): RegisterHistory | null {
     };
 }
 
+/** Why a body cannot keep a member's child. Null on all but three. */
+function buildNoPlace(factionId: string): RegisterNoPlace | null {
+    const x = noPlaceForTheirOwn(factionId);
+    if (!x) return null;
+    return {
+        reason: x.reason,
+        whyItCannotKeepThem: x.whyItCannotKeepThem,
+        whereTheChildGoes: x.whereTheChildGoes,
+        whatTheChildKnows: x.whatTheChildKnows,
+        andWhetherItIsPermanent: x.andWhetherItIsPermanent,
+        whatItCostsTheParent: x.whatItCostsTheParent
+    };
+}
+
 /** How a body that takes nobody is staffed. Null on all but two. */
 function buildPosting(d: Posting | undefined): RegisterPosting | null {
     if (!d) return null;
@@ -1509,6 +1566,7 @@ function buildCourts(): RegisterCourt[] {
             transferNote: court.transferNote ?? null,
             lineageDispute: buildLineageDispute(court.lineageDispute),
             posting: buildPosting(court.posting),
+            noPlaceForItsOwn: buildNoPlace(court.id),
             // `court.roster` rather than `courtOfficers()`, and the difference
             // is the whole reason this field exists: the helper sorts by
             // ordinal, and an ordinal sort on a court roster invents a chain of
@@ -3180,6 +3238,7 @@ function buildDossiers(
             history: buildHistory(row.id),
             demonic: buildDemonic(row.id),
             posting: buildPosting(getParentage(row.id)?.posting),
+            noPlaceForItsOwn: buildNoPlace(row.id),
             house: buildHouse(row.id),
             people: {
                 active: MEMBERS
@@ -3348,6 +3407,7 @@ function buildDossiers(
             history: buildHistory(a.id),
             demonic: buildDemonic(a.id),
             posting: buildPosting(getParentage(a.id)?.posting),
+            noPlaceForItsOwn: buildNoPlace(a.id),
             house: null,
             people: {
                 active: [
@@ -3488,6 +3548,25 @@ export function buildRegister(): WorldRegister {
      * the catalog meant the half with no faction entry made a claim the reader
      * could not go and answer.
      */
+    /**
+     * The three bodies with no place for their own members' children.
+     *
+     * Built here rather than inline in the return, because the anchors are
+     * filled in the second pass and a literal inside the returned object cannot
+     * be reached from it.
+     */
+    const noPlaceRows = NO_PLACE_FOR_THEIR_OWN.map(x => ({
+        factionId: x.factionId,
+        name: nameOf(x.factionId),
+        anchor: null as string | null,
+        reason: x.reason as string,
+        whyItCannotKeepThem: x.whyItCannotKeepThem,
+        whereTheChildGoes: x.whereTheChildGoes,
+        whatTheChildKnows: x.whatTheChildKnows,
+        andWhetherItIsPermanent: x.andWhetherItIsPermanent,
+        whatItCostsTheParent: x.whatItCostsTheParent
+    }));
+
     const anchorFor = (id: string): string | null => {
         const entry = entryFor(id);
         if (entry) return `faction-${entry}`;
@@ -3527,6 +3606,11 @@ export function buildRegister(): WorldRegister {
         // which is why this cannot move above the assignment two lines up.
         d.synopsis = buildSynopsis(d);
     }
+
+    // The three bodies with no place for their own, each linked to its own
+    // entry, because that section is a comparison and a reader has to be able
+    // to get from it to any of the three.
+    for (const x of noPlaceRows) x.anchor = anchorFor(x.factionId);
 
     // The same for the artifact table's owner column, where the id may belong
     // to a body filed under a different one.
@@ -3585,26 +3669,19 @@ export function buildRegister(): WorldRegister {
         artifacts,
         artifactCeiling: findArtifactCeiling(artifacts),
         courts,
-        placement: {
-            bands: PLACEMENT_REACH.map(b => ({
-                patron: b.patron,
-                reaches: b.reaches,
-                andNoFurtherBecause: b.andNoFurtherBecause,
-                howOften: b.howOften
-            })),
-            // Headings derived from the record's own keys, so a field added to
-            // the catalog turns up here instead of being silently dropped.
-            theRareEnd: Object.entries(THE_HOLLOW_COURT_AND_ITS_CHILDREN).map(([key, text]) => ({
-                key,
-                heading: key
-                    .replace(/([A-Z]+)/g, ' $1')
-                    .replace(/\s+/g, ' ')
-                    .toLowerCase()
-                    .trim()
-                    .replace(/^./, c => c.toUpperCase()),
-                text: String(text)
-            }))
-        },
+        noPlaceForTheirOwn: noPlaceRows,
+        // Headings derived from the record's own keys, so a field added to the
+        // catalog turns up here instead of being silently dropped.
+        theMemento: Object.entries(THE_MEMENTO_AND_THE_SEARCH).map(([key, text]) => ({
+            key,
+            heading: key
+                .replace(/([A-Z]+)/g, ' $1')
+                .replace(/\s+/g, ' ')
+                .toLowerCase()
+                .trim()
+                .replace(/^./, c => c.toUpperCase()),
+            text: String(text)
+        })),
         techniques,
         teaching,
         stack: buildStack(dossierIds),
@@ -4874,6 +4951,30 @@ function demonicBlock(x: RegisterDemonic, name: string): string {
 }
 
 /**
+ * Why a house has no place for its own members' children.
+ *
+ * On three entries and nowhere else, and the absence everywhere else is the
+ * point: a cultivator ordinarily raises their child in their own house, an
+ * ordinary sect is glad to have an elder's child, and no mechanism is involved
+ * at all. These three cannot, for two opposite reasons - two have no intake and
+ * one has a bar nothing else applies - and the reason decides everything that
+ * happens to the child afterwards.
+ *
+ * In the ranks-and-people part, because it is a fact about who is in the house
+ * and who is conspicuously not.
+ */
+function noPlaceBlock(x: RegisterNoPlace, name: string): string {
+    return `<div class="assess"><dl>
+    <dt>No place for its own</dt><dd><b>${esc(x.reason)}</b>. ${esc(x.whyItCannotKeepThem)}</dd>
+    <dt>Where the child goes</dt><dd>${esc(x.whereTheChildGoes)}</dd>
+    <dt>What the child knows</dt><dd>${esc(x.whatTheChildKnows)}</dd>
+    <dt>Whether it ends</dt><dd>${esc(x.andWhetherItIsPermanent)}</dd>
+    <dt>What it costs the parent</dt><dd>${esc(x.whatItCostsTheParent)}</dd>
+  </dl>
+  <p class="note">Three bodies in the world have this problem and ${esc(name)} is one of them. Everywhere else a cultivator simply raises their child in their own house, because an ordinary sect is content to produce a strong elder and any promising child might become one.</p></div>`;
+}
+
+/**
  * How a body nobody can join is staffed, and what a term there is worth.
  *
  * Rendered in the ranks-and-people part, in place of the gate an ordinary house
@@ -4953,6 +5054,7 @@ function courtPanel(court: RegisterCourt): string {
         : '<p class="note">No high-water mark. This court has never produced somebody at the last realm, which is the ordinary case and is the whole difference between a court and an apex.</p>'}
     <p class="terr">${esc(court.officesNote)}</p>
     ${court.posting ? postingBlock(court.posting, court.name) : ''}
+    ${court.noPlaceForItsOwn ? noPlaceBlock(court.noPlaceForItsOwn, court.name) : ''}
     ${court.lineageDispute ? lineageDisputeBlock(court.lineageDispute, court.name) : ''}
     <div class="scroll"><table>
       <caption>Offices &middot; ${court.officers.length} &middot; catalog order, not a ladder</caption>
@@ -5165,6 +5267,7 @@ function dossier(d: SectDossier): string {
       // does not exist.
       ? postingBlock(d.posting, d.name)
       : d.wayIn ? wayInBlock(d.wayIn) : ''}
+  ${d.noPlaceForItsOwn ? noPlaceBlock(d.noPlaceForItsOwn, d.name) : ''}
   ${d.house ? houseBlock(d.house) : ''}
   ${people.length ? `<div class="grps">${people.join('')}</div>` : ''}
 
@@ -5554,19 +5657,19 @@ export function renderRegisterHtml(
 </section>
 
 <section>
-  <div class="sh"><h2>The other way in</h2><span class="r">${reg.placement.bands.length} bands &middot; not on any entry</span></div>
-  <p class="note"><strong>Every entry on this sheet states an admission bar, and the bars are not what the rolls are made of.</strong> Two disciples at the same rank, one admitted on the figure and one placed because somebody with standing asked somebody they know personally, are identical on the roll and identical on this page - so anybody in any house might be somebody's, and the record cannot be read as evidence of how they got there. The route is the same at every height; what changes is how far up it reaches, and that is set by the standing of whoever is calling in the favour. The favour runs through the friendship and never through the institution: nobody writes to a house about a child, one person asks another person, and the patron's own body is frequently not told. Wherever this sheet shows somebody at a rank their height does not obviously justify, this is an available explanation rather than a data error.</p>
+  <div class="sh"><h2>Bodies with no place for their own</h2><span class="r">${reg.noPlaceForTheirOwn.length} of ${c.factions} &middot; two opposite reasons</span></div>
+  <p class="note"><strong>A cultivator ordinarily raises their child in their own house, and that covers the whole world except these three.</strong> An ordinary sect is glad to have an elder's child: it takes people who will make competent elders, and the bar for that is one anybody's child might clear. No favour is needed anywhere and none is called in. These three produce the same situation - a person of high standing whose own institution has no place for their own child - by opposite routes, and the routes are the reason this is a comparison rather than three separate notes.</p>
   <div class="scroll"><table>
-    <caption>What a favour is worth &middot; coarse on purpose, because the real variable is which specific person owes you one</caption>
-    <thead><tr><th>Who is asking</th><th>What it reaches</th><th>And no further, because</th><th>How often</th></tr></thead>
-    <tbody>${reg.placement.bands.map(b => `<tr>`
-      + `<td class="nm">${esc(b.patron)}</td>`
-      + `<td class="q">${esc(b.reaches)}</td>`
-      + `<td class="q">${esc(b.andNoFurtherBecause)}</td>`
-      + `<td class="q">${esc(b.howOften)}</td>`
+    <caption>The same situation, two causes &middot; and everything downstream differs with the cause</caption>
+    <thead><tr><th>Body</th><th>Why</th><th>Where the child goes</th><th>What the child knows</th></tr></thead>
+    <tbody>${reg.noPlaceForTheirOwn.map(x => `<tr>`
+      + `<td class="nm">${x.anchor ? `<a href="#${esc(x.anchor)}">${esc(x.name)}</a>` : esc(x.name)}</td>`
+      + `<td class="nm">${esc(x.reason)}</td>`
+      + `<td class="q">${esc(x.whereTheChildGoes)}</td>`
+      + `<td class="q">${esc(x.whatTheChildKnows)}</td>`
       + '</tr>').join('')}</tbody></table></div>
-  <p class="note">And the rare end of the same rule, which is one house's version of what every house does. It contradicts nothing established about that house: none of it happens at the Court or through it.</p>
-  <dl class="dispute">${reg.placement.theRareEnd.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
+  <p class="note">Two of them have <em>no intake at all</em> - people arrive by appointment to a posting and a child cannot be appointed - so there is no standard to fail. The third has a bar nothing else in the world applies: it only wants people capable of reaching the last realm, which is not a high standard but a different one, and most children of even the greatest cultivators are not that. Which is also why only one of the three produces a mystery. A posting is a public appointment and everybody knows who holds one, so those children know exactly who their parent is and inherit an expectation and a debt. The Court's discretion is absolute, and its children inherit an object with no name attached to it.</p>
+  <dl class="dispute">${reg.theMemento.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
 </section>
 
 <section>
