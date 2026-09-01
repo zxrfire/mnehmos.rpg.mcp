@@ -1036,6 +1036,17 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     'foundation-tempering-scripture': 'sound',
     'verdant-longevity-canon': 'refined',
     'paired-breath-canon': 'sound',
+    'slack-water-foundation-canon': 'sound',
+    // The purest case of the mass-copy tier after the stall primer, and it
+    // gets there by a route the table has not had an example of: not copied
+    // by cultivators at all. Building gangs in four prefectures have been
+    // writing it out for each other for generations, none of them mastered
+    // it, and `crude` is what that produces.
+    'footing-and-fill-canon': 'crude',
+    // Damage, with the cause in the entry's own description. Most of the
+    // people who worked the method out did not come back from working it out,
+    // so what exists was assembled from notes by people who were not there.
+    'struck-ground-foundation-canon': 'corrupt',
 
     // ── Core Formation. The last band where `crude` is possible at all, and
     // the poorest road in it is the one that takes it. ──
@@ -1043,10 +1054,22 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     'iron-silt-settling-canon': 'crude',
     'undyed-core-canon': 'sound',
     'standing-mirror-first-register': 'refined',
+    // Generations of people who each took it to its end and wrote down what
+    // they found, which is what the tier is for and what the entry claims
+    // about its own practitioners.
+    'heartwood-forming-canon': 'refined',
 
     // ── Nascent Soul and above. No `crude` past here, by the rule above. ──
     'nascent-lotus-canon': 'refined',
     'mountain-vein-devouring-canon': 'sound',
+    'held-under-canon': 'sound',
+    'interred-soul-canon': 'sound',
+    'grafted-form-canon': 'sound',
+    'drawn-wire-canon': 'refined',
+    // A partial manual assembled out of what eleven people who died working
+    // the method left behind. Above Core Formation the only bad tier
+    // available is damage, and this is what damage looks like.
+    'twice-struck-canon': 'corrupt',
     'meridian-devouring-art': 'corrupt',
     'void-tide-breathing-canon': 'pristine',
     'nine-abyss-demon-transformation': 'corrupt',
@@ -2290,6 +2313,193 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         description:
             'The only known ice-attuned accumulation canon above heaven grade. It slows the heart to four beats a minute and the mind to something the manual declines to describe.'
     }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // THE ELEMENTAL ROADS
+    //
+    // WHAT THIS BLOCK IS FIXING. Measured across the whole catalog by
+    // `scripts/probe-what-kind-of-house-is-this.ts`: of twenty-nine
+    // cultivation roads, twenty were ELEMENTLESS and nine carried an element,
+    // and the nine broke down as fire 3, metal 2, water 1, wood 1, earth 1,
+    // ice 1 and lightning NONE AT ALL. Only six of thirty-four houses taught
+    // any elemental road whatsoever.
+    //
+    // So a spirit root was very nearly decorative above the bottom of the
+    // ladder. A single_water cultivator had exactly one water road in the
+    // world and it stopped at thirteen, one rung into Foundation; a
+    // single_wood had one that stopped at seventeen. Everybody, whatever they
+    // were born with, walked the same elementless succession, which is not
+    // scarcity - it is an element being a name rather than a road.
+    //
+    // THESE ARE ROADS AND NOT A PARALLEL LADDER, and the difference matters.
+    // The elementless succession still carries anybody from nothing to Void
+    // Refinement and remains what most people walk. What an element buys is an
+    // alternative at some of those rungs which is better for a matching root
+    // and refused to the roots it fights - so being born to an element is now
+    // a set of doors that open and a set that do not, instead of a label.
+    // Every one of them is deliberately DISCONTINUOUS: none of the five covers
+    // the whole ladder, and the gaps are where an elemental cultivator goes
+    // back to the common road or goes looking.
+    //
+    // THE TWO LIGHTNING ROADS ARE NOT GATED BY THEIR ELEMENT AND CANNOT BE.
+    // `OVERCOMES` in `spirit-roots.ts` maps lightning and ice to null, because
+    // the mutated elements sit outside the wuxing cycle - so
+    // `conflictsWithRoot` returns false for every root against them and
+    // `suitsRoot` lets anybody at all read a lightning book. The gate that
+    // actually holds is `rootGrades: ['mutated']`, which the suitability layer
+    // reads, exactly as the Rime-Heart canon above already does for ice. A
+    // shelf pass that puts one of these on a teach list without that in mind
+    // will hand a storm road to a farmer with a wood root, and nothing in
+    // `newlyEntitled` will stop it.
+    // ═══════════════════════════════════════════════════════════════════
+    art({
+        id: 'slack-water-foundation-canon',
+        name: 'Slack Water Foundation Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: 'water',
+        requiredOrdinal: 13,
+        qiCost: 25,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The foundation is laid at slack water, in the quarter hour either side of the turn, when the river is neither running out nor coming in. It works anywhere the tide reaches and nowhere else, so a practitioner\'s whole life is arranged around a timetable that moves fifty minutes later every day, and ferrymen find them extremely easy to recognise and extremely difficult to employ.'
+    }),
+    art({
+        id: 'held-under-canon',
+        name: 'Held-Under Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: 'water',
+        // Pitched at Core Formation rather than at Nascent Soul, and the
+        // reason is the shelf it has to sit on. Every water house in the
+        // catalog is shallow - the Alliance topped out at thirteen - so a
+        // water road opening at twenty-one would have had to go to a house
+        // with no water in it, and the one place it fits leaves a four-rung
+        // hole between the book below it and this one. At seventeen it joins
+        // the Slack Water canon with no seam and the Alliance has an actual
+        // water career: thirteen, seventeen, twenty-one.
+        domain: 'element',
+        requiredOrdinal: 17,
+        qiCost: 44,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The core is formed submerged, on one breath, and brought up finished or not at all. The argument is that a core made where the body was already in trouble is a core that holds when the body is in trouble again, and the Alliance has four hundred years of ferrymen to suggest that the argument is sound. It is taught at the weirs where the water is slow and somebody is always standing on the bank, and the Alliance is candid that the places it is taught badly are the places nobody is.'
+    }),
+    art({
+        id: 'heartwood-forming-canon',
+        name: 'Heartwood Forming Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: 'wood',
+        // A wood line held steady long enough to lay down rings, which is what
+        // the Verdant Longevity Canon below it is already asking for.
+        rootGrades: ['single', 'dual'],
+        requiredOrdinal: 17,
+        qiCost: 36,
+        damage: null,
+        cooldown: 0,
+        description:
+            'A core laid down the way a tree lays down heartwood, in rings, from the outside in, out of material that is dead by the time it is load-bearing. It is the slowest road to Core Formation anybody teaches and the least likely to deviate, and its practitioners are insufferable about both facts.'
+    }),
+    art({
+        id: 'grafted-form-canon',
+        name: 'Grafted Form Canon',
+        category: 'cultivation',
+        grade: 'heaven',
+        element: 'wood',
+        domain: 'body',
+        // Pitched at Nascent Soul rather than at Deity Transformation, and the
+        // reason is `peakOrdinal` rather than taste. A cap of 29 has to sit in
+        // a house that has produced somebody near 29, the two wood houses peak
+        // at 26 and 27, and the houses that could carry it are elementless by
+        // doctrine or earth to the bone. A wood road nobody wooden could teach
+        // would have been an entry in a catalog rather than a road.
+        requiredOrdinal: 21,
+        qiCost: 105,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The infant soul is raised as a scion rather than born: cut, bound into the stock while both are still open, and left a season to find out whether it took. The Hall regards this as the plainest available description of what Nascent Soul actually does to a person, and everybody else regards it as an unusually literal one. A graft that fails does not kill the cultivator. It leaves them with the join.'
+    }),
+    art({
+        id: 'footing-and-fill-canon',
+        name: 'Footing and Fill Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: 'earth',
+        requiredOrdinal: 13,
+        qiCost: 22,
+        damage: null,
+        cooldown: 0,
+        description:
+            'Written by stonewrights for stonewrights, in the vocabulary of a trade rather than of a sect: dig to something that will hold, fill in courses, let each course set before you load it. There is nothing in it about qi that a mason would not already say about a wall, which is why it has been copied by every building gang in four prefectures and why no sect has ever been proud of teaching it.'
+    }),
+    art({
+        id: 'interred-soul-canon',
+        name: 'Interred Soul Canon',
+        category: 'cultivation',
+        grade: 'heaven',
+        element: 'earth',
+        domain: 'formation',
+        requiredOrdinal: 21,
+        qiCost: 78,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The infant soul is set into worked stone and left in the ground for the years it takes, and the cultivator goes on with their life around the place it is buried. It produces an exceptionally durable Nascent Soul and one obvious vulnerability, which is that everybody in the house knows the location and the practitioner cannot move it. Houses that teach this are houses that do not expect to be driven off their ground.'
+    }),
+    art({
+        id: 'drawn-wire-canon',
+        name: 'Drawn Wire Canon',
+        category: 'cultivation',
+        grade: 'immortal',
+        element: 'metal',
+        // Void Refinement is the same self put back into the emptiness and
+        // taken out smaller and harder. Drawing wire is that, with tongs.
+        domain: 'element',
+        domainDegree: 2,
+        requiredOrdinal: 29,
+        qiCost: 210,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The self drawn through a smaller opening, then a smaller one, then a smaller one, for as many temperings as the realm asks. Nothing is added at any stage and a great deal is lost at every stage, which the canon states on its first page rather than at the end. What comes out the far side is the same length of metal it always was and will no longer bend for anything.'
+    }),
+    art({
+        id: 'struck-ground-foundation-canon',
+        name: 'Struck-Ground Foundation Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: 'lightning',
+        // See the block comment: the element gates nobody here, because
+        // lightning is outside the overcoming cycle. This does.
+        rootGrades: ['mutated'],
+        requiredOrdinal: 13,
+        qiCost: 30,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The foundation is laid standing on ground that has already been struck, in the glass the strike left behind, during the weather that made it. It is not a metaphor and there is no safer version. The first lightning road anybody has written down in an age, and the reason there are so few is not that the method is obscure - it is that the people who worked it out were mostly not available to write it up.'
+    }),
+    art({
+        id: 'twice-struck-canon',
+        name: 'Twice-Struck Canon',
+        category: 'cultivation',
+        grade: 'immortal',
+        element: 'lightning',
+        rootGrades: ['mutated'],
+        domain: 'element',
+        domainDegree: 2,
+        requiredOrdinal: 29,
+        qiCost: 240,
+        damage: null,
+        cooldown: 0,
+        description:
+            'Everybody knows lightning does not strike the same place twice. The Court has the bodies of forty-one people who established that it does, a partial manual assembled out of what the last eleven of them left, and a standing position that the saying is the single most expensive piece of folk wisdom in the province. Sixteen rungs above the only other lightning road in the world, with nothing whatsoever in between.'
+    }),
+
     art({
         id: 'heaven-conversing-primordial-canon',
         name: 'Heaven-Conversing Primordial Canon',
