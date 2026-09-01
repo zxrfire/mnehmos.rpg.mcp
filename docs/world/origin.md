@@ -18,6 +18,7 @@ Where you started, and what it was worth. Read with
 | [Spending one on your own child](#spending-one-on-your-own-child) | a cultivator with standing has a child to place, or a placed child asks who arranged it |
 | [The shape of an immortal life](#the-shape-of-an-immortal-life) | somebody asks what it actually takes to reach the top of the ladder |
 | [The children of great houses mostly fail anyway](#the-children-of-great-houses-mostly-fail-anyway) | a great house's heir is failing, or the player resents somebody's birth |
+| [Rare in the world, common at the top](#rare-in-the-world-common-at-the-top-and-both-at-once) | somebody asks why the great houses are full of well-born people |
 | [And it cuts the other way](#and-it-cuts-the-other-way) | the player has no house, no teacher, and no vein |
 
 ## Birth is the third dealt thing
@@ -270,6 +271,45 @@ So a privileged origin should be **visible in the run's opening position** and *
 visible in its outcome distribution**, except at the very top where it is one required term
 among several. If being well-born reliably produces high-realm cultivators, the axis has
 been implemented wrong.
+
+## Rare in the world, common at the top, and both at once
+
+<!-- tier: 2 trigger="somebody asks why the great houses are full of well-born people" -->
+
+Read the standing register of a freshly seeded world and the seniors of the great houses
+are, in a large minority of cases, people who were born into one. That looks like it
+contradicts the section above and it does not. They are two different probabilities:
+
+- **Being born well is vanishingly rare.** Roughly one birth in forty-one thousand is a
+  Dao house's blood. Nothing changes that, and nothing may.
+- **Having been born well is common among the people who finished the climb.** A house's
+  seniors are not a random handful of the province. They are whoever was still standing
+  after a road that stones, a teacher and somebody at the crossings each made survivable.
+
+Selection is not sampling, and the second fact is a consequence of the first rather than
+an exception to it. Origin still buys no rank: nobody is at the top *because* they were
+born well, they are over-represented at the top because being born well made the climb
+survivable - which is the same claim this document already makes about provisioned years.
+
+**The farmer's child at an elder's seat is still the commonest single answer.** Measured
+across five seeded worlds, the seniors of apex bodies came out about 36% high-born and
+about 42% born on a farm in a thin county. A rule with no exceptions would be an
+assertion; this is a draw, and the exception is on every seed.
+
+The mechanism is in `src/engine/world/where-the-seeded-population-was-born.ts`, and it is
+one distinction: somebody the world was **created already holding** has their birth drawn
+from the birth table *reweighted by which births actually produce somebody at that rung*,
+while everybody **born during the simulation** draws from the table itself, untouched.
+`scripts/probe-what-the-seeded-population-was-born-as.ts` reports the three populations
+separately.
+
+One honest caveat on the marginal figure. The share of the whole living population that is
+high-born is not a fact about the world, it is a fact about how many people the world keeps
+a record of: the catalog places a fixed upper stratum into whatever population is seeded,
+so at the default population it is about 29% of the register and drags the marginal to
+around 6%. Grown to fifteen thousand provincials the same worlds read 0.22%, and the
+procedurally born population reads 0.000% at every scale. The engine does not model the
+mortal millions, and no figure taken over the record table should be read as if it did.
 
 ## And it cuts the other way
 
