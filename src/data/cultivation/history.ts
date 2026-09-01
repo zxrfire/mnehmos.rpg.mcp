@@ -1309,6 +1309,389 @@ export const WHAT_THE_OFFSET_HIDES = [
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────
+// THE PAST AT HOUSEHOLD SCALE
+//
+// Everything above this line is the past as an institution holds it: dated,
+// argued, cited, with a party attached to every claim. That is the smaller
+// half. The larger half is what a family two fields from a sealed compound
+// says about it over a meal, and it is the only version most people in this
+// world will ever be given.
+//
+// It behaves differently from a record in three ways, and the entries below
+// are written to show all three:
+//
+//   IT IS ABOUT THE GROUND, NOT THE EVENT. Nobody near a scar knows what
+//   happened. They know what the ground does now, and they have reasoned
+//   backwards to a cause, and the reasoning is usually the wrong shape and
+//   the observation is usually excellent.
+//
+//   IT SURVIVES AS PRACTICE. A story is forgotten in three generations and a
+//   practice is not, because the practice keeps being performed. So the
+//   durable residue is a road that bends, a field nobody sows, a day nobody
+//   works, and the explanation attached to it is whatever the last person to
+//   be asked invented.
+//
+//   THE NAME OUTLASTS THE MEANING. `regions.ts` names these sites from what
+//   is visibly there, what happened, who held it, what people do there now,
+//   or a name that is wrong - and several of the resulting names have been in
+//   use for longer than anybody has been able to say what they record. That
+//   is the commonest single artefact of the deep past in this world: a word
+//   everybody uses correctly and nobody can unpack.
+//
+// NOTHING HERE IS A MECHANIC. These are descriptions of ground the world
+// generator already places, attached to names the catalog already holds. No
+// entry grants, blocks, modifies or prices anything.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const ResidueKindSchema = z.enum(['ruin', 'scar', 'road', 'word']);
+export type ResidueKind = z.infer<typeof ResidueKindSchema>;
+
+export const LocalResidueSchema = z.object({
+    /**
+     * The name it goes by. For `ruin` and `scar` this must be a name from
+     * `RUIN_NAMES` or `SCAR_NAMES` in `regions.ts`, and the test asserts it,
+     * because a story attached to a name the generator will never produce is
+     * a story nobody can ever be told.
+     */
+    siteName: z.string().min(2),
+    kind: ResidueKindSchema,
+    /** What the nearest families say, in the register they say it in. */
+    whatTheySay: z.string().min(60),
+    /** Who holds it and how they came to. Never "it is said". */
+    heldBy: z.string().min(20),
+    /**
+     * The behaviour that grew out of it, which is what actually persists. A
+     * residue entry with no practice is a legend, and legends do not survive
+     * the generation that heard them.
+     */
+    practice: z.string().min(40),
+    /** The engine's stance on the account itself. */
+    truth: ClaimTruthSchema,
+    /**
+     * What can actually be established, where anything can. Frequently this
+     * says that the account is unfalsifiable and that the practice is sound
+     * anyway, which is the honest answer far more often than either party
+     * would like.
+     */
+    established: z.string().min(50)
+});
+export type LocalResidue = z.infer<typeof LocalResidueSchema>;
+
+/**
+ * What the nearest people say about the named ground, and what they do about it.
+ *
+ * Ordered ruins, then scars, then the two kinds of residue that have outlived
+ * the site entirely: a road whose shape is the only surviving evidence of
+ * something, and a word.
+ */
+export const LOCAL_RESIDUE: readonly LocalResidue[] = [
+    // ── sealed compounds ──────────────────────────────────────────────
+    {
+        siteName: 'Ninebell',
+        kind: 'ruin',
+        whatTheySay:
+            'They rang them out on the last night so the country would know. Nine bells, one for each hall, and when the last one stopped that was the seal taken.',
+        heldBy:
+            'the families on the valley floor below it, who say it at funerals and nowhere else',
+        practice:
+            'A single bell is rung at a burial and never rung twice, and a second stroke is thought so unlucky that village bells in the valley are hung without a return rope.',
+        truth: 'unresolved',
+        established:
+            'The count that was passed outward on the night was seven, and it is recorded as seven. Where the ninth and the name came from is not recoverable: the name may predate the sealing, the count may have been miscarried, or two of the halls may have had no bell. All three have been proposed by people with nothing to go on.'
+    },
+    {
+        siteName: 'Quan\'s Shelf',
+        kind: 'ruin',
+        whatTheySay:
+            'Quan held it. That is all anybody has ever said about Quan, and if you ask what Quan held it against, or when, or which Quan, you get told again that Quan held it.',
+        heldBy:
+            'everybody within sight of the terrace, which is most of the county',
+        practice:
+            'The surname is not given to children anywhere in the county and has not been for as long as the registers run, which no family can explain and none of them break.',
+        truth: 'unresolved',
+        established:
+            'A surname attached to a terrace, with no line, roll, grant or grave in the province that carries it. The naming convention says a possessive is used only where the holder is gone, so the name is evidence that the holder went, and it is the only evidence of anything.'
+    },
+    {
+        siteName: 'The Warm Gate',
+        kind: 'ruin',
+        whatTheySay:
+            'It is warm. Put your hand on it. Everybody says it is not, and everybody who says so has not put their hand on it in the right month.',
+        heldBy:
+            'diggers who camp at the wall, and nobody else, and they know they are the only ones',
+        practice:
+            'A digger will not go in on a day the stone is cold, which halves the working season and is observed by crews who cannot agree on anything else.',
+        truth: 'reconstructed',
+        established:
+            'The ground there has been cold for centuries and the name is older than the sealing, so the name is not a claim about the present and never was. What the diggers are reading is real temperature variation in a wall that catches sun, and the rule they built on it is a rule about weather that works.'
+    },
+    {
+        siteName: 'Coldwell',
+        kind: 'ruin',
+        whatTheySay:
+            'The well is good and the well is theirs. They left it outside the wall on purpose, for whoever came after, and that is why it has never gone bad.',
+        heldBy:
+            'every crew that has ever camped there, and it is the first thing said to a new arrival',
+        practice:
+            'Nobody drops anything in it, nobody washes in it, and a crew that fouls it is told to leave by crews that have no authority to tell anybody anything.',
+        truth: 'unresolved',
+        established:
+            'The well is outside the wall, it is still good, and it is the only reason anybody camps there. Whether it was left deliberately cannot be established and the courtesy is maintained by people who have never met and do not need the answer.'
+    },
+    {
+        siteName: 'Halfroof',
+        kind: 'ruin',
+        whatTheySay:
+            'What is standing is what they wanted standing. A house that is shut properly does not come down by halves.',
+        heldBy:
+            'a family of stone-getters who have quarried the fallen half for four generations',
+        practice:
+            'They take stone from the ground and never from the standing half, which is a distinction with no basis and has kept a wall up for a hundred and twenty years.',
+        truth: 'reconstructed',
+        established:
+            'About half of one roof is above the wall line and the rest is not. Selective collapse is what an unmaintained inherited compound does and needs no intent behind it. The family\'s rule is superstition and is also the reason there is anything left to look at.'
+    },
+    {
+        siteName: 'The Long Rota',
+        kind: 'ruin',
+        whatTheySay:
+            'They kept the duty list going after they shut the door. Two years of it. Somebody was still writing down who had the gate, and there was no gate, and there was nobody to relieve them.',
+        heldBy:
+            'anybody who has been shown the last page, which is a thing crews do for newcomers',
+        practice:
+            'Digging crews at that site keep a written rota of their own, in the same form, which is the only place in either province where a scratch crew writes anything down.',
+        truth: 'objective',
+        established:
+            'The roster was kept for two years after the sealing and the last page is legible. What is not established is who was keeping it or why they stopped, and the two years is the only interior fact about a sealed compound that anybody in the present can read directly.'
+    },
+    {
+        siteName: 'Fivewinter',
+        kind: 'ruin',
+        whatTheySay:
+            'It answered for five winters. People went up each year to see, and the fifth year it answered and the sixth year it did not, and the ones who went up the sixth year came back and said so and were not believed.',
+        heldBy:
+            'the villages on the approach, who still send somebody up in the first hard frost',
+        practice:
+            'One person walks up in the first frost every year, on a rota kept by the villages between them, and comes back and reports that there was nothing. This has been done without a break for longer than anybody has been counting.',
+        truth: 'reconstructed',
+        established:
+            'The interval in the name is what the people who kept coming back to check counted, and the practice is the check, still running. The annual walk is the longest continuously observed act of measurement in either province and no institution has ever heard of it.'
+    },
+    {
+        siteName: 'Bai\'s Shortcut',
+        kind: 'ruin',
+        whatTheySay:
+            'Bai was the last steward and Bai walked the path every day and Bai was not going anywhere. He was checking the wall. He did it until he did not.',
+        heldBy:
+            'the crews, who use the path daily and think of it as somebody\'s',
+        practice:
+            'The perimeter path is walked in Bai\'s direction and it would be quicker the other way for most of the year, and crews who have noticed this go on doing it.',
+        truth: 'reconstructed',
+        established:
+            'The name is possessive and therefore records a holder who is gone, and the path goes round rather than anywhere, which is consistent with a patrol and with several other things. Nobody has established that there was a wall to check by the time the walking started.'
+    },
+    {
+        siteName: 'The Millet Yard',
+        kind: 'ruin',
+        whatTheySay:
+            'It was the millet yard. It will be again. The ground is only resting and my grandmother said her grandmother saw it green.',
+        heldBy:
+            'the market villages, who use the name in trade and have never sown it',
+        practice:
+            'A handful of seed is thrown over the wall at the spring market by whoever is nearest, without ceremony and without anybody claiming to know why, and it is a joke and it is also never skipped.',
+        truth: 'reconstructed',
+        established:
+            'Nothing has grown in it for an age. The grandmother chain is longer than any mortal lifespan will support and is therefore a story about the name rather than a memory of the yard, which is the ordinary fate of a name that is wrong.'
+    },
+    {
+        siteName: 'Went Under',
+        kind: 'ruin',
+        whatTheySay:
+            'It went under. Same as a man goes under. You do not say it drowned and you do not say it fell, you say it went under, and everybody knows what you mean.',
+        heldBy:
+            'the whole district, in a usage that is applied to people and to houses without distinction',
+        practice:
+            'The phrase is used of a family that has lost its land, and using it means the family is not spoken of afterwards, which is a real social sanction attached to a verb.',
+        truth: 'unresolved',
+        established:
+            'The name is said of the seat rather than of the ground, and the ground is not low. Whether it was ever meant literally is unrecoverable, and the word has been doing social work for so long that the district would resist an answer.'
+    },
+    {
+        siteName: 'Sixty Doors',
+        kind: 'ruin',
+        whatTheySay:
+            'Sixty doors and not one of them opens. Somebody counted them from outside and could not get through any, and that is the whole story and it is a good one.',
+        heldBy:
+            'diggers and the people who sell to diggers, told as a warning that reads as a boast',
+        practice:
+            'Crews price a season at that site by the door and not by the day, which is a unit of account that exists nowhere else and which nobody has ever had to explain twice.',
+        truth: 'objective',
+        established:
+            'The count was taken from outside by somebody who could not get in, which is what the name records. How many of them are doors rather than door-shaped stone has never been settled, because settling it requires getting in.'
+    },
+
+    // ── scars ─────────────────────────────────────────────────────────
+    {
+        siteName: 'Nothing Grows',
+        kind: 'scar',
+        whatTheySay:
+            'Nothing grows. It is not a name, it is what I am telling you. Do not put anything in it and do not put anything near it and do not let the stock over the line.',
+        heldBy:
+            'the three families whose land ends at it, stated to every visitor in the same words',
+        practice:
+            'The boundary is walked and re-marked every spring by all three families together, which is the only thing they do together, and the marks are set a full field short of where the ground actually changes.',
+        truth: 'objective',
+        established:
+            'The statement is a fact, has been used as a name for two centuries, and the margin the families keep is far wider than the affected ground. Overcaution passed down as measurement is the commonest form deep-past knowledge takes, and it is why they have never lost an animal.'
+    },
+    {
+        siteName: 'Hemu\'s Rest',
+        kind: 'scar',
+        whatTheySay:
+            'Hemu kept the waystation and would not leave it. The road went and the station went and Hemu stayed, and the name stayed with him.',
+        heldBy:
+            'carters on the road that replaced the road, who have never seen a waystation there',
+        practice:
+            'Carters passing the marker leave water rather than food, which is what you leave for somebody who is still working, and none of them describe it as an offering.',
+        truth: 'unresolved',
+        established:
+            'The name is possessive, records a keeper, and has outlasted both the waystation and the road it served. Whether Hemu declined to leave or simply died before the road did is not recoverable and the practice does not depend on which.'
+    },
+    {
+        siteName: 'Cutbank',
+        kind: 'scar',
+        whatTheySay:
+            'Look at the edge. Ground does not do that. Something cut it and whatever cut it was not weather and it was not water.',
+        heldBy:
+            'anybody who has stood on it, which is the point, because the edge argues for itself',
+        practice:
+            'Surveyors take the datum for the whole district off the edge rather than off a stone, because it does not move, and they do this without holding any theory about why.',
+        truth: 'reconstructed',
+        established:
+            'The sharpness is the thing everybody remarks on and is the whole content of the name. A boundary that sharp is consistent with a catastrophe and inconsistent with erosion, which is as far as the evidence carries, and it is far enough for the surveyors\' purpose.'
+    },
+    {
+        siteName: 'Wenzhi\'s Field',
+        kind: 'scar',
+        whatTheySay:
+            'Wenzhi had it. Not Wenzhi did it. He had the ground, and when it happened there was no word for what had happened, so it went down as his.',
+        heldBy:
+            'the district, which is unusually careful about this distinction and always has been',
+        practice:
+            'No claim has ever been lodged on the ground, because a claim needs a description and the district has never agreed on one, and the field is therefore the only unowned land in the prefecture.',
+        truth: 'objective',
+        established:
+            'The name records the holder because nobody could name the cause, which the naming convention states outright. The district\'s insistence on the distinction is the residue: it is a community that has been careful with an attribution for two centuries and has forgotten that it is being careful.'
+    },
+    {
+        siteName: 'The Good Ground',
+        kind: 'scar',
+        whatTheySay:
+            'It is on the survey as good. It has never been good in anybody\'s memory. The survey is old and the survey is what the tax is worked out from, so we pay on good ground and farm none.',
+        heldBy:
+            'the families assessed on it, annually, to any clerk who will stand still',
+        practice:
+            'The assessment is paid and appealed in the same visit, every year, by families who have budgeted for both and expect neither to change.',
+        truth: 'objective',
+        established:
+            'The old entry survives in the surveys and every local knows better. A stale record that is still authoritative because it is the record is the ordinary way the deep past reaches a mortal household, and it reaches it as a bill.'
+    },
+    {
+        siteName: 'Threeyear',
+        kind: 'scar',
+        whatTheySay:
+            'Three years before anybody would cross. Nobody decided that. Everybody waited three years and then somebody went and then everybody went.',
+        heldBy:
+            'the two villages on either side, who tell it as a thing that happened to them collectively',
+        practice:
+            'A death on the ground still stops crossings for three years, which has happened twice since, and both times the interval was observed without anybody proposing it.',
+        truth: 'objective',
+        established:
+            'The interval was agreed by nobody and observed by everybody, which is what the name records. It is the clearest instance in the catalog of a rule with no author, and it is enforced by nothing but the fact that the first person to cross would be the first person to cross.'
+    },
+    {
+        siteName: 'Whitewater',
+        kind: 'scar',
+        whatTheySay:
+            'The stream off it runs pale. It has always run pale. You can drink it and people do and there is a family that will tell you their children are the better for it.',
+        heldBy:
+            'the downstream hamlets, who are divided on it and have been for generations',
+        practice:
+            'Half the hamlets draw from it and half will not, the split runs along no boundary anybody can identify, and the two halves intermarry and do not discuss it.',
+        truth: 'unresolved',
+        established:
+            'The colour is the name and it has not changed. Whether the water carries anything has never been tested by anybody competent, and the population that has been drinking it for generations is the only evidence in existence and has never been looked at.'
+    },
+    {
+        siteName: 'The Short Way',
+        kind: 'scar',
+        whatTheySay:
+            'It is the short way. It costs you a day. Say it to a stranger and see whether they laugh, because if they laugh they are not from here.',
+        heldBy:
+            'everybody in the district, and it is used deliberately as a test',
+        practice:
+            'The joke is the first thing said to an unknown traveller, and a traveller who takes the short way is followed at a distance by somebody who will not stop them.',
+        truth: 'objective',
+        established:
+            'It is the short way and going round costs a day, which is the joke and the warning at once, as the name records. That the district has turned a hazard into an identity check is the residue, and it works.'
+    },
+
+    // ── residue with no site left ─────────────────────────────────────
+    {
+        siteName: 'the bend above Millrun',
+        kind: 'road',
+        whatTheySay:
+            'The road goes round because the road has always gone round. My father carted it, his father carted it, and if you go straight you go straight into the wet and lose the load.',
+        heldBy:
+            'Wide Field carters, who are entirely correct about the consequence',
+        practice:
+            'The bend is maintained, ditched and gravelled at the district\'s expense, and the straight line across it is unmaintained and therefore worse every year, which makes the reason for the bend truer each decade.',
+        truth: 'reconstructed',
+        established:
+            'The ground is bad in the wet and a loaded cart does not cross it, which is sufficient on its own. Whether the bend is older than the wet ground is not established, and a road that is maintained because of a rule becomes a road that justifies the rule.'
+    },
+    {
+        siteName: 'the day nobody works',
+        kind: 'road',
+        whatTheySay:
+            'You do not work the second day after the frost breaks. You do not have to be told why, you just do not, and the ones who do have a bad year and everybody notices.',
+        heldBy:
+            'hamlets across two provinces, with no shared explanation and no shared date',
+        practice:
+            'A day of no work, observed on different days in different valleys, defended fiercely, and attributed by each valley to something local that the neighbouring valley has never heard of.',
+        truth: 'unresolved',
+        established:
+            'The observance is real and widespread and the explanations are all local and mutually incompatible, which is what a practice looks like when it has outlived a common cause. Nothing in any record dates it or accounts for it.'
+    },
+    {
+        siteName: 'sill',
+        kind: 'word',
+        whatTheySay:
+            'Sill business. Means the road is shut and it is not our business why, and you go round, and you do not ask at the ford.',
+        heldBy:
+            'the whole of the Low Fall, in the flat register used for a bank holiday',
+        practice:
+            'The word is used for any closure with no notice attached, which means the province cannot distinguish closures with an author from closures without one, and has stopped trying.',
+        truth: 'unresolved',
+        established:
+            'The usage is universal and the referent is not fixed. It attaches to a body some of the time and to nothing the rest of the time, and nobody at a ford has ever needed to know which, which is why the ambiguity has survived.'
+    },
+    {
+        siteName: 'gone up',
+        kind: 'word',
+        whatTheySay:
+            'Gone up. Said of somebody who left and did not write, and said of somebody who died on a mountain, and said of the ones the stories are about, and it is the same two words for all three.',
+        heldBy:
+            'mortals everywhere, who are not being poetic and would be surprised to be told they were',
+        practice:
+            'A family with somebody gone up keeps the place at the table for a set number of years and then stops, and the number is different in every valley and is never argued about.',
+        truth: 'reconstructed',
+        established:
+            'The phrase collapses ascension, disappearance and death into one expression, which is not a metaphor at the mortal end of the world but a description of the available evidence: from a village, all three look identical, and the village is not wrong about that.'
+    }
+];
+
+// ─────────────────────────────────────────────────────────────────────────
 // ERA RECORDS
 // The one builder in the file. It turns the authored age table into the
 // engine's `Era` shape so a ledger can be opened on the canonical past
@@ -1445,4 +1828,25 @@ export function allCitedFactionIds(): string[] {
         addClaim(cal.isTheOriginCorrect);
     }
     return [...ids].sort();
+}
+
+/** Local accounts of one named site, in the order they were authored. */
+export function residueFor(siteName: string): LocalResidue[] {
+    return LOCAL_RESIDUE.filter(r => r.siteName === siteName);
+}
+
+/** Every residue entry of one kind. */
+export function residueOfKind(kind: ResidueKind): LocalResidue[] {
+    return LOCAL_RESIDUE.filter(r => r.kind === kind);
+}
+
+/**
+ * The residue whose account the record cannot settle.
+ *
+ * Deliberately the largest group. A local account that could be checked would
+ * have been checked, and the ones that survive as practice survive precisely
+ * because there is nothing to check them against.
+ */
+export function unsettledResidue(): LocalResidue[] {
+    return LOCAL_RESIDUE.filter(r => r.truth === 'unresolved');
 }

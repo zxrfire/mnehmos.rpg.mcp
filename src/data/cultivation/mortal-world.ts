@@ -131,6 +131,9 @@ const OCCUPATION_DATA: readonly Occupation[] = [
     { id: 'job-gleaner', name: 'Gleaner (burn zone)', kind: 'cultivator', minOrdinal: 4, cashPerMonth: 3_000, settlements: ['village', 'market_town'], risk: 'lethal', note: 'Quiet Marches only. The best-paid work available to a Qi Condensation cultivator anywhere, and it kills about one in nine a season.' },
     { id: 'job-face-labour', name: 'Face labour (carving)', kind: 'cultivator', minOrdinal: 0, cashPerMonth: 700, settlements: ['market_town'], risk: 'high', note: 'Quiet Marches only. Cutting a face on somebody else\'s grant for a share of what comes out, and inhaling the reason carvers die at forty.' },
     { id: 'job-placer-runner', name: 'Placer\'s runner', kind: 'either', minOrdinal: 0, cashPerMonth: 550, settlements: ['village', 'market_town'], risk: 'low', note: 'Border-road work: finding foreign cultivators willing to be assessed, for a placer who charges more than a month of cave rent to do it.' },
+    { id: 'job-gravedigger', name: 'Gravedigger', kind: 'mortal', minOrdinal: 0, cashPerMonth: 230, settlements: ['village', 'market_town', 'sect_town', 'city'], risk: 'low', note: 'Paid by the plot and not by the month, so the wage is a winter figure. The only trade that can tell you honestly how a town died last year.' },
+    { id: 'job-bell-keeper', name: 'Bell keeper', kind: 'mortal', minOrdinal: 0, cashPerMonth: 150, settlements: ['village', 'market_town'], risk: 'none', note: 'Rings for funerals, for beasts and for fire, and refuses to ring for anything else, which in several valleys includes ringing twice.' },
+    { id: 'job-salt-carrier', name: 'Salt carrier', kind: 'mortal', minOrdinal: 0, cashPerMonth: 290, settlements: ['village', 'market_town', 'city'], risk: 'moderate', note: 'Legal at the gate and lucrative between them. The risk in the figure is the gate rather than the road.' },
 
     // ── commissions ──────────────────────────────────────────────────
     //
@@ -217,7 +220,28 @@ export const PRICES: readonly Price[] = [
     { id: 'price-scribe-letter', name: 'A letter written', category: 'service', cash: 8, unit: 'letter', note: 'Most people cannot write. This is why a scribe eats better than a farmhand.' },
     { id: 'price-placement', name: 'Placement of a foreign cultivator', category: 'information', cash: 7_000, unit: 'assessment', note: 'Seventy stones to have the Ninefold Ledger say where inside a realm somebody stands. Cheaper than being wrong once.' },
     { id: 'price-chisel', name: 'Carver\'s chisel', category: 'tool', cash: 450, unit: 'each', note: 'Lasts about a season at a face. In the Marches this is a recurring cost of cultivating, which the Low Fall finds absurd.' },
-    { id: 'price-mortal-sword', name: 'Sword, mortal steel', category: 'tool', cash: 700, unit: 'each', note: 'Ashen Forge work, reforged from ploughed-up fragments. A cultivator\'s blade starts at fifty times this.' }
+    { id: 'price-mortal-sword', name: 'Sword, mortal steel', category: 'tool', cash: 700, unit: 'each', note: 'Ashen Forge work, reforged from ploughed-up fragments. A cultivator\'s blade starts at fifty times this.' },
+
+    // ── the dead, which is the largest unavoidable expense a family has ──
+    //
+    // Priced here rather than left implied because a burial is the one
+    // purchase every mortal household makes and cannot decline, and the whole
+    // scale above is easier to read against it: a coffin costs what a mule
+    // costs, and a mule is the largest thing most families ever buy on
+    // purpose.
+    { id: 'price-coffin', name: 'Coffin', category: 'service', cash: 1_400, unit: 'each', note: 'The same figure as a mule, which every family notices, and the comparison is made at every funeral in both provinces.' },
+    { id: 'price-burial-plot', name: 'Ground for a grave', category: 'land', cash: 600, unit: 'plot', note: 'Bought once and held forever, which is the only thing a mortal family owns that a cultivator cannot outbid them for, because nobody wants it.' },
+    { id: 'price-corpse-cart', name: 'Carriage of a body', category: 'transport', cash: 90, unit: 'per stage', note: 'A city will not bury an outsider and a village will not keep one, so a body travels, and it travels at a fixed rate nobody haggles over.' },
+    { id: 'price-bell-tolling', name: 'A bell rung out', category: 'service', cash: 20, unit: 'each', note: 'Paid to the bell keeper by the stroke. In the Low Fall a second stroke is refused at any price in the valleys that will not ring twice.' },
+    { id: 'price-mourner', name: 'A hired mourner', category: 'service', cash: 30, unit: 'day', note: 'Standard in the cities and considered grotesque in the villages, which supply most of the mourners.' },
+    { id: 'price-name-cut', name: 'A name cut in stone', category: 'service', cash: 250, unit: 'each', note: 'Two and a half stones to be legible for a century. Most families pay for the name and not the dates, which is why the graveyards cannot be used to date anything.' },
+
+    // ── the ordinary board, which sets the floor everything else sits on ──
+    { id: 'price-salt', name: 'Salt', category: 'food', cash: 4, unit: 'catty', note: 'Taxed at the gate in nine cities and smuggled everywhere else, which is the commonest crime in the world and is punished as one.' },
+    { id: 'price-cloth', name: 'Cloth, undyed', category: 'tool', cash: 55, unit: 'bolt', note: 'A set of clothes is two bolts and a winter, and a cultivator whose robes are obviously new is read as either freshly paid or freshly robbed.' },
+    { id: 'price-firewood', name: 'Firewood', category: 'food', cash: 18, unit: 'month', note: 'The reason charcoal burning is a trade and the reason a cold winter shows up in the corpse carriers\' takings before it shows up anywhere else.' },
+    { id: 'price-culling-bounty', name: 'Beast-culling bounty', category: 'service', cash: 350, unit: 'head', note: 'Paid by a village out of its own store, which means the village decides what it can afford to be afraid of. Below this figure nobody comes.' },
+    { id: 'price-village-well', name: 'A well sunk', category: 'land', cash: 5_000, unit: 'each', note: 'Fifty stones, raised over years by a whole village, and the largest thing most hamlets will ever do collectively.' }
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -326,6 +350,211 @@ export const MORTAL_ATTITUDES: readonly MortalAttitude[] = [
         fromOrdinal: 29, toOrdinal: MAX_ORDINAL,
         lowFall: 'Not really a social category. Mortals who have been in a room with one describe the room rather than the person, and most of the province considers them rumour until one arrives.',
         quietMarches: 'Regarded as stories, in the specific sense that the local understanding of the upper realms is that they are stories. A visitor at this height would not be disbelieved so much as not understood.'
+    }
+];
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT PEOPLE ARE AFRAID OF
+//
+// A settlement's fears are the most reliable statement of what it is, because
+// a fear costs money: somebody is paid to stand somewhere, a store is kept
+// that could have been eaten, a field is not sown. So each entry below names
+// the expenditure, and the expenditure is the part that is checkable.
+//
+// The pattern worth noticing is that the fears get LESS accurate as the
+// settlement gets larger. A hamlet is afraid of the thing in the woods, which
+// is there. A city is afraid of a shortage it has never had, and spends more
+// on it than the hamlet spends on everything.
+//
+// Nothing here is a hazard table. No entry spawns, gates or prices an
+// encounter; `encounters.ts` and the world engine decide what is actually out
+// there, and several of these fears are of things that are not.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const SettlementFearSchema = z.object({
+    id: z.string(),
+    /** Where it is held. */
+    settlement: z.enum(['hamlet', 'village', 'market_town', 'sect_town', 'city']),
+    /** Stated the way somebody living there would state it. */
+    fear: z.string().min(40),
+    /** What is actually out there, which is frequently less and sometimes more. */
+    behindIt: z.string().min(60),
+    /**
+     * What it costs, in money, labour or land not used. The load-bearing
+     * field: a fear with no expenditure attached is a mood.
+     */
+    spentOnIt: z.string().min(40),
+    /** Who receives the spending, where anybody does. */
+    paidTo: z.string().nullable()
+});
+export type SettlementFear = z.infer<typeof SettlementFearSchema>;
+
+export const SETTLEMENT_FEARS: readonly SettlementFear[] = [
+    {
+        id: 'fear-hamlet-woods',
+        settlement: 'hamlet',
+        fear: 'The thing in the woods, which has taken stock twice and a child once, and which nobody has seen properly.',
+        behindIt: 'Usually a real beast at the bottom of the ladder, and the hamlet\'s description of it is unreliable in the direction of larger. What makes it dangerous is not the beast but the fact that a hamlet cannot afford the bounty that would bring anybody.',
+        spentOnIt: 'Stock kept in at night, which costs grazing; a watch kept by men who worked all day; and a bounty saved toward and never quite reached.',
+        paidTo: null
+    },
+    {
+        id: 'fear-hamlet-being-noticed',
+        settlement: 'hamlet',
+        fear: 'Being noticed. A hamlet that gets onto somebody\'s list has been given a reason to be on it, and there is no coming off.',
+        behindIt: 'Well founded. A hamlet has nothing worth taking except its people and its ground, and the mechanisms that would take either are the ordinary ones - a levy, a grant, a boundary moving - none of which require any malice.',
+        spentOnIt: 'Understating the harvest to the tax clerk, which is the only universal mortal crime, and repairing nothing that faces the road.',
+        paidTo: null
+    },
+    {
+        id: 'fear-village-the-year',
+        settlement: 'village',
+        fear: 'The year. Not a bad year, the year: one hard winter with a bad harvest behind it and the village is a hamlet again and does not come back.',
+        behindIt: 'The correct fear and the one nobody outside a village takes seriously. The margin between a village and a hamlet is about two seasons of stores, and the world holds no institution whose business it is to notice.',
+        spentOnIt: 'A common store that is kept full and is never eaten from until it must be, and the headman\'s standing rests entirely on not touching it.',
+        paidTo: null
+    },
+    {
+        id: 'fear-village-the-cultivator-who-stays',
+        settlement: 'village',
+        fear: 'One who stays. They come through and that is fine. One who takes a house and does not leave is the end of the village deciding anything for itself.',
+        behindIt: 'Accurate, and the mechanism is social rather than violent. A resident cultivator becomes the court of appeal for every dispute whether they want to or not, and a village that has one stops resolving anything without them.',
+        spentOnIt: 'Hospitality calculated to be adequate and not welcoming, and a standing willingness to name a better village a day further on.',
+        paidTo: null
+    },
+    {
+        id: 'fear-market-town-the-rate',
+        settlement: 'market_town',
+        fear: 'The rate moving. Every price in the town is quoted against the cash-to-stone rate and the changer does not set it and cannot explain it.',
+        behindIt: 'The rate is downstream of an assay the town has no access to, and it does move. What the town does not know is that it moves for reasons that have nothing to do with the town, which is why every local theory about it is wrong.',
+        spentOnIt: 'Holding cash and stones both, in a proportion each merchant guards as a trade secret, at a cost in dead capital nobody has ever totalled.',
+        paidTo: null
+    },
+    {
+        id: 'fear-market-town-the-road',
+        settlement: 'market_town',
+        fear: 'The road shutting. A market town is a road with buildings on it and a season of closure empties it.',
+        behindIt: 'Closures are real, common, and mostly unexplained. The town attributes nearly all of them upward, which means it cannot tell a closure it could have petitioned about from one it could not.',
+        spentOnIt: 'A second route kept passable at the town\'s expense, and an understanding with a waystation on it that costs a fixed sum every year and is invoked perhaps twice a decade.',
+        paidTo: 'a waystation keeper on the alternate route'
+    },
+    {
+        id: 'fear-sect-town-admission-season',
+        settlement: 'sect_town',
+        fear: 'Admission season, and the fortnight afterwards, when the refused are still there and have spent everything getting there.',
+        behindIt: 'The largest predictable disorder in either province, entirely produced by an intake that is smaller than the queue. The sects do not regard it as their problem and are correct that nothing obliges them to.',
+        spentOnIt: 'Extra watchmen, a mission or temple kept open all year for a fortnight\'s use, and the food price rising for everybody so that the town is paid back for it.',
+        paidTo: 'the missions and temples that take in the refused'
+    },
+    {
+        id: 'fear-sect-town-the-sect-losing',
+        settlement: 'sect_town',
+        fear: 'The sect losing its ground. Not being defeated in some grand way. Losing the vein, after which the town has no reason to exist.',
+        behindIt: 'A sect that loses its vein stops producing cultivators within a generation and is absorbed by whoever took it. The town is generally the last party to be told and the first to be affected.',
+        spentOnIt: 'Nothing, because there is nothing a town can spend on this, which is precisely why it is the fear that gets talked about most and acted on least.',
+        paidTo: null
+    },
+    {
+        id: 'fear-city-the-stores',
+        settlement: 'city',
+        fear: 'The grain not arriving. A city eats what is carted in and has never gone more than a fortnight without.',
+        behindIt: 'It has not happened in living memory and the fear is nonetheless the most expensive one in the world, because a city that has never been hungry has no way to calibrate how much reserve is enough.',
+        spentOnIt: 'Public granaries, a standing subsidy to the carters, and the gate salt tax, which is levied as a grain measure and is the reason salt is smuggled.',
+        paidTo: 'the city, which is to say the people who administer the granaries'
+    },
+    {
+        id: 'fear-city-the-unregistered',
+        settlement: 'city',
+        fear: 'The ones who came in without registering. A city is the only place a cultivator can be anonymous and everybody in it knows that.',
+        behindIt: 'True, and it is the reason the gate registers exist, and the registers catch the people who would have registered anyway. The population the fear is about is exactly the population the instrument cannot see.',
+        spentOnIt: 'Gate registration at every gate, enforced continuously, funded by the fee, which is the real income of the house that runs it.',
+        paidTo: 'the house that holds the registers'
+    },
+    {
+        id: 'fear-city-a-quarrel-arriving',
+        settlement: 'city',
+        fear: 'Two of them falling out inside the walls. Nobody is afraid of one. Everybody is afraid of two.',
+        behindIt: 'A duel between anybody above the bottom band is a building, and the city has no instrument that would stop it and no claim it could bring afterwards. What actually restrains it is that both parties usually want to come back.',
+        spentOnIt: 'Retaining somebody resident and visible to do nothing at all, which is the most expensive line in a city\'s accounts and is renewed without discussion.',
+        paidTo: 'whoever is currently retained, at a figure the city does not publish'
+    }
+];
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT IS DONE WITH THE DEAD
+//
+// The one thing every settlement in the world has to do and the one where
+// they differ most, because a funeral is where a place's economics, its
+// geography and its beliefs are all forced to produce a single decision about
+// a body by a fixed deadline.
+//
+// Three facts run underneath all of them and none of them is a rule the
+// engine reads:
+//
+//   A city will not bury an outsider and a village will not keep one, so
+//   bodies travel, and the carriage rate is a real price above.
+//
+//   A cultivator's body is not the same object as a mortal's to the people
+//   handling it, and the difference is entirely about who might come asking.
+//
+//   The corpse-carrying trade is watched, everywhere, because one of the
+//   sects recruits out of it openly.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const FuneraryPracticeSchema = z.object({
+    id: z.string(),
+    settlement: z.enum(['hamlet', 'village', 'market_town', 'sect_town', 'city']),
+    /** What is actually done, plainly. */
+    practice: z.string().min(60),
+    /** Why it is done that way, which is usually about land or distance. */
+    because: z.string().min(50),
+    /** What it costs the family, in the currency they have. */
+    cost: z.string().min(30),
+    /** What is done differently when the body is a cultivator's. */
+    ifTheyWereACultivator: z.string().min(60)
+});
+export type FuneraryPractice = z.infer<typeof FuneraryPracticeSchema>;
+
+export const FUNERARY_PRACTICE: readonly FuneraryPractice[] = [
+    {
+        id: 'dead-hamlet',
+        settlement: 'hamlet',
+        practice: 'Buried the same day in ground the hamlet holds in common, wrapped rather than coffined, with the bell from the nearest village if somebody can be sent and without one if not.',
+        because: 'There is no coffin maker, no gravedigger and no stone cutter within a day, and the ground is the one asset a hamlet has that costs it nothing to spend.',
+        cost: 'A day of everybody\'s labour and a length of cloth, which is the only cash in it.',
+        ifTheyWereACultivator: 'The hamlet sends word before it does anything, waits as long as it dares, and then buries them shallow and marks the place carefully, on the assumption that somebody will come and will want them moved.'
+    },
+    {
+        id: 'dead-village',
+        settlement: 'village',
+        practice: 'A coffin if the family can raise it and a wrapping if not, a plot bought outright, a name cut without dates, and the bell rung once.',
+        because: 'A village has a bell keeper, a plot register and a stone cutter on circuit, and it has enough people that a burial is a public act rather than a family one.',
+        cost: 'Between a coffin and a bare wrapping there is the price of a mule, and which one a family pays is remarked on for a generation.',
+        ifTheyWereACultivator: 'Buried apart from the village ground, in a plot bought for the purpose, because the village will not have an unclaimed cultivator among its own dead and cannot say why beyond that it will not.'
+    },
+    {
+        id: 'dead-market-town',
+        settlement: 'market_town',
+        practice: 'Carried out to a burial ground beyond the walls at a fixed rate, coffined, with hired mourners for anybody who traded in the town, and a stone with dates for anybody who owned in it.',
+        because: 'The town has no ground to spare inside and a road out that somebody is already paid to use, and the distinction between trading and owning is the distinction the whole town runs on.',
+        cost: 'Coffin, carriage, plot and stone, which together are a season of a porter\'s wage and are borrowed against by most families.',
+        ifTheyWereACultivator: 'The gate register is consulted first, because an unregistered body is a problem the town would rather hand to somebody else, and a registered one has a name that can be written to.'
+    },
+    {
+        id: 'dead-sect-town',
+        settlement: 'sect_town',
+        practice: 'Two burial grounds, one for the town and one on sect ground, and everybody knows which one they will be in before they die.',
+        because: 'A sect town is a support economy and its whole social order is which side of the gate a family stands on. The grounds make it permanent, which is the point.',
+        cost: 'The town ground is priced like a village\'s. The sect ground is not sold, and there is no figure, which is a form of price.',
+        ifTheyWereACultivator: 'A disciple is taken in by the sect and a refused applicant is not, and the missions bury the refused at their own expense, which is the largest single thing the missions do and the reason they are always short.'
+    },
+    {
+        id: 'dead-city',
+        settlement: 'city',
+        practice: 'Registered, carted, and buried in ground the city holds and charges for, with the carriage of outsiders back to wherever they registered from as a paid trade in itself.',
+        because: 'A city will not bury an outsider, which is a rule about liability rather than sentiment: an unclaimed body in a city ground is a claim somebody may bring later, and the register is what the city has instead of an answer.',
+        cost: 'Everything above at city prices, plus the carriage if the register says elsewhere, which is why a gate registration is the cheapest funeral insurance available.',
+        ifTheyWereACultivator: 'Held, not buried, until somebody claims them or a stated interval passes, and the interval is the one figure in the whole arrangement that the city publishes and does not enforce consistently.'
     }
 ];
 
@@ -466,4 +695,29 @@ export function monthsOfSurvival(stones: number, standard: 'rough' | 'inn' | 'ca
             ? getPrice('price-month-rations')!.cash + getPrice('price-month-lodging')!.cash
             : getPrice('price-month-rations')!.cash + getPrice('price-cave-vein')!.cash;
     return Number((stonesToCash(stones) / monthly).toFixed(1));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// LOOKUPS: FEARS AND THE DEAD
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Everything a settlement of this size is afraid of, largest fear first. */
+export function fearsOf(settlement: Settlement['kind']): SettlementFear[] {
+    return SETTLEMENT_FEARS.filter(f => f.settlement === settlement);
+}
+
+/**
+ * The fears somebody is actually paid for.
+ *
+ * The useful cut, because a fear with a recipient is an institution's income
+ * and therefore a fear that will be maintained whether or not the thing behind
+ * it is still there.
+ */
+export function fearsThatFundSomebody(): SettlementFear[] {
+    return SETTLEMENT_FEARS.filter(f => f.paidTo !== null);
+}
+
+/** What a settlement of this size does with a body. */
+export function funeraryPracticeOf(settlement: Settlement['kind']): FuneraryPractice | undefined {
+    return FUNERARY_PRACTICE.find(f => f.settlement === settlement);
 }
