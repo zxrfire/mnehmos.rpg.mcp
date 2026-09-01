@@ -2097,6 +2097,15 @@ export const PlannedActionSchema = z.object({
      */
     leverage: ApproachLeverageSchema.optional(),
     /**
+     * How many rations, where the sentence names a count rather than a span.
+     *
+     * Separate from `days` because they are different asks and the conversion
+     * between them is not the parser's to make: how long a ration lasts depends
+     * on the body carrying it, since hunger tapers by realm. Bounded so a model
+     * answering `1e9` cannot ask the purse for a heat-death of provisions.
+     */
+    rations: z.number().int().min(1).max(100_000).optional(),
+    /**
      * What an approach is ABOUT, when the player asked about something.
      *
      * Separate from `target`, which is who they asked. Both are needed and
@@ -3315,7 +3324,13 @@ export function parseIntent(input: string): PlannedAction {
     // `parseCount`, which already knows all of them.
     if (new RegExp(
         '\\b(?:stock up|lay in|load up|provision myself|buy provisions|'
-        + 'buy (?:some |a |my )?(?:rations?|supplies|provisions)|'
+        // A COUNT BEFORE THE NOUN. "buy rations" reached provisioning and
+        // "buy 20 rations" did not - the clause had no numeric alternative, so
+        // it fell through to the eat rule, which matches any `rations?` and
+        // bought a single meal. A player who names a number and gets one meal
+        // has had their number silently discarded, and if they were not hungry
+        // they got a refusal that reads as though provisioning were impossible.
+        + `buy (?:some |a |my |${WORD_NUMBER_ALTERNATION}|[0-9]+ )?(?:rations?|supplies|provisions)|`
         + `(?:buy|get|pick up|purchase) (?:a |one |${WORD_NUMBER_ALTERNATION}|[0-9]+ )?`
         + '(?:months?|weeks?|days?|years?|seasons?) (?:of |worth of )?'
         + '(?:food|rations?|provisions|supplies)|'
@@ -3323,7 +3338,19 @@ export function parseIntent(input: string): PlannedAction {
         + '(?:of |worth of )(?:food|rations?|provisions|supplies)|'
         + 'provisions? for|rations? for|food for the (?:road|trip|journey|way))\\b'
     ).test(text)) {
-        return { action: 'provision', days: parseDuration(text) ?? undefined };
+        // A SPAN and a COUNT are different asks. "two years of rations" names
+        // how long to be fed for; "twenty rations" names how many to carry, and
+        // how long twenty lasts depends on the body carrying them - hunger
+        // tapers by realm, so the same twenty are a season to a novice and years
+        // to a Foundation cultivator. Only the span goes through
+        // `parseDuration`; the count is passed as itself.
+        const span = parseDuration(text);
+        const namesASpan = /\b(?:months?|weeks?|days?|years?|seasons?)\b/.test(text);
+        if (namesASpan) {
+            return { action: 'provision', days: span ?? undefined };
+        }
+        const count = parseCount(text);
+        return { action: 'provision', ...(count !== null ? { rations: count } : {}) };
     }
 
     if (/\b(?:eat|meal|dine|breakfast|supper|feed myself|buy food)\b/.test(text)
