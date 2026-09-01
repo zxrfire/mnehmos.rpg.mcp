@@ -563,6 +563,43 @@ const MORTAL_CATEGORIES = new Set(['food', 'lodging', 'transport', 'medicine', '
  */
 const MARKET_LINES = 8;
 
+/**
+ * Which lines of a price board get read out, when it will not all fit.
+ *
+ * NOT the cheapest eight, which is what it used to be and which hid an entire
+ * category of goods from every player in the game. `handleMarket` sorts by
+ * price ascending; medicine runs 2,000-6,000 cash against a bowl of millet at
+ * 1, so a board of 41 things showed millet, a ferry, salt, an inn, a letter, a
+ * night's lodging, firewood and a bell - and the pills that close a torn
+ * meridian sat thirty lines below the fold.
+ *
+ * That is not a cosmetic problem. Untreated meridian injuries are the leading
+ * cause of death in this game, the cure is ON THIS BOARD, and a playtester
+ * reading this list concluded across dozens of runs that no settlement sells
+ * pills at all. They were there the whole time and off the bottom of the page.
+ *
+ * One line per category first, cheapest of each, so nothing a market sells can
+ * be invisible; then the cheapest of whatever is left, so the board still opens
+ * with what a poor cultivator can actually afford. The order within the result
+ * is by price, because that is how a board reads.
+ */
+function boardSample(prices: MarketPrice[]): MarketPrice[] {
+    if (prices.length <= MARKET_LINES) return prices;
+
+    const firstOfCategory = new Map<string, MarketPrice>();
+    for (const item of prices) {
+        const category = String(item.category ?? 'other');
+        if (!firstOfCategory.has(category)) firstOfCategory.set(category, item);
+    }
+
+    const chosen = new Set<MarketPrice>([...firstOfCategory.values()].slice(0, MARKET_LINES));
+    for (const item of prices) {
+        if (chosen.size >= MARKET_LINES) break;
+        chosen.add(item);
+    }
+    return prices.filter(item => chosen.has(item));
+}
+
 function priceOf(item: MarketPrice): string {
     const unit = item.unit ? ` the ${item.unit}` : '';
     const mortal = item.category === undefined || MORTAL_CATEGORIES.has(item.category);
@@ -570,7 +607,22 @@ function priceOf(item: MarketPrice): string {
     if (mortal && typeof item.cash === 'number') {
         return `${Math.round(item.cash)} cash${unit}`;
     }
+    // NOTHING IS PRICED IN A FRACTION OF A STONE.
+    //
+    // A stone is a large denomination - a hundred cash - so a bolt of cloth
+    // came out as "0.5 spirit stones the bolt", which is not a price anybody
+    // says out loud. It was invisible while the board only ever showed its
+    // eight cheapest lines, all of which are food and lodging and quoted in
+    // cash; surfacing one line per category brought it straight up, and
+    // `presence.test.ts` had the rule written down waiting for it.
+    //
+    // Sub-stone goods are quoted in cash whatever their category. Cultivator
+    // goods that genuinely cost stones still read in stones, which is the
+    // distinction the currency exists to make.
     if (typeof item.spiritStones === 'number') {
+        if (item.spiritStones < 1 && typeof item.cash === 'number') {
+            return `${Math.round(item.cash)} cash${unit}`;
+        }
         return `${round2(item.spiritStones)} spirit stones${unit}`;
     }
     return `an unmarked price${unit}`;
@@ -7508,7 +7560,17 @@ ${noticed}`;
         const price = resolved ? getPrice(resolved.id) : undefined;
 
         if (!price) {
-            const board = PRICES.slice(0, MARKET_LINES).map(row => row.name).join(', ');
+            // One line per category, not the first eight rows of the catalog.
+            //
+            // `PRICES` is authored in category order, so slicing the top of it
+            // listed food, lodging and transport and stopped - and a player who
+            // asked for a healing pill by a name the catalog does not use was
+            // told what IS sold in a sentence that never mentioned medicine.
+            // The refusal was the second place the board hid its own medicine
+            // from a dying player; `boardSample` is the first.
+            const board = boardSample(
+                PRICES.map(row => ({ ...row } as unknown as MarketPrice))
+            ).map(row => row.name).join(', ');
             return refused('engine.resolvePrice', 'buy', factsForRefusal(
                 'Not something anybody here sells.',
                 'You ask for it and get the look people give somebody asking for a thing that is '
@@ -10460,7 +10522,7 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
             // sentence underneath compared the purse to seventeen things the
             // player could not see. Either number can be right; having both on
             // screen cannot be.
-            const shown = prices.slice(0, MARKET_LINES);
+            const shown = boardSample(prices);
             lines.push(
                 shown.length === prices.length
                     ? 'What is on offer, and what it costs here:'
