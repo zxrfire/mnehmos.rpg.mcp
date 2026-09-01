@@ -27,7 +27,7 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
 import { reachableCeilingFor, BOOKLESS_CEILING } from '../src/engine/world/manuals.js';
-import { guideOrdinalFor, masterIdOf, readyToStrike } from '../src/engine/world/an-npc-striking-at-the-next-wall.js';
+import { readyToStrike } from '../src/engine/world/an-npc-striking-at-the-next-wall.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
 import {
     computeCultivationRate,
@@ -38,6 +38,29 @@ import {
 import { progressRequiredForOrdinal } from '../src/engine/cultivation/realms.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 import type { AmbientQi } from '../src/schema/cultivation.js';
+
+
+// Read off the record rather than imported from the module under test, so this
+// probe runs unchanged in both arms of a before-and-after. Importing
+// `masterIdsOf` made the control arm fail to load at all, which reads as a
+// broken control and is entirely the harness.
+function masterIdsOn(npc: { relationships: readonly { kind: string; targetId: string }[] }): string[] {
+    return npc.relationships.filter(r => r.kind === 'master').map(r => r.targetId);
+}
+
+/** The deepest LIVING master, which is what the changed engine reads. */
+function bestGuide(
+    npc: { relationships: readonly { kind: string; targetId: string }[] },
+    byId: ReadonlyMap<string, { status: string; cultivation: { realmOrdinal: number } }>
+): number | null {
+    let best: number | null = null;
+    for (const id of masterIdsOn(npc)) {
+        const m = byId.get(id);
+        if (!m || m.status !== 'alive') continue;
+        if (best === null || m.cultivation.realmOrdinal > best) best = m.cultivation.realmOrdinal;
+    }
+    return best;
+}
 
 const BANDS: [string, number, number][] = [
     ['QiCond 0-12', 0, 12],
@@ -58,7 +81,7 @@ function auditGuidance(state: WorldState) {
     const rows = BANDS.map(() => ({
         n: 0, inHouse: 0, hasTie: 0, tieDead: 0, liveAbove: 0,
         multSum: 0, gapSum: 0, gapN: 0, full: 0,
-        needSum: 0, stoodSum: 0, clockN: 0, atCeiling: 0, settled: 0
+        needSum: 0, stoodSum: 0, clockN: 0, atCeiling: 0, settled: 0, tieCount: 0
     }));
 
     for (const npc of state.npcs) {
@@ -70,13 +93,16 @@ function auditGuidance(state: WorldState) {
         row.n++;
         if (npc.factionId) row.inHouse++;
 
-        const tie = masterIdOf(npc);
-        if (tie !== null) {
+        const ties = masterIdsOn(npc);
+        if (ties.length > 0) {
             row.hasTie++;
-            const master = byId.get(tie);
-            if (!master || master.status !== 'alive') row.tieDead++;
+            // Counted as "every master they hold is a grave", which is the
+            // fact that matters: one live master out of three is not being
+            // abandoned.
+            if (ties.every(id => byId.get(id)?.status !== 'alive')) row.tieDead++;
+            row.tieCount += ties.length;
         }
-        const guide = guideOrdinalFor(npc, byId);
+        const guide = bestGuide(npc, byId);
         const mult = guidanceMultiplier(ord, guide);
         row.multSum += mult;
         if (guide !== null && guide > ord) {
@@ -116,7 +142,7 @@ function auditGuidance(state: WorldState) {
     // accrual - failed crossings, the settling clock, waiting on a book - then
     // no rate multiplier reaches them, and teaching is the wrong lever however
     // large it is made. Measured here rather than assumed.
-    console.log('  band          n  inHouse  hasTie  tieDead  liveAbove  meanGap  atFullGap  meanMult');
+    console.log('  band          n  inHouse  hasTie  tieDead  liveAbove  meanGap  atFullGap  meanMult  tiesEach');
     BANDS.forEach(([name], i) => {
         const r = rows[i];
         if (r.n === 0) return;
@@ -126,7 +152,7 @@ function auditGuidance(state: WorldState) {
             + String(r.tieDead).padStart(9) + String(r.liveAbove).padStart(11)
             + (r.gapN ? (r.gapSum / r.gapN).toFixed(1) : '-').padStart(9)
             + String(r.full).padStart(11)
-            + (r.multSum / r.n).toFixed(3).padStart(10)
+            + (r.multSum / r.n).toFixed(3).padStart(10) + (r.tieCount / Math.max(1, r.n)).toFixed(2).padStart(10)
         );
     });
 
