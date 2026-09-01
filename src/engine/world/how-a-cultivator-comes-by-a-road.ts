@@ -40,14 +40,29 @@
  *   A RUIN     The buried grounds, which teach nobody until the world finds
  *              them, and which are the only channel that can put a road into a
  *              province that had none.
+ *   A CARVING  Three worked faces somebody left behind on their way through.
+ *              The one-time source, and cheap in years because it is a text -
+ *              what is scarce about it is that there are three.
+ *   AN OBJECT  Legible AS a road, by somebody carrying it or standing high
+ *              enough in the house that holds it. See AN OBJECT FIT FOR YOUR
+ *              PATH below.
  *
- * The gate's own doctrine is ACCESS, NOT EFFORT - "the requirement names WHAT
- * MUST BE IN REACH, never what must be done" - so the first, second and fourth
- * are computed from what somebody can get at rather than stored on them when
- * they get it. That is not a shortcut around persistence. It is the design:
- * being handed an inheritance counts, being taught counts, reading counts, and
- * a cultivator sealed in the right library is doing the qualifying thing by
- * being in the room.
+ * ACCESS PUTS A ROAD IN REACH, AND YEARS ARE WHAT WALK IT. That second half is
+ * newer than this file and it corrects it: the doctrine used to be stated here
+ * as ACCESS, NOT EFFORT - "the requirement names WHAT MUST BE IN REACH, never
+ * what must be done" - and under it an NPC held every road their access could
+ * ever supply from the day they were born, for nothing, while a player holding
+ * the same arts and standing on the same cliff held none, because a player's
+ * insights only formed by surviving something. Access is still what this file
+ * answers, and it is no longer sufficient on its own: what a cultivator has
+ * actually WALKED is decided by `cultivation/what-a-road-in-reach-costs-to-walk.ts`,
+ * which charges each kind of access a price in years of practice and is asked
+ * by the gate for a player and for an NPC alike.
+ *
+ * What survives of the old doctrine, and should: there is still no deed and no
+ * quest. Being handed an inheritance counts, being taught counts, reading
+ * counts, and a cultivator sealed in the right library is doing the qualifying
+ * thing by being in the room. What they cannot do is be there for an afternoon.
  *
  * It also means the answer changes when the WORLD changes, which storing could
  * not express. A disciple promoted to Inner gains a road the day the promotion
@@ -176,7 +191,9 @@ export function seedPlacesThatTeachADao(state: WorldState): LocationRecord[] {
             hazards: place.access === 'buried' ? ['pressure', 'sealed_qi'] : [],
             environment: makeEnvironment({
                 spiritualDensity: region.environment.spiritualDensity,
-                danger: place.access === 'buried' ? 0.7 : place.access === 'open' ? 0.3 : 0.1,
+                danger: place.access === 'buried' ? 0.7
+                    : place.access === 'held' ? 0.1
+                    : 0.3,
                 politicalControl: holder?.name ?? 'nobody',
                 knownSecrets: []
             }),
@@ -292,6 +309,18 @@ export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord): RoadInRe
         } else if (access === 'open') {
             if (!theirRegion || theirRegion !== location.data.catalogRegionId) continue;
             how = 'ground_open';
+        } else if (access === 'carving') {
+            // Reached exactly the way open ground is - it is a face on a rock
+            // in a province and nobody is standing on the door. What is
+            // different is the PRICE: a carving costs a handful of years
+            // because it is a text, where a cliff costs forty because nothing
+            // on it is addressed to you. The one-time and the passive source
+            // the design owner asked for are the same mechanism with different
+            // numbers, which is the only way to have both without a second
+            // system. The floors do the rest: these are the three highest in
+            // the catalog.
+            if (!theirRegion || theirRegion !== location.data.catalogRegionId) continue;
+            how = 'carving';
         } else {
             if (!location.discovered) continue;
             if (!theirRegion || theirRegion !== location.data.catalogRegionId) continue;
@@ -334,6 +363,87 @@ export function roadsBoughtWithMaterialsBy(state: WorldState, npcId: string): Ro
     return out;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// AN OBJECT FIT FOR YOUR PATH
+//
+// The design owner's third source, in their words: "seeing an immortal artifact
+// fit for your path". FIT is the load-bearing half - an object should teach the
+// person whose road it suits and be inert to everybody else, which is what
+// makes it information rather than a prize.
+//
+// Two conditions, and neither is a new mechanism:
+//
+//   IT SAYS WHAT IT IS   `data.daoDomain`, on seven of the twenty-four rows in
+//                        `artifacts.ts`. The other seventeen teach nothing, and
+//                        two of them say so in their own descriptions: the Cold
+//                        Arterial Key and the Storm Tally are curricula rather
+//                        than daos. Take the field away and every one of them
+//                        is an ordinary object with an ordinary `power`.
+//   YOU CAN READ IT      A rung floor, derived from `power` rather than stored,
+//                        so it follows the ladder. Somebody twelve rungs under
+//                        an object is holding a heavy thing.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How far under an object's own rung it stops being legible as a road.
+ *
+ * Three realms, which is the same gap `places-that-teach-a-dao.ts` reasons
+ * about between what a ground IS and who can read it: four hundred spans below
+ * you, the cliff is a cliff with scratches on it. Derived against `power`
+ * rather than authored per row, because a second number beside `power` is a
+ * second opinion about how strong a thing is and it goes stale the first time
+ * anybody retunes the ladder.
+ */
+export const ARTIFACT_LEGIBLE_WITHIN = 12;
+
+/**
+ * The standing a house asks before it lets anybody near the thing its whole
+ * position rests on.
+ *
+ * Objects in this catalog are possessed by a FACTION far more often than by a
+ * person - the Nail, the Standing Edge, the Datum Lamp and the Weight are all
+ * held by the house rather than carried - so reading only
+ * `possessorId === npc.id` would have made this channel supply almost nobody.
+ * A house's own people can study what the house holds, rationed by exactly the
+ * instrument every other house asset is rationed by: `factionRankIndex`, the
+ * same field `manuals.ts` gates a shelf with and `daoStandingRequired` gates a
+ * cliff with. An outer disciple does not get shown the vault.
+ */
+export const STANDING_TO_STUDY_A_HOUSE_OBJECT = 3;
+
+/**
+ * Roads legible off an object this cultivator can actually get at.
+ *
+ * Carried by them, or held by their house with standing enough to be let near
+ * it, and in either case only if they are close enough to the object's own rung
+ * to read anything in it at all.
+ */
+export function roadsCarriedByObjectsInReachOf(
+    state: WorldState,
+    npc: NpcRecord
+): RoadInReach[] {
+    const ordinal = npc.cultivation.realmOrdinal;
+    const out: RoadInReach[] = [];
+    for (const object of state.objects) {
+        const domain = object.data?.daoDomain;
+        if (typeof domain !== 'string') continue;
+        const inHand = object.possessorId === npc.id;
+        const inTheHouse = npc.factionId !== null
+            && object.possessorId === npc.factionId
+            && npc.factionRankIndex >= STANDING_TO_STUDY_A_HOUSE_OBJECT;
+        if (!inHand && !inTheHouse) continue;
+        if (ordinal < Number(object.power ?? 0) - ARTIFACT_LEGIBLE_WITHIN) continue;
+        out.push({
+            domain: domain as InsightDomain,
+            subject: object.name,
+            sourceId: object.id,
+            sourceName: object.name,
+            how: 'artifact'
+        });
+    }
+    return out;
+}
+
 /**
  * Every road WITHIN REACH of this cultivator: the arts in their hands, the
  * ground they can get at, and the objects that were spent on them.
@@ -364,6 +474,7 @@ export function roadsInReachOf(state: WorldState, npc: NpcRecord): RoadInReach[]
 
     for (const road of [
         ...roadsBoughtWithMaterialsBy(state, npc.id),
+        ...roadsCarriedByObjectsInReachOf(state, npc),
         ...daoGroundsInReachOf(state, npc)
     ]) {
         if (seen.has(road.domain)) continue;

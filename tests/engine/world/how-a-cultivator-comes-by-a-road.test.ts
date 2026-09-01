@@ -40,6 +40,11 @@ import {
     spendMaterialsOnTheBlocked
 } from '../../../src/engine/world/how-a-cultivator-comes-by-a-road.js';
 import {
+    ARTIFACT_LEGIBLE_WITHIN,
+    STANDING_TO_STUDY_A_HOUSE_OBJECT,
+    roadsCarriedByObjectsInReachOf
+} from '../../../src/engine/world/how-a-cultivator-comes-by-a-road.js';
+import {
     MATERIAL_BANDS,
     isUnspent,
     spend
@@ -54,7 +59,12 @@ import {
     daoRequirementCurve,
     roadsWalked
 } from '../../../src/engine/cultivation/breakthrough.js';
-import { roadsWalkedBy } from '../../../src/engine/cultivation/what-a-road-in-reach-costs-to-walk.js';
+import {
+    CULTIVATION_BEGINS_AT_AGE,
+    YEARS_A_ROAD_COSTS,
+    roadsWalkedBy
+} from '../../../src/engine/cultivation/what-a-road-in-reach-costs-to-walk.js';
+import { ARTIFACTS } from '../../../src/data/cultivation/artifacts.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THE CATALOG
@@ -472,5 +482,128 @@ describe('a house spending one on the disciple at the wall', () => {
         // spending a finite thing and their crossing changes what it is.
         expect(state.objects.filter(o => o.data.spentBy === 'senior').length).toBe(1);
         expect(state.objects.filter(o => o.data.spentBy === 'junior').length).toBe(0);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THE TWO SOURCES THE DESIGN OWNER ASKED FOR BY NAME
+//
+// "DON'T FORGET SEEING some dao carvings or being in a ruin an expert had once
+// cultivated in, or seeing an immortal artifact fit for your path. stuff like
+// that gives you insight boost. maybe one time, maybe passive."
+//
+// Both shapes exist and they are the same mechanism with different prices: a
+// carving is one-time because it is a TEXT you read, and a cliff is passive
+// because the only way through it is to sit there. The ruin half was already
+// built - a deep find of the right character is promoted to ordinary dao
+// ground by `applyRoadsComprehended` - and is covered above.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('a carving is a text, and there are three of them', () => {
+    const carvings = PLACES_THAT_TEACH_A_DAO.filter(p => p.access === 'carving');
+
+    it('exists in the catalog, and there are exactly three', () => {
+        // `docs/world/immortals.md` is explicit: "Three faces exist, in the
+        // ordinary hand, cut for people who were in the room". Not a set and
+        // not a supply - three.
+        expect(carvings).toHaveLength(3);
+    });
+
+    it('is unheld, unstanding-gated, and asks the highest floors in the world', () => {
+        const otherFloors = PLACES_THAT_TEACH_A_DAO
+            .filter(p => p.access !== 'carving')
+            .map(p => p.fromOrdinal);
+        for (const face of carvings) {
+            expect(face.heldBy, face.id).toBeNull();
+            expect(face.standingRequired, face.id).toBe(0);
+            // Nobody is on the door. The bar IS the floor, because a later
+            // reader gets the surface without the afternoon.
+            expect(face.fromOrdinal, face.id).toBeGreaterThanOrEqual(
+                Math.max(...otherFloors)
+            );
+        }
+    });
+
+    it('is walked in years rather than decades, which is the whole difference', () => {
+        expect(YEARS_A_ROAD_COSTS.carving).toBeLessThan(YEARS_A_ROAD_COSTS.ground_open);
+        const face = {
+            domain: 'void' as const,
+            subject: 'the seam',
+            sourceId: 'loc-a-face',
+            sourceName: 'A Face',
+            how: 'carving' as const
+        };
+        const cliff = { ...face, sourceId: 'loc-a-cliff', how: 'ground_open' as const };
+        const readAt = CULTIVATION_BEGINS_AT_AGE + YEARS_A_ROAD_COSTS.carving;
+        expect(roadsWalkedBy({ roadsWithinReach: [face], age: readAt })).toHaveLength(1);
+        // And the same road off a cliff is not walked yet at the same age.
+        expect(roadsWalkedBy({ roadsWithinReach: [cliff], age: readAt })).toHaveLength(0);
+    });
+
+    it('is reached the way open ground is - by being in the province', () => {
+        const state = tinyWorld();
+        ground(state, {
+            id: 'g-face', domain: 'void', access: 'carving', from: 0, region: 'region-low-fall'
+        });
+        expect(daoGroundsInReachOf(state, member()).map(r => r.how)).toEqual(['carving']);
+        // Somebody standing in the next province gets nothing, because a face
+        // on a rock is a place and places do not travel.
+        const elsewhere = { ...member(), locationId: 'loc-region-white-stair' };
+        expect(daoGroundsInReachOf(state, elsewhere)).toEqual([]);
+    });
+});
+
+describe('an object fit for your path, and the many that are not', () => {
+    function artifact(id: string, domain: string | null, power: number, holder: string | null) {
+        return makeObject({
+            id,
+            name: id,
+            kind: 'artifact',
+            power,
+            possessorId: holder,
+            ownerId: holder,
+            ...(domain === null ? {} : { data: { daoDomain: domain } })
+        });
+    }
+
+    it('teaches nothing at all unless the row says what road it is legible as', () => {
+        const state = tinyWorld();
+        state.objects.push(artifact('a-heavy-thing', null, 24, 'npc-under-test'));
+        expect(roadsCarriedByObjectsInReachOf(state, member())).toEqual([]);
+    });
+
+    it('leaves most of the catalog silent, which is what makes it information', () => {
+        const teaching = ARTIFACTS.filter(a => typeof a.data?.daoDomain === 'string');
+        expect(teaching.length).toBeGreaterThan(0);
+        // An object that is merely strong teaches nobody anything. If every
+        // legendary row carried a road, holding one would be a prize.
+        expect(teaching.length).toBeLessThan(ARTIFACTS.length / 2);
+        for (const row of teaching) {
+            // Never the road everybody already has.
+            expect(row.data.daoDomain, row.id).not.toBe('element');
+        }
+    });
+
+    it('is inert to somebody too far under it to read it', () => {
+        const state = tinyWorld();
+        state.objects.push(artifact('a-tall-thing', 'karma', 40, 'npc-under-test'));
+        // The subject stands at 24. Sixteen rungs under a forty is a heavy
+        // object and nothing else.
+        expect(roadsCarriedByObjectsInReachOf(state, member())).toEqual([]);
+        const nearEnough = member({ realmOrdinal: 40 - ARTIFACT_LEGIBLE_WITHIN });
+        expect(roadsCarriedByObjectsInReachOf(state, nearEnough).map(r => r.domain))
+            .toEqual(['karma']);
+    });
+
+    it('is reachable through the house that holds it, but only with standing', () => {
+        const state = tinyWorld();
+        state.objects.push(artifact('the-house-thing', 'formation', 24, HOUSE));
+        const junior = member({ factionRankIndex: STANDING_TO_STUDY_A_HOUSE_OBJECT - 1 });
+        const senior = member({ factionRankIndex: STANDING_TO_STUDY_A_HOUSE_OBJECT });
+        expect(roadsCarriedByObjectsInReachOf(state, junior)).toEqual([]);
+        expect(roadsCarriedByObjectsInReachOf(state, senior).map(r => r.how)).toEqual(['artifact']);
+        // And nothing at all for somebody at the house next door.
+        const outsider = member({ factionId: OTHER_HOUSE, factionRankIndex: 5 });
+        expect(roadsCarriedByObjectsInReachOf(state, outsider)).toEqual([]);
     });
 });
