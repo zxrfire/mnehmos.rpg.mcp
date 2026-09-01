@@ -231,43 +231,22 @@ export const PostingSchema = z.object({
 export type Posting = z.infer<typeof PostingSchema>;
 
 /**
- * One body's own account of a lineage two bodies claim, written from inside it.
+ * WHAT USED TO BE HERE: `LineageDisputeSchema`, and the two accounts it held.
  *
- * There is deliberately no joint record. A single shared account standing
- * outside both parties is the shape you use for one institution with a
- * disagreement in it; where the split is real - two rolls, two patrons, two
- * provinces, no correspondence - there is no longer any "they" to hold a joint
- * record and no neutral vantage from which one could be narrated. Each body
- * carries its own, keyed on its own entry, and a reader compares them.
+ * The Kiln Court and the Root Sill Court each carried a partisan record
+ * arguing that it was the real house and the other was not, with a field on
+ * each saying no instrument anywhere settles it. The shape presented the two
+ * as one institution with a disagreement inside it, and they are not that.
+ * They had a schism and they have run independently since: two rolls, two
+ * patrons, two provinces, no correspondence in either direction.
  *
- * Which means these are partisan, and are supposed to be. The facts in the two
- * accounts are identical and must stay identical; only the vantage differs, and
- * a body speaking for itself sounds like a body that believes it is the house.
- *
- * HOW TO RUN IT. Both entries are real and both are in the catalog. A player
- * who deals with either should be able to deal with the other, get a different
- * account of the same nine hundred years, and find that nothing in the world
- * can tell them which one is the house. That is not a plot waiting to resolve.
- * It is the answer - so do not add an instrument that settles it, and do not
- * paraphrase either argument into the other, because paraphrasing an argument
- * is how a catalog starts adjudicating.
+ * The facts survive and are on the bodies themselves - what each holds, whom
+ * each answers, and what walked out of the gate - and how the two stand with
+ * each other is one relationship in `faction-relationships.ts`, with a side
+ * apiece. Do not reintroduce a joint record: the reason there was never a
+ * neutral vantage to narrate one from is the same reason there is no longer a
+ * question to adjudicate.
  */
-export const LineageDisputeSchema = z.object({
-    /** The other claimant's id, in `COURTS` or in `SECTS`. Resolved by name at the view. */
-    againstId: z.string().min(1),
-    /** What this body says happened. Its own telling, not a summary of both. */
-    howItCameToBeTwo: z.string().min(120),
-    /** The case for itself. Never hedged - it is being made, not reported. */
-    whyWeAreTheHouse: z.string().min(120),
-    /** The other side's case, in this body's mouth. Same facts, worse light. */
-    whatTheOtherSideSays: z.string().min(120),
-    /** What no instrument anywhere can settle, and why that is the answer. */
-    andNothingDecidesIt: z.string().min(120),
-    /** Why a naming dispute is a regional question rather than an internal one. */
-    whatIsActuallyAtStake: z.string().min(120)
-});
-export type LineageDispute = z.infer<typeof LineageDisputeSchema>;
-
 export const ParentageSchema = z.object({
     factionId: z.string(),
     governance: GovernanceModelSchema,
@@ -290,16 +269,6 @@ export const ParentageSchema = z.object({
      * take a backer tomorrow if one were offered.
      */
     independenceStance: z.enum(['proud', 'would_take_a_backer', 'indifferent']).nullable(),
-    /**
-     * Set only where another body claims to be this same house.
-     *
-     * Same field as `Court.lineageDispute` and the same rules. It is here as
-     * well because one of the two claimants in the catalog is a court with a
-     * row in `COURTS` and the other is a court with a row in `SECTS`, and the
-     * account belongs to the body rather than to the table it happens to sit
-     * in. See `LineageDisputeSchema`.
-     */
-    lineageDispute: LineageDisputeSchema.optional(),
     /**
      * Set on the walking half of the split posting, and on nothing else here.
      *
@@ -681,7 +650,8 @@ export type ApexInstitution = z.infer<typeof ApexInstitutionSchema>;
 // because the Wardens ARE the posting; the reveal is not a new set of titles,
 // it is the second column. It reveals less than it did, because half the people
 // that sentence described walked, and the half that walked took the Survey's
-// own word for the posting with them - see `LineageDisputeSchema`.
+// own word for the posting with them. The two have been separate institutions
+// ever since - see the note on `court-kiln`.
 // ─────────────────────────────────────────────────────────────────────────
 
 
@@ -768,8 +738,8 @@ export const CourtSchema = z.object({
      * Survey holds, which neither has ever explained or raised. The body that
      * did move is the Root Sill, and it is a POSTING rather than a court: you
      * can repost a posting and you cannot repost a sect, which is the whole
-     * reason that event was available to anybody. Its account lives on its own
-     * entry, in `lineageDispute`, not here.
+     * reason that event was available to anybody. What each half kept is
+     * stated on its own entry, not here.
      *
      * What is left for this field is the other kind of move, and the register
      * deliberately does not classify which: the Azure Mist was a feeder sect
@@ -778,14 +748,6 @@ export const CourtSchema = z.object({
      * using. The note says which in its own first sentence.
      */
     transferNote: z.string().min(120).optional(),
-    /**
-     * Set only where another body claims to be this same house.
-     *
-     * This court's own partisan account of it. See `LineageDisputeSchema` for
-     * why there is no joint record and why the two accounts must not be
-     * reconciled.
-     */
-    lineageDispute: LineageDisputeSchema.optional(),
     /**
      * Set on the two bodies nobody can join, and on nothing else.
      *
@@ -1068,11 +1030,11 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         // stranger position than the Survey's and is what deadlocks the two.
         alignment: 'neutral',
         alignmentDoctrine:
-            'It prices the schedule and the record, and there is nothing else in the arrangement to price. The Long Cut does not grant, lease or recognise - it posts staff and gives them faces to work - so the question of what an institution on its ground believes cannot arise, because there are no institutions on its ground. Its own ladder is the argument written out: a Set Hand is a face worked to completion without a death on it, recorded by date, and a Face Master at Foundation Establishment directs Hands at Core Formation, because the face is what is being ranked and not the person. It levies nothing, because everybody is already staff; it takes no tribute, because there is nobody to take it from; and when it fights, it fights with its own. Where the Survey has decided that morality is not a term of the contract, the Long Cut has never encountered the question, and the difference is the whole of the deadlock: the Survey can be argued with about a tenant, and the Long Cut cannot, because it has none. The only recognition it has ever extended was to people rather than to ground - two of the Survey\'s administrations walked, were offered a schedule, and took it.',
+            'It prices the schedule and the record, and there is nothing else in the arrangement to price. The Long Cut does not grant, lease or recognise - it posts staff and gives them faces to work - so the question of what an institution on its ground believes cannot arise, because there are no institutions on its ground. Its own ladder is the argument written out: a Set Hand is a face worked to completion without a death on it, recorded by date, and a Face Master at Foundation Establishment directs Hands at Core Formation, because the face is what is being ranked and not the person. It levies nothing, because everybody is already staff; it takes no tribute, because there is nobody to take it from; and when it fights, it fights with its own. Where the Survey has decided that morality is not a term of the contract, the Long Cut has never encountered the question, and the difference is the whole of the deadlock: the Survey can be argued with about a tenant, and the Long Cut cannot, because it has none. The only recognition it has ever extended was to people rather than to ground - the one administration in the world that has ever changed patrons walked out of the Survey\'s arrangement, was offered a schedule, and took it.',
         whetherItsWordSkipsABar:
             'It will, and it prices it honestly, which is the difference between the two of them. The Long Cut employs rather than grants so it cannot lean on a tenant - what it has is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Long Cut regards as evidence that it sets them correctly rather than as evidence that nobody dares.',
         howItConductsItselfWithTheOtherApexes:
-            'Patient in the specific way of a body that keeps records. The Long Cut does not argue, it schedules, and its whole conduct with the other two is that it will still be here on the date. It finds the Pavilion inconvenient rather than absurd - an apex that publishes its standard and refuses on it makes the Marches\' silent arrangements legible by contrast, and the Long Cut has had to answer questions about the Weir Office twice in ninety years that it would not otherwise have been asked. With the Survey it is courteous and total: it has taken two of its administrations and acknowledged nothing, and the Survey has acknowledged nothing back, and both understand this as the arrangement working rather than as hostility.',
+            'Patient in the specific way of a body that keeps records. The Long Cut does not argue, it schedules, and its whole conduct with the other two is that it will still be here on the date. It finds the Pavilion inconvenient rather than absurd - an apex that publishes its standard and refuses on it makes the Marches\' silent arrangements legible by contrast, and the Long Cut has had to answer questions about the Weir Office twice in ninety years that it would not otherwise have been asked. With the Survey it is courteous and total: it has taken the only administration that has ever moved and acknowledged nothing, and the Survey has acknowledged nothing back, and both understand this as the arrangement working rather than as hostility.',
         instability:
             'The Nail cannot be moved, so the Long Cut cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
         whatItHasTakenFromOtherPatrons:
@@ -1358,8 +1320,9 @@ export const COURTS: readonly Court[] = [
         // a Keeper of the Kiln was a Sill-Sworn of the Deep Survey and both
         // sentences described one person. When the house split, each half took
         // one of the names, and the one that kept the ground kept the older.
-        // See `lineageDispute` below, and the Root Sill's own account of the
-        // same nine hundred years in `SECT_HIERARCHY['sect-kiln-wardens']`.
+        // They are two institutions now and have been since, with no
+        // correspondence in either direction. What the other half kept is on
+        // its own entry in `FACTION_PARENTAGE['sect-kiln-wardens']`.
         name: 'The Kiln Court',
         apexId: 'apex-deep-survey',
         powerOrdinal: 37,
@@ -1387,31 +1350,25 @@ export const COURTS: readonly Court[] = [
             whatItIsWorthFromAbove:
                 'A mark the other apexes read. This is the part that surprises people, because an apex\'s chosen wants for nothing: they have the best books in the world in front of them and an elder at the last realm to open them. What they cannot get inside their own house is a credential anybody outside it recognises, and a posting on the datum is one of the very few things all three recognise, because all three are entangled in the arrangement that produced it. So the top of the world competes for these seats against people being sent up from a hill village, and both parties know it.',
             andAfterwards:
-                'They go back, and they go back higher. A Kiln term is read - by the Survey, which posted them, and by every house that has ever wanted the Survey to read something of theirs - and the reading is the whole value: a term that nobody looked at afterwards would make this a career rather than a step, and the Kiln has never been a career for anybody except the Keeper. What complicates it, and what the Court has never resolved, is that an appointee spends that term inside a body whose own claim to be the house is disputed, and comes back holding a service record with a contested name at the top of it.',
+                'They go back, and they go back higher. A Kiln term is read - by the Survey, which posted them, and by every house that has ever wanted the Survey to read something of theirs - and the reading is the whole value: a term that nobody looked at afterwards would make this a career rather than a step, and the Kiln has never been a career for anybody except the Keeper. What the Court has never had to think about, and reads as vindication, is that a Kiln term is read without qualification: this is the body standing on the datum, and nothing about how the term is read changed when the other half left.',
             andBeingPassedOver:
                 'Happens far more often than being chosen, and to people who had every reason to expect it. The Kiln takes four. There is no list of the ones who were considered and there has never been an explanation given to any of them, because the Survey does not explain and the nominating houses cannot say what they were not told - so what a passed-over candidate has is a certainty they cannot check, held for a lifetime, about a decision nobody will confirm was ever taken. And then they watch the one who went come back ahead of them.',
             andWhatTheTermIsWorthAfterwards:
                 'Precedence, not height. A returning Warden comes back at exactly the rung they left at - a decade of walking a node rota moves nobody up a ladder - and comes back ahead of every chosen who stayed, because when the next seat opens they are the one who went and did the work somewhere that was not comfortable while the others were at home being promising. Nobody grants that. It is simply what everybody senior enough to promote them already thinks, and it holds precisely because the posting is unglamorous from the inside: a body with no intake, staffed by other people\'s decisions, doing an assigned job on ground it does not own. Going is a way of being useful that cannot be faked. For an apex\'s chosen, precedence is the one thing their own house cannot simply hand them, which is why the favoured compete for a seat at a gate that turns four thousand people away.'
         },
-        // Partisan, because there is nobody left to be even-handed on behalf
-        // of. The facts here are the same facts the Root Sill states four
-        // provinces away; what differs is which of them is put first and what
-        // is made of them. Do not reconcile the two.
-        lineageDispute: {
-            againstId: 'sect-kiln-wardens',
-            howItCameToBeTwo:
-                'For nine hundred years this posting had two names and one body. The Deep Survey called it the Root Sill because the Survey names everything it posts; the province had been calling the people at the gate the Kiln Wardens for longer than the Survey had existed and went on doing so; and the duplication cost nothing, because a Keeper of the Kiln was a Sill-Sworn of the Deep Survey and both sentences described the same person standing in the same place. Then the Survey reposted the court and most of the Wardens declined the reposting. They did not take the datum, the nodes or the perimeter, because none of those can be taken. They took the word the Survey had been using on paper, and they walked, and the Long Cut was waiting for them.',
-            whyWeAreTheHouse:
-                'The ground, the datum, the nine hundred lit nodes and the work. The Kiln was never anything but where those things are. It is not a roll and never was: a Warden is somebody walking the node rota, and the rota is walked, on the schedule, by the people who are here. The province has read the four Warden ranks off this gate for nine hundred years without needing to be told whose name was on the posting order, and it reads them off this gate today.',
-            whatTheOtherSideSays:
-                'That a house is who is in it. They hold the roll, they took most of the people with them, they carry the founding posting order that names the first four Wardens, and the sealed ancestor is counted on their side of it. Ji Wanluo holds the posting order and they hold a copy of the roll, and neither document decides anything, which they know. What the Court will not say aloud, and what everybody involved understands, is that keeping the Survey\'s own administrative word for a posting they no longer hold was the sharper of the two choices.',
-            andNothingDecidesIt:
-                'There is no instrument anywhere that settles it. The argument is nine hundred years old on both sides and neither side of it is weak: one is standing on the thing and one is holding the paper about the thing, and no register, no patron and no grant book in either province is competent to say which of those makes a house. The Survey has never referred to the other body in correspondence - a body wearing a name the Survey invented - and that silence is not a ruling either.',
-            whatIsActuallyAtStake:
-                'Nobody would treat a naming dispute as a regional question. What is asleep under the kiln is the strongest sealed thing in the world, it has not moved, and it never does; the argument is about whose it is. A claim on the best single weapon in the region changed hands when some disaffected administrators accepted an invitation, and not one word had to be said out loud for it to happen.'
-        },
+        // A SCHISM, AND THEN TWO BODIES. This entry used to carry a
+        // `lineageDispute` - a partisan account arguing that the other half was
+        // not the house, mirrored by an equal and opposite account four
+        // provinces away, with a field on each saying nothing settles it. That
+        // framing is gone. The two are not one house with an argument in it.
+        // They split, and they have operated independently ever since: two
+        // rolls, two patrons, two provinces, no correspondence in either
+        // direction and none wanted. What each of them holds is stated on its
+        // own entry as a plain fact, and how they stand with each other is one
+        // relationship in `faction-relationships.ts` rather than two
+        // irreconcilable claims about who is real.
         officesNote:
-            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Kiln issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Kiln was a Sill-Sworn of the Deep Survey, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it. Ji Wanluo is Keeper of the Kiln and there is another Keeper of the Kiln four provinces away who says she is not.',
+            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Kiln issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Kiln was a Sill-Sworn of the Deep Survey, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it: the Survey reposted the court, most of the Wardens declined the reposting and left, and the Long Cut took them in. Ji Wanluo is Keeper of the Kiln, the rota is walked on the schedule by the people who are here, and the body four provinces away is a separate institution the Kiln has no dealings with.',
         roster: [
             {
                 id: 'court-officer-ji-wanluo',
@@ -1925,12 +1882,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         governance: 'federated',
         relation: 'court',
         // The half that walked, under the Survey's own name for the posting,
-        // which is the part the Survey finds hardest to answer. It is the
-        // second administration the Long Cut has taken from the Deep Survey in
-        // living memory and the second that walked rather than fought - and it
-        // now stands directly against the first. See `lineageDispute` below,
-        // and the Kiln Court's own account of the same nine hundred years on
-        // `court-kiln`.
+        // which is the part the Survey finds hardest to answer. It is the ONE
+        // administration in the world that has ever changed patrons, and it
+        // walked rather than fought. Three other fields in this file used to
+        // say the Long Cut had taken TWO of the Survey's administrations while
+        // a fourth said it was the only one that has ever moved; the fourth was
+        // right and the other three have been corrected to it.
         parentFactionId: 'apex-long-cut',
         holds: 'The datum: the root vein, held on nobody\'s behalf but the Survey\'s, and drawn on by nobody at all.',
         terms: NO_TERMS,
@@ -1948,7 +1905,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             whatItIsWorthFromBelow:
                 'The same step up, from a different set of houses. A carver sent from a Long Cut face arrives holding a Warden rank that the Long Cut\'s own ladder does not contain, in a body whose roll goes back to the first four - and the Long Cut, which ranks people by faces worked and deaths avoided and nothing else, has quietly acquired the one posting in its whole arrangement that confers a standing rather than a record. It has never commented on that either.',
             whatItIsWorthFromAbove:
-                'More, not less, and for a reason the Kiln cannot match: this is the half holding the founding posting order that names the first four Wardens, and a term entered on that roll is entered on the only continuous document either claimant has. An apex\'s chosen who takes it is buying nine hundred years of names above their own. What they are also buying, and what nobody says at the ceremony, is a position in a dispute - the Survey has never referred to this body in correspondence, so a term here is a credential that one of the three apexes behaves as though does not exist.',
+                'More, not less, and for a reason the Kiln cannot match: this is the body holding the founding posting order that names the first four Wardens, and a term entered on that roll goes under nine hundred years of names. An apex\'s chosen who takes it is buying that. What nobody says at the ceremony is that the Deep Survey has never referred to this body in correspondence since the schism, so a term here is a credential two of the three apexes read and the third passes over in silence.',
             andAfterwards:
                 'They go back higher, into a Long Cut arrangement that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Kiln. The Root Sill is closer to being a career here than it is four provinces away, and the roll is why.',
             andBeingPassedOver:
@@ -1956,25 +1913,18 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             andWhatTheTermIsWorthAfterwards:
                 'The same precedence, and a sharper version of it, because the Long Cut ranks people by faces worked and deaths avoided and has no vocabulary for standing at all. A returning appointee is a Hand again on paper and is first in the queue in every room, and nobody has ever written down why - the Course Keepers have simply started giving them the faces nobody else is given. What the Long Cut has acquired without noticing is a credential its own ladder cannot express, held by the only people in its whole arrangement who went somewhere uncomfortable on purpose, and it is the one thing across five provinces of driven ground that is not decided by a schedule.'
         },
-        // The mirror of `court-kiln`'s, and deliberately not a balanced
-        // version of it. Same facts, other vantage. The one asymmetry that is
-        // real rather than rhetorical: this body has the roll and the people
-        // and the posting order, and the thing all three are about is nine
-        // days' walk inside somebody else's perimeter.
-        lineageDispute: {
-            againstId: 'court-kiln',
-            howItCameToBeTwo:
-                'The Deep Survey posted this court and gave it its name, and the province called the people standing in it something else, and for nine hundred years neither mattered, because a Keeper of the Kiln was a Sill-Sworn of the Deep Survey and both sentences described the same person. Then the Survey reposted the court without asking anybody who was standing in it. Most of the Wardens declined the reposting - not the work, the reposting - and left. The Long Cut offered a place and the place was taken, and what walked out of that gate was the roll, the posting order and most of the people who had been walking the rota.',
-            whyWeAreTheHouse:
-                'A house is who is in it. The roll is here, most of the Wardens are here, the founding posting order that names the first four is here, and the First Warden is ours by every record that exists - the watches were shaped around him before there was a Survey to name anything, and the shape of them came with the people who kept them. What stayed behind is a datum and a perimeter, which are ground; ground does not walk out on a reposting because ground cannot decline one.',
-            whatTheOtherSideSays:
-                'That the Kiln was never anything but where the datum, the nodes and the perimeter are, and that whoever is standing on them is the house. It is not a weak argument and this court has never pretended it was. The one who stayed holds the original posting order, which is the single document either side would most like to be holding, and she reports one figure a year upward and answers nothing downward, including to us.',
-            andNothingDecidesIt:
-                'Nine hundred years on both sides and no instrument anywhere that settles it. The Survey has never once referred to this court in correspondence, which is what the Survey does instead of answering, and which is awkward for it in a way it has not acknowledged: the name being ignored is the Survey\'s own, invented by the Survey, for a posting the Survey created. There is a reading of that silence as composure and a reading of it as having no answer, and the Survey has lost two administrations to the Long Cut in living memory and acknowledged neither.',
-            whatIsActuallyAtStake:
-                'The First Warden, asleep at the world-heart, which is the strongest sealed thing anybody has ever established the existence of and has never moved, because it never does. That is the whole of why a question about a name is a question the province asks. And what the Survey has never allowed itself to hear is what was actually declined. A posting here is not a duty handed out - it is wanted, at both ends of the ladder, by people at the top of the world who cannot buy the equivalent anywhere; every Warden who walked had competed for the thing they were walking away from. Declining an assignment is a disagreement. Declining an honour is a verdict, and the Survey has spent nine hundred years filing it as the first.'
-        },
-        note: 'Not a faction. A posting. Every unexplained thing about the Wardens - the lit nodes, the refusal to recruit, the absent grievance, the nine hundred years without a single recorded exchange - is what an outside observer sees when they mistake staff for an institution.'
+        // A SCHISM, AND THEN TWO BODIES. This entry used to carry the mirror
+        // of the Kiln Court's `lineageDispute`: an argument that the half that
+        // walked is the real house, answered by an equal and opposite argument
+        // four provinces away, with a field on each saying no instrument
+        // anywhere settles it. That is gone, and what replaces it is simpler
+        // and harder: they split, and they have run independently ever since.
+        // This body took the roll and the founding posting order and answers
+        // the Long Cut; the Kiln Court kept the datum, the nodes and the
+        // perimeter and answers the Deep Survey. Neither writes to the other
+        // and neither has asked to. See `faction-relationships.ts` for how
+        // they stand, which is one relationship rather than two claims.
+        note: 'Not a faction. A posting, and since the schism a posting under a different apex. It holds the roll and the founding posting order that names the first four Wardens; the ground, the datum, the nine hundred nodes and the perimeter stayed behind with the half that accepted the reposting, and the two have had no correspondence since. Every unexplained thing about the Wardens - the lit nodes, the refusal to recruit, the absent grievance, the nine hundred years without a single recorded exchange - is what an outside observer sees when they mistake staff for an institution.'
     },
 
     // ── the Quiet Marches stack ───────────────────────────────────────
@@ -2891,12 +2841,16 @@ export function idsForFaction(id: string): string[] {
 }
 
 // The Kiln schism used to live here, as a single standalone record narrating
-// both sides from outside. It was dissolved into the two bodies, because the
-// shape contradicted the fact it described: a joint record is how you represent
-// one house with a disagreement in it, and these are two houses, four provinces
-// apart, under different patrons, with no correspondence between them. There is
-// no "they" left to hold a joint account and no neutral vantage to narrate one
-// from. Each court now carries its own, partisan, on its own entry:
-// `court-kiln` in `COURTS` and `sect-kiln-wardens` in `SECT_HIERARCHY`. The
-// third party's share of it - what the Long Cut got out of taking them in - is
-// on `apex-long-cut`. See `LineageDisputeSchema` for how to run it.
+// both sides from outside. Then it lived on the two bodies as a pair of
+// partisan accounts arguing about which of them was the house. Neither shape
+// is here now, and the second was the more misleading of the two: it presented
+// an institution that had split as an institution having an argument.
+//
+// What is true is plainer. There was a schism, and there are two bodies. The
+// Kiln Court holds the datum, the nine hundred lit nodes and the perimeter,
+// under the Deep Survey. The Root Sill Court holds the roll and the founding
+// posting order, four provinces away, under the Long Cut. They do not
+// correspond and neither has asked to. Each fact sits on the body it belongs
+// to; the third party's share - what the Long Cut got out of taking them in -
+// is on `apex-long-cut`; and how the two regard each other is one relationship
+// in `faction-relationships.ts`, with a side apiece.

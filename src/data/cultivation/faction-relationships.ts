@@ -210,8 +210,16 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     //
     // The pair this module was built for. They share no patron, no border and
     // no correspondence, so not one of the derivable tables produces a tie
-    // between them, and the register showed the largest unresolved question in
-    // the region as two unrelated entries.
+    // between them, and the register showed the two offices among the courts as
+    // two unrelated entries.
+    //
+    // NOT A NAMING DISPUTE. The catalog used to carry a partisan account on
+    // each of them arguing that it was the real house, with a field on each
+    // saying no instrument anywhere settles it. That framing is gone: it made
+    // an institution that had split read as an institution having an argument.
+    // They had a schism and they have run independently ever since, and this is
+    // the relationship - what each kept, whom each answers, and how much of
+    // each other they can stand.
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'rel-the-root-sill-and-the-kiln',
@@ -220,22 +228,22 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'two_bodies_nobody_joins',
         what:
-            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of body it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They are also the two halves of a single posting that ran for nine hundred years under two names, one kept by the half that held the ground and one kept by the half that held the roll.',
+            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Kiln kept the datum, the nine hundred lit nodes and the perimeter under the Deep Survey, the Root Sill took the roll and the founding posting order four provinces away under the Long Cut, and neither has written to the other since.',
         since:
-            'Nine hundred years as one body under two names, and roughly a lifetime as two bodies: the Deep Survey reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Long Cut was waiting for them.',
+            'Nine hundred years as one posting under two names, and roughly a lifetime as two institutions: the Deep Survey reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Long Cut was waiting for them.',
         a: {
             regard: 'cold',
             howTheyPutIt:
-                'A house is who is in it. The roll is here, most of the Wardens are here, the founding posting order that names the first four is here, and the one who stayed reports a figure upward once a year and answers nothing downward, including to us. What is four provinces away is a datum and a perimeter, which are ground, and ground does not decline a reposting because ground cannot be asked.',
+                'What was walked out of was an arrangement, not a job. The roll is here, most of the Wardens are here, the founding posting order that names the first four is here, and the people who stayed are welcome to the ground. There is nothing to discuss with them and there has never been an attempt to discuss it.',
             andSoTheyDo:
-                'Keeps the roll, keeps the posting order, and writes nothing to the gate. There has been no correspondence in either direction since the walk, and neither body has ever asked for any.',
+                'Keeps the roll, keeps the posting order, walks a different rota for a different apex, and writes nothing to the gate. There has been no correspondence in either direction since the walk and neither body has asked for any.',
             grievance:
-                'Nobody was asked. The reposting arrived by letter about a body that had been walking the same rota for nine hundred years, and what the Wardens declined was not the work but being reassigned to it in writing - which is the one sentence the half that stayed has never put in its own account of the same season.'
+                'Nobody was asked. The reposting arrived by letter about a body that had been walking the same rota for nine hundred years, and what the Wardens declined was not the work but being reassigned to it in writing. The half that stayed accepted the same letter without comment, and that is the part this body has never got past.'
         },
         b: {
             regard: 'correct',
             howTheyPutIt:
-                'The Kiln was never anything but where the datum, the nodes and the perimeter are, and whoever is standing on them is the house. The province has read four Warden ranks off this gate for nine hundred years and reads them off it today. There is a Keeper of the Kiln four provinces away who says otherwise, and the work here is unaffected by that.',
+                'The Kiln is where the datum, the nodes and the perimeter are, and the work is walking all three on a schedule. Some of the people who used to do it went elsewhere and are doing something else now. The province has read four Warden ranks off this gate for nine hundred years and reads them off it today, and none of that was affected.',
             andSoTheyDo:
                 'Nothing at all, in public or in writing. The Kiln issues no correspondence, has never named the other body in a document, and has never asked its own patron to.',
             grievance: null
@@ -264,9 +272,9 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             howTheyPutIt:
                 'What was declined was not an assignment, it was an honour, and there is a difference the Survey has spent nine hundred years filing as the first. Every Warden who walked had competed for the thing they were walking away from. Declining an assignment is a disagreement; declining an honour is a verdict.',
             andSoTheyDo:
-                'Carries a service record with a contested name at the top of it and enters new terms on the only continuous roll either claimant holds, knowing one of the three apexes behaves as though the document does not exist.',
+                'Enters new terms on the roll it walked out with, knowing that one of the three apexes behaves as though the document does not exist and that a service record with this body\'s name at the top of it will be read by two of them and silently passed over by the third.',
             grievance:
-                'Silence used as an answer. The Survey has never once referred to this court in correspondence, which is what it does instead of replying, and it has lost two administrations to the same rival in living memory and acknowledged neither.'
+                'Silence used as an answer. The Survey has never once referred to this court in correspondence, which is what it does instead of replying, and it has lost the only administration in the world that has ever changed patrons to the same rival in living memory, and has never acknowledged it.'
         }
     },
     {
@@ -376,7 +384,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             howTheyPutIt:
                 'A difference about method between two bodies that have both costed their principles. It is much older than any live question and there is no room in which it would need settling.',
             andSoTheyDo:
-                'Lists the anomalies as ordinary in its own papers, does not raise them, and has lost two administrations to the other without a word being said in either direction.',
+                'Lists the anomalies as ordinary in its own papers, does not raise them, and has lost the only administration that has ever moved to the other without a word being said in either direction.',
             grievance: null
         },
         b: {

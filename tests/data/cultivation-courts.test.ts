@@ -232,23 +232,25 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
             getParentage('sect-kiln-wardens')?.parentFactionId,
             'the half that walked went to the Long Cut'
         ).toBe('apex-long-cut');
-        // And each body says the same thing the rows do, in its own words. The
-        // joint record that used to be asserted here is gone on purpose: there
-        // is no vantage from which both halves are narrated, so each carries
-        // its own partisan account and the test checks that both exist, that
-        // each names the other, and that they are not the same text.
-        const kilnSide = kiln.lineageDispute;
-        const walkedSide = getParentage('sect-kiln-wardens')?.lineageDispute;
-        expect(kilnSide, 'the standing half has no account of the split').toBeDefined();
-        expect(walkedSide, 'the walking half has no account of the split').toBeDefined();
-        expect(kilnSide!.againstId, 'the Kiln does not know who disputes it').toBe('sect-kiln-wardens');
-        expect(walkedSide!.againstId, 'the Root Sill does not know who disputes it').toBe('court-kiln');
-        expect(kilnSide!.whyWeAreTheHouse).not.toBe(walkedSide!.whyWeAreTheHouse);
-        // The ground argument and the roll argument, one each and not swapped.
-        expect(kilnSide!.whyWeAreTheHouse, 'the standing half should argue the ground')
-            .toMatch(/ground|datum|nodes/i);
-        expect(walkedSide!.whyWeAreTheHouse, 'the walking half should argue the roll')
-            .toMatch(/roll|people|posting order/i);
+        // AND NEITHER OF THEM ARGUES ABOUT IT ANY MORE. Each body used to carry
+        // a partisan `lineageDispute` claiming to be the real house, and this
+        // test asserted that both existed and disagreed. Both records are gone:
+        // the framing presented an institution that had split as one having an
+        // argument, and they are two institutions that operate independently.
+        //
+        // What is asserted instead is that the concept has not crept back, and
+        // that each body's own note still says plainly what it kept - the
+        // ground on one side, the roll on the other - because those are the
+        // facts the two accounts were carrying between them.
+        expect((kiln as { lineageDispute?: unknown }).lineageDispute,
+            'the naming dispute is back on the Kiln').toBeUndefined();
+        const walkedParentage = getParentage('sect-kiln-wardens')!;
+        expect((walkedParentage as { lineageDispute?: unknown }).lineageDispute,
+            'the naming dispute is back on the Root Sill').toBeUndefined();
+        expect(kiln.officesNote, 'the standing half no longer says what it kept')
+            .toMatch(/datum|nodes|perimeter/i);
+        expect(walkedParentage.note, 'the walking half no longer says what it took')
+            .toMatch(/roll|posting order/i);
 
         const titles = kiln.roster.map(o => o.title);
         expect(titles.some(t => /Keeper of the Kiln/.test(t)), 'the Keeper stayed').toBe(true);
