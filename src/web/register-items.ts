@@ -656,7 +656,6 @@ export function renderItemsSection(): string {
 <section>
   <div class="sh"><h2>Every catalogued thing</h2><span class="r">${r.rows.length} rows &middot; by kind</span></div>
   <p class="note"><strong>The <em>pitched at</em> column is a rung, and it does not mean the same thing twice.</strong> ${esc(pitch.map(p => p.replace(/^the /, '')).join('; '))}. They are printed in one column because they are all positions on the one ladder and a reader wants them comparable, and they are annotated because flattening them silently would be the sheet inventing a comparison the engine does not make.</p>
-  <p class="note">Artifacts are not repeated here. Every one of them is a row with a holder, so they are on the Items tab with the rest of the ledger, and a second copy of that table sorted differently is exactly the parallel listing this page exists not to have.</p>
   ${itemTable(`Pills - ${rowsOf('pills').length} of them, the only reliable way to undo damage`, rowsOf('pills'))}
   ${itemTable(`Structural repair medicine - ${rowsOf('repair medicine').length}, for a cultivator who crossed and arrived broken`, rowsOf('repair medicine'))}
   ${itemTable(`Comprehension materials - ${rowsOf('comprehension materials').length} bands, spent by being understood`, rowsOf('comprehension materials'))}

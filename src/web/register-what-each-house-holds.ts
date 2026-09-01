@@ -376,6 +376,32 @@ function houseDetail(h: HouseHoldings): string {
 }
 
 /**
+ * One house's inventory, spelled out, keyed by faction id.
+ *
+ * WHY THIS IS EXPORTED. The Holdings tab used to end on a flat alphabet of
+ * disclosures - every body in the world in one list, in a shape that appeared
+ * nowhere else on the sheet. It now draws the same house structure the
+ * Factions tab draws, so a reader who has learned where a body sits once knows
+ * where to find its inventory. That structure lives in `register.ts` because
+ * it is read out of the hierarchy catalogs; what this module owns is what is
+ * INSIDE a house, so it hands over the bodies and keeps the question.
+ */
+export function holdingsByHouse(dossiers: readonly SectDossier[]): Map<string, string> {
+    return new Map(buildHoldings(dossiers).houses.map(h => [h.id, houseDetail(h)]));
+}
+
+/** What a house is holding, at a glance, for its closed card. */
+export function holdingsFacts(dossiers: readonly SectDossier[]): Map<string, string[]> {
+    return new Map(buildHoldings(dossiers).houses.map(h => [h.id, [
+        h.objects.length ? `${h.objects.length} object${h.objects.length === 1 ? '' : 's'}, top ${h.strongestObject}` : '',
+        h.immortalObjectCount ? `${h.immortalObjectCount} immortal object${h.immortalObjectCount === 1 ? '' : 's'}` : '',
+        h.doseCount ? `${h.doseCount} dose${h.doseCount === 1 ? '' : 's'}` : '',
+        h.asleep ? `somebody asleep at ${h.asleep.ordinal}` : '',
+        h.compound ? `${h.compound.lit}/${h.compound.total} nodes lit` : ''
+    ].filter(Boolean)]));
+}
+
+/**
  * The pane, as HTML. Takes the dossiers the sheet has already built, so nothing
  * is read twice and nothing here can disagree with the faction entries.
  */
@@ -396,18 +422,10 @@ export function renderHoldingsSection(dossiers: readonly SectDossier[]): string 
     <td class="m">${h.recruits ? `gate ${h.admissionOrdinal}` : dim('takes nobody')}</td>
   </tr>`).join('');
 
-    const drills = r.houses.map(h => `<details class="holddrill">
-    <summary><strong>${esc(h.name)}</strong> <span class="dim">ordinal ${h.ordinal}, ${esc(h.rank)}</span></summary>
-    ${houseDetail(h)}
-  </details>`).join('');
-
     return `
 <section>
   <div class="sh"><h2>What each house holds</h2><span class="r">${c.houses} bodies &middot; strongest acting member first</span></div>
-  <p class="note"><strong>The question this answers is what is in the building.</strong> Every other tab says what a body is, who backs it and how it came to be here; none of them says what a reader standing at its gate wants to know, which is what it can do for them and what it can do to them. Those are two different columns because a house is routinely strong in one and empty in the other.</p>
   <p class="note"><strong>For you</strong> is the shelf, the gate and the purse: what it will teach, whether it will have you at all, and what it pays at the top of its own ladder. <strong>To you</strong> is what it can put in front of you: the rung its strongest acting member stands on, the strongest object it owns, and what it could field once at a cost that is usually the house. A body with a modest teach list and something asleep at forty-plus reads as unremarkable everywhere else on this sheet.</p>
-  <p class="note">Read across the catalogs rather than restated: the objects come off the artifact table's own owner field, the arts off each teach list, the doses off the repair holdings, the ground off the grant, and what is asleep off the ancestral records. A content edit in any of the seven moves this table and nothing here has to be touched.</p>
-  <p class="note"><strong>Nothing is scored, totalled or ranked by wealth.</strong> Doses, arts, nodes and an ordinal are not commensurable, and any weighting that made them add up would be a balance constant living in a view. Rows run by acting ordinal, like every other table here.</p>
   <div class="scroll"><table class="holdtbl">
     <colgroup><col style="width:22%"><col style="width:10%"><col style="width:10%"><col style="width:8%"><col style="width:7%"><col style="width:9%"><col style="width:11%"><col style="width:7%"><col style="width:8%"><col style="width:8%"></colgroup>
     <caption>${c.houses} bodies &middot; ${c.withAnObject} own an object &middot; ${c.withAnImmortalObject} hold an immortal object &middot; ${c.withDoses} hold repair medicine &middot; ${c.withSomethingAsleep} have somebody asleep &middot; ${c.holdingNothingAtAll} hold nothing anybody could take</caption>
@@ -420,10 +438,5 @@ export function renderHoldingsSection(dossiers: readonly SectDossier[]): string 
   <p class="note"><em>Ord</em> is the strongest acting member and a second figure beside it is what the body could field once, at cost. <em>Objects</em> counts the artifact catalog's own rows filed to this owner, with the strongest rating beside it. <em>Asleep</em> is the rung a sealed ancestor went under at, and a body marked <span class="chip">quiet</span> is one whose rivals have no reason to think it is there - which is the whole of what that asset is worth. <em>Nodes</em> is formation nodes lit over the total the compound has, and it is the honest measure of how much of its own inheritance a house can still operate. <em>Doses</em> is the opening holding rather than a live count: a running world spends them, and the record follows the dose rather than the number.</p>
   <p class="note">${c.holdingNothingAtAll} of the ${c.houses} hold nothing anybody could carry away - no object, no dose, nobody asleep, nothing left on the way out. That is not a gap in the data. It is a body whose entire standing is the people standing in it, and it is the ordinary case rather than the exceptional one.</p>
 </section>
-
-<section>
-  <div class="sh"><h2>House by house</h2><span class="r">${c.houses} &middot; click to open</span></div>
-  <p class="note">The same rows, spelled out: what it is holding, what waking or spending each thing would cost, and whose gift the ground is in. The name in the table above jumps to the body's full entry on the Factions tab; this is the inventory on its own.</p>
-  ${drills}
-</section>`;
+`;
 }
