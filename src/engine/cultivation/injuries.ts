@@ -9,9 +9,11 @@
  * torn meridian, kept cultivating anyway, and every roll since has been worse
  * than the last.
  *
- * The lethal rule this module owns the predicate for is the blunt one:
- * three or more untreated meridian injuries, and forcing another fight kills
- * you. This module reports the *state*; `survival.ts` decides the *death*.
+ * The lethal rule this module owns the predicate for is the blunt one: three
+ * or more untreated meridian injuries. Forcing another fight in that state
+ * kills you at once, and doing nothing at all kills you in BLEED_OUT_TURNS -
+ * a wound nothing heals on its own does not wait for you to decide. This
+ * module reports the *state*; `survival.ts` decides the *death*.
  */
 
 import {
@@ -190,8 +192,10 @@ export function aggregateInjuryPenalties(injuries: readonly Injury[]): InjuryPen
  * LETHAL_UNTREATED_INJURIES or more untreated meridian injuries.
  *
  * Note this is a STATE predicate, not a death check. Standing here is legal and
- * survivable - you can crawl to a healer. It only kills when the cultivator
- * forces another fight anyway, which `evaluateDeathConditions` decides.
+ * survivable for a while - long enough to crawl to a healer, which is the
+ * window BLEED_OUT_TURNS is sized to give. It is not indefinitely survivable:
+ * forcing another fight kills at once, and staying in this state kills on the
+ * clock. `evaluateDeathConditions` decides both.
  */
 export function isLethalInjuryState(cultivator: Pick<Cultivator, 'injuries'>): boolean {
     return untreatedInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES;
@@ -239,6 +243,59 @@ export const TEMPERING_PER_SCAR: Record<InjurySeverity, number> = {
 /** Hard ceiling on tempering, as a flat probability. Judgement, not talent. */
 export const MAX_TEMPERING = 0.06;
 
+// ─────────────────────────────────────────────────────────────────────────
+// AND THE OTHER SIDE OF IT: SCAR ATTRITION
+//
+// Tempering alone made a closed wound a pure asset, and that turned the whole
+// ratchet into a loop with no bottom: get hurt, pay a pill, come out slightly
+// better than before, repeat for as long as the money holds. A cultivator who
+// had torn their meridians forty times was the best-prepared person in the
+// world, which is the opposite of what the setting says about them.
+//
+// So the curve goes up and then it goes down. The first few closed wounds are
+// judgement - you know what the onset feels like now. Past that the wounds
+// stop teaching and start accumulating: meridians that have been torn open and
+// knitted shut a dozen times do not carry qi the way they did, and no pill
+// treats scar tissue, because scar tissue is what the pill made.
+//
+// Read carefully, because this is the counterweight and not a second penalty
+// on being hurt:
+//
+//   - UNTREATED wounds are still priced separately and still only ever hurt.
+//     Nothing here softens the ratchet.
+//   - Attrition is a function of HOW MANY wounds were closed, not of failure.
+//     A cultivator who never got hurt never pays it, and a cultivator who was
+//     hurt once and healed is still ahead.
+//   - It is capped, so a long enough life is crippled rather than negative.
+//   - It is why a prodigy who fought their way up arrives at the top of the
+//     ladder unable to do what a prodigy who walked up it could. That is the
+//     single most load-bearing consequence in the balance of the last realm:
+//     see `assessLastCrossing` in breakthrough.ts.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Closed wounds a body absorbs before the scarring starts to cost.
+ *
+ * Three, which is what a clean climb through the mortal realms produces and
+ * about what tempering can pay for at its cap. Below it the old contract is
+ * untouched: healing is a pure return on having paid.
+ *
+ * Measured, not chosen. The people who arrive at the top of the ladder carry a
+ * median of four closed wounds - the ones who took more mostly died at the wall
+ * that gave them the fourth - so the plateau sits one below that median on
+ * purpose. It is the line that decides which prodigies can still afford the
+ * last crossing when they get there, and putting it anywhere else makes that
+ * either everybody or nobody.
+ */
+export const SCAR_PLATEAU = 4;
+/** Fraction of cultivation rate each closed wound past the plateau costs. */
+export const SCAR_RATE_ATTRITION = 0.04;
+/** Flat breakthrough-odds cost of each closed wound past the plateau. */
+export const SCAR_BREAKTHROUGH_ATTRITION = 0.005;
+/** Ceilings. A used-up cultivator is slow and unlucky, never inverted. */
+export const MAX_SCAR_RATE_ATTRITION = 0.5;
+export const MAX_SCAR_BREAKTHROUGH_ATTRITION = 0.12;
+
 export interface Tempering {
     /** Number of treated injuries on the record. */
     scars: number;
@@ -249,10 +306,21 @@ export interface Tempering {
      * recognising the onset is worth less than having been through it.
      */
     deviationRelief: number;
+    /** Closed wounds past {@link SCAR_PLATEAU}. The ones that only cost. */
+    wornScars: number;
+    /** Fraction of cultivation rate the scarring has taken. */
+    rateAttrition: number;
+    /** Flat breakthrough-odds cost of the scarring. */
+    breakthroughAttrition: number;
+    /**
+     * Tempering less attrition. Positive early, negative for anyone who bought
+     * their rank with their meridians. This is the figure to show a player.
+     */
+    netBreakthroughModifier: number;
 }
 
 /**
- * What a cultivator's closed wounds are worth.
+ * What a cultivator's closed wounds are worth, and what they cost.
  *
  * Counts only TREATED injuries. An open wound is not experience, it is an open
  * wound, and it is priced by `aggregateInjuryPenalties` instead.
@@ -266,11 +334,37 @@ export function scarTempering(injuries: readonly Injury[]): Tempering {
         raw += TEMPERING_PER_SCAR[injury.severity];
     }
     const breakthroughBonus = Math.min(raw, MAX_TEMPERING);
+    const wornScars = Math.max(0, scars - SCAR_PLATEAU);
+    const rateAttrition = Math.min(
+        MAX_SCAR_RATE_ATTRITION,
+        wornScars * SCAR_RATE_ATTRITION
+    );
+    const breakthroughAttrition = Math.min(
+        MAX_SCAR_BREAKTHROUGH_ATTRITION,
+        wornScars * SCAR_BREAKTHROUGH_ATTRITION
+    );
     return {
         scars,
         breakthroughBonus,
-        deviationRelief: breakthroughBonus / 2
+        deviationRelief: breakthroughBonus / 2,
+        wornScars,
+        rateAttrition,
+        breakthroughAttrition,
+        netBreakthroughModifier: breakthroughBonus - breakthroughAttrition
     };
+}
+
+/**
+ * The multiplier scar tissue puts on a cultivation rate, ready to fold in.
+ *
+ * Separate from `aggregateInjuryPenalties` on purpose: that function prices
+ * OPEN wounds and its figure is labelled as such everywhere it surfaces. Scar
+ * tissue is a different fact about the same body and gets its own line, so a
+ * rate breakdown never says "no untreated injuries" beside a number that is
+ * not one.
+ */
+export function scarRateMultiplier(injuries: readonly Injury[]): number {
+    return 1 - scarTempering(injuries).rateAttrition;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

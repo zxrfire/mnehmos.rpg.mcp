@@ -48,6 +48,34 @@ export const CONFLICTING_TECHNIQUE_RISK = 0.12;
  * Added risk per untreated meridian injury. Small individually; the point is
  * the feedback loop - deviation causes injuries, injuries make deviation more
  * likely, and a run that starts sliding keeps sliding.
+ *
+ * ── The root cliff, measured, and the decision to keep this ──────────────
+ *
+ * Hand-played runs reported every deviation-prone root dying at ordinal 2-3
+ * while single roots reached 16, which is a cliff rather than the rate
+ * difference the roots advertise. Twenty-four seeds per root over twenty years
+ * through the real time skip, fed throughout, varying ONE thing - whether the
+ * wounds get closed once a year - reproduced it exactly and located it here:
+ *
+ *   dual_metal_wood    treated: 0.76 wounds/yr, 0 of 24 dead, ordinal 7
+ *                    untreated: 1.39 wounds/yr, 24 of 24 dead, ordinal 2.3
+ *   muddled_five       treated: 0.20 wounds/yr, 0 of 24 dead, ordinal 7
+ *                    untreated: 0.56 wounds/yr, 24 of 24 dead, ordinal 2.7
+ *
+ * Every dangerous root shows the same pair. The entire distance between them is
+ * one to five spirit stones a year of medicine, against a worst-case village
+ * wage of 21.6 stones a year. The escalation is not too steep; it is exactly
+ * steep enough to be lethal to somebody with an empty purse and survivable to
+ * somebody with a full one, which is what a compounding penalty is for.
+ *
+ * So this constant stays as it is. The defect it was blamed for was that a
+ * bottom-rung cultivator had no way to reach those few stones at all - foraging
+ * priced items nothing could sell, which `market.ts` is the answer to. Fixing
+ * the money leaves the danger intact; softening the danger would have made the
+ * root draw cosmetic, which is the one outcome that would cost the game
+ * something it cannot get back.
+ *
+ * Guarded in `tests/engine/cultivation/root-cliff.test.ts`, both arms.
  */
 export const RISK_PER_UNTREATED_INJURY = 0.02;
 

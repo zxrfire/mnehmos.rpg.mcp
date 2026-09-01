@@ -167,11 +167,66 @@ export interface ObjectRecord {
      */
     knownOwnershipBy: string[];
 
+    /**
+     * What it is worth in a fight, on the same ladder a person is measured on,
+     * or null for the great majority of things that are not worth anything in
+     * one.
+     *
+     * A generic field on a generic record, and deliberately so. A notched sabre
+     * and an object an ascended founder sent back down are the same kind of row
+     * with different numbers in this column - there is no separate table for
+     * important artifacts, no tier that behaves differently, and nothing
+     * anywhere that treats one holder's object as a special case. Whoever is
+     * carrying it gets the number, and the resolver that reads it for a hired
+     * sword is the resolver that reads it for the strongest object in the world.
+     */
+    power: number | null;
+
     /** Where it currently is, when it is not on a person. */
     locationId: string | null;
     tags: string[];
     data: Record<string, string | number | boolean | null>;
     nextClaimSeq: number;
+}
+
+/**
+ * What is left of a broken object.
+ *
+ * One rung down, at every rung, for everything. A shattered sabre rated six
+ * leaves pieces rated five; a shattered immortal weapon rated forty-six leaves
+ * pieces rated forty-five. There is no special case at the top of the scale and
+ * there must not be one - the dramatic consequences people draw from the high
+ * end (that the only objects above the mortal ceiling anybody can hold are the
+ * remains of something that failed up there) are consequences of this ordinary
+ * rule meeting an ordinary boundary, not of a rule written for immortals.
+ *
+ * A piece is a real object: it has an owner, a provenance and a power, and it
+ * can be broken again. Nothing stops a chain of that, which is most of why the
+ * bottom of the artifact catalog is full of things nobody can name the maker of.
+ */
+export function shardPower(power: number | null): number | null {
+    if (power === null) return null;
+    return Math.max(0, power - 1);
+}
+
+/**
+ * Break an object into pieces, as ordinary records.
+ *
+ * The pieces are objects. They inherit the provenance and lose a rung, and the
+ * original is not returned - a thing that has been broken is not in the world
+ * any more, which is the only part of this anybody argues about.
+ */
+export function shatter(object: ObjectRecord, pieces = 2): ObjectRecord[] {
+    return Array.from({ length: Math.max(2, pieces) }, (_, i) => makeObject({
+        ...object,
+        id: `${object.id}-shard-${i + 1}`,
+        name: `A piece of ${object.name}`,
+        power: shardPower(object.power),
+        significance: object.significance === 'legendary' ? 'significant' : object.significance,
+        possessorId: null,
+        claims: [],
+        tags: [...object.tags.filter(t => t !== 'never-carried'), 'shard', `from:${object.id}`]
+    }));
 }
 
 export function makeObject(
@@ -180,6 +235,7 @@ export function makeObject(
     return {
         significance: 'notable',
         description: '',
+        power: null,
         possessorId: null,
         ownerId: null,
         ownerName: '',

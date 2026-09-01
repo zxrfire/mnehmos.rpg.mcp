@@ -437,6 +437,25 @@ export async function worldForRun(run: Run): Promise<WorldState> {
     return handle.state;
 }
 
+/**
+ * Write the world back, for a caller that changed it without spending a day.
+ *
+ * Every other write here rides on `advanceWorldForCultivator`, which persists
+ * at the end of a span - correct while the only things that touched the world
+ * were the passage of time and what the passage of time produced. It stopped
+ * being sufficient once actions started changing the world in a single turn:
+ * settling an abode above the Lid, a descent that opens the seam and is over
+ * inside fifteen breaths, an object put down a channel. None of those spends a
+ * day, and all of them are real state.
+ *
+ * Idempotent and cheap. The repository appends above its own high-water mark,
+ * so a call that changed nothing writes nothing.
+ */
+export async function saveWorldForRun(run: Run): Promise<void> {
+    const handle = await worldHandleFor(run);
+    repo().appendWorld(handle.state);
+}
+
 /** Advance the world to where the run's clock says it should be, less `less`. */
 function catchUp(handle: WorldHandle, run: Run, less: number): number {
     const record = handle.state.runs.find(r => r.id === run.id);

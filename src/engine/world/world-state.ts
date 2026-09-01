@@ -65,6 +65,7 @@ import {
     type LocationRecord
 } from './locations.js';
 import { createMemoryStore, type MemoryStore } from './memory.js';
+import { DEFAULT_LAYER, type AscensionRecord, type LayerKey } from './layers.js';
 import type { NpcRecord, NpcRelationship } from './npc-state.js';
 import type { LineageRecord } from './lineage.js';
 import type { WorldRun } from './legacy.js';
@@ -80,6 +81,16 @@ export interface FactionRecord {
     name: string;
     /** 'sect', 'clan', 'consortium', 'court', 'order', 'city', 'cult'. */
     kind: string;
+    /**
+     * Which layer this institution belongs to.
+     *
+     * An immortal sect and a village hall are rows in the same table, ordered
+     * by the same fields, and the only difference is which side of the Lid they
+     * are on. Keeping them in one table is deliberate: a mortal sect can be a
+     * branch of an immortal lineage, and that relationship is unwritable if the
+     * two live in separate catalogs.
+     */
+    layer: LayerKey;
     alignment: 'righteous' | 'neutral' | 'demonic';
     seatLocationId: string | null;
     controlledLocationIds: string[];
@@ -100,6 +111,7 @@ export function makeFaction(
 ): FactionRecord {
     return {
         kind: 'sect',
+        layer: DEFAULT_LAYER,
         alignment: 'neutral',
         seatLocationId: null,
         controlledLocationIds: [],
@@ -139,6 +151,8 @@ export interface InventoryItem {
 export interface ActorWorldState {
     actorId: string;
     locationId: string | null;
+    /** Which side of the Lid they are on. See `layers.ts`. */
+    layer: LayerKey;
     factionId: string | null;
     factionRankIndex: number;
     inventory: InventoryItem[];
@@ -158,6 +172,7 @@ export function makeActor(
 ): ActorWorldState {
     return {
         locationId: null,
+        layer: DEFAULT_LAYER,
         factionId: null,
         factionRankIndex: -1,
         inventory: [],
@@ -309,6 +324,15 @@ export interface WorldState {
      * world's record that it happened.
      */
     runs: WorldRun[];
+    /**
+     * Everyone who has gone through the Lid, and what became of them.
+     *
+     * The engine's own answer to a question the world below cannot ask. There
+     * is no signal across the boundary, so a sect's claim to a living ancestor
+     * is a claim - frequently an honest one made by people who do not know.
+     * Nothing that renders to a player may read `afterCrossing`.
+     */
+    ascensions: AscensionRecord[];
 
     history: HistoryLedger;
     memories: MemoryStore;
@@ -405,6 +429,7 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
         opportunities: [],
         objects: [],
         runs: [],
+        ascensions: [],
         populationTarget: 0,
         history,
         memories: createMemoryStore(),
@@ -1053,6 +1078,7 @@ export function cloneWorld(state: WorldState): WorldState {
             data: { ...o.data }
         })),
         runs: state.runs.map(r => ({ ...r })),
+        ascensions: state.ascensions.map(a => ({ ...a })),
         objects: state.objects.map(o => ({
             ...o,
             claims: o.claims.map(c => ({

@@ -162,6 +162,56 @@ believed about cultivation was incomplete can unlock techniques, paths, regions,
 and explanations for things that already happened to you. The cultivation-side statement
 of that is in [`../cultivation/README.md`](../cultivation/README.md).
 
+### The ladder of knowing
+
+`discovery.ts` implements the six stages
+[`docs/world/discovery.md`](../../../docs/world/discovery.md) specifies:
+
+```text
+unaware        the name has never been spoken near you
+whisper        a word got said. What it refers to is not known
+named          you know it exists and roughly what it is. Nothing more
+placed         you know where, or who, or when
+encountered    you have been in a room with it
+known          you have dealt with it, and it has dealt with you
+```
+
+**Nothing bespoke.** A stage is a property of an ordinary `knowledge_records`
+row, carried on its own `tags` as `stage:<stage>` and mapped onto the existing
+stance vocabulary. There is no stage table, no column and no migration: a row
+written before the ladder existed still has a position, derived from its stance
+and its source. Every query in this directory that has never heard of stages
+keeps working unchanged.
+
+Three rules are load-bearing and each has a test as a guard:
+
+- **Each step needs a source, and the source caps the step.** `stageCeilingFor`
+  is that sentence in code. Something overheard through a wall cannot rise
+  above `whisper` however often it is re-heard, because the fragment was
+  unresolvable and asking about it would reveal where the listener was
+  standing. Being told, or reading it, reaches `placed`. Only having been there
+  reaches the top.
+- **Nothing here ranks the speaker.** A sect archivist and a drunk carter are
+  both `told`. What separates them is the note on the row, never a rung - and
+  the carter's may still be the true one.
+- **Seeing is a knowledge state, not an access state.** No predicate in
+  `discovery.ts` takes a realm, a threshold, an admission bar or a faction.
+  Reaching `placed` on a sect's ground means the holder can say where it is and
+  set out for it; whether the gate opens is the location layer's question and
+  is asked separately.
+
+Two predicates come out of it and they are different questions: **has a name
+been said near them** (licenses the name, from `whisper`) and **do they know
+where** (licenses setting out, from `placed`).
+
+`travellers.ts` is the other half. Of the scarce sources the doc lists, the
+traveller is the only one available to somebody with no sect, no archive, no
+money and no reason to have been anywhere - so it is the main engine of
+discovery for the ordinary case. Where a traveller came from is `placed`, since
+they said it with a number of days attached; anything else they mention on the
+way past is a `whisper` like any other dropped name. Pure and seeded: same
+seed, same day, same place, same person on the road.
+
 ### Even the engine may not know
 
 `world_facts` says what is true, but it must be able to say **unresolved**. Distinguish an
@@ -212,6 +262,9 @@ relationships.ts  directed ties with type, strength, history and attitude
 grudges.ts        grudges, debts, favours, oaths and blood feuds; inherited
 knowledge.ts      objective reality kept apart from knows / believes / suspects,
                   and from what the public believes. The heart of it.
+discovery.ts      the six-stage ladder of knowing, as a property of an ordinary
+                  knowledge record rather than a table of its own
+travellers.ts     who came through, and which names they brought with them
 secrets.ts        per-holder secret lifecycle, extending secret.repo.ts
 ```
 

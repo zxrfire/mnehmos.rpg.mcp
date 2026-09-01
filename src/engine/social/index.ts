@@ -17,6 +17,9 @@
  *   grudges.ts        grudges, debts, favours, oaths and blood feuds; inherited
  *   knowledge.ts      objective reality kept apart from knows/believes/suspects
  *                     and from what the public believes. The heart of it.
+ *   discovery.ts      the six-stage ladder of knowing, expressed as a property
+ *                     of an ordinary knowledge record rather than a new table
+ *   travellers.ts     who came through, and which names they brought with them
  *   secrets.ts        per-holder secret lifecycle, extending secret.repo.ts
  *
  * Deliberately does NOT re-export `hearing.ts` or `stealth-perception.ts`,
@@ -30,4 +33,6 @@ export * from './common.js';
 export * from './relationships.js';
 export * from './grudges.js';
 export * from './knowledge.js';
+export * from './discovery.js';
+export * from './travellers.js';
 export * from './secrets.js';

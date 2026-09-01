@@ -28,12 +28,21 @@
  */
 
 import {
+    type AmbientQi,
     type Cultivator,
     type ExistenceState,
+    type Injury,
     type SoulState
 } from '../../schema/cultivation.js';
 import { REALM_TIERS, rankName } from './realms.js';
-import { aggregateInjuryPenalties } from './injuries.js';
+import { aggregateInjuryPenalties, createInjury } from './injuries.js';
+// Upward in the dependency order and deliberately so: there is one answer in
+// this codebase to what a strike of heavenly lightning costs a body, and the
+// descent has to weather the same one rather than carry a second. Nothing in
+// `breakthrough.ts` or its transitive imports reaches back here, so this is a
+// dependency rather than a cycle - checked, and worth re-checking if either
+// file grows an import.
+import { TRIBULATION_LETHAL_STRIKES, tribulationStrikeSurvival } from './breakthrough.js';
 import type { CultivationRNG } from './rng.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -531,6 +540,86 @@ export function evaluateLidTransit(
         detail:
             `Coming back down opens the Lid a second time. The seam discharges: ` +
             `${DESCENT_TRIBULATION_STRIKES} strikes, and the descent is not survivable by being owed a favour.`
+    };
+}
+
+/**
+ * What the descent actually does to the body making it.
+ *
+ * `evaluateLidTransit` prices the passage and stops there, deliberately: it is
+ * a ruling, not a resolution, and the strikes it names have to be weathered
+ * through the same machinery every other tribulation in the game runs on. This
+ * is that call, and it exists because the alternative was a caller in the
+ * narration tier deciding what nine strikes of lightning are worth.
+ *
+ * ONE IMPLEMENTATION OF WHAT A STRIKE COSTS. `tribulationStrikeSurvival` is
+ * `breakthrough.ts`'s, `TRIBULATION_LETHAL_STRIKES` is its constant, and the
+ * injuries come out of `createInjury` on the caller's seeded stream. Nothing
+ * here is a second opinion about lightning; the only thing this file
+ * contributes is HOW MANY, and that number is `DESCENT_TRIBULATION_STRIKES`,
+ * which is above the heaviest crossing in the game.
+ *
+ * The result is meant to be survivable and probably not. Nine strikes at the
+ * per-strike odds a True Immortal carries is a decision somebody makes once
+ * about something they care about more than continuing.
+ */
+export interface DescentOutcome {
+    strikes: number;
+    /** How many landed. Three is fatal, exactly as it is on the way up. */
+    struck: number;
+    survived: boolean;
+    /** Per-strike survival, so a caller can show the price before it is paid. */
+    perStrike: number;
+    injuries: Injury[];
+    detail: string;
+}
+
+export function resolveDescentStrikes(
+    cultivator: Pick<Cultivator, 'attributes' | 'injuries' | 'immortalStatus'>,
+    ambient: AmbientQi,
+    rng: CultivationRNG,
+    turn: number
+): DescentOutcome {
+    const transit = evaluateLidTransit(cultivator, 'down');
+    const strikes = transit.strikes;
+    const perStrike = tribulationStrikeSurvival(cultivator, ambient);
+
+    const injuries: Injury[] = [];
+    let struck = 0;
+
+    // Every strike is rolled even after the fatal one, so the number of samples
+    // drawn depends only on the transit and the stream stays aligned for
+    // anything the caller rolls next. Same discipline as `resolveTribulation`.
+    for (let strike = 0; strike < strikes; strike++) {
+        if (rng.next() < perStrike) continue;
+        struck++;
+        if (struck <= TRIBULATION_LETHAL_STRIKES) {
+            injuries.push(createInjury(
+                {
+                    severity: struck >= TRIBULATION_LETHAL_STRIKES ? 'crippling' : 'serious',
+                    source: 'tribulation',
+                    turn,
+                    description:
+                        `The seam discharged: strike ${strike + 1} of ${strikes}, coming down.`
+                },
+                rng
+            ));
+        }
+    }
+
+    const survived = struck < TRIBULATION_LETHAL_STRIKES;
+    return {
+        strikes,
+        struck,
+        survived,
+        perStrike,
+        injuries,
+        detail: survived
+            ? `${struck} of ${strikes} strikes struck home coming down `
+              + `(${(perStrike * 100).toFixed(0)}% survival per strike). They arrived.`
+            : `${struck} of ${strikes} strikes struck home coming down `
+              + `(${(perStrike * 100).toFixed(0)}% survival per strike). They did not arrive, and `
+              + 'there is nothing at the bottom of it for anybody to find.'
     };
 }
 

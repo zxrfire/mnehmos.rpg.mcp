@@ -130,6 +130,38 @@ export function rollAmbientQi(sample: number): AmbientQi {
 // nearly always. Spirit tides are NOT geology - somebody ascending is not a
 // property of the ground under your feet - so they carry the same small weight
 // everywhere.
+//
+// ── The half of that fix which is still not wired ───────────────────────
+//
+// Measured in a live run, and recorded here because the code above reads as
+// though the problem is solved and from inside the module it is:
+//
+// NOTHING IN THIS REPOSITORY EVER PASSES `SiteConditions.density`.
+//
+// Not `src/web/game.ts` (`ambientFor`, and all six of its `simulateTimeSkip`
+// call sites), not `cultivation-manage.ts`, not `cultivation-support.ts`. Every
+// one of them omits it, so every one of them takes `impliedDensityFor` - which
+// guesses from the place's NAME, and guesses poor on purpose. Over the whole
+// implied curve, 64% of places come out typically thin, 25% normal, 11% dense.
+//
+// The consequence, watched happening: a cultivator standing on a location the
+// world layer holds at `env_spiritual_density = 1.0`, unsealed - the richest
+// drawable ground in the world, where `ambientWeightsForDensity(1)` puts 98.4%
+// of its weight on `dense` - was told the qi was thin, six months running. None
+// of that 1.0 was in the arguments. The same omission also means `sealed` is
+// never passed, so `sealed_vein` is unreachable in play.
+//
+// This is not a regression in the roll. The roll is correct and `geology.test.ts`
+// proves it. It is that the world layer knows the density, the engine accepts
+// the density, and no line of code joins them: `resolvePlace` in
+// `src/web/entities.ts` still says in as many words that "places are free text
+// in this engine; nothing about them is simulated", and carries a TODO(world)
+// to resolve against real `world_locations`. Until that TODO is done, the fix
+// recorded above is inert wherever it matters, and the largest multiplier in
+// the game - up to 6x on progress rate - is decided by a hash of a place name.
+//
+// `tests/engine/cultivation/ground-in-the-skip.test.ts` holds the engine half
+// of this down and states the caller half it cannot reach.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
