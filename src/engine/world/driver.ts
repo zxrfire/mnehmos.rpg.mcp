@@ -42,9 +42,11 @@
  * joined only by the number of days.
  */
 
+import type { NpcStatus } from './npc-state.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import type { HistoricalFact, Observer } from './history.js';
 import { buildPlayerDigest, type DigestOptions, type PlayerAccess, type PlayerDigest } from './digest.js';
+import { advanceImmortalLayer, type ImmortalPeril } from './immortal-world.js';
 import { applyPressure, type PressureEvent, type PressureOptions } from './pressure.js';
 import {
     advanceTime,
@@ -92,6 +94,18 @@ export interface PlayAdvanceResult {
     time: TimeAdvanceResult;
     deaths: DeathHandoff[];
 
+    /**
+     * What happened on the far side of the Lid in the same span.
+     *
+     * Empty on almost every world, because almost no world has anybody up
+     * there. When it is not empty it is the other half of "both layers keep
+     * running": an ascended cultivator does not leave a snapshot behind and
+     * does not become one.
+     */
+    immortalPerils: ImmortalPeril[];
+    /** People who stopped being above the Lid. Nobody below can learn this. */
+    immortalDeaths: string[];
+
     /** What the player learns. Null when no access was supplied. */
     digest: PlayerDigest | null;
 }
@@ -127,6 +141,8 @@ export function advanceWorldForPlay(
     const STEP = DAYS_PER_YEAR;
     const pressureEvents: PressureEvent[] = [];
     const timeSlices: TimeAdvanceResult[] = [];
+    const immortalPerils: ImmortalPeril[] = [];
+    const immortalDeaths: string[] = [];
     let born = 0;
     let remaining = requested;
     let interrupted = false;
@@ -147,6 +163,14 @@ export function advanceWorldForPlay(
         const pressure = applyPressure(state, before, time.toDay, opts.pressure);
         pressureEvents.push(...pressure.events);
         born += pressure.born;
+
+        // The far side, on the same slice. A no-op on any world nobody has
+        // ascended from, which is nearly all of them - and the reason "the
+        // lower world does not pause" and "the immortal world does not pause"
+        // are one statement rather than two.
+        const above = advanceImmortalLayer(state, before, time.toDay);
+        immortalPerils.push(...above.perils);
+        immortalDeaths.push(...above.deaths);
         for (const event of pressure.events) {
             for (const handoff of event.deaths) opts.onDeath?.(handoff);
         }
@@ -186,6 +210,8 @@ export function advanceWorldForPlay(
         born,
         time,
         deaths,
+        immortalPerils,
+        immortalDeaths,
         digest
     };
 }
@@ -222,8 +248,41 @@ export interface WorldShape {
     inheritedGoals: number;
     /** Living NPCs by realm tier, lowest first. */
     realmHistogram: number[];
+    /**
+     * Highest ordinal the ENGINE knows is out there, counting people the
+     * world cannot currently account for. See `EXTANT_STATES`.
+     */
     strongestOrdinal: number;
+    /** Extant but not `alive`: missing, sealed, between bodies. */
+    unaccountedFor: number;
 }
+
+/**
+ * States in which the ENGINE knows somebody still exists, whatever the world
+ * believes about it.
+ *
+ * `missing` is the load-bearing one and it is why this predicate exists at all.
+ * At the top of the ladder almost nobody is seen from one century to the next,
+ * so being unaccounted for is the ORDINARY condition of a Tribulation
+ * Transcendence figure rather than a loss - `ExistenceState` says as much in
+ * its own comment: whereabouts unknown, aliveness genuinely unresolved.
+ *
+ * Counting only `alive` conflated two different questions and made the
+ * instrument unable to see the state the world is supposed to produce: a
+ * perfectly ordinary disappearance read as the ceiling dropping, so a drift
+ * audit reported collapse where the setting was working correctly. The engine
+ * is allowed to know things the world cannot - that is the same licence
+ * `afterCrossing` takes when it records `still_above` about somebody no house
+ * can confirm - and the ceiling is an engine fact.
+ */
+const EXTANT_STATES = new Set<NpcStatus>([
+    'alive',
+    'missing',
+    'sealed',
+    'soul_preserved',
+    'possessing',
+    'reconstructed'
+]);
 
 /**
  * A compact shape of the world, for asking whether it is recognisably
@@ -237,6 +296,7 @@ export function worldShape(state: WorldState): WorldShape {
     const histogram = new Array(tiers.length - 1).fill(0);
     let living = 0;
     let strongest = 0;
+    let unaccountedFor = 0;
     let inheritedGoals = 0;
     let inheritedGrudges = 0;
 
@@ -245,10 +305,17 @@ export function worldShape(state: WorldState): WorldShape {
         for (const rel of npc.relationships) {
             if (rel.inheritedFromId !== null && rel.standing < 0) inheritedGrudges++;
         }
+        // The ceiling is what the engine knows is out there. The headcount is
+        // what the world can see. They are different questions and were being
+        // answered by one filter.
+        if (EXTANT_STATES.has(npc.status)) {
+            const reach = npc.cultivation.realmOrdinal;
+            if (reach > strongest) strongest = reach;
+            if (npc.status !== 'alive') unaccountedFor++;
+        }
         if (npc.status !== 'alive') continue;
         living++;
         const o = npc.cultivation.realmOrdinal;
-        if (o > strongest) strongest = o;
         for (let i = 0; i < histogram.length; i++) {
             if (o >= tiers[i] && o < tiers[i + 1]) {
                 histogram[i]++;
@@ -280,6 +347,7 @@ export function worldShape(state: WorldState): WorldShape {
         inheritedGrudges,
         inheritedGoals,
         realmHistogram: histogram,
-        strongestOrdinal: strongest
+        strongestOrdinal: strongest,
+        unaccountedFor
     };
 }
