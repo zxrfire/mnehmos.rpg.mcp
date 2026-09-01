@@ -29,7 +29,7 @@ describe('the world reaches somebody sitting still', () => {
             const { db, game } = makeGame({ seed });
             const { cultivator } = await game.newRun('Wen Shu');
             fund(db, cultivator.id);
-            const { timeSkip } = await game.cultivate(40 * DAYS_PER_YEAR);
+            const { timeSkip } = await game.cultivate(40 * DAYS_PER_YEAR, { anyway: true });
             cut.push(timeSkip.requestedDays);
         }
         // At least one forty-year stretch was stopped by something. Before the
@@ -43,7 +43,7 @@ describe('the world reaches somebody sitting still', () => {
             const { db, game } = makeGame({ seed });
             const { cultivator } = await game.newRun('Wen Shu');
             fund(db, cultivator.id);
-            const result = await game.act('I cultivate for forty years.');
+            const result = await game.act('I cultivate for forty years anyway.');
             if (result.toolCalls.some(call => call.name === 'encounters.rollEncounters')) {
                 sawSomething = true;
                 break;
@@ -83,7 +83,7 @@ describe('the bargain a sealed door buys', () => {
         const { cultivator } = await game.newRun('Wen Shu');
         fund(db, cultivator.id);
 
-        const result = await game.act('I go into closed-door seclusion for forty years.');
+        const result = await game.act('I go into closed-door seclusion for forty years anyway.');
         const rolled = result.toolCalls.filter(call => call.name === 'encounters.rollEncounters');
         expect(rolled.length, 'a sealed door skipped the roll entirely, which is the old ward')
             .toBeGreaterThan(0);
@@ -103,8 +103,8 @@ describe('the bargain a sealed door buys', () => {
             return n;
         };
 
-        const sealed = await interruptions('I go into closed-door seclusion for forty years.');
-        const open = await interruptions('I sit in seclusion for forty years.');
+        const sealed = await interruptions('I go into closed-door seclusion for forty years anyway.');
+        const open = await interruptions('I sit in seclusion for forty years anyway.');
 
         expect(sealed, 'the door should stop the great majority of it').toBeLessThan(open);
     });
@@ -113,7 +113,7 @@ describe('the bargain a sealed door buys', () => {
         const { db, game } = makeGame({ seed: 'seal-span' });
         const { cultivator } = await game.newRun('Wen Shu');
         fund(db, cultivator.id);
-        const { timeSkip } = await game.act('I go into closed-door seclusion for ten years.')
+        const { timeSkip } = await game.act('I go into closed-door seclusion for ten years anyway.')
             .then(() => ({ timeSkip: null }))
             .catch(() => ({ timeSkip: null }));
         // The span itself is the cultivation engine's business; what this
@@ -189,7 +189,7 @@ describe('the same seed is the same life', () => {
         db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
         // With a book, so the decade is a decade of something.
         await game.act('I learn the Lesser Qi-Gathering Manual');
-        const { timeSkip } = await game.cultivate(3650);
+        const { timeSkip } = await game.cultivate(3650, { anyway: true });
         const after = repos.cultivators.getById(cultivator.id)!;
         return {
             requested: timeSkip.requestedDays,

@@ -103,7 +103,7 @@ describe('a ten-year seclusion', () => {
         // its own test below.
         db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
 
-        const { timeSkip, state } = await game.cultivate(10 * DAYS_PER_YEAR);
+        const { timeSkip, state } = await game.cultivate(10 * DAYS_PER_YEAR, { anyway: true });
 
         // NOT ten years, necessarily. An open seclusion is now rolled against
         // the encounter window before anything is spent, and the span is
@@ -168,7 +168,7 @@ describe('a ten-year seclusion', () => {
             // one the technique ceiling is a hard zero and both runs would be
             // reproducibly empty, which is true and tests nothing.
             await game.act('I learn the Lesser Qi-Gathering Manual');
-            const { timeSkip } = await game.cultivate(3650);
+            const { timeSkip } = await game.cultivate(3650, { anyway: true });
             return timeSkip;
         };
 
@@ -184,7 +184,7 @@ describe('a ten-year seclusion', () => {
         await game.newRun('Broke');
 
         // 30 stones buys 15 rations: 750 days of food out of 3650 asked for.
-        const { timeSkip, state } = await game.cultivate(3650);
+        const { timeSkip, state } = await game.cultivate(3650, { anyway: true });
 
         // 30 stones buys 15 rations; the food runs out long before year ten,
         // and the skip stops there to say so rather than narrating a death
@@ -210,7 +210,7 @@ describe('death is terminal', () => {
         db.prepare('UPDATE cultivators SET spirit_stones = 0 WHERE id = ?').run(cultivator.id);
 
         for (let attempt = 0; attempt < 20; attempt++) {
-            await game.cultivate(2000).catch(() => undefined);
+            await game.cultivate(2000, { anyway: true }).catch(() => undefined);
             if (game.state().run.status !== 'active') break;
         }
         return { db, game, cultivator };
@@ -237,7 +237,7 @@ describe('death is terminal', () => {
 
         for (const call of [
             () => game.act('I keep cultivating.'),
-            () => game.cultivate(30),
+            () => game.cultivate(30, { anyway: true }),
             () => game.breakthrough()
         ]) {
             await expect(call()).rejects.toMatchObject({
@@ -480,11 +480,11 @@ describe('seclude', () => {
         const { cultivator: planCultivator } = await sealedRun.game.newRun('Shut-In');
         sealedRun.db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?')
             .run(planCultivator.id);
-        expect(planned(await sealedRun.game.act('I seal the cave for ten years.')).action)
+        expect(planned(await sealedRun.game.act('I seal the cave for ten years anyway.')).action)
             .toBe('seclude');
 
-        const sealed = await disturbances('I seal the cave for ten years.');
-        const open = await disturbances('I sit in seclusion for ten years.');
+        const sealed = await disturbances('I seal the cave for ten years anyway.');
+        const open = await disturbances('I sit in seclusion for ten years anyway.');
 
         expect(sealed, 'shutting the door left them no better off than leaving it open')
             .toBeLessThan(open);

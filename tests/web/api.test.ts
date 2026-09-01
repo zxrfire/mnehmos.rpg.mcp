@@ -253,7 +253,7 @@ describe('POST /api/cultivate', () => {
         const { http } = await boot();
         await http.post('/api/run/new', { name: 'Mo Yan' });
 
-        const res = await http.post('/api/cultivate', { days: 30 });
+        const res = await http.post('/api/cultivate', { days: 30, anyway: true });
         expect(res.status).toBe(200);
         // `narration` is the fix for a real split: the button called this
         // endpoint, got a structure back, and rendered a table of deltas,
@@ -376,7 +376,7 @@ describe('GET /api/ledger', () => {
         const id = game.state().cultivator.id;
         db.prepare('UPDATE cultivators SET spirit_stones = 0 WHERE id = ?').run(id);
         for (let attempt = 0; attempt < 20; attempt++) {
-            const res = await http.post('/api/cultivate', { days: 2000 });
+            const res = await http.post('/api/cultivate', { days: 2000, anyway: true });
             if (res.status !== 200 || res.body.state.run.status !== 'active') break;
         }
 

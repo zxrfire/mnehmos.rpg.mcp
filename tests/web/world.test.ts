@@ -33,7 +33,7 @@ describe('one span, both clocks', () => {
         db.prepare('UPDATE cultivators SET spirit_stones = 900 WHERE id = ?').run(cultivator.id);
 
         const before = (await worldForRun(game.state().run as never)).currentDay;
-        const { timeSkip, state } = await game.cultivate(20 * 365);
+        const { timeSkip, state } = await game.cultivate(20 * 365, { anyway: true });
         const after = (await worldForRun(game.state().run as never)).currentDay;
 
         // Not the days requested. A seclusion broken in year three does not get
@@ -49,7 +49,7 @@ describe('one span, both clocks', () => {
         const { cultivator } = await game.newRun('Wen Shu');
         db.prepare('UPDATE cultivators SET spirit_stones = 900 WHERE id = ?').run(cultivator.id);
 
-        const result = await game.act('I sit in seclusion for eighty years.');
+        const result = await game.act('I sit in seclusion for eighty years anyway.');
         const worldRows = engineCalls(result).filter(c => c.name === 'world.advanceWorldForPlay');
 
         expect(worldRows.length).toBeGreaterThan(0);
@@ -62,7 +62,7 @@ describe('one span, both clocks', () => {
         const { cultivator } = await game.newRun('Nobody');
         db.prepare('UPDATE cultivators SET spirit_stones = 900 WHERE id = ?').run(cultivator.id);
 
-        const result = await game.act('I sit in seclusion for eighty years.');
+        const result = await game.act('I sit in seclusion for eighty years anyway.');
 
         // How much a player never heard about is a fact about the simulation.
         // The moment it becomes a sentence, "the world is mostly none of your
@@ -87,7 +87,7 @@ describe('one span, both clocks', () => {
         expect(game.worldEnabled).toBe(false);
         await game.newRun('Alone');
 
-        const { timeSkip } = await game.cultivate(365);
+        const { timeSkip } = await game.cultivate(365, { anyway: true });
         expect(timeSkip.simulatedDays).toBeGreaterThan(0);
     });
 });
@@ -101,7 +101,7 @@ describe('a life begins in the world the last one left', () => {
         // Kill the first life so there is a world with a finished run in it.
         db.prepare('UPDATE cultivators SET spirit_stones = 0 WHERE id = ?').run(cultivator.id);
         for (let i = 0; i < 20 && game.state().run.status === 'active'; i++) {
-            await game.cultivate(2000).catch(() => undefined);
+            await game.cultivate(2000, { anyway: true }).catch(() => undefined);
         }
         expect(game.state().run.status).toBe('dead');
 

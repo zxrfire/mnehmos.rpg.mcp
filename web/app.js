@@ -1694,17 +1694,31 @@ async function submitAction(ev) {
   afterMutation();
 }
 
-async function doCultivate(days) {
+async function doCultivate(days, { anyway = false } = {}) {
   if (S.busy) return;
   setBusy(true);
   setPending(true, `Seclusion - ${fmtDays(days)}…`);
 
-  const res = await postJSON('/api/cultivate', { days });
+  const res = await postJSON('/api/cultivate', anyway ? { days, anyway: true } : { days });
 
   setPending(false);
   setBusy(false);
 
-  if (!res.ok) { toast('Cultivation refused', res.error); focusCommand(); return; }
+  if (!res.ok) {
+    // The engine refuses a stretch whose return it has already computed as
+    // exactly zero - no manual, or a manual that has ended - and the refusal
+    // names the book that would carry further. It is far too much to read in a
+    // toast, and it is the most useful sentence in the game at that moment, so
+    // it gets the confirm overlay and an explicit way through. The years are
+    // still the player's to spend; they just have to mean it.
+    if (/\banyway\b/i.test(res.error || '')) {
+      openSitAnywayConfirm(days, res.error);
+      return;
+    }
+    toast('Cultivation refused', res.error);
+    focusCommand();
+    return;
+  }
 
   const payload = res.data || {};
   if (payload.state) applyState(payload.state);
@@ -2224,6 +2238,36 @@ function openBreakthroughConfirm() {
   });
 
   $('#bt-go').addEventListener('click', () => { closeOverlay(); doBreakthrough(); });
+}
+
+/**
+ * The engine has refused a stretch it knows returns exactly zero.
+ *
+ * Its own words, in full, with the way through beside them. The refusal names
+ * the manual that would carry further, which is the whole reason it is worth a
+ * panel instead of a toast: this is the moment a stopped player finds out what
+ * would unstop them.
+ */
+function openSitAnywayConfirm(days, reason) {
+  openOverlay({
+    title: `${fmtDays(days)} that would return nothing`,
+    body: html`
+      <div class="confirm">
+        <p>${reason}</p>
+        <p class="muted">Sitting anyway costs the days, the food and the risk, and gains no
+           progress. The engine has already computed that; nothing about the stretch is
+           uncertain except what wanders past while you are in it.</p>
+      </div>`,
+    foot: html`
+      <button class="btn" type="button" data-overlay-close data-autofocus>Go and find a manual</button>
+      <button class="btn btn--danger" type="button" id="sit-anyway">Sit anyway</button>`,
+    onClose: () => focusCommand()
+  });
+
+  $('#sit-anyway').addEventListener('click', () => {
+    closeOverlay();
+    doCultivate(days, { anyway: true });
+  });
 }
 
 /* ─────────────────────────────── ladder ─────────────────────────────── */
