@@ -145,6 +145,26 @@ export interface ResolvedEntity {
     facts: string[];
     /** Categories, ladders, ordinals, grades. Inspector only, never prompted. */
     structure: string[];
+    /**
+     * The numbers a resolver needs, when this entity is a person.
+     *
+     * Everything above is either narratable prose or an inspector string, and
+     * a caller that needs the rung to price something against was reduced to
+     * parsing `structure` for it. These are the same values that line already
+     * carries, exposed as numbers so `engine/social-leverage/` can be handed a
+     * party without re-fetching the row.
+     *
+     * Absent for a sect or a place, and absent for a person the player has not
+     * resolved to a real row. Nothing here is ever narrated: it is the same
+     * inspector-only material as `structure`, in a shape code can read.
+     */
+    party?: {
+        realmOrdinal: number;
+        factionId: string | null;
+        /** True when they hold a rank inside that house, not merely a badge. */
+        ranked: boolean;
+        charm?: number;
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -362,7 +382,14 @@ export function resolveCultivator(
             `sectId=${match.sectId ?? 'none'}, sectRank=${match.sectRank ?? 'none'}, ` +
             `spiritRoot=${match.spiritRoot}, spiritStones=${match.spiritStones}, ` +
             `untreatedInjuries=${match.untreatedInjuries}, location=${match.location ?? 'unrecorded'}.`
-        ]
+        ],
+        // The same three values the line above prints, as numbers. See the
+        // field's own comment on `ResolvedEntity`.
+        party: {
+            realmOrdinal: match.realmOrdinal,
+            factionId: match.sectId ?? null,
+            ranked: Boolean(match.sectId && match.sectRank)
+        }
     };
 }
 
