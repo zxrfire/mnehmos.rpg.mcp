@@ -20,6 +20,7 @@ Read alongside [`economy.md`](economy.md), which covers price, ownership and pro
 | [Spent is not gone](#spent-is-not-gone) | An object is consumed, and somebody asks about it later |
 | [Holding is a signature](#holding-is-a-signature) | Somebody is seen with a thing that is not theirs |
 | [Scarcity is measured, not authored](#scarcity-is-measured-not-authored) | Deciding how many of something exist |
+| [The almanac and the ledger](#the-almanac-and-the-ledger) | Deciding which surface a fact about an object belongs on |
 
 ---
 
@@ -175,3 +176,42 @@ a thing is tiny. Scarcity at the top is a consequence of the ladder's own shape.
 
 When you need a count, look for the fact that already implies it. A number with a measurement
 behind it survives the next content pass; one that was chosen does not.
+
+---
+
+## The almanac and the ledger
+
+<!-- tier: 2 trigger="a fact about an object has to be shown to somebody, and the question is where it goes" -->
+
+The counted/tracked line above decides how an object is *stored*. This one decides where it is
+*shown*, and the two are the same line seen from the reader's side. There are exactly two
+questions a person can have about an object, they are different questions, and a surface that
+tries to answer both answers neither:
+
+> **The almanac says what a thing IS. The ledger says WHO HAS IT.**
+
+**The almanac** is what kinds of thing exist in the world at all, and a description of each. A
+reader opens it to find out what something is - what a soul-quenching needle does, what makes a
+third-grade furnace different from a second. Its rows are kinds, and **no holder appears here.**
+A kind is not owned by anybody; that is what makes it a kind.
+
+**The ledger** is which specific things exist right now and who is holding them, with the
+provenance that says how they came by it. A reader opens it to find out who has what. Its rows
+are objects with histories - the `makeObject` and `makeResourceLot` rows, the ones whose
+movement is an event somebody should be able to find out about two centuries later.
+
+The failure is always the same and it is worth naming, because it does not look like a bug: a
+surface drifts into the middle, listing kinds *and* gesturing at holders, so it is no longer a
+reference (it does not describe everything that exists) and not yet a record (it cannot tell you
+who has one). Both readers leave without their answer, and the page reads as merely *dense*
+rather than as *wrong*, which is why it can sit there for months.
+
+Two consequences worth holding on to:
+
+- **A fungible thing has an almanac entry and no ledger row.** Nobody tracks which low-grade
+  pill it is, so there is nothing for the ledger to say. Asking the ledger about it is asking a
+  question the world has deliberately declined to store - and that is a correct answer, not a
+  gap to be filled in.
+- **A singular thing has both, and they must not repeat each other.** The almanac describes the
+  kind once; the ledger names the holder and the history. When a fact is duplicated across the
+  two, the copies drift, and the reader learns not to trust either.
