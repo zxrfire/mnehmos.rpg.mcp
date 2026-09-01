@@ -684,7 +684,7 @@ export const THE_SENDING_PYRAMID = {
     theOrdinaryFactionShape:
         'So the ordinary faction shape is: a handful of lowers received across centuries, perhaps one middle in the whole record, no higher ever, and almost all of it spent. Anything richer than that needs a reason written down.',
     whoNeverReceivedAnything:
-        'And a great many factions have never received anything at all, ever, which the catalog states rather than leaves implied. A receipt requires a line: somebody up there who is yours. The Standing Grove, the Sixmile Wardens, the Hollow Bell Wanderers, the Bone Lantern Cult, the Severed, the Clear River Alliance and every Dao house have no crossed ancestor and no parent that has one, and consequently no history of receipts whatever. For them these objects are a rumour about other people.'
+        'And a great many factions have never received anything at all, ever, which the catalog states rather than leaves implied. A receipt requires a line: somebody up there who is yours. The Longbough Grove, the Sixmile Wardens, the Hollow Bell Wanderers, the Bone Lantern Cult, the Severed, the Clear River Fordhall and every Dao house have no crossed ancestor and no parent that has one, and consequently no history of receipts whatever. For them these objects are a rumour about other people.'
 } as const;
 
 // -------------------------------------------------------------------------
