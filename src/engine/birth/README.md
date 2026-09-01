@@ -2,8 +2,15 @@
 
 Where a run opens, and whose child it opens as.
 
-One file, `birth.ts`, and one function anybody outside this directory should
-call: `drawBirth(seed)`. It turns the origin axis into starting values.
+Two files:
+
+- `birth.ts` - `drawBirth(seed)`, which turns the origin axis into starting
+  values. This is the one function most callers want.
+- `spending-a-word-to-place-a-child.ts` - the favour that skips an admission
+  bar, which is the other half of what a name is worth and is described in
+  [`docs/world/origin.md`](../../../docs/world/origin.md). It answers two
+  questions: which doors a family's word would open that the applicant's own
+  ordinal does not, and what it costs to spend one on your own child.
 
 ## Why it exists
 
@@ -69,10 +76,50 @@ re-measures the outcome half through `measureOriginOutcomes`. If a change here
 makes a good birth reliably produce high-realm cultivators, that file is where
 it should fail.
 
+## The favour, and why it lives here
+
+`placementsWithinReach` in `origin.ts` applies two hard conditions: the house is
+within the family's reach, and the applicant already meets the house's own
+admission ordinal. A child has an ordinal of zero until they have cultivated, so
+at the age the top tier places its children the second condition throws away
+every house with a bar above the floor - and what survives takes anybody. The
+greatest name in the province buys a place its holder could have had by walking
+up. `tests/engine/birth/spending-a-word-to-place-a-child.test.ts` pins that
+directly, because it is the defect the favour exists to fix and the prose used
+to describe it as though it were the feature.
+
+`placementsAWordWouldOpen` is the counterpart and is deliberately **disjoint**
+from `placementsWithinReach`: a house appears in exactly one of the two lists,
+so the difference between them is what the word was worth.
+
+Three rules bind this file the way the six above bind `birth.ts`:
+
+7. **No bar is altered and no ordinal is conferred.** Every answer is derived
+   from `favourStanceOf`, which is derived from `SECT_ADMISSION`, so there is no
+   second copy of anybody's admission figure here. A word buys the gate; the
+   receiving house's ladder is climbed from the bottom.
+8. **The two doors stay apart.** `doorsOf` exists because exactly one house has
+   a probation door as well as a membership bar, and collapsing them has been
+   done twice. The membership bar has never moved; the probation door is the one
+   people come through; and that house's own standing is above every origin's
+   reach, so it is at once the most open door in the setting and the only one
+   nobody can be let through. It is already open and needs no opening.
+9. **Deltas out, nothing written.** `spendAWord` returns rows for the social
+   ledgers - one obligation, one tie, one knowledge row held by one person - and
+   commits none of them. There is deliberately no public-belief row: a word is
+   spent between two people and the child is not told.
+
 ## What is not here yet
 
 - **Age does not vary.** A run opens at 16 wherever it opens. `placement.atAge`
-  says a great house places its children at seven, and nothing reads it.
+  says a great house places its children at seven, and nothing reads it - which
+  also means `spendAWord`'s extreme and intended case, the newborn, is not
+  reachable from `drawBirth` yet.
+- **A player has no children.** `spendAWord` takes a `childId` and does not care
+  where it came from. For NPCs the world layer already supplies kin ties through
+  `engine/world/the-ties-an-ordinary-life-produces.ts`; for the player character
+  there is no equivalent, so the family case is implemented and not yet
+  reachable from a run. That is the one thing this module is waiting on.
 - **A birth house has no seat to be born at.** The catalog records a faction's
   territory in prose rather than as a place name, so the house a family belongs
   to does not currently decide where the run opens. Both are drawn, and they

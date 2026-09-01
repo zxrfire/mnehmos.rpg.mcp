@@ -71,7 +71,7 @@ converge on `NARRATOR-CORE.md`.
 | [`understanding.md`](understanding.md) | Understanding as an axis distinct from accumulation, personal realms, achievements, visions, and what separates two cultivators at the same rank | 2 and 3 |
 | [`discovery.md`](discovery.md) | How the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of | 2 and 3 |
 | [`asking.md`](asking.md) | Who you ask and what you say; genuine ignorance versus deflection, and why the player rather than the character is what improves across runs | 2 and 3 |
-| [`origin.md`](origin.md) | Where you were born and what it was worth; privilege buys inputs and never rank | 2 and 3 |
+| [`origin.md`](origin.md) | Where you were born and what it was worth; privilege buys inputs and never rank; the word that skips an admission bar, the one house where it buys nothing, and spending one on your own child | 2 and 3 |
 | [`past-the-ceiling.md`](past-the-ceiling.md) | What a capped cultivator does next: the routes past a manual's ceiling, who each is open to, and what every layer must supply | 2 and 3 |
 | [`making-places-different.md`](making-places-different.md) | Authoring guide: how to keep regions and factions from being interchangeable | 3 |
 | [`capability-gaps-by-realm.md`](capability-gaps-by-realm.md) | Design audit: the six capability questions answered for every realm, measured against the code, with what is built, what is indirect and what is absent; the same test applied to the four attributes | 3 |
@@ -121,6 +121,8 @@ These cut across place. A scene commonly takes one row from each table.
 |---|---|
 | **Any turn at all** | [`NARRATOR-CORE.md`](NARRATOR-CORE.md), always |
 | A run begins, or somebody's birth starts to matter | [`origin.md`](origin.md) |
+| Somebody is admitted somewhere their own standing does not reach, or a child is placed at all | [`origin.md`](origin.md) |
+| A cultivator with standing has a child, or a placed child asks who arranged it | [`origin.md`](origin.md), [`people.md`](people.md) |
 | The player asks somebody a question | [`asking.md`](asking.md) |
 | The player hears of something they have never met | [`discovery.md`](discovery.md) |
 | An NPC is present, remembered, or being reasoned about | [`people.md`](people.md) |

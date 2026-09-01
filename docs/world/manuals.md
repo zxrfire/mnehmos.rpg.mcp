@@ -313,6 +313,15 @@ a rich one's.
 Favour is not permanent and must not be. A house that loses its favourite names another; a
 house that stops doing so stops mattering within a century.
 
+**This is not the other favour, and the two must not be run together.** Everything above
+happens *inside* a house, to somebody already admitted, and what it moves is a shelf: the
+house hands a disciple a book earlier than their rank would reach it, bounded by how many
+copies it owns. The other one is spent from *outside* a house, by somebody who is not in it,
+on somebody who is not in it yet, and what it moves is a gate - it makes a house suspend its
+own admission bar for one person, once. See [Somebody's word, and the bar it
+skips](origin.md#somebodys-word-and-the-bar-it-skips). A person can be the subject of both
+in one life, in that order, and they are two separate debts to two separate people.
+
 **Somebody has to carry you over a gap.** Where a shelf does not join up, the setting's
 answer is a person rather than a book: guidance from somebody of an appropriate level, a
 method passed master to student. A house that still holds a living master of the higher
