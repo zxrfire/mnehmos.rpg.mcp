@@ -104,6 +104,11 @@ import {
     rankName,
     realmForOrdinal
 } from '../engine/cultivation/realms.js';
+import {
+    relationshipsOf,
+    type Regard,
+    type ResolvedRelationship
+} from '../data/cultivation/faction-relationships.js';
 
 /**
  * The band this page is about, and the two rungs above it.
@@ -435,6 +440,16 @@ export interface RegisterCourt {
     apexName: string;
     ordinal: number;
     administers: string;
+    /**
+     * The same section a faction entry ends on, on the two courts that have no
+     * faction row of their own.
+     *
+     * Without it the Kiln Court - one of the two claimants to the largest
+     * unresolved question in the region - was the one body in the world whose
+     * side of that argument had no relations printed anywhere, because it is a
+     * court with no sect row and the section lives on the sect entry.
+     */
+    relationships: RegisterRelationship[];
     /**
      * Three or four sentences that say what this court is. See
      * {@link buildCourtSynopsis}.
@@ -814,6 +829,27 @@ export interface RegisterHoldsFrom {
 }
 
 /**
+ * One relationship, seen from the entry it is printed on.
+ *
+ * `holdsFrom` above answers who a body reports to, once, upward, and that was
+ * the whole of what the sheet said about a faction's relations for a long time.
+ * It is the wrong shape for the question a reader actually has: a body has
+ * relations in three directions, the warmth of each is a separate fact from the
+ * structure of it, and the interesting houses are the ones where those two
+ * disagree - dutiful upward and brutal downward, or warm to a patron who is
+ * merely correct back.
+ *
+ * Every field here is quoted from `faction-relationships.ts` and none is
+ * assembled at render time. `theirRegard` is the other body's word for the same
+ * tie, printed beside this body's, so an asymmetry is visible on the entry
+ * rather than requiring a reader to go and open the other one.
+ */
+export interface RegisterRelationship extends ResolvedRelationship {
+    /** The other body's entry on this sheet, where it has one. */
+    anchor: string | null;
+}
+
+/**
  * What it is actually good at, against what it is known for.
  *
  * Reputation fixes on whatever is legible from the road and then stops
@@ -1007,6 +1043,15 @@ export interface SectDossier {
     fielded: RegisterFielded;
     /** Who it answers to and on what terms. Null only where nothing records one. */
     holdsFrom: RegisterHoldsFrom | null;
+    /**
+     * Everything it stands in relation to, above, below and beside.
+     *
+     * Last on the entry, and never empty: every body in the catalog is in at
+     * least one, because the tables the ties are read out of already covered
+     * the world. An entry with nothing here would be a fault in the data rather
+     * than a body that stands alone, which is why the section says so.
+     */
+    relationships: RegisterRelationship[];
     /** Reputation against capability. Null where the catalog has no character row. */
     capability: RegisterCapability | null;
     /** The door, where there is one. Null on a house that takes nobody. */
@@ -1720,6 +1765,7 @@ function buildCourts(): RegisterCourt[] {
             apexName: getApexInstitution(court.apexId)?.name ?? court.apexId,
             ordinal: court.powerOrdinal,
             administers: court.administers,
+            relationships: buildRelationships(court.id),
             // Filled after the panel is assembled: the precis reads it.
             synopsis: [] as string[],
             description: court.description,
@@ -2074,6 +2120,19 @@ function buildHoldsFrom(factionId: string): RegisterHoldsFrom | null {
         unbackedReason: p.unbackedReason,
         note: p.note
     };
+}
+
+/**
+ * Everything one body stands in relation to, quoted whole from the catalog.
+ *
+ * Keyed on every id the body is filed under rather than on one of them, for the
+ * reason every other join on this sheet is: a court that is also a sect has a
+ * row in two tables, the ties were written against whichever id their author
+ * had in front of them, and a single-id lookup silently drops half of them.
+ */
+function buildRelationships(factionId: string): RegisterRelationship[] {
+    return relationshipsOf(factionId, idsForFaction(factionId))
+        .map(r => ({ ...r, anchor: null as string | null }));
 }
 
 /** Reputation against capability, straight out of the character catalog. */
@@ -3354,6 +3413,7 @@ function buildDossiers(
             synopsis: [],
             fielded,
             holdsFrom: buildHoldsFrom(row.id),
+            relationships: buildRelationships(row.id),
             capability: buildCapability(row.id),
             // Null where the body is a posting, and the null is the fact
             // rather than the view hiding something: there is no way in,
@@ -3539,6 +3599,7 @@ function buildDossiers(
                 }
             },
             holdsFrom: buildHoldsFrom(a.id),
+            relationships: buildRelationships(a.id),
             capability: buildCapability(a.id) ?? (a.factionId ? buildCapability(a.factionId) : null),
             wayIn: a.factionId ? buildWayIn(a.factionId) : null,
             flags: [
@@ -3836,6 +3897,12 @@ export function buildRegister(): WorldRegister {
             }
         }
         if (d.holdsFrom?.parentId) d.holdsFrom.parentLinkId = entryFor(d.holdsFrom.parentId);
+        // A relationship names a second body by construction, so every row in
+        // the section has to be one click from the other side of itself. That
+        // is not a convenience: the two sides are allowed to feel differently
+        // about the same tie, and a reader who cannot reach the other entry has
+        // only been shown half of it.
+        for (const r of d.relationships) r.anchor = anchorFor(r.otherId);
         if (d.apex) for (const s of d.apex.answeredBy) s.linkId = entryFor(s.id);
         // Last, because it reads every block above it - including the artifacts,
         // which is why this cannot move above the assignment two lines up.
@@ -3857,6 +3924,12 @@ export function buildRegister(): WorldRegister {
     }
 
     const courts = buildCourts();
+    // Courts get the same treatment for the same reason. A court with no
+    // faction row is still a body other entries link to, and the one contested
+    // lineage in the catalog has exactly that shape on one of its two sides.
+    for (const c of courts) {
+        for (const r of c.relationships) r.anchor = anchorFor(r.otherId);
+    }
 
     return {
         generatedAt: new Date().toISOString(),
@@ -4347,6 +4420,44 @@ text-transform:uppercase;color:var(--signal);padding-top:3px}
 .dispute dd{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
 @media (max-width:640px){.dispute{grid-template-columns:1fr;gap:2px}
 .dispute dt{padding-top:9px}}
+/* ── How a body stands with everybody ────────────────────────────────────
+   Three groups - above, beside, under - and inside each one a row whose head
+   carries the two warmth words next to each other. The pairing is the whole
+   design: an asymmetric row has to be readable as asymmetric at a glance,
+   without the reader having to open the other entry. Colour is taken from the
+   existing tokens rather than a new palette, so the six words theme with
+   everything else on the sheet. */
+.rels{margin:4px 0 0}
+.relgrp{margin:14px 0 0}
+.relgrp h4{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
+text-transform:uppercase;color:var(--faint);margin:0 0 6px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.relgrp h4 span{color:var(--datum)}
+.relgrp h4 .gap{color:var(--faint);font-weight:400;letter-spacing:.04em;text-transform:none}
+.rel{border-left:2px solid var(--line,var(--rule));padding:0 0 0 12px;margin:10px 0}
+.relh{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:5px}
+.relwho{font:600 14px Newsreader,Georgia,serif;color:var(--ink)}
+.relarrow{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.relkind,.relsrc{font:400 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
+letter-spacing:.06em;color:var(--faint)}
+.relsrc{margin-left:auto}
+.regard{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
+text-transform:uppercase;padding:2px 6px;border-radius:3px;border:1px solid var(--rule);color:var(--quiet)}
+.regard.warm{color:var(--datum);border-color:var(--datum);background:var(--datum-soft)}
+.regard.correct{color:var(--quiet)}
+.regard.distant{color:var(--faint);border-style:dashed}
+.regard.wary{color:var(--signal);border-color:var(--signal)}
+.regard.cold{color:var(--signal);border-color:var(--signal);background:var(--signal-soft)}
+.regard.hostile{color:var(--signal);border-color:var(--signal);background:var(--signal-soft);
+text-decoration:underline}
+.relwhat{margin:0 0 6px;font-size:14px;line-height:1.55;color:var(--quiet)}
+.relsides{margin:0;display:grid;grid-template-columns:190px 1fr;gap:6px 16px}
+.relsides dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
+text-transform:uppercase;color:var(--faint);padding-top:2px}
+.relsides dd{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
+@media (max-width:640px){.relsides{grid-template-columns:1fr;gap:2px}
+.relsides dt{padding-top:9px}
+.relsrc{margin-left:0}}
+.relgloss{margin:6px 0 0;font-size:12.5px;line-height:1.5;color:var(--faint)}
 /* ── A court's offices ───────────────────────────────────────────────────
    The two standing columns sit side by side and are given the same weight,
    because neither is the real one. */
@@ -4957,6 +5068,110 @@ function fieldedBlock(f: RegisterFielded): string {
   </dl></div>`;
 }
 
+/**
+ * What each warmth word means, printed where it is used rather than only in the
+ * key, because a one-word column that needs a lookup is a column nobody reads.
+ */
+const REGARD_GLOSS: Record<Regard, string> = {
+    warm: 'glad of them, and will spend on them unasked',
+    correct: 'the forms observed exactly, and nothing past them',
+    distant: 'no ill will and no contact; nobody maintains this one',
+    wary: 'useful, watched, and not left unattended',
+    cold: 'the forms observed and the warmth deliberately withheld',
+    hostile: 'acted against, or would be if the cost fell'
+};
+
+const STANCE_HEADS: Record<RegisterRelationship['stance'], { label: string; gloss: string }> = {
+    above: {
+        label: 'Above it',
+        gloss: 'what it answers to, and how warm that is from each end'
+    },
+    alongside: {
+        label: 'Beside it',
+        gloss: 'level with it - rivals, claimants, and bodies under the same roof'
+    },
+    below: {
+        label: 'Under it',
+        gloss: 'what answers to it, and how it treats them'
+    }
+};
+
+/**
+ * How a body stands with everything around it. Last on the entry.
+ *
+ * The order inside a group is authored ties first and derived ties behind them,
+ * and the `from` chip says which a reader is looking at: an authored tie is one
+ * somebody wrote because no table held it, and a derived one is a row that
+ * already existed in the grant table, the rivalry lists, the contested claims,
+ * the dao house counters or the shared events, restated here. Neither is
+ * invented by this function - the section prints what the catalog holds and
+ * would print nothing if the catalog held nothing.
+ *
+ * WHY BOTH REGARDS ARE ON EVERY ROW. The facts of a tie are shared and written
+ * once; the feelings are two and are allowed to disagree. A house can be warm
+ * to a patron that is merely correct back, and dutiful upward while being cold
+ * to everything under it, and that asymmetry is the most useful thing on the
+ * row. Printing only this body's half would hide exactly the half a reader
+ * cannot infer.
+ */
+function relationshipsBlock(rels: RegisterRelationship[], name: string): string {
+    if (!rels.length) {
+        return sectionHead('How it stands with everybody', 'above, below and beside - and nothing recorded')
+            + `<p class="none">Nothing in the catalog puts ${esc(name)} in relation to any other body. `
+            + 'That is a hole in the data rather than a house that stands alone: every faction holds from '
+            + 'somebody, is held from, is contested, or was in a room when something happened.</p>';
+    }
+
+    const groups = (['above', 'alongside', 'below'] as const)
+        .map(stance => ({ stance, rows: rels.filter(r => r.stance === stance) }))
+        .filter(g => g.rows.length);
+
+    const counts = groups.map(g => `${g.rows.length} ${STANCE_HEADS[g.stance].label.toLowerCase()}`).join(', ');
+
+    const body = groups.map(g => `<div class="relgrp">`
+        + `<h4>${esc(STANCE_HEADS[g.stance].label)} <span>${g.rows.length}</span>`
+        + `<span class="gap">${esc(STANCE_HEADS[g.stance].gloss)}</span></h4>`
+        + g.rows.map(r => {
+            const other = r.anchor
+                ? `<span class="jump" data-goto="${esc(r.anchor)}">${esc(r.otherName)}</span>`
+                : esc(r.otherName);
+            return `<div class="rel">`
+                + `<div class="relh">`
+                + `<span class="relwho">${other}</span>`
+                + `<span class="regard ${esc(r.regard)}">${esc(r.regard)}</span>`
+                + `<span class="relarrow">and back</span>`
+                + `<span class="regard ${esc(r.theirRegard)}">${esc(r.theirRegard)}</span>`
+                + `<span class="relkind">${esc(r.kind.replace(/_/g, ' '))}</span>`
+                + `<span class="relsrc">from ${esc(r.source)}</span>`
+                + `</div>`
+                + `<p class="relwhat">${esc(r.what)}</p>`
+                + `<dl class="relsides">`
+                + `<dt>Since</dt><dd>${esc(r.since)}</dd>`
+                + `<dt>How ${esc(name)} puts it</dt><dd>${esc(r.howTheyPutIt)}</dd>`
+                + `<dt>And so it does</dt><dd>${esc(r.andSoTheyDo)}</dd>`
+                + (r.grievance
+                    ? `<dt>The grievance</dt><dd>${esc(r.grievance)}</dd>`
+                    : '')
+                + `</dl>`
+                + `<p class="relgloss"><b>${esc(r.regard)}</b>: ${esc(REGARD_GLOSS[r.regard])}. `
+                + `The other side reads it as <b>${esc(r.theirRegard)}</b>: ${esc(REGARD_GLOSS[r.theirRegard])}.`
+                + (r.regard === r.theirRegard
+                    ? ''
+                    : ' The two do not match, and both are the catalog\'s own word rather than this sheet\'s.')
+                + `</p>`
+                + `</div>`;
+        }).join('')
+        + `</div>`).join('');
+
+    return sectionHead('How it stands with everybody', `${counts} - the structure, and how warm each end of it is`)
+        + '<p class="note"><strong>The structure of a tie is one fact and the warmth of it is two.</strong> '
+        + 'Direction, kind and what the tie is about are stored once and shared, so a patron and a client cannot '
+        + 'disagree about who holds from whom. The two warmth words are stored separately and are allowed to '
+        + 'differ, which is the point of the section: a house can be warm to a patron that is only correct back, '
+        + 'or dutiful upward and cold to everything under it, and neither of those could be read off the org chart.</p>'
+        + `<div class="rels">${body}</div>`;
+}
+
 /** Who it answers to, on what terms, and what leaving would cost. */
 function holdsFromBlock(h: RegisterHoldsFrom): string {
     const parent = h.parentName === null
@@ -5355,14 +5570,16 @@ function courtPanel(court: RegisterCourt): string {
         + `<td class="q">${esc(o.office)} <span class="dim">wants ${esc(o.wants)}; fears ${esc(o.fears)}</span></td>`
         + '</tr>').join('')}</tbody></table></div>
     <p class="note"><strong>&bull;</strong> marks the officer the court's ordinal of ${court.ordinal} is naming: the strongest member who will answer. It is not the top of a chain of command, because there is not one.</p>
+    ${relationshipsBlock(court.relationships, court.name)}
   </div>`;
 }
 
 /**
  * One faction, read in the order it has to be read in.
  *
- * The entry runs FROM WHAT A HOUSE IS TO WHAT IT SAYS ABOUT ITSELF, in five
- * parts, and each part is checkable against the one above it:
+ * The entry runs FROM WHAT A HOUSE IS TO WHAT IT SAYS ABOUT ITSELF and then out
+ * to everybody around it, in six parts, and each part is checkable against the
+ * one above it:
  *
  *   1. HISTORY            how it came to be here. Everything below is a
  *                         consequence of it, so it goes first or the reader is
@@ -5380,11 +5597,26 @@ function courtPanel(court: RegisterCourt): string {
  *   4. STANDINGS           loyalty, patrons, goals and grievances. Where the
  *                         cross-references land, and every grievance here
  *                         should be recognisable from the other side's entry.
- *   5. CLAIMS AND ANCESTORS  last, deliberately. A claim is what a house
- *                         asserts, not what is true, and putting it after the
- *                         evidence lets a reader weigh it rather than accept
- *                         it. Shown first, a nine-hundred-year-old lineage
- *                         claim reads as a fact about the world.
+ *   5. CLAIMS AND ANCESTORS  A claim is what a house asserts, not what is true,
+ *                         and putting it after the evidence lets a reader weigh
+ *                         it rather than accept it. Shown first, a
+ *                         nine-hundred-year-old lineage claim reads as a fact
+ *                         about the world.
+ *   6. HOW IT STANDS WITH EVERYBODY  last, and last for a reason: it is the
+ *                         only part that is entirely about somebody else. Every
+ *                         row names a second body and links to it, so it is
+ *                         where a reader leaves this entry, and a section a
+ *                         reader leaves by belongs at the foot rather than in
+ *                         the middle. It also reads best after the five parts
+ *                         above have said what this house is - a cold word
+ *                         toward a patron means something different once you
+ *                         know what the house is holding and what it lost.
+ *
+ * THE ORDER OF FIVE AND SIX HAS BEEN WRONG BEFORE. This block described parts
+ * four and five in that order while the code emitted five and then four, so the
+ * ancestors sat above the wants on every entry on the sheet and the comment
+ * saying otherwise had been true when it was written. The code now matches the
+ * order stated here, which is the order to keep.
  *
  * THE ORDER SURVIVES AN EMPTY SECTION. Most houses have no sealed ancestor, no
  * artifact and no lineage dispute; a heading with nothing under it reads as a
@@ -5577,6 +5809,18 @@ function dossier(d: SectDossier): string {
         + `<div class="grps">${holds.join('')}</div>`
       : ''}
 
+  ${sectionHead('What they want', 'and what they are wrong about, and what is in the way')}
+  ${d.ambition
+      ? ambitionBlock(d.ambition)
+      // Only on a faction that could have one. An apex reaching for something
+      // is not a shape the catalog records, and printing an absence there would
+      // read as an omission rather than as the abstention it is on a sect.
+      : d.apex ? '' : '<p class="none">Nothing recorded that this faction is reaching for, and the abstention is the entry rather than a hole in it.</p>'}
+  ${d.capability ? capabilityBlock(d.capability) : ''}
+  ${flagBlock(d.flags)}
+  ${d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : ''}
+  ${d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>` : ''}
+
   ${claims.length
       // Omitted entirely where a house has no ancestors of any kind, which is
       // true of the two apexes nobody has ever joined. A heading with nothing
@@ -5594,21 +5838,11 @@ function dossier(d: SectDossier): string {
         + `<div class="grps">${claims.join('')}</div>`
       : ''}
 
-  ${sectionHead('What they want', 'and what they are wrong about, and what is in the way')}
-  ${d.ambition
-      ? ambitionBlock(d.ambition)
-      // Only on a faction that could have one. An apex reaching for something
-      // is not a shape the catalog records, and printing an absence there would
-      // read as an omission rather than as the abstention it is on a sect.
-      : d.apex ? '' : '<p class="none">Nothing recorded that this faction is reaching for, and the abstention is the entry rather than a hole in it.</p>'}
-  ${d.capability ? capabilityBlock(d.capability) : ''}
-  ${flagBlock(d.flags)}
-  ${d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : ''}
-  ${d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>` : ''}
-
   ${nothingAtAll
       ? '<div class="grps"><div class="grp"><p class="none">Nobody recorded and nothing held. The faction exists; the register has no names for it.</p></div></div>'
       : ''}
+
+  ${relationshipsBlock(d.relationships, d.name)}
 </article>`;
 }
 

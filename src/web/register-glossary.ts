@@ -353,6 +353,75 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
         ]
     },
 
+    // ── the warmth words, which are conduct rather than sentiment ──────
+    //
+    // Beside Standing above rather than folded into it, because they measure
+    // different things and a reader who conflates them will misread both.
+    // Standing is a property of a GRANT and runs one way: it says how a
+    // client's lease is going. A regard is a property of a PARTY and there are
+    // always two of them on a tie, so the interesting rows are the ones where
+    // the two words differ.
+    {
+        group: 'How two bodies regard each other',
+        intro:
+            'One word per side of a relationship, and the two sides are allowed to disagree. It is '
+            + 'deliberately about conduct rather than feeling, because conduct is what an outsider can '
+            + 'observe: what a body actually does about another body, not what it would say about them. '
+            + 'The facts of a tie - who is above whom, what it is, what it is about - are stored once and '
+            + 'shared, so only the warmth can be asymmetric, and where it is, that asymmetry is the most '
+            + 'useful thing on the row.',
+        entries: [
+            {
+                term: 'Warm',
+                meaning:
+                    'Glad of them, and will spend on them without being asked. Rare upward and rarer '
+                    + 'downward.'
+            },
+            {
+                term: 'Correct',
+                meaning:
+                    'The forms observed exactly and nothing beyond them. The most common word in the '
+                    + 'catalog and the least informative on its own - read it against the other side.'
+            },
+            {
+                term: 'Distant',
+                meaning:
+                    'No ill will and no contact. Nobody maintains this one, and on two bodies in the '
+                    + 'catalog that is a stated policy rather than neglect.'
+            },
+            {
+                term: 'Wary',
+                meaning: 'Useful, watched, and not left unattended.'
+            },
+            {
+                term: 'Cold',
+                meaning:
+                    'The forms observed and the warmth deliberately withheld. Distinguished from correct '
+                    + 'by intent: both parties do what the arrangement requires, and only one of them has '
+                    + 'decided that is all they will ever do.'
+            },
+            {
+                term: 'Hostile',
+                meaning: 'Acted against, or would be if the cost ever fell.'
+            },
+            {
+                term: 'Above / beside / under',
+                meaning:
+                    'Where the other body stands, read out of the same tables that draw the org chart, so '
+                    + 'a relationship can never disagree with the pyramid. Never a claim about strength: '
+                    + 'the highest acting body in the world stands beside three apexes and under nobody.'
+            },
+            {
+                term: 'From',
+                meaning:
+                    'Which table the tie was read out of. Authored means somebody wrote it because no '
+                    + 'table held it; everything else names the row it restates - the grant table, the '
+                    + 'court table, the rivalry lists, the contested claims, the dao house counters or '
+                    + 'the shared events - so a reader can go and check it.'
+            }
+        ]
+    },
+
     // ── the state column: availability, never rank ─────────────────────
     {
         group: 'What a person is doing',
