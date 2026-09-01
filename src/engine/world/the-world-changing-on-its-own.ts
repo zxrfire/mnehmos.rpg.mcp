@@ -98,6 +98,7 @@ import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
 import { manualCeilingOf, newlyEntitled, refreshChosen, BOOKLESS_CEILING } from './manuals.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
+import type { OriginTierKey } from '../cultivation/origin.js';
 import { applyGatherings } from './gatherings.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
@@ -645,13 +646,40 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         const ceiling = Math.min(regionCeiling, manualCeiling);
         if (ceiling <= npc.cultivation.realmOrdinal) continue;
 
+        // THE SHELF THEY CAN ACTUALLY REACH, not a default one.
+        //
+        // `deriveLife` prices the whole climb on `origin.roadQuality`, and
+        // `bestReadable` describes an origin as a level of SHELF - "an origin
+        // reaches a level of shelf, and the reader takes the best thing on it
+        // they can read". This call passed no origin at all, so every
+        // cultivator in the world climbed on the default one whatever house
+        // they were in, whatever rank they held and whatever they were holding.
+        //
+        // Measured with that in place: six of the twelve spirit roots
+        // asymptoted at ordinal 12, one rung below Foundation Establishment,
+        // and across five hundred years the world recorded 53 crossings INTO
+        // rung 12 and exactly ZERO into 13. Not a thin flow - a wall, and it
+        // stood one rung under the first realm boundary.
+        //
+        // Membership is the shelf. Somebody inside a house reads that house's
+        // working book; somebody senior in it reaches further up; somebody with
+        // no house has whatever a market stall sold them. That is the same
+        // gradient `manuals.ts` already applies to WHICH book they hold, and it
+        // is why joining a house is worth forty years of sweeping.
+        const shelf: OriginTierKey = !npc.factionId
+            ? 'thin_county'
+            : npc.factionRankIndex >= 3 ? 'great_house'
+                : npc.factionRankIndex >= 1 ? 'established_clan'
+                    : 'sect_retainer';
+
         const derived = deriveOrdinal(
             npc.cultivation.spiritRoot,
             npc.cultivation.attributes,
             age,
             rateMultiplier,
             ceiling,
-            forStream(state.seed, 'advance-npc', npc.id)
+            forStream(state.seed, 'advance-npc', npc.id),
+            { origin: shelf }
         );
         if (derived <= npc.cultivation.realmOrdinal) continue;
 

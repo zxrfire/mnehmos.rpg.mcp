@@ -14,7 +14,8 @@ import { forStream } from '../src/engine/cultivation/rng.js';
 
 const catalog = await loadCultivationCatalog();
 const { state } = seedWorld({ seed: 'advance-probe', catalog });
-const region = (state.locations as any[]).find(l => l.kind === 'region' && l.data?.localCeilingOrdinal === 44);
+const region = (state.locations as any[]).filter(l => l.kind === 'region')
+    .sort((a, b) => Number(b.data?.localCeilingOrdinal ?? 0) - Number(a.data?.localCeilingOrdinal ?? 0))[0];
 const ceiling = Number(region.data.localCeilingOrdinal);
 const rate = Number(region.data.ambientRateMultiplier ?? 1);
 const AGES = [30, 60, 120, 300, 600, 1200, 3000];
