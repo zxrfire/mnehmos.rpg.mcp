@@ -41,7 +41,7 @@ This is why an archive is guarded, why theft is worth the risk, and why a house 
 a room loses a *capability* rather than a decoration. It is also why the most tempting
 object in any compound is the one the house cannot replace.
 
-Copies fall steeply with how far a book carries. A primer is stock — issued, worn out,
+Copies fall steeply with how far a book carries. A primer is stock - issued, worn out,
 replaced. A book at the top of a shelf is usually a single physical object.
 
 ---
@@ -51,7 +51,7 @@ replaced. A book at the top of a shelf is usually a single physical object.
 <!-- tier: 2 trigger="a cultivator considers copying a manual, or a house's last master of an art dies" -->
 
 **Common books: anybody who holds one.** No mastery, no permission, no ceremony. That is a
-loop rather than a coincidence — copyable means plentiful, plentiful means cheap, cheap
+loop rather than a coincidence - copyable means plentiful, plentiful means cheap, cheap
 means the next person can afford one and copy it too. A gathering primer has been copied by
 every house, league and hedge-teacher for a thousand years, and a market stall sells one
 next to the cooking pots. **Selling copies is an ordinary living** for a cultivator who
@@ -71,7 +71,7 @@ An art becomes scarce, then rare, then lost, and nobody ever decided it should. 
 whole mechanism of the late age in one sentence, and it needs no special rule.
 
 **A book nobody present can copy is a treasure, not a resource.** A house can hold a manual
-that runs past anybody it has ever produced — an inheritance, a bequest from an ancestor who
+that runs past anybody it has ever produced - an inheritance, a bequest from an ancestor who
 crossed, something dug out of a hole. Nobody in the building can read it to the end, so
 nobody can write it out again, so there will only ever be this one. It is usually not being
 cultivated by anybody: a book waiting for somebody good enough to arrive, which may be
@@ -90,14 +90,14 @@ boundary is a change in kind, and a method that carries somebody across one is a
 piece of work from a method that polishes them. So an author finishes at the natural place
 to finish, and the next realm is somebody else's book, a later volume, or nobody's.
 
-**A manual takes you to Perfection and stops there.** Not part of the way into a realm —
+**A manual takes you to Perfection and stops there.** Not part of the way into a realm -
 all of it, the hundred per cent peak of the last rung. That is what a complete book is for
 and it is the whole of what it does.
 
 **The crossing out is not in the book, and no book can put it there.** What stands between
 Perfection and the next realm is heart demons, or tribulation lightning, or whatever that
 particular boundary asks of a person, and *which one you face is decided by where you stand
-on the ladder rather than by what you practise* — `triggersHeavenlyTribulation` in
+on the ladder rather than by what you practise* - `triggersHeavenlyTribulation` in
 `realms.ts` takes an ordinal and nothing else. Two cultivators crossing the same boundary
 meet the same thing whether their methods have anything in common or not.
 
@@ -122,15 +122,15 @@ in hand, too long and the crossing never happens at all. **This is the single mo
 choice the ladder offers, and it is available at every boundary.**
 
 **Then it lands you on the first rung of the next realm, and that is where the `cap` sits.**
-The number in the catalog is not where the paper stops — the paper stopped at Perfection.
+The number in the catalog is not where the paper stops - the paper stopped at Perfection.
 It is where the crossing leaves you standing, which is why complete books cap at 13, 17, 21,
-25, 29, 33 and 37 rather than at 12, 16 and 20. The realms run 0–12, 13–16, 17–20, 21–24,
-25–28, 29–32, 33–36, 37–40 and 41–44.
+25, 29, 33 and 37 rather than at 12, 16 and 20. The realms run 0-12, 13-16, 17-20, 21-24,
+25-28, 29-32, 33-36, 37-40 and 41-44.
 
 **And there you are stuck.** You have never been higher and you have never been less able to
 say what to do next: the realm you have just entered is a different thing, and the book that
 carried you every step of the way to here says nothing whatsoever about its second rung. Not
-vague guidance, not a hint — nothing, because refining a nascent soul is not a harder version
+vague guidance, not a hint - nothing, because refining a nascent soul is not a harder version
 of gathering qi. A cultivator standing on the first rung of a new realm with the book that
 got them there is holding a work that has been correct and complete the entire way and is
 now finished with them.
@@ -139,7 +139,7 @@ Unless the book is advanced enough to cover the next realm too, which is what a 
 is, and why one is worth so much.
 
 This was got wrong once, in this file, and the correction is worth keeping because the wrong
-version is the intuitive one. Capping at a realm's *last* rung — 12, 16, 20 — and opening
+version is the intuitive one. Capping at a realm's *last* rung - 12, 16, 20 - and opening
 each successor one rung later puts **a one-rung wall at every realm boundary in the world**:
 a reader stops at 16, every successor wants 17, and nothing can stand between them. The
 counterfactual was measured rather than argued: the catalog as it stands has walls at none of
@@ -152,18 +152,18 @@ Two consequences worth holding onto:
 **A cap that lands mid-realm is an anomaly, and it has a story.** The author died before
 finishing. The upper sections were lost. The copy this house holds is missing its last
 volume. The one person who could have completed it crossed the Lid instead. If a manual
-stops somewhere strange, **say what happened to it** — an unexplained mid-realm cap is a
+stops somewhere strange, **say what happened to it** - an unexplained mid-realm cap is a
 number somebody picked, and it reads as one.
 
 **A gap above a book is normal and is not a defect.** A patriarch standing at 38 whose
 house's best manual stops at 36 is not evidence of a broken shelf: their book took them to
 Body Integration Perfection, which is exactly what a complete book does, and the two rungs
-past it came from somewhere else — a lucky encounter, an inheritance, a ruin. That gap sits
+past it came from somewhere else - a lucky encounter, an inheritance, a ruin. That gap sits
 above every house's shelf and it is why [`escapes.md`](escapes.md) has the routes it has.
 
 **A gap *inside* a shelf is a defect.** A primer capping at 13 followed by a book requiring
 21 is eight rungs nobody in the house can cross, and a house that has stood for centuries
-would have solved it — with an intermediary art, very possibly one shared with an allied
+would have solved it - with an intermediary art, very possibly one shared with an allied
 house. Measured, twenty of thirty-two shelves had such a gap, and nearly all of it traced to
 one genuine absence: there was no elementless road at Core Formation anywhere in the world,
 so a wood, water, earth or muddled root arriving at 17 had nothing to pick up.
@@ -174,7 +174,7 @@ cap is a position, so the next book meets the reader at it.
 
 **Span varies, and it means something.** A book covering 13 to 29 is a deep foundation and a
 rare thing to own; its disciples change method less often, which is its own coherence and a
-real advantage, since every switch is a risk. A short book is cheap and replaceable — and
+real advantage, since every switch is a risk. A short book is cheap and replaceable - and
 sometimes safer, because a long one whose later stages nobody in the building has actually
 walked is a promise the house cannot keep. **No book is a whole career.** However far one
 carries, the ceiling arrives; a good manual only decides when.
@@ -288,12 +288,12 @@ the shelf is.
 who walked through the gate last month. What a house gives instead takes one of three
 shapes, and which one it uses says a great deal about it:
 
-- **A reduced form** — a deliberately weakened version of its own art, written to be given
+- **A reduced form** - a deliberately weakened version of its own art, written to be given
   away. It works, it carries somebody a long way up the bottom of the ladder, and it stops
   early by design. A house that does this has thought about being copied.
-- **The opening stages only** — the real book, its first stages. The disciple already holds
+- **The opening stages only** - the real book, its first stages. The disciple already holds
   the thing they are trying to earn more of, which is its own kind of pressure.
-- **A teacher and no book at all** — an inner disciple will teach you, *if you can win their
+- **A teacher and no book at all** - an inner disciple will teach you, *if you can win their
   favour*. Cheapest for the house and by far the most demanding for the disciple, because
   their progress now runs through somebody's goodwill rather than an object they hold, and
   goodwill can be withdrawn.
@@ -304,7 +304,7 @@ is not the same day as being taught, and holding a book you cannot yet read is a
 and rather sharp situation.
 
 **The chosen.** A house that has decided somebody is worth it hands them the top of the
-shelf years before their rank would reach it — the most legible form favour takes, because
+shelf years before their rank would reach it - the most legible form favour takes, because
 everybody can see what it produces later. How many a house can favour is decided by **how
 many copies of the top book it has**, so generosity is a consequence of wealth rather than
 temperament, and a poor house's chosen is a far lonelier and more conspicuous position than
@@ -334,7 +334,7 @@ the books and it has the master. What it does not have is the pills and the comp
 materials, and its own 36 reached that peak by their own means.
 
 Crucially those materials **exist in the world today** and somebody else has them. This is
-not the ancient-materials problem — that is extinction, and it is covered in
+not the ancient-materials problem - that is extinction, and it is covered in
 [`ancient.md`](ancient.md). This is *access*: modern methods still want materials, those
 materials are purchasable and sourceable, and sourcing them **requires backing.** So the gap
 is a motive to buy, dig, ally, marry or fight, rather than a decline a house passively
@@ -345,7 +345,7 @@ cultivators are ordinary and high-level rogues are vanishingly rare.** Anybody c
 bottom of the ladder without a house. Nobody sources what the upper ladder costs without
 one.
 
-Some comprehension materials are **single-use** — once it is in your head it is gone. Those
+Some comprehension materials are **single-use** - once it is in your head it is gone. Those
 are made by immortals and sent down, or found in ruins, and they are the reason a house's
 ceiling can move in a single generation when its access changes.
 
@@ -356,18 +356,18 @@ ceiling can move in a single generation when its access changes.
 <!-- tier: 2 trigger="somebody is seen practising, or a manual is stolen, sold, or offered on a black market" -->
 
 You cannot cultivate a house's manual quietly. Cultivating it is visible and knowledgeable
-people recognise it on sight — which is already how this world works, where a knowledgeable
+people recognise it on sight - which is already how this world works, where a knowledgeable
 NPC seeing what you are practising is a scene the narrator is told to run.
 
 **So a stolen or black-market manual is not a safe purchase.** It works, it carries you
 exactly as far as the real thing, and the day somebody from the house that wrote it watches
 you use it, you are holding an object you cannot explain. The manual is evidence, and it is
-evidence for as long as you keep climbing on it — which is the rest of your life, because
+evidence for as long as you keep climbing on it - which is the rest of your life, because
 putting it down means starting again.
 
 That is what makes a black market a decision rather than a discount. There is an honest
-trade beside it: a cultivator who finds a manual they can never use — no resources, no
-backing, no chance — selling it for a great deal of money to a buyer who has all three. That
+trade beside it: a cultivator who finds a manual they can never use - no resources, no
+backing, no chance - selling it for a great deal of money to a buyer who has all three. That
 is what an auction house is for. The black market is where the same object arrives having
 been taken off somebody, and the price is lower for a reason.
 
@@ -375,7 +375,7 @@ been taken off somebody, and the price is lower for a reason.
 honest trade or the worst thing you have ever done to the people who fed you, and the only
 difference is whose book it was. A house's shelf *is* its power, its recruitment pitch, and
 the reason anybody sweeps its floors for forty years. A disciple who sells the inner manual
-has not stolen an object — they have given away the institution. It runs from *nobody's
+has not stolen an object - they have given away the institution. It runs from *nobody's
 property, sell freely*, through *awkward, somebody will want to know where you got it*, to
 **unforgivable and permanent**: once the top of a house's shelf is out, no amount of killing
 you puts it back.
