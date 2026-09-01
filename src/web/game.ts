@@ -320,7 +320,7 @@ import {
 import { whyProgressHasStopped, type SeatStanding } from './why-progress-has-stopped.js';
 import { whoWouldTeach, type SomebodyAbove } from './who-would-teach-this-cultivator.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
-import { assessAcquisition, sealedDoorFraction, type AcquisitionRoute } from '../engine/encounters/index.js';
+import { assessAcquisition, sealedDoorFraction, concealmentScale, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
 import type {
@@ -1133,7 +1133,11 @@ interface Execution {
  * integrity it is 1 - no reduction at all - because a formation that is
  * entirely gone is a person sitting in an open cave who believes otherwise.
  */
-export function doorScaleOverStretch(setByOrdinal: number, days: number): number {
+export function doorScaleOverStretch(
+    setByOrdinal: number,
+    days: number,
+    hidden = false
+): number {
     const years = Math.max(0, days) / 365;
     const halfLife = wardHalfLifeYears(setByOrdinal);
     const meanIntegrity = years <= 0
@@ -1142,7 +1146,16 @@ export function doorScaleOverStretch(setByOrdinal: number, days: number): number
     const held = Math.min(1, Math.max(0, meanIntegrity));
     const fraction = sealedDoorFraction();
     // Linear between "the door is as set" and "there is no door".
-    return fraction + (1 - fraction) * (1 - held);
+    const throughTheDoor = fraction + (1 - fraction) * (1 - held);
+    // A HIDDEN DOOR IS A DIFFERENT KIND OF PROTECTION AND MULTIPLIES WITH IT.
+    //
+    // The ward decides whether somebody who is standing at the door gets
+    // through it. Concealment decides whether they are standing there at all,
+    // and it filters by RUNG rather than by rate - hide the entrance and only
+    // somebody at your own realm or above finds the place. The two are
+    // independent, so they multiply: a decayed ward on a hidden cave is still
+    // hidden, and a fresh ward on an obvious one is still obvious.
+    return hidden ? throughTheDoor * concealmentScale(setByOrdinal) : throughTheDoor;
 }
 
 export class GameService {

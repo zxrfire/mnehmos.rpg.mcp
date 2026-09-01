@@ -15,6 +15,7 @@ export {
     activityProfile,
     arrivalExposure,
     sealedDoorFraction,
+    concealmentScale,
     biasFor,
     interruptsThrough,
     locatabilityApplies,
