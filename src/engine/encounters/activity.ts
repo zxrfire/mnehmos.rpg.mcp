@@ -91,18 +91,40 @@ export const ARRIVAL_PER_FACT_CHANCE = 0.06;
  * 0.06 for exactly that reason - it is the mechanism behind "you surface to a
  * world that moved".
  *
- * `sealed` is still zero. The formation is the bargain and this layer does not
- * get to sell it twice.
+ * `sealed` is LOW AND NOT ZERO, and the difference matters more than the size
+ * of the number. A shut door is not a ward: a rogue cultivator barges into the
+ * cave, somebody arrives at it needing help, a house comes looking. At zero,
+ * closed-door seclusion stopped being a trade and became a dominant strategy -
+ * everything that can end a run arrives through these tables, so a player who
+ * sealed was simply safe, and the correct play was to never open the door.
+ *
+ * A twentieth of an open seclusion. Over a month it is nothing; over the thirty
+ * years somebody actually seals for, something eventually happens, which is the
+ * point.
  */
 const ARRIVAL_EXPOSURE: Readonly<Record<EncounterActivity, number>> = {
     seclusion: 0.55,
-    sealed: 0,
+    sealed: 0.03,
     travel: 1,
     abroad: 1.2,
     gathering: 0.9,
     labour: 1.1,
     convalescence: 0.8
 };
+
+/**
+ * How much of an open seclusion a shut door lets through.
+ *
+ * Read off the table rather than chosen, because TWO separate systems have to
+ * agree about the door: the encounter tables here, and the time-skip's own
+ * random events, which run on their own grid and knew nothing about sealing
+ * until they were handed this. A second hand-written constant over there
+ * would have drifted from this one within a month, and the symptom would have
+ * been a door that was airtight in one system and ordinary in the other.
+ */
+export function sealedDoorFraction(): number {
+    return PROFILES.sealed.exposure / PROFILES.seclusion.exposure;
+}
 
 export function arrivalExposure(activity: EncounterActivity): number {
     return ARRIVAL_EXPOSURE[activity] ?? 1;
@@ -143,11 +165,30 @@ const PROFILES: Readonly<Record<EncounterActivity, ActivityProfile>> = {
     },
     sealed: {
         id: 'sealed',
-        exposure: 0,
-        unreachableTags: [],
-        unreachableKinds: [],
-        lean: { good: 1, neutral: 1, bad: 1 },
-        kindBias: {}
+        // Rare, and not none. A door changes the odds that somebody gets in and
+        // does not decide whether anybody tries. A twelfth of an open
+        // seclusion, so a month behind a shut door is quiet and thirty years is
+        // not - which is the length people actually seal for.
+        //
+        // MEASURE THIS AGAINST THE LINE ABOVE, NOT AGAINST ZERO. It was first
+        // written as 0.05, which reads small and is HIGHER than the 0.035 an
+        // open cave carries - the formation was making the cultivator easier
+        // to reach. A fraction is only small next to the thing it is a
+        // fraction of.
+        exposure: 0.003,
+        // A SEALED CAVE IS NOT MORE REACHABLE THAN AN OPEN ONE. These were
+        // briefly emptied when the door stopped being a ward, and the result
+        // was that sealing let the market caravan in that sitting with the
+        // door open kept out - the pool got WIDER as the formation went up.
+        // The door's rarity lives in `exposure` above. Everything seclusion
+        // cannot reach, this cannot reach either, and the road is doubly out.
+        unreachableTags: ['road', 'trade', 'auction', 'ordinary'],
+        unreachableKinds: ['commerce'],
+        // What DOES get through is skewed, because getting through a formation
+        // takes either somebody strong enough not to care or somebody desperate
+        // enough to try. The ordinary passer-by is exactly who the door stops.
+        lean: { good: 1, neutral: 1, bad: 2 },
+        kindBias: { rival_cultivator: 1.5, misfortune: 1.3, sect_event: 1.2 }
     },
     travel: {
         id: 'travel',

@@ -14,6 +14,7 @@ export {
     ENCOUNTER_ACTIVITIES,
     activityProfile,
     arrivalExposure,
+    sealedDoorFraction,
     biasFor,
     interruptsThrough,
     locatabilityApplies,

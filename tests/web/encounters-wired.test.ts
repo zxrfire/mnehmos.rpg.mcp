@@ -55,26 +55,58 @@ describe('the world reaches somebody sitting still', () => {
 
 describe('the bargain a sealed door buys', () => {
     /**
-     * The single most important guard in this file.
+     * A SHUT DOOR IS NOT A WARD.
      *
-     * Closed-door seclusion trades every opportunity for total safety, and
-     * that has to be TOTAL - not rare. If a sealed stretch can be interrupted
-     * even occasionally, the verb stops being a decision and becomes a
-     * flavour, and the whole "safety was bought with every chance that would
-     * have found you" line becomes a lie the engine tells.
+     * This used to assert that a sealed stretch was interrupted by literally
+     * nothing, on every seed, and called itself the most important guard in
+     * the file. It was the most important defect in the file. Total safety at
+     * a fixed price is not a decision, it is a dominant strategy: everything
+     * that can end a run arrives through these tables, so the correct play was
+     * to seal, skip the decades, and never open the door. Three runs died to
+     * the world and the fourth simply stopped playing it.
+     *
+     * And a door is a poor reason for immunity anyway. From outside, a live
+     * cultivator's sealed cave and a dead one's sealed cave are the same
+     * object - a formation somebody put up and did not take down - and a great
+     * many of them ARE the dead kind, because a lifespan running out behind a
+     * shut door is one of the ordinary ways to die here. So people open them.
+     * Sealing does not remove you from the world; it makes you look like
+     * something worth breaking into.
+     *
+     * What the door still buys is enormous, and it is a rate rather than a
+     * guarantee: a year behind it is silent, five years is rare, thirty is
+     * roughly a one-in-four, and across the same spans an open cave is
+     * saturated. That is a bargain worth paying for. It is not a lid.
      */
-    it('lets nothing at all reach a sealed seclusion, on any seed', async () => {
-        for (const seed of ['seal-a', 'seal-b', 'seal-c', 'seal-d', 'seal-e', 'seal-f']) {
-            const { db, game } = makeGame({ seed });
-            const { cultivator } = await game.newRun('Wen Shu');
-            fund(db, cultivator.id);
+    it('still rolls the world against a sealed door, rather than lifting the player out of it', async () => {
+        const { db, game } = makeGame({ seed: 'seal-a' });
+        const { cultivator } = await game.newRun('Wen Shu');
+        fund(db, cultivator.id);
 
-            const result = await game.act('I go into closed-door seclusion for forty years.');
-            const encounters = result.toolCalls.filter(
-                call => call.name === 'encounters.rollEncounters'
-            );
-            expect(encounters, `seed ${seed} let something into a sealed door`).toEqual([]);
-        }
+        const result = await game.act('I go into closed-door seclusion for forty years.');
+        const rolled = result.toolCalls.filter(call => call.name === 'encounters.rollEncounters');
+        expect(rolled.length, 'a sealed door skipped the roll entirely, which is the old ward')
+            .toBeGreaterThan(0);
+    });
+
+    it('buys a great deal of quiet, measured against the same years unsealed', async () => {
+        const seeds = ['seal-a', 'seal-b', 'seal-c', 'seal-d', 'seal-e', 'seal-f'];
+        const interruptions = async (phrasing: string) => {
+            let n = 0;
+            for (const seed of seeds) {
+                const { db, game } = makeGame({ seed });
+                const { cultivator } = await game.newRun('Wen Shu');
+                fund(db, cultivator.id);
+                const result = await game.act(phrasing);
+                n += result.events.filter(e => e.kind === 'encounter').length;
+            }
+            return n;
+        };
+
+        const sealed = await interruptions('I go into closed-door seclusion for forty years.');
+        const open = await interruptions('I sit in seclusion for forty years.');
+
+        expect(sealed, 'the door should stop the great majority of it').toBeLessThan(open);
     });
 
     it('still passes the days it was asked for when it survives them', async () => {

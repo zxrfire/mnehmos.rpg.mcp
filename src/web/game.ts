@@ -317,7 +317,7 @@ import {
 import { whyProgressHasStopped, type SeatStanding } from './why-progress-has-stopped.js';
 import { whoWouldTeach, type SomebodyAbove } from './who-would-teach-this-cultivator.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
-import { assessAcquisition, type AcquisitionRoute } from '../engine/encounters/index.js';
+import { assessAcquisition, sealedDoorFraction, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type {
     ArrivableFact,
     DutyCandidate,
@@ -6381,9 +6381,34 @@ ${noticed}`;
             rations: provisioning.rations,
             grainAbstinence: false,
             autoBreakthrough: true,
-            // Nothing wanders into a True Immortal's seclusion. The encounter
-            // tables are the mortal world's, and they are not up there.
-            randomEvents: !sealed && !canExistBeyondTheLid(cultivator),
+            // A SHUT DOOR IS NOT A WARD.
+            //
+            // Sealing used to switch the encounter tables off entirely, and
+            // that made closed-door seclusion a dominant strategy rather than
+            // a trade: everything that can kill a cultivator in a long stretch
+            // arrives through those tables, so a player who sealed was simply
+            // safe. Found by playing - three runs died to wounds and to a
+            // fight, and the fourth survived by never opening the door.
+            //
+            // The world does not stop at the threshold. A rogue cultivator
+            // barges into the cave; somebody arrives at it needing help. Being
+            // behind a door changes what happens next and does not decide
+            // whether anything happens at all.
+            //
+            // What sealing still buys is real and is priced below: a sealed
+            // crossing is a PREPARED one - the door is shut, the site was
+            // chosen, and `SEALED_PREPARATION` is worth more than
+            // `PROVISIONED_PREPARATION` at the toll and at the foundation.
+            //
+            // Nothing wanders into a True Immortal's seclusion, and that guard
+            // stays: the encounter tables are the mortal world's and they do
+            // not reach above the Lid.
+            randomEvents: !canExistBeyondTheLid(cultivator),
+            // The door is a rate, not a switch. Sealing buys the same fraction
+            // here as it buys in the encounter tables - one number, read off
+            // the table, so the two systems cannot come to disagree about how
+            // much a formation is worth.
+            randomEventScale: sealed ? sealedDoorFraction() : 1,
             // A boundary crossed inside this stretch exacts its price, and it
             // can only take what the run actually owns. Handing it the real
             // rows is what makes the price a delete rather than an assertion.

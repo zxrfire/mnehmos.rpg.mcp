@@ -149,18 +149,40 @@ describe('arriving', () => {
         expect(loudCount).toBeGreaterThan(quietCount * 3);
     });
 
-    it('does not get through a sealed door', () => {
-        for (let s = 0; s < 20; s++) {
-            const roll = rollEncounters({
-                seed: `sealed-${s}`,
-                startDay: 0,
-                days: 20 * 360,
-                activity: 'sealed',
-                cultivator: { id: 'c1', realmOrdinal: 12, fortune: 1, maxHp: 60, hp: 60, spiritStones: 40 },
-                place: cave,
-                arrivable: candidates()
-            });
-            expect(roll.occurrences).toHaveLength(0);
-        }
+    /**
+     * A door is not a ward, and it is still a door.
+     *
+     * The old assertion was zero over twenty years on every seed. What that
+     * bought at the table was a strategy with no cost: seal, skip decades,
+     * and nothing in the game can reach you. So the contract is now about
+     * SCALE rather than absolutes - the length you sit decides whether the
+     * door was enough.
+     */
+    const sealFor = (seed: string, years: number) => rollEncounters({
+        seed,
+        startDay: 0,
+        days: years * 360,
+        activity: 'sealed',
+        cultivator: { id: 'c1', realmOrdinal: 12, fortune: 1, maxHp: 60, hp: 60, spiritStones: 40 },
+        place: cave,
+        arrivable: candidates()
+    });
+
+    it('keeps a short seclusion quiet behind a sealed door', () => {
+        // A season, and then a year. Shutting the door to finish one thing is
+        // what it is for, and it should reliably work.
+        let reached = 0;
+        for (let s = 0; s < 20; s++) if (sealFor(`short-${s}`, 1).occurrences.length > 0) reached++;
+        expect(reached, 'a year behind a shut door should almost always be quiet')
+            .toBeLessThanOrEqual(3);
+    });
+
+    it('does not hold for decades, because nothing does', () => {
+        // Thirty years is the length people actually seal for, and over that
+        // span somebody gets in. Not everybody, and not nobody.
+        let reached = 0;
+        for (let s = 0; s < 20; s++) if (sealFor(`long-${s}`, 30).occurrences.length > 0) reached++;
+        expect(reached, 'thirty years and nothing ever reached anyone').toBeGreaterThan(0);
+        expect(reached, 'the door should still be doing most of the work').toBeLessThan(20);
     });
 });
