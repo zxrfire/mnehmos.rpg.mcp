@@ -553,7 +553,24 @@ export function chooseTheChosen(
  * lonelier and more conspicuous position than a rich one's.
  */
 export function chosenCount(topCopies: number, memberCount: number): number {
-    return Math.max(1, Math.min(topCopies, Math.ceil(memberCount / 25)));
+    // Being favoured is a DESIGNATION, not a book in your hands.
+    //
+    // This used to be capped at the number of copies of the top manual, which
+    // for any house worth joining is one - so every house in the world favoured
+    // exactly one person, forever. Measured downstream, that made inter-house
+    // gatherings seat two people 93 times out of 170 and made a ranked
+    // competition structurally impossible, since a ranking needs three to have
+    // a first, a last and a middle.
+    //
+    // The error was treating the top copy as the thing that MAKES somebody
+    // chosen. It is what being chosen eventually buys. A house grooms several
+    // candidates and hands the apex volume to whichever of them is ready for
+    // it; the others are being taught by the people who hold it, which is the
+    // ordinary way a method moves anyway. So the cap follows what the house can
+    // put in front of them - the top of the shelf and the shelf below it -
+    // rather than the single scarcest object in the building.
+    const canGroom = topCopies + 1;
+    return Math.max(1, Math.min(canGroom, Math.ceil(memberCount / 12)));
 }
 
 /**
