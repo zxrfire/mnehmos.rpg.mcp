@@ -113,6 +113,8 @@ import {
     strikeAtTheWall
 } from './an-npc-striking-at-the-next-wall.js';
 import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
+import { getOrigin } from '../cultivation/origin.js';
+import { manualQualityRank } from '../cultivation/manual-quality.js';
 import {
     applyRoadsComprehended,
     roadsInReachOf
@@ -870,11 +872,41 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         // no house has whatever a market stall sold them. That is the same
         // gradient `manuals.ts` already applies to WHICH book they hold, and it
         // is why joining a house is worth forty years of sweeping.
-        const shelf: OriginTierKey = !npc.factionId
+        const membership: OriginTierKey = !npc.factionId
             ? 'thin_county'
             : npc.factionRankIndex >= 3 ? 'dao_house_bloodline'
                 : npc.factionRankIndex >= 1 ? 'established_clan'
                     : 'sect_retainer';
+
+        // AND THE BETTER OF THAT AND WHAT THEY WERE BORN WITH.
+        //
+        // The block above reinterpreted `origin` as the shelf a MEMBERSHIP
+        // reaches, which fixed a real wall - before it, every cultivator in the
+        // world climbed on the default origin and six of twelve spirit roots
+        // asymptoted one rung under Foundation Establishment. What it also did,
+        // silently, was overwrite the origin a person was actually born with.
+        //
+        // So a child of an apex house standing at rank 0 climbed as a
+        // `sect_retainer`, and a farm child at rank 3 climbed as a
+        // `dao_house_bloodline`. Birth never touched the climb at all. Measured
+        // on people who actually completed a band transition, origin showed no
+        // consistent effect and REVERSED between transitions - market_town
+        // faster from 13-16 to 17-20 and slower from 17-20 to 21-24 - which is
+        // what a variable being overwritten by an unrelated one looks like.
+        //
+        // The honest reading is that both are true at once and neither replaces
+        // the other. AGENTS.md states the thesis: an origin buys INPUTS and
+        // never rank. A family does not stop funding somebody the day they
+        // sweep a courtyard, and a house does not withhold its shelf from a
+        // pauper it promoted. So take whichever supplies the better road, which
+        // is what `deriveLife` prices the climb on, and let the other one be
+        // the floor rather than the answer.
+        const born = npc.identity.origin;
+        const shelf: OriginTierKey =
+            manualQualityRank(getOrigin(born).roadQuality)
+                > manualQualityRank(getOrigin(membership).roadQuality)
+                ? born
+                : membership;
 
         const derived = deriveOrdinal(
             npc.cultivation.spiritRoot,
