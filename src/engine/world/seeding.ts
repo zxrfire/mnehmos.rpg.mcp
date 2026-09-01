@@ -71,6 +71,11 @@ import {
     type OriginTierKey
 } from '../cultivation/origin.js';
 import { drawOriginForSomebodyAlreadyAtOrdinal } from './where-the-seeded-population-was-born.js';
+import {
+    houseRoadOf,
+    roadRefuses,
+    drawRootForSomebodyAlreadyInAHouse
+} from './what-root-a-seeded-house-member-has.js';
 import { purchasedQiPerYear } from '../cultivation/buying-and-bartering-pills.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
@@ -1274,8 +1279,27 @@ function seedPopulation(
             npc = addGoal(npc, goalFor(npc, region, rng), presentDay - years(rng.int(1, 20)));
 
             // Affiliation is offered to those a faction here would look at.
+            //
+            // THE CAUSALITY RUNS THE OTHER WAY HERE, AND IT HAS TO. A derived
+            // provincial's root was rolled from the untouched table before any
+            // of this and is an INPUT to `deriveLife`, so conditioning it on
+            // the house would invert the derivation the same way conditioning
+            // their origin would. Instead the HOUSE is chosen to suit the root
+            // they already have: people go where their root can be taught,
+            // which is the same sentence as the placement conditioning read
+            // from the other end.
+            //
+            // Somebody every local house refuses still joins one - that is the
+            // servant rung, and it is the honest answer for a person with
+            // nowhere else in the province to go. `assignFactionRoles` is what
+            // keeps them on it.
             if (regionFactions.length > 0 && rng.chance(AFFILIATION_RATE)) {
-                const candidate = regionFactions[rng.int(0, regionFactions.length - 1)];
+                const open = regionFactions.filter(f => {
+                    const cf = catalogById.get(f.id);
+                    return cf != null && !roadRefuses(houseRoadOf(cf), getSpiritRoot(npc.cultivation.spiritRoot));
+                });
+                const pool = open.length > 0 ? open : regionFactions;
+                const candidate = pool[rng.int(0, pool.length - 1)];
                 const cf = catalogById.get(candidate.id);
                 if (cf && cf.recruits && ordinal >= cf.admissionOrdinal) {
                     npc = { ...npc, factionId: candidate.id, factionRankIndex: 0 };
@@ -1353,6 +1377,17 @@ function seedNamedFigures(
         // which is the birth table reweighted, not replaced. Its own stream, so
         // no root, attribute, name or ordinal in any existing world moves.
         const ordinal = clampOrdinal(member.realmOrdinal);
+        const rankIndex = Math.min(member.rankIndex, Math.max(0, faction.ranks.length - 1));
+        // And their root follows from the road the house teaches, for the same
+        // reason their birth follows from the seat. See
+        // `what-root-a-seeded-house-member-has.ts`: nobody is raised to Sword
+        // Elder on a road their own root refuses, so the question is which
+        // roots PRODUCE somebody standing here - the root table reweighted, not
+        // replaced. Rung zero is never conditioned, in any house.
+        const root = drawRootForSomebodyAlreadyInAHouse(
+            forStream(state.seed, 'seed-root', id).next(),
+            houseRoadOf(faction), ordinal, rankIndex
+        );
         let npc = createNpc(state.seed, {
             id,
             bornOnDay: presentDay - years(age),
@@ -1362,6 +1397,7 @@ function seedNamedFigures(
             origin: drawOriginForSomebodyAlreadyAtOrdinal(
                 forStream(state.seed, 'seed-origin', id).next(), ordinal
             ).key,
+            cultivation: { spiritRoot: root.key },
             tags: ['catalog:member', `faction:${faction.id}`]
         });
 
@@ -1370,7 +1406,7 @@ function seedNamedFigures(
             ...npc,
             name: member.name,
             factionId: faction.id,
-            factionRankIndex: Math.min(member.rankIndex, Math.max(0, faction.ranks.length - 1)),
+            factionRankIndex: rankIndex,
             spiritStones: holdingsFor(member.realmOrdinal, member.rankIndex, rng),
             cultivation: {
                 ...npc.cultivation,
@@ -1472,10 +1508,18 @@ function seedFactionApex(
             takenNames: taken,
             // As above: the strongest person in a house is somebody who
             // finished a climb, and which births produce somebody who finished
-            // one is not the same question as which births happen.
+            // one is not the same question as which births happen. The same
+            // goes for the root they finished it on - this is the person the
+            // house's whole road was supposed to produce.
             origin: drawOriginForSomebodyAlreadyAtOrdinal(
                 forStream(state.seed, 'seed-origin', id).next(), declared
             ).key,
+            cultivation: {
+                spiritRoot: drawRootForSomebodyAlreadyInAHouse(
+                    forStream(state.seed, 'seed-root', id).next(),
+                    houseRoadOf(faction), declared, Math.max(0, faction.ranks.length - 1)
+                ).key
+            },
             tags: ['catalog:apex', `faction:${faction.id}`]
         });
         taken.add(npc.name);
@@ -1545,26 +1589,69 @@ function assignFactionRoles(
     }
 
     for (const faction of state.factions) {
-        const members = membersByFaction.get(faction.id);
-        if (!members || members.length === 0) continue;
+        const all = membersByFaction.get(faction.id);
+        if (!all || all.length === 0) continue;
         const cf = catalogById.get(faction.id);
         const ladder = faction.ranks.length;
 
-        members.sort((a, b) =>
+        // ── THE SERVANT RUNG IS A RUNG, NOT A WAITING ROOM ────────────────
+        //
+        // A house whose whole teaching is one road cannot promote somebody that
+        // road refuses, however strong they came out: there is nothing for them
+        // to have been promoted ON. They are taken OUT of the pyramid rather
+        // than demoted inside it, so the house still has a coherent head and
+        // `power_ordinal` below still reads off somebody who can actually
+        // practise what the house does.
+        //
+        // What it produces is the thing the catalog's own ladders have always
+        // implied - `Sword Servant`, `Dew Servant`, `Herb Boy` - a rung holding
+        // people who are in the house, of the house, possibly born to it, and
+        // who will not climb it. They are exactly who leaves, resents, or takes
+        // a rival's offer, and the world has machinery for all three.
+        // They stay in the house and in its society - a servant knows the head,
+        // and being passed over by somebody is a tie rather than the absence of
+        // one. What they are taken out of is the PYRAMID, so the rungs above
+        // zero are filled from people who can actually practise what the house
+        // does, and `power_ordinal` reads off one of them.
+        const road = cf ? houseRoadOf(cf) : null;
+        // Only a house that can teach nothing else. A stated preference is not
+        // a bar - see the note in `what-root-a-seeded-house-member-has.ts`.
+        const closed = road != null && road.regime === 'single_road';
+        const refused = (npc: NpcRecord) =>
+            closed && roadRefuses(road!, getSpiritRoot(npc.cultivation.spiritRoot));
+
+        const members = all.slice().sort((a, b) =>
             b.cultivation.realmOrdinal - a.cultivation.realmOrdinal ||
             a.identity.bornOnDay - b.identity.bornOnDay ||
             (a.id < b.id ? -1 : 1)
         );
+        // Servants go to the bottom rung FIRST, before any early exit below.
+        // Ordering it after the empty-body check leaked exactly the people this
+        // exists to place: a house with no climbing members kept whatever rank
+        // the catalog had given them, above a rung they cannot have held.
+        for (const npc of members) {
+            if (!refused(npc)) continue;
+            const at = state.npcs.findIndex(n => n.id === npc.id);
+            if (at >= 0) state.npcs[at] = { ...state.npcs[at], factionRankIndex: 0 };
+        }
 
-        // A pyramid: one at the top, a few elders, the rest below.
+        // A house whose every member is refused has no cultivating body at all.
+        // Rank nobody rather than inventing a head out of its servants.
+        const climbing = members.filter(n => !refused(n));
+        if (climbing.length === 0) continue;
+
+        // A pyramid: one at the top, a few elders, the rest below. Indexed on
+        // the people who can climb, so a servant standing between two elders in
+        // raw ordinal does not push everyone below them down a rung.
         const elderFloor = Math.max(0, ladder - 3);
-        for (let i = 0; i < members.length; i++) {
+        for (let c = 0; c < climbing.length; c++) {
+            const i = c;
             const rank =
                 i === 0 ? ladder - 1
-                    : i <= Math.max(1, Math.floor(members.length * 0.08)) ? Math.max(elderFloor, ladder - 2)
-                        : i <= Math.max(2, Math.floor(members.length * 0.25)) ? Math.min(elderFloor, 2)
-                            : i <= Math.max(3, Math.floor(members.length * 0.5)) ? 1 : 0;
-            const at = state.npcs.findIndex(n => n.id === members[i].id);
+                    : i <= Math.max(1, Math.floor(climbing.length * 0.08)) ? Math.max(elderFloor, ladder - 2)
+                        : i <= Math.max(2, Math.floor(climbing.length * 0.25)) ? Math.min(elderFloor, 2)
+                            : i <= Math.max(3, Math.floor(climbing.length * 0.5)) ? 1 : 0;
+            const at = state.npcs.findIndex(n => n.id === climbing[c].id);
             if (at < 0) continue;
 
             // A catalog figure's rank is curated content and the seeder should
@@ -1581,8 +1668,10 @@ function assignFactionRoles(
         }
 
         // The faction's real power is its strongest member, whatever the
-        // catalog hoped for.
-        const strongest = members[0].cultivation.realmOrdinal;
+        // catalog hoped for - and it has to be somebody who can practise what
+        // the house teaches, or the house is being priced on a servant.
+        const head = climbing[0];
+        const strongest = head.cultivation.realmOrdinal;
         faction.resources.power_ordinal = strongest;
         if (cf && strongest < cf.powerOrdinal - 3) {
             faction.tags = faction.tags.concat('underpowered');
@@ -1591,11 +1680,11 @@ function assignFactionRoles(
                 kind: 'succession',
                 scale: 'local',
                 summary:
-                    `The ${faction.name} is held by ${members[0].name}, who is weaker than the seat ` +
+                    `The ${faction.name} is held by ${head.name}, who is weaker than the seat ` +
                     `has historically wanted. Nobody says so where it can be heard.`,
                 // The person the summary is about, as an id. It used to be a
                 // name inside a sentence, which is a fact nothing could join.
-                actors: [{ id: members[0].id, name: members[0].name, role: 'holder' }],
+                actors: [{ id: head.id, name: head.name, role: 'holder' }],
                 factionIds: [faction.id],
                 visibility: 'faction',
                 magnitude: 0.35,
@@ -1605,8 +1694,12 @@ function assignFactionRoles(
 
         // The people at the top know each other, and the ones passed over know
         // who passed them.
-        const leader = members[0];
+        const leader = head;
         for (let i = 1; i < Math.min(members.length, 5); i++) {
+            // The head is whoever can actually practise the road, which is not
+            // always the strongest body in the building - so skip them here
+            // rather than handing them a rivalry with themselves.
+            if (members[i].id === leader.id) continue;
             const at = state.npcs.findIndex(n => n.id === members[i].id);
             if (at < 0) continue;
             state.npcs[at] = upsertRelationship(state.npcs[at], {

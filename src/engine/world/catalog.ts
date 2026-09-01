@@ -126,6 +126,21 @@ export interface CatalogFaction {
      * world for a stated reason rather than by default.
      */
     teachesElements: (string | null)[];
+    /**
+     * The same curriculum with each road's CEILING beside it.
+     *
+     * A house is a shelf rather than a single art: a primary road that carries
+     * high and secondary roads that stop lower. `teachesElements` flattens that
+     * away, and the ceiling is exactly what decides how far somebody whose root
+     * can only walk the secondary road gets to rise - so a wood-rooted member of
+     * a water house is neither excluded nor equal, they have a real career with
+     * a real ceiling and it is their root that put it there.
+     *
+     * Read by `what-root-a-seeded-house-member-has.ts`. Kept beside
+     * `teachesElements` rather than replacing it so nothing already reading the
+     * flat list has to change.
+     */
+    teachesRoads: { element: string | null; cap: number }[];
     /** What the house is for: 'attack', 'support', 'alchemy', 'defense'. */
     specialities: string[];
     /** False only where the house genuinely built what it lives in. */
@@ -265,9 +280,12 @@ export async function loadCultivationCatalog(): Promise<WorldCatalog> {
     const admission = (sects as { SECT_ADMISSION?: Record<string, { preferredRoots?: readonly string[] }> })
         .SECT_ADMISSION ?? {};
     const elementOf = new Map<string, string | null>();
-    for (const t of (((techniques as { TECHNIQUES?: { id: string; element?: string | null }[] } | null)
-        ?.TECHNIQUES) ?? [])) {
+    const capOfId = new Map<string, number>();
+    for (const t of (((techniques as {
+        TECHNIQUES?: { id: string; element?: string | null; cap?: number }[]
+    } | null)?.TECHNIQUES) ?? [])) {
         elementOf.set(t.id, t.element ?? null);
+        capOfId.set(t.id, Number(t.cap ?? 0));
     }
 
     const factions: CatalogFaction[] = [];
@@ -283,7 +301,11 @@ export async function loadCultivationCatalog(): Promise<WorldCatalog> {
         } catch { /* a catalog that cannot answer is a house with nothing. */ }
         factions.push(mapFaction(raw, parentage[raw.id], characters[raw.id], sealed, {
             preferredRoots: admission[raw.id]?.preferredRoots ?? [],
-            teachesElements: (raw.teaches ?? []).map(id => elementOf.get(id) ?? null)
+            teachesElements: (raw.teaches ?? []).map(id => elementOf.get(id) ?? null),
+            teachesRoads: (raw.teaches ?? []).map(id => ({
+                element: elementOf.get(id) ?? null,
+                cap: capOfId.get(id) ?? 0
+            }))
         }));
     }
 
@@ -359,8 +381,11 @@ function mapFaction(
     parent?: RawParentage,
     character?: RawCharacter,
     sealedCeilingOrdinal = 0,
-    architecture: { preferredRoots: readonly string[]; teachesElements: (string | null)[] } =
-        { preferredRoots: [], teachesElements: [] }
+    architecture: {
+        preferredRoots: readonly string[];
+        teachesElements: (string | null)[];
+        teachesRoads?: { element: string | null; cap: number }[];
+    } = { preferredRoots: [], teachesElements: [], teachesRoads: [] }
 ): CatalogFaction {
     const total = raw.compound?.formationNodesTotal ?? 0;
     const lit = raw.compound?.formationNodesLit ?? 0;
@@ -387,6 +412,7 @@ function mapFaction(
         sealedCeilingOrdinal,
         preferredRoots: architecture.preferredRoots.slice(),
         teachesElements: architecture.teachesElements.slice(),
+        teachesRoads: (architecture.teachesRoads ?? []).slice(),
         specialities: (raw.specialities ?? []).slice(),
         // A house that says nothing about its compound is taken to have built
         // it, which is the honest default: an inheritance is a claim, and an
