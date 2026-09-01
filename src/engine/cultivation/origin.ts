@@ -46,11 +46,49 @@
  * factual account of what a family can put behind a child, in the same voice
  * `SPIRIT_ROOTS` describes an aperture.
  *
- * It also grants nothing that has to be found. A great house can put a child
+ * It also grants nothing that has to be found. A Dao house can put a child
  * on dense ground; it cannot put them on a sealed vein, because a sealed vein
  * is not a thing anybody owns - it carries weight zero in the ambient roll and
  * has to be walked into. That is why `MAX_ORIGIN_AMBIENT` is `dense`, and it
  * is the reason privilege alone cannot reach the top of the ladder.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * THE TOP OF THE TABLE IS THREE ROUTES, NOT ONE RUNG
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * There used to be a single `great_house` row, and it was flattening three
+ * births that arrive by three different roads:
+ *
+ *   A BLOODLINE       A Dao house is a family. The house IS the parents, the
+ *                     roster is a lineage, and being its child is the whole of
+ *                     the claim. Position is inherited directly because there
+ *                     is nothing else it could be inherited from.
+ *
+ *   PROXIMITY AND A   An apex sect is joined, not born into. A member's child
+ *   WORD              is not a member, is not on the roll, and inherits nothing
+ *                     institutionally: the Azure Cloud Pavilion's disciple bar
+ *                     has never moved for anybody and does not move for them.
+ *                     What the parent has is a fortune and the largest word in
+ *                     the pyramid, which is spent rather than kept.
+ *
+ *   A FAVOUR          Somebody with standing asked a house to take a child it
+ *                     would have refused on its own admission ordinal, and the
+ *                     house did. That route is open wherever a member has a
+ *                     word worth spending: it is forced at the Hollow Court,
+ *                     whose bar does not count being somebody's child so it
+ *                     cannot keep its own, and it is merely quieter everywhere
+ *                     else. From the child's side the two are the same fact.
+ *
+ * They differ by WHAT THEY ARE and not by a special case each. Everything below
+ * is expressed in the fields every other tier already uses, and the sharpest
+ * differences fall out of two of them: `access.tradition` is null for the apex
+ * member's child because a tradition is transmitted to members and they are not
+ * one, and `vouchers` is zero for the placed child because the one word that
+ * could have been spent on them was spent placing them and nobody will say by
+ * whom.
+ *
+ * The three together carry EXACTLY the weight the single row carried. This is a
+ * differentiation, not an inflation.
  *
  * Pure. Deterministic. No I/O, no database, no LLM.
  */
@@ -68,7 +106,10 @@ export type OriginTierKey =
     | 'minor_clan'
     | 'sect_retainer'
     | 'established_clan'
-    | 'great_house';
+    // The three routes at the top. Siblings, not rungs - see the header.
+    | 'dao_house_bloodline'
+    | 'apex_sect_members_child'
+    | 'fostered_on_a_word';
 
 /**
  * What a family's word reaches, and what standing inside a house is worth.
@@ -79,9 +120,10 @@ export type OriginTierKey =
  * meet does not take them however loud the name. Placement decides which
  * doors are worth knocking on, and the door decides who comes in.
  *
- * `entryRankIndex` is fixed at 0 for every tier and is asserted to be so. A
- * fostered child of a great house starts in the outer court beside everyone
- * else, and the sect's own ladder is climbed the ordinary way.
+ * `entryRankIndex` is fixed at 0 for every tier and is asserted to be so. A Dao
+ * house's own child starts in the outer court beside everyone else, and so does
+ * a child an apex Seat spent a word to place; the receiving house's own ladder
+ * is climbed the ordinary way from the bottom in both cases.
  */
 export interface OriginPlacement {
     /** Highest sect `powerOrdinal` the family's word reaches. 0 means nobody. */
@@ -151,8 +193,8 @@ export interface OriginTier {
      * price of a meal - so what an origin buys is not access to a range but a
      * better-taught version of the same range.
      *
-     * It also stops being worth anything to somebody who cannot read it. A
-     * great house hands out a worked canon whose demand a mediocre child of the
+     * It also stops being worth anything to somebody who cannot read it. A Dao
+     * house hands out a worked canon whose demand a mediocre child of the
      * house cannot meet, so the house's advantage is CONDITIONAL ON TALENT
      * rather than flat - which is the correct answer to "a mediocre person
      * wouldn't understand a manual from a Tribulation Transcendence cultivator
@@ -193,16 +235,23 @@ export const MAX_EXPEDITION_MARGIN = 0.2;
 /**
  * The table.
  *
- * Weights are integers out of 100,000 rather than floats, matching
+ * Weights are integers out of ten million rather than floats, matching
  * `SPIRIT_ROOTS`: the distribution is then exactly reproducible from a seed
  * and can be asserted without float tolerance. Nine runs in ten are a farm in
  * a thin county, and that is the point rather than a tuning artefact.
+ *
+ * THE DENOMINATOR USED TO BE A HUNDRED THOUSAND, and the only reason it moved
+ * is that the top row split into three. Every figure below is the old one
+ * multiplied by a hundred, so every tier's probability is unchanged to the
+ * digit, and the three routes at the top sum to exactly what the single
+ * `great_house` row weighed. A hundred thousand could not express the split at
+ * all: the row weighed four, and three distinguishable shares do not fit in it.
  */
 export const ORIGIN_TIERS: readonly OriginTier[] = [
     {
         key: 'thin_county',
         name: 'A farm in a thin county',
-        weight: 90_000,
+        weight: 9_000_000,
         spiritStones: 30,
         ground: 'thin',
         // The block-printed primer off a market stall, if anything at all.
@@ -224,7 +273,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
     {
         key: 'market_town',
         name: 'A trade in a market town',
-        weight: 8_000,
+        weight: 800_000,
         spiritStones: 150,
         ground: 'thin',
         // The same six pages the farm has. Money is not a shelf.
@@ -246,7 +295,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
     {
         key: 'minor_clan',
         name: 'A small cultivating family',
-        weight: 1_700,
+        weight: 170_000,
         spiritStones: 900,
         ground: 'normal',
         // A hall copy, written out by relatives who never finished it.
@@ -291,7 +340,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
     {
         key: 'sect_retainer',
         name: 'A retainer family, attached to a sect',
-        weight: 260,
+        weight: 26_000,
         spiritStones: 1_800,
         ground: 'normal',
         // The outer library's working book, with somebody alive who read it to the end.
@@ -321,7 +370,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
     {
         key: 'established_clan',
         name: 'An established cultivating clan',
-        weight: 36,
+        weight: 3_600,
         spiritStones: 15_000,
         ground: 'normal',
         // A catalogued library, and the road in it is a proper one.
@@ -350,10 +399,17 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         description:
             'A vein the clan holds outright, a catalogued library, elders who will stand at a crossing, and a name that several sects will take a letter from. Its children are placed at nine.'
     },
+    // ── The three routes at the top ────────────────────────────────────
+    //
+    // Rarer than everything above and better resourced than all of it, and NOT
+    // ordered against each other: they are three different things rather than
+    // three heights of one thing, and the table stops being a ladder here. See
+    // the header. Their weights sum to 400, which is the old single row's 4 in
+    // the old denominator, exactly.
     {
-        key: 'great_house',
-        name: 'A great house',
-        weight: 4,
+        key: 'dao_house_bloodline',
+        name: 'A Dao house, by blood',
+        weight: 240,
         spiritStones: 90_000,
         ground: 'normal',
         // The house's own worked canon - and a demand most of its children cannot meet.
@@ -380,12 +436,124 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
                 { subject: 'sword', label: 'the house sword records' },
                 { subject: 'mortality', label: 'the death registers, kept since the founding' }
             ],
+            // A lineage IS the transmission, so the principle arrives with the
+            // blood and needs no admission anywhere.
             tradition: { subject: 'debt', label: "the house's own principle, practised at every hour" }
         },
         vouchers: 6,
         expeditions: { supplied: 8, survivalMargin: 0.2 },
         description:
-            'Resources on a patriarch\'s scale, a vein under the compound, teachers assigned rather than sought, and a name that opens a door in any province anyone has heard of. It buys none of the ladder, and everyone in the house knows somebody it did not save.'
+            'A house is a family and this person is in it. Resources on a patriarch\'s scale, a vein under the compound, teachers assigned rather than sought, and a name that opens a door in any province anyone has heard of. It buys none of the ladder, and everyone in the house knows somebody it did not save.'
+    },
+    {
+        key: 'apex_sect_members_child',
+        name: 'A child of an apex sect member',
+        // Commoner than a placed child and rarer than a house's blood: an apex
+        // has more members than a house has heirs, and most of their children
+        // stay near rather than being sent anywhere.
+        weight: 110,
+        // What one enormously wealthy person spends on one child, which is the
+        // ONLY thing on this row that transfers outright. A place cannot, a
+        // rank cannot, and the shelf below is not theirs either.
+        spiritStones: 35_000,
+        ground: 'normal',
+        // Whatever the parent puts in their hands, which is as good as a book gets.
+        roadQuality: 'refined',
+        placement: {
+            // The same as an established clan's, and that is the point of the
+            // row. An apex will not lend its name to a placement - the Pavilion
+            // has never once asked a house to take somebody it would have
+            // refused - so what carries here is a PERSON's standing and not an
+            // institution's, and a person of great standing is owed about what
+            // a clan is owed. Everything above this line has to be bought with
+            // the word, which is `vouchers` below and is where this row leads
+            // the whole table.
+            reach: 29,
+            // Later than a retainer's child, and the reason is the row's whole
+            // subject: a retainer family has a standing arrangement, and this
+            // person has a parent who has to decide to act. Nothing happens on
+            // a schedule when nothing is inherited.
+            atAge: 12,
+            entryRankIndex: 0,
+            // Below a clan's, because a clan is an establishment and this is one
+            // person who is somewhere else most of the time.
+            sectBonus: 1.4,
+            // Above a clan's, because the one person who does turn up is the
+            // strongest protector in the province.
+            tollProtection: 0.24,
+            stipendPerYear: 900
+        },
+        access: {
+            teachers: [
+                { subject: 'sword', label: 'their own parent, in the weeks the parent is not elsewhere' }
+            ],
+            readableManuals: [
+                { subject: 'formation', label: 'what the parent brings home and leaves lying about' },
+                { subject: 'alchemy', label: "the outer shelves, which a member's child is not stopped from reading" }
+            ],
+            // NULL, AND THIS IS THE ROW'S SHARPEST FACT. A tradition is
+            // "reachable only from inside the house", an apex transmits to its
+            // members, and a member's child is not a member. Nothing here is a
+            // rule about apexes: it is the ordinary meaning of the field.
+            tradition: null
+        },
+        // The largest figure in the table, and the only axis this row leads on.
+        // A word from somebody at that height moves any bar that moves at all.
+        vouchers: 8,
+        expeditions: { supplied: 6, survivalMargin: 0.2 },
+        description:
+            'An apex sect is joined rather than born into, so this person holds no place in it: not on the roll, not inside the arrays, and standing in front of the same disciple bar as everyone else. What the parent holds is a fortune, a hand in what the child reads, and a word that moves any door in the province, spent one door at a time.'
+    },
+    {
+        key: 'fostered_on_a_word',
+        name: 'Placed at a house on somebody\'s word',
+        // The rarest birth in the table. It takes somebody whose word a house
+        // cannot refuse deciding to spend it on one specific child, and almost
+        // nobody at that height has anybody they want to spend it on.
+        weight: 50,
+        // A ward's allotment from the house that took them. Real money, and not
+        // a family's, because there is no family.
+        spiritStones: 22_000,
+        ground: 'normal',
+        // The house's working book at the rank a ward holds, which is what rank
+        // reaches on any shelf. The canon is further up it and they start at
+        // the bottom of it like every other intake.
+        roadQuality: 'sound',
+        placement: {
+            // The receiving house's standing and no more. The parent's name is
+            // not theirs to use and they do not have it.
+            reach: 29,
+            // The earliest in the table by a distance, and the entire content of
+            // the favour: a house that takes a newborn is a house that raises
+            // them, and what the word bought was the years before the body set.
+            atAge: 3,
+            entryRankIndex: 0,
+            // They are actually inside an institution, from the beginning, which
+            // nobody else on these three rows is.
+            sectBonus: 1.5,
+            tollProtection: 0.25,
+            stipendPerYear: 500
+        },
+        access: {
+            teachers: [
+                { subject: 'formation', label: 'the elder the house assigned when they arrived' }
+            ],
+            readableManuals: [
+                { subject: 'sword', label: 'the house library, at the rank a ward holds' },
+                { subject: 'body', label: 'the tempering manuals, which are open to everybody inside' }
+            ],
+            // Present, because they were raised in the hall, and being raised in
+            // it is the only way this field is ever reached.
+            tradition: { subject: 'debt', label: "the house's own principle, practised in the hall they grew up in" }
+        },
+        // ZERO, AND IT IS LOWER THAN A SMALL CULTIVATING FAMILY'S. The one word
+        // that could have been spent on this person was spent placing them, the
+        // arrangement was two people talking and was never written down, and the
+        // one who asked will not be named. There is nobody left to ask.
+        vouchers: 0,
+        expeditions: { supplied: 2, survivalMargin: 0.12 },
+        description:
+            'Taken as an infant by a house that would have refused them on its own admission ordinal, because somebody it could not afford to disappoint asked it to. The house fed them, taught them and put them on its roll. Who asked was never written down anywhere, is not discussed, and the child was not told.'
     }
 ] as const;
 
@@ -431,8 +599,8 @@ export function isOriginTierKey(value: unknown): value is OriginTierKey {
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT IT BUYS: RESOURCES
 //
-// Stones are finite and they are spent. That is the whole of why a great
-// house does not simply win: a thousand-year climb eats a patriarch's fortune
+// Stones are finite and they are spent. That is the whole of why a Dao house
+// does not simply win: a thousand-year climb eats a patriarch's fortune
 // the same way it eats everyone else's, only later.
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -646,9 +814,11 @@ export interface PlacementCandidate {
  *
  * Two conditions, both hard. The house has to be within the family's reach,
  * and the applicant has to meet the house's OWN floor - placement opens the
- * conversation and never the door. This is why a great house child cannot be
- * placed at the Hollow Court: its floor is Void Refinement, and a seven year
- * old is at ordinal zero like everybody else.
+ * conversation and never the door. This is why a Dao house's own child cannot
+ * be placed at the Hollow Court: its floor is Void Refinement, and a seven year
+ * old is at ordinal zero like everybody else. It is also why an apex sect
+ * member's child gets nothing here that a farm child does not, at the age it
+ * would matter: the bar is the bar, and moving one is what `vouchers` is for.
  *
  * Returns matches in catalog order. It does not rank them, and it does not
  * recommend one.

@@ -504,11 +504,11 @@ function main(): void {
     // MEDIAN OF SIXTY LIVES, not one. `deriveLife` consumes its stream one
     // breakthrough attempt at a time, so a faster rate takes fewer attempts,
     // consumes fewer draws and lands on a different sequence. A single seed
-    // therefore reports luck as if it were a finding - it showed a great house
+    // therefore reports luck as if it were a finding - it showed a Dao house
     // reaching ordinal 9 where a retainer family reached 12, which is noise.
     const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
     const reachedBy: Record<string, number> = {};
-    for (const key of ['thin_county', 'sect_retainer', 'great_house'] as const) {
+    for (const key of ['thin_county', 'sect_retainer', 'dao_house_bloodline'] as const) {
         const origin = getOrigin(key);
         const at = (age: number) => median(Array.from({ length: 60 }, (_, i) => deriveOrdinal(
             'dual_metal_wood', MEDIOCRE, age, 1, MAX_ORDINAL,
@@ -520,11 +520,11 @@ function main(): void {
             + String(at(60)).padStart(11) + String(at(200)).padStart(9)
             + String(reachedBy[key]).padStart(7));
     }
-    const gap = Math.max(reachedBy.sect_retainer, reachedBy.great_house) - reachedBy.thin_county;
+    const gap = Math.max(reachedBy.sect_retainer, reachedBy.dao_house_bloodline) - reachedBy.thin_county;
     record('backing shortens the road by more than a rung', gap > 1,
         gap > 1
             ? `unbacked reaches ${reachedBy.thin_county}, backed reaches `
-              + `${Math.max(reachedBy.sect_retainer, reachedBy.great_house)} - a gap of ${gap} rungs, `
+              + `${Math.max(reachedBy.sect_retainer, reachedBy.dao_house_bloodline)} - a gap of ${gap} rungs, `
               + 'where the proxy produced 1'
             : `the gap is ${gap} rung(s): the book an origin hands over is not doing measurable work`);
 

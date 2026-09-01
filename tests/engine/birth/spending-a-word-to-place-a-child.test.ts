@@ -95,11 +95,18 @@ describe('a child at ordinal zero, and the tally the catalog owns', () => {
 });
 
 describe('what a great name is actually worth at seven years old', () => {
-    const top = ORIGIN_TIERS[ORIGIN_TIERS.length - 1];
+    // The greatest NAME in the table, derived rather than taken off the end of
+    // it. Since the top row split into three routes the last row is a child
+    // placed at a house on somebody's word, who has no name of their own to
+    // use and no word left to spend - so "the last tier" and "the biggest
+    // name" stopped being the same row.
+    const top = ORIGIN_TIERS.reduce(
+        (a, b) => (b.placement.reach > a.placement.reach ? b : a)
+    );
 
     it('without a word, resolves to houses that take anybody', () => {
         // This is the defect `docs/world/origin.md` used to describe as
-        // "a good allied sect at an age when it matters". Every house a great
+        // "a good allied sect at an age when it matters". Every house a Dao
         // house's name reaches at ordinal zero admits at the floor, so the
         // greatest name in the province buys what an afternoon's walk buys.
         const qualified = placementsWithinReach(top.key, 0, HOUSES);

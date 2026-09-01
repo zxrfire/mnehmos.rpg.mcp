@@ -255,7 +255,7 @@ Three outcomes, and all three have to be real at once:
 
 An institution holds a shelf, and rank reaches up it - so what a house hands a disciple is
 the best thing on it they can actually work, never the top of it. This matters: pricing a
-house at the top of its shelf made a mediocre child of a great house climb *slower* than a
+house at the top of its shelf made a mediocre child of a Dao house climb *slower* than a
 retainer's child, because the worked canon was over their head and the working book was
 not. The paperweight rule is correct for a book somebody **holds** - a ruin find, a stolen
 canon, the one object in the room - because there is nothing else to read. It is wrong for

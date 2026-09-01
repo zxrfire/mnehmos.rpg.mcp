@@ -3243,7 +3243,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // right direction: comprehension cannot be bought, inherited, gifted or
         // waited for, so the one person in an age who can open this is somebody
         // something happened to rather than somebody who was well funded. A
-        // great house cannot buy its heir into it.
+        // Dao house cannot buy its heir into it.
         //
         // AND THE OPENING IS THE WORST IN THE CATALOG. Thirteen rungs at a
         // tenth rate. Somebody who opens it at five crawls to eighteen on a

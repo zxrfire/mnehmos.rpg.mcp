@@ -177,7 +177,9 @@ export const OriginTierKeySchema = z.enum([
     'minor_clan',
     'sect_retainer',
     'established_clan',
-    'great_house'
+    'dao_house_bloodline',
+    'apex_sect_members_child',
+    'fostered_on_a_word'
 ]);
 export type OriginTierKey = z.infer<typeof OriginTierKeySchema>;
 

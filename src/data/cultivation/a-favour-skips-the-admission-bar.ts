@@ -14,7 +14,7 @@
  *
  *   - A Ninefold Ledger child cannot enter the Ledger, which admits at 4. At
  *     seven years old they are at 0. They wait, in their own family's house.
- *   - A great house's name reaches perhaps thirty houses, and the ones it can
+ *   - A Dao house's name reaches perhaps thirty houses, and the ones it can
  *     actually use on a seven-year-old are EXACTLY THE FIVE THAT ADMIT AT 0 -
  *     the Sweptground Temple, the Azure Dew, the Hollow Bell Wanderers, the
  *     Sixmile Wardens and the Gleaners' Company. All five take anybody. So the

@@ -225,9 +225,9 @@ describe('seeding: nobody is flagged important', () => {
 
     it('rolls where every NPC was born, and rolls it the same way the player is', () => {
         const { state } = seeded('seed-a', 400);
-        // Nobody is assigned a great house. The origin comes out of the seed on
+        // Nobody is assigned a Dao house. The origin comes out of the seed on
         // the same weights the player draws on, which is the honest explanation
-        // for why a great house has the members it does.
+        // for why a Dao house has the members it does.
         for (const npc of state.npcs) {
             expect(isOriginTierKey(npc.identity.origin)).toBe(true);
         }
@@ -244,21 +244,21 @@ describe('seeding: nobody is flagged important', () => {
         const attrs = { might: 2, insight: 2, fortune: 1, charm: 2 };
         const rngFor = () => forStream('x', 'origin-derive', 3);
 
-        // A great house child and a farmer's child with IDENTICAL talent. The
+        // A Dao house child and a farmer's child with IDENTICAL talent. The
         // house is worth something and it is worth it through the rate, the
         // stipend and the pills - never through a rank that was handed over.
         const poor = deriveOrdinal('single_fire', attrs, 120, 1, 44, rngFor(), {
             origin: 'thin_county'
         });
         const rich = deriveOrdinal('single_fire', attrs, 120, 1, 44, rngFor(), {
-            origin: 'great_house'
+            origin: 'dao_house_bloodline'
         });
         expect(rich).toBeGreaterThanOrEqual(poor);
 
         // And a fortune cannot rescue the draw that decides everything.
         //
         // MEASURED AT A RUNG THAT IS NOT THE WALL. This used to compare a
-        // muddled great-house child against a single-root farm child at age
+        // muddled Dao house child against a single-root farm child at age
         // 120 and require a strict loss. Both saturate: with insight 2 the
         // 12 -> 13 crossing stops everybody, so the farm child reads 12 at 80
         // years and at a thousand, and the comparison was being taken entirely
@@ -282,15 +282,15 @@ describe('seeding: nobody is flagged important', () => {
         // own claim about resources - they carry an untalented person to
         // Perfection and stop - rather than a rank handed over.
         const richMuddled = deriveOrdinal('muddled_five_element', attrs, 120, 1, 44, rngFor(), {
-            origin: 'great_house'
+            origin: 'dao_house_bloodline'
         });
         expect(richMuddled).toBeGreaterThan(poorMuddled);
     });
 
-    it('still caps a great house child at the province ceiling', () => {
+    it('still caps a Dao house child at the province ceiling', () => {
         const attrs = { might: 3, insight: 4, fortune: 3, charm: 3 };
         const capped = deriveOrdinal('single_fire', attrs, 400, 2, 9, forStream('x', 'cap', 1), {
-            origin: 'great_house'
+            origin: 'dao_house_bloodline'
         });
         expect(capped).toBeLessThanOrEqual(9);
     });

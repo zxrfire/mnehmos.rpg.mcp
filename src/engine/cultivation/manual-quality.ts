@@ -376,9 +376,11 @@ export function readManual(
  *
  * A SHELF IS NOT A BOOK, and conflating them produced a genuinely perverse
  * result: pricing an origin at the top of its shelf made a mediocre child of a
- * great house climb SLOWER than a retainer's child, because the house's worked
+ * Dao house climb SLOWER than a retainer's child, because the house's worked
  * canon was over their head and the retainer's working book was not. Measured,
- * great_house reached ordinal 9 where sect_retainer reached 12.
+ * the top tier reached ordinal 9 where sect_retainer reached 12 - taken under
+ * the single `great_house` row that is now `dao_house_bloodline` and two
+ * siblings, so the figures are traceable to a table that no longer exists.
  *
  * That is the paperweight rule applied where it does not belong. It is correct
  * for a book somebody HOLDS - a ruin find, a stolen canon, the one object in

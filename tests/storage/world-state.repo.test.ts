@@ -119,7 +119,7 @@ describe('WorldStateRepository', () => {
 
             // Same failure mode as the fields above: an origin the seeder rolls
             // and the table has no column for would come back as 'thin_county'
-            // for everybody, and the reason a great house has the members it
+            // for everybody, and the reason a Dao house has the members it
             // does would quietly stop being true across a save.
             const origins = new Map(state.npcs.map(n => [n.id, n.identity.origin]));
             expect(origins.size).toBeGreaterThan(0);

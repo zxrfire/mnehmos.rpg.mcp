@@ -148,7 +148,7 @@ export function abundanceOf(house: FactionRecord): number {
  * `barFor`.
  *
  * Interpolated between what the house admits at and what its strongest member
- * actually stands at, so a great house's inner disciples are stronger than a
+ * actually stands at, so a high house's inner disciples are stronger than a
  * poor house's elders - which is true, is the reason anybody wants to move up,
  * and needs no table to say it.
  */
