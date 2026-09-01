@@ -381,6 +381,35 @@ export interface RegisterPosting {
  * be moved may still be able to move somebody else, and the one house that
  * could move almost anybody has never once tried.
  */
+/**
+ * What somebody in the province would actually say if you asked who these are.
+ *
+ * NOT a summary of the entry and not the catalog's `description`, which is
+ * excellent and is four hundred words about what is INTERESTING about a house.
+ * This is what it IS, in the order a stranger would say it, and it is assembled
+ * from the fields that carry the outside view rather than the true one:
+ * `knownAs` is by definition what the province thinks, and the gap between it
+ * and `actuallyGoodAt` is the whole reason the register carries both.
+ *
+ * ON A DAO HOUSE IT LEADS WITH THE DAO, because that is the first thing anybody
+ * would mention and the thing the house is FOR. A dao house entry that opened
+ * on its territory was answering a question nobody asks: these are bodies with
+ * no territory, whose whole identity is one principle applied for nineteen
+ * centuries.
+ */
+export interface RegisterPasserby {
+    /** One or two sentences. The answer to "who are they?" and nothing else. */
+    line: string;
+    /**
+     * The dao, on a dao house. Null on everything else.
+     *
+     * Carried separately as well as being in the line, because it is the one
+     * fact about these houses that a reader scanning for it should not have to
+     * read a sentence to find.
+     */
+    dao: string | null;
+}
+
 export interface RegisterFavour {
     answer: string;
     why: string;
@@ -615,6 +644,19 @@ export interface RegisterCurriculum {
         element: string | null;
         reach: string;
         requiredOrdinal: number;
+        /**
+         * Nobody else in the world teaches it.
+         *
+         * The difference between a library and a shelf, and it is derived from
+         * the teach lists rather than asserted: an art taught by exactly one
+         * house is that house's, and an art on twenty shelves is a fact about
+         * the world instead. Reading a teach list without this makes a house
+         * that holds the only lightning curriculum anybody has look the same as
+         * one that stocks the primer everybody stocks.
+         */
+        onlyHere: boolean;
+        /** How many houses teach it at all, including this one. */
+        housesTeachingIt: number;
     }[];
     /** The one it is known for, where it has one. */
     signature: { id: string; name: string; grade: TechniqueGrade; reach: string } | null;
@@ -634,6 +676,8 @@ export interface RegisterCurriculum {
     wide: { name: string; reach: string }[];
     /** The hardest thing on the list, which is what the library is worth. */
     hardest: { name: string; grade: TechniqueGrade; requiredOrdinal: number } | null;
+    /** How much of the list is this house's alone. The interesting figure. */
+    exclusiveCount: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1081,6 +1125,15 @@ export interface SectDossier {
      * another has something and will not skip it.
      */
     favour: RegisterFavour | null;
+    /**
+     * What a passerby would tell you these people are. Leads the entry.
+     *
+     * The first chunk, and the one the whole restructure turned on: a reader
+     * arriving at a faction wants to know what it is before anything else, and
+     * the sheet was opening on an assembled precis of figures. See
+     * {@link buildPasserby}.
+     */
+    passerby: RegisterPasserby | null;
     /** What it is trying to become. Null on the four that want nothing. */
     ambition: RegisterAmbition | null;
     /**
@@ -1538,6 +1591,46 @@ function buildHistory(factionId: string): RegisterHistory | null {
 }
 
 /**
+ * What a passerby would tell you these people are.
+ *
+ * Assembled, not written, and built out of the field that already carries the
+ * OUTSIDE view rather than the true one - `knownFor.outside` is defined in its
+ * own catalog as "what people two provinces away would say they are", which is
+ * the passerby, exactly. Everything else on this sheet is the inside view, and
+ * mixing the two here would produce a sentence nobody in the world could say.
+ *
+ * THE DAO COMES FIRST ON A DAO HOUSE. These are bodies with no territory whose
+ * entire identity is one principle applied for millennia, so opening on
+ * anything else answers a question nobody asked. A stranger asked about the
+ * Quiet Cut says "they cut things" before they say a word about where the house
+ * is, and they are right to.
+ */
+function buildPasserby(factionId: string): RegisterPasserby | null {
+    const outside = getFactionCharacter(factionId)?.knownFor.outside ?? null;
+    const house = getDaoHouse(factionId);
+
+    if (house) {
+        // The dao, what the principle actually is, and what they sell, in that
+        // order - because that is the order somebody would say it in.
+        const sells = house.services[0]
+            ? `They sell ${unperiod(upTo(house.services[0], 130))}.`
+            : '';
+        return {
+            dao: house.principle,
+            line: [
+                `A house of ${house.principle}.`,
+                upTo(firstSentence(house.principleDescription), 260),
+                sells,
+                outside ? `What everybody says about them: ${unperiod(upTo(outside, 200))}.` : ''
+            ].filter(Boolean).join(' ')
+        };
+    }
+
+    if (!outside) return null;
+    return { dao: null, line: upTo(outside, 320) };
+}
+
+/**
  * Whether a favour gets somebody in here, and whether this house spends one.
  *
  * Read off the favour catalog, which authors the unusual answers and derives
@@ -1787,7 +1880,12 @@ function buildCurriculum(
             category: t.category,
             element: t.element,
             reach: t.reach,
-            requiredOrdinal: t.requiredOrdinal
+            requiredOrdinal: t.requiredOrdinal,
+            // Derived from the teach lists rather than stated anywhere, so it
+            // cannot drift: `taughtBy` is every faction that will teach the
+            // art, and a list of one is a house holding something.
+            onlyHere: t.taughtBy.length === 1,
+            housesTeachingIt: t.taughtBy.length
         }))
         .sort((a, b) =>
             gradeRank(b.grade) - gradeRank(a.grade)
@@ -1812,7 +1910,8 @@ function buildCurriculum(
         categories: byFrequency(arts.map(a => a.category)),
         elements: byFrequency(arts.map(a => a.element).filter((e): e is string => e !== null)),
         wide: arts.filter(a => a.reach !== 'single').map(a => ({ name: a.name, reach: a.reach })),
-        hardest: { name: arts[0].name, grade: arts[0].grade, requiredOrdinal: arts[0].requiredOrdinal }
+        hardest: { name: arts[0].name, grade: arts[0].grade, requiredOrdinal: arts[0].requiredOrdinal },
+        exclusiveCount: arts.filter(a => a.onlyHere).length
     };
 }
 
@@ -3328,6 +3427,7 @@ function buildDossiers(
             // the one apex with a sect row is rendered from `rows` rather than
             // from the apex-only builder, and it is the apex whose answer to
             // this question matters most.
+            passerby: buildPasserby(row.id),
             favour: buildFavour(
                 row.id,
                 APEX_INSTITUTIONS.find(a => a.factionId === row.id)?.whetherItsWordSkipsABar ?? null
@@ -3501,6 +3601,7 @@ function buildDossiers(
             demonic: buildDemonic(a.id),
             posting: buildPosting(getParentage(a.id)?.posting),
             noPlaceForItsOwn: buildNoPlace(a.id),
+            passerby: buildPasserby(a.factionId ?? a.id),
             favour: buildFavour(a.factionId ?? a.id, a.whetherItsWordSkipsABar),
             house: null,
             people: {
@@ -4207,6 +4308,14 @@ text-transform:uppercase;color:var(--faint);padding:6px 0;list-style:none}
 /* The five parts of an entry. A divider rather than a box: the parts are a
    reading order, not containers, and drawing them as containers made a house
    look like five unrelated records filed together. */
+/* The passerby line. Larger than the body and set apart, because it is the
+   answer to the first question and everything under it is detail. */
+.pass{margin:3px 0 0;font-size:15.5px;line-height:1.55;color:var(--ink)}
+.chip.dao{background:var(--datum-soft);color:var(--datum);border-color:var(--datum)}
+/* An art nobody else teaches. The mark is on the row rather than in a separate
+   list, so the ordering does the grouping and the reader keeps one table. */
+.who.sole .wn{font-weight:600}
+.who.sole{border-left:2px solid var(--datum);padding-left:8px;margin-left:-10px}
 .part{display:flex;align-items:baseline;gap:10px;margin:20px 0 8px;
 padding-bottom:5px;border-bottom:1px solid var(--line)}
 .part h4{margin:0;font:600 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -4919,16 +5028,28 @@ function capabilityBlock(c: RegisterCapability): string {
  * three of the second kind is a different problem from one that teaches none.
  */
 function curriculumBlock(c: RegisterCurriculum): string {
-    return `<div class="grp arts"><h4>Teaches <span>${c.arts.length}</span>`
+    // Theirs alone first, then the rest. A teach list read flat makes a house
+    // holding the only lightning curriculum in the world look like one that
+    // stocks the primer everybody stocks, and the ordering is the correction:
+    // what is worth crossing a province for is at the top.
+    const ordered = [...c.arts].sort((a, b) => Number(b.onlyHere) - Number(a.onlyHere));
+    return `<div class="grp arts"><h4>Arts <span>${c.arts.length}</span>`
+        + (c.exclusiveCount
+            ? `<span class="gap">${c.exclusiveCount} taught nowhere else</span>`
+            : '<span class="gap">nothing here is theirs alone</span>')
         + (c.signature ? `<span class="gap">known for ${esc(c.signature.name)}</span>` : '')
         + '</h4>'
-        + c.arts.map(a => `<div class="who"><span class="wn">${esc(a.name)}</span>`
+        + ordered.map(a => `<div class="who${a.onlyHere ? ' sole' : ''}"><span class="wn">${esc(a.name)}</span>`
             + `<span class="wo">${a.requiredOrdinal}</span>`
             + `<span class="wr">${esc(a.grade)} &middot; ${esc(a.category)}`
             + `${a.element ? ' &middot; ' + esc(a.element) : ''}`
             + `${a.reach === 'single' ? '' : ' &middot; ' + esc(a.reach)}`
             + `${c.signature && c.signature.id === a.id ? ' &middot; signature' : ''}</span>`
-            + `<span class="wd">${esc(rankName(a.requiredOrdinal))}</span></div>`).join('')
+            + `<span class="wd">${esc(rankName(a.requiredOrdinal))}`
+            + (a.onlyHere
+                ? ' &middot; <b>nobody else teaches this</b>'
+                : ` &middot; on ${a.housesTeachingIt} teach lists`)
+            + '</span></div>').join('')
         + '</div>';
 }
 
@@ -5383,37 +5504,38 @@ function dossier(d: SectDossier): string {
             + '</div>');
     }
 
-    const nothingAtAll = !people.length && !controls.length && !claims.length;
+    // Weapons and arts are two lists under one chunk rather than two chunks.
+    // Both answer "what does this house hold", a reader comparing houses wants
+    // them adjacent, and most houses have one and not the other.
+    const holds: string[] = [...controls];
+
+    const nothingAtAll = !people.length && !holds.length && !claims.length;
 
     return `<article class="dos${d.apex ? ' apex' : ''}">
   <header>
     <span class="ord">${d.ordinal}</span>
     <div>
       <h3><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}
+        ${d.passerby?.dao ? `<span class="chip dao">dao of ${esc(d.passerby.dao)}</span>` : ''}
         ${d.alsoKnownAs ? `<span class="chip">also ${esc(d.alsoKnownAs)}</span>` : ''}
         ${d.apex ? '<span class="chip pin">apex</span>' : ''}
         ${d.withdrawn ? `<span class="chip wd">withdrawn x${d.withdrawn.count}</span>` : ''}
         ${d.ceiling ? `<span class="chip sl">ceiling ${d.ceiling}</span>` : ''}
       </h3>
-      ${d.synopsis.length
-          // Not `territory`, which is one line about where the buildings are,
-          // and not `description`, which is a paragraph written to be read.
-          // This is the assembled precis - see `buildSynopsis`.
-          ? `<p class="synop">${d.synopsis.map(esc).join(' ')}</p>`
+      ${d.passerby
+          // What a passerby would actually say, and it leads. Not the precis,
+          // which is an assessment, and not `description`, which is four
+          // hundred words about what is INTERESTING about the house. A reader
+          // arriving here wants to know what it IS first.
+          ? `<p class="pass">${esc(d.passerby.line)}</p>`
           : `<p class="terr">${esc(d.territory)}</p>`}
     </div>
   </header>
   ${metaRow([
       ['rank', d.rank],
       // Alignment is in the strip rather than only in the coloured dot, because
-      // a dot is a legend lookup and this is part of who the house is. It reads
-      // at the top with the history rather than being inferred at position four
-      // from a list of grievances.
+      // a dot is a legend lookup and this is part of who the house is.
       ['aligned', d.alignment],
-      // Governance, standing, the gate and who it holds from used to be here.
-      // They now have blocks of their own with the terms attached, and a strip
-      // of small print restating four of them was the reader's first sight of
-      // facts that deserve their own line.
       ['gift', d.partingGift ? d.partingGift.name + (d.partingGift.intact ? '' : ' (spent)') : ''],
       ['sent down', d.apex?.giftName ?? ''],
       ['heritage', d.apex?.heritage ?? ''],
@@ -5425,52 +5547,67 @@ function dossier(d: SectDossier): string {
   ${d.history ? historyBlock(d.history) : ''}
   ${d.demonic ? demonicBlock(d.demonic, d.name) : ''}
 
-  ${sectionHead('Ranks and people', 'who is in it, and what it can put in a room')}
+  ${sectionHead('What they are', 'the fuller version, and then the catalog in its own words')}
+  ${d.synopsis.length ? `<p class="synop">${d.synopsis.map(esc).join(' ')}</p>` : ''}
+  ${d.description
+      // Moved up into this chunk from the foot of the entry. It is the
+      // catalog's narrative prose - written to be read rather than used - and
+      // it belongs with the description rather than after everything else,
+      // collapsed so it never costs a reader who does not want it.
+      ? `<details class="context"><summary>In the catalog's own words</summary><p class="desc">${esc(d.description)}</p></details>`
+      : ''}
+
+  ${sectionHead('Who is in it', 'the people and their ranks, how you get in, and who it answers to')}
   ${fieldedBlock(d.fielded)}
   ${d.posting
       // In place of the gate rather than beside it, and `wayIn` is null on
       // these two rather than merely unrendered: there is no application
-      // anybody could make, so an admission block would be printing a bar that
-      // does not exist.
+      // anybody could make, so an admission block would print a bar that does
+      // not exist.
       ? postingBlock(d.posting, d.name)
       : d.wayIn ? wayInBlock(d.wayIn) : ''}
   ${d.favour ? favourBlock(d.favour) : ''}
   ${d.noPlaceForItsOwn ? noPlaceBlock(d.noPlaceForItsOwn, d.name) : ''}
   ${d.house ? houseBlock(d.house) : ''}
   ${people.length ? `<div class="grps">${people.join('')}</div>` : ''}
+  ${d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''}
 
-  ${controls.length
-      ? sectionHead('What it controls', 'held outright, or shared with everybody who teaches it')
-        + `<div class="grps">${controls.join('')}</div>`
+  ${holds.length
+      ? sectionHead('What they hold', 'weapons, and the arts - which of them are theirs alone')
+        + `<div class="grps">${holds.join('')}</div>`
       : ''}
 
-  ${sectionHead('Standings', 'who it answers to, what it wants, and who is in the way')}
-  ${d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''}
+  ${claims.length
+      // Omitted entirely where a house has no ancestors of any kind, which is
+      // true of the two apexes nobody has ever joined. A heading with nothing
+      // under it reads as a broken page rather than as an absence.
+      //
+      // The gloss is derived rather than fixed, because the difference between
+      // a house holding somebody in reserve and a house with only a roll of the
+      // dead is the single most useful fact in this chunk, and a static
+      // subtitle would say the same thing about both.
+      ? sectionHead('Ancestors', d.people.sealed
+          ? `one sealed and still down there${d.lineageDispute ? ', a contested lineage,' : ','} and the roll`
+          : d.lineageDispute
+              ? 'a contested lineage, and the roll - nothing held in reserve'
+              : 'the roll. Nothing held in reserve, which is the ordinary case')
+        + `<div class="grps">${claims.join('')}</div>`
+      : ''}
+
+  ${sectionHead('What they want', 'and what they are wrong about, and what is in the way')}
   ${d.ambition
       ? ambitionBlock(d.ambition)
-      // Only on a faction that could have one. An apex reaching for something is
-      // not a shape the catalog records, and printing an absence there would
+      // Only on a faction that could have one. An apex reaching for something
+      // is not a shape the catalog records, and printing an absence there would
       // read as an omission rather than as the abstention it is on a sect.
       : d.apex ? '' : '<p class="none">Nothing recorded that this faction is reaching for, and the abstention is the entry rather than a hole in it.</p>'}
   ${d.capability ? capabilityBlock(d.capability) : ''}
   ${flagBlock(d.flags)}
   ${d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : ''}
-
-  ${claims.length || d.apex
-      ? sectionHead('Claims and ancestors', 'what it asserts, which is not the same as what is true')
-        + (d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>` : '')
-        + (claims.length ? `<div class="grps">${claims.join('')}</div>` : '')
-      : ''}
+  ${d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>` : ''}
 
   ${nothingAtAll
       ? '<div class="grps"><div class="grp"><p class="none">Nobody recorded and nothing held. The faction exists; the register has no names for it.</p></div></div>'
-      : ''}
-  ${d.description
-      // Last, and deliberately. Everything above is the assessment; this is
-      // the context under it. It is the catalog's narrative prose, which is
-      // written to be read rather than to be used, and an entry that opens
-      // with it buries every fact a reader came for.
-      ? `<details class="context"><summary>In the catalog's own words</summary><p class="desc">${esc(d.description)}</p></details>`
       : ''}
 </article>`;
 }

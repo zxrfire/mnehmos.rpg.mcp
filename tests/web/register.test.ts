@@ -36,6 +36,7 @@ import {
     SECT_ANCESTRY,
     DAO_HOUSES,
     auditAncestralClaim,
+    getDaoHouse,
     contestedClaimsOf,
     intakeRouteOf,
     sectThreat
@@ -663,17 +664,63 @@ describe('what a faction entry actually says', () => {
         }
     });
 
-    it('puts the narrative prose last, as context rather than as the entry', () => {
-        // It is still on the page and still complete; what changed is that it
-        // no longer comes first. An entry that opens with prose written to be
-        // read buries every fact the reader came for.
+    it('keeps the narrative prose collapsed, and never lets it open an entry', () => {
+        // It used to be pinned to the foot of the entry. It now sits in the
+        // first chunk, with the description, because a reader asking "who are
+        // these people" wants the catalog's own words near the answer rather
+        // than four screens below it - and that is only safe because it is
+        // COLLAPSED. The rule the original test was really enforcing is that
+        // prose written to be read must never be what a reader has to scroll
+        // through to reach a fact, and a <details> satisfies that wherever it
+        // sits.
         const articles = html.match(/<article class="dos[\s\S]*?<\/article>/g) ?? [];
+        expect(articles.length, 'no entries rendered').toBeGreaterThan(0);
         for (const article of articles) {
-            const assess = article.indexOf('class="assess"');
+            expect(article.indexOf('class="assess"'), 'an entry has no assessment')
+                .toBeGreaterThan(-1);
             const context = article.indexOf('class="context"');
-            expect(assess, 'an entry has no assessment').toBeGreaterThan(-1);
             if (context === -1) continue;
-            expect(context, 'prose comes before the assessment').toBeGreaterThan(assess);
+
+            // Collapsed, always, so it costs a reader who does not want it
+            // nothing at all.
+            expect(article.slice(context - 40, context), 'the prose is no longer collapsed')
+                .toContain('<details');
+
+            // And never the first thing in the entry: the passerby line is.
+            const pass = article.indexOf('class="pass"');
+            if (pass !== -1) {
+                expect(pass, 'prose comes before what a passerby would say')
+                    .toBeLessThan(context);
+            }
+        }
+    });
+
+    it('opens every entry on what a passerby would say', () => {
+        // The first chunk, and the one the restructure turned on. A reader
+        // arriving at a faction wants to know what it IS before anything else,
+        // and the sheet used to open on an assembled precis of figures.
+        for (const d of reg.dossiers) {
+            expect(d.passerby, `${d.id} has nothing a passerby would say`).toBeTruthy();
+            expect(d.passerby!.line.length, `${d.id} passerby line is too thin`)
+                .toBeGreaterThan(30);
+            expect(flat, `${d.id} passerby line not rendered`)
+                .toContain(text(d.passerby!.line).slice(0, 60).trim());
+        }
+    });
+
+    it('names the dao first on a dao house, and on nothing else', () => {
+        // The thing a stranger would mention before anything: these are bodies
+        // with no territory whose whole identity is one principle.
+        const houses = reg.dossiers.filter(d => d.passerby?.dao);
+        expect(houses.length, 'no dao house names its dao').toBeGreaterThan(3);
+        for (const d of houses) {
+            expect(d.passerby!.line.startsWith(`A house of ${d.passerby!.dao}`),
+                `${d.id} does not lead with its dao`).toBe(true);
+            expect(getDaoHouse(d.id), `${d.id} claims a dao and is not a dao house`).toBeTruthy();
+        }
+        for (const d of reg.dossiers.filter(x => !x.passerby?.dao)) {
+            expect(getDaoHouse(d.id), `${d.id} is a dao house and does not name its dao`)
+                .toBeFalsy();
         }
     });
 
