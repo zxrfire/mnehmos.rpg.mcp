@@ -259,10 +259,25 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
         `${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}, in ${placeName(cultivator)}.`,
         `Spirit root: ${root.name}. Might ${cultivator.attributes.might}, Insight ${cultivator.attributes.insight}, Fortune ${cultivator.attributes.fortune}, Charm ${cultivator.attributes.charm}.`,
         `Cultivation progress ${Math.round(cultivator.cultivationProgress)} qi-units. HP ${cultivator.hp}/${cultivator.maxHp}. Satiety ${cultivator.satiety}/100. Spirit stones ${cultivator.spiritStones}.`,
+        // AND WHETHER THAT COUNT IS THE ONE THAT KILLS.
+        //
+        // The sheet reported the number and never what it meant. Played to
+        // three untreated wounds - which IS the lethal threshold - it said "3
+        // meridian injuries have been open since the day it was taken" and
+        // stopped, while combat and work had both been saying the dangerous
+        // half for some time. The one screen a player reads when they suspect
+        // they are in trouble was the last place to tell them.
+        //
+        // The pronouns were singular too, against a plural subject.
         untreated === 0
             ? 'The meridians are whole.'
-            : `${untreated} meridian injur${untreated === 1 ? 'y has' : 'ies have'} been open ` +
-              'since the day it was taken, and nothing has closed it.',
+            : untreated >= LETHAL_UNTREATED_INJURIES
+                ? `${untreated} meridian injuries are open and nothing has closed them. `
+                  + 'That is the count that kills. Anything further is fatal.'
+                : `${untreated} meridian injur${untreated === 1 ? 'y has' : 'ies have'} been open `
+                  + `since the day ${untreated === 1 ? 'it was' : 'they were'} taken, and nothing `
+                  + `has closed ${untreated === 1 ? 'it' : 'them'}. `
+                  + `${LETHAL_UNTREATED_INJURIES} is the count that kills.`,
         `${cultivator.yearsAtCurrentRealm.toFixed(1)} years at this realm without advancing.`,
         // WHOSE ROLL THEY ARE ON.
         //
