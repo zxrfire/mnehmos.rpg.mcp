@@ -19,6 +19,8 @@ a column the engine already reads.
 
 ## The four axes
 
+<!-- tier: 2 trigger="a ruin is being described, compared, or chosen between" -->
+
 A ruin is not one number. It is a point in four independent spaces, and almost every
 combination is a different game.
 
@@ -38,6 +40,8 @@ hole - and it is four ordinary field values, not a special case.
 two ever cross, the axes have collapsed back into one and the guide is broken.
 
 ### Reading a ruin is a skill, and it is not a realm
+
+<!-- tier: 2 trigger="somebody tries to identify who built a site, or the player meets an expert reader" -->
 
 Somebody with the learning looks at a site and names the house that built it. Somebody
 without stands in front of the same wall and cannot. The read runs through
@@ -61,6 +65,8 @@ Two rules that keep it honest:
 
 ### Knowledge follows engagement, not altitude
 
+<!-- tier: 2 trigger="what a house or person knows about a site is in question" -->
+
 The sharpest thing in this document, and the one that cuts against intuition.
 
 **The strongest power in the region may know less about a given ruin than a middling house
@@ -80,6 +86,8 @@ of. `knownAxes` calls that `confidentlyPartial`.
 ---
 
 ## Convergence: a ruin is not a place you can go
+
+<!-- tier: 2 trigger="a ruin's window is opening, closing, or being waited on" -->
 
 **It is a place that is periodically reachable.** The window opens, it is short, and if
 you are still inside when it closes you are inside until it comes round again - which for
@@ -102,6 +110,8 @@ most sites is longer than most cultivators have.
 
 ### The escape hatch is real, and self-cancelling
 
+<!-- tier: 2 trigger="somebody is trapped by a closing window, or claims they can leave anyway" -->
+
 There is a way to leave late. `spatial_folding` is a Void Refinement capability grant,
 written long before any of this. Two of its properties do all the work:
 
@@ -115,6 +125,8 @@ Do not add a consumable version of this. An item that folds space on demand is t
 mechanic with its teeth pulled.
 
 ### But somebody might come for you
+
+<!-- tier: 2 trigger="the player is in trouble somewhere and has powerful connections" -->
 
 The rule above is about your own capability. It says nothing about anybody else's, and
 somebody who *is* that high might come and get you. `rescuersFor` answers "would anyone",
@@ -137,6 +149,8 @@ Three things keep it honest:
 
 ### The schedule is its own kind of knowledge
 
+<!-- tier: 2 trigger="the timing of an opening is being sold, guarded, or guessed at" -->
+
 Placing the builder tells you what is inside. Knowing the cycle tells you *when you can
 go*. Two different scholars, both worth having, and neither substitutes for the other - a
 properly equipped expedition is three people rather than one person with three advantages.
@@ -144,6 +158,8 @@ properly equipped expedition is three people rather than one person with three a
 ---
 
 ## Loot is a record, not a table
+
+<!-- tier: 2 trigger="the player is searching a site, or wondering why the entrance is bare" -->
 
 **The gradient is not authored. It is inherited.** Everybody who came before faced the
 same clock: in, take what is near the door, out before it shut. So the shallows are bare
@@ -177,6 +193,8 @@ stock belongs.
 
 ## Not every ruin is ancient, and the world makes more of them
 
+<!-- tier: 2 trigger="a recent disaster has left a site, or a ruin's age is in question" -->
+
 A sect destroyed last century is a ruin. The differences fall out of the other axes rather
 than needing to be authored:
 
@@ -198,6 +216,8 @@ secludes for a century comes out to find somewhere that did not exist when they 
 ---
 
 ## Access: disciples only, a fee, or a task
+
+<!-- tier: 2 trigger="a house controls the way in, and the player must pay, join, or serve to enter" -->
 
 A known site on a predictable cycle inside somebody's territory is an **asset**, and a
 house that can reach it decides who goes in.
@@ -225,6 +245,8 @@ information.
 
 ## A stripped ruin is empty of things and full of understanding
 
+<!-- tier: 2 trigger="the player enters a site everybody agrees is finished" -->
+
 The one destination in this game that asks nothing of you.
 
 Comprehension **cannot be looted**. [`understanding.md`](understanding.md) is explicit that
@@ -250,6 +272,8 @@ Two things to keep honest:
 ---
 
 ## Mechanics that change the terms
+
+<!-- tier: 2 trigger="the player is inside a site that does not behave like an ordinary place" -->
 
 > **A ruin mechanic changes the terms of engagement. It does not add a number.**
 > It changes **what the player knows**, **what they are**, or **what the rules of the
@@ -287,6 +311,8 @@ grows more unsettling the more competent the player has been.
 ---
 
 ## The variety test
+
+<!-- tier: 3 -->
 
 Before you commit a ruin, answer this in one sentence:
 

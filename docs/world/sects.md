@@ -13,6 +13,8 @@ The catalog that models all of this is
 
 ## Sects are institutions
 
+<!-- tier: 2 trigger="a sect's motives, decisions, or internal politics are in play" -->
+
 A sect is not a quest hub. It has hierarchy, elders, disciples, resources, territory,
 rules, internal factions, treasures, techniques, enemies, allies, political interests,
 secrets, and succession problems.
@@ -36,6 +38,8 @@ Every sect in this world is *late*. None of them built what they live in - see
 [`the-late-age.md`](the-late-age.md).
 
 ### What a sect is for, from the disciple's side
+
+<!-- tier: 2 trigger="the player is weighing whether to join, stay in, or leave a house" -->
 
 The single most valuable thing a sect offers is protection at a crossing. A sect that has
 decided a disciple is worth protecting spends real resources on their realm boundary:
@@ -76,6 +80,8 @@ warning, an instruction nobody understands for two hundred years, permission.
 
 ### Two kinds of ancestor
 
+<!-- tier: 2 trigger="a house's ancestors are counted, claimed, or woken" -->
+
 An ancestral asset comes in two forms, and they behave completely differently.
 
 | | **Ascended** | **Dormant** |
@@ -97,6 +103,8 @@ can get wrong in both directions. Waking one to settle a border dispute is how a
 becomes a footnote.
 
 ### Recency is most of the prestige
+
+<!-- tier: 2 trigger="two houses' standing is being compared, or a house's decline is in question" -->
 
 Having an ascended ancestor is not a binary. **What matters is how recently they left**,
 because nothing goes through the Lid with them - so the years before a crossing are spent
@@ -144,6 +152,8 @@ Consequences worth building on:
 
 ### Immortal lineages
 
+<!-- tier: 2 trigger="a house claims an ancestor who crossed the Lid" -->
+
 Sects and clans are also counted by how many immortals they have produced. The counting,
 and what a recognised branch of an immortal clan can expect, are in
 [`immortals.md`](immortals.md).
@@ -179,6 +189,8 @@ and what a recognised branch of an immortal clan can expect, are in
 
 ## Related
 
+<!-- tier: 3 -->
+
 - [`dao-houses.md`](dao-houses.md) - the other kind of formidable faction
 - [`immortals.md`](immortals.md) - what is on the other end of an offering
 - [`economy.md`](economy.md) - what a sect's scarcity actually trades in
@@ -186,6 +198,8 @@ and what a recognised branch of an immortal clan can expect, are in
 - [`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md) - the sect catalog
 
 ## Sects are a pyramid, and the pyramid is the vein network
+
+<!-- tier: 2 trigger="the player asks why a house is where it is, or who a house answers to" -->
 
 Factions are not a flat list of rivals in one province. They stack, and the stack is held
 together by **who controls the water**.
@@ -209,6 +223,8 @@ them**.
 
 ## Moving up: the feeder relationship
 
+<!-- tier: 2 trigger="a disciple is being sent up, recruited away, or handed over between houses" -->
+
 The pyramid is not sealed. **A generation's outstanding disciple is selected upward.**
 
 That is the legitimate route out of a small sect, it is rare, it is competitive, and it is
@@ -231,6 +247,8 @@ world should be entirely unapologetic about it.
 
 ## At the top, rank stops tracking realm
 
+<!-- tier: 2 trigger="somebody outranks a person plainly stronger than they are" -->
+
 Small sects rank by cultivation, because cultivation is all they have to rank by.
 
 **Apex institutions do not.** Everyone below a high realm is simply *a disciple*, and
@@ -245,6 +263,8 @@ where they stand.
 
 ## Guest elders
 
+<!-- tier: 2 trigger="a cultivator with no lineage holds a post, or is offered one" -->
+
 There is a third relationship besides member and outsider: the **guest elder** - a
 powerful cultivator affiliated with a sect without belonging to it, providing services in
 exchange for resources or protection, and keeping their independence.
@@ -255,6 +275,8 @@ Both sides are usually right to be slightly nervous about it, and a guest elder 
 during a crisis is not a betrayal in any way anyone can formally object to.
 
 ## The unbacked
+
+<!-- tier: 2 trigger="the player has no house, or is dealing with somebody who has none" -->
 
 Not everyone is in the stack. Some sects hold no vein from anyone, answer to nobody, and
 pay for it continuously.
@@ -299,6 +321,8 @@ of trap.
 
 ## Direct rule: a backer with no subsidiaries
 
+<!-- tier: 2 trigger="a house holds territory with nothing beneath it" -->
+
 The pyramid is one model, not the only one. A powerful institution can hold its territory
 **directly** - no client sects, no courts, no leases. It administers every vein itself and
 deals with the people on them itself.
@@ -337,6 +361,8 @@ visible the moment a border is crossed - a province of squabbling client sects o
 side, and on the other a single administration with a register and a schedule.
 
 ### Direct rule by deference
+
+<!-- tier: 2 trigger="a house is obeyed in territory it does not formally hold" -->
 
 Direct rule does not have to mean administration. It can mean **respect**, and this is the
 form that fits a sect people are glad to have nearby.
