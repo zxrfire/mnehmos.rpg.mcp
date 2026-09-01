@@ -375,7 +375,9 @@ async function main(): Promise<void> {
     rule('THE ASYMMETRY THAT WAS IN THE WAY');
     line('  `settleNpcDeath` inherited a tie at standing <= -0.4 and dropped everything');
     line('  above it, so grudges outlived their holders and friendships died with them.');
-    line('  Measured over five centuries on three seeds, before and after:');
+    line('  The old number needs no measuring: with that condition a positive inherited');
+    line('  tie could not be written at all, so it was structurally zero. What the');
+    line('  symmetric bar produces, over five centuries on three seeds:');
 
     for (const seed of ['drift-a', 'drift-b', 'drift-c']) {
         let state = seedWorld({ seed, catalog }).state;
