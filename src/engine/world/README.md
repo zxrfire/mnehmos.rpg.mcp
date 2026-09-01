@@ -1839,3 +1839,40 @@ AGENTS.md. **A single measurement off a shared tree is already a measurement of 
 else's unfinished work**, and it does not announce itself - both these readings looked
 entirely reasonable. Green bars are necessary and are not the measurement: keep the rows,
 and compare them.
+
+### Which term actually moves the ladder: the fit, or the filter?
+
+Both fixes left an explanation standing that neither of us had measured - that the upward
+shift in the realm histogram comes from fitting the MAJORITY to a road they can read, while
+the hard filter merely removes people whose contribution was already zero. Two people
+arriving independently at the same explanation is the condition under which both stop
+looking, so it was worth an arm that separates them.
+
+Three arms, one command, identical seeds throughout so the differences are PAIRED:
+
+| arm | top 2 rungs fit | ord 37+ fit | Qi Condensation @500y |
+|---|---|---|---|
+| **A** no conditioning at all | 63.9% | 53.3% | 64.06% |
+| **B** soft fit conditioning only, hard filter and servant rule OFF | 72.9% | 93.3% | 62.38% |
+| **C** full | 76.4% | 100.0% | 60.22% |
+
+**On fit, the soft term does nearly all the work.** Ordinal 37 and above goes 53.3% to
+93.3% with no hard filter anywhere; the filter buys the last 6.7 points to reach a clean
+100%. So the headline result of the root fix does not depend on excluding anybody - the
+reweighted draw alone very nearly gets there, and the filter is what makes it absolute at
+the top rather than what makes it happen.
+
+**On the ladder, the shared explanation is wrong in its specific claim.** It predicted A→B
+would be the large term and B→C roughly nothing. Measured, B→C is the LARGER of the two
+(-2.16 against -1.68). The filter is not histogram-neutral.
+
+The reading that survives is a refinement rather than a replacement: both terms are the
+same mechanism at different strengths. Pinning refused roots to the servant rung does not
+merely park people who were going nowhere, it improves the COMPOSITION of the pool that
+gets promoted, and a better-composed pool climbs better. That is still a fit effect; it is
+just fit acting through who is eligible rather than through who reads what.
+
+Caveat, stated because the numbers invite over-reading: the fit columns are 5 seeds and the
+Qi column is 3. The A > B > C ORDERING is paired on identical seeds and is safe; the
+magnitudes are not, and unpaired seed-to-seed spread on this measure has been seen at 5
+points. Do not quote -2.16 as a constant.
