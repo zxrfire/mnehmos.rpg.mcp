@@ -157,9 +157,37 @@
  * checked out at `5ccbaab^`, run, restored, run - it is worth -3.93 points of
  * mean Qi Condensation, redistributed upward. Its author measured -2.49 pooled
  * over five seeds at 500 years with the living population unchanged at 2556 vs
- * 2557, so it is redistribution rather than growth, and the mechanism is the
- * obvious one: members who fit their house's road can read its books, so more
- * of them get out of the bottom band.
+ * 2557, so it is redistribution rather than growth.
+ *
+ * ── WHAT MOVES IT, AND THE GUESS THAT DID NOT SURVIVE ────────────────────
+ *
+ * This file used to say the mechanism was "the obvious one: members who fit
+ * their house's road can read its books, so more of them get out of the bottom
+ * band" - meaning the SOFT term, the reweighted draw. Both of us believed it
+ * and we were both partly wrong, so the correction is recorded rather than
+ * quietly swapped.
+ *
+ * The prediction that failed was specifically that the HARD filter contributes
+ * nothing to the histogram, on the reasoning that pinning root-refused members
+ * to the servant rung parks people who were going nowhere anyway. Measured by
+ * separating the two terms over identical seeds (`349d00b`):
+ *
+ *     arm                                          qi @ 500y
+ *     A  no conditioning at all                       64.06%
+ *     B  soft fit only, hard filter and servant       62.38%   A -> B  -1.68
+ *        rule off
+ *     C  full, as it ships                            60.22%   B -> C  -2.16
+ *
+ * B to C is the LARGER of the two. The filter does not merely park the stuck:
+ * pinning refused roots to the servant rung changes the COMPOSITION of the pool
+ * that gets promoted, and a better-composed pool climbs better. So it is still
+ * a fit effect, which is the half of the guess that held - but it acts through
+ * who is ELIGIBLE rather than through who can read what.
+ *
+ * DO NOT QUOTE THOSE MAGNITUDES AS CONSTANTS. The A > B > C ordering is paired
+ * on identical seeds and is safe. The differences are not: the qi column is
+ * three seeds, and unpaired seed-to-seed spread on this measure has been seen
+ * at five points, which is larger than either difference above.
  *
  * ── RATIOS WERE CONSIDERED AND DID NOT EARN THEIR PLACE ──────────────────
  *
