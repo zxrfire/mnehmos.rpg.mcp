@@ -38,6 +38,7 @@
  */
 
 import type {
+    InsightDomain,
     Technique,
     TechniqueClass,
     TechniqueGrade,
@@ -204,6 +205,14 @@ export interface TechniqueEntry extends Technique {
      * catalog used to leave to silence. See `NO_SURVIVING_COPY_TECHNIQUE_IDS`.
      */
     survivingCopy: boolean;
+    /**
+     * Why a sufficient dao could NOT reconstruct this one, or null.
+     *
+     * The counterpart to `derivable`, held to the same discipline as
+     * `NO_SURVIVING_COPY_NOTES`: an absence with a reason attached is a
+     * design statement, and an absence without one is missing content.
+     */
+    notDerivableReason: string | null;
     /** One factual line on where a copy is actually obtained. */
     sourceNote: string;
     /**
@@ -282,6 +291,97 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
 ]);
 
 /** Arts that only ever surface in a grave deposit. */
+// ─────────────────────────────────────────────────────────────────────────
+// THE CORRIDOR ABOVE THE MIDDLE
+//
+// Measured in `docs/world/escapes.md`: the ladder above ordinal 17 is not a
+// ladder, it is a single-file corridor. At most heights the world offers
+// exactly ONE cultivation manual that continues, and usually wants a specific
+// element for it. Three of the choke points are single-source; one is a house
+// that will not open its library to anybody without a mutated ice root.
+//
+// That narrowness is the design and it is not a defect. What WOULD be a
+// defect is a choke point with one route, because a route is a thing that can
+// fail to be found, and a corridor whose only door is somebody else's estate
+// is a corridor that reads as missing content rather than as scarcity.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Manuals that exist in parts, and the OBJECT rows those parts are.
+ *
+ * A volume is a physical copy of a piece of a book: it has a holder, a
+ * provenance and a power one rung below the whole, by `shardPower`. So it
+ * lives in the object catalog rather than here, and this is the join.
+ *
+ * There is deliberately no second cap field. A partial set's ceiling is
+ * DERIVED from how many volumes are held, by the engine, using the same
+ * arithmetic that turns a broken blade into a worse blade.
+ *
+ * WHY THIS ONE. `heaven-conversing-primordial-canon` is the only continuation
+ * anywhere between ordinal 37 and 40, and its only route was a parting gift -
+ * a dead man's estate in a shed with a bad roof. One route, at the narrowest
+ * point on the ladder. Rather than delete that (it is the best-written route
+ * in the catalog: the largest body of chaos-grade transmission in two
+ * provinces, safe because the people holding it stand at Core Formation and
+ * cannot read a character of it), the work is scattered. The shed holds the
+ * complete set. Three separate volumes are also loose in three houses, none
+ * of which has all three and two of which do not know what they are holding.
+ *
+ * So the corridor now has two doors: take the estate, or find three people.
+ */
+export const SCATTERED_MANUAL_VOLUMES: Readonly<Record<string, readonly string[]>> = {
+    'heaven-conversing-primordial-canon': [
+        'volume-heaven-conversing-first',
+        'volume-heaven-conversing-second',
+        'volume-heaven-conversing-third'
+    ]
+};
+
+/**
+ * Manuals a sufficient dao could write the continuation of.
+ *
+ * Opt-in, and deliberately short. Derivation is the prodigy's road, not the
+ * way missing content gets papered over - the same discipline
+ * `NO_SURVIVING_COPY_TECHNIQUE_IDS` is held to. If this set ever grows to
+ * cover the choke points, the corridor has been quietly abolished rather than
+ * opened, and the routes suite says so.
+ *
+ * What makes one derivable is that its road is walked rather than transmitted:
+ * an art whose method a person could arrive at from their own comprehension,
+ * given enough of it. What makes one not is written on the entry.
+ */
+export const DERIVABLE_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
+    // Elementless accumulation. Nothing in it is anybody's secret; it is the
+    // plainest statement of a thing every cultivator does badly by instinct,
+    // and somebody who understands what they are doing badly can write it.
+    'five-breath-circulation-scripture',
+    // Water-line accumulation off a well. Ordinary enough that two houses have
+    // independently written versions of it and neither claims to have invented
+    // anything.
+    'moonlit-well-absorption-art',
+    // And one that is derivable to nobody's benefit. A method for eating
+    // your own meridians is arrived at by experiment on the only subject
+    // available, which is how it keeps being reinvented by people who were
+    // not taught it and did not need to be.
+    'meridian-devouring-art'
+]);
+
+/**
+ * Why a particular manual cannot be reconstructed, however deep the reader.
+ *
+ * A stated absence, in the idiom `NO_SURVIVING_COPY_NOTES` established. These
+ * are the interesting refusals - the ones where "you cannot derive this" is a
+ * fact about the book rather than about the reader.
+ */
+export const NOT_DERIVABLE_NOTES: Readonly<Record<string, string>> = {
+    'canon-of-the-unwritten-span':
+        'It is written for a condition the reader is not in and cannot simulate. Every house that has worked through it agrees it is correct and that there is nothing in it they can do, which is also the reason nobody can reconstruct the missing half: you would have to already be past the Lid to know what it was describing, and anybody past the Lid has no use for it.',
+    'heaven-conversing-primordial-canon':
+        'Not a method but a transcript of one side of a conversation, and the other side was had by somebody who is no longer in the world. A reader deep enough to follow it is deep enough to establish that the missing half cannot be inferred from the half that survives - which is precisely what the three people who have tried each concluded, separately, and wrote down.',
+    'chaos-origin-scripture':
+        'The one manual whose difficulty is not comprehension. It describes what to do at the last crossing, and the only way to check a reconstruction is to attempt the crossing, which is not a thing anybody gets to do twice.'
+};
+
 export const GRAVE_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'heart-of-the-ten-thousand-corpses',
     'lifespan-devouring-heaven-theft',
@@ -573,8 +673,15 @@ export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>)
  * an art with none carries its own reason in place of the generic note.
  */
 function art(
-    t: Omit<Technique, 'mastery' | 'class' | 'cap'>
-        & { opacity?: Opacity; class?: TechniqueClass; cap?: number | null }
+    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable'>
+        & {
+            opacity?: Opacity;
+            class?: TechniqueClass;
+            cap?: number | null;
+            rootGrades?: readonly string[];
+            domain?: InsightDomain | null;
+            domainDegree?: number;
+        }
 ): TechniqueEntry {
     const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
         ? 'grave'
@@ -594,7 +701,18 @@ function art(
         // ceiling on one of them, read as one block instead of a hundred
         // scattered flags that a new entry could forget.
         class: t.class ?? classOf(t),
-        cap: t.cap !== undefined ? t.cap : capOf(t)
+        cap: t.cap !== undefined ? t.cap : capOf(t),
+        // Authored per entry: what a manual demands of a reader is content
+        // rather than a derivation. Defaulted to "asks nothing", so an art
+        // that genuinely takes any reader does not have to say so.
+        rootGrades: [...(t.rootGrades ?? [])],
+        domain: t.domain ?? null,
+        domainDegree: t.domainDegree ?? 1,
+        // Resolved from the named sets, exactly as provenance and surviving
+        // copies are, so a new entry cannot forget them.
+        volumes: SCATTERED_MANUAL_VOLUMES[t.id] ? [...SCATTERED_MANUAL_VOLUMES[t.id]] : null,
+        derivable: DERIVABLE_TECHNIQUE_IDS.has(t.id),
+        notDerivableReason: NOT_DERIVABLE_NOTES[t.id] ?? null
     };
 }
 
@@ -1584,6 +1702,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'earth',
         element: null,
+        // The most-walked crossing in the world, and it is walked with the
+        // body. Open to any root; closed to anybody who has never paid
+        // attention to the thing they live in.
+        domain: 'body',
         requiredOrdinal: 13,
         qiCost: 16,
         damage: null,
@@ -1597,6 +1719,9 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'earth',
         element: 'wood',
+        // A wood line held steady for two centuries. A muddled root cannot
+        // hold one steady for two months.
+        rootGrades: ['single', 'dual'],
         requiredOrdinal: 16,
         qiCost: 26,
         damage: null,
@@ -1610,6 +1735,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'earth',
         element: 'fire',
+        // The choke at 17-20, and now it refuses on two axes rather than
+        // one. A water root is turned away for being the wrong element; a
+        // fire root with no comprehension of what fire IS is turned away
+        // for a different reason and hears a different sentence. That
+        // difference is the whole point of populating this field.
+        domain: 'element',
         // 19 -> 17, the first rung of Core Formation. A realm's manual has to
         // be learnable ON that realm's first rung or the succession has a hole
         // in it: the previous book caps at 17 and this one could not be opened
@@ -1641,6 +1772,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'heaven',
         element: 'earth',
+        // Eating a vein is formation work before it is anything else.
+        domain: 'formation',
         // 26 -> 25, the first rung of Deity Transformation. Same hole.
         requiredOrdinal: 25,
         qiCost: 100,
@@ -1655,6 +1788,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'immortal',
         element: null,
+        // Breathing a tide that is not there.
+        domain: 'void',
         requiredOrdinal: 29,
         qiCost: 140,
         damage: null,
@@ -1668,6 +1803,16 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'immortal',
         element: 'ice',
+        // The narrowest door on the ladder, and the catalog already said so
+        // in prose: the Frostmirror Court admits mutated ice roots and
+        // nobody else. Written into the manual rather than into the house,
+        // because it is a fact about the book - the Court refuses
+        // applicants it could not teach, rather than teaching applicants it
+        // refuses. Ice is a mutated element, so this is consistent with
+        // `element` rather than stricter than it.
+        rootGrades: ['mutated'],
+        domain: 'element',
+        domainDegree: 2,
         // 34 -> 33, the first rung of Body Integration. Same hole.
         requiredOrdinal: 33,
         qiCost: 270,
@@ -1682,6 +1827,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'chaos',
         element: null,
+        // One side of a conversation. Following it needs the reader to
+        // understand what is being answered, which is karma at depth.
+        domain: 'karma',
+        domainDegree: 2,
         requiredOrdinal: 37,
         qiCost: 360,
         damage: null,
@@ -1695,6 +1844,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'chaos',
         element: null,
+        domain: 'void',
+        domainDegree: 2,
         // 44 -> 41, the first rung of Tribulation Transcendence. Same hole,
         // and the most consequential one: it is the only book that bridges
         // Grand Ascension to the last crossing, and it has to be dug up.
@@ -1927,6 +2078,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'forbidden',
         grade: 'heaven',
         element: null,
+        domain: 'life_death',
         requiredOrdinal: 27,
         qiCost: 110,
         damage: null,
@@ -1940,6 +2092,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'forbidden',
         grade: 'immortal',
         element: 'fire',
+        domain: 'life_death',
+        domainDegree: 2,
         requiredOrdinal: 32,
         qiCost: 220,
         damage: '14d12+55',
@@ -1953,6 +2107,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'forbidden',
         grade: 'immortal',
         element: null,
+        domain: 'life_death',
+        domainDegree: 2,
         requiredOrdinal: 36,
         qiCost: 340,
         damage: null,
@@ -1966,6 +2122,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'forbidden',
         grade: 'chaos',
         element: null,
+        domain: 'life_death',
+        domainDegree: 3,
         requiredOrdinal: 42,
         qiCost: 780,
         damage: '26d20+180',
@@ -2106,6 +2264,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // plain about is a condition the reader is not in.
         opacity: 0.55,
         element: null,
+        // Written for somebody whose remaining years have stopped being a
+        // quantity. The demand is the condition, and nothing below the Lid
+        // meets it - which is why every house that has read it agrees it is
+        // correct and that there is nothing in it they can do.
+        domain: 'time',
+        domainDegree: 3,
         // Left at 46, deliberately, and it is the one manual the succession
         // rule does not apply to.
         //

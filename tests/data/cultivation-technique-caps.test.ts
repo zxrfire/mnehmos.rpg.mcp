@@ -28,6 +28,8 @@ import {
 } from '../../src/data/cultivation/techniques.js';
 import { houseTeachingCeiling } from '../../src/data/cultivation/index.js';
 import { PILLS, isAdvancement } from '../../src/data/cultivation/pills.js';
+import { getArtifact } from '../../src/data/cultivation/artifacts.js';
+import { shardPower } from '../../src/engine/world/possessions.js';
 import { SECTS } from '../../src/data/cultivation/sects.js';
 import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
 import {
@@ -372,5 +374,211 @@ describe('advancement costs more than survival, in every grade', () => {
             expect(pill.value, `${pill.id} tops ${pill.grade}`)
                 .toBe(Math.max(...inGrade.map(p => p.value)));
         }
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE CORRIDOR
+//
+// `docs/world/escapes.md` measured the ladder above the middle and found it is
+// not a ladder at all: at most heights the world offers exactly ONE book that
+// continues, and usually wants a specific element for it.
+//
+//   17-20  one, fire-locked, three houses
+//   25-28  earth-locked, or a forbidden method from two demonic houses
+//   29-31  one, ruin, one trial
+//   33-35  one, ice-locked, ONE house
+//   37-40  one
+//   41-44  ruin and grave only
+//
+// That corridor is the design. What it must never become is a DEAD END, and
+// nothing was watching for that: retire or re-rate one manual and the game
+// becomes unwinnable at some rung with no test failing.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the corridor has no gaps', () => {
+    it('offers at least one continuation at every rung below the last crossing', () => {
+        const gaps: string[] = [];
+        for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
+            const continues = MANUALS.filter(t =>
+                t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
+            if (continues.length === 0) gaps.push(String(ordinal));
+        }
+        expect(
+            gaps,
+            `no cultivation manual continues past ordinal(s) ${gaps.join(', ')} - `
+            + 'that is an unwinnable game, not a hard one'
+        ).toHaveLength(0);
+    });
+
+    it('names the choke points rather than letting them go unnoticed', () => {
+        // Not an assertion that the corridor be wide. It is deliberately
+        // narrow. This pins that we KNOW where the single-source rungs are, so
+        // that a change which adds or removes one is visible in a diff.
+        const chokes: number[] = [];
+        for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
+            const continues = MANUALS.filter(t =>
+                t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
+            if (continues.length === 1) chokes.push(ordinal);
+        }
+        // Every choke point must still have somewhere to go, which the first
+        // test covers - and must be reachable by at least one route, which is
+        // what makes it a door rather than a wall.
+        for (const ordinal of chokes) {
+            const only = MANUALS.find(t =>
+                t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal))!;
+            expect(
+                only.survivingCopy,
+                `ordinal ${ordinal} has exactly one continuation (${only.id}) and no surviving copy`
+            ).toBe(true);
+        }
+        expect(chokes.length, 'the corridor is narrow on purpose').toBeGreaterThan(0);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT A MANUAL DEMANDS, AND THE WAYS OUT WHEN IT RUNS OUT
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('a manual asks for more than an element', () => {
+    it('makes at least one refusal on each axis possible', () => {
+        // Only `element` was authored, so every suitability miss a player could
+        // ever see read as an element miss - "it is sound, it is written for
+        // water, you draw fire" was the ONLY failure in the game. The root and
+        // comprehension axes existed, were judged by `assessFit`, and had
+        // nothing whatever to judge.
+        expect(MANUALS.some(t => t.element !== null), 'element axis').toBe(true);
+        expect(MANUALS.some(t => t.rootGrades.length > 0), 'root-grade axis').toBe(true);
+        expect(MANUALS.some(t => t.domain !== null), 'comprehension axis').toBe(true);
+    });
+
+    it('keeps the demands consistent with the element that implies them', () => {
+        // Ice is a mutated element, so a manual written in ice that also asks
+        // for a mutated root is being explicit rather than stricter. A manual
+        // asking for a root grade its own element rules out would be a door
+        // with no key anywhere in the world.
+        for (const t of MANUALS.filter(m => m.rootGrades.includes('mutated'))) {
+            expect(['ice', 'lightning', null], `${t.id} asks for a mutated root`)
+                .toContain(t.element);
+        }
+    });
+
+    it('leaves the bottom of the ladder asking for nothing', () => {
+        // A six-page block-printed market-town book does not have opinions.
+        const first = MANUALS.find(t => t.id === 'lesser-qi-gathering-manual')!;
+        expect(first.rootGrades).toHaveLength(0);
+        expect(first.domain).toBeNull();
+        expect(first.element).toBeNull();
+    });
+
+    it('never demands a comprehension degree nobody could hold', () => {
+        for (const t of MANUALS) {
+            if (t.domain === null) continue;
+            expect(t.domainDegree, t.id).toBeGreaterThan(0);
+            expect(t.domainDegree, t.id).toBeLessThanOrEqual(3);
+        }
+    });
+});
+
+describe('a scattered work is objects, not a second cap field', () => {
+    it('resolves every volume id to a real object', () => {
+        for (const manual of MANUALS.filter(m => m.volumes !== null)) {
+            expect(manual.volumes!.length, manual.id).toBeGreaterThan(1);
+            for (const id of manual.volumes!) {
+                expect(getArtifact(id), `${manual.id} names missing volume ${id}`).toBeDefined();
+            }
+        }
+    });
+
+    it('rates a volume one rung below the whole, by the ordinary rule', () => {
+        // `shardPower`, the same arithmetic that turns a broken blade into a
+        // worse blade. One piece of that reasoning in the repo, not two.
+        for (const manual of MANUALS.filter(m => m.volumes !== null)) {
+            for (const id of manual.volumes!) {
+                const volume = getArtifact(id)!;
+                // A book is not a weapon. `OBJECT_CEILING_BELOW_THE_LID` caps
+                // objects because an object rated at a rung lets its holder
+                // strike at it, and paper does not - which is exactly why
+                // `MANUALS_MAY_EXCEED_THE_LID` can be true. A volume that
+                // carried combat power would make a library an armoury.
+                expect(volume.power, id).toBeNull();
+                expect(shardPower(volume.power), id).toBeNull();
+                expect(volume.tags, id).toContain('shard');
+                expect(volume.tags, id).toContain(`from:${manual.id}`);
+            }
+        }
+    });
+
+    it('puts the volumes in different hands, which is the whole point', () => {
+        for (const manual of MANUALS.filter(m => m.volumes !== null)) {
+            const holders = manual.volumes!.map(id => getArtifact(id)!.possessorId);
+            expect(new Set(holders).size, `${manual.id}: one holder is not a scattered set`)
+                .toBe(holders.length);
+            // And they are not all equally findable. A volume nobody can name
+            // and a volume a house would miss by name are different thefts.
+            const known = manual.volumes!.map(id => getArtifact(id)!.knownOwnershipBy.length);
+            expect(new Set(known).size, `${manual.id}: every volume is equally known`)
+                .toBeGreaterThan(1);
+        }
+    });
+
+    it('adds no second cap field anywhere', () => {
+        // A partial set's ceiling is derived by the engine. If a `volumeCap`
+        // ever appears here there are two opinions about the same number.
+        for (const t of TECHNIQUES) {
+            expect(t).not.toHaveProperty('volumeCap');
+            expect(t).not.toHaveProperty('partialCap');
+        }
+    });
+});
+
+describe('derivation is a road, not a hole-closer', () => {
+    it('marks only a minority of manuals derivable', () => {
+        // X3. The same discipline NO_SURVIVING_COPY_TECHNIQUE_IDS is held to:
+        // if this set ever grows to cover the choke points, the corridor has
+        // been quietly abolished rather than opened.
+        const derivable = MANUALS.filter(t => t.derivable);
+        expect(derivable.length).toBeGreaterThan(0);
+        expect(derivable.length / MANUALS.length).toBeLessThan(0.35);
+    });
+
+    it('never lets derivation open a single-source choke point', () => {
+        // The load-bearing one. A choke point that anybody deep enough can
+        // simply write for themselves is not a choke point.
+        for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
+            const continues = MANUALS.filter(t =>
+                t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
+            if (continues.length !== 1) continue;
+            expect(continues[0].derivable,
+                `ordinal ${ordinal}: its only continuation ${continues[0].id} is derivable`)
+                .toBe(false);
+        }
+    });
+
+    it('gives every non-derivable manual of note a stated reason', () => {
+        // A stated absence is a design statement. A silent one is missing
+        // content - the distinction NO_SURVIVING_COPY_NOTES exists to make.
+        const noted = MANUALS.filter(t => t.notDerivableReason !== null);
+        expect(noted.length).toBeGreaterThan(0);
+        for (const t of noted) {
+            expect(t.derivable, `${t.id} is both derivable and explained away`).toBe(false);
+            expect(t.notDerivableReason!.length).toBeGreaterThan(60);
+        }
+    });
+});
+
+describe('every choke point has more than one way through', () => {
+    it('gives the narrowest stretch on the ladder a second route', () => {
+        // X2. heaven-conversing-primordial-canon is the only continuation
+        // between ordinal 37 and 40, and its only route was a parting gift: a
+        // dead woman's estate in a shed with a bad roof. One route at the
+        // narrowest point on the ladder reads as missing content rather than
+        // as scarcity, so the work is now also scattered into three volumes.
+        const canon = MANUALS.find(t => t.id === 'heaven-conversing-primordial-canon')!;
+        expect(canon.volumes, 'the 37-40 corridor needs a second door').not.toBeNull();
+        expect(canon.volumes!.length).toBeGreaterThanOrEqual(3);
+        // The estate route is untouched: the complete work is still where it
+        // was, and it is still the better prize.
+        expect(canon.survivingCopy).toBe(true);
     });
 });
