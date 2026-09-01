@@ -239,6 +239,34 @@ export interface TimeSkipContext {
     locationDensity?: number;
     /** The location is a sealed pocket nothing has drawn on. */
     sealed?: boolean;
+    /**
+     * The identity this cultivator's PER-CULTIVATOR draws are keyed on.
+     *
+     * Four things in this file derive a stream from who the cultivator is
+     * rather than only from the run: the latent affinity behind prodigy
+     * recognition, the recognition gate itself, the narrowed pick among
+     * candidates, and the 0.2 suitability draw that decides which
+     * comprehensions are takeable at all. All four keyed on `cultivator.id`,
+     * and a played run's row id is a `randomUUID()` - so the same seed
+     * produced different prodigies, different roads and different
+     * comprehension, which breaks the charter line that a seed is a life.
+     *
+     * It was LATENT rather than new: until `ctx.understanding` was populated
+     * the candidate set was always empty, so nothing downstream of it ever
+     * ran. It started mattering the moment that field was wired up.
+     *
+     * Mirrors `EncounterRequest.rollIdentity` in `src/web/encounters.ts`
+     * deliberately, rather than inventing a second convention for the same
+     * problem - the encounter layer hit this first and its answer is the
+     * house answer. Same rule applies here: a caller with a genuinely stable
+     * id (an NPC out of the catalog, a fixture) should leave this alone and
+     * get the old behaviour, and a caller whose id is random must pass
+     * something seed-stable.
+     *
+     * DEFAULTS TO `cultivator.id`, which is correct for every caller whose id
+     * is already stable and preserves their results exactly.
+     */
+    rollIdentity?: string;
     /** Turn number the skip begins on, stamped onto injuries. */
     turn?: number;
     /** Absolute in-world day the skip begins on, so grids line up across skips. */
@@ -336,6 +364,9 @@ export function simulateTimeSkip(
     const turn = Math.max(0, Math.floor(ctx.turn ?? 0));
     const startDay = Math.max(0, Math.floor(ctx.startDay ?? 0));
     const autoBreakthrough = ctx.autoBreakthrough ?? true;
+    // Every per-cultivator stream in this file keys on THIS, never on the row
+    // id directly. See `TimeSkipContext.rollIdentity`.
+    const identity = ctx.rollIdentity ?? cultivator.id;
     const randomEvents = ctx.randomEvents ?? true;
     const grainAbstinence = ctx.grainAbstinence ?? false;
     const hostility = ctx.hostility;
@@ -503,13 +534,13 @@ export function simulateTimeSkip(
         rng: ReturnType<typeof forStream>,
         detail: Record<string, string | number> = {}
     ): void => {
-        const candidates = discoverableInsights({ ...cultivator, insights }, {
+        const candidates = discoverableInsights({ ...cultivator, id: identity, insights }, {
             ...(ctx.understanding ?? {}),
             survived,
             // Suitability is live in play: what is in reach is filtered by what
             // this particular cultivator can take out of it.
             runSeed: ctx.seed,
-            affinityOf: target => affinityFor(ctx.seed, cultivator.id, target)
+            affinityOf: target => affinityFor(ctx.seed, identity, target)
         });
         const achievement = recordAchievement(
             { kind, onDay: absDay, turn: turn + Math.floor(elapsed), summary, detail },
@@ -525,7 +556,7 @@ export function simulateTimeSkip(
         // pick, so nothing downstream shifts.
         const candidate = pickNarrowed(rng, candidates, daoOf(insights), {
             runSeed: ctx.seed,
-            cultivatorId: cultivator.id
+            cultivatorId: identity
         });
         const integrated = integrateInsight(insights, candidate, achievement);
         insights = integrated.insights;
@@ -1062,18 +1093,18 @@ export function simulateTimeSkip(
         // only missing piece, and most cultivators die never having stood in a
         // room where their own Dao was being practised.
         if (!interrupted && onGrid(newAbsDay, INSIGHT_CHECK_DAYS)) {
-            const reachable = discoverableInsights({ ...cultivator, insights }, {
+            const reachable = discoverableInsights({ ...cultivator, id: identity, insights }, {
                 ...(ctx.understanding ?? {}),
                 survived: null,
                 runSeed: ctx.seed,
-                affinityOf: target => affinityFor(ctx.seed, cultivator.id, target)
+                affinityOf: target => affinityFor(ctx.seed, identity, target)
             });
             for (const candidate of reachable) {
                 const held = insights.some(
                     i => i.domain === candidate.domain && i.subject === candidate.subject
                 );
                 if (held) continue;
-                if (!isRecognition(affinityFor(ctx.seed, cultivator.id, candidate))) continue;
+                if (!isRecognition(affinityFor(ctx.seed, identity, candidate))) continue;
 
                 const rng = forStream(
                     ctx.seed, 'understanding', newAbsDay, `recognition:${candidate.subject}`
@@ -1154,6 +1185,16 @@ export function simulateTimeSkip(
             const atSite = (ctx.understanding?.locationTags ?? []).length > 0;
             if (rng.chance(visionChance(atSite))) {
                 const kind = rng.pick(VISION_KINDS);
+                // `cultivator.id` and NOT `identity`, deliberately. This is the
+                // one use of the row id in this file that is correct: a vision
+                // is OWNED by a row, and `holderId` plus the `claimKey` derived
+                // from it are what the knowledge layer stores it against.
+                // Substituting the roll identity would file every player run's
+                // visions under one shared owner.
+                //
+                // Nothing here is drawn from it - the vision's occurrence, kind
+                // and confidence all come off the day-keyed stream above, so
+                // this was already reproducible and stays so.
                 visions.push(
                     formVision(cultivator.id, kind, newAbsDay, rng.float(0.2, 0.6))
                 );
