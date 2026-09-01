@@ -89,7 +89,8 @@ import { addLineageEdge, createLineageRecord, type LineageRecord } from './linea
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
 import { dayOfYear, makeFact, appendFact } from './history.js';
 import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
-import { seedArtifacts, seedComprehensionMaterials } from './goods.js';
+import { seedArtifacts } from './artifact-placement.js';
+import { seedComprehensionMaterials } from './single-use-dao-comprehension-materials.js';
 import {
     createWorld,
     makeFaction,
