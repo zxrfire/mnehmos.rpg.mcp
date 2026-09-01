@@ -40,6 +40,11 @@
  *   invented                 nothing under it. Usually somebody's interest.
  *   unresolved               nobody can settle it, this catalog included
  *
+ * `unresolved` is neither right nor wrong and is counted as neither. It is the
+ * honest answer more often than either party would like, and a catalog that
+ * forced every saying into true or false would be doing the thing the setting
+ * is most careful not to do.
+ *
  * NOTHING HERE IS A MECHANIC
  * --------------------------
  * AGENTS.md: lore describes what the systems produce and never adds a system
