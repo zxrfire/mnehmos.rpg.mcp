@@ -110,19 +110,52 @@
  * both arms of the root-conditioning control. Numbers that stable are not a
  * small-N swap.
  *
- * A flowing population cannot do that, and the reason it happens here is known:
- * the top of the ladder is a FOSSIL. Grand Ascension and Tribulation
- * Transcendence read 0.39% on every seed at every horizon - the same handful of
- * people the seeder placed, still standing there, never added to and never
- * replaced. Nobody arrives above ordinal 32 in five hundred years. That is a
- * transmission defect - roads reaching people - and the fix for it is NOT a
- * faster climb for everybody. If a change makes the middle of this table climb,
- * it is the wrong fix even when it does raise the ceiling.
+ * ── RETRACTED: "NOBODY ARRIVES ABOVE ORDINAL 32" WAS MY OWN BUG ──────────
  *
- * So this test is expected to be RED until transmission is fixed, and the
- * failure is the defect report rather than a broken assertion. It goes green on
- * its own the day somebody fixes it - there is no expectation marker anybody
- * has to remember to remove.
+ * This block used to say the upper bands were a FOSSIL - the same handful of
+ * people the seeder placed, never added to, with nobody arriving above ordinal
+ * 32 in five hundred years - and called that a transmission defect. I reported
+ * it in that form repeatedly. It is false, and the error was in my probe rather
+ * than in the world.
+ *
+ * The probe split the living into "seeded" and "arrived" by asking whether an
+ * id was present at world creation. That is a question about WHERE SOMEBODY
+ * CAME FROM, not about whether they climbed - so a person the seeder placed at
+ * ordinal 20 who then climbed to 33 was counted as "seeded" in the band they
+ * had climbed into. Every genuine climber who happened to exist at year zero
+ * was invisible to it, which is most of them over a few centuries. AGENTS.md
+ * documents the mirror image of this exact mistake, a column that counted
+ * everybody not present at world creation; I made the other half of it.
+ *
+ * Measured properly - counting somebody as having arrived when they are seen
+ * standing in a band above the lowest one they were ever seen in - over two
+ * thousand years on one seed:
+ *
+ *     climbed into 13-16   1571        climbed into 25-28    65
+ *     climbed into 17-20    528        climbed into 29-32    22
+ *     climbed into 21-24    195        climbed into 33-44     2
+ *
+ * The inflow is not zero. It is roughly one arrival into Void Refinement per
+ * ninety years and one into Body Integration and above per thousand, and the
+ * 29-32 band grows over that span rather than holding still. At a rate that
+ * low, a five-hundred-year window containing no arrival is an ordinary sample
+ * and proves nothing whatsoever - which is what my figure actually was.
+ *
+ * ── SO WHAT IS RULE 2 BELOW ACTUALLY CATCHING? ──────────────────────────
+ *
+ * An open question, and it should be treated as one rather than as a defect
+ * report. The inversion is real and reproduces on all five seeds at 200 years.
+ * But a band holding four to eight people, whose members carry lifespans in the
+ * tens of thousands of years and who sit still by choice while working on the
+ * last crossing, is stock rather than flow, and two tiny stocks sitting in the
+ * wrong order relative to each other may be perfectly legitimate.
+ *
+ * The honest position: Rule 2 is measuring an ordering at a horizon too short
+ * for these bands to be populations, and the discriminator that would settle it
+ * is not ordering at all - it is whether the band ever gains anybody, which the
+ * numbers above now say it does. Until somebody decides what the guard should
+ * ask instead, this failure is a QUESTION rather than a verdict, and it must
+ * not be quoted as evidence that the top of the ladder is broken.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * THE BASELINE, MEASURED - AND IT IS A LOG, NOT A CONSTANT
@@ -364,12 +397,17 @@ describe('the pyramid holds its shape', () => {
         // forgiven unless it holds on EVERY seed, which is what separates noise
         // from a fact about the population.
         //
-        // Expected to fail today on body_integration over void_refinement, and
-        // that failure is the defect report rather than a broken assertion: the
-        // top of the ladder is inventory the seeder placed, nobody arrives above
-        // ordinal 32 in five hundred years, and this goes green on its own the
-        // day that is fixed. There is no expectation marker to remember to
-        // remove.
+        // Fails today on body_integration over void_refinement, and what that
+        // failure MEANS is now an open question rather than a verdict. See the
+        // retraction in the header: the claim it used to rest on - that nobody
+        // arrives above ordinal 32 - was an artifact of my own probe, and
+        // measured properly there are 22 arrivals into 29-32 and 2 into 33-44
+        // over two thousand years.
+        //
+        // So this may be catching a real ordering defect, or it may be asking
+        // an ordering question of two four-person stocks at a horizon far too
+        // short for them to be populations. Do not quote it as evidence that
+        // the top of the ladder is broken until somebody has decided which.
         const structural = FINDINGS.filter(f => f.verdict === 'structural_small');
         const described = structural.map(f =>
             `${f.upper} (${f.pooledUpper} pooled) is larger than ${f.lower} ` +
