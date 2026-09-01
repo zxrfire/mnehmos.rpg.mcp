@@ -15,9 +15,9 @@
  * reconstruction and the toll are all taken from
  * `src/server/consolidated/cultivation-support.ts` verbatim:
  *
- *   skipEndState            absolute end state, including the two values the
- *                           digest does not return (`yearsAtCurrentRealm`,
- *                           `starvationTurns`)
+ *   skipEndState            absolute end state, including the three counters
+ *                           that reset mid-skip (`yearsAtCurrentRealm`,
+ *                           `starvationTurns`, `bleedingTurns`)
  *   (injuries come straight off the engine result now - see below)
  *   persistToll             the price of a crossing - and the delete behind it
  *
@@ -29,6 +29,7 @@ import { describeDeath } from '../engine/cultivation/survival.js';
 import {
     persistFoundation,
     persistToll,
+    persistUnderstanding,
     skipEndState,
     type CultivationRepos
 } from '../server/consolidated/cultivation-support.js';
@@ -49,6 +50,8 @@ export interface ApplySkipResult {
     injuries: Injury[];
     /** Engine-authored lines for every price a crossing exacted. */
     tollLines: string[];
+    /** Comprehensions written this skip, and the achievements behind them. */
+    understanding: { insights: number; achievements: number };
 }
 
 /**
@@ -70,6 +73,7 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
     const ranksGained = Math.max(0, end.realmOrdinal - before.realmOrdinal);
     const nextTurn = run.turn + 1;
     const tollLines: string[] = [];
+    let understanding = { insights: 0, achievements: 0 };
 
     const persist = repos.db.transaction(() => {
         for (const injury of injuries) {
@@ -101,6 +105,22 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
             persistFoundation(repos, before.id, skip.foundationEstablished);
         }
 
+        // ── What they understood, which was being thrown away ──────────────
+        //
+        // `simulateTimeSkip` returns `insightsGained` and `achievements` and
+        // this function persisted neither, so every comprehension a played
+        // life produced was computed, narrated and discarded. The MCP tool
+        // layer has always written them (`cultivation-manage.ts`), which is
+        // exactly the divergence the header of this file exists to prevent:
+        // the same skip persisted one way through a tool and another way
+        // through the command bar.
+        //
+        // It is the same call the tool surface makes, on the same rows, so the
+        // two paths cannot disagree about what a life understood.
+        understanding = persistUnderstanding(
+            repos, before.id, skip.insightsGained, skip.achievements
+        );
+
         // Deltas are computed against the row as it stands AFTER the advance,
         // because advanceRealm zeroes progress and the stagnation clock; these
         // put back whatever the simulation actually ended on.
@@ -110,6 +130,7 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
             qi: end.qi - mid.qi,
             satiety: end.satiety - mid.satiety,
             starvationTurns: end.starvationTurns - mid.starvationTurns,
+            bleedingTurns: end.bleedingTurns - mid.bleedingTurns,
             spiritStones: end.spiritStones - mid.spiritStones,
             cultivationProgress: end.cultivationProgress - mid.cultivationProgress,
             age: end.age - mid.age,
@@ -147,7 +168,8 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
         cultivator: repos.cultivators.getById(before.id)!,
         run: repos.runs.getById(run.id)!,
         injuries,
-        tollLines
+        tollLines,
+        understanding
     };
 }
 

@@ -902,7 +902,15 @@ export async function handleBreakthrough(
         rng: forStream(run.seed, 'breakthrough', day, cultivator.realmOrdinal),
         ambient,
         turn: run.turn,
-        pill: pending ? { name: pending.name, potency: pending.potency } : null,
+        pill: pending ? {
+            name: pending.name,
+            potency: pending.potency,
+            // Both carried straight off the record written when it was
+            // swallowed. A graded pill takes the real band curve; the
+            // count is what makes the fifth one worth less than the first.
+            ...(pending.grade ? { grade: pending.grade } : {}),
+            priorPillsTaken: pending.priorPillsTaken ?? 0
+        } : null,
         ranksGainedThisTurn: alreadyGained,
         // Real candidates from real rows: known techniques and the people in
         // this run who know this cultivator. The crossing picks; nobody asks.

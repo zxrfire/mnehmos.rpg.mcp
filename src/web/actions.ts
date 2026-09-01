@@ -564,7 +564,18 @@ export type SectIntent =
     | 'leave' | 'promote' | 'stipend' | 'standing' | 'join' | 'siphon' | 'order'
     // What the rungs above `order` buy. Same defect as `order` had: implemented,
     // gated, tested, and unreachable from anything a player could type.
-    | 'recruit' | 'admission' | 'curriculum' | 'expel';
+    | 'recruit' | 'admission' | 'curriculum' | 'expel'
+    /**
+     * The mission board, and taking something off it.
+     *
+     * `sect_members.contribution` is one of three independent axes of standing
+     * and it had NO EARNER: promotion spends it, `handleStipend` credits a
+     * trickle of it, and nothing else in the game could add to it, so
+     * "I do sect work for contribution" returned the generic mortal job board.
+     * `commissionBoard`, `boardRefusals` and the accept/complete/refuse ledger
+     * are what answer it, and none of them was reachable.
+     */
+    | 'duty';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -829,6 +840,44 @@ export const SECT_THEFT_PATTERN =
  * The two that do. "I leave" on its own is movement and "where do I stand" is a
  * status read, so both of these want the noun before they mean a sect.
  */
+/**
+ * The house's mission board, which needs a branch of its own and not a row in
+ * `SECT_INTENT_PATTERNS`.
+ *
+ * The sect block only runs on a sentence containing a sect noun, and half the
+ * sentences that mean this one do not have one: "I take a commission", "what
+ * duties are going", "I put my name down for the wall patrol". Worse, the two
+ * that DO have one were already taken - "I look at the sect mission board" by
+ * `look`, and "I do sect work for contribution" by `work`, which answered it
+ * with the mortal job board that pays in cash and moves no standing at all.
+ *
+ * So it fires early, ahead of both, and it is deliberately narrow: either an
+ * explicit board, or an institution word standing next to a work word.
+ * `contribution` is on the list by itself because there is exactly one thing in
+ * the game that pays in it.
+ */
+export const SECT_DUTY_PATTERN =
+    /\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b|\b(?:sect|house|order|clan|school)\b[^.!?]*\b(?:work|dut(?:y|ies)|commissions?|assignments?|errands?|missions?)\b|\b(?:commissions?|assignments?|dut(?:y|ies))\b[^.!?]*\b(?:going|available|on offer|posted|open)\b/;
+
+/**
+ * Taking one, said without the institution.
+ *
+ * "I take a commission" names no sect and is unambiguously about the board,
+ * because there is nothing else in this game called a commission. The verb has
+ * to be in verb position, so "the commission was already taken" is not an
+ * attempt to take it.
+ */
+export const DUTY_TAKING_VERBS =
+    'take|takes|taking|accept|accepts|accepting|volunteer|volunteers|'
+    + 'sign up|signs up|put my name';
+
+/** The nouns that make a taking verb a duty rather than a purchase. */
+export const DUTY_NOUNS = /\b(?:commissions?|assignments?|dut(?:y|ies)|missions?)\b/;
+
+/** The verbs a line is taken off the board with. */
+export const DUTY_SUBJECT_VERBS =
+    /take|takes|taking|accept|accepts|accepting|sign up for|signs up for|volunteer for|put my name (?:down )?(?:for|to)|do/;
+
 export const SECT_INTENT_PATTERNS: ReadonlyArray<[SectIntent, RegExp]> = [
     ['leave', /\b(?:leave|leaving|quit|resign|renounce|withdraw from|walk out (?:of|on)|abandon|defect|desert|break with)\b/],
     ['standing', /\b(?:standing|where do i stand|my rank|what rank|my position|my contribution|how (?:am i|do i) (?:doing|rate))\b/]
@@ -2438,6 +2487,30 @@ export function parseIntent(input: string): PlannedAction {
         return { action: 'seclude', days: parseDuration(text) ?? DEFAULT_SECLUSION_DAYS };
     }
 
+    // ── the house's own board, ahead of the mortal one ──
+    //
+    // `sect_members.contribution` had no earner, and this is the sentence that
+    // earns it. It must beat `work` (which answers with the village job board,
+    // paid in cash, moving no standing) and `look` (which answers with the
+    // weather). Requires a board noun or an institution beside a work noun, so
+    // "I take whatever work the village will give me" is untouched.
+    if (SECT_DUTY_PATTERN.test(text)
+        || (usedAsVerb(text, DUTY_TAKING_VERBS) && DUTY_NOUNS.test(text))) {
+        // A SUBJECT ONLY WHEN SOMETHING IS BEING TAKEN. Reading the wall and
+        // signing for a line off it are the same sentence with one verb
+        // changed, and the difference is an oath row with a due date on it. So
+        // the target is attached only where a taking verb is actually in verb
+        // position, and "I look at the sect mission board" carries none - which
+        // routes it to the read, which is the cheap branch. Same rule `site`,
+        // `petition`, `posture`, `seal` and `offer` all follow.
+        const taking = usedAsVerb(text, DUTY_TAKING_VERBS);
+        return {
+            action: 'sect',
+            intent: 'duty',
+            ...(taking ? { target: extractSubject(input, DUTY_SUBJECT_VERBS) } : {})
+        };
+    }
+
     // ── the mortal economy, before anything that spends time ──
     //
     // Deliberately ahead of `eat`, `trade` and `cultivate`. A player with no
@@ -2697,6 +2770,19 @@ export function parseIntent(input: string): PlannedAction {
     if (PLACE_HISTORY_PATTERNS.some(pattern => pattern.test(text))) {
         const where = namedAfter(input, PLACE_HISTORY_SUBJECT);
         return { action: 'look', intent: 'history', ...(where ? { target: where } : {}) };
+    }
+
+    // ── a master reading a student ──
+    //
+    // The same verb with the SUBJECT turned round, and it had no phrasing at
+    // all. "Am I ready", "have I stopped", "am I stuck here" are questions
+    // about the person asking - answered off their stagnation clock and off
+    // who in their house is actually standing above them - and every one of
+    // them either fell to the place read (answered with the weather) or to
+    // `unclear`. Ahead of the general assess rule, and it carries no target,
+    // which is what routes it to the student branch in `GameService.assess`.
+    if (/\b(?:am i (?:ready|stuck|stalled|finished|done|going anywhere)|have i (?:stopped|stalled|stagnated|gone as far)|how am i doing here|is there anything (?:left |more )?(?:for me )?here|has this place got anything|what do (?:they|the elders|my seniors) (?:make of|think of|see in) me|am i wasting my time)\b/.test(text)) {
+        return { action: 'assess' };
     }
 
     // ── assess: what happens if I try, which is not the same as looking ──

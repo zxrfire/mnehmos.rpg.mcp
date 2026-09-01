@@ -39,6 +39,7 @@ import { getHerb } from '../../data/cultivation/herbs.js';
 import { gradeRank } from '../../data/cultivation/techniques.js';
 import {
     FLAG_GRAIN_ABSTINENCE_UNTIL,
+    FLAG_BREAKTHROUGH_PILLS_TAKEN,
     FLAG_PENDING_PILL,
     FLAG_PILL_TOXICITY,
     addToPouch,
@@ -365,7 +366,10 @@ export async function handleConsumePill(
 
     const day = Math.floor(run.elapsedDays);
     const nextTurn = run.turn + 1;
-    const effect = resolvePillEffect(cultivator, pill, day);
+    const effect = resolvePillEffect(
+        cultivator, pill, day,
+        readNumberFlag(repos.db, cultivator.id, FLAG_BREAKTHROUGH_PILLS_TAKEN, 0)
+    );
 
     // ── Toxicity: the medicine keeps its own ledger. ──
     const toxicityBefore = readNumberFlag(repos.db, cultivator.id, FLAG_PILL_TOXICITY, 0);
@@ -473,7 +477,9 @@ interface PillApplication {
 function resolvePillEffect(
     cultivator: Parameters<typeof describeCultivator>[1],
     pill: Pill,
-    currentDay: number
+    currentDay: number,
+    /** How many breakthrough pills this life has already had. Read, never written. */
+    priorPillsTaken: number
 ): PillApplication {
     const base: PillApplication = {
         summary: '',
@@ -537,18 +543,37 @@ function resolvePillEffect(
             };
         }
         case 'boost_breakthrough': {
+            // The grade and the count go on the record AT CONSUMPTION, not at
+            // the attempt. `attemptBreakthrough` prices a graded pill through
+            // the real band curve and an ungraded one through the legacy flat
+            // `potency` path, and every pill in the catalog has a grade - so
+            // omitting it was routing every player pill down the fallback that
+            // exists for a synthesised pill with no catalog row behind it.
+            //
+            // The count is stamped here for a reason that is not convenience:
+            // permanent tolerance is a fact about the body that swallowed the
+            // pill on the day it swallowed it. Read at the attempt instead, a
+            // pill held through four later pills would grow weaker in the
+            // pouch, which is not something a pouch does.
             const pending: PendingPill = {
                 pillId: pill.id,
                 name: pill.name,
-                potency: pill.potency
+                potency: pill.potency,
+                grade: pill.grade,
+                priorPillsTaken
             };
             return {
                 ...base,
-                flags: { [FLAG_PENDING_PILL]: JSON.stringify(pending) },
+                flags: {
+                    [FLAG_PENDING_PILL]: JSON.stringify(pending),
+                    [FLAG_BREAKTHROUGH_PILLS_TAKEN]: String(priorPillsTaken + 1)
+                },
                 pendingPill: pending,
                 summary:
-                    `Held for the next bottleneck: +${round2(pill.potency * 100)} percentage points, ` +
-                    'applied by the engine at the moment of the attempt. It is spent whether the attempt succeeds or not.'
+                    `Held for the next bottleneck: +${round2(pill.potency * 100)} percentage points ` +
+                    `nominal, at ${pill.grade} grade, against ${priorPillsTaken} breakthrough pill(s) ` +
+                    'already taken in this life. The engine prices it at the moment of the attempt, ' +
+                    'and it is spent whether the attempt succeeds or not.'
             };
         }
         case 'advance_progress':

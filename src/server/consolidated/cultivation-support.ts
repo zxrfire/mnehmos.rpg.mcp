@@ -73,6 +73,7 @@ import {
     type ImmortalStatus,
     type Injury,
     type Run,
+    type TechniqueGrade,
     type TimeSkipResult,
     type TollCandidate,
     type TollResult,
@@ -273,6 +274,14 @@ export const FLAG_GRAIN_ABSTINENCE_UNTIL = 'grain_abstinence_until_day';
 export const FLAG_PENDING_PILL = 'pending_pill';
 export const FLAG_RANKS_THIS_TURN = 'ranks_this_turn';
 export const FLAG_PILL_TOXICITY = 'pill_toxicity';
+/**
+ * Breakthrough pills swallowed in this life, ever.
+ *
+ * Separate from toxicity, which decays against a tolerance and is about the
+ * body. This is the count `pillToleranceDecay` reads, and it never goes down:
+ * the fifth pill is worth less than the first for the rest of a life.
+ */
+export const FLAG_BREAKTHROUGH_PILLS_TAKEN = 'breakthrough_pills_taken';
 export const FLAG_STIPEND_PAID_DAY = 'stipend_paid_day';
 /** The crossing took the name. People have to be told it, every time. */
 export const FLAG_NAME_TAKEN = 'name_taken';
@@ -334,6 +343,27 @@ export interface PendingPill {
     pillId: string;
     name: string;
     potency: number;
+    /**
+     * The catalog row's grade.
+     *
+     * THE input that matters to `attemptBreakthrough`: it selects the real
+     * graded curve - base multiplier and the realm band the pill was made for -
+     * instead of the legacy flat `potency` path. Optional so a record written
+     * before this existed still loads, and so a synthesised pill with no
+     * catalog row behind it stays honest about having none.
+     */
+    grade?: TechniqueGrade;
+    /**
+     * How many breakthrough pills this cultivator had already taken when this
+     * one was swallowed.
+     *
+     * Drives permanent tolerance. Stamped at CONSUMPTION rather than read at
+     * the attempt, because the tolerance a pill is subject to is a fact about
+     * the body that swallowed it on the day it swallowed it - and a pill held
+     * for twenty years through four other pills should not quietly become
+     * weaker in the pouch.
+     */
+    priorPillsTaken?: number;
 }
 
 /**

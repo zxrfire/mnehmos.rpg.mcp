@@ -40,6 +40,8 @@ import {
 } from '../../engine/cultivation/index.js';
 import {
     TECHNIQUES,
+    capOf,
+    classOf,
     findTechniquesForOrdinal,
     getTechnique,
     gradeRank
@@ -185,8 +187,33 @@ function projectTechnique(
         description: technique.description,
         rootMatch: matched ? 'matched' : conflicts ? 'conflicting' : 'neutral',
         matchedBonus: matched ? root.matchedTechniqueBonus : 1,
+        // ── WHERE THE MANUAL STOPS ───────────────────────────────────────
+        //
+        // The single cheapest thing that makes the corridor above the middle
+        // of the ladder legible instead of cruel. `techniqueCap` is a HARD
+        // ceiling in `computeCultivationRate` - at or past it, progress is
+        // zero, not slow - and until this was reported a player found out by
+        // spending forty years discovering that the book they picked up ends
+        // at seventeen. A ceiling nobody can see before they commit to it is
+        // not a difficulty curve, it is a trap.
+        //
+        // `class` rides along because the two answers are easy to confuse: a
+        // dao art has no cap because it is not a cultivation manual and was
+        // never going to carry anybody anywhere, which is a different fact
+        // from a cultivation manual rated to the top of the ladder.
+        class: classOf(technique),
+        carriesToOrdinal: capFor(technique),
+        carriesToRank: capFor(technique) === null
+            ? null
+            : rankName(capFor(technique) as number),
         ...extra
     };
+}
+
+/** The rung this art carries a cultivator to, or null when it carries nobody. */
+function capFor(technique: Technique): number | null {
+    if (classOf(technique) !== 'cultivation') return null;
+    return technique.cap !== undefined ? technique.cap : capOf(technique);
 }
 
 function totalPractiseDays(args: { days?: number; months?: number; years?: number }): number {

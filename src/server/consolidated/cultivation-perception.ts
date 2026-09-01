@@ -67,7 +67,13 @@ import {
     type CapabilitySubject,
     type PredicateVerdict
 } from '../../engine/world/index.js';
-import { ApproachSchema, type Cultivator, type TechniqueGrade } from '../../schema/cultivation.js';
+import {
+    ApproachSchema,
+    stagnationYearsForOrdinal,
+    type Cultivator,
+    type TechniqueGrade
+} from '../../schema/cultivation.js';
+import { getMembersOf } from '../../data/cultivation/members.js';
 import { regardFor, type RegardAsker } from '../../engine/cultivation/regard.js';
 import { worldForRun } from '../state/cultivation-world.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
@@ -90,11 +96,13 @@ import {
 export const AssessSchema = z.object({
     action: z.literal('assess'),
     cultivatorId: z.string().optional(),
-    against: z.enum(['place', 'opponent', 'inscription']).default('place')
-        .describe('What is being attempted: going somewhere, acting against somebody, reading something'),
+    against: z.enum(['place', 'opponent', 'inscription', 'student']).default('place')
+        .describe('What is being attempted: going somewhere, acting against somebody, reading something, or a master reading a student'),
     place: z.string().optional()
         .describe('Place to assess. Defaults to where the cultivator is standing.'),
     opponentId: z.string().optional().describe('A cultivator in this campaign'),
+    studentId: z.string().optional()
+        .describe('The student being read. Defaults to the asking cultivator, which is the ordinary case: what does somebody qualified to judge me see.'),
     siteId: z.string().optional().describe('A discovered site whose inscription is being read'),
     alertness: z.number().min(0).max(1).optional()
         .describe('How much attention the other party is paying. Circumstance, not outcome.'),
@@ -103,6 +111,31 @@ export const AssessSchema = z.object({
     approach: ApproachSchema.optional()
         .describe('The half of the situation no stored row contains: what is being attempted, in what tone, with what leverage, in front of whom, and what rung the asker is letting the room believe. Optional, and omitting it is exactly the old behaviour. The engine reduces it to an apparent rung and a pressure of at most two rungs; it never reads an outcome out of it.')
 });
+
+/**
+ * The strongest person on the student's own roster who is genuinely above them.
+ *
+ * The same rule the cultivation rate's `guideOrdinal` reads, deliberately: what
+ * a master can tell a student and what a master is worth to a student's
+ * progress must be the same person, or the send-off and the rate would
+ * disagree about who is teaching.
+ */
+function assessorFor(
+    repos: CultivationRepos,
+    student: Cultivator
+): { id: string; name: string; realmOrdinal: number } | null {
+    const held = repos.sects.getMembership(student.id);
+    if (!held) return null;
+    let best: { id: string; name: string; realmOrdinal: number } | null = null;
+    for (const member of getMembersOf(held.sectId)) {
+        if (member.id === student.id) continue;
+        if (member.realmOrdinal <= student.realmOrdinal) continue;
+        if (!best || member.realmOrdinal > best.realmOrdinal) {
+            best = { id: member.id, name: member.name, realmOrdinal: member.realmOrdinal };
+        }
+    }
+    return best;
+}
 
 export const UnderstandingSchema = z.object({
     action: z.literal('understanding'),
@@ -201,6 +234,76 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
             },
             alertness: args.alertness ?? 1,
             preparation: args.preparation ?? 0
+        };
+    } else if (against === 'student') {
+        // ── A MASTER READING A STUDENT ───────────────────────────────────
+        //
+        // The gap this fills, found by a sweep of the schema rather than of the
+        // play: `against` had three values and none of them was a PERSON BEING
+        // TAUGHT. A master looking at a disciple and saying "you have taken
+        // what there is here; go" is the send-off the whole guidance term
+        // exists for, and it could not be asked for.
+        //
+        // Nothing here is authored. The assessor is a real person on the
+        // student's own roster who is genuinely standing above them, and the
+        // stall is `yearsAtCurrentRealm` against the ladder's own
+        // `stagnationYearsForOrdinal`. A house with nobody above the student
+        // supplies no assessor, and THAT is the send-off - stated as an absence
+        // rather than as advice.
+        const studentId = args.studentId ?? cultivator.id;
+        const student = studentId === cultivator.id
+            ? cultivator
+            : repos.cultivators.getById(studentId);
+        if (!student) {
+            return guidingError('unknown_cultivator', `No cultivator with id ${studentId}.`);
+        }
+
+        const assessor = assessorFor(repos, student);
+        const stagnationYears = stagnationYearsForOrdinal(student.realmOrdinal);
+        const stalled = student.yearsAtCurrentRealm >= stagnationYears;
+
+        subject = subjectFromOpposition({
+            id: student.id,
+            name: student.name,
+            realmOrdinal: student.realmOrdinal,
+            // A student is not resisting. Reading somebody who is standing
+            // still and letting you is the least alert thing in the game, and
+            // pricing it as an ambush would make every teacher an assassin.
+            alertness: 0,
+            preparation: args.preparation
+        });
+        gate = student.realmOrdinal;
+        context = {
+            student: {
+                id: student.id,
+                name: student.name,
+                rank: rankName(student.realmOrdinal),
+                realmOrdinal: student.realmOrdinal
+            },
+            // Who is qualified to say anything about them, and from what rung.
+            // Null is the loud answer: nobody in this house is above them.
+            assessor: assessor
+                ? {
+                    id: assessor.id,
+                    name: assessor.name,
+                    realmOrdinal: assessor.realmOrdinal,
+                    rank: rankName(assessor.realmOrdinal),
+                    rungsAbove: assessor.realmOrdinal - student.realmOrdinal
+                }
+                : null,
+            // What the ladder says about how long they have been standing here.
+            stall: {
+                yearsAtCurrentRealm: round2(student.yearsAtCurrentRealm),
+                stagnationYears: round2(stagnationYears),
+                stalled,
+                yearsPast: stalled ? round2(student.yearsAtCurrentRealm - stagnationYears) : 0,
+                yearsRemaining: stalled ? 0 : round2(stagnationYears - student.yearsAtCurrentRealm)
+            },
+            note: assessor === null
+                ? 'Nobody standing over them is standing above them. Whatever comes next is not in this house.'
+                : stalled
+                    ? 'They have been at this rung past the point where the ladder stops crediting the time.'
+                    : 'Still inside the span the ladder credits at this rung.'
         };
     } else if (against === 'inscription') {
         const site = args.siteId ? discoveredSite(repos, run.id, args.siteId) : null;
@@ -379,9 +482,14 @@ function findKnownLocation<T extends { id: string; name: string }>(
 
     if ((cultivator.location ?? '').trim().toLowerCase() === needle) return match;
 
+    // `canPointAt`, not `isAwareOf`. The two opened at different rungs of the
+    // discovery ladder the moment it existed: awareness starts at `whisper` and
+    // licenses saying a name, and pointing starts at `placed` and licenses
+    // acting on one. Assessing a place you have only overheard through a wall
+    // is acting on it.
     const gate = new KnowledgeGate(getDbFor());
-    if (gate.isAwareOf(cultivator.id, 'place', match.name)) return match;
-    if (gate.isAwareOf(cultivator.id, 'place', placeKey(match.id))) return match;
+    if (gate.canPointAt(cultivator.id, 'place', match.name)) return match;
+    if (gate.canPointAt(cultivator.id, 'place', placeKey(match.id))) return match;
     return null;
 }
 
