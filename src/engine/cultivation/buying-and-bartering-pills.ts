@@ -230,8 +230,19 @@ export function pillStorageModel(pill: Pill): PillStorageModel {
 // ─────────────────────────────────────────────────────────────────────────
 
 /** Progress pills anybody can simply buy. Derived, never listed. */
+/**
+ * Computed once. `PILLS` is a static catalog and `pillTradeTier` is pure over
+ * it, so the answer cannot change inside a process - and this is asked for
+ * every cultivator, every year, through `stonesPerQiUnitAt`. A CPU profile of a
+ * thousand-year advance put this function and its two neighbours at 2.2s of
+ * busy time, all of it recomputing the same filter over the same array.
+ */
+let commodityProgress: readonly Pill[] | null = null;
+
 export function commodityProgressPills(): readonly Pill[] {
-    return PILLS.filter(p => p.effect === 'advance_progress' && pillTradeTier(p) === 'commodity');
+    commodityProgress ??=
+        PILLS.filter(p => p.effect === 'advance_progress' && pillTradeTier(p) === 'commodity');
+    return commodityProgress;
 }
 
 /**
@@ -256,13 +267,17 @@ export function commodityProgressPills(): readonly Pill[] {
  * 29 is crazy rare" claim in `audit-alive-world.ts`. With it, the same sweep
  * puts none there on any seed and the middle bands keep everything they gained.
  */
+let marketCeiling: number | null = null;
+
 export function commodityMarketCeiling(): number {
+    if (marketCeiling !== null) return marketCeiling;
     let top = -1;
     for (const pill of PILLS) {
         if (pillTradeTier(pill) !== 'commodity') continue;
         const realm = REALM_TIERS.find(t => t.key === PILL_GRADE_REALM[pill.grade]);
         if (realm) top = Math.max(top, realm.ordinalEnd);
     }
+    marketCeiling = top;
     return top;
 }
 
@@ -285,10 +300,20 @@ export function commodityMarketCeiling(): number {
  * open market is any use at all, which is the correct answer above the point
  * where the commodity tier stops meaning anything.
  */
+const perQiUnit = new Map<number, number>();
+
 export function stonesPerQiUnitAt(realmOrdinal: number): number {
+    // Keyed on the rung, which is the whole of the input, and there are
+    // forty-seven of them. Everything below is pure over the static catalog.
+    const remembered = perQiUnit.get(realmOrdinal);
+    if (remembered !== undefined) return remembered;
+
     // Past the last realm anybody sells for money, there is no price. Not a
     // high one - none. See `commodityMarketCeiling`.
-    if (realmOrdinal > commodityMarketCeiling()) return Infinity;
+    if (realmOrdinal > commodityMarketCeiling()) {
+        perQiUnit.set(realmOrdinal, Infinity);
+        return Infinity;
+    }
     let best = Infinity;
     for (const pill of commodityProgressPills()) {
         const decay = pillBandDecay(pill.grade, realmOrdinal);
@@ -296,6 +321,7 @@ export function stonesPerQiUnitAt(realmOrdinal: number): number {
         if (!(delivered > 0)) continue;
         best = Math.min(best, pill.value / delivered);
     }
+    perQiUnit.set(realmOrdinal, best);
     return best;
 }
 
