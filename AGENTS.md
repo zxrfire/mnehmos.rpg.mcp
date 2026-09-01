@@ -360,6 +360,117 @@ and never to `upstream`.
 
 ---
 
+## Lessons that keep having to be relearned
+
+Every item below was a real correction from the design owner or a real bug found by
+playing the game rather than by reading it. They repeat, which is why they are written
+down.
+
+### The world's rules must bind the player too
+
+The commonest defect in this repo by a distance. A system is built for the simulation,
+binds every NPC correctly, and does not reach the played game at all - so the world runs
+on one set of rules and the player on another.
+
+Worked examples, all found by playing:
+
+- **Books.** `manuals.ts` seeds sect libraries, hands copies to members, prices the
+  betrayal of selling one, and caps every NPC at the best book they hold. A player could
+  name any art they had the rung for and simply have it. Seventeen of twenty-four roads
+  were open that way.
+- **Ground.** Every settlement declares an `ambient` band and the world stamped them all
+  with their province's average, so Nine Peaks - "the deepest vein anyone has kept" - was
+  arithmetically identical to a thin ford town, and rolled thin thirty-four months out of
+  thirty-six.
+- **Wounds.** `NpcCultivation.untreatedInjuries` is an integer, so no NPC can carry a
+  typed wound the player can carry.
+
+When you finish a world system, ask what the player's path through it is, and go and play
+it. If the answer is "the player does not have one", the system is half-built.
+
+### If a near-synonym works, the phrasing that fails is a bug
+
+"I refine a pill" was understood and "I make a pill" reached nothing, so the whole alchemy
+subsystem was accessible only to somebody who guessed the one verb. Same for "I take a
+duty" against "what duties are there", and "what is my rank" against "what rank am I".
+
+A player cannot find the working half except by guessing, and the failing half is usually
+the more natural phrasing. When you add a verb, try the three or four ways somebody would
+actually say it, and try the ways they would say the thing next to it to check you have
+not swallowed it.
+
+### The player must be able to type back what the game printed
+
+The listing named ruins - "The Gate Frame With No Gate In It" - and the parser accepted
+only the id slug, which is shown nowhere. Typing back what the game had just said reached
+nothing. Any name the game prints is a name the game must accept.
+
+### Fix the gap that was demonstrated, not the one you imagined
+
+Having found that `ruin` was missing from the site nouns, the first fix also added scars,
+sealed domains, forbidden zones and spirit veins. Those words live in the *names* of
+places a player travels to, so the change stole sentences from `investigate` and from
+ordinary place resolution. Two tests caught it. Narrow to what you actually saw fail.
+
+### Rarity is a population statement, not a price
+
+"Rare to a degree where most people just live with it" is a measurement of a cohort: of
+everybody carrying the condition, what fraction is ever treated? A thing can be priced
+astronomically and still be common if the people who need it can all get one. Measure the
+cohort, not the cost.
+
+Its sibling: **a count needs a physical reason.** An apex holds one or two copies of its
+deepest manual because copying it out takes the patriarch's own time and nobody else can
+do it. That survives the next content pass; "legendary tier, therefore two" does not.
+
+### Holding a thing and being able to pass it on are different facts
+
+A house's shelf says what it *has*. What gets across depends on teaching capacity, which
+is a different number - one leader's occasional hours at an apex, against four people at
+the Hollow Court who do nothing else. Two bodies with identical shelves can produce
+utterly different numbers of high cultivators, and that difference is usually the
+interesting part.
+
+### "Typically does not" is not "never"
+
+Court members are famous, unapproachable and usually silent. They are also "people and
+not demons", and one might show you a thing or two. A rule modelled as an impossibility
+throws away the rare event that makes the ordinary case worth having. Build the tendency,
+leave the door open.
+
+### Decline is correct for a house and wrong for the world
+
+Sects rise and fall; that is the setting working. The world's standing distribution
+collapsing to 98% at the bottom with empty bands in the middle is not a Late Age, it is
+unreplaced attrition wearing its clothes. When you measure decline, split it: which
+institutions ended, and what happened to the population's shape.
+
+And when you count a band, split **survivors from arrivals**. A band held entirely by
+people who were there at seeding is a dying band however healthy its headcount looks.
+
+### A ruling about one body is not a general mechanic
+
+A constraint given for the Hollow Court was generalised into a universal rule and had to
+be retracted in writing. If the design owner says a thing about one faction, it is about
+that faction until they say otherwise. Ask before promoting it.
+
+### A test can encode a defect
+
+Four calibration tests asserted a ladder that stopped at Core Formation. They were
+measuring a sweep that priced every rung at ordinal zero, and their bars had been derived
+from that broken arithmetic - one docstring even reasoned from it explicitly. Passing
+tests are evidence, not proof. When a fix turns tests red, read whether they assert the
+intent or the bug, and re-derive rather than reverting a correct change.
+
+### The register is a reflection, not a source
+
+The standing register must be readable off the world's own state. Where it says a house
+holds something, the house holds it; where it says a body wants something, that want is
+still coherent with what that body now is. A want pointed several tiers below its holder
+is the signature of an earlier draft, and finding one usually means finding more.
+
+---
+
 ## Boundaries when working in parallel
 
 Multiple agents may be working this repo simultaneously. Stay inside your assigned file
