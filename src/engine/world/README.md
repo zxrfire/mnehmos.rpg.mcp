@@ -1127,6 +1127,95 @@ the figure from before any of this existed.
 
 ---
 
+## A house may fall. The ladder may not.
+
+The two halves of that sentence are different facts and the code collapsed them into
+one for a long time, which is how a genuinely broken world passed for a Late Age.
+
+**A house declining is the setting working.** Houses lose their ground, fail to replace
+an elder, are destroyed in a war. Measured on a seeded world at five hundred years, half
+the thirty-two houses it starts with are gone, and that is correct.
+
+**The world's standing distribution declining is not the same fact and was never
+wanted.** Measured before the change this section documents, one seed at three thousand
+years:
+
+```text
+  band     mortal   qi   found  core  nascent  deity  void  body  grand  trib
+  people      120  345      13     3        1      1     0     0      0     0
+```
+
+96% of the living at or below Qi Condensation, four consecutive empty bands above the
+middle, and every person in the top three bands a survivor of the seeding rather than
+somebody who climbed. That is unreplaced attrition wearing a Late Age's clothes.
+
+### The mechanism: literacy was seeded once and never manufactured again
+
+`manualsOf` reads `teaches` off the content catalog, keyed by the id of a house somebody
+wrote by hand. Every house the world **founds for itself** - `faction_founded`, which is
+the ordinary way institutions replace each other - has no catalog entry, so it read back
+an empty shelf and could teach nobody anything for as long as it stood. Institutional
+churn was therefore a one-way ratchet on the world's knowledge, and the three columns
+move together:
+
+```text
+  years   houses standing   holding a shelf   books held by the living
+      0                32                30                         68
+    500                40                11                         46
+   1500                31                 7                         29
+   3000                47                 5                          6
+```
+
+With no reachable ceiling the flow up the ladder stops, and a distribution with no inflow
+can only erode toward the rung people enter at.
+
+**`shelfOf(state, factionId)` is the fix, and it is this file's own rule applied.** The
+header of `manuals.ts` already says a manual is an object with a holder and a count, and
+`seedSectLibraries` already puts every catalog house's working library into
+`state.objects`; nothing read them back. A house's shelf is now the catalog's statement
+**union what the house is actually holding**, and `librariesCarriedOutBy` writes the
+library a founded house starts with - the copies its founders walked out with, read off
+`techniqueIds` the world was already storing. There is no branch anywhere on whether a
+house is a catalog house or a founded one, and at seeding the two sources are identical,
+so every seeded world reads exactly as it did before.
+
+### The second half: a schedule is not a sample
+
+`applyAdvancement` drew `living / 40` people at random each year. Over a hundred-year Qi
+Condensation lifespan that leaves a seventh of everybody never looked at, and it bites
+hardest at ordinal 12 to 13, where lifespan goes from a hundred years to two hundred:
+somebody whose walk would carry them across at ninety and who is not drawn in their last
+decade dies at a hundred having been able to cross the whole time. Measured at three
+thousand years, **356 of 492 living people were standing below the ordinal the rules
+already granted them** at their own age, ceiling and rank. The distribution was being
+produced by a coin rather than by the ladder.
+
+It is now a rotation: the roster is sliced by a stable hash of the id and one slice is
+walked per year, so every living person is reviewed once every `ADVANCEMENT_REVIEW_YEARS`
+whatever else happens. Nothing about it is stochastic, so nothing about it draws on the
+world seed.
+
+The two together, same seed, three thousand years:
+
+```text
+  band     mortal   qi   found  core  nascent  deity  void  body  grand  trib
+  before      120  345      13     3        1      1     0     0      0     0
+  after        23  340      79    33       23      4     1     1      0     2
+```
+
+and at five hundred years across six seeds every band from Foundation Establishment to
+Void Refinement is occupied, 69-80% of the world stands at or below Qi Condensation, and
+81-143 of the people above it were born after the seeding. `tests/engine/world/
+demography.test.ts` pins both halves; `scripts/probe-who-refills-each-band.ts` is the
+measurement, and it splits every band into survivors and arrivals because a band held
+entirely by survivors is a band that is dying however healthy its headcount reads.
+
+**What was deliberately not changed.** The life-walk itself is not the wall and was left
+alone: run with no ceiling at all it reaches ordinal 45 given the years, and the ceiling
+is what people were short of. The apex is still not a procedural product - `seedNamedFigures`
+and `seedFactionApex` instantiate it, for the reason stated in `seeding.ts` - and nothing
+here makes advancement easier at any rung.
+
 ## Reading order
 
 ```text
@@ -1141,7 +1230,8 @@ npc-state.ts     NPCs as small durable records; goals outlive their holder
 memory.ts        durable memories, search, and the LLM-driven compression write path
 world-state.ts   the authoritative store; plain serialisable data, pure mutations
 time.ts          advanceTime: what fell due, what was running, what was missed
-manuals.ts       who holds a book, and who a house has decided is worth its top shelf
+manuals.ts       who holds a book, what shelf a house actually has, and who it
+                 has decided is worth the top of it
 gatherings.ts    the chosen of allied houses meet; meetings, bouts, rankings, sites
 the-ties-an-ordinary-life-produces.ts
                  households, teaching lines, shared service and being passed
