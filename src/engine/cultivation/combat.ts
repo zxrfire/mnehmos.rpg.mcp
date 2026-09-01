@@ -71,7 +71,6 @@ import { understandingEffects, type RelevanceContext } from './understanding.js'
 import { getSpiritRoot } from './spirit-roots.js';
 import { readManual } from './manual-quality.js';
 import { ambientBreakthroughMod } from './ambient.js';
-import { brokenStatusOf } from './what-goes-wrong-at-a-realm-boundary.js';
 import {
     killRequirement,
     soulAttacksAffect,
@@ -369,7 +368,13 @@ export function combatPowerForOrdinal(ordinal: number, status: ImmortalStatus = 
 }
 
 /**
- * What a cultivator carrying a broken status is worth, in raw realm terms.
+ * The window a broken cultivator's power has to land in.
+ *
+ * NOT applied as a bracket - `assessPower` gives them their rung's ordinary
+ * figure and lets the ordinary injury penalty do the work, because "41 with
+ * cracks IS half-step 41" and a bespoke power band would be a second mechanism
+ * for something the wound list already expresses. This function is the TARGET
+ * that penalty has to hit, and it is what the tests measure against.
  *
  * The ordering the design asks for is strict: WEAKER THAN EVERY OTHER HOLDER OF
  * THEIR OWN RUNG, AND STRONGER THAN EVERY HOLDER OF THE RUNG BELOW. That keeps
@@ -434,13 +439,20 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     const status = combatant.immortalStatus ?? 'none';
     const tradition = traditionOrDefault(combatant.traditionId);
     const tier = realmForOrdinal(ordinal);
-    // A broken status is read off the wound list and replaces the rung's own
-    // figure: they are at this rung, and they are the weakest thing on it. See
-    // `brokenCombatPowerForOrdinal`.
-    const broken = status === 'none' ? brokenStatusOf(combatant.injuries ?? []) : null;
-    const realmBase = broken
-        ? brokenCombatPowerForOrdinal(ordinal)
-        : combatPowerForOrdinal(ordinal, status);
+    // NO SPECIAL BRACKET FOR A BROKEN CULTIVATOR.
+    //
+    // "41 with cracks IS half-step 41" - they are at the rung, they carry a
+    // structural injury, and the ORDINARY injury penalty is what stops them
+    // using the full power of it. That is the whole mechanism, and it
+    // generalises to every boundary somebody crosses carrying a break rather
+    // than being a rule about one rung.
+    //
+    // The ordering it has to produce - weaker than every intact holder of their
+    // rung, stronger than every holder of the rung below - therefore falls out
+    // of `aggregateInjuryPenalties` rather than being asserted here. See
+    // `brokenCombatPowerForOrdinal` for the window that penalty has to land in
+    // and for where the ordering provably cannot hold.
+    const realmBase = combatPowerForOrdinal(ordinal, status);
 
     const injuries = aggregateInjuryPenalties(combatant.injuries);
     const tempering = scarTempering(combatant.injuries);

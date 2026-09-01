@@ -20,6 +20,8 @@ import {
     BROKEN_STATUS_FOR_TRIAL,
     CROSSING_OUTCOMES,
     HALTING_WOUND,
+    applyCrossingConsequence,
+    blocksAdvancement,
     brokenStatusFor,
     brokenStatusOf,
     brokenStatusRepairedBy,
@@ -30,6 +32,7 @@ import {
     outcomesForTrial,
     resolveCrossingFailure,
     rollArrivesBroken,
+    structuralBlockOn,
     trialForOrdinal
 } from '../../../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { getWoundType, isPermanentWound, woundNature, WOUND_TYPES } from '../../../src/data/cultivation/wounds.js';
@@ -134,7 +137,7 @@ describe('every outcome lands in state the rest of the engine already reads', ()
     it('writes only fields that existed before this module did', () => {
         const allowed = new Set([
             'injuries', 'foundationQuality', 'yearsBurned',
-            'soulState', 'identityContinuity', 'halted'
+            'soulStateFloor', 'identityContinuityFactor', 'halted'
         ]);
         const subject = { realmOrdinal: 32, injuries: [], foundationQuality: 'stable' as const, age: 3000 };
         for (const outcome of CROSSING_OUTCOMES) {
@@ -165,16 +168,16 @@ describe('every outcome lands in state the rest of the engine already reads', ()
         expect(woundNature(out.injuries[0].woundType)).toBe('mental');
         // Power intact, person gone: the soul and the continuity move, and the
         // ordinal does not.
-        expect(out.soulState).toBe('fragmented');
-        expect(out.identityContinuity!).toBeLessThan(0.5);
-        expect(out.identityContinuity!).toBeGreaterThan(0);
+        expect(out.soulStateFloor).toBe('fragmented');
+        expect(out.identityContinuityFactor!).toBeLessThan(0.5);
+        expect(out.identityContinuityFactor!).toBeGreaterThan(0);
     });
 
     it('leaves half madness functional and wrong rather than gone', () => {
         const half = CROSSING_OUTCOMES.find(o => o.key === 'half_mad')!;
         const out = half.apply({ realmOrdinal: 28, injuries: [] }, rng(), { turn: 1 });
-        expect(out.identityContinuity!).toBeGreaterThan(0.5);
-        expect(out.soulState).toBe('damaged');
+        expect(out.identityContinuityFactor!).toBeGreaterThan(0.5);
+        expect(out.soulStateFloor).toBe('damaged');
     });
 });
 
@@ -251,17 +254,17 @@ describe('a cultivator who crossed and can never cross again', () => {
         }
         // And the crossing INTO the last realm, which is lightning but still
         // leaves its own casualty.
-        expect(brokenStatusFor(40)).toBe('broken-step');
+        expect(brokenStatusFor(40)).toBe('unformed-tribulation-body');
     });
 
     it('is a status on top of a rung and never a rung of its own', () => {
         // The ladder keeps its rungs. Somebody who cracks going into
         // Tribulation Transcendence is at 41 carrying a broken step.
         const wound = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'broken-step' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unformed-tribulation-body' },
             rng()
         );
-        expect(brokenStatusOf([wound])).toBe('broken-step');
+        expect(brokenStatusOf([wound])).toBe('unformed-tribulation-body');
         expect(isHalted({ injuries: [wound] })).toBe(true);
     });
 
@@ -313,10 +316,10 @@ describe('striking on a break is legal, suicidal, and curative if it lands', () 
         // is your own effort, so the one thing that would answer this is
         // forbidden exactly where it is needed.
         const wound = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'broken-step' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unformed-tribulation-body' },
             rng()
         );
-        expect(isRepairableInTheCrucible('broken-step')).toBe(false);
+        expect(isRepairableInTheCrucible('unformed-tribulation-body')).toBe(false);
         expect(brokenStatusRepairedBy([wound])).toBeNull();
     });
 
@@ -330,10 +333,10 @@ describe('striking on a break is legal, suicidal, and curative if it lands', () 
         // Marking it treated would leave it counting as scar tissue against
         // SCAR_PLATEAU - charging attrition for a wound no longer carried.
         const wound = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'open-seam' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'failed-body-joining' },
             rng()
         );
-        const after = clearBrokenStatus([wound, createInjury({ severity: 'minor', source: 'combat', turn: 1 }, rng())], 'open-seam');
+        const after = clearBrokenStatus([wound, createInjury({ severity: 'minor', source: 'combat', turn: 1 }, rng())], 'failed-body-joining');
         expect(after).toHaveLength(1);
         expect(after[0].woundType).toBeNull();
     });
@@ -375,5 +378,69 @@ describe('halting reads off the wound list and nowhere else', () => {
             rng()
         );
         expect(isHalted({ injuries: [ruined] })).toBe(true);
+    });
+});
+
+describe('ruin compounds and never restores', () => {
+    it('takes the worse soul state rather than assigning the new one', () => {
+        // The bug this replaced: going mad and then going half mad UPGRADED the
+        // soul from fragmented back to damaged, so the more times the world
+        // broke somebody the more intact they got.
+        const self = { soulState: 'fragmented' as const, identityContinuity: 0.35, age: 100 };
+        const after = applyCrossingConsequence(self, { injuries: [], soulStateFloor: 'damaged' });
+        expect(after.soulState).toBe('fragmented');
+    });
+
+    it('still worsens a soul that is currently better', () => {
+        const self = { soulState: 'intact' as const, identityContinuity: 1, age: 100 };
+        expect(applyCrossingConsequence(self, { injuries: [], soulStateFloor: 'damaged' }).soulState)
+            .toBe('damaged');
+    });
+
+    it('multiplies identity continuity rather than assigning it', () => {
+        // Two Severings at 0.75 leave 56%, not 75%.
+        let self = { soulState: 'intact' as const, identityContinuity: 1, age: 100 };
+        self = applyCrossingConsequence(self, { injuries: [], identityContinuityFactor: 0.75 }) as typeof self;
+        expect(self.identityContinuity).toBeCloseTo(0.75, 5);
+        self = applyCrossingConsequence(self, { injuries: [], identityContinuityFactor: 0.75 }) as typeof self;
+        expect(self.identityContinuity).toBeCloseTo(0.5625, 5);
+    });
+
+    it('adds burnt years rather than setting an age', () => {
+        let self = { soulState: 'intact' as const, identityContinuity: 1, age: 500 };
+        self = applyCrossingConsequence(self, { injuries: [], yearsBurned: 200 }) as typeof self;
+        self = applyCrossingConsequence(self, { injuries: [], yearsBurned: 200 }) as typeof self;
+        expect(self.age).toBe(900);
+    });
+
+    it('leaves everything untouched when the outcome says nothing about it', () => {
+        const self = { soulState: 'damaged' as const, identityContinuity: 0.6, age: 100 };
+        expect(applyCrossingConsequence(self, { injuries: [] })).toEqual(self);
+    });
+});
+
+describe('which wounds travel up the ladder and which stop you', () => {
+    const wound = (woundType: string) =>
+        createInjury({ severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType }, rng());
+
+    it('lets mental and ordinary physical wounds cross with you', () => {
+        // A heart demon is carried up the ladder and may even be shed on the
+        // way. What it does is make everything harder, not stop the build.
+        for (const key of ['heart-demon', 'heart-demon-rooted', 'severed-meridian', 'span-burnt', 'torn-meridians']) {
+            expect(blocksAdvancement(wound(key))).toBe(false);
+        }
+    });
+
+    it('stops you on a cracked structure, because the next thing will not build', () => {
+        // Mechanical rather than punitive: a core does not form on a cracked
+        // foundation, the same way it cannot form before one exists.
+        for (const key of BROKEN_STATUSES) {
+            expect(blocksAdvancement(wound(key))).toBe(true);
+        }
+    });
+
+    it('reports which structural break is doing the stopping', () => {
+        expect(structuralBlockOn([wound('heart-demon'), wound('cracked-core')])).toBe('cracked-core');
+        expect(structuralBlockOn([wound('heart-demon')])).toBeNull();
     });
 });
