@@ -1285,7 +1285,12 @@ export class GameService {
         // inside this world rather than a world of its own - which is what
         // makes the ruins the new cultivator digs through the previous
         // cultivator's. When there is no world, the seed factory stands in.
-        const previousRun = this.repos.runs.deathLedger(1)[0] ?? null;
+        // `latestFinishedRun` rather than the ledger. "Which world does this
+        // life begin in" and "what does this world's record of deaths say" are
+        // different questions, and the ledger now excludes admin-rigged runs in
+        // SQL - so reading lineage off it would have handed a fresh run a null
+        // world the moment an operator flagged the run before it.
+        const previousRun = this.repos.runs.latestFinishedRun();
         const world = this.worldEnabled && previousRun ? await worldForRun(previousRun) : null;
         const plan = world
             ? planNextRun(world, {
@@ -1640,7 +1645,7 @@ export class GameService {
             throw new GameError('Admin mode is off. Set ADMIN_MODE=true to enable the roster.', 403);
         }
         const player = this.repos.runs.getActiveRun()?.cultivatorId
-            ?? this.repos.runs.deathLedger(1)[0]?.cultivatorId
+            ?? this.repos.runs.latestFinishedRun()?.cultivatorId
             ?? null;
         // Both populations. The database holds the player and whoever a run
         // wrote down; the world holds the several hundred people who were
@@ -1687,7 +1692,7 @@ export class GameService {
     async loadWorld(): Promise<WorldState | null> {
         this.useOwnDb();
         if (!this.worldEnabled) return null;
-        const run = this.repos.runs.getActiveRun() ?? this.repos.runs.deathLedger(1)[0] ?? null;
+        const run = this.repos.runs.getActiveRun() ?? this.repos.runs.latestFinishedRun() ?? null;
         return run ? worldForRun(run) : null;
     }
 
@@ -9257,7 +9262,7 @@ ${fit.line}`;
 
     /** The newest run - live if there is one, otherwise the last one to end. */
     private currentRun(): { run: Run; cultivator: Cultivator } {
-        const run = this.repos.runs.getActiveRun() ?? this.repos.runs.deathLedger(1)[0] ?? null;
+        const run = this.repos.runs.getActiveRun() ?? this.repos.runs.latestFinishedRun() ?? null;
         if (!run) throw new GameError('No run has been started yet.', 404);
         const cultivator = this.repos.cultivators.getById(run.cultivatorId);
         if (!cultivator) throw new GameError('This run has no cultivator. The save is inconsistent.', 500);
