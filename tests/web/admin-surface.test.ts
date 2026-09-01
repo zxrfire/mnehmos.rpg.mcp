@@ -20,6 +20,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { makeGame } from './harness';
+import { parseAdminCommand } from '../../src/server/consolidated/admin-manage';
 
 /** ADMIN_MODE is read at call time, so a test can turn it on and put it back. */
 async function withAdmin<T>(on: boolean, fn: () => Promise<T>): Promise<T> {
@@ -51,6 +52,62 @@ describe('the ADMIN prefix is made of the characters it appears to be made of', 
     });
 });
 
+/**
+ * The argument grammar.
+ *
+ * Found by playing, and it was the worst defect on the surface: the command
+ * line was split on whitespace and a value taken up to the next space, so
+ * `location=The Dead Verge` set the location to "The" and quoting it set it to
+ * `"The`. MOST OF THIS WORLD'S GAZETTEER IS MULTI-WORD - The Dead Verge, Nine
+ * Peaks, The Low Fall, The Drowned Reach, Salt Reach - so most of the map was
+ * unreachable from the admin surface and no environmental gating could be
+ * exercised at all.
+ */
+describe('an ADMIN value runs to the next key, not to the next space', () => {
+    it('takes a bare multi-word value whole', () => {
+        expect(parseAdminCommand('set_location location=The Dead Verge')).toEqual({
+            action: 'set_location',
+            args: { location: 'The Dead Verge' }
+        });
+    });
+
+    it('takes a quoted value and keeps no quotes', () => {
+        for (const line of [
+            'set_location location="The Dead Verge"',
+            "set_location location='The Dead Verge'"
+        ]) {
+            expect(parseAdminCommand(line).args.location).toBe('The Dead Verge');
+        }
+    });
+
+    it('still splits several pairs on one line', () => {
+        expect(parseAdminCommand('spawn_site ordinal=41 kind=grave')).toEqual({
+            action: 'spawn_site',
+            args: { ordinal: 41, kind: 'grave' }
+        });
+    });
+
+    it('ends a multi-word value at the next key rather than swallowing it', () => {
+        expect(parseAdminCommand('spawn_site name=The Glass Where the Count Stopped ordinal=42'))
+            .toEqual({
+                action: 'spawn_site',
+                args: { name: 'The Glass Where the Count Stopped', ordinal: 42 }
+            });
+    });
+
+    it('coerces only what is entirely a number or a flag', () => {
+        const { args } = parseAdminCommand('x a=41 b=abc-123 c=true d=false e=Nine Peaks');
+        expect(args).toEqual({
+            a: 41, b: 'abc-123', c: true, d: false, e: 'Nine Peaks'
+        });
+    });
+
+    it('answers a bare command with an action and no arguments', () => {
+        expect(parseAdminCommand('roster')).toEqual({ action: 'roster', args: {} });
+        expect(parseAdminCommand('')).toEqual({ action: '', args: {} });
+    });
+});
+
 describe('ADMIN is answered before the narrator sees it', () => {
     it('lists the actions when told nothing else', async () => {
         await withAdmin(true, async () => {
@@ -74,10 +131,17 @@ describe('ADMIN is answered before the narrator sees it', () => {
             expect(cultivator.realmOrdinal).toBe(0);
 
             const result = await game.act('ADMIN: spawn_site kind=grave ordinal=41');
-            expect(result.narration).toMatch(/site spawned/i);
+            expect(result.narration).toMatch(/site revealed/i);
             expect(result.narration).toMatch(/tribulation transcendence/i);
-            // ADMIN bypasses gates, not truth: the engine made a real thing.
-            expect(result.narration).toMatch(/persisted|real/i);
+            // ADMIN bypasses gates, not truth. The gate lifted is awareness -
+            // the site itself is a real catalogued one and every bar inside it
+            // still stands. It used to write an invented row into
+            // `cultivation_sites` that no player-facing path has ever read.
+            expect(result.narration).toMatch(/awareness gate lifted/i);
+            expect(result.narration).toMatch(/every gate inside this site still stands/i);
+            // And the whole internal state object no longer lands in the log.
+            expect(result.narration).not.toContain('ADMIN_MANAGE_JSON');
+            expect(result.narration).toMatch(/out of world/i);
         });
     });
 

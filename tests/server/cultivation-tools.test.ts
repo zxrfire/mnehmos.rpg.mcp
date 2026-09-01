@@ -22,7 +22,7 @@ import {
     handleAlchemyManage
 } from '../../src/server/consolidated/alchemy-manage.js';
 import { SectManageTool, handleSectManage } from '../../src/server/consolidated/sect-manage.js';
-import { AdminManageTool, handleAdminManage } from '../../src/server/consolidated/admin-manage.js';
+import { AdminManageTool, adminResult, handleAdminManage } from '../../src/server/consolidated/admin-manage.js';
 import { ConsolidatedTools } from '../../src/server/consolidated/index.js';
 import { closeDb, getDb } from '../../src/storage/index.js';
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
@@ -38,6 +38,9 @@ import {
     tollCandidatesFor
 } from '../../src/server/consolidated/cultivation-support.js';
 import { GRAIN_ABSTINENCE_PILL_ID, MINOR_HEALING_PILL_ID } from '../../src/data/cultivation/pills.js';
+import { getSite } from '../../src/data/cultivation/inheritance-trials.js';
+import { KnowledgeGate } from '../../src/web/knowledge.js';
+import { SiteLedger, nameableSites } from '../../src/web/trials.js';
 import {
     DAYS_PER_YEAR,
     forStream,
@@ -67,7 +70,10 @@ const technique = async (args: Record<string, unknown>) =>
     payload(await handleTechniqueManage(args, ctx));
 const alchemy = async (args: Record<string, unknown>) => payload(await handleAlchemyManage(args, ctx));
 const sect = async (args: Record<string, unknown>) => payload(await handleSectManage(args, ctx));
-const admin = async (args: Record<string, unknown>) => payload(await handleAdminManage(args, ctx));
+// ADMIN is the one surface that embeds no machine payload in its text: the
+// blob used to be dumped straight into the player's narrative log. `adminResult`
+// is the door for a caller that wants the object, which is what a test wants.
+const admin = async (args: Record<string, unknown>) => (await adminResult(args)) as any;
 
 /**
  * A seed whose first talent draw satisfies `predicate`.
@@ -1341,22 +1347,64 @@ describe('cultivation MCP tool surface', () => {
             expect(stored.realmOrdinal).toBe(0);
         });
 
-        it('spawns a real, persisted site whose contents the engine rolled', async () => {
+        // Found by playing: `spawn_site` reported SUCCESS and the site was not
+        // there. It wrote a fresh row into `cultivation_sites` with rolled
+        // contents, and NOTHING player-facing has ever read those rows - the
+        // whole site surface runs over the authored catalog, gated on a
+        // knowledge record, and `SiteLedger` drops any row whose id is not a
+        // catalog id. So the spawn was real in SQLite and unreachable in the
+        // game, twice, and the second look answered "it is not the kind of
+        // place that has one". A tool that reports success for work it did not
+        // do is worse than one that fails.
+        it('reveals a real catalogued site, and the cultivator can then name it', async () => {
             process.env.ADMIN_MODE = 'true';
-            await newRun();
+            const created = await newRun();
 
             const result = await admin({ action: 'spawn_site', ordinal: 44, kind: 'grave' });
             expect(result.spawned).toBe(true);
-            expect(result.site.ordinal).toBe(44);
-            expect(result.gateLifted.playerOrdinal).toBe(0);
-            expect(result.site.contents.spiritStones).toBeGreaterThan(0);
+            expect(result.revealed).toBe(true);
+            expect(result.gateLifted.what).toBe('awareness');
 
-            const row = db
-                .prepare('SELECT * FROM cultivation_sites WHERE id = ?')
-                .get(result.site.id) as any;
-            expect(row).toBeDefined();
-            expect(row.admin_spawned).toBe(1);
-            expect(JSON.parse(row.contents).spiritStones).toBe(result.site.contents.spiritStones);
+            // It is a catalog site, not an invention.
+            expect(getSite(result.site.catalogId)).toBeDefined();
+            expect(result.site.name).toBe(getSite(result.site.catalogId)!.name);
+            expect(result.site.ordinal).toBe(44);
+
+            // And the gate that was actually in the way is down: the player can
+            // now name it, which is the whole predicate `nameableSites` rests on.
+            const gate = new KnowledgeGate(db);
+            expect(gate.isAwareOf(created.cultivator.id, 'place', result.site.catalogId)).toBe(true);
+            expect(
+                nameableSites(id => gate.isAwareOf(created.cultivator.id, 'place', id))
+                    .some(s => s.id === result.site.catalogId)
+            ).toBe(true);
+
+            // The ledger row is keyed the way the player-facing reader expects,
+            // so "I go inside" resolves to it rather than to nothing.
+            expect(new SiteLedger(db).atHand(created.run.id)?.catalogId)
+                .toBe(result.site.catalogId);
+        });
+
+        it('refuses a site the catalog does not hold, and names the near misses', async () => {
+            process.env.ADMIN_MODE = 'true';
+            await newRun();
+
+            const result = await admin({
+                action: 'spawn_site', name: 'Cave of a Tribulation Transcendence Cultivator'
+            });
+            expect(result.error).toBe('unknown_site');
+            expect(result.nearest.length).toBeGreaterThan(0);
+        });
+
+        it('says when the catalog has no site at the rung that was aimed at', async () => {
+            process.env.ADMIN_MODE = 'true';
+            await newRun();
+
+            // The catalog is authored and has graves at 44 and 42, not at 43.
+            const result = await admin({ action: 'spawn_site', ordinal: 43, kind: 'grave' });
+            expect(result.spawned).toBe(true);
+            expect(result.site.ordinal).not.toBe(43);
+            expect(result.selection).toMatch(/nearest catalogued site/);
         });
 
         it('spawns an encounter as a real cultivator with engine-rolled talent', async () => {
@@ -1462,6 +1510,18 @@ describe('cultivation MCP tool surface', () => {
 
             const withAdmin = await run({ action: 'ledger', includeAdminRuns: true });
             expect(withAdmin.count).toBe(1);
+
+            // AND AT THE REPOSITORY, which is what /api/ledger reads.
+            // `run_manage.ledger` filtered admin runs out in its own handler and
+            // nothing else did, so a run named "Scenario Rig" that had been
+            // stood at ordinal 45 by hand sat at the top of /api/ledger with a
+            // starvation death against it, in the statistics, as balance data.
+            // The exclusion is the ledger's contract, so it belongs in the SQL.
+            const runs = new RunRepository(db);
+            expect(runs.deathLedger(50)).toEqual([]);
+            expect(runs.deathLedger(50, { includeAdmin: true })).toHaveLength(1);
+            // And the separate question - "what run just ended" - still answers.
+            expect(runs.latestFinishedRun()?.id).toBe(dead.run.id);
         });
 
         it('advances time through the real simulation, with real consequences', async () => {
@@ -1478,6 +1538,147 @@ describe('cultivation MCP tool surface', () => {
 
             const stored = new CultivatorRepository(db).getById(created.cultivator.id)!;
             expect(stored.age).toBeCloseTo(21, 1);
+        });
+
+        // Found by playing: `years=50` moved 1.73 years and `days=200000` moved
+        // 180, and the caller was told neither number. Both were in the result
+        // object the whole time; nothing rendered them, and the note underneath
+        // said "Nothing was skipped", which is the invisible-fallback lesson
+        // wearing a reassurance.
+        it('says how much of the span it actually simulated, and what stopped it', async () => {
+            process.env.ADMIN_MODE = 'true';
+            await newRun();
+
+            const result = await admin({ action: 'advance_days', years: 50 });
+            expect(result.advanced).toBe(true);
+            expect(result.stoppedShort).not.toBeNull();
+            expect(result.stoppedShort.requestedDays).toBeGreaterThan(result.stoppedShort.simulatedDays);
+            expect(result.stoppedShort.reason).toBeTruthy();
+            // The explanation names the way out rather than the reason code.
+            expect(result.stoppedShort.explanation).toMatch(/rations|treat|move|died/i);
+            expect(result.note).toContain('were simulated');
+            expect(result.note).not.toContain('Nothing was skipped except the gain');
+        });
+
+        it('does not claim it stopped short when it did not', async () => {
+            process.env.ADMIN_MODE = 'true';
+            const created = await newRun();
+            grantPill(created.cultivator.id, GRAIN_ABSTINENCE_PILL_ID);
+            await alchemy({ action: 'consume_pill', pillId: GRAIN_ABSTINENCE_PILL_ID });
+
+            const result = await admin({ action: 'advance_days', days: 30 });
+            expect(result.stoppedShort).toBeNull();
+            expect(result.note).toContain('nothing was skipped except the gain');
+        });
+
+        // Found by playing: no admin action granted cultivation progress, which
+        // defeated the surface's whole purpose. `set_realm` clears progress and
+        // `advance_days` grants none by design, so an operator could stand
+        // somebody at ordinal 41 and then could not test a crossing FROM it.
+        it('grants progress so an attempt becomes legal, and rolls nothing', async () => {
+            process.env.ADMIN_MODE = 'true';
+            const created = await newRun();
+            await admin({ action: 'set_realm', ordinal: 12 });
+
+            const before = new CultivatorRepository(db).getById(created.cultivator.id)!;
+            expect(before.cultivationProgress).toBe(0);
+
+            const result = await admin({ action: 'grant_progress', fill: true });
+            expect(result.granted).toBe(true);
+            expect(result.progressAfter).toBe(progressRequiredForOrdinal(12));
+            expect(result.eligibility.eligible).toBe(true);
+
+            const after = new CultivatorRepository(db).getById(created.cultivator.id)!;
+            expect(after.cultivationProgress).toBe(progressRequiredForOrdinal(12));
+            // Nothing else moved. This is not a breakthrough and does not claim one.
+            expect(after.realmOrdinal).toBe(12);
+            expect(result.note).toContain('NO BREAKTHROUGH');
+        });
+
+        it('refuses to grant progress above the Lid, where it is not the currency', async () => {
+            process.env.ADMIN_MODE = 'true';
+            await newRun();
+            await admin({ action: 'set_realm', ordinal: 45 });
+
+            const result = await admin({ action: 'grant_progress', fill: true });
+            expect(result.error).toBe('not_denominated_in_qi');
+        });
+
+        // Found by playing: `set_realm` at 45 and 46 gave the right rank, the
+        // right lifespan and the right refusal, and left `immortalStatus:
+        // "none"` - so a False Immortal was offered "True Immortal" as a next
+        // rank, and a True Immortal standing in Undersnow was offered farmhand
+        // work. The rung and the crossing are two facts and admin set one.
+        it('writes the immortal status when it places somebody above the Lid', async () => {
+            process.env.ADMIN_MODE = 'true';
+            const created = await newRun();
+
+            const false_ = await admin({ action: 'set_realm', ordinal: 45 });
+            expect(false_.immortalStatusWritten).toBe('false_immortal');
+            expect(new CultivatorRepository(db).getById(created.cultivator.id)!.immortalStatus)
+                .toBe('false_immortal');
+            expect(false_.note).toContain('NO CROSSING WAS ATTEMPTED');
+        });
+
+        it('leaves the immortal status alone below the Lid', async () => {
+            process.env.ADMIN_MODE = 'true';
+            const created = await newRun();
+
+            const result = await admin({ action: 'set_realm', ordinal: 44 });
+            expect(result.immortalStatusWritten).toBeNull();
+            expect(new CultivatorRepository(db).getById(created.cultivator.id)!.immortalStatus)
+                .toBe('none');
+        });
+
+        it('does not overwrite a crossing somebody actually made', async () => {
+            process.env.ADMIN_MODE = 'true';
+            const created = await newRun();
+            const repo = new CultivatorRepository(db);
+            await admin({ action: 'set_realm', ordinal: 44 });
+            repo.recordImmortalStatus(created.cultivator.id, 'false_immortal');
+
+            const result = await admin({ action: 'set_realm', ordinal: 46 });
+            expect(result.immortalStatusWritten).toBeNull();
+            expect(repo.getById(created.cultivator.id)!.immortalStatus).toBe('false_immortal');
+        });
+
+        // Found by playing: `set_location` accepted any string at all.
+        // "Nowhereville" reported "moved" and flagged the run, and the engine
+        // then narrated the ambient qi of a place that does not exist.
+        it('refuses a place the map has never heard of, and names near misses', async () => {
+            process.env.ADMIN_MODE = 'true';
+            const created = await newRun();
+
+            const result = await admin({ action: 'set_location', location: 'Nowhereville' });
+            expect(result.error).toBe('unknown_place');
+            expect(result.moved).toBeUndefined();
+
+            const stored = new CultivatorRepository(db).getById(created.cultivator.id)!;
+            expect(stored.location).toBe('Sweptground');
+        });
+
+        it('takes a multi-word place, with or without its article', async () => {
+            process.env.ADMIN_MODE = 'true';
+            const created = await newRun();
+
+            const result = await admin({ action: 'set_location', location: 'dead verge' });
+            expect(result.moved).toBe(true);
+            // Stored under the gazetteer's own spelling, so every later join works.
+            expect(result.to).toBe('The Dead Verge');
+            expect(new CultivatorRepository(db).getById(created.cultivator.id)!.location)
+                .toBe('The Dead Verge');
+        });
+
+        // AGENTS.md: a guard that only exists when the world is enabled is not
+        // a guard. The region catalog is the register that is always there, and
+        // this suite runs with no world driver at all.
+        it('guards the destination without needing a world', async () => {
+            process.env.ADMIN_MODE = 'true';
+            await newRun();
+            const good = await admin({ action: 'set_location', location: 'Nine Peaks' });
+            expect(good.moved).toBe(true);
+            const bad = await admin({ action: 'set_location', location: 'the moon' });
+            expect(bad.error).toBe('unknown_place');
         });
     });
 
@@ -1521,8 +1722,7 @@ describe('cultivation MCP tool surface', () => {
                 [handleRunManage, Object.keys(RunManageTool.actionSchemas)],
                 [handleTechniqueManage, Object.keys(TechniqueManageTool.actionSchemas)],
                 [handleAlchemyManage, Object.keys(AlchemyManageTool.actionSchemas)],
-                [handleSectManage, Object.keys(SectManageTool.actionSchemas)],
-                [handleAdminManage, Object.keys(AdminManageTool.actionSchemas)]
+                [handleSectManage, Object.keys(SectManageTool.actionSchemas)]
             ];
 
             for (const [handler, actions] of tools) {
@@ -1533,6 +1733,17 @@ describe('cultivation MCP tool surface', () => {
                     // error, never as an exception escaping the handler.
                     expect(() => payload(response)).not.toThrow();
                 }
+            }
+
+            // ADMIN separately: its text carries no machine payload on purpose,
+            // so it is checked through `adminResult` instead. Same property -
+            // every declared action routes, and a missing parameter comes back
+            // as a guiding error rather than an exception.
+            for (const action of Object.keys(AdminManageTool.actionSchemas)) {
+                const response = await handleAdminManage({ action }, ctx);
+                expect(response.content[0].text).toBeTruthy();
+                expect(response.content[0].text).not.toContain('ADMIN_MANAGE_JSON');
+                await expect(adminResult({ action })).resolves.toBeTypeOf('object');
             }
         });
     });

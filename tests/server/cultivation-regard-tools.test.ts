@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { handleCultivationManage } from '../../src/server/consolidated/cultivation-manage.js';
-import { handleAdminManage } from '../../src/server/consolidated/admin-manage.js';
+import { adminResult } from '../../src/server/consolidated/admin-manage.js';
 import { closeDb, getDb } from '../../src/storage/index.js';
 
 const ctx = { sessionId: 'test' };
@@ -27,7 +27,10 @@ function payload(response: { content: Array<{ text: string }> }): any {
 
 const cultivation = async (args: Record<string, unknown>) =>
     payload(await handleCultivationManage(args, ctx));
-const admin = async (args: Record<string, unknown>) => payload(await handleAdminManage(args, ctx));
+// ADMIN embeds no machine payload in its text any more - the blob used to be
+// dumped straight into the player's narrative log. `adminResult` is the door
+// for a caller that wants the object.
+const admin = async (args: Record<string, unknown>) => (await adminResult(args)) as any;
 
 /** A cultivator standing in a named market town at a chosen rung. */
 async function standingAt(ordinal: number, seed: string) {
