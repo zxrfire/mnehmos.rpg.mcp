@@ -37,6 +37,7 @@ Nothing in this file is a new subsystem. The last section is the useful part.
 | &nbsp;&nbsp;[9. Decreeing the curriculum](#9-decreeing-the-curriculum) | somebody near the top of the ladder changes what may be taught |
 | [Not every door is open to everybody](#not-every-door-is-open-to-everybody) | a route is refused, or the player asks why one is closed to them |
 | [Searching must be rational, not compulsory](#searching-must-be-rational-not-compulsory) | the player is deciding whether to keep searching or accept the ceiling |
+| [Leaving, and what it costs](#leaving-and-what-it-costs) | the player considers changing house, or somebody in the world does |
 | [What each layer must supply](#what-each-layer-must-supply) | **Tier 3** - never injected |
 | [Related](#related) | **Tier 3** - never injected |
 
@@ -608,3 +609,88 @@ machinery that exists.
 - [`economy.md`](economy.md) - possession, ownership and claim, which is what routes 1b and 8 argue over
 - [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md) - the cap itself
 - [`../../src/engine/encounters/README.md`](../../src/engine/encounters/README.md) - suitability, and the miss as a good outcome
+
+---
+
+## Leaving, and what it costs
+
+<!-- tier: 2 trigger="a cultivator considers changing house, is offered a place elsewhere, or leaves one" -->
+
+Most of the routes above are things you do where you stand. This one is the other kind, and it
+is the commonest answer in the setting to *my house cannot take me further*: *go somewhere that
+can*. Leaving a sect for a better one is the spine of a career here.
+
+The thing that makes it a decision rather than a menu is that **what you know is not only
+yours.** A road in your head is your house's property as much as your own, and walking out with
+it is how a road escapes into the world. So the terms of a departure are negotiated over the
+book, not over the person, and the house's reaction is proportional to what leaves with you.
+
+### Inside your own apex, none of this applies
+
+Moving to a stronger house under the same apex - or to the apex itself - **carries no friction
+at all.** The road does not leave the bloc that already holds it, nobody has leaked anything to
+anybody, and the receiving house is on the same side as the one you left. This is the ordinary
+way a promising person rises and it should be the commonest transfer in the world by a wide
+margin. An apex is, among other things, a containment sphere for its own curriculum.
+
+Everything below is about crossing OUT of that sphere.
+
+### The two ways out, and the instrument that separates them
+
+**Sworn, on good terms.** The leaver takes a dao oath - carries no manuals out, transmits the
+road to nobody - and it is witnessed. The old house lets them go and nothing is owed in either
+direction. `THE BOUND WORD` is the institution for exactly this, and note what its own history
+says about the weight of the instrument: its founding oath outlived its purpose, the house wants
+it gone, it *cannot revise its own instruments*, and the dissolution method for an oath whose
+parties are all dead has never worked. **An oath here is permanent even when everybody involved
+regrets it.**
+
+**Unsworn, on hostile terms.** They walk out with the road in their head. The new house gains a
+shelf entry and pays for it; the old house gains a standing reason to move on them, which arms
+if the receiving house ever weakens (see [`sects.md`](sects.md)).
+
+**The oath's price falls on the leaver, and that is what makes the choice real.** A defector's
+value to a new house *is* the road they bring - it is what they are paid and promoted for. To
+swear is to promise to arrive with nothing to sell: admitted on what you personally are, worth
+much less, possibly for centuries. To refuse is to arrive valuable and hand your new house a
+permanent liability. Neither dominates.
+
+It also explains why a strong house tolerates defection at all: **it offers the oath first.**
+Losing a person is survivable; losing the road is not. A house that lets people go freely on
+oath and hunts the ones who refuse is behaving consistently.
+
+### The full set of exits
+
+Not all of these are leaving, which is the point - a capped cultivator who thinks the only
+options are *stay* and *defect* is missing most of the board.
+
+| Exit | What it costs | When it is correct |
+|---|---|---|
+| **Rise inside your apex** | nothing | almost always, if the bloc has a deeper shelf |
+| **Swear and cross out** | your value on arrival, permanently | the road that fits you is outside, and you cannot afford enemies |
+| **Cross out unsworn** | an enemy that waits for you to weaken | the road you carry is worth more than the peace |
+| **Take the seat above you** | it is held by a person, not a rule | the shelf is reachable by rank and somebody is in the way |
+| **Be seconded to an ally** | you owe the term, and you come back | your house cannot teach you and does not want to lose you |
+| **Marry or be adopted in** | you become *of* them; your old loyalties are the price | the receiving house is a family before it is an institution |
+| **Be transferred for a fee** | your old house is paid, so no grudge forms | both houses would rather have the receipt than the fight |
+| **Buy or barter the road, and stay** | a favour owed upward, spent once | the book is obtainable and the house is not the problem |
+| **Schism** | you take people with you, and inherit the war | the disagreement is institutional, not personal |
+| **Found your own house** | everything, at first | you hold a road nobody will teach you further on |
+| **Go rogue** | no shelf, no backing, no materials | every door above is shut, or you want none of them |
+
+Two of these are worth more attention than the others when this gets built. **Secondment** is
+the answer for the extremely common case where a house likes you and has run out of book - it
+uses alliances that already exist, it is not a betrayal, and it produces a person who owes two
+houses. And **founding your own** is the only exit that turns a ceiling into an institution: it
+is what the world does when somebody holds a road and refuses every offer, and it is where new
+houses come from.
+
+### What this means for the world, not just the player
+
+The same rules bind everybody, and most of the interesting consequences are demographic rather
+than personal. A road held inside one apex stays inside it. A road that crosses out does so
+through a specific person on a specific day, with or without an oath, and either way it is an
+event somebody can find out about later. Over centuries that is the whole explanation of why
+some roads are held by one house and others by a dozen - and the [items.md](items.md) rule
+holds: how many houses teach a thing is measured off what happened, never chosen.
+
