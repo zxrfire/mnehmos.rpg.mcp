@@ -1789,3 +1789,53 @@ the whole world. The narrowness of the Frostmirror Court and the Storm Tyrant Co
 therefore not in the conflict rule at all - it is in `preferredRoots`, which is exactly
 why `stated_roots` is a regime and why reading only the element would have missed the two
 narrowest houses in the world.
+
+### The root figures above, re-taken and partly retracted
+
+The before-and-after quoted for the root fix, and in the commit message of `5ccbaab`,
+was **never a clean back-to-back**. The "before" arm was measured while nine elemental
+roads were sitting uncommitted in the tree; `47094b8` then landed them, and only the
+"after" arm was re-taken against the new catalog. So the two halves of that table were
+read off two different worlds.
+
+Found because a peer chased the same hazard from the other end and said to check. Re-taken
+properly - `seeding.ts` reverted to `5ccbaab^` and restored in ONE command, both arms on
+the current catalog. `catalog.ts` was deliberately left in place across both arms: the
+`teachesRoads` addition is additive and the old seeder contains zero references to it, so
+reverting the seeder alone isolates the behavioural change.
+
+| measure | before (clean) | after | as first reported |
+|---|---|---|---|
+| root fit, ord 0-6 | 58.9 | 71.6 | 58.0 |
+| root fit, ord 7-12 | 61.0 | 75.0 | 63.1 |
+| root fit, ord 13-20 | 62.7 | 75.4 | 62.7 |
+| root fit, ord 21-28 | 60.0 | 67.8 | 64.3 |
+| root fit, ord 29-36 | 77.1 | 82.9 | 77.1 |
+| root fit, ord 37+ | 53.3 | 100.0 | 53.3 |
+| top 2 rungs | 63.9 | 76.4 | 65.5 |
+| holds the house's own road | 39.1% | 46.1% | not measured |
+| refused, above a closed servant rung | **50** | **0** | after only |
+| refused by their house's road | 481 | 159 | not measured |
+
+The conclusion is unchanged and slightly stronger than first claimed - the real gap in the
+middle bands was wider than the contaminated reading showed. The headline is identical to
+the digit: an apex band that was the WORST in the world at 53.3% now reads 100%.
+
+**And one term is doing nothing.** `reachableCeiling` - the secondary-road ceiling - moves
+the population it was written for by ~1 person: "standing above every road they can walk"
+reads 145 before and 143 after, and 40 in both arms inside closed houses. It is a correct
+rule that is currently inert, because it only bites on `several_roads` houses and almost
+every secondary road in the catalog is elementless, which suits everybody and therefore
+caps nobody. It will start doing work when secondary roads become elemental with lower
+caps, and until then the module header should not be read as if it were load-bearing.
+
+**The origin figures were checked for the same defect and are clean**: 20.84% of placed
+figures high-born, 0.00% of the derived population, 35.56% of apex seniors, all reproducing
+to the digit on the current tree. Origin conditioning keys off realm ordinal rather than
+member content, so the `members.ts` churn underneath it never moved the result.
+
+The lesson generalises past both fixes, and it is a sharper version of the one already in
+AGENTS.md. **A single measurement off a shared tree is already a measurement of somebody
+else's unfinished work**, and it does not announce itself - both these readings looked
+entirely reasonable. Green bars are necessary and are not the measurement: keep the rows,
+and compare them.
