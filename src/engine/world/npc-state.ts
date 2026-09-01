@@ -36,6 +36,7 @@
 
 import { forStream } from '../cultivation/rng.js';
 import { reconcileSoulAndSelf, ruinSoul } from '../cultivation/how-much-of-a-person-is-left.js';
+import { whoTheyAreNow } from './reading-a-tie-against-the-roster.js';
 import { clampOrdinal, lifespanForOrdinal, rankName } from '../cultivation/realms.js';
 import {
     rollAttributes,
@@ -992,8 +993,24 @@ export interface NpcBrief {
         yearsOpen: number;
         generation: number;
     }[];
-    /** Ties that matter, strongest feeling first. */
-    relationships: { name: string; kind: RelationshipKind; standing: number; note: string }[];
+    /**
+     * Ties that matter, strongest feeling first.
+     *
+     * `name` is what the tie stored. `whoTheyAreNow` is that name read against
+     * the roster, and it is the field that stops the LLM being handed a master
+     * who died two centuries ago as somebody it could go and talk to. Four ties
+     * in five in an advanced world point at somebody who is not alive, so
+     * without it the most common case renders as the rarest one.
+     *
+     * Present only when {@link npcBrief} was given a roster to read against.
+     */
+    relationships: {
+        name: string;
+        whoTheyAreNow?: string;
+        kind: RelationshipKind;
+        standing: number;
+        note: string;
+    }[];
     /** Ids of the most recent facts about them. The trajectory, compactly. */
     recentFactIds: string[];
     memoryIds: string[];
@@ -1007,8 +1024,21 @@ export interface NpcBrief {
  * Deliberately small. An NPC's behaviour comes out of goals, relationships and
  * a handful of recent events; handing over the full record every time is how a
  * context window gets spent on nothing.
+ *
+ * Pass `roster` - the world's own `state.npcs` - and every tie is read against
+ * it. Without it the brief says only the name a tie stored, which in an advanced
+ * world is the wrong reading four times in five: 84% of all ties point at
+ * somebody who is dead, missing or no longer in their own body, and an agent
+ * handed "Chu Zhenkuan, master, +0.6" with nothing else will go looking for him.
  */
-export function npcBrief(npc: NpcRecord, onDay: number, recentFacts = 6, relationshipLimit = 8): NpcBrief {
+export function npcBrief(
+    npc: NpcRecord,
+    onDay: number,
+    recentFacts = 6,
+    relationshipLimit = 8,
+    roster: readonly NpcRecord[] = []
+): NpcBrief {
+    const byId = new Map(roster.map(n => [n.id, n]));
     return {
         id: npc.id,
         name: npc.name,
@@ -1034,7 +1064,15 @@ export function npcBrief(npc: NpcRecord, onDay: number, recentFacts = 6, relatio
                 Math.abs(b.standing) - Math.abs(a.standing) || (a.targetId < b.targetId ? -1 : 1)
             )
             .slice(0, relationshipLimit)
-            .map(r => ({ name: r.targetName, kind: r.kind, standing: r.standing, note: r.note })),
+            .map(r => ({
+                name: r.targetName,
+                ...(roster.length > 0
+                    ? { whoTheyAreNow: whoTheyAreNow(byId.get(r.targetId) ?? null, r.targetName).description }
+                    : {}),
+                kind: r.kind,
+                standing: r.standing,
+                note: r.note
+            })),
         recentFactIds: npc.historyFactIds.slice(-recentFacts),
         memoryIds: npc.memoryIds,
         staleDays: Math.max(0, onDay - npc.lastConfirmedOnDay)

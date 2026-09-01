@@ -92,7 +92,8 @@ import {
     type SourceKind
 } from '../social/knowledge.js';
 import { FRIENDSHIP_STANDING } from './gatherings.js';
-import { appendFact, makeFact, yearOfDay, type HistoricalFact } from './history.js';
+import { makeFact, yearOfDay, type HistoricalFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
     addGoal,
     closeGoal,
@@ -575,8 +576,8 @@ function stepTies(
         if (!rng.chance(STOP_WAITING_PER_YEAR * patience)) continue;
 
         // ── They stopped ─────────────────────────────────────────────────
-        const fact = appendFact(
-            state.history,
+        const fact = appendWorldFact(
+            state,
             makeFact({
                 day,
                 kind: 'gave_up_waiting',
@@ -702,8 +703,8 @@ function maybeNewHousehold(
     const partner = rng.pick(candidates);
     const partnerAt = state.npcs.findIndex(npc => npc.id === partner.id);
 
-    const fact = appendFact(
-        state.history,
+    const fact = appendWorldFact(
+        state,
         makeFact({
             day,
             kind: 'marriage',
@@ -794,8 +795,8 @@ function stepWriteOff(
 
     absence.writtenOffOnDay = day;
 
-    const fact = appendFact(
-        state.history,
+    const fact = appendWorldFact(
+        state,
         makeFact({
             day,
             kind: 'presumed_dead',
@@ -878,8 +879,8 @@ function stepWriteOff(
     const seat = state.npcs.findIndex(npc => npc.id === absence.absenteeId);
     if (seat >= 0 && state.npcs[seat].factionId) {
         const struck = state.npcs[seat];
-        const strikeFact = appendFact(
-            state.history,
+        const strikeFact = appendWorldFact(
+            state,
             makeFact({
                 day,
                 kind: 'expulsion',

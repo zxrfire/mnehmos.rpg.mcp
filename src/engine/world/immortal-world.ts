@@ -64,7 +64,6 @@ import {
     rankName
 } from '../cultivation/realms.js';
 import {
-    appendFact,
     makeFact,
     personName,
     placeName,
@@ -72,6 +71,7 @@ import {
     yearOfDay,
     type HistoricalFact
 } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
     IMMORTAL_LAYER,
     MORTAL_LAYER,
@@ -663,7 +663,7 @@ export function ensureImmortalLayer(state: WorldState): ImmortalLayerSummary {
     }
 
     // The engine is allowed to know this. Nobody below is.
-    appendFact(state.history, makeFact({
+    appendWorldFact(state, makeFact({
         day: foundedDay,
         kind: 'faction_founded',
         scale: 'world',
@@ -1263,7 +1263,7 @@ export function ascend(state: WorldState, input: AscendInput): AscendResult {
     facts.push(belowFact);
 
     // The engine's own record. Secret, and it stays that way.
-    facts.push(appendFact(state.history, makeFact({
+    facts.push(appendWorldFact(state, makeFact({
         day: onDay,
         kind: 'ascension',
         scale: 'world',
@@ -1464,7 +1464,7 @@ export function settleAbode(state: WorldState, input: SettleAbodeInput): SettleA
     // Secret, and it stays that way. Nothing below the Lid learns that
     // somebody up there has built anything, because there is no signal across
     // the boundary in either direction that is not an object or a channel.
-    appendFact(state.history, makeFact({
+    appendWorldFact(state, makeFact({
         day: input.onDay,
         kind: 'opportunity',
         scale: 'personal',
@@ -1600,7 +1600,7 @@ export function descend(state: WorldState, input: DescendInput): DescentResult {
     }
 
     // Witnessed, enormous, and over almost before it started.
-    const fact = appendFact(state.history, makeFact({
+    const fact = appendWorldFact(state, makeFact({
         day: input.onDay,
         kind: 'catastrophe',
         scale: 'regional',
@@ -1757,7 +1757,7 @@ export function sendAcross(state: WorldState, input: SendAcrossInput): SendAcros
         tags: [LID_CHANNEL_TAG, direction]
     });
 
-    const fact = appendFact(state.history, makeFact({
+    const fact = appendWorldFact(state, makeFact({
         day: input.onDay,
         kind: 'opportunity',
         scale: 'personal',
@@ -1945,7 +1945,7 @@ export function advanceImmortalLayer(
  */
 function killAbove(state: WorldState, resident: NpcRecord, onDay: number, note: string): void {
     Object.assign(state, upsertNpc(state, markDead(resident, onDay, note)));
-    appendFact(state.history, makeFact({
+    appendWorldFact(state, makeFact({
         day: onDay,
         kind: 'death',
         scale: 'personal',

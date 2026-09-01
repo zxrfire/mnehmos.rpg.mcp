@@ -130,7 +130,8 @@ import {
 import type { Injury } from '../../schema/cultivation.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { isBelowTheLid } from './layers.js';
-import { appendFact, fillConsequences, makeFact, type HistoricalFact } from './history.js';
+import { fillConsequences, makeFact, type HistoricalFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { LocationRecord } from './locations.js';
 import {
     expectationsFor,
@@ -498,7 +499,7 @@ export function holdGathering(
     // to be answerable from the relationship alone two centuries later. So the
     // fact is appended first with a provisional summary and its narrative
     // fields are filled in afterwards, in place, on the stored record.
-    const fact = appendFact(state.history, makeFact({
+    const fact = appendWorldFact(state, makeFact({
         day,
         kind: 'gathering',
         scale: 'regional',

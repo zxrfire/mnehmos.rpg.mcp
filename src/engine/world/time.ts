@@ -47,7 +47,6 @@ import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
 import { rankName } from '../cultivation/realms.js';
 import {
-    appendFact,
     classifyForObserver,
     concurrentEventsFor,
     makeFact,
@@ -56,6 +55,7 @@ import {
     type HistoricalFact,
     type Observer
 } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { openingsBetween, type LocationRecord } from './locations.js';
 // The two standings at which the world calls a tie something. Imported from
 // where they are defined rather than retyped here: `gatherings.ts` states in
@@ -365,7 +365,7 @@ export function advanceTime(
 
         let factId: string | null = null;
         if (landed) {
-            const fact = appendFact(state.history, makeFact({
+            const fact = appendWorldFact(state, makeFact({
                 day: effect.dueOnDay,
                 kind: factKindFor(effect.kind),
                 scale: scaleFor(effect),
@@ -486,7 +486,7 @@ export function advanceTime(
             `Lifespan exhausted at ${rank}. Died of old age.`
         );
         state.npcs[i] = dead;
-        const fact = appendFact(state.history, makeFact({
+        const fact = appendWorldFact(state, makeFact({
             day: onDay,
             kind: 'death',
             scale: 'personal',
@@ -785,7 +785,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // one a descendant three centuries later is standing on.
     if (primary && (inherited.length > 0 || heirs.length > 0)) {
         const heir = state.npcs.find(n => n.id === primary.id);
-        appendFact(state.history, makeFact({
+        appendWorldFact(state, makeFact({
             day: onDay,
             kind: 'inheritance',
             scale: 'personal',
