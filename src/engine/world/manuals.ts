@@ -141,7 +141,7 @@ const COMMON_ARTS: readonly { id: string; requiredOrdinal: number; element: stri
         }));
 
 /** A manual the world can actually hand somebody: a road, not a fighting art. */
-interface Manual {
+export interface Manual {
     id: string;
     name: string;
     cap: number;
@@ -150,7 +150,16 @@ interface Manual {
     element: string | null;
 }
 
-function manualsOf(factionId: string): Manual[] {
+/**
+ * A house's shelf, ascending.
+ *
+ * Exported because `the-ties-an-ordinary-life-produces.ts` has to name the
+ * PERSON behind the transmission this file has always modelled anonymously -
+ * `reachableCeilingFor` builds a set of ids somebody in the house can teach and
+ * then throws away who that somebody was. Asking the same question of the same
+ * shelf is what keeps the tie and the ceiling from disagreeing.
+ */
+export function manualsOf(factionId: string): Manual[] {
     const out: Manual[] = [];
     for (const id of TAUGHT.get(factionId) ?? []) {
         const t = getTechnique(id) as

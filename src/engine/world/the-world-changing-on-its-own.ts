@@ -101,6 +101,13 @@ import {
     mightFindARoad, roadTheyFound, BOOKLESS_CEILING
 } from './manuals.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
+import {
+    applyOrdinaryLifeTies,
+    applyPassedOver,
+    bindNewbornToHousehold,
+    couldParent,
+    rosterOf
+} from './the-ties-an-ordinary-life-produces.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
 import { applyGatherings } from './gatherings.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
@@ -193,6 +200,18 @@ export const EVENTS_PER_FACTION_YEAR = 0.055;
 export const MIN_EVENTS_PER_YEAR = 0.15;
 /** Ceiling, so a large world does not become a newsfeed. */
 export const MAX_EVENTS_PER_YEAR = 3;
+
+/**
+ * What a house feels toward the people who just embarrassed its rival.
+ *
+ * Deliberately just under `gatherings.ts`'s `ALLIED_STANDING` of 0.3. See the
+ * comment at the founding template: this is the only positive edge the yearly
+ * pass creates between two houses, and it has to be the beginning of an
+ * alliance rather than a finished one, so that `settleHouseStanding`'s slow
+ * drift has somewhere to take it and a schism does not instantly manufacture a
+ * bloc.
+ */
+export const SYMPATHY_AT_A_SCHISM = 0.25;
 
 export interface PressureOptions {
     /** Multiplier on the event rate. For tests and for tuning. */
@@ -287,6 +306,16 @@ export function applyPressure(
                 deaths: []
             });
         }
+        // And then the ties an ordinary life produces, on the same yearly line.
+        //
+        // AFTER recruitment and books, because a teaching line binds a student
+        // to whoever in their house can actually carry them and both of those
+        // passes decide who that is. BEFORE demography, so a household formed
+        // this year is a household a child can be born into this year rather
+        // than next. See `the-ties-an-ordinary-life-produces.ts` for what each
+        // of these is a by-product of - none of them is a new subsystem, and
+        // every one writes a row the world already had the state for.
+        applyOrdinaryLifeTies(state, year, withinSpan(year * 365 + 170, fromDay, toDay));
         applyFactionEconomy(state);
         born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
         // The longest project in the world, on its own clock. It will almost
@@ -457,6 +486,11 @@ function applyDemography(
     const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
     if (regions.length === 0) return [];
 
+    // One walk of the roster for the whole cohort. Without it every birth in
+    // the year re-scanned `state.npcs`, which holds the dead as well and is
+    // four thousand records deep by year five hundred.
+    const roster = rosterOf(state);
+
     const born: NpcRecord[] = [];
     for (let i = 0; i < count; i++) {
         const id = `npc-${state.nextNpcSeq++}`;
@@ -534,13 +568,36 @@ function applyDemography(
         // land in real settlements that filter matches nobody and every child
         // is born without a surname or a line - so the same bug would have
         // silently taken lineage with it. It is the region, not the node.
-        const candidates = state.npcs.filter(
-            n => n.status === 'alive' && isBelowTheLid(n) &&
-                n.locationId !== null && under.has(n.locationId) &&
-                day - n.identity.bornOnDay >= years(age + 18)
-        );
-        if (candidates.length > 0) {
-            const parent = candidates[own.int(0, candidates.length - 1)];
+        //
+        // AND A HOUSEHOLD, NOT ONLY A LINEAGE EDGE.
+        //
+        // This wrote the edge and threw the person away, so a world could hold
+        // four hundred descendants and zero families: after 120 years and 498
+        // living people the entire world held 0 kin ties, 0 spouse ties and 6
+        // friendships, and every absence run against it reported nothing to
+        // lose. The edge is the bloodline; the ties are the people, and the
+        // absence pass reads the ties.
+        //
+        // The parent is drawn from the child's OWN PLACE where the place has
+        // anybody eligible, and only falls back to the province when it does
+        // not. A household is people who live together, and a parent two days'
+        // walk away is not one - it also breaks every consumer that asks who
+        // was standing near somebody when they disappeared. `couldParent` is
+        // the eligibility, and it caps how many children one person can be the
+        // parent of, because an unbounded draw over three centuries makes a
+        // long-lived cultivator the parent of forty people.
+        const oldEnough = (n: NpcRecord) => day - n.identity.bornOnDay >= years(age + 18);
+        const here = couldParent(
+            roster.living.filter(n => oldEnough(n) && n.locationId === home.id), age, day);
+        const candidates = here.length > 0
+            ? here
+            : couldParent(
+                roster.living.filter(n =>
+                    oldEnough(n) && n.locationId !== null && under.has(n.locationId)), age, day);
+        const parent = candidates.length > 0
+            ? candidates[own.int(0, candidates.length - 1)]
+            : null;
+        if (parent) {
             const surname = parent.name.split(' ')[0];
             npc = { ...npc, name: `${surname} ${npc.name.split(' ').slice(1).join(' ')}`.trim() };
             const lineageId = `lin-${surname.toLowerCase()}`;
@@ -588,6 +645,14 @@ function applyDemography(
             npc = { ...npc, factionId: joined.id, factionRankIndex: 0 };
         }
 
+        // The household the birth actually created, written last so the child's
+        // own record is finished before anybody is bound to it. The parent's
+        // half and the siblings' halves go into `state.npcs` in place; the
+        // child's half comes back on the record about to be pushed.
+        if (parent) npc = bindNewbornToHousehold(state, npc, parent.id, day, roster).child;
+
+        roster.at.set(npc.id, state.npcs.length);
+        roster.living.push(npc);
         state.npcs.push(npc);
         born.push(npc);
     }
@@ -846,14 +911,20 @@ function applyFoundRoads(state: WorldState, year: number, day: number): number {
 }
 
 function applyPromotions(state: WorldState, day: number): number {
-    const { promotions } = assessPromotions(state);
+    const { promotions, blocked } = assessPromotions(state);
     if (promotions.length === 0) return 0;
-    const at = new Map(state.npcs.map((n, i) => [n.id, i]));
+    const roster = rosterOf(state);
+    const at = roster.at;
     for (const p of promotions) {
         const i = at.get(p.npcId);
         if (i === undefined) continue;
         state.npcs[i] = { ...state.npcs[i], factionRankIndex: p.toRank, updatedOnDay: day };
     }
+    // The other half of a promotion, which this call has always computed and
+    // always discarded: everybody who had met the bar and watched somebody else
+    // take the seat. `blocked` carries the reason, and `outranked` is the one
+    // with a person in it.
+    applyPassedOver(state, promotions, blocked, day, roster);
     return promotions.length;
 }
 
@@ -2197,6 +2268,38 @@ const TEMPLATES: Template[] = [
             });
             splinter.standing[parent.id] = -0.5;
             parent.standing[splinter.id] = -0.5;
+
+            // THE ENEMY OF THEIR ENEMY, AND THE ONLY THING IN THIS PASS THAT
+            // ADDS A POSITIVE EDGE BETWEEN TWO HOUSES.
+            //
+            // Founding produced enmity and nothing else, so the alliance graph
+            // could only lose partners to dissolution and never gain one. It
+            // reached zero and stayed there - measured over five thousand years
+            // on `scripts/probe-houses-over-time.ts`, allied pairs went 4, 3, 1,
+            // 1, 0, 0, 0 while houses churned healthily throughout, 25 of them
+            // founded in the last era alone. The gatherings layer found the same
+            // hole from the other side: 13 of its 15 alliance edges had a
+            // dissolved partner, its circles ran 11 down to 1, and a circle
+            // needs two houses that can stand each other. Inter-house gatherings
+            // are one of the few sources of cross-house ties in the world, so
+            // the institutional shortage was producing the personal one.
+            //
+            // A house that has just walked out on somebody has immediate common
+            // ground with everybody else that somebody has wronged, and both
+            // sides know it on the day. `rivalsOf` is already that list.
+            //
+            // WARM, NOT ALLIED. It stops just under `ALLIED_STANDING` on
+            // purpose: being glad somebody embarrassed your rival is the
+            // beginning of an alliance, not one, and it leaves the gatherings
+            // layer's slow drift something to finish rather than handing it a
+            // completed friendship. It also costs nothing per year, because it
+            // fires only on a founding.
+            for (const glad of rivalsOf(state, parent)) {
+                if (glad.id === splinter.id) continue;
+                splinter.standing[glad.id] = SYMPATHY_AT_A_SCHISM;
+                glad.standing[splinter.id] = SYMPATHY_AT_A_SCHISM;
+            }
+
             parent.resources.spirit_stones = Math.round((parent.resources.spirit_stones ?? 0) * 0.8);
             state.factions.push(splinter);
 
