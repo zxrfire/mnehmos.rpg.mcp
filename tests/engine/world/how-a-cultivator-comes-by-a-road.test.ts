@@ -54,6 +54,7 @@ import {
     daoRequirementCurve,
     roadsWalked
 } from '../../../src/engine/cultivation/breakthrough.js';
+import { roadsWalkedBy } from '../../../src/engine/cultivation/what-a-road-in-reach-costs-to-walk.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THE CATALOG
@@ -393,6 +394,26 @@ describe('a material is spent once and still teaches afterwards', () => {
     });
 });
 
+/**
+ * A day far enough after `bornOnDay: 0` that the subject has had a life.
+ *
+ * `member()` is born on day zero, and every test in this block used to examine
+ * it on day 500 - one year and four months old - because a road cost nothing
+ * then. Two hundred years is an ordinary age for somebody standing at Nascent
+ * Soul, and it is the smallest fixture change that keeps these tests asking
+ * what they were written to ask.
+ */
+const A_PLAUSIBLE_AGE = 200 * 360;
+
+/** The roads somebody has actually walked, by the one rule the wall asks. */
+function walked(state: WorldState, npc: NpcRecord) {
+    return roadsWalkedBy({
+        knownTechniques: npc.cultivation.techniqueIds,
+        roadsWithinReach: roadsInReachOf(state, npc),
+        age: A_PLAUSIBLE_AGE / 360
+    });
+}
+
 describe('a house spending one on the disciple at the wall', () => {
     it('spends it on somebody who is actually stopped, and not on anybody else', () => {
         const state = tinyWorld();
@@ -401,17 +422,23 @@ describe('a house spending one on the disciple at the wall', () => {
         state.objects.push(material('mat-1', 'alchemy', 24, HOUSE));
 
         expect(daoRequirementCurve(24)).toBeGreaterThan(0);
-        expect(spendMaterialsOnTheBlocked(state, 500)).toBe(1);
+        expect(spendMaterialsOnTheBlocked(state, A_PLAUSIBLE_AGE)).toBe(1);
         expect(state.objects[0].data.spentBy).toBe('blocked');
 
-        // And the road survives the object, which is the whole point.
-        const after = roadsInReachOf(state, state.npcs[0]);
-        expect(roadsWalked(after)).toBeGreaterThan(0);
+        // And the road survives the object, which is the whole point. Asked
+        // through the rule the wall asks, not by counting the reach list -
+        // see A_PLAUSIBLE_AGE.
+        expect(roadsWalked(walked(state, state.npcs[0]))).toBeGreaterThan(0);
     });
 
     it('does not spend one on somebody who was going to cross anyway', () => {
         const state = tinyWorld();
-        // Two roads already in reach at a rung that asks for two.
+        // Two roads already WALKED at a rung that asks for two. This test used
+        // to say "in reach" and to examine the subject on day 500, when they
+        // were one year and four months old - and it passed, because a road in
+        // reach used to be a road held, at birth, free. It is now the same
+        // question the wall asks: access, charged against the years somebody
+        // has actually been cultivating.
         ground(state, {
             id: 'g-a', domain: 'weapon', access: 'open', from: 0, region: 'region-low-fall'
         });
@@ -421,7 +448,7 @@ describe('a house spending one on the disciple at the wall', () => {
         state.npcs.push(member({ id: 'fine' }));
         state.objects.push(material('mat-1', 'alchemy', 24, HOUSE));
 
-        expect(spendMaterialsOnTheBlocked(state, 500)).toBe(0);
+        expect(spendMaterialsOnTheBlocked(state, A_PLAUSIBLE_AGE)).toBe(0);
         expect(isUnspent(state.objects[0])).toBe(true);
     });
 
@@ -430,7 +457,7 @@ describe('a house spending one on the disciple at the wall', () => {
         state.npcs.push(member({ id: 'blocked' }));
         state.objects.push(material('mat-elsewhere', 'alchemy', 24, OTHER_HOUSE));
         state.objects.push(material('mat-too-high', 'karma', 40, HOUSE));
-        expect(spendMaterialsOnTheBlocked(state, 500)).toBe(0);
+        expect(spendMaterialsOnTheBlocked(state, A_PLAUSIBLE_AGE)).toBe(0);
     });
 
     it('spends at most one per house per year, on the deepest rung that is stuck', () => {
@@ -440,7 +467,7 @@ describe('a house spending one on the disciple at the wall', () => {
         state.objects.push(material('mat-1', 'alchemy', 24, HOUSE));
         state.objects.push(material('mat-2', 'karma', 20, HOUSE));
 
-        expect(spendMaterialsOnTheBlocked(state, 500)).toBe(1);
+        expect(spendMaterialsOnTheBlocked(state, A_PLAUSIBLE_AGE)).toBe(1);
         // The person nearest the top of the ladder, because the house is
         // spending a finite thing and their crossing changes what it is.
         expect(state.objects.filter(o => o.data.spentBy === 'senior').length).toBe(1);

@@ -28,9 +28,10 @@
  * FOUR CHANNELS, AND WHY DERIVING BEATS STORING
  * ═══════════════════════════════════════════════════════════════════════════
  *
- *   PRACTICE   The arts in their hands. `roadsWalkedBy` in
- *              `an-npc-striking-at-the-next-wall.ts` already reads the `domain`
- *              each technique declares. Reused rather than reimplemented.
+ *   PRACTICE   The arts in their hands, which this module no longer gathers at
+ *              all: `roadsTaughtByPractice` is read off `knownTechniques` by
+ *              the rule itself, for a player and for an NPC alike, because both
+ *              records already carry the same field against the same catalog.
  *   GROUND     A named place that teaches a road, held by a house, standing
  *              open in a province, or buried until somebody digs it out. See
  *              `data/cultivation/places-that-teach-a-dao.ts`.
@@ -77,7 +78,7 @@
  * prices out as an ordinary house.
  */
 
-import type { Insight, InsightDomain } from '../../schema/cultivation.js';
+import type { InsightDomain } from '../../schema/cultivation.js';
 import {
     PLACES_THAT_TEACH_A_DAO,
     type PlaceThatTeachesADao
@@ -87,7 +88,11 @@ import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { makeEnvironment, makeThresholds, makeLocation, type LocationRecord } from './locations.js';
 import type { ObjectRecord } from './possessions.js';
 import { isUnspent, spend } from './single-use-dao-comprehension-materials.js';
-import { roadsWalkedBy } from './an-npc-striking-at-the-next-wall.js';
+import { ageOf } from './an-npc-striking-at-the-next-wall.js';
+import {
+    roadsWalkedBy,
+    type RoadWithinReach
+} from '../cultivation/what-a-road-in-reach-costs-to-walk.js';
 import {
     FOUND_BY_PROSPECTING_TAG,
     prospectingEffortIn
@@ -236,15 +241,16 @@ export function regionCatalogIdOf(state: WorldState, locationId: string | null):
 // WHAT IS IN REACH
 // ─────────────────────────────────────────────────────────────────────────
 
-/** A road, and the thing that put it in reach. */
-export interface RoadInReach {
-    domain: InsightDomain;
-    subject: string;
-    /** Location id, object id or technique id. Becomes the achievement id. */
-    sourceId: string;
-    sourceName: string;
-    how: 'ground_held' | 'ground_open' | 'ground_buried' | 'material_spent';
-}
+/**
+ * A road, and the thing that put it in reach.
+ *
+ * An alias for the shared shape rather than a second declaration of it: the
+ * price of each `how` is a fact about the rule, not about the world layer, and
+ * a private copy of this interface is how the world's answer and the player's
+ * drifted apart in the first place. See
+ * `cultivation/what-a-road-in-reach-costs-to-walk.ts`.
+ */
+export type RoadInReach = RoadWithinReach;
 
 /**
  * Every dao ground this person can actually get at, and why.
@@ -328,63 +334,41 @@ export function roadsBoughtWithMaterialsBy(state: WorldState, npcId: string): Ro
     return out;
 }
 
-const HOW_IT_WAS_COME_BY: Record<RoadInReach['how'], Insight['provenance']['achievementKind']> = {
-    // Somebody let them in. The house did not have to, and the standing they
-    // spent years accumulating is what bought it.
-    ground_held: 'extraordinary_instruction',
-    // Nobody taught it. They stood somewhere and worked it out.
-    ground_open: 'profound_principle',
-    // Out of a hole, made by an age that is over.
-    ground_buried: 'met_something_ancient',
-    // One object, spent, and it does not come again.
-    material_spent: 'unusual_opportunity'
-};
-
-const HOW_IT_READS: Record<RoadInReach['how'], (name: string) => string> = {
-    ground_held: name => `Let into ${name} by the house that holds it, and took something out of it.`,
-    ground_open: name => `Stood at ${name}, which anybody may do, and was one of the few who read it.`,
-    ground_buried: name => `Went into ${name} after somebody dug it open, and came out understanding.`,
-    material_spent: name => `Understood ${name}. There is now one fewer in the world.`
-};
-
 /**
- * Every road this cultivator holds: the practice, the ground and the spent
- * objects, one insight per distinct domain.
+ * Every road WITHIN REACH of this cultivator: the arts in their hands, the
+ * ground they can get at, and the objects that were spent on them.
  *
- * THE SHALLOWEST DEGREE, everywhere. `roadsWalked` counts domains and does not
- * read degree, and claiming more would quietly pay every NPC an odds bonus
- * through `understandingEffects` that nothing in their life earned.
+ * IN REACH IS NOT WALKED, and this function used to conflate the two. It
+ * returned finished `Insight` objects at degree 1, dated to the day the person
+ * was BORN, so an NPC held every road their access could ever supply from the
+ * moment they existed, for nothing - while a player holding the same arts and
+ * standing on the same cliff held none of them, because a player's insights
+ * only form by surviving something. That is the split AGENTS.md names first.
  *
- * First source wins on a tie, and practice is consulted first, so somebody who
- * both holds a sword canon and was let onto the cliff is credited to the canon.
- * The count is identical either way; the provenance names the thing they would
- * themselves name.
+ * What is actually walked is decided by one rule, in
+ * `cultivation/what-a-road-in-reach-costs-to-walk.ts`, which charges each of
+ * these a price in years of practice and is asked by the gate for a player and
+ * for an NPC alike. This function no longer decides anything: it gathers, out
+ * of `WorldState`, and gathering is the whole of what a storage adapter may do.
+ *
+ * WHAT THE WORLD PUTS IN REACH, and not the arts in their hands. Practice used
+ * to be the first thing in this list and it is deliberately gone: the rule
+ * reads `knownTechniques` off the subject itself, for a player and an NPC
+ * alike, so listing it here as well would be a second copy of the one channel
+ * that needs no adapter. `roadsWithinReachFromPractice` still exists for the
+ * probes, which report the three channels apart.
  */
-export function roadsInReachOf(state: WorldState, npc: NpcRecord): Insight[] {
-    const out: Insight[] = [...roadsWalkedBy(npc)];
-    const held = new Set<InsightDomain>(out.map(i => i.domain));
-    const bornOn = Math.max(0, npc.identity.bornOnDay);
+export function roadsInReachOf(state: WorldState, npc: NpcRecord): RoadInReach[] {
+    const out: RoadInReach[] = [];
+    const seen = new Set<InsightDomain>();
 
     for (const road of [
         ...roadsBoughtWithMaterialsBy(state, npc.id),
         ...daoGroundsInReachOf(state, npc)
     ]) {
-        if (held.has(road.domain)) continue;
-        held.add(road.domain);
-        const achievementId = `${npc.id}-road-${road.sourceId}`;
-        out.push({
-            id: achievementId,
-            domain: road.domain,
-            subject: road.subject,
-            degree: 1,
-            provenance: {
-                achievementId,
-                achievementKind: HOW_IT_WAS_COME_BY[road.how],
-                onDay: bornOn,
-                deepenedBy: [],
-                account: HOW_IT_READS[road.how](road.sourceName)
-            }
-        });
+        if (seen.has(road.domain)) continue;
+        seen.add(road.domain);
+        out.push(road);
     }
     return out;
 }
@@ -676,10 +660,19 @@ export function spendMaterialsOnTheBlocked(state: WorldState, day: number): numb
         const required = daoRequirementFor(ordinal);
         if (required <= 0) continue;
 
-        // Counted exactly the way the wall counts it: distinct domains outside
-        // the one a root supplies unaided.
+        // Counted exactly the way the wall counts it, by the same function the
+        // wall asks - so a house cannot spend a material on somebody the gate
+        // would have let through anyway, and cannot decline to spend one on
+        // somebody it would refuse. Reading the REACH list here instead was the
+        // bug this rule exists to stop: it credited roads nobody had yet paid
+        // the years for, so a house judged a member unblocked years before the
+        // wall would have agreed.
         const held = new Set<InsightDomain>(
-            roadsInReachOf(state, npc).map(i => i.domain).filter(d => d !== 'element')
+            roadsWalkedBy({
+                knownTechniques: npc.cultivation.techniqueIds,
+                roadsWithinReach: roadsInReachOf(state, npc),
+                age: ageOf(npc, day)
+            }).map(i => i.domain).filter(d => d !== 'element')
         );
         if (held.size >= required) continue;
 
