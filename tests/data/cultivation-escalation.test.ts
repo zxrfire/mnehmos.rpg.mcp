@@ -275,6 +275,26 @@ describe('the ladder composes with class and era rather than replacing them', ()
         }
     });
 
+    it('every art above the Lid is elementless, which is what lets the idiom be ancient', () => {
+        // ANCIENT IS A PARADIGM, NOT A DATE. The immortal realm changes slowly,
+        // so it never left the categorical idiom, and an art composed up there
+        // today is ancient by construction rather than by age.
+        //
+        // The catalog has not caught up: all six arts above the Lid are
+        // currently filed `modern`, from a hand-authored id set that was never
+        // extended upward. This test does NOT assert either classification -
+        // asserting the current one would freeze a known discrepancy, and
+        // asserting the intended one would fail against data somebody else
+        // owns. It asserts the property that makes the reclassification legal
+        // and that must hold either way: carrying an element is what the other
+        // idiom does, and nothing up here carries one.
+        const above = TECHNIQUES.filter(t => t.requiredOrdinal >= FALSE_IMMORTAL_ORDINAL);
+        expect(above.length).toBeGreaterThan(0);
+        for (const t of above) {
+            expect(t.element, `${t.id} is above the Lid and carries an element`).toBeNull();
+        }
+    });
+
     it('the categorical line addresses subjects that are there, which is what the top rung does not', () => {
         // The load-bearing consequence, stated as a check rather than as prose.
         // Every ancient art has a subject: a body to move, a body to take from,
