@@ -678,6 +678,42 @@ options are *stay* and *defect* is missing most of the board.
 | **Found your own house** | everything, at first | you hold a road nobody will teach you further on |
 | **Go rogue** | no shelf, no backing, no materials | every door above is shut, or you want none of them |
 
+### Money cannot buy a house, and it can buy the people in one
+
+[`items.md`](items.md) says that above a certain line cash is simply not the medium, and that
+holds here: **no house sells rank.** Offering a sect stones for a seat reads as not
+understanding what you are looking at, and it is the sort of error that ends the conversation.
+
+But that is a statement about the institution, and an institution is made of people. Two
+channels stay open to somebody who has just come into real money - and they are different
+transactions with different failure modes, which is why they should never be collapsed into one
+"bribe" verb:
+
+**Greasing palms.** You are not buying a promotion, you are paying the individuals who decide
+one. What money buys is a recommendation, an omission, a name moved up a list, a test scheduled
+when the right elder is presiding. The seat is still awarded by the house, on the house's
+stated terms, by people who have been paid to see you favourably. This runs through the same
+machinery as any other pressure applied to a person - coin is one leverage among several, and
+it is priced the same way a threat or an attachment is. So it can be refused, it can be
+**reported** to the house, and the person who took it now has something on you as surely as you
+have something on them. A righteous house treats a discovered payment as a scandal about its
+own member first and about you second.
+
+**Buying a release.** This one the house CAN accept, and the distinction is worth being precise
+about: a release is not the purchase of standing, it is **compensation for a loss.** You are
+paying an institution for the value of what walks out with you - the years it spent on you and
+the road in your head. That is a transaction a house can take without contradicting itself,
+because nothing about its own ladder has been sold. It is the fee half of the transfer above,
+paid by the leaver instead of by the receiving house, and it is what turns a hostile departure
+into a settled one when no oath is on offer or when you refuse to swear.
+
+Which makes a sudden windfall a genuine turning point rather than a bigger number. Somebody who
+opens a piece of closed ground and comes out rich has not bought their way up the ladder - the
+ladder is not for sale - but they can now pay their way OUT of a house that has run out of book,
+without swearing away the only thing they have to sell. That is one of the few moments where
+stones convert into a rung, and it converts indirectly, through people, at the risk of being
+found out.
+
 Two of these are worth more attention than the others when this gets built. **Secondment** is
 the answer for the extremely common case where a house likes you and has run out of book - it
 uses alliances that already exist, it is not a betrayal, and it produces a person who owes two
