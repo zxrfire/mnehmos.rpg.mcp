@@ -80,11 +80,52 @@ import type { WorldState } from './world-state.js';
  * The bottom rank is uncapped. A house can always take another sweeper, and the
  * limit on its intake is what it can feed rather than how many stools it has.
  */
-export function seatsAtRank(rankIndex: number, rankCount: number, members: number): number {
+export function seatsAtRank(
+    rankIndex: number,
+    rankCount: number,
+    members: number,
+    abundance = 0
+): number {
     if (rankIndex <= 0) return Number.MAX_SAFE_INTEGER;
+    // The top seat is not a promotion. It is a succession, it happens when the
+    // person in it dies or leaves, and the machinery for that lives elsewhere -
+    // routine promotion filling it would quietly install a weaker head over a
+    // living master, which is not a thing a house does.
+    if (rankIndex >= rankCount - 1) return 0;
     if (rankIndex >= rankCount) return 0;
-    const share = members / Math.pow(2, rankIndex);
+    // WHERE RESOURCES ARE NOT SCARCE, NEITHER IS PROMOTION.
+    //
+    // The pyramid is made of seats, and seats are scarce because the things
+    // that fill them are: stipends, quarters, a share of the vein, a share of
+    // an elder's attention. A house with an abundance of all of it has no
+    // reason to cap its own inner ranks, and promotion there falls back on the
+    // only remaining question, which is whether somebody is good enough.
+    //
+    // That is what makes the world's apex different from everybody else, and it
+    // is not an exception written beside its name: it is the same formula
+    // reading a much larger number. `abundance` runs 0..1 and comes off the
+    // house's own production and holdings, so any house that got rich would
+    // behave the same way, and any apex that lost its ground would stop.
+    const narrowing = Math.pow(2, rankIndex * (1 - abundance));
+    const share = members / narrowing;
     return Math.max(1, Math.floor(share));
+}
+
+/**
+ * How far a house is from having to ration its own ranks, 0..1.
+ *
+ * Self-sufficiency is the honest proxy and it is already computed: `production`
+ * on the catalog faction is exactly "how much it can make for itself", and a
+ * house that makes everything it needs is not choosing between two disciples
+ * for one stipend. Squared, so that abundance has to be near-total before it
+ * meaningfully flattens a hierarchy - comfortable is not the same as limitless,
+ * and only the very top of the world is limitless.
+ */
+export function abundanceOf(house: FactionRecord): number {
+    const production = Number(house.resources.production ?? 0.5);
+    const veins = Number(house.resources.veins ?? 0);
+    const base = Math.max(0, Math.min(1, production));
+    return Math.min(1, base * base * (veins > 0 ? 1.2 : 0.8));
 }
 
 /**
@@ -169,8 +210,9 @@ export function assessPromotions(state: WorldState): {
         // Consider each rank from the top down, so a seat freed by promoting
         // somebody up is available to the person below them in the same pass.
         // A house does not wait a year between filling two links of one chain.
+        const abundance = abundanceOf(house);
         for (let rank = rankCount - 1; rank >= 1; rank--) {
-            const seats = seatsAtRank(rank, rankCount, members.length);
+            const seats = seatsAtRank(rank, rankCount, members.length, abundance);
             const bar = ordinalExpectedAt(rank, rankCount, admission, power);
 
             const candidates = members

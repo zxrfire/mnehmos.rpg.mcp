@@ -456,16 +456,42 @@ function applyDemography(
         const id = `npc-${state.nextNpcSeq++}`;
         const own = forStream(state.seed, 'birth', id);
         const region = regions[own.int(0, regions.length - 1)];
-        const ceiling = Number(region.data.localCeilingOrdinal ?? 20);
-        const rateMultiplier = Number(region.data.ambientRateMultiplier ?? 1);
         const age = own.int(16, 22);
 
-        // A place, not the container. The fallback to the region node is the
-        // honest last resort for a province with nowhere habitable in it, and
-        // it is loud rather than silent: if it ever fires in a seeded world the
-        // demography test below goes red.
-        const under = locationIdsUnder(state, region.id);
-        const home = drawBirthplace(birthplacesIn(state, region), own) ?? region;
+        // A place, not the container - and never the container.
+        //
+        // This used to fall back to the region node when a province had nowhere
+        // habitable left, described as a loud last resort. It was loud, and it
+        // was also wrong: sealings and rising thresholds empty a province's
+        // habitable list over centuries, so past a few hundred years EVERY birth
+        // in that province landed on its container. Measured, the count of
+        // people standing on containers fell 243 -> 14 by year 250 and then
+        // climbed to 265 by year 600, which is not a last resort firing, it is
+        // the normal path.
+        //
+        // People are born where people can live. So the province is chosen from
+        // the ones that HAVE somewhere, and if nowhere in the world does, then
+        // no child is born - which is the honest reading of a world with no
+        // habitable ground left, and is far louder than quietly stacking a
+        // generation onto a map node nobody can stand on.
+        const habitable = birthplacesIn(state, region);
+        const somewhere = habitable.length > 0
+            ? { region, places: habitable }
+            : (() => {
+                for (const alt of regions) {
+                    const places = birthplacesIn(state, alt);
+                    if (places.length > 0) return { region: alt, places };
+                }
+                return null;
+            })();
+        if (!somewhere) break;
+        const home = drawBirthplace(somewhere.places, own) ?? somewhere.places[0];
+        const under = locationIdsUnder(state, somewhere.region.id);
+        // Read off the province they are actually born in, not the one first
+        // drawn - a child born in the next province over grows up under its
+        // ceiling and its ground.
+        const ceiling = Number(somewhere.region.data.localCeilingOrdinal ?? 20);
+        const rateMultiplier = Number(somewhere.region.data.ambientRateMultiplier ?? 1);
 
         let npc = createNpc(state.seed, {
             id,
@@ -476,7 +502,7 @@ function applyDemography(
             // Two people with one name breaks the knowledge system, which is
             // keyed by id while everything the player reads is keyed by name.
             takenNames: new Set(state.npcs.map(n => n.name)),
-            tags: [`region:${String(region.data.catalogRegionId ?? region.id)}`]
+            tags: [`region:${String(somewhere.region.data.catalogRegionId ?? somewhere.region.id)}`]
         });
         const ordinal = deriveOrdinal(
             npc.cultivation.spiritRoot,
