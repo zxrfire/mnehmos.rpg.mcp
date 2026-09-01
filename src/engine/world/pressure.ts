@@ -97,6 +97,7 @@ import {
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
 import { manualCeilingOf, newlyEntitled, refreshChosen, BOOKLESS_CEILING } from './manuals.js';
+import { assessPromotions } from './promotion-inside-a-house.js';
 import { applyGatherings } from './gatherings.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
@@ -257,6 +258,7 @@ export function applyPressure(
         // Then the parts of a year that are arithmetic rather than incident:
         // people advance, institutions pay their bills, and children are born.
         // Births last, so a year's dead are counted before its replacements.
+        applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
         applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
         applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
@@ -654,6 +656,32 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
  * on, sweeps for forty years, and only then is handed the book that lets them
  * pass the ceiling the last one gave them.
  */
+/**
+ * Houses raise people, and the seats above them run out.
+ *
+ * Ordered BEFORE `applyBookAcquisition` in the year, deliberately: a promotion
+ * is what entitles somebody to the next book, and running these the other way
+ * round would make every disciple wait a full year between the rank and the
+ * manual it was supposed to buy them.
+ *
+ * See `promotion-inside-a-house.ts`. `factionRankIndex` was written at seeding
+ * and at recruitment and never advanced again, so 340 of 364 house members sat
+ * at rank 0 by year 500 - and since a rank-0 member is entitled to exactly one
+ * book however deep their house's shelf is, nobody alive held a manual reaching
+ * past ordinal 17.
+ */
+function applyPromotions(state: WorldState, day: number): number {
+    const { promotions } = assessPromotions(state);
+    if (promotions.length === 0) return 0;
+    const at = new Map(state.npcs.map((n, i) => [n.id, i]));
+    for (const p of promotions) {
+        const i = at.get(p.npcId);
+        if (i === undefined) continue;
+        state.npcs[i] = { ...state.npcs[i], factionRankIndex: p.toRank, updatedOnDay: day };
+    }
+    return promotions.length;
+}
+
 function applyBookAcquisition(state: WorldState, year: number, day: number): number {
     const rng = forStream(state.seed, 'books', year);
     const living: number[] = [];
