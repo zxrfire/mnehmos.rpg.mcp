@@ -460,8 +460,22 @@ export function newlyEntitled(state: WorldState, npc: NpcRecord): string[] {
     // Unbacked: only what a stall would have, and only if they have nothing
     // better already. Somebody already holding a road does not buy a primer.
     if (manualCeilingOf(npc) > 0) return [];
+    // AND ONLY IF IT WOULD ACTUALLY CARRY THEM.
+    //
+    // A stall's primer is a road for somebody at the bottom of the ladder and
+    // waste paper for anybody past its cap, so handing one to a cultivator
+    // already above it does not give them a method - it gives the world a
+    // false account of what they practise. Measured before this guard: an
+    // unaffiliated cultivator standing at ordinal 44 was described as
+    // practising a gathering canon that carries to 13, which is not a person
+    // anybody can believe in.
+    //
+    // Somebody far above the market's stock is in the situation the escape
+    // routes exist for, and the honest answer is that a market has nothing for
+    // them. Handing them nothing says exactly that.
     const stock = commonManuals()
-        .filter(m => m.requiredOrdinal <= ordinal
+        .filter(m => m.cap > ordinal
+            && m.requiredOrdinal <= ordinal
             && suitsRoot(npc.cultivation.spiritRoot, m.element)
             && !held.has(m.id));
     return stock.length > 0 ? [stock[0].id] : [];
@@ -863,6 +877,57 @@ export function unauthorisedPractice(npc: NpcRecord, techniqueId: string): strin
     if (owners.length === 0) return null;
     // Somebody carrying the tag of a house that teaches it has an answer ready.
     return owners;
+}
+
+/**
+ * What happens when they catch you practising it.
+ *
+ * Being caught is one event; the response is not. It is decided by WHOSE ART IT
+ * IS, and specifically by the alignment of the house that owns it - which turns
+ * a single rule into three quite different situations without a branch on any
+ * faction's name.
+ *
+ *   A DEMONIC HOUSE     may simply kill you. There is no process to fail and
+ *                       nobody to explain yourself to; you are practising their
+ *                       method without their permission and that is the whole
+ *                       of the matter. A demonic manual can absolutely be found
+ *                       - in a hole, on a body, at the wrong end of a market -
+ *                       and finding one is not the dangerous part.
+ *   A RIGHTEOUS HOUSE   asks where you got it. That is worse in a different
+ *                       direction and better in the obvious one: there is a
+ *                       conversation, it has a right answer, and the questions
+ *                       are about your SOURCE rather than about you. Somebody
+ *                       sold it, somebody copied it, somebody died holding it,
+ *                       and the house wants that person far more than it wants
+ *                       you. You may walk away having given up somebody else.
+ *   A NEUTRAL HOUSE     prices it. An art off their shelf in somebody else's
+ *                       hands is a loss to be recovered or a lever to be used,
+ *                       and which of those it becomes depends on what you are
+ *                       worth to them.
+ *
+ * And the reason this matters rather than being colour: THE RISK IS NOT THE
+ * SAME RISK, so the same decision is correct for different people. Rogue
+ * cultivators take demonic methods constantly and knowingly - a person with no
+ * house, no standing and no prospects is being offered a real ladder against a
+ * risk they were already carrying, and many of them simply do not care. That is
+ * a rational choice from where they are standing, and it is why the demonic
+ * arts stay in circulation no matter how many people are killed over them.
+ */
+export type IfCaught = 'killed' | 'questioned_about_the_source' | 'priced' | 'nothing';
+
+export function ifCaughtPractising(
+    techniqueId: string,
+    ownerFactionId: string | null
+): IfCaught {
+    if (isCommonlyHeld(techniqueId)) return 'nothing';
+    if (!ownerFactionId) return 'nothing';
+    const owner = (SECTS as readonly { id: string; alignment?: string }[])
+        .find(s => s.id === ownerFactionId);
+    switch (owner?.alignment) {
+        case 'demonic': return 'killed';
+        case 'righteous': return 'questioned_about_the_source';
+        default: return 'priced';
+    }
 }
 
 /**
