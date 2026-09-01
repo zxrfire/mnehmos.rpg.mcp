@@ -88,15 +88,24 @@ import { runCascade } from './cascade.js';
 import { ruinFromFallenSeat } from './provenance.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
 import {
+    activeGoals,
     addGoal,
     createNpc,
     markDead,
     markMissing,
+    relationshipWith,
     setRealm,
     upsertRelationship,
     type NpcRecord
 } from './npc-state.js';
+import {
+    haveTheyWorkedItOut,
+    resolveAttempt,
+    whatTheyDoAboutIt,
+    type AskWeight
+} from '../social-leverage/index.js';
 import { addLineageEdge, createLineageRecord } from './lineage.js';
+import { applyRuinProspecting } from './how-the-world-keeps-finding-more-ruins.js';
 import { deriveOrdinal } from './seeding.js';
 import {
     guideOrdinalFor,
@@ -107,7 +116,7 @@ import {
     applyRoadsComprehended,
     roadsInReachOf
 } from './how-a-cultivator-comes-by-a-road.js';
-import type { AmbientQi } from '../../schema/cultivation.js';
+import type { AmbientQi, ApproachLeverage } from '../../schema/cultivation.js';
 import {
     applyManualCopying,
     newlyEntitled, refreshChosen, reachableCeilingFor,
@@ -182,7 +191,26 @@ export type PressureKind =
     | 'war_settled'
     | 'zone_forbidden'
     | 'migration'
-    | 'disappearance';
+    | 'disappearance'
+    /**
+     * Somebody worked on somebody: a purse, a house's weight, an account, or
+     * nothing but themselves, put down in front of a person to get something
+     * out of them.
+     *
+     * Here rather than only on the player's side because the reverse is this
+     * repo's commonest defect. The identical resolver in
+     * `engine/social-leverage/` runs on both.
+     */
+    | 'leverage_applied'
+    /**
+     * And years later, the other party understood what it had been for.
+     *
+     * Its own event and not a side effect of the one above, because the years
+     * in between are the whole of what makes it worth anything: being turned
+     * down is an embarrassment, and being used and finding out afterwards is
+     * what opens a grudge somebody's grandchildren are still carrying.
+     */
+    | 'leverage_understood';
 
 export interface PressureEvent {
     kind: PressureKind;
@@ -262,6 +290,18 @@ export function applyPressure(
     for (let year = firstYear; year <= lastYear && events.length < maxEvents; year++) {
         yearsStepped++;
         const rng = forStream(state.seed, 'pressure', year);
+
+        // People go out looking, and sometimes they find something the Late
+        // Age left. BEFORE the event draw, so a ruin found this year is a ruin
+        // this year's `ruin_opened` can open - discovery and opening are two
+        // stages of one thing and the ordering is what makes them separable.
+        //
+        // This pass is the reason `ruin_opened` no longer runs the world out of
+        // ground. See `how-the-world-keeps-finding-more-ruins.ts` for the
+        // measured baseline it replaced, which was zero openings per century in
+        // the last fifth of a five-thousand-year run, in three seeds of three.
+        applyRuinProspecting(state, year, withinSpan(year * 365 + 40, fromDay, toDay));
+
         const live = state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f)).length;
         const rate = clamp(
             live * EVENTS_PER_FACTION_YEAR * intensity,
@@ -2174,8 +2214,19 @@ const TEMPLATES: Template[] = [
             // ruin by every reading except the one this filter used. Adding it
             // makes the supply regenerate from something the world already does,
             // which is the same shape as the fix in `neighboursOf`.
+            //
+            // AND OPENING IS NOT FINDING. This filter used to take undiscovered
+            // ground, which collapses two events into one: somebody cannot open
+            // a sealed hall nobody has located. So the supply this template
+            // draws on is now the STANDING RESERVE - ground the world has found
+            // and not yet emptied - and the thing that replenishes it is
+            // `applyRuinProspecting`, which runs earlier in the same year.
+            // Measured before that pass existed: openings went to zero per
+            // century in the last fifth of a five-thousand-year run, in every
+            // seed, because the endowment was fixed and this template consumed
+            // it. See `how-the-world-keeps-finding-more-ruins.ts`.
             const openable = state.locations.filter(l =>
-                isBelowTheLid(l) && !l.tags.includes('emptied') &&
+                isBelowTheLid(l) && !l.tags.includes('emptied') && l.discovered &&
                 ((l.kind === 'ruin' && l.sealed) || l.tags.includes('ruined'))
             );
             const ruin = pick(rng, openable);
@@ -2923,8 +2974,462 @@ const TEMPLATES: Template[] = [
                 }
             }, { npcs: [npc.id] });
         }
+    },
+
+    // ── Somebody worked on somebody. ─────────────────────────────────────
+    //
+    //    The world's half of `engine/social-leverage/`. It matters that this
+    //    is here and not only on the player's side: the repo's commonest
+    //    defect by a distance is a system that binds every NPC and never
+    //    reaches the played game, and the reverse - a verb the player has and
+    //    nobody else does - is the same bug wearing different clothes. So the
+    //    identical resolver runs on both, from the same seeded stream, against
+    //    the same terms, and the world is full of people who have bought each
+    //    other and been bought.
+    //
+    //    Nothing here reads an alignment to decide the roll. What is on the
+    //    table is read off what the actor actually HAS - a purse, a house
+    //    behind them, an account they can call in, or nothing but themselves -
+    //    and the ask is read off what stands between the two houses. Charm
+    //    works everywhere; the fallout is what differs, and the fallout is
+    //    `leverage_understood` below.
+    {
+        kind: 'leverage_applied',
+        weight: 12,
+        apply(state, day, rng) {
+            const living = state.npcs.filter(n => n.status === 'alive' && isBelowTheLid(n));
+
+            // ── A MANOEUVRE ALREADY RUNNING IS PICKED UP AGAIN. ──────────
+            //
+            // Measured, and the reason this is not a uniform draw. With the
+            // actor drawn uniformly from everybody alive, three seeds over
+            // five hundred years gave 2-3 manoeuvres a century and ZERO
+            // discoveries, because a first attachment lands at 0.22 and the
+            // discovery half will not look at a tie below 0.45. Every
+            // manoeuvre in the world was somebody's first one, so the second
+            // stage was unreachable and this whole subsystem was a weight in
+            // a table. Biasing after the draw did not help either: about eight
+            // people in two hundred and fifty were working anybody, so the
+            // continuation branch came up roughly half a time per run.
+            //
+            // The floor is not the thing to move - 0.45 is the honest reading
+            // of "attached enough that finding out would hurt". What was wrong
+            // is that somebody working a person COMES BACK TO THAT PERSON, and
+            // the draw did not know it.
+            const continuations: { actor: NpcRecord; subjectId: string }[] = [];
+            for (const person of living) {
+                for (const tie of person.relationships) {
+                    if (tie.kind !== 'patron') continue;
+                    if (!tie.factIds.some(id => isLeverageFact(state, id))) continue;
+                    const other = living.find(n => n.id === tie.targetId);
+                    // Only an ATTACHMENT chain is picked up again. A purse is a
+                    // transaction and finishes when it is paid; an attachment
+                    // is the one that is built over visits, and it is the only
+                    // one there is anything to work out about later.
+                    if (relationshipWith(other ?? person, person.id)?.kind !== 'ally') continue;
+                    if (!other) continue;
+                    continuations.push({ actor: person, subjectId: tie.targetId });
+                }
+            }
+            const carryOn = continuations.length > 0 && rng.next() < LEVERAGE_CONTINUATION_SHARE;
+            const continuation = carryOn ? pick(rng, continuations) : null;
+
+            const actor = continuation ? continuation.actor : pick(rng, living);
+            if (!actor) return null;
+
+            const actorFaction = actor.factionId
+                ? state.factions.find(f => f.id === actor.factionId) ?? null : null;
+            const hostileIds = actorFaction
+                ? Object.entries(actorFaction.standing)
+                    .filter(([, v]) => v <= -0.3).map(([k]) => k)
+                : [];
+
+            // The person they are already working, or - starting fresh -
+            // somebody they could be standing in front of, or somebody at a
+            // house theirs is at odds with. The same two reasons `killing`
+            // uses, because they are the same two reasons.
+            const subject = continuation
+                ? living.find(n => n.id === continuation.subjectId) ?? null
+                : pick(rng, living.filter(n =>
+                    n.id !== actor.id &&
+                    (hostileIds.includes(n.factionId ?? '') || n.locationId === actor.locationId)
+                ));
+            if (!subject) return null;
+            const subjectFaction = subject.factionId
+                ? state.factions.find(f => f.id === subject.factionId) ?? null : null;
+
+            // WHAT IS ON THE TABLE, read off what this person has. Never a
+            // free choice, and never a verb.
+            const available: ApproachLeverage[] = ['none'];
+            if (actor.spiritStones >= LEVERAGE_PURSE) available.push('coin');
+            if (actorFaction && !subjectFaction) available.push('sect');
+            if (relationshipWith(subject, actor.id)) available.push('favour');
+            // Everybody always has themselves. This is the one channel with no
+            // precondition, which is exactly why it is the poor man's lever.
+            available.push('attachment');
+            // A second visit uses the lever that worked the first time. Coming
+            // back with a different one is starting again, not escalating.
+            const theirExisting = relationshipWith(subject, actor.id);
+            const leverage: ApproachLeverage = continuation
+                ? 'attachment'
+                : pick(rng, available) ?? 'none';
+
+            // ── WHAT IS BEING ASKED ESCALATES WITH THE TIE. ─────────────
+            //
+            // Measured, and this was the defect that kept the whole subsystem
+            // at zero. The ask used to be read off faction hostility alone, so
+            // anybody who belonged to a house was opened with
+            // `against_their_interest` - 0.5 of resistance against a base of
+            // 0.35, which floors the odds at 2% before a single other term is
+            // read. Five hundred years produced twenty-three refusals, five
+            // agreements and NOT ONE attachment that ever landed. The world
+            // was running a subsystem that could only fail.
+            //
+            // Nobody opens by asking a stranger to betray their house. They
+            // ask for something small, and the size of what they ask next is a
+            // function of what they have built, which is a number already
+            // sitting on the tie. Hostility between the houses still decides
+            // how far it can eventually go; it no longer decides where it
+            // starts.
+            const built = Math.max(0, theirExisting?.standing ?? 0);
+            const ask: AskWeight =
+                built >= 0.6
+                    ? (hostileIds.includes(subject.factionId ?? '')
+                        ? 'a_betrayal' : 'against_their_interest')
+                    : built >= 0.25 ? 'a_real_favour'
+                        : 'a_courtesy';
+
+            const result = resolveAttempt({
+                actor: {
+                    id: actor.id, name: actor.name,
+                    ordinal: actor.cultivation.realmOrdinal,
+                    charm: actor.cultivation.attributes.charm,
+                    factionId: actor.factionId,
+                    alignment: actorFaction?.alignment ?? null
+                },
+                subject: {
+                    id: subject.id, name: subject.name,
+                    ordinal: subject.cultivation.realmOrdinal,
+                    charm: subject.cultivation.attributes.charm,
+                    factionId: subject.factionId,
+                    alignment: subjectFaction?.alignment ?? null,
+                    ranked: Boolean(subject.factionId)
+                },
+                onDay: day,
+                ask,
+                approach: { leverage, audience: 'few' },
+                // The whole translation between the two tie models: the world
+                // layer stores standing from -1 to +1, and what the resolver
+                // wants is how consequential the tie is, which is the positive
+                // half of it.
+                theirTie: theirExisting
+                    ? { active: true, strength: Math.max(0, theirExisting.standing) }
+                    : null,
+                theyWantSomethingFromYou: activeGoals(subject).length > 0,
+                rng
+            });
+
+            // ── ONE EVENT IS A CAMPAIGN, NOT A CONVERSATION. ─────────────
+            //
+            // Measured, and the last of the three gates that kept this at
+            // zero. An attachment needs three landings to become worth
+            // anything, and relying on the global draw to come back to the
+            // same pair does not work at this scale: five manoeuvres a century
+            // across two hundred and fifty people, against lifespans that end
+            // long before the draw returns. Attachments landed - exactly one
+            // per seed in five hundred years - and every one of them sat at
+            // 0.22 forever because nobody ever came back.
+            //
+            // The world's tick is a YEAR, so an event here is already a span
+            // rather than a moment, and somebody working a person works them
+            // over that span. Each visit is its own roll off the same stream
+            // against the tie as it then stands, and the ask escalates with
+            // it exactly as it does on the player's side. The resolver is
+            // untouched: this is the caller doing what a caller with a year to
+            // spend would do.
+            let campaign = result;
+            // The furthest the tie actually got. Kept apart from the final
+            // outcome because a campaign that builds an attachment over three
+            // visits and is turned down on the fourth has still built the
+            // attachment - and reading the tie off the last result threw all
+            // of it away, which is why every campaign came back refused.
+            let landed = result.marks.tie ? result : null;
+            let built2 = Math.max(0, theirExisting?.standing ?? 0);
+            if (leverage === 'attachment') {
+                for (let visit = 0; visit < LEVERAGE_VISITS_PER_YEAR; visit++) {
+                    if (campaign.outcome === 'refused' || campaign.outcome === 'reported') break;
+                    built2 = campaign.marks.tie?.theirs.strength ?? built2;
+                    // Within one year the manoeuvre BUILDS. Cashing it in is
+                    // what a later year is for, and asking for the thing on
+                    // the same afternoon you finished earning it is how the
+                    // campaign was destroying itself.
+                    const nextAsk: AskWeight = built2 >= 0.25 ? 'a_real_favour' : 'a_courtesy';
+                    const next = resolveAttempt({
+                        actor: {
+                            id: actor.id, name: actor.name,
+                            ordinal: actor.cultivation.realmOrdinal,
+                            charm: actor.cultivation.attributes.charm,
+                            factionId: actor.factionId,
+                            alignment: actorFaction?.alignment ?? null
+                        },
+                        subject: {
+                            id: subject.id, name: subject.name,
+                            ordinal: subject.cultivation.realmOrdinal,
+                            charm: subject.cultivation.attributes.charm,
+                            factionId: subject.factionId,
+                            alignment: subjectFaction?.alignment ?? null,
+                            ranked: Boolean(subject.factionId)
+                        },
+                        onDay: day,
+                        ask: nextAsk,
+                        approach: { leverage, audience: 'few' },
+                        theirTie: { active: true, strength: built2 },
+                        yourTie: campaign.marks.tie
+                            ? { active: true, strength: campaign.marks.tie.yours.strength }
+                            : null,
+                        theyWantSomethingFromYou: activeGoals(subject).length > 0,
+                        rng
+                    });
+                    campaign = next;
+                    if (next.marks.tie) landed = next;
+                }
+            }
+
+            // The arrangement is real if ANY visit landed; the final outcome is
+            // what the summary and the grudge are written from.
+            const took = landed !== null;
+            const subjectAt = state.npcs.findIndex(n => n.id === subject.id);
+            if (subjectAt < 0) return null;
+
+            const fact = emit(state, 'leverage_applied', day, {
+                day,
+                // An arrangement when it lands, a grudge when it does not. Both
+                // are existing kinds; nothing new was needed for any of this.
+                kind: took ? 'debt_incurred' : 'grudge_opened',
+                scale: 'personal',
+                summary:
+                    `${actor.name} wanted something from ${subject.name}` +
+                    (subjectFaction ? ` of the ${houseName(subjectFaction.name)}` : '') +
+                    `. ${campaign.line}`,
+                actors: [
+                    { id: actor.id, name: actor.name, role: 'asked' },
+                    { id: subject.id, name: subject.name, role: 'was asked' }
+                ],
+                locationId: subject.locationId,
+                factionIds: subjectFaction ? [subjectFaction.id] : [],
+                // Private by nature. Being asked is not news; being asked in
+                // front of the wrong person is, and that is the audience term.
+                visibility: took ? 'secret' : 'faction',
+                magnitude: took ? 0.2 : 0.3,
+                unattributed: took
+                    ? 'Somebody who could not have afforded it last season has paid for something, ' +
+                      'and is not saying who arranged it.'
+                    : 'Two people had a short conversation at the edge of the market and one of ' +
+                      'them walked off without finishing it.',
+                consequences: {
+                    immediate: campaign.line,
+                    tenYearsLater: took
+                        ? 'One of them is still assuming the other will help again.'
+                        : 'The one who was asked has never once forgotten being asked.'
+                }
+            }, { npcs: [actor.id, subject.id] });
+
+            // The marks. Written onto the world's own tie rows, carrying the
+            // fact id, so the discovery template below has a causal chain to
+            // read rather than a flag somebody invented for it.
+            if (took) {
+                state.npcs[subjectAt] = upsertRelationship(state.npcs[subjectAt], {
+                    targetId: actor.id,
+                    targetName: actor.name,
+                    kind: leverage === 'attachment' ? 'ally' : 'client',
+                    standing: landed?.marks.tie?.theirs.strength ?? 0.3,
+                    note: `Came to an arrangement at ${subject.locationId ?? 'somewhere'}.`,
+                    factIds: [fact.fact.id]
+                }, day);
+                const actorAt = state.npcs.findIndex(n => n.id === actor.id);
+                if (actorAt >= 0) {
+                    state.npcs[actorAt] = upsertRelationship(state.npcs[actorAt], {
+                        targetId: subject.id,
+                        targetName: subject.name,
+                        kind: 'patron',
+                        // The asymmetry IS the record. Nothing else marks this
+                        // as instrumental and nothing else needs to.
+                        standing: landed?.marks.tie?.yours.strength ?? 0,
+                        note: 'Useful.',
+                        factIds: [fact.fact.id]
+                    }, day);
+                }
+            } else {
+                // Turned down. The aggrieved party holds it, as everywhere.
+                state.npcs[subjectAt] = upsertRelationship(state.npcs[subjectAt], {
+                    targetId: actor.id,
+                    targetName: actor.name,
+                    kind: 'rival',
+                    standing: campaign.outcome === 'reported' ? -0.5 : -0.3,
+                    note: 'Asked for something they had no business asking for.',
+                    factIds: [fact.fact.id]
+                }, day);
+            }
+
+            return fact;
+        }
+    },
+
+    // ── And years later, somebody works out what it was. ─────────────────
+    //
+    //    The delayed half, and the reason the whole subsystem is worth having.
+    //    A grudge that opens the instant a manoeuvre succeeds is not the same
+    //    thing as one that opens eleven years later, because the intervening
+    //    years are years somebody spent believing it had worked cleanly.
+    //
+    //    What it looks for needs no new column: a tie one side reads as strong
+    //    and the other has never returned, with a `leverage_applied` fact in
+    //    its causal chain. The asymmetry is the evidence.
+    {
+        kind: 'leverage_understood',
+        weight: 5,
+        apply(state, day, rng) {
+            const candidates: { subject: NpcRecord; actor: NpcRecord; sinceDay: number }[] = [];
+            for (const subject of state.npcs) {
+                if (subject.status !== 'alive' || !isBelowTheLid(subject)) continue;
+                for (const tie of subject.relationships) {
+                    if (tie.kind !== 'ally') continue;
+                    if (tie.standing < LEVERAGE_ATTACHED_FLOOR) continue;
+                    if (!tie.factIds.some(id => isLeverageFact(state, id))) continue;
+                    // The actor does NOT have to still be alive, and requiring
+                    // it was measured to be the gate that kept this template
+                    // at zero firings in five hundred years: qualifying ties
+                    // existed, and by the time anybody looked at them the
+                    // person who had built them was dead. Working out that
+                    // somebody used you does not require them to be breathing,
+                    // and in a world where the ledger is inherited it is the
+                    // more interesting case - the account opens against a name
+                    // whose heirs are the ones who will have to answer it.
+                    const actor = state.npcs.find(n => n.id === tie.targetId);
+                    if (!actor) continue;
+                    // Did they ever return it. This is the whole tell.
+                    const back = relationshipWith(actor, subject.id);
+                    if (back && back.standing >= LEVERAGE_RETURNED_FLOOR) continue;
+                    candidates.push({ subject, actor, sinceDay: tie.sinceDay });
+                }
+            }
+            const found = pick(rng, candidates);
+            if (!found) return null;
+
+            const { subject, actor, sinceDay } = found;
+            const subjectFaction = subject.factionId
+                ? state.factions.find(f => f.id === subject.factionId) ?? null : null;
+            const back = relationshipWith(actor, subject.id);
+            const tie = relationshipWith(subject, actor.id);
+
+            const worked = haveTheyWorkedItOut({
+                truth: {
+                    heldById: actor.id,
+                    aboutId: subject.id,
+                    theirStrength: tie?.standing ?? 0.5,
+                    yourStrength: Math.max(0, back?.standing ?? 0),
+                    ask: 'against_their_interest',
+                    audience: 'few',
+                    formedOnDay: sinceDay
+                },
+                onDay: day,
+                daysElapsed: Math.max(0, day - sinceDay),
+                subjectInsight: subject.cultivation.attributes.insight,
+                rng
+            });
+            if (!worked) return null;
+
+            const outcome = whatTheyDoAboutIt({
+                truth: {
+                    heldById: actor.id,
+                    aboutId: subject.id,
+                    theirStrength: tie?.standing ?? 0.5,
+                    yourStrength: Math.max(0, back?.standing ?? 0),
+                    ask: 'against_their_interest',
+                    audience: 'few',
+                    formedOnDay: sinceDay
+                },
+                onDay: day,
+                actorName: actor.name,
+                subjectName: subject.name,
+                subjectAlignment: subjectFaction?.alignment ?? null,
+                subjectRanked: Boolean(subject.factionId),
+                subjectFactionId: subject.factionId
+            });
+
+            const at = state.npcs.findIndex(n => n.id === subject.id);
+            if (at < 0) return null;
+            // The tie is rewritten rather than removed. `upsertRelationship`
+            // keeps `sinceDay`, so an eleven-year attachment that turns hostile
+            // is still eleven years old - which is what makes it read as
+            // betrayal rather than as dislike.
+            state.npcs[at] = upsertRelationship(state.npcs[at], {
+                targetId: actor.id,
+                targetName: actor.name,
+                kind: 'enemy',
+                standing: outcome.grudge.severity === 'unforgivable' ? -1
+                    : outcome.grudge.severity === 'grave' ? -0.85 : -0.6,
+                note: outcome.grudge.description
+            }, day);
+
+            // A righteous house takes it up, which is what turns one person's
+            // account into a house's. A demonic one does not, and prices the
+            // member instead. Both are read from the same alignment column.
+            if (outcome.verdict.houseIsAParty && subjectFaction && actor.factionId) {
+                const other = state.factions.find(f => f.id === actor.factionId);
+                if (other) adjustStandingBetween(subjectFaction, other, -0.15);
+            }
+
+            return emit(state, 'leverage_understood', day, {
+                day,
+                kind: 'betrayal',
+                scale: 'personal',
+                summary: `${subject.name} worked out what ${actor.name} had wanted all along.`,
+                actors: [
+                    { id: subject.id, name: subject.name, role: 'used' },
+                    { id: actor.id, name: actor.name, role: 'used them' }
+                ],
+                locationId: subject.locationId,
+                factionIds: outcome.verdict.houseIsAParty && subjectFaction
+                    ? [subjectFaction.id] : [],
+                visibility: outcome.verdict.houseIsAParty ? 'faction' : 'secret',
+                magnitude: 0.4,
+                unattributed:
+                    'Two people who were seen together for years are not seen together any more, ' +
+                    'and only one of them will say why.',
+                consequences: {
+                    immediate: outcome.verdict.note,
+                    losers: [{ id: subject.id, name: subject.name, role: 'used' }],
+                    tenYearsLater: 'It has not stopped mattering to the one it happened to.'
+                }
+            }, {
+                npcs: [subject.id, actor.id],
+                factions: outcome.verdict.houseIsAParty && subjectFaction ? [subjectFaction.id] : []
+            });
+        }
     }
 ];
+
+/** Follow-up visits a single year's manoeuvre can contain beyond the first. */
+const LEVERAGE_VISITS_PER_YEAR = 3;
+
+/** How often a manoeuvre already in progress is picked up again rather than a new one started. */
+const LEVERAGE_CONTINUATION_SHARE = 0.75;
+
+/** Spirit stones that count as having a purse to put on a table. */
+const LEVERAGE_PURSE = 200;
+
+/** How attached one side has to be before the shape is worth reading at all. */
+const LEVERAGE_ATTACHED_FLOOR = 0.45;
+
+/** Above this on the other side, it was returned and there is nothing to find out. */
+const LEVERAGE_RETURNED_FLOOR = 0.3;
+
+/** Whether a fact id in a tie's causal chain is one of these manoeuvres. */
+function isLeverageFact(state: WorldState, factId: string): boolean {
+    const fact = state.history.facts.find(f => f.id === factId);
+    return fact?.data?.pressure === 'leverage_applied';
+}
 
 /** The table, for tests and for tuning. Read-only. */
 export function pressureTemplates(): { kind: PressureKind; weight: number }[] {
