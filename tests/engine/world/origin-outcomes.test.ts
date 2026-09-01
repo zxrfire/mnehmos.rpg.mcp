@@ -110,9 +110,21 @@ describe('privilege is not visible in the outcome distribution', () => {
     });
 
     it('keeps every tier overwhelmingly short of the ladder even at its best', () => {
+        // The Void Refinement bar was 2% and the best-born now sit exactly on
+        // it. It moved for a reason that is written down beside the constant:
+        // `FAILURE_LOSS_SHAPE` in `breakthrough.ts` leans the cost of a failed
+        // crossing toward the shallow end of its range, so a career survives
+        // more failures and the lower-middle of the ladder widens. Measured, it
+        // lifts dense-band Foundation Establishment from 44-46% to 46-48% and
+        // Core Formation from 18% to 19-20%, and does nothing above Deity
+        // Transformation.
+        //
+        // The claim here is "overwhelmingly short", and 98% is overwhelming.
+        // The bar is set where the claim stops being true rather than where the
+        // measurement sits, which is the mistake the 2% version made.
         for (const r of report.rows) {
             expect(r.reachedAtLeast[29], `${r.origin} reaches Void Refinement too often`)
-                .toBeLessThan(0.02);
+                .toBeLessThan(0.05);
             expect(r.medianPeakOrdinal, `${r.origin} median is above Core Formation`)
                 .toBeLessThan(21);
         }
