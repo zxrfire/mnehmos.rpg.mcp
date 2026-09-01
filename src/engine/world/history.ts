@@ -75,6 +75,21 @@ export type HistoricalEventKind =
     | 'toll_paid'
     | 'marriage'
     | 'inheritance'
+    /**
+     * Somebody who was expecting a return stopped expecting it.
+     *
+     * A dated event and not a mood: the goal closed, the tie was rewritten, and
+     * the number of silent years is on the fact. See
+     * `when-somebody-does-not-come-back.ts`.
+     */
+    | 'gave_up_waiting'
+    /**
+     * The world settled on an unexplained absence having been a death.
+     *
+     * Almost always written with `truth: 'unresolved'`, because the engine
+     * frequently knows better and the record does not.
+     */
+    | 'presumed_dead'
     | 'grudge_opened'
     | 'grudge_inherited'
     | 'grudge_settled'

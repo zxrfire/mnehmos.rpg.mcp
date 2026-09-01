@@ -921,6 +921,84 @@ relationships originate, whether the same houses always win, and what exclusion 
 
 ---
 
+## Absence: the world noticing that somebody is gone
+
+`when-somebody-does-not-come-back.ts`. Seclusion is this game's core loop and until
+this module it cost exactly the days it took. Everything above makes things happen while
+a cultivator is sealed in a cave - elders die, borders move, houses fold, juniors are
+promoted - and none of it was **about** the person who was not there. The events were
+already happening; they were not happening **to** the player.
+
+An **absence** is a dated object: who was gone, from when, who saw them go, who was told,
+and a snapshot of every tie that pointed at them on the day they left. Once a year it
+lets the people holding those ties reach the conclusions time actually forces, and on
+return it reports what is materially different.
+
+The product is not "relationships decay". It is that **several parties end up holding
+different, dated, sincerely-believed accounts of the same absence, and at most one of
+them is right**:
+
+```text
+truth (engine)          in seclusion under Stone Fall, alive throughout
+the enemy who watched   knows      witnessed   still alive, still in there
+the sect                believes   inferred    died, year 47
+the register            believes   read        struck out, year 47
+the woman who waited    believes   inferred    he left and did not come back
+```
+
+None of that needed a new table. `KnowledgeLedger.disagreementsAbout(claimKey)` already
+returned exactly this shape and had nothing to return, because nobody was writing the
+rows. Every account is an ordinary `knowledge.ts` record on `fate:<id>`, with a stage from
+`discovery.ts`, and the register is a `public` holder like any other - a document with its
+own date and its own author, which outlives everybody who agreed with it.
+
+Four rules bind it:
+
+- **Events, never a meter.** There is no abandonment score. Somebody who stopped waiting
+  did so on a day, after a stated number of silent years, and what changed is a closed
+  `reunion` goal, a rewritten tie carrying the fact id that did it, a chronicle fact, and
+  a knowledge row. Ask the world "how much has she given up on him" and it has no answer;
+  ask "did she stop, and when" and it has a date. This does not violate the social layer's
+  ban on decay: that layer is storage and must never shrink a record, and this is the
+  world layer, whose job is to make dated events happen from seeded rolls exactly as
+  `pressure.ts` does.
+- **Waiting is a `reunion` goal.** `GoalKind` has carried `'reunion'` since `npc-state.ts`
+  was written and nothing had ever produced one. Using it rather than a new field means
+  waiting **inherits**: `settleNpcDeath` hands unfinished goals to an heir with the
+  generation counter bumped, so a childhood friend's grandchild can still be looking.
+- **Telling people is the lever.** Waiting requires having been informed, and both clocks
+  are halved for somebody who was told where the absentee went. Patience factors take the
+  **smaller** of whatever applies rather than the product, because loving somebody and
+  having been told by them are the same reason to keep a door open, and multiplying them
+  produced a world where the people who mattered most cost you least.
+- **Nothing about the player.** The absentee is an id and a name, and nothing branches on
+  whether they have an `NpcRecord`. The same pass serves a sealed player and the ordinary
+  `disappearance` event, whose own chronicle line already read "treated as dead by
+  everyone except one person" without anybody ever having been that person.
+
+### Two things measurement changed here
+
+- **`settleNpcDeath` inherited only the enemies.** It took a tie at standing `<= -0.4` and
+  dropped everything above it, so grudges outlived their holders and friendships died with
+  them - eighteen inherited grudges after five centuries against zero inherited
+  friendships. Five hundred years of that is a family that accumulates nothing but debts
+  owed against it. The bar is now symmetric on `GRUDGE_STANDING` / `FRIENDSHIP_STANDING`,
+  and household and teaching kinds pass down as `ally`, because an heir did not marry
+  their parent's spouse - what descends is the obligation. `worldShape` counts the two
+  sides separately so the asymmetry is visible if it ever returns.
+- **The world has almost nobody to lose.** Measured on a seeded world after 120 years:
+  73 ties among 498 living people, of which 33 are enemies, 19 rivals, and exactly **6**
+  at or above the standing the engine calls a friendship - with no households and no
+  teaching lines anywhere, because the only kinds the world produces are
+  `ally / rival / enemy / acquaintance`. So a seclusion in the world as it currently
+  stands has very little to cost, and that is a gap in the **world** rather than in this
+  pass. It is written down here rather than tuned around: lowering the waiting bar until
+  the number moved would have made a shortage of relationships look like a working
+  mechanic. `scripts/audit-absence.ts` reports both the seeded case and a controlled cast,
+  and the controlled table is the one that measures the mechanism.
+
+---
+
 ## Reading order
 
 ```text
@@ -937,6 +1015,9 @@ world-state.ts   the authoritative store; plain serialisable data, pure mutation
 time.ts          advanceTime: what fell due, what was running, what was missed
 manuals.ts       who holds a book, and who a house has decided is worth its top shelf
 gatherings.ts    the chosen of allied houses meet; meetings, bouts, rankings, sites
+when-somebody-does-not-come-back.ts
+                 an absence as a dated object; who stops waiting, who writes you
+                 off, and the incompatible accounts that survive it
 immortal-world.ts the far side: arrival, standing, perils, and its own clock
 ```
 
