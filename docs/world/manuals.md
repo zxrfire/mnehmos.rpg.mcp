@@ -89,22 +89,53 @@ boundary is a change in kind, and a method that carries somebody across one is a
 piece of work from a method that polishes them. So an author finishes at the natural place
 to finish, and the next realm is somebody else's book, a later volume, or nobody's.
 
-**But "written to perfection" describes the syllabus, not the number.** A complete book
-teaches its realm to the last rung *and the crossing out of it*, which is the hardest thing
-in it — so a reader who has finished the paper is standing on the first rung of the next
-realm, and that is where the `cap` sits. The realms run 0–12, 13–16, 17–20, 21–24, 25–28,
-29–32, 33–36, 37–40 and 41–44, so complete books cap at 13, 17, 21, 25, 29, 33 and 37.
+**A manual takes you to Perfection and stops there.** Not part of the way into a realm —
+all of it, the hundred per cent peak of the last rung. That is what a complete book is for
+and it is the whole of what it does.
 
-**And that is where it abandons you.** The book got you across the boundary and then stopped,
-because the realm you have just entered is a different thing and the book was never about it.
-You are standing on its first rung holding a work that says nothing whatsoever about the
-second — not vague guidance, not a hint, *nothing*, because how to refine a nascent soul is
-not a harder version of how to gather qi. This is the precise moment a cultivator's career
-becomes a problem: they have never been higher, they have never been less able to say what to
-do next, and the paper in their hands has been correct and complete the entire way.
+**The crossing out is not in the book, and no book can put it there.** What stands between
+Perfection and the next realm is heart demons, or tribulation lightning, or whatever that
+particular boundary asks of a person, and *which one you face is decided by where you stand
+on the ladder rather than by what you practise* — `triggersHeavenlyTribulation` in
+`realms.ts` takes an ordinal and nothing else. Two cultivators crossing the same boundary
+meet the same thing whether their methods have anything in common or not.
 
-Unless, of course, the book is advanced enough to cover that too — which is what a long
-manual is, and why one is worth so much.
+A good manual **explains** the crossing. It tells you what is coming, which is worth a great
+deal and is not the same as telling you how to pass it. What it actually contributes when
+you are standing in it is indirect and entirely material: the foundation it spent your last
+realm building, and the techniques it taught you along the way. You survive the crossing on
+what the book made of you, never on what the book says about it.
+
+**Which is why people wait at Perfection.** Sitting at a hundred per cent of your realm is
+not stalling, it is the one moment in a cultivator's career when they can see exactly what is
+coming and still choose when to meet it. Everything that improves the odds is bought *here*:
+the pill, the artifact, a place where the lightning has somewhere to go, somebody standing by
+who can pull you out, another decade of foundation. A cultivator who crosses the moment they
+touch Perfection has taken the worst version of a fight they could have picked the terms of.
+
+And it cannot be waited out forever. `stagnationYearsForOrdinal` gives every rank an
+allowance measured against its own lifespan, and a plateau longer than the realm permits ends
+the life where it stands - `stagnation_aging` in `survival.ts` is a real cause of death. So
+Perfection is a decision with a clock on it: too soon and you meet the crossing with nothing
+in hand, too long and the crossing never happens at all. **This is the single most legible
+choice the ladder offers, and it is available at every boundary.**
+
+**Then it lands you on the first rung of the next realm, and that is where the `cap` sits.**
+The number in the catalog is not where the paper stops — the paper stopped at Perfection.
+It is where the crossing leaves you standing, which is why complete books cap at 13, 17, 21,
+25, 29, 33 and 37 rather than at 12, 16 and 20. The realms run 0–12, 13–16, 17–20, 21–24,
+25–28, 29–32, 33–36, 37–40 and 41–44.
+
+**And there you are stuck.** You have never been higher and you have never been less able to
+say what to do next: the realm you have just entered is a different thing, and the book that
+carried you every step of the way to here says nothing whatsoever about its second rung. Not
+vague guidance, not a hint — nothing, because refining a nascent soul is not a harder version
+of gathering qi. A cultivator standing on the first rung of a new realm with the book that
+got them there is holding a work that has been correct and complete the entire way and is
+now finished with them.
+
+Unless the book is advanced enough to cover the next realm too, which is what a long manual
+is, and why one is worth so much.
 
 This was got wrong once, in this file, and the correction is worth keeping because the wrong
 version is the intuitive one. Capping at a realm's *last* rung — 12, 16, 20 — and opening
