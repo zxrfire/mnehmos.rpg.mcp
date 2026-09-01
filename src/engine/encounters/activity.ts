@@ -242,7 +242,19 @@ const PLACE_KIND_BIAS: Readonly<Record<string, Partial<Record<EncounterKind, num
     secret_realm: { ruin: 2.5, opportunity: 2, spirit_beast: 1.6, commerce: 0.05 },
     sealed_domain: { ruin: 2.5, misfortune: 1.5, commerce: 0.05 },
     region: {},
-    portal: {}
+    portal: {},
+    // ── INTERIORS ────────────────────────────────────────────────────────
+    // Being inside a compound is not being on its ground. There are no
+    // bandits in a scripture pavilion and no spirit beasts in a refectory;
+    // what is in there is the house, which is why every interior row is
+    // dominated by `sect_event` and `rival_cultivator` and has almost no
+    // commerce in it - the market is outside the wall by definition.
+    precinct: { sect_event: 3.5, rival_cultivator: 2, bandits: 0.05, spirit_beast: 0.1, commerce: 0.3 },
+    hall: { sect_event: 3.5, rival_cultivator: 1.8, dao_house: 1.4, bandits: 0.02, spirit_beast: 0.05, commerce: 0.2 },
+    // A room cut over a vein is where people meet each other competing for it.
+    chamber: { sect_event: 2.5, rival_cultivator: 2.6, opportunity: 1.5, bandits: 0.02, spirit_beast: 0.1, commerce: 0.05 },
+    // A shut room has nobody in it. What it has is what is in it.
+    vault: { ruin: 2, opportunity: 1.8, misfortune: 1.2, commerce: 0.02, dao_house: 0.1, bandits: 0.02 }
 };
 
 export function placeKindBias(place: EncounterPlace): Partial<Record<EncounterKind, number>> {
