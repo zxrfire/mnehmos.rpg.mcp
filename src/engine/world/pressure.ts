@@ -97,6 +97,7 @@ import {
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
 import { manualCeilingOf, newlyEntitled, refreshChosen, BOOKLESS_CEILING } from './manuals.js';
+import { applyGatherings } from './gatherings.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
     makeFaction,
@@ -131,6 +132,16 @@ export type PressureKind =
      */
     | 'convergence_opened'
     | 'convergence_closed'
+    /**
+     * The chosen of allied houses met, and something came of it.
+     *
+     * Not in TEMPLATES either, and for the same reason as `convergence_opened`:
+     * a circle's calendar is a property of the circle, not of how eventful the
+     * year happened to be. `gatherings.ts` owns everything about it and this
+     * module only calls it, on the same yearly line as advancement and
+     * recruitment.
+     */
+    | 'gathering'
     | 'vein_lost'
     | 'elder_died'
     | 'killing'
@@ -249,6 +260,25 @@ export function applyPressure(
         applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
         applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
+        // And then the people those two passes produced meet each other. After
+        // books and after recruitment, so a chosen named this year can be sent
+        // this year rather than waiting a turn of the clock; before the economy,
+        // so the house that hosted pays for it out of the same year's purse.
+        for (const held of applyGatherings(
+            state, year, withinSpan(year * 365 + 160, fromDay, toDay)
+        )) {
+            events.push({
+                kind: 'gathering',
+                onDay: held.onDay,
+                fact: held.fact,
+                touched: {
+                    factions: held.factionIds,
+                    locations: held.locationId ? [held.locationId] : [],
+                    npcs: held.attendeeIds
+                },
+                deaths: []
+            });
+        }
         applyFactionEconomy(state);
         born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
         // The longest project in the world, on its own clock. It will almost

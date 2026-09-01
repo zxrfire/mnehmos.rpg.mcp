@@ -77,6 +77,7 @@ export type HistoricalEventKind =
     | 'grudge_opened'
     | 'grudge_inherited'
     | 'grudge_settled'
+    | 'gathering'
     | 'oath_sworn'
     | 'debt_incurred'
     | 'opportunity'
