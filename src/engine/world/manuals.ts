@@ -232,6 +232,49 @@ export const BOOKLESS_CEILING = 6;
  */
 export const COMMON_MANUAL_CAP = 13;
 
+/** How many houses in the world teach this manual. */
+export function housesTeaching(techniqueId: string): number {
+    let n = 0;
+    for (const [, taught] of TAUGHT) if (taught.includes(techniqueId)) n++;
+    return n;
+}
+
+/**
+ * Taught in enough places that no house can call it theirs.
+ *
+ * `COMMON_MANUAL_CAP` answered this alone, and it was right when written:
+ * nothing above Qi Condensation sat on more than one shelf. Bridge manuals then
+ * closed the gaps in twenty of thirty-two shelves, largely by putting a handful
+ * of existing books onto many houses at once, and the constant began calling
+ * the province's standard crossing somebody's private property -
+ * `unauthorisedPractice` reported a cultivator practising it as answerable to
+ * seventeen houses.
+ *
+ * Commonness was never a fact about height. It is a fact about HOW MANY PEOPLE
+ * HOLD IT, and the two coincided by accident. Measured across the catalog:
+ *
+ *   cap  0-13   3 manuals, median 9 houses each, max 23
+ *   cap 14-21   5 manuals, median 3 houses each, max 23
+ *   cap 22-29   4 manuals, median 3 houses each, max 13
+ *   cap 30-46   3 manuals, median 1 house each,  max 1
+ *
+ * The top band needs no threshold of mine: EVERY manual above cap 29 is taught
+ * by exactly one house. Anybody who reached Void Refinement is already an
+ * exception, so the pool of people who could copy such a book is tiny and one at
+ * that height is worth an enormous amount of money. That falls out of the
+ * catalog rather than being asserted here.
+ *
+ * Four is the line because the catalog puts nothing between three and nine.
+ */
+export const COMMON_HOUSE_COUNT = 4;
+
+export function isCommonlyHeld(techniqueId: string): boolean {
+    const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
+    if (!t || t.class !== 'cultivation' || t.cap == null) return true;
+    if (Number(t.cap) <= COMMON_MANUAL_CAP) return true;
+    return housesTeaching(techniqueId) >= COMMON_HOUSE_COUNT;
+}
+
 /** Manuals cheap and numerous enough to be ordinary market stock. */
 export function commonManuals(): Manual[] {
     const seen = new Set<string>();
@@ -763,9 +806,8 @@ export function betrayalOfSelling(
     techniqueId: string,
     ownerFactionId: string | null
 ): 0 | 1 | 2 | 3 {
-    const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
-    const cap = t && t.class === 'cultivation' && t.cap != null ? Number(t.cap) : 0;
-    if (cap <= COMMON_MANUAL_CAP) return 0;
+    // Nobody's property, so selling copies is a trade rather than a betrayal.
+    if (isCommonlyHeld(techniqueId)) return 0;
     if (!ownerFactionId) return 1;
     const shelf = manualsOf(ownerFactionId);
     const isTop = shelf.length > 0 && shelf[shelf.length - 1].id === techniqueId;
@@ -814,10 +856,9 @@ export function whoseArt(techniqueId: string): string[] {
  * want a word, in the order they would get to you.
  */
 export function unauthorisedPractice(npc: NpcRecord, techniqueId: string): string[] | null {
-    const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
-    const cap = t && t.class === 'cultivation' && t.cap != null ? Number(t.cap) : 0;
-    // Common books are nobody's. Half the province is practising them.
-    if (cap <= COMMON_MANUAL_CAP) return null;
+    // Common books are nobody's - and "common" is how widely a manual is
+    // held, not how high it carries.
+    if (isCommonlyHeld(techniqueId)) return null;
     const owners = whoseArt(techniqueId).filter(id => id !== npc.factionId);
     if (owners.length === 0) return null;
     // Somebody carrying the tag of a house that teaches it has an answer ready.
@@ -860,7 +901,9 @@ export function canReproduce(npc: NpcRecord, techniqueId: string): boolean {
     // cheap means the next person can afford one and copy it too. Selling
     // copies is an ordinary living for a cultivator who needs stones and has
     // nothing else to trade, and it is why a primer costs what it costs.
-    if (Number(t.cap) <= COMMON_MANUAL_CAP) return true;
+    // A widely-held book is copyable by anybody holding it, which is the
+    // loop that keeps it widely held.
+    if (isCommonlyHeld(techniqueId)) return true;
     // Above that line the loop breaks. Reproduction needs somebody who took
     // the book to its end, so a house whose last master of an art has died
     // holds a finite number of physical objects - and an art becomes scarce,
