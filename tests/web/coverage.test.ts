@@ -41,7 +41,13 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         // standing, and the most obvious sentence about them has to work.
         'I explore the ruins',
         'I examine the stele',
-        'I search the ruin for anything left',
+        // Was "I search the ruin for anything left", which now routes to
+        // `site` and should: `ruin` became a site noun once playing showed the
+        // whole site subsystem was unreachable by the setting's own word for
+        // these places, and searching a ruin for what is left in it is the site
+        // layer's own job rather than general examination. Swapped for a
+        // sentence that examines something without standing at a threshold.
+        'I search the market stalls for anything left',
         'I poke around the old shrine',
         'I read the inscription'
     ],
