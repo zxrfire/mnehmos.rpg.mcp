@@ -884,7 +884,22 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'It does not, and nothing in the room is dangerous. What it costs is what the log costs: it is dated, specific, and directly contradicts the founding account of a house that administers eleven perimeters and employs most of the people who live near this wall. Both people who have read it understood inside a page what carrying it would mean, and one of them left it where it was.',
             prize: {
-                techniqueIds: ['nameless-witness-stance'],
+                techniqueIds: [
+                    'nameless-witness-stance',
+                    // The wide-span treasure, and the only door onto it.
+                    //
+                    // It is here rather than anywhere else because the gates
+                    // agree. The door opens for somebody a house wrote an
+                    // account of an event without troubling to name, and the
+                    // book was written by somebody who held one method from
+                    // the foundation to the integrated body and appears never
+                    // to have learned that everybody else changes books - which
+                    // is not a thing that happens to a person with colleagues.
+                    // Its own gate is `domain: 'void'` at the deepest degree
+                    // the catalog uses, and a comprehension of absence is what
+                    // this door has always been measuring.
+                    'single-road-treatise'
+                ],
                 other: [
                     'The duty log of the four days, in the Girdle\'s hand, which is the only document in the world that establishes the containment was intact when the eastern nail was broken.',
                     'The names of the perimeter staff, which the House of Held Names does not have and which the descendants at the wall have been unable to claim rank on for nine hundred years.'

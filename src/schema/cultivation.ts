@@ -1171,7 +1171,30 @@ export const TechniqueSchema = z.object({
      * by the catalog's authoring helper from a named set, the way provenance
      * and surviving copies already are.
      */
-    derivable: z.boolean().default(false)
+    derivable: z.boolean().default(false),
+    /**
+     * THE HARD OPENING. What it costs to begin a method that is far beyond
+     * the reader, or null for a book that simply works when you sit down.
+     *
+     * The other half of a wide-span manual. `requiredOrdinal` is the wrong
+     * instrument for a treasure: gating a cap-33 book behind ordinal 29 is
+     * exactly what makes it unable to skip anything, which is the whole point
+     * of finding one. So a wide-span book is gated on COMPREHENSION instead -
+     * `domain` and `domainDegree` - which is the one axis money cannot buy,
+     * because it comes from what has happened to somebody rather than from
+     * how long they have sat.
+     *
+     * And on this: the opening is genuinely hard. A legendary method does not
+     * work the first time you try it. `rungs` is how far up from
+     * `requiredOrdinal` the difficult stretch runs, and `rateMultiplier` is
+     * what progress is worth inside it - well below 1. Somebody handed a great
+     * canon at Foundation cannot coast on it; they crawl through the opening
+     * and then it opens up.
+     */
+    opening: z.object({
+        rungs: z.number().int().min(1).max(MAX_ORDINAL),
+        rateMultiplier: z.number().min(0.05).max(1)
+    }).nullable().default(null)
 });
 export type Technique = z.infer<typeof TechniqueSchema>;
 
