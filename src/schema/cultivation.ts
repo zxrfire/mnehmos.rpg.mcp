@@ -1890,6 +1890,21 @@ export const SimEventKindSchema = z.enum([
      * `engine/cultivation/cultivation.ts`, which authors both sentences.
      */
     'method_ceiling',
+    /**
+     * The gate was open and the skip did not walk through it, because sitting
+     * longer is still worth more than striking now would be.
+     *
+     * The third sibling of the two warnings above, and it exists for the same
+     * reason: a standing condition the player can act on and would otherwise
+     * never learn. An unattended skip strikes the instant `canAttemptBreakthrough`
+     * says yes, which is by construction the WORST legal moment - no overflow
+     * has accumulated yet, so the odds are at their minimum for that rung.
+     * Measured in play: a realm boundary attempted at 2%, the floor of the
+     * whole scale, killing a healthy provisioned cultivator by way of the
+     * meridian injuries a boundary failure inflicts. Nobody chose it and
+     * nobody was told.
+     */
+    'crossing_deferred',
     'toll_charged',
     'foundation_established',
     /**
