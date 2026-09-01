@@ -2047,7 +2047,12 @@ ${noticedWaiting}`;
                 return this.eat(run, cultivator);
 
             case 'provision':
-                return this.provision(run, cultivator, action.days);
+                return this.provision(run, cultivator, action.days, action.rations, {
+                    // The unclamped span in the sentence, so a request the
+                    // engine had to cut down can be said rather than silently
+                    // reduced. Same source `cultivate` uses.
+                    askedFor: durationAskedFor(rawInput) ?? undefined
+                });
 
             case 'status': {
                 const eligibility = canAttemptBreakthrough(cultivator);
@@ -10156,13 +10161,27 @@ ${fit.line}`;
      * Priced off the same catalog entry the market board quotes, so the number
      * on the board and the number charged here cannot drift.
      */
-    private provision(run: Run, cultivator: Cultivator, days?: number): Execution {
-        // No span named means "as much as I can carry sensibly": enough for the
-        // default seclusion, which is the thing they are about to do.
-        const wanted = Math.max(
-            1,
-            Math.ceil((days ?? DEFAULT_CULTIVATION_DAYS) / ACTIONS_PER_FULL_SATIETY)
-        );
+    private provision(
+        run: Run,
+        cultivator: Cultivator,
+        days?: number,
+        /** A count of rations, where the sentence named one instead of a span. */
+        rations?: number,
+        options: { askedFor?: number } = {}
+    ): Execution {
+        // A COUNT IS TAKEN AS ITSELF. "Buy twenty rations" names twenty things
+        // to carry, not a span to be fed for, and converting one into the other
+        // in the parser would be wrong in both directions - how long a ration
+        // lasts depends on the body, because hunger tapers by realm.
+        //
+        // No span and no count means "as much as I can carry sensibly": enough
+        // for the default seclusion, which is the thing they are about to do.
+        const wanted = rations !== undefined
+            ? Math.max(1, Math.floor(rations))
+            : Math.max(
+                1,
+                Math.ceil((days ?? DEFAULT_CULTIVATION_DAYS) / ACTIONS_PER_FULL_SATIETY)
+            );
         const affordable = Math.floor(cultivator.spiritStones / PROVISION_COST_STONES);
         const bought = Math.min(wanted, affordable);
 
@@ -10185,9 +10204,25 @@ ${fit.line}`;
         this.repos.runs.incrementTurn(run.id, 1);
 
         const covers = held * ACTIONS_PER_FULL_SATIETY;
+
+        // THE CEILING, SAID RATHER THAN APPLIED IN SILENCE.
+        //
+        // `parseDuration` caps at MAX_CULTIVATION_DAYS, so "nine thousand years
+        // of rations" arrived here as a hundred years and the account reported
+        // a hundred years as though that were what was asked. Exactly the
+        // defect already fixed for seclusion, and the honest form is a few lines
+        // below this one: a purse that covers less than the ask already says
+        // "which is less than you went in for".
+        const askedFor = options.askedFor;
+        const clamped = days !== undefined && askedFor !== undefined && askedFor > days
+            ? `${humanDays(askedFor)} was asked for. The most this engine will provision against `
+              + `in one go is ${humanDays(days)}, and that is what was priced.`
+            : null;
+
         const facts = factsForToolResult(
             `${bought} ration${bought === 1 ? '' : 's'} bought.`,
             [
+                ...(clamped ? [clamped] : []),
                 `${bought} ration${bought === 1 ? '' : 's'} of dry food, ${cost} spirit stones, ` +
                 `and ${updated.spiritStones} left in the purse.`,
                 `That is ${humanDays(covers)} of eating in the pack` +
