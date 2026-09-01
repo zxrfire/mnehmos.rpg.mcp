@@ -40,7 +40,14 @@ function deepInsights(): Insight[] {
     return [
         formInsight({ domain: 'life_death', subject: 'mortality', opening: 'o', access: c }, 5, a),
         formInsight({ domain: 'karma', subject: 'debt', opening: 'o', access: c }, 5, a),
-        formInsight({ domain: 'void', subject: 'the seam', opening: 'o', access: c }, 4, a)
+        formInsight({ domain: 'void', subject: 'the seam', opening: 'o', access: c }, 4, a),
+        // Two more roads at DEGREE 1, because the dao gate is live and asks for
+        // breadth. Three domains stopped this subject at ordinal 32, which read
+        // as the top of the ladder closing and was the fixture failing the
+        // gate. Degree 1 buys the eligibility and moves no odds - `roadsWalked`
+        // does not read degree and `understandingEffects` does.
+        formInsight({ domain: 'weapon', subject: 'the sword', opening: 'o', access: c }, 1, a),
+        formInsight({ domain: 'formation', subject: 'the diagram', opening: 'o', access: c }, 1, a)
     ];
 }
 

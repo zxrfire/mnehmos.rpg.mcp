@@ -1,0 +1,577 @@
+/**
+ * How a cultivator comes by a road besides their own.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THE DEFECT THIS EXISTS TO FIX
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `DAO_GATE_ENFORCED` in `breakthrough.ts` shipped false for one reason, stated
+ * in that file and measured twice: A PLAYER GAINS COMPREHENSION FROM THINGS
+ * THAT HAPPEN - a ruin opened, a phenomenon survived, a teacher, nearly not
+ * being - AND THE WORLD RAN ALL FOUR AND WROTE NONE OF THEM DOWN. Switching the
+ * gate on bound the player and not the world, which is the repo's commonest
+ * defect running in the other direction, and at 1,500 years it stopped every
+ * NPC alive below ordinal 29:
+ *
+ *     band            people   mean roads   needed   would pass
+ *     Core 17-20          28      1.18          1      28 / 28
+ *     Nascent 21-24       20      1.30          2       5 / 20
+ *     Deity 25-28          7      1.86          3       0 / 7
+ *     Void 29-32           2      2.50          4       0 / 2
+ *     Grand 37-40          1      3.00          6       0 / 1
+ *
+ * This module is the supply side. It answers one question - what roads is this
+ * person in reach of - and it answers it from world state that already exists,
+ * with no field added to `NpcRecord` and no migration.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * FOUR CHANNELS, AND WHY DERIVING BEATS STORING
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ *   PRACTICE   The arts in their hands. `roadsWalkedBy` in
+ *              `an-npc-striking-at-the-next-wall.ts` already reads the `domain`
+ *              each technique declares. Reused rather than reimplemented.
+ *   GROUND     A named place that teaches a road, held by a house, standing
+ *              open in a province, or buried until somebody digs it out. See
+ *              `data/cultivation/places-that-teach-a-dao.ts`.
+ *   A MATERIAL Spent. Once, on one person, and then there is one fewer in the
+ *              world forever. See `single-use-dao-comprehension-materials.ts`.
+ *   A RUIN     The buried grounds, which teach nobody until the world finds
+ *              them, and which are the only channel that can put a road into a
+ *              province that had none.
+ *
+ * The gate's own doctrine is ACCESS, NOT EFFORT - "the requirement names WHAT
+ * MUST BE IN REACH, never what must be done" - so the first, second and fourth
+ * are computed from what somebody can get at rather than stored on them when
+ * they get it. That is not a shortcut around persistence. It is the design:
+ * being handed an inheritance counts, being taught counts, reading counts, and
+ * a cultivator sealed in the right library is doing the qualifying thing by
+ * being in the room.
+ *
+ * It also means the answer changes when the WORLD changes, which storing could
+ * not express. A disciple promoted to Inner gains a road the day the promotion
+ * lands. A house that loses its ground loses the road for everybody in it,
+ * living, at once - and the people who had already crossed on it keep their
+ * rungs, because a rung is banked and a road is not.
+ *
+ * THE THIRD CHANNEL IS THE EXCEPTION AND HAS TO BE. A material is consumed, so
+ * "in reach" is the wrong test for it: the road has to survive the object. It
+ * does, because `spend` leaves the row in the world with `spentBy` on it rather
+ * than deleting it - which `docs/world/items.md` asks for on its own account -
+ * and this module reads the road back off the spent row. The record of who used
+ * one IS the comprehension.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * WHAT THIS IS NOT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Not a second odds system. `roadsWalked` counts domains and does not read
+ * degree, so everything here is at degree 1 and contributes nothing to
+ * `understandingEffects` beyond what a first glimpse is worth. Claiming depth
+ * the world has not modelled would hand every NPC a breakthrough bonus no event
+ * in their life paid for.
+ *
+ * Not a faction rule. There is no branch anywhere on which house is which. A
+ * house that holds a ground is a house with a row in a catalog and a
+ * `controllingFactionId` on an ordinary location; take the ground away and it
+ * prices out as an ordinary house.
+ */
+
+import type { Insight, InsightDomain } from '../../schema/cultivation.js';
+import {
+    PLACES_THAT_TEACH_A_DAO,
+    type PlaceThatTeachesADao
+} from '../../data/cultivation/places-that-teach-a-dao.js';
+import { daoRequirementFor } from '../cultivation/breakthrough.js';
+import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import { makeEnvironment, makeThresholds, makeLocation, type LocationRecord } from './locations.js';
+import type { ObjectRecord } from './possessions.js';
+import { isUnspent, spend } from './single-use-dao-comprehension-materials.js';
+import { roadsWalkedBy } from './an-npc-striking-at-the-next-wall.js';
+import type { NpcRecord } from './npc-state.js';
+import type { WorldState } from './world-state.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// SEEDING THE GROUND
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Tag every dao ground carries, so a location can be found without a join. */
+export const DAO_GROUND_TAG = 'dao-ground';
+
+/** The location id a catalog row becomes. Stable, so replays agree. */
+export function daoGroundLocationId(place: PlaceThatTeachesADao): string {
+    return `loc-${place.id}`;
+}
+
+/**
+ * Turn the catalog into ordinary locations.
+ *
+ * Ordinary is the whole point. Same table as a ford town, same `kind` from the
+ * same union, same `thresholds`, same `controllingFactionId` - so every system
+ * that walks locations already handles these, and nothing had to learn about
+ * them. The only thing that distinguishes one is a tag and four `data` keys.
+ *
+ * A buried ground is seeded UNDISCOVERED, which is what makes it a ruin rather
+ * than a landmark: it is on the map the engine keeps and on nobody's map, it
+ * teaches nothing to anyone, and `discoverBuriedGrounds` below is the only way
+ * that changes.
+ */
+export function seedPlacesThatTeachADao(state: WorldState): LocationRecord[] {
+    const out: LocationRecord[] = [];
+    for (const place of PLACES_THAT_TEACH_A_DAO) {
+        const region = regionLocationFor(state, place.regionId);
+        // A GROUND IS IN A PROVINCE. No province, no ground - and this guard is
+        // not defensive tidiness, it is the difference between a world and a
+        // fixture. `tests/engine/world/fixtures.ts` seeds a small catalog with
+        // none of the real regions in it, and without this every one of these
+        // was planted there anyway as a parentless orphan, adding twenty
+        // locations to a tiny world and moving events that had nothing to do
+        // with comprehension. `driver.test.ts` caught it: a vein that changed
+        // hands in one seeded century stopped changing hands.
+        if (!region) continue;
+        const holder = place.heldBy
+            ? state.factions.find(f => f.id === place.heldBy) ?? null
+            : null;
+        out.push(makeLocation({
+            id: daoGroundLocationId(place),
+            name: place.name,
+            // Three ordinary kinds, chosen for what already reads them rather
+            // than for what they sound like:
+            //
+            //   cave          held ground. A chamber, a terrace, a stair - the
+            //                 kind a house keeps and works in. NOT `sect_seat`:
+            //                 that kind carries an invariant the whole world
+            //                 depends on, that a seat is THE seat of exactly
+            //                 one faction, and `hostile-ground.test.ts` rightly
+            //                 refuses a second one.
+            //   wilds         open ground. It can also be forbidden by an
+            //                 ordinary pressure event, which is correct - a
+            //                 road can be lost.
+            //   secret_realm  buried. `gatherings.ts` already sends expeditions
+            //                 to these once they are discovered, which is
+            //                 exactly the verb a buried ground needs. NOT
+            //                 `ruin`: a ruin must carry an `originFactId` into
+            //                 a seeded prior age, and a dao ground has no such
+            //                 event behind it.
+            kind: place.access === 'buried' ? 'secret_realm'
+                : place.access === 'held' ? 'cave' : 'wilds',
+            parentId: region.id,
+            description: `${place.description} ${place.what}`,
+            ambient: region.ambient,
+            qiDensity: region.qiDensity,
+            // What it takes to stand there and not be hurt by it. The floor is
+            // the same number the road's floor is, because the reason a low
+            // cultivator takes nothing from the Struck Terrace and the reason it
+            // kills them are one reason.
+            thresholds: makeThresholds(place.fromOrdinal, place.fromOrdinal, place.fromOrdinal, 0),
+            hazards: place.access === 'buried' ? ['pressure', 'sealed_qi'] : [],
+            environment: makeEnvironment({
+                spiritualDensity: region.environment.spiritualDensity,
+                danger: place.access === 'buried' ? 0.7 : place.access === 'open' ? 0.3 : 0.1,
+                politicalControl: holder?.name ?? 'nobody',
+                knownSecrets: []
+            }),
+            // A buried ground is not on anybody's map yet. That is the whole
+            // difference between it and the one standing open in the same
+            // province, and it is one boolean rather than a second mechanism.
+            discovered: place.access !== 'buried',
+            discoveredOnDay: place.access !== 'buried' ? state.currentDay : null,
+            controllingFactionId: holder?.id ?? null,
+            tags: [DAO_GROUND_TAG, place.access, `road:${place.domain}`],
+            data: {
+                daoGroundId: place.id,
+                daoDomain: place.domain,
+                daoSubject: place.subject,
+                daoFromOrdinal: place.fromOrdinal,
+                daoAccess: place.access,
+                daoStandingRequired: place.standingRequired,
+                catalogRegionId: place.regionId,
+                // Zero, so `drawBirthplace` never puts a child on a terrace
+                // where a tribulation came down. A dao ground is somewhere you
+                // go, never somewhere you are from.
+                populationWeight: 0
+            }
+        }));
+    }
+    // Held ground is the holder's, and the roster of what a house controls has
+    // to say so or `locationsControlledBy` disagrees with the location itself.
+    for (const location of out) {
+        if (!location.controllingFactionId) continue;
+        const at = state.factions.findIndex(f => f.id === location.controllingFactionId);
+        if (at < 0) continue;
+        const faction = state.factions[at];
+        if (faction.controlledLocationIds.includes(location.id)) continue;
+        state.factions[at] = {
+            ...faction,
+            controlledLocationIds: [...faction.controlledLocationIds, location.id]
+        };
+    }
+    return out;
+}
+
+function regionLocationFor(state: WorldState, catalogRegionId: string): LocationRecord | null {
+    return state.locations.find(
+        l => l.kind === 'region' && l.data.catalogRegionId === catalogRegionId
+    ) ?? null;
+}
+
+/** Which province a location is in, walking up the parent chain. */
+export function regionCatalogIdOf(state: WorldState, locationId: string | null): string | null {
+    let current = locationId ? state.locations.find(l => l.id === locationId) ?? null : null;
+    for (let hops = 0; current && hops < 8; hops++) {
+        const id = current.data.catalogRegionId;
+        if (typeof id === 'string') return id;
+        current = current.parentId
+            ? state.locations.find(l => l.id === current!.parentId) ?? null
+            : null;
+    }
+    return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT IS IN REACH
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A road, and the thing that put it in reach. */
+export interface RoadInReach {
+    domain: InsightDomain;
+    subject: string;
+    /** Location id, object id or technique id. Becomes the achievement id. */
+    sourceId: string;
+    sourceName: string;
+    how: 'ground_held' | 'ground_open' | 'ground_buried' | 'material_spent';
+}
+
+/**
+ * Every dao ground this person can actually get at, and why.
+ *
+ * Three different sentences about being unable to get in, and each is a real
+ * constraint somewhere else in the engine rather than a number invented here:
+ *
+ *   HELD    membership AND standing. `factionRankIndex` is the same instrument
+ *           `manuals.ts` rations a shelf with, and it is what forty years of
+ *           sweeping buys. An outer disciple at a house whose ground asks for
+ *           an elder is genuinely stuck, and can leave.
+ *   OPEN    the province they are standing in. You are born where you are born
+ *           and most people in this world die in the province they were born
+ *           in, so an open ground is a hand dealt at birth - which is why every
+ *           province has at least one and no province has all eight.
+ *   BURIED  somebody found it. `discovered` is world state moved by
+ *           `discoverBuriedGrounds`, on the world's clock and not on merit.
+ *
+ * And in all three cases the rung: below `fromOrdinal` a visitor takes nothing,
+ * which is the same floor that makes standing there survivable.
+ */
+export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord): RoadInReach[] {
+    const ordinal = npc.cultivation.realmOrdinal;
+    const theirRegion = regionCatalogIdOf(state, npc.locationId);
+    const out: RoadInReach[] = [];
+
+    for (const location of state.locations) {
+        if (!location.tags.includes(DAO_GROUND_TAG)) continue;
+        const domain = location.data.daoDomain;
+        const from = Number(location.data.daoFromOrdinal ?? 0);
+        if (typeof domain !== 'string' || ordinal < from) continue;
+
+        const access = String(location.data.daoAccess ?? '');
+        let how: RoadInReach['how'];
+        if (access === 'held') {
+            if (!npc.factionId || npc.factionId !== location.controllingFactionId) continue;
+            if (npc.factionRankIndex < Number(location.data.daoStandingRequired ?? 0)) continue;
+            how = 'ground_held';
+        } else if (access === 'open') {
+            if (!theirRegion || theirRegion !== location.data.catalogRegionId) continue;
+            how = 'ground_open';
+        } else {
+            if (!location.discovered) continue;
+            if (!theirRegion || theirRegion !== location.data.catalogRegionId) continue;
+            how = 'ground_buried';
+        }
+
+        out.push({
+            domain: domain as InsightDomain,
+            subject: String(location.data.daoSubject ?? location.name),
+            sourceId: location.id,
+            sourceName: location.name,
+            how
+        });
+    }
+    return out;
+}
+
+/**
+ * Roads bought with an object that no longer exists.
+ *
+ * Read off the SPENT row, which is why `spend` marks rather than deletes. There
+ * is no second bookkeeping here and there must not be: if the object rows are
+ * ever compacted, this channel disappears with them, correctly, because the
+ * world would then have no record that the material was ever used on anybody.
+ */
+export function roadsBoughtWithMaterialsBy(state: WorldState, npcId: string): RoadInReach[] {
+    const out: RoadInReach[] = [];
+    for (const object of state.objects) {
+        if (object.kind !== 'material' || object.data?.spentBy !== npcId) continue;
+        const domain = object.data?.domain;
+        if (typeof domain !== 'string') continue;
+        out.push({
+            domain: domain as InsightDomain,
+            subject: object.name,
+            sourceId: object.id,
+            sourceName: object.name,
+            how: 'material_spent'
+        });
+    }
+    return out;
+}
+
+const HOW_IT_WAS_COME_BY: Record<RoadInReach['how'], Insight['provenance']['achievementKind']> = {
+    // Somebody let them in. The house did not have to, and the standing they
+    // spent years accumulating is what bought it.
+    ground_held: 'extraordinary_instruction',
+    // Nobody taught it. They stood somewhere and worked it out.
+    ground_open: 'profound_principle',
+    // Out of a hole, made by an age that is over.
+    ground_buried: 'met_something_ancient',
+    // One object, spent, and it does not come again.
+    material_spent: 'unusual_opportunity'
+};
+
+const HOW_IT_READS: Record<RoadInReach['how'], (name: string) => string> = {
+    ground_held: name => `Let into ${name} by the house that holds it, and took something out of it.`,
+    ground_open: name => `Stood at ${name}, which anybody may do, and was one of the few who read it.`,
+    ground_buried: name => `Went into ${name} after somebody dug it open, and came out understanding.`,
+    material_spent: name => `Understood ${name}. There is now one fewer in the world.`
+};
+
+/**
+ * Every road this cultivator holds: the practice, the ground and the spent
+ * objects, one insight per distinct domain.
+ *
+ * THE SHALLOWEST DEGREE, everywhere. `roadsWalked` counts domains and does not
+ * read degree, and claiming more would quietly pay every NPC an odds bonus
+ * through `understandingEffects` that nothing in their life earned.
+ *
+ * First source wins on a tie, and practice is consulted first, so somebody who
+ * both holds a sword canon and was let onto the cliff is credited to the canon.
+ * The count is identical either way; the provenance names the thing they would
+ * themselves name.
+ */
+export function roadsInReachOf(state: WorldState, npc: NpcRecord): Insight[] {
+    const out: Insight[] = [...roadsWalkedBy(npc)];
+    const held = new Set<InsightDomain>(out.map(i => i.domain));
+    const bornOn = Math.max(0, npc.identity.bornOnDay);
+
+    for (const road of [
+        ...roadsBoughtWithMaterialsBy(state, npc.id),
+        ...daoGroundsInReachOf(state, npc)
+    ]) {
+        if (held.has(road.domain)) continue;
+        held.add(road.domain);
+        const achievementId = `${npc.id}-road-${road.sourceId}`;
+        out.push({
+            id: achievementId,
+            domain: road.domain,
+            subject: road.subject,
+            degree: 1,
+            provenance: {
+                achievementId,
+                achievementKind: HOW_IT_WAS_COME_BY[road.how],
+                onDay: bornOn,
+                deepenedBy: [],
+                account: HOW_IT_READS[road.how](road.sourceName)
+            }
+        });
+    }
+    return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE WORLD FINDING THINGS
+//
+// Two passes on the world's own clock, and both are deliberately slow. The
+// gate is meant to be expensive; what it must not be is unpayable, and the
+// difference between those two is entirely a question of RATE. A channel that
+// opens every road in a century has replaced a wall nobody can pass with a
+// wall nobody notices, and the second is worse because it looks fine in every
+// measurement.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Chance per year that one still-buried ground is dug open.
+ *
+ * Four of them in the world. At this rate about a third are open after three
+ * centuries and about nine in ten after fifteen, which is the point of the
+ * figure: A LONG HORIZON HAS MORE ROADS IN IT THAN A SHORT ONE, without
+ * anybody having been given anything, so the map a world holds at year 300 is
+ * genuinely poorer than the one it holds at year 1500.
+ *
+ * It was four times this while the pass was being written, and at that rate
+ * every buried ground in every seed was open inside eight hundred years -
+ * measured, six of six - which made "buried" a word rather than a state.
+ */
+export const BURIED_GROUND_FOUND_PER_YEAR = 0.0015;
+
+/**
+ * And the chance a material lying unrecovered in a ruin is brought out.
+ *
+ * Higher, because somebody is looking: roughly a third of the world's materials
+ * are seeded into holes, they are the specific thing expeditions are mounted
+ * for, and a hole with a known thing in it is a different proposition from a
+ * hole. Still slow enough that "go and dig one up" is a century's project for
+ * an institution rather than a resource anybody plans around.
+ */
+export const UNRECOVERED_MATERIAL_FOUND_PER_YEAR = 0.02;
+
+/** Who a recovered material ends up with: a house working near its band. */
+function plausibleRecoverer(
+    state: WorldState,
+    forOrdinal: number,
+    rng: CultivationRNG
+): { id: string; name: string; seatLocationId: string | null } | null {
+    const houses = state.factions.filter(
+        f => f.dissolvedOnDay === null
+            && Number(f.resources.reliable_ordinal ?? f.resources.power_ordinal ?? 0) >= forOrdinal - 8
+    );
+    if (houses.length === 0) return null;
+    return houses[rng.int(0, houses.length - 1)];
+}
+
+export interface RoadsPassResult {
+    /** Buried grounds dug open this pass. */
+    groundsFound: number;
+    /** Materials brought out of ruins. */
+    materialsRecovered: number;
+    /** Materials understood, and therefore gone. */
+    materialsSpent: number;
+}
+
+/**
+ * A year of the world coming by roads: what was found, and what was spent.
+ *
+ * Called from `applyPressure` before advancement, so a road opened this year is
+ * a road this year's crossing can stand on - the same ordering `applyManualCopying`
+ * takes for the same reason.
+ */
+export function applyRoadsComprehended(
+    state: WorldState,
+    year: number,
+    day: number
+): RoadsPassResult {
+    const result: RoadsPassResult = { groundsFound: 0, materialsRecovered: 0, materialsSpent: 0 };
+    const rng = forStream(state.seed, 'roads-comprehended', year);
+
+    // ── Somebody digs a ground open. ──
+    for (let i = 0; i < state.locations.length; i++) {
+        const location = state.locations[i];
+        if (!location.tags.includes(DAO_GROUND_TAG)) continue;
+        if (location.discovered || location.data.daoAccess !== 'buried') continue;
+        if (!rng.chance(BURIED_GROUND_FOUND_PER_YEAR)) continue;
+        state.locations[i] = { ...location, discovered: true, discoveredOnDay: day };
+        result.groundsFound++;
+    }
+
+    // ── Somebody brings a material out of a hole. ──
+    for (let i = 0; i < state.objects.length; i++) {
+        const object = state.objects[i];
+        if (!object.tags.includes('unrecovered') || !isUnspent(object)) continue;
+        if (!rng.chance(UNRECOVERED_MATERIAL_FOUND_PER_YEAR)) continue;
+        const house = plausibleRecoverer(state, Number(object.data?.forOrdinal ?? 0), rng);
+        if (!house) continue;
+        state.objects[i] = {
+            ...object,
+            possessorId: house.id,
+            ownerId: house.id,
+            ownerName: house.name,
+            locationId: house.seatLocationId,
+            tags: object.tags.filter(t => t !== 'unrecovered')
+        };
+        result.materialsRecovered++;
+    }
+
+    // ── And a house spends one. ──
+    result.materialsSpent = spendMaterialsOnTheBlocked(state, day);
+    return result;
+}
+
+/**
+ * A house spends an irreplaceable object on the disciple standing at the wall.
+ *
+ * THIS IS WHAT THE OBJECT IS FOR, and it is the only thing that can be done
+ * with it. The house is not being generous: a material calibrated to a height
+ * is dead capital until somebody in the building is at that height and stopped,
+ * and the moment one is, holding it any longer is a decision to waste it.
+ *
+ * Three conditions, and each is the house's own reasoning rather than a rule
+ * about houses:
+ *
+ *   1. THE PERSON IS ACTUALLY STOPPED. Not "would benefit" - blocked, at a rung
+ *      whose crossing asks for more roads than they hold. A house does not burn
+ *      one of these on somebody who was going to cross anyway.
+ *   2. THE ROAD IS ONE THEY DO NOT HAVE. Spending a lamp on somebody who has
+ *      already walked karma buys the house nothing, and every house in the
+ *      world can work that out.
+ *   3. THE MATERIAL IS PITCHED NEAR THEM. Four rungs of slack either side of
+ *      its band. Below that the reader takes nothing out of it; far above it
+ *      the house has somebody better to spend it on.
+ *
+ * The most senior blocked member first, which is not favouritism: the house is
+ * spending a finite thing and the person closest to the top of the ladder is
+ * the one whose crossing changes what the house is.
+ *
+ * ONE PER HOUSE PER YEAR, at most. Not a budget - a fact about the object.
+ * Understanding one takes the disciple out of everything else they were doing,
+ * and a house that put two people through in the same year would be a house
+ * that had two to spare, which nobody in the world does.
+ */
+export function spendMaterialsOnTheBlocked(state: WorldState, day: number): number {
+    const spentThisYear = new Set<string>();
+    let spent = 0;
+
+    // Blocked members, deepest rung first, so a house's one spend goes to the
+    // person nearest the top of the ladder.
+    const candidates = state.npcs
+        .map((npc, index) => ({ npc, index }))
+        .filter(({ npc }) => npc.status === 'alive' && npc.factionId !== null)
+        .sort((a, b) => b.npc.cultivation.realmOrdinal - a.npc.cultivation.realmOrdinal);
+
+    for (const { npc } of candidates) {
+        const houseId = npc.factionId;
+        if (!houseId || spentThisYear.has(houseId)) continue;
+
+        const ordinal = npc.cultivation.realmOrdinal;
+        // What the wall will ask when they get to it, from the one function
+        // that decides it. No second copy of the curve lives in this layer.
+        const required = daoRequirementFor(ordinal);
+        if (required <= 0) continue;
+
+        // Counted exactly the way the wall counts it: distinct domains outside
+        // the one a root supplies unaided.
+        const held = new Set<InsightDomain>(
+            roadsInReachOf(state, npc).map(i => i.domain).filter(d => d !== 'element')
+        );
+        if (held.size >= required) continue;
+
+        const at = state.objects.findIndex(object =>
+            object.kind === 'material'
+            && object.ownerId === houseId
+            && isUnspent(object)
+            && typeof object.data?.domain === 'string'
+            && !held.has(object.data.domain as InsightDomain)
+            && Math.abs(Number(object.data?.forOrdinal ?? 0) - ordinal) <= 4
+        );
+        if (at < 0) continue;
+
+        state.objects[at] = spend(state.objects[at], npc.id, day);
+        spentThisYear.add(houseId);
+        spent++;
+    }
+    return spent;
+}
+
+/**
+ * What a house is still sitting on. For probes and the standing register;
+ * nothing in the simulation reads it.
+ */
+export function unspentMaterialsHeldBy(state: WorldState, factionId: string): ObjectRecord[] {
+    return state.objects.filter(o => o.ownerId === factionId && isUnspent(o));
+}

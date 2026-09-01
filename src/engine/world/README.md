@@ -1297,8 +1297,15 @@ things up.
 ### The measurement
 
 One seed, before and after, same machine, `scripts/probe-does-the-world-produce-its-apex.ts`.
-The parenthesised figure is how many of that count **arrived** rather than being placed
-there at seeding, which is the number a headcount cannot see.
+The parenthesised figure is how many of that count were not present at world creation.
+
+**Read that column with care - it is not a turnover measure**, and reporting it as one was
+a mistake this section made and the bucket model below corrects. After ten thousand years
+essentially the whole living population postdates the seeding whatever the ladder is
+doing, so the figure says "the seeded cohort has died", which it always will. What it is
+good for is the ORIGINAL question - a band standing at 12 people none of whom postdate the
+seeding is a band with no inflow at all - and it is useless for asking whether the inflow
+is now too fast. For that, see *Every realm is a bucket*.
 
 ```text
                  above 29        above 33       above 37   at 41+   wounded  halted
@@ -1308,10 +1315,11 @@ there at seeding, which is the number a headcount cannot see.
           10,000y 28 (27)        15 (14)         3 (2)      1 (0)   48      1-4
 ```
 
-The upper middle of the ladder roughly doubles and is now almost entirely arrivals. The
-apex itself does not move: **1 to 2 people at 41+, and none of them arrived there**, which
-is the same figure before and after and is the honest state of it - see the absence
-recorded below.
+The upper middle of the ladder roughly doubles, which is the half of this that was wanted:
+the bands above Deity Transformation had an inflow of nearly zero and now have one. The
+apex itself barely moves here - 1 to 2 people at 41+ - and the count that shows it moving
+at all is further down, because a band read as 41-44 misses somebody who crossed the Lid
+by succeeding.
 
 **The wounds are the point, not a side effect.** A real wall produces real failures, and
 the wounds layer is what a failure leaves, so the world getting more broken is wanted.
@@ -1385,15 +1393,160 @@ actually held against what the curve asks at the wall out of each band:
 ```
 
 An NPC holds one road and a couple of arts, so two or three domains is the ceiling of what
-practice alone supplies, and the curve wants six by Grand Ascension. Switched on as it
-stands, nothing in the world would ever cross ordinal 28 again.
+practice alone supplies, and the curve wanted six by Grand Ascension. Switched on as it
+stood, nothing in the world would ever have crossed ordinal 28 again.
 
-The missing half is that a player accumulates comprehension from EVENTS - a ruin, a
-phenomenon, a teacher who did not have to, nearly not being. The world runs all four of
-those and none of them writes an insight, because there is nowhere to write one. That is
-the same shape as the wound gap this section opened with, and it wants the same answer: a
-stored list on the record and a pass that fills it from what the world already does. It is
-its own piece of work and it is not done here.
+### The other half is ground, and the gate is now live
+
+`how-a-cultivator-comes-by-a-road.ts` is the supply. The missing half was that a player
+accumulates comprehension from EVENTS - a ruin, a phenomenon, a teacher who did not have
+to, nearly not being - and the world ran all four and wrote none of them down.
+
+**It is derived, not stored, and that is the design rather than a shortcut.** The gate's
+own doctrine is *access, not effort*: the requirement names what must be IN REACH, never
+what must be done. So `roadsInReachOf(state, npc)` is a pure read of world state, no field
+added to `NpcRecord` and no migration - and it has a property storing could not express,
+which is that the answer moves when the world moves. A disciple promoted to Inner gains a
+road the day the promotion lands; a house that loses its ground loses the road for
+everybody in it at once, and the people who already crossed on it keep their rungs, because
+a rung is banked and a road is not.
+
+Four channels, and every one of them costs something:
+
+| Channel | What it is | What refuses you |
+|---|---|---|
+| Practice | `roadsWalkedBy` - the domains of the arts in your hands | Nothing; but it cannot reach past three, and `alchemy` is taught by no technique in the catalog |
+| Held ground | Nine named places a house controls | Membership, then STANDING. This is what forty years of sweeping buys |
+| Open ground | Seven standing open in a province | Geography. You are born where you are born, and no province has all eight roads |
+| Buried ground | Four inside ruins | Nobody has dug it out yet. `BURIED_GROUND_FOUND_PER_YEAR` is 0.0015, so a world at year 300 is genuinely poorer than the same world at 1500 |
+| A material | Single-use, spent once on one person and gone | There are 39 in the world and no house makes more |
+
+The material channel is the one exception to "in reach", and it has to be: the object is
+consumed, so the road has to survive it. It does, because `spend` marks the row rather than
+deleting it, and this module reads the road back off the spent row. **The record of who
+used one is the comprehension.** `spendMaterialsOnTheBlocked` is the pass that spends them,
+at most one per house per year, on the most senior member who is actually stopped at a wall
+for want of a road the house is holding.
+
+The catalog is `data/cultivation/places-that-teach-a-dao.ts`. Every row seeds as an
+ordinary `LocationRecord` - `cave` when held, `wilds` when open, `secret_realm` when buried,
+so `gatherings.ts` already sends expeditions to the buried ones. Not `sect_seat`, which
+carries the one-seat-per-faction invariant, and not `ruin`, which must point at a seeded
+prior age. **A ground is in a province: no province, no ground.** Seeding a place whose
+region the catalog does not have planted twenty orphans in the test fixture world and moved
+events that had nothing to do with comprehension.
+
+**Measured with it live**, `scripts/probe-can-the-world-feed-the-dao-gate.ts`, four seeds
+at 800 years:
+
+```text
+  band            people   mean roads   needed   would pass   arrivals
+  Core 17-20          87      1.71          1     87 / 87       100%
+  Nascent 21-24       66      2.67          2     47 / 66       100%
+  Deity 25-28         36      3.36          3     22 / 36        81%
+  Void 29-32          26      4.12          4     15 / 26        46%
+  Body 33-36          21      3.81          5      9 / 21         0%
+  Grand 37-40          5      4.20          5      2 / 5          0%
+  Trib 41-44           6      4.17          5      2 / 6          0%
+```
+
+Two things in that table are load-bearing and neither is the headcount.
+
+**The curve's cap came down from 8 to 5, and it is a measurement.** Nobody in any band on
+any seed holds seven roads. Six is held by an eighth to two fifths of the people who get
+that high. So the old top of the curve - 6 into Tribulation Transcendence and 7 at the last
+crossing - was not a hard gate, it was a rung nobody could ever attempt again. The number of
+domains the schema DEFINES is a fact about the schema; only what the world can put in
+somebody's reach may bound a requirement. See `MOST_ROADS_THE_WORLD_SUPPLIES`.
+
+**And run the gate-off arm before concluding anything about the apex.** The same probe with
+`DAO_GATE_ENFORCED` false, three seeds at 800 years, gives bands of 62 / 43 / 21 / 20 / 20 /
+2 / 5 against 58 / 44 / 18 / 18 / 20 / 3 / 5 with it on. The distributions are the same to
+inside the noise INCLUDING at the top, and arrival shares move by single points. The gate is
+not what limits this world's apex and never was - the settling clock, the manual ceiling and
+the span are. It is one edit and one command to check, and it is the only way to tell a gate
+that bites from a world that was already that shape.
+
+### Every realm is a bucket
+
+The model the ladder is tuned to, in the designer's words: *"think of it as a bucket with
+an input and an output. the bucket always has some volume to it but its shifting"*, and
+the scope in theirs as well - *"each cultivation stage"*. Nine buckets, and they are
+**chained**: the outflow of one is the inflow of the next, minus whatever dies or settles
+on the way. Nothing here can be tuned in isolation.
+
+**The arrivals share is a diagnostic, not a target.** An earlier pass in this section
+reported "90-95% of the people above Void Refinement arrived rather than being seeded" as
+good news. It was not even a turnover measure - it counts everybody not present at world
+creation, and after ten thousand years that is essentially the whole living population
+whatever the ladder is doing. The same figure read 82-94% *before* the change it was
+offered as evidence for. The designer's correction was blunt and correct: arrivals should
+be hard, cultivation should not be easy, and a bucket whose entire contents turn over
+inside the measurement window is being flushed rather than filled.
+
+`scripts/probe-the-bucket-at-each-realm.ts` measures the three numbers the share falls out
+of, by tracking band membership by id across century snapshots. Note it counts the LIVING:
+nothing in the engine resolves `missing`, so an extant count accumulates every person who
+ever walked off, and measured that way Foundation Establishment "grew" by 206 over forty
+centuries in a world whose headcount never moved.
+
+**The finding, and it was the outflow.** Two seeds, forty centuries after a five-century
+warm-up. `stay` is volume over outflow, and the column that matters is what fraction of
+the realm's own granted span that is:
+
+```text
+  realm                    volume   inflow  climbed   ended    stay   of span
+  Qi Condensation           378.6   378.63    32.86  345.81     1.0     100%
+  Foundation Establishment   55.2    49.66    11.88   37.84     1.1      55%
+  Core Formation             33.1    17.95     6.35   11.14     1.9      38%
+  Nascent Soul               17.5     7.63     2.45    5.17     2.3      23%
+  Deity Transformation       10.3     3.04     0.99    2.16     3.3      16%
+  Void Refinement             5.3     1.15     0.40    0.65     5.0      10%
+  Body Integration            6.2     0.39     0.04    0.39    14.6      15%
+  Grand Ascension             1.5     0.05     0.00    0.03    61.0      20%
+  Tribulation Transcendence   0.6     0.00     0.00    0.03    24.0       2%
+```
+
+Residence as a share of span falls monotonically with height. Qi Condensation lives out
+100% of its hundred years; Void Refinement gets 10% of its five thousand. **A realm's
+lifespan is the whole of what a high realm buys, and something was cancelling it.** The
+cause column said what: at Void Refinement 44% of departures were "killed by a person" and
+33% "killed when a house came" - 77% violence against 10% of age.
+
+**The mechanism: `killing` drew the victim first, uniformly from everybody alive.**
+`couldKill` kept the killer commensurate so no result was ever absurd, but the RATE was: a
+Void Refinement cultivator was picked as often as a Qi Condensation one while having fifty
+times the span to lose. Drawing the KILLER first inverts it with no rule about tiers and no
+exception for anybody - a killing needs somebody who can do it, most people are at the
+bottom, so most killings happen there, and somebody at Grand Ascension has perhaps one
+person in the world who could reach them. `couldKill` is still the gate, so the guarantee
+`demography.test.ts` pins is untouched.
+
+```text
+  realm                     stay % of span      "killed by a person"
+                            before   after      before   after
+  Qi Condensation             100%    100%          2%      3%
+  Foundation Establishment     55%     56%          5%      4%
+  Core Formation               38%     39%          -        -
+  Nascent Soul                 23%     26%         13%      -
+  Deity Transformation         16%     20%         23%      -
+  Void Refinement              10%     15%         44%      8%
+  Body Integration             15%     14%         32%      -
+  Tribulation Transcendence     2%      9%         50%      0%
+```
+
+The bottom two bands do not move, which is the check that this is a statement about how
+many people can reach whom rather than a protection granted to rank. Void Refinement's
+volume goes 5.3 to 7.8 and its inflow falls from 22% of the band per century to 13%, with
+residence rising from 5.0 to 7.7 centuries - a slow-in, slow-out bucket holding a steady
+volume, which is the shape the model asks for. Tribulation Transcendence departures are
+now 100% the tribulation, which is one of the four ends the design permits.
+
+**Settling and structural breaks are outflows that do not remove anybody.** A settled or
+broken cultivator stays in the band forever and stops feeding the one above, so they pad
+the volume while the upward outflow goes to zero. That is meant to happen and it is why
+the probe reports `climbed` and `ended` separately, and counts `stuck` beside them: a band
+whose volume is mostly stuck reads healthy and is feeding nothing.
 
 ### Two things this does not fix, written down so they are not mistaken for design
 
@@ -1476,7 +1629,34 @@ when-somebody-does-not-come-back.ts
                  an absence as a dated object; who stops waiting, who writes you
                  off, and the incompatible accounts that survive it
 immortal-world.ts the far side: arrival, standing, perils, and its own clock
+what-a-sea-crossing-costs.ts
+                 a crossing is not a road with a different number on it: a
+                 commit point, a season that closes it, a duration that is a
+                 distribution, water as the binding constraint, and a chest
+                 that is the only ground there is
 ```
+
+### A sea crossing is a different kind of link, and the engine still cannot read it
+
+`what-a-sea-crossing-costs.ts` is one half of a gap `regions.ts` recorded and this
+directory owns the other half of. `LinkKind` here is `road|path|tunnel|gate|portal|seam`
+and `seeding.ts` links **every** region connection as `'road'`, so in a seeded world an
+eleven-day cart road and a thirty-four-day open-water passage are the same object with
+different numbers on them.
+
+The five differences that make a crossing its own kind are now mechanisms rather than
+atmosphere - a commit point past which turning back is not shorter, a season that shuts
+the route without anybody deciding to, a duration that is sampled rather than fixed,
+water counted by the cup rather than food, and a stone burn that is the whole of
+cultivation because there is no vein under open water. None of them is reached by
+ordinary travel today.
+
+What it would take is two lines in files that conflict badly when shared: one `crossing`
+member on `LinkKind`, and one ternary at the `linkLocations` call in `seeding.ts` that
+picks it for a connection whose kind is `sea_crossing`. `crossing` would be the only link
+whose `open` flag is set by the world rather than by a holder or a key, which is what
+`OpeningCycle` already exists to express, and `laneIsOpenInMonth` is now the function that
+would answer it. `SEA_CROSSING_ENGINE_GAP` in that module is the machine-readable record.
 
 ## Related
 

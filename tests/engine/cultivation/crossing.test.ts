@@ -81,7 +81,19 @@ function deepInsights(): Insight[] {
     return [
         formInsight({ domain: 'life_death', subject: 'mortality', opening: 'o', access }, 5, a),
         formInsight({ domain: 'karma', subject: 'debt', opening: 'o', access }, 5, a),
-        formInsight({ domain: 'void', subject: 'the seam', opening: 'o', access }, 4, a)
+        formInsight({ domain: 'void', subject: 'the seam', opening: 'o', access }, 4, a),
+        // BREADTH AS WELL AS DEPTH, because the dao gate is live and asks for
+        // distinct roads rather than deep ones. A perfect life that held three
+        // domains stopped dead at ordinal 32 and the whole sweep reported zero
+        // crossings - which read as a collapse at the top of the ladder and was
+        // in fact a subject the world could no longer produce.
+        //
+        // At DEGREE 1, deliberately. `roadsWalked` does not read degree, so
+        // these buy the eligibility and nothing else; at degree 5 they would
+        // also move `understandingEffects`, and every calibrated figure in this
+        // file would be measuring the fixture instead of the crossing.
+        formInsight({ domain: 'weapon', subject: 'the sword', opening: 'o', access }, 1, a),
+        formInsight({ domain: 'formation', subject: 'the diagram', opening: 'o', access }, 1, a)
     ];
 }
 

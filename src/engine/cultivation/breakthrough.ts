@@ -151,6 +151,33 @@ export const MAX_BREAKTHROUGH_CHANCE = 0.97;
  * proof is one life in thirty thousand either way, so treat this constant as
  * load-bearing for `tests/engine/world/origin-outcomes.test.ts` and re-run that
  * file before moving it.
+ *
+ * -- AND THE DAO GATE NOW BINDS THE SAME ROAD, WHICH IS A REAL TENSION -----
+ *
+ * Written down rather than resolved quietly, because it is a design question
+ * and not a tuning one. `daoRequirementCurve` charges 3 roads at the crossing
+ * out of ordinal 28, and a thin-county life has no house, no shelf and nobody
+ * to teach it. Measured across 60,000 poor lives with the gate live: 36 reach
+ * that wall and 2 of them are allowed to strike at it. The rest are refused for
+ * want of comprehension rather than for want of qi, which the origin sweep now
+ * reports as its own `no_road` end instead of burying it in `settling`.
+ *
+ * So the poor road to Void Refinement is NOT closed - it runs through ruins and
+ * through whatever the province left standing open, rather than through a sect
+ * - but it is far narrower than this constant alone implies, and the narrowing
+ * is the gate rather than the ceiling.
+ *
+ * That is arguably the gate working exactly as intended. Its whole purpose is
+ * that "nothing on the ladder ever asked a cultivator for anything they could
+ * only get from somebody else, so joining a sect meant nothing and sitting in a
+ * cave forever was a complete strategy" - and a rogue farmer stopped at the
+ * Void Refinement wall is that sentence coming true. It is still a change to a
+ * stated design commitment and it belongs to the design owner.
+ *
+ * If the farmer's road has to stay as wide as it was, THE LEVER IS THE SUPPLY -
+ * more open ground, more in the holes - and not this constant and not the
+ * curve. Re-run `scripts/probe-can-the-world-feed-the-dao-gate.ts` alongside
+ * the origin sweep before moving either.
  */
 export const MAX_BOUNDARY_CHANCE = 0.85;
 
@@ -500,6 +527,49 @@ export const FAILURE_PROGRESS_LOSS: Record<BreakthroughFailure, number> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────
+// EVERY REALM IS A BUCKET
+//
+// The model the whole ladder is tuned to, in the designer's words:
+//
+//     "think of it as a bucket with an input and an output. the bucket always
+//      has some volume to it but its shifting."
+//
+// and the scope, in theirs as well: "each cultivation stage". Nine buckets, one
+// per realm, and they are CHAINED - the outflow of one is the inflow of the
+// next, minus whatever dies or settles on the way. No band can be tuned in
+// isolation: widening Core Formation's outflow fills Nascent Soul, and choking
+// Foundation Establishment starves everything above it.
+//
+// What that rules out in both directions:
+//
+//   VOLUME FALLING            outflow exceeds inflow. The original defect - the
+//                             world produced nobody above Void Refinement and
+//                             every person there was a seeded survivor.
+//   VOLUME STEADY, INFLOW
+//   THE SIZE OF THE VOLUME    the whole contents turn over inside the window.
+//                             The correction after the first fix went too far:
+//                             "arrivals should be HARD", "cultivation should
+//                             not be easy", "90-95% is too much".
+//   VOLUME CLIMBING FOREVER   outflow too slow. Nothing has shown this yet.
+//   VOLUME HEALTHY, NO INFLOW living on inheritance. Where the apex started.
+//
+// The target is a SLOW inflow and a SLOW outflow holding a steady volume, so
+// the band always contains a mix of long residents and recent arrivals. The
+// arrivals share is a diagnostic that falls out of the three numbers; it is
+// not a target and no constant here should be set from it.
+//
+// TWO OUTFLOWS THAT ARE NOT OUTFLOWS. Settling and a structural break both stop
+// somebody climbing without removing them from the world, so they pad a band's
+// volume while contributing nothing upward. A bucket can therefore read healthy
+// and be feeding nothing, which means the outflow that FEEDS THE NEXT BUCKET
+// has to be measured separately from the outflow that merely ends.
+//
+// `scripts/probe-the-bucket-at-each-realm.ts` is the instrument. It reports
+// volume, inflow, upward outflow, ending outflow, how long somebody stays and -
+// the number that says whether a realm's span is buying them anything - what
+// fraction of that span the stay is.
+//
+// ─────────────────────────────────────────────────────────────────────────
 // THE SHAPE OF THE LOSS, WHICH IS THE PYRAMID'S STRONGEST LEVER
 //
 // READ THIS BEFORE CHANGING FAILURE_LOSS_SHAPE. It is not a flavour constant.
@@ -572,6 +642,13 @@ export const FAILURE_PROGRESS_LOSS: Record<BreakthroughFailure, number> = {
 // little above Deity Transformation. Lowering it empties the middle of the
 // ladder first and the top last. Re-run both probes and put the new table here;
 // a figure without its measurement does not survive the next content pass.
+//
+// AND IT IS AN INFLOW LEVER, WHICH IS HALF OF A BUCKET. If a band's volume is
+// wrong, ask which side is wrong before reaching for this. Measured over forty
+// centuries, the answer at the top was the OUTFLOW every time: residence as a
+// share of the realm's own span ran 100% at Qi Condensation and fell to 10% by
+// Void Refinement, where 77% of departures were violent against 10% of age. No
+// value of `k` fixes that, because it is not about how many people arrive.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
@@ -876,34 +953,21 @@ export interface BreakthroughContext {
 export const DAO_GATE_FROM_ORDINAL = 20;
 
 /**
- * WHETHER THE CURVE IS CHARGED. Currently FALSE, and it is a hold rather than
- * a doubt: the curve is right, wanted, and must not go live yet.
+ * WHETHER THE CURVE IS CHARGED. Now TRUE, and what it was waiting for exists.
  *
- * ── What is missing, measured twice, independently ───────────────────────
+ * ── Why it was held off, measured twice, independently ───────────────────
  *
  * `canAttemptBreakthrough` reads `roadsWalked(cultivator.insights)`. A played
- * cultivator has an insight list and `src/web/game.ts` now populates the
- * discovery context that fills it, so the gate would bind a player correctly
- * today. AN NPC RECORD HAS NO INSIGHT LIST AT ALL. The world runs ruins,
- * phenomena, teachers and near-deaths and writes none of them down, because
- * there is nowhere on an NPC to write one.
+ * cultivator has an insight list and `src/web/game.ts` populates the discovery
+ * context that fills it, so the gate always bound a player correctly. AN NPC
+ * RECORD HAS NO INSIGHT LIST AT ALL. The world ran ruins, phenomena, teachers
+ * and near-deaths and wrote none of them down, because there was nowhere on an
+ * NPC to write one and nothing in any catalog that granted one.
  *
- * So the gate would bind the player and not the world - the same one-sided
- * enforcement, in the other direction, that the wound layer had.
- *
- * Measured here, three seeds, the live driver:
- *
- *   - 0 of 1,511 living NPCs hold a single road besides their own.
- *   - switched on, 100 of 100 NPCs standing at a gated wall are refused.
- *     Not thinned. Every one, permanently.
- *   - the standing band histogram barely moves (123 above Core Formation
- *     against 130 at 1,000 years), and that is a TRAP rather than a
- *     reassurance: the upper bands are overwhelmingly seeded, and only 1 NPC
- *     in 32 alive from seeding climbs past ordinal 21 in a thousand years. The
- *     histogram is measuring the seeder, not the ladder.
- *
- * And measured independently by the world-advancement agent at 1,500 years,
- * counting roads held in the hand rather than in an insight list:
+ * So the gate bound the player and not the world - the same one-sided
+ * enforcement, in the other direction, that the wound layer had. Measured:
+ * 0 of 1,511 living NPCs held a single road besides their own, 100 of 100 NPCs
+ * standing at a gated wall were refused, and at 1,500 years:
  *
  *     band            people   mean roads   needed   would pass
  *     Core 17-20          28      1.18          1      28 / 28
@@ -913,31 +977,53 @@ export const DAO_GATE_FROM_ORDINAL = 20;
  *     Body 33-36           3      2.00          5       0 / 3
  *     Grand 37-40          1      3.00          6       0 / 1
  *
- * Nothing in the world crosses ordinal 28 again. Not thinned - stopped.
+ * Nothing crossed ordinal 28 again. Not thinned - stopped.
  *
- * ── What has to exist before this becomes true ───────────────────────────
+ * ── What was built, and the same table afterwards ────────────────────────
  *
- * SOMEWHERE ON AN NPC TO ACCUMULATE COMPREHENSION, and it is its own piece of
- * work in the world layer rather than a line here. Two halves:
+ * The supply, in `engine/world/how-a-cultivator-comes-by-a-road.ts`, in four
+ * channels that all cost something:
  *
- *   1. The categorical half, which the world-advancement agent has built:
- *      `roadsWalkedBy` reads the domains of the techniques somebody actually
- *      holds, since every technique declares a `domain` from the same enum.
- *      The roads you have walked are the roads in your hands.
- *   2. The event half, which does not exist. A player accumulates comprehension
- *      from things that HAPPEN - a ruin opened, a phenomenon survived, a
- *      teacher, nearly not being. The world runs all four and records none.
+ *   PRACTICE   `roadsWalkedBy` - the domains of the arts in somebody's hands.
+ *              This half already existed and cannot reach past three roads;
+ *              `alchemy` is taught by no technique in the catalog at all.
+ *   GROUND     Twenty named places in `data/cultivation/places-that-teach-a-dao.ts`.
+ *              Nine are HELD by a house and let its own people in by STANDING,
+ *              which is what membership is finally worth. Seven stand OPEN in
+ *              a province, so a road is partly a hand dealt at birth.
+ *   RUINS      Four are BURIED and teach nobody until somebody digs them out,
+ *              on the world's clock rather than on anybody's merit.
+ *   MATERIALS  Single-use objects, spent once on one person and then gone, with
+ *              the spent row left in the world carrying who used it.
  *
- * Flip this to true when an NPC can accumulate from events, and re-run
- * `scripts/probe-what-the-dao-gate-costs-the-world.ts` in the same pass. The
- * bar to clear is not "some NPCs pass" - it is that the band table above shows
- * a survivor at every rung the ladder is supposed to produce.
+ * Re-measured with all four live - `scripts/probe-can-the-world-feed-the-dao-gate.ts`,
+ * four seeds at 800 years, 2,037 living:
  *
- * `tests/engine/cultivation/dao-gate.test.ts` asserts the curve is right AND
- * that it is currently inert, so flipping this is a deliberate act with a test
- * that notices.
+ *     band            people   mean roads   needed   would pass   arrivals
+ *     Core 17-20          87      1.71          1     87 / 87       100%
+ *     Nascent 21-24       66      2.67          2     47 / 66       100%
+ *     Deity 25-28         36      3.36          3     22 / 36        81%
+ *     Void 29-32          26      4.12          4     15 / 26        46%
+ *     Body 33-36          21      3.81          5      9 / 21         0%
+ *     Grand 37-40          5      4.20          5      2 / 5          0%
+ *     Trib 41-44           6      4.17          5      2 / 6          0%
+ *
+ * A survivor at every rung, and roughly half of each high band refused - which
+ * is a gate rather than a wall, and is what the switch was held back for.
+ *
+ * ── The control that matters more than the table ─────────────────────────
+ *
+ * THE SAME PROBE WITH THE GATE OFF, three seeds at 800 years, produces bands of
+ * 62 / 43 / 21 / 20 / 20 / 2 / 5 against 58 / 44 / 18 / 18 / 20 / 3 / 5 with it
+ * on. The distributions are the same to inside the noise, INCLUDING at the top,
+ * and the arrival shares move by single points. So the gate is not what limits
+ * the apex in this world and never was; the settling clock, the manual ceiling
+ * and the span are. Anybody re-tuning this constant on the strength of a thin
+ * upper band is about to chase the wrong cause, and should run the gate-off arm
+ * first - it takes one edit and one command, and it is the only way to tell a
+ * gate that bites from a world that was already shaped that way.
  */
-export const DAO_GATE_ENFORCED = false;
+export const DAO_GATE_ENFORCED = true;
 
 /** The one domain a cultivator's own root can supply unaided. */
 const SELF_TAUGHT_DOMAIN: InsightDomain = 'element';
@@ -986,13 +1072,41 @@ export function roadsWalked(insights: readonly Insight[] | undefined): number {
  *     into Void Refinement            3
  *     into Body Integration           4
  *     into Grand Ascension            5
- *     into Tribulation Transcendence  6
- *     the last crossing               7
+ *     into Tribulation Transcendence  5
+ *     the last crossing               5
  *
- * Capped at `ROADS_BESIDES_YOUR_OWN.length`, which is 8, so the top of the
- * curve deliberately stops one short of the complete set. Demanding every
- * road there is would make the last crossing turn on holding a full house
- * rather than on being deep, and `understanding.ts` already prices depth.
+ * ── AND IT STOPS AT FIVE, WHICH IS A MEASUREMENT ─────────────────────────
+ *
+ * `MOST_ROADS_THE_WORLD_SUPPLIES` is the cap, and it was 8 - the whole set
+ * besides your own - which read as a reasonable bound and was in fact a closed
+ * door. With the supply in `how-a-cultivator-comes-by-a-road.ts` live, three
+ * seeds at 1,500 years, share of each standing band holding at least k roads:
+ *
+ *     band              >=3     >=4     >=5     >=6     >=7
+ *     Deity 25-28      69.2%   53.8%   46.2%   11.5%    0.0%
+ *     Void 29-32      100.0%   75.0%   62.5%   12.5%    0.0%
+ *     Body 33-36       92.9%   64.3%   50.0%   21.4%    0.0%
+ *     Grand 37-40     100.0%   60.0%   60.0%   40.0%    0.0%
+ *     Trib 41-44      100.0%  100.0%   20.0%   20.0%    0.0%
+ *
+ * NOBODY IN THE WORLD HOLDS SEVEN, IN ANY BAND, ON ANY SEED. Six is held by
+ * between an eighth and two fifths of the people who get that high, and five
+ * by about half. A requirement of 7 at the last crossing is therefore not a
+ * hard gate - it is a rung nobody may ever attempt again, which is the exact
+ * failure the whole switch was held back for, relocated to the top of the
+ * ladder where it would have been much harder to notice.
+ *
+ * Five is where about half of a high band stands, so the wall refuses about
+ * half of them and the other half may strike. That is a gate. It is also the
+ * number that has to move if the supply ever widens: the cap is a claim about
+ * WHAT THE WORLD CAN FEED, not about what the ladder deserves to ask, and
+ * re-running `scripts/probe-can-the-world-feed-the-dao-gate.ts` is what settles
+ * it. Raise the supply first and this second, in that order and never the
+ * other way round.
+ *
+ * The rising part is unchanged and is the design claim: each realm asks more
+ * understanding than the last, for five realms, which is every realm anybody
+ * in the measured world actually climbs through.
  *
  * The shape is derived from the realm index rather than tabulated, so it
  * follows the ladder if a realm is ever inserted or removed.
@@ -1007,8 +1121,20 @@ export function daoRequirementCurve(ordinal: number): number {
     // index is the zero point and every realm below it comes out negative.
     const steps = realmIndex - CORE_FORMATION_REALM_INDEX;
     if (steps < 0) return 0;
-    return Math.min(ROADS_BESIDES_YOUR_OWN.length, steps + 1);
+    return Math.min(MOST_ROADS_THE_WORLD_SUPPLIES, steps + 1);
 }
+
+/**
+ * The most roads the curve may ever ask for. See the table above.
+ *
+ * Deliberately smaller than `ROADS_BESIDES_YOUR_OWN.length`: the number of
+ * domains that EXIST is a fact about the schema, and the number the world can
+ * actually put into one cultivator's reach is a fact about sects, provinces,
+ * ruins and single-use objects. Only the second one may bound a requirement,
+ * and reading the first as though it were the second is what made the top of
+ * this curve unpayable.
+ */
+export const MOST_ROADS_THE_WORLD_SUPPLIES = 5;
 
 /** The realm a cultivator stands in to attempt Nascent Soul. The curve's zero. */
 const CORE_FORMATION_REALM_INDEX = REALM_TIERS.findIndex(t => t.key === 'core_formation');

@@ -398,7 +398,19 @@ export function strikeAtTheWall(
     day: number,
     readiness: Readiness,
     rng: CultivationRNG,
-    ambient: AmbientQi
+    ambient: AmbientQi,
+    /**
+     * Every road this person holds, when the caller can see the world.
+     *
+     * `roadsWalkedBy` below is the half that can be read off the record alone -
+     * the arts in their hands - and it is the DEFAULT rather than the answer,
+     * because a caller with only an NPC in scope must still get a sensible one.
+     * A caller that has `WorldState` should pass `roadsInReachOf`, which adds
+     * the ground they can get at and the single-use materials that were spent
+     * on them; the technique half cannot on its own reach past three roads, and
+     * `alchemy` is taught by no art in the catalog at all.
+     */
+    roads: Insight[] = roadsWalkedBy(npc)
 ): Strike | null {
     const ordinal = npc.cultivation.realmOrdinal;
     const required = progressRequiredForOrdinal(ordinal);
@@ -410,7 +422,7 @@ export function strikeAtTheWall(
         // The dao gate reads this. See THE ROADS BESIDES THEIR OWN - without it
         // every NPC in the world answers zero roads walked and stops at the
         // first rung the gate covers, while the player is unaffected.
-        insights: roadsWalkedBy(npc),
+        insights: roads,
         // They stood here until they had it. That is what `readyToStrike`
         // measured, and handing the requirement over is the same accounting
         // `deriveLife` does when it charges the years and then rolls.

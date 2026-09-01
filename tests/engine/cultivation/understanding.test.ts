@@ -162,7 +162,11 @@ describe('2. it cannot be bought', () => {
             realmOrdinal: 40,
             spiritStones: 10_000_000,
             age: 3000,
-            cultivationProgress: 1e12
+            cultivationProgress: 1e12,
+            // Explicit, because comprehension is the subject here. `makeCultivator`
+            // otherwise supplies the roads the rung implies, which is right for
+            // every suite whose subject is the crossing and wrong for this one.
+            insights: []
         });
         expect(magnate.insights).toEqual([]);
         // And nothing about their situation opens a comprehension either.
