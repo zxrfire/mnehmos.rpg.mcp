@@ -9340,6 +9340,101 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     const deviation = body.deviation as { deviated?: boolean; summary?: string } | undefined;
     if (deviation?.deviated && deviation.summary) lines.push(deviation.summary);
 
+    // ── what a fight cost ──
+    //
+    // `combat_manage.resolve` returns a rich body - every exchange with its
+    // damage, the HP left afterwards, the wounds each side picked up, the
+    // lethal-injury threshold - and NONE of it reached the player, because
+    // this function had no combat branch and the handler's `narrationHint` is
+    // atmosphere rather than accounting.
+    //
+    // Found by playing. One swing at somebody standing in the square came back
+    // as "Broken off. Both parties are worse than they were, the wounds are
+    // real, and nothing is settled." - which is true, and reads well, and does
+    // not mention that it took two thirds of the HP off a sixteen-year-old and
+    // left an untreated wound behind. The player had to read /api/state to find
+    // out they had nearly died.
+    //
+    // This is the same defect the work path carried until it was played too,
+    // and it is worse here: work drains you over years and combat does it in a
+    // turn, and the injury threshold is the fastest way to die in the game.
+    if (typeof body.outcome === 'string' && Array.isArray(body.exchanges)) {
+        const them = body.opponent as { id?: string; name?: string } | undefined;
+        const exchanges = body.exchanges as Array<{
+            damage?: number; defenderId?: string;
+        }>;
+
+        // Whose id is on the receiving end decides whose damage it was. The
+        // opponent's id is the one field guaranteed present on both sides.
+        const taken = exchanges
+            .filter(x => x.defenderId !== undefined && x.defenderId !== them?.id)
+            .reduce((sum, x) => sum + (x.damage ?? 0), 0);
+        const dealt = exchanges
+            .filter(x => x.defenderId !== undefined && x.defenderId === them?.id)
+            .reduce((sum, x) => sum + (x.damage ?? 0), 0);
+
+        const mine = body.cultivator as {
+            vitals?: { hp?: number; maxHp?: number };
+            mortality?: {
+                untreatedInjuries?: number;
+                lethalInjuryThreshold?: number;
+                atLethalInjuryThreshold?: boolean;
+                turnsUntilBleedOut?: number | null;
+            };
+        } | undefined;
+        const hp = mine?.vitals?.hp;
+        const maxHp = mine?.vitals?.maxHp;
+
+        if (taken > 0 || dealt > 0) {
+            lines.push(
+                `${exchanges.length} exchange${exchanges.length === 1 ? '' : 's'}: `
+                + `${dealt} dealt, ${taken} taken`
+                + `${typeof hp === 'number' && typeof maxHp === 'number'
+                    ? `, which leaves ${hp} of ${maxHp}.` : '.'}`
+            );
+        }
+
+        // The wounds by name. A player who does not know they are carrying one
+        // cannot decide to have it treated, and untreated is the state that
+        // kills.
+        const hurt = body.injuries as {
+            self?: Array<{ severity?: string; description?: string }>;
+        } | undefined;
+        const fresh = hurt?.self ?? [];
+        if (fresh.length > 0) {
+            // The descriptions are written as sentences and already carry a
+            // full stop. Appending another produced "taken in combat..".
+            const said = fresh
+                .map(i => (i.description ?? i.severity ?? 'something').replace(/\.\s*$/, ''))
+                .join('; ');
+            lines.push(
+                `Came away with ${fresh.length === 1 ? 'a wound' : `${fresh.length} wounds`}: ${said}.`
+            );
+        }
+
+        // AND SAY HOW CLOSE THE THRESHOLD IS.
+        //
+        // Untreated wounds accumulate and the count that kills is fixed. A
+        // player one short of it is one fight from dying and should be told so
+        // in the words the engine uses, not left to infer it from a number they
+        // never saw.
+        const carried = mine?.mortality?.untreatedInjuries;
+        const lethalAt = mine?.mortality?.lethalInjuryThreshold;
+        if (typeof carried === 'number' && typeof lethalAt === 'number' && carried > 0) {
+            lines.push(
+                mine?.mortality?.atLethalInjuryThreshold === true
+                    ? `${carried} untreated wounds, which is the count that kills. `
+                      + 'Anything further is fatal, and nothing closes them on its own.'
+                    : `${carried} untreated wound${carried === 1 ? '' : 's'} of the `
+                      + `${lethalAt} that kill. They do not close on their own.`
+            );
+        }
+        const bleed = mine?.mortality?.turnsUntilBleedOut;
+        if (typeof bleed === 'number') {
+            lines.push(`Bleeding. ${bleed} turn${bleed === 1 ? '' : 's'} before the meridians give out.`);
+        }
+    }
+
     // ── the mortal economy ──
     //
     // `work` and `market` return figures rather than a narration hint, because
