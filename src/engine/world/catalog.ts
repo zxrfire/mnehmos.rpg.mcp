@@ -71,6 +71,19 @@ export interface CatalogFaction {
     production: number;
     /** Fraction of its inherited compound it can still operate, 0..1. */
     formationIntegrity: number;
+    /**
+     * The one-off ceiling it holds asleep, or zero.
+     *
+     * `sects.ts` has recorded this for a long time - `sectThreat().ceiling` is
+     * what a house could field once, as against `powerOrdinal`, which is what
+     * it fields every day - and the world layer never carried it across. So a
+     * seeded world contained no information about which houses have something
+     * under the hall, and `cascade.ts` could not offer `unseal` to anybody.
+     *
+     * It is an ordinary resource number and it is spent like one: waking it
+     * sets it to zero, permanently, and there is exactly one per house.
+     */
+    sealedCeilingOrdinal: number;
     description: string;
 }
 
@@ -190,9 +203,24 @@ export async function loadCultivationCatalog(): Promise<WorldCatalog> {
     const characters = (character as { FACTION_CHARACTER?: Record<string, RawCharacter> } | null)
         ?.FACTION_CHARACTER ?? {};
 
+    // The one-off ceiling a house holds asleep. `sectThreat` has computed it
+    // for a long time and nothing outside the data layer ever read it, which is
+    // why a seeded world had no unsealable houses in it.
+    const threatOf = (sects as { sectThreat?: (id: string) => { ceiling?: number } | undefined })
+        .sectThreat;
+
     const factions: CatalogFaction[] = [];
     for (const raw of (sects.SECTS ?? []) as unknown as RawSect[]) {
-        factions.push(mapFaction(raw, parentage[raw.id], characters[raw.id]));
+        let sealed = 0;
+        try {
+            const ceiling = threatOf?.(raw.id)?.ceiling ?? 0;
+            // Only the part that is ABOVE what the house fields day to day is a
+            // sealed ceiling. `sectThreat` returns the max of the two, so a
+            // house with nothing asleep reports its own power ordinal here and
+            // would otherwise look as though it held a sleeper.
+            if (ceiling > (raw.powerOrdinal ?? 0)) sealed = clampOrdinal(ceiling);
+        } catch { /* a catalog that cannot answer is a house with nothing. */ }
+        factions.push(mapFaction(raw, parentage[raw.id], characters[raw.id], sealed));
     }
 
     const mapped: CatalogRegion[] = [];
@@ -251,7 +279,12 @@ interface RawRegion {
     veinStatus?: string;
 }
 
-function mapFaction(raw: RawSect, parent?: RawParentage, character?: RawCharacter): CatalogFaction {
+function mapFaction(
+    raw: RawSect,
+    parent?: RawParentage,
+    character?: RawCharacter,
+    sealedCeilingOrdinal = 0
+): CatalogFaction {
     const total = raw.compound?.formationNodesTotal ?? 0;
     const lit = raw.compound?.formationNodesLit ?? 0;
     return {
@@ -273,6 +306,7 @@ function mapFaction(raw: RawSect, parent?: RawParentage, character?: RawCharacte
         renewalYears: renewalYearsOf(parent?.terms?.renewal),
         production: productionOf(character),
         formationIntegrity: total > 0 ? Number((lit / total).toFixed(4)) : 1,
+        sealedCeilingOrdinal,
         description: raw.description ?? ''
     };
 }

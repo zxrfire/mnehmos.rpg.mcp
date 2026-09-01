@@ -74,7 +74,16 @@ import {
     type EventConsequences,
     type HistoricalFact
 } from './history.js';
-import { applyLocationChange, forbidZone, qiFraction, type LocationRecord } from './locations.js';
+import {
+    applyLocationChange,
+    forbidZone,
+    nextClosingDay,
+    nextOpeningDay,
+    qiFraction,
+    type LocationRecord
+} from './locations.js';
+import { runCascade } from './cascade.js';
+import { ruinFromFallenSeat } from './provenance.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
 import {
     addGoal,
@@ -100,6 +109,27 @@ import {
 // ─────────────────────────────────────────────────────────────────────────
 
 export type PressureKind =
+    /**
+     * A house is ended by another house, and then the survivors choose.
+     *
+     * The one template that does not resolve in a single step: it hands off to
+     * `cascade.ts`, which runs a chain of forced choices out to its end. The
+     * chain usually stops at the first link, because doing nothing is on every
+     * table and is usually the heaviest entry on it. When it does not, the map
+     * is permanently different afterwards.
+     */
+    | 'house_destroyed'
+    /**
+     * Something sealed came open on its own schedule, with nobody's intent
+     * behind it.
+     *
+     * Not drawn from the table at all - see `applyConvergences`. A window that
+     * only opens when the year's event budget happens to allow it is not a
+     * schedule, and the whole point of this one is that the world does it
+     * whether or not anybody is watching or interested.
+     */
+    | 'convergence_opened'
+    | 'convergence_closed'
     | 'vein_lost'
     | 'elder_died'
     | 'killing'
@@ -204,6 +234,13 @@ export function applyPressure(
             const event = fireOne(state, day, forStream(state.seed, 'pressure-event', year, i));
             if (event) events.push(event);
         }
+
+        // Windows open and shut on their own clock, not on the event budget.
+        // Deliberately outside the draw loop and outside `maxEvents`: a
+        // convergence that only happens when the year had a slot free is not a
+        // schedule, and "the world did something, and nobody did it" is the
+        // entire content of this one.
+        events.push(...applyConvergences(state, year, fromDay, toDay));
 
         // Then the parts of a year that are arithmetic rather than incident:
         // people advance, institutions pay their bills, and children are born.
@@ -732,6 +769,17 @@ function liveFactions(state: WorldState): FactionRecord[] {
  */
 const CASUAL_KILL_MAX_GAP = 3;
 
+/**
+ * The advantage at which one house can simply end another.
+ *
+ * The same number from the same place: `CASUAL_KILL_MAX_GAP` is the most a
+ * killer can give away and still manage it, so a house that is that much
+ * stronger than another can reach everybody in it. It is not a new margin and
+ * it must not become one - if the combat layer's edge cap moves, this moves
+ * with it, because they are the same fact stated twice.
+ */
+const DECISIVE_MARGIN = CASUAL_KILL_MAX_GAP + 1;
+
 /** Whether this person could actually kill that one, on the ordinary ladder. */
 function couldKill(killer: NpcRecord, victim: NpcRecord): boolean {
     return killer.cultivation.realmOrdinal >= victim.cultivation.realmOrdinal - CASUAL_KILL_MAX_GAP;
@@ -859,6 +907,131 @@ function applyLastCrossing(
             );
         }
         out.push(state.npcs[i]);
+    }
+    return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE WORLD OPENS SOMETHING, AND NOBODY DID IT
+//
+// An immortal's pavilion, sealed for four hundred years, with its owner long
+// dead. It opens because the cycle came round. There is no actor, no motive and
+// no beneficiary until somebody happens to be near enough to walk in - and the
+// event fires identically whether anybody is or not.
+//
+// That indifference is the design. Every other template in this file is
+// somebody doing something to somebody; this one is the world's own clock, and
+// it should read as the world doing something rather than the world doing
+// something TO YOU. It is also the only template that creates an opportunity
+// rather than a loss.
+//
+// It is not in TEMPLATES and must not be added to it. A weighted draw would
+// make the schedule a function of how eventful the year was.
+// ─────────────────────────────────────────────────────────────────────────
+
+function applyConvergences(
+    state: WorldState,
+    year: number,
+    fromDay: number,
+    toDay: number
+): PressureEvent[] {
+    const out: PressureEvent[] = [];
+    const yearStart = year * 365;
+    const yearEnd = yearStart + 364;
+
+    for (let i = 0; i < state.locations.length; i++) {
+        const location = state.locations[i];
+        if (!location.cycle || !isBelowTheLid(location)) continue;
+
+        const opensOn = nextOpeningDay(location, Math.max(yearStart, fromDay));
+        const opened = opensOn !== null && opensOn <= Math.min(yearEnd, toDay);
+
+        if (opened && location.sealed) {
+            const day = withinSpan(opensOn!, fromDay, toDay);
+            const years = Math.round(location.cycle.periodDays / DAYS_PER_YEAR);
+            const changed = applyLocationChange(location, {
+                onDay: day,
+                kind: 'unsealed',
+                summary: `${location.name} is open. It was last open ${years} years ago.`,
+                // The cause is known and is nobody: it is the cycle. That is a
+                // different thing from an unexplained change and should not be
+                // filed as one.
+                causeKnown: true,
+                witnessed: false,
+                patch: {
+                    sealed: false,
+                    discovered: true,
+                    environment: { spiritualDensity: qiFraction(location.qiDensity) },
+                    addTags: ['open_now']
+                }
+            });
+            state.locations[i] = changed.location;
+
+            out.push(emit(state, 'convergence_opened', day, {
+                day,
+                kind: 'opportunity',
+                scale: 'regional',
+                summary: changed.change.summary,
+                locationId: location.id,
+                locationChangeIds: [changed.change.id],
+                visibility: 'public',
+                magnitude: 0.7,
+                data: {
+                    openDays: location.cycle.openDays,
+                    periodYears: years
+                },
+                unattributed:
+                    'The pass that has never gone anywhere goes somewhere this season. '
+                    + 'Nobody arranged it and nobody local can say how long it lasts.',
+                consequences: {
+                    immediate: 'It is open, and whoever left it is not coming.',
+                    physical: `${location.name} is reachable.`,
+                    opportunitiesOpened: [
+                        `${location.cycle.openDays} days inside ${location.name}.`
+                    ],
+                    tenYearsLater: 'Shut again, and the people who did not go are still '
+                        + 'explaining why they did not.'
+                }
+            }, { locations: [location.id] }));
+            continue;
+        }
+
+        // And it shuts, which is the half that makes the opening mean anything.
+        const closesOn = nextClosingDay(location, Math.max(yearStart, fromDay));
+        if (!location.sealed && location.tags.includes('open_now')
+            && closesOn !== null && closesOn <= Math.min(yearEnd, toDay)) {
+            const day = withinSpan(closesOn, fromDay, toDay);
+            const changed = applyLocationChange(location, {
+                onDay: day,
+                kind: 'sealed',
+                summary: `${location.name} is shut again.`,
+                causeKnown: true,
+                witnessed: false,
+                patch: {
+                    sealed: true,
+                    environment: { spiritualDensity: 0.05 },
+                    removeTags: ['open_now']
+                }
+            });
+            state.locations[i] = changed.location;
+
+            out.push(emit(state, 'convergence_closed', day, {
+                day,
+                kind: 'opportunity',
+                scale: 'local',
+                summary: changed.change.summary,
+                locationId: location.id,
+                locationChangeIds: [changed.change.id],
+                visibility: 'public',
+                magnitude: 0.4,
+                unattributed: 'The pass does not go anywhere any more.',
+                consequences: {
+                    immediate: 'Anybody still inside is still inside.',
+                    opportunitiesClosed: [`${location.name}, for a very long time.`],
+                    tenYearsLater: 'A list of who went in and a shorter list of who came out.'
+                }
+            }, { locations: [location.id] }));
+        }
     }
     return out;
 }
@@ -1046,6 +1219,130 @@ function clamp(n: number, lo: number, hi: number): number {
 // ─────────────────────────────────────────────────────────────────────────
 
 const TEMPLATES: Template[] = [
+    // ── A house is ended by another house, and then the survivors choose.
+    //
+    //    The only template that does not finish in one step. Everything after
+    //    the binding is `cascade.ts`: what the survivors do, and if they wake
+    //    what is under the hall, what THAT does. The chain is priced off state
+    //    that already exists and stops wherever the arithmetic stops it, which
+    //    is usually immediately.
+    //
+    //    Rare on purpose - weight 2, the same as a region turning forbidden -
+    //    because this is the event that can permanently remove ground from the
+    //    map, and the map has to be worth something for that to matter.
+    {
+        kind: 'house_destroyed',
+        weight: 2,
+        apply(state, day, rng) {
+            // Bind to a pair the world already contains: somebody hostile, and
+            // decisively stronger. Nothing is chosen; if the province has no
+            // such pair this year, nothing happens, which is correct.
+            const live = liveFactions(state);
+            const pairs: { victim: FactionRecord; aggressor: FactionRecord }[] = [];
+            for (const victim of live) {
+                if (victim.tags.includes('destroyed_by')) continue;
+                const victimPower = Number(victim.resources.power_ordinal ?? 0);
+                for (const aggressor of rivalsOf(state, victim)) {
+                    if (Number(aggressor.resources.power_ordinal ?? 0)
+                        >= victimPower + DECISIVE_MARGIN) {
+                        pairs.push({ victim, aggressor });
+                    }
+                }
+            }
+            const pair = pick(rng, pairs);
+            if (!pair) return null;
+            const { victim, aggressor } = pair;
+
+            // What was actually taken. Read off the roster and the treasury
+            // rather than declared: severity is how much of the house is gone.
+            const before = membersOf(state, victim.id);
+            const losses = before.filter(n =>
+                n.cultivation.realmOrdinal
+                    < Number(aggressor.resources.power_ordinal ?? 0) - CASUAL_KILL_MAX_GAP
+            );
+            const deaths: DeathHandoff[] = [];
+            for (const npc of losses) {
+                replaceNpc(state, markDead(npc, day, `Killed when the ${aggressor.name} came.`));
+                deaths.push(settleNpcDeath(state, npc, day));
+            }
+            const severity = before.length === 0
+                ? 1 : Math.min(1, losses.length / before.length);
+
+            victim.resources.spirit_stones = Math.round(
+                Number(victim.resources.spirit_stones ?? 0) * (1 - severity)
+            );
+            victim.tags = Array.from(new Set(victim.tags.concat('destroyed_by')));
+            adjustStandingBetween(victim, aggressor, -0.6);
+
+            // The seat is a place afterwards, and the world just made a new
+            // ruin. Provenance documented, because people watched it happen,
+            // and no cycle, because it is a place you can walk to.
+            const changeIds: string[] = [];
+            const seat = victim.seatLocationId
+                ? state.locations.find(l => l.id === victim.seatLocationId) ?? null : null;
+            // Same guard as `applyExpend`: a region is a container and does not
+            // become a ruin. See the block there for what happened without it.
+            if (seat && seat.kind !== 'region' && severity >= 0.5) {
+                const ruined = ruinFromFallenSeat(seat, {
+                    onDay: day,
+                    houseName: victim.name,
+                    houseId: victim.id
+                });
+                replaceLocation(state, ruined.location);
+                changeIds.push(ruined.change.id);
+            }
+
+            const opening = emit(state, 'house_destroyed', day, {
+                day,
+                kind: 'catastrophe',
+                scale: 'regional',
+                summary:
+                    `The ${aggressor.name} came for the ${victim.name}. `
+                    + `${losses.length} of ${before.length} dead.`
+                    + (changeIds.length > 0 ? ` The compound is a ruin.` : ''),
+                locationId: seat?.id ?? null,
+                factionIds: [victim.id, aggressor.id],
+                locationChangeIds: changeIds,
+                visibility: 'public',
+                magnitude: 0.85,
+                unattributed:
+                    'The valley road is full of people going the other way, and none of '
+                    + 'them are stopping to explain.',
+                consequences: {
+                    immediate: `The ${victim.name} has ${before.length - losses.length} people left.`,
+                    physical: changeIds.length > 0 ? 'The compound is standing and empty.' : '',
+                    beneficiaries: [{ id: aggressor.id, name: aggressor.name, role: 'aggressor' }],
+                    losers: [{ id: victim.id, name: victim.name, role: 'stricken' }],
+                    opportunitiesOpened: ['A compound nobody is holding, and it fell this year.'],
+                    tenYearsLater: 'Somebody is living in it, and did not build it.'
+                }
+            }, {
+                factions: [victim.id, aggressor.id],
+                locations: seat ? [seat.id] : [],
+                npcs: losses.map(n => n.id)
+            }, deaths);
+
+            // And now the survivors choose. Everything past this point is the
+            // cascade's, and its steps are separate facts with their own ids.
+            const chain = runCascade(state, {
+                strickenId: victim.id,
+                aggressorId: aggressor.id,
+                day,
+                causeFactId: opening.fact.id,
+                severity
+            }, forStream(state.seed, 'cascade', victim.id, day));
+
+            // The chain's touched ids and deaths fold into the opening event,
+            // because a caller that reads `touched` is asking what moved and
+            // the honest answer includes everything the chain moved.
+            opening.touched.factions.push(...chain.touched.factions);
+            opening.touched.locations.push(...chain.touched.locations);
+            opening.touched.npcs.push(...chain.touched.npcs);
+            opening.deaths.push(...chain.deaths);
+            return opening;
+        }
+    },
+
     // ── A vein changes hands. The single most consequential thing that can
     //    happen to a sect, because the vein is its whole ability to produce
     //    cultivators. ────────────────────────────────────────────────────
