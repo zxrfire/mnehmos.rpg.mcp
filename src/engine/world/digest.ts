@@ -340,6 +340,8 @@ const FALLBACK: Partial<Record<HistoricalEventKind, string>> = {
     territory_changed: 'The people collecting the tax are wearing a different colour.',
     resource_contested: 'The road up the gorge is closed to anyone without a token.',
     death: 'A house has been in white for a month.',
+    gave_up_waiting: 'Somebody has taken a name off a door.',
+    presumed_dead: 'A name has been struck out of a register at the hall.',
     ruin_opened: 'There is a new track up to the old compound.',
     ruin_sealed: 'The way in has been walled and nobody says by whom.',
     technique_lost: 'A formation has stopped working and nobody can restart it.',

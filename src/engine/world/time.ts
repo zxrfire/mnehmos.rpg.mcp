@@ -57,13 +57,19 @@ import {
     type Observer
 } from './history.js';
 import { openingsBetween, type LocationRecord } from './locations.js';
+// The two standings at which the world calls a tie something. Imported from
+// where they are defined rather than retyped here: `gatherings.ts` states in
+// its own comment that `FRIENDSHIP_STANDING` is the bar `settleNpcDeath` uses
+// read from the other end, and that sentence is only true if it is one number.
+import { FRIENDSHIP_STANDING, GRUDGE_STANDING } from './gatherings.js';
 import {
     inheritGoals,
     legacyGoals,
     markDead,
     upsertRelationship,
     type NpcGoal,
-    type NpcRecord
+    type NpcRecord,
+    type RelationshipKind
 } from './npc-state.js';
 import { heirsOf, type HeirRef } from './lineage.js';
 import {
@@ -707,19 +713,39 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
                 state.npcs[at] = inheritGoals(state.npcs[at], goals, deceased.id, onDay);
                 inherited = state.npcs[at].goals.slice(before);
             }
-            // And the accounts. A grudge outlives its owner: the charter is
-            // explicit that they are inherited, and an heir who took the
-            // holdings and the unfinished business but not the enemies would
-            // be inheriting the easy half.
+            // And the accounts, in BOTH directions.
+            //
+            // A grudge outlives its owner: the charter is explicit that they
+            // are inherited, and an heir who took the holdings and the
+            // unfinished business but not the enemies would be inheriting the
+            // easy half. But for a long time this loop inherited only the
+            // enemies, and that asymmetry was doing real damage to the world it
+            // produced. Measured over five centuries, eighteen grudges born at
+            // gatherings had passed to heirs and not one friendship had, so a
+            // family accumulated nothing but debts owed against it: every
+            // alliance died with the person who made it and every feud
+            // compounded. Five hundred years of that is a world where nobody
+            // has a friend their grandfather made, which is the opposite of
+            // the setting's own claim that gratitude persists and is repaid to
+            // a benefactor's descendants.
+            //
+            // So the bar is symmetric: an account is inherited when it reached
+            // the standing at which the world calls it something, in either
+            // direction. `GRUDGE_STANDING` and `FRIENDSHIP_STANDING` are the
+            // same number with the sign flipped and they are imported rather
+            // than retyped, because a threshold that exists in two places has
+            // already started to drift.
             for (const account of deceased.relationships) {
-                if (account.standing > -0.4) continue;
+                if (account.standing > GRUDGE_STANDING && account.standing < FRIENDSHIP_STANDING) {
+                    continue;
+                }
                 if (account.targetId === primary.id) continue;
                 state.npcs[at] = upsertRelationship(state.npcs[at], {
                     targetId: account.targetId,
                     targetName: account.targetName,
-                    kind: account.kind,
+                    kind: inheritedKind(account.kind, account.standing),
                     // It thins by a generation, and it does not go away.
-                    standing: Math.max(-1, account.standing * 0.85),
+                    standing: account.standing * 0.85,
                     note: account.note,
                     factIds: account.factIds,
                     inheritedFromId: deceased.id
@@ -764,6 +790,31 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
         goalsInherited: inherited,
         primaryHeirId: primary ? primary.id : null
     };
+}
+
+/**
+ * What a tie becomes in the next pair of hands.
+ *
+ * An heir did not marry their parent's spouse and was never anybody's disciple
+ * by inheritance, so the household and teaching kinds cannot pass down as
+ * themselves. What passes down is the OBLIGATION, and `ally` is this
+ * vocabulary's word for it - the same way a feud passes down as a feud without
+ * the heir having been the one insulted. Everything else keeps its kind,
+ * because a debt inherited is still a debt.
+ */
+function inheritedKind(kind: RelationshipKind, standing: number): RelationshipKind {
+    if (standing < 0) return kind;
+    switch (kind) {
+        case 'spouse':
+        case 'parent':
+        case 'child':
+        case 'kin':
+        case 'master':
+        case 'disciple':
+            return 'ally';
+        default:
+            return kind;
+    }
 }
 
 /** Convenience for the common phrasing. */

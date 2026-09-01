@@ -54,6 +54,12 @@ import {
     type InterruptPolicy,
     type TimeAdvanceResult
 } from './time.js';
+import {
+    applyAbsence,
+    type Absence,
+    type AbsenceConsequence
+} from './when-somebody-does-not-come-back.js';
+import type { KnowledgeRecord } from '../social/knowledge.js';
 import type { WorldState } from './world-state.js';
 
 export interface AdvanceForPlayOptions {
@@ -74,6 +80,19 @@ export interface AdvanceForPlayOptions {
     digest?: DigestOptions;
     /** Wired to the social layer's `inheritLedgerOnDeath`. */
     onDeath?: (handoff: DeathHandoff) => void;
+    /**
+     * People the world currently cannot account for, advanced on the same
+     * yearly line as everything else.
+     *
+     * The list is open absences, mutated in place. It is passed rather than
+     * stored on the world for the same reason `onDeath` is a callback: the
+     * accounts an absence produces are social-layer rows, and this layer hands
+     * them back instead of owning a ledger it would then have to persist.
+     *
+     * The absentee does not have to be the player. The ordinary `disappearance`
+     * pressure event produces exactly the same object.
+     */
+    absences?: Absence[];
 }
 
 export interface PlayAdvanceResult {
@@ -108,6 +127,21 @@ export interface PlayAdvanceResult {
 
     /** What the player learns. Null when no access was supplied. */
     digest: PlayerDigest | null;
+
+    /**
+     * What the span did to the people who were waiting for somebody absent.
+     *
+     * Empty unless `absences` was passed. These are the consequences of the
+     * absence itself - who stopped waiting, who died waiting, when the world
+     * wrote the absentee off - and are separate from `events` because most of
+     * them are not chronicle-visible to anybody but the person they happened to.
+     */
+    absenceConsequences: AbsenceConsequence[];
+    /**
+     * Dated, sourced, possibly-false accounts of an absence, for the caller to
+     * file in a `KnowledgeLedger`. Nothing in this layer stores them.
+     */
+    absenceAccounts: KnowledgeRecord[];
 }
 
 /**
@@ -143,6 +177,8 @@ export function advanceWorldForPlay(
     const timeSlices: TimeAdvanceResult[] = [];
     const immortalPerils: ImmortalPeril[] = [];
     const immortalDeaths: string[] = [];
+    const absenceConsequences: AbsenceConsequence[] = [];
+    const absenceAccounts: KnowledgeRecord[] = [];
     let born = 0;
     let remaining = requested;
     let interrupted = false;
@@ -173,6 +209,15 @@ export function advanceWorldForPlay(
         immortalDeaths.push(...above.deaths);
         for (const event of pressure.events) {
             for (const handoff of event.deaths) opts.onDeath?.(handoff);
+        }
+
+        // After the deaths and the politics of the slice, not before: somebody
+        // who died this year has to be dead by the time the absence pass asks
+        // whether they are still waiting, or they die waiting a year late.
+        for (const absence of opts.absences ?? []) {
+            const pass = applyAbsence(state, absence, state.currentDay);
+            absenceConsequences.push(...pass.consequences);
+            absenceAccounts.push(...pass.accounts);
         }
 
         remaining -= time.daysAdvanced;
@@ -212,7 +257,9 @@ export function advanceWorldForPlay(
         deaths,
         immortalPerils,
         immortalDeaths,
-        digest
+        digest,
+        absenceConsequences,
+        absenceAccounts
     };
 }
 
@@ -244,6 +291,16 @@ export interface WorldShape {
     unresolvedFacts: number;
     /** Relationship rows carrying an inherited account. */
     inheritedGrudges: number;
+    /**
+     * Inherited accounts on the other side of zero.
+     *
+     * Counted separately and beside the grudges on purpose. For a long time
+     * this number was structurally zero - `settleNpcDeath` inherited only the
+     * enemies - and a single figure would have hidden that, because grudges
+     * alone look like inheritance working. Two numbers make the asymmetry
+     * visible the moment it comes back.
+     */
+    inheritedFriendships: number;
     /** Goals that have outlived at least one holder. */
     inheritedGoals: number;
     /** Living NPCs by realm tier, lowest first. */
@@ -299,11 +356,14 @@ export function worldShape(state: WorldState): WorldShape {
     let unaccountedFor = 0;
     let inheritedGoals = 0;
     let inheritedGrudges = 0;
+    let inheritedFriendships = 0;
 
     for (const npc of state.npcs) {
         for (const goal of npc.goals) if (goal.generation > 0) inheritedGoals++;
         for (const rel of npc.relationships) {
-            if (rel.inheritedFromId !== null && rel.standing < 0) inheritedGrudges++;
+            if (rel.inheritedFromId === null) continue;
+            if (rel.standing < 0) inheritedGrudges++;
+            else if (rel.standing > 0) inheritedFriendships++;
         }
         // The ceiling is what the engine knows is out there. The headcount is
         // what the world can see. They are different questions and were being
@@ -345,6 +405,7 @@ export function worldShape(state: WorldState): WorldShape {
         facts: state.history.facts.length,
         unresolvedFacts: state.history.facts.filter(f => f.truth === 'unresolved').length,
         inheritedGrudges,
+        inheritedFriendships,
         inheritedGoals,
         realmHistogram: histogram,
         strongestOrdinal: strongest,
