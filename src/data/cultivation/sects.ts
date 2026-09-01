@@ -777,7 +777,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A doorway on the fourth peak with handprints burned into the jamb at a height no one in the Order can reach flat-footed.'
         },
         description:
-            'Nine linked peaks over the deepest vein anybody in the province has surveyed and managed to keep, held for two centuries without a foot of it leased to anyone. The library is earth and body from the crushing fist up to the mountain body and the vein-devouring canon, so an ascetic is slow, obvious, extremely hard to put down, and utterly unable to catch anything that decides to leave. What outsiders take from the road is the stone every ascetic carries and sets down on tables, and what the stone actually does is select for people who will do a pointless thing for years, which the Order\'s own intake records show and the Order does not teach. Eleven of sixty-three nodes are lit and the Order admits it does not know what forty of the others were for, but the pipeline is the best in the province and tracks the vein exactly, which is the world in one row: production follows ground, and the ground here has not been sold.',
+            'Nine linked peaks over the deepest vein anybody in the province has surveyed and managed to keep, held for two centuries without a foot of it leased to anyone. The library is earth and body from the crushing fist up to the mountain body and the vein-devouring canon, so an ascetic is slow, obvious, extremely hard to put down, and utterly unable to catch anything that decides to leave. What outsiders take from the road is the stone every ascetic carries and sets down on tables, and what the stone actually does is select for people who will do a pointless thing for years, which the Order\'s own intake records show and the Order does not teach. Eleven of sixty-three nodes are lit and the Order admits it does not know what forty of the others were for, but the pipeline tracks the vein exactly, which is the world in one row: production follows ground, and the ground here has not been sold.',
         ambition: {
             wants:
                 'The vein taken off the Third Sill\'s apportionment entirely, and held outright the way the Pavilion holds the gorge.',
@@ -1255,7 +1255,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A hall kept cold enough that nothing has ever drawn on the qi standing in it, which is why the Court cultivates there and nowhere else.'
         },
         description:
-            'A glacier court above the snowline on a cold vein nobody else can work, appearing on no accurate map, with twenty-six of forty-four nodes lit and the floors left unswept as doctrine. It is the only institution left holding a complete ice curriculum, because the curriculum was sealed in the ice and the Court dug it out rather than inheriting it from teachers: the frost needle, the tomb slash, the rimeglass carapace, the mirror displacement and the stillness canon, which is the only ice-attuned accumulation canon above heaven grade anybody has. It will not open the library to anyone without a mutated ice root, and this is triage rather than arrogance - the arts kill everyone else, so every applicant it refuses is somebody it has declined to bury, and a mutated ice cultivator who finds this Court has found the one place their talent is not a death sentence. It became a court because the ice curriculum turned out to be the one thing in the province nobody could replace, and it is the only body in the Low Fall openly gunning for another, describing itself in correspondence as a peer rather than a junior while the glacier that fed the curriculum retreats forty spans below the working face.',
+            'A glacier court above the snowline on a cold vein nobody else can work, appearing on no accurate map, with twenty-six of forty-four nodes lit and the floors left unswept as doctrine. It is the only institution left holding a complete ice curriculum, because the curriculum was sealed in the ice and the Court dug it out rather than inheriting it from teachers: the frost needle, the tomb slash, the rimeglass carapace, the mirror displacement and the stillness canon, which is the only ice-attuned accumulation canon above heaven grade anybody has. It will not open the library to anyone without a mutated ice root, and this is triage rather than arrogance - the arts kill everyone else, so every applicant it refuses is somebody it has declined to bury, and a mutated ice cultivator who finds this Court has found the one place their talent is not a death sentence. It became a court because the ice curriculum turned out to be the one thing in the province nobody could replace, and it is the only body in either province issuing grant paper of its own in a format that copies its landlord\'s, which it does while describing itself in correspondence as a peer rather than a junior, and while the glacier that fed the curriculum retreats forty spans below the working face.',
         ambition: {
             wants:
                 'The third arterial, and the eleven grants that hang off it, administered by the Frostmirror instead of the Third Sill - or failing that, standing as a peer rather than a junior.',
@@ -1451,7 +1451,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         admissionOrdinal: 2,
         stipend: [7, 22, 75, 260, 800, 2_400],
         teaches: [
-            // The house's cultivation manual, and therefore its ceiling. Reliable 13: the Foundation manual is the top of what this cult can actually walk somebody through, and the corpse work is what it does with them afterwards.
+            // The house's cultivation manual. NOT its ceiling - the cult delivers short of what this book can carry, which makes it resource-limited rather than manual-limited, and the corpse work is what it does with people afterwards.
             'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
             'cross-meridian-strike',
@@ -1526,7 +1526,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nineteen nodes lit along the caldera rim and nineteen dark, in an alternating ring, because the sect could only read every other line of the diagram.'
         },
         description:
-            'A caldera fortress on the vent vein, reached by one bridge kept in poor repair on purpose, with nineteen of thirty-eight nodes lit in an alternating ring because the sect could read every other line of the diagram and lit exactly what it understood. Its library is the hottest thing in the catalog - the ashfall crescent, the molten core scripture, the sunfeather conflagration, the burning-heart ward and the nine-abyss transformation - so its people fight by outlasting the heat they are standing in, and its elders are visibly not human any more in one specific way each. It is the strongest openly demonic sect in the region and the only one that does not pretend to be anything else: applicants are handed the full text of the transformation contract before they sign, which is total honesty about a monstrous bargain and reads to everybody as recruitment. It has the strongest live pipeline in the province because the contract works and the cost is paid later and by the individual, and it is alone among the high factions in not having concluded that the road upward is shut - which is either the only clear sight in either province or the contract talking.',
+            'A caldera fortress on the vent vein, reached by one bridge kept in poor repair on purpose, with nineteen of thirty-eight nodes lit in an alternating ring because the sect could read every other line of the diagram and lit exactly what it understood. Its library is the hottest thing in the catalog - the ashfall crescent, the molten core scripture, the sunfeather conflagration, the burning-heart ward and the nine-abyss transformation - so its people fight by outlasting the heat they are standing in, and its elders are visibly not human any more in one specific way each. It is the one demonic sect in the province that holds from the Long Cut rather than the Deep Survey, which means the apex with a doctrine about who holds ground has no instrument on it at all, and it is the only body of any alignment that hands an applicant the full text of a transformation contract before they sign - total honesty about a monstrous bargain, which reads to everybody as recruitment. Its pipeline works for a reason nobody else can copy, because the contract works and the cost is paid later and by the individual, and it is alone among the high factions in not having concluded that the road upward is shut - which is either the only clear sight in either province or the contract talking.',
         ambition: {
             wants:
                 'A court of its own, on the grounds that the transformation curriculum is the third irreplaceable thing in the province and the other two were promoted for exactly that.',
@@ -1547,7 +1547,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         admissionOrdinal: 9,
         stipend: [14, 45, 150, 500, 1_600, 5_000],
         teaches: [
-            // The house's cultivation manual, and therefore its ceiling. Reliable 21. The court climbs on storm work and this is the gathering canon underneath it.
+            // The house's cultivation manual. NOT its ceiling - the Court delivers short of what this book can carry, which is a statement about what it can source rather than about what it can teach. The court climbs on storm work and this is the gathering canon underneath it.
             // And the road up to it, which the Court did not list. It admits
             // at 9 and its canon opens at 21; nothing between the two was on
             // the shelf, so the storm work above was unreachable by anybody
@@ -1596,7 +1596,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         admissionOrdinal: 13,
         stipend: [20, 90, 400, 1_600],
         teaches: [
-            // The house's cultivation manual, and therefore its ceiling. Reliable 21. The Grove teaches slowly and this is what it teaches from.
+            // The house's cultivation manual. NOT its ceiling - the Grove delivers short of what this book can carry, and the shortfall is the deliberate one: it teaches slowly, has taken nobody in forty-one years, and this is what it teaches from.
             'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
             'undyed-core-canon',
@@ -2094,7 +2094,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         admissionOrdinal: 7,
         stipend: [20, 60, 190, 620, 2_000, 6_500],
         teaches: [
-            // The house's cultivation manual, and therefore its ceiling. Reliable 24. A house of removal still has to raise the people doing the removing.
+            // The house's cultivation manual. NOT its ceiling - the house delivers short of what this book can carry, which on a body that cuts its own records is a figure it cannot audit either. A house of removal still has to raise the people doing the removing.
             'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
             'undyed-core-canon',
@@ -2303,7 +2303,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         admissionOrdinal: 8,
         stipend: [16, 48, 150, 470, 1_500, 4_600],
         teaches: [
-            // The house's cultivation manual, and therefore its ceiling. Reliable 25. Surveyors walk the veins they draw on, which is what this canon is for.
+            // The house's cultivation manual. NOT its ceiling - the Anchorhold delivers short of what this book can carry, which is unusual on a house whose method and whose duty are the same activity. Surveyors walk the veins they draw on, which is what this canon is for.
             // Four ordinary books beneath it, none of them the Anchorhold's.
             // The two houses stand at opposite ends of the same feud and both
             // finish on the vein canon, but the Span raises its surveyors on

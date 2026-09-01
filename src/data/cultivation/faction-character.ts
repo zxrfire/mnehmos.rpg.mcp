@@ -321,7 +321,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         production: {
             reliableOrdinal: 21, currentCount: 5, peakOrdinal: 28, peakCount: 4, yearsSinceLastPeak: 90,
             climbingToward: 28, waitingOn: 'time',
-            note: 'The best pipeline in the province, because the vein under it is the deepest anyone has kept, and nothing here is short except years. It is the one house in the catalog not waiting on a supplier - it is waiting on people to have carried the stone long enough, because its own rule prices every rung in seasons served and that cannot be paid faster. Which makes it the most obvious target in the province: everybody knows where the stores are, and that they have never been assayed.'
+            note: 'The one house in the catalog short of nothing except years, which is a rarer position than a high figure and is not the same claim - three Low Fall houses turn out more than this one does. The vein under it is the deepest anyone has kept, and nothing here is short except years. It is the one house in the catalog not waiting on a supplier - it is waiting on people to have carried the stone long enough, because its own rule prices every rung in seasons served and that cannot be paid faster. Which makes it the most obvious target in the province: everybody knows where the stores are, and that they have never been assayed.'
         },
         distinctSentence: 'Sits on the richest vein in the province and has refused for two centuries to lease a foot of it, while maintaining forty formation nodes it cannot light and will not remove.'
     },
@@ -549,7 +549,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Favours owed between individuals, tracked by nobody centrally, and defaulted on constantly.',
         production: {
             reliableOrdinal: 8, currentCount: 14, peakOrdinal: 20, peakCount: 1, yearsSinceLastPeak: 60,
-            note: 'The lowest reliable production in the Low Fall, because anyone who reaches Foundation Establishment is recruited away within a year and the league does not stop them.'
+            note: 'The only production figure in the catalog that is set by other houses rather than by this one. Anyone who reaches Foundation Establishment is recruited away within a year by one of the sects that turned them down, and the league does not stop them - so it is not a shortage and it is not a ceiling, it is a leak, and cumulatively the Wanderers have produced a great many people who are now on somebody else\'s roll.'
         },
         distinctSentence: 'A league whose members mark where they have been rather than where they are, and which loses every promising member to the sects that refused them first.'
     },
@@ -693,7 +693,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Contract terms - what a member has agreed to owe and when it comes due. Money is treated as a rounding detail inside that.',
         production: {
             reliableOrdinal: 25, currentCount: 7, peakOrdinal: 34, peakCount: 3, yearsSinceLastPeak: 110,
-            note: 'The strongest live pipeline in the province, because the contract works: it reliably produces Deity Transformation and the cost is paid later and by the individual.'
+            note: 'Reliable to Deity Transformation, which one house in the province beats and none matches by the same mechanism: the contract works, the cost is paid later and by the individual, and no other body in either province has a method that defers the price rather than charging it as it goes.'
         },
         distinctSentence: 'Hands every applicant the full text of a transformation contract whose counterparty its own scripture does not name, and lights nineteen nodes in an alternating ring because it can read every other line.'
     },
