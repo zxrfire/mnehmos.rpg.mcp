@@ -83,3 +83,29 @@ const tt = shares['tribulation_transcendence'];
 console.log(`\n  share above Void Refinement : ${Math.min(...aboveVoid).toFixed(2)}% .. ${Math.max(...aboveVoid).toFixed(2)}%`);
 console.log(`  share at Tribulation Transc.: ${Math.min(...tt).toFixed(2)}% .. ${Math.max(...tt).toFixed(2)}%`);
 console.log(`  share at Qi Condensation    : ${Math.min(...shares['qi_condensation']).toFixed(2)}% .. ${Math.max(...shares['qi_condensation']).toFixed(2)}%`);
+
+// ── THE SHAPE, AS RATIOS ────────────────────────────────────────────────
+//
+// Absolute shares need recalibrating every content pass. The ratio of a band
+// to the one below it does not: it is scale-free, so a world that grows or
+// shrinks or shifts its whole distribution keeps the same ratios as long as
+// the SHAPE holds. This is the number to build an invariant on, if one is
+// wanted beyond plain ordering - ordering alone permits a flattened pyramid,
+// and with nine bands summing to 100 the top band could reach 11% and still be
+// monotone.
+console.log('\nBAND OVER THE BAND BELOW IT - the scale-free shape');
+console.log('  ratio                              min      max');
+for (let i = 1; i < KEYS.length; i++) {
+    const rs: number[] = [];
+    for (let s = 0; s < SEEDS.length; s++) {
+        const below = shares[KEYS[i - 1]][s];
+        const here = shares[KEYS[i]][s];
+        if (below > 0) rs.push(here / below);
+    }
+    if (rs.length === 0) continue;
+    const flag = Math.max(...rs) > 1 ? '   <- larger than the band beneath it' : '';
+    console.log(
+        `  ${(KEYS[i] + ' / ' + KEYS[i - 1]).padEnd(34)}` +
+        `${Math.min(...rs).toFixed(3).padStart(6)}  ${Math.max(...rs).toFixed(3).padStart(7)}${flag}`
+    );
+}

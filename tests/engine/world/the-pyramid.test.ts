@@ -18,22 +18,126 @@
  *
  * The design owner's constraint, in their own words, is that we must not blow
  * the world up with Tribulation Transcendence cultivators. This file is that
- * sentence with numbers in it.
+ * sentence with a test under it.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THE INVARIANT IS THE SHAPE, NOT THE PERCENTAGES
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * This file used to assert five fixed bars - Qi Condensation over 50%, the
+ * share above Void Refinement under 5%, and so on. They were the wrong
+ * instrument and were retired on the design owner's ruling: *"the pyramid test
+ * is too restrictive. Variation is fine, as long as the SHAPE takes hold."*
+ *
+ * Fixed bars fail on their own terms. Every legitimate content pass nudges
+ * them, each nudge has a good reason, and the bar gets loosened by whoever is
+ * holding the good reason - so a number chosen to be loose enough not to trip
+ * is not measuring anything. Measured here: root conditioning moved the largest
+ * band by four points and not one bar went red.
+ *
+ * What makes this a pyramid is that each band is smaller than the one below it.
+ * That is scale-free, needs no calibration, survives any content pass that does
+ * not change the regime, and requires nothing to be renegotiated when somebody
+ * adds nine roads.
+ *
+ * ── AND STRICT MONOTONICITY EVERYWHERE IS ALSO WRONG ─────────────────────
+ *
+ * *"its not impossible for a temporary rarity for one band to exceed those
+ * below. but this can only happen when N is small, right?"* - and that is
+ * exactly right. Two bands near the top holding a handful of people each will
+ * swap places by chance. A test that calls that a defect goes red on honest
+ * worlds and gets switched off, which is worse than not having it.
+ *
+ * So the discriminator is NOISE VERSUS STRUCTURE, and the data already shows
+ * what separates them: an inversion that REPRODUCES ACROSS SEEDS is not two
+ * small samples trading places. A genuine small-N inversion appears on one seed
+ * and not the next. A structural one appears on every seed at every horizon.
+ *
+ * ── TWO RULES, BECAUSE THE TWO ENDS OF THE LADDER ARE NOT ALIKE ──────────
+ *
+ * *"you could have more void than DT... which is fine. but more Foundation
+ * than Qi? no no no no no"* - and the reason those are different is N, not
+ * altitude.
+ *
+ *   1. WHERE BOTH BANDS ARE POPULATIONS, THE ORDERING IS ABSOLUTE. Qi
+ *      Condensation holds three hundred people and Foundation Establishment
+ *      holds eighty. Samples that size do not trade places by chance, so an
+ *      inversion there is structural on the spot: it fails on a single seed,
+ *      with no pooling and no reproduction requirement. This is the pyramid's
+ *      load-bearing claim and the floor of the whole guard.
+ *
+ *   2. WHERE EITHER BAND IS INDIVIDUALS, THE ORDERING HOLDS ONLY IN
+ *      AGGREGATE. Four people against six will swap for ordinary reasons.
+ *      An inversion there is reported, and fails only when it holds on EVERY
+ *      seed and the pooled counts are thick enough to mean anything.
+ *
+ * ── WHERE THE BOUNDARY SITS, AND WHY THERE ─────────────────────────────
+ *
+ * Off the histogram rather than off anybody's judgement. Per-seed headcounts at
+ * this horizon, five seeds:
+ *
+ *     qi_condensation            306 .. 332
+ *     foundation_establishment    73 ..  99
+ *     core_formation              33 ..  48
+ *     nascent_soul                22 ..  34
+ *     deity_transformation        11 ..  14
+ *     ---------------------------------------- nothing lands at 9 or 10
+ *     body_integration             7 ..   8
+ *     void_refinement              4 ..   6
+ *     grand_ascension              2
+ *     tribulation_transcendence    2
+ *
+ * The counts fall by roughly an order of magnitude down the ladder and there is
+ * a clean gap: everything at Deity Transformation and below is double or triple
+ * digits, everything above it is single digits, and NO BAND SITS AT 9 OR 10. So
+ * the boundary goes at ten, in the empty space, where a small drift in either
+ * direction cannot flip a band's classification.
+ *
+ * It is applied per band per seed rather than as a fixed list of realms, so a
+ * band that thins out stops being held to the hard rule automatically instead
+ * of producing a false failure. That is the degradation the fixed-bar version
+ * of this file never had.
+ *
+ * Both kinds get printed either way. A one-seed inversion is information; a
+ * reproducing one fails and names itself.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * WHAT IT CATCHES TODAY, AND WHY THAT IS THE POINT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Body Integration is larger than the Void Refinement band beneath it - 1.57 to
+ * 1.60 against 0.98 to 1.20 - on every seed, at 200 years and at 500 years, in
+ * both arms of the root-conditioning control. Numbers that stable are not a
+ * small-N swap.
+ *
+ * A flowing population cannot do that, and the reason it happens here is known:
+ * the top of the ladder is a FOSSIL. Grand Ascension and Tribulation
+ * Transcendence read 0.39% on every seed at every horizon - the same handful of
+ * people the seeder placed, still standing there, never added to and never
+ * replaced. Nobody arrives above ordinal 32 in five hundred years. That is a
+ * transmission defect - roads reaching people - and the fix for it is NOT a
+ * faster climb for everybody. If a change makes the middle of this table climb,
+ * it is the wrong fix even when it does raise the ceiling.
+ *
+ * So this test is expected to be RED until transmission is fixed, and the
+ * failure is the defect report rather than a broken assertion. It goes green on
+ * its own the day somebody fixes it - there is no expectation marker anybody
+ * has to remember to remove.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * THE BASELINE, MEASURED - AND IT IS A LOG, NOT A CONSTANT
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * `scripts/probe-the-pyramid.ts`, five seeds at 500 years, share of the
- * living. The 200-year figures this test uses are within a point of these,
- * which is itself worth knowing - the shape is stable over time as well as
- * over seeds.
+ * The shape rule above catches a regime change in one step. It does not catch a
+ * slow walk: four separate changes, each individually reasonable and each
+ * leaving the ordering intact, can move the largest band a long way with
+ * nothing ever going red. Rows catch that. Re-take when something lands that
+ * plausibly touches the climb, write the new row beside the old one, and say
+ * what moved it. One step is noise; three rows leaning the same way is a
+ * finding.
  *
- * KEEP THE OLD ROWS. Every re-take stays here with what moved it, because the
- * bars below cannot catch what this log is for. See the drift note.
- *
- * Two horizons, because they are not interchangeable and the first two columns
- * are the only pair that is a controlled comparison:
+ * `scripts/probe-the-pyramid.ts`. Two horizons, because they are not
+ * interchangeable and the first two columns are the only controlled pair:
  *
  *                              200y, 2 seeds        200y, 2 seeds     500y, 5 seeds
  *                              WITHOUT root cond.   WITH (current)    WITH (current)
@@ -57,6 +161,16 @@
  * obvious one: members who fit their house's road can read its books, so more
  * of them get out of the bottom band.
  *
+ * ── RATIOS WERE CONSIDERED AND DID NOT EARN THEIR PLACE ──────────────────
+ *
+ * Ordering alone permits a flattened pyramid, so a scale-free ratio bound - each
+ * band at most some fraction of the one below - was the obvious companion
+ * invariant. Measured across five seeds at 500 years, the largest ratio among
+ * the flowing bands is 0.800 (Core Formation over Foundation Establishment).
+ * Any bound safe against that is about 0.9, which is barely stronger than the
+ * ordering rule it would sit beside, and it would be a number to renegotiate.
+ * Dropped, and recorded here so the next person does not re-derive it.
+ *
  * ── AND THE FIRST FIGURES IN THIS FILE WERE CONTAMINATED ─────────────────
  *
  * The baseline originally committed here as the pre-change reading was not one.
@@ -74,82 +188,102 @@
  * itself - the figures looked entirely reasonable and sat in a committed test
  * as the authority. The control arm above is the first clean "without" reading
  * this file has ever had.
- *
- * ── THE DRIFT THESE BARS CANNOT CATCH ────────────────────────────────────
- *
- * That change moved Qi Condensation by between two and a half and four points,
- * depending on horizon, and NOTHING here went red - which is correct and is
- * also the hazard. The bars have roughly a factor of two of headroom because
- * they are built to catch a regime change in one step. Four separate changes of
- * that size, each individually reasonable and each individually green, walk Qi
- * Condensation from 67 to 51 and the suite says nothing until the last of them.
- *
- * There is no bar that fixes this. Tightening these until they caught two
- * points would put them red on every content pass, which is the failure the
- * loose bars exist to avoid. What catches drift is the LOG above: re-take the
- * baseline when something lands that plausibly touches the climb, write the new
- * row next to the old one, and say what moved it. A single step is noise; three
- * rows leaning the same way is a finding.
- *
- * As a number to argue with rather than a bar to trip: Qi Condensation below
- * 55, or the share above Void Refinement above 3, is not a red test and IS a
- * conversation to have before the next change lands on top of it.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * AND THE THING THE TABLE SAYS THAT NOBODY ASKED IT
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * It is a pyramid up to Void Refinement and a FOSSIL above it. Body Integration
- * (1.57%) is larger than the Void Refinement band beneath it, which a
- * population that flows cannot do, and Grand Ascension and Tribulation
- * Transcendence read 0.39% on every seed and at every horizon - the same
- * handful of people the seeder placed, still standing there, never added to and
- * never replaced. That is the same fact as "nobody arrives above ordinal 32",
- * seen from the population's side instead of from the individual's.
- *
- * Which is why the bars below are ceilings rather than floors above Void
- * Refinement. The upper bands being TOO SMALL is a known, separate, documented
- * defect about transmission - roads reaching people - and the fix for it is not
- * a faster climb for everybody. If a change makes the middle of this table
- * climb, it is the wrong fix even when it does raise the ceiling.
- *
- * The bars are deliberately loose. This is a guard against a regime change, not
- * a pin on a tuning table, and a test that pinned the shares would go red every
- * time somebody added content. Each has roughly a factor of two of headroom.
  */
 import { describe, expect, it } from 'vitest';
 
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
-import { realmForOrdinal, type RealmKey } from '../../../src/engine/cultivation/realms.js';
+import { REALM_TIERS, realmForOrdinal, type RealmKey } from '../../../src/engine/cultivation/realms.js';
 
 const YEARS = 200;
-const SEEDS = ['pyr-a', 'pyr-b'] as const;
+
+/**
+ * Five, because the whole discriminator is whether an inversion reproduces.
+ * One seed cannot tell noise from structure and two can barely try.
+ */
+const SEEDS = ['pyr-a', 'pyr-b', 'pyr-c', 'pyr-d', 'pyr-e'] as const;
+
+/**
+ * Pooled headcount below which an inversion says nothing at all.
+ *
+ * Not a balance number and not tuned against the current world - it is the
+ * point where two bands trading places stops being arithmetic worth reading.
+ * Pooling across five seeds is what keeps the top of the ladder above it at
+ * all, and a pair still under it is reported rather than judged.
+ */
+const MIN_POOLED_TO_JUDGE = 20;
+
+/**
+ * Per-seed headcount at which a band stops being individuals and becomes a
+ * population whose ordering is not negotiable.
+ *
+ * Read off the histogram in the header, not chosen: the bands run 306, 99, 48,
+ * 34, 14 and then 8, 6, 2, 2, so there is an empty gap between the lowest
+ * population band and the highest individual one, and this sits in it. Nothing
+ * in the world is at 9 or 10, so a band drifting a little either way cannot
+ * flip its own classification.
+ */
+const LARGE_BAND_MIN = 10;
+
+/** The ladder, bottom to top. Adjacent pairs are what the shape rule reads. */
+const LADDER: readonly RealmKey[] = REALM_TIERS.map(t => t.key);
 
 const catalog = await loadCultivationCatalog();
 
-/** Share of the living standing in each realm, after the world has run. */
-function pyramid(seed: string): { share: Record<string, number>; alive: number } {
+/** Headcount standing in each realm after the world has run. */
+function pyramid(seed: string): { count: Map<RealmKey, number>; alive: number } {
     const { state } = seedWorld({ seed, catalog });
     const after = advanceWorldYears(state, YEARS).state;
-    const counts = new Map<RealmKey, number>();
+    const count = new Map<RealmKey, number>(LADDER.map(k => [k, 0]));
     let alive = 0;
     for (const npc of after.npcs) {
         if (npc.status !== 'alive') continue;
         alive++;
         const key = realmForOrdinal(npc.cultivation.realmOrdinal).key;
-        counts.set(key, (counts.get(key) ?? 0) + 1);
+        count.set(key, (count.get(key) ?? 0) + 1);
     }
-    const share: Record<string, number> = {};
-    for (const [k, n] of counts) share[k] = (100 * n) / alive;
-    return { share, alive };
+    return { count, alive };
 }
 
 const RUNS = SEEDS.map(s => ({ seed: s, ...pyramid(s) }));
 
-const at = (share: Record<string, number>, ...keys: RealmKey[]): number =>
-    keys.reduce((sum, k) => sum + (share[k] ?? 0), 0);
+type Verdict = 'ordered' | 'noise' | 'structural_small' | 'structural_large' | 'too_few';
+
+interface PairFinding {
+    lower: RealmKey;
+    upper: RealmKey;
+    invertedOn: string[];
+    /** Seeds where BOTH bands were populations, so the ordering was absolute. */
+    invertedWhileLarge: string[];
+    pooledLower: number;
+    pooledUpper: number;
+    verdict: Verdict;
+}
+
+/** Every adjacent band pair, classified by whichever of the two rules applies. */
+const FINDINGS: PairFinding[] = LADDER.slice(1).map((upper, i) => {
+    const lower = LADDER[i];
+    const inverted = RUNS.filter(r => (r.count.get(upper) ?? 0) > (r.count.get(lower) ?? 0));
+    const invertedOn = inverted.map(r => r.seed);
+    // Rule 1 applies only where both bands were populations ON THAT SEED, so a
+    // band that thins out drops to the lenient rule by itself.
+    const invertedWhileLarge = inverted
+        .filter(r => (r.count.get(lower) ?? 0) >= LARGE_BAND_MIN
+            && (r.count.get(upper) ?? 0) >= LARGE_BAND_MIN)
+        .map(r => r.seed);
+    const pooledLower = RUNS.reduce((s, r) => s + (r.count.get(lower) ?? 0), 0);
+    const pooledUpper = RUNS.reduce((s, r) => s + (r.count.get(upper) ?? 0), 0);
+
+    let verdict: Verdict;
+    if (invertedWhileLarge.length > 0) verdict = 'structural_large';
+    else if (invertedOn.length === 0) verdict = 'ordered';
+    else if (pooledLower + pooledUpper < MIN_POOLED_TO_JUDGE) verdict = 'too_few';
+    else if (invertedOn.length === SEEDS.length) verdict = 'structural_small';
+    else verdict = 'noise';
+
+    return { lower, upper, invertedOn, invertedWhileLarge, pooledLower, pooledUpper, verdict };
+});
 
 describe('the pyramid holds its shape', () => {
     it('keeps a world in it at all', () => {
@@ -158,70 +292,68 @@ describe('the pyramid holds its shape', () => {
         }
     });
 
-    it('keeps the bottom of the ladder the overwhelming majority', () => {
-        // Baseline 59.9 - 66.4, against 66.5 - 67.7 before root conditioning,
-        // so this band has already absorbed one real change. The floor is what
-        // stops an ambient change draining Qi Condensation into the bands above
-        // it, which is what "inflating from the bottom up" looks like in one
-        // number.
-        for (const run of RUNS) {
-            expect(
-                at(run.share, 'qi_condensation'),
-                `${run.seed}: Qi Condensation is ${at(run.share, 'qi_condensation').toFixed(2)}%`
-            ).toBeGreaterThan(50);
-        }
-    });
-
-    it('keeps nine in ten people below Deity Transformation', () => {
-        // Baseline 94%. The single most sensitive number to a rate change,
-        // because every band above it is fed through these four.
-        for (const run of RUNS) {
-            const bottom = at(
-                run.share,
-                'qi_condensation', 'foundation_establishment', 'core_formation', 'nascent_soul'
+    it('reports every inversion, so the ones that do not fail are still visible', () => {
+        // Not an assertion about the world - a printout, so that a pair drifting
+        // from noise toward structure is visible in the log BEFORE it starts
+        // failing. A finding that only appears the day it breaks the build is a
+        // finding nobody saw coming.
+        const interesting = FINDINGS.filter(f => f.verdict !== 'ordered');
+        for (const f of interesting) {
+            console.log(
+                `[pyramid] ${f.upper} over ${f.lower}: ${f.verdict} - ` +
+                `inverted on ${f.invertedOn.length}/${SEEDS.length} seeds ` +
+                `(${f.invertedOn.join(', ') || 'none'}), ` +
+                `pooled ${f.pooledUpper} against ${f.pooledLower}`
             );
-            expect(bottom, `${run.seed}: below Deity Transformation is ${bottom.toFixed(2)}%`)
-                .toBeGreaterThan(85);
         }
+        expect(FINDINGS.length, 'the ladder has no adjacent pairs').toBe(LADDER.length - 1);
     });
 
-    it('does not let the world fill with the last three realms', () => {
-        // Baseline 2.35 - 2.40 with root conditioning, 2.17 - 2.21 without.
-        // THE owner's constraint, stated as a number.
-        // Bodies at Body Integration and above are meant to be countable by a
-        // person who cares, not a demographic.
-        for (const run of RUNS) {
-            const high = at(
-                run.share,
-                'body_integration', 'grand_ascension', 'tribulation_transcendence', 'immortal'
-            );
-            expect(high, `${run.seed}: above Void Refinement is ${high.toFixed(2)}%`)
-                .toBeLessThan(5);
-        }
+    it('never puts one population band above another, on any seed', () => {
+        // RULE 1, AND IT IS THE FLOOR OF THE WHOLE GUARD. Where both bands hold
+        // ten people or more, the ordering is not negotiable and there is no
+        // reproduction requirement: three hundred people and eighty people do
+        // not trade places by chance, so one seed is proof. This is the rule
+        // that answers "more Foundation than Qi? no no no no no", and it is
+        // checked before anything else because everything else is conditional.
+        const broken = FINDINGS.filter(f => f.verdict === 'structural_large');
+        const described = broken.map(f =>
+            `${f.upper} is larger than ${f.lower} on ${f.invertedWhileLarge.join(', ')} ` +
+            `while both were populations`
+        );
+        expect(
+            broken.map(f => `${f.upper}>${f.lower}`),
+            described.length
+                ? `the pyramid has inverted where the counts are large: ${described.join('; ')}. ` +
+                  'This is not sampling noise at these headcounts - the regime has changed.'
+                : 'populations correctly ordered'
+        ).toEqual([]);
     });
 
-    it('keeps Tribulation Transcendence a rounding error', () => {
-        // Baseline 0.39 - 0.40, i.e. two people in five hundred. A world where
-        // this reads several per cent is the failure the whole file exists for.
-        for (const run of RUNS) {
-            const tt = at(run.share, 'tribulation_transcendence', 'immortal');
-            expect(tt, `${run.seed}: Tribulation Transcendence and above is ${tt.toFixed(2)}%`)
-                .toBeLessThan(1.5);
-        }
-    });
-
-    it('never puts a realm above Core Formation ahead of Core Formation itself', () => {
-        // The pyramid has to stay a pyramid where it is still flowing. Above
-        // Void Refinement it demonstrably is not - see the header - so this
-        // asks the question only of the bands that are still a population.
-        for (const run of RUNS) {
-            const core = at(run.share, 'core_formation');
-            for (const k of ['nascent_soul', 'deity_transformation', 'void_refinement'] as RealmKey[]) {
-                expect(
-                    at(run.share, k),
-                    `${run.seed}: ${k} is ${at(run.share, k).toFixed(2)}% against Core Formation ${core.toFixed(2)}%`
-                ).toBeLessThanOrEqual(core);
-            }
-        }
+    it('has no inversion among the small bands that reproduces on every seed', () => {
+        // RULE 2. Near the top a band is a handful of people, and two handfuls
+        // swap for ordinary reasons - so an inversion here is reported and
+        // forgiven unless it holds on EVERY seed, which is what separates noise
+        // from a fact about the population.
+        //
+        // Expected to fail today on body_integration over void_refinement, and
+        // that failure is the defect report rather than a broken assertion: the
+        // top of the ladder is inventory the seeder placed, nobody arrives above
+        // ordinal 32 in five hundred years, and this goes green on its own the
+        // day that is fixed. There is no expectation marker to remember to
+        // remove.
+        const structural = FINDINGS.filter(f => f.verdict === 'structural_small');
+        const described = structural.map(f =>
+            `${f.upper} (${f.pooledUpper} pooled) is larger than ${f.lower} ` +
+            `(${f.pooledLower} pooled) on all ${SEEDS.length} seeds`
+        );
+        expect(
+            structural.map(f => `${f.upper}>${f.lower}`),
+            described.length
+                ? `a band above another one, reproducibly: ${described.join('; ')}. ` +
+                  'A flowing population cannot do this. Check whether anybody ARRIVES ' +
+                  'in the upper band or whether it is seeded inventory standing still.'
+                : 'no reproducing inversion'
+        ).toEqual([]);
     });
 });
