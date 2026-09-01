@@ -66,9 +66,11 @@ import {
     BREAKTHROUGH_PILL_STONES,
     STONES_PER_YEAR_OF_SECLUSION,
     affordablePillPotency,
+    earningsPerYear,
     getOrigin,
     type OriginTierKey
 } from '../cultivation/origin.js';
+import { purchasedQiPerYear } from '../cultivation/buying-and-bartering-pills.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
 import { growCompound, type CompoundInput } from './architecture.js';
@@ -92,6 +94,7 @@ import { dayOfYear, makeFact, appendFact } from './history.js';
 import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
 import { seedArtifacts } from './artifact-placement.js';
 import { seedComprehensionMaterials } from './single-use-dao-comprehension-materials.js';
+import { seedPillStock } from './where-the-pills-actually-are.js';
 import {
     createWorld,
     makeFaction,
@@ -169,17 +172,13 @@ const APEX_SEED_FLOOR = 17;
 /**
  * What a year of work is worth to somebody at this rank.
  *
- * Rank is earning power in this world: a Foundation Establishment cultivator
- * can take contracts a mortal cannot survive and refuse ones a mortal cannot
- * refuse. Scaled off the seclusion cost so the two terms stay in proportion
- * when either is retuned, and capped so an apex figure is wealthy rather than
- * absurd - a Grand Ascension cultivator's holdings are not what makes them
- * dangerous, and the economy should not imply otherwise.
+ * MOVED, unchanged, to `engine/cultivation/origin.ts`, where the rest of the
+ * economy's constants already live and where the pill market can read it
+ * without the cultivation layer importing the world layer. Re-exported here
+ * because a dozen call sites and two probes name it at this path, and because
+ * the income curve is half of every price in the game.
  */
-function earningsPerYear(ordinal: number): number {
-    const scale = Math.min(EARNINGS_RANK_CAP, 1 + ordinal * EARNINGS_PER_ORDINAL);
-    return STONES_PER_YEAR_OF_SECLUSION * EARNINGS_BASE_SHARE * scale;
-}
+export { earningsPerYear } from '../cultivation/origin.js';
 
 /**
  * What a catalog figure is holding.
@@ -196,10 +195,6 @@ function holdingsFor(ordinal: number, rankIndex: number, rng: CultivationRNG): n
     return Math.round(perYear * rng.int(1, 8) * standing);
 }
 
-/** A working year covers this share of a secluded year's upkeep, at ordinal 0. */
-const EARNINGS_BASE_SHARE = 0.9;
-const EARNINGS_PER_ORDINAL = 0.35;
-const EARNINGS_RANK_CAP = 9;
 /** Share of their realm's lifespan an apex figure has already spent. */
 const APEX_AGE_FRACTION = 0.25;
 
@@ -259,6 +254,11 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // rests on existed only in a catalog nothing read. See `goods.ts`.
     state.objects.push(...seedArtifacts(state));
     state.objects.push(...seedComprehensionMaterials(state));
+    // And the medicine, which the same catalog-nothing-read defect applied to:
+    // a world with no pills in it is a world where the crossing pill is a price
+    // in a document. Two shapes, one threshold - see
+    // `where-the-pills-actually-are.ts`.
+    state.objects.push(...seedPillStock(state));
     const npcAt = new Map(state.npcs.map((n, i) => [n.id, i]));
     for (const grant of grantBooksToMembers(state)) {
         const at = npcAt.get(grant.npcId);
@@ -815,6 +815,44 @@ export interface DeriveOrdinalOptions {
      * Omitted reads as 'thin_county', which is nine births in ten.
      */
     origin?: OriginTierKey;
+    /**
+     * Told what every crossing attempt cost and what it was carrying.
+     *
+     * Measurement only, and it must stay that way: the walk never reads back
+     * anything it hands out here, so a probe can watch the pill economy without
+     * a second copy of this loop existing somewhere to drift away from it.
+     * `scripts/probe-pill-affordability.ts` is the caller, and the reason it
+     * exists is that the affordability question - whether anybody at the bottom
+     * of the ladder can actually buy one - is not answerable from the ordinal
+     * this function returns.
+     */
+    onAttempt?: (attempt: CrossingAttemptObservation) => void;
+    /**
+     * Turn the commodity pill market off, so a probe can measure what it is
+     * worth rather than argue about it.
+     *
+     * Defaults to on, which is the world. It exists because "did the pill
+     * economy cause this" is a question that gets asked of every balance
+     * finding from here on, and answering it by reverting the branch and
+     * re-running is how a comparison ends up being between two different trees.
+     */
+    buysProgress?: boolean;
+}
+
+/** One crossing attempt, as it actually happened. See `onAttempt`. */
+export interface CrossingAttemptObservation {
+    ordinal: number;
+    /** Age at the attempt. */
+    age: number;
+    /** Stones in hand at the counter, before the pill was paid for. */
+    stonesBeforePill: number;
+    /** What a pill at full potency costs at this rung. */
+    pillPrice: number;
+    /** Share of a pill the holding covered, 0..1. */
+    potency: number;
+    /** The odds the attempt actually ran at. */
+    finalChance: number;
+    crossed: boolean;
 }
 
 /** The denser of two bands. A house can improve the ground; it cannot find a vein. */
@@ -950,11 +988,59 @@ export function deriveLife(
         const perYear = perYearAt(ordinal);
         const allowance = stagnationYearsForOrdinal(ordinal);
         const lifespan = lifespanForOrdinal(ordinal);
+
+        // ── MONEY IS THE SECOND ROAD UP, AND IT WAS NEVER CONNECTED ──────
+        //
+        // What actually empties the middle of the ladder is not the crossing
+        // roll. `scripts/probe-pill-affordability.ts` watches this loop over
+        // four thousand lives: inside Qi Condensation the mean odds are 0.899
+        // and a pill is already being bought at mean potency 0.39. Nobody is
+        // failing crossings and nobody is failing to afford a pill.
+        //
+        // What runs out is YEARS. Ordinal 12 needs 10,661 qi-units at 86 a
+        // year for an ordinary cultivator, which is 123.6 years against a Qi
+        // Condensation lifespan of 100 - the last rung of the realm costs more
+        // time than the realm grants, so the histogram piles up at 12 and
+        // Foundation reads zero. See `probe-what-a-crossing-costs-in-years.ts`.
+        //
+        // The lever the catalog already had and nothing read is
+        // `advance_progress`. A cultivator's spare income converts to qi at
+        // whatever the open market charges, and the market is the commodity
+        // tier and only the commodity tier - see
+        // `engine/cultivation/buying-and-bartering-pills.ts`. Nothing above
+        // earth grade is for sale for money, so no fortune buys the last
+        // realms, and `pillBandDecay` inside `stonesPerQiUnitAt` makes a cheap
+        // pill quietly stop being a bargain to somebody strong.
+        //
+        // The shape this produces is not tuned; it falls out of two curves that
+        // already existed. At ordinal 0 a cultivator clears 2.7 stones a year
+        // and buys 2 qi against 86 accrued, which is nothing - the bottom of
+        // the ladder is untouched. At ordinal 12 they clear 127 and buy 109
+        // against 86, which is the rung that was impossible becoming merely
+        // very hard. Above Core Formation the income cap and the band decay
+        // between them make it irrelevant again.
+        const netPerYear =
+            origin.placement.stipendPerYear
+            + (1 - focus) * earningsPerYear(ordinal)
+            - focus * STONES_PER_YEAR_OF_SECLUSION;
+        // The crossing pill comes first. Somebody who spends the pill money on
+        // reaching the door faster arrives at the door with nothing, which is
+        // not a trade anybody makes twice - so one pill's worth of the income
+        // over this rank is reserved and only the remainder becomes qi.
+        const naturalYears = cost / perYear;
+        const reservePerYear = naturalYears > 0
+            ? Math.min(Math.max(0, netPerYear), BREAKTHROUGH_PILL_STONES / naturalYears)
+            : Math.max(0, netPerYear);
+        const spendPerYear = opts.buysProgress === false
+            ? 0
+            : Math.max(0, netPerYear - reservePerYear);
+        const perYearHere = perYear + purchasedQiPerYear(spendPerYear, ordinal);
+
         let yearsAtRank = 0;
         let crossed = false;
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            const yearsNeeded = cost / perYear;
+            const yearsNeeded = cost / perYearHere;
             // Settling: a plateau longer than the realm permits ends the life
             // where it stands, exactly as it does for the player.
             if (yearsAtRank + yearsNeeded >= allowance) break;
@@ -984,8 +1070,14 @@ export function deriveLife(
                     - secludedYears * STONES_PER_YEAR_OF_SECLUSION
                     + workingYears * earningsPerYear(ordinal)
             );
+            // And what went over the counter on the way. Progress bought is
+            // progress paid for: without this line the crossing pill would be
+            // bought with money that had already been spent on qi, and the
+            // holding every NPC in the world ends up with would be a fiction.
+            stones = Math.max(0, stones - yearsNeeded * spendPerYear);
 
             // One pill, bought if the holding covers it, and actually paid for.
+            const stonesBeforePill = stones;
             const potency = affordablePillPotency(stones, BREAKTHROUGH_PILL_STONES);
             const pill = potency > 0
                 ? { name: 'a breakthrough pill', potency: potency * MAX_PILL_BONUS }
@@ -1001,7 +1093,17 @@ export function deriveLife(
                 // moment the road was for.
                 { ambient, pill, manualQuality: road }
             );
-            if (rng.next() < odds.finalChance) {
+            const struck = rng.next() < odds.finalChance;
+            opts.onAttempt?.({
+                ordinal,
+                age,
+                stonesBeforePill,
+                pillPrice: BREAKTHROUGH_PILL_STONES,
+                potency,
+                finalChance: odds.finalChance,
+                crossed: struck
+            });
+            if (struck) {
                 crossed = true;
                 break;
             }
@@ -1012,7 +1114,7 @@ export function deriveLife(
                 (FAILURE_PROGRESS_LOSS.failure_stable +
                     FAILURE_PROGRESS_LOSS.failure_injured +
                     FAILURE_PROGRESS_LOSS.failure_deviation) / 3;
-            const recovery = (cost * burned) / perYear;
+            const recovery = (cost * burned) / perYearHere;
             yearsAtRank += recovery;
             age += recovery;
             spent += recovery;
