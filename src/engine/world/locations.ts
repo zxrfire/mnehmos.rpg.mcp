@@ -289,7 +289,43 @@ export type LocationKind =
     | 'forbidden_zone'
     | 'secret_realm'
     | 'sealed_domain'
-    | 'portal';
+    | 'portal'
+    // ── INTERIORS ────────────────────────────────────────────────────────
+    // Four, and each one changes a behaviour rather than naming a shape. A
+    // fifth would be decoration; the identity of a room is `data.purpose`,
+    // which is content, and the kind is only what the engine switches on.
+    // See `architecture.ts`.
+    /**
+     * A walled division of a compound, one per rank in the holder's own
+     * ladder. It is the rung the access chain is walked over: crossing into
+     * one is what `reachThrough` charges for, and it is deliberately NOT a
+     * settlement, so `birthplacesIn` and the crowding pass do not count the
+     * same people once per wall they live behind.
+     */
+    | 'precinct'
+    /**
+     * An interior room people gather in. Qi is whatever the compound's ground
+     * gives; what a hall has instead is a schedule - an `OpeningCycle` - so a
+     * house that hears petitions three days a month is expressible without a
+     * field for it.
+     */
+    | 'hall'
+    /**
+     * An interior room that CONCENTRATES qi above the ground it sits on. A
+     * vein chamber, a furnace floor, a meditation cell. A `hall` and a
+     * `precinct` never are - they sit on the ground the compound sits on - so
+     * a chamber is the only OPEN room being crowded out of costs anything. (A
+     * `vault` may also run high, but a sealed pocket offers nobody any of it
+     * until the seal is off: that is `qiDensity` against
+     * `environment.spiritualDensity`, and they are deliberately different.)
+     */
+    | 'chamber'
+    /**
+     * An interior room that is shut by default and holds something. Sealed at
+     * creation with a `data.keyId`, calibrated at the mastery bar rather than
+     * the admission bar. What a house keeps rather than what it uses.
+     */
+    | 'vault';
 
 export type LinkKind = 'road' | 'path' | 'tunnel' | 'gate' | 'portal' | 'seam';
 

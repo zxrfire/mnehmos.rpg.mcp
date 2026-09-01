@@ -84,6 +84,30 @@ export interface CatalogFaction {
      * sets it to zero, permanently, and there is exactly one per house.
      */
     sealedCeilingOrdinal: number;
+    /**
+     * Roots the house actively recruits. Empty means every root is welcome.
+     *
+     * Carried across for `architecture.ts`, which derives how elemental a
+     * house's BUILDINGS are from how elementally narrow the house itself is: a
+     * house that takes everybody cannot build for one element, and a house that
+     * admits nothing but ice is ice all the way down.
+     */
+    preferredRoots: string[];
+    /**
+     * The element of each manual the house teaches, `null` for elementless.
+     *
+     * The second half of the same signal. A house whose curriculum is almost
+     * entirely elementless is the most element-neutral architecture in the
+     * world for a stated reason rather than by default.
+     */
+    teachesElements: (string | null)[];
+    /** What the house is for: 'attack', 'support', 'alchemy', 'defense'. */
+    specialities: string[];
+    /** False only where the house genuinely built what it lives in. */
+    compoundInherited: boolean;
+    /** Array stones on the perimeter, and how many still answer. */
+    formationNodesTotal: number;
+    formationNodesLit: number;
     description: string;
 }
 
@@ -209,6 +233,18 @@ export async function loadCultivationCatalog(): Promise<WorldCatalog> {
     const threatOf = (sects as { sectThreat?: (id: string) => { ceiling?: number } | undefined })
         .sectThreat;
 
+    // Admission terms live beside the sects rather than inside them, and the
+    // element of an art lives in the technique catalog. Both are joined here
+    // rather than in the world layer, so `architecture.ts` never imports
+    // content and the one mapping stays legible in one file.
+    const admission = (sects as { SECT_ADMISSION?: Record<string, { preferredRoots?: readonly string[] }> })
+        .SECT_ADMISSION ?? {};
+    const elementOf = new Map<string, string | null>();
+    for (const t of (((techniques as { TECHNIQUES?: { id: string; element?: string | null }[] } | null)
+        ?.TECHNIQUES) ?? [])) {
+        elementOf.set(t.id, t.element ?? null);
+    }
+
     const factions: CatalogFaction[] = [];
     for (const raw of (sects.SECTS ?? []) as unknown as RawSect[]) {
         let sealed = 0;
@@ -220,7 +256,10 @@ export async function loadCultivationCatalog(): Promise<WorldCatalog> {
             // would otherwise look as though it held a sleeper.
             if (ceiling > (raw.powerOrdinal ?? 0)) sealed = clampOrdinal(ceiling);
         } catch { /* a catalog that cannot answer is a house with nothing. */ }
-        factions.push(mapFaction(raw, parentage[raw.id], characters[raw.id], sealed));
+        factions.push(mapFaction(raw, parentage[raw.id], characters[raw.id], sealed, {
+            preferredRoots: admission[raw.id]?.preferredRoots ?? [],
+            teachesElements: (raw.teaches ?? []).map(id => elementOf.get(id) ?? null)
+        }));
     }
 
     const mapped: CatalogRegion[] = [];
@@ -245,7 +284,9 @@ interface RawSect {
     territory?: string;
     rivals?: readonly string[];
     description?: string;
-    compound?: { formationNodesTotal?: number; formationNodesLit?: number };
+    teaches?: readonly string[];
+    specialities?: readonly string[];
+    compound?: { inherited?: boolean; formationNodesTotal?: number; formationNodesLit?: number };
 }
 
 interface RawParentage {
@@ -283,7 +324,9 @@ function mapFaction(
     raw: RawSect,
     parent?: RawParentage,
     character?: RawCharacter,
-    sealedCeilingOrdinal = 0
+    sealedCeilingOrdinal = 0,
+    architecture: { preferredRoots: readonly string[]; teachesElements: (string | null)[] } =
+        { preferredRoots: [], teachesElements: [] }
 ): CatalogFaction {
     const total = raw.compound?.formationNodesTotal ?? 0;
     const lit = raw.compound?.formationNodesLit ?? 0;
@@ -307,6 +350,15 @@ function mapFaction(
         production: productionOf(character),
         formationIntegrity: total > 0 ? Number((lit / total).toFixed(4)) : 1,
         sealedCeilingOrdinal,
+        preferredRoots: architecture.preferredRoots.slice(),
+        teachesElements: architecture.teachesElements.slice(),
+        specialities: (raw.specialities ?? []).slice(),
+        // A house that says nothing about its compound is taken to have built
+        // it, which is the honest default: an inheritance is a claim, and an
+        // unstated one is not a claim.
+        compoundInherited: raw.compound?.inherited ?? false,
+        formationNodesTotal: total,
+        formationNodesLit: lit,
         description: raw.description ?? ''
     };
 }

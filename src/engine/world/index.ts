@@ -175,6 +175,7 @@
 export * from './layers.js';
 export * from './history.js';
 export * from './locations.js';
+export * from './architecture.js';
 export * from './capability.js';
 export * from './opportunities.js';
 export * from './possessions.js';
