@@ -46,7 +46,7 @@ import {
     getApexInstitution,
     getCourt,
     getParentage,
-    THE_KILN_SCHISM
+    type LineageDispute
 } from '../data/cultivation/hierarchy.js';
 import { ARTIFACTS, artifactsOwnedBy } from '../data/cultivation/artifacts.js';
 import { IMMORTAL_CHANNELS, LINEAGE_STANDINGS } from '../data/cultivation/crossings.js';
@@ -56,6 +56,13 @@ import { MEMBERS } from '../data/cultivation/members.js';
 import { HERBS } from '../data/cultivation/herbs.js';
 import { ARTERIALS, PROVINCES } from '../data/cultivation/regions.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
+import {
+    historyOf,
+    otherPartiesTo,
+    sharedEventsFor,
+    type SharedEvent
+} from '../data/cultivation/faction-history.js';
+import { demonicStandingOf } from '../data/cultivation/demonic-sects-and-what-they-are-willing-to-do.js';
 import {
     TECHNIQUES,
     GRADE_ORDER,
@@ -249,6 +256,83 @@ export interface RegisterCourtOfficer {
     answersForTheCourt: boolean;
 }
 
+/**
+ * One claimant's side of a contested lineage, as headings and text.
+ *
+ * Headings are derived from the catalog record's own keys rather than written
+ * here, so a field added to the catalog turns up on the page instead of being
+ * silently lost - which is exactly how the record this replaces reached no page
+ * at all for as long as it existed. `against` is resolved to the other
+ * claimant's name and, where it has an entry on this sheet, its anchor.
+ */
+/**
+ * How a faction came to be where it is, and what that explains.
+ *
+ * First on the entry, and the placement is the argument: everything below it is
+ * a consequence of it, and each layer under it is checkable against this one. A
+ * house whose history claims one thing and whose roster shows another is either
+ * declining or lying, and both are worth a reader's attention - but only if the
+ * history was read first.
+ *
+ * Every field is quoted from `faction-history.ts` and none is assembled here.
+ * The dates live on the shared events, once each, and the register does not
+ * restate them in any sentence of its own.
+ */
+export interface RegisterHistory {
+    origin: string;
+    /** Why its pipeline sits where it does against its own strongest member. */
+    whyTheGapIs: string;
+    /** Null where the house holds no dark nodes, which is the honest case. */
+    whatTheUnlitNodesWere: string | null;
+    /** Where `wrongAbout` traces back to, which is a piece of history by definition. */
+    whereTheWrongBeliefComesFrom: string;
+    /** Events with other bodies: dated once, and each party's own telling. */
+    shared: {
+        id: string;
+        yearsAgo: number;
+        what: string;
+        explains: string;
+        /** This faction's own account. Partisan, and not reconciled with the others. */
+        ourAccount: string;
+        /** Everybody else who was there, with a way to go and read their version. */
+        others: { id: string; name: string; anchor: string | null }[];
+    }[];
+}
+
+/**
+ * What a demonic faction is actually willing to do, and on what leash.
+ *
+ * Null on everything not filed demonic. `demonic` is an alignment field and a
+ * field is not an identity, so this is the answer to the question the field
+ * stands in for - and it is here rather than assembled, because the six answers
+ * have to differ from each other and a view cannot enforce that.
+ */
+export interface RegisterDemonic {
+    kind: string;
+    theLineItCrosses: string;
+    whoPays: string;
+    didTheyAgree: string;
+    whatItKeepsLocal: string;
+    standingOnTheContract: string;
+    ifItWereDestroyed: string;
+}
+
+export interface RegisterLineageDispute {
+    againstId: string;
+    againstName: string;
+    /**
+     * The anchor on this page where the other claimant's own account is.
+     *
+     * Not a faction id. One of the two claimants in the catalog has a faction
+     * entry and the other has only a court panel, so a link resolved through
+     * the faction table alone reached exactly one of them - which would leave
+     * the half with no entry making an unanswerable claim, and the whole reason
+     * there are two accounts is that neither is unanswerable.
+     */
+    againstAnchor: string | null;
+    fields: { key: string; heading: string; text: string }[];
+}
+
 export interface RegisterCourt {
     id: string;
     name: string;
@@ -316,6 +400,17 @@ export interface RegisterCourt {
      * printed the wrong one on the Azure Mist for as long as it existed.
      */
     transferNote: string | null;
+    /**
+     * This court's own account of a lineage another body also claims.
+     *
+     * Null on three of the four. Where it is set it is partisan and is meant to
+     * be: the catalog holds no joint version, because the two claimants are two
+     * bodies four provinces apart under different patrons rather than one body
+     * with an argument in it. The sheet quotes it whole and never summarises
+     * it - every field is an argument one side makes, and paraphrasing an
+     * argument is how a register starts adjudicating.
+     */
+    lineageDispute: RegisterLineageDispute | null;
     /**
      * Catalog order, deliberately unsorted.
      *
@@ -824,8 +919,24 @@ export interface SectDossier {
     partingGift: { name: string; intact: boolean } | null;
     /** Everything in the artifact catalog this faction owns, strongest first. */
     artifacts: RegisterArtifact[];
+    /**
+     * How it came to be here. First on the entry, and everything else follows.
+     */
+    history: RegisterHistory | null;
+    /** What it is willing to do that the others are not. Null on all but six. */
+    demonic: RegisterDemonic | null;
     /** What it is trying to become. Null on the four that want nothing. */
     ambition: RegisterAmbition | null;
+    /**
+     * This body's own account of a lineage another body also claims. Usually null.
+     *
+     * It sits with the claims and the ancestors at the foot of the entry rather
+     * than up with the history, and the placement is the argument: a claim is
+     * what a house asserts, not what is true, and a reader who has already been
+     * shown the roll, the holdings and the standings can weigh it. Shown first
+     * it would be accepted.
+     */
+    lineageDispute: RegisterLineageDispute | null;
     /** The family, and the door. Null on everything that is not a dao house. */
     house: RegisterHouseAdmission | null;
     people: {
@@ -1014,17 +1125,6 @@ export interface WorldRegister {
     artifactCeiling: RegisterArtifactCeiling | null;
     /** Every court, with the people standing in its offices. */
     courts: RegisterCourt[];
-    /**
-     * One house, two names, two patrons, and no instrument that settles it.
-     *
-     * A catalog record the sheet was dropping in its entirety, which is the
-     * failure this suite exists to catch: `THE_KILN_SCHISM` is exported, is the
-     * account of how two of the three bodies under the Long Cut came to be
-     * there, and reached no page. It is quoted whole and unsummarised - every
-     * field of it is an argument one side makes, and paraphrasing an argument
-     * is how a register starts adjudicating.
-     */
-    schism: { key: string; heading: string; text: string }[];
     /** Every art, with every house that teaches it. Grade descending. */
     techniques: RegisterTechnique[];
     /** Every house with a teach list, and what is on it. */
@@ -1172,31 +1272,89 @@ function findArtifactCeiling(list: RegisterArtifact[]): RegisterArtifactCeiling 
 }
 
 /**
- * The Kiln schism, quoted whole.
+ * One body's own side of a contested lineage, quoted whole.
  *
- * A catalog record the sheet was dropping in its entirety, which is the exact
- * class of failure this page's suite exists to catch: `THE_KILN_SCHISM` is
- * exported, it is the account of how two of the three bodies under the Long Cut
- * came to be there, and it reached no page at all.
+ * This used to be a single top-level `schism` section built from one standalone
+ * catalog record, and the record before that reached no page at all - which is
+ * the exact class of failure this page's suite exists to catch. It is now read
+ * off whichever body is being rendered, because the catalog no longer holds a
+ * joint version: two bodies four provinces apart under different patrons have
+ * no shared vantage to narrate from, so each carries its own and a reader
+ * compares them.
  *
  * Headings are derived from the record's own keys rather than written, so a
  * field added to the catalog turns up here instead of being silently lost. The
  * text is never summarised: every field is an argument one of two parties makes
  * about which of them is the house, both arguments are nine hundred years old,
  * and there is no instrument anywhere that decides it. A paraphrase would pick
- * a side, and the catalog's own last line is that the unresolvability is the
- * answer rather than a plot waiting to resolve.
+ * a side.
  */
-function buildSchism(): WorldRegister['schism'] {
+/**
+ * How a faction came to be here, read whole out of the history catalog.
+ *
+ * Nothing is assembled and nothing is summarised. The shared events arrive with
+ * this faction's own account already selected - the catalog holds one account
+ * per party and the register picks the one belonging to the entry being drawn,
+ * which is the whole mechanism by which two houses can carry different
+ * accounts of the same year without either of them being the sheet's opinion.
+ *
+ * `anchor` on the other parties is filled in the second pass, once the entries
+ * exist.
+ */
+function buildHistory(factionId: string): RegisterHistory | null {
+    const h = historyOf(factionId);
+    if (!h) return null;
+    return {
+        origin: h.origin,
+        whyTheGapIs: h.whyTheGapIs,
+        whatTheUnlitNodesWere: h.whatTheUnlitNodesWere,
+        whereTheWrongBeliefComesFrom: h.whereTheWrongBeliefComesFrom,
+        shared: sharedEventsFor(factionId).map((e: SharedEvent) => ({
+            id: e.id,
+            yearsAgo: e.yearsAgo,
+            what: e.what,
+            explains: e.explains,
+            ourAccount: e.accounts[factionId],
+            others: otherPartiesTo(e, factionId).map(id => ({
+                id,
+                name: nameOf(id),
+                anchor: null as string | null
+            }))
+        }))
+    };
+}
+
+/** What a demonic faction is willing to do. Null on everything else. */
+function buildDemonic(factionId: string): RegisterDemonic | null {
+    const d = demonicStandingOf(factionId);
+    if (!d) return null;
+    return {
+        kind: d.kind,
+        theLineItCrosses: d.theLineItCrosses,
+        whoPays: d.whoPays,
+        didTheyAgree: d.didTheyAgree,
+        whatItKeepsLocal: d.whatItKeepsLocal,
+        standingOnTheContract: d.standingOnTheContract,
+        ifItWereDestroyed: d.ifItWereDestroyed
+    };
+}
+
+function buildLineageDispute(d: LineageDispute | undefined): RegisterLineageDispute | null {
+    if (!d) return null;
     const heading = (key: string): string => {
         const words = key.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
         return words.charAt(0).toUpperCase() + words.slice(1);
     };
-    return Object.entries(THE_KILN_SCHISM).map(([key, text]) => ({
-        key,
-        heading: heading(key),
-        text: String(text)
-    }));
+    return {
+        againstId: d.againstId,
+        againstName: nameOf(d.againstId),
+        againstAnchor: null,
+        fields: Object.entries(d)
+            // `againstId` is the join, not an argument. Everything else is text
+            // one side wrote about the other and is printed as written.
+            .filter(([key]) => key !== 'againstId')
+            .map(([key, text]) => ({ key, heading: heading(key), text: String(text) }))
+    };
 }
 
 /** Every court, with the people actually standing in its offices. */
@@ -1232,6 +1390,7 @@ function buildCourts(): RegisterCourt[] {
                 }
                 : null,
             transferNote: court.transferNote ?? null,
+            lineageDispute: buildLineageDispute(court.lineageDispute),
             // `court.roster` rather than `courtOfficers()`, and the difference
             // is the whole reason this field exists: the helper sorts by
             // ordinal, and an ordinal sort on a court roster invents a chain of
@@ -2855,6 +3014,9 @@ function buildDossiers(
             // known until every dossier has been made.
             artifacts: [] as RegisterArtifact[],
             ambition: buildAmbition(row.id),
+            lineageDispute: buildLineageDispute(getParentage(row.id)?.lineageDispute),
+            history: buildHistory(row.id),
+            demonic: buildDemonic(row.id),
             house: buildHouse(row.id),
             people: {
                 active: MEMBERS
@@ -2908,7 +3070,12 @@ function buildDossiers(
             name: a.name,
             ordinal: a.powerOrdinal,
             rank: rankName(a.powerOrdinal),
-            alignment: 'neutral',
+            // Read off the apex rather than defaulted. It used to be a hard
+            // 'neutral' here, which asserted that the top of the world has no
+            // politics - and the Azure Cloud Pavilion is righteous, holds the
+            // position against the other two, and had that fact disappear the
+            // moment the sheet read it as an apex rather than as a house.
+            alignment: a.alignment,
             admissionOrdinal: 0,
             recruits: false,
             intake: 'closed',
@@ -3007,6 +3174,9 @@ function buildDossiers(
             partingGift: null,
             artifacts: [] as RegisterArtifact[],
             ambition: buildAmbition(a.id),
+            lineageDispute: buildLineageDispute(getParentage(a.id)?.lineageDispute),
+            history: buildHistory(a.id),
+            demonic: buildDemonic(a.id),
             house: null,
             people: {
                 active: [
@@ -3138,6 +3308,21 @@ export function buildRegister(): WorldRegister {
     const entryFor = (id: string): string | null =>
         idsForFaction(id).find(candidate => dossierIds.has(candidate)) ?? null;
 
+    /**
+     * The anchor on this page where a body's own account can be read.
+     *
+     * Two shapes, because two kinds of body get drawn: a faction entry, and a
+     * court panel on a body with no faction row. Resolving through the faction
+     * table alone reached only the first, which on the one contested lineage in
+     * the catalog meant the half with no faction entry made a claim the reader
+     * could not go and answer.
+     */
+    const anchorFor = (id: string): string | null => {
+        const entry = entryFor(id);
+        if (entry) return `faction-${entry}`;
+        return getCourt(id) ? `court-${id}` : null;
+    };
+
     for (const d of dossiers) {
         d.artifacts = artifactsOwnedBy(d.id)
             .map(a => artifactById.get(a.id))
@@ -3151,6 +3336,19 @@ export function buildRegister(): WorldRegister {
         if (d.ambition) {
             for (const b of d.ambition.blockedBy) b.linkId = entryFor(b.id);
             for (const o of d.ambition.contestedWith) o.linkId = entryFor(o.id);
+        }
+        // The other claimant to a contested lineage is always a body with an
+        // entry somewhere on this sheet - a court panel or a faction entry -
+        // and an account that says the other side exists without letting a
+        // reader go and read it is asking them to take one side's word for it.
+        if (d.lineageDispute) d.lineageDispute.againstAnchor = anchorFor(d.lineageDispute.againstId);
+        // Same for everybody named in a shared event, and for the same reason:
+        // the accounts are partisan by construction, so each has to be one
+        // click from the others.
+        if (d.history) {
+            for (const e of d.history.shared) {
+                for (const o of e.others) o.anchor = anchorFor(o.id);
+            }
         }
         if (d.holdsFrom?.parentId) d.holdsFrom.parentLinkId = entryFor(d.holdsFrom.parentId);
         if (d.apex) for (const s of d.apex.answeredBy) s.linkId = entryFor(s.id);
@@ -3216,7 +3414,6 @@ export function buildRegister(): WorldRegister {
         artifacts,
         artifactCeiling: findArtifactCeiling(artifacts),
         courts,
-        schism: buildSchism(),
         techniques,
         teaching,
         stack: buildStack(dossierIds),
@@ -3591,12 +3788,40 @@ text-transform:uppercase;color:var(--faint);padding:6px 0;list-style:none}
    same kind of thing: a set of quoted positions with nothing adjudicating
    between them. Wider label column - these headings are sentences' worth of
    key rather than single words. */
-.schism{margin:0;display:grid;grid-template-columns:210px 1fr;gap:9px 16px}
-.schism dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
+/* The five parts of an entry. A divider rather than a box: the parts are a
+   reading order, not containers, and drawing them as containers made a house
+   look like five unrelated records filed together. */
+.part{display:flex;align-items:baseline;gap:10px;margin:20px 0 8px;
+padding-bottom:5px;border-bottom:1px solid var(--line)}
+.part h4{margin:0;font:600 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
+letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+.part span{font-size:11.5px;color:var(--faint)}
+/* History, and the demonic identities, share a term list. Both are the
+   catalog's own sentences with a heading derived from the field. */
+.hist{margin:0 0 10px;display:grid;grid-template-columns:190px 1fr;gap:7px 16px}
+.hist dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
+text-transform:uppercase;color:var(--faint);padding-top:2px}
+.hist dd{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
+@media (max-width:640px){.hist{grid-template-columns:1fr;gap:2px}.hist dt{padding-top:9px}}
+.evts{margin:6px 0 4px}
+.evt{border-left:2px solid var(--line);padding:0 0 0 12px;margin:10px 0}
+.evth{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;margin-bottom:4px}
+.evty{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;color:var(--ink)}
+.evtx,.evtw{font-size:11px;color:var(--faint)}
+/* The neutral line reads quieter than the partisan one, because it is the
+   floor both accounts stand on rather than either party speaking. */
+.evtn{margin:0 0 5px;font-size:13px;line-height:1.5;color:var(--faint)}
+.evta{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
+.demon{margin:12px 0}
+.demon h4{margin:0 0 8px;font:600 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
+letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+.demon h4 span{margin-left:8px;letter-spacing:.06em;text-transform:none;color:var(--faint)}
+.dispute{margin:0;display:grid;grid-template-columns:210px 1fr;gap:9px 16px}
+.dispute dt{font:600 10px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
 text-transform:uppercase;color:var(--signal);padding-top:3px}
-.schism dd{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
-@media (max-width:640px){.schism{grid-template-columns:1fr;gap:2px}
-.schism dt{padding-top:9px}}
+.dispute dd{margin:0;font-size:14.5px;line-height:1.55;color:var(--quiet)}
+@media (max-width:640px){.dispute{grid-template-columns:1fr;gap:2px}
+.dispute dt{padding-top:9px}}
 /* ── A court's offices ───────────────────────────────────────────────────
    The two standing columns sit side by side and are given the same weight,
    because neither is the real one. */
@@ -4337,6 +4562,107 @@ function houseBlock(h: RegisterHouseAdmission): string {
  * the apex column alone puts her a mark above the man who measures the vein.
  * Both are true, neither contains the other, and the table refuses to pick.
  */
+/**
+ * The divider between the five parts of an entry.
+ *
+ * A label and one line of what the part is for. It exists because the parts are
+ * not obviously ordered from outside - a reader arriving at the middle of a
+ * long entry cannot tell that the roster above the artifacts is a deliberate
+ * sequence rather than an arbitrary one - and because a named part can be
+ * omitted honestly when it is empty, which an unnamed run of blocks cannot.
+ */
+function sectionHead(label: string, gloss: string): string {
+    return `<div class="part"><h4>${esc(label)}</h4><span>${esc(gloss)}</span></div>`;
+}
+
+/**
+ * How a faction came to be here, first on its entry.
+ *
+ * Quoted whole out of the history catalog and assembled nowhere. The shared
+ * events carry this faction's own account and a link to everybody else who was
+ * there, which is the entire mechanism by which two houses can hold different
+ * accounts of one year without the sheet adjudicating between them - and the
+ * date is printed from the event's own field, once, because a year restated in
+ * prose is a year that will drift from the one anything reads.
+ *
+ * The three explanatory fields are here rather than beside the figures they
+ * explain, on purpose. A reader who meets "eleven rungs under its own strongest
+ * member" without having been told what the house lost reads it as an
+ * assessment; a reader who has been told reads it as a consequence.
+ */
+function historyBlock(h: RegisterHistory): string {
+    const rows: string[] = [
+        `<dt>How it got here</dt><dd>${esc(h.origin)}</dd>`,
+        `<dt>Why it makes what it makes</dt><dd>${esc(h.whyTheGapIs)}</dd>`
+    ];
+    if (h.whatTheUnlitNodesWere) {
+        rows.push(`<dt>What the dark nodes were</dt><dd>${esc(h.whatTheUnlitNodesWere)}</dd>`);
+    }
+    rows.push(`<dt>Where the false belief comes from</dt><dd>${esc(h.whereTheWrongBeliefComesFrom)}</dd>`);
+
+    const shared = h.shared.map(e => {
+        const others = e.others.map(o => o.anchor
+            ? `<a href="#${esc(o.anchor)}">${esc(o.name)}</a>`
+            : esc(o.name)).join(', ');
+        return `<div class="evt">`
+            + `<div class="evth"><span class="evty">${e.yearsAgo.toLocaleString()} yr ago</span>`
+            + `<span class="evtx">explains ${esc(e.explains)}</span>`
+            + `<span class="evtw">with ${others}</span></div>`
+            + `<p class="evtn">${esc(e.what)}</p>`
+            + `<p class="evta">${esc(e.ourAccount)}</p></div>`;
+    }).join('');
+
+    return sectionHead('History', 'how it came to be here, and what that accounts for')
+        + `<dl class="hist">${rows.join('')}</dl>`
+        + (shared
+            ? `<div class="evts"><p class="note">Dated once and told twice. The neutral line is the minimum every party would concede happened; the second paragraph is this house speaking for itself, and the others are one click away saying something else about the same year.</p>${shared}</div>`
+            : '');
+}
+
+/**
+ * What a faction filed demonic is actually willing to do.
+ *
+ * On six entries and nowhere else. `demonic` is a field on a sect row, and a
+ * field is not an identity - read with the alignment as the only answer, the
+ * six are one house wearing six names. Every line here is the catalog's, and
+ * the ordering is the argument: what it does, who pays, whether they agreed,
+ * what it will not do, where it stands with its patron, and what happens to the
+ * ground if somebody ends it.
+ */
+function demonicBlock(x: RegisterDemonic, name: string): string {
+    return `<div class="demon"><h4>What ${esc(name)} is willing to do <span>${esc(x.kind.replace(/-/g, ' '))}</span></h4>`
+        + `<dl class="hist">`
+        + `<dt>The line it crosses</dt><dd>${esc(x.theLineItCrosses)}</dd>`
+        + `<dt>Who pays</dt><dd>${esc(x.whoPays)}</dd>`
+        + `<dt>Whether they agreed</dt><dd>${esc(x.didTheyAgree)}</dd>`
+        + `<dt>What it keeps local</dt><dd>${esc(x.whatItKeepsLocal)}</dd>`
+        + `<dt>Where it stands with its patron</dt><dd>${esc(x.standingOnTheContract)}</dd>`
+        + `<dt>If it were destroyed</dt><dd>${esc(x.ifItWereDestroyed)}</dd>`
+        + `</dl></div>`;
+}
+
+/**
+ * One body's side of a contested lineage, quoted whole and never summarised.
+ *
+ * It carries a link to the other claimant, which is the whole of what makes
+ * this readable: two partisan accounts with no joint version between them are
+ * only fair if a reader can get from either to the other in one click. The
+ * sheet adds no adjudicating sentence of its own and must not - every line here
+ * was written from inside one of the two houses.
+ */
+function lineageDisputeBlock(d: RegisterLineageDispute, selfName: string): string {
+    const other = d.againstAnchor
+        ? `<a href="#${esc(d.againstAnchor)}">${esc(d.againstName)}</a>`
+        : esc(d.againstName);
+    return `<div class="grp dispute-grp"><h4>Contested lineage <span>1</span>`
+        + `<span class="gap">against ${other}</span></h4>`
+        + `<p class="note">${esc(selfName)} in its own words, and it is a party rather than a witness. `
+        + `${other} keeps its own account of the same years on its own entry, and the two do not agree about `
+        + `what any of it meant. They do not disagree about a single fact, and nothing in the world settles it.</p>`
+        + `<dl class="dispute">${d.fields.map(f => `<dt>${esc(f.heading)}</dt><dd>${esc(f.text)}</dd>`).join('')}</dl>`
+        + '</div>';
+}
+
 function courtPanel(court: RegisterCourt): string {
     const named = court.startingAwareness !== 'unaware' && court.startingAwareness !== 'whisper';
     const agrees = court.startingAwareness === court.apexAwareness;
@@ -4372,6 +4698,7 @@ function courtPanel(court: RegisterCourt): string {
         ? `<p class="terr"><b>The one who got furthest.</b> ${esc(court.highWaterMark.name)}, ${esc(court.highWaterMark.rank)} at ${court.highWaterMark.ordinal}, ${court.highWaterMark.yearsAgo.toLocaleString()} years ago - and ${court.highWaterMark.end === 'attempted' ? 'attempted the crossing' : 'declined it and died of old age at the rung'}. ${esc(court.highWaterMark.note)}</p>`
         : '<p class="note">No high-water mark. This court has never produced somebody at the last realm, which is the ordinary case and is the whole difference between a court and an apex.</p>'}
     <p class="terr">${esc(court.officesNote)}</p>
+    ${court.lineageDispute ? lineageDisputeBlock(court.lineageDispute, court.name) : ''}
     <div class="scroll"><table>
       <caption>Offices &middot; ${court.officers.length} &middot; catalog order, not a ladder</caption>
       <thead><tr><th>Office</th><th>Who</th><th class="pw">Ord</th><th>Inside ${esc(court.apexName)}</th><th>What the office does</th></tr></thead>
@@ -4387,19 +4714,52 @@ function courtPanel(court: RegisterCourt): string {
 }
 
 /**
- * One faction and everyone attached to it.
+ * One faction, read in the order it has to be read in.
  *
- * The four people-groups are rendered as separate labelled lists rather than
- * one table with a status column, because they are not comparable: an active
- * member is somebody you can meet, a sealed one is an event waiting for a
- * trigger, and the other two are history. A single sortable table would invite
- * exactly the comparison the register exists to prevent.
+ * The entry runs FROM WHAT A HOUSE IS TO WHAT IT SAYS ABOUT ITSELF, in five
+ * parts, and each part is checkable against the one above it:
+ *
+ *   1. HISTORY            how it came to be here. Everything below is a
+ *                         consequence of it, so it goes first or the reader is
+ *                         assembling the consequence before the cause.
+ *   2. RANKS AND PEOPLE    who is in it right now, and what it can field. The
+ *                         first hard test of the history: a house whose history
+ *                         claims one thing and whose roster shows another is
+ *                         either declining or lying, and both are interesting.
+ *   3. WHAT IT CONTROLS    items and arts, held outright or shared. The
+ *                         distinction is load-bearing and the data supports it:
+ *                         an art nobody else teaches is a possession, a method
+ *                         half the province teaches is not, and the artifact
+ *                         catalog carries owner and holder separately because
+ *                         they are not always the same party.
+ *   4. STANDINGS           loyalty, patrons, goals and grievances. Where the
+ *                         cross-references land, and every grievance here
+ *                         should be recognisable from the other side's entry.
+ *   5. CLAIMS AND ANCESTORS  last, deliberately. A claim is what a house
+ *                         asserts, not what is true, and putting it after the
+ *                         evidence lets a reader weigh it rather than accept
+ *                         it. Shown first, a nine-hundred-year-old lineage
+ *                         claim reads as a fact about the world.
+ *
+ * THE ORDER SURVIVES AN EMPTY SECTION. Most houses have no sealed ancestor, no
+ * artifact and no lineage dispute; a heading with nothing under it reads as a
+ * broken page rather than as an absence, so every section is omitted when empty
+ * and none is ever rendered hollow. The one deliberate exception is the
+ * abstention note on a faction with no ambition, which is an authored statement
+ * that the house wants nothing rather than a hole where a want would go.
+ *
+ * The four people-groups stay separate labelled lists rather than one table
+ * with a status column, because they are not comparable: an active member is
+ * somebody you can meet, a sealed one is an event waiting for a trigger, and
+ * the other two are history. A single sortable table would invite exactly the
+ * comparison the register exists to prevent - and it is also why the living
+ * sit in part two and the dead sit in part five.
  */
 function dossier(d: SectDossier): string {
-    const groups: string[] = [];
-
+    // ── 2. who is in it ──────────────────────────────────────────────
+    const people: string[] = [];
     if (d.people.active.length) {
-        groups.push(`<div class="grp healthy"><h4>Members <span>${d.people.active.length}</span></h4>`
+        people.push(`<div class="grp healthy"><h4>Members <span>${d.people.active.length}</span></h4>`
             + d.people.active.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span>`
                 + `<span class="wo">${p.ordinal}</span>`
@@ -4407,6 +4767,52 @@ function dossier(d: SectDossier): string {
                 + `<span class="wd">wants ${esc(p.wants)}</span></div>`).join('')
             + '</div>');
     }
+
+    // ── 3. what it controls ──────────────────────────────────────────
+    //
+    // Weapons are a group rather than a meta field: an object that came down
+    // through the Lid is closer to a member of the faction than to a statistic
+    // about it, and the sheet should not bury it in a strip of small print.
+    const controls: string[] = [];
+
+    // Above the weapons, because this is the measured column and that one is
+    // not. A holding says an object came down; a power says what it is worth
+    // against a person, on the ladder the person is standing on.
+    if (d.artifacts.length) {
+        controls.push(`<div class="grp artifacts"><h4>Artifacts <span>${d.artifacts.length}</span>`
+            + `<span class="gap">strongest ${d.artifacts[0].power}</span></h4>`
+            + d.artifacts.map(a =>
+                `<div class="who"><span class="wn">${esc(a.name)}</span>`
+                + `<span class="wo">${a.power}</span>`
+                + `<span class="wr">${esc(a.significance)} · held by ${esc(heldByLine(a))}</span>`
+                + `<span class="wd">${esc(a.description)}${tagChips(a.tags)}</span></div>`).join('')
+            + '</div>');
+    }
+
+    const weapons: string[] = [];
+    if (d.apex) weapons.push(`<div class="who"><span class="wn">${esc(d.apex.giftName)}</span><span class="wo">-</span><span class="wr">sent down</span><span class="wd">Permanent, unreproducible, and the reason this faction is an apex.</span></div>`);
+    if (d.partingGift) weapons.push(`<div class="who"><span class="wn">${esc(d.partingGift.name)}</span><span class="wo">-</span><span class="wr">parting gift${d.partingGift.intact ? '' : ' · spent'}</span><span class="wd">Left on the way out by somebody who crossed.</span></div>`);
+    for (const h of d.holdings) {
+        const mix = (['higher', 'middle', 'lower'] as const)
+            .filter(g => h.byGrade[g] > 0)
+            .map(g => `${h.byGrade[g]} ${g}`)
+            .join(', ');
+        weapons.push(`<div class="who"><span class="wn">${esc(h.item)}</span><span class="wo">${h.count}</span><span class="wr">${esc(mix)}</span><span class="wd">Came down. Cannot be made or reordered here; every use is permanent.</span></div>`);
+    }
+    if (weapons.length) {
+        controls.push(`<div class="grp weapons"><h4>Immortal weapons <span>${weapons.length}</span></h4>${weapons.join('')}</div>`);
+    }
+
+    // A library is what the house can teach rather than what it is holding,
+    // which is why it sits under the objects and not above them - and the
+    // curriculum block is the one place the sheet distinguishes an art nobody
+    // else teaches from a method half the province has.
+    if (d.curriculum) controls.push(curriculumBlock(d.curriculum));
+
+    // ── 5. what it says about itself ─────────────────────────────────
+    const claims: string[] = [];
+
+    if (d.lineageDispute) claims.push(lineageDisputeBlock(d.lineageDispute, d.name));
 
     if (d.people.sealed) {
         const sl = d.people.sealed;
@@ -4423,7 +4829,7 @@ function dossier(d: SectDossier): string {
                 ? 'level with the house'
                 : `${d.ordinal - sl.ordinal} under the house`;
 
-        groups.push(`<div class="grp sealed"><h4>Sealed ancestors &middot; ${kind} <span>1</span>`
+        claims.push(`<div class="grp sealed"><h4>Sealed ancestors &middot; ${kind} <span>1</span>`
             + `<span class="gap">${esc(against)}</span></h4>`
             + `<div class="who"><span class="wn">${esc(sl.name)}</span>`
             + `<span class="wo">${sl.ordinal}</span>`
@@ -4434,7 +4840,7 @@ function dossier(d: SectDossier): string {
     }
 
     if (d.people.ascended.length) {
-        groups.push(`<div class="grp ascended"><h4>Ascended <span>${d.people.ascended.length}</span></h4>`
+        claims.push(`<div class="grp ascended"><h4>Ascended <span>${d.people.ascended.length}</span></h4>`
             + d.people.ascended.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span>`
                 + `<span class="wo">${p.ordinal ?? '-'}</span>`
@@ -4444,7 +4850,7 @@ function dossier(d: SectDossier): string {
     }
 
     if (d.people.terminal.length) {
-        groups.push(`<div class="grp terminal"><h4>Dead and lost <span>${d.people.terminal.length}</span></h4>`
+        claims.push(`<div class="grp terminal"><h4>Dead and lost <span>${d.people.terminal.length}</span></h4>`
             + d.people.terminal.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span>`
                 + `<span class="wo">${p.ordinal ?? '-'}</span>`
@@ -4453,46 +4859,7 @@ function dossier(d: SectDossier): string {
             + '</div>');
     }
 
-
-
-    // Weapons are a group rather than a meta field: an object that came down
-    // through the Lid is closer to a member of the faction than to a statistic
-    // about it, and the sheet should not bury it in a strip of small print.
-    const weapons: string[] = [];
-    if (d.apex) weapons.push(`<div class="who"><span class="wn">${esc(d.apex.giftName)}</span><span class="wo">-</span><span class="wr">sent down</span><span class="wd">Permanent, unreproducible, and the reason this faction is an apex.</span></div>`);
-    if (d.partingGift) weapons.push(`<div class="who"><span class="wn">${esc(d.partingGift.name)}</span><span class="wo">-</span><span class="wr">parting gift${d.partingGift.intact ? '' : ' · spent'}</span><span class="wd">Left on the way out by somebody who crossed.</span></div>`);
-    for (const h of d.holdings) {
-        const mix = (['higher', 'middle', 'lower'] as const)
-            .filter(g => h.byGrade[g] > 0)
-            .map(g => `${h.byGrade[g]} ${g}`)
-            .join(', ');
-        weapons.push(`<div class="who"><span class="wn">${esc(h.item)}</span><span class="wo">${h.count}</span><span class="wr">${esc(mix)}</span><span class="wd">Came down. Cannot be made or reordered here; every use is permanent.</span></div>`);
-    }
-    if (weapons.length) {
-        groups.unshift(`<div class="grp weapons"><h4>Immortal weapons <span>${weapons.length}</span></h4>${weapons.join('')}</div>`);
-    }
-
-    // Above the weapons, because this is the measured column and that one is
-    // not. A holding says an object came down; a power says what it is worth
-    // against a person, on the ladder the person is standing on.
-    if (d.artifacts.length) {
-        groups.unshift(`<div class="grp artifacts"><h4>Artifacts <span>${d.artifacts.length}</span>`
-            + `<span class="gap">strongest ${d.artifacts[0].power}</span></h4>`
-            + d.artifacts.map(a =>
-                `<div class="who"><span class="wn">${esc(a.name)}</span>`
-                + `<span class="wo">${a.power}</span>`
-                + `<span class="wr">${esc(a.significance)} · held by ${esc(heldByLine(a))}</span>`
-                + `<span class="wd">${esc(a.description)}${tagChips(a.tags)}</span></div>`).join('')
-            + '</div>');
-    }
-
-    // Under the people and the objects, because a library is what the house can
-    // teach rather than what it is holding - but on the entry, which it was not.
-    if (d.curriculum) groups.push(curriculumBlock(d.curriculum));
-
-    if (!groups.length) {
-        groups.push('<div class="grp"><p class="none">Nobody recorded and nothing held. The faction exists; the register has no names for it.</p></div>');
-    }
+    const nothingAtAll = !people.length && !controls.length && !claims.length;
 
     return `<article class="dos${d.apex ? ' apex' : ''}">
   <header>
@@ -4514,6 +4881,11 @@ function dossier(d: SectDossier): string {
   </header>
   ${metaRow([
       ['rank', d.rank],
+      // Alignment is in the strip rather than only in the coloured dot, because
+      // a dot is a legend lookup and this is part of who the house is. It reads
+      // at the top with the history rather than being inferred at position four
+      // from a list of grievances.
+      ['aligned', d.alignment],
       // Governance, standing, the gate and who it holds from used to be here.
       // They now have blocks of their own with the terms attached, and a strip
       // of small print restating four of them was the reader's first sight of
@@ -4525,7 +4897,22 @@ function dossier(d: SectDossier): string {
       ['second', d.apex ? String(d.apex.secondSeat) : ''],
       ['channel', d.channel ? `${d.channel.kind.replace(/_/g, ' ')} · ${d.channel.crossings} crossing${d.channel.crossings === 1 ? '' : 's'} · ${d.channel.depletion ?? '-'}` : '']
   ])}
+
+  ${d.history ? historyBlock(d.history) : ''}
+  ${d.demonic ? demonicBlock(d.demonic, d.name) : ''}
+
+  ${sectionHead('Ranks and people', 'who is in it, and what it can put in a room')}
   ${fieldedBlock(d.fielded)}
+  ${d.wayIn ? wayInBlock(d.wayIn) : ''}
+  ${d.house ? houseBlock(d.house) : ''}
+  ${people.length ? `<div class="grps">${people.join('')}</div>` : ''}
+
+  ${controls.length
+      ? sectionHead('What it controls', 'held outright, or shared with everybody who teaches it')
+        + `<div class="grps">${controls.join('')}</div>`
+      : ''}
+
+  ${sectionHead('Standings', 'who it answers to, what it wants, and who is in the way')}
   ${d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''}
   ${d.ambition
       ? ambitionBlock(d.ambition)
@@ -4533,13 +4920,19 @@ function dossier(d: SectDossier): string {
       // not a shape the catalog records, and printing an absence there would
       // read as an omission rather than as the abstention it is on a sect.
       : d.apex ? '' : '<p class="none">Nothing recorded that this faction is reaching for, and the abstention is the entry rather than a hole in it.</p>'}
-  ${d.wayIn ? wayInBlock(d.wayIn) : ''}
-  ${d.house ? houseBlock(d.house) : ''}
   ${d.capability ? capabilityBlock(d.capability) : ''}
   ${flagBlock(d.flags)}
   ${d.withdrawn ? `<p class="terr">${esc(d.withdrawn.occupiedBy)}</p>` : ''}
-  ${d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>` : ''}
-  <div class="grps">${groups.join('')}</div>
+
+  ${claims.length || d.apex
+      ? sectionHead('Claims and ancestors', 'what it asserts, which is not the same as what is true')
+        + (d.apex ? `<p class="terr"><b>The lordship.</b> ${esc(d.apex.seatNote)}</p>` : '')
+        + (claims.length ? `<div class="grps">${claims.join('')}</div>` : '')
+      : ''}
+
+  ${nothingAtAll
+      ? '<div class="grps"><div class="grp"><p class="none">Nobody recorded and nothing held. The faction exists; the register has no names for it.</p></div></div>'
+      : ''}
   ${d.description
       // Last, and deliberately. Everything above is the assessment; this is
       // the context under it. It is the catalog's narrative prose, which is
@@ -4645,7 +5038,11 @@ function treeNode(
         : entry
             ? factionCard(entry)
             : court
-                ? `<details class="ncard">
+                // Anchored, because a court with no faction row is still a body
+                // other entries link to - one of the two claimants to a
+                // contested lineage is exactly this case, and without an id
+                // here its own account was unreachable from the other side.
+                ? `<details class="ncard" id="court-${esc(court.id)}">
         <summary>
           <span class="nhead"><span class="nname">${esc(court.name)}</span><span class="nord">${court.ordinal}</span></span>
           <span class="nkind">court &middot; ${court.officers.length} offices &middot; posted by ${esc(court.apexName)}<span class="ngo">open</span></span>
@@ -4802,11 +5199,6 @@ export function renderRegisterHtml(
     <p class="note">Courts open too. A court is not a faction and has no entry in the list below, but it is between three and six people doing a job on somebody else's vein, and they are the layer every tenant in the province actually deals with.</p>
     <div class="orgchart"><ul>${hierarchies.map(n => treeNode(n, dossierById, courtById)).join('')}</ul></div>
     ${prose(blocks, 'apexes')}
-  </div>` : ''}
-  ${reg.schism.length ? `<div class="govgrp">
-    <h3 class="govhead">one house, two names, two patrons <span>${reg.schism.length}</span></h3>
-    <p class="note">Two entries in the list below are the same nine-hundred-year-old house, each holding one of its two names, under two different apexes, and each saying the other is not the house. Both arguments are in the catalog and neither is weak. Nothing in the world decides it, which is the answer rather than a question waiting for one - and it is why two of the three bodies under one apex are administrations that walked out of the other.</p>
-    <dl class="schism">${reg.schism.map(s => `<dt>${esc(s.heading)}</dt><dd>${esc(s.text)}</dd>`).join('')}</dl>
   </div>` : ''}
   ${byGovernance(reg.dossiers, inTree).map(g => `<div class="govgrp">
     <h3 class="govhead">${esc(g.governance)} <span>${g.members.length}</span></h3>

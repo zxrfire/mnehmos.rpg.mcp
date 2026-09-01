@@ -208,6 +208,8 @@ export * from './regions.js';
 export * from './traditions.js';
 export * from './mortal-world.js';
 export * from './faction-character.js';
+export * from './faction-history.js';
+export * from './demonic-sects-and-what-they-are-willing-to-do.js';
 export * from './hierarchy.js';
 export * from './immortal-items.js';
 export * from './wanderers.js';
