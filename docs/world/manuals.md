@@ -82,15 +82,27 @@ nobody, for centuries.
 
 <!-- tier: 2 trigger="a manual's ceiling is reached, quoted, or compared to another's" -->
 
-**Typically a manual is written to perfection** — to the last rung of a realm. The realms
-end at 12, 16, 20, 24, 28, 32, 36, 40 and 44, and those are the natural places for a book to
-finish.
+**Typically a manual is written to perfection**, and the realm boundaries are where books
+stop. The reason is craft rather than convention: it is much harder to write down how to
+reach a *later realm* than how to refine somebody within the one they are in. A realm
+boundary is a change in kind, and a method that carries somebody across one is a different
+piece of work from a method that polishes them. So an author finishes at the natural place
+to finish, and the next realm is somebody else's book, a later volume, or nobody's.
 
-The reason is craft, not convention. It is much harder to write down how to reach a *later
-realm* than how to refine somebody within the one they are in: a realm boundary is a change
-in kind, and a method that carries somebody across one is a different piece of work from a
-method that polishes them. So an author finishes at the natural place to finish, and the
-next realm is somebody else's book, a later volume, or nobody's.
+**But "written to perfection" describes the syllabus, not the number.** A complete book
+teaches its realm to the last rung *and the crossing out of it*, which is the hardest thing
+in it — so a reader who has finished the paper is standing on the first rung of the next
+realm, and that is where the `cap` sits. The realms run 0–12, 13–16, 17–20, 21–24, 25–28,
+29–32, 33–36, 37–40 and 41–44, so complete books cap at 13, 17, 21, 25, 29, 33 and 37.
+
+This was got wrong once, in this file, and the correction is worth keeping because the wrong
+version is the intuitive one. Capping at a realm's *last* rung — 12, 16, 20 — and opening
+each successor one rung later puts **a one-rung wall at every realm boundary in the world**:
+a reader stops at 16, every successor wants 17, and nothing can stand between them. The
+counterfactual was measured rather than argued: the catalog as it stands has walls at none of
+the boundaries, and the proposed rule puts one at all nine. The existing numbers already are
+the perfection rule, expressed as a position rather than as a syllabus, and that is what
+makes the chain interlock with no seam.
 
 Two consequences worth holding onto:
 
@@ -109,8 +121,13 @@ above every house's shelf and it is why [`escapes.md`](escapes.md) has the route
 **A gap *inside* a shelf is a defect.** A primer capping at 13 followed by a book requiring
 21 is eight rungs nobody in the house can cross, and a house that has stood for centuries
 would have solved it — with an intermediary art, very possibly one shared with an allied
-house. Successors should join: the next book wants exactly one rung past where the last one
-left you.
+house. Measured, twenty of thirty-two shelves had such a gap, and nearly all of it traced to
+one genuine absence: there was no elementless road at Core Formation anywhere in the world,
+so a wood, water, earth or muddled root arriving at 17 had nothing to pick up.
+
+**A successor opens where its predecessor's cap left the reader standing**, not one rung
+later. That is what makes a shelf walkable, and it is the same fact as the caps above: the
+cap is a position, so the next book meets the reader at it.
 
 **Span varies, and it means something.** A book covering 13 to 29 is a deep foundation and a
 rare thing to own; its disciples change method less often, which is its own coherence and a
