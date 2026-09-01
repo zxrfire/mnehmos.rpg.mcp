@@ -96,7 +96,7 @@ import {
 } from './npc-state.js';
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
-import { manualCeilingOf, newlyEntitled, BOOKLESS_CEILING } from './manuals.js';
+import { manualCeilingOf, newlyEntitled, refreshChosen, BOOKLESS_CEILING } from './manuals.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
     makeFaction,
@@ -631,6 +631,15 @@ function applyBookAcquisition(state: WorldState, year: number, day: number): num
         if (state.npcs[i].status === 'alive' && isBelowTheLid(state.npcs[i])) living.push(i);
     }
     if (living.length === 0) return 0;
+
+    // Name replacements first, so somebody promoted this year can be handed
+    // the shelf in the same pass rather than waiting another turn of the clock.
+    const npcAt = new Map(state.npcs.map((n, i) => [n.id, i]));
+    for (const pick of refreshChosen(state)) {
+        const i = npcAt.get(pick.id);
+        if (i === undefined) continue;
+        state.npcs[i] = { ...state.npcs[i], tags: [...state.npcs[i].tags, 'chosen'], updatedOnDay: day };
+    }
 
     let handed = 0;
     const looks = Math.max(1, Math.round(living.length / 8));
