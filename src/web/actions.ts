@@ -209,6 +209,20 @@ export const ACTION_NAMES = [
      */
     'list_techniques',
     'learn_technique',
+    /**
+     * How a manual could go further, by every route there is.
+     *
+     * ONE COMMAND, THREE COSTS. Finding the next volume, being taught it and
+     * writing it yourself are the same question asked of a world that answers
+     * differently depending on what you have, and `assessAcquisition` funnels
+     * all three through one report. A player standing at a ceiling has three
+     * things they might do and had no way to compare them; the engine could
+     * price all three the whole time and nothing asked it to.
+     *
+     * A read, and free, which is what makes it worth having: the decision is
+     * the content, so the comparison must not itself cost a decade.
+     */
+    'acquisition',
     'wait',
     // The mortal economy. Half the deaths in this world are logistical, and
     // these are the two verbs that answer that - so they must be reachable
@@ -367,7 +381,7 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
     // Both are reads of what is already true - the pouch, and the catalog
     // filtered by rows this cultivator already owns. Neither can teach and
     // neither can kill.
-    'inventory', 'list_techniques',
+    'inventory', 'list_techniques', 'acquisition',
     // Reading your own head changes nothing in it. This one is a read in the
     // strictest sense in the package: it touches no catalog the holder has no
     // record for, so it cannot even accidentally become a way to learn.
@@ -482,6 +496,9 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     // What is on the counter, resolved against THE POUCH. Bare "I sell my
     // herbs" carries no target and prices the whole pouch instead.
     'sell',
+    // The manual being asked about, by name. Resolved against what this
+    // cultivator HOLDS: the question is how THEIR book goes further.
+    'acquisition',
     // The art, by name. Resolved against the whole catalog and then put to
     // `handleLearn`, which owns every gate - so naming one out of reach is
     // refused with the measured reason rather than dropped here.
@@ -944,6 +961,18 @@ export const TECHNIQUE_CLASS_NOUNS =
     /\b(?:arts?|techniques?|manuals?|methods?|scriptures?|canons?)\b/;
 
 export const LEARNING_SUBJECT_VERBS = /learn|study|read|take up|master|acquire/;
+
+/**
+ * Asking how a manual goes further, by any route.
+ *
+ * Deliberately about the BOOK rather than about learning: these are the words
+ * somebody uses at a ceiling, and every one of them presupposes a method they
+ * already practise.
+ */
+export const ACQUISITION_PATTERN =
+    /\b(?:how (?:do|can) i (?:get|go) (?:any )?further|what (?:are|is) my options|how does (?:this|my) (?:manual|method|art|book) (?:go|get) further|next volume|go further with|carry me further|what would (?:it )?take to (?:get|go) (?:past|further|beyond)|my options at this (?:ceiling|wall)|how do i pass this (?:ceiling|wall))\b/;
+
+export const ACQUISITION_SUBJECT_VERBS = /further with|with|past|beyond|of/;
 
 /** The verbs a line is taken off the board with. */
 export const DUTY_SUBJECT_VERBS =
@@ -2579,6 +2608,18 @@ export function parseIntent(input: string): PlannedAction {
             action: 'sect',
             intent: 'duty',
             ...(taking ? { target: extractSubject(input, DUTY_SUBJECT_VERBS) } : {})
+        };
+    }
+
+    // ── how does this book go further ──
+    //
+    // ONE COMMAND, THREE COSTS. Ahead of the learning branch, because "how do I
+    // get further with this manual" is not a request to learn a new one, and
+    // ahead of the mortal-economy work rule, which takes "work out".
+    if (ACQUISITION_PATTERN.test(text)) {
+        return {
+            action: 'acquisition',
+            target: extractSubject(input, ACQUISITION_SUBJECT_VERBS)
         };
     }
 
