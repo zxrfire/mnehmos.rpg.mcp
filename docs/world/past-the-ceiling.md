@@ -645,17 +645,23 @@ above the Lid, and the only way to read a trajectory is against the clock.
 It also explains how a body this attractive stays small without turning anybody away
 arbitrarily: the bar is objective, it is knowable in advance, and almost nobody clears it.
 
-**And there is a second reason for the bar, which is arithmetic rather than judgement: the
-Court does not want to share.** Its ground is the best in the world, and ground is finite -
-the more people draw on a vein, the less each of them gets. So **every additional member
-lowers the odds of every existing member reaching immortality.** Admitting somebody is not
-a kindness the Court extends at no cost to itself; it is spending the thing it is made of.
+**And there is a second reason for the bar: the Court does not want to share.** Not space -
+**it has never been short of that.** It has cultivation rooms for everybody and spare ones
+besides, it has never had enough members to fill them, and if it ever did it could trivially
+afford to cut more. **Nobody has ever been turned away from the Hollow Court for want of
+somewhere to sit.**
 
-That makes the admission bar a rationing rule as much as a prediction. The Court takes
-somebody only when they raise the expected number of ascensions - which means the candidate
-has to be good enough that their presence is worth more than the dilution their presence
-causes. A merely excellent cultivator fails that test even though they would be the best
-person in most houses in the world.
+What it is protecting is the ground itself. The qi is the finite thing - you can build another
+room and you cannot make another vein - so every additional person drawing on it is drawing on
+the same source as everybody else. **An extra member lowers the odds of every existing member
+reaching immortality**, and those odds are the entire purpose of the institution.
+
+So the bar is a judgement about whether a candidate is worth more than the share they will
+take. Somebody who will reach the Lid raises the expected number of ascensions and pays for
+their own draw many times over. Somebody who merely *might* costs everybody a fraction of their
+own attempt, forever. **A merely excellent cultivator fails that test** even though they would
+be the best person in most houses in the world - which is what makes the Court's refusals read
+as arrogance from outside and arithmetic from inside.
 
 It is also why waiting costs the Court nothing. With lifespans in the tens of thousands of
 years, holding four seats open for two centuries until the right person appears is cheaper
