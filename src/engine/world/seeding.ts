@@ -70,6 +70,7 @@ import {
 } from '../cultivation/origin.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
+import { growCompound, type CompoundInput } from './architecture.js';
 import type { WorldCatalog, CatalogFaction, CatalogRegion } from './catalog.js';
 import {
     linkLocations,
@@ -567,7 +568,55 @@ function seedSectGround(
     state.locations.push(ground);
     // The road from the province to the gate. Ordinary link, ordinary travel.
     linkLocations(region, ground, 'road', 2);
+
+    // And the inside of it. A sect seat with no interior is a name with two
+    // roads out of it: measured before this existed, the Azure Cloud Pavilion -
+    // the house with a newly ascended immortal attached - was exactly that, and
+    // nesting in a whole seeded world bottomed out at depth 1. `growCompound`
+    // is pure and deterministic off the world seed, so calling it here and
+    // calling it the first time somebody walks through the gate produce the
+    // same compound; it is called here because seeding 32 of them costs less
+    // than the branch that would decide not to.
+    const compound = growCompound(ground, compoundInputFor(cf), {
+        seed: state.seed,
+        presentDay
+    });
+    for (const room of compound.locations) state.locations.push(room);
+
     return ground;
+}
+
+/**
+ * The generator's flat input, read straight off the catalog row.
+ *
+ * Every field the architecture layer added to `CatalogFaction` is defaulted
+ * here rather than assumed. A great many fixtures across the suite build a
+ * catalog faction by hand and predate those fields; a hand-built house should
+ * come out as an ordinary compound with no elemental character, not take world
+ * seeding down with it.
+ */
+function compoundInputFor(cf: CatalogFaction): CompoundInput {
+    return {
+        factionId: cf.id,
+        factionName: cf.name,
+        ranks: cf.ranks,
+        admissionOrdinal: cf.admissionOrdinal,
+        powerOrdinal: cf.powerOrdinal,
+        recruits: cf.recruits,
+        alignment: cf.alignment,
+        governance: cf.governance,
+        production: cf.production,
+        formationIntegrity: cf.formationIntegrity,
+        formationNodesTotal: cf.formationNodesTotal ?? 0,
+        formationNodesLit: cf.formationNodesLit ?? 0,
+        inherited: cf.compoundInherited ?? false,
+        holdsVein: cf.holdsVein,
+        tributeStonesPerYear: cf.tributeStonesPerYear,
+        sealedCeilingOrdinal: cf.sealedCeilingOrdinal,
+        preferredRoots: cf.preferredRoots ?? [],
+        teachesElements: cf.teachesElements ?? [],
+        specialities: cf.specialities ?? []
+    };
 }
 
 function seedFactions(
