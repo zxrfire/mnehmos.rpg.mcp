@@ -234,9 +234,36 @@ export const WOUND_TYPES: readonly WoundType[] = [
     // is climbing and a 41 who is done, because the difference is written on
     // the person rather than into the ladder.
     //
+    // ── HOW THEY ARE NAMED, WHICH IS A RULE AND NOT A STYLE ─────────
+    //
     // Each names the structure ITS OWN crossing was for, so the status reads
     // as a diagnosis rather than a label. A healer's words: plain, physical,
-    // and about the specific thing that did not take.
+    // clinical, and about the specific thing that did not take. Two words
+    // where two will do - a participle and the thing - and the key derives
+    // from the name, so the id can never drift from what the row prints.
+    //
+    // AND A TERM BELONGING TO ONE REALM NEVER APPEARS IN ANOTHER'S NAME.
+    // That is the rule the table has actually broken, twice, and it is worth
+    // stating as a prohibition rather than a preference:
+    //
+    //   - 'A shattered foundation' was minted at six walls, none of which
+    //     builds a foundation. A Body Integration cultivator came out of the
+    //     joining carrying a Foundation Establishment word for a structure
+    //     that realm was not constructing. It is now 'Scattered cultivation',
+    //     which borrows from nobody because a cultivation base is what every
+    //     rung on the ladder has.
+    //   - 'A failed body joining' named the right realm and said it in plain
+    //     English, and 'failed' is a verdict rather than a diagnosis. It is
+    //     now 'An unsealed seam' - the seam is the setting's own word for what
+    //     that crossing welds, and `killRequirement` has been returning
+    //     'seam' as a remnant kind since long before this table existed.
+    //
+    // The same principle got 'a spoiled temper' rejected for 'damaged spirit
+    // sense': name the failure of the SPECIFIC FORMATION, never a mood and
+    // never a metaphor. Ask what the realm forms, then name that not forming.
+    //
+    // Pinned by test, both halves - the realm each name may borrow from, and
+    // the derivation of the key. See `boundary-trials.test.ts`.
     //
     // Adding a realm means adding a row here and one line in
     // `BROKEN_STATUS_FOR_TRIAL`. Nothing else knows these apart.
@@ -307,9 +334,9 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Void Refinement, and a reach that reports things which are not there and misses things that are. They compensate by never relying on it - they ask, they send people, they check twice - and it makes them look either extraordinarily careful or extraordinarily suspicious depending on who is describing them.'
     },
     {
-        key: 'failed-body-joining',
+        key: 'unsealed-seam',
         nature: 'physical',
-        name: 'A failed body joining',
+        name: 'An unsealed seam',
         description:
             'Soul and body were welded from the sinew inward and one seam did not close. Everything moving through this cultivator is enormous, and there is a place where it is not held.',
         severities: ['crippling'],
@@ -346,7 +373,7 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Tribulation Transcendence, awake, powerful beyond anything the world can field against them, and permanently three rungs from the Lid. Most of them stop being seen. It is not shame - there is simply nothing further to do, and a hundred thousand years is a long time to be asked about it.'
     },
     {
-        key: 'span-burnt',
+        key: 'burnt-span',
         nature: 'physical',
         name: 'A burnt span',
         description:
@@ -359,9 +386,9 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Somebody at a good rung who is old for it and knows the figure to the year. They are usually in a hurry about something and will not explain what.'
     },
     {
-        key: 'foundation-shattered',
+        key: 'scattered-cultivation',
         nature: 'physical',
-        name: 'A shattered foundation',
+        name: 'Scattered cultivation',
         description:
             'The structure the whole life was built on came apart under the crossing. Whatever is standing here now was laid a second time out of the wreckage of the first, and it remembers being broken.',
         severities: ['crippling'],
@@ -387,7 +414,7 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Entirely lucid and slightly guarded, with one subject they will not go near. Press it and the composure is visibly load-bearing rather than real.'
     },
     {
-        key: 'heart-demon-rooted',
+        key: 'rooted-heart-demon',
         nature: 'mental',
         name: 'A rooted heart demon',
         description:
@@ -400,7 +427,7 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Functional, capable, employed, and wrong in a way that takes an afternoon to notice: reasoning that runs correctly from one premise nobody else holds, an intensity that arrives in the wrong places, and a complete and genuine inability to see it. They are not dangerous by default and they are not reliable either.'
     },
     {
-        key: 'heart-demon-ascendant',
+        key: 'ascendant-heart-demon',
         nature: 'mental',
         name: 'An ascendant heart demon',
         description:
@@ -426,7 +453,7 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Someone assembling their own past out of what they have been told, quite openly, and checking it against anybody who might have been present. Vulnerable to being told the wrong thing on purpose, and aware of that too.'
     },
     {
-        key: 'the-fixed-premise',
+        key: 'fixed-premise',
         nature: 'mental',
         name: 'A fixed premise',
         description:

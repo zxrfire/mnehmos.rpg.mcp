@@ -199,10 +199,10 @@ describe('the wound table', () => {
 
     it('takes its description from the table rather than composing one', () => {
         const injury = createInjury(
-            { severity: 'crippling', source: 'qi_deviation', turn: 1, woundType: 'heart-demon-ascendant' },
+            { severity: 'crippling', source: 'qi_deviation', turn: 1, woundType: 'ascendant-heart-demon' },
             rng()
         );
-        expect(injury.description).toBe(getWoundType('heart-demon-ascendant')!.description);
+        expect(injury.description).toBe(getWoundType('ascendant-heart-demon')!.description);
     });
 
     it('treats an unknown or absent key as an ordinary wound of its severity', () => {
@@ -337,12 +337,84 @@ describe('striking on a break is legal, suicidal, and curative if it lands', () 
         // Marking it treated would leave it counting as scar tissue against
         // SCAR_PLATEAU - charging attrition for a wound no longer carried.
         const wound = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'failed-body-joining' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unsealed-seam' },
             rng()
         );
-        const after = clearBrokenStatus([wound, createInjury({ severity: 'minor', source: 'combat', turn: 1 }, rng())], 'failed-body-joining');
+        const after = clearBrokenStatus([wound, createInjury({ severity: 'minor', source: 'combat', turn: 1 }, rng())], 'unsealed-seam');
         expect(after).toHaveLength(1);
         expect(after[0].woundType).toBeNull();
+    });
+});
+
+describe('what the broken statuses are called', () => {
+    // ── The rule ──────────────────────────────────────────────────────────
+    //
+    // A break is named for what THAT realm's crossing was trying to build, and
+    // a term belonging to one realm may never appear in another's name. The
+    // defect this pins is reuse across realms: "a shattered foundation" was
+    // being minted at six walls that build no foundation, so a Body Integration
+    // cultivator could come out of the joining carrying a Foundation
+    // Establishment word. The foundation is not what that realm was
+    // constructing.
+    //
+    // It is the same principle as the earlier rejection of "a spoiled temper"
+    // for "damaged spirit sense": name the failure of the specific formation,
+    // never a mood or a metaphor.
+
+    /** The term each realm owns. It may appear in that realm's break and nowhere else. */
+    const OWNED_TERM: Record<string, string[]> = {
+        foundation_establishment: ['foundation'],
+        core_formation: ['core'],
+        nascent_soul: ['nascent', 'soul'],
+        deity_transformation: ['transformation'],
+        void_refinement: ['spirit', 'sense'],
+        body_integration: ['seam'],
+        grand_ascension: ['ascension'],
+        tribulation_transcendence: ['tribulation']
+    };
+
+    const slug = (name: string) =>
+        name.replace(/^(a|an|the)\s+/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+    it('names every break for its own realm and borrows nothing from another', () => {
+        for (const ordinal of [13, 17, 21, 25, 29, 33, 37, 41]) {
+            const realmKey = realmForOrdinal(ordinal).key;
+            const status = brokenStatusFor(ordinal - 1)!;
+            const row = getWoundType(status)!;
+            const words = row.name.toLowerCase();
+
+            // It says what this realm was building.
+            expect(OWNED_TERM[realmKey].some(term => words.includes(term))).toBe(true);
+
+            // And nothing another realm owns.
+            for (const [otherRealm, terms] of Object.entries(OWNED_TERM)) {
+                if (otherRealm === realmKey) continue;
+                for (const term of terms) {
+                    if (OWNED_TERM[realmKey].includes(term)) continue;
+                    expect(words).not.toContain(term);
+                }
+            }
+        }
+    });
+
+    it('keeps no realm term anywhere else in the catalog', () => {
+        // The leak was not in a break at all - it was in an ORDINARY wound that
+        // several realms mint. A wound that is not a break must borrow nobody's
+        // term, because it can be handed out anywhere on the ladder.
+        const breakKeys = new Set(BROKEN_STATUSES);
+        const owned = Object.values(OWNED_TERM).flat();
+        for (const row of WOUND_TYPES) {
+            if (breakKeys.has(row.key)) continue;
+            for (const term of owned) {
+                expect(row.name.toLowerCase()).not.toContain(term);
+            }
+        }
+    });
+
+    it('derives every id from what the row prints, so the two cannot drift', () => {
+        for (const row of WOUND_TYPES) {
+            expect(row.key).toBe(slug(row.name));
+        }
     });
 });
 
@@ -627,7 +699,7 @@ describe('which wounds travel up the ladder and which stop you', () => {
     it('lets mental and ordinary physical wounds cross with you', () => {
         // A heart demon is carried up the ladder and may even be shed on the
         // way. What it does is make everything harder, not stop the build.
-        for (const key of ['heart-demon', 'heart-demon-rooted', 'severed-meridian', 'span-burnt', 'torn-meridians']) {
+        for (const key of ['heart-demon', 'rooted-heart-demon', 'severed-meridian', 'burnt-span', 'torn-meridians']) {
             expect(blocksAdvancement(wound(key))).toBe(false);
         }
     });

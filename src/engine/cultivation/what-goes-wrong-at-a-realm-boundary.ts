@@ -591,13 +591,21 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
         })
     },
 
-    // ── The foundation blows up. The condensation is where it belongs. ──
+    // ── The structure under them comes apart. ──
+    //
+    // NOT NAMED FOR A FOUNDATION, and that is the point. This row is minted at
+    // six walls and only one of them builds a foundation, so calling it 'a
+    // shattered foundation' handed a Body Integration cultivator a Foundation
+    // Establishment word for something that realm was not constructing. What
+    // actually comes apart is the cultivation base, which every rung has - so
+    // the wound borrows nobody's term. See the naming rule in `wounds.ts`.
     {
-        key: 'foundation_shattered',
-        summary: 'The foundation came apart under the compression. What was built is gone.',
+        key: 'cultivation_scattered',
+        summary: 'The structure the life was built on came apart under the crossing. What was built is gone.',
         weights: {
-            // Nothing to shatter at the first wall - the foundation is being
-            // laid there, not compressed - so this row is simply absent from it.
+            // Nothing to scatter at the first wall - there is no accumulated
+            // base yet, it is being laid there - so this row is simply absent
+            // from it.
             the_condensation: 14,
             the_birthing: 5,
             the_merging: 4,
@@ -606,7 +614,7 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
             the_ascent: 3
         },
         apply: (subject, rng, ctx) => ({
-            injuries: [wound(ctx, rng, 'foundation-shattered', 'crippling')],
+            injuries: [wound(ctx, rng, 'scattered-cultivation', 'crippling')],
             // Laid again out of the wreckage. 'rebuilt' is strictly worse than
             // 'stable' and strictly better than 'damaged', which is exactly the
             // charter's "loss branches rather than subtracts".
@@ -700,7 +708,7 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
         },
         apply: (_s, rng, ctx) => ({
             injuries: [
-                wound(ctx, rng, 'heart-demon-rooted', rng.next() < 0.6 ? 'serious' : 'crippling', 'qi_deviation')
+                wound(ctx, rng, 'rooted-heart-demon', rng.next() < 0.6 ? 'serious' : 'crippling', 'qi_deviation')
             ],
             soulStateFloor: 'damaged',
             // Functional and not right. Still overwhelmingly themselves, which
@@ -724,7 +732,7 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
             the_ascent: 6
         },
         apply: (_s, rng, ctx) => ({
-            injuries: [wound(ctx, rng, 'heart-demon-ascendant', 'crippling', 'qi_deviation')],
+            injuries: [wound(ctx, rng, 'ascendant-heart-demon', 'crippling', 'qi_deviation')],
             soulStateFloor: 'fragmented',
             // Low, and deliberately not zero. `identityContinuity` is the field
             // that stops a remnant being mistaken for the person who left it,
@@ -761,7 +769,7 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
             the_ascent: 6
         },
         apply: (_s, rng, ctx) => ({
-            injuries: [wound(ctx, rng, 'the-fixed-premise', rng.next() < 0.7 ? 'minor' : 'serious', 'qi_deviation')]
+            injuries: [wound(ctx, rng, 'fixed-premise', rng.next() < 0.7 ? 'minor' : 'serious', 'qi_deviation')]
         })
     },
 
@@ -781,7 +789,7 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
                 SPAN_BURNED_FRACTION.min +
                 rng.next() * (SPAN_BURNED_FRACTION.max - SPAN_BURNED_FRACTION.min);
             return {
-                injuries: [wound(ctx, rng, 'span-burnt', fraction > 0.15 ? 'crippling' : 'serious')],
+                injuries: [wound(ctx, rng, 'burnt-span', fraction > 0.15 ? 'crippling' : 'serious')],
                 yearsBurned: span * fraction
             };
         }
@@ -909,7 +917,7 @@ export const BROKEN_STATUS_FOR_TRIAL: Partial<Record<TrialKind, string>> = {
     the_birthing: 'unformed-nascent-soul',
     the_merging: 'incomplete-transformation',
     the_emptiness: 'damaged-spirit-sense',
-    the_joining: 'failed-body-joining',
+    the_joining: 'unsealed-seam',
     the_ascent: 'unset-ascension',
     // The crossing INTO Tribulation Transcendence. Lightning resolves whether
     // they survive it; this is what a survival that did not land clean leaves.
@@ -1108,7 +1116,7 @@ export const REPAIRED_IN_THE_CRUCIBLE: Record<string, boolean> = {
     'unformed-nascent-soul': true,
     'incomplete-transformation': true,
     'damaged-spirit-sense': true,
-    'failed-body-joining': true,
+    'unsealed-seam': true,
     'unset-ascension': true,
     'unformed-tribulation-body': false
 };
