@@ -98,7 +98,7 @@ import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { deriveOrdinal } from './seeding.js';
 import {
     newlyEntitled, refreshChosen, reachableCeilingFor,
-    mightFindARoad, roadTheyFound, BOOKLESS_CEILING
+    mightFindARoad, roadTheyFound, librariesCarriedOutBy, BOOKLESS_CEILING
 } from './manuals.js';
 import { assessPromotions } from './promotion-inside-a-house.js';
 import {
@@ -2302,6 +2302,26 @@ const TEMPLATES: Template[] = [
 
             parent.resources.spirit_stones = Math.round((parent.resources.spirit_stones ?? 0) * 0.8);
             state.factions.push(splinter);
+
+            // AND THE BOOKS THEY WALKED OUT WITH, WHICH IS WHY THIS IS A HOUSE
+            // AND NOT A BUILDING.
+            //
+            // A founded house had no catalog entry, so `manualsOf` read back an
+            // empty shelf and it could teach nobody anything for as long as it
+            // stood - which made ordinary institutional churn a one-way ratchet
+            // on the world's literacy. Measured over three thousand years:
+            // houses standing 32 -> 47 while houses holding a shelf went 30 ->
+            // 5, distinct books held by anybody alive 68 -> 6, and the standing
+            // distribution collapsed to 96% at or below Qi Condensation with
+            // four consecutive empty bands above the middle.
+            //
+            // The founders are already carrying their methods. Writing the
+            // library rows here is the physical fact of the schism rather than
+            // a new rule, and `shelfOf` reads them the same way it reads any
+            // other house's.
+            state.objects.push(
+                ...librariesCarriedOutBy(state, splinter, [founder, ...leavers])
+            );
 
             for (const npc of [founder, ...leavers]) {
                 replaceNpc(state, {

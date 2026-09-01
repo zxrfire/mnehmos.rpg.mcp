@@ -153,7 +153,7 @@ import { FRIENDSHIP_STANDING } from './gatherings.js';
 import {
     admissionOffer,
     manualCeilingOf,
-    manualsOf,
+    shelfOf,
     shelfReach,
     suitsRoot,
     type Manual
@@ -654,7 +654,10 @@ export function applyTeachingLines(
     const lines: TeachingLine[] = [];
     for (const factionId of [...byHouse.keys()].sort()) {
         const members = byHouse.get(factionId)!;
-        const shelf = manualsOf(factionId);
+        // The shelf the house HAS, not the one the catalog gave it - so a hall
+        // founded by people who walked out with their books has teaching lines
+        // in it, the same as anywhere else. See `shelfOf`.
+        const shelf = shelfOf(state, factionId);
         if (shelf.length === 0) continue;
         const faction = state.factions.find(f => f.id === factionId);
         if (!faction || faction.dissolvedOnDay !== null) continue;

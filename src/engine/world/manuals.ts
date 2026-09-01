@@ -95,7 +95,7 @@
  */
 
 import type { NpcRecord } from './npc-state.js';
-import type { WorldState } from './world-state.js';
+import type { FactionRecord, WorldState } from './world-state.js';
 import { makeObject, type ObjectRecord } from './possessions.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { conflictsWithRoot, getSpiritRoot } from '../cultivation/spirit-roots.js';
@@ -176,6 +176,110 @@ export function manualsOf(factionId: string): Manual[] {
     // Ascending, because rank reaches UP the shelf and the top of it is the
     // thing a house does not hand out.
     return out.sort((a, b) => a.cap - b.cap || a.id.localeCompare(b.id));
+}
+
+/**
+ * The shelf a house ACTUALLY HAS, which is not the shelf the catalog gave it.
+ *
+ * ── WHY THIS EXISTS: LITERACY WAS SEEDED ONCE AND NEVER MANUFACTURED AGAIN ──
+ *
+ * `manualsOf` reads `teaches` off the content catalog, keyed by the id of a
+ * house that was written by hand. Every house the world FOUNDS for itself -
+ * `faction_founded` in `the-world-changing-on-its-own.ts`, which is the ordinary
+ * way institutions replace each other - has no catalog entry, so it read back an
+ * empty shelf and could teach nobody anything, permanently, however senior the
+ * people who walked out to start it.
+ *
+ * That made institutional churn a one-way ratchet on the world's knowledge.
+ * Measured over three thousand years on one seed, and the columns move together:
+ *
+ *     years   houses standing   holding a shelf   books held by the living
+ *         0                32                30                         68
+ *       500                40                11                         46
+ *      1500                31                 7                         29
+ *      3000                47                 5                          6
+ *
+ * Houses churn healthily throughout - that half is correct and wanted, a house
+ * is supposed to be able to fall. What is not wanted is that 42 of the 47
+ * standing at the end could not carry anybody past `BOOKLESS_CEILING`. With the
+ * ceiling gone the flow up the ladder stops, the standing distribution can only
+ * erode toward the rung people enter at, and the world reads 96% Qi Condensation
+ * with four consecutive empty bands above the middle - a Late Age produced by
+ * unreplaced attrition rather than by anybody's decline.
+ *
+ * ── THE FIX IS THE FILE'S OWN RULE, APPLIED ──────────────────────────────
+ *
+ * This module's header already says a manual is an object with a holder and a
+ * count, and `seedSectLibraries` already puts every catalog house's working
+ * library into `state.objects` possessed by the house. Nothing read them back.
+ * So the shelf is the catalog's statement UNION what the house is holding, and a
+ * founded house becomes literate the honest way: its founders walked out with
+ * copies of what they were practising, and those copies are ordinary objects
+ * created at the founding.
+ *
+ * No branch anywhere on whether a house is a catalog house or a founded one.
+ * At seeding the two sources are identical, so every seeded world reads exactly
+ * as it did before.
+ */
+export function shelfOf(state: WorldState, factionId: string): Manual[] {
+    return shelvesOf(state).get(factionId) ?? manualsOf(factionId);
+}
+
+/**
+ * One walk of the object table per world-day, rather than one per question.
+ *
+ * `applyFoundRoads` asks `reachableCeilingFor` of every living person every
+ * year, so a shelf that scanned `state.objects` on each call would be a walk of
+ * the object table five hundred times a year for as long as the world runs. The
+ * index is rebuilt when the day moves or when the table grows, which covers both
+ * ways a library can change inside one pass: a founding adds rows in the same
+ * year they are read, and everything else happens between years.
+ */
+interface ShelfIndex {
+    day: number;
+    objects: number;
+    byFaction: Map<string, Manual[]>;
+}
+const SHELVES = new WeakMap<WorldState, ShelfIndex>();
+
+function shelvesOf(state: WorldState): Map<string, Manual[]> {
+    const cached = SHELVES.get(state);
+    if (cached && cached.day === state.currentDay && cached.objects === state.objects.length) {
+        return cached.byFaction;
+    }
+
+    const held = new Map<string, Set<string>>();
+    for (const object of state.objects) {
+        if (object.kind !== 'manual' || object.possessorId === null) continue;
+        const techniqueId = manualIdOf(object);
+        if (techniqueId === null) continue;
+        let ids = held.get(object.possessorId);
+        if (!ids) { ids = new Set(); held.set(object.possessorId, ids); }
+        ids.add(techniqueId);
+    }
+
+    const byFaction = new Map<string, Manual[]>();
+    for (const faction of state.factions) {
+        const out = manualsOf(faction.id);
+        const seen = new Set(out.map(m => m.id));
+        for (const techniqueId of held.get(faction.id) ?? []) {
+            if (seen.has(techniqueId)) continue;
+            const t = getTechnique(techniqueId) as
+                | { id: string; name: string; class?: string; cap?: number | null;
+                    requiredOrdinal?: number; element?: string | null }
+                | undefined;
+            if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+            seen.add(t.id);
+            out.push({
+                id: t.id, name: t.name, cap: Number(t.cap),
+                requiredOrdinal: Number(t.requiredOrdinal ?? 0), element: t.element ?? null
+            });
+        }
+        byFaction.set(faction.id, out.sort((a, b) => a.cap - b.cap || a.id.localeCompare(b.id)));
+    }
+
+    SHELVES.set(state, { day: state.currentDay, objects: state.objects.length, byFaction });
+    return byFaction;
 }
 
 /**
@@ -373,7 +477,8 @@ export function refreshChosen(state: WorldState): NpcRecord[] {
 
     const named: NpcRecord[] = [];
     for (const [factionId, people] of members) {
-        const shelf = manualsOf(factionId);
+        // The shelf the house holds, so a founded hall can favour somebody too.
+        const shelf = shelfOf(state, factionId);
         if (shelf.length === 0) continue;
         const faction = state.factions.find(f => f.id === factionId);
         if (!faction || faction.dissolvedOnDay !== null) continue;
@@ -419,7 +524,7 @@ export function newlyEntitled(state: WorldState, npc: NpcRecord): string[] {
     const ordinal = npc.cultivation.realmOrdinal;
 
     if (npc.factionId) {
-        const shelf = manualsOf(npc.factionId);
+        const shelf = shelfOf(state, npc.factionId);
         if (shelf.length === 0) return [];
         // A house that teaches in person hands its newest people no object at
         // all. They are not stuck - they are dependent, which is a different
@@ -542,6 +647,73 @@ export function seedSectLibraries(state: WorldState): ObjectRecord[] {
                 data: { techniqueId: m.id, cap: m.cap, copies: copiesOf(m.cap, rng) }
             }));
         }
+    }
+    return made;
+}
+
+/**
+ * The library a new house starts with: the copies its founders walked out with.
+ *
+ * A schism is people leaving a building, and what they take with them is what
+ * they were already practising. Nothing here decides that a founded house
+ * "deserves" a shelf - it reads `techniqueIds` off the people who left, which
+ * the world was already storing, and writes the ordinary library rows any other
+ * house has. A hall founded by six outer disciples holds six people's primers
+ * and teaches to thirteen; one founded by an elder who took the inner book with
+ * her holds that, and is a different institution from its first day, for a
+ * reason anybody in the province could tell you.
+ *
+ * This is the inflow the world had no other source of. `faction_fell` removes a
+ * library from circulation every time a house ends - correctly, a fallen house
+ * is a fallen house - and until this existed nothing put one back, so the count
+ * of houses able to carry anybody past `BOOKLESS_CEILING` could only fall. See
+ * `shelfOf` for the measurement.
+ *
+ * Deliberately NOT a copy of the parent's whole shelf. What leaves is what the
+ * leavers held; the deep end of a house's shelf stays where it was unless the
+ * person holding it is one of the people walking out.
+ */
+export function librariesCarriedOutBy(
+    state: WorldState,
+    faction: FactionRecord,
+    carriers: readonly NpcRecord[]
+): ObjectRecord[] {
+    const copies = new Map<string, number>();
+    for (const npc of carriers) {
+        for (const id of new Set(npc.cultivation.techniqueIds)) {
+            const t = getTechnique(id) as { class?: string; cap?: number | null } | undefined;
+            if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+            copies.set(id, (copies.get(id) ?? 0) + 1);
+        }
+    }
+    if (copies.size === 0) return [];
+
+    const held = new Set(
+        state.objects
+            .filter(o => o.kind === 'manual' && o.possessorId === faction.id)
+            .map(manualIdOf)
+    );
+
+    const made: ObjectRecord[] = [];
+    for (const [techniqueId, count] of [...copies].sort((a, b) => a[0].localeCompare(b[0]))) {
+        if (held.has(techniqueId)) continue;
+        const t = getTechnique(techniqueId) as { id: string; name: string; cap?: number | null };
+        const cap = Number(t.cap);
+        made.push(makeObject({
+            id: libraryObjectId(faction.id, techniqueId),
+            name: t.name,
+            kind: 'manual',
+            significance: cap >= 29 ? 'significant' : cap >= 17 ? 'notable' : 'mundane',
+            description:
+                `The ${faction.name}'s copies of a cultivation manual carrying to ordinal ${cap}, `
+                + 'brought out of the house it split from.',
+            possessorId: faction.id,
+            ownerId: faction.id,
+            ownerName: faction.name,
+            locationId: faction.seatLocationId,
+            tags: ['manual', 'library', 'carried-out', `faction:${faction.id}`],
+            data: { techniqueId, cap, copies: count }
+        }));
     }
     return made;
 }
@@ -991,7 +1163,7 @@ export function reachableCeilingFor(state: WorldState, npc: NpcRecord): number {
     if (!npc.factionId) return 0;
     if (admissionOffer(npc.factionId, state.seed) !== 'a_teacher') return 0;
 
-    const shelf = manualsOf(npc.factionId);
+    const shelf = shelfOf(state, npc.factionId);
     if (shelf.length === 0) return 0;
     const faction = state.factions.find(f => f.id === npc.factionId);
     const rankCount = Math.max(1, faction?.ranks.length ?? 1);
