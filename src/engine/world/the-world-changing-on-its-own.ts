@@ -112,6 +112,7 @@ import {
     readyToStrike,
     strikeAtTheWall
 } from './an-npc-striking-at-the-next-wall.js';
+import { standsOnAnUnreachableClock } from './who-sits-in-the-hollow-court.js';
 import {
     applyRoadsComprehended,
     roadsInReachOf
@@ -2455,9 +2456,18 @@ const TEMPLATES: Template[] = [
             // lost the vein that was its whole ability to produce cultivators
             // and has nobody left.
             const failing = liveFactions(state).filter(f =>
-                (f.resources.spirit_stones ?? 0) < 400 ||
-                membersOf(state, f.id).length < 3 ||
-                (f.tags.includes('lost_vein') && membersOf(state, f.id).length < 6)
+                ((f.resources.spirit_stones ?? 0) < 400 ||
+                    membersOf(state, f.id).length < 3 ||
+                    (f.tags.includes('lost_vein') && membersOf(state, f.id).length < 6))
+                // AND NOT A BODY WHOSE PEOPLE OUTLAST INSTITUTIONS. Counting
+                // heads is the right test for a house that runs on succession
+                // and the wrong one at the top of the ladder, where a single
+                // survivor holds tens of thousands of years and rebuilding
+                // after losing three of four Seats to a crossing is not a body
+                // dying - it is the only thing that body does. The Hollow Court
+                // dissolved on every seed inside three centuries against
+                // members who cannot die of time.
+                && !standsOnAnUnreachableClock(state, f.id)
             );
             const faction = pick(rng, failing);
             if (!faction) return null;

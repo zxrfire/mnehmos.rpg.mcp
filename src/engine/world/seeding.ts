@@ -62,6 +62,10 @@ import {
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { MEMBERS } from '../../data/cultivation/members.js';
+import { planTheHollowCourt } from './who-sits-in-the-hollow-court.js';
+
+/** The one faction whose roster lives outside `MEMBERS`. */
+const COURT_FACTION_ID = 'sect-hollow-court';
 import {
     BREAKTHROUGH_PILL_STONES,
     STONES_PER_YEAR_OF_SECLUSION,
@@ -1317,6 +1321,12 @@ function seedPopulation(
     // seniors are in the room when the pyramid is built.
     created.push(...seedNamedFigures(state, catalog, presentDay));
     created.push(...seedFactionApex(state, catalog, presentDay, taken));
+    // And the one body whose roster is not in `MEMBERS` at all. Its Seats are
+    // enumerated in `WITHDRAWN_POWERS` because the register reads them from
+    // there, which left the strongest house in the world holding whatever
+    // incidental person the apex pass happened to place - one, measured, on
+    // every seed - and then dissolving. See `who-sits-in-the-hollow-court.ts`.
+    created.push(...seedTheHollowCourt(state, catalog, presentDay, taken));
 
     assignFactionRoles(state, catalogById, presentDay);
     return created;
@@ -1469,6 +1479,83 @@ export function ageInsideRecordedHistory(
     return Math.min(wantedYears, spanYears);
 }
 
+
+/**
+ * Stand the Hollow Court up, because its roster is not in `MEMBERS`.
+ *
+ * Mirrors `seedFactionApex` deliberately: same draw, same conditioning helpers,
+ * same age bounding against recorded history. The only differences are that the
+ * plan comes from `WITHDRAWN_POWERS` rather than from a `powerOrdinal`, and that
+ * the lower rungs carry `chosen` - the engine's existing prodigy tag, already
+ * read by `shelfReach`, `assessPromotions` and `refreshChosen`.
+ *
+ * Nothing about these people is authored beyond their rung and that tag. Names,
+ * roots, origins and attributes are drawn exactly as anybody else's.
+ */
+function seedTheHollowCourt(
+    state: WorldState,
+    catalog: WorldCatalog,
+    presentDay: number,
+    taken: Set<string>
+): NpcRecord[] {
+    const created: NpcRecord[] = [];
+    const faction = catalog.factions.find(f => f.id === COURT_FACTION_ID);
+    if (!faction) return created;
+
+    const plan = planTheHollowCourt(faction.ranks.length);
+    plan.forEach((seat, i) => {
+        const id = `npc-court-${i}`;
+        if (state.npcs.some(n => n.id === id)) return;
+
+        const rng = forStream(state.seed, 'seed-court', id);
+        // A Seat is as old as the climb it finished; somebody on a lower rung
+        // cleared the Court's own admission bar and cannot be older than it.
+        const wanted = seat.prodigy
+            ? rng.int(MIN_AGE + 40, seat.maxAgeYears)
+            : Math.max(MIN_AGE + 1, seat.maxAgeYears) + rng.int(0, 400);
+        const age = ageInsideRecordedHistory(state, presentDay, wanted);
+
+        let npc = createNpc(state.seed, {
+            id,
+            bornOnDay: presentDay - years(age),
+            onDay: presentDay,
+            locationId: seatLocationId(catalog, faction),
+            occupation: 'unknown',
+            takenNames: taken,
+            origin: drawOriginForSomebodyAlreadyAtOrdinal(
+                forStream(state.seed, 'seed-court-origin', id).next(), seat.realmOrdinal
+            ).key,
+            cultivation: {
+                spiritRoot: drawRootForSomebodyAlreadyInAHouse(
+                    forStream(state.seed, 'seed-court-root', id).next(),
+                    houseRoadOf(faction), seat.realmOrdinal, seat.rankIndex
+                ).key
+            },
+            tags: seat.prodigy
+                ? ['catalog:court', `faction:${faction.id}`, 'chosen']
+                : ['catalog:court', `faction:${faction.id}`, 'sealed']
+        });
+        taken.add(npc.name);
+
+        npc = setRealm(npc, seat.realmOrdinal, presentDay - years(rng.int(20, 400)));
+        npc = {
+            ...npc,
+            factionId: faction.id,
+            factionRankIndex: seat.rankIndex,
+            spiritStones: holdingsFor(seat.realmOrdinal, seat.rankIndex, rng),
+            cultivation: {
+                ...npc.cultivation,
+                foundation: 'stable',
+                specialties: getSpiritRoot(npc.cultivation.spiritRoot).elements.slice()
+            }
+        };
+
+        state.npcs.push(npc);
+        created.push(npc);
+    });
+
+    return created;
+}
 function seedFactionApex(
     state: WorldState,
     catalog: WorldCatalog,
