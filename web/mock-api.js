@@ -30,40 +30,76 @@ const between = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
 
 /* ───────────────────────── ladder (engine parity) ───────────────────────── */
 
+/** The engine sentinel for a span that has stopped being a quantity. */
+const UNBOUNDED_LIFESPAN_YEARS = 1e9;
+
+// Mirrors REALM_TIERS in engine/cultivation/realms.ts. Only five realms count
+// Early/Mid/Late/Perfection; the rest have vocabulary of their own, and getting
+// that wrong here is worse than useless - the mock exists so the client can be
+// exercised against something shaped like the engine, and a mock that disagrees
+// about the shape tests the client against a world that does not exist.
 const REALMS = [
   { key: 'qi_condensation', name: 'Qi Condensation', start: 0, end: 12, lifespanYears: 100, subRanks: Array.from({ length: 13 }, (_, i) => `Layer ${i + 1}`) },
   { key: 'foundation_establishment', name: 'Foundation Establishment', start: 13, end: 16, lifespanYears: 200, subRanks: ['Early', 'Mid', 'Late', 'Perfection'] },
   { key: 'core_formation', name: 'Core Formation', start: 17, end: 20, lifespanYears: 500, subRanks: ['Early', 'Mid', 'Late', 'Perfection'] },
   { key: 'nascent_soul', name: 'Nascent Soul', start: 21, end: 24, lifespanYears: 1000, subRanks: ['Early', 'Mid', 'Late', 'Perfection'] },
-  { key: 'deity_transformation', name: 'Deity Transformation', start: 25, end: 28, lifespanYears: 2000, subRanks: ['Early', 'Mid', 'Late', 'Perfection'] },
-  { key: 'void_refinement', name: 'Void Refinement', start: 29, end: 32, lifespanYears: 5000, subRanks: ['Early', 'Mid', 'Late', 'Perfection'] },
-  { key: 'body_integration', name: 'Body Integration', start: 33, end: 36, lifespanYears: 10000, subRanks: ['Early', 'Mid', 'Late', 'Perfection'] },
-  { key: 'grand_ascension', name: 'Grand Ascension', start: 37, end: 40, lifespanYears: 30000, subRanks: ['Early', 'Mid', 'Late', 'Perfection'] },
+  { key: 'deity_transformation', name: 'Deity Transformation', start: 25, end: 28, lifespanYears: 2000, subRanks: ['First Turn', 'Second Turn', 'Third Turn', 'Final Turn'] },
+  { key: 'void_refinement', name: 'Void Refinement', start: 29, end: 32, lifespanYears: 5000, subRanks: ['First Tempering', 'Second Tempering', 'Third Tempering', 'Final Tempering'] },
+  { key: 'body_integration', name: 'Body Integration', start: 33, end: 36, lifespanYears: 10000, subRanks: ['Sinew', 'Bone', 'Organ', 'Marrow'] },
+  { key: 'grand_ascension', name: 'Grand Ascension', start: 37, end: 40, lifespanYears: 30000, subRanks: ['Rising Body', 'Rising Soul', 'Rising Name', 'Rising Dao'] },
   { key: 'tribulation_transcendence', name: 'Tribulation Transcendence', start: 41, end: 44, lifespanYears: 100000, subRanks: ['Early', 'Mid', 'Late', 'Perfection'] },
-  // Ordinal 45 is the far side of the Lid. The real name comes from
-  // /api/reference/ladder; this is the mock's best guess so the summit can be
-  // exercised, and the client never hardcodes it.
-  { key: 'true_immortal', name: 'True Immortal', start: 45, end: 45, lifespanYears: 0, subRanks: [''] }
+  // The two rungs above the Lid, and the only realm whose rungs differ from
+  // each other: 45 is a vast countable span, 46 is the unbounded sentinel. They
+  // are also the only ranks named adjective-first with no realm prefix - the
+  // name is "False Immortal", not "Immortal False".
+  { key: 'immortal', name: 'Immortal', start: 45, end: 46, lifespanYears: UNBOUNDED_LIFESPAN_YEARS, subRanks: ['False', 'True'] }
 ];
-const MAX_ORDINAL = 45;
+const MAX_ORDINAL = 46;
+/** Mirrors src/schema/cultivation.ts. The mock states the same numbers the engine does. */
+const LETHAL_UNTREATED_INJURIES = 3;
+const BLEED_OUT_TURNS = 90;
+/** The rung the crossing lands on when it does not complete. */
+const FALSE_IMMORTAL_ORDINAL = 45;
+const FALSE_IMMORTAL_LIFESPAN_YEARS = 300000;
 
 const clampOrd = (o) => Math.max(0, Math.min(MAX_ORDINAL, Math.floor(Number(o) || 0)));
 const realmFor = (o) => REALMS.find((t) => clampOrd(o) >= t.start && clampOrd(o) <= t.end);
 const subRankFor = (o) => { const t = realmFor(o); return t.subRanks[clampOrd(o) - t.start]; };
 const rankName = (o) => {
+    const t = realmFor(o);
     const sub = subRankFor(o);
-    return sub ? `${realmFor(o).name} ${sub}` : realmFor(o).name;
+    if (!sub) return t.name;
+    // The one realm that reads adjective-first: "False Immortal", "True
+    // Immortal". Everywhere else the realm leads.
+    if (t.key === 'immortal') return `${sub} ${t.name}`;
+    return `${t.name} ${sub}`;
 };
+const lifespanFor = (o) => (clampOrd(o) === FALSE_IMMORTAL_ORDINAL
+  ? FALSE_IMMORTAL_LIFESPAN_YEARS
+  : realmFor(o).lifespanYears);
 const isBoundary = (o) => {
   const c = clampOrd(o);
   if (c >= MAX_ORDINAL) return false;
   return realmFor(c).key !== realmFor(c + 1).key;
 };
+/**
+ * Null above the Lid, exactly as the engine returns it.
+ *
+ * Immortal qi is not this currency and there is no exchange rate, so there is
+ * no number to send. The mock must return the same null or the client's
+ * handling of it never gets exercised here - which is the whole point of the
+ * mock. Below the Lid the curve is strictly increasing: it no longer halves at
+ * realm boundaries the way an earlier version did, so a higher rung is never
+ * cheaper than a lower one.
+ */
 const progressRequired = (o) => {
   const c = clampOrd(o);
+  if (c >= FALSE_IMMORTAL_ORDINAL) return null;
   const t = realmFor(c);
-  return Math.round((100 * Math.pow(1.35, c) + (c - t.start) * 50) * (isBoundary(c) ? 2.5 : 1));
+  return Math.round(100 * Math.pow(1.35, c) + (c - t.start) * 50 + c * 40);
 };
+/** The same figure with the not-in-this-currency case collapsed, for arithmetic. */
+const progressRequiredOrZero = (o) => progressRequired(o) || 0;
 const baseChance = (o) => {
   const c = clampOrd(o);
   const v = Math.max(0.1, 0.9 - c * 0.014) * (isBoundary(c) ? 0.45 : 1);
@@ -77,7 +113,7 @@ function fullLadder() {
     realmKey: realmFor(ordinal).key,
     subRank: subRankFor(ordinal),
     name: rankName(ordinal),
-    lifespanYears: realmFor(ordinal).lifespanYears,
+    lifespanYears: lifespanFor(ordinal),
     isBoundary: isBoundary(ordinal),
     progressRequired: progressRequired(ordinal),
     baseBreakthroughChance: baseChance(ordinal)
@@ -92,9 +128,11 @@ const ROOTS = [
   { key: 'single_water', name: 'Single Water Root', grade: 'single', elements: ['water'], weight: 81, cultivationSpeed: 1.5, description: 'Dense, sustained qi.' },
   { key: 'single_fire', name: 'Single Fire Root', grade: 'single', elements: ['fire'], weight: 81, cultivationSpeed: 1.5, description: 'Sharp offensive power.' },
   { key: 'single_earth', name: 'Single Earth Root', grade: 'single', elements: ['earth'], weight: 81, cultivationSpeed: 1.5, description: 'A rock-solid foundation.' },
-  { key: 'dual_water_fire', name: 'Water-Fire Dual Root', grade: 'dual', elements: ['water', 'fire'], weight: 162, cultivationSpeed: 1.0, description: 'Two elements that put each other out. Cultivating either art risks qi deviation every turn.' },
-  { key: 'dual_metal_wood', name: 'Metal-Wood Dual Root', grade: 'dual', elements: ['metal', 'wood'], weight: 162, cultivationSpeed: 1.0, description: 'Metal cuts wood, and it does so inside your meridians. Qi deviation is a standing risk.' },
-  { key: 'muddled_five_element', name: 'Five-Element Muddled Root', grade: 'muddled', elements: ['metal', 'wood', 'water', 'fire', 'earth'], weight: 216, cultivationSpeed: 0.55, description: 'All five elements, none of them clean. Cultivation crawls.' },
+  { key: 'dual_water_fire', name: 'Water-Fire Dual Root', grade: 'dual', elements: ['water', 'fire'], weight: 90, cultivationSpeed: 1.0, description: 'Two elements that put each other out. Cultivating either art risks qi deviation every turn.' },
+  { key: 'dual_metal_wood', name: 'Metal-Wood Dual Root', grade: 'dual', elements: ['metal', 'wood'], weight: 90, cultivationSpeed: 1.0, description: 'Metal cuts wood, and it does so inside your meridians. Qi deviation is a standing risk.' },
+  { key: 'triple_metal_wood_earth', name: 'Metal-Wood-Earth Triple Root', grade: 'triple', elements: ['metal', 'wood', 'earth'], weight: 99, cultivationSpeed: 0.85, description: 'Three elements in an overcoming chain. Two of them fight on the way in; only earth arrives clean.' },
+  { key: 'quad_metal_wood_earth_water', name: 'Metal-Wood-Earth-Water Quad Root', grade: 'quad', elements: ['metal', 'wood', 'earth', 'water'], weight: 117, cultivationSpeed: 0.7, description: 'Four elements and one gap where fire should be. The gap saves nothing; the intake is already divided four ways.' },
+  { key: 'muddled_five_element', name: 'Five-Element Muddled Root', grade: 'muddled', elements: ['metal', 'wood', 'water', 'fire', 'earth'], weight: 144, cultivationSpeed: 0.55, description: 'All five elements, none of them clean. Cultivation crawls.' },
   { key: 'mutated_lightning', name: 'Mutated Lightning Root', grade: 'mutated', elements: ['lightning'], weight: 27, cultivationSpeed: 1.8, description: 'Lightning attacks with nothing standing behind them. Techniques for this root are extremely scarce.' },
   { key: 'mutated_ice', name: 'Mutated Ice Root', grade: 'mutated', elements: ['ice'], weight: 27, cultivationSpeed: 1.8, description: 'Freezes all things, but backlash comes easily.' }
 ];
@@ -195,6 +233,7 @@ function makeCultivator(name) {
     qi: 10, maxQi: 10,
     satiety: 100,
     starvationTurns: 0,
+    bleedingTurns: 0,
     age: 16,
     yearsAtCurrentRealm: 0,
     injuries: [],
@@ -240,9 +279,19 @@ function derived() {
     nextRankName: next != null ? rankName(next) : null,
     realmName: realmFor(o).name,
     progressRequired: req,
-    breakthroughReady: c.cultivationProgress >= req && next != null && c.immortalStatus === 'none',
-    lifespanRemaining: Math.max(0, (c.immortalStatus === 'false_immortal' ? 300000 : realmFor(o).lifespanYears) - c.age),
+    // `req` is null above the Lid, and `anything >= null` coerces to
+    // `anything >= 0` - which is true, and would report a cultivator standing
+    // on the summit as ready to break through it. The null has to be tested
+    // before it is compared.
+    breakthroughReady: req !== null && c.cultivationProgress >= req && next != null && c.immortalStatus === 'none',
+    lifespanRemaining: Math.max(0, (c.immortalStatus === 'false_immortal' ? FALSE_IMMORTAL_LIFESPAN_YEARS : lifespanFor(o)) - c.age),
     untreatedInjuries: untreated,
+    // Mirrors the real derivedView: null when no bleed clock is running,
+    // because JSON has no Infinity and the client tests for null.
+    turnsUntilBleedOut: untreated >= LETHAL_UNTREATED_INJURIES
+      ? Math.max(0, BLEED_OUT_TURNS - (c.bleedingTurns || 0))
+      : null,
+    bleedOutTurns: BLEED_OUT_TURNS,
     sectName: (SECTS.find(x => x.id === c.sectId) || {}).name || null,
     foundationQuality: c.foundationQuality || 'none',
     nameTaken: !!c.nameTaken,
@@ -444,7 +493,157 @@ function rosterPayload() {
   return { roster: me ? [me, ...others] : others };
 }
 
+/* ───────────────────────────── the world map ─────────────────────────────
+   A hand-built stand-in for /api/admin/places, and much smaller than the real
+   thing on purpose: the engine's seeded world is 857 places once interiors are
+   in it, and a fixture that size is unreadable and unmaintainable in a mock.
+   What this DOES carry is one of every state the renderer draws differently -
+   a sealed vault, a hall on an opening cycle, a ruin nobody has discovered, a
+   one-sided crossing, a keyed gate, four depths of containment and the far
+   side of the Lid - because those are the shapes that break, not the volume.
+   -------------------------------------------------------------------------- */
+
+const MOCK_PLACE_DAY = 4200;
+
+function mockPlace(id, name, kind, over = {}) {
+  const qi = over.qiDensity ?? 35;
+  const band = qi >= 90 ? 'spirit_tide' : qi >= 55 ? 'dense' : qi >= 25 ? 'normal' : 'thin';
+  return {
+    id, name, kind,
+    layer: 'mortal',
+    parentId: null,
+    depth: 0,
+    childIds: [],
+    description: '',
+    qiDensity: qi,
+    qiBand: band,
+    spiritualDensity: Math.round(qi) / 100,
+    ambient: 'normal',
+    danger: 0.2,
+    climate: 'temperate',
+    politicalControl: 'nobody in particular',
+    thresholds: { entry: 0, survival: 0, operational: 0, mastery: 0 },
+    hazards: [],
+    tags: [],
+    resources: [],
+    specialRules: [],
+    sealed: false,
+    sealedOnDay: null,
+    discovered: true,
+    discoveredOnDay: 0,
+    controllingFactionId: null,
+    controllingFactionName: null,
+    open: true,
+    cycle: null,
+    opensInDays: null,
+    closesInDays: null,
+    linkCount: 0,
+    ...over
+  };
+}
+
+function mockEdge(from, to, kind, travelDays, over = {}) {
+  return {
+    id: from + '|' + to + '|' + kind,
+    fromId: from, toId: to, kind, travelDays,
+    open: true, requiresKeyId: null, note: '', mutual: true, asymmetric: false,
+    ...over
+  };
+}
+
+function placesPayload() {
+  const L = [
+    mockPlace('r-fall', 'The Low Fall', 'region', { qiDensity: 35, childIds: ['s-azure', 't-sweptground', 'v-fall'], linkCount: 3 }),
+    mockPlace('v-fall', 'the Low Fall vein', 'vein', { parentId: 'r-fall', depth: 1, qiDensity: 65, linkCount: 1 }),
+    mockPlace('t-sweptground', 'Sweptground', 'settlement', { parentId: 'r-fall', depth: 1, qiDensity: 31, linkCount: 3, politicalControl: 'a magistrate who is owed favours' }),
+    mockPlace('s-azure', 'Azure Cloud Pavilion grounds', 'sect_seat', {
+      parentId: 'r-fall', depth: 1, qiDensity: 89, linkCount: 3,
+      childIds: ['h-azure-gate', 'p-azure-outer'],
+      controllingFactionName: 'Azure Cloud Pavilion',
+      thresholds: { entry: 0, survival: 0, operational: 22, mastery: 38 },
+      hazards: ['formation'], tags: ['sect_ground', 'recruits'], resources: ['qi', 'teaching'],
+      description: 'The ground the Azure Cloud Pavilion holds: gate, forecourt, halls, and the vein the compound was built on top of.'
+    }),
+    mockPlace('h-azure-gate', 'Azure Cloud Pavilion: the gatehouse', 'hall', {
+      parentId: 's-azure', depth: 2, qiDensity: 89, linkCount: 1,
+      cycle: { periodDays: 30, openDays: 3, phaseDay: 0 }, open: false, opensInDays: 16,
+      specialRules: ['hears petitions three days a month']
+    }),
+    mockPlace('p-azure-outer', 'Azure Cloud Pavilion: the outer disciple precinct', 'precinct', {
+      parentId: 's-azure', depth: 2, qiDensity: 89, linkCount: 3, childIds: ['c-azure-cell', 'x-azure-vault']
+    }),
+    mockPlace('c-azure-cell', 'Azure Cloud Pavilion: the meditation cells', 'chamber', {
+      parentId: 'p-azure-outer', depth: 3, qiDensity: 96, linkCount: 1,
+      thresholds: { entry: 4, survival: 4, operational: 9, mastery: 16 }
+    }),
+    mockPlace('x-azure-vault', 'Azure Cloud Pavilion: the inner vault', 'vault', {
+      parentId: 'p-azure-outer', depth: 3, qiDensity: 89, linkCount: 1,
+      sealed: true, sealedOnDay: 1180, open: false,
+      thresholds: { entry: 26, survival: 26, operational: 33, mastery: 41 }
+    }),
+    mockPlace('u-drowned', 'The Drowned Terrace', 'ruin', {
+      qiDensity: 74, linkCount: 2, discovered: false, discoveredOnDay: null,
+      cycle: { periodDays: 900, openDays: 20, phaseDay: 300 }, open: true, closesInDays: 7,
+      hazards: ['pressure', 'illusion'],
+      thresholds: { entry: 11, survival: 18, operational: 24, mastery: 35 },
+      description: 'Half a hall standing in still water. It is above the water for twenty days in every nine hundred.'
+    }),
+    mockPlace('u-ninelamps', 'The Nine Lamps', 'ruin', {
+      qiDensity: 100, linkCount: 1, discovered: false, discoveredOnDay: null,
+      sealed: true, sealedOnDay: 240, open: false,
+      hazards: ['sealed_qi', 'guardian'],
+      thresholds: { entry: 30, survival: 36, operational: 42, mastery: 45 }
+    }),
+    mockPlace('sc-ashfield', 'The Ashfield', 'scar', {
+      qiDensity: 1, linkCount: 1, hazards: ['thin_qi'],
+      description: 'Nothing grows and nothing gathers. Something drank it.'
+    }),
+    mockPlace('a-abode', 'A borrowed abode', 'settlement', { layer: 'immortal', qiDensity: 100, linkCount: 0 })
+  ];
+
+  const E = [
+    mockEdge('r-fall', 's-azure', 'road', 2),
+    mockEdge('r-fall', 't-sweptground', 'road', 1),
+    mockEdge('r-fall', 'v-fall', 'path', 3),
+    mockEdge('h-azure-gate', 's-azure', 'path', 0),
+    mockEdge('p-azure-outer', 's-azure', 'gate', 0),
+    mockEdge('c-azure-cell', 'p-azure-outer', 'gate', 0),
+    mockEdge('p-azure-outer', 'x-azure-vault', 'gate', 0, { open: false, requiresKeyId: 'key-azure-vault' }),
+    mockEdge('sc-ashfield', 't-sweptground', 'path', 6, { mutual: false }),
+    mockEdge('t-sweptground', 'u-drowned', 'tunnel', 11, { asymmetric: true }),
+    mockEdge('u-drowned', 'u-ninelamps', 'seam', 4, { open: false })
+  ];
+
+  const byKind = {};
+  for (const l of L) byKind[l.kind] = (byKind[l.kind] || 0) + 1;
+  const byLinkKind = {};
+  for (const e of E) byLinkKind[e.kind] = (byLinkKind[e.kind] || 0) + 1;
+
+  return {
+    world: { seed: 'mock-world', currentDay: MOCK_PLACE_DAY },
+    locations: L,
+    edges: E,
+    layers: [
+      { key: 'mortal', label: 'the lower world', count: L.filter((l) => l.layer === 'mortal').length },
+      { key: 'immortal', label: 'the immortal world', count: L.filter((l) => l.layer === 'immortal').length }
+    ],
+    counts: {
+      total: L.length,
+      discovered: L.filter((l) => l.discovered).length,
+      sealed: L.filter((l) => l.sealed).length,
+      closed: L.filter((l) => !l.open).length,
+      roots: L.filter((l) => !l.parentId).length,
+      maxDepth: L.reduce((m, l) => Math.max(m, l.depth), 0),
+      byKind,
+      byLinkKind
+    },
+    danglingLinks: 0,
+    orphanedParents: 0
+  };
+}
+
 /* ───────────────────────────── scenarios ───────────────────────────── */
+
 
 function seedScenario(scenario) {
   W.roster = buildRoster(44);
@@ -689,6 +888,13 @@ function handleAct(input) {
   const c = W.cultivator;
   c.satiety = Math.max(0, c.satiety - between(2, 6));
   if (c.satiety === 0) c.starvationTurns += 1; else c.starvationTurns = 0;
+  // Sibling of the line above: open meridians run their own clock, and it
+  // resets the moment the count drops back under the threshold.
+  if (c.injuries.filter((i) => !i.treated).length >= LETHAL_UNTREATED_INJURIES) {
+    c.bleedingTurns = (c.bleedingTurns || 0) + 1;
+  } else {
+    c.bleedingTurns = 0;
+  }
 
   let engineLine;
   let action = 'wait';
@@ -743,7 +949,9 @@ function handleAct(input) {
     action = 'cultivate';
     const gain = between(6, 26);
     c.cultivationProgress += gain;
-    engineLine = `Cultivation progress +${gain} (${c.cultivationProgress} / ${progressRequired(c.realmOrdinal)}).`;
+    engineLine = progressRequired(c.realmOrdinal) === null
+      ? `Cultivation progress +${gain}, and nowhere for it to go: above the Lid qi is not the currency.`
+      : `Cultivation progress +${gain} (${c.cultivationProgress} / ${progressRequired(c.realmOrdinal)}).`;
     rulings.push({
       name: 'engine.simulateTimeSkip', action: 'cultivate',
       summary: `1 of 1 day(s) resolved in one deterministic pass. 0 event(s); +0 rank, ${gain} progress, 0 injury(ies).`, ok: true
@@ -753,12 +961,16 @@ function handleAct(input) {
     const d = derived();
     engineLine = c.immortalStatus === 'false_immortal'
       ? 'Breakthrough refused. The Lid has already been opened once against this name.'
-      : `Breakthrough refused. ${Math.round(c.cultivationProgress)} of ${d.progressRequired} qi-units.`;
+      : d.progressRequired === null
+        ? 'Breakthrough refused. There is nothing above this rung to attempt.'
+        : `Breakthrough refused. ${Math.round(c.cultivationProgress)} of ${d.progressRequired} qi-units.`;
     rulings.push({
       name: 'engine.canAttemptBreakthrough', action: 'breakthrough',
       summary: c.immortalStatus === 'false_immortal'
         ? 'Refused: permanently barred. The crossing was attempted once and did not complete; it does not open again.'
-        : `Refused: not enough has accumulated. ${Math.round(c.cultivationProgress)} of ${d.progressRequired} qi-units. The barrier does not care how badly you want it.`,
+        : d.progressRequired === null
+          ? 'Refused: there is no barrier above this one, and no currency that would buy it.'
+          : `Refused: not enough has accumulated. ${Math.round(c.cultivationProgress)} of ${d.progressRequired} qi-units. The barrier does not care how badly you want it.`,
       ok: false
     });
   } else {
@@ -829,7 +1041,7 @@ function handleCultivate(days) {
     }
 
     const req = progressRequired(c.realmOrdinal);
-    if (c.cultivationProgress >= req && c.realmOrdinal < MAX_ORDINAL && rng() > 0.55) {
+    if (req !== null && c.cultivationProgress >= req && c.realmOrdinal < FALSE_IMMORTAL_ORDINAL && rng() > 0.55) {
       events.push({
         kind: 'breakthrough_success',
         dayOffset,
@@ -848,6 +1060,13 @@ function handleCultivate(days) {
   c.satiety = Math.max(0, c.satiety - Math.min(95, Math.round(requested / 26)));
   if (c.satiety === 0) c.starvationTurns += 1;
 
+  // The bleed clock over the same stretch. Open meridians do not pause for a
+  // seclusion; this is the mock's version of the engine's own accrual.
+  const openWounds = c.injuries.filter((i) => !i.treated).length;
+  c.bleedingTurns = openWounds >= LETHAL_UNTREATED_INJURIES
+    ? (c.bleedingTurns || 0) + simulated
+    : 0;
+
   const lifespan = realmFor(c.realmOrdinal).lifespanYears;
   let died = false;
   let deathCause = null;
@@ -861,6 +1080,11 @@ function handleCultivate(days) {
   } else if (c.starvationTurns >= 5) {
     died = true; deathCause = 'starvation';
     events.push({ kind: 'death', dayOffset: simulated, summary: 'Seclusion outlasted the food by a considerable margin.', interrupts: true, data: {} });
+  } else if (c.bleedingTurns >= BLEED_OUT_TURNS) {
+    died = true; deathCause = 'untreated_injuries';
+    events.push({ kind: 'death', dayOffset: simulated, summary: `${openWounds} meridians left open for ${BLEED_OUT_TURNS} days. They gave out.`, interrupts: true, data: {} });
+  } else if (openWounds >= LETHAL_UNTREATED_INJURIES) {
+    events.push({ kind: 'bleeding_warning', dayOffset: simulated, summary: `${openWounds} untreated meridian injuries. ${BLEED_OUT_TURNS - c.bleedingTurns} days before they give out on their own.`, interrupts: true, data: {} });
   } else if (c.age > lifespan * 0.85) {
     events.push({ kind: 'lifespan_warning', dayOffset: simulated, summary: `${Math.round(lifespan - c.age)} years of lifespan remain at this realm.`, interrupts: false, data: {} });
   }
@@ -906,6 +1130,12 @@ function handleBreakthrough() {
   const c = W.cultivator;
   const from = c.realmOrdinal;
   if (from >= MAX_ORDINAL) return fail('Already at the top of the ladder.', 409);
+  // 45 is not the summit but nothing climbs off it either: the crossing was
+  // attempted once and did not complete, and the Lid does not open twice
+  // against one name.
+  if (from === FALSE_IMMORTAL_ORDINAL) {
+    return fail('The Lid has already been opened once against this name. There is no second attempt.', 409);
+  }
 
   const d = derived();
   if (!d.breakthroughReady) return fail('Cultivation progress is not sufficient for a breakthrough attempt.', 409);
@@ -946,7 +1176,7 @@ function handleBreakthrough() {
   }
 
   const injuriesSustained = [];
-  const progressConsumed = progressRequired(from);
+  const progressConsumed = progressRequiredOrZero(from);
   const tribulating = realmFor(from).key === 'tribulation_transcendence';
   let tribulation = null;
 
@@ -1046,6 +1276,12 @@ async function route(url, init) {
     if (shouldFail('roster')) return fail('Mock: roster forced to fail.', 500);
     if (!W.cfg.admin) return fail('Admin mode is not enabled on this server.', 403);
     return json(rosterPayload());
+  }
+
+  if (path === '/api/admin/places') {
+    if (shouldFail('places')) return fail('Mock: places forced to fail.', 500);
+    if (!W.cfg.admin) return fail('Admin mode is not enabled on this server.', 403);
+    return json(placesPayload());
   }
 
   if (path === '/api/ledger') {

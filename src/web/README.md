@@ -600,11 +600,60 @@ nobody knows he exists. Handing it to a player is handing them the answer key. S
 reasoning as `game.ts`'s refusal to let a `sect` query return the register: see the note
 above `GameService.sect()`.
 
+## The world map
+
+**The map lives in [`places.ts`](places.ts), and like the register it is a view rather
+than a document.** `placesView(world)` reads `WorldState.locations` and returns nodes and
+edges; `web/app.js` renders them. Nothing in either file authors a place, a road or a
+distance.
+
+| | |
+|---|---|
+| `GET /api/admin/places` | the whole map as JSON - admin only |
+| **World Map** in the admin menu | the panel the operator actually opens |
+
+### The map may not invent geography
+
+A line drawn between two places is read by whoever is looking at it as a road, so the
+whole module is arranged around not drawing one that is not there:
+
+- **An edge is a `LocationLink` and nothing else.** A link naming a location this world
+  does not hold is counted in `danglingLinks` and not drawn; so is a link from a place to
+  itself.
+- **A road recorded from both ends is one road.** Where the two ends disagree about
+  `travelDays` the larger is kept and `asymmetric` is set, because a traveller does not
+  get to pick the cheaper direction's number.
+- **The payload carries no coordinates, and must not start to.** `LocationRecord` has no
+  position and has never needed one: containment is `parentId` and distance is
+  `travelDays` on a link. A renderer handed x/y would be laying out a claim about where
+  things are that no part of the world supports. That is why the panel is a containment
+  view with the graph drawn over it rather than a force layout, and why it says *position
+  is containment, not geography* on its own face.
+
+`tests/web/places.test.ts` pins every one of those.
+
+### Built for the player it does not serve yet
+
+`discovered` is on every node and is never filtered server-side. The admin panel shows all
+of them and marks the undiscovered ones, so an operator can see the fog the player is
+standing in; the *As the player sees it* control drops them, which is exactly what a
+player-facing map would do at the boundary. See
+[`../../docs/world/discovery.md`](../../docs/world/discovery.md) for why that gate exists
+at all.
+
+### Depth is walked, never assumed
+
+The seeded world was 65 places in two levels; with interiors it is 857 in five, and it
+will move again. `depth` is computed by walking `parentId` with a visited set, the client
+renders containers recursively, and the panel folds everything below the regions by
+default because eight hundred tiles is not a map.
+
 ## Related
 
 - [`../../context.md`](../../context.md) - the authority rule this package enforces
 - [`standing.ts`](standing.ts) - who is entitled to commit a house, and what the refusal says
 - [`register.ts`](register.ts) - the standing register, and the only place to change it
+- [`places.ts`](places.ts) - the world map view, and the rule against inventing geography
 - [`../engine/cultivation/README.md`](../engine/cultivation/README.md) - what phase 2 actually runs
 - [`../agent/provider/README.md`](../agent/provider/README.md) - provider selection and config precedence
 - [`../storage/README.md`](../storage/README.md) - the database both front doors share
