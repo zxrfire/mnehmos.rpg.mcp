@@ -387,6 +387,10 @@ export const NOT_DERIVABLE_NOTES: Readonly<Record<string, string>> = {
 };
 
 export const GRAVE_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
+    // The top prize. Taken off a body, which is the only way it has ever
+    // moved: no house has held it long enough to shelve it and the one
+    // person known to have carried it stopped twelve rungs short of its end.
+    'first-and-last-breath-canon',
     'heart-of-the-ten-thousand-corpses',
     'lifespan-devouring-heaven-theft',
     'debt-collection-in-arrears'
@@ -543,6 +547,36 @@ export const ABOVE_THE_LID_TRANSMISSION = {
  * grade: the arts above the Lid are ordinary rows with large numbers in them,
  * in the same band as everything else at the top, and nothing anywhere reads
  * their ordinal to decide anything.
+ *
+ * ── THE ONE EXEMPTION, AND WHY IT IS NARROW ──────────────────────────────
+ *
+ * A WIDE-SPAN manual is exempt from this band, and nothing else is.
+ *
+ * The band says a manual is never learnable before its grade opens, which is
+ * doing real work for ordinary books: it is what makes the succession a
+ * ladder rather than a shop, and it is why there is always a visible next
+ * tier a cultivator cannot yet touch. Every one of the seventeen ordinary
+ * manuals still obeys it.
+ *
+ * But it cannot describe a treasure, and the setting requires one. The design
+ * ruling is that a beginner holding a manual rated at the top of the ladder is
+ * possible - vanishingly rare, and possible - and the band forbids exactly
+ * that: it says a chaos-grade book opens at 37, so the only chaos book a
+ * beginner could be handed is one they cannot read for thirty-two rungs, which
+ * is the same as not being handed it.
+ *
+ * Raising `requiredOrdinal` to satisfy the band would destroy the thing it is
+ * gating. A cap-45 book behind ordinal 37 skips nothing; the whole of what a
+ * wide-span manual IS is that it starts where nothing else of its size does.
+ * So the band yields, deliberately, and the gate moves to an axis the band
+ * cannot express: `domain` and `domainDegree`, which is comprehension, which
+ * cannot be bought, inherited or waited for. A well-funded heir at Qi
+ * Condensation is exactly as far from a degree-three understanding of time as
+ * a beggar is, and that is the point.
+ *
+ * `isWideSpan` is derived rather than flagged, so nothing can take the
+ * exemption without actually reaching past its own realm geometry, and the
+ * content suite checks that the exempt set stays tiny.
  */
 export const GRADE_ORDINAL_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 0, max: 12 },
@@ -2103,7 +2137,16 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         grade: 'heaven',
         element: null,
         domain: 'life_death',
-        requiredOrdinal: 27,
+        // 27 -> 25, the first rung of Deity Transformation.
+        //
+        // The corridor guard found the hole: at 25 and 26 the only ordinary
+        // continuation in the world was earth-locked, so every other root
+        // arrived at Deity Transformation with nothing in front of it and had
+        // to wait two rungs it could not cultivate through. Opening this here
+        // closes it, and closes it in the right way: a non-earth root at this
+        // height has exactly one road and it is a demonic one. Stranded is a
+        // bug. Cornered is the game.
+        requiredOrdinal: 25,
         qiCost: 110,
         damage: null,
         cooldown: 6,
@@ -2359,6 +2402,61 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         opacity: 0.85,
         description:
             'One method, held without substitution from the foundation to the integrated body, written by somebody who evidently never changed books and appears not to have understood that everybody else does. It is the only surviving argument that the succession of manuals is a convenience rather than a law, and the reason nobody has been able to check is that the argument cannot be started without an understanding of absence that almost nobody at Foundation has any way to have acquired.'
+    }),
+    art({
+        // THE TOP PRIZE, AND THE ONE BOOK THAT TAKES THE BAND EXEMPTION.
+        //
+        // Opens at 5. Ends at 45. Forty rungs, the entire ladder below the Lid,
+        // in one method with no substitution - against a catalog where every
+        // other book carries a reader through one realm because `capOf` is
+        // realm geometry, and against the Treatise on the Single Road, which is
+        // the common treasure at twenty.
+        //
+        // It is chaos grade at `requiredOrdinal: 5`, which its own grade band
+        // forbids, and that exemption is the deliberate part. See
+        // `GRADE_ORDINAL_BANDS` for the reasoning: raising the requirement to
+        // satisfy the band would destroy the thing the band is gating, because
+        // a cap-45 book that opens at 37 skips nothing at all.
+        //
+        // WHAT IT IS GATED ON INSTEAD. A degree-three comprehension of time,
+        // held by somebody at Qi Condensation. That is not a hard requirement,
+        // it is very nearly an impossible one, and it is impossible in the
+        // right direction: comprehension cannot be bought, inherited, gifted or
+        // waited for, so the one person in an age who can open this is somebody
+        // something happened to rather than somebody who was well funded. A
+        // great house cannot buy its heir into it.
+        //
+        // AND THE OPENING IS THE WORST IN THE CATALOG. Thirteen rungs at a
+        // tenth rate. Somebody who opens it at five crawls to eighteen on a
+        // book that any market-town manual would have carried them through in a
+        // fraction of the time - long enough that a mortal-lifespan cultivator
+        // can plausibly die inside the opening of the best book in the world,
+        // holding it, having gained almost nothing from it. That is the price,
+        // it is paid in the one currency nobody can borrow, and it is why this
+        // is a gamble rather than a windfall.
+        //
+        // Above it there is exactly one thing: the Canon of the Unwritten Span,
+        // which is uncapped and opens at 46, which is to say it is the version
+        // of this that nobody in the world can reach. `MANUALS_MAY_EXCEED_THE_LID`
+        // is what makes both of them legal - paper may be rated anywhere, where
+        // no object below the Lid may be, and that asymmetry is the reason the
+        // top prize in this setting is a book and not a sword.
+        id: 'first-and-last-breath-canon',
+        name: 'Canon of the First and Last Breath',
+        category: 'cultivation',
+        grade: 'chaos',
+        element: null,
+        requiredOrdinal: 5,
+        cap: 45,
+        opening: { rungs: 13, rateMultiplier: 0.1 },
+        domain: 'time',
+        domainDegree: 3,
+        qiCost: 1_100,
+        damage: null,
+        cooldown: 0,
+        opacity: 0.9,
+        description:
+            'One breath cycle, described once, and then forty rungs of what that same cycle becomes as the body around it stops being a mortal body. It does not teach a foundation method and a core method and a soul method; it teaches a breath, and then it explains for six hundred pages that there was never more than one thing to learn. Every alchemist and every sword house that has read it agrees it is correct. Nobody has ever met a person who was using it.'
     }),
     art({
         id: 'canon-of-the-unwritten-span',

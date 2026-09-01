@@ -47,6 +47,18 @@ import {
 import { techniqueExhausted } from '../../src/engine/cultivation/cultivation.js';
 
 const MANUALS = TECHNIQUES.filter(t => t.class === 'cultivation');
+
+/**
+ * The corridor is what the world ROUTINELY offers, so every gap, choke-point
+ * and element-lock check below is made against the ordinary succession.
+ *
+ * Wide-span treasures are excluded deliberately and it matters: a single
+ * grave-only book that opens at five and ends at forty-five continues at every
+ * rung on the ladder, so counting it would report the corridor as having no
+ * choke points and no gaps at all. A gap that is closed only by a unique
+ * treasure nobody has is still a gap.
+ */
+const ORDINARY = MANUALS.filter(t => !isWideSpan(t));
 const DAO = TECHNIQUES.filter(t => t.class === 'dao');
 
 describe('the two kinds of art are separated', () => {
@@ -185,7 +197,7 @@ describe('the succession of books', () => {
         // goes further" is not a wall, it is the ladder ending.
         const walls: number[] = [];
         for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
-            const learnable = MANUALS.filter(t => t.requiredOrdinal <= ordinal);
+            const learnable = ORDINARY.filter(t => t.requiredOrdinal <= ordinal);
             const best = learnable.length
                 ? Math.max(...learnable.map(t => t.cap ?? MAX_ORDINAL + 1))
                 : -1;
@@ -436,7 +448,7 @@ describe('the corridor has no gaps', () => {
     it('offers at least one continuation at every rung below the last crossing', () => {
         const gaps: string[] = [];
         for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
-            const continues = MANUALS.filter(t =>
+            const continues = ORDINARY.filter(t =>
                 t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
             if (continues.length === 0) gaps.push(String(ordinal));
         }
@@ -453,7 +465,7 @@ describe('the corridor has no gaps', () => {
         // that a change which adds or removes one is visible in a diff.
         const chokes: number[] = [];
         for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
-            const continues = MANUALS.filter(t =>
+            const continues = ORDINARY.filter(t =>
                 t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
             if (continues.length === 1) chokes.push(ordinal);
         }
@@ -461,7 +473,7 @@ describe('the corridor has no gaps', () => {
         // test covers - and must be reachable by at least one route, which is
         // what makes it a door rather than a wall.
         for (const ordinal of chokes) {
-            const only = MANUALS.find(t =>
+            const only = ORDINARY.find(t =>
                 t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal))!;
             expect(
                 only.survivingCopy,
@@ -582,7 +594,7 @@ describe('derivation is a road, not a hole-closer', () => {
         // The load-bearing one. A choke point that anybody deep enough can
         // simply write for themselves is not a choke point.
         for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
-            const continues = MANUALS.filter(t =>
+            const continues = ORDINARY.filter(t =>
                 t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
             if (continues.length !== 1) continue;
             expect(continues[0].derivable,
@@ -686,7 +698,7 @@ describe('a person can be the source of a method, not only a shelf', () => {
         let chokesCovered = 0;
         let chokes = 0;
         for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
-            const continues = MANUALS.filter(t =>
+            const continues = ORDINARY.filter(t =>
                 t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
             if (continues.length !== 1) continue;
             chokes++;
@@ -715,7 +727,7 @@ describe('the corridor is a little wider than it was', () => {
         // closed one.
         const stranded: string[] = [];
         for (let ordinal = 13; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
-            const continues = MANUALS.filter(t =>
+            const continues = ORDINARY.filter(t =>
                 t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
             if (continues.length === 0) continue;
             const elements = new Set(continues.map(t => t.element));

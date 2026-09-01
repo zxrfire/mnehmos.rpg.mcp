@@ -23,7 +23,22 @@ import {
     type TechniqueGrade,
     type Element
 } from '../../src/schema/cultivation.js';
-import { MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
+import {
+    FALSE_IMMORTAL_ORDINAL,
+    LAST_CROSSING_ORDINAL,
+    MAX_ORDINAL,
+    OBJECT_CEILING_BELOW_THE_LID,
+    TRUE_IMMORTAL_ORDINAL
+} from '../../src/engine/cultivation/realms.js';
+import {
+    ABOVE_THE_LID_TRANSMISSION,
+    CONTENT_MAX_ORDINAL,
+    GRADE_BASELINE_OPACITY,
+    TECHNIQUES,
+    learningCostMultiplier,
+    transmissionModeOf
+} from '../../src/data/cultivation/techniques.js';
+import { WANDERERS, getWanderer } from '../../src/data/cultivation/wanderers.js';
 import { SPIRIT_ROOTS } from '../../src/engine/cultivation/spirit-roots.js';
 import { DiceEngine } from '../../src/math/dice.js';
 
@@ -33,6 +48,7 @@ import {
     GRADE_QI_BANDS,
     GRADE_ORDER,
     getTechnique,
+    isWideSpan,
     findTechniquesForOrdinal,
     findBestTechniquesForOrdinal,
     gradeForOrdinal,
@@ -233,6 +249,13 @@ describe('techniques', () => {
     it('required ordinal rises with grade: every art sits inside its grade band', () => {
         for (const t of TECHNIQUES) {
             const band = GRADE_ORDINAL_BANDS[t.grade];
+            // A wide-span manual is exempt, and only a wide-span manual. See
+            // `GRADE_ORDINAL_BANDS` for the reasoning: the band is what makes
+            // the succession a ladder rather than a shop and every ordinary
+            // book still obeys it, but it cannot describe a treasure, because
+            // raising `requiredOrdinal` to satisfy it destroys the thing it is
+            // gating - a cap-45 book that opens at 37 skips nothing.
+            if (isWideSpan(t)) continue;
             expect(t.requiredOrdinal, `${t.id} requiredOrdinal`).toBeGreaterThanOrEqual(band.min);
             expect(t.requiredOrdinal, `${t.id} requiredOrdinal`).toBeLessThanOrEqual(band.max);
         }
@@ -331,8 +354,17 @@ describe('techniques', () => {
         expect(best.length).toBeGreaterThan(0);
         expect(best.every(t => t.grade === 'chaos')).toBe(true);
 
-        const earlyBest = findBestTechniquesForOrdinal(5);
+        // At ordinal five the best ORDINARY art is mortal grade. The one
+        // wide-span treasure that opens down here is chaos grade and is
+        // correctly reported as reachable - it is reachable, that is the whole
+        // point of it - so the ordinary claim is made about the ordinary
+        // catalog rather than by pretending the treasure is not there.
+        const earlyBest = findBestTechniquesForOrdinal(5).filter(t => !isWideSpan(t));
         expect(earlyBest.every(t => t.grade === 'mortal')).toBe(true);
+        expect(
+            findBestTechniquesForOrdinal(5).some(isWideSpan),
+            'the treasure is reachable at five, which is what makes it a treasure'
+        ).toBe(true);
     });
 
     it('gradeForOrdinal agrees with the band table', () => {
@@ -1379,6 +1411,108 @@ describe('cross-catalog: spirit roots and technique availability', () => {
             const starting = findTechniquesForRoot(root.key, 0);
             expect(starting.length, `${root.key} starts with nothing`).toBeGreaterThan(0);
             expect(starting.some(m => m.technique.category === 'cultivation')).toBe(true);
+        }
+    });
+});
+
+describe('shown or read', () => {
+    it('splits every provenance into one of the two channels', () => {
+        // The rule is general. There is no art anywhere in the catalog that is
+        // acquired by some third means, at any grade.
+        for (const entry of TECHNIQUES) {
+            const mode = transmissionModeOf(entry.provenance);
+            expect(['shown', 'read']).toContain(mode);
+            expect(mode).toBe(entry.provenance === 'taught' ? 'shown' : 'read');
+        }
+    });
+
+    it('charges the read channel and never the shown one', () => {
+        for (const entry of TECHNIQUES) {
+            expect(learningCostMultiplier(entry, 'shown')).toBe(1);
+            expect(learningCostMultiplier(entry, 'read')).toBeGreaterThan(1);
+        }
+    });
+
+    it('makes the penalty depend on the art rather than on its grade alone', () => {
+        // Opacity is what decides how much the page loses, so two arts of the
+        // same grade may cost very different amounts to read - and an art that
+        // states its own figure is not bound by the baseline for its grade.
+        const plain = { grade: 'chaos' as const, opacity: 0.05 };
+        const opaque = { grade: 'mortal' as const, opacity: 0.95 };
+        expect(learningCostMultiplier(plain, 'read'))
+            .toBeLessThan(learningCostMultiplier(opaque, 'read'));
+        // And a plain chaos art beats the chaos baseline, which is the point of
+        // being allowed to say so.
+        expect(learningCostMultiplier(plain, 'read'))
+            .toBeLessThan(learningCostMultiplier({ grade: 'chaos' as const }, 'read'));
+    });
+
+    it('grows more opaque with grade by default, without ever being a rule', () => {
+        const grades = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'] as const;
+        for (let i = 1; i < grades.length; i++) {
+            expect(GRADE_BASELINE_OPACITY[grades[i]])
+                .toBeGreaterThan(GRADE_BASELINE_OPACITY[grades[i - 1]]);
+        }
+        for (const g of grades) {
+            expect(GRADE_BASELINE_OPACITY[g]).toBeGreaterThan(0);
+            expect(GRADE_BASELINE_OPACITY[g]).toBeLessThan(1);
+        }
+    });
+
+    it('gives each rung above the Lid exactly one channel, and opposite ones', () => {
+        const { falseImmortal, trueImmortal } = ABOVE_THE_LID_TRANSMISSION;
+        expect(falseImmortal.ordinal).toBe(FALSE_IMMORTAL_ORDINAL);
+        expect(trueImmortal.ordinal).toBe(TRUE_IMMORTAL_ORDINAL);
+        // 45 is shown and never read; 46 is read and almost never shown. The
+        // two rungs are the same rule seen from both ends.
+        expect(falseImmortal.mode).toBe('shown');
+        expect(trueImmortal.mode).toBe('read');
+
+        // The sole teacher at 45 is a real person in the catalog, standing at
+        // that rung, and there is no second one.
+        const lu = getWanderer(falseImmortal.soleTeacher);
+        expect(lu, 'the sole teacher must exist').toBeDefined();
+        expect(lu!.lastOrdinal).toBe(FALSE_IMMORTAL_ORDINAL);
+        expect(WANDERERS.filter(w => w.lastOrdinal === FALSE_IMMORTAL_ORDINAL)).toHaveLength(1);
+
+        // And the read channel still names the exception, because the exception
+        // is the general rule rather than a special case for immortals.
+        expect(trueImmortal.theExceptionStillApplies).toMatch(/breaths/i);
+    });
+
+    it('authors arts to the top of the ladder and no further', () => {
+        // It used to stop at the last crossing, on the reasoning that nothing
+        // circulates above it. Both rungs above the Lid have exactly one
+        // channel each, both channels are real, and the catalog now writes the
+        // far end of them down - so the ceiling is the ladder's own top and the
+        // scarcity is carried by how few arts are up there.
+        expect(CONTENT_MAX_ORDINAL).toBe(MAX_ORDINAL);
+        for (const entry of TECHNIQUES) {
+            expect(entry.requiredOrdinal).toBeLessThanOrEqual(CONTENT_MAX_ORDINAL);
+        }
+        // And it is still an authoring ceiling rather than the Lid. A manual is
+        // paper; the ceiling on what can be HELD is a different number about a
+        // different kind of thing, and it did not move.
+        expect(OBJECT_CEILING_BELOW_THE_LID).toBeLessThan(CONTENT_MAX_ORDINAL);
+        expect(LAST_CROSSING_ORDINAL).toBeLessThan(CONTENT_MAX_ORDINAL);
+    });
+
+    it('puts something at each of the two rungs above the Lid, with reach declared', () => {
+        for (const ordinal of [FALSE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL]) {
+            const arts = TECHNIQUES.filter(t => t.requiredOrdinal === ordinal);
+            expect(arts.length, `nothing authored at ordinal ${ordinal}`).toBeGreaterThan(0);
+            for (const a of arts) {
+                // Reach decides whether the top of the ladder means anything:
+                // measured, a single-target art up here does not take a
+                // mobilised apex at all and a wide one takes it in two rounds.
+                // An entry that left it off would be deciding that quietly.
+                expect(a.reach, `${a.id} is above the Lid and declares no reach`).toBeDefined();
+                // Nobody teaches at these rungs, in either direction.
+                expect(a.provenance, `${a.id} has a living teacher`).not.toBe('taught');
+            }
+            // And at least one of them lands on a place rather than a person.
+            expect(arts.some(a => a.reach === 'field'), `ordinal ${ordinal} is all single-target`)
+                .toBe(true);
         }
     });
 });
