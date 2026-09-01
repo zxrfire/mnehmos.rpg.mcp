@@ -40,6 +40,7 @@ import {
     type ActionName
 } from '../../src/web/actions';
 import { makeGame, planned, engineCalls, refusedCall, cultivatorRow, injuryCount } from './harness';
+import { withoutTheOverride } from '../../src/web/game';
 import { SECTS, sectThreat } from '../../src/data/cultivation/sects';
 import { OFFER_INTENTS } from '../../src/web/actions';
 import { abodeLocationId } from '../../src/engine/world/immortal-world';
@@ -2871,4 +2872,64 @@ describe('the plainest things a player says', () => {
         expect(parseIntent('I cultivate for a year').action).toBe('cultivate');
         expect(parseIntent('who can teach me').action).toBe('teacher');
     });
+});
+
+describe('a pill that would do nothing asks first', () => {
+    /**
+     * Found by playing: a fresh cultivator at 30/30 qi spent 18 of the 30
+     * spirit stones they owned on a Qi-Gathering Pill, swallowed it, and was
+     * told "0 qi restored". The pill could not have done anything, it was
+     * gone, and it left toxicity - strictly worse than not taking it.
+     *
+     * Saying so afterwards was an improvement on saying nothing, and
+     * afterwards is still the wrong moment, because the pill is already spent.
+     * A refusal rather than a prompt, because this layer cannot ask a question
+     * and wait: the player says it again with `anyway` and it goes down.
+     */
+    it('refuses at full and says how to insist', async () => {
+        const { game } = makeGame({ seed: 'wasted-pill', worldEnabled: true });
+        await game.newRun('Wen Zhaoshi');
+        await game.act('I buy a qi-gathering pill');
+
+        const asked = await game.act('I take the pill');
+        expect(asked.narration).toMatch(/qi is already \d+ of \d+/i);
+        expect(asked.narration).toMatch(/anyway/i);
+        // Nothing spent: the pill is still there to be taken deliberately.
+        expect(refusedCall(asked)).not.toBeNull();
+    }, 120_000);
+
+    it('goes through when the player insists, and still reports the waste', async () => {
+        const { game } = makeGame({ seed: 'wasted-pill', worldEnabled: true });
+        await game.newRun('Wen Zhaoshi');
+        await game.act('I buy a qi-gathering pill');
+        await game.act('I take the pill');
+
+        const taken = await game.act('I take the pill anyway');
+        expect(taken.narration).toMatch(/swallowed/i);
+        expect(taken.narration).toMatch(/No qi restored/i);
+    }, 120_000);
+
+    /**
+     * The override word is not part of the pill's name. Left in the target,
+     * "I take the pill anyway" resolved to a pill called "pill anyway" and
+     * refused a second time for an entirely different reason - a worse answer
+     * than the one being confirmed.
+     */
+    it('does not read the override word as part of the name', () => {
+        expect(withoutTheOverride('pill anyway')).toBe('pill');
+        expect(withoutTheOverride('the Qi-Gathering Pill anyway')).toBe('the Qi-Gathering Pill');
+        expect(withoutTheOverride('pill')).toBe('pill');
+    });
+
+    /** A pill that would actually do something is never gated. */
+    it('does not ask when the pill would work', async () => {
+        const { db, game } = makeGame({ seed: 'useful-pill', worldEnabled: true });
+        const { cultivator } = await game.newRun('Wen Zhaoshi');
+        await game.act('I buy a qi-gathering pill');
+        db.prepare('UPDATE cultivators SET qi = 5 WHERE id = ?').run(cultivator.id);
+
+        const taken = await game.act('I take the pill');
+        expect(taken.narration).toMatch(/qi restored/i);
+        expect(taken.narration).not.toMatch(/would do nothing/i);
+    }, 120_000);
 });
