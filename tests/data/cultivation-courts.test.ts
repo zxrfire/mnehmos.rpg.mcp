@@ -370,15 +370,29 @@ describe('a faction wants something, and somebody is in the way', () => {
         expect(contestedClaimsOf('sect-sweptground-temple')).toEqual([]);
     });
 
-    it('puts three claimants on the one arterial the Third Sill administers', () => {
+    it('puts a contested claim on the one arterial the Third Sill administers', () => {
         // The most useful thing a register can carry is a claim two or more
         // parties have their hands on, and this is the biggest one in the world.
+        //
+        // It used to assert three CLAIMANTS and there are two, which is a
+        // correction rather than a loss. The third was the Storm Tyrant Court,
+        // which answers the Deep Survey directly and holds no Third Sill grant
+        // - so a claim by it on a Long Cut court's arterial was a claim it had
+        // no standing to make. It is still a party to the contest, and both
+        // remaining claimants still name it, which is the shape that is
+        // actually true: two houses want the arterial and all three of them are
+        // measured against each other over it.
         const claimants = SECTS.filter(
             s => s.ambition?.blockedBy.includes('court-third-sill') &&
                 s.ambition.contestedWith.length >= 2
         );
         expect(claimants.map(s => s.id).sort()).toContain('sect-frostmirror-court');
-        expect(claimants.length).toBeGreaterThanOrEqual(3);
+        expect(claimants.length, 'the arterial is not contested').toBeGreaterThanOrEqual(2);
+
+        const inTheContest = new Set(claimants.flatMap(s => [s.id, ...s.ambition!.contestedWith]));
+        expect(inTheContest.size, 'the contest names too few houses').toBeGreaterThanOrEqual(3);
+        expect(inTheContest.has('sect-storm-tyrant-court'), 'the third party dropped out')
+            .toBe(true);
     });
 });
 

@@ -613,7 +613,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         unitOfValue: 'Nothing at all. They cannot be paid, and the only currency that moves them is a question worth answering.',
         production: {
             reliableOrdinal: 0, currentCount: 0, peakOrdinal: 40, peakCount: 4, yearsSinceLastPeak: 900,
-            note: 'Produces nobody, by construction: it takes no disciples, so its production tier is zero while four of the highest people alive sit on the ground it holds. The extreme case of the two metrics disagreeing, and the one where reading production as strength goes furthest wrong - nothing here is falling, because nothing here is doing anything.'
+            note: 'Zero, and the figure is a fact about the door rather than about the house. The Court admits - the bar is a Void Refinement floor and evidence you could reach the last realm - so everybody who has ever walked in was already most of the way, and nothing has ever been walked up from the bottom because there is no bottom here to start at. Read the routine figure as a limit and it is the most wrong the sheet can be about anything: six of this house\'s own have crossed the Lid, which is the top of the lineage tiers and the one objective claim about it nobody disputes. Nothing here is falling. Nothing here is doing anything either.'
         },
         distinctSentence: 'Four people who reached the top of the ladder, declined to pay for the last step, and have not stood up since - and cannot be paid in anything but a good question.'
     },
