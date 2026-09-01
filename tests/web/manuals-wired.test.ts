@@ -12,6 +12,9 @@ import { computeCultivationRate } from '../../src/engine/cultivation/cultivation
 import { fitOf } from '../../src/web/encounters';
 import { TECHNIQUES } from '../../src/data/cultivation/index';
 import { getSpiritRoot } from '../../src/engine/cultivation/spirit-roots';
+import type Database from 'better-sqlite3';
+import { handleLearn } from '../../src/server/consolidated/technique-manage';
+import { isGuidingErrorBody } from '../../src/server/consolidated/cultivation-support';
 
 describe('no manual is a ceiling of zero, not an absent ceiling', () => {
     /**
@@ -115,5 +118,90 @@ describe('whether a thing is for you, said out loud', () => {
         const result = await game.act('I learn the Lesser Qi-Gathering Manual');
         expect(result.toolCalls.some(c => c.name === 'encounters.assessFit')).toBe(true);
         expect(result.narration).toMatch(/pitched at rung/);
+    });
+});
+
+describe("above the common shelf, a road is somebody's property", () => {
+    /**
+     * The world ran on the books economy and the player did not.
+     *
+     * manuals.ts seeds sect libraries, hands copies to members, prices the
+     * betrayal of selling one, and caps every NPC at the best book they hold.
+     * A player could name any art they had the rung for and simply have it -
+     * no copy, no house, no teacher, nothing paid. Seventeen of the catalog's
+     * twenty-four roads were open that way; the widest opened at Foundation
+     * Establishment and carried twenty rungs.
+     *
+     * Measured in scripts/probe-who-may-open-a-book.ts, found by playing.
+     */
+    // Both elementless and both open at thirteen, so the only thing that
+    // differs between them is whether a house owns the road. The Treatise is
+    // the widest free step the probe found: thirteen to thirty-three.
+    const OWNED = 'single-road-treatise';            // req 13, cap 33, few houses
+    const COMMON = 'foundation-tempering-scripture'; // req 13, cap 17, widely held
+
+    const standAt = (db: Database.Database, id: string, ordinal: number) =>
+        db.prepare('UPDATE cultivators SET realm_ordinal = ? WHERE id = ?').run(ordinal, id);
+
+    it("refuses a house's road to somebody who serves no house", async () => {
+        const { db, game } = makeGame({ seed: 'owned-road-a' });
+        const { cultivator } = await game.newRun('Wen Shu');
+        standAt(db, cultivator.id, 13);
+
+        const result = await handleLearn({
+            action: 'learn', techniqueId: OWNED, cultivatorId: cultivator.id
+        });
+        expect(isGuidingErrorBody(result)).toBe(true);
+        expect((result as { error?: string }).error).toBe('no_road_to_this_book');
+    });
+
+    /**
+     * The common shelf stays open and that is load-bearing rather than
+     * generous. A hard ceiling at six with no way to buy a road past it is a
+     * soft lock on turn one, which is why the reachability test above exists.
+     */
+    it('leaves the widely-held road open at the same rung', async () => {
+        const { db, game } = makeGame({ seed: 'owned-road-b' });
+        const { cultivator } = await game.newRun('Wen Shu');
+        standAt(db, cultivator.id, 13);
+
+        const result = await handleLearn({
+            action: 'learn', techniqueId: COMMON, cultivatorId: cultivator.id
+        });
+        expect(isGuidingErrorBody(result)).toBe(false);
+    });
+
+    /**
+     * A prize out of a sealed place is IN THE ROOM, which is the whole reason
+     * anybody goes into one. The gate stands aside when the caller says where
+     * the book came from.
+     */
+    it('stands aside for a book somebody actually found', async () => {
+        const { db, game } = makeGame({ seed: 'owned-road-c' });
+        const { cultivator } = await game.newRun('Wen Shu');
+        standAt(db, cultivator.id, 13);
+
+        const result = await handleLearn({
+            action: 'learn', techniqueId: OWNED, cultivatorId: cultivator.id,
+            provenance: 'found_in_place'
+        });
+        expect(isGuidingErrorBody(result)).toBe(false);
+    });
+
+    /**
+     * And it never says WHICH houses teach it. Who teaches what is something
+     * you find out by asking people; an engine that volunteers the list has
+     * answered a question nobody put to it.
+     */
+    it('says how many houses teach it and never which', async () => {
+        const { db, game } = makeGame({ seed: 'owned-road-d' });
+        const { cultivator } = await game.newRun('Wen Shu');
+        standAt(db, cultivator.id, 13);
+
+        const result = await handleLearn({
+            action: 'learn', techniqueId: OWNED, cultivatorId: cultivator.id
+        }) as Record<string, unknown>;
+        expect(typeof result.housesTeachingIt).toBe('number');
+        expect(JSON.stringify(result)).not.toMatch(/Sect|Pavilion|House|Order/);
     });
 });
