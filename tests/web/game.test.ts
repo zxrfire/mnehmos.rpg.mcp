@@ -132,10 +132,20 @@ describe('a ten-year seclusion', () => {
         // Aging is derived from the day count, not accumulated per chunk.
         expect(timeSkip.deltas.age).toBeCloseTo(timeSkip.simulatedDays / DAYS_PER_YEAR, 5);
 
-        // Ten years of qi-gathering must show up somewhere: rank, or progress.
-        expect(
-            state.cultivator.realmOrdinal > 0 || state.cultivator.cultivationProgress > 0
-        ).toBe(true);
+        // Ten years of qi-gathering shows up NOWHERE, and that is the design
+        // rather than a defect. `techniqueCap` is a hard ceiling: a cultivator
+        // practising no cultivation manual is carried as far as no method
+        // carries anybody, which is nowhere, at every rung. Wen Shu was created
+        // and sat down without ever picking up a book.
+        //
+        // This assertion used to read "must show up somewhere: rank, or
+        // progress", and it passed because the web layer supplied no ceiling at
+        // all - which made holding no manual strictly better than holding one
+        // and was the whole defect. The version below is the same claim made
+        // honestly: the years buy nothing without a method, and they buy
+        // something with one.
+        expect(state.cultivator.realmOrdinal).toBe(0);
+        expect(state.cultivator.cultivationProgress).toBe(0);
 
         // The stagnation clock is the reconstruction most likely to drift.
         // Either the run never advanced (clock ran the whole skip) or it did
@@ -149,6 +159,10 @@ describe('a ten-year seclusion', () => {
             const { db, game } = makeGame({ seed: 'identical' });
             const { cultivator } = await game.newRun('Twin');
             db.prepare('UPDATE cultivators SET spirit_stones = 500 WHERE id = ?').run(cultivator.id);
+            // With a manual, so the decade is a decade of something. Without
+            // one the technique ceiling is a hard zero and both runs would be
+            // reproducibly empty, which is true and tests nothing.
+            await game.act('I learn the Lesser Qi-Gathering Manual');
             const { timeSkip } = await game.cultivate(3650);
             return timeSkip;
         };

@@ -50,6 +50,15 @@ import { worldLocationFor } from './entities.js';
 import { worldRosterRow } from './view.js';
 import type { KnowledgeGate, KnownEntityKind } from './knowledge.js';
 import type { SourceKind } from '../engine/social/knowledge.js';
+import type { KnowingStage } from '../engine/social/discovery.js';
+import {
+    passingThrough,
+    placedStatement,
+    travellerProse,
+    whisperStatement,
+    type Traveller,
+    type TravellerPlace
+} from '../engine/social/travellers.js';
 import {
     COMMON_CURRENCY_ORDINAL,
     OVERHEARD_BAND_WEIGHTS,
@@ -57,6 +66,7 @@ import {
     WORKING_KNOWLEDGE_MARGIN,
     mentionableFor,
     pickWeighted,
+    placesInLore,
     regionOfPlace,
     type Locale,
     type Mentionable
@@ -150,6 +160,20 @@ export interface SpeakableName {
     kind: KnownEntityKind;
     id: string;
     name: string;
+    /**
+     * How far up the ladder THIS name carries, when it differs from the rest of
+     * the hearing.
+     *
+     * Almost always absent, and absent means the hearing's own default. The one
+     * case that needs it is a traveller: where they came from is `placed`,
+     * because they said it with a number of days attached, and anything else
+     * they mention on the way past is a `whisper` like any other dropped name.
+     * Two stages out of one sentence is exactly what actually happens when
+     * somebody accounts for the road.
+     */
+    stage?: KnowingStage;
+    /** What the holder ends up holding, when the default sentence will not do. */
+    statement?: string;
 }
 
 export interface Hearing {
@@ -158,9 +182,11 @@ export interface Hearing {
      * addressing them, which is the sharper form: the option to ask is gone,
      * and what the player ends up holding is knowledge with compromising
      * provenance - they cannot act on it without revealing where they were
-     * standing.
+     * standing. `passing` is somebody who came through, said where they had
+     * come from, and left - the one channel that reliably brings a name from
+     * outside the county to a cultivator who has never been anywhere.
      */
-    mode: 'told' | 'overheard';
+    mode: 'told' | 'overheard' | 'passing';
     /** Who said it. Null when overheard from behind a wall. */
     speaker: string | null;
     /**
@@ -185,6 +211,19 @@ export interface Hearing {
      * the player is not told which they got.
      */
     sourceKind: SourceKind;
+    /**
+     * The stage every name in this hearing lands at, unless the name overrides
+     * it.
+     *
+     * `whisper` for the two ambient channels, which is discovery.md's own rule
+     * for a name said flatly: "They have the word and nothing else."
+     */
+    stage?: KnowingStage;
+    /**
+     * Engine-authored prose for the deterministic path, where the composed
+     * default will not do. Optional; `hearingProse` falls back to its own.
+     */
+    prose?: string;
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -211,6 +250,11 @@ export interface Hearing {
  */
 export function hearingProse(hearing: Hearing): string {
     const names = hearing.names.map(name => name.name);
+
+    // Authored where the names were chosen, for the same reason the overheard
+    // prose is authored here: the sentence is the dressing on a fact that was
+    // already written down, and it must not explain any of it.
+    if (hearing.prose) return hearing.prose;
 
     if (hearing.mode === 'overheard') {
         const said = names.length > 1
@@ -279,13 +323,53 @@ export function othersPresent(
         row.alive &&
         (row.location ?? '').trim().toLowerCase() === here);
 
-    if (!world) return stored;
+    if (!world) return oneCrowd(stored, []);
 
     const place = worldLocationFor(world, cultivator.location);
-    if (!place) return stored;
+    if (!place) return oneCrowd(stored, []);
 
     const inWorld = npcsAt(world, place.id).map(npc => worldRosterRow(npc, world.currentDay));
-    return [...stored, ...inWorld];
+    return oneCrowd(stored, inWorld);
+}
+
+/**
+ * Two halves of a crowd, given ONE order.
+ *
+ * This function is the fix for a reproducibility bug, and the bug is worth
+ * stating because the shape of it will recur. `stored` and `inWorld` each sort
+ * deterministically on their own, and concatenating them does NOT: which half
+ * a given person arrives through is a property of the day rather than of the
+ * person, so the last element of `[...stored, ...inWorld]` flips identity
+ * without the crowd changing at all.
+ *
+ * That mattered because callers pick out of this list by POSITION.
+ * `somebodyAtHand` answers "the nearest cultivator" with the last element, and
+ * `combat_manage.resolve` then seeds its stream on the opponent's id - so the
+ * same seed, the same day and the same people produced a different opponent, a
+ * different stream and a different wound. `resolveConfrontation` was
+ * byte-identical the whole time; the non-determinism was here, in an ordering
+ * nobody had stated.
+ *
+ * The order itself is arbitrary and is deliberately said to be arbitrary -
+ * there is no distance in this world model, so "nearest" cannot be computed and
+ * must not be pretended at. What is required is that it be TOTAL and depend
+ * only on the SET of people present, never on how they got into it. Rank first
+ * so the list reads sensibly to anything that renders it, then id, which is
+ * stable for the life of a row.
+ *
+ * Deduplicated by id, keeping the stored row: a person with a real database row
+ * and a world entry is one person, and the row is the authority.
+ */
+export function oneCrowd(
+    stored: readonly RosterEntry[],
+    inWorld: readonly RosterEntry[]
+): RosterEntry[] {
+    const byId = new Map<string, RosterEntry>();
+    for (const row of inWorld) byId.set(row.id, row);
+    for (const row of stored) byId.set(row.id, row);
+    return [...byId.values()].sort((a, b) =>
+        a.realmOrdinal - b.realmOrdinal ||
+        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -366,6 +450,22 @@ export function offerHearing(input: HearingInput): Hearing | null {
         };
     }
 
+    // ── Somebody who came through ──
+    //
+    // Ahead of the overheard channel and independent of who lives here, because
+    // this is the one source that works for a cultivator standing alone in a
+    // village where nobody has anywhere to be. discovery.md lists the traveller
+    // among the scarce sources a step needs; of that list it is the only one
+    // available to somebody with no sect, no archive, no money and no reason to
+    // have been anywhere.
+    //
+    // What it delivers is GEOGRAPHY, which the other two channels are bad at:
+    // they draw across the whole speakable world and a place name has to win a
+    // weighted draw against every sect, elder and dead civilisation in it. A
+    // road brings places.
+    const traveller = offerTraveller(input, rng, locale);
+    if (traveller) return traveller;
+
     // ── Two people not talking to the player ──
     // Needs at least two of them, because one person alone in a courtyard is
     // not having a conversation, and a monologue for the player's benefit is
@@ -401,6 +501,91 @@ export function offerHearing(input: HearingInput): Hearing | null {
             'reveal where this cultivator was standing.',
         confidence: 0.2,
         sourceKind: 'overheard'
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ROAD
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How much of the world goes past this door, 0..1.
+ *
+ * Read off the location's own links, because a place with four roads out of it
+ * is a place people come through and a dead-end valley is not. This module does
+ * not own the map and does not go looking for one: when the world is off, the
+ * answer is the middle, which is the honest reading of "nobody has said".
+ */
+function trafficAt(world: WorldState | null | undefined, place: string | null): number {
+    if (!world) return 0.5;
+    const here = worldLocationFor(world, place);
+    if (!here) return 0.5;
+    const open = here.links.filter(link => link.open).length;
+    return Math.min(1, open / 4);
+}
+
+/**
+ * Somebody came through, and said where from.
+ *
+ * The candidate list is places this cultivator cannot already name, drawn from
+ * the same table every other channel draws from. Nothing bespoke: a place
+ * becoming nameable through a traveller is the same row, acquired the same way,
+ * as a place becoming nameable through an elder.
+ */
+function offerTraveller(
+    input: HearingInput,
+    rng: { chance(p: number): boolean; int(min: number, max: number): number },
+    locale: Locale
+): Hearing | null {
+    const unknownPlaces: TravellerPlace[] = unknownTo(input.gate, input.cultivator.id, placesInLore())
+        .map(entry => ({ id: entry.id, name: entry.name, regionId: entry.regionId }));
+
+    const traveller = passingThrough({
+        rng,
+        unknownPlaces,
+        hereRegionId: locale.regionId,
+        traffic: trafficAt(input.world, input.cultivator.location),
+        listening: (input.intent ?? 'ambient') === 'listening'
+    });
+    if (!traveller) return null;
+
+    return travellerHearing(traveller);
+}
+
+/** The traveller, as the hearing the rest of the layer already understands. */
+export function travellerHearing(traveller: Traveller): Hearing {
+    const names: SpeakableName[] = [
+        {
+            kind: 'place',
+            id: traveller.from.id,
+            name: traveller.from.name,
+            // The valuable half, and the reason this channel exists. They said
+            // where they came from with a number of days on it, which is
+            // exactly what `placed` means - "you know where, or who, or when".
+            stage: 'placed',
+            statement: placedStatement(traveller.from, traveller.daysOnTheRoad)
+        },
+        ...traveller.mentions.map((place): SpeakableName => ({
+            kind: 'place',
+            id: place.id,
+            name: place.name,
+            // And the other half, unchanged from every other dropped name: the
+            // word, and nothing else. If the next paragraph says what it is,
+            // the moment has been spent for nothing.
+            stage: 'whisper',
+            statement: whisperStatement(place)
+        }))
+    ];
+
+    return {
+        mode: 'passing',
+        speaker: traveller.shape,
+        names,
+        note: traveller.note,
+        confidence: traveller.confidence,
+        sourceKind: 'told',
+        stage: 'whisper',
+        prose: travellerProse(traveller)
     };
 }
 
@@ -508,6 +693,7 @@ export function recordHearing(
 ): SpeakableName[] {
     const learned: SpeakableName[] = [];
     for (const name of hearing.names) {
+        const stage = name.stage ?? hearing.stage ?? 'whisper';
         const isNew = gate.learnIfNew({
             holderId: cultivator.id,
             kind: name.kind,
@@ -516,9 +702,11 @@ export function recordHearing(
             onDay: Math.floor(run.elapsedDays),
             sourceKind: hearing.sourceKind,
             sourceNote: hearing.note,
-            stance: 'suspects',
+            stage,
             confidence: hearing.confidence,
-            statement: `${name.name} is a name that got said. What it is remains unknown.`
+            statement:
+                name.statement
+                ?? `${name.name} is a name that got said. What it is remains unknown.`
         });
         if (isNew) learned.push(name);
     }

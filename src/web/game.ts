@@ -70,6 +70,8 @@ import { round2 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
+import { capOf, classOf } from '../data/cultivation/techniques.js';
+import { getMembersOf } from '../data/cultivation/members.js';
 import {
     auditAncestralClaim,
     getSectAncestry,
@@ -132,6 +134,7 @@ import {
     clearFlag,
     ensureCultivationDb,
     addToPouch,
+    discoveryContextFor,
     listPouch,
     removeFromPouch,
     type PouchEntry,
@@ -259,16 +262,27 @@ import {
 } from './hearsay.js';
 import { observableHere, observedLine } from './practices.js';
 import {
+    acceptDuty,
     activityForVerb,
     arrivableForSpan,
+    completeDuty,
     consumeArrivals,
     daysActuallySpent,
+    dutyFromOffer,
     encounterCalls,
     encountersFor,
     recordEncounters,
-    withEncounterDeltas
+    refuseDuty,
+    fitOf,
+    sectBoardFor,
+    withEncounterDeltas,
+    type DutyLedgerInput
 } from './encounters.js';
-import type { ArrivableFact, EncounterActivity } from '../engine/encounters/index.js';
+import type {
+    ArrivableFact,
+    DutyCandidate,
+    EncounterActivity
+} from '../engine/encounters/index.js';
 import { unattributedTextOf } from '../engine/world/digest.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import {
@@ -279,7 +293,9 @@ import {
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
 import type { PlayerDigest } from '../engine/world/digest.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
+import { npcsAt } from '../engine/world/world-state.js';
 import {
     factsForBreakthrough,
     factsForEat,
@@ -680,6 +696,28 @@ const RECIPES_SHOWN = 8;
 
 /** The same, for the arts. Two lists, one convention. */
 const TECHNIQUES_SHOWN = 8;
+
+/** And for the wall. Offers and refusals are counted separately. */
+const DUTIES_SHOWN = 8;
+
+/**
+ * The rung a cultivator with no cultivation manual is carried to.
+ *
+ * Zero, and it is a real number rather than an absence. `techniqueExhausted`
+ * treats null as "no ceiling declared", so handing it null for somebody
+ * practising nothing gave them an unlimited climb and made learning a first
+ * book strictly harmful. See `rateTermsFor`.
+ */
+const NO_MANUAL_CEILING = 0;
+
+/**
+ * How much of a day sect work leaves for cultivation.
+ *
+ * Below `WAITING_FOCUS` and above nothing. A commission is somebody else's
+ * errand run at their pace, and the whole reason contribution is worth
+ * anything is that earning it costs the thing it buys.
+ */
+const DUTY_FOCUS = 0.25;
 
 /**
  * How a name reached this cultivator, for the inspector.
@@ -1590,7 +1628,7 @@ ${noticedWaiting}`;
                 return this.market(cultivator, action.target);
 
             case 'sect':
-                return this.sect(cultivator, action.target, action.intent, action.topic, action.days);
+                return this.sect(run, cultivator, ambient, action.target, action.intent, action.topic, action.days);
 
             case 'recall':
                 return this.recall(run, cultivator, action.target, action.intent);
@@ -1784,7 +1822,12 @@ ${noticed}`;
             locationId: placeName(cultivator),
             turn: run.turn,
             startDay,
-            options: { focusMultiplier: TRAVEL_FOCUS },
+            options: {
+                focusMultiplier: TRAVEL_FOCUS,
+                ...this.rateTermsFor(cultivator),
+                ground: this.groundFor(cultivator)
+            },
+            understanding: this.understandingFor(run, cultivator),
             // What is in the pack feeds them here too. Only seclusion tops the
             // pack up from the purse; this eats what is already carried.
             rations: this.drawFromPack(cultivator, SHORT_ACTION_DAYS),
@@ -2233,11 +2276,31 @@ ${noticed}`;
         // village does not offer should reach the tool's own refusal, which
         // knows why, rather than being silently dropped here.
         const wanted = (target ?? '').trim();
-        const occupation = wanted.length >= 3
-            ? findWorkForOrdinal(cultivator.realmOrdinal)
-                .find(o => wanted.toLowerCase().includes(o.name.toLowerCase())
-                    || o.name.toLowerCase().includes(wanted.toLowerCase()))
+        const offered = findWorkForOrdinal(cultivator.realmOrdinal);
+        const named = wanted.length >= 3
+            ? offered.find(o => wanted.toLowerCase().includes(o.name.toLowerCase())
+                || o.name.toLowerCase().includes(wanted.toLowerCase()))
             : undefined;
+
+        // ── "take any work" means take any work ──────────────────────────
+        //
+        // Naming nothing lists the board, which is right for a player asking
+        // what is going and wrong for the sentence this action exists to serve.
+        // "I take whatever work the village will give me" is what somebody
+        // types when they are out of stones and out of options, and answering
+        // it with a menu costs them a turn they cannot afford - which is the
+        // same class of defect as the board that could be read and not bought
+        // from.
+        //
+        // The engine picks, not this layer: the best-paying line on the board
+        // that is actually being PUT TO THEM, which is `findWorkForOrdinal`'s
+        // own answer narrowed by its own regard. A tie is broken by id so the
+        // choice is reproducible.
+        const anyWork = named === undefined && GameService.WORK_UNSPECIFIED.test(wanted);
+        const occupation = named ?? (anyWork
+            ? [...offered].sort((a, b) =>
+                b.cashPerMonth - a.cashPerMonth || (a.id < b.id ? -1 : 1))[0]
+            : undefined);
 
         // Eat before the shift. `handleWork`'s own `rations` argument means BUY
         // that many, so the pack cannot be handed to it - but a player who
@@ -2414,7 +2477,9 @@ ${noticed}`;
      * spend a hundred turns of revelation on a single query.
      */
     private async sect(
+        run: Run,
         cultivator: Cultivator,
+        ambient: AmbientQi,
         target: string | undefined,
         intent: string | undefined,
         topic?: string,
@@ -2426,6 +2491,9 @@ ${noticed}`;
         // parsed to `unclear`, so a player could join a house and then do
         // nothing whatever about it for the rest of the run.
         switch (intent) {
+            case 'duty':
+                return this.duty(run, cultivator, ambient, target);
+
             case 'siphon': {
                 // The pace rides in on the plan's topic and the span on its
                 // days, both optional: naming neither is a request to see the
@@ -4853,7 +4921,12 @@ ${noticed}`;
             locationId: placeName(cultivator),
             turn: run.turn,
             startDay,
-            options: { focusMultiplier: ENTERING_FOCUS },
+            options: {
+                focusMultiplier: ENTERING_FOCUS,
+                ...this.rateTermsFor(cultivator),
+                ground: this.groundFor(cultivator)
+            },
+            understanding: this.understandingFor(run, cultivator),
             rations: this.drawFromPack(cultivator, ENTERING_DAYS),
             grainAbstinence: false,
             autoBreakthrough: false,
@@ -5374,14 +5447,47 @@ ${noticed}`;
      * was not told the ground was lethal.
      */
     private async assess(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+        const query = (target ?? '').trim();
+
+        // ── a master reading a student ──
+        //
+        // A different question from "could I survive that cave", answered off
+        // different rows: who in this house is standing above them, and whether
+        // the ladder has stopped crediting the years they have spent at this
+        // rung. `AssessSchema` had three subjects and none of them was a person
+        // being TAUGHT, which left the send-off - the sentence a master says
+        // when a disciple has taken what there is here - unreachable and
+        // unaskable.
+        if (query.length === 0 || GameService.ASSESSING_THEMSELVES.test(query)) {
+            const read = await handleAssess({
+                action: 'assess',
+                cultivatorId: cultivator.id,
+                against: 'student'
+            });
+            return this.fromToolResult(
+                'cultivation_perception.assess', 'assess', read, 'The reckoning'
+            );
+        }
+
         const result = await handleAssess({
             action: 'assess',
             cultivatorId: cultivator.id,
             against: 'place',
-            ...(target ? { place: target } : {})
+            place: query
         });
         return this.fromToolResult('cultivation_perception.assess', 'assess', result, 'The reckoning');
     }
+
+    /**
+     * An assessment with no subject, or with the asker as the subject.
+     *
+     * "Am I ready", "how am I doing here", "have I stopped" - a question about
+     * the person asking rather than about any ground. Previously these fell to
+     * the place read and were answered with the weather at the cultivator's own
+     * location, which is a true statement and not an answer.
+     */
+    private static readonly ASSESSING_THEMSELVES =
+        /^(?:my ?self|me|my (?:progress|standing|position|cultivation|prospects)|where i (?:am|stand)|whether i(?:'m| am)? (?:ready|stuck|stalled|finished|done)|if i(?:'m| am)? (?:ready|stuck|stalled)|ready|stuck|stalled)$/i;
 
     /**
      * Alchemy, through the same handler the MCP tool surface calls.
@@ -5550,7 +5656,12 @@ ${noticed}`;
             locationId: placeName(cultivator),
             turn: run.turn,
             startDay,
-            options: { focusMultiplier: GATHERING_FOCUS },
+            options: {
+                focusMultiplier: GATHERING_FOCUS,
+                ...this.rateTermsFor(cultivator),
+                ground: this.groundFor(cultivator)
+            },
+            understanding: this.understandingFor(run, cultivator),
             // What is in the pack feeds them here too. Only seclusion tops the
             // pack up from the purse; this eats what is already carried.
             rations: this.drawFromPack(cultivator, GATHERING_DAYS),
@@ -5767,7 +5878,12 @@ ${noticed}`;
             locationId: placeName(provisioned),
             turn: run.turn,
             startDay,
-            options: { focusMultiplier: 1 },
+            options: {
+                focusMultiplier: 1,
+                ...this.rateTermsFor(provisioned),
+                ground: this.groundFor(provisioned)
+            },
+            understanding: this.understandingFor(run, provisioned),
             techniqueElement: null,
             rations: provisioning.rations,
             grainAbstinence: false,
@@ -5801,7 +5917,9 @@ ${noticed}`;
         // AFTER the skip, because a knowledge grant is a write and writes belong
         // in phase 2. Phase 3 then only ever gets a licence to mention something
         // that is already true.
-        const enc2 = recordEncounters(this.knowledge, applied.cultivator, applied.run.elapsedDays, enc);
+        const enc2 = recordEncounters(
+            this.knowledge, applied.cultivator, applied.run.elapsedDays, enc, this.repos
+        );
         this.pendingArrivals = consumeArrivals(this.pendingArrivals, enc);
 
         const facts = factsForTimeSkip(
@@ -5869,7 +5987,12 @@ ${noticed}`;
             locationId: placeName(cultivator),
             turn: run.turn,
             startDay,
-            options: { focusMultiplier: focus },
+            options: {
+                focusMultiplier: focus,
+                ...this.rateTermsFor(before),
+                ground: this.groundFor(before)
+            },
+            understanding: this.understandingFor(run, before),
             // What is in the pack feeds them here too. Only seclusion tops the
             // pack up from the purse; this eats what is already carried.
             rations: this.drawFromPack(cultivator, lived),
@@ -5882,7 +6005,9 @@ ${noticed}`;
         const applied = applyTimeSkip(this.repos, { before, run, skip });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
-        const enc2 = recordEncounters(this.knowledge, applied.cultivator, applied.run.elapsedDays, enc);
+        const enc2 = recordEncounters(
+            this.knowledge, applied.cultivator, applied.run.elapsedDays, enc, this.repos
+        );
         this.pendingArrivals = consumeArrivals(this.pendingArrivals, enc);
 
         const facts = factsForTimeSkip(before, applied.cultivator, skip, ambient, label);
@@ -5963,7 +6088,15 @@ ${noticed}`;
             ),
             ambient,
             turn: run.turn,
-            pill: pending ? { name: pending.name, potency: pending.potency } : null,
+            pill: pending ? {
+                name: pending.name,
+                potency: pending.potency,
+                // Both carried straight off the record written when it was
+                // swallowed. A graded pill takes the real band curve; the
+                // count is what makes the fifth one worth less than the first.
+                ...(pending.grade ? { grade: pending.grade } : {}),
+                priorPillsTaken: pending.priorPillsTaken ?? 0
+            } : null,
             ranksGainedThisTurn: 0,
             // Deliberate, and now aided where the cultivator prepared for it.
             toll: {
@@ -6277,7 +6410,12 @@ ${noticed}`;
             locationId: placeName(paid),
             turn: run.turn,
             startDay,
-            options: { focusMultiplier: TREATMENT_FOCUS },
+            options: {
+                focusMultiplier: TREATMENT_FOCUS,
+                ...this.rateTermsFor(paid),
+                ground: this.groundFor(paid)
+            },
+            understanding: this.understandingFor(run, paid),
             rations: provisioning.rations,
             grainAbstinence: false,
             autoBreakthrough: false,
@@ -6704,12 +6842,35 @@ ${noticed}`;
             );
         }
 
+        type Listed = {
+            name?: string;
+            grade?: string;
+            element?: string | null;
+            known?: boolean;
+            class?: string;
+            carriesToOrdinal?: number | null;
+            carriesToRank?: string | null;
+        };
         const body = listed as {
-            compatible?: { name?: string; grade?: string; element?: string | null; known?: boolean }[];
-            conflicting?: { name?: string; grade?: string; element?: string | null }[];
+            compatible?: Listed[];
+            conflicting?: Listed[];
             counts?: { gatedByRealm?: number; unavailableInThisRun?: number };
             note?: string;
         };
+
+        // WHERE IT STOPS, SAID BEFORE THE DECADE IS SPENT.
+        //
+        // A cultivation manual is a hard ceiling: at or past its cap, progress
+        // is zero, not slow. Before this, the only way to find out that the
+        // book you picked up ends at seventeen was to reach seventeen. That is
+        // not difficulty, it is a trap, and it is also the reason the corridor
+        // above the middle of the ladder reads as a wall instead of as a road.
+        const carries = (row: Listed): string =>
+            row.class !== 'cultivation'
+                ? ' It carries nobody anywhere; it is an art, not a road.'
+                : row.carriesToRank
+                    ? ` It carries a cultivator as far as ${row.carriesToRank} and no further.`
+                    : ' It carries a cultivator the whole way.';
         const compatible = (body.compatible ?? []).filter(row => row.known !== true);
         const conflicting = body.conflicting ?? [];
 
@@ -6727,6 +6888,7 @@ ${noticed}`;
                         `  ${row.name ?? 'unnamed'}`
                         + `${row.element ? `, an art of ${row.element}` : ''}`
                         + `${row.grade ? ` (${row.grade} grade)` : ''}.`
+                        + carries(row)
                     );
                 }
                 if (compatible.length > TECHNIQUES_SHOWN) {
@@ -6739,7 +6901,10 @@ ${noticed}`;
                     + 'Learning one can tear the meridians on the spot:'
                 );
                 for (const row of conflicting.slice(0, TECHNIQUES_SHOWN)) {
-                    lines.push(`  ${row.name ?? 'unnamed'}${row.element ? `, of ${row.element}` : ''}.`);
+                    lines.push(
+                        `  ${row.name ?? 'unnamed'}${row.element ? `, of ${row.element}` : ''}.`
+                        + carries(row)
+                    );
                 }
             }
         }
@@ -6793,10 +6958,388 @@ ${noticed}`;
             techniqueId: technique.id,
             cultivatorId: cultivator.id
         });
-        return this.fromToolResult(
+        const execution = this.fromToolResult(
             'technique_manage.learn', 'learn_technique', result, technique.name
         );
+
+        // ── WHETHER IT IS FOR THEM, IN THE SAME BREATH ───────────────────
+        //
+        // A miss has to be legible in the MOMENT. `assessFit` writes the
+        // sentence - "it is sound. It is written for water. This cultivator
+        // draws fire. Sitting with it will teach them nothing, however long
+        // they sit" - and nothing returned it, so a player who picked up an art
+        // that did not suit them learned the wrong lesson: sit longer, rather
+        // than go somewhere else. That inversion is the exact thing the
+        // suitability layer exists to prevent.
+        //
+        // Said on success as well as on refusal, deliberately. Being told what
+        // you have just taken on is worth more than being told what you were
+        // stopped from taking, because the thing you took on is the one you are
+        // about to spend a decade with.
+        const catalog = getTechnique(technique.id);
+        if (catalog) {
+            const fit = fitOf(cultivator, catalog);
+            execution.facts.lines.push(fit.line);
+            // Into the prose as well as the lines. `factsForToolResult` builds
+            // `prose` once from the lines it was given, so a line pushed
+            // afterwards reaches the narrator's licence and never reaches a
+            // player running without a model.
+            execution.facts.prose = `${execution.facts.prose}
+
+${fit.line}`;
+            execution.facts.structure.push(
+                `encounters.assessFit: ${fit.fit} at grade ordinal ${fit.gradeOrdinal}; `
+                + fit.axes.map(a => `${a.axis}=${a.verdict}`).join(', ') + '.'
+            );
+            execution.calls.push({
+                name: 'encounters.assessFit',
+                action: 'learn_technique',
+                summary: `${technique.name}: ${fit.fit}. ${fit.line}`,
+                ok: fit.fit === 'suited' || fit.fit === 'partly'
+            });
+        }
+        return execution;
     }
+
+    /**
+     * The mission board, and taking a line off it.
+     *
+     * `sect_members.contribution` is one of three independent axes of standing
+     * and until this existed it had NO EARNER. `handlePromote` spends it,
+     * `handleStipend` credits a trickle of it, and nothing anywhere could add
+     * to it deliberately - so "I do sect work for contribution" was answered
+     * with the mortal job board, which pays in cash and moves no standing at
+     * all. A ladder with a rung nobody can climb is a ladder with a ceiling
+     * nobody was told about.
+     *
+     * Two halves, and the split is the same one every other committing verb in
+     * this file uses: an unnamed duty is a READ of the wall, and a named one is
+     * an oath. The read shows the refusals too, each carrying the engine's own
+     * line about why - because an empty board and a board full of work beneath
+     * somebody are different facts, and an Elder standing in front of the
+     * second one should be told which it is.
+     *
+     * Every number is `sectBoardFor`'s. This method chooses which line, and
+     * nothing else.
+     */
+    private async duty(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined
+    ): Promise<Execution> {
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const deps = { repos: this.repos, knowledge: this.knowledge, world: this.atHand };
+        const board = sectBoardFor(deps, cultivator);
+        const wanted = (target ?? '').trim();
+
+        const describe = (offer: DutyCandidate): string =>
+            `${offer.entry.name}: ${humanDays(offer.terms.days)}, `
+            + `${offer.terms.contribution} contribution and ${offer.terms.stones} spirit stone`
+            + `${offer.terms.stones === 1 ? '' : 's'} on completion`
+            + (offer.terms.cohort > 0 ? `, with ${offer.terms.cohort} of the house alongside` : '')
+            + '.';
+
+        // ── the wall, read ──
+        if (wanted.length < 3 || GameService.BOARD_IN_GENERAL.test(wanted)) {
+            const lines: string[] = [];
+            if (board.offers.length === 0) {
+                lines.push(board.membership
+                    ? 'Nothing on the wall is being put to somebody at this rank. That is not the '
+                      + 'same as an empty wall, and everyone who walks past it knows the difference.'
+                    : 'You belong to nothing, so there is no wall. Commission work goes to people '
+                      + 'somebody can send for.');
+            } else {
+                lines.push(board.membership
+                    ? 'What the house is asking for, and what it pays:'
+                    : 'What is being contracted out, and what it pays. None of it touches anybody\'s '
+                      + 'ledger, because you are on nobody\'s:');
+                for (const offer of board.offers.slice(0, DUTIES_SHOWN)) {
+                    lines.push(`  ${describe(offer)}`);
+                }
+            }
+            for (const refused of board.refusals.slice(0, DUTIES_SHOWN)) {
+                lines.push(`  ${refused.name}: not put to you. ${refused.reason}`);
+            }
+
+            const facts = factsForToolResult(
+                board.offers.length === 0 ? 'Nothing going for you.' :
+                    `${board.offers.length} thing${board.offers.length === 1 ? '' : 's'} going.`,
+                lines
+            );
+            facts.structure.push(
+                `encounters.sectBoardFor: ${board.offers.length} offer(s), `
+                + `${board.refusals.length} withheld, membership=`
+                + `${board.membership ? `${board.membership.factionId}@${board.membership.rankIndex}` : 'none'}.`
+            );
+            return this.freeAction(run, 'sect', facts);
+        }
+
+        // ── a line, taken ──
+        const chosen = board.offers.find(offer =>
+            matchScore(wanted, offer.entry.name) > MATCH_THRESHOLD);
+        if (!chosen) {
+            const going = board.offers.map(offer => offer.entry.name).join(', ');
+            return refused('encounters.sectBoardFor', 'sect', factsForRefusal(
+                `Nothing on the wall called ${wanted}.`,
+                going.length > 0
+                    ? `You read it twice and it is not there. What is: ${going}.`
+                    : 'You read it twice. There is nothing on it for somebody standing where you '
+                      + 'are standing, whatever you came in wanting.',
+                `Unresolved duty "${wanted}" against ${board.offers.length} offer(s) at ordinal `
+                + `${cultivator.realmOrdinal}. Nothing accepted, nothing written.`
+            ));
+        }
+
+        const startDay = Math.floor(run.elapsedDays);
+        const duty = dutyFromOffer(chosen, board.membership, startDay);
+        const what = `${chosen.entry.name}, off the board at ${placeName(cultivator)}.`;
+        const ledger: DutyLedgerInput = {
+            repos: this.repos,
+            cultivator,
+            duty,
+            onDay: startDay,
+            entryId: chosen.entry.id,
+            what
+        };
+
+        // The oath is written BEFORE the span. That ordering is the whole
+        // reason accepting is a decision rather than free money: a run that
+        // ends in the middle leaves a standing obligation somebody can read in
+        // forty years, and `refuseDuty` is what settles it the other way.
+        acceptDuty(ledger);
+
+        const execution = await this.shortSkip(
+            run, cultivator, ambient, DUTY_FOCUS, `Sect duty: ${chosen.entry.name}`,
+            duty.days, 'labour'
+        );
+
+        const after = this.repos.cultivators.getById(cultivator.id)!;
+        const doneOn = Math.floor(this.repos.runs.getById(run.id)!.elapsedDays);
+        const settlement: DutyLedgerInput = { ...ledger, cultivator: after, onDay: doneOn };
+
+        // Paid for finishing it, never for taking it on. Somebody who did not
+        // come back is not owed, and the house records that rather than
+        // forgetting it - which is the same answer the wage already gives.
+        if (after.alive) {
+            const settled = completeDuty(settlement);
+            execution.facts.lines.push(settled.line);
+            execution.facts.structure.push(
+                `encounters.completeDuty: obligation ${settled.obligation.id} fulfilled; `
+                + `contribution +${settled.contribution}, stones +${settled.stones}.`
+            );
+            execution.calls.push({
+                name: 'encounters.completeDuty',
+                action: 'sect',
+                summary:
+                    `${chosen.entry.name} completed. ${settled.contribution} contribution credited `
+                    + `and ${settled.stones} spirit stone(s) paid, both off the duty's own terms.`,
+                ok: true
+            });
+        } else {
+            const walked = refuseDuty({ ...settlement, outcome: 'failed' });
+            execution.facts.lines.push(walked.line);
+            execution.calls.push({
+                name: 'encounters.refuseDuty',
+                action: 'sect',
+                summary: `${chosen.entry.name} not finished. ${walked.line}`,
+                ok: false
+            });
+        }
+
+        execution.facts.lines.unshift(describe(chosen));
+        execution.calls.unshift({
+            name: 'encounters.acceptDuty',
+            action: 'sect',
+            summary:
+                `${chosen.entry.name} taken on: ${duty.days} day(s), due on day ${duty.dueOnDay}. `
+                + 'An oath row, held by the person who swore it.',
+            ok: true
+        });
+        return execution;
+    }
+
+    /** "the board", "sect work", "whatever is going" - a wall, not a line. */
+    private static readonly BOARD_IN_GENERAL =
+        /^(?:the |my |a |any |some )?\s*(?:board|wall|duty|duties|work|sect work|commissions?|assignments?|jobs?|whatever(?:'s| is)? going|anything)\s*$/i;
+
+    /**
+     * The two terms the cultivation rate wants and this layer never supplied:
+     * what the manual can carry them to, and who is teaching them.
+     *
+     * `computeCultivationRate` reads both and both default to "not declared",
+     * which is why nothing was visibly wrong - a cultivator with no manual and
+     * no master cultivated exactly as fast as one with the best of both, and
+     * the two most important reasons to join a house did nothing.
+     *
+     * Neither is invented here. `capOf` is the manual's own rated band, read
+     * off the catalog row for an art this cultivator has actually been taught;
+     * the guide is a real person on their own house's roster who is genuinely
+     * standing above them.
+     *
+     * `techniqueCap` is a HARD ceiling - at or past it, progress is zero - so
+     * it is deliberately the HIGHEST cap among the arts they hold, and null the
+     * moment any one of them is rated to the top. Reading it any other way
+     * would have a cultivator who learned a second, better manual stopped by
+     * the first one.
+     *
+     * ── NO MANUAL IS A CEILING OF ZERO, NOT AN ABSENT CEILING ────────────
+     *
+     * This was the other way round for one commit and it inverted the whole
+     * design. `null` means UNCAPPED, so a cultivator holding no cultivation
+     * manual climbed for ever while one who took up the Lesser Qi-Gathering
+     * Manual was stopped at 13 on the spot - measured at ordinal 28 as
+     * `no manual -> perDay 24.0` against `cap 13 -> perDay 0.0`. The incentive
+     * was to learn nothing, and a life did exactly that: ordinal 28 with zero
+     * known techniques, out of a sect whose ceiling is 14.
+     *
+     * Zero is the honest number. A cultivator practising no method is carried
+     * as far as no method carries anybody, and `techniqueExhausted` reads
+     * `ordinal >= 0` as true at every rung, which is the hard stop the engine
+     * and the lore both state. It is safe to be this hard because the first
+     * manual is genuinely reachable: measured 30 fresh lives out of 30 able to
+     * learn the Lesser Qi-Gathering Manual on turn one, so the gate costs a
+     * sentence rather than a run.
+     *
+     * KNOWN PROSE DEFECT, reported to whoever owns `cultivation.ts`: with a cap
+     * of zero the breakdown line reads "The manual ends at <first rung>", which
+     * implies a manual. The factor is right and the sentence is not; it wants a
+     * distinct label for "there is no manual".
+     */
+    private rateTermsFor(cultivator: Cultivator): {
+        techniqueCap: number | null;
+        guideOrdinal: number | null;
+    } {
+        let cap: number | null = null;
+        let anyManual = false;
+        for (const id of cultivator.knownTechniques) {
+            const art = getTechnique(id);
+            if (!art || classOf(art) !== 'cultivation') continue;
+            anyManual = true;
+            const theirs = art.cap !== undefined ? art.cap : capOf(art);
+            // One uncapped manual is enough. A book rated to the top of the
+            // ladder ends the question for every other book they own.
+            if (theirs === null || theirs === undefined) return {
+                techniqueCap: null,
+                guideOrdinal: this.guideFor(cultivator)
+            };
+            cap = cap === null ? theirs : Math.max(cap, theirs);
+        }
+
+        return {
+            // NO_MANUAL_CEILING when they hold none. Not null - see above.
+            techniqueCap: anyManual ? cap : NO_MANUAL_CEILING,
+            guideOrdinal: this.guideFor(cultivator)
+        };
+    }
+
+    /**
+     * The ground they are sitting on, and everybody else sitting on it.
+     *
+     * Two rules ride on this one field and both were inert because nothing
+     * passed it, which is the same state the technique ceiling was in.
+     *
+     *   CONTESTED QI. Qi drawn by one person is not available to another, so
+     *   occupancy is summed as DRAW rather than heads - one Deity
+     *   Transformation elder crowds out sixteen mortals. A valley that
+     *   comfortably carries thirty carries three hundred at a tenth of the
+     *   rate, which is why a sect's elders live apart from its disciples and
+     *   why putting an ancient on your own vein is a decision.
+     *
+     *   THE THIN-REGION CEILING. Ground poorer than the middle of the thin band
+     *   carries nobody past ordinal 12 - a hard zero, not a slower multiplier,
+     *   because "whole provinces exist where nobody has passed Qi Condensation
+     *   in living memory" is a ceiling and a multiplier never stops anybody.
+     *   All thirteen Qi Condensation rungs stay climbable on dead ground, so a
+     *   cultivator born there has a full realm of runway before the ground is
+     *   the thing in their way, and the answer is to move.
+     *
+     * The cultivator's own ordinal is in the list, because they are one of the
+     * people drawing on it. Null without a loaded world, which degrades to
+     * "nobody is competing and the ground is not known to be poor" - the old
+     * behaviour, and honest about being a lack of information rather than a
+     * measurement of an empty valley.
+     */
+    private groundFor(cultivator: Cultivator): GroundConditions | null {
+        if (!this.atHand) return null;
+        const record = worldLocationFor(this.atHand, cultivator.location);
+        if (!record) return null;
+        return {
+            density: record.environment.spiritualDensity,
+            occupantOrdinals: [
+                ...npcsAt(this.atHand, record.id).map(npc => npc.cultivation.realmOrdinal),
+                cultivator.realmOrdinal
+            ]
+        };
+    }
+
+    /**
+     * The strongest person in this cultivator's own house who is above them.
+     *
+     * A house is worth joining because somebody in it knows more than you do,
+     * and `guidanceMultiplier` is where that becomes a number - saturating at
+     * about +50% eight rungs up, and falling to exactly 1 when the guide is at
+     * or below you, which is the honest answer for the head of a small sect.
+     *
+     * `members.ts` holds 164 real people with real rungs, so nobody is
+     * invented: a house with nobody above the player supplies no guide, and
+     * that is a fact about the house.
+     */
+    private guideFor(cultivator: Cultivator): number | null {
+        const held = this.repos.sects.getMembership(cultivator.id);
+        if (!held) return null;
+        let best: number | null = null;
+        for (const member of getMembersOf(held.sectId)) {
+            if (member.id === cultivator.id) continue;
+            if (member.realmOrdinal <= cultivator.realmOrdinal) continue;
+            if (best === null || member.realmOrdinal > best) best = member.realmOrdinal;
+        }
+        return best;
+    }
+
+    /**
+     * What this cultivator is currently near enough to comprehend.
+     *
+     * THE SINGLE LARGEST GAP IN THIS FILE, and it was an omission rather than
+     * a bug. `simulateTimeSkip` takes an `understanding` context and this layer
+     * never supplied one, on any of its six skip paths - so
+     * `discoverableInsights` was handed an empty room every time. The only
+     * comprehensions a played life could reach were the three that need no
+     * access at all: `body` off a survived deviation, and `life_death`/`void`
+     * off a survived tribulation. Three, and only by being badly hurt.
+     *
+     * What that cost is not confined to dao. The dao gate had to ship switched
+     * OFF, because enforcing it against a world where nobody can comprehend
+     * anything stops every cultivator alive at Foundation or Deity. Suitability
+     * never ran, because it filters a set that was always empty. Every escape
+     * route out of a stalled ladder runs through here.
+     *
+     * `discoveryContextFor` has been complete the whole time and is what the
+     * MCP tool surface already calls, so this is the same context assembled
+     * from the same rows - manuals they can actually read, a sect that will
+     * teach, ground somebody has already found, and where they were born. The
+     * engine supplies `runSeed` and `affinityOf` itself, which is what turns
+     * suitability and the prodigy path on.
+     */
+    private understandingFor(
+        run: Run,
+        cultivator: Cultivator,
+        practisingTechniqueId: string | null = null
+    ) {
+        return discoveryContextFor(this.repos, cultivator, {
+            runId: run.id,
+            practisingTechniqueId
+        }).context;
+    }
+
+    /**
+     * "any work", "whatever is going", "" - a request rather than a name.
+     *
+     * Deliberately includes the empty string: somebody who typed "find work"
+     * and named no trade wants work, not a menu.
+     */
+    private static readonly WORK_UNSPECIFIED =
+        /^(?:any|some|whatever|anything|work|a job|any work|some work|whatever (?:is |'s )?going|whatever i can (?:get|find)|hard work|honest work|day labour|day labor)?$/i;
 
     /** "everything", "my herbs", "the lot" - a category, never a name. */
     private static readonly SELL_EVERYTHING =
@@ -7285,6 +7828,15 @@ ${noticed}`;
             return holding.length > 0 ? holding[holding.length - 1] : null;
         }
 
+        // The last of a list that has ONE order, which is the whole of what
+        // makes this reproducible. See `oneCrowd` in `hearsay.ts`: this used to
+        // read the last element of two independently-sorted halves stuck
+        // together, so the same seed on the same day could hand
+        // `combat_manage.resolve` a different opponent, and the stream is
+        // seeded on the opponent's id. Nothing about "nearest" is computed
+        // here - there is no distance in this world model - and the honest
+        // version of that is a stated arbitrary order rather than an unstated
+        // one.
         return here.length > 0 ? here[here.length - 1] : null;
     }
 
@@ -7793,6 +8345,36 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     // largest sum a low cultivator ever sees. Same defect class as `work` and
     // `join`: a tool surface written for a model that will phrase the figures,
     // called by something that has to phrase them itself.
+    // A master's read of a student, which is a sentence about a person and not
+    // about a place. `handleAssess` returns rows and no narration hint.
+    if (body.against === 'student') {
+        const stall = body.stall as {
+            yearsAtCurrentRealm?: number; stagnationYears?: number;
+            stalled?: boolean; yearsPast?: number; yearsRemaining?: number;
+        } | undefined;
+        const assessor = body.assessor as
+            { name?: string; rank?: string; rungsAbove?: number } | null | undefined;
+
+        lines.push(assessor
+            ? `${assessor.name ?? 'Somebody'} stands ${assessor.rungsAbove ?? 0} rung`
+              + `${assessor.rungsAbove === 1 ? '' : 's'} above you, at ${assessor.rank ?? 'an unnamed rank'}, `
+              + 'and is qualified to say anything at all about where you are.'
+            : 'Nobody standing over you is standing above you. Whatever comes next is not in '
+              + 'this house, and nobody in it is in a position to tell you what it is.');
+
+        if (stall) {
+            lines.push(stall.stalled
+                ? `${Math.round(stall.yearsAtCurrentRealm ?? 0)} years at this rung against the `
+                  + `${Math.round(stall.stagnationYears ?? 0)} the ladder credits. You are `
+                  + `${Math.round(stall.yearsPast ?? 0)} years past the point where sitting still `
+                  + 'stops being patience.'
+                : `${Math.round(stall.yearsAtCurrentRealm ?? 0)} years at this rung, of the `
+                  + `${Math.round(stall.stagnationYears ?? 0)} the ladder credits. `
+                  + `${Math.round(stall.yearsRemaining ?? 0)} still counted.`);
+        }
+        if (typeof body.note === 'string') lines.push(body.note);
+    }
+
     if (body.paid === true) {
         const payingSect = body.sect as { name?: string } | undefined;
         const stones = typeof body.spiritStonesPaid === 'number' ? body.spiritStonesPaid : 0;
