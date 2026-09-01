@@ -811,7 +811,33 @@ options are *stay* and *defect* is missing most of the board.
 | **Found your own house** | everything, at first | you hold a road nobody will teach you further on |
 | **Defect to a neutral apex** | nothing, and they reward you for coming | you are qualified, blocked, and worth something to a body that large |
 | **Disband the house and leave** | it ends; you answer to nobody afterwards | you are senior enough to end it, and there is nothing left worth holding |
+| **Be named heir** | you become the thing others are measured against | the house has a successor posting and you can be the one demonstrably worth it |
+| **Contest the seat** | you have to win, and losing is not neutral | the person in the way will not move and the gap is small enough to be a fight |
+| **Be expelled** | chosen for you, and it takes your standing with it | you became a problem, which a blocked person eventually does |
 | **Go rogue** | no shelf, no backing, no materials | every door above is shut, or you want none of them |
+
+### Three of these do not wait for a seat, which is the commonest reason to be stuck
+
+Measured in a seeded world: **244 people are qualified for their next rank and blocked purely
+because there is no seat**, against 21 who are simply outranked. So the ordinary situation is
+not being unworthy and not being un-booked - it is meeting every bar and waiting on somebody
+who is not going to die soon. Seat scarcity is deliberate and correct (see `seatsAtRank`), so
+the answer is not more seats; it is that the people it blocks should *act*.
+
+Three exits sidestep the queue rather than joining it:
+
+- **Being named heir** puts somebody outside the ordinary ladder entirely. Most houses have a
+  successor posting that is awarded on what a person demonstrably is rather than on how long
+  they have waited, and `seatsAtRank` already says the top seat changes hands by succession
+  rather than by promotion. Who holds that posting, and who resents it, is one of the better
+  political situations this world can produce.
+- **Contesting the seat** is the direct version. The person in the way is a person, not a
+  rule. The engine already prices a fight across a rung gap and already refuses lopsided ones
+  outright, so the arithmetic for this exists - what is missing is anybody reaching for it.
+- **Being expelled** is the involuntary one, and it belongs in the list because it is what
+  happens to a blocked person who becomes a problem. It is an exit that is taken *for* you,
+  it costs the standing you were waiting to spend, and the leadership surface already has the
+  verb.
 
 ### Money cannot buy a house, and it can buy the people in one
 
