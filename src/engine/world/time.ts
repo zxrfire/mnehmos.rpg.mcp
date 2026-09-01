@@ -486,7 +486,7 @@ export function advanceTime(
             `Lifespan exhausted at ${rank}. Died of old age.`
         );
         state.npcs[i] = dead;
-        const fact = appendWorldFact(state, makeFact({
+        appendWorldFact(state, makeFact({
             day: onDay,
             kind: 'death',
             scale: 'personal',
@@ -497,7 +497,12 @@ export function advanceTime(
             visibility: npc.cultivation.realmOrdinal >= 13 ? 'regional' : 'faction',
             magnitude: Math.min(1, 0.15 + npc.cultivation.realmOrdinal * 0.025)
         }));
-        state.npcs[i] = { ...state.npcs[i], historyFactIds: state.npcs[i].historyFactIds.concat(fact.id) };
+        // The back-link used to be written here, unguarded, and `appendWorldFact`
+        // now does it - the deceased is an actor on their own death. Two writes
+        // was harmless only while every fact had a fresh id; once a recurring
+        // statement became one row that absorbs later occurrences, the second
+        // write started putting the same id onto the same person again and
+        // again. Removed rather than guarded, because one writer is the point.
         deaths.push({ npcId: npc.id, name: npc.name, onDay, rank });
         changes.push({
             entity: 'npc', entityId: npc.id, field: 'status',

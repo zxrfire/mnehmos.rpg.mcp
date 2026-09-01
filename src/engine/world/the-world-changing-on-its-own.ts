@@ -2593,7 +2593,18 @@ const TEMPLATES: Template[] = [
                 unattributed: up
                     ? 'Everything in the market costs more than it did and nobody can say why.'
                     : 'The market is full of things nobody is buying.',
-                data: { priceFactor: Number(factor.toFixed(3)) },
+                // The factor is NOT repeated here. It is stored on the location
+                // change this fact cites, which is the record that owns it and
+                // the one anybody reading a price actually consults - nothing
+                // has ever read it off the fact.
+                //
+                // Copying it onto the fact as well had a second cost that was
+                // not obvious: it made every price move a different row from
+                // every other, so a province's market produced forty
+                // indistinguishable statements over two thousand years and the
+                // ledger could not fold them. The change ids concatenate on a
+                // fold, so every occurrence's own factor survives where it lives.
+                //   See `a-fact-that-keeps-happening-is-one-row.ts`.
                 consequences: {
                     immediate: 'Prices moved.',
                     tenYearsLater: 'The old price is what people quote when they are complaining.'
