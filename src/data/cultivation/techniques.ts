@@ -287,7 +287,11 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // this list cannot make.
     'word-of-continuance',
     'heaven-conversing-primordial-canon',
-    'chaos-origin-scripture'
+    'chaos-origin-scripture',
+    // The wide-span treasure. Nobody teaches a book that makes four of
+    // their own manuals redundant, and no house has ever held a copy long
+    // enough to decide whether it would.
+    'single-road-treatise'
 ]);
 
 /** Arts that only ever surface in a grave deposit. */
@@ -665,6 +669,24 @@ export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>)
 }
 
 /**
+ * Whether a manual reaches further than its own realm geometry would give it.
+ *
+ * `capOf` is `realmEnd + 1`, so an ordinary book carries a reader through one
+ * realm and one rung over the boundary. A manual whose `cap` exceeds that is
+ * a WIDE-SPAN book: it lets somebody skip, which nothing else in the catalog
+ * does, and it is the reason a ruin is worth entering rather than a way to
+ * save four rungs.
+ *
+ * Derived rather than flagged, so nothing can claim to be a treasure without
+ * actually reaching further than one.
+ */
+export function isWideSpan(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal' | 'cap'>): boolean {
+    if (classOf(t) !== 'cultivation' || t.cap === null) return false;
+    const ordinary = capOf(t);
+    return ordinary !== null && t.cap > ordinary;
+}
+
+/**
  * Authoring helper. Mastery is per-cultivator state, never catalog state, so
  * every entry starts at zero and the factory keeps that out of the literals.
  * Provenance is resolved from the id sets above rather than repeated on every
@@ -673,7 +695,7 @@ export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>)
  * an art with none carries its own reason in place of the generic note.
  */
 function art(
-    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable'>
+    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening'>
         & {
             opacity?: Opacity;
             class?: TechniqueClass;
@@ -681,6 +703,7 @@ function art(
             rootGrades?: readonly string[];
             domain?: InsightDomain | null;
             domainDegree?: number;
+            opening?: { rungs: number; rateMultiplier: number } | null;
         }
 ): TechniqueEntry {
     const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
@@ -712,6 +735,7 @@ function art(
         // copies are, so a new entry cannot forget them.
         volumes: SCATTERED_MANUAL_VOLUMES[t.id] ? [...SCATTERED_MANUAL_VOLUMES[t.id]] : null,
         derivable: DERIVABLE_TECHNIQUE_IDS.has(t.id),
+        opening: t.opening ?? null,
         notDerivableReason: NOT_DERIVABLE_NOTES[t.id] ?? null
     };
 }
@@ -2253,6 +2277,90 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Named from below, after the only occasion anybody down here has watched the rung work: something came down into a courtyard, crossed it, and the matter was finished. The writings are not an account of that afternoon and the sender has never been asked whether they are related. Three archives hold the incident and none of them holds this.'
     }),
     art({
+        // A SECOND ROAD AT 17-20, which had exactly one and wanted fire.
+        //
+        // The corridor above the middle is single-file by design and was
+        // single-file to the point of being uninhabitable: a metal root
+        // standing at Core Formation had one book in the entire world and it
+        // was written for somebody else. Two roads is not a menu; it is the
+        // difference between a narrow world and a closed one.
+        id: 'iron-silt-settling-canon',
+        name: 'Iron-Silt Settling Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: 'metal',
+        requiredOrdinal: 17,
+        qiCost: 38,
+        damage: null,
+        cooldown: 0,
+        description:
+            'Accumulation by precipitation rather than by draw: the practitioner sits in moving water carrying metal silt and lets the core form around what settles. It is slower than the fire road and enormously more forgiving of being interrupted, which is why it is the method of choice for anybody whose life contains other people.'
+    }),
+    art({
+        // A SECOND ROAD AT 33-35, which had exactly one, wanted a mutated ice
+        // root, and was held by a single house that admits nobody else.
+        //
+        // That was the narrowest point on the whole ladder and the clearest
+        // case of the corridor being too thin to be a world: a fire root
+        // arriving at Body Integration had nothing at all in front of it, in
+        // any house, at any price.
+        id: 'ash-lung-tempering-canon',
+        name: 'Ash-Lung Tempering Canon',
+        category: 'cultivation',
+        grade: 'immortal',
+        element: 'fire',
+        requiredOrdinal: 33,
+        qiCost: 300,
+        damage: null,
+        cooldown: 0,
+        domain: 'body',
+        domainDegree: 2,
+        description:
+            'The body integrated through heat rather than through stillness, which the orthodox road regards as a shortcut and which is in fact simply a different and worse-documented amount of work. The practitioner breathes fire-ash until the lungs stop objecting, and the ones it does not kill come out the far side able to do something the still road cannot teach at all.'
+    }),
+    art({
+        // THE WIDE-SPAN BOOK. The one manual in the catalog that lets somebody
+        // skip, and the shape of what a treasure has to be.
+        //
+        // Every other manual carries a reader through exactly one realm and one
+        // rung over the boundary, because `capOf` is realm geometry. This one
+        // opens at Foundation and closes at Body Integration - twenty rungs,
+        // five ordinary books' worth - which is why finding it is worth a ruin
+        // rather than worth four rungs.
+        //
+        // WHAT IT IS GATED ON IS NOT RANK. `requiredOrdinal` is the wrong
+        // instrument for a treasure: put a cap-33 book behind ordinal 29 and it
+        // can no longer skip anything, which is the whole of what it is for. So
+        // it opens at 13, where its grade band opens, and the gate is
+        // comprehension instead - `domain: 'void'` at the deepest degree the
+        // catalog uses. That is the one axis money cannot buy, because it comes
+        // from what has happened to somebody rather than from how long they
+        // have sat, and a well-funded heir at Foundation is exactly as far from
+        // it as a beggar.
+        //
+        // AND THE OPENING IS BRUTAL. Eight rungs at a fifth rate: somebody
+        // handed this at thirteen crawls to twenty-one on a book that should
+        // have carried them there in a third of the time, and only then does it
+        // open up. It cannot be coasted on. That is the second half of the
+        // price, and it is why the book is a decision rather than a windfall.
+        id: 'single-road-treatise',
+        name: 'Treatise on the Single Road',
+        category: 'cultivation',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 13,
+        cap: 33,
+        opening: { rungs: 8, rateMultiplier: 0.2 },
+        domain: 'void',
+        domainDegree: 3,
+        qiCost: 44,
+        damage: null,
+        cooldown: 0,
+        opacity: 0.85,
+        description:
+            'One method, held without substitution from the foundation to the integrated body, written by somebody who evidently never changed books and appears not to have understood that everybody else does. It is the only surviving argument that the succession of manuals is a convenience rather than a law, and the reason nobody has been able to check is that the argument cannot be started without an understanding of absence that almost nobody at Foundation has any way to have acquired.'
+    }),
+    art({
         id: 'canon-of-the-unwritten-span',
         name: 'Canon of the Unwritten Span',
         category: 'cultivation',
@@ -2464,3 +2572,141 @@ export function gradeForOrdinal(ordinal: number): TechniqueGrade {
     // cultivator who completed the crossing is past manuals; report the top.
     return 'chaos';
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// LIVING TEACHERS
+//
+// A sixth route, and the one the catalog had no way to express. `provenance`
+// answers how a COPY would reach a reader - a shelf, a tomb, a body, a face,
+// an estate - and every one of those is paper. A person is not paper.
+//
+// The engine has always known the difference and said so twice. `opacity` is
+// how much of an art fails to survive being written down, which is why the
+// catalog can describe famous manuals "held for centuries by houses full of
+// people who can recite them and cannot perform them". And `guidanceMultiplier`
+// prices a master by the gap between them and the student. Both of those said
+// a person transmits better than a book, and neither could be used to GET a
+// method, because nothing in the data said which person held which one.
+//
+// This is that. It is a join table, not a second technique catalog: the arts
+// are the same rows read by the same code, and what is new is a name attached
+// to one, and a price that is not money.
+//
+// THREE RULES, and they are what keep this from being a shop.
+//
+//   1. A teacher stands at or above the manual's cap. Guidance is priced on
+//      the gap between guide and guided, and somebody who has not stood where
+//      the book ends cannot walk anybody to it. This is checked.
+//   2. What they want is never only stones. Every price here is a thing about
+//      the student or about the teacher's own unfinished business, because a
+//      method somebody can buy is a shelf with extra steps.
+//   3. A teacher is not a shortcut past the corridor's shape. They hold arts
+//      that exist, at rungs the corridor already gates, and being taught by
+//      one is a way THROUGH a choke point rather than around it.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface LivingTransmission {
+    /** The person, by their row in `members.ts`. */
+    memberId: string;
+    /** What they can personally carry somebody through. Real technique ids. */
+    techniqueIds: readonly string[];
+    /** What they want for it. Never money alone - see rule 2. */
+    wants: string;
+    /**
+     * Why the person and not the shelf they stand next to.
+     *
+     * The load-bearing field. If a house teaches the same art off its own
+     * shelf, the individual adds nothing and this row should not exist.
+     */
+    whyNotTheShelf: string;
+}
+
+export const LIVING_TRANSMISSIONS: readonly LivingTransmission[] = [
+    {
+        memberId: 'member-xu-zhenshan',
+        techniqueIds: ['mountain-vein-devouring-canon'],
+        wants:
+            'To be taken to a perimeter he has not surveyed, and left alone at it for a season. He will not say which perimeters he has already done and he keeps the list on him.',
+        whyNotTheShelf:
+            'The Anchorhold teaches the canon and teaches it badly, because the house understands it as a method for drawing on a vein and Xu Zhenshan is the only person in either province who has worked out that it is a method for measuring one. The shelf version works. His version tells the student what they are standing on, which is a different art wearing the same title.'
+    },
+    {
+        // Was the Flame Sovereign, who stands at 34 and cannot walk anybody to
+        // 37. The guard caught it, which is the guard doing its job: a teacher
+        // who has not stood where the book ends cannot take a student there,
+        // and the whole value of a person over a shelf is that they have.
+        memberId: 'member-the-one-who-introduces-herself-as-four-bonds-and-a-name',
+        techniqueIds: ['ash-lung-tempering-canon'],
+        wants:
+            'That the student keeps whatever they came in holding. She will not take a severance and will not witness one, and she has never explained why to anybody who did not already know.',
+        whyNotTheShelf:
+            'The Severed shelve this canon and will teach it to their own, at the Severed price: the house takes something first, itemised, in advance, and the itemisation is the point of the house. She teaches the same canon and takes nothing, which is not a discount - it is the single largest disagreement inside a house that agrees on almost everything, and everybody involved understands that she is allowed to do it because of what she paid to be allowed to.'
+    },
+    {
+        memberId: 'member-court-sovereign-yan-shu',
+        techniqueIds: ['rime-heart-stillness-canon'],
+        wants:
+            'Nothing that can be given. She teaches the two or three people a century who arrive already holding a mutated ice root and already at Body Integration, and what she wants from them is that they stay, which most of them do.',
+        whyNotTheShelf:
+            'This is the narrowest door in the world and it is a door rather than a wall only because of her. The Frostmirror Court will not open its library to anybody without a mutated ice root, so the library is not a route for the overwhelming majority of the ladder - and the Sovereign is the reason the remaining few do not simply have to steal it.'
+    },
+    {
+        memberId: 'member-pei-hanzhang',
+        techniqueIds: ['void-tide-breathing-canon'],
+        wants:
+            'The name of who opened the site he took it out of, which he does not have and has wanted for two hundred years. He will teach on the strength of a credible lead and has twice taught on an incredible one.',
+        whyNotTheShelf:
+            'No shelf anywhere holds it. It is a ruin manual and its only other route is a trial calibrated for the disciples of a house that no longer exists - so a living person who dug it up, read it, and survived it is the single most valuable thing at Void Refinement that a cultivator can actually walk up to and talk to.'
+    },
+    {
+        memberId: 'member-ru-anwei',
+        techniqueIds: ['heaven-conversing-primordial-canon'],
+        wants:
+            'To be asked in person, which is the entire difficulty. She has not left the inner hall in three hundred and eighty years and the whole of the Pavilion exists to make sure nobody needs her to.',
+        whyNotTheShelf:
+            'There is no shelf. The canon is a parting gift in a shed and three loose volumes in three houses, and she is the only living person known to have read the whole of it. She is also, and not coincidentally, the reason the 37-40 stretch is survivable at all: the alternative to a dead woman\'s estate is a living woman\'s attention, and the second is harder to get and worth more.'
+    }
+];
+
+const TRANSMISSIONS_BY_TECHNIQUE: ReadonlyMap<string, readonly LivingTransmission[]> = (() => {
+    const map = new Map<string, LivingTransmission[]>();
+    for (const t of LIVING_TRANSMISSIONS) {
+        for (const id of t.techniqueIds) {
+            const bucket = map.get(id);
+            if (bucket) bucket.push(t);
+            else map.set(id, [t]);
+        }
+    }
+    return map;
+})();
+
+/** Who could personally carry somebody through this art. */
+export function teachersOf(techniqueId: string): readonly LivingTransmission[] {
+    return TRANSMISSIONS_BY_TECHNIQUE.get(techniqueId) ?? [];
+}
+
+/**
+ * How far this teacher can actually take a student in this art.
+ *
+ * Their own rung or the book's cap, whichever is lower - because guidance is
+ * priced on the gap between guide and guided, so nobody walks anybody past
+ * where they themselves have stood.
+ *
+ * That produces a fact worth having rather than a rounding error. The
+ * Rime-Heart Stillness Canon ends at 37 and the Frostmirror Court's highest
+ * living member stands at 36, so the last rung of the narrowest book in the
+ * world has no living teacher anywhere and has to be walked alone. Nobody
+ * authored that; it fell out of the two numbers.
+ */
+export function carriesTo(memberOrdinal: number, techniqueId: string): number | null {
+    const art = getTechnique(techniqueId);
+    if (!art || art.class !== 'cultivation') return null;
+    if (art.cap === null) return memberOrdinal;
+    return Math.min(memberOrdinal, art.cap);
+}
+
+/** Everything this person can transmit. */
+export function transmissionsBy(memberId: string): readonly LivingTransmission[] {
+    return LIVING_TRANSMISSIONS.filter(t => t.memberId === memberId);
+}
+

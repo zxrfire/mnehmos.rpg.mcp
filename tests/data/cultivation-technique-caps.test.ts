@@ -24,11 +24,17 @@ import {
     TECHNIQUES,
     capOf,
     classOf,
+    isWideSpan,
+    LIVING_TRANSMISSIONS,
+    teachersOf,
+    transmissionsBy,
+    carriesTo,
     getTechnique
 } from '../../src/data/cultivation/techniques.js';
 import { houseTeachingCeiling } from '../../src/data/cultivation/index.js';
 import { PILLS, isAdvancement } from '../../src/data/cultivation/pills.js';
 import { getArtifact } from '../../src/data/cultivation/artifacts.js';
+import { MEMBERS } from '../../src/data/cultivation/members.js';
 import { shardPower } from '../../src/engine/world/possessions.js';
 import { SECTS } from '../../src/data/cultivation/sects.js';
 import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
@@ -88,7 +94,34 @@ describe('only manuals carry a ceiling', () => {
     });
 
     it('derives the cap rather than authoring it per entry', () => {
-        for (const t of TECHNIQUES) expect(t.cap, t.id).toBe(capOf(t));
+        // Except the wide-span books, which are the whole point of there being
+        // an override: a treasure reaches further than its realm geometry, and
+        // that is exactly what makes it a treasure rather than four saved rungs.
+        for (const t of TECHNIQUES) {
+            if (isWideSpan(t)) continue;
+            expect(t.cap, t.id).toBe(capOf(t));
+        }
+    });
+
+    it('keeps the wide-span books rare, and gated on something money cannot buy', () => {
+        const wide = MANUALS.filter(isWideSpan);
+        expect(wide.length, 'a skip has to exist').toBeGreaterThan(0);
+        // Rare. If half the catalog lets you skip, the corridor is gone.
+        expect(wide.length / MANUALS.length).toBeLessThan(0.15);
+        for (const t of wide) {
+            // Gated on comprehension rather than on rank, which is the whole
+            // design: `requiredOrdinal` is the wrong instrument for a treasure
+            // because gating a cap-33 book behind ordinal 29 stops it skipping
+            // anything. Comprehension is the axis money cannot buy.
+            expect(t.domain, t.id + ' must be dao-gated').not.toBeNull();
+            expect(t.domainDegree, t.id).toBeGreaterThanOrEqual(2);
+            // And the opening is hard, so it cannot be coasted on.
+            expect(t.opening, t.id + ' needs a hard opening').not.toBeNull();
+            expect(t.opening!.rateMultiplier, t.id).toBeLessThan(0.5);
+            expect(t.opening!.rungs, t.id).toBeGreaterThan(0);
+            // Nobody teaches a book that makes four of their own redundant.
+            expect(t.provenance, t.id).not.toBe('taught');
+        }
     });
 
     it('stops dead at the cap rather than tapering toward it', () => {
@@ -126,6 +159,9 @@ describe('the succession of books', () => {
             if (progressRequiredForOrdinal(realm.ordinalStart) === null) continue;
             for (const manual of MANUALS.filter(t => t.requiredOrdinal === realm.ordinalStart)) {
                 if (manual.cap === null) continue;
+                // A wide-span book is not part of the ordinary succession; it
+                // is the thing that lets somebody leave it.
+                if (isWideSpan(manual)) continue;
                 expect(manual.cap, `${manual.id} should hand off at a boundary`)
                     .toBe(realm.ordinalEnd + 1);
                 // A book that carries somebody as far as the Lid has nothing
@@ -580,5 +616,117 @@ describe('every choke point has more than one way through', () => {
         // The estate route is untouched: the complete work is still where it
         // was, and it is still the better prize.
         expect(canon.survivingCopy).toBe(true);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// LIVING TEACHERS
+//
+// The sixth route. `provenance` answers how a COPY reaches a reader and every
+// one of its answers is paper; a person is not paper, and the engine has
+// always known the difference - `opacity` is how much of an art fails to
+// survive being written down, and `guidanceMultiplier` prices a master by the
+// gap. Neither could be used to GET a method, because nothing said which
+// person held which one.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('a person can be the source of a method, not only a shelf', () => {
+    it('names a real person and a real art on every row', () => {
+        expect(LIVING_TRANSMISSIONS.length).toBeGreaterThan(0);
+        for (const t of LIVING_TRANSMISSIONS) {
+            const member = MEMBERS.find(m => m.id === t.memberId);
+            expect(member, `${t.memberId} is not in the cast`).toBeDefined();
+            expect(t.techniqueIds.length, t.memberId).toBeGreaterThan(0);
+            for (const id of t.techniqueIds) {
+                const art = getTechnique(id);
+                expect(art, `${t.memberId} teaches missing art ${id}`).toBeDefined();
+                // Only cultivation manuals. A dao art is not a rank ceiling and
+                // teaching one is a different route with a different meaning.
+                expect(art!.class, id).toBe('cultivation');
+            }
+        }
+    });
+
+    it('never lets somebody teach past where they themselves have stood', () => {
+        // The rule that keeps this from being a shop. Guidance is priced on the
+        // gap between guide and guided, and somebody who has not stood where
+        // the book ends cannot walk anybody to it.
+        for (const t of LIVING_TRANSMISSIONS) {
+            const member = MEMBERS.find(m => m.id === t.memberId)!;
+            for (const id of t.techniqueIds) {
+                const art = getTechnique(id)!;
+                // Strictly above where the student BEGINS, which is the rule
+                // guidance actually implies. How far they can then take them is
+                // derived: their own rung or the cap, whichever is lower.
+                expect(
+                    member.realmOrdinal,
+                    `${member.name} stands at ${member.realmOrdinal}, below the start of ${art.id}`
+                ).toBeGreaterThan(art.requiredOrdinal);
+                const reach = carriesTo(member.realmOrdinal, id)!;
+                expect(reach, id).toBeGreaterThan(art.requiredOrdinal);
+                if (art.cap !== null) expect(reach, id).toBeLessThanOrEqual(art.cap);
+            }
+        }
+    });
+
+    it('asks for something that is not money', () => {
+        // A method somebody can buy is a shelf with extra steps.
+        for (const t of LIVING_TRANSMISSIONS) {
+            expect(t.wants.length, t.memberId).toBeGreaterThan(40);
+            expect(t.whyNotTheShelf.length, t.memberId).toBeGreaterThan(80);
+            expect(t.wants.toLowerCase()).not.toMatch(/spirit stones|a fee|price of/);
+        }
+    });
+
+    it('puts a teacher at the choke points, which is where a person is worth most', () => {
+        // Not everywhere - a teacher for the market-town book would be absurd.
+        // At the rungs where the world offers exactly one continuation, a
+        // living alternative is the difference between a door and a wall.
+        const taught = new Set(LIVING_TRANSMISSIONS.flatMap(t => t.techniqueIds));
+        let chokesCovered = 0;
+        let chokes = 0;
+        for (let ordinal = 0; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
+            const continues = MANUALS.filter(t =>
+                t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
+            if (continues.length !== 1) continue;
+            chokes++;
+            if (taught.has(continues[0].id)) chokesCovered++;
+        }
+        expect(chokes, 'the corridor still has choke points').toBeGreaterThan(0);
+        expect(chokesCovered, 'no choke point has a living teacher').toBeGreaterThan(0);
+    });
+
+    it('resolves both directions of the lookup', () => {
+        for (const t of LIVING_TRANSMISSIONS) {
+            expect(transmissionsBy(t.memberId)).toContain(t);
+            for (const id of t.techniqueIds) expect(teachersOf(id)).toContain(t);
+        }
+        expect(teachersOf('no-such-art')).toHaveLength(0);
+        expect(transmissionsBy('member-nobody')).toHaveLength(0);
+    });
+});
+
+describe('the corridor is a little wider than it was', () => {
+    it('leaves no realm above the middle with a single element locking it', () => {
+        // The failure the design agent measured: a fire root standing at Body
+        // Integration had nothing at all in front of it, in any house, at any
+        // price, because the one continuation was ice. One book per rung is a
+        // narrow world; one book per rung that also demands one element is a
+        // closed one.
+        const stranded: string[] = [];
+        for (let ordinal = 13; progressRequiredForOrdinal(ordinal) !== null; ordinal++) {
+            const continues = MANUALS.filter(t =>
+                t.requiredOrdinal <= ordinal && (t.cap === null || t.cap > ordinal));
+            if (continues.length === 0) continue;
+            const elements = new Set(continues.map(t => t.element));
+            // Either somebody has an elementless option, or there is more than
+            // one element on offer. A single elemental book and nothing else
+            // strands every other root in the world.
+            if (elements.size === 1 && !elements.has(null)) {
+                stranded.push(`${ordinal} (only ${[...elements][0]})`);
+            }
+        }
+        expect(stranded, `element-locked with no alternative at ordinal ${stranded.join(', ')}`)
+            .toHaveLength(0);
     });
 });

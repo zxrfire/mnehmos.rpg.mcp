@@ -880,9 +880,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     },
 
     // ── the two Azure feeders ──────────────────────────────────────────
-    // The Pavilion holds no courts and grants to nobody except these, which is
-    // the whole of its structure. A court administers an arterial vein for an
-    // apex; a feeder does not administer anything - it takes people the apex is
+    // The Pavilion grants to nobody except these two, which is the whole of its
+    // structure, and one of them has since been promoted to its court - the Mist,
+    // on the same ground, with the same four people. A court administers an
+    // arterial vein for an apex; a feeder does not administer anything - it takes people the apex is
     // not currently willing to hold and keeps them where they can be watched.
     //
     // Being sent down to one is not a disgrace and nobody in the Low Fall reads
@@ -967,6 +968,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         admissionOrdinal: 6,
         stipend: [10, 30, 90, 300, 1_000, 3_000],
         teaches: [
+            // A metal road at Core Formation, and the reason there is now more than
+            // one: the fire canon was the only continuation at 17-20 in the
+            // whole world, so a metal root arrived here with nothing.
+            'iron-silt-settling-canon',
             'lesser-qi-gathering-manual',
             'shadow-splitting-gait',
             'formless-severing-intent',
@@ -1082,6 +1087,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         admissionOrdinal: 5,
         stipend: [6, 20, 60, 190, 600, 1_500],
         teaches: [
+            // The forge's own road, taught the way the Consortium does not: slowly,
+            // and to people who already work metal.
+            'iron-silt-settling-canon',
             'scarlet-ember-palm',
             'ashfall-crescent',
             'cinder-lotus-blossom',
@@ -1275,6 +1283,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         admissionOrdinal: 5,
         stipend: [15, 50, 170, 550, 1_800, 6_000],
         teaches: [
+            // The only house in the region whose record supports teaching a Body
+            // Integration manual, and the only alternative anywhere to an ice
+            // canon held by a court that admits mutated roots and nobody else.
+            'ash-lung-tempering-canon',
             'shadow-splitting-gait',
             'crimson-tithe-palm',
             'meridian-devouring-art',
