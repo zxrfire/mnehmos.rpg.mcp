@@ -199,6 +199,141 @@ function lifespanRemaining(derived = S.derived) {
 }
 
 /**
+ * The two clocks a cultivator is standing between, read off the engine.
+ *
+ * Both of them used to be half-invented here. `50` was written into four
+ * places in this file - the meter's maximum, its note, the warning list and the
+ * seclusion picker - and 50 is the FLOOR, true only through Foundation
+ * Establishment. `stagnationYearsForOrdinal` is a fifth of the realm's own span
+ * above that, so a Core Formation cultivator was being told 50 where the ladder
+ * credits 100, and somebody at Tribulation Transcendence the same 50 against
+ * 20,000. The sentence under it - "Fifty years without advancing is fatal" -
+ * had been a true statement when it was written and had silently become a lie
+ * for everybody above the second realm.
+ *
+ * They are gathered into one function rather than fixed four times because
+ * that is how the same defect comes back: four copies drift, one does not.
+ *
+ * `nearer` is the point of the whole thing. The panel showed both figures side
+ * by side and never related them, and relating them is the only thing a player
+ * actually needs from a pair of countdowns - it is the difference between "I
+ * have time" and "I must move now". Nothing here is computed that the engine
+ * did not send; the subtraction of two of its own numbers is the most this
+ * layer is allowed to do.
+ */
+function mortalClocks(derived = S.derived, cultivator = S.cultivator) {
+  const d = derived || {};
+  const c = cultivator || {};
+
+  const age = Number(c.age) || 0;
+  const lifeLeft = Number(d.lifespanRemaining);
+  const lifeSpan = Number(d.lifespanYears);
+
+  const stag = Number(c.yearsAtCurrentRealm) || 0;
+  const stagLimit = Number(d.stagnationYears);
+  const stagLeft = Number.isFinite(stagLimit) ? Math.max(0, stagLimit - stag) : NaN;
+
+  // Which of the two ends this life first. Null while either is unknown -
+  // saying nothing beats guessing, since a wrong answer here is exactly the
+  // sentence a player would act on.
+  let nearer = null;
+  if (Number.isFinite(lifeLeft) && Number.isFinite(stagLeft)) {
+    nearer = stagLeft <= lifeLeft ? 'settling' : 'lifespan';
+  }
+
+  return {
+    age,
+    lifeLeft,
+    lifeSpan,
+    // How much of this rung's span is gone. The argument for crossing young in
+    // one number: a rung reached early is a rung with runway left on it.
+    spanBurnt: Number.isFinite(lifeSpan) && lifeSpan > 0 ? age / lifeSpan : NaN,
+    stag,
+    stagLimit,
+    stagLeft,
+    // The engine's own age term on the next crossing, and the age it starts at.
+    pressure: Number(d.lifespanPressure),
+    pressureFrom: Number(d.lifespanPressureFromAge),
+    nearer
+  };
+}
+
+/**
+ * The sentence under the settling clock.
+ *
+ * It used to read "Fifty years without advancing is fatal", which was wrong
+ * twice. Wrong about the number above Foundation Establishment, and wrong about
+ * what the thing IS: settling is a decision somebody makes - to stop striking,
+ * consolidate, and live the span out at the rung they reached - and the clock
+ * is the deadline on that decision, not a fuse. Reaching the deadline still
+ * settles you, permanently, and the wording has to carry both halves: you may
+ * choose it, and if you do not choose it in time it is chosen for you.
+ *
+ * Written with digits rather than a spelled-out number so it survives a
+ * cultivator at Tribulation Transcendence, where the figure is 20,000.
+ */
+function settlingNote(clocks, derived) {
+  const limit = fmtNum(clocks.stagLimit, 0);
+  const rung = (derived && derived.rankName) ? derived.rankName : 'this rung';
+  if (clocks.stagLeft <= 0) {
+    return `${limit} years at ${rung} and the ladder no longer credits them. Settled: alive, `
+      + 'at this rung, and finished climbing.';
+  }
+  return `${limit} years is what ${rung} credits. Spend them and the choice is made for you - `
+    + `settled here, alive, and finished climbing. ${fmtNum(clocks.stagLeft)} left to make it `
+    + 'yourself.';
+}
+
+/**
+ * The line that relates the two clocks, which is the whole reason they sit in
+ * the same section.
+ *
+ * Three facts, in the order a player needs them: which clock ends this life
+ * first, what the span already spent is costing the next crossing, and - the
+ * one that is otherwise invisible - how much runway is left before it starts
+ * costing anything. That last one is the argument for striking a marginal
+ * crossing now instead of gathering for another fifty years, because crossing
+ * resets you into a longer span with none of it spent.
+ *
+ * Everything printed here is a subtraction of two numbers the engine sent.
+ */
+function reckoning(clocks, derived) {
+  if (!clocks.nearer) return '';
+
+  const settlingFirst = clocks.nearer === 'settling';
+  const head = settlingFirst ? 'Settling comes first' : 'The span comes first';
+  const body = settlingFirst
+    ? `${fmtNum(clocks.stagLeft)} years before this rung stops crediting them, against `
+      + `${fmtNum(clocks.lifeLeft)} of lifespan. The climb ends before the body does.`
+    : `${fmtNum(clocks.lifeLeft)} years of lifespan left, against ${fmtNum(clocks.stagLeft)} `
+      + 'before settling. The body goes first; the rung would have held you longer.';
+
+  // The consequence half. Lifespan on its own is a countdown with nothing
+  // attached to it, and this is the thing attached: the crossing is priced
+  // against how much of the span is gone, so waiting is never free.
+  let pressure = '';
+  if (clocks.pressure < 0) {
+    pressure = `The next crossing already carries ${fmtSignedPct(clocks.pressure)} for the span `
+      + 'you have spent, and every year makes it worse. Striking at poor odds beats striking later.';
+  } else if (Number.isFinite(clocks.pressureFrom)) {
+    const runway = clocks.pressureFrom - clocks.age;
+    pressure = runway > 0
+      ? `No age penalty on the next crossing yet; it begins at ${fmtNum(clocks.pressureFrom, 0)}, `
+        + `which is ${fmtNum(runway)} years away. Cross before then and you arrive at the next `
+        + 'rung with its whole span unspent.'
+      : 'No age penalty on the next crossing.';
+  }
+
+  const tone = settlingFirst ? 'tone-warn' : 'tone-bad';
+  return html`
+    <div class="reckoning ${raw(tone)}">
+      <div class="reckoning__head">${head}</div>
+      <p class="reckoning__body">${body}</p>
+      ${pressure ? raw(html`<p class="reckoning__body">${pressure}</p>`) : ''}
+    </div>`;
+}
+
+/**
  * Highest legal ordinal, taken from the ladder the engine served.
  *
  * The fallback is only reached before /api/reference/ladder has answered. It
@@ -743,26 +878,35 @@ function renderWarnings() {
     });
   }
 
-  // 3. Stagnation at the current realm (fatal at 50 years).
-  const stag = Number(c.yearsAtCurrentRealm) || 0;
-  if (stag >= 45) {
+  // 3. The settling clock, which is NOT fifty years everywhere. It is the
+  //    engine's `stagnationYearsForOrdinal`, arriving on `derived`, and the
+  //    thresholds are fractions of it rather than the 45 and 35 that were cut
+  //    against a 50-year assumption.
+  const clocks = mortalClocks(d, c);
+  const stag = clocks.stag;
+  const stagRatio = Number.isFinite(clocks.stagLimit) && clocks.stagLimit > 0
+    ? stag / clocks.stagLimit
+    : 0;
+  if (stagRatio >= 0.9) {
     items.push({
       level: 'critical',
       mark: '✕',
-      title: `${fmtNum(stag)} years at ${d.rankName || 'this realm'} - ${fmtNum(50 - stag)} left`,
-      body: 'Fifty years without advancing kills. Break through or die where you stand.'
+      title: `${fmtNum(stag)} years at ${d.rankName || 'this rung'} - ${fmtNum(clocks.stagLeft)} left`,
+      body: `${fmtNum(clocks.stagLimit, 0)} years is all this rung credits. Cross, or settle here `
+        + 'for good - and if you do neither, the second one happens anyway.'
     });
-  } else if (stag >= 35) {
+  } else if (stagRatio >= 0.7) {
     items.push({
       level: 'severe',
       mark: '!',
-      title: `${fmtNum(stag)} years stagnant at ${d.rankName || 'this realm'}`,
-      body: 'The limit is fifty years at one realm. Time is now the thing most likely to kill you.'
+      title: `${fmtNum(stag)} years stagnant at ${d.rankName || 'this rung'}`,
+      body: `This rung credits ${fmtNum(clocks.stagLimit, 0)} years and ${fmtNum(clocks.stagLeft)} `
+        + 'are left. Time is now the thing most likely to end the climb.'
     });
   }
 
   // 4. Lifespan. A False Immortal's ceiling is their own, not their ordinal's.
-  const life = lifespanRemaining(d);
+  const life = clocks.lifeLeft;
   if (Number.isFinite(life) && life <= 3) {
     items.push({
       level: 'critical',
@@ -776,6 +920,21 @@ function renderWarnings() {
       mark: '!',
       title: `${fmtNum(life)} years of lifespan remain`,
       body: 'Lifespan is granted by realm, not by rest.'
+    });
+  }
+
+  // 4b. The span already spent, which is a different warning from the span
+  //     remaining and fires long before it. At Void Refinement the crossing is
+  //     down a tenth with four hundred years still in hand, and nothing in this
+  //     list used to say so - lifespan appeared as a countdown with no
+  //     consequence attached until the last fifteen years of it.
+  if (clocks.pressure < 0) {
+    items.push({
+      level: clocks.pressure <= -0.12 ? 'critical' : 'severe',
+      mark: clocks.pressure <= -0.12 ? '✕' : '!',
+      title: `${fmtPct(clocks.spanBurnt, 0)} of this rung's span spent`,
+      body: `The next crossing carries ${fmtSignedPct(clocks.pressure)} for it, and the figure only `
+        + 'grows. Waiting to gather more is now buying odds with odds.'
     });
   }
 
@@ -1078,13 +1237,30 @@ function renderSheet() {
 
   const hpRatio = (Number(c.maxHp) || 1) > 0 ? (Number(c.hp) || 0) / Number(c.maxHp) : 0;
 
-  const life = lifespanRemaining(d);
-  const age = Number(c.age) || 0;
-  const lifeCeiling = Number.isFinite(life) ? age + Math.max(0, life) : 0;
-  const lifeState = Number.isFinite(life) && life <= 3 ? 'is-danger' : Number.isFinite(life) && life <= 15 ? 'is-warn' : '';
+  const clocks = mortalClocks(d, c);
+  const life = clocks.lifeLeft;
+  const age = clocks.age;
+  // The span itself when the engine sent it; the old age+remaining sum only as
+  // a fallback, and that sum is wrong for anybody living past their ceiling.
+  const lifeCeiling = Number.isFinite(clocks.lifeSpan)
+    ? clocks.lifeSpan
+    : (Number.isFinite(life) ? age + Math.max(0, life) : 0);
+  // Danger stays absolute - three years left is three years left at any rung.
+  // Warn is now the engine's own line rather than a flat fifteen years: the
+  // moment `lifespanPressure` starts biting is the moment the span begins
+  // costing something, and at Void Refinement that arrives with four hundred
+  // years still in hand, where a fifteen-year bar would never have fired.
+  const lifeState = Number.isFinite(life) && life <= 3
+    ? 'is-danger'
+    : (Number.isFinite(life) && life <= 15) || clocks.pressure < 0 ? 'is-warn' : '';
 
-  const stag = Number(c.yearsAtCurrentRealm) || 0;
-  const stagState = stag >= 45 ? 'is-danger' : stag >= 35 ? 'is-warn' : '';
+  const stag = clocks.stag;
+  // Proportions, not the 45/35 that were hand-cut against a 50-year clock.
+  // 0.7 is the same fraction `facts.ts` calls the point of no return.
+  const stagRatio = Number.isFinite(clocks.stagLimit) && clocks.stagLimit > 0
+    ? stag / clocks.stagLimit
+    : 0;
+  const stagState = stagRatio >= 0.9 ? 'is-danger' : stagRatio >= 0.7 ? 'is-warn' : '';
 
   const ordinal = Number(c.realmOrdinal) || 0;
   const falseImmortal = isFalseImmortal(d, c);
@@ -1240,18 +1416,29 @@ function renderSheet() {
           : Number.isFinite(life)
             ? (falseImmortal
                 ? `${fmtNum(life)} years remain of a False Immortal's own span. Vast, finite, and countable.`
-                : `${fmtNum(life)} years of lifespan remain at this realm.`)
+                : `${fmtNum(life)} of the ${fmtNum(clocks.lifeSpan)} years this rung grants remain`
+                  + `${Number.isFinite(clocks.spanBurnt) ? ` - ${fmtPct(clocks.spanBurnt, 0)} of the span spent` : ''}.`)
             : ''
       }))}
-      ${raw(meter({
-        name: 'Years at current realm',
-        value: stag,
-        max: 50,
-        unit: ' yr',
-        kind: 'stag',
-        state: stagState,
-        note: 'Fifty years without advancing is fatal.'
-      }))}
+      ${Number.isFinite(clocks.stagLimit)
+        ? raw(meter({
+            name: 'Years at this rung',
+            value: stag,
+            max: clocks.stagLimit,
+            unit: ' yr',
+            kind: 'stag',
+            state: stagState,
+            note: settlingNote(clocks, d)
+          }))
+        : raw(html`<div class="vital-line tone-unresolved">
+            <div class="vital-line__top">
+              <span class="meter__name">Years at this rung</span>
+              <span class="vital-line__val">${fmtNum(stag)} yr</span>
+            </div>
+            <div class="meter__note">This client was served a state that did not say how long
+              this rung credits, so it will not guess at one.</div>
+          </div>`)}
+      ${raw(reckoning(clocks, d))}
     </section>
 
     <section class="sheet__group">
@@ -1822,16 +2009,27 @@ function pickerDays() {
  * needs telling - watched the warning vanish as they typed it.
  */
 function pickerWarnings(days) {
-  const life = lifespanRemaining();
-  const stag = Number((S.cultivator || {}).yearsAtCurrentRealm) || 0;
+  const clocks = mortalClocks();
+  const life = clocks.lifeLeft;
   const years = days / DAYS_PER_YEAR;
 
   const warnings = [];
   if (Number.isFinite(life) && years >= life) {
     warnings.push(`This is longer than the ${fmtNum(life)} years of lifespan you have left.`);
   }
-  if (stag + years >= 50) {
-    warnings.push(`This would push you past the 50-year stagnation limit at your current realm unless you break through.`);
+  if (Number.isFinite(clocks.stagLimit) && clocks.stag + years >= clocks.stagLimit) {
+    warnings.push(`This rung credits ${fmtNum(clocks.stagLimit, 0)} years and you have spent `
+      + `${fmtNum(clocks.stag)}. Sitting this out settles you here unless you cross first.`);
+  }
+  // What the years themselves cost the crossing you are gathering for. The
+  // picker warned about running out of life and never about the attempt
+  // getting worse on the way there, which is the earlier and more useful half.
+  if (Number.isFinite(clocks.pressureFrom) && clocks.age + years > clocks.pressureFrom) {
+    warnings.push(clocks.pressure < 0
+      ? `The next crossing already carries ${fmtSignedPct(clocks.pressure)} for the span you have `
+        + 'spent, and these years add to it.'
+      : `This carries you past ${fmtNum(clocks.pressureFrom, 0)}, where the span you have spent `
+        + 'starts costing the next crossing its own odds.');
   }
   const satiety = Number((S.cultivator || {}).satiety) || 0;
   if (satiety <= 30 && days > 30) {
@@ -1957,6 +2155,18 @@ function openBreakthroughConfirm() {
   const boundary = rung ? !!rung.isBoundary : false;
   const trib = rung ? rung.realmKey === 'tribulation_transcendence' : false;
   const untreated = (c.injuries || []).filter((i) => !i.treated).length;
+  // The age term, quoted before the strike rather than discovered in the
+  // ledger afterwards. It is the engine's own `lifespanPressure` - a fraction
+  // of THIS rung's span, never an absolute age - so it is stated here in the
+  // one place where declining is still an option.
+  const clocks = mortalClocks(d, c);
+  const ageLine = clocks.pressure < 0
+    ? `Age: ${fmtNum(clocks.age, 0)} of a ${fmtNum(clocks.lifeSpan, 0)}-year span - `
+      + `${fmtSignedPct(clocks.pressure)} on this attempt, and it worsens every year`
+    : Number.isFinite(clocks.pressureFrom)
+      ? `Age: ${fmtNum(clocks.age, 0)} of a ${fmtNum(clocks.lifeSpan, 0)}-year span - no age `
+        + `penalty; that begins at ${fmtNum(clocks.pressureFrom, 0)}`
+      : '';
 
   const body = html`
     <div class="confirm">
@@ -1966,6 +2176,9 @@ function openBreakthroughConfirm() {
         <span>Base chance at this rung: ${rung ? fmtPct(rung.baseBreakthroughChance, 1) : 'unknown'}</span>
         <span>Ambient qi: ${titleise(S.ambient)}</span>
         <span>Untreated injuries: ${untreated}${untreated ? ' (each one costs you odds)' : ''}</span>
+        ${!ageLine ? '' : clocks.pressure < 0
+          ? raw(html`<span style="color:var(--amber-400)">${ageLine}</span>`)
+          : raw(html`<span>${ageLine}</span>`)}
         ${boundary ? raw(html`<span style="color:var(--brass-300)">This is a realm boundary. The base rate is heavily taxed.</span>`) : ''}
         ${trib ? raw(html`<span style="color:var(--violet-300)">This attempt summons heavenly tribulation.</span>`) : ''}
       </div>

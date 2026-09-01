@@ -940,6 +940,27 @@ export function lifespanPressure(ordinal: number, age?: number): number {
     return MAX_LIFESPAN_PRESSURE * through;
 }
 
+/**
+ * The age at which `lifespanPressure` starts biting at this rung, in years.
+ *
+ * The same fact as the function above, read the other way round, and it exists
+ * because a display cannot say the useful half of it otherwise. "Your crossing
+ * is penalised 16%" tells a player what they have already lost; "the penalty
+ * starts at 50, and you are 16" tells them how much runway they are standing
+ * on, which is the number that decides whether to strike now or gather longer.
+ *
+ * It is also where the reward for climbing young becomes visible without
+ * anything having to award it. Crossing into Foundation Establishment at thirty
+ * and at ninety-five leave the same rung and the same 200-year span, but one
+ * cultivator has seventy years before the clock bites and the other has none -
+ * so the advantage falls out of `age / lifespanForOrdinal(ordinal)` on its own,
+ * which is exactly where it should come from. There is no young-cultivator
+ * bonus anywhere in this file and there must not be one.
+ */
+export function lifespanPressureOnsetAge(ordinal: number): number {
+    return lifespanForOrdinal(ordinal) * LIFESPAN_PRESSURE_ONSET;
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // WAITING
 //

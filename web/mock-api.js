@@ -61,6 +61,19 @@ const BLEED_OUT_TURNS = 90;
 /** The rung the crossing lands on when it does not complete. */
 const FALSE_IMMORTAL_ORDINAL = 45;
 const FALSE_IMMORTAL_LIFESPAN_YEARS = 300000;
+/**
+ * The settling clock. 50 is a FLOOR, not the figure: above Foundation
+ * Establishment a rung credits a fifth of the span its realm grants, so Core
+ * Formation is 100 and Tribulation Transcendence is 20,000. The client used to
+ * carry a flat 50 and say "fifty years without advancing is fatal" to all of
+ * them; it now reads this off `derived`, and the mock has to state it or
+ * offline play goes back to being wrong in exactly the same way.
+ */
+const STAGNATION_YEARS = 50;
+const STAGNATION_LIFESPAN_FRACTION = 0.2;
+/** Mirrors breakthrough.ts. The share of a rung's span spent before age costs odds. */
+const LIFESPAN_PRESSURE_ONSET = 0.5;
+const MAX_LIFESPAN_PRESSURE = -0.2;
 
 const clampOrd = (o) => Math.max(0, Math.min(MAX_ORDINAL, Math.floor(Number(o) || 0)));
 const realmFor = (o) => REALMS.find((t) => clampOrd(o) >= t.start && clampOrd(o) <= t.end);
@@ -77,6 +90,18 @@ const rankName = (o) => {
 const lifespanFor = (o) => (clampOrd(o) === FALSE_IMMORTAL_ORDINAL
   ? FALSE_IMMORTAL_LIFESPAN_YEARS
   : realmFor(o).lifespanYears);
+const stagnationYearsFor = (o) => Math.max(
+  STAGNATION_YEARS,
+  lifespanFor(o) * STAGNATION_LIFESPAN_FRACTION
+);
+/** `lifespanPressure(ordinal, age)` - a fraction of THIS rung's span, never an absolute age. */
+const lifespanPressureFor = (o, age) => {
+  const span = lifespanFor(o);
+  if (!(span > 0) || !Number.isFinite(age)) return 0;
+  const spent = Math.max(0, Math.min(1, age / span));
+  if (spent <= LIFESPAN_PRESSURE_ONSET) return 0;
+  return MAX_LIFESPAN_PRESSURE * ((spent - LIFESPAN_PRESSURE_ONSET) / (1 - LIFESPAN_PRESSURE_ONSET));
+};
 const isBoundary = (o) => {
   const c = clampOrd(o);
   if (c >= MAX_ORDINAL) return false;
@@ -285,6 +310,14 @@ function derived() {
     // before it is compared.
     breakthroughReady: req !== null && c.cultivationProgress >= req && next != null && c.immortalStatus === 'none',
     lifespanRemaining: Math.max(0, (c.immortalStatus === 'false_immortal' ? FALSE_IMMORTAL_LIFESPAN_YEARS : lifespanFor(o)) - c.age),
+    // The whole span, the settling clock, and what the span already spent is
+    // worth to the next crossing. The client shows "16 of 100" and "0 of 50"
+    // and says which runs out first; none of those three numbers may be
+    // invented in the browser.
+    lifespanYears: c.immortalStatus === 'false_immortal' ? FALSE_IMMORTAL_LIFESPAN_YEARS : lifespanFor(o),
+    stagnationYears: stagnationYearsFor(o),
+    lifespanPressure: lifespanPressureFor(o, c.age),
+    lifespanPressureFromAge: lifespanFor(o) * LIFESPAN_PRESSURE_ONSET,
     untreatedInjuries: untreated,
     // Mirrors the real derivedView: null when no bleed clock is running,
     // because JSON has no Infinity and the client tests for null.
@@ -1095,9 +1128,9 @@ function handleCultivate(days) {
   if (c.age >= lifespan) {
     died = true; deathCause = 'lifespan_exhausted';
     events.push({ kind: 'death', dayOffset: simulated, summary: `Lifespan exhausted at ${Math.round(c.age)} years. The realm grants ${lifespan}.`, interrupts: true, data: {} });
-  } else if (c.yearsAtCurrentRealm >= 50) {
+  } else if (c.yearsAtCurrentRealm >= stagnationYearsFor(c.realmOrdinal)) {
     died = true; deathCause = 'stagnation_aging';
-    events.push({ kind: 'death', dayOffset: simulated, summary: `Fifty years at ${rankName(c.realmOrdinal)} without advancing. The body gave out.`, interrupts: true, data: {} });
+    events.push({ kind: 'death', dayOffset: simulated, summary: `${Math.round(stagnationYearsFor(c.realmOrdinal))} years at ${rankName(c.realmOrdinal)} without advancing. Settled where they stood.`, interrupts: true, data: {} });
   } else if (c.starvationTurns >= 5) {
     died = true; deathCause = 'starvation';
     events.push({ kind: 'death', dayOffset: simulated, summary: 'Seclusion outlasted the food by a considerable margin.', interrupts: true, data: {} });
