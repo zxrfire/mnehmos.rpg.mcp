@@ -97,7 +97,7 @@ for (const [from, to] of [['13-16', '17-20'], ['17-20', '21-24'], ['21-24', '25-
         console.log(`  by ${label}:`);
         for (const r of rows) console.log(`     ${r.k.padEnd(28)} n=${String(r.n).padStart(3)}  median ${r.med}`);
     };
-    split('origin', n => String(n.cultivation.origin ?? 'unknown'));
+    split('origin', n => String(n.identity?.origin ?? 'unknown'));
     split('spirit root', n => String(n.cultivation.spiritRoot));
     split('insight', n => 'insight ' + String(n.cultivation.attributes?.insight ?? '?'));
 }
