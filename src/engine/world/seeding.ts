@@ -89,6 +89,7 @@ import { addLineageEdge, createLineageRecord, type LineageRecord } from './linea
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
 import { dayOfYear, makeFact, appendFact } from './history.js';
 import { seedSectLibraries, grantBooksToMembers } from './manuals.js';
+import { seedArtifacts, seedComprehensionMaterials } from './goods.js';
 import {
     createWorld,
     makeFaction,
@@ -239,6 +240,12 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // fell back on `deriveOrdinal`, and nobody in the world gained a rung in
     // two hundred years. See `manuals.ts`.
     state.objects.push(...seedSectLibraries(state));
+    // And the things that are not books. `artifacts.ts` has been a complete
+    // table of ObjectRecords since it was written and the seeder never put one
+    // of them into the world, so the immortal weapon a house's whole standing
+    // rests on existed only in a catalog nothing read. See `goods.ts`.
+    state.objects.push(...seedArtifacts(state));
+    state.objects.push(...seedComprehensionMaterials(state));
     const npcAt = new Map(state.npcs.map((n, i) => [n.id, i]));
     for (const grant of grantBooksToMembers(state)) {
         const at = npcAt.get(grant.npcId);
