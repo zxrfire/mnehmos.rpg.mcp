@@ -113,31 +113,106 @@ describe('the register reads', () => {
 describe('the register is consistent with itself', () => {
     const reg = buildRegister();
 
-    it('gives every entry the same six parts in the same order', () => {
-        // Chunks inside chunks, and the same shape everywhere. A reader who
-        // has read one entry should be able to find their way around any other
-        // one without re-learning it.
-        // "What they hold" became "What they teach" when the inventory moved to
-        // the Holdings tab and the artifact rows to the Items ledger. What is
-        // left in that part of an entry is the shelf, which Holdings only
-        // summarises, so the heading now says what is actually under it.
+    it('keeps a faction entry to the five parts a resume has', () => {
+        // THIS TEST USED TO ASSERT SEVEN PARTS AND WAS ENCODING THE DEFECT.
+        // It listed 'History' and 'What they teach' among the parts of an
+        // entry, which is exactly the arrangement the design owner rejected: a
+        // faction entry is a RESUME, read in about thirty seconds by somebody
+        // deciding whether they care, and neither a house's full dated history
+        // nor its shelf art by art answers "what is this house". Both are now
+        // on the pages that own them - the History tab and the Arts tab - and
+        // the entry carries a pointer and a count instead.
+        //
+        // A passing test is evidence, not proof. This one passed for as long
+        // as the entry was too long, because it was asserting the length.
         const order = [
-            'History',
             'What they are',
             'Who is in it',
-            'What they teach',
             'What they want',
             'Ancestors',
-            'How it stands with everybody'
+            'How it stands'
         ];
         const html = renderRegisterHtml(reg as never, {} as never);
         const heads = [...html.matchAll(/<div class="part"><h4>([^<]*)<\/h4>/g)].map(m => m[1]);
         expect(heads.length, 'no parts rendered at all').toBeGreaterThan(0);
 
-        // Every heading that appears is one of the six, and they never appear
-        // out of sequence relative to each other inside a single entry.
         for (const head of new Set(heads)) {
             expect(order, `unknown part heading: ${head}`).toContain(head);
+        }
+        // And the two that moved must not come back. A part heading is cheap to
+        // add and the entry has been re-inflated once already.
+        expect(new Set(heads), 'History is back on the entry').not.toContain('History');
+        expect(new Set(heads), 'the shelf is back on the entry').not.toContain('What they teach');
+    });
+
+    it('cross-references without ever emitting a URL', () => {
+        // A faction entry lives inside a pane that is hidden unless its tab is
+        // selected, so a fragment link to one is a link to nothing - and the
+        // moment a stretch of this sheet is copied out of a browser, every
+        // fragment resolves against wherever the register happened to be
+        // served. What the design owner saw pasted was a markdown link to
+        // http://localhost:8787/api/admin/register.html#court-court-kiln,
+        // repeated on every historical event. The href was relative in the
+        // markup; the copy resolved it. The only fix that survives a copy is
+        // not to emit a URL at all, so every cross-reference goes through
+        // data-goto, which switches to the owning tab and then scrolls.
+        const html = renderRegisterHtml(reg as never, {} as never);
+        const fragments = [...html.matchAll(/<a href="#[^"]*"/g)].map(m => m[0]);
+        expect(fragments, 'a cross-reference was emitted as a URL').toEqual([]);
+        expect(html).toContain('data-goto=');
+    });
+
+    it('states each pair of bodies once rather than from both ends', () => {
+        // The catalog stores a tie on both parties, which is right. Rendering
+        // it that way meant one feud was written out twice, in two entries a
+        // reader would never see together, and that the general rule about
+        // what a feud is got restated once per feud. The Ties tab collapses
+        // them onto the pair, so each anchor may appear exactly once.
+        const html = renderRegisterHtml(reg as never, {} as never);
+        const ids = [...html.matchAll(/ id="(tie-[^"]+)"/g)].map(m => m[1]);
+        expect(ids.length, 'no ties rendered at all').toBeGreaterThan(10);
+        expect(ids.length, 'a tie was rendered twice').toBe(new Set(ids).size);
+    });
+
+    it('lands every cross-reference on something that exists', () => {
+        // Nine hundred jumps on this sheet and no way to see a dead one: the
+        // handler switches tab, finds nothing, and returns, so a broken
+        // cross-reference looks exactly like a click that did not register.
+        // Two were broken when this was first run, both on the one body filed
+        // as a court AND a sect - each of its neighbours reached it by the name
+        // the other catalog uses, and the two names keyed to two different
+        // records. The anchors are canonical now, which is what makes this
+        // assertion possible at all.
+        const html = renderRegisterHtml(reg as never, {} as never);
+        const ids = new Set([...html.matchAll(/ id="([^"]+)"/g)].map(m => m[1]));
+        const targets = [...html.matchAll(/data-goto="([^"]+)"/g)].map(m => m[1]);
+        expect(targets.length, 'no cross-references at all').toBeGreaterThan(100);
+        const dead = [...new Set(targets.filter(t => !ids.has(t)))];
+        expect(dead, 'a cross-reference points at nothing').toEqual([]);
+
+        // And the tab jumps have to name a tab that exists, for the same
+        // reason: a wrong name selects no pane and hides every one of them.
+        const tabs = new Set([...html.matchAll(/data-tab="([a-z]+)"/g)].map(m => m[1]));
+        const tabTargets = [...new Set([...html.matchAll(/data-tab-goto="([a-z]+)"/g)].map(m => m[1]))];
+        expect(tabTargets.length, 'no tab jumps at all').toBeGreaterThan(0);
+        expect(tabTargets.filter(t => !tabs.has(t)), 'a jump names no tab').toEqual([]);
+    });
+
+    it('opens the arts tab folded', () => {
+        // Four catalogs of tables, a hundred and thirty-eight rows. Opening on
+        // all of it at once is a page nobody can navigate, so every section on
+        // that tab declares that it starts folded and the reader opens the one
+        // they want. A reader's own folding still wins - the default is a
+        // starting position, not a preference.
+        const html = renderRegisterHtml(reg as never, {} as never);
+        const arts = html.slice(
+            html.indexOf('<div class="pane" data-pane="arts"'),
+            html.indexOf('<div class="pane" data-pane="key"')
+        );
+        const sections = [...arts.matchAll(/<section([^>]*)>/g)].map(m => m[1]);
+        expect(sections.length, 'no sections on the arts tab').toBeGreaterThan(3);
+        for (const attrs of sections) {
+            expect(attrs, `an arts section opens expanded: ${attrs}`).toContain('startfolded');
         }
     });
 
