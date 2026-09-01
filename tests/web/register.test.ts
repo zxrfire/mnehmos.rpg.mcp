@@ -945,47 +945,46 @@ describe('the entries that were weakest', () => {
     });
 });
 
-describe('two bodies, one lineage, and no joint record', () => {
-    // This used to be a top-level `schism` section built from a single
-    // standalone catalog record narrating both sides from outside, and before
-    // that the record reached no page at all - which is the failure this suite
-    // exists for. The record is gone. Each claimant now carries its own
-    // partisan account on its own entry, because two bodies four provinces
-    // apart under different patrons have no shared vantage to narrate from, and
-    // the sheet's job is to make both reachable rather than to reconcile them.
-    it('gives each claimant its own account, quoted rather than summarised', () => {
-        const withDispute = [
-            ...reg.courts.filter(c => c.lineageDispute),
-            ...reg.dossiers.filter(d => d.lineageDispute)
-        ];
-        expect(withDispute.length, 'nobody disputes a lineage').toBeGreaterThanOrEqual(2);
+describe('two bodies that used to be one posting', () => {
+    // THREE SHAPES, AND THIS IS THE THIRD. It began as a top-level `schism`
+    // section built from a standalone record narrating both sides from outside.
+    // Then it became a pair of partisan accounts, one on each body, arguing
+    // about which of them was the real house, with a field on each saying
+    // nothing settles it. Both are gone: the second shape presented an
+    // institution that had SPLIT as an institution having an ARGUMENT.
+    //
+    // What is on the sheet now is one relationship with two sides, in the
+    // section at the foot of each entry - the same shape every other pair of
+    // bodies in the world gets - and the facts that used to be spread across
+    // ten partisan fields sit on the bodies that hold them.
+    it('carries the split as a relationship rather than as a pair of claims', () => {
+        const kiln = reg.courts.find(c => c.id === 'court-kiln')!;
+        const walked = reg.dossiers.find(d => d.id === 'sect-kiln-wardens')!;
 
-        for (const body of withDispute) {
-            const d = body.lineageDispute!;
-            expect(d.fields.length, `${body.id} has an empty account`).toBeGreaterThan(0);
-            for (const f of d.fields) {
-                expect(f.heading, `${body.id}/${f.key} has no heading`).not.toBe(f.key);
-                expect(flat, `${body.id}/${f.key} not rendered`)
-                    .toContain(text(f.text).slice(0, 60).trim());
-            }
-            // The join is not an argument and must not be printed as one.
-            expect(d.fields.some(f => f.key === 'againstId'), `${body.id} prints its join`).toBe(false);
-        }
+        const ours = walked.relationships.find(r => r.otherId === 'court-kiln');
+        const theirs = kiln.relationships.find(r => r.otherId === 'sect-kiln-wardens');
+        expect(ours, 'the walking half does not record the other one').toBeDefined();
+        expect(theirs, 'the standing half does not record the other one').toBeDefined();
+
+        // One tie, two sides, and the facts are the same object.
+        expect(ours!.id).toBe(theirs!.id);
+        expect(ours!.what).toBe(theirs!.what);
+        expect(ours!.stance).toBe('alongside');
+        expect(theirs!.stance).toBe('alongside');
+        // The feeling is allowed to differ and does. That is the content.
+        expect(ours!.regard).not.toBe(theirs!.regard);
+        expect(ours!.regard).toBe(theirs!.theirRegard);
+
+        // And both sides are on the page, with a way from each to the other.
+        expect(flat).toContain(text(ours!.what).slice(0, 60).trim());
+        expect(ours!.anchor, 'no way from the walking half to the standing one').toBeTruthy();
     });
 
-    it('lets a reader get from either account to the other', () => {
-        // The whole of what makes two partisan accounts fair. An account that
-        // says the other side exists without a way to go and read it is asking
-        // the reader to take one side's word for it.
-        const kiln = reg.courts.find(c => c.id === 'court-kiln');
-        const walked = reg.dossiers.find(d => d.id === 'sect-kiln-wardens');
-        expect(kiln?.lineageDispute, 'the standing half has no account').toBeTruthy();
-        expect(walked?.lineageDispute, 'the walking half has no account').toBeTruthy();
-        expect(kiln!.lineageDispute!.againstId).toBe('sect-kiln-wardens');
-        expect(walked!.lineageDispute!.againstId).toBe('court-kiln');
-        expect(kiln!.lineageDispute!.againstName).toBe(walked!.name);
-        expect(walked!.lineageDispute!.againstAnchor, 'no way back to the standing half')
-            .toBeTruthy();
+    it('has stopped adjudicating which of them is the house', () => {
+        // The conceit that was removed, guarded so it cannot drift back in.
+        // Nobody on this sheet argues that the other body is not real.
+        expect(flat).not.toContain('Contested lineage');
+        expect(flat).not.toContain('nothing in the world settles it');
     });
 
     it('names both halves of the split house on the page', () => {
@@ -1080,7 +1079,8 @@ describe('a court panel', () => {
         // Sill, which never moved at all and had a conversion note describing a
         // transfer that did not happen. The body that did move is the Root Sill
         // and it is a posting rather than a court, so its account lives on its
-        // own entry as a contested lineage instead.
+        // own entry, and how it stands with the half that stayed is one row in
+        // the relationships section rather than a transfer note.
         //
         // What survives is the reason the heading is worded the way it is. The
         // one remaining note is a promotion inside a patron rather than a move
@@ -1095,12 +1095,12 @@ describe('a court panel', () => {
         expect(flat).toContain('How it came to answer here');
 
         // And the one administration that genuinely changed patrons is reachable
-        // from the sheet, as a lineage two bodies claim rather than as a move.
-        const disputed = [
-            ...reg.courts.filter(c => c.lineageDispute),
-            ...reg.dossiers.filter(d => d.lineageDispute)
+        // from the sheet, as a relationship between two independent bodies.
+        const linked = [
+            ...reg.courts.filter(c => c.relationships.some(r => r.kind === 'two_bodies_nobody_joins')),
+            ...reg.dossiers.filter(d => d.relationships.some(r => r.kind === 'two_bodies_nobody_joins'))
         ].map(x => x.id).sort();
-        expect(disputed).toEqual(['court-kiln', 'sect-kiln-wardens']);
+        expect(linked).toEqual(['court-kiln', 'sect-kiln-wardens']);
     });
 });
 

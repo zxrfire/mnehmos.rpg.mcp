@@ -46,7 +46,6 @@ import {
     getApexInstitution,
     getCourt,
     getParentage,
-    type LineageDispute,
     type Posting
 } from '../data/cultivation/hierarchy.js';
 import { ARTIFACTS, artifactsOwnedBy } from '../data/cultivation/artifacts.js';
@@ -342,21 +341,18 @@ export interface RegisterDemonic {
     ifItWereDestroyed: string;
 }
 
-export interface RegisterLineageDispute {
-    againstId: string;
-    againstName: string;
-    /**
-     * The anchor on this page where the other claimant's own account is.
-     *
-     * Not a faction id. One of the two claimants in the catalog has a faction
-     * entry and the other has only a court panel, so a link resolved through
-     * the faction table alone reached exactly one of them - which would leave
-     * the half with no entry making an unanswerable claim, and the whole reason
-     * there are two accounts is that neither is unanswerable.
-     */
-    againstAnchor: string | null;
-    fields: { key: string; heading: string; text: string }[];
-}
+/**
+ * WHAT USED TO BE HERE: `RegisterLineageDispute`, and the block that drew it.
+ *
+ * Two bodies each carried a partisan account arguing that it was the real
+ * house, and the sheet printed both under a "Contested lineage" heading with a
+ * line saying nothing in the world settles it. The catalog no longer carries
+ * either account: what happened was a schism, and the two have run
+ * independently since - two rolls, two patrons, two provinces, no
+ * correspondence. That is a relationship rather than a claim, and it is now one
+ * row in the relationships section at the foot of both entries, with a side
+ * apiece and a different word for how each of them feels about it.
+ */
 
 /**
  * How a body nobody can join comes to have anybody in it.
@@ -527,7 +523,6 @@ export interface RegisterCourt {
      * it - every field is an argument one side makes, and paraphrasing an
      * argument is how a register starts adjudicating.
      */
-    lineageDispute: RegisterLineageDispute | null;
     /**
      * How a body that takes nobody comes to have anybody in it. Null on most.
      *
@@ -1242,7 +1237,6 @@ export interface SectDossier {
      * shown the roll, the holdings and the standings can weigh it. Shown first
      * it would be accepted.
      */
-    lineageDispute: RegisterLineageDispute | null;
     /** The family, and the door. Null on everything that is not a dao house. */
     house: RegisterHouseAdmission | null;
     people: {
@@ -1788,24 +1782,6 @@ function buildDemonic(factionId: string): RegisterDemonic | null {
     };
 }
 
-function buildLineageDispute(d: LineageDispute | undefined): RegisterLineageDispute | null {
-    if (!d) return null;
-    const heading = (key: string): string => {
-        const words = key.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
-        return words.charAt(0).toUpperCase() + words.slice(1);
-    };
-    return {
-        againstId: d.againstId,
-        againstName: nameOf(d.againstId),
-        againstAnchor: null,
-        fields: Object.entries(d)
-            // `againstId` is the join, not an argument. Everything else is text
-            // one side wrote about the other and is printed as written.
-            .filter(([key]) => key !== 'againstId')
-            .map(([key, text]) => ({ key, heading: heading(key), text: String(text) }))
-    };
-}
-
 /** Every court, with the people actually standing in its offices. */
 function buildCourts(): RegisterCourt[] {
     return COURTS.map(court => {
@@ -1840,7 +1816,6 @@ function buildCourts(): RegisterCourt[] {
                 }
                 : null,
             transferNote: court.transferNote ?? null,
-            lineageDispute: buildLineageDispute(court.lineageDispute),
             posting: buildPosting(court.posting),
             noPlaceForItsOwn: buildNoPlace(court.id),
             // `court.roster` rather than `courtOfficers()`, and the difference
@@ -3585,7 +3560,6 @@ function buildDossiers(
             // known until every dossier has been made.
             artifacts: [] as RegisterArtifact[],
             ambition: buildAmbition(row.id),
-            lineageDispute: buildLineageDispute(getParentage(row.id)?.lineageDispute),
             history: buildHistory(row.id),
             demonic: buildDemonic(row.id),
             posting: buildPosting(getParentage(row.id)?.posting),
@@ -3768,7 +3742,6 @@ function buildDossiers(
             partingGift: null,
             artifacts: [] as RegisterArtifact[],
             ambition: buildAmbition(a.id),
-            lineageDispute: buildLineageDispute(getParentage(a.id)?.lineageDispute),
             history: buildHistory(a.id),
             demonic: buildDemonic(a.id),
             posting: buildPosting(getParentage(a.id)?.posting),
@@ -3994,11 +3967,6 @@ export function buildRegister(): WorldRegister {
             for (const b of d.ambition.blockedBy) b.linkId = entryFor(b.id);
             for (const o of d.ambition.contestedWith) o.linkId = entryFor(o.id);
         }
-        // The other claimant to a contested lineage is always a body with an
-        // entry somewhere on this sheet - a court panel or a faction entry -
-        // and an account that says the other side exists without letting a
-        // reader go and read it is asking them to take one side's word for it.
-        if (d.lineageDispute) d.lineageDispute.againstAnchor = anchorFor(d.lineageDispute.againstId);
         // Same for everybody named in a shared event, and for the same reason:
         // the accounts are partisan by construction, so each has to be one
         // click from the others.
@@ -4484,12 +4452,7 @@ text-transform:uppercase;color:var(--faint);padding:6px 0;list-style:none}
 @media (max-width:640px){
 .assess dl,.holds dl,.cap dl,.wayin dl,.flag{grid-template-columns:1fr;gap:2px}
 .assess dt,.holds dt,.cap dt,.wayin dt{padding-top:9px}}
-/* ── One house, two names ────────────────────────────────────────────────
-   The same definition-list grammar as the dossier blocks, because it is the
-   same kind of thing: a set of quoted positions with nothing adjudicating
-   between them. Wider label column - these headings are sentences' worth of
-   key rather than single words. */
-/* The five parts of an entry. A divider rather than a box: the parts are a
+/* The six parts of an entry. A divider rather than a box: the parts are a
    reading order, not containers, and drawing them as containers made a house
    look like five unrelated records filed together. */
 /* The passerby line. Larger than the body and set apart, because it is the
@@ -5675,19 +5638,6 @@ function postingBlock(x: RegisterPosting, name: string): string {
  * sheet adds no adjudicating sentence of its own and must not - every line here
  * was written from inside one of the two houses.
  */
-function lineageDisputeBlock(d: RegisterLineageDispute, selfName: string): string {
-    const other = d.againstAnchor
-        ? `<a href="#${esc(d.againstAnchor)}">${esc(d.againstName)}</a>`
-        : esc(d.againstName);
-    return `<div class="grp dispute-grp"><h4>Contested lineage <span>1</span>`
-        + `<span class="gap">against ${other}</span></h4>`
-        + `<p class="note">${esc(selfName)} in its own words, and it is a party rather than a witness. `
-        + `${other} keeps its own account of the same years on its own entry, and the two do not agree about `
-        + `what any of it meant. They do not disagree about a single fact, and nothing in the world settles it.</p>`
-        + `<dl class="dispute">${d.fields.map(f => `<dt>${esc(f.heading)}</dt><dd>${esc(f.text)}</dd>`).join('')}</dl>`
-        + '</div>';
-}
-
 function courtPanel(court: RegisterCourt): string {
     const named = court.startingAwareness !== 'unaware' && court.startingAwareness !== 'whisper';
     const agrees = court.startingAwareness === court.apexAwareness;
@@ -5725,7 +5675,6 @@ function courtPanel(court: RegisterCourt): string {
     <p class="terr">${esc(court.officesNote)}</p>
     ${court.posting ? postingBlock(court.posting, court.name) : ''}
     ${court.noPlaceForItsOwn ? noPlaceBlock(court.noPlaceForItsOwn, court.name) : ''}
-    ${court.lineageDispute ? lineageDisputeBlock(court.lineageDispute, court.name) : ''}
     <div class="scroll"><table>
       <caption>Offices &middot; ${court.officers.length} &middot; catalog order, not a ladder</caption>
       <thead><tr><th>Office</th><th>Who</th><th class="pw">Ord</th><th>Inside ${esc(court.apexName)}</th><th>What the office does</th></tr></thead>
@@ -5863,7 +5812,6 @@ function dossier(d: SectDossier): string {
     // ── 5. what it says about itself ─────────────────────────────────
     const claims: string[] = [];
 
-    if (d.lineageDispute) claims.push(lineageDisputeBlock(d.lineageDispute, d.name));
 
     if (d.people.sealed) {
         const sl = d.people.sealed;
@@ -6005,10 +5953,8 @@ function dossier(d: SectDossier): string {
       // dead is the single most useful fact in this chunk, and a static
       // subtitle would say the same thing about both.
       ? sectionHead('Ancestors', d.people.sealed
-          ? `one sealed and still down there${d.lineageDispute ? ', a contested lineage,' : ','} and the roll`
-          : d.lineageDispute
-              ? 'a contested lineage, and the roll - nothing held in reserve'
-              : 'the roll. Nothing held in reserve, which is the ordinary case')
+          ? 'one sealed and still down there, and the roll'
+          : 'the roll. Nothing held in reserve, which is the ordinary case')
         + `<div class="grps">${claims.join('')}</div>`
       : ''}
 
@@ -6273,7 +6219,7 @@ export function renderRegisterHtml(
   ${prose(blocks, 'register')}
   ${hierarchies.length ? `<div class="govgrp">
     <h3 class="govhead">apex hierarchies <span>${hierarchies.length}</span></h3>
-    <p class="note">Courts open too. A court is not a faction and has no entry in the list below, but it is between three and six people doing a job on somebody else's vein, and they are the layer every tenant in the province actually deals with.</p>
+    <p class="note">Courts open too, and a court is the layer every tenant in a province actually deals with. <strong>Almost all of them are sects</strong> - they have members, an intake, a ladder and a seat, and the word <em>court</em> describes the arterial vein they administer rather than what kind of institution they are, so each of those has its own entry in the list below. <strong>Two are not.</strong> The Kiln Court and the Root Sill Court are offices: nobody joins either, there is no intake and no ladder to climb, and what stands there is between three and six people appointed from elsewhere, doing an assigned job on ground the body does not own. Those two are the ones with no faction entry, and the reason is the distinction rather than an omission.</p>
     <div class="orgchart"><ul>${hierarchies.map(n => treeNode(n, dossierById, courtById)).join('')}</ul></div>
     ${prose(blocks, 'apexes')}
   </div>` : ''}
