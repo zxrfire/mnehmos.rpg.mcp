@@ -84,6 +84,7 @@ import { HERBS } from '../data/cultivation/herbs.js';
 import { ARTERIALS, PROVINCES } from '../data/cultivation/regions.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import {
+    SHARED_EVENTS,
     historyOf,
     otherPartiesTo,
     sharedEventsFor,
@@ -110,6 +111,7 @@ import {
     getTechnique,
     gradeRank,
     opacityOf,
+    teachableEndOf,
     transmissionModeOf
 } from '../data/cultivation/techniques.js';
 import {
@@ -909,6 +911,17 @@ export interface RegisterDeepRoad extends DeepRoadHolding {
     canFinishIt: boolean;
     /** How hard the first rungs are, in the manual's own words. Null is smooth. */
     opening: { rungs: number; rateMultiplier: number } | null;
+    /**
+     * The highest rung anybody can be TAUGHT to on this road.
+     *
+     * Not `cap`, and the difference is the correction. `cap` is where the paper
+     * stops, and on a book covering the last realm that is the rung the last
+     * crossing LANDS on - which nobody is ever taught onto. Comparing a
+     * teacher's reach against `cap` reported the one house in the world whose
+     * leader can teach every teachable rung as two rungs short of finishing its
+     * own road. See `teachableEndOf` in the technique catalog.
+     */
+    teachableEnd: number | null;
 }
 
 /**
@@ -2299,7 +2312,15 @@ function buildDeepRoad(factionId: string): RegisterDeepRoad | null {
         capRank: art?.cap === null || art?.cap === undefined ? null : rankName(art.cap),
         carriesTo: reach,
         carriesToRank: rankName(reach),
-        canFinishIt: art?.cap !== null && art?.cap !== undefined ? reach >= art.cap : true,
+        teachableEnd: teachableEndOf(holding.techniqueId),
+        // Against the teachable end rather than against the cap. The book may
+        // run past the highest rung anybody can be walked to, and a teacher
+        // standing at that rung has finished the road whatever the paper says
+        // after it.
+        canFinishIt: (() => {
+            const end = teachableEndOf(holding.techniqueId);
+            return end === null ? true : reach >= end;
+        })(),
         opening: art?.opening ?? null
     };
 }
@@ -4610,6 +4631,12 @@ font-size:14px;line-height:1.55;color:var(--ink)}
    on every row, for every faction. Fractions bound all three: the name and the
    role wrap at their own spaces, and what they give up goes to the detail.
    NOTE: no backticks in this comment - see AGENTS.md and the note above. */
+/* The separators inside a .who row are printed marks that the grid hides, for
+   the same reason the card heads carry one: on screen the columns separate the
+   cells, and flattened they do not. A screen reader meeting a middot between
+   two cells is reading the row correctly, so nothing hides it from one.
+   NOTE: no backticks in this comment - see AGENTS.md. */
+.rsep{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .who{display:grid;grid-template-columns:minmax(0,1.1fr) 38px minmax(0,1fr) minmax(0,2.7fr);
 gap:4px 14px;padding:6px 0;border-top:1px solid var(--rule);align-items:baseline}
 .who:first-of-type{border-top:none}
@@ -4807,6 +4834,102 @@ text-transform:uppercase;color:var(--faint);padding-top:2px}
 .evtn{margin:0 0 5px;font-size:13px;line-height:1.5;color:var(--faint)}
 .evta{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
 .demon{margin:12px 0}
+/* ── THE RESUME NOTATION ─────────────────────────────────────────────────
+   Two lines on a faction entry that used to be two whole sections. They are
+   read rather than scanned only if something makes them look like data, so
+   they take the sheet's mono face and the label takes the same micro-caps a
+   card fact does. The separator is a printed middot in the markup, not a gap:
+   this sheet gets copied out of the browser and a gap does not survive that. */
+.holdline{margin:6px 0 0;font:12.5px/1.9 "IBM Plex Mono",ui-monospace,Menlo,monospace;
+color:var(--quiet);display:flex;flex-wrap:wrap;align-items:baseline;gap:0 4px}
+.holdline .nfl{font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.13em;
+text-transform:uppercase;color:var(--faint);margin-right:4px}
+.hn b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.holdline .jump{font-size:11px;letter-spacing:.04em}
+/* The pointers to the pages that own the material this entry used to carry. */
+.crossref{margin:8px 0 14px;font:11px "IBM Plex Mono",ui-monospace,Menlo,monospace;
+letter-spacing:.06em;color:var(--faint);display:flex;flex-wrap:wrap;gap:0 4px}
+.crossref:empty{display:none}
+/* The tab's key. A block, so the page's chunk pass leaves it alone - it only
+   splits a bare paragraph, and a key that ships half behind a disclosure is a
+   key nobody reads. */
+.notekey{border-left:3px solid var(--rule);padding:2px 0 2px 14px;margin:0 0 20px;max-width:72ch}
+.notekey p{margin:0 0 8px;color:var(--quiet);line-height:1.6}
+.notekey p:last-child{margin-bottom:0}
+.notekey .relchip{cursor:default}
+/* ── THE RELATIONS STRIP ─────────────────────────────────────────────────
+   A house's whole position in the world, in one glance. Direction is carried
+   by the reserved plum/moss/grey AND by a glyph, never by hue alone; the two
+   warmth words carry the asymmetry the section's prose used to have to assert.
+   A list, so that a chip is a line when the stylesheet is not there. */
+.relstrip{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.relchip{display:inline-flex;align-items:baseline;gap:6px;cursor:pointer;
+border:1px solid var(--rule);border-left-width:3px;border-radius:3px;padding:3px 9px 3px 7px;
+font:11.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--quiet);background:var(--panel)}
+.relchip:hover{border-color:var(--datum);color:var(--ink)}
+.relchip--above{border-left-color:var(--rel-up)}
+.relchip--below{border-left-color:var(--rel-down)}
+.relchip--alongside{border-left-color:var(--rel-level)}
+.relchip--above .relchip__mark{color:var(--rel-up)}
+.relchip--below .relchip__mark{color:var(--rel-down)}
+.relchip--alongside .relchip__mark{color:var(--rel-level)}
+.relchip__mark{font-size:9px;line-height:1}
+.relchip__who{color:var(--ink)}
+.relchip__warm{font-size:10px;letter-spacing:.06em;color:var(--faint)}
+/* ── THE TIES PAGE ───────────────────────────────────────────────────────
+   Both ends of a tie side by side, which is the only arrangement in which the
+   disagreement between them is visible. Two columns where there is room and
+   one where there is not; nothing here scrolls the document. */
+.tiesides{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:10px 0 0}
+.tieside{border-left:2px solid var(--rule);padding-left:12px;min-width:0}
+.tieside h5{margin:0 0 6px;font:600 12.5px Archivo,"Helvetica Neue",Arial,sans-serif;
+color:var(--ink);display:flex;flex-wrap:wrap;align-items:baseline;gap:7px}
+.warmpair{display:inline-flex;align-items:baseline;gap:5px}
+.warmslash{color:var(--faint)}
+.warmtag{font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
+text-transform:uppercase;padding:1px 6px;border:1px solid currentColor;border-radius:2px}
+.warmkey{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 18px;
+font:11.5px/1.6 "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--quiet)}
+.wk{display:flex;align-items:baseline;gap:6px;max-width:44ch}
+.wk b{font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
+text-transform:uppercase;padding:1px 6px;border:1px solid currentColor;border-radius:2px;white-space:nowrap}
+/* WARMTH IS A SCALE AND READS AS ONE, and it deliberately borrows neither of
+   the direction hues. Direction is plum and moss and means one thing on this
+   sheet; a chip here carries direction on its left rule and warmth in its
+   fill, so the two must not be able to be confused. Warmth runs teal at the
+   good end, grey through the middle, and the signal orange the rest of the
+   sheet reserves for "look at this" at the bad end - with the two extremes
+   filled so the ends of the scale separate at a distance.
+
+   NEVER COLOUR ALONE. The word is printed inside every mark that carries a
+   hue, so cold and wary do not have to be told apart by eye. */
+.warm-warm{color:var(--datum);background:var(--datum-soft)}
+.warm-civil{color:var(--datum)}
+.warm-distant{color:var(--strong)}
+.warm-wary{color:var(--quiet)}
+.warm-cold{color:var(--signal)}
+.warm-hostile{color:var(--signal);background:var(--signal-soft)}
+/* A tie card carries its direction the way a relationship row does. */
+.tie{border-left:3px solid var(--rule)}
+.tie.rel--above{border-left-color:var(--rel-up)}
+.tie.rel--below{border-left-color:var(--rel-down)}
+.tie.rel--alongside{border-left-color:var(--rel-level)}
+.tie .nhead{gap:6px}
+.prov{margin:10px 0 0;font:10px "IBM Plex Mono",ui-monospace,Menlo,monospace;
+letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+/* ── A GRADE BAND IS A FOLD ──────────────────────────────────────────────
+   Inside a quadrant, grade is the axis a reader sorts by, and a page that
+   opens every grade of every quadrant at once has made the sort useless. */
+.band{margin:0 0 6px;border-top:1px solid var(--rule)}
+.band>summary{list-style:none;cursor:pointer;padding:9px 0;display:flex;align-items:baseline;
+justify-content:space-between;gap:14px}
+.band>summary::-webkit-details-marker{display:none}
+.band>summary .bandhead{margin:0}
+.band>summary::after{content:"show";font:600 9.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
+letter-spacing:.12em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
+.band[open]>summary::after{content:"hide"}
+.band>summary:hover .bandhead{color:var(--datum)}
+.band>summary:focus-visible{outline:2px solid var(--datum);outline-offset:2px}
 .demon h4{margin:0 0 8px;font:600 10.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;
 letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
 .demon h4 span{margin-left:8px;letter-spacing:.06em;text-transform:none;color:var(--faint)}
@@ -4919,10 +5042,42 @@ function prose(blocks: Record<string, { text: string; stale?: boolean }> | undef
 
 /** A row of small labelled facts under a dossier heading. */
 function metaRow(pairs: [string, string][]): string {
+    // SEPARATED BY A PRINTED MIDDOT, not by the gap. Flattened - which is what
+    // happens the moment anybody copies a stretch of this sheet - a row of
+    // gapped spans came out as "heritage ancientstock depletedsecond 38".
     return `<div class="meta">${pairs
         .filter(([, v]) => v !== '' && v !== null && v !== undefined)
         .map(([k, v]) => `<span><b>${esc(k)}</b> ${esc(v)}</span>`)
-        .join('')}</div>`;
+        .join('<span class="rsep"> &middot; </span>')}</div>`;
+}
+
+/**
+ * A cross-reference to another entry on this sheet, by anchor id.
+ *
+ * WHY THIS IS NOT AN `<a href="#...">`. Two reasons, and the second is the one
+ * a reader complained about.
+ *
+ * A faction entry lives inside a pane that is `hidden` unless its tab is
+ * selected, so a fragment link to one is a link to nothing - the browser
+ * cannot scroll to an element with no box. Every other cross-reference on the
+ * sheet already goes through `data-goto`, which switches to the owning tab
+ * first and then scrolls. Five call sites were still emitting a raw fragment
+ * link and were dead on click.
+ *
+ * And a fragment link stops being a fragment the moment it leaves the page.
+ * Copy a stretch of this sheet into anything that keeps links and every one of
+ * them comes out resolved against wherever the register happened to be served,
+ * host and port included - which are the operator's and are wrong for every
+ * other reader. What was reported was
+ * `[The Kiln Court](http://localhost:8787/api/admin/register.html#court-court-kiln)`
+ * repeated on every historical event. The href is relative in the markup; it is
+ * the copy that resolves it, and the only fix that survives a copy is not to
+ * emit a URL at all.
+ */
+function jumpTo(anchor: string | null, name: string): string {
+    return anchor
+        ? `<span class="jump" data-goto="${esc(anchor)}">${esc(name)}</span>`
+        : esc(name);
 }
 
 /**
@@ -5074,8 +5229,7 @@ function taughtByLine(t: RegisterTechnique): string {
  * elemental and scales; ancient is categorical. What is forbidden is a strict
  * upgrade, because then the abandonment makes no sense.
  */
-function techniqueQuadrants(list: RegisterTechnique[]): string {
-    const quadrants: { era: string; artClass: string; head: string; note: string }[] = [
+const QUADRANTS: { era: string; artClass: string; head: string; note: string }[] = [
         {
             era: 'modern', artClass: 'cultivation',
             head: 'Modern &middot; cultivation',
@@ -5096,34 +5250,41 @@ function techniqueQuadrants(list: RegisterTechnique[]): string {
             head: 'Ancient &middot; dao',
             note: 'Categorical rather than elemental: spears somebody else can carry, a piece of ground taken out of the world, a second body. Not stronger than the modern line - the comparison does not resolve - and never a strict upgrade, or the abandonment would make no sense.'
         }
-    ];
+];
 
-    return quadrants.map(q => {
+/**
+ * The same four quadrants, one SECTION each, and each one starts folded.
+ *
+ * WHY SECTIONS RATHER THAN HEADINGS. The arts tab was one section holding four
+ * quadrant headings holding up to five grade tables each - so a reader who
+ * wanted the heaven-grade ancient dao arts scrolled past a hundred and thirty
+ * rows of everything else to reach them. Era and class are the sheet's own two
+ * axes and the catalog's grades are the third; making the first two fold
+ * independently turns a scroll into two clicks.
+ *
+ * `startfolded` is honoured once, on first sight of a section, and never
+ * against a reader who has already opened it - the fold set in localStorage
+ * still wins. A default is a starting position, not a preference.
+ */
+function techniqueQuadrantSections(list: RegisterTechnique[]): string {
+    return QUADRANTS.map(q => {
         const rows = list.filter(t => t.era === q.era && t.artClass === q.artClass);
-
-        // AN EMPTY QUADRANT IS PRINTED, NOT HIDDEN.
-        //
-        // The design states all four are real and occupied, and the catalog
-        // currently fills three: every one of the six ancient arts is class
-        // `dao`, so `ancient + cultivation` - the road that trades lifespan or
-        // blood for something the elemental line cannot ask for - has no rows.
-        //
-        // Dropping the head would leave a reader unable to tell "no such thing
-        // exists" from "this table forgot", and the whole reason for splitting
-        // on era was that the quadrants are four different KINDS of thing
-        // rather than a label. Printed empty, the gap is falsifiable on the
-        // page and the sentence corrects itself the moment a row lands.
-        if (!rows.length) {
-            return `<h3 class="bandhead">${q.head} <span>0</span></h3>
-  <p class="note">${q.note} <strong>Nothing in the catalog occupies this quadrant yet.</strong> It is printed empty rather than left out: a missing head reads as an oversight, and this is a real absence.</p>`;
-        }
-
         const capped = rows.filter(t => t.worldSupplyCeiling !== null);
-        return `<h3 class="bandhead">${q.head} <span>${rows.length}</span></h3>
+        const untaught = rows.filter(t => !t.taughtBy.length).length;
+        return `<section class="startfolded">
+  <div class="sh"><h2>${q.head}</h2><span class="r">${rows.length} art${rows.length === 1 ? '' : 's'}${untaught ? ` &middot; ${untaught} with no teacher` : ''} &middot; by grade</span></div>
   <p class="note">${q.note}${capped.length
             ? ` ${capped.length} of these ${capped.length === 1 ? 'has' : 'have'} a supply ceiling in the <em>Ceiling</em> column.`
             : ''}</p>
-  ${techniqueTables(rows)}`;
+  ${rows.length
+            ? techniqueTables(rows)
+            // AN EMPTY QUADRANT IS PRINTED, NOT HIDDEN. The design states all
+            // four are real; the catalog currently fills three. Dropping the
+            // head would leave a reader unable to tell "no such thing exists"
+            // from "this table forgot", and the gap is falsifiable on the page.
+            : '<p class="note"><strong>Nothing in the catalog occupies this quadrant yet.</strong> It is printed empty rather than left out: a missing head reads as an oversight, and this is a real absence.</p>'}
+</section>
+`;
     }).join('');
 }
 
@@ -5133,9 +5294,15 @@ function techniqueTables(list: RegisterTechnique[]): string {
         if (!rows.length) return '';
         const untaught = rows.filter(t => !t.taughtBy.length).length;
 
-        return `<h3 class="bandhead">${esc(grade)} <span>${rows.length}</span>`
+        // A GRADE IS A FOLD OF ITS OWN, and closed to start. Grade is the
+        // catalog's own band - it sets the qi cost, the ordinal range and the
+        // baseline opacity - so it is the axis a reader is most often sorting
+        // by inside a quadrant, and a page that opens on every row of every
+        // grade at once has made that sort useless.
+        return `<details class="band"${untaught ? '' : ''}>
+    <summary><span class="bandhead">${esc(grade)} <span>${rows.length}</span>`
             + (untaught ? `<span>&middot; ${untaught} with no teacher</span>` : '')
-            + `</h3>
+            + `</span></summary>
   <div class="scroll"><table class="arts">
     <caption>${esc(grade)} grade &middot; ${rows.length} &middot; by the rung the art is written for</caption>
     <thead><tr><th class="pw">Ord</th><th>Art</th><th>Kind</th><th>Reach</th><th>Channel</th><th>Ceiling</th><th>Taught by</th><th>What it does</th></tr></thead>
@@ -5151,7 +5318,8 @@ function techniqueTables(list: RegisterTechnique[]): string {
             ? '<span class="dim">none</span>'
             : `${Math.round(t.worldSupplyCeiling * 100)}%`}</td>`
         + `<td class="q">${taughtByLine(t)}</td>`
-        + `<td class="q">${esc(t.description)}</td></tr>`).join('')}</tbody></table></div>`;
+        + `<td class="q">${esc(t.description)}</td></tr>`).join('')}</tbody></table></div>
+  </details>`;
     }).join('');
 }
 
@@ -5387,25 +5555,46 @@ function herbNameOf(id: string): string {
     return HERBS.find(h => h.id === id)?.name ?? id;
 }
 
-/** The same relation from the house's end: what joining it would get you. */
-function teachingBlocks(list: RegisterTeaching[]): string {
-    return list.map(h => `<details class="ncard">
+/**
+ * The shelf, house by house, and this is the page that owns it.
+ *
+ * WHAT THIS REPLACED, AND IT WAS TWO THINGS RENDERING THE SAME FACT. The Arts
+ * tab already listed every house's teach list, and every faction entry listed
+ * the same list again in a different shape - with the element, the category and
+ * how many other houses teach each title - and under it the deep road with its
+ * copy count, its provenance, its opening penalty and a biography of its one
+ * teacher. Three renderings of one field on the sect catalog, one of them on a
+ * page whose job is to say what a house IS.
+ *
+ * There is one now, here, and it is the fullest of the three. The faction entry
+ * carries what elements and to what level, which is what a reader deciding
+ * about a house is asking, and points at this.
+ */
+function houseTeachingCards(dossiers: readonly SectDossier[]): string {
+    return [...dossiers]
+        .filter(d => d.curriculum || d.deepRoad)
+        .sort((a, b) => b.ordinal - a.ordinal || a.name.localeCompare(b.name))
+        .map(d => {
+            const c = d.curriculum;
+            return `<details class="ncard" id="teach-${esc(d.id)}">
     <summary>
-      <span class="nhead"><span class="nname">${esc(h.name)}</span><span class="nord">${h.ordinal}</span></span>
-      <span class="nkind">${h.arts.length} art${h.arts.length === 1 ? '' : 's'}${h.signature ? ' &middot; known for ' + esc(h.signature.name) : ' &middot; no signature art'}<span class="ngo">open</span></span>
+      <span class="nhead"><span class="nname">${esc(d.name)}</span><span class="nsep"> &middot; </span>`
+                + `<span class="nord"><span class="nfl">ord</span> ${d.ordinal}</span></span>`
+                + nfacts([
+                    c && c.elements.length ? nfact('elements', c.elements.join(', ')) : '',
+                    c ? nfact('arts', String(c.arts.length)) : '',
+                    c && c.hardest ? nfact('to', `${c.hardest.requiredOrdinal} &middot; ${c.hardest.grade}`) : '',
+                    c && c.exclusiveCount ? nfact('nowhere else', String(c.exclusiveCount), 'pin') : '',
+                    d.deepRoad ? nfact('and', 'a road to the top of the ladder', 'pin') : ''
+                ])
+                + `<span class="ngo">open</span>
     </summary>
     <div class="nbody">
-      <div class="grp"><h4>Teaches <span>${h.arts.length}</span>${h.signature ? `<span class="gap">signature: ${esc(h.signature.name)}</span>` : ''}</h4>
-      ${h.arts.map(a => `<div class="who"><span class="wn">${esc(a.name)}</span>`
-        + `<span class="wo">${a.requiredOrdinal}</span>`
-        + `<span class="wr">${esc(a.grade)}${h.signature && h.signature.id === a.id ? ' &middot; signature' : ''}</span>`
-        + `<span class="wd">${esc(rankName(a.requiredOrdinal))}</span></div>`).join('')}
-      </div>
-      ${h.unknownArtIds.length
-        ? `<p class="none">Teach list names ${h.unknownArtIds.length} art${h.unknownArtIds.length === 1 ? '' : 's'} the catalog does not have: ${esc(h.unknownArtIds.join(', '))}. That is a fault in the data rather than a kind of teaching.</p>`
-        : ''}
+      ${c ? curriculumBlock(c) : ''}
+      ${d.deepRoad ? deepRoadBlock(d.deepRoad) : ''}
     </div>
-  </details>`).join('');
+  </details>`;
+        }).join('');
 }
 
 /**
@@ -5575,8 +5764,12 @@ function deepRoadBlock(r: RegisterDeepRoad): string {
             + (r.cap === null
                 ? ', against a book that ends nowhere.'
                 : r.canFinishIt
-                    ? `, and the book ends at ${r.cap}. This is the one house in the world that can walk somebody to the end of its own road.`
-                    : `, and the book ends at ${r.cap}. The last ${r.cap - r.carriesTo} rung${r.cap - r.carriesTo === 1 ? '' : 's'} have no teacher anywhere and have to be walked alone.`)
+                    ? `, and the book ends at ${r.cap}${r.teachableEnd !== null && r.teachableEnd < r.cap
+                        ? ` - of which ${r.teachableEnd} is the highest rung anybody can be taught to, because the last is reached by surviving the crossing and by nothing else`
+                        : ''}. This house can walk somebody to the end of its own road.`
+                    : `, and the book ends at ${r.cap}. `
+                        + `The last ${(r.teachableEnd ?? r.cap) - r.carriesTo} teachable rung`
+                        + `${(r.teachableEnd ?? r.cap) - r.carriesTo === 1 ? '' : 's'} have no teacher anywhere and have to be walked alone.`)
             + '</dd>',
         `<dt>What the opening costs</dt><dd>${r.opening
             ? `The first ${r.opening.rungs} rungs run at ${Math.round(r.opening.rateMultiplier * 100)}% of ordinary progress. A hard stretch of somebody else's shorthand before the road opens up.`
@@ -5821,17 +6014,67 @@ function warmthSentence(r: RegisterRelationship, name: string): string {
  * section and a lighter one on each row, which is the grammar `.evts` and
  * `.evt` already use for the same kind of material. No new layout.
  */
-function relationshipsBlock(rels: RegisterRelationship[], name: string): string {
+// ─────────────────────────────────────────────────────────────────────────
+// TIES: THE RESUME STRIP, AND THE PAGE THAT OWNS THE RECORD
+//
+// WHAT THIS REPLACED AND WHY. Every faction entry used to carry its whole
+// relationship dossier - a card per tie, each with what the tie is, when it
+// started, how this house puts it, what it does about it, and the grievance.
+// Thirty-eight entries carried it and every tie was written out twice, once
+// inside each party's entry, so a single feud produced two near-identical
+// four-paragraph blocks and the sheet carried the general rule "a feud the
+// other party has not heard about is not a feud" once per feud.
+//
+// A faction entry is a resume. It says what a body IS in the time somebody
+// spends deciding whether they care, and four screens of correspondence is not
+// that. So the entry keeps the SHAPE of a house's position - how many ties,
+// running which way, how warm at each end - as a strip of chips that is read at
+// a glance, and the record itself moved to the Ties tab, where each pair is
+// written ONCE.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The direction glyph, which is the accessible half of the colour.
+ *
+ * Direction is carried by the reserved plum/moss/grey palette AND by this
+ * mark, never by the palette alone: about one man in twelve cannot separate
+ * two of those hues, and a strip that meant nothing to them would be a strip
+ * that meant nothing. The counts sentence above the strip says the same fact
+ * a third time, in words.
+ */
+const STANCE_MARK: Record<RelStance, string> = {
+    above: '&#9650;',      // pointing up: this body stands over the house
+    alongside: '&#9679;',  // level
+    below: '&#9660;'       // pointing down: this body answers to the house
+};
+
+const STANCE_WORD: Record<RelStance, string> = {
+    above: 'stands over it',
+    alongside: 'level with it',
+    below: 'answers to it'
+};
+
+/**
+ * How a house's position in the world looks at a glance, and nothing else.
+ *
+ * One chip per tie: the direction as a mark and a colour, the other body's
+ * name, and the two warmths with an arrow between them - `cold &rarr; civil`
+ * meaning this house is cold to them and they are civil back. That asymmetry
+ * is the thing the section's prose kept asserting ("a house can be warm to a
+ * patron that is only civil back") and it is a fact a reader can now see
+ * instead of being told.
+ *
+ * The chip opens the pair's full account on the Ties tab. Nothing here is a
+ * summary OF that account - it is the index to it, which is the difference
+ * between a cross-reference and a copy.
+ */
+function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor: string): string {
     if (!rels.length) {
-        return foldablePart('How it stands with everybody', 'above, below and beside - and nothing recorded',
+        return foldablePart('How it stands', 'nothing recorded, which is a hole in the data',
             `<p class="none">Nothing in the catalog puts ${esc(name)} in relation to any other body. `
             + 'That is a hole in the data rather than a house that stands alone: every faction holds from '
             + 'somebody, is held from, is contested, or was in a room when something happened.</p>');
     }
-
-    const groups = (['above', 'alongside', 'below'] as const)
-        .map(stance => ({ stance, rows: rels.filter(r => r.stance === stance) }))
-        .filter(g => g.rows.length);
 
     const above = rels.filter(r => r.stance === 'above').length;
     const below = rels.filter(r => r.stance === 'below').length;
@@ -5842,74 +6085,248 @@ function relationshipsBlock(rels: RegisterRelationship[], name: string): string 
         below ? `${below} under it` : ''
     ].filter(Boolean).join(', ');
 
-    const body = groups.map(g => `<div class="relgrp relgrp--${esc(g.stance)}">`
-        + `<h4>${esc(STANCE_HEADS[g.stance].label)} <span>${g.rows.length}</span>`
-        + `<span class="gap">${esc(STANCE_HEADS[g.stance].gloss)}</span></h4>`
-        + g.rows.map(r => {
-            const other = r.anchor
-                ? `<span class="jump" data-goto="${esc(r.anchor)}">${esc(r.otherName)}</span>`
-                : esc(r.otherName);
-            return relCard(r.stance, other,
-                // "stands above X, as the apex that appoints into its posting" reads
-                // as a role and is right for a vertical tie. It is wrong for a level
-                // one, where neither party IS anything to the other, so that case
-                // takes its own connector rather than being forced into "as".
-                `<p class="relsay">${esc(standingSentence(r, name))}${r.stance === 'alongside'
-                    ? `. Between them: ${esc(tiePhrase(r))}. `
-                    : `, as ${esc(tiePhrase(r))}. `}`
-                + `${warmthSentence(r, name)}</p>`
-                + chunked(r.what, 'the rest of what the tie is', 'relwhat')
-                + `<dl class="relsides">`
-                + `<dt>Since</dt>${chunkedDd(r.since)}`
-                + `<dt>How ${esc(name)} puts it</dt>${chunkedDd(r.howTheyPutIt)}`
-                + `<dt>And so it does</dt>${chunkedDd(r.andSoTheyDo)}`
-                + (r.grievance
-                    ? `<dt>The grievance</dt>${chunkedDd(r.grievance)}`
-                    : '')
-                + `</dl>`);
-        }).join('')
-        + `</div>`).join('');
+    // Sorted the way the counts are read, so the strip and the sentence above
+    // it are in the same order and one confirms the other.
+    const order: RelStance[] = ['above', 'alongside', 'below'];
+    const chips = [...rels]
+        .sort((a, b) => order.indexOf(a.stance) - order.indexOf(b.stance)
+            || a.otherName.localeCompare(b.otherName))
+        // A LIST ITEM PER CHIP, and a printed separator inside each one. Both
+        // for the same reason: this sheet gets copied out of the browser, and
+        // separation that lives only in a gap or a border does not survive
+        // that. Flattened, a strip of styled spans came out as
+        // "The Deep Surveycold civilNine Abyss Flame Sect...".
+        .map(r => `<li class="relchip relchip--${esc(r.stance)}" data-goto="${esc(tieAnchor(selfAnchor, r.anchor, r.otherName))}"`
+            + ` title="${esc(`${r.otherName} ${STANCE_WORD[r.stance]}. ${name} is ${r.warmth} to them; they are ${r.theirWarmth} back.`)}">`
+            + `<span class="relchip__mark" aria-hidden="true">${STANCE_MARK[r.stance]}</span>`
+            + `<span class="relchip__who">${esc(r.otherName)}</span>`
+            + `<span class="nsep"> &middot; </span>`
+            + `<span class="relchip__warm">${esc(r.warmth)} &rarr; ${esc(r.theirWarmth)}</span>`
+            + '</li>')
+        .join('');
 
-    // Provenance, collapsed. Which table a tie was read out of is a fact about
-    // the catalog rather than about the world, and somebody checking one can
-    // open this. It never sits in the reading line.
-    const bySource = [...new Set(rels.map(r => r.source))]
-        .map(src => `${rels.filter(r => r.source === src).length} from ${src}`)
-        .join(', ');
+    // NO LEGEND HERE. How to read a chip is the same fact on all thirty-four
+    // entries, so it is said once at the top of the tab and not per house -
+    // which is the defect this whole pass exists to close, in miniature.
+    return foldablePart('How it stands', `${counts} - the record for each is on the Ties tab`,
+        `<p class="note"><strong>${esc(counts)}.</strong> <span class="jump" data-tab-goto="ties">Every one of them in full on the Ties tab.</span></p>`
+        + `<ul class="relstrip">${chips}</ul>`);
+}
 
-    return foldablePart('How it stands with everybody', `${counts} - and how warm each end of it is`,
-        // ONE SENTENCE, AND IT IS ABOUT HOUSES RATHER THAN ABOUT STORAGE.
-        // This ran to five lines explaining that direction is held once and
-        // warmth twice - true, and a fact about the database. Every faction
-        // entry carries this section, so it rendered 38 times on one sheet
-        // against 3,798 substantial lines, and the register's whole claim is to
-        // be a reflection of the world rather than of the code. The in-world
-        // half is the half that survives: a house can be warm to a patron that
-        // is only civil back, and no org chart shows that.
-        '<p class="note"><strong>A house can be warm to a patron that is only civil back, '
-        + 'or dutiful upward and cold to everything under it.</strong> Neither is on any org chart.</p>'
-        // THE KEY IS A SIBLING OF THE PARAGRAPH, NOT A SPAN INSIDE IT, and that
-        // is the whole of the bug this closes. It used to be three badges at the
-        // tail of the note above. `enforceChunkLimit` only declines to split a
-        // paragraph that already holds a BLOCK tag, a span is not one, and the
-        // note runs past the limit - so on all 38 entries that carry this
-        // section the key was pushed into the continuation and shipped closed.
-        // A reader landed on cards ruled in two colours with the legend for
-        // them folded away, which is how a working colour system reads as
-        // decoration applied to some rows and not others.
-        + `<div class="relkey">${([
-            ['above', 'Stands over this house'],
-            ['alongside', 'Neither above nor below'],
-            ['below', 'Answers to this house']
-        ] as [RelStance, string][]).map(([stance, gloss]) => relCard(stance, esc(gloss), '')).join('')}</div>`
-        + `<div class="rels">${body}</div>`
-        + '<details class="context"><summary>Where these came from</summary>'
-        // The counts stay - they are this house's own provenance and differ per
-        // entry. The paragraph explaining what "authored" means as an authoring
-        // convention does not: it was identical on all 12 entries that carry
-        // one, and it describes how the catalog was written rather than how the
-        // world is.
-        + `<p class="desc">${esc(bySource)}.</p></details>`);
+/**
+ * Where the pair's record sits on the Ties tab. Stable from either end.
+ *
+ * KEYED ON THE SHEET ANCHORS AND NOT ON THE NAMES. A body is filed under two
+ * ids about half the time and prints under whichever name its own catalog
+ * uses, so a name key resolves to two different strings from the two ends of
+ * the same tie - which is a chip pointing at nothing. Two of them did: the
+ * Azure Mist Court is a court and a sect and its two neighbours reached it by
+ * the name the other catalog uses. `anchor` has already been resolved through
+ * the register's own id-collapsing, so both ends agree by construction.
+ *
+ * A body with no entry at all falls back to its name, which is fine because
+ * there is then nothing on either side to disagree with.
+ */
+function tieAnchor(selfAnchor: string, otherAnchor: string | null, otherName: string): string {
+    const other = otherAnchor ?? `name-${otherName}`;
+    const key = [selfAnchor, other].map(x => x.toLowerCase()).sort().join('--');
+    return `tie-${key.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`.slice(0, 96);
+}
+
+/** One pair, seen from both ends, assembled once. */
+interface TiePair {
+    anchor: string;
+    aId: string;
+    aName: string;
+    aAnchor: string | null;
+    bName: string;
+    bAnchor: string | null;
+    /** Where B stands relative to A. */
+    stance: RelStance;
+    kind: string;
+    source: string;
+    what: string;
+    since: string;
+    /** How A regards B, and how B regards A. */
+    aWarmth: Warmth;
+    bWarmth: Warmth;
+    aPutsIt: string;
+    aDoes: string;
+    aGrievance: string | null;
+    /** Filled when the other end's entry was seen too, which is the usual case. */
+    bPutsIt: string | null;
+    bDoes: string | null;
+    bGrievance: string | null;
+    /** True where neither body holds from the other. The lateral ties. */
+    lateral: boolean;
+    /**
+     * The A-side relationship row, kept whole.
+     *
+     * So that the sentence helpers this sheet already has - what the standing
+     * is, what the tie is called in words, how warm it is from each end - are
+     * called rather than reimplemented. Every one of those sentences is the
+     * catalog's phrasing assembled by code that was already right; this pass
+     * moved where they are printed, not what they say.
+     */
+    rel: RegisterRelationship;
+}
+
+/**
+ * Every tie in the world, once.
+ *
+ * The catalog stores a tie on both parties, which is correct - a house's own
+ * entry has to be readable on its own - and it means the register meets each
+ * one twice. Collapsing on the pair is what takes the relations page from two
+ * partisan accounts printed apart to one row with both accounts on it, which
+ * is also the only shape in which the disagreement between them is visible.
+ */
+function buildTiePairs(
+    dossiers: readonly SectDossier[],
+    courts: readonly RegisterCourt[]
+): TiePair[] {
+    const byAnchor = new Map<string, TiePair>();
+
+    // Both catalogs, because the two courts with no faction row of their own
+    // carry ties like anything else - and one of them is a party to the largest
+    // unresolved question in the region. Dropped from this pass, their chips
+    // would point at a record nothing had rendered.
+    const bodies: { id: string; name: string; anchor: string; relationships: RegisterRelationship[] }[] = [
+        ...dossiers.map(d => ({ id: d.id, name: d.name, anchor: `faction-${d.id}`, relationships: d.relationships })),
+        ...courts
+            .filter(court => !dossiers.some(d => idsForFaction(d.id).includes(court.id)))
+            .map(court => ({ id: court.id, name: court.name, anchor: `court-${court.id}`, relationships: court.relationships }))
+    ];
+
+    for (const d of bodies) {
+        for (const r of d.relationships) {
+            const anchor = tieAnchor(d.anchor, r.anchor, r.otherName);
+            const seen = byAnchor.get(anchor);
+            if (seen) {
+                // The second end. Only the partisan fields differ; `what`,
+                // `since` and `kind` are the pair's and are already stored.
+                if (seen.bName === d.name) {
+                    seen.bPutsIt = r.howTheyPutIt;
+                    seen.bDoes = r.andSoTheyDo;
+                    seen.bGrievance = r.grievance;
+                }
+                continue;
+            }
+            byAnchor.set(anchor, {
+                anchor,
+                aId: d.id,
+                aName: d.name,
+                aAnchor: d.anchor,
+                bName: r.otherName,
+                bAnchor: r.anchor,
+                stance: r.stance,
+                kind: r.kind,
+                source: r.source,
+                what: r.what,
+                since: r.since,
+                aWarmth: r.warmth,
+                bWarmth: r.theirWarmth,
+                aPutsIt: r.howTheyPutIt,
+                aDoes: r.andSoTheyDo,
+                aGrievance: r.grievance,
+                bPutsIt: null,
+                bDoes: null,
+                bGrievance: null,
+                lateral: r.stance === 'alongside',
+                rel: r
+            });
+        }
+    }
+    return [...byAnchor.values()].sort((x, y) => x.aName.localeCompare(y.aName)
+        || x.bName.localeCompare(y.bName));
+}
+
+/**
+ * WHAT THIS IS NOT: A GRID.
+ *
+ * The first draft of this page was a square of every body against every other,
+ * and it was the wrong object twice over. A pair with nothing between them is
+ * not a fact worth a cell, so the square was mostly blanks - and blanks are the
+ * one thing a grid renders emphatically. Then the feudal edges came out of it,
+ * because who holds from whom is a hierarchy and the org chart on the Factions
+ * tab already draws it better than any plane can: indentation carries that
+ * meaning with no notation at all, and a grid restating those edges would be
+ * the copy-rather-than-cross-reference failure in a new shape.
+ *
+ * What is left is a short list, so a list is what it is. One line per tie, both
+ * warmths on it, and the direction of the pair said once in the header instead
+ * of on every row. It wraps at every viewport, it needs no scroll container,
+ * and it has no empty-cell problem because a pair that does not exist is simply
+ * not a line.
+ *
+ * The tie cards below ARE that list - each one's closed summary is the line -
+ * so the index and the record cannot drift apart, because they are one object.
+ */
+function tieGroup(pairs: readonly TiePair[], head: string, note: string): string {
+    if (!pairs.length) return '';
+    return `<h3 class="bandhead">${head} <span>${pairs.length}</span></h3>
+  <p class="note">${note}</p>
+  ${pairs.map(tieCard).join('')}`;
+}
+
+/** The warmth scale, said once, where the grid is read rather than per tie. */
+function warmthLegend(): string {
+    return `<div class="warmkey">${(Object.keys(WARMTH_GLOSS) as Warmth[])
+        .map(w => `<span class="wk warm-${esc(w)}"><b>${esc(w)}</b> ${esc(WARMTH_GLOSS[w])}</span>`)
+        .join('')}</div>`;
+}
+
+/**
+ * One pair's whole record, written once, with both partisan accounts on it.
+ *
+ * This is the material that used to sit inside every faction entry, twice per
+ * tie. Nothing has been cut from it; what changed is that a reader arrives here
+ * having asked for it, rather than meeting four screens of it while trying to
+ * find out what a house is.
+ */
+function tieCard(p: TiePair): string {
+    const side = (who: string, anchor: string | null, warmth: Warmth,
+        putsIt: string | null, does: string | null, grievance: string | null): string =>
+        `<div class="tieside"><h5>${jumpTo(anchor, who)} <span class="warmtag warm-${esc(warmth)}">${esc(warmth)}</span></h5>`
+        + (putsIt
+            ? `<dl class="relsides"><dt>How they put it</dt>${chunkedDd(putsIt)}`
+                + (does ? `<dt>And so they do</dt>${chunkedDd(does)}` : '')
+                + (grievance ? `<dt>The grievance</dt>${chunkedDd(grievance)}` : '')
+                + '</dl>'
+            : '<p class="none">The catalog carries this tie from the other end only.</p>')
+        + '</div>';
+
+    return `<details class="ncard tie rel--${esc(p.stance)}" id="${esc(p.anchor)}">
+    <summary>
+      <span class="nhead"><span class="nname">${esc(p.aName)}</span>`
+        + '<span class="nsep"> &middot; </span>'
+        + `<span class="nname">${esc(p.bName)}</span>`
+        + '<span class="nsep"> &middot; </span>'
+        // The whole of the asymmetry, on the closed line. The first word is the
+        // first-named body's regard for the second and the second word is the
+        // answer back; which is which is said once in the section header rather
+        // than on every row, because it is the same fact on all of them.
+        + `<span class="warmpair"><span class="warmtag warm-${esc(p.aWarmth)}">${esc(p.aWarmth)}</span>`
+        + '<span class="warmslash">/</span>'
+        + `<span class="warmtag warm-${esc(p.bWarmth)}">${esc(p.bWarmth)}</span></span></span>`
+        + nfacts([
+            nfact('standing', STANCE_WORD[p.stance]),
+            nfact('tie', p.kind.replace(/_/g, ' '))
+        ])
+        + `<span class="ngo">open</span>
+    </summary>
+    <div class="nbody">
+      ${relCard(p.stance, jumpTo(p.bAnchor, p.bName),
+            `<p class="relsay">${esc(standingSentence(p.rel, p.aName))}${p.stance === 'alongside'
+                ? `. Between them: ${esc(tiePhrase(p.rel))}. `
+                : `, as ${esc(tiePhrase(p.rel))}. `}`
+            + `${warmthSentence(p.rel, p.aName)}</p>`
+            + chunked(p.what, 'the rest of what the tie is', 'relwhat')
+            + `<dl class="relsides"><dt>Since</dt>${chunkedDd(p.since)}</dl>`
+            + `<div class="tiesides">${side(p.aName, p.aAnchor, p.aWarmth, p.aPutsIt, p.aDoes, p.aGrievance)}`
+            + `${side(p.bName, p.bAnchor, p.bWarmth, p.bPutsIt, p.bDoes, p.bGrievance)}</div>`)}
+      <p class="prov">read from ${esc(p.source)}</p>
+    </div>
+  </details>`;
 }
 
 /** Who it answers to, on what terms, and what leaving would cost. */
@@ -6295,7 +6712,9 @@ function foldablePart(label: string, gloss: string, body: string): string {
  * member" without having been told what the house lost reads it as an
  * assessment; a reader who has been told reads it as a consequence.
  */
-function historyBlock(h: RegisterHistory): string {
+function historyCard(d: SectDossier): string {
+    const h = d.history;
+    if (!h) return '';
     const rows: string[] = [
         `<dt>How it got here</dt>${chunkedDd(h.origin)}`,
         `<dt>Why it makes what it makes</dt>${chunkedDd(h.whyTheGapIs)}`
@@ -6305,24 +6724,63 @@ function historyBlock(h: RegisterHistory): string {
     }
     rows.push(`<dt>Where the false belief comes from</dt>${chunkedDd(h.whereTheWrongBeliefComesFrom)}`);
 
-    const shared = h.shared.map(e => {
-        const others = e.others.map(o => o.anchor
-            ? `<a href="#${esc(o.anchor)}">${esc(o.name)}</a>`
-            : esc(o.name)).join(', ');
-        return `<div class="evt">`
+    return `<details class="ncard" id="hist-${esc(d.id)}">
+    <summary>
+      <span class="nhead"><span class="nname">${esc(d.name)}</span><span class="nsep"> &middot; </span>`
+        + `<span class="nord"><span class="nfl">ord</span> ${d.ordinal}</span></span>`
+        + nfacts([
+            nfact('shares', `${h.shared.length} dated event${h.shared.length === 1 ? '' : 's'}`),
+            h.whatTheUnlitNodesWere ? nfact('and', 'what the dark nodes were') : ''
+        ])
+        + `<span class="ngo">open</span>
+    </summary>
+    <div class="nbody"><dl class="hist">${rows.join('')}</dl>
+      ${h.shared.length
+        ? `<p class="note">The ${h.shared.length} event${h.shared.length === 1 ? '' : 's'} this house shares with others `
+            + 'are below, each written once with every party\'s own account on it.</p>'
+        : ''}
+    </div>
+  </details>`;
+}
+
+/**
+ * Every dated event, written ONCE, with every party's account on it.
+ *
+ * WHAT THIS REPLACED. A shared event was rendered inside each participant's
+ * entry - the neutral line, then that house's own telling - so a three-party
+ * event appeared three times with three quarters of its text identical, and a
+ * reader working down the Factions tab met the same year over and over. The
+ * event is one object with several accounts hanging off it; that is what it now
+ * looks like on the page.
+ *
+ * The neutral line is the floor every account has to stand on, said once at the
+ * top of the section rather than above each event, because it is a rule about
+ * how this catalog is written and not a fact about any one year.
+ */
+function sharedEventsOnce(dossiers: readonly SectDossier[]): string {
+    const anchorOf = new Map<string, string>();
+    for (const d of dossiers) anchorOf.set(d.name, `faction-${d.id}`);
+
+    const events = [...SHARED_EVENTS].sort((a, b) => b.yearsAgo - a.yearsAgo);
+
+    return events.map(e => {
+        const parties = e.parties.map(id => nameOf(id));
+        return `<div class="evt" id="event-${esc(e.id)}">`
             + `<div class="evth"><span class="evty">${e.yearsAgo.toLocaleString()} yr ago</span>`
+            + `<span class="nsep"> &middot; </span>`
             + `<span class="evtx">explains ${esc(e.explains)}</span>`
-            + `<span class="evtw">with ${others}</span></div>`
+            + `<span class="nsep"> &middot; </span>`
+            + `<span class="evtw">${parties.map(n => jumpTo(anchorOf.get(n) ?? null, n)).join(', ')}</span></div>`
             + chunked(e.what, 'the rest of what happened', 'evtn')
-            + chunked(e.ourAccount, 'the rest of this house\'s account', 'evta')
+            + `<div class="tiesides">${e.parties.map(id => {
+                const account = e.accounts[id];
+                if (!account) return '';
+                return `<div class="tieside"><h5>${jumpTo(anchorOf.get(nameOf(id)) ?? null, nameOf(id))}</h5>`
+                    + chunked(account, 'the rest of this house\'s account', 'evta')
+                    + '</div>';
+            }).join('')}</div>`
             + '</div>';
     }).join('');
-
-    return foldablePart('History', 'how it came to be here, and what that accounts for',
-        `<dl class="hist">${rows.join('')}</dl>`
-        + (shared
-            ? `<div class="evts"><p class="note">The neutral line is the minimum every party would concede happened. The second paragraph is this house speaking for itself.</p>${shared}</div>`
-            : ''));
 }
 
 /**
@@ -6335,8 +6793,8 @@ function historyBlock(h: RegisterHistory): string {
  * what it will not do, where it stands with its patron, and what happens to the
  * ground if somebody ends it.
  */
-function demonicBlock(x: RegisterDemonic, name: string): string {
-    return `<div class="demon"><h4>What ${esc(name)} is willing to do <span>${esc(x.kind.replace(/-/g, ' '))}</span></h4>`
+function demonicBlock(x: RegisterDemonic, name: string, id: string): string {
+    return `<div class="demon" id="conduct-${esc(id)}"><h4>What ${esc(name)} is willing to do <span>${esc(x.kind.replace(/-/g, ' '))}</span></h4>`
         + `<dl class="hist">`
         + `<dt>The line it crosses</dt><dd>${esc(x.theLineItCrosses)}</dd>`
         + `<dt>Who pays</dt><dd>${esc(x.whoPays)}</dd>`
@@ -6421,7 +6879,7 @@ function postingBlock(x: RegisterPosting, name: string): string {
  * sheet adds no adjudicating sentence of its own and must not - every line here
  * was written from inside one of the two houses.
  */
-function courtPanel(court: RegisterCourt): string {
+function courtPanel(court: RegisterCourt, selfAnchor: string): string {
     const named = court.startingAwareness !== 'unaware' && court.startingAwareness !== 'whisper';
     const agrees = court.startingAwareness === court.apexAwareness;
 
@@ -6469,7 +6927,7 @@ function courtPanel(court: RegisterCourt): string {
         + `<td class="q">${esc(o.office)} <span class="dim">wants ${esc(o.wants)}; fears ${esc(o.fears)}</span></td>`
         + '</tr>').join('')}</tbody></table></div>
     <p class="note"><strong>&bull;</strong> marks the officer the court's ordinal of ${court.ordinal} is naming: the strongest member who will answer. It is not the top of a chain of command, because there is not one.</p>
-    ${relationshipsBlock(court.relationships, court.name)}
+    ${relSummaryStrip(court.relationships, court.name, selfAnchor)}
   </div>`;
 }
 
@@ -6535,6 +6993,98 @@ function courtPanel(court: RegisterCourt): string {
  * comparison the register exists to prevent - and it is also why the living
  * sit in part two and the dead sit in part five.
  */
+// ─────────────────────────────────────────────────────────────────────────
+// THE RESUME NOTATION
+//
+// A faction entry is read in about thirty seconds by somebody deciding whether
+// they care about this house. Anything countable on it is therefore written as
+// notation rather than as a sentence, because notation is SCANNED and a
+// sentence has to be READ - and the sheet's whole vocabulary is the ladder, so
+// `44 x1` needs no key on a page where 0 to MAX_ORDINAL appears everywhere.
+//
+// THE RULE THIS ENFORCES, and it is the one the previous line broke. A block on
+// the overview may POINT at the page that owns a question or it may ANSWER the
+// question, and never both. The holdings line used to say "what this house is
+// holding is on the Holdings tab" and then spell out the count, the strongest
+// power, the immortal total and a named object - a cross-reference and a copy in
+// one sentence, which gives the reader an incomplete answer here, a fuller one
+// there, and two places to drift apart. The pointer is the whole job.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What a house holds, as scale and count and nothing else.
+ *
+ * `43 x1 &middot; 4 immortal` - a body with one object rated 43 and four
+ * immortal objects. What the objects ARE, what waking or spending one costs,
+ * and who is carrying which are the Holdings and Items tabs, which exist to
+ * answer exactly that and answer it in full.
+ */
+function holdsNotation(d: SectDossier): string {
+    // Grouped by rating, strongest first, so two objects at the same rung read
+    // as `41 x2` rather than as two rows. The rating is the ladder, which is
+    // the only scale on this sheet, so the notation needs no key.
+    const byPower = new Map<number, number>();
+    for (const a of d.artifacts) byPower.set(a.power, (byPower.get(a.power) ?? 0) + 1);
+    const objects = [...byPower.entries()]
+        .sort((x, y) => y[0] - x[0])
+        .map(([power, n]) => `<span class="hn"><b>${power}</b> x${n}</span>`);
+
+    const immortal = d.holdings.reduce((n, h) => n + h.count, 0);
+    if (immortal) objects.push(`<span class="hn"><b>${immortal}</b> immortal</span>`);
+    // The sent-down gift and the parting gift are already named in the meta
+    // strip above, so naming them again here would be the copy this notation
+    // exists to remove. They are counted, not named.
+    const gifts = (d.apex ? 1 : 0) + (d.partingGift ? 1 : 0);
+    if (gifts) objects.push(`<span class="hn"><b>${gifts}</b> sent down</span>`);
+
+    if (!objects.length) return '';
+    return `<p class="holdline"><span class="nfl">holds</span> ${objects.join('<span class="nsep"> &middot; </span>')}`
+        + ` <span class="jump" data-tab-goto="holdings">what each one is</span></p>`;
+}
+
+/**
+ * What a house teaches, at the depth a resume answers it: elements, and level.
+ *
+ * WHAT THIS REPLACED. The overview carried the shelf art by art - every title,
+ * its grade, its category, its element, how many teach lists it is on - and
+ * under that the deep road with its copy count, its provenance, its opening
+ * penalty and a biography of its one teacher. All of it is good and all of it
+ * is on the Arts tab, which is the page that owns arts, so the overview was a
+ * second rendering of somebody else's page.
+ *
+ * A reader scanning a house wants "ice and water, and they can carry you to
+ * about 33". The exact names are one click away.
+ *
+ * THE LEVEL IS THE TEACHABLE END, not the book's cap. A road covering the last
+ * realm caps at the rung the last crossing lands on, which nobody is ever
+ * taught onto, so quoting the cap here would put a rung on the resume that no
+ * house can walk anybody to.
+ */
+function teachNotation(d: SectDossier): string {
+    const c = d.curriculum;
+    if (!c && !d.deepRoad) return '';
+
+    const bits: string[] = [];
+    if (c) {
+        bits.push(c.elements.length
+            ? `<span class="hn">${esc(c.elements.join(', '))}</span>`
+            : '<span class="hn dim">no element - bodies, doors or paperwork</span>');
+        bits.push(`<span class="hn"><b>${c.arts.length}</b> art${c.arts.length === 1 ? '' : 's'}</span>`);
+        if (c.hardest) bits.push(`<span class="hn">to <b>${c.hardest.requiredOrdinal}</b></span>`);
+        if (c.hardest) bits.push(`<span class="hn">top grade ${esc(c.hardest.grade)}</span>`);
+        if (c.exclusiveCount) bits.push(`<span class="hn"><b>${c.exclusiveCount}</b> nowhere else</span>`);
+    }
+    if (d.deepRoad) {
+        const end = d.deepRoad.teachableEnd ?? d.deepRoad.cap;
+        bits.push('<span class="hn">a road to the top of the ladder'
+            + (end === null ? '' : ` &middot; teachable to <b>${end}</b>`)
+            + `, and this house carries to <b>${d.deepRoad.carriesTo}</b></span>`);
+    }
+
+    return `<p class="holdline"><span class="nfl">teaches</span> ${bits.join('<span class="nsep"> &middot; </span>')}`
+        + ` <span class="jump" data-tab-goto="arts">art by art</span></p>`;
+}
+
 function dossier(d: SectDossier): string {
     // ── 2. who is in it ──────────────────────────────────────────────
     const people: string[] = [];
@@ -6570,8 +7120,8 @@ function dossier(d: SectDossier): string {
         people.push(`<div class="grp healthy"><h4>The roll <span>${d.people.active.length}</span>`
             + `<span class="gap">${esc(sources.join(', '))}</span></h4>`
             + d.people.active.map(p =>
-                `<div class="who"><span class="wn">${esc(p.name)}</span>`
-                + `<span class="wo">${p.ordinal}</span>`
+                `<div class="who"><span class="wn">${esc(p.name)}</span><span class="rsep"> &middot; </span>`
+                + `<span class="wo">${p.ordinal}</span><span class="rsep"> &middot; </span>`
                 + `<span class="wr">${esc(p.rank)} · ${esc(p.role)}</span>`
                 + `<span class="wd">${esc(p.wants)}`
                 // Both names, and the register is the only place they appear
@@ -6609,60 +7159,21 @@ function dossier(d: SectDossier): string {
             + '</div>');
     }
 
-    // ── 3. what it controls ──────────────────────────────────────────
+    // ── 3. WHAT IT HOLDS AND WHAT IT TEACHES ARE BOTH NOTATION HERE ─────
     //
-    // Weapons are a group rather than a meta field: an object that came down
-    // through the Lid is closer to a member of the faction than to a statistic
-    // about it, and the sheet should not bury it in a strip of small print.
-    const controls: string[] = [];
-
-    // ── THE INVENTORY IS NOT HERE ANY MORE, AND THAT IS THE POINT ────────
+    // Neither list is on this page any more. The artifacts and immortal objects
+    // are the Holdings and Items tabs, in full, house by house and object by
+    // object; the shelf art by art and the road to the top of the ladder are
+    // the Arts tab, which is the page that owns arts. What is left here is the
+    // scale and the count - `43 x1 &middot; 4 immortal`, `ice, water &middot; 8
+    // arts &middot; to 33` - which is what a reader deciding whether they care
+    // about this house is asking, and which is read in a glance rather than in
+    // four screens.
     //
-    // This part used to render two lists nobody needed here: every artifact
-    // this house owns, and every immortal object it holds. Both are now the
-    // Holdings tab's job, in full, house by house, joined across the seven
-    // catalogs that carry them - and the artifact rows are also the Items tab's
-    // ledger, with owner and holder as separate columns. A faction entry
-    // carrying them made a THIRD rendering of the same rows.
-    //
-    // A third rendering is not a convenience. Every copy is a place the facts
-    // can drift, and on a sheet the design owner has three times called too
-    // dense, the copy is also what makes an entry exhausting: a reader working
-    // down a house met a full artifact catalog with descriptions and tags in
-    // the middle of it, having already met the same objects on two other tabs.
-    // One line pointing at the tab that owns the question replaces both lists.
-    //
-    // What stays is what Holdings only summarises: the shelf, art by art, and
-    // the road to the top of the ladder with its copies and its teachers.
-    // Holdings gives a count and the hardest title; this gives the curriculum.
-    const inventoryElsewhere = d.artifacts.length || d.holdings.length || d.partingGift || d.apex
-        ? `<p class="note"><strong>What this house is holding is on the Holdings tab</strong>`
-            + ` - ${[
-                d.artifacts.length
-                    ? `${d.artifacts.length} object${d.artifacts.length === 1 ? '' : 's'} in the artifact catalog, strongest at ${d.artifacts[0].power}`
-                    : '',
-                d.holdings.length
-                    ? `${d.holdings.reduce((n, h) => n + h.count, 0)} immortal object${d.holdings.reduce((n, h) => n + h.count, 0) === 1 ? '' : 's'}`
-                    : '',
-                d.apex ? `the ${esc(d.apex.giftName)} that was sent down` : '',
-                d.partingGift ? `the ${esc(d.partingGift.name)}${d.partingGift.intact ? '' : ', spent'}` : ''
-            ].filter(Boolean).join(', ')}`
-            + ' - spelled out there with what waking or spending each thing would cost. '
-            + 'Who is holding which specific object is the Items tab.</p>'
-        : '';
-
-    // A library is what the house can teach rather than what it is holding -
-    // and the curriculum block is the one place on the sheet that distinguishes
-    // an art nobody else teaches from a method half the province has. Holdings
-    // reports a count and the hardest title; the shelf itself is here.
-    if (d.curriculum) controls.push(curriculumBlock(d.curriculum));
-
-    // Under the library, because it is the one title on it that a teach list
-    // describes wrongly. A shelf entry says the house has the book; what
-    // decides whether anybody gets up the road is how many copies exist and
-    // how much of one person's attention is available, and neither of those is
-    // a property of a title.
-    if (d.deepRoad) controls.push(deepRoadBlock(d.deepRoad));
+    // The rule, because it is the one that keeps being broken: the resume may
+    // point at the page that owns a question or answer it, never both. A line
+    // that says "this is on the Holdings tab" and then spells out the holdings
+    // is a cross-reference and a copy at once, and the two copies drift.
 
     // ── 5. what it says about itself ─────────────────────────────────
     const claims: string[] = [];
@@ -6696,7 +7207,7 @@ function dossier(d: SectDossier): string {
     if (d.people.ascended.length) {
         claims.push(`<div class="grp ascended"><h4>Ascended <span>${d.people.ascended.length}</span></h4>`
             + d.people.ascended.map(p =>
-                `<div class="who"><span class="wn">${esc(p.name)}</span>`
+                `<div class="who"><span class="wn">${esc(p.name)}</span><span class="rsep"> &middot; </span>`
                 + `<span class="wo">${p.ordinal ?? '-'}</span>`
                 + `<span class="wr">${p.yearsAgo.toLocaleString()} yr ago</span>`
                 + `<span class="wd">${esc(p.rememberedFor)}</span></div>`).join('')
@@ -6706,19 +7217,14 @@ function dossier(d: SectDossier): string {
     if (d.people.terminal.length) {
         claims.push(`<div class="grp terminal"><h4>Dead and lost <span>${d.people.terminal.length}</span></h4>`
             + d.people.terminal.map(p =>
-                `<div class="who"><span class="wn">${esc(p.name)}</span>`
+                `<div class="who"><span class="wn">${esc(p.name)}</span><span class="rsep"> &middot; </span>`
                 + `<span class="wo">${p.ordinal ?? '-'}</span>`
                 + `<span class="wr">${esc(p.fate)} · ${p.yearsAgo.toLocaleString()} yr ago</span>`
                 + `<span class="wd">${esc(p.rememberedFor)}</span></div>`).join('')
             + '</div>');
     }
 
-    // Weapons and arts are two lists under one chunk rather than two chunks.
-    // Both answer "what does this house hold", a reader comparing houses wants
-    // them adjacent, and most houses have one and not the other.
-    const holds: string[] = [...controls];
-
-    const nothingAtAll = !people.length && !holds.length && !claims.length;
+    const nothingAtAll = !people.length && !claims.length;
 
     return `<article class="dos${d.apex ? ' apex' : ''}">
   <header>
@@ -6753,8 +7259,24 @@ function dossier(d: SectDossier): string {
       ['channel', d.channel ? `${d.channel.kind.replace(/_/g, ' ')} · ${d.channel.crossings} crossing${d.channel.crossings === 1 ? '' : 's'} · ${d.channel.depletion ?? '-'}` : '']
   ])}
 
-  ${d.history ? historyBlock(d.history) : ''}
-  ${d.demonic ? demonicBlock(d.demonic, d.name) : ''}
+  ${holdsNotation(d)}
+  ${teachNotation(d)}
+
+  <!-- THE POINTERS, AND WHY THEY ARE ALL THERE IS OF THREE WHOLE SECTIONS.
+       History, the ethics dossier and the relations correspondence each ran to
+       screens on every one of the entries that carried them, and none of the
+       three answers "what is this house". They are on the pages that own them
+       now, whole and uncut, and this is the line that says so. -->
+  <p class="crossref">${[
+      d.history
+          ? `<span class="jump" data-goto="hist-${esc(d.id)}">how it got here${d.history.shared.length
+              ? `, and the ${d.history.shared.length} dated event${d.history.shared.length === 1 ? '' : 's'} it shares`
+              : ''}</span>`
+          : '',
+      d.demonic
+          ? `<span class="jump" data-goto="conduct-${esc(d.id)}">what it is willing to do &middot; ${esc(d.demonic.kind.replace(/-/g, ' '))}</span>`
+          : ''
+  ].filter(Boolean).join('<span class="nsep"> &middot; </span>')}</p>
 
   ${foldablePart('What they are', 'the fuller version, and then the catalog in its own words',
       (d.synopsis.length ? chunked(d.synopsis.join(' '), 'the rest of the precis', 'synop') : '')
@@ -6781,11 +7303,6 @@ function dossier(d: SectDossier): string {
       + (d.id === 'sect-hollow-court' ? howTheCourtIsSeenBlock() : '')
       + (people.length ? `<div class="grps">${people.join('')}</div>` : '')
       + (d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''))}
-
-  ${holds.length || inventoryElsewhere
-      ? foldablePart('What they teach', 'the shelf, art by art - and which of it is theirs alone',
-          inventoryElsewhere + (holds.length ? `<div class="grps">${holds.join('')}</div>` : ''))
-      : ''}
 
   ${foldablePart('What they want', 'and what they are wrong about, and what is in the way',
       (d.ambition
@@ -6819,7 +7336,7 @@ function dossier(d: SectDossier): string {
       ? '<div class="grps"><div class="grp"><p class="none">Nobody recorded and nothing held. The faction exists; the register has no names for it.</p></div></div>'
       : ''}
 
-  ${relationshipsBlock(d.relationships, d.name)}
+  ${relSummaryStrip(d.relationships, d.name, `faction-${d.id}`)}
 </article>`;
 }
 
@@ -6897,9 +7414,9 @@ function factionCard(d: SectDossier): string {
 
     return `<details class="ncard" id="faction-${esc(d.id)}">
       <summary>
-        <span class="nhead"><span class="nname"><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}</span><span class="nord"><span class="nfl">ord</span> ${d.ordinal}</span></span>
+        <span class="nhead"><span class="nname"><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">ord</span> ${d.ordinal}</span><span class="rsep"> &middot; </span></span>
         ${nfacts(facts)}
-        ${want}
+        ${want ? '<span class="rsep"> &middot; </span>' : ''}${want}
       </summary>
       <div class="nbody">${dossier(d)}</div>
     </details>`;
@@ -6947,7 +7464,7 @@ function treeNode(
         // catalog says has never been settled.
         ? `<details class="ncard" id="faction-${esc(entry.id)}">
         <summary>
-          <span class="nhead"><span class="nname"><span class="dot ${esc(entry.alignment)}"></span>${esc(entry.name)}</span><span class="nord"><span class="nfl">ord</span> ${entry.ordinal}</span></span>
+          <span class="nhead"><span class="nname"><span class="dot ${esc(entry.alignment)}"></span>${esc(entry.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">ord</span> ${entry.ordinal}</span><span class="rsep"> &middot; </span></span>
           ${nfacts([
               nfact('court of', court.apexName),
               nfact('as the', court.name.replace(/^The\s+/i, '')),
@@ -6958,7 +7475,7 @@ function treeNode(
           ])}
           <span class="ngo">open</span>
         </summary>
-        ${courtPanel(court)}
+        ${courtPanel(court, `faction-${entry.id}`)}
         <div class="nbody">${dossier(entry)}</div>
       </details>`
         : entry
@@ -6970,7 +7487,7 @@ function treeNode(
                 // here its own account was unreachable from the other side.
                 ? `<details class="ncard" id="court-${esc(court.id)}">
         <summary>
-          <span class="nhead"><span class="nname">${esc(court.name)}</span><span class="nord"><span class="nfl">ord</span> ${court.ordinal}</span></span>
+          <span class="nhead"><span class="nname">${esc(court.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">ord</span> ${court.ordinal}</span><span class="rsep"> &middot; </span></span>
           ${nfacts([
               nfact('standing', 'court', 'pin'),
               nfact('offices', String(court.officers.length)),
@@ -6978,10 +7495,10 @@ function treeNode(
           ])}
           <span class="ngo">open</span>
         </summary>
-        ${courtPanel(court)}
+        ${courtPanel(court, `court-${court.id}`)}
       </details>`
                 : `<div class="ncard ncard--flat">
-        <span class="nhead"><span class="nname">${esc(node.name)}</span>${node.ordinal ? `<span class="nord"><span class="nfl">ord</span> ${node.ordinal}</span>` : ''}</span>
+        <span class="nhead"><span class="nname">${esc(node.name)}</span>${node.ordinal ? `<span class="nsep"> &middot; </span><span class="nord"><span class="nfl">ord</span> ${node.ordinal}</span>` : ''}<span class="rsep"> &middot; </span></span>
         ${nfacts([nfact('standing', kind), nfact('entry', 'none of its own')])}
       </div>`;
 
@@ -7322,6 +7839,16 @@ export function renderRegisterHtml(
     hierarchies.forEach(claim);
     const stamp = reg.generatedAt.replace('T', ' ').slice(0, 16) + ' UTC';
 
+    // Every tie in the world, collapsed onto the PAIR. The catalog stores each
+    // one on both parties, so meeting them faction by faction meets everything
+    // twice; this is the same set with each pair counted once, which is also
+    // the only shape in which the two ends of a tie can be read against each
+    // other.
+    const tiePairs = buildTiePairs(reg.dossiers, reg.courts);
+    const tieCount = tiePairs.length;
+    const lateralTies = tiePairs.filter(t => t.lateral);
+    const holdingTies = tiePairs.filter(t => !t.lateral);
+
 
 
     // THREE PASSES OVER THE FINISHED DOCUMENT, IN THIS ORDER AND NOT ANOTHER.
@@ -7379,8 +7906,14 @@ export function renderRegisterHtml(
 </header>
 
 <nav class="tabs" role="tablist">
-  <button class="tab" role="tab" data-tab="people" aria-selected="true">People &ge; Grand Ascension <span>${reg.high.length}</span></button>
-  <button class="tab" role="tab" data-tab="factions" aria-selected="false">Factions <span>${c.factions}</span></button>
+  <button class="tab" role="tab" data-tab="people" aria-selected="true" title="Everybody in the world at or above Grand Ascension">People <span>${reg.high.length}</span></button>
+  <button class="tab" role="tab" data-tab="factions" aria-selected="false" title="What each body IS - a resume, read in thirty seconds">Factions <span>${c.factions}</span></button>
+  <!-- The two pages the faction resume points at. A tie and a dated event are
+       both things BETWEEN houses, so neither belongs inside one house's entry:
+       written there, each one is written twice and the general rule about what
+       a feud is gets restated once per feud. -->
+  <button class="tab" role="tab" data-tab="ties" aria-selected="false" title="How each pair of bodies stands, written once">Ties <span>${tieCount}</span></button>
+  <button class="tab" role="tab" data-tab="history" aria-selected="false" title="How each house got here, and the dated events several of them share">History <span>${SHARED_EVENTS.length}</span></button>
   <!-- The almanac and the ledger, and the counts say which is which: Objects
        counts described things, Items counts things with a named holder. -->
   <button class="tab" role="tab" data-tab="objects" aria-selected="false" title="The almanac: what kinds of thing exist, and what each one is">Objects <span>${c.catalogued}</span></button>
@@ -7395,7 +7928,7 @@ export function renderRegisterHtml(
      parts they are not reading, section by section or all at once, and to have
      that remembered the next time they open the sheet. -->
 <div class="foldbar">
-  <p>Everything is open. Fold away any section you are not reading by clicking its heading - this browser remembers what you folded.</p>
+  <p>Fold away any section you are not reading by clicking its heading, and this browser remembers what you folded. The Arts tab starts folded because it is four catalogs of tables; everywhere else starts open.</p>
   <button class="secfold" type="button" data-fold="all">fold everything</button>
   <button class="secfold" type="button" data-fold="none">open everything</button>
 </div>
@@ -7430,6 +7963,16 @@ export function renderRegisterHtml(
 <section>
   <div class="sh"><h2>Every faction</h2><span class="r">${c.factions} · by governance · click to open</span></div>
   <p class="note">Grouped by how each faction holds its ground, strongest group first and strongest faction first inside it. The group says what kind of arrangement it is; the line under each name says who the other party is, so the reporting relation survives the grouping. The people under each faction are weighted to the bottom of the ladder, because that is where the player starts and where almost everybody is - and each list now ends on the strongest member, who is the person the faction ordinal has always been naming. <strong>Click any faction to open its full entry.</strong></p>
+  <!-- THE LEGEND FOR THE WHOLE TAB, said once here and never on an entry.
+       Short paragraphs on purpose: the page splits any paragraph past its
+       readable limit into a lead and a disclosure, and a key that ships half
+       closed is a key nobody reads. -->
+  <div class="notekey">
+    <p><strong>An entry is a resume.</strong> It answers what a body IS - what kind of thing it is, who it answers to, what it holds and teaches at the depth of a count, what it wants, and the shape of its position in the world.</p>
+    <p>Everything deeper is on the page that owns it: the correspondence on <span class="jump" data-tab-goto="ties">Ties</span>, the dated events on <span class="jump" data-tab-goto="history">History</span>, the shelf art by art on <span class="jump" data-tab-goto="arts">Arts</span>, and the objects on <span class="jump" data-tab-goto="holdings">Holdings</span>. Whole, and uncut.</p>
+    <p><strong>holds 34 x1 &middot; 22 x1</strong> is one object rated 34 and one rated 22, on the same ladder every other figure on this sheet uses. <strong>teaches ice &middot; 8 arts &middot; to 33</strong> is the elements and the level.</p>
+    <p><strong>How it stands</strong> is one chip per tie: <span class="relchip relchip--above"><span class="relchip__mark">&#9650;</span><span class="relchip__who">stands over it</span></span> <span class="relchip relchip--alongside"><span class="relchip__mark">&#9679;</span><span class="relchip__who">level</span></span> <span class="relchip relchip--below"><span class="relchip__mark">&#9660;</span><span class="relchip__who">answers to it</span></span>, then the other body, then how warm from each end - so <em>cold &rarr; civil</em> is this house cold to them and them civil back.</p>
+  </div>
   ${prose(blocks, 'register')}
   ${hierarchies.length ? `<div class="govgrp">
     <h3 class="govhead">apex hierarchies <span>${hierarchies.length}</span></h3>
@@ -7444,6 +7987,113 @@ export function renderRegisterHtml(
 </section>
 
 
+
+<section class="startfolded">
+  <div class="sh"><h2>Who administers whose ground</h2><span class="r">${ARTERIALS.length} arterials &middot; ${PROVINCES.length} provinces</span></div>
+  <p class="note">A province is <em>held</em> by an apex and <em>administered through</em> a court, and those are two different relations that the world keeps in two different places. Reading them together is what this section is for, and it produces two facts that nobody in the world has ever written down - not because they are secret, but because no document exists whose job it would be.</p>
+  ${groundTable()}
+  ${apexGroundTable()}
+</section>
+
+<section class="startfolded">
+  <div class="sh"><h2>What a favour is for</h2><span class="r">it skips the admission ordinal &middot; nothing else</span></div>
+  <p class="note"><strong>A favour is not money, standing, or a recommendation that makes a good impression. It makes a house take somebody it would otherwise refuse on the bar.</strong> That is the whole of the mechanism, and it is the only thing that makes a name worth anything before a child has an ordinal at all - because every house states a minimum, no origin waives one, and a seven-year-old is at zero. Without it the greatest name in the province could only place a child at the ${reg.theFavour.noBarToSpeakOf.length} houses that admit at the floor, all of which would have taken a farmer's child that morning. Who can grant one is not a rule: it is somebody at Tribulation Transcendence or comparably placed, and there are very few of those.</p>
+  <div class="scroll"><table>
+    <caption>Where a word buys nothing &middot; ${reg.theFavour.noBarToSpeakOf.length} houses, and the reason the mechanic had to exist</caption>
+    <thead><tr><th>House</th></tr></thead>
+    <tbody>${reg.theFavour.noBarToSpeakOf.map(x => `<tr><td class="nm">${jumpTo(x.anchor, x.name)}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note">And the ${reg.theFavour.willNotMove.length} whose bar does not move - never out of fastidiousness. A bar that cannot be waived is a bar whose waiving would break something: kill the applicant, dissolve the thing the house runs on, or admit a contribution the house has no use for.</p>
+  <div class="scroll"><table>
+    <caption>Where a word buys nothing because it is refused &middot; a different no from the table above</caption>
+    <thead><tr><th>House</th><th>Why it does not move</th></tr></thead>
+    <tbody>${reg.theFavour.willNotMove.map(x => `<tr>`
+      + `<td class="nm">${jumpTo(x.anchor, x.name)}</td>`
+      + `<td class="q">${esc(x.why)}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note">Everywhere else - <strong>${reg.theFavour.movesForOne.length} houses</strong> - a word moves the bar, at a price, and the price is generally an obligation nobody names at the time. The bar is what is being bought and nothing else: the child still has to survive the teaching.</p>
+  <div class="scroll"><table>
+    <caption>Where a word buys the bar &middot; highest bar first, because that is where a favour is worth most</caption>
+    <thead><tr><th>House</th><th class="pw">Bar</th></tr></thead>
+    <tbody>${reg.theFavour.movesForOne.map(x => `<tr>`
+      + `<td class="nm">${jumpTo(x.anchor, x.name)}</td>`
+      + `<td class="pw">${x.bar}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note"><strong>And the three apexes differ on exactly this</strong>, which is a far more useful distinction than the alignment word beside them, because it is the one an ordinary person is actually asking about: no, because we do not do that - or yes, and here is what it costs.</p>
+  <dl class="dispute">${reg.theFavour.apexes.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
+  <p class="note">The extreme case, and the reason anybody spends one.</p>
+  <dl class="dispute">${reg.theFavour.theNewborn.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
+</section>
+
+<section class="startfolded">
+  <div class="sh"><h2>Bodies with no place for their own</h2><span class="r">${reg.noPlaceForTheirOwn.length} of ${c.factions} &middot; two opposite reasons</span></div>
+  <p class="note"><strong>A cultivator ordinarily raises their child in their own house, and that covers the whole world except these three.</strong> An ordinary sect is glad to have an elder's child: it takes people who will make competent elders, and the bar for that is one anybody's child might clear. No favour is needed anywhere and none is called in. These three produce the same situation - a person of high standing whose own institution has no place for their own child - by opposite routes, and the routes are the reason this is a comparison rather than three separate notes.</p>
+  <div class="scroll"><table>
+    <caption>The same situation, two causes &middot; and everything downstream differs with the cause</caption>
+    <thead><tr><th>Body</th><th>Why</th><th>Where the child goes</th><th>What the child knows</th></tr></thead>
+    <tbody>${reg.noPlaceForTheirOwn.map(x => `<tr>`
+      + `<td class="nm">${jumpTo(x.anchor, x.name)}</td>`
+      + `<td class="nm">${esc(x.reason)}</td>`
+      + `<td class="q">${esc(x.whereTheChildGoes)}</td>`
+      + `<td class="q">${esc(x.whatTheChildKnows)}</td>`
+      + '</tr>').join('')}</tbody></table></div>
+  <p class="note">Two of them have <em>no intake at all</em> - people arrive by appointment to a posting and a child cannot be appointed - so there is no standard to fail. The third has a bar nothing else in the world applies: it only wants people capable of reaching the last realm, which is not a high standard but a different one, and most children of even the greatest cultivators are not that. Which is also why only one of the three produces a mystery. A posting is a public appointment and everybody knows who holds one, so those children know exactly who their parent is and inherit an expectation and a debt. The Court's discretion is absolute, and its children inherit an object with no name attached to it.</p>
+  <p class="note"><strong>And a placement is a gamble rather than a gift.</strong> It applies to all three and to every other placement in the world, which is why it sits here rather than on any one entry.</p>
+  <dl class="dispute">${reg.washingOut.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
+  <p class="note">The object at the centre of the one storyline any of this produces, on the Court's side only, because it is the only one of the three whose child has nothing else to go on.</p>
+  <dl class="dispute">${reg.theMemento.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
+</section>
+
+</div>
+
+<!-- ── TIES ───────────────────────────────────────────────────────────────
+     HOW EACH PAIR OF BODIES STANDS, AND EACH PAIR WRITTEN ONCE.
+
+     This material used to live inside every faction entry, which meant a
+     single feud was written out twice - once from each side, in two entries a
+     reader would never see together - and that the general rule "a feud the
+     other party has not heard about is not a feud" was restated once per feud.
+     The rule is a legend here. The pair is one row.
+
+     THE TREE KEEPS THE FEUDAL AXIS. Who holds from whom is a hierarchy and the
+     org chart on the Factions tab draws it with indentation, which says it
+     better than any notation. What a tree structurally cannot draw is the
+     lateral tie - two houses under different patrons feuding, two bodies with
+     a hand on the same thing - and that is what leads this page. -->
+<div class="pane" data-pane="ties" hidden>
+<section>
+  <div class="sh"><h2>How every body stands with every other</h2><span class="r">${tieCount} ties &middot; each written once</span></div>
+  <p class="note"><strong>Read a line as: the two bodies, then how the first regards the second, then how the second regards the first.</strong> Those two words are allowed to differ and frequently do - a house can be warm to a patron that is only civil back, or dutiful upward and cold to everything under it - and the difference is the whole reason this page exists, because no org chart shows it.</p>
+  <p class="note"><strong>Two absences are printed at full length in the catalog and are said once here instead.</strong> <em>Nobody wrote a date on it</em> means the year is not recorded and the tie is remembered by both houses rather than by a document. <em>The same, from the other side</em> means the second party's account was written independently and says what the first one says - which is not agreement so much as two entries that were never written to answer each other.</p>
+  ${warmthLegend()}
+  ${tieGroup(lateralTies, 'Lateral ties', 'Neither body holds from the other. These are the ties a hierarchy has no way of drawing - feuds across blocs, two claimants on one thing, peers under different patrons - and they are most of what moves this world.')}
+  ${tieGroup(holdingTies, 'Holding ties', 'One body holds from the other. The shape of these is already drawn, and better, by the org chart on the <span class="jump" data-tab-goto="factions">Factions</span> tab; they are listed here for the record each one carries, which a tree has nowhere to put.')}
+</section>
+
+<section>
+  <div class="sh"><h2>What each of these houses is willing to do</h2><span class="r">${reg.dossiers.filter(d => d.demonic).length} of ${c.factions} &middot; a field, not an identity</span></div>
+  <p class="note"><strong>On these entries and nowhere else.</strong> <em>Demonic</em> is a field on a sect row and a field is not an identity - read with the alignment as the only answer, these are one house wearing several names. Every line below is the catalog's, and the ordering is the argument: what it does, who pays, whether they agreed, what it will not do, where it stands with its patron, and what happens to the ground if somebody ends it.</p>
+  ${reg.dossiers.filter(d => d.demonic).map(d => demonicBlock(d.demonic!, d.name, d.id)).join('')}
+</section>
+</div>
+
+<!-- ── HISTORY ────────────────────────────────────────────────────────────
+     HOW EACH HOUSE GOT HERE, AND THE DATED EVENTS SEVERAL OF THEM SHARE.
+
+     A shared event was rendered inside each participant's entry, so a
+     three-party event appeared three times with three quarters of its text
+     identical. It is one object with several accounts hanging off it, and that
+     is what it looks like here. -->
+<div class="pane" data-pane="history" hidden>
+<section>
+  <div class="sh"><h2>The dated events</h2><span class="r">${SHARED_EVENTS.length} events &middot; oldest first</span></div>
+  <p class="note"><strong>The first paragraph of each event is the minimum every party would concede happened.</strong> It is deliberately thin: its whole job is to be the floor the accounts under it have to stand on, so that a disagreement between two houses is checkable rather than merely a difference of tone. An account that cannot be squared with it is an error rather than a point of view.</p>
+  <p class="note">Every party's own telling is beside every other's, which is the arrangement the sheet could not offer while these lived inside single entries. Nothing here adjudicates between them and nothing should.</p>
+  <div class="evts">${sharedEventsOnce(reg.dossiers)}</div>
+</section>
+
+<section>
+  <div class="sh"><h2>How each house came to be here</h2><span class="r">${reg.dossiers.filter(d => d.history).length} houses</span></div>
+  <p class="note">Four questions per house, quoted whole out of the history catalog and assembled nowhere: how it got here, why it makes what it makes, what the dark nodes were where it holds any, and where the belief the world is wrong about traces back to. A reader who meets "eleven rungs under its own strongest member" without having been told what the house lost reads it as an assessment; a reader who has been told reads it as a consequence.</p>
+  ${reg.dossiers.map(historyCard).join('')}
+</section>
 </div>
 
 <!-- ── THE ALMANAC ────────────────────────────────────────────────────────
@@ -7482,6 +8132,16 @@ ${renderRepairMedicineSection()}
   </div>`).join('')}
   ${prose(blocks, 'items')}
 </section>
+
+<!-- The almanac's question about a material: what it was, what it fed, and how
+     much is left. There is no holder on any row - an unfound unit is in ground
+     nobody has opened - so it is a description of a kind and belongs here
+     rather than in the ledger, and rather than on the arts sheet where it sat. -->
+<section>
+  <div class="sh"><h2>Materials nobody can gather</h2><span class="r">${LOST_MATERIALS.length} materials &middot; and what went with each</span></div>
+  <p class="note">An extinction is not one loss, it is a list: the recipes it closed, the arts it fed, the object kinds nobody can make any more. What is left of each is counted here because a number with placements against it is a search with a destination and an end, where "nobody has any" is only a wall.</p>
+  ${lostMaterialTable()}
+</section>
 </div>
 
 <!-- ── THE LEDGER ─────────────────────────────────────────────────────────
@@ -7505,6 +8165,20 @@ ${renderRepairMedicineSection()}
 ${immortalObjectHolders(reg)}
 
 ${renderRepairMedicineHolders()}
+
+<!-- WHY THIS IS ON THE LEDGER AND NOT ON THE ARTS TAB, WHERE IT WAS.
+     Every row here names a house and says what that house is holding, how it
+     came by it and whether it would part with it. That is the ledger's
+     question exactly. It sat under a heading about the last age, on a tab
+     about arts, where the only thing it had in common with its neighbours was
+     the era it came from - which is a fact about the object's provenance and
+     not about what kind of record it is. -->
+<section>
+  <div class="sh"><h2>What the last age left, and who is sitting on it</h2><span class="r">${ARCHIVE_COPIES.length} archives &middot; ${MEDICINE_HOLDINGS.length} houses</span></div>
+  <p class="note"><strong>An age worked something out, paid for it, and stopped.</strong> What survives is not a weaker version of the modern line and not a stronger one - the comparison does not resolve. What the two tables below add to that is possession: a house with the book and no material is a different house from one with neither, and from one quietly holding the last of both. The catalog knows; almost nobody in the world does.</p>
+  ${archiveTable()}
+  ${medicineTable()}
+</section>
 </div>
 
 <!-- What is in the building, joined across the seven catalogs that hold it.
@@ -7517,7 +8191,7 @@ ${renderHoldingsSection(reg.dossiers)}
      object and an art are the three things that decide a fight, and the first
      two have had a panel for a long time. -->
 <div class="pane" data-pane="arts" hidden>
-<section>
+<section class="startfolded">
   <div class="sh"><h2>The arts</h2><span class="r">${c.techniques} arts &middot; grade descending</span></div>
   <p class="note"><strong>An art is worth an enormous amount inside a realm and nothing at all across the Lid.</strong> Measured, not asserted. Inside a realm: ${esc(WHAT_AN_ART_BUYS.insideARealm)}. Across the Lid: ${esc(WHAT_AN_ART_BUYS.acrossTheLid)}. What does cross: ${esc(WHAT_AN_ART_BUYS.whatDoesCross)}. So a reader comparing this table against the objects table is comparing two different kinds of thing, and the object is the one that changes which realm you can fight in.</p>
   ${(() => {
@@ -7542,79 +8216,26 @@ ${renderHoldingsSection(reg.dossiers)}
       const noCopy = reg.techniques.filter(t => !t.survivingCopy).length;
       return `<p class="note"><strong>${untaught.length} of the ${c.techniques} arts are on no house's teach list</strong>, and ${shownWithNobody.length === 0 ? 'every one of them is a <em>read</em> art' : `${shownWithNobody.length} of them are <em>shown</em> arts, which should not happen`}: the two figures agreeing is what says the catalog is whole. An art nobody teaches is not a hole in the world, it is what makes a grave worth opening - and ${noCopy === 0 ? 'every art below still has a copy somewhere' : `${noCopy} ${noCopy === 1 ? 'art has' : 'arts have'} no surviving copy at all, which is the one state a grave cannot fix`}.</p>`;
   })()}
-  ${techniqueQuadrants(reg.techniques)}
 </section>
 
-<section>
-  <div class="sh"><h2>Who administers whose ground</h2><span class="r">${ARTERIALS.length} arterials &middot; ${PROVINCES.length} provinces</span></div>
-  <p class="note">A province is <em>held</em> by an apex and <em>administered through</em> a court, and those are two different relations that the world keeps in two different places. Reading them together is what this section is for, and it produces two facts that nobody in the world has ever written down - not because they are secret, but because no document exists whose job it would be.</p>
-  ${groundTable()}
-  ${apexGroundTable()}
-</section>
-
-<section>
-  <div class="sh"><h2>What the last age left</h2><span class="r">${ARCHIVE_COPIES.length} archives &middot; ${MEDICINE_HOLDINGS.length} houses &middot; ${LOST_MATERIALS.length} materials</span></div>
-  <p class="note"><strong>An age worked something out, paid for it, and stopped.</strong> What survives is not a weaker version of the modern line and not a stronger one - the comparison does not resolve. Modern is elemental and it scales; ancient is categorical, and the price is paid by the user in their own body or their own span. On some of them it compounds, which is why a whole era working it out and walking away is a history rather than a taboo.</p>
-  ${archiveTable()}
-  ${medicineTable()}
-  ${lostMaterialTable()}
+<!-- FOUR QUADRANTS, FOUR SECTIONS, AND EACH ONE FOLDS ON ITS OWN. Era and
+     class are independent axes and all four combinations are different KINDS
+     of thing, so they are four pages rather than four headings inside one.
+     Inside each, grade is the second axis and each grade band opens on its
+     own. A reader looking for "the heaven-grade ancient dao arts" reaches
+     them in two clicks from a folded page instead of scrolling a table of
+     everything. -->
+${techniqueQuadrantSections(reg.techniques)}
+<section class="startfolded">
+  <div class="sh"><h2>What each house teaches</h2><span class="r">${reg.dossiers.filter(d => d.curriculum || d.deepRoad).length} houses &middot; strongest first</span></div>
+  <p class="note"><strong>The shelf, art by art, and it is here rather than on the faction entries.</strong> A faction entry says what elements a house teaches and to what level, which is what somebody deciding whether to care about it is asking; the titles, the grades, which of them are that house's alone, how many copies exist and who can actually walk somebody up a road are this page's, because they are facts about arts. Both are read off the same field on the sect catalog, so they cannot disagree.</p>
+  <p class="note">Theirs alone is listed first inside each house. A teach list read flat makes a body holding the only lightning curriculum in the world look like one stocking the primer everybody stocks, and the ordering is the correction.</p>
+  ${houseTeachingCards(reg.dossiers)}
   ${(() => {
       const capped = ANCIENT_ARTS.filter(a => a.worldSupplyCeiling !== null);
       if (!capped.length) return '';
       return `<p class="note"><strong>The ceiling in the arts table is what the world believes, not a bar anything applies.</strong> ${capped.length} ancient ${capped.length === 1 ? 'art has' : 'arts have'} a figure, expressed on the same 0-100% mastery scale the engine uses - and NOTHING CURRENTLY READS IT. No upkeep is consulted anywhere in the technique layer, so an elder saying <em>you will not get past the fifth level</em> is a person describing their own house's history with the material, and the catalog recording that they are right, rather than a rule reading itself out loud. When it is enforced it should be enforced the honest way: an upkeep nobody can meet, not a rule saying you may not.</p>`;
   })()}
-</section>
-
-<section>
-  <div class="sh"><h2>What a favour is for</h2><span class="r">it skips the admission ordinal &middot; nothing else</span></div>
-  <p class="note"><strong>A favour is not money, standing, or a recommendation that makes a good impression. It makes a house take somebody it would otherwise refuse on the bar.</strong> That is the whole of the mechanism, and it is the only thing that makes a name worth anything before a child has an ordinal at all - because every house states a minimum, no origin waives one, and a seven-year-old is at zero. Without it the greatest name in the province could only place a child at the ${reg.theFavour.noBarToSpeakOf.length} houses that admit at the floor, all of which would have taken a farmer's child that morning. Who can grant one is not a rule: it is somebody at Tribulation Transcendence or comparably placed, and there are very few of those.</p>
-  <div class="scroll"><table>
-    <caption>Where a word buys nothing &middot; ${reg.theFavour.noBarToSpeakOf.length} houses, and the reason the mechanic had to exist</caption>
-    <thead><tr><th>House</th></tr></thead>
-    <tbody>${reg.theFavour.noBarToSpeakOf.map(x => `<tr><td class="nm">${x.anchor ? `<a href="#${esc(x.anchor)}">${esc(x.name)}</a>` : esc(x.name)}</td></tr>`).join('')}</tbody></table></div>
-  <p class="note">And the ${reg.theFavour.willNotMove.length} whose bar does not move - never out of fastidiousness. A bar that cannot be waived is a bar whose waiving would break something: kill the applicant, dissolve the thing the house runs on, or admit a contribution the house has no use for.</p>
-  <div class="scroll"><table>
-    <caption>Where a word buys nothing because it is refused &middot; a different no from the table above</caption>
-    <thead><tr><th>House</th><th>Why it does not move</th></tr></thead>
-    <tbody>${reg.theFavour.willNotMove.map(x => `<tr>`
-      + `<td class="nm">${x.anchor ? `<a href="#${esc(x.anchor)}">${esc(x.name)}</a>` : esc(x.name)}</td>`
-      + `<td class="q">${esc(x.why)}</td></tr>`).join('')}</tbody></table></div>
-  <p class="note">Everywhere else - <strong>${reg.theFavour.movesForOne.length} houses</strong> - a word moves the bar, at a price, and the price is generally an obligation nobody names at the time. The bar is what is being bought and nothing else: the child still has to survive the teaching.</p>
-  <div class="scroll"><table>
-    <caption>Where a word buys the bar &middot; highest bar first, because that is where a favour is worth most</caption>
-    <thead><tr><th>House</th><th class="pw">Bar</th></tr></thead>
-    <tbody>${reg.theFavour.movesForOne.map(x => `<tr>`
-      + `<td class="nm">${x.anchor ? `<a href="#${esc(x.anchor)}">${esc(x.name)}</a>` : esc(x.name)}</td>`
-      + `<td class="pw">${x.bar}</td></tr>`).join('')}</tbody></table></div>
-  <p class="note"><strong>And the three apexes differ on exactly this</strong>, which is a far more useful distinction than the alignment word beside them, because it is the one an ordinary person is actually asking about: no, because we do not do that - or yes, and here is what it costs.</p>
-  <dl class="dispute">${reg.theFavour.apexes.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
-  <p class="note">The extreme case, and the reason anybody spends one.</p>
-  <dl class="dispute">${reg.theFavour.theNewborn.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
-</section>
-
-<section>
-  <div class="sh"><h2>Bodies with no place for their own</h2><span class="r">${reg.noPlaceForTheirOwn.length} of ${c.factions} &middot; two opposite reasons</span></div>
-  <p class="note"><strong>A cultivator ordinarily raises their child in their own house, and that covers the whole world except these three.</strong> An ordinary sect is glad to have an elder's child: it takes people who will make competent elders, and the bar for that is one anybody's child might clear. No favour is needed anywhere and none is called in. These three produce the same situation - a person of high standing whose own institution has no place for their own child - by opposite routes, and the routes are the reason this is a comparison rather than three separate notes.</p>
-  <div class="scroll"><table>
-    <caption>The same situation, two causes &middot; and everything downstream differs with the cause</caption>
-    <thead><tr><th>Body</th><th>Why</th><th>Where the child goes</th><th>What the child knows</th></tr></thead>
-    <tbody>${reg.noPlaceForTheirOwn.map(x => `<tr>`
-      + `<td class="nm">${x.anchor ? `<a href="#${esc(x.anchor)}">${esc(x.name)}</a>` : esc(x.name)}</td>`
-      + `<td class="nm">${esc(x.reason)}</td>`
-      + `<td class="q">${esc(x.whereTheChildGoes)}</td>`
-      + `<td class="q">${esc(x.whatTheChildKnows)}</td>`
-      + '</tr>').join('')}</tbody></table></div>
-  <p class="note">Two of them have <em>no intake at all</em> - people arrive by appointment to a posting and a child cannot be appointed - so there is no standard to fail. The third has a bar nothing else in the world applies: it only wants people capable of reaching the last realm, which is not a high standard but a different one, and most children of even the greatest cultivators are not that. Which is also why only one of the three produces a mystery. A posting is a public appointment and everybody knows who holds one, so those children know exactly who their parent is and inherit an expectation and a debt. The Court's discretion is absolute, and its children inherit an object with no name attached to it.</p>
-  <p class="note"><strong>And a placement is a gamble rather than a gift.</strong> It applies to all three and to every other placement in the world, which is why it sits here rather than on any one entry.</p>
-  <dl class="dispute">${reg.washingOut.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
-  <p class="note">The object at the centre of the one storyline any of this produces, on the Court's side only, because it is the only one of the three whose child has nothing else to go on.</p>
-  <dl class="dispute">${reg.theMemento.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
-</section>
-
-<section>
-  <div class="sh"><h2>What each house teaches</h2><span class="r">${reg.teaching.length} houses &middot; strongest first</span></div>
-  <p class="note">The same relation from the other end, because a reader arrives from both. The table above answers who would teach me this; this answers what joining them would actually get me - which is the question an admission ordinal cannot answer, and the one a candidate choosing between two open gates is really asking. Both are derived from the same field on the sect catalog, so they cannot disagree.</p>
-  ${teachingBlocks(reg.teaching)}
 </section>
 </div>
 
@@ -7691,18 +8312,50 @@ function showPane(want) {
 }
 
 // An org chart that ends at a name loses the detail. Every node and every
-// cross-reference opens the full entry: switch to the Factions tab, scroll it
-// into view, and flash the border so it is obvious which one was meant.
-document.addEventListener('click', function (e) {
-  var target = e.target.closest('[data-goto]');
-  if (!target) return;
-  var id = target.dataset.goto;
-  showPane('factions');
+// cross-reference opens the full entry: switch to the tab that OWNS the target,
+// scroll it into view, and flash the border so it is obvious which one was
+// meant.
+//
+// THE PANE IS FOUND FROM THE TARGET, not assumed. This used to switch to the
+// Factions tab whatever it had been handed, which was right while every
+// cross-reference on the sheet pointed at a faction and silently wrong the
+// moment one pointed anywhere else: a tie, an event and a house's history all
+// live on their own tabs now, and a jump to one would have selected Factions
+// and then scrolled to an element inside a hidden pane, which has no box and
+// cannot be scrolled to. The failure is invisible - nothing happens - which is
+// the worst kind.
+//
+// A target may also be inside a folded section or a closed disclosure, so both
+// are opened on the way. A jump that lands on a collapsed heading has not
+// arrived.
+function revealAndScrollTo(id) {
   var el = document.getElementById(id);
-  if (!el) return;
+  if (!el) return false;
+  var pane = el.closest('.pane');
+  if (pane) showPane(pane.dataset.pane);
+  var section = el.closest('section');
+  if (section && section.id && foldedSections.has(section.id)) setSection(section, false);
+  var node = el;
+  while (node) {
+    if (node.tagName === 'DETAILS') node.open = true;
+    node = node.parentElement;
+  }
   el.scrollIntoView({ block: 'start' });
   el.classList.add('flash');
   setTimeout(function () { el.classList.remove('flash'); }, 1400);
+  return true;
+}
+
+document.addEventListener('click', function (e) {
+  var toTab = e.target.closest('[data-tab-goto]');
+  if (toTab) {
+    showPane(toTab.dataset.tabGoto);
+    window.scrollTo({ top: 0 });
+    return;
+  }
+  var target = e.target.closest('[data-goto]');
+  if (!target) return;
+  revealAndScrollTo(target.dataset.goto);
 });
 
 document.querySelectorAll('.tab').forEach(function (tab) {
@@ -7756,6 +8409,24 @@ function writeSet(key, set) {
 
 var foldedSections = readSet(FOLD_SECTIONS);
 var foldedParts = readSet(FOLD_PARTS);
+
+// A SECTION MAY DECLARE THAT IT STARTS FOLDED, and a declaration is a starting
+// position rather than a preference. The Arts tab is four quadrants of tables
+// and opens on all of them at once, which is a page nobody can navigate - so
+// its sections carry a startfolded class and the reader opens the one they
+// want. The moment a reader touches any fold their own set is written to
+// storage and wins for good, including where it says a defaulted section is
+// open. Nothing here can re-close something somebody opened.
+var SEEN_DEFAULTS = 'register.sawFoldDefaults.v1';
+var sawDefaults = false;
+try { sawDefaults = window.localStorage.getItem(SEEN_DEFAULTS) === '1'; } catch (err) { sawDefaults = false; }
+if (!sawDefaults) {
+  document.querySelectorAll('section.startfolded[id]').forEach(function (section) {
+    foldedSections.add(section.id);
+  });
+  writeSet(FOLD_SECTIONS, foldedSections);
+  try { window.localStorage.setItem(SEEN_DEFAULTS, '1'); } catch (err) { /* no storage; the fold still holds for this visit */ }
+}
 
 function paintSection(section) {
   var folded = foldedSections.has(section.id);
