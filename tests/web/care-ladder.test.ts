@@ -14,21 +14,35 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { makeGame } from './harness';
+import { makeGame, engineCalls } from './harness';
 import { PILLS } from '../../src/data/cultivation/pills';
 
 const HEAL = PILLS.filter(pill => pill.effect === 'heal_hp');
 
-/** Restore `hp` to 1 on a body of `maxHp`, with money, and buy a month of care. */
+/**
+ * Restore `hp` to 1 on a body of `maxHp`, with money, and buy a month of care.
+ *
+ * Returns what THE CARE restored, read off `engine.mortalCare` rather than off
+ * the sheet. Those stopped being the same number when HP began recovering
+ * ambiently: the month a stay costs also mends the body on its own, so the
+ * sheet delta is the sum of two systems and only one of them is what the
+ * healing ladder is a statement about. On a 5,000-HP frame the calendar's half
+ * is 75 and care's is 24, which is exactly how a ladder guard turns into a
+ * measurement of the wrong thing.
+ *
+ * Read from a mechanical channel rather than by parsing the prose, for the
+ * usual reason: a reworded sentence is not a balance change.
+ */
 async function monthOfCare(seed: string, ordinal: number, maxHp: number) {
     const { db, game } = makeGame({ seed });
     const { cultivator } = await game.newRun('Hurt');
     db.prepare(
         'UPDATE cultivators SET realm_ordinal = ?, max_hp = ?, hp = 1, spirit_stones = 5000 WHERE id = ?'
     ).run(ordinal, maxHp, cultivator.id);
-    const before = game.state().cultivator.hp;
-    await game.act('I get my injuries treated');
-    return game.state().cultivator.hp - before;
+    const acted = await game.act('I get my injuries treated');
+    const row = engineCalls(acted).find(call => call.name === 'engine.mortalCare');
+    expect(row, 'the stay did not report what it restored').toBeDefined();
+    return Number(/^(\d+) HP restored/.exec(row!.summary)![1]);
 }
 
 describe('a month of care restores a fixed amount, not a share of the wound', () => {

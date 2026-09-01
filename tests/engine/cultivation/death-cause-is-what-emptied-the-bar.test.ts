@@ -58,10 +58,16 @@ describe('a seclusion that kills nobody by violence records nobody as killed by 
      * meridians, which is what pushes the deviation risk up.
      */
     it('does not write combat_defeat over a death in a sealed cave', () => {
+        // At the lethal untreated count on purpose. Below it the body now mends
+        // ambiently, so a cultivator sitting at 1 HP simply heals up and lives -
+        // which is the point of that change and makes this a poor place to
+        // measure a death. At the threshold, mending is off, which is the
+        // owner's own exception: "unless you are so injured you are slowly
+        // dying."
         const cultivator = makeCultivator({
             hp: 1,
             maxHp: 50,
-            injuries: makeInjuries(2, 'serious', 'qi_deviation')
+            injuries: makeInjuries(3, 'serious', 'qi_deviation')
         });
 
         const skip = simulateTimeSkip(cultivator, 3650, {

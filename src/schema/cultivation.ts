@@ -66,6 +66,57 @@ export const LETHAL_UNTREATED_INJURIES = 3;
  * only gate is having a body at all.
  */
 export const BLEED_OUT_TURNS = 90;
+
+/**
+ * Fraction of maximum HP a body mends per day on its own.
+ *
+ * HP ONLY EVER WENT DOWN, and it killed people. Measured in play: a cultivator
+ * at Qi Condensation Layer 13, age 38 of a 100-year lifespan, full belly, ZERO
+ * injuries, 22 of 50 settling years, died on this:
+ *
+ *     Day 90: A minor disturbance interrupted cultivation and cost 3 HP.
+ *             Nothing followed it.
+ *     Day 90: died at Qi Condensation Layer 13, age 38: combat defeat.
+ *
+ * Killed by a three-point scratch the engine itself says nothing followed,
+ * because the running total from every prior seclusion had never come back up.
+ * The design owner's ruling: "hp should recover ambiently (unless you are so
+ * injured you are slowly dying). being medium injured and going into seclusion
+ * to recover IS one way of fixing it."
+ *
+ * So the line is between two systems that already exist and had come to behave
+ * like one:
+ *
+ *   HP                   fatigue and damage. Comes back. This constant.
+ *   untreated injuries   torn meridians. Do NOT come back, ever, on their own,
+ *                        and the bleed clock above is what they do instead.
+ *
+ * THE RATE IS SET BY WHAT IT MUST NOT BREAK, not by what would feel generous.
+ * The first attempt at this was 1% a day - a full bar in a hundred days - and
+ * `care-ladder.test.ts` caught it immediately, which is exactly what that file
+ * exists for. A month of mortal care takes thirty days, so at 1% a day the
+ * treatment was handing back a FIXED amount while the calendar handed back 30%
+ * of a body beside it, and on a 300-HP Nascent Soul frame the free half was
+ * three times the paid half. That is the "wounds are answered by graded healing
+ * pills" ladder made pointless, which is the same mistake that file already
+ * records having been made once.
+ *
+ * So: 0.0005 a day, a full bar from empty in about five and a half years.
+ *
+ *   - Seclusion is denominated in YEARS, and the owner's case is a cultivator
+ *     who "goes into seclusion to recover". Five years of sitting for a whole
+ *     body is a real answer at the scale this game actually runs at.
+ *   - A month of care restores its fixed amount plus 1.5% of the frame, which
+ *     is noise beside it. The ladder is untouched and a pill is still the only
+ *     answer to a wound that is urgent.
+ *   - The death this exists to prevent is chip damage carried across decades:
+ *     three points off a fifty-point frame comes back in about four months, so
+ *     the scratch never survives to meet the next one.
+ *
+ * It is also disabled outright at the lethal untreated count - see the recovery
+ * block in `time-skip.ts` for that gate and the two beside it.
+ */
+export const HP_RECOVERY_FRACTION_PER_DAY = 0.0005;
 /**
  * Floor on the years a cultivator may plateau before settling kills them.
  *

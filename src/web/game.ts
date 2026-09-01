@@ -7407,6 +7407,25 @@ ${noticed}`;
                         + 'tissue and contribute no penalty.',
                     ok: treated.length > 0
                 },
+                {
+                    // CARE'S OWN CONTRIBUTION, ON A CHANNEL THAT IS NOT PROSE.
+                    //
+                    // The HP a stay puts back was visible only in the sentence
+                    // describing it, so the inspector could not show it and
+                    // nothing could measure it - which matters now that the
+                    // month a stay costs ALSO mends the body ambiently. Those
+                    // are two systems and the sheet delta is their sum; this
+                    // row is the paid half on its own, which is the half the
+                    // healing ladder is a statement about.
+                    name: 'engine.mortalCare',
+                    action: 'treat',
+                    summary:
+                        `${mended} HP restored by the stay itself: a full month restores `
+                        + `${CARE_RESTORES_HP}, scaled by the ${lay.toFixed(2)} of one actually lain `
+                        + `still, capped at the ${missing} the body was missing. The same month's `
+                        + 'ambient mending is a separate figure and belongs to the skip above.',
+                    ok: true
+                },
                 ...tollCalls(applied.tollLines),
                 ...worldCalls(world)
             ]
