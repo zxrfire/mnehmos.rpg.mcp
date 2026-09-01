@@ -670,26 +670,70 @@ function applyDemography(
  * never moves, and after five centuries every cultivator in the world is
  * exactly as strong as the day they were born.
  *
- * A sample per year rather than the whole roster, keyed per NPC and year, so
- * the cost is a constant and the outcome is decomposable. A realm only ever
- * goes up here; losing one is the cultivation engine's business, not this
- * module's.
+ * A slice of the roster per year rather than the whole of it, so the cost is a
+ * constant and the outcome is decomposable. A realm only ever goes up here;
+ * losing one is the cultivation engine's business, not this module's.
+ *
+ * ── A ROTATION, NOT A DRAW ────────────────────────────────────────────────
+ *
+ * This used to pick `living / 40` people at random each year. A draw with
+ * replacement over a hundred-year lifespan leaves a seventh of everybody NEVER
+ * LOOKED AT, and it gives nobody a guaranteed look at the age their walk
+ * finally clears a rung. That bites hardest at exactly one place: ordinal 12 to
+ * 13, where lifespan goes from a hundred years to two hundred. Somebody whose
+ * walk would carry them across at age ninety and who is not drawn in their last
+ * decade dies at a hundred, in Qi Condensation, having been able to cross the
+ * whole time - and the rung they failed to reach was the one that would have
+ * bought them the years to go further.
+ *
+ * Measured on a live world at three thousand years, before this: 356 of 492
+ * living people were standing BELOW the ordinal the rules already granted them
+ * at their own age, ceiling and rank. The distribution was not being produced by
+ * the ladder, it was being produced by a coin.
+ *
+ * So the roster is sliced by a stable hash of the id and one slice is walked per
+ * year: every living person is reviewed once every `ADVANCEMENT_REVIEW_YEARS`
+ * whatever else happens, and nobody is skipped for a century. Nothing about it
+ * is stochastic, so nothing about it draws on the world seed - a schedule is not
+ * a sample, and running it off `forStream` would have implied otherwise to the
+ * next reader.
+ *
+ * The period is shorter than the old expected interval and that part IS a tuning
+ * change, so it was measured rather than picked: a Qi Condensation life is about
+ * eighty adult years, so twelve gives somebody six reviews inside it instead of
+ * a Poisson two. The cost is still a constant per year and still flat across
+ * five centuries - 0.45 to 0.75 seconds per simulated century on the reference
+ * world, against three and a bit times as many walks, because the walk was never
+ * the whole of the pass.
  */
-function applyAdvancement(state: WorldState, year: number, day: number): NpcRecord[] {
-    const living: number[] = [];
-    for (let i = 0; i < state.npcs.length; i++) {
-        if (state.npcs[i].status === 'alive' && isBelowTheLid(state.npcs[i])) living.push(i);
+const ADVANCEMENT_REVIEW_YEARS = 12;
+
+/** Stable, seedless, and cheap: which review year this person's id belongs to. */
+function reviewSlot(id: string, period: number): number {
+    let h = 2166136261;
+    for (let i = 0; i < id.length; i++) {
+        h ^= id.charCodeAt(i);
+        h = Math.imul(h, 16777619);
     }
-    if (living.length === 0) return [];
+    return (h >>> 0) % period;
+}
 
-    const sample = Math.max(1, Math.round(living.length / 40));
+function applyAdvancement(state: WorldState, year: number, day: number): NpcRecord[] {
+    const slot = ((year % ADVANCEMENT_REVIEW_YEARS) + ADVANCEMENT_REVIEW_YEARS)
+        % ADVANCEMENT_REVIEW_YEARS;
+    const due: number[] = [];
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        if (npc.status !== 'alive' || !isBelowTheLid(npc)) continue;
+        if (reviewSlot(npc.id, ADVANCEMENT_REVIEW_YEARS) !== slot) continue;
+        due.push(i);
+    }
+    if (due.length === 0) return [];
+
     const advanced: NpcRecord[] = [];
-    const rng = forStream(state.seed, 'advancement', year);
 
-    for (let s = 0; s < sample; s++) {
-        const at = living[rng.int(0, living.length - 1)];
+    for (const at of due) {
         const npc = state.npcs[at];
-        if (npc.status !== 'alive') continue;
 
         const regionTag = npc.tags.find(t => t.startsWith('region:'))?.slice(7);
         const region = state.locations.find(
