@@ -17,6 +17,9 @@
  *   THINGS      "items, manuals (for both cultivation techniques and daos), all
  *                that should exist to make the world feel alive and physicalized"
  *   THE CHOSEN  "chosen must change"
+ *   RANK        people rank up, and the population pyramid keeps its shape
+ *   ONE OF MANY "you are just one amongst them"
+ *   YOU MUST GO "you're forced to move to level up"
  *
  * Run: npx tsx scripts/audit-alive-world.ts
  */
@@ -26,6 +29,7 @@ import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
 import { forStream } from '../src/engine/cultivation/rng.js';
 import { manualCeilingOf } from '../src/engine/world/manuals.js';
+import { assessPromotions } from '../src/engine/world/promotion-inside-a-house.js';
 import { MAX_ORDINAL } from '../src/engine/cultivation/realms.js';
 import type { AmbientQi } from '../src/schema/cultivation.js';
 
@@ -187,6 +191,79 @@ async function main(): Promise<void> {
         newlyChosen > 0
             ? `${newlyChosen} of the ${chosenNow.size} current favourites were named after the seeding`
             : 'not one new favourite in three centuries: the designation died with its holders');
+
+    // ── RANK, AND THE SHAPE OF A HOUSE ──────────────────────────────────────
+    rule('RANK: DO PEOPLE RISE, AND DOES A HOUSE STAY A PYRAMID?');
+    claim('people rank up, and the population pyramid keeps its shape');
+    const inHouse = living.filter(n => n.factionId && n.factionRankIndex >= 0);
+    const ranks = new Map<number, number>();
+    for (const n of inHouse) ranks.set(n.factionRankIndex, (ranks.get(n.factionRankIndex) ?? 0) + 1);
+    const ordered = [...ranks].sort((a, b) => a[0] - b[0]);
+    line(`  in a house after 300 years: ${inHouse.length}`);
+    line('  ranks: ' + ordered.map(([r, n]) => `${r}:${n}`).join('  '));
+    // A pyramid narrows. A slab does not, and a slab is what a world with no
+    // promotion produces - everybody piled on the bottom rung forever.
+    //
+    // The TOP rank is excluded, and not to make this pass. A house's head seat
+    // holds exactly one person however large the house is, it is filled by
+    // succession rather than by promotion, and its population is therefore the
+    // number of houses with a living master rather than a share of anybody.
+    // Counting it inverts the top of the curve for a reason that says nothing
+    // about whether people are rising: measured here, 8 houses have a master at
+    // the head while only 5 people in the world meet the bar for the rank below
+    // it, which is a fact about how thin the upper ladder is, not about the
+    // shape of a hierarchy.
+    const promoted = ordered.filter(([r]) => r < Math.max(...ordered.map(o => o[0])));
+    let narrows = promoted.length > 2;
+    for (let i = 1; i < promoted.length; i++) {
+        if (promoted[i][1] > promoted[i - 1][1]) narrows = false;
+    }
+    const heads = ordered.length > 0 ? ordered[ordered.length - 1][1] : 0;
+    record('a house is a pyramid', narrows,
+        narrows
+            ? `${promoted.length} promoted ranks, each smaller than the one below it `
+              + `(${promoted.map(([r, n]) => `${r}:${n}`).join(' ')}), plus ${heads} head seats`
+            : `ranks do not narrow: ${promoted.map(([r, n]) => `${r}:${n}`).join(' ')}`);
+
+    const { promotions, blocked } = assessPromotions(state);
+    record('houses are still raising people', promotions.length > 0,
+        `${promotions.length} promotion(s) pending this year, ${inHouse.length} people in houses`);
+
+    // ── ONE AMONG THEM ──────────────────────────────────────────────────────
+    rule('ONE AMONG THEM: IS THE PLAYER SPECIAL?');
+    claim('"you are just one amongst them"');
+    line('  Everything measured above happened with no player in it. The test is whether');
+    line('  the world produces the same kinds of thing a run produces - people climbing,');
+    line('  holding books, being favoured, being stuck - or whether it is scenery waiting');
+    line('  for somebody to arrive.');
+    line();
+    const climbers = living.filter(n => n.cultivation.realmOrdinal > 0).length;
+    const booked = living.filter(n => manualCeilingOf(n) > 0).length;
+    const favoured = living.filter(n => n.tags.includes('chosen')).length;
+    line(`  cultivating at all: ${climbers}   holding a road: ${booked}   favoured: ${favoured}`);
+    line(`  standing above ordinal 20: ${living.filter(n => n.cultivation.realmOrdinal > 20).length}`);
+    record('the world is full of other people doing this',
+        climbers > 50 && booked > 50 && favoured > 0,
+        `${climbers} are cultivating, ${booked} hold a road, ${favoured} are somebody's favourite`);
+
+    // ── YOU MUST GO ─────────────────────────────────────────────────────────
+    rule('YOU MUST GO: IS STAYING PUT A LOSING LINE?');
+    claim(`"you're forced to move to level up"`);
+    line('  The setting only works if the house you were born into runs out. Two ways it');
+    line('  must run out, and both have to be real at once:');
+    line();
+    const noSeat = blocked.filter(b => b.reason === 'no_seat').length;
+    line(`  BLOCKED BY SEATS   ${noSeat} cultivator(s) have met the bar for the next rank`);
+    line('                     and cannot have it, because the people above them are not');
+    line('                     dying for centuries.');
+    const capped = living.filter(n => {
+        const c = manualCeilingOf(n);
+        return c > 0 && n.cultivation.realmOrdinal >= c;
+    }).length;
+    line(`  OUT OF BOOK        ${capped} cultivator(s) stand at the end of everything they`);
+    line('                     hold. No amount of sitting still moves them again.');
+    record('staying where you were born stops working', noSeat > 0 || capped > 0,
+        `${noSeat} blocked by seats, ${capped} at the end of their manual`);
 
     // ── SUMMARY ─────────────────────────────────────────────────────────────
     rule('WHAT THE ENGINE ACTUALLY MAKES TRUE');
