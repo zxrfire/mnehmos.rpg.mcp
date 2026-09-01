@@ -21,6 +21,11 @@ import {
     spanStanding,
     ORDINARY_REALM_SPAN,
     DERIVATION_YEARS_PER_RUNG,
+    PRECEDENT_WELL_WALKED,
+    DERIVATION_THINNESS_COST,
+    precedentAt,
+    thinnessAt,
+    derivationYears,
     type DerivableManual,
     type GatedManual
 } from '../../../src/engine/cultivation/escapes.js';
@@ -492,20 +497,41 @@ describe('E2 - canDerive', () => {
 
 // ─────────────────────────────────────────────────────────────────────────
 describe('E3 - deriveContinuation, the one thing that writes a manual at runtime', () => {
+    // A well-walked height: plenty stands above the target, so the new-ground
+    // curve sits at its floor and these tests measure everything else.
+    const WELL_WALKED = { artsAtOrAbove: PRECEDENT_WELL_WALKED };
+
     const request = {
         runSeed: 'seed-alpha',
         cultivatorId: 'cultivator-1',
         source: SCATTERED,
-        dao: daoIn('fire')
+        dao: daoIn('fire'),
+        precedent: WELL_WALKED
     };
 
-    it('produces a manual capped one realm above the source', () => {
+    it('carries exactly ONE RUNG further, not a realm and not to the top', () => {
+        // A derived book is a step off a ceiling, not a leapfrog over the
+        // corridor. Writing a realm's worth of method from your own road would
+        // make derivation the best route in the game rather than the most
+        // desperate one.
         const result = deriveContinuation(request);
         expect(result.derived).toBe(true);
         if (!result.derived) return;
         expect(result.manual.requiredOrdinal).toBe(41);
-        expect(result.manual.cap).toBe(ordinaryCapFor(41));
+        expect(result.manual.cap).toBe(42);
         expect(realmsSpannedBy(result.manual)).toBe(ORDINARY_REALM_SPAN);
+    });
+
+    it('the step it buys never reaches the top of the ladder', () => {
+        for (let sourceCap = 1; sourceCap < MAX_ORDINAL; sourceCap++) {
+            const result = deriveContinuation({
+                ...request,
+                source: { ...SCATTERED, requiredOrdinal: sourceCap - 1, cap: sourceCap }
+            });
+            if (!result.derived) continue;
+            expect(result.manual.cap, `from ${sourceCap}`).toBe(sourceCap + 1);
+            expect(result.manual.cap).toBeLessThanOrEqual(MAX_ORDINAL);
+        }
     });
 
     it('is deterministic in (seed, cultivator, source, road) and in nothing else', () => {
@@ -542,8 +568,7 @@ describe('E3 - deriveContinuation, the one thing that writes a manual at runtime
 
     it('prices the work in years, readable before it is committed', () => {
         const result = deriveContinuation(request);
-        expect(result.derived && result.years)
-            .toBe((ordinaryCapFor(41)! - 41) * DERIVATION_YEARS_PER_RUNG);
+        expect(result.derived && result.years).toBe(DERIVATION_YEARS_PER_RUNG);
         // And it is not drawn from the stream: a price a player can only
         // discover by paying it is the same failure as a hidden ceiling.
         expect(deriveContinuation({ ...request, runSeed: 'other-seed' }).years)
@@ -571,6 +596,72 @@ describe('E3 - deriveContinuation, the one thing that writes a manual at runtime
         expect(refused.manual).toBeNull();
         expect(refused.years).toBe(0);
         expect(refused.line).toBe(refused.check.detail);
+    });
+
+    it('gets harder as you go up, because the ground is thinner', () => {
+        // "Obviously it gets harder as you go up cuz you're on new ground."
+        // Derived rather than tuned: the cost keys off how much the world holds
+        // at or above the target, so it moves on its own as the catalog does.
+        const walked = deriveContinuation({ ...request, precedent: { artsAtOrAbove: 12 } });
+        const thinning = deriveContinuation({ ...request, precedent: { artsAtOrAbove: 4 } });
+        const lonely = deriveContinuation({ ...request, precedent: { artsAtOrAbove: 1 } });
+
+        expect(walked.years).toBeLessThan(thinning.years);
+        expect(thinning.years).toBeLessThan(lonely.years);
+        // Low down it is a long project; near the top it is most of a life.
+        expect(walked.years).toBe(DERIVATION_YEARS_PER_RUNG);
+        expect(lonely.years).toBeGreaterThan(DERIVATION_YEARS_PER_RUNG * 4);
+    });
+
+    it('refuses outright where nobody has ever been', () => {
+        // The far end, and a refusal rather than a very large price - which is
+        // what stops derivation being a general escape from the corridor.
+        const check = canDerive(daoIn('fire'), SCATTERED, { artsAtOrAbove: 0 });
+        expect(check.permitted).toBe(false);
+        expect(check.reason).toBe('no_precedent');
+        expect(check.detail).toContain('Nobody has been here');
+        // And it must not read as a library being closed to them - that is a
+        // different refusal with a different answer.
+        expect(check.detail).toContain('not a library that is closed');
+    });
+
+    it('the curve introduces no new roll - trying again gets the same book', () => {
+        // What changes between attempts is the cultivator, never the dice.
+        for (const artsAtOrAbove of [0, 1, 4, 12]) {
+            const precedent = { artsAtOrAbove };
+            expect(deriveContinuation({ ...request, precedent }))
+                .toEqual(deriveContinuation({ ...request, precedent }));
+        }
+    });
+
+    it('the price is years and possibility, never resources', () => {
+        // The moment difficulty becomes a resource cost this stops being the
+        // one door money cannot open. Nothing in the result names a currency.
+        const lonely = deriveContinuation({ ...request, precedent: { artsAtOrAbove: 1 } });
+        expect(lonely.derived).toBe(true);
+        expect(JSON.stringify(lonely).toLowerCase()).not.toContain('stone');
+        expect(JSON.stringify(lonely).toLowerCase()).not.toContain('contribution');
+    });
+
+    it('reads the live catalog: the ground genuinely thins near the top', () => {
+        // Not a claim about a fixture - a measurement of the world as authored.
+        // If this inverts, the corridor has been widened at the top and
+        // derivation there has quietly become cheap.
+        // Cultivation manuals, not every art - see `precedentAt`. Counting dao
+        // arts too leaves 13 standing at rung 44 and the curve inert
+        // everywhere, which is how a diluted denominator hides a real scarcity.
+        const ordinals = TECHNIQUES
+            .filter(t => classOf(t) === 'cultivation')
+            .map(t => t.requiredOrdinal);
+        const low = precedentAt(ordinals, 13);
+        const high = precedentAt(ordinals, 37);
+        expect(low.artsAtOrAbove).toBeGreaterThan(high.artsAtOrAbove);
+        expect(thinnessAt(low)).toBe(0);
+        expect(thinnessAt(high)).toBeGreaterThan(0);
+        expect(derivationYears(low)).toBeLessThan(derivationYears(high));
+        // And it keeps thinning all the way up rather than flattening out.
+        expect(precedentAt(ordinals, 45).artsAtOrAbove)
+            .toBeLessThan(precedentAt(ordinals, 37).artsAtOrAbove);
     });
 
     it('X3 - derivation is not a hole-closer', () => {

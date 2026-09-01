@@ -53,6 +53,7 @@ import {
     type DerivableManual,
     type DerivationCheck,
     type EffectiveCap,
+    type Precedent,
     type GatedManual,
     type ManualGateResult,
     type OpeningPenalty
@@ -506,7 +507,15 @@ export function canTransmit(
  */
 export function derivationOption(
     dao: DaoAssessment,
-    manual: ManualLike
+    manual: ManualLike,
+    /**
+     * What the world holds at or above the rung this would write for. Omitted
+     * skips the new-ground check, which is right for a caller only asking
+     * whether the ROAD permits it - but a caller about to offer the verb
+     * should supply it, or it will offer a derivation the world has no ground
+     * for. Build it with `precedentAt`.
+     */
+    precedent?: Precedent
 ): DerivationCheck {
     const source: DerivableManual = {
         id: manual.id,
@@ -521,5 +530,5 @@ export function derivationOption(
         derivable: manual.derivable ?? false,
         notDerivableReason: manual.notDerivableReason ?? null
     };
-    return canDerive(dao, source);
+    return canDerive(dao, source, precedent);
 }
