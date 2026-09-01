@@ -71,7 +71,7 @@ converge on `NARRATOR-CORE.md`.
 | [`discovery.md`](discovery.md) | How the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of | 2 and 3 |
 | [`asking.md`](asking.md) | Who you ask and what you say; genuine ignorance versus deflection, and why the player rather than the character is what improves across runs | 2 and 3 |
 | [`origin.md`](origin.md) | Where you were born and what it was worth; privilege buys inputs and never rank | 2 and 3 |
-| [`escapes.md`](escapes.md) | What a capped cultivator does next: the routes past a manual's ceiling, who each is open to, and what every layer must supply | 2 and 3 |
+| [`past-the-ceiling.md`](past-the-ceiling.md) | What a capped cultivator does next: the routes past a manual's ceiling, who each is open to, and what every layer must supply | 2 and 3 |
 | [`making-places-different.md`](making-places-different.md) | Authoring guide: how to keep regions and factions from being interchangeable | 3 |
 
 Every file carries markers at section level, so a prompt builder may select on tier and
@@ -125,7 +125,7 @@ These cut across place. A scene commonly takes one row from each table.
 | An art is used, taught, refused, or compared | [`techniques.md`](techniques.md) |
 | A book is held, copied, bought, refused, or stolen | [`manuals.md`](manuals.md) |
 | Nobody present recognises what somebody is practising | [`ancient.md`](ancient.md) |
-| The player has run out of manual | [`escapes.md`](escapes.md) |
+| The player has run out of manual | [`past-the-ceiling.md`](past-the-ceiling.md) |
 | Two people of the same rank are not equally dangerous | [`understanding.md`](understanding.md) |
 | Something old, inherited, or built by somebody else is described | [`the-late-age.md`](the-late-age.md) |
 | Ownership, price, or provenance is disputed | [`economy.md`](economy.md) |

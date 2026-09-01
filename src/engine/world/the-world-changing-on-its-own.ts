@@ -638,7 +638,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         // nobody in the world held a book at all.
         //
         // A capped cultivator is not stuck by accident. They are standing in
-        // the situation the escape routes exist for, and the right outcome is
+        // the situation acquiring a new manual exists for, and the right outcome is
         // that they stop here until they find a later volume, are taught, or
         // write one.
         const manualCeiling = manualCeilingOf(npc) || BOOKLESS_CEILING;

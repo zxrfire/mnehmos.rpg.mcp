@@ -4,7 +4,7 @@
  * `techniqueExhausted` in `cultivation.ts` stops a cultivator dead at their
  * manual's `cap`. Not a taper - a multiplier of zero. This module is the other
  * half of that: the arithmetic behind the doors out, specified in
- * [`docs/world/escapes.md`](../../../docs/world/escapes.md) as routes 1b and 7.
+ * [`docs/world/past-the-ceiling.md`](../../../docs/world/past-the-ceiling.md) as routes 1b and 7.
  *
  * Nothing here is a new subsystem. Every rule below is a function of something
  * the engine already reads:
@@ -76,7 +76,7 @@ import { forStream } from './rng.js';
 // Realm geometry and the opening penalty live beside `techniqueExhausted` in
 // `cultivation.ts`, because this module reaches `shardPower` in the world layer
 // and the world layer imports that file - defining them here and importing them
-// back would close a runtime cycle. Re-exported below so callers of the escape
+// back would close a runtime cycle. Re-exported below so callers of the
 // routes have one import site.
 import {
     ORDINARY_REALM_SPAN,
@@ -184,7 +184,7 @@ export interface ExtendableManual extends GatedManual {
 export type DerivableManual = ExtendableManual;
 
 // Realm geometry and the opening penalty, re-exported from `cultivation.ts` so
-// that everything the escape routes need reads off one import.
+// that everything the routes past a ceiling need reads off one import.
 export {
     ORDINARY_REALM_SPAN,
     OPENING_COST_PER_EXCESS_REALM,
@@ -236,7 +236,7 @@ export {
 // ── A written stage is transmissible ─────────────────────────────────────
 //
 // "It can be passed on from master to student personally (or even written
-// down)." So a derivation is not a private escape. It is how a manual actually
+// down)." So a derivation is not a private trick. It is how a manual actually
 // grows, and how a house's library gets deeper over generations - which is the
 // same fact dormant arts and deep-foundation sects state from the other end: a
 // house holds stages somebody wrote long ago that nobody living has reached.
@@ -843,7 +843,7 @@ export function canExtend(
 // ─────────────────────────────────────────────────────────────────────────
 // E3. WRITING IT
 //
-// The one genuinely new mechanism in `escapes.md`, and the one most likely to
+// The one genuinely new mechanism in `past-the-ceiling.md`, and the one most likely to
 // break the founding rule if it is built carelessly.
 //
 // THE ENGINE PRODUCES THE ROW. The narrator may never assert a manual into
@@ -883,7 +883,7 @@ export const DERIVATION_YEARS_PER_RUNG = 12;
 // "Obviously it gets harder as you go up cuz you're on new ground."
 //
 // Derivation as first built was equally available at every height, which would
-// have made it a general escape from the corridor rather than a desperate one.
+// have made it a general way out of the corridor rather than a desperate one.
 // It is not equally available, and the reason is not a difficulty dial: the
 // higher the rung, the fewer people have ever been there, the less exists to
 // compose against, and near the top a deriver is genuinely writing something
