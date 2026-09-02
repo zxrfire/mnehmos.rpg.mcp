@@ -453,6 +453,39 @@ The mirror image is worth stating too: **a rule that binds NPCs and not the play
 player and not NPCs, is the same failure with one caller instead of none.** See
 [the world's rules must bind the player too](#the-worlds-rules-must-bind-the-player-too).
 
+### A field nothing writes is the same defect, one size smaller
+
+The entry above is about a module nothing calls. **This is the same failure at the level of a
+single field, and it is harder to see, because every artefact around it is correct.**
+
+The case: `deadlineOnDay` on a want. The schema had it, a predicate read it, tests covered the
+predicate, and the design rested on it - the whole distinction between *a present need, which is
+a refusal* and *a reserved future need, which is a price you have not met*. **Nothing in the
+world ever wrote one.** So every want in every seeded world read as reserved, every holder was
+negotiable, nobody was ever out of time, and the case the design most cared about - somebody
+desperate - could not occur. Measured across five worlds: 2000 people with an open want, **0
+carrying a date.**
+
+Why this is worse than an uncalled module. An uncalled module is *inert* - nothing happens, and
+sooner or later somebody notices nothing happening. **An unwritten field is not inert. It reads
+as a value**, and the code around it goes on answering with total confidence. `null` means "no
+deadline", "no deadline" means "not urgent", and a world where nobody is ever urgent looks
+exactly like a world that is merely calm. Every test passed, over an empty column.
+
+Three things that catch it:
+
+1. **Ask who writes it, not just who reads it.** The same discipline as naming the caller, one
+   level down. A field with three readers and no writer is a field with a bug.
+2. **Count the column in a seeded world before trusting anything computed from it.** A
+   distribution of one value is the signature. This is the same instrument as
+   [an aggregate can be measuring the seeder](#an-aggregate-can-be-measuring-the-seeder-rather-than-the-thing-you-changed),
+   pointed at an input rather than an output.
+3. **Prefer deriving to storing where the answer moves.** The fix here was not to start writing
+   the column - a stored deadline goes stale the moment the settling clock resets, and then the
+   row lies with a straight face. It was to compute the date on demand from clocks the world
+   already keeps and already moves. **A stored value that nothing maintains is a slower version
+   of the same defect.**
+
 ### Check for existing docs and modules before you start
 
 **In this project the prior is that it already exists.** The defect above has a twin: because so
