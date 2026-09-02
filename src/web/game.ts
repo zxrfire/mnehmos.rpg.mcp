@@ -879,6 +879,90 @@ function boardSample(prices: MarketPrice[]): MarketPrice[] {
 }
 
 /**
+ * What the pill just bought will not close, said on the receipt.
+ *
+ * ── The defect, found by playing ─────────────────────────────────────────
+ *
+ * The `help` read named a Meridian Rebirth Pill as what the wound wanted, and
+ * `I buy a Clear Meridian Pill` then took 132 spirit stones for something
+ * `treat_injury` refuses to spend on that wound - because `treatWorstInjury`
+ * enforces `medicineReaches` and the counter did not. Nothing in the sale said
+ * so. The player learned it later, holding the pill, out the money.
+ *
+ * ── Why this is a sentence and not a refusal ─────────────────────────────
+ *
+ * `AGENTS.md` is explicit that the fix for an action that seems unwise is a
+ * price or a warning, never a removed verb: banning is a decision taken away
+ * from the person playing, and it is indistinguishable from the feature being
+ * missing. There are real reasons to buy a pill that will not touch today's
+ * wound - a lighter one tomorrow, a body that is not yet past the grade, a
+ * sale a player wants for its own sake - and the engine is not entitled to
+ * decide which of those they are having. So the pill is sold, the stones are
+ * taken, and the receipt says what it will and will not reach, with the name
+ * of the medicine that would in it.
+ *
+ * Nothing here decides anything. `medicineReaches` is the same call the
+ * physician and `treat_injury` already make, and the sentence is the one
+ * `whatToSayAboutTheCure` already writes for the other two surfaces, so the
+ * counter cannot disagree with either about the same wound.
+ */
+function whatThisPurchaseWillNotReach(
+    cultivator: Cultivator,
+    pillId: string,
+    regionId: string
+): { lines: string[]; structure: string[] } {
+    const none = { lines: [], structure: [] };
+    const bought = getPill(pillId);
+    if (!bought || bought.effect !== 'treat_injury') return none;
+
+    // Permanent wounds are excluded for the reason `alchemy-manage.ts` gives:
+    // `treatWorstInjury` skips them at every grade, so counting them here would
+    // have the receipt promise a cure that does not exist.
+    const mendable = untreatedInjuries(cultivator.injuries)
+        .filter(injury => !isPermanentWound(injury.woundType));
+    if (mendable.length === 0) return none;
+
+    const beyond = mendable.filter(injury =>
+        !medicineReaches(bought.grade, injury.severity, cultivator.realmOrdinal));
+    if (beyond.length === 0) return none;
+
+    const needed = beyond
+        .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
+        .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
+    const cure = whatWouldCloseThisWound(
+        beyond, cultivator.realmOrdinal, cultivator.spiritStones, regionId);
+    const reached = mendable.length - beyond.length;
+
+    // Said in whichever of the two shapes is TRUE. A pill that closes two of
+    // three wounds and cannot touch the third is not a wasted pill, and telling
+    // somebody it will "close nothing" is the same species of falsehood as
+    // telling them nothing at all - it just points the other way.
+    const whatItMisses = beyond.length === mendable.length
+        ? (mendable.length === 1 ? 'the wound you are carrying' : 'any of the wounds you are carrying')
+        : `${beyond.length} of the ${mendable.length} wounds you are carrying`;
+    const whatBecomesOfIt = reached === 0
+        ? 'Swallowing it will spend it and close nothing.'
+        : `Swallowing it closes the ${reached === 1 ? 'other one' : `other ${reached}`} and leaves `
+          + `${beyond.length === 1 ? 'that one' : 'those'} exactly as ${beyond.length === 1 ? 'it is' : 'they are'}.`;
+
+    return {
+        lines: [
+            `It will not reach ${whatItMisses}. ${bought.name} is ${bought.grade} grade and `
+            + `${beyond.length === 1 ? 'that tear wants' : 'the worst of them wants'} `
+            + `${needed}-grade medicine on a body at your height. ${whatBecomesOfIt}`
+            + (cure ? `\n\n${whatToSayAboutTheCure(cure)}` : ''),
+            'You were sold it anyway, because it is your money and there may be a wound tomorrow it '
+            + 'does answer. Nobody at the counter pretended otherwise.'
+        ],
+        structure: [
+            `medicineReaches(${bought.grade}): ${beyond.length} of ${mendable.length} untreated `
+            + `wound(s) out of reach at ordinal ${cultivator.realmOrdinal}; highest requirement `
+            + `${needed}. The pill is in the pouch and treat_injury will refuse it on those.`
+        ]
+    };
+}
+
+/**
  * Whether what somebody typed names a title by a piece of it.
  *
  * The commission titles in this game are long and good - "What a Poor District
@@ -9718,14 +9802,21 @@ ${noticed}`;
         // that answers both answers neither. The note belongs on the board,
         // where it already is, and the receipt says what was bought, what it
         // cost, and what is left.
+        // What the counter has just sold, and what it will not close. Built
+        // BEFORE the facts so the sentence is in `prose` rather than appended
+        // to a receipt that has already been rendered.
+        const shortfall = whatThisPurchaseWillNotReach(cultivator, pill.id, regionId);
+
         const facts = factsForToolResult(`${pill.name}, bought.`, [
             `One ${pill.name}, ${cash} cash the ${price.unit}, which is ${stones} spirit `
             + `stone${stones === 1 ? '' : 's'} of the ${cultivator.spiritStones} you had.`,
-            `${after.spiritStones} left in the purse, and the pill is in the pouch.`
+            `${after.spiritStones} left in the purse, and the pill is in the pouch.`,
+            ...shortfall.lines
         ]);
         facts.structure.push(
             `${price.id} -> ${pill.id}: ${cash} cash at the ${regionId} multiplier, charged as `
-            + `${stones} stone(s). One added to cultivator_pouch.`
+            + `${stones} stone(s). One added to cultivator_pouch.`,
+            ...shortfall.structure
         );
 
         return {
