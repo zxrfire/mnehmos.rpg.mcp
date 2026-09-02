@@ -504,36 +504,78 @@ other:
 | Layer | What it is | When it applies |
 |---|---|---|
 | **The elemental floor** | Broad, shallow, inherent. The tribulation body itself: they have started *being* the elements, because a tribulation is a natural law | Always on, before anybody has thrown anything |
-| **The adaptation** | Narrow, deep, learned. One close against one specific thing | Grows during the fight, moves when what you lean on moves |
+| **The adaptation** | Narrow, deep, learned. One close against one kind of harm | Grows during the fight, moves when what you lean on moves |
 
 The floor is why the ordinary weapon barely works at the summit - almost everybody arrives
 carrying an element. The adaptation is why leaning on *anything* stops working.
+
+**Both layers speak the same vocabulary, which is what makes them one design rather than two.**
+The floor covers the **elemental damage types** - fire, cold, lightning and their neighbours -
+and the adaptation closes **one type**, whichever is arriving most.
+
+That also explains, without a special case, why ancient arts and the deep daos work up there:
+**a strike out of karma, a working on the mind, or harm that is simply force never went under
+the floor to begin with.** They are not exempt from the adaptation - lean on one and it closes
+like anything else - but they start above the floor rather than under it, which is the whole of
+their advantage and is a much smaller claim than "they bypass a tribulation body".
 
 **And it can only adapt to ONE thing at a time.** This is the constraint that makes the whole
 capability precise, bounded and playable, and it should be the first thing anybody implementing
 it reads. The body closes one door - whichever it is being hit with most - and while that door
 is shut, every other one is open.
 
-**The grain is SPECIFIC, and this is the part most easily got wrong.** It adapts to **fire**,
-not to elements. To **a particular sword road**, not to weapons. To **one karma working**, not
-to karma. Hitting it with an ancient art teaches it *that art*, not ancient arts as a class.
-Adapting at the level of a category would shut a great many doors with one close, which is the
-one-slot rule defeated by a naming choice.
+**The grain is one KIND OF HARM, and this is the part most easily got wrong.** It adapts to
+**fire**, not to elements. To **cutting**, not to swords and not to one sword road. To **what
+mind control does**, which is not what a blade does. Hitting it with an ancient art teaches it
+the injury that art inflicts, not ancient arts as a class and not that art by name. See the key
+section below: the body never sees the technique.
 
 **So the counter is a near-even split: 51% of one thing and 49% of another.** The body adapts to
 the majority; the minority keeps landing at full effect for the entire fight. That is a real
 piece of play, discoverable at the table, and it is worth stating in exactly those terms because
 it teaches the mechanic faster than any description of it.
 
-**And because the grain is specific, the split works between ANY two things.** Fire and water is
-a working answer. You do not need a weapon, an ancient art or an exotic dao - you need **two
-things**. A cultivator with two elements has a way through; one with a single magnificent art
-does not.
+**And because the key is the kind of harm, the split works between any two KINDS.** Fire and
+water is a working answer - one burns, one does not. **Two sword roads are not**, however
+different the two schools look on paper: both cut, so the body has only ever felt cutting and
+closes against it once. That is the test to apply to any pair, and it is not "are these two
+different arts" but **"do these two hurt differently"**.
 
 That is the fight-sized version of a rule the setting already holds about whole lives: a narrow
 life makes a narrower cultivator. Here it takes an afternoon rather than three centuries, and it
 is the same lesson - **the person who only ever learned to do one thing is the one it stops
 working for first.**
+
+##### It is still very strong, and the counter has a price
+
+Nothing above weakens the realm, and it is worth saying because a mechanic described mostly by
+its counter starts to read like one.
+
+**People lean on what they are best at.** So *most-used* is *best*, and a tribulation body closes
+against precisely the opponent's strongest move - which is the single most valuable thing a
+defence can do. It is not a generic damage reduction; it is a defence that finds the worst thing
+coming at it and shuts that.
+
+**And running the counter costs you.** To hold a 51/49 split you have to spend half the fight
+using your **second-best** kind of harm, against somebody at the summit of the ladder. That is
+the price, it is a real one, and it is what keeps the capability strong without making it
+invincible: **the answer exists, and taking it means fighting worse.**
+
+##### Where it comes from, which is the same organ
+
+The tribulation body is not a combat feature that happens to help at a crossing. **The crossing
+is its origin.**
+
+The lightning of a tribulation arrives strike after strike after strike - the same harm, poured
+on, repeated past any reasonable endurance. **That is what a tribulation body is for and how it
+works: it adapts to the lightning while the lightning is happening**, and that is what makes the
+crossing survivable at all. What walks out the other side is an organ that has learned to do that
+to *anything*.
+
+So everything it does in a duel is the same organ pointed at a person, and the resemblance
+between "survives the tribulation" and "your best move stops working" is not a coincidence or an
+extension. **It is one mechanism, described from two ends.** A tribulation body is a function of
+a tribulation, and a tribulation is a natural law.
 
 **Switching moves the adaptation, and that is the whole texture of the fight.** Lead with fire,
 get adapted to, switch to the sword - and the body must give up its fire adaptation to close
@@ -635,47 +677,69 @@ have to be fitted to the calibration matchup below, together with the HP pool.
 
 ##### What the body adapts TO, which is the one thing to get right
 
-Adaptation needs a key: the thing an incoming attack is counted against. Get it wrong in either
-direction and the mechanic breaks. Too coarse and one close shuts many doors, which defeats the
-one-slot rule by a naming choice. Too fine and every art is its own key, so nothing is ever
-repeated and the defence never engages.
+**The body does not learn the ART. It learns the INJURY.**
 
-**The key the setting asks for is asymmetric, and both halves are the owner's own words:**
+That single sentence is the whole of it, and it dissolves a problem this section previously spent
+four paragraphs failing to solve. A tribulation body has no idea what technique is being used on
+it and does not classify techniques at all. It knows what **kind of harm keeps arriving**, and it
+closes against that.
+
+Every case the design owner gave falls straight out of it:
+
+| Case | Why |
+|---|---|
+| Not all elements - it adapts to **fire** | Fire burns; cold does not |
+| **Two sword roads are one thing** | Both cut. The body has only ever felt cutting |
+| Ancient mind control and ancient sword generation are **two** | One does something to the mind; the other opens you |
+| It might adapt to **sharp and not to blunt** | Slashing and piercing are not bludgeoning |
+| *"one type of trauma"* | The rule, in the owner's own words |
+
+**So there is no technique taxonomy to invent, and no family field either.** The engine already
+carries the exact vocabulary, in `BaseDamageTypeEnum` (`src/schema/base-schemas.ts`):
 
 ```text
-an art WITH an element     ->  the element        'fire', not 'elements'
-an art WITHOUT one         ->  the art's family   that sword road, not 'weapons'
+slashing  piercing  bludgeoning
+fire  cold  lightning  thunder
+acid  poison  necrotic  radiant
+psychic  force
 ```
 
-That asymmetry is not untidy, it is the setting being specific about two different things. Fire
-arts really are all fire; sword roads really are not all one road.
+**Key the adaptation on the damage type of the incoming harm.** Nothing is added, and every one
+of the owner's cases is expressible in what is already there.
 
-**"Family" beyond the individual art is NOT expressible today, and this was measured rather than
-assumed.** There is no lineage, parent or variant field on a technique. The nearest candidate is
-`subject`, and it fails in both directions at once:
+**Retracting what this section said an hour ago**, because a wrong answer with reasoning attached
+is worth more than a silent edit. It proposed keying on `element ?? id`, and proposed adding an
+optional `familyId` to techniques so that variants of one road could be declared to share. Both
+are **wrong and neither should be built.** They were solving the problem of classifying arts,
+which is not the problem: the body never sees the art. The `familyId` field in particular would
+have been a new taxonomy for somebody to maintain, invented to answer a question the damage-type
+enum had already answered. It is also worth recording that the reasoning which produced it -
+measuring `subject` and finding it too coarse and too sparse - was perfectly sound and aimed at
+the wrong target entirely.
+
+**The gap this leaves, and it is real:** the taxonomy exists but **cultivation arts are not mapped
+onto it.** `grep` finds no `damageType` on a technique or anywhere in `schema/cultivation.ts` -
+`BaseDamageTypeEnum` is retained substrate that the cultivation layer has never used. So before
+adaptation can be implemented, an incoming art has to be able to say what kind of harm it does.
+The cheapest honest route is derivation from what arts already carry rather than a new authored
+field on 138 rows:
 
 ```text
-elementless arts: 69
-  subject: alchemy 17 | (none) 17 | weapon 11 | movement 10 | life_death 8 | body 6
+element   metal wood water fire earth lightning ice   (7, on 69 arts)
+subject   alchemy weapon movement life_death body      (on 52 of the other 69)
 ```
 
-Too coarse - one close on `weapon` would shut eleven arts at once, and the owner has said
-explicitly that it learns a particular sword road and not weapons. And too sparse - 17 of the 69
-carry no subject at all, so they would all collapse into one bucket together.
+Several map with no judgement at all - fire to `fire`, lightning to `lightning`, ice to `cold`,
+`subject: weapon` to the sharp types, `subject: alchemy` to `poison`. Others genuinely need a
+decision, and **that decision is content and belongs to the owner, not to whoever implements
+this**: what harm does a wood art do, or a movement art, or one of the 17 arts carrying neither
+element nor subject. Derive where it is obvious, ask where it is not, and default the remainder
+to something explicit rather than letting them all collapse into one bucket - because arts that
+share a bucket are arts the body cannot tell apart, which is the one-slot rule leaking again.
 
-**So the smallest honest key is `element ?? id`:** the element where there is one, and otherwise
-the art itself. That is correct today, because every art is its own family until somebody says
-two of them are the same one.
-
-**And the smallest thing that would express families later** is an optional `familyId` on a
-technique, defaulting to its own id, so that two variants of one road can be declared to share a
-family without anybody maintaining a taxonomy of the whole catalog. Proposed, not built - it
-should be added when there is a pair of arts that actually need it, not in advance.
-
-**Never key adaptation on `era`, and never on `domain`.** `era` is guarded in
-`schema/cultivation.ts` - an ancient art must never simply be stronger, or the axis collapses
-into "old wins". `domain` is far too coarse and too sparse for this job: only 25 of 138 arts
-carry one at all. Both are the category mistake above, wearing a field name.
+**Never key adaptation on `era`, on `domain`, or on the technique id.** All three are the same
+mistake - classifying the art instead of the harm - and `era` additionally trips the guard in
+`schema/cultivation.ts` that stops the axis collapsing into "old wins".
 
 ##### What this buys the rest of the setting
 
@@ -730,11 +794,14 @@ unwinnable. What they cannot reliably do is **finish** them. That is a better re
 "the transcendent wins" or "numbers still win", and it is what the tribulation body is *for*: it
 is the reason a body at that height cannot be mobbed.
 
-**The counter is unchanged and gets sharper here.** Twenty elemental cultivators fail; a far
-smaller number carrying anything non-elemental do not. An ancient art, a weapon, a strike out of
-karma. **So somebody at the summit has more to fear from one well-equipped enemy than from an
-army of ordinary ones** - which is exactly the shape the setting wants at the top, and it now
-falls out of the arithmetic instead of being asserted.
+**And the counter is sharper here, because twenty of them is not twenty kinds of harm.** An army
+of elemental cultivators is, to a tribulation body, very nearly *one* attacker repeated - they
+all burn, so the floor covers them and the slot closes against the one type arriving most. **Two
+opponents who hurt you differently are worth more than twenty who hurt you the same way.**
+
+**So somebody at the summit has more to fear from one well-equipped enemy than from an army of
+ordinary ones** - which is exactly the shape the setting wants at the top, and it now falls out
+of the mechanism instead of being asserted.
 
 **This is the calibration target.** When the numbers are chosen, they must land that matchup:
 
@@ -777,10 +844,12 @@ trailing record of what the defender has been hit with.
 
 **Per incoming attack, in damage resolution, where the art is already known:**
 
-- **Key it.** `element ?? id` on the incoming technique. See the grain section above.
+- **Key it** on the **damage type** of the harm arriving - a `BaseDamageType`, never the
+  technique, its element, its id or its era. This needs the mapping named in the grain section
+  above, which does not exist yet and is the one real prerequisite.
 - **Apply the elemental floor** whenever the defender is at Tribulation Transcendence or above
-  and the incoming art has an element. Always on, independent of the slot.
-- **Apply the adaptation** on top, when the incoming key matches the slot's key, scaled by how
+  and the incoming damage type is one of the elemental ones. Always on, independent of the slot.
+- **Apply the adaptation** on top, when the incoming type matches the slot's type, scaled by how
   far it has closed.
 - **Then update the slot** from the trailing window: grow if the dominant key still matches,
   decay if it does not, and re-aim once it has emptied.
@@ -799,10 +868,11 @@ wrong:**
   The HP pool is the other half and must be fitted together with the reduction, since either
   alone can be made to pass and fail it. **Record the chosen figures in this document.**
 - **`imperfect-tribulation-body` changes the slot's behaviour, not the damage.** Slower growth,
-  faster decay, a cap below full, or a key it can never take. Deriving which key it cannot learn
-  from something already on the cultivator - their root or their road - keeps it deterministic
-  and adds no catalog field.
-- **Do not** key any of this on `era` or on `domain`.
+  faster decay, a cap below full, or a damage type it can never close against. Deriving which
+  type it cannot learn from something already on the cultivator - their root or their road -
+  keeps it deterministic and adds no catalog field.
+- **Do not** key any of this on `era`, on `domain`, on `element`, or on the technique id. The
+  body learns the injury, not the art.
 
 ---
 
