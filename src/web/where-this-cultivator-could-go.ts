@@ -567,23 +567,52 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
     // share it. A place that is over its draw, or that nobody draws on at all,
     // still says so on its own line, which is now the only place such a clause
     // appears and therefore reads as the exception it is.
-    const tally = new Map<string, number>();
+    // The VERDICT is shared; the NUMBER is not.
+    //
+    // "It comfortably carries a draw of 7, and nobody speaks of it as crowded"
+    // is two facts welded together, and only one of them varies. Six places
+    // with six different draws still produced six copies of "and nobody speaks
+    // of it as crowded", which is the wall this is about. So the verdict is
+    // hoisted and each row keeps its own figure, which is the part that
+    // differs and the part the mechanic is taught on.
+    const uncrowded = sorted.filter(place =>
+        place.occupants !== null && place.supportedDraw !== null
+        && place.occupants > 0 && place.occupants <= place.supportedDraw);
+    const shared = uncrowded.length >= 3;
+
+    // The ceiling clause gets exactly the same treatment, and has to: fixing
+    // the absurd sentence without this only traded one repetition for another,
+    // and "No ceiling: it carries anybody as far as they can go" four times
+    // running is the same wall the crowding was.
+    const ceilingFor = (place: Destination): string =>
+        place.localCeilingOrdinal === input.localCeilingOrdinal
+            ? ''
+            : place.localCeilingOrdinal >= MAX_ORDINAL
+                ? ' No ceiling: it carries anybody as far as they can go.'
+                : ` Carries nobody past ${rankName(place.localCeilingOrdinal)}.`;
+
+    const ceilingTally = new Map<string, number>();
     for (const place of sorted) {
-        const said = crowd(place);
-        if (said) tally.set(said, (tally.get(said) ?? 0) + 1);
+        const said = ceilingFor(place);
+        if (said) ceilingTally.set(said, (ceilingTally.get(said) ?? 0) + 1);
     }
-    let shared = '';
-    for (const [said, count] of tally) {
-        if (count >= 3 && count > (tally.get(shared) ?? 0)) shared = said;
+    let sharedCeiling = '';
+    for (const [said, count] of ceilingTally) {
+        if (count >= 3 && count > (ceilingTally.get(sharedCeiling) ?? 0)) sharedCeiling = said;
     }
-    if (shared) {
-        const example = sorted.find(place => crowd(place) === shared);
-        lines.push(
-            example && example.supportedDraw !== null
-                ? `Unless said otherwise below, each of these comfortably carries a draw of `
-                  + `${example.supportedDraw} and none is spoken of as crowded.`
-                : `Unless said otherwise below, none of these is spoken of as crowded.`
+
+    const preamble: string[] = [];
+    if (shared) preamble.push('none of these is spoken of as crowded');
+    if (sharedCeiling) {
+        preamble.push(
+            sharedCeiling.includes('No ceiling')
+                ? 'none of them has a ceiling, and each carries anybody as far as they can go'
+                : sharedCeiling.trim().replace(/^Carries nobody/, 'none carries anybody')
+                    .replace(/\.$/, '')
         );
+    }
+    if (preamble.length) {
+        lines.push(`Unless said otherwise below, ${preamble.join('; and ')}.`);
     }
 
     for (const place of sorted) {
@@ -598,18 +627,26 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
         // thing about it. The header already said so and the rows did not, so
         // standing in a capped province and looking at an uncapped one printed
         // the absurd sentence on every row.
-        const ceiling = place.localCeilingOrdinal === input.localCeilingOrdinal
-            ? ''
-            : place.localCeilingOrdinal >= MAX_ORDINAL
-                ? ' No ceiling: it carries anybody as far as they can go.'
-                : ` Carries nobody past ${rankName(place.localCeilingOrdinal)}.`;
-        const said = crowd(place);
+        const ceilingSaid = ceilingFor(place);
+        const ceiling = ceilingSaid === sharedCeiling ? '' : ceilingSaid;
+        // Uncrowded rows keep the figure and lose the verdict once it has been
+        // said above. Over-drawn and unworked ground always say their own
+        // sentence: those are the exceptions the list exists to surface.
+        const uncrowdedHere = shared && uncrowded.includes(place);
+        const said = uncrowdedHere
+            ? ` It comfortably carries a draw of ${place.supportedDraw}.`
+            : crowd(place);
+        // "The Low Fall: a province, The Low Fall, 11 days away" - a province
+        // row carries itself as its own region, so naming both stutters. The
+        // header line above already guards exactly this for where the player is
+        // standing; the destination rows did not.
+        const saysItsOwnName = bare(place.name) === bare(place.regionName);
         lines.push(
             `${place.name}${place.hereNow ? ' (where you are)' : ''}: ${kindLabel(place.kind)}`
-            + `${place.sameProvince ? '' : `, ${place.regionName}`}, `
+            + `${place.sameProvince || saysItsOwnName ? '' : `, ${place.regionName}`}, `
             + `${distance(place)}.`
             + `${place.ambient ? ` ${QI[place.ambient]}.` : ''}`
-            + (said === shared ? '' : said)
+            + said
             + ceiling
         );
         structure.push(mechanicalRow(place, input.localCeilingOrdinal));
