@@ -721,10 +721,28 @@ That is [`docs/world/items.md`](docs/world/items.md)'s barter tier made personal
 line cash is not the medium, and what moves people instead is a favour owed or another
 singular thing.
 
-**Scope: tracked objects only.** Counted stock has a price and no story. A bowl of millet does
-not have anybody's dying son behind it, and if it did the market would stop working. See
+**Scope: tracked objects only, and the question that decides which those are is whether the
+thing has a story.** A bowl of millet does not have anybody's dying son behind it, and if it
+did the market would stop working. See
 [rarity is a population statement, not a price](#rarity-is-a-population-statement-not-a-price)
-for why that boundary is not an authoring convention.
+for why that boundary is not an authoring convention, and
+[`docs/world/things/items.md`](docs/world/things/items.md) for the ruling in full. Three
+things about it are worth having here, because all three have been got wrong in code:
+
+- **There are three tiers, not two.** A mundane good is a price and an availability and has
+  no row anywhere; a counted thing is an amount, on a holder and on a place; a tracked thing
+  is one object with a provenance. What moves each is different, and it is the reason the
+  lines are where they are: an event moves the first, **taking** moves the second, and a
+  decision moves the third.
+- **Counted does not mean unrecorded.** Both of the stored tiers are counted and both are
+  recorded. A character's row says they hold three; a place's row says how many are still in
+  the ground, and it goes DOWN when people take from it -
+  `src/engine/world/what-a-place-still-has-in-the-ground.ts`. What a counted thing lacks is
+  an identity and a past, which is why "counted versus tracked" does not communicate the
+  distinction it names and the prose should not lean on the terms.
+- **Nothing crosses the line and nothing moves up a grade.** Both are settled when a thing
+  comes into existence. Crafting creates rather than promotes, and the only movement anywhere
+  is downward - `shardPower`, a piece worth one rung less than the whole.
 
 This is the same law as [nothing in this world is
 invincible](#nothing-in-this-world-is-invincible), pointed at motivation instead of defence:
