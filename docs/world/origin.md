@@ -136,16 +136,15 @@ right instrument there is a nomination, which is a different thing with a differ
 
 <!-- tier: 2 trigger="the Azure Cloud Pavilion's doors come up, or somebody offers to get a person in there" -->
 
-The Azure Cloud Pavilion has **two doors, and only one of them is the door people come
-through.**
+The Azure Cloud Pavilion has **one door, and it stands at the floor.** It is the only one of
+its kind in the world: the Pavilion will take an uncultivated mortal off the road, test them,
+and spend years finding out what they are.
 
-- Its **membership** bar is the one everybody quotes, and it has never moved for anybody.
-- Its **probation** door stands at the floor, and it is the only one of its kind in the
-  world. The Pavilion will take an uncultivated mortal off the road, test them, and spend
-  years finding out what they are.
-
-Both are true at once, so the sentence to say out loud is: **it is already open and needs no
-opening.** A favour buys nothing there because there is nothing to buy. You walk up. Being
+What people quote as its bar is not a second door. **It is what passing costs.** Everybody
+enters the same way, as a guest disciple on a long probation, drawing none of the Pavilion's
+resources until they have shown what they are - and the thing that has never moved for
+anybody is that test, not the doorway. So the sentence to say out loud is: **it is already
+open and needs no opening.** A favour buys nothing there because there is nothing to buy. You walk up. Being
 handed the same child by somebody at the top of the world gets exactly what walking up the
 mountain gets, and the Pavilion says so in the same words every time it is asked, on the
 stated ground that a bar it moves once is not a bar.
