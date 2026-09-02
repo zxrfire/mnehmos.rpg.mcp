@@ -59,8 +59,8 @@ converge on `NARRATOR-CORE.md`.
 ## The files
 
 Three of these were missing from this table for a long time - `closed-ground.md`,
-`trust.md` and `escapes.md` - which is 971 lines of setting material that the directory's
-own index did not admit existed. Add the row when you add the file.
+`trust.md` and `escapes.md` - which is most of a thousand lines of setting material the
+directory's own index did not admit existed. Add the row when you add the file.
 
 | File | Covers | Default tier |
 |---|---|---|
