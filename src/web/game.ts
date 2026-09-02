@@ -214,6 +214,16 @@ import {
     type SiteIntent
 } from './actions.js';
 import {
+    theClauseThisTurnDidNotRun,
+    sayingWhatWasNotDone,
+    theStructureLineFor
+} from './a-second-verb-in-the-sentence-that-was-not-run.js';
+import {
+    PROVISION_COST_STONES,
+    whatFeedingThisStretchCosts,
+    type ProvisioningPlan
+} from './what-feeding-a-stretch-of-seclusion-costs.js';
+import {
     holderOf,
     linesDownward,
     residentAbove,
@@ -623,7 +633,13 @@ const POINTING_AT_NOBODY_IN_PARTICULAR = /\b(?:someone|somebody|anyone|anybody)\
  */
 const POINTING_AT_A_RANK = /\b(elder|disciple|master|warden|head)\b/i;
 
-export const PROVISION_COST_STONES = 2;
+/**
+ * Kept at this path for every importer that already reads it. The figure -
+ * and the whole of the provisioning arithmetic around it - now lives in
+ * `what-feeding-a-stretch-of-seclusion-costs.ts`, so the seclusion picker can
+ * price a stretch out of the same function that spends the stones.
+ */
+export { PROVISION_COST_STONES };
 
 /**
  * Where rations bought ahead of time are kept.
@@ -1889,6 +1905,35 @@ export class GameService {
 
         // ── phase 2 ──
         const execution = await this.execute(plan.action, run, cultivator, ambient, trimmed);
+
+        // ── AND THE HALF OF THE SENTENCE THAT DID NOT RUN ────────────────
+        //
+        // One turn is one action, and that stays true: nothing below runs a
+        // second verb. What it does is SAY that a second verb was there, which
+        // is the whole defect - `I buy a month of rations and eat` bought and
+        // did not eat, and said nothing about the eating, so the player learned
+        // it from a hunger banner that would not go away.
+        //
+        // Here rather than inside `execute` because it is a fact about the
+        // sentence and not about any one verb: put in one branch it would cover
+        // one verb, and the next verb somebody adds would drop clauses again.
+        const dropped = theClauseThisTurnDidNotRun(trimmed, plan.action.action);
+        if (dropped) {
+            const said = sayingWhatWasNotDone(dropped);
+            // All three channels, because they are read by three different
+            // people. `lines` is what the narrator may know, `prose` is what
+            // the deterministic narrator ships verbatim, and `structure` is the
+            // log, which is the only one of the three that cannot be dressed.
+            execution.facts.lines.push(said);
+            execution.facts.prose = `${execution.facts.prose}\n\n${said}`;
+            execution.facts.structure.push(theStructureLineFor(dropped, plan.action.action));
+            execution.calls.push({
+                name: 'engine.parseIntent',
+                action: plan.action.action,
+                summary: theStructureLineFor(dropped, plan.action.action),
+                ok: false
+            });
+        }
 
         const after = this.currentRun();
         // And again, now the turn is over, BEFORE the write below. The refresh
@@ -12868,33 +12913,53 @@ ${done.lines.join(' ')}`;
         writeFlag(this.db, cultivator.id, FLAG_RATIONS_HELD, String(Math.max(0, Math.floor(held))));
     }
 
+    /**
+     * What this stretch would cost to eat, without buying anything.
+     *
+     * A read, and the one the seclusion picker prices its preview from. It runs
+     * the same function `buyProvisions` runs, so the figure shown at the door
+     * is the figure charged inside it.
+     */
+    provisionsForAStretch(days: number): ProvisioningPlan {
+        this.useOwnDb();
+        const requested = Math.floor(Number(days));
+        if (!Number.isFinite(requested) || requested < 1) {
+            throw new GameError('A stretch is a whole number of days, at least one.');
+        }
+        if (requested > MAX_CULTIVATION_DAYS) {
+            throw new GameError(`The longest seclusion this engine will resolve in one pass is ${MAX_CULTIVATION_DAYS} days.`);
+        }
+        const { cultivator } = this.currentRun();
+        return whatFeedingThisStretchCosts(cultivator, this.rationsHeld(cultivator), requested);
+    }
+
     private buyProvisions(
         cultivator: Cultivator,
         days: number
     ): { cultivator: Cultivator; rations: number; covered: number; line: string } {
-        const wanted = Math.ceil(days / ACTIONS_PER_FULL_SATIETY);
-
+        // The arithmetic is not done here. It is done in
+        // `what-feeding-a-stretch-of-seclusion-costs.ts`, which is also what
+        // the picker asks before the player commits - so what the door quotes
+        // and what the cave charges cannot drift apart.
+        //
         // What is already in the pack comes first. A player who stocked up
         // deliberately must not be charged again at the cave mouth for food
         // they are carrying, and the ones they carried in are the ones the
         // time skip eats.
-        const carried = Math.min(wanted, this.rationsHeld(cultivator));
-        const short = wanted - carried;
-        const affordable = Math.floor(cultivator.spiritStones / PROVISION_COST_STONES);
-        const topUp = Math.max(0, Math.min(short, affordable));
-        const rations = carried + topUp;
-        const cost = topUp * PROVISION_COST_STONES;
+        const plan = whatFeedingThisStretchCosts(cultivator, this.rationsHeld(cultivator), days);
+        const { carried, toBuy, cost } = plan;
+        const rations = carried + toBuy;
         if (carried > 0) this.setRationsHeld(cultivator, this.rationsHeld(cultivator) - carried);
 
         if (rations === 0) {
             return {
                 cultivator,
                 rations: 0,
-                covered: Math.floor(cultivator.satiety / 2),
+                covered: plan.covered,
                 line:
                     'Nothing in the pack and nothing the purse will buy: ' +
                     `${cultivator.spiritStones} spirit stones against ${PROVISION_COST_STONES} ` +
-                    `per ration. The belly covers ${Math.floor(cultivator.satiety / 2)} days ` +
+                    `per ration. The belly covers ${plan.covered} days ` +
                     'and then starvation begins.'
             };
         }
@@ -12904,14 +12969,14 @@ ${done.lines.join(' ')}`;
             : cultivator;
         if (!updated) throw new GameError('Cultivator vanished while buying provisions.', 500);
 
-        const covered = rations * ACTIONS_PER_FULL_SATIETY + Math.floor(cultivator.satiety / 2);
+        const covered = plan.covered;
         return {
             cultivator: updated,
             rations,
             covered,
             line: (carried > 0
                 ? `${carried} ration${carried === 1 ? '' : 's'} came out of the pack` +
-                  `${topUp > 0 ? `, and ${topUp} more was bought for ${cost} spirit stones` : ' and nothing had to be bought'}. `
+                  `${toBuy > 0 ? `, and ${toBuy} more was bought for ${cost} spirit stones` : ' and nothing had to be bought'}. `
                 : `${rations} ration${rations === 1 ? '' : 's'} bought for ${cost} spirit stones. `)
                 + (covered >= days
                     ? `That covers the whole stretch. ${updated.spiritStones} stones left.`

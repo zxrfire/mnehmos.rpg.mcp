@@ -2088,6 +2088,12 @@ kbd {
 }
 .pick__total b { color: var(--jade-300); }
 .pick__warn { font-size: 13px; color: var(--amber-400); margin-top: 6px; }
+/* What the food for the stretch costs, quoted before the button is pressed.
+   Not a warning - on most stretches it is good news - so it reads in the
+   ordinary body colour and leaves the amber for the things that can kill. */
+.pick__food { font-size: 13.5px; color: var(--paper-dim); margin-top: 8px; line-height: 1.6; }
+.pick__food--unknown { color: var(--paper-mut); font-style: italic; }
+.pick__food--cost b { color: var(--jade-300); }
 
 /* Confirm body */
 .confirm { display: grid; gap: 14px; font-size: 15px; line-height: 1.65; }

@@ -318,6 +318,17 @@ export function createApp(options: AppOptions): (req: IncomingMessage, res: Serv
                 case '/api/ledger':
                     sendJson(res, 200, game.ledger());
                     return;
+                // What a stretch of seclusion will cost to eat, asked BEFORE
+                // it is entered. A pure read - no time passes, no stone moves,
+                // nothing is written - and it runs the same arithmetic that
+                // spends the stones at the cave mouth, so the picker cannot
+                // quote a figure the seclusion then disagrees with.
+                case '/api/seclusion/provisions': {
+                    const asked = new URL(req.url ?? '/', 'http://localhost')
+                        .searchParams.get('days');
+                    sendJson(res, 200, game.provisionsForAStretch(Number(asked)));
+                    return;
+                }
                 case '/api/admin/roster':
                     sendJson(res, 200, await game.roster());
                     return;

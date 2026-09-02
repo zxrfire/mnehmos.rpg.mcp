@@ -240,6 +240,55 @@ Clear Meridian Pill closes a crippling tear a physician will refuse. Whether
 that is right is a design question. Closing it would make the game harder, which
 is not a thing to do in passing, so it is written down rather than patched.
 
+### A clause the turn did not run is named, never dropped
+
+The rule above has a hole the shape of a sentence with two verbs in it. Found by
+playing: `I buy a month of rations and eat` bought the rations and did not eat,
+and **said nothing about the eating**. That is worse than a refusal - a refusal
+at least tells you where you stand, and a dropped clause is indistinguishable
+from an action that ran and did nothing.
+
+One turn is still one action, and
+[`a-second-verb-in-the-sentence-that-was-not-run.ts`](a-second-verb-in-the-sentence-that-was-not-run.ts)
+does not change that. It is not command chaining, and it must not become it: the
+game's character is that you say what you mean in your own words and the engine
+prices it, and two verbs can legitimately cost two spans. What it does is report
+the clause, in the player's own words, with the sentence that would work beside
+it - into `facts.prose`, `facts.lines`, `facts.structure` and the inspector.
+
+**The rule is narrow and the narrowness is measured.** It only looks at clauses
+standing AFTER the one that ran, because the general form - report any clause
+whose reading differs from the turn's - fired on four ordinary single-intent
+sentences in a corpus of thirty-four (`I speak to the elder and ask about a
+manual` is one act, not two). The cost of the narrowness is written down in the
+module: where the parser takes the LAST verb and drops the first, this says
+nothing yet.
+
+### What a seclusion will cost to eat is quoted before it is entered
+
+You cannot cultivate for longer than you can eat, and the ration purchase at the
+cave mouth is what makes a long stretch possible at all. That mechanic is right.
+What was wrong was the order: a player entered seclusion holding 54 spirit stones
+and came out holding none, told about it afterwards.
+
+[`what-feeding-a-stretch-of-seclusion-costs.ts`](what-feeding-a-stretch-of-seclusion-costs.ts)
+owns the provisioning arithmetic, and **it owns it once**. `GameService.buyProvisions`
+runs it to spend the stones and `GameService.provisionsForAStretch` runs it to
+answer `GET /api/seclusion/provisions?days=N`, which is what the seclusion picker
+prints above its button. A preview computed by a second implementation would be a
+second economy and would drift the first time either half was touched, so there
+is no second implementation - the played test asserts the quote equals the charge.
+
+The picker asks a second time only when the purchase takes 75% or more of the
+purse, in the shape `Cultivate` with no manual already uses. Every other stretch
+gets the figure and no extra click: prompting on every seclusion is tedium on the
+common case, and the point was never to make food a decision - it was to stop the
+purse leaving without the player having seen the number.
+
+**What is not covered.** The free-text route (`I cultivate for two years`) has no
+commit point to quote at, so it still reports the purchase afterwards. The engine
+has no answer for that one yet.
+
 ### `intent` is open, and is never branched on
 
 `intent` is a free-ish label, and it is safe **precisely because nothing in the engine
