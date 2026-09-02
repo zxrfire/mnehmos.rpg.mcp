@@ -406,7 +406,7 @@ async function theWoundedCharacter(): Promise<void> {
     await (game as any).newRun('Shi Wanjun');
     stand(repos, game, 6);
 
-    // Open three meridians, which is LETHAL_UNTREATED_INJURIES. Written through
+    // Open three meridians, which is CRIPPLING_UNTREATED_INJURIES. Written through
     // the repo's own writer: injuries live in their own table, so a bare
     // `update` does not reach them and quietly produces a healthy character -
     // which is exactly what this fixture did on its first attempt, reporting
@@ -459,7 +459,7 @@ async function theWoundedCharacter(): Promise<void> {
         const { game: g2, repos: r2 } = makeGame({ seed: `wounded-${text}`, worldEnabled: true });
         await (g2 as any).newRun('Shi Wanjun');
         stand(r2, g2, 6);
-        // Three torn meridians, which is LETHAL_UNTREATED_INJURIES. Written
+        // Three torn meridians, which is CRIPPLING_UNTREATED_INJURIES. Written
         // through the repo's own writer: injuries live in their own table, so
         // a bare update does not reach them and quietly produces a healthy
         // character - which is what this fixture did on its first attempt,

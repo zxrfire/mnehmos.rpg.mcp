@@ -375,49 +375,89 @@ counters; they hand the resulting state to `survival.ts` and it returns a `Death
 `alive = false` eventually produce a ledger that disagrees with itself.
 
 ```text
-combat_defeat       hp reaches 0 and no caller said what took it
-starvation          STARVATION_TURNS consecutive turns at 0 satiety
-lifespan_exhausted  age reaches the realm's lifespanYears
-stagnation_aging    stagnationYearsForOrdinal(ordinal) without advancing a rank
-untreated_injuries  LETHAL_UNTREATED_INJURIES untreated - fight, or simply wait
+combat_defeat          hp reaches 0 and no caller said what took it
+obviously_fatal_choice a fight forced below SUICIDAL_HP_FRACTION
+starvation             STARVATION_TURNS consecutive turns at 0 satiety
+lifespan_exhausted     age reaches the realm's lifespanYears
+stagnation_aging       stagnationYearsForOrdinal(ordinal) without advancing a rank
 ```
 
 Injuries do not heal on their own. There is no long rest and no overnight recovery: an
 injury stays untreated until a pill, a healer or a long seclusion clears it, and while
-untreated it drags on both cultivation rate and breakthrough odds. That is the ratchet. A
-run does not end because one bad roll killed you; it ends because five months ago you took
-a torn meridian, kept cultivating anyway, and every roll since has been worse than the
-last.
+untreated it drags on the cultivation rate, on breakthrough odds, and on what a blow
+actually lands. That is the ratchet. A run does not end because one bad roll killed you; it
+ends because five months ago you took a torn meridian, kept cultivating anyway, and every
+roll since has been worse than the last.
 
-### Bleeding out, and why the last death has two routes
+### `untreated_injuries` was on that list, and is not
 
-`untreated_injuries` is the only cause on that list reachable two ways, and it needs both.
+It was the commonest death in the game. It is retired, by ruling:
 
-Forcing a fight at LETHAL_UNTREATED_INJURIES open wounds kills at once - that is the
-choice, and the caller declares it with `forcingCombat`. Doing nothing at all kills in
-BLEED_OUT_TURNS, on a persisted counter (`bleedingTurns`) that advances every turn spent at
-or above the threshold and resets to zero the moment one wound is closed. It is deliberately
-built as the sibling of starvation: same shape of constant, same persisted counter, same
-pure advance-or-reset function, same clause in the same gate.
+> torn meridians should not kill, they don't make you bleed out. it should be the same as
+> a torn muscle irl. very VERY annoying, but you don't die. but you probably lose combat
+> effectiveness of some sort or maybe cultivation speed (but not comprehension).
 
-The second route exists because the first one alone made the state a trap with no exit. A
-cultivator at three open meridians could not advance - untreated injuries raise deviation
-risk, so every seclusion produced another wound and another ejection - could not heal,
-because nothing heals meridian damage on its own, and could not die either, because the
-only door was a fight the engine had just told them was fatal. The run was neither winnable
-nor loseable. Standing still with your meridians open has to be a way to die.
+Two clauses produced it, both now gone from `evaluateDeathConditions`: forcing a fight at
+the threshold, and simply standing still for `BLEED_OUT_TURNS` days. Measured on the
+sampled strategy with the food problem bought off, so the wound was the only thing left
+that could end anybody, **fifteen of fifteen runs died of it** - median age 21, median peak
+ordinal 2 of 47 - and all three stretch lengths gave identical results because the ninety
+day clock fired inside the first stretch whatever its length. A wound that ends every life
+before it has begun is a wall in front of the content rather than a hazard.
 
-BLEED_OUT_TURNS is ninety days, and the window is sized rather than picked: longer than a
-full belly, so crossing to a settlement is a real plan; exactly one encounter check, so the
-world gets one chance to arrive while you are dying; and far shorter than the years a rank
-costs, so no seclusion worth entering survives it.
+`docs/world/injuries.md` is the spec, including the split it turns on: **channel wounds**
+(`permanent: false` - torn meridians, scorched channels) impair and never kill, while
+**wounds of the cultivation** (a broken foundation, a cracked core, an unformed nascent
+soul) take a rung back through `blocksAdvancement` and the broken statuses. The two are not
+one scale with a bigger number at the end, and removing the lethality did not touch the
+second family - it was never on the clock, because `bleedingInjuryCount` has always
+excluded permanent wounds.
 
-It is **not gated on realm.** Hunger tapers to nothing by Deity Transformation because a
-body that takes nothing from the world takes no meals from it. Nothing on the ladder makes
-an open meridian less load-bearing - the higher the realm, the more qi is being pushed
-through the channel that is torn - so a mortal at ordinal 0 and a Body Integration
-cultivator at 40 bleed on the same clock. The only gate is `hasBody`: a soul persisting
-without a body has no meridians to bleed from.
+**What a channel wound takes instead.** All of it was already built and some of it was not
+being read:
+
+| What it takes | Where |
+|---|---|
+| Cultivation rate, up to 90% of it | `computeCultivationRate`, the `untreated_injuries` factor |
+| Breakthrough odds | `computeBreakthroughOdds` |
+| What a blow lands - slower, less accurate | `resolveExchange`, via `CombatantPower.channelWoundPenalty` |
+| General capability in a fight, offence and defence | the `condition` line of `assessPower` |
+| Risk of the next deviation | `RISK_PER_UNTREATED_INJURY` |
+
+The combat term is expressed in the **damage roll** rather than as a lock on what may be
+attempted, and that is a rule rather than a detail. A wounded cultivator keeps every art
+they know and may attempt anything they could attempt whole; what a wound takes is the
+quality of the execution. Gating a verb behind a wound is the banning failure, and it
+invites a player to route around it by rephrasing. Degrading the outcome cannot be routed
+around.
+
+**And comprehension is untouched.** There is no injury term in `understanding.ts`, in
+`dao.ts`, or anywhere insights are earned or priced, and adding one would be wrong. A
+wounded cultivator still thinks clearly: they cannot push qi properly, and there is nothing
+wrong with what they can see.
+
+**What survived the removal.** `bleedingTurns` and `BLEED_OUT_TURNS` are kept as an
+odometer rather than a clock - how long the channels have been open, which is a true fact
+about a body and is what a player is shown in place of a countdown. Nothing reads them to
+kill anybody. `LETHAL_UNTREATED_INJURIES` is a deprecated alias for
+`CRIPPLING_UNTREATED_INJURIES`, the same number under a name that describes what it now
+does: the point at which the body has stopped coping.
+
+**And one thing that had to come off with it.** Open channels at that threshold used to
+block HP recovery outright, which was defensible while such a cultivator was dead in ninety
+days anyway. With the death retired it was the amplifier on a loop - a wound raises
+deviation risk, a deviation costs HP and leaves another wound, and the repair was switched
+off - and the wall did not come down so much as change its name: `untreated_injuries` fell
+to 0 of 15 while `qi_deviation` rose to 15 of 15. A torn muscle does not stop a bruise
+closing.
+
+**What still ends a run that never treats anything.** Deviations do, years in rather than
+in a season. That is the wound to deviation to wound cascade rather than the wound itself,
+it runs on `RISK_PER_UNTREATED_INJURY` which is a separate ruling with its own guard in
+`root-cliff.test.ts`, and it has not been retuned here. Measured against the same strategy
+that *does* treat its wounds: median age at death 47 against 27, median peak ordinal 9
+against 2, and six of fifteen runs surviving the whole probe. The medicine ladder is what
+that difference is made of.
 
 ### Lifespan is not a straight line
 
@@ -897,13 +937,14 @@ insights, a pill on every attempt and every wound treated:
 | Struck down somewhere on the ladder | 26.1% |
 | Alive, stopped short | 22.6% |
 
-One thing the table does not contain, and cannot: **it never bleeds.** "Every wound treated"
-is one of the stated conditions, so the population being measured is precisely the one the
-bleed clock never reaches. Untreated meridian injuries at the lethal threshold now kill on
-their own in ninety days (`BLEED_OUT_TURNS`), and the harness behind this table treats every
-wound the moment stones allow - which, at the maximum draw, is always. The figures are
-therefore still correct for what they claim and still silent about the runs that cannot
-afford a healer, which is most of them. Nobody has measured that population.
+One thing the table does not contain, and cannot: **it never carries a wound.** "Every wound
+treated" is one of the stated conditions, so the population being measured is the one that
+can always afford a physician - the harness treats every wound the moment stones allow,
+which at the maximum draw is always. The figures are still correct for what they claim and
+still silent about the runs that cannot afford a healer, which is most of them. That
+silence has grown MORE important rather than less: untreated channel wounds no longer end
+a run outright, so the untreated population is now one that survives and is permanently
+worse rather than one that dies quickly, and nobody has measured it.
 
 Two things about that table matter more than the numbers in it.
 

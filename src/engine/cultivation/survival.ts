@@ -9,28 +9,32 @@
  * eventually disagrees with itself about how someone died, and there is no
  * reload to paper over it.
  *
- * The five ways the survival layer kills you, and where each threshold comes
- * from (all constants live in `schema/cultivation.ts`):
+ * The ways the survival layer kills you, and where each threshold comes from
+ * (all constants live in `schema/cultivation.ts`):
  *
- *   combat_defeat       hp reaches 0 and nothing said what took it
- *   starvation          STARVATION_TURNS consecutive turns at 0 satiety
- *   lifespan_exhausted  age reaches the realm's lifespanYears
- *   stagnation_aging    stagnationYearsForOrdinal() without advancing a rank
- *   untreated_injuries  LETHAL_UNTREATED_INJURIES untreated - fight, or wait
+ *   combat_defeat          hp reaches 0 and nothing said what took it
+ *   obviously_fatal_choice a fight forced below SUICIDAL_HP_FRACTION
+ *   starvation             STARVATION_TURNS consecutive turns at 0 satiety
+ *   lifespan_exhausted     age reaches the realm's lifespanYears
+ *   stagnation_aging       stagnationYearsForOrdinal() without advancing a rank
  *
- * Note the shape of that last one. It kills two ways, and it needs both.
- * Forcing a fight at three torn meridians is fatal immediately, which is why
- * the caller declares `forcingCombat`. And doing nothing at all is fatal in
- * BLEED_OUT_TURNS, because a wound that nothing heals on its own does not
- * politely wait for you to decide. Without the second route the state was a
- * trap with no exit: the run could not be advanced, could not be healed, and
- * could not be ended, because the only door out was a fight the player had
- * just been told would kill them. Standing still has to be a way to die.
+ * ── AND THE ONE THAT USED TO BE ON THAT LIST ─────────────────────────────
+ *
+ * `untreated_injuries` was, by a wide margin, the commonest death in this game.
+ * It is retired. A torn meridian is a torn muscle: very annoying, slow, and not
+ * something you die of. It impairs - the rate, the fight, the body's ability to
+ * mend itself - and it never ends a run. `docs/world/injuries.md` is the spec
+ * and `evaluateDeathConditions` is where the two clauses used to stand.
+ *
+ * The `bleedingTurns` counter and BLEED_OUT_TURNS survive that removal as an
+ * odometer rather than a clock: how long the channels have been open, which is
+ * a true fact about a body and is what a player is now shown in place of a
+ * countdown. Nothing reads them to kill anybody.
  */
 
 import {
     BLEED_OUT_TURNS,
-    LETHAL_UNTREATED_INJURIES,
+    CRIPPLING_UNTREATED_INJURIES,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
     stagnationYearsForOrdinal,
@@ -45,7 +49,8 @@ import {
     realmForOrdinal,
     type RealmKey
 } from './realms.js';
-import { bleedingInjuryCount, untreatedInjuryCount } from './injuries.js';
+import { bleedingInjuryCount } from './injuries.js';
+import type { Injury } from '../../schema/cultivation.js';
 import { hasBody, isGoingConcern, isTerminal } from './existence.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -123,14 +128,61 @@ export const SATIETY_BURN_BY_REALM: Readonly<Record<RealmKey, number>> = {
     immortal: 0
 };
 
-/** The multiplier for this rung. */
-export function satietyBurnMultiplier(realmOrdinal: number): number {
-    return SATIETY_BURN_BY_REALM[realmForOrdinal(realmOrdinal).key];
+/**
+ * The wound that takes the meals back.
+ *
+ * Each realm-boundary wound locks the ability its realm exists to grant, and
+ * for Deity Transformation the one capability the engine genuinely enforces is
+ * this one: `SATIETY_BURN_BY_REALM.deity_transformation` is zero, and a
+ * cultivator who transformed does not eat. Somebody whose transformation was
+ * only PARTIAL does not get that. Design owner: "it's only partial, they don't
+ * have the full abilities of a DT", and having to eat is the most concrete of
+ * those abilities.
+ *
+ * They burn at the Nascent Soul rate - the realm they actually completed -
+ * rather than at a mortal's, because what failed was the last crossing and not
+ * everything under it. That is one full belly lasting a very long time and
+ * never lasting forever, so the meals are a real logistical fact again without
+ * being a mortal's problem.
+ *
+ * NOTE WHERE THIS SITS BESIDE THE OTHER RULING IN THIS FILE. Untreated CHANNEL
+ * wounds have just stopped killing anybody; this makes one STRUCTURAL wound
+ * cost something ongoing, and a cultivator carrying it can in principle starve.
+ * That is correct and is not what was retired: starvation is a fair death with
+ * a visible clock and a cure you can buy in any settlement. Only channel wounds
+ * stop killing people. See `docs/world/injuries.md` for the family split.
+ */
+const FAILED_TRANSFORMATION = 'failed-transformation';
+
+function transformationIsPartial(injuries: readonly Injury[] | undefined): boolean {
+    if (!injuries) return false;
+    return injuries.some(i => !i.treated && i.woundType === FAILED_TRANSFORMATION);
+}
+
+/**
+ * The multiplier for this rung.
+ *
+ * `injuries` is optional and omitting it is the old behaviour exactly, which is
+ * what keeps the dozen callers that do not have a wound list to hand honest
+ * rather than silently wrong. Pass it wherever a real body is being priced.
+ */
+export function satietyBurnMultiplier(
+    realmOrdinal: number,
+    injuries?: readonly Injury[]
+): number {
+    const base = SATIETY_BURN_BY_REALM[realmForOrdinal(realmOrdinal).key];
+    // Only ever adds a cost, and only to somebody standing where the ability
+    // would otherwise have been granted. A wound cannot make anybody hungrier
+    // than the realm below them already is.
+    if (base === 0 && transformationIsPartial(injuries)) {
+        return SATIETY_BURN_BY_REALM.nascent_soul;
+    }
+    return base;
 }
 
 /** Whether this cultivator still has to eat at all. */
-export function stillNeedsToEat(realmOrdinal: number): boolean {
-    return satietyBurnMultiplier(realmOrdinal) > 0;
+export function stillNeedsToEat(realmOrdinal: number, injuries?: readonly Injury[]): boolean {
+    return satietyBurnMultiplier(realmOrdinal, injuries) > 0;
 }
 
 /**
@@ -147,12 +199,14 @@ export function stillNeedsToEat(realmOrdinal: number): boolean {
 export function burnSatiety(
     state: SatietyState,
     actions = 1,
-    realmOrdinal = 0
+    realmOrdinal = 0,
+    /** See `satietyBurnMultiplier`. Omitting it is the old behaviour exactly. */
+    injuries?: readonly Injury[]
 ): SatietyState {
     const count = Math.max(0, Math.floor(actions));
     if (count === 0) return { ...state };
 
-    const multiplier = satietyBurnMultiplier(realmOrdinal);
+    const multiplier = satietyBurnMultiplier(realmOrdinal, injuries);
     // Nothing is burned and nothing starves. Not "very slowly" - not at all.
     if (multiplier <= 0) return { satiety: clampSatiety(state.satiety), starvationTurns: 0 };
 
@@ -476,54 +530,55 @@ function describeProvisioning(a: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// BLEEDING OUT
+// HOW LONG THE CHANNELS HAVE BEEN OPEN
 //
-// The sibling of starvation, and built as one deliberately: a persisted
-// counter, a pure advance-or-reset function, a "how long have I got" helper,
-// and one clause in the death gate. Where hunger measures turns with nothing
-// in the belly, this measures turns with the meridians open.
+// This block was the bleed-out clock: a persisted counter, a pure
+// advance-or-reset function, a "how long have I got" helper, and one clause in
+// the death gate that ended the run at BLEED_OUT_TURNS. The clause is gone
+// (see the module header and `evaluateDeathConditions`) because a torn channel
+// is a torn muscle and does not kill anybody.
 //
-// It exists because the lethal-injury state was unloseable. Untreated injuries
-// raise deviation risk; a deviation adds another injury; nothing heals on its
-// own; and the only way `untreated_injuries` could be reached was by forcing a
-// fight, which is precisely what a player who has just read "any further
-// combat is fatal" will not do. The run could not be advanced, healed or
-// ended. You might still bleed out doing nothing, and now you do.
+// WHAT IS LEFT IS THE MEASUREMENT, AND IT IS WORTH KEEPING. How long somebody
+// has been carrying open channels is a true fact about them, it is what a
+// player sees in place of the countdown that used to be here, and it is the
+// mechanism any wound that genuinely haemorrhages would use if one is ever
+// written. It resets on treatment exactly as it always did, so what it reports
+// is the state you are in now rather than the damage of a lifetime.
 //
-// ── Why there is no realm ceiling on this ────────────────────────────────
-// Starvation has one: `stillNeedsToEat` is false from Deity Transformation up,
-// because that realm is where a body stops taking anything from the world,
-// meals included. There is no equivalent line for meridian damage, and putting
-// one in would be the mistake the charter names. Hunger tapers because food
-// stops being what sustains the body; nothing anywhere on the ladder makes a
-// torn channel less load-bearing, and the higher the realm the more qi is
-// being pushed through the tear. A Deity Transformation cultivator does not
-// need to eat and still cannot circulate through a meridian that is open.
+// The names still say "bleed", and they are kept that way on purpose: renaming
+// four exported symbols across a dozen importers in a shared tree sweeps up
+// other people's unfinished work (AGENTS.md, "rename by re-export, never by
+// rewriting importers"). What they MEAN is documented here, and nothing in
+// this file kills anybody with them.
 //
-// So the gate is `hasBody(existence)` and nothing else - the same gate the
-// whole flesh-arithmetic block already sits behind. A soul persisting without
-// a body has no meridians to bleed from; everyone who has a body bleeds on the
-// same clock, at ordinal 0 and at ordinal 40.
+// The `hasBody(existence)` gate that used to guard this is unchanged and still
+// guards the flesh arithmetic around it: a soul persisting without a body has
+// no channels to tear.
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface BleedState {
-    /** Untreated meridian injuries the body is currently carrying open. */
+    /** Open channel wounds the body is currently carrying. */
     untreatedInjuries: number;
-    /** Consecutive turns spent at or above LETHAL_UNTREATED_INJURIES. */
+    /** Consecutive turns spent at or above CRIPPLING_UNTREATED_INJURIES. */
     bleedingTurns: number;
 }
 
-/** Whether this many open wounds is the state that kills on its own. */
+/**
+ * Whether this many open wounds is the state in which a body stops coping -
+ * it no longer mends itself and everything it does costs more.
+ *
+ * NOT a death predicate, and it was one. See the banner above.
+ */
 export function isBleedingOut(untreatedInjuries: number): boolean {
-    return untreatedInjuries >= LETHAL_UNTREATED_INJURIES;
+    return untreatedInjuries >= CRIPPLING_UNTREATED_INJURIES;
 }
 
 /**
- * Advance the bleed clock for `turns` turns.
+ * Advance the open-channel counter for `turns` turns.
  *
- * Any turn spent at or above the lethal untreated count advances the counter;
- * any turn spent below it resets the counter to zero, exactly as `burnSatiety`
- * clears `starvationTurns` on the first action taken with food in the belly.
+ * Any turn spent at or above the crippling untreated count advances it; any
+ * turn spent below it resets to zero, exactly as `burnSatiety` clears
+ * `starvationTurns` on the first action taken with food in the belly.
  * Treating one wound out of three therefore buys the whole clock back, which
  * is the point: the counter measures the state you are in now, not the damage
  * you have taken over a life. Pure - returns the new values, writes nothing.
@@ -542,12 +597,15 @@ export function bleedOut(state: BleedState, turns = 1): BleedState {
 }
 
 /**
- * Turns of bleeding still survivable. Zero means the next one is fatal.
+ * Turns before the neglect is total. NOBODY DIES AT ZERO - it means the
+ * channels have now been open a full season and are as set as they get.
  *
  * `Infinity` when the untreated count is under the threshold, for the same
- * reason `turnsUntilStarvation` returns it above the hunger line: a cultivator
- * who is not bleeding is not on a long clock, they are off it, and a finite
- * number here would render as a countdown that never moves.
+ * reason `turnsUntilStarvation` returns it above the hunger line: somebody not
+ * in this state is off the measure rather than late on it.
+ *
+ * Callers that used to schedule a death deadline on this must not. The
+ * time-skip no longer does; it reports the count and the cost instead.
  */
 export function turnsUntilBleedOut(state: BleedState): number {
     if (!isBleedingOut(Math.max(0, Math.floor(state.untreatedInjuries)))) return Infinity;
@@ -611,10 +669,24 @@ export interface SuicideAssessment {
 
 /**
  * Whether entering combat right now is an obviously fatal choice: below
- * SUICIDAL_HP_FRACTION of max HP, or at the lethal untreated-injury threshold.
+ * SUICIDAL_HP_FRACTION of max HP.
  *
  * Advisory on its own - it becomes a death only through
  * `evaluateDeathConditions` with `forcingCombat` set.
+ *
+ * ── OPEN CHANNELS ARE NOT ON THIS LIST ANY MORE ──────────────────────────
+ *
+ * A second clause here counted CRIPPLING_UNTREATED_INJURIES as suicidal, back
+ * when forcing a fight in that state was an immediate death. It is not, and
+ * leaving the clause would have this function reporting "suicidal" for a state
+ * nothing kills anybody for - a warning with no consequence behind it, which is
+ * worse than no warning.
+ *
+ * Fighting badly wounded is still a bad idea and the engine still says so, in
+ * the place it is actually true: the condition line of `assessPower` and the
+ * damage a wounded attacker lands in `resolveExchange`. You are much likelier
+ * to LOSE the fight, and losing a fight has always been fatal. That is the
+ * honest version - the wound makes the death likelier rather than being it.
  */
 export function assessSuicidalCombat(
     cultivator: Pick<Cultivator, 'hp' | 'maxHp' | 'injuries'>
@@ -625,10 +697,6 @@ export function assessSuicidalCombat(
         reasons.push(
             `HP at ${(hpFraction * 100).toFixed(0)}% of maximum, below the ${(SUICIDAL_HP_FRACTION * 100).toFixed(0)}% threshold`
         );
-    }
-    const untreated = untreatedInjuryCount(cultivator.injuries);
-    if (untreated >= LETHAL_UNTREATED_INJURIES) {
-        reasons.push(`${untreated} untreated meridian injuries`);
     }
     return { suicidal: reasons.length > 0, reasons };
 }
@@ -709,32 +777,41 @@ export function evaluateDeathConditions(
         // is not reset here on purpose - `burnSatiety` clears it the moment the
         // realm is reached, and a stale value should never resurrect the cause.
         if (
-            stillNeedsToEat(cultivator.realmOrdinal) &&
+            stillNeedsToEat(cultivator.realmOrdinal, cultivator.injuries) &&
             cultivator.starvationTurns >= STARVATION_TURNS
         ) {
             return 'starvation';
         }
 
+        // ── WHERE THE TWO UNTREATED-INJURY DEATHS USED TO BE ──────────────
+        //
+        // Two clauses stood here and both are gone. One killed a cultivator who
+        // entered a fight carrying CRIPPLING_UNTREATED_INJURIES open channels;
+        // the other killed anybody who simply stood still with them for
+        // BLEED_OUT_TURNS. Together they were the commonest death in the game.
+        //
+        // Design owner: "torn meridians should not kill, they don't make you
+        // bleed out. it should be the same as a torn muscle irl. very VERY
+        // annoying, but you don't die. but you probably lose combat
+        // effectiveness of some sort or maybe cultivation speed (but not
+        // comprehension)."
+        //
+        // So a channel wound is now an impairment and never a cause, and the
+        // impairment is real rather than nominal: it takes the cultivation rate
+        // (`computeCultivationRate`), the condition line and the damage a blow
+        // actually lands (`assessPower` and `resolveExchange` in combat.ts), and
+        // it stops the body mending itself at all (`mendingBlocked` in
+        // time-skip.ts). What it does not touch is comprehension - see the note
+        // in injuries.ts. `docs/world/injuries.md` is the spec.
+        //
+        // What did NOT change, and must not: forcing a fight while barely able
+        // to stand is still an obviously fatal choice, because that one is about
+        // the HP bar rather than about a wound. Losing the fight that follows
+        // still kills you the ordinary way, and a badly wounded cultivator now
+        // loses it far more often.
         if (ctx.forcingCombat) {
-            if (bleedingInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES) {
-                return 'untreated_injuries';
-            }
             const hpFraction = cultivator.maxHp > 0 ? cultivator.hp / cultivator.maxHp : 0;
             if (hpFraction < SUICIDAL_HP_FRACTION) return 'obviously_fatal_choice';
-        }
-
-        // The same cause, reached by waiting instead of by fighting. It sits
-        // below starvation because the ordering is most-immediate-first and a
-        // bleed runs on ninety turns against hunger's five; it sits above
-        // lifespan and settling because those run on years. No realm gate: see
-        // the BLEEDING OUT banner above for why hunger has one and this does
-        // not. `>=` like every other threshold here, so death lands exactly on
-        // the ninetieth turn.
-        if (
-            isBleedingOut(bleedingInjuryCount(cultivator.injuries)) &&
-            (cultivator.bleedingTurns ?? 0) >= BLEED_OUT_TURNS
-        ) {
-            return 'untreated_injuries';
         }
     }
 
@@ -778,12 +855,14 @@ export function describeDeath(
         case 'stagnation_aging':
             return `${who}: spent ${Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal))} years without advancing a single rank. Died of old age at a bottleneck never crossed.`;
         case 'untreated_injuries':
-            // Deliberately silent on which of the two routes it was. The cause
-            // reaches here without a context and inventing "fought" for a
-            // cultivator who bled out sitting in a cave would be the engine
-            // narrating something it does not know. What it does know is the
-            // count and the outcome.
-            return `${who}: carried ${LETHAL_UNTREATED_INJURIES} or more untreated meridian injuries. The meridians gave out.`;
+            // RETIRED. Nothing produces this cause any more - a torn channel is
+            // a torn muscle. The branch stays so that a run ledger written
+            // before the ruling still renders, which in a permadeath game is
+            // the only surviving account of that life. Deliberately silent on
+            // which of the two old routes it was: the cause reaches here
+            // without a context, and inventing "fought" for somebody who died
+            // in a cave would be the engine narrating what it does not know.
+            return `${who}: carried ${CRIPPLING_UNTREATED_INJURIES} or more untreated meridian injuries. The meridians gave out.`;
         case 'starvation':
             return `${who}: starved to death after ${STARVATION_TURNS} turns without food.`;
         case 'failed_breakthrough':

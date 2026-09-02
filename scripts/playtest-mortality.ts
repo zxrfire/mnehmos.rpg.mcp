@@ -23,7 +23,7 @@ import {
     evaluateDeathConditions, describeDeath, bleedStateOf, isBleedingOut
 } from '../src/engine/cultivation/survival.js';
 import {
-    STARVATION_TURNS, LETHAL_UNTREATED_INJURIES, BLEED_OUT_TURNS
+    STARVATION_TURNS, CRIPPLING_UNTREATED_INJURIES, BLEED_OUT_TURNS
 } from '../src/schema/cultivation.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 
@@ -78,10 +78,9 @@ function everyDeath(): void {
         ['combat_defeat', 'hp at zero', body({ hp: 0 }), {}],
         ['starvation', `${STARVATION_TURNS} turns at empty`,
             body({ satiety: 0, starvationTurns: STARVATION_TURNS }), {}],
-        ['untreated_injuries', `${LETHAL_UNTREATED_INJURIES} wounds and forcing a fight`,
-            body({ injuries: threeOpenWounds() }), { forcingCombat: true }],
-        ['untreated_injuries', `${LETHAL_UNTREATED_INJURIES} wounds and ${BLEED_OUT_TURNS} days of nothing`,
-            body({ injuries: threeOpenWounds(), bleedingTurns: BLEED_OUT_TURNS }), {}],
+        // The two `untreated_injuries` rows that stood here are gone with the
+        // cause. A torn meridian is a torn muscle - see docs/world/injuries.md.
+        // What replaces them is the negative check in section 2.
         ['obviously_fatal_choice', 'almost no hp, and starting a fight anyway',
             body({ hp: 2 }), { forcingCombat: true }],
         ['lifespan_exhausted', 'a hundred years old at Qi Condensation',
@@ -117,26 +116,36 @@ function everyDeath(): void {
 // ─────────────────────────────────────────────────────────────────────────
 
 function theBleedClock(): void {
-    rule('2. THE BLEED CLOCK - the trap, closed');
+    rule('2. OPEN CHANNELS - and that they do NOT kill');
 
+    // This section used to check that the bleed clock fired on exactly day
+    // ninety. It checks the opposite now, because the design owner reversed the
+    // decision: "torn meridians should not kill, they don't make you bleed out.
+    // it should be the same as a torn muscle irl. very VERY annoying, but you
+    // don't die." A probe that still asserted the death would report a working
+    // engine as broken. See docs/world/injuries.md.
     const wounded = body({ injuries: threeOpenWounds() });
-    line(`  bleeding at ${LETHAL_UNTREATED_INJURIES} untreated:  ${isBleedingOut(bleedStateOf(wounded).untreatedInjuries)}`);
+    line(`  crippled at ${CRIPPLING_UNTREATED_INJURIES} untreated:  ${isBleedingOut(bleedStateOf(wounded).untreatedInjuries)}`);
     line(`  and at two:                    ${isBleedingOut(bleedStateOf(body({ injuries: threeOpenWounds().slice(0, 2) })).untreatedInjuries)}`);
 
-    // The exact turn, not one before.
-    const dayBefore = evaluateDeathConditions(
-        body({ injuries: threeOpenWounds(), bleedingTurns: BLEED_OUT_TURNS - 1 }), {});
     const onTheDay = evaluateDeathConditions(
         body({ injuries: threeOpenWounds(), bleedingTurns: BLEED_OUT_TURNS }), {});
-    line(`  day ${BLEED_OUT_TURNS - 1}:  ${dayBefore ?? 'alive'}`);
-    line(`  day ${BLEED_OUT_TURNS}:  ${onTheDay ?? 'alive'}`);
+    const longAfter = evaluateDeathConditions(
+        body({ injuries: threeOpenWounds(), bleedingTurns: BLEED_OUT_TURNS * 40 }), {});
+    const fighting = evaluateDeathConditions(
+        body({ injuries: threeOpenWounds() }), { forcingCombat: true });
+    line(`  day ${BLEED_OUT_TURNS} carrying three:      ${onTheDay ?? 'alive'}`);
+    line(`  ten years carrying three:      ${longAfter ?? 'alive'}`);
+    line(`  and forcing a fight with them: ${fighting ?? 'alive'}`);
 
-    if (dayBefore === null && onTheDay === 'untreated_injuries') {
-        note('works', `Death lands exactly on day ${BLEED_OUT_TURNS} and not one day before, which is `
-            + 'the convention the rest of the death gate follows.');
+    if (onTheDay === null && longAfter === null && fighting === null) {
+        note('works', 'Open channels never end a run, on any of the three routes that used to '
+            + 'produce `untreated_injuries`. They are an impairment - rate, odds, and what a '
+            + 'blow lands - and not a clock.');
     } else {
-        note('broken', `The bleed clock fires at the wrong time: day ${BLEED_OUT_TURNS - 1} gives `
-            + `${dayBefore}, day ${BLEED_OUT_TURNS} gives ${onTheDay}.`);
+        note('broken', 'A channel wound is still killing somebody: '
+            + `day ${BLEED_OUT_TURNS} gives ${onTheDay}, ten years gives ${longAfter}, `
+            + `forcing a fight gives ${fighting}.`);
     }
 
     // Treating one of three has to stop nothing.

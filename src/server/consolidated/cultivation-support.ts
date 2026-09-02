@@ -62,8 +62,7 @@ import { RunRepository } from '../../storage/repos/run.repo.js';
 import { SectRepository } from '../../storage/repos/sect.repo.js';
 import { TechniqueRepository } from '../../storage/repos/technique.repo.js';
 import {
-    BLEED_OUT_TURNS,
-    LETHAL_UNTREATED_INJURIES,
+    CRIPPLING_UNTREATED_INJURIES,
     SATIETY_MAX,
     type Achievement,
     type AmbientQi,
@@ -101,8 +100,7 @@ import {
     isBreakthroughEligible,
     isRealmBoundary,
     untreatedInjuryCount,
-    bleedStateOf,
-    turnsUntilBleedOut
+    aggregateInjuryPenalties
 } from '../../engine/cultivation/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1434,7 +1432,6 @@ export function describeCultivator(
     const required = progressRequiredForOrdinal(cultivator.realmOrdinal);
     const root = getSpiritRoot(cultivator.spiritRoot);
     const untreated = untreatedInjuryCount(cultivator.injuries);
-    const bleedOutTurns = turnsUntilBleedOut(bleedStateOf(cultivator));
     const day = run ? Math.floor(run.elapsedDays) : 0;
     const ambient = run
         ? currentAmbient(repos.db, run, cultivator.location, day)
@@ -1498,15 +1495,19 @@ export function describeCultivator(
             ),
             yearsAtCurrentRealm: round2(cultivator.yearsAtCurrentRealm),
             untreatedInjuries: untreated,
-            lethalInjuryThreshold: LETHAL_UNTREATED_INJURIES,
-            atLethalInjuryThreshold: untreated >= LETHAL_UNTREATED_INJURIES,
-            // Turns left before the meridians give out on their own. Null
-            // rather than Infinity when not bleeding: this crosses a JSON
-            // boundary, and JSON.stringify(Infinity) is the literal `null`
-            // anyway - saying so explicitly beats shipping a value whose type
-            // changes on the wire.
-            turnsUntilBleedOut: Number.isFinite(bleedOutTurns) ? bleedOutTurns : null,
-            bleedOutThreshold: BLEED_OUT_TURNS
+            // NOT a mortality figure any more, and it is left in this block
+            // because the panel is where a narrator looks for "what is wrong
+            // with this person". A channel wound is a torn muscle: it impairs
+            // and it does not kill. See `docs/world/injuries.md`.
+            crippledInjuryThreshold: CRIPPLING_UNTREATED_INJURIES,
+            atCrippledInjuryThreshold: untreated >= CRIPPLING_UNTREATED_INJURIES,
+            // How long the channels have been open, replacing a countdown to a
+            // death that no longer happens. A narrator handed a countdown will
+            // write a countdown.
+            daysChannelsOpen: Math.max(0, Math.round(cultivator.bleedingTurns)),
+            injuryRatePenalty: round4(
+                aggregateInjuryPenalties(cultivator.injuries).cultivationPenalty
+            )
         },
         injuries: cultivator.injuries.map(summariseInjury),
         standing: {

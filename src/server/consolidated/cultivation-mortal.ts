@@ -75,7 +75,7 @@ import {
 } from '../../data/cultivation/herbs.js';
 import { forStream } from '../../engine/cultivation/rng.js';
 import { untreatedInjuryCount } from '../../engine/cultivation/injuries.js';
-import { LETHAL_UNTREATED_INJURIES } from '../../schema/cultivation.js';
+import { CRIPPLING_UNTREATED_INJURIES } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
 import { RATION_COST_STONES } from './cultivation-manage.js';
 import {
@@ -427,11 +427,15 @@ export async function handleWork(
         // reported wages, food and health while saying nothing whatsoever
         // about them. Found by playing: an innkeeper worked three spans across
         // four years, was told the pay each time, and died of
-        // `untreated_injuries` without one sentence about a wound. Untreated is
-        // the state that kills, nothing closes them on its own, and a player
-        // who is never told cannot decide to have them treated.
+        // `untreated_injuries` without one sentence about a wound.
+        //
+        // That death no longer exists - a torn channel does not kill anybody -
+        // and the reporting matters just as much, for the reason underneath the
+        // original one: nothing closes these on their own, they take a growing
+        // share of the cultivation rate for as long as they are carried, and a
+        // player who is never told cannot decide to have them treated.
         untreatedInjuries: untreatedInjuryCount(after.injuries),
-        lethalInjuryThreshold: LETHAL_UNTREATED_INJURIES,
+        crippledInjuryThreshold: CRIPPLING_UNTREATED_INJURIES,
         alive: after.alive,
         deathCause: after.deathCause ?? null,
         purse: describePurse(after),

@@ -67,6 +67,7 @@ import {
 } from './realms.js';
 import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
 import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
+import { isPermanentWound } from '../../data/cultivation/wounds.js';
 import { blocksAdvancement, brokenStatusOf } from './what-goes-wrong-at-a-realm-boundary.js';
 import { foundationEffect, foundationOf } from './foundation.js';
 import { understandingEffects, type RelevanceContext } from './understanding.js';
@@ -286,6 +287,17 @@ export interface CombatantPower {
     total: number;
     /** What ending this combatant requires, given tradition and rank. */
     kill: KillRequirement;
+    /**
+     * How badly this combatant's own OPEN CHANNEL wounds degrade the execution
+     * of anything they throw, in [0, MAX_INJURY_CULTIVATION_PENALTY].
+     *
+     * Zero for a whole body, and zero for a maiming or a structural break -
+     * those are priced as capability, on the condition and broken lines. This
+     * is the torn-muscle term and it is deliberately NOT part of `total`, so it
+     * cannot silently make somebody easier to hit. It is read by
+     * `resolveExchange` and nowhere else. See the ACCURACY banner there.
+     */
+    channelWoundPenalty: number;
 }
 
 /**
@@ -678,6 +690,18 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     // ── CONDITION ─────────────────────────────────────────────────────────
     // What they are actually able to do right now: open wounds, blood, qi in
     // the meridians. The ratchet arriving in a fight.
+    //
+    // This line prices CAPABILITY, and capability cuts both ways - it is
+    // divided into the advantage as the attacker's numerator and as the
+    // defender's denominator, so somebody slow with a torn channel is both
+    // weaker and easier to hit. That is correct and it is why the channel term
+    // was left here rather than moved wholesale into the damage roll.
+    //
+    // What the roll adds on top is a different loss: not what you can bring but
+    // how well the blow you threw arrives. See the ACCURACY banner in
+    // `resolveExchange`. Two prices in two systems for two things, which is
+    // what the ONE WOUND, ONE PRICE note above actually forbids doubling -
+    // charging the same loss twice inside ONE system.
     const hpFraction = combatant.maxHp > 0 ? Math.max(0, combatant.hp) / combatant.maxHp : 0;
     const qiFraction = combatant.maxQi > 0 ? Math.max(0, combatant.qi) / combatant.maxQi : 1;
     const foundationMod = foundation === 'none' ? 0 : foundationEffect(foundation).breakthroughModifier;
@@ -745,8 +769,30 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         realmBase,
         factors,
         total,
-        kill: killRequirement(tradition, ordinal)
+        // The wounds go in because a rung is a claim about what a body can do
+        // and a realm-boundary wound is that claim failing. A crippled nascent
+        // soul cannot leave the body it is holding together, so destroying the
+        // body IS the ending for somebody the ladder says it is not - which is
+        // decided in `tradition.ts` and read here at the moment it is asked.
+        kill: killRequirement(tradition, ordinal, combatant.injuries),
+        channelWoundPenalty: openChannelPenalty(combatant.injuries)
     };
+}
+
+/**
+ * What this body's OPEN CHANNEL wounds cost the execution of anything it does.
+ *
+ * Open, untreated, and not permanent - so torn meridians and scorched channels
+ * and every untyped wound the engine mints, and NOT a severed meridian, a
+ * ruined dantian or a broken foundation. Those are wounds of the cultivation
+ * rather than of the body: they close roads, they are priced on the condition
+ * and broken lines, and they are not a torn muscle. The two families are not
+ * one scale (`docs/world/injuries.md`).
+ */
+function openChannelPenalty(injuries: readonly Injury[]): number {
+    return aggregateInjuryPenalties(
+        injuries.filter(i => !i.treated && !isPermanentWound(i.woundType))
+    ).cultivationPenalty;
 }
 
 /** Above Nascent Soul the soul starts being part of what you can throw. */
@@ -1019,7 +1065,45 @@ export function resolveExchange(
     // where the absolute HP numbers are not comparable.
     const roll = ctx.rng.next();
     const share = advantage / (1 + advantage);
-    const fraction = share * (EXCHANGE_DAMAGE_FLOOR + EXCHANGE_DAMAGE_SPAN * roll);
+
+    // ── ACCURACY: WHAT A TORN CHANNEL COSTS THE BLOW ──────────────────────
+    //
+    // Design owner: "you can probably still use your dao skills, its just
+    // painful for you in a way that affects the rng of the damage it does cuz
+    // its slower and less accurate."
+    //
+    // So a wound takes the QUALITY of the execution and never the permission.
+    // Nothing above this line consults `channelWoundPenalty`, and there is no
+    // branch anywhere that refuses a technique to a wounded cultivator: they
+    // attempt everything they could attempt whole, and it arrives worse.
+    //
+    // That distinction is not decoration. Gating a verb behind a wound is the
+    // "banning" failure - it takes the decision away from the player and it
+    // invites them to route around it by phrasing the same intent differently.
+    // Degrading the outcome cannot be routed around.
+    //
+    // Two terms, because "slower" and "less accurate" are different losses:
+    //
+    //   the span   the top of the range is what goes first. A hurt cultivator
+    //              can still land a blow; what they can no longer do is land
+    //              their BEST one. This is the accuracy half, and it is what
+    //              makes the strike unreliable rather than merely weak.
+    //   the floor  charged at half, so even the worst exchange still lands
+    //              something. Nobody is reduced to tickling.
+    //
+    // Only OPEN CHANNEL wounds - see `openChannelPenalty`. A maiming or a
+    // structural break is already priced as capability on the condition and
+    // broken lines, and charging it here as well would be the double-price the
+    // ONE WOUND, ONE PRICE note in `assessPower` exists to prevent.
+    //
+    // At zero the arithmetic is byte-identical to what it was, so an unhurt
+    // combatant's seeded sequence is unchanged - which is what makes this
+    // measurable against the old build at all.
+    const impaired = Math.max(0, Math.min(1, attacker.channelWoundPenalty));
+    const fraction = share * (
+        EXCHANGE_DAMAGE_FLOOR * (1 - impaired * 0.5) +
+        EXCHANGE_DAMAGE_SPAN * roll * (1 - impaired)
+    );
     const damage = Math.max(1, Math.round(defenderMaxHp * fraction));
 
     // A wound that lands hard enough leaves something that does not heal on its

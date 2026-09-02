@@ -21,7 +21,7 @@
  */
 
 import {
-    LETHAL_UNTREATED_INJURIES,
+    CRIPPLING_UNTREATED_INJURIES,
     stagnationYearsForOrdinal,
     type AmbientQi,
     BreakthroughResult,
@@ -37,9 +37,8 @@ import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import type { AttemptResult } from '../engine/social-leverage/index.js';
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
-import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
+import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
-import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 
 export interface EngineFacts {
@@ -146,6 +145,8 @@ export const DEATH_IN_WORLD: Record<DeathCause, string> = {
     // about their own death. `describeDeathCause` takes the ordinal now and
     // this row is a function of it, the way `standingStructure` already does it.
     stagnation_aging: 'settled - the years this rung credits ran out, and the qi already inside them finished working on them instead',
+    // RETIRED. Nothing produces this cause any more; the row is kept so a run
+    // ledger written before the ruling still renders. See `docs/world/injuries.md`.
     untreated_injuries: 'the meridians gave out, untreated',
     starvation: 'starved - the flesh keeps its mortal arithmetic',
     failed_breakthrough: 'the meridians ruptured mid-breakthrough',
@@ -262,25 +263,31 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
         `${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}, in ${placeName(cultivator)}.`,
         `Spirit root: ${root.name}. Might ${cultivator.attributes.might}, Insight ${cultivator.attributes.insight}, Fortune ${cultivator.attributes.fortune}, Charm ${cultivator.attributes.charm}.`,
         `Cultivation progress ${Math.round(cultivator.cultivationProgress)} qi-units. HP ${cultivator.hp}/${cultivator.maxHp}. Satiety ${cultivator.satiety}/100. Spirit stones ${cultivator.spiritStones}.`,
-        // AND WHETHER THAT COUNT IS THE ONE THAT KILLS.
+        // AND WHAT CARRYING THAT MANY ACTUALLY COSTS.
         //
         // The sheet reported the number and never what it meant. Played to
-        // three untreated wounds - which IS the lethal threshold - it said "3
-        // meridian injuries have been open since the day it was taken" and
-        // stopped, while combat and work had both been saying the dangerous
-        // half for some time. The one screen a player reads when they suspect
-        // they are in trouble was the last place to tell them.
+        // three untreated wounds it said "3 meridian injuries have been open
+        // since the day it was taken" and stopped, while combat and work had
+        // both been saying the consequential half for some time. The one screen
+        // a player reads when they suspect they are in trouble was the last
+        // place to tell them.
+        //
+        // What it says has changed with the ruling: this is not the count that
+        // kills, because nothing about a torn channel kills. It is the count at
+        // which the body gives up repairing itself, and it is meant to read as
+        // intolerable rather than as terminal.
         //
         // The pronouns were singular too, against a plural subject.
         untreated === 0
             ? 'The meridians are whole.'
-            : untreated >= LETHAL_UNTREATED_INJURIES
+            : untreated >= CRIPPLING_UNTREATED_INJURIES
                 ? `${untreated} meridian injuries are open and nothing has closed them. `
-                  + 'That is the count that kills. Anything further is fatal.'
+                  + 'At this many the body has stopped mending itself, and it will not start again '
+                  + 'until they are treated.'
                 : `${untreated} meridian injur${untreated === 1 ? 'y has' : 'ies have'} been open `
                   + `since the day ${untreated === 1 ? 'it was' : 'they were'} taken, and nothing `
                   + `has closed ${untreated === 1 ? 'it' : 'them'}. `
-                  + `${LETHAL_UNTREATED_INJURIES} is the count that kills.`,
+                  + `At ${CRIPPLING_UNTREATED_INJURIES} the body stops mending itself altogether.`,
         `${cultivator.yearsAtCurrentRealm.toFixed(1)} years at this realm without advancing.`,
         // WHOSE ROLL THEY ARE ON.
         //
@@ -316,12 +323,14 @@ function sectNameFor(sectId: string): string {
 export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): string[] {
     return [
         `realmOrdinal=${cultivator.realmOrdinal} (${rankName(cultivator.realmOrdinal)}), spiritRoot=${cultivator.spiritRoot}, foundation=${cultivator.foundationQuality}.`,
-        // The countdown rides beside the count, as a number, so the ruling
-        // panel carries it rather than only the prose does. `Infinity` is the
-        // honest value for somebody who is not on the clock and is printed as
-        // a dash rather than as a very large number.
-        `untreatedInjuries=${untreatedInjuryCount(cultivator.injuries)} of ${LETHAL_UNTREATED_INJURIES} lethal, ` +
-        `daysUntilBleedOut=${Number.isFinite(turnsUntilBleedOut(bleedStateOf(cultivator))) ? turnsUntilBleedOut(bleedStateOf(cultivator)) : '-'}; ` +
+        // The count and what it is costing, as numbers, so the ruling panel
+        // carries them rather than only the prose does. `daysUntilBleedOut` used
+        // to ride here and was a countdown to a death that no longer happens;
+        // how long the channels have been open is the true version of the same
+        // fact and is what replaced it.
+        `untreatedInjuries=${untreatedInjuryCount(cultivator.injuries)} of ${CRIPPLING_UNTREATED_INJURIES} before the body stops mending, ` +
+        `daysChannelsOpen=${Math.max(0, Math.round(cultivator.bleedingTurns))}, ` +
+        `rateLost=${Math.round(aggregateInjuryPenalties(cultivator.injuries).cultivationPenalty * 100)}%; ` +
         `yearsAtRealm=${cultivator.yearsAtCurrentRealm.toFixed(1)} of ${Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal))} before settling.`,
         describeAmbientInWorld(ambient)
     ];
@@ -901,21 +910,20 @@ function selfNoticing(cultivator: Cultivator): string {
     const notes: string[] = [];
     const untreated = untreatedInjuryCount(cultivator.injuries);
 
-    if (untreated >= LETHAL_UNTREATED_INJURIES) {
-        // This used to end at "Standing up is a decision now", which was the
-        // whole truth only while a fight was the only way untreated wounds
-        // could kill. It is half the truth now: they give out on their own,
-        // and the count is read off the same bleed clock the engine kills by
-        // rather than restated here. `turnsUntilBleedOut` returns Infinity for
-        // anybody not on that clock, which is what is guarded on - the injury
-        // count is not the same question.
-        const left = turnsUntilBleedOut(bleedStateOf(cultivator));
+    if (untreated >= CRIPPLING_UNTREATED_INJURIES) {
+        // What somebody in this state would actually notice about themselves.
+        //
+        // This line has been rewritten twice. It first said standing up was a
+        // decision; then it added a countdown, because untreated wounds gave
+        // out on their own. They do not - a torn channel is a torn muscle - so
+        // the countdown is gone and what is left is the thing that is true and
+        // is worse to live with: nothing is getting better, and it has stopped
+        // getting better on its own.
+        const days = Math.max(0, Math.round(cultivator.bleedingTurns));
         notes.push(
             'Three things have gone wrong inside and none of them have closed. Standing up is a '
-            + 'decision now'
-            + (Number.isFinite(left)
-                ? `, and so is not standing up: ${left} days of this and they give out on their own.`
-                : '.')
+            + 'decision now, and nothing is knitting'
+            + (days > 0 ? `; it has been like this for ${days} days.` : '.')
         );
     } else if (untreated === 1) {
         notes.push('Something opened a while ago and has stayed open.');

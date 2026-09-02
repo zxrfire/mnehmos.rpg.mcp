@@ -31,39 +31,61 @@ export const SATIETY_MAX = 100;
 export const SATIETY_COST_PER_ACTION = 2;
 /** Consecutive turns at zero satiety before death by starvation. */
 export const STARVATION_TURNS = 5;
-/** Untreated meridian injuries at which forcing another fight becomes fatal. */
-export const LETHAL_UNTREATED_INJURIES = 3;
 /**
- * Consecutive turns at or above LETHAL_UNTREATED_INJURIES before the meridians
- * give out on their own. Ninety - a season.
+ * Open channel wounds at which a body stops coping: it no longer mends on its
+ * own, and everything it tries costs more.
  *
- * Sitting at the lethal threshold had exactly one exit, and it was a fight
- * nobody in that state starts. Untreated injuries raise deviation risk, a
- * deviation adds another wound, and the run became a loop that could not be
- * won, lost or left. Bleeding out is the missing exit: standing still with
- * your meridians open is a way to die.
+ * ── IT IS NOT A DEATH THRESHOLD, AND IT USED TO BE ────────────────────────
  *
- * Ninety rather than a rounder number, for three reasons that are all about
- * what the window has to contain:
+ * Design owner, reversing the original decision: "torn meridians should not
+ * kill, they don't make you bleed out. it should be the same as a torn muscle
+ * irl. very VERY annoying, but you don't die. but you probably lose combat
+ * effectiveness of some sort or maybe cultivation speed (but not
+ * comprehension)."
  *
- *   - It is longer than a full belly (SATIETY_MAX / SATIETY_COST_PER_ACTION =
- *     50 days), so a cultivator ejected from seclusion at the threshold can
- *     cross to a settlement and eat on the way. Reaching a healer has to be a
- *     real plan, not a coin flip, or this is just a slower version of the trap.
- *   - It is exactly one encounter check (ENCOUNTER_CHECK_DAYS in time-skip.ts),
- *     so the world gets precisely one chance to arrive while they are dying -
- *     with help or without it.
- *   - It is far shorter than anything cultivation is denominated in. A rank
- *     costs years; three months does not buy one. So there is no seclusion
- *     worth entering that a cultivator at the threshold survives, and
- *     "treat it and then cultivate" is the only order that works.
+ * This number used to mean "forcing another fight is fatal" and, with
+ * BLEED_OUT_TURNS beside it, "and standing still is fatal too". Measured on the
+ * sampled strategy with the food problem bought off so the wound was the only
+ * thing left to end anybody: FIFTEEN of fifteen runs died of
+ * `untreated_injuries`, every one at median age 21 and median peak ordinal 2 of
+ * 47, and the three stretch lengths gave identical results because the ninety
+ * day clock fired inside the first stretch whatever its length. A wound that
+ * ends every life before it has begun is not a hazard, it is a wall in front of
+ * the content. See `docs/world/injuries.md`.
  *
- * Deliberately NOT gated on realm. Hunger tapers to nothing by Deity
- * Transformation because less and less of what sustains that body is food.
- * Nothing on the ladder makes an open meridian less load-bearing - the higher
- * the realm, the more qi is moving through the channel that is torn - so the
- * same ninety days applies to a mortal at ordinal 0 and to anyone at 40. The
- * only gate is having a body at all.
+ * What it means now is what `mendingBlocked` in time-skip.ts already used it
+ * for: a body carrying this many open channels has stopped healing itself and
+ * has to be treated by somebody. Very annoying, entirely survivable.
+ *
+ * `LETHAL_UNTREATED_INJURIES` is kept as a deprecated alias below because a
+ * dozen modules import it and renaming them all at once in a shared tree sweeps
+ * up other people's work. New code should use this name.
+ */
+export const CRIPPLING_UNTREATED_INJURIES = 3;
+/**
+ * @deprecated Nothing lethal reads this any more - see
+ * CRIPPLING_UNTREATED_INJURIES, which is the same number under the name that
+ * describes what it now does. Kept so importers migrate as they come free.
+ */
+export const LETHAL_UNTREATED_INJURIES = CRIPPLING_UNTREATED_INJURIES;
+/**
+ * Days a channel has to be left open before it is considered fully neglected.
+ * Ninety - a season.
+ *
+ * ── THIS IS NO LONGER A CLOCK ANYBODY DIES ON ─────────────────────────────
+ *
+ * It was: ninety consecutive days at the untreated threshold ended the run with
+ * `deathCause: 'untreated_injuries'`. That is the mechanism the ruling above
+ * reversed, and it is severed in `evaluateDeathConditions`. Nothing in the
+ * engine now reads this number to kill anybody.
+ *
+ * The counter it drives (`bleedingTurns`) is kept and still advances, because
+ * how long somebody has been carrying an open channel is a true and useful fact
+ * about them - it is what the player is shown instead of a countdown, and it is
+ * the mechanism a wound that genuinely haemorrhages would use if one is ever
+ * written. The number itself keeps its size for the reason it was originally
+ * chosen: it is far shorter than anything cultivation is denominated in, so
+ * "treat it and then cultivate" stays the order that works.
  */
 export const BLEED_OUT_TURNS = 90;
 
@@ -586,6 +608,15 @@ export const DeathCauseSchema = z.enum([
     'obviously_fatal_choice',
     'lifespan_exhausted',
     'stagnation_aging',
+    /**
+     * RETIRED, AND KEPT ONLY SO OLD LEDGERS STILL PARSE.
+     *
+     * Nothing in the engine produces this any more: a channel wound is a torn
+     * muscle and does not put anybody in the ground. `evaluateDeathConditions`
+     * no longer returns it. It stays in the enum because a permadeath game's
+     * run ledger is the only surviving account of a life, and saves written
+     * before the ruling carry it. See `docs/world/injuries.md`.
+     */
     'untreated_injuries',
     'starvation',
     'failed_breakthrough',
@@ -671,13 +702,15 @@ export const CultivatorSchema = z.object({
     /** Consecutive turns spent at zero satiety. Five is fatal. */
     starvationTurns: z.number().int().min(0).default(0),
     /**
-     * Consecutive turns spent at or above LETHAL_UNTREATED_INJURIES untreated
-     * meridian injuries. Ninety is fatal.
+     * Consecutive turns spent at or above CRIPPLING_UNTREATED_INJURIES open
+     * channel wounds. NOT FATAL AT ANY VALUE - see BLEED_OUT_TURNS.
      *
-     * The sibling of `starvationTurns`, and persisted for the same reason: it
-     * is a clock the body is running, not a derived quantity. Clearing it is
-     * the business of treatment - it resets the moment the untreated count
-     * drops below the threshold, and never otherwise.
+     * It used to be the sibling of `starvationTurns` and it is now an odometer
+     * rather than a clock: how long this body has been carrying open channels,
+     * which is what the player is shown in place of the countdown that used to
+     * be there. Still persisted, because it is a fact about the body rather
+     * than a derived quantity, and still cleared by treatment the moment the
+     * open count drops below the threshold.
      */
     bleedingTurns: z.number().int().min(0).default(0),
 

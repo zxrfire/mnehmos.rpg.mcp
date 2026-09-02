@@ -277,13 +277,44 @@ describe('untreated, the same root is a death sentence, and that is the design',
         }
     });
 
-    it('and every one of them dies, low, exactly as the playthroughs found', () => {
+    it('and very nearly all of them die, low, exactly as the playthroughs found', () => {
+        // ── RE-DERIVED, AND SAY WHY ──────────────────────────────────────
+        //
+        // This asserted `toBe(SEEDS)` - literally every run of every dangerous
+        // root, untreated, dead. That was reachable only because untreated
+        // wounds were themselves a death: three open channels ended the run in
+        // ninety days whatever else was true, so the arm could not miss.
+        //
+        // The design owner reversed that. A torn meridian is a torn muscle: it
+        // impairs and it does not kill (`docs/world/injuries.md`). So the exact
+        // 100% is gone with the mechanism that produced it, and the claim has
+        // to be re-derived rather than the bar quietly widened.
+        //
+        // What it re-derives to is barely weaker. Pooled over all six roots,
+        // 140 of 144 runs still die, and every root's survivors die at a mean
+        // of ordinal 2.6 to 3.6 - which is the "ordinal 2-3" the hand-played
+        // runs found, unchanged. One root, `muddled_five_element`, now gets 4
+        // of 24 through: it is the slowest cultivator on the table, so it
+        // reaches fewer bottlenecks and takes fewer of the deviations that used
+        // to finish it.
+        //
+        // Pooled rather than per-root for the bar, because that is the claim -
+        // "a dangerous root untreated is a death sentence" is a statement about
+        // the cohort, and asking one root of twenty-four seeds to carry it is
+        // how a guard becomes decoration. The per-root check that survives is
+        // the one that was never about the retired mechanism: they die LOW.
+        let died = 0;
+        let ran = 0;
         for (const root of DANGEROUS_ROOTS) {
             const arm = cohort(root, false);
-            expect(arm.deaths, `${root} untreated`).toBe(SEEDS);
+            died += arm.deaths;
+            ran += SEEDS;
             // The hand-played runs died at ordinal 2-3. So does this.
             expect(arm.meanOrdinal, `${root} untreated mean ordinal`).toBeLessThan(5);
+            // And no root is anywhere near surviving it.
+            expect(arm.deaths, `${root} untreated`).toBeGreaterThan(SEEDS * 0.75);
         }
+        expect(died / ran, `${died} of ${ran} pooled`).toBeGreaterThan(0.95);
     });
 
     it('while a clean root mostly survives the same neglect', () => {
