@@ -28,6 +28,7 @@
     "register": "npm run build && node scripts/render-register.mjs",
     "dev": "ts-node src/index.ts",
     "play": "node scripts/play.mjs",
+    "verbs:embed": "node scripts/embed-the-verb-corpus.mjs",
     "mcp": "node dist/server/index.js",
     "docs:index": "node scripts/build-world-index.mjs",
     "docs:houses": "node scripts/build-house-dossiers.mjs"
@@ -82,6 +83,7 @@
     "better-sqlite3": "^12.9.0",
     "dotenv": "^17.4.2",
     "mathjs": "^15.1.0",
+    "onnxruntime-node": "1.24.3",
     "nerdamer": "^1.1.13",
     "seedrandom": "^3.0.5",
     "simplex-noise": "^4.0.3",

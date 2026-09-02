@@ -47,7 +47,10 @@ import {
     composeNarrationUser,
     narrationSystemPrompt
 } from './prompt.js';
-import { verbForASentenceThePatternsMissed } from './reaching-a-verb-the-pattern-table-has-no-line-for.js';
+import {
+    readyTheTier,
+    verbForASentenceThePatternsMissed
+} from './reaching-a-verb-the-pattern-table-has-no-line-for.js';
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing } from './hearsay.js';
 import type { EngineFacts } from './facts.js';
@@ -71,13 +74,20 @@ import type { EngineFacts } from './facts.js';
  * the tier, costs the player nothing but the refusal they were already getting:
  * the table's own answer is what leaves this function.
  */
-function readTheSentence(input: string): Plan['action'] {
-    const fromTable = parseIntent(input);
-    try {
-        return verbForASentenceThePatternsMissed(input, fromTable);
-    } catch {
-        return fromTable;
-    }
+async function readTheSentence(input: string): Promise<Plan['action']> {
+    return verbForASentenceThePatternsMissed(input, parseIntent(input));
+}
+
+/**
+ * Open the model before the first turn asks for it.
+ *
+ * The weights and the exemplar vectors cost a fraction of a second to read, and
+ * paying it while the player is watching a spinner is the wrong moment. Called
+ * from `server.ts` at start-up; anything that skips it simply pays on the first
+ * sentence the table cannot read, because `readyTheTier` is idempotent.
+ */
+export function openTheSentenceModel(): Promise<void> {
+    return readyTheTier();
 }
 
 export interface NarratorScene {
@@ -269,7 +279,7 @@ export class DeterministicNarrator implements Narrator {
     constructor(private readonly note = 'no narrator provider configured') {}
 
     async plan(input: string): Promise<Plan> {
-        return { action: readTheSentence(input), source: 'fallback', note: this.note };
+        return { action: await readTheSentence(input), source: 'fallback', note: this.note };
     }
 
     /**
@@ -358,7 +368,7 @@ export class ProviderNarrator implements Narrator {
             text = result.text ?? '';
         } catch (err) {
             return {
-                action: readTheSentence(input),
+                action: await readTheSentence(input),
                 source: 'fallback',
                 note: `provider unavailable (${errorLabel(err)}); intent parsed deterministically`
             };
@@ -367,7 +377,7 @@ export class ProviderNarrator implements Narrator {
         const raw = extractJsonObject(text);
         if (raw === null) {
             return {
-                action: readTheSentence(input),
+                action: await readTheSentence(input),
                 source: 'fallback',
                 note: 'model did not return a JSON object; intent parsed deterministically'
             };
@@ -380,7 +390,7 @@ export class ProviderNarrator implements Narrator {
         const validated = validatePlan(raw);
         if (!validated.ok) {
             return {
-                action: readTheSentence(input),
+                action: await readTheSentence(input),
                 source: 'fallback',
                 note: `model response rejected (${validated.reason}); intent parsed deterministically`
             };

@@ -29,7 +29,12 @@ import {
     type ResolvedRuntimeProviderConfig
 } from '../agent/provider/config.js';
 import { GameError, GameService } from './game.js';
-import { DeterministicNarrator, ProviderNarrator, type Narrator } from './narrator.js';
+import {
+    DeterministicNarrator,
+    ProviderNarrator,
+    openTheSentenceModel,
+    type Narrator
+} from './narrator.js';
 import { ladderView, spiritRootsView } from './view.js';
 import { buildRegister, renderRegisterHtml } from './register.js';
 import { placesView } from './places.js';
@@ -487,6 +492,15 @@ export async function startServer(): Promise<ReturnType<typeof createServer>> {
 
     const port = Number(process.env.PORT) || DEFAULT_PORT;
     const host = process.env.HOST || '0.0.0.0';
+
+    // Read the weights and the exemplar vectors now rather than on the first
+    // sentence the pattern table cannot place. It is a fraction of a second and
+    // the wrong moment to spend it is while somebody is watching a spinner. A
+    // failure here is reported and not fatal: every sentence the table already
+    // reaches still reaches it, which is most of them.
+    void openTheSentenceModel().catch((err: unknown) => {
+        console.error(`[web] the sentence model did not open: ${String(err)}`);
+    });
 
     const server = createServer(app);
     server.listen(port, host, () => {
