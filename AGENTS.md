@@ -453,6 +453,44 @@ The mirror image is worth stating too: **a rule that binds NPCs and not the play
 player and not NPCs, is the same failure with one caller instead of none.** See
 [the world's rules must bind the player too](#the-worlds-rules-must-bind-the-player-too).
 
+### Check for existing docs and modules before you start
+
+**In this project the prior is that it already exists.** The defect above has a twin: because so
+much here was designed, written and documented before it was wired, the thing you are about to
+build has usually been built once already - and the way you find out is by looking first, not by
+discovering the collision at commit time.
+
+The case that produced this entry: an agent was briefed to design fostering - who takes a child,
+what it costs, why a favour is the currency. All of it existed.
+`src/data/cultivation/a-favour-skips-the-admission-bar.ts` opens by stating the mechanism
+outright - *a favour from somebody high enough makes a house take a person it would otherwise
+refuse on the bar* - and carries the argument for why it must exist.
+`src/engine/birth/spending-a-word-to-place-a-child.ts` was the engine half.
+`docs/world/origin.md` was the written design, and the package README pointed at it. **The brief
+was wrong, not the agent.** Had it been followed, the result would have been a second fostering
+mechanic beside the first: the very defect the task existed to fix, committed again.
+
+So, before writing anything:
+
+1. **Read `docs/world/` for the subject.** The filenames say what they hold - `origin.md`,
+   `items.md`, `asking.md`, `manuals.md`, `past-the-ceiling.md`. A design doc that contradicts
+   what you are about to build is the cheapest correction you will ever get.
+2. **Grep the catalog and the engine for the concept, not the identifier.** The file that owns a
+   thing here is usually named after what it is - `a-favour-skips-the-admission-bar.ts`,
+   `what-grade-of-medicine-a-wound-needs.ts`, `who-a-life-like-this-grew-up-knowing.ts` - so
+   searching for the *idea* in filenames finds what searching for a symbol will not.
+3. **Check whether it is half-wired rather than absent.** `src/engine/birth/` had one live file
+   and one dead one in the same package. "No caller" and "does not exist" look identical from a
+   distance and want opposite responses.
+4. **When the docs and your brief disagree, say so before building.** The docs are usually older
+   and usually right, and a brief written from a playtest often describes a symptom rather than
+   the design. Raise it; do not quietly pick one.
+
+The habit generalises past duplication. Most of the sharpest rulings in this world are already
+written down somewhere - what money cannot buy, what a refusal owes the player, why lineage buys
+nothing at one particular door - and prose you write in ignorance of them will contradict them
+in ways a test will never catch.
+
 ### Nothing in this world is invincible
 
 **Whatever a capability grants, it never adds up to cannot-be-killed.** Not the strongest body
