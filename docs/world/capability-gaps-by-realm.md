@@ -118,11 +118,26 @@ reviews as a feature**, and that is the trap this correction exists to close.
 Two things are genuinely implemented and are *not* affected, because neither routes through
 grants:
 
-- **Soul persistence.** `tradition.ts`'s `SOUL_PERSISTS_FROM_ORDINAL` feeds
-  `killRequirement`, which `combat.ts` consults inside `assessPower` to set `bodyIsEnough`
-  and `remnant: 'soul'`. At ordinal 21 and above, destroying the body really is not enough.
-  This is the one realm capability the engine enforces against a living person, and it works
-  precisely because `soul_persists` as a *grant* is bypassed.
+- **Soul persistence, and only through one door.** `tradition.ts`'s
+  `SOUL_PERSISTS_FROM_ORDINAL` feeds `killRequirement`, which `combat.ts` consults inside
+  `assessPower` to set `bodyIsEnough` and `remnant: 'soul'`, and `combat-manage.ts` surfaces
+  at the moment of a killing blow. At ordinal 21 and above, destroying the body really is not
+  enough. This is the one realm capability the engine enforces against a living person, and it
+  works precisely because `soul_persists` as a *grant* is bypassed.
+
+  **But the module that would actually resolve it is uncalled.** `existence.ts` carries the
+  whole apparatus - `PROFOUND_EXISTENCE_STATES`, `canEnterExistenceState`,
+  `resolveBodilyDestruction`, the survival roll, `identityContinuity`, the soul-state costs -
+  and `canEnterExistenceState` and `resolveBodilyDestruction` **have no caller anywhere in
+  `src/`**. Only the tests call them. What the rest of the repo imports from that file is its
+  state predicates (`hasBody`, `isGoingConcern`, `isTerminal`, taken by `survival.ts`) and its
+  separate Lid-transit half (`canExistBeyondTheLid`, `evaluateLidTransit`,
+  `resolveDescentStrikes`, taken by `game.ts` and `above.ts`).
+
+  So Nascent Soul's `survive` verdict is wrong twice over rather than once: the grants that
+  name it are unreachable, AND the machinery that would carry it out is never invoked. In the
+  live game, surviving the destruction of your body is a **sentence in a combat readout**
+  saying the body was not enough - nothing computes what happened to the soul afterwards.
 - **`suppresses_lesser`, `makes_veins`, `seals_domains`, `reads_lid`, `opens_lid`** are not
   implemented at all, grants or otherwise. That part of the original count stands.
 
@@ -198,7 +213,7 @@ The floor. A mortal with a party trick.
 | 2 | survive | **built** | `SATIETY_BURN_BY_REALM.qi_condensation` is `1` - full mortal arithmetic, ~50 days of belly. `BARREN_GROUND_CEILING = 12`: thin ground cannot carry anybody past this realm. Location `entry`/`survival` thresholds and `standingConsequence` price hostile ground in HP per day |
 | 3 | do | **built** | The whole verb surface: gather, sell, refine (recipes open at ordinal 0), work, market, join a house, learn techniques, take commissions. 24 techniques and 10 recipes in band |
 | 4 | asked of | **built** | `duties.ts`: 6 of 8 summons entries and all 5 commission entries pitched here. Summons need membership; the board does not |
-| 5 | risk | **built** | Deviation, injuries that never heal, starvation, `BLEED_OUT_TURNS`, settling, stagnation. Five named deaths, all reachable here |
+| 5 | risk | **built** | Deviation, injuries that never heal, starvation, settling, stagnation. The named deaths are all reachable here - though not `untreated_injuries`, which is retired: a channel wound impairs and never kills. See `docs/world/injuries.md` |
 | 6 | opportunity | **built** | Market, foraging, `quoteSale` through the regard margin, stipend, `origin.ts`'s income curve |
 
 **Nothing is needed here.** The realm is complete and it is the densest part of the game.
