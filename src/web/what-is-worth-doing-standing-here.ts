@@ -217,6 +217,25 @@ export interface StandingHere {
     sellableGoods: number;
     /** People standing here, right now, at a higher rung than this cultivator. */
     peopleAboveHere: number;
+    /**
+     * People standing here who would part with something they are holding.
+     *
+     * A COUNT AND NEVER A NAME, the same discipline `groundThatTeachesARoad`
+     * below follows and for the same reason: this decides whether a LINE is
+     * offered, and the line routes to a read that does its own knowledge
+     * granting. A panel that named the sellers would be handing over four
+     * strangers' names every time it rendered.
+     *
+     * `SAY.market` existed in this file from the day it was written and NO
+     * RULE EVER ADDED IT - a dead prompt, which is the same defect as an
+     * unwritten field one size smaller. So a fresh nobody standing in a market
+     * town with thirty stones, no manual and a stall forty paces away asking
+     * eight for the primer was offered "who can teach me", "what arts can I
+     * learn" and "what sects are there", and was never once told there was a
+     * market. That is the first real decision in the game - a book or the food
+     * - and it was unreachable except by guessing the words.
+     */
+    peopleHereWithSomethingToSell: number;
     /** The ground gives back less than ordinary: half rate, and a penalty. */
     thinGround: boolean;
     /**
@@ -524,6 +543,31 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             + 'different sentence from this one, and it has an outcome. A stranger will '
             + 'usually say no; "buy <them> a drink" or "sit with <them>" costs a day and no '
             + 'stones, and it is what turns a stranger into somebody who might not.'));
+    }
+
+    // ── WHAT THIS PLACE IS ASKING FOR THINGS ──────────────────────────────
+    //
+    // Two rules, one line, and the reasons are different enough to be worth
+    // both. Somebody with no road has one decision - the book or the food -
+    // and the board is where both of them are priced. And somebody standing
+    // next to a cultivator who would sell them something has a reason to look
+    // that has nothing to do with their own state.
+    //
+    // Deliberately below the body and the road: a starving cultivator does not
+    // need a shopping trip, and `dedupe` keeps the more urgent occurrence of a
+    // line anyway.
+    if (!here.aboveTheLid) {
+        if (here.peopleHereWithSomethingToSell > 0) {
+            const n = here.peopleHereWithSomethingToSell;
+            add(at(SAY.market, 'open',
+                `${n} ${n === 1 ? 'person' : 'people'} standing here would rather have stones `
+                + 'than what they are carrying. What a stall asks and what a person asks are the '
+                + 'same read, and the second one comes with a reason attached.'));
+        } else if (!here.practisesAMethod) {
+            add(at(SAY.market, 'open',
+                'A stall beside the cooking pots copies out the common books. The stones go on '
+                + 'a book or they go on food, and that is the first real decision there is.'));
+        }
     }
 
     if (!here.aboveTheLid && !here.inASect && here.practisesAMethod) {
