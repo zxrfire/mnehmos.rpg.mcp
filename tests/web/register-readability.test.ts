@@ -135,13 +135,23 @@ describe('the register is consistent with itself', () => {
         // meet arriving as the fifth block of a chunk about institutional
         // machinery read as a run-on. The list is a fixed set, not a growing
         // one - the two headings below still must not come back.
+        // RENAMED TO THE QUESTION THE READER ARRIVES WITH, not to the field
+        // the data sits in. The design owner's verdict on the previous set was
+        // that the labels were not obvious, and the headings were part of it:
+        // `What they are`, `Who is in it` and `How it stands` name the shape of
+        // the record rather than anything anybody wanted to know. A reader
+        // arrives asking whether they could join, what it would teach them, and
+        // who it is at odds with, and the headings say those now.
+        //
+        // Still a fixed set, and still not a growing one. The guard below is
+        // the load-bearing half of this test.
         const order = [
-            'What they are',
-            'Who is in it',
-            'The roll',
-            'What they want',
+            'What it is',
+            'Could I get in',
+            'Who is actually in it',
+            'What it is after, and what it is like',
             'Ancestors',
-            'How it stands'
+            'Who it knows'
         ];
         const html = renderRegisterHtml(reg as never, {} as never);
         const heads = [...html.matchAll(/<div class="part"><h4>([^<]*)<\/h4>/g)].map(m => m[1]);
