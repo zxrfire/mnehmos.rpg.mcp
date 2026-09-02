@@ -124,14 +124,20 @@ Rolled once at creation, never rerollable, and it decides most of your ceiling.
 | Spirit root | Odds | Effect |
 |---|---|---|
 | Single Metal / Wood / Water / Fire / Earth | 8.1% each | Clean affinity, fast cultivation |
-| Water-Fire or Metal-Wood dual | 16.2% each | Conflicting elements; standing qi-deviation risk |
-| Five-Element Muddled | 21.6% | All five, none clean. Cultivation crawls. |
+| Water-Fire or Metal-Wood dual | 9.0% each | Conflicting elements; standing qi-deviation risk |
+| Metal-Wood-Earth triple | 9.9% | Three in an overcoming chain; only earth arrives clean |
+| Metal-Wood-Earth-Water quad | 11.7% | Four ways divided, and the missing fire buys nothing |
+| Five-Element Muddled | 14.4% | All five, none clean. Cultivation crawls. |
 | Mutated Lightning / Ice | 2.7% each | Devastating, and almost no manuals exist |
+
+Every element after the first is one more mouth on the same intake: speed, matched-art
+bonus and breakthrough odds fall the whole way down that table, and commonness rises.
 
 Plus four innate attributes locked at creation: **Might** (1-3), **Insight** (1-4),
 **Fortune** (0-3, and it can genuinely be zero), **Charm** (1-3).
 
-The most common draw in the game is the muddled root. That is the real experience of
+Mixed roots - three, four or five elements - are 36% of all draws, and the five-element
+muddled root is the single most likely thing to be. That is the real experience of
 this world.
 
 ---

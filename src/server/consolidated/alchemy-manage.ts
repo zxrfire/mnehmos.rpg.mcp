@@ -44,10 +44,10 @@ import {
     canRefineGrade,
     whyTheCauldronRefuses
 } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
-// The physician's refusal already names the cure, at its board price, with
-// whether the purse covers it. The pill path refusing on the SAME ladder must
-// say the SAME sentence, or the game contradicts itself on the surface where
-// it used to contradict itself in the resolver.
+// The physician's refusal already names the cure, at what a counter in this
+// province charges, with whether the purse covers it. The pill path refusing on
+// the SAME ladder must say the SAME sentence, or the game contradicts itself on
+// the surface where it used to contradict itself in the resolver.
 import {
     whatWouldCloseThisWound,
     whatToSayAboutTheCure
@@ -61,6 +61,11 @@ import {
 } from '../../data/cultivation/pills.js';
 import { RECIPES, getRecipe } from '../../data/cultivation/recipes.js';
 import { getHerb } from '../../data/cultivation/herbs.js';
+// The leaf, deliberately, and NOT `cultivation-mortal.js` which re-exports it:
+// that module and `cultivation-manage.js` are in a live cycle, and reaching
+// this function through it flips the evaluation order and takes the server out
+// at boot. See `where-a-cultivator-is-standing.ts`.
+import { standingOf } from './where-a-cultivator-is-standing.js';
 import { gradeRank } from '../../data/cultivation/techniques.js';
 import {
     FLAG_GRAIN_ABSTINENCE_UNTIL,
@@ -664,7 +669,14 @@ function resolvePillEffect(
                 && !reaches(injury.severity));
             const cure = outOfReach.length > 0
                 ? whatWouldCloseThisWound(
-                    outOfReach, cultivator.realmOrdinal, cultivator.spiritStones)
+                    outOfReach,
+                    cultivator.realmOrdinal,
+                    cultivator.spiritStones,
+                    // Where they are standing, so this surface quotes the same
+                    // figure the counter charges. The physician's refusal, the
+                    // situation panel and this sentence are the three places
+                    // the cure gets named, and they now name one price.
+                    standingOf(cultivator).regionId)
                 : null;
 
             let summary: string;

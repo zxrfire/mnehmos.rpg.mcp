@@ -41,7 +41,9 @@
       "Bash(git rm:*)",
       "Bash(npx tsx:*)",
       "Bash(xxd:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(npx vitest *)",
+      "Bash(grep -a \"×\\\\|✓ tests\\\\|Tests  \\\\|FAIL\\\\|AssertionError\" \"C:\\\\Users\\\\hi\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--intellij-projects-mnehmos-rpg-mcp\\\\cb7237b3-d97b-472f-9777-5cee0fa5a317\\\\scratchpad/../../tool-results/bj4zo3q2i.txt\" 2>/dev/null | head -40 || grep -a \"×\\\\|Tests  \" \"C:\\\\Users\\\\hi\\\\.claude\\\\projects\\\\D--intellij-projects-mnehmos-rpg-mcp\\\\cb7237b3-d97b-472f-9777-5cee0fa5a317\\\\tool-results\\\\bj4zo3q2i.txt\" | head -40)"
     ]
   }
 }

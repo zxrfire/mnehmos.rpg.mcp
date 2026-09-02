@@ -1393,7 +1393,7 @@ function seedNamedFigures(
             id,
             bornOnDay: presentDay - years(age),
             onDay: presentDay,
-            locationId: seatLocationId(catalog, faction),
+            locationId: groundAHouseFiguresStandOn(state, catalog, faction),
             occupation: 'unknown',
             origin: drawOriginForSomebodyAlreadyAtOrdinal(
                 forStream(state.seed, 'seed-origin', id).next(), ordinal
@@ -1544,7 +1544,7 @@ function seedWhatAHouseActuallyHolds(
             id,
             bornOnDay: presentDay - years(age),
             onDay: presentDay,
-            locationId: seatLocationId(catalog, faction),
+            locationId: groundAHouseFiguresStandOn(state, catalog, faction),
             occupation: 'unknown',
             takenNames: taken,
             // As above: the strongest person in a house is somebody who
@@ -1586,22 +1586,46 @@ function seedWhatAHouseActuallyHolds(
 }
 
 /**
- * Where a faction sits. Matched against region ids and place names, falling
- * back to the first region so a catalog entry with an unrecognised territory
- * still lands somewhere real rather than nowhere.
+ * The ground a house's own people are standing on: its gate, forecourt and
+ * halls, which `seedSectGround` has already built and linked by road.
+ *
+ * ── WHAT THIS USED TO DO, AND WHY IT WAS NOT A SMALL BUG ─────────────────
+ *
+ * It matched `faction.territory` against region ids and place names. But
+ * `territory` is PROSE - "Terraced peaks above Low Fall gorge, and the vein
+ * under it, taken off somebody else nineteen centuries ago." - so no branch of
+ * that search could ever fire, and every catalog figure in the world fell
+ * through to the region node.
+ *
+ * That is not "placed a little vaguely". `the-world-changing-on-its-own.ts`
+ * states the law in its own banner: **a region is a container, nobody stands in
+ * one, and `npcsAt` matches on an exact `locationId`, so anything placed on a
+ * region node is placed nowhere anybody can meet it.** The newborn path was
+ * fixed for exactly that reason and the seeder was never brought in line, so
+ * the entire upper stratum of the world - measured at 88 people at ordinal 17
+ * and above, on three seeds, every one of them a catalog figure - was standing
+ * somewhere no player and no NPC could ever be. Meanwhile all 34 `sect_seat`
+ * locations, each with a generated compound inside it, held nobody at all.
+ *
+ * The seat is the answer the seeder had already computed. `seedSectGround` runs
+ * before this and puts the ground in `state.locations` under `sectGroundId`,
+ * `seedFactions` writes the same id to `FactionRecord.seatLocationId`, and it is
+ * road-linked to the province - a place somebody can walk to. Reading it here
+ * makes this function do what its own callers' comment always said it did:
+ * "They are placed at their faction's seat."
+ *
+ * The old region fallback is kept for the case it was actually written for - a
+ * catalog whose faction has no region, so no ground was built - because a body
+ * on a container is still better than a body on a string.
  */
-function seatLocationId(catalog: WorldCatalog, faction: CatalogFaction): string {
-    const wanted = faction.territory.toLowerCase();
-    for (const region of catalog.regions) {
-        if (region.id.toLowerCase().includes(wanted) || wanted.includes(region.id.toLowerCase())) {
-            return regionLocationId(region.id);
-        }
-        for (const place of region.places) {
-            if (place.name.toLowerCase() === wanted) {
-                return placeLocationId(region.id, place.name);
-            }
-        }
-    }
+function groundAHouseFiguresStandOn(
+    state: WorldState,
+    catalog: WorldCatalog,
+    faction: CatalogFaction
+): string {
+    const ground = sectGroundId(faction.id);
+    if (state.locations.some(l => l.id === ground)) return ground;
+
     const home = catalog.regions.find(r => r.factionIds.includes(faction.id)) ?? catalog.regions[0];
     return home ? regionLocationId(home.id) : 'the open road';
 }

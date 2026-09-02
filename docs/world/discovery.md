@@ -41,6 +41,7 @@ cultivator does not need a carter to mention that there is a mountain over there
 | [Making somebody tell you](#making-somebody-tell-you) | the player puts weight behind a question |
 | [The ladder of knowing](#the-ladder-of-knowing) | the player learns of something new, or their grasp of it is in question |
 | [Encountering something from above](#encountering-something-from-above) | the player meets something plainly beyond their stratum |
+| [The houses that need people come looking](#the-houses-that-need-people-come-looking) | the player is in a town, a city or at a crossroads with no house behind them |
 | [The hard rule for the narrator](#the-hard-rule-for-the-narrator) | the narrator is about to name a place, house, or person |
 | [Why this is the payoff](#why-this-is-the-payoff) | **Tier 3** - never injected |
 | [Characters assume you know](#characters-assume-you-know) | an NPC talks past the player about things the player has never heard of |
@@ -242,6 +243,40 @@ Other reliable notes:
   or may not have heard right - and finds out later, or never.
 - **The stratum keeps existing afterwards.** Whatever was revealed does not become
   reachable because it was seen. Seeing is a knowledge state, not an access state.
+
+## The houses that need people come looking
+
+<!-- tier: 2 trigger="the player is in a town, a city or at a crossroads with no house behind them" -->
+
+Every other channel above runs one way: the player has to go and find a name. This one
+runs the other way, and it is the only one that does.
+
+**A house short of members advertises.** A bill nailed to a wall in a market town, at a
+city gate, at a crossroads waystation: *we are holding an intake here, on such a day, and
+we will hear anybody at such a rung.* It is ordinary, it is free to read, and it grants a
+name at `placed` off a `read` source like anything else on the ladder - a name and a
+place, never an introduction. The bar written on the paper is the real bar.
+
+**The great houses do not advertise, and that is the whole of what the paper tells you.**
+A house whose name people already say has no reason to spend the paper, so being on a
+wall is itself a fact about the house - and a legible one, before the player knows
+anything else about the world's rankings:
+
+- **No address on it.** The house owns no ground. Nothing to inherit, and nothing to be
+  thrown out of.
+- **No bar worth the name.** It will hear anybody who has begun at all, which means it
+  has run out of ways to be chosen.
+- **The terms set out carefully, in a good hand.** It has a seat and no reputation, and
+  is arguing where it should be able to assume.
+
+So a player who reads three bills has learned three house names *and* has been shown,
+without a word of explanation, that these are the bottom of the field. Which is correct,
+and is exactly the door somebody with nothing should be walking through.
+
+**Not everybody can put their name on a wall.** A body that recruits by mouth - and there
+are several, each for its own catalogued reason - needs people just as badly and cannot
+afford an address. What that produces is worth having: the houses a newcomer can see are
+the ones that can afford to be seen, and the others find *you*.
 
 ## The hard rule for the narrator
 

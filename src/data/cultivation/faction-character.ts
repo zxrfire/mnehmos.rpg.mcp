@@ -216,7 +216,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         knownFor: {
             outside: 'Nothing, to almost everybody. Below a certain height the Survey is not a name people decline to say, it is a name they have never heard - and what they have instead is the sense that boundary disputes in some provinces end faster than they should.',
             actuallyGoodAt: 'Being unable to be lied to about where anything is, and having been so for nine hundred years without interruption. Every arterial figure in the region descends from a measurement it took and has never had to retake.',
-            theGap: 'It is the strongest institution in the world at the thing nobody experiences as strength. A house that wins arbitrations it does not attend leaves no impression at all on the people it beats, which is why its reputation is smaller than the Pavilion\'s and its position is not.'
+            theGap: 'What it is strong at is the thing nobody experiences as strength. A house that wins arbitrations it does not attend leaves no impression at all on the people it beats, which is why its reputation is smaller than the Pavilion\'s and its position is not.'
         },
         practice: 'Everything is minuted, including refusals, including the refusals of Surveyors who give no reason. The register is read by successors and the Survey behaves accordingly: it does not act in a way it would be embarrassed to have written down, which outsiders read as caution and is closer to vanity.',
         grievance: 'That the one administration in the world that has ever changed patrons walked out of its arrangement and into the Long Cut\'s in living memory, and that it has not been able to think of a reply that would not concede the point.',

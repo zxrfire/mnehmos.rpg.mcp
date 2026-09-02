@@ -78,7 +78,7 @@
  * get wrong a third time.
  *
  *   `minOrdinal`         MEMBERSHIP. It has never moved, for anybody, ever.
- *   `probationOrdinal`   THE REAL DOOR, standing at the floor, and it is the
+ *   `guestFromOrdinal`   THE REAL DOOR, standing at the floor, and it is the
  *                        only one in the world.
  *
  * The Pavilion's `powerOrdinal` also stands above every origin's placement
@@ -130,7 +130,7 @@ export interface Doors {
      * here later is a fact about the catalog rather than a change to this
      * module.
      */
-    probationOrdinal: number | null;
+    guestFromOrdinal: number | null;
     /**
      * The lowest ordinal that gets somebody inside the walls at all. The
      * probation door where there is one, the membership bar otherwise - and
@@ -146,15 +146,15 @@ export function doorsOf(factionId: string): Doors | undefined {
 
     const admission = SECT_ADMISSION[factionId];
     const membershipOrdinal = admission?.minOrdinal ?? sect.admissionOrdinal;
-    const probation = admission?.probationOrdinal;
-    const probationOrdinal = typeof probation === 'number' ? probation : null;
+    const probation = admission?.guestFromOrdinal;
+    const guestFromOrdinal = typeof probation === 'number' ? probation : null;
 
     return {
         factionId,
         membershipOrdinal,
-        probationOrdinal,
-        lowestDoor: probationOrdinal !== null
-            ? Math.min(probationOrdinal, membershipOrdinal)
+        guestFromOrdinal,
+        lowestDoor: guestFromOrdinal !== null
+            ? Math.min(guestFromOrdinal, membershipOrdinal)
             : membershipOrdinal
     };
 }
@@ -163,7 +163,7 @@ export function doorsOf(factionId: string): Doors | undefined {
 export function housesWithTwoDoors(): Doors[] {
     return SECTS
         .map(s => doorsOf(s.id))
-        .filter((d): d is Doors => d !== undefined && d.probationOrdinal !== null);
+        .filter((d): d is Doors => d !== undefined && d.guestFromOrdinal !== null);
 }
 
 // ─────────────────────────────────────────────────────────────────────────

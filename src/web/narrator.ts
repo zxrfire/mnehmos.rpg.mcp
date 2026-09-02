@@ -35,6 +35,7 @@
 import type { AmbientQi } from '../schema/cultivation.js';
 import type { LLMProvider } from '../agent/provider/types.js';
 import {
+    carryWhatOnlyTheSentenceKnows,
     extractJsonObject,
     parseIntent,
     validatePlan,
@@ -356,7 +357,13 @@ export class ProviderNarrator implements Narrator {
             };
         }
 
-        return { action: validated.action, source: 'model' };
+        // The model chose the verb; the sentence still owns the facts about
+        // itself. Without this a configured provider and an unconfigured one
+        // hand the ENGINE different objects for the same sentence - a threat
+        // loses the leverage the social resolver reads, a count of rations
+        // becomes a defaulted month - and the two modes stop being the same
+        // game. See `carryWhatOnlyTheSentenceKnows` for the measurement.
+        return { action: carryWhatOnlyTheSentenceKnows(validated.action, input), source: 'model' };
     }
 
     /**

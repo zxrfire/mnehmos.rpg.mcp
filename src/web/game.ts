@@ -66,7 +66,7 @@ import {
     getPrice
 } from '../data/cultivation/mortal-world.js';
 import {
-    localPrice, canAdvanceHere, requireRegion, REGIONS
+    localPrice, canAdvanceHere, requireRegion, regionIdOfPlace, REGIONS
 } from '../data/cultivation/regions.js';
 import {
     treatWorstInjuries,
@@ -81,6 +81,13 @@ import { round2 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
+import {
+    couldTheyTellItIs,
+    whereThisArtWasLearned,
+    type ArtObserver,
+    type ClaimVerdict
+} from '../engine/world/recognising-whose-art-you-just-watched.js';
+import { manualsOf } from '../engine/world/manuals.js';
 import { capOf, classOf } from '../data/cultivation/techniques.js';
 import { NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
@@ -118,6 +125,8 @@ import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
 import { handleMarket, handleWork, standingOf } from '../server/consolidated/cultivation-mortal.js';
 import { SECT_BONUS_PER_RANK } from '../server/consolidated/cultivation-manage.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
+import { handleGuest } from '../server/consolidated/sect-guest.js';
+import { applyProbation, probationOf, recallDueFor } from '../server/consolidated/sect-probation.js';
 import {
     handleJoin,
     handleLeave,
@@ -459,6 +468,7 @@ import {
     type GroundNearby,
     type ThingThatTeaches
 } from './ground-that-teaches-a-road.js';
+import { readTheWall } from './what-is-posted-on-the-wall-here.js';
 import { assessAcquisition, sealedDoorFraction, concealmentScale, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
@@ -548,6 +558,13 @@ import {
 import {
     whatTheConfrontationDidToThem
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
+// A played deed goes into the world's own record, not only into the ledger.
+// See the module header for the measurement: before it, three player actions
+// in the whole game wrote a world fact, and every propagation system in the
+// repo - digest, rumour, hearsay, the market repeat - reads that table alone.
+import {
+    aDeedEntersTheWorld
+} from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 // The owner's two axes: severity of the wound, realm of the wounded.
 import {
     medicineNeededFor,
@@ -583,6 +600,7 @@ import { DEATH_IN_WORLD,
     factsForDao,
     factsForHolding,
     factsForRecall,
+    factsForRecognisingAnArt,
     factsForSiteTaken,
     factsForTreatment,
     factsForUnsupported,
@@ -621,6 +639,7 @@ import { effectiveCapOf, writtenTo } from '../engine/cultivation/escapes.js';
 import { stagesHeldBy, stagesWrittenSince } from './stages.js';
 import { PlayLog, type LogEntry } from './log.js';
 import type { FiledOutcome, Narrator } from './narrator.js';
+import { announceMode } from './which-mode-this-session-is-playing-in.js';
 import { composeStateSummary } from './prompt.js';
 import { handleAdminManage, isAdminModeEnabled, parseAdminCommand } from '../server/consolidated/admin-manage.js';
 import {
@@ -946,6 +965,90 @@ function boardSample(prices: MarketPrice[]): MarketPrice[] {
         chosen.add(item);
     }
     return prices.filter(item => chosen.has(item));
+}
+
+/**
+ * What the pill just bought will not close, said on the receipt.
+ *
+ * ── The defect, found by playing ─────────────────────────────────────────
+ *
+ * The `help` read named a Meridian Rebirth Pill as what the wound wanted, and
+ * `I buy a Clear Meridian Pill` then took 132 spirit stones for something
+ * `treat_injury` refuses to spend on that wound - because `treatWorstInjury`
+ * enforces `medicineReaches` and the counter did not. Nothing in the sale said
+ * so. The player learned it later, holding the pill, out the money.
+ *
+ * ── Why this is a sentence and not a refusal ─────────────────────────────
+ *
+ * `AGENTS.md` is explicit that the fix for an action that seems unwise is a
+ * price or a warning, never a removed verb: banning is a decision taken away
+ * from the person playing, and it is indistinguishable from the feature being
+ * missing. There are real reasons to buy a pill that will not touch today's
+ * wound - a lighter one tomorrow, a body that is not yet past the grade, a
+ * sale a player wants for its own sake - and the engine is not entitled to
+ * decide which of those they are having. So the pill is sold, the stones are
+ * taken, and the receipt says what it will and will not reach, with the name
+ * of the medicine that would in it.
+ *
+ * Nothing here decides anything. `medicineReaches` is the same call the
+ * physician and `treat_injury` already make, and the sentence is the one
+ * `whatToSayAboutTheCure` already writes for the other two surfaces, so the
+ * counter cannot disagree with either about the same wound.
+ */
+function whatThisPurchaseWillNotReach(
+    cultivator: Cultivator,
+    pillId: string,
+    regionId: string
+): { lines: string[]; structure: string[] } {
+    const none = { lines: [], structure: [] };
+    const bought = getPill(pillId);
+    if (!bought || bought.effect !== 'treat_injury') return none;
+
+    // Permanent wounds are excluded for the reason `alchemy-manage.ts` gives:
+    // `treatWorstInjury` skips them at every grade, so counting them here would
+    // have the receipt promise a cure that does not exist.
+    const mendable = untreatedInjuries(cultivator.injuries)
+        .filter(injury => !isPermanentWound(injury.woundType));
+    if (mendable.length === 0) return none;
+
+    const beyond = mendable.filter(injury =>
+        !medicineReaches(bought.grade, injury.severity, cultivator.realmOrdinal));
+    if (beyond.length === 0) return none;
+
+    const needed = beyond
+        .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
+        .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
+    const cure = whatWouldCloseThisWound(
+        beyond, cultivator.realmOrdinal, cultivator.spiritStones, regionId);
+    const reached = mendable.length - beyond.length;
+
+    // Said in whichever of the two shapes is TRUE. A pill that closes two of
+    // three wounds and cannot touch the third is not a wasted pill, and telling
+    // somebody it will "close nothing" is the same species of falsehood as
+    // telling them nothing at all - it just points the other way.
+    const whatItMisses = beyond.length === mendable.length
+        ? (mendable.length === 1 ? 'the wound you are carrying' : 'any of the wounds you are carrying')
+        : `${beyond.length} of the ${mendable.length} wounds you are carrying`;
+    const whatBecomesOfIt = reached === 0
+        ? 'Swallowing it will spend it and close nothing.'
+        : `Swallowing it closes the ${reached === 1 ? 'other one' : `other ${reached}`} and leaves `
+          + `${beyond.length === 1 ? 'that one' : 'those'} exactly as ${beyond.length === 1 ? 'it is' : 'they are'}.`;
+
+    return {
+        lines: [
+            `It will not reach ${whatItMisses}. ${bought.name} is ${bought.grade} grade and `
+            + `${beyond.length === 1 ? 'that tear wants' : 'the worst of them wants'} `
+            + `${needed}-grade medicine on a body at your height. ${whatBecomesOfIt}`
+            + (cure ? `\n\n${whatToSayAboutTheCure(cure)}` : ''),
+            'You were sold it anyway, because it is your money and there may be a wound tomorrow it '
+            + 'does answer. Nobody at the counter pretended otherwise.'
+        ],
+        structure: [
+            `medicineReaches(${bought.grade}): ${beyond.length} of ${mendable.length} untreated `
+            + `wound(s) out of reach at ordinal ${cultivator.realmOrdinal}; highest requirement `
+            + `${needed}. The pill is in the pouch and treat_injury will refuse it on those.`
+        ]
+    };
 }
 
 /**
@@ -1355,6 +1458,20 @@ const GENERIC_PILL_PHRASE =
 
 const GENERIC_HOUSE_PHRASE =
     /^(?:any |some |a |an |one |another |new |good |strong |nearby |local )*(?:sects?|orders?|schools?|clans?|houses?|cults?|somewhere|somebody|someone|anyone|anybody)\b/i;
+
+/**
+ * The same words, but only where they are the WHOLE of what was said.
+ *
+ * `GENERIC_HOUSE_PHRASE` is unanchored at its end and has to stay that way for
+ * the joining path it was written for. Six of the seven dao houses are called
+ * "The House of ...", so once the leading article comes off the subject the
+ * remainder begins with `house` and the unanchored test reads a specific name
+ * as the whole category. Anchored at both ends it cannot: "a sect" is a
+ * category, "House of the Narrow Hour" is a name, and no house in the catalog
+ * is called any of these words on its own.
+ */
+const GENERIC_HOUSE_CATEGORY_ONLY =
+    /^(?:any |some |a |an |one |another |new |good |strong |nearby |local |the )*(?:guest (?:student|studentship|place|pupil)|sects?|orders?|schools?|clans?|houses?|cults?|somewhere|anywhere|somebody|someone|anyone|anybody)(?:\s+(?:somewhere|anywhere|near(?:by)?|around(?: here)?|here|about|else))?$/i;
 
 /**
  * How many things done to a place are read out at once.
@@ -1937,6 +2054,14 @@ export class GameService {
 
         this.log.append(created.run.id, [
             ...(plan ? [{ role: 'narrator' as const, turn: 0, text: plan.note }] : []),
+            // WHICH OF THE TWO WAYS OF PLAYING THIS IS, in the log rather than
+            // only in a status bar. Without a key the bar read
+            // "narrator anthropic/claude-opus-5 (not configured)", which is a
+            // diagnostic about an environment variable and reads as a broken
+            // install. It is not one: the whole game is playable here. Said in
+            // both directions on purpose - a line that only appears when
+            // something is missing is an apology rather than a mode.
+            { role: 'engine' as const, turn: 0, text: announceMode(this.narrator).line },
             {
                 role: 'engine',
                 turn: 0,
@@ -2145,7 +2270,7 @@ export class GameService {
 
         this.log.append(run.id, [
             { role: 'player', turn: run.turn, text: trimmed },
-            ...this.engineEntries(execution, after.run.turn),
+            ...this.engineEntries(execution, after.run.turn, narration.text),
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
@@ -2208,7 +2333,7 @@ export class GameService {
 
         this.log.append(run.id, [
             { role: 'player', turn: run.turn, text: `Seclusion - ${humanDays(requested)}.` },
-            ...this.engineEntries(execution, after.run.turn),
+            ...this.engineEntries(execution, after.run.turn, narration.text),
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
@@ -2245,7 +2370,7 @@ export class GameService {
 
         this.log.append(run.id, [
             { role: 'player', turn: run.turn, text: 'Strike the barrier.' },
-            ...this.engineEntries(execution, after.run.turn),
+            ...this.engineEntries(execution, after.run.turn, narration.text),
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
@@ -2505,12 +2630,56 @@ ${noticedWaiting}`;
                 // "0 of 100 toward the next rank" while the true answer is
                 // "nothing will ever accumulate" is a status screen that lies
                 // by omission.
-                return this.freeAction(run, 'status', factsForStatus(
+                const sheet = this.freeAction(run, 'status', factsForStatus(
                     cultivator, ambient, eligibility.progressRequired, eligibility.eligible,
                     techniqueCeiling(
                         cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap
                     ).line
                 ));
+                // ── AND A PROBATIONER IS NOT SOMEBODY WHO SERVES NO HOUSE ──
+                //
+                // Found by playing. The sheet reads whose roll somebody is on
+                // off `cultivator.sectId`, which a probationer correctly does
+                // not have - so a person in year twelve of an apex's intake
+                // asked "where do I stand" and was told "Serves no house.
+                // Nothing is owed to them and nothing is asked of them." Both
+                // sentences are true of a probationer and together they are
+                // the wrong answer, because the interesting fact about that
+                // person is the one they omit.
+                //
+                // Appended rather than threaded into `standingLines`: that
+                // function is pure and has no database, and the probation is a
+                // flag rather than a column on the row.
+                const onProbation = probationOf(this.repos, cultivator, run);
+                if (onProbation) {
+                    // AND IF IT HAS BEEN DECIDED, IT HAS BEEN DECIDED. The
+                    // scoring happens on the house's clock rather than on a
+                    // turn, and the commonest sentence a person in this
+                    // position types is this one - so a placement that only
+                    // fired on the word "guest" would be reachable in a test
+                    // and not in a life.
+                    const applied = onProbation.outcome === 'carried'
+                        ? null
+                        : applyProbation(this.repos, cultivator, run, onProbation);
+                    const line = applied
+                        ? applied.narrationHint
+                        : `On ${onProbation.factionName}'s intake roll, `
+                          + `${Math.round(onProbation.yearsOnTheRoll)} years in, and on nobody's `
+                          + 'house roll. Fed and taught and holding no rung, with no claim on the '
+                          + 'house and no claim to its name.';
+                    sheet.facts.lines.push(line);
+                    sheet.facts.prose = `${sheet.facts.prose}\n${line}`;
+                    sheet.facts.structure.push(
+                        applied
+                            ? `sect probation ${applied.outcome}`
+                              + `${applied.band ? ` (${applied.band})` : ''}: `
+                              + `${applied.yearsOnTheRoll}y on the roll, taken at `
+                              + `${applied.ageAtIntake}, now ${applied.ageNow}; apex ceiling `
+                              + `${applied.apexAgeCeiling}. ${applied.reason}`
+                            : `sect probation carried: ${onProbation.reason}`
+                    );
+                }
+                return sheet;
             }
 
             case 'work':
@@ -2524,6 +2693,9 @@ ${noticedWaiting}`;
 
             case 'recall':
                 return this.recall(run, cultivator, action.target, action.intent);
+
+            case 'recognise':
+                return this.recognise(run, cultivator, action.target, action.topic);
 
             case 'news':
                 return this.news(run, cultivator);
@@ -2735,6 +2907,29 @@ ${noticedWaiting}`;
                         ));
                 }
 
+                // WHAT IS NAILED TO THE WALL, ASKED FOR DELIBERATELY.
+                //
+                // A house that needs bodies advertises, and a house that does
+                // not need them has no reason to. So a wall is a discovery
+                // channel that runs the opposite way to every other one in the
+                // game: instead of the player having to find a name, the houses
+                // that are short come looking. Free, because reading a wall is
+                // free everywhere; the price is at the door, where the bar on
+                // the paper is the real bar.
+                if (action.intent === 'bills') {
+                    const wall = readTheWall(this.knowledge, cultivator, run);
+                    return this.freeAction(run, 'look', wall.lines.length > 0
+                        ? factsForToolResult(
+                            `There is paper up in ${placeName(cultivator)}.`,
+                            wall.lines
+                        )
+                        : factsForRefusal(
+                            'Nothing is posted here.',
+                            'You go looking for a wall with paper on it. Either there is no '
+                            + 'wall, or nobody who needs people has been through lately.'
+                        ));
+                }
+
                 const company = this.company(cultivator);
                 const standing = this.standingHere(cultivator);
                 const looking = this.freeAction(
@@ -2743,6 +2938,19 @@ ${noticedWaiting}`;
                         ? factsForCompany(cultivator, company, standing)
                         : factsForLook(cultivator, ambient, company, standing)
                 );
+                // And the wall, but only where it has something the player has
+                // not already read. Looking round a market town every day for a
+                // season must not reprint the same two posters; a bill whose
+                // house is already held writes nothing through `learnIfNew` and
+                // is dropped here on exactly that signal, so nothing has to
+                // remember that this player has stood here before.
+                const posted = readTheWall(this.knowledge, cultivator, run);
+                for (const line of posted.newLines) {
+                    looking.facts.lines.push(line);
+                    looking.facts.prose = `${looking.facts.prose}
+
+${line}`;
+                }
                 // Two people talking on the far side of a wall, who were having
                 // the conversation anyway. Nothing here is staged for the
                 // player, which is exactly why it is worth anything.
@@ -2829,6 +3037,35 @@ ${noticed}`;
             ));
         }
 
+        // ── THE NAME WE STORE IS THE WORLD'S, NOT THE PLAYER'S ───────────
+        //
+        // `extractSubject` consumes an optional leading article after the verb,
+        // so "I travel to The Quiet Marches" arrives here as "Quiet Marches" -
+        // and every province in the world is named "The" something. Matching
+        // survives that, because `somewhereReal` compares on `loosePlaceKey`
+        // and the comment there says exactly why. STORING did not: the run then
+        // sat at a location string matching no world row at all, so the
+        // province could not be resolved from it, `where can I go` answered for
+        // the wrong province, and a house's gate the player had just been told
+        // about was never listed.
+        //
+        // So canonicalise to the row the world actually holds. The refusals
+        // above deliberately keep the player's own words; this is the arrival,
+        // and the arrival is a fact about the world.
+        // The world's row where there is one; otherwise the catalog's province,
+        // because a run without the world layer still travels and still has to
+        // store a name the rest of the engine can resolve.
+        const worldRow = this.atHand ? worldLocationFor(this.atHand, place.name) : null;
+        //
+        // PLACES WIN. A town you can walk to is a better answer than the
+        // province containing it, so the province branch is consulted only when
+        // the typed name is not a place the catalog knows.
+        const bareName = (name: string) => name.replace(/^the\s+/i, '').toLowerCase();
+        const asProvince = regionIdOfPlace(place.name)
+            ? undefined
+            : REGIONS.find(region => bareName(region.name) === bareName(place.name));
+        const arrivedAt = worldRow?.name ?? asProvince?.name ?? place.name;
+
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, SHORT_ACTION_DAYS, {
             seed: run.seed,
@@ -2854,7 +3091,7 @@ ${noticed}`;
         });
 
         const applied = applyTimeSkip(this.repos, {
-            before: cultivator, run, skip, location: place.name
+            before: cultivator, run, skip, location: arrivedAt
         });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
@@ -2862,7 +3099,7 @@ ${noticed}`;
         // its source so a place walked to and a place read about stay different
         // facts.
         this.noteEncounter(
-            applied.cultivator, run, { kind: 'place', id: place.name, name: place.name },
+            applied.cultivator, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
             'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
         );
 
@@ -3465,6 +3702,76 @@ ${noticed}`;
         const actorName = loserIsThePlayer ? party.name : cultivator.name;
         const hurtName = loserIsThePlayer ? cultivator.name : party.name;
 
+        // ── AND EVERYONE WHO HEARS ABOUT IT KNOWS SOMETHING ABOUT YOU ────
+        //
+        // AGENTS.md's own worked example ends on that sentence, and it was the
+        // one half of the ruling that had no mechanism: the obligation row said
+        // a house was owed something, and the WORLD did not contain the bout.
+        // Nobody could repeat it, no digest carried it, and a stranger asking
+        // around about this cultivator in forty years found the ledger empty of
+        // the event that the account rests on.
+        //
+        // Written whatever `followed.against` came to, because how far past the
+        // terms it went is not the same question as whether anybody has a claim.
+        // A bout that went too far against somebody who answers to nobody opens
+        // no account at all - `followed.brokenPromise` is exactly that case -
+        // and the world should still contain it. AGENTS.md: write the fact and
+        // no grudge.
+        //
+        // The severity is `whatFollowsFromTheBout`'s where it decided one, and
+        // it is not re-decided here. Where it decided none, the fact still needs
+        // a weight, and the honest floor is the lowest band: nobody is owed
+        // anything, so nothing about it is grave to anybody but the person it
+        // happened to.
+        const deed = this.atHand
+            ? aDeedEntersTheWorld(this.atHand, {
+                kind: 'betrayal',
+                weight: followed.against?.severity ?? 'slight',
+                day: Math.floor(this.atHand.currentDay),
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                actors: [
+                    { id: actorId, name: actorName, role: 'went past what was agreed' },
+                    {
+                        id: loserIsThePlayer ? cultivator.id : party.id,
+                        name: hurtName,
+                        role: 'it was done to'
+                    }
+                ],
+                factionIds: theirHouseId ? [theirHouseId] : [],
+                summary:
+                    `${actorName} and ${hurtName} went out on ${terms} terms and `
+                    + `${actorName} took it ${followed.howFar}.`
+                    + (loserDied ? ` ${hurtName} did not get up.` : ''),
+                unattributed:
+                    'Two people went out to measure each other and only the arrangement came '
+                    + 'back the way it went out.',
+                data: {
+                    boutTerms: terms,
+                    howFar: followed.howFar,
+                    outcome,
+                    witnesses,
+                    died: loserDied
+                }
+            })
+            : null;
+        if (deed) {
+            this.worldDirty = true;
+            lines.push(deed.line);
+            calls.push({
+                name: 'world.aDeedEntersTheWorld',
+                action: 'attack',
+                summary:
+                    `${deed.fact.id} (betrayal, ${deed.weight}, magnitude `
+                    + `${deed.fact.magnitude.toFixed(2)}, ${deed.fact.visibility}) written to the `
+                    + `world's history on day ${deed.fact.day}, naming ${actorId} and `
+                    + `${loserIsThePlayer ? cultivator.id : party.id}. `
+                    + `${deed.fact.witnessIds.length} witness id(s). terms=${terms}; `
+                    + `howFar=${followed.howFar}. The bout is now repeatable as news.`,
+                ok: true
+            });
+        }
+
         if (followed.against && theirHouseId && theirHouse) {
             // `blood_feud` is a different KIND and not a heavier grudge -
             // `grudges.ts` keeps them apart because a feud runs between lines,
@@ -3480,6 +3787,9 @@ ${noticed}`;
                 cause: followed.against.cause,
                 severity: followed.against.severity,
                 onDay,
+                // The ground-truth row this account rests on, so a reader in
+                // forty years can get from the claim to the event and back.
+                triggeringEventId: deed?.fact.id ?? null,
                 description:
                     `${followed.against.description} ${hurtName} was ${theirHouse.name}'s, and `
                     + `${actorName} is the name on it.`,
@@ -4020,6 +4330,72 @@ ${noticed}`;
                 `${asked.name} said it at ${placeName(cultivator)}.`)
             : false;
 
+        // ── ASKING IN THE REGION GIVES IT ────────────────────────────────
+        //
+        // `seedSectGround` states the rule about its own location in as many
+        // words: "A name you have to be given. Joining gives it; being told
+        // gives it; asking in the region gives it." The first two clauses were
+        // reachable and the third was not, so a player who had been told a
+        // house existed - which is where every fresh cultivator starts, at
+        // stage `named`, "exists somewhere out there and takes disciples" -
+        // could name the house forever and never learn where its gate was.
+        //
+        // The consequence was not cosmetic. Every catalog figure in the world
+        // stands on their house's ground, so a route that cannot reach a gate
+        // cannot reach anybody worth asking, and the listing's own closing line
+        // - "or you would have to walk up on your own" - described a thing the
+        // game did not let you do.
+        //
+        // IN THE REGION is the whole of the condition, and it is doing real
+        // work rather than decorating one. Where a house's gate stands is
+        // ordinary local knowledge to the people who live in that province and
+        // is not ordinary anywhere else, so this grants the gates around you
+        // and never a map of the world. A house three provinces over stays a
+        // name until somebody who knows says otherwise.
+        //
+        // AND IT DOES NOT HANG OFF `answer.teaches`, which is the version that
+        // was written first and measured as a dead branch. `teaches` requires
+        // `holdsIt` - a knowledge row on the NPC being asked - and a villager in
+        // a square has no row for the house up the gorge, so a player who
+        // travelled six days to the right province and asked got "agrees that it
+        // is a good question, agrees that people do ask it, and has finished
+        // speaking" and learned nothing. That is the correct answer about the
+        // house's BUSINESS and the wrong one about the mountain it is on. This
+        // is the same principle as `seedTheGroundAroundHome`: a farm boy knows
+        // where the caves are, and everybody in a province knows which valley
+        // the local house keeps its gate in, whether or not the particular
+        // person asked has anything else to say.
+        const gate = subject?.kind === 'sect' && this.atHand
+            ? this.atHand.locations.find(row =>
+                row.kind === 'sect_seat' && row.controllingFactionId === subject.id)
+            : undefined;
+        // Both provinces read off the WORLD, not off the gazetteer. `standingOf`
+        // is a name match against the static places and answers with the HOME
+        // region for anything it does not name - which is every sect ground,
+        // every cave and every ruin. Asking somebody a question while standing
+        // on a house's ground would then have been priced as though the player
+        // were back where they were born, and the gate a province away would
+        // have opened for free. A fallback written in ordinary English is
+        // invisible; this one is a wrong answer that never looks like one.
+        const provinceOf = (locationId: string | null | undefined): string | null => {
+            if (!this.atHand || !locationId) return null;
+            const row = this.atHand.locations.find(l => l.id === locationId);
+            if (!row) return null;
+            return row.kind === 'region' ? row.id : row.parentId ?? null;
+        };
+        const standingIn = this.atHand
+            ? provinceOf(worldLocationFor(this.atHand, cultivator.location)?.id)
+            : null;
+        const gateIsLocal = gate !== undefined
+            && standingIn !== null
+            && provinceOf(gate.id) === standingIn;
+        const showed = gate && gateIsLocal
+            ? this.noteEncounter(
+                cultivator, run, { kind: 'place', id: gate.id, name: gate.name }, 'told',
+                `Asked after the ${subject!.name} at ${placeName(cultivator)}, which is in the `
+                + 'province the house keeps its gate in. Ordinary local knowledge here.')
+            : false;
+
         // The last mile. `asked.ts` decides how far the answer got; what falls
         // out of it is a name said flatly, which discovery.md calls the primary
         // way names enter a player's world. Written before the prose exists.
@@ -4027,9 +4403,28 @@ ${noticed}`;
             cultivator, run, `ask:${asked.id}:${topic}`, asked.id,
             { intent: 'asked', reach: answer.reach });
 
+        // Said out loud, and said BEFORE the facts are built rather than pushed
+        // onto `lines` afterwards - `factsForToolResult` composes the prose from
+        // the array it is handed, so a line appended after the call reaches the
+        // engine channel and never reaches the player. Measured exactly that
+        // way once: the grant landed, the destinations read listed the gate on
+        // the next turn, and the turn that granted it said nothing at all.
+        //
+        // A knowledge row the player is never told about is a grant they cannot
+        // use. This is the sentence that turns a house they can name into a door
+        // they can walk to.
+        const said = showed && gate
+            ? [
+                ...answer.lines,
+                `Whatever else they had to say, where the ${subject!.name} keeps its gate is `
+                + `not news in this province - anybody would have pointed. ${gate.name} is a `
+                + 'place you could set out for now.'
+            ]
+            : answer.lines;
+
         const facts = factsForToolResult(
             `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
-            answer.lines
+            said
         );
         facts.structure.push(...answer.structure);
         if (dropped) addHearing(facts, dropped);
@@ -4075,6 +4470,18 @@ ${noticed}`;
                 summary:
                     `${subject.name} recorded as believed, source told, from ${asked.name}. ` +
                     'The player earned this one by asking somebody who would say it.',
+                ok: true
+            });
+        }
+        if (showed && gate) {
+            execution.calls.push({
+                name: 'knowledge.learn',
+                action: 'gate_placed',
+                summary:
+                    `${gate.name} recorded at stage placed, source told. Asked about a house `
+                    + 'in the province its gate stands in, which is the third of the three ways '
+                    + "`seedSectGround` says its own name is given. `canPointAt` now passes, so "
+                    + 'the destinations read names it and the move verb accepts it.',
                 ok: true
             });
         }
@@ -4250,6 +4657,74 @@ ${noticed}`;
                     await handleStipend({ action: 'stipend', cultivatorId: cultivator.id }),
                     'The stipend'
                 );
+            // ── SITTING IN SOMEWHERE THAT HAS NOT TAKEN YOU ──────────────
+            //
+            // The one institutional verb here that is not gated on holding a
+            // rung, and the reason it exists: the game tells a player
+            // constantly that a teacher is one of the two ways past a manual's
+            // ceiling, and then gives a nobody nobody to ask. A guest place is
+            // a route somebody with no house and no name can actually walk.
+            //
+            // Free, and correctly so - `fromToolResult` advances no clock, and
+            // being entered on a roll is a conversation rather than a span. The
+            // years are spent afterwards, cultivating on what you were shown.
+            case 'guest': {
+                if (topic === 'depart') {
+                    return this.fromToolResult(
+                        'sect_manage.guest', 'sect',
+                        await handleGuest({
+                            action: 'guest', cultivatorId: cultivator.id,
+                            accept: false, depart: true
+                        }),
+                        'The guest roll'
+                    );
+                }
+                const asked = (target ?? '').trim();
+                // ── A HOUSE WHOSE NAME BEGINS "House of" IS NOT A CATEGORY ──
+                //
+                // `GENERIC_HOUSE_PHRASE` is unanchored at its end, so once the
+                // leading article is stripped off "the House of the Narrow
+                // Hour" the remainder starts with `house` and reads as the
+                // whole category. Played: "can I study at the House of the
+                // Narrow Hour" was answered with the listing of every house
+                // that takes guests, which is the deflection failure - it looks
+                // like an answer and is a reply to a question nobody asked.
+                //
+                // Fixed here rather than in the shared constant, because the
+                // constant is doing its job elsewhere and six of the seven dao
+                // houses are named this way. The category words only mean the
+                // category when they are the WHOLE of what was said.
+                const generic = GENERIC_HOUSE_CATEGORY_ONLY.test(asked);
+                const house = asked.length >= 3 && !generic
+                    ? resolveSect(this.repos, asked, this.scopeFor(cultivator), cultivator.sectId)
+                    : null;
+                // The same rule the join path already follows: a specific name
+                // that resolves to nothing must not fall through to the
+                // listing, because being shown a house you did not ask about
+                // reads exactly like an answer.
+                if (!house && asked.length >= 3 && !generic) {
+                    return refused('engine.resolveSect', 'sect', factsForRefusal(
+                        'Not a name you hold.',
+                        'You have said a name and it is not one anybody has said to you. A guest '
+                        + 'place starts where every other door starts, which is somebody saying '
+                        + 'the name in front of you.',
+                        `Unresolved sect "${asked.slice(0, 60)}": no knowledge record. The guest `
+                        + 'listing is deliberately NOT offered as a substitute.'
+                    ));
+                }
+                return this.fromToolResult(
+                    'sect_manage.guest', 'sect',
+                    await handleGuest({
+                        action: 'guest',
+                        cultivatorId: cultivator.id,
+                        ...(house ? { sectId: house.id } : {}),
+                        accept: house !== null && topic === 'accept',
+                        depart: false
+                    }),
+                    house ? house.name : 'The guest roll'
+                );
+            }
+
             case 'donate':
                 return this.donate(run, cultivator, days);
 
@@ -4335,8 +4810,20 @@ ${noticed}`;
             // here", which is exactly the fact being silently applied. So this
             // refuses until the player has actually left, rather than
             // duplicating the departure path and eventually disagreeing with it.
+            // ── UNLESS THE HOUSE ABOVE SENT FOR THEM ─────────────────────
+            //
+            // The refusal below is right for a defection and wrong for a
+            // recall. Somebody at the Mist or the Dew who has outrun what
+            // their house can teach is on a roll the terraces keep, and going
+            // back up the gorge is not walking out on anybody - the grant
+            // terms say the Mist owes the Pavilion "every disciple the
+            // terraces ask for, on the day they ask". Telling them they are
+            // already somebody's would be the world enforcing a rule it does
+            // not enforce on its own people, which is the oldest defect here.
+            const sentUp = recallDueFor(this.repos, cultivator);
             const held = positionIn(this.repos, cultivator.id);
-            if (held && held.sectId !== named.id) {
+            if (held && held.sectId !== named.id
+                && !(sentUp !== null && sentUp.toFactionId === named.id)) {
                 return refused('sect_manage.join', 'sect', factsForRefusal(
                     'You are already somebody\'s.',
                     `You stand as ${held.rankTitle} of ${held.sectName}, and nobody is taken on `
@@ -4390,7 +4877,7 @@ ${noticed}`;
             return this.fromToolResult('sect_manage.list', 'sect', listing, 'The sects');
         }
 
-        const all = (listing as { sects?: Array<{ id: string; name: string; admissible?: boolean | null }> }).sects ?? [];
+        const all = (listing as { sects?: Array<{ id: string; name: string; admissible?: boolean | null; guestDoorOpen?: boolean | null }> }).sects ?? [];
         const heard = all.filter(s => this.knowledge.isAwareOf(cultivator.id, 'sect', s.id));
 
         const facts = heard.length === 0
@@ -4413,8 +4900,18 @@ ${noticed}`;
                         : `The names you have for this are ${heard.slice(0, -1).map(x => x.name).join(', ')} ` +
                           `and ${heard[heard.length - 1].name}.`,
                     ...heard
-                        .filter(x => x.admissible === false)
+                        .filter(x => x.admissible === false && x.guestDoorOpen !== true)
                         .map(x => `${x.name} would not take you as you stand.`),
+                    // The house that will not take you as a disciple and will
+                    // take you today. Said as one sentence, because said as
+                    // two it reads as a contradiction, and because a player
+                    // who is only told the first half has been shown a closed
+                    // door in front of an open one.
+                    ...heard
+                        .filter(x => x.admissible === false && x.guestDoorOpen === true)
+                        .map(x => `${x.name} would not take you as a disciple as you stand, and `
+                            + 'its intake is open to you now - it takes people at the floor, '
+                            + 'carries them, and decides about them later.'),
                     'Knowing a name is not an introduction. Somebody would have to put you in front of them, ' +
                     'or you would have to walk up on your own.'
                 ]);
@@ -4635,6 +5132,199 @@ ${noticed}`;
         }];
         return execution;
     }
+
+    /**
+     * WHOSE ART THAT WAS.
+     *
+     * The trust hierarchy's strongest check, put to the character by the player.
+     * `docs/world/trust.md` says a house's arts are the closest thing it has to
+     * an identity and that watching somebody cultivate goes straight to the
+     * thing in question - and the whole of it was unaskable, with both of the
+     * numbers that decide the answer sitting in the database and no question
+     * pointed at them.
+     *
+     * Free, and never refused. Looking at what is in front of you and thinking
+     * about it is always a legitimate thing to do, so this spends no day and
+     * takes nothing. Like `recall` it reads the holder's own rows and the
+     * catalog they can already name, so it cannot teach anybody anything they
+     * had no route to.
+     *
+     * THE ANSWER IS GRADED BY THE TWO AXES AND NEVER FAKES CONFIDENCE. Somebody
+     * with no reference is told they would not know it rather than handed a
+     * "no" they have not earned; somebody with a reference and too low a rung
+     * is told what it matches AND that they could not tell a good imitation.
+     * At the top it is one flat sentence, and that terseness is the reward.
+     *
+     * "is this the Azure Cloud's art" names a house and no art, which is the
+     * ordinary phrasing rather than a shortfall in it: the art the sentence
+     * means is that house's signature, so the house's own catalog row supplies
+     * it.
+     */
+    private recognise(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        topic: string | undefined
+    ): Execution {
+        const scope = this.scopeFor(cultivator);
+        const askedHouse = (target ?? '').trim();
+        const askedArt = (topic ?? '').trim();
+
+        // Gated, like every other name read: a house this cultivator has never
+        // heard of does not resolve, and that is itself one of the answers.
+        const house = askedHouse.length >= 2
+            ? resolveSect(this.repos, askedHouse, scope, cultivator.sectId)
+            : null;
+        const art = askedArt.length >= 2
+            ? resolveTechnique(this.repos, askedArt, cultivator.id)
+            : null;
+
+        // The art the sentence is about. Named outright, or the signature of
+        // the house that was named - and where a house carries no signature,
+        // the top of its own shelf, which is the same thing said by the shelf.
+        const houseSignature = house
+            ? (getSect(house.id) as { signatureTechniqueId?: string | null } | undefined)?.signatureTechniqueId
+                ?? manualsOf(house.id).at(-1)?.id
+                ?? null
+            : null;
+        const artId = art?.id ?? houseSignature;
+
+        if (!artId && askedHouse.length > 0) {
+            // A house they cannot name is a house they hold no reference for,
+            // and that IS the answer rather than a failure to compute one. It
+            // goes down the graded path with the rest so the player gets the
+            // same honest sentence they would get if the name had resolved:
+            // never a "no" they have not earned, and never a refusal, because
+            // asking yourself whether you recognise something is always a
+            // legitimate thing to do.
+            const facts = factsForRecognisingAnArt({
+                artName: 'whatever that was',
+                claimedHouseName: askedHouse,
+                verdict: 'would_not_know_it',
+                placedTo: [],
+                perceivedButCouldNotPlaceIt: false,
+                nobodysArt: false,
+                revealsTheReader: false,
+                structure: [
+                    `"${askedHouse}" is not a name this cultivator holds, so there is no reference `
+                    + 'to read the demonstration against and no rung that would supply one. The '
+                    + 'reader stands at '
+                    + `${rankName(cultivator.realmOrdinal)} (ordinal ${cultivator.realmOrdinal}), `
+                    + 'which is the whole of the point: the perceptual axis does not buy reference.'
+                ]
+            });
+            const execution = this.freeAction(run, 'recognise', facts);
+            execution.calls = [{
+                name: 'world.whereThisArtWasLearned',
+                action: 'recognise',
+                summary:
+                    `No house resolved from "${askedHouse}" for a reader at ordinal `
+                    + `${cultivator.realmOrdinal}. Verdict would_not_know_it: reference afforded `
+                    + 'nothing, and realm cannot substitute for it. Read only; nothing was spent '
+                    + 'and no row was written.',
+                ok: true
+            }];
+            return execution;
+        }
+
+        if (!artId) {
+            // Nothing named at all. Not a refusal of an action and not a parse
+            // error: a character who has not said what they mean. Said in the
+            // world's voice, because an error message reaching the player is a
+            // scene that failed to get written.
+            const facts = factsForRefusal(
+                'Nothing to hold it up against.',
+                'You would have to know which art you meant. Watching somebody move is not '
+                + 'the same as having a name for what they did.',
+                'No technique resolved from the sentence, and no house whose signature could stand '
+                + 'in for one. Read only; nothing was spent and no row was written.'
+            );
+            const listing = this.freeAction(run, 'recognise', facts);
+            listing.outcome = 'refused';
+            return listing;
+        }
+
+        const technique = getTechnique(artId) as
+            { name?: string; requiredOrdinal?: number } | undefined;
+        const artName = art?.name ?? technique?.name ?? artId;
+        // The rung the demonstration is priced at: the art's own floor, which
+        // is the LOWEST anybody could be performing it at. So the perceptual
+        // half of the answer is if anything generous to the reader, and that is
+        // stated here rather than left for whoever reads the number to assume.
+        const performedAtOrdinal = Number(technique?.requiredOrdinal ?? 0);
+
+        const observer: ArtObserver = {
+            realmOrdinal: cultivator.realmOrdinal,
+            referenceFor: (factionId: string) => this.knowledge.stageOf(cultivator.id, 'sect', factionId)
+        };
+        const demonstration = { techniqueId: artId, performedAtOrdinal };
+
+        const learned = whereThisArtWasLearned(demonstration, observer);
+        const claim = house ? couldTheyTellItIs(demonstration, observer, house.id) : null;
+
+        // With no house named, the strongest house they could place it to
+        // stands in as the subject, which is what "whose art is that" asks.
+        const standIn = learned.houses[0] ?? null;
+        const verdict: ClaimVerdict = claim
+            ? claim.verdict
+            : !learned.perceived ? 'could_not_follow'
+                : standIn === null || standIn.reading === 'nothing' ? 'would_not_know_it'
+                    : standIn.reading === 'certain' ? 'it_is' : 'consistent';
+
+        const nameOf = (factionId: string): string =>
+            (getSect(factionId) as { name?: string } | undefined)?.name ?? factionId;
+        const claimedHouseName = house?.name
+            ?? (claim === null && standIn !== null ? nameOf(standIn.factionId) : null)
+            ?? (askedHouse.length > 0 ? askedHouse : null);
+
+        // Only houses this reader can actually place it to. Listing the rest
+        // would hand over the catalog, which is the one thing a read of the
+        // holder's own head must never do.
+        const placedTo = learned.houses
+            .filter(h => h.reading !== 'nothing')
+            .map(h => nameOf(h.factionId));
+
+        const fromRealm = claim?.fromRealm ?? standIn?.fromRealm ?? 'nothing';
+        const fromReference = claim?.fromReference ?? standIn?.fromReference ?? 'nothing';
+        const atStage = claim?.reference ?? standIn?.reference ?? 'unaware';
+
+        const facts = factsForRecognisingAnArt({
+            artName,
+            claimedHouseName,
+            verdict,
+            placedTo,
+            perceivedButCouldNotPlaceIt: learned.perceivedButCouldNotPlaceIt,
+            nobodysArt: learned.nobodysArt,
+            revealsTheReader: learned.revealsTheReader,
+            structure: [
+                `${artName} is priced as performed at ${rankName(performedAtOrdinal)} `
+                + `(ordinal ${performedAtOrdinal}), which is the lowest rung anybody could be doing `
+                + `it at rather than this performer's own. The reader stands at `
+                + `${rankName(cultivator.realmOrdinal)} (ordinal ${cultivator.realmOrdinal}).`,
+                `Realm afforded ${fromRealm}; reference afforded ${fromReference}, at stage `
+                + `${atStage}. The reading is the lower of the two, because neither axis rescues `
+                + 'the other - which is why a confident answer needs both a rung and a life.',
+                `${learned.houses.length} house(s) teach it and this reader could place it to `
+                + `${placedTo.length} of them. Verdict ${verdict}.`
+            ]
+        });
+
+        const execution = this.freeAction(run, 'recognise', facts);
+        execution.outcome = 'executed';
+        execution.calls = [{
+            name: 'world.whereThisArtWasLearned',
+            action: 'recognise',
+            summary:
+                `${artId} at ordinal ${performedAtOrdinal}, read by a cultivator at ordinal `
+                + `${cultivator.realmOrdinal}. Verdict ${verdict}. Realm and reference are read `
+                + 'separately and the answer is the lower of them. Read only: no time passed, '
+                + 'nothing was written, and the technique catalog was consulted only for the art '
+                + 'already named in the sentence.',
+            ok: true
+        }];
+        return execution;
+    }
+
 
     // ── institutions acting on each other, and on the dead ────────────────
     //
@@ -7511,16 +8201,72 @@ ${noticed}`;
         /** Claimants this cultivator has no name for. Counted, then said once. */
         let nameless = 0;
 
-        for (const factionId of site.factionIds) {
-            const house = this.repos.sects.getById(factionId);
-            if (!house) continue;
+        const claimants = site.factionIds
+            .map(id => ({ id, house: this.repos.sects.getById(id) }))
+            .filter((row): row is { id: string; house: NonNullable<typeof row.house> } =>
+                row.house !== undefined && row.house !== null);
 
+        // ── AND THE WORLD CONTAINS THE THEFT ─────────────────────────────
+        //
+        // Written FIRST, so the grudges below can carry its id. Before this,
+        // emptying a house's ground produced an obligation row and nothing
+        // else: the ledger said a house was owed something and the world did
+        // not contain the event the house was owed for. Nobody could repeat it,
+        // no digest carried it, and a stranger in the next province had heard
+        // nothing - because `circulating` and `digest` both read
+        // `state.history.facts` and only the simulation was writing to it.
+        //
+        // The severity is NOT recomputed. It was decided above for the record
+        // the house holds and it is decided exactly once; this hands the same
+        // word to the fact so the two cannot disagree, and joins them by id
+        // rather than by keeping two opinions.
+        const deed = this.atHand && claimants.length > 0
+            ? aDeedEntersTheWorld(this.atHand, {
+                kind: 'resource_contested',
+                weight: severity,
+                day: Math.floor(this.atHand.currentDay),
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                actors: [{ id: cultivator.id, name: cultivator.name, role: 'took it' }],
+                factionIds: claimants.map(row => row.id),
+                summary:
+                    `${cultivator.name} emptied ${site.name}, which `
+                    + `${claimants.map(row => row.house.name).join(' and ')} `
+                    + `${claimants.length === 1 ? 'claims' : 'claim'}.`,
+                unattributed:
+                    'Somebody has been up at the old ground, and whoever holds it has people on '
+                    + 'the road asking.',
+                data: { siteId: site.id, siteKind: site.kind, pitch }
+            })
+            : null;
+        if (deed) {
+            this.worldDirty = true;
+            lines.push(deed.line);
+            calls.push({
+                name: 'world.aDeedEntersTheWorld',
+                action: 'site',
+                summary:
+                    `${deed.fact.id} (${deed.fact.kind}, ${deed.weight}, magnitude `
+                    + `${deed.fact.magnitude.toFixed(2)}, ${deed.fact.visibility}) written to the `
+                    + `world's history on day ${deed.fact.day}, naming ${cultivator.id}. `
+                    + `${deed.fact.witnessIds.length} witness id(s). It is now a thing that can be `
+                    + 'repeated, digested and heard about second hand.',
+                ok: true
+            });
+        }
+
+        for (const { id: factionId, house } of claimants) {
             const record = createGrudge({
                 holderId: factionId,
                 subjectId: cultivator.id,
                 cause: 'robbery',
                 severity,
                 onDay,
+                // The ground-truth event this record rests on. The column has
+                // existed since the social migration, `grudges.ts` indexes by
+                // it, and until the fact above existed nothing in `src/web/`
+                // had one to put in it.
+                triggeringEventId: deed?.fact.id ?? null,
                 description:
                     `${site.name} was emptied on day ${onDay}. The ground is ${house.name}'s and `
                     + 'what came off it did not.',
@@ -9421,7 +10167,8 @@ ${noticed}`;
             // on the Cultivate control, which names the Lesser Qi-Gathering
             // Manual when there is no method. A refusal is finished when it
             // names the alternative.
-            const cure = whatWouldCloseThisWound(hurt, cultivator.realmOrdinal, cultivator.spiritStones);
+            const cure = whatWouldCloseThisWound(
+                hurt, cultivator.realmOrdinal, cultivator.spiritStones, regionId);
             return refused('engine.medicineNeededFor', 'treat', factsForRefusal(
                 'Past what a physician can do.',
                 `They look at what you are carrying and put their hands in their sleeves. `
@@ -9856,14 +10603,21 @@ ${noticed}`;
         // that answers both answers neither. The note belongs on the board,
         // where it already is, and the receipt says what was bought, what it
         // cost, and what is left.
+        // What the counter has just sold, and what it will not close. Built
+        // BEFORE the facts so the sentence is in `prose` rather than appended
+        // to a receipt that has already been rendered.
+        const shortfall = whatThisPurchaseWillNotReach(cultivator, pill.id, regionId);
+
         const facts = factsForToolResult(`${pill.name}, bought.`, [
             `One ${pill.name}, ${cash} cash the ${price.unit}, which is ${stones} spirit `
             + `stone${stones === 1 ? '' : 's'} of the ${cultivator.spiritStones} you had.`,
-            `${after.spiritStones} left in the purse, and the pill is in the pouch.`
+            `${after.spiritStones} left in the purse, and the pill is in the pouch.`,
+            ...shortfall.lines
         ]);
         facts.structure.push(
             `${price.id} -> ${pill.id}: ${cash} cash at the ${regionId} multiplier, charged as `
-            + `${stones} stone(s). One added to cultivator_pouch.`
+            + `${stones} stone(s). One added to cultivator_pouch.`,
+            ...shortfall.structure
         );
 
         return {
@@ -10940,6 +11694,40 @@ ${noticed}`;
             onTheGround
         });
 
+        // ── AND THE GATES ────────────────────────────────────────────────
+        //
+        // Same gate, same shape, different half of the map. A house's ground is
+        // where the people worth asking actually stand - measured on 5 seeds,
+        // every one of the 88 cultivators at Foundation Establishment and above
+        // is on one - and until it appeared here the read that answers "where
+        // can I go" could not name a single one of the 34.
+        //
+        // Counted into `unnamed` when the gate refuses, exactly like quiet
+        // ground. That counter reaches the engine channel and never the prose,
+        // which is right: `unplaceable` is the player-facing "and two further
+        // names you cannot place", and it is about names they HOLD. A gate they
+        // have never been told about is not a name they are carrying, and
+        // saying "there are eight things here you cannot see" would advertise
+        // the discovery instead of gating it.
+        for (const record of this.housesWithGroundIn(fromRegion.name)) {
+            if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
+            if (!this.canPointAtLocation(cultivator, record)) {
+                unnamed++;
+                continue;
+            }
+            remember({
+                name: record.name,
+                kind: record.kind,
+                ambient: ordinaryBandFor(record.qiDensity),
+                regionName: fromRegion.name,
+                travelDays: null,
+                localCeilingOrdinal: fromRegion.localCeilingOrdinal,
+                hereNow: loosePlaceKey(record.name) === loosePlaceKey(cultivator.location ?? ''),
+                sameProvince: true,
+                ...this.occupancyOf(record.name)
+            });
+        }
+
         const read = whereCouldTheyGo({
             ordinal: cultivator.realmOrdinal,
             placeName: placeName(cultivator),
@@ -11171,7 +11959,14 @@ ${noticed}`;
                 medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
             woundsPastMortalCare: mendable.filter(injury =>
                 !medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
-            cure: whatWouldCloseThisWound(hurt, cultivator.realmOrdinal, cultivator.spiritStones),
+            cure: whatWouldCloseThisWound(
+                hurt,
+                cultivator.realmOrdinal,
+                cultivator.spiritStones,
+                // The province they are standing in, so the panel quotes the
+                // figure `buy` will charge rather than the board's base.
+                standingOf(cultivator).regionId
+            ),
             battered: cultivator.hp < cultivator.maxHp,
             practisesAMethod: road.state !== 'no_method',
             methodExhausted: road.state === 'exhausted',
@@ -12144,6 +12939,42 @@ ${fit.line}`;
                 && row.discovered !== false
                 && row.parentId === region.id)
             .sort((a, b) => b.qiDensity - a.qiDensity || (a.name < b.name ? -1 : 1));
+    }
+
+    /**
+     * The gates of the houses that hold ground in one province.
+     *
+     * WHY THIS IS A SEPARATE READ FROM `quietGroundIn`. That one lists ground
+     * nobody holds and is filtered on `discovered`, which is true of all of it
+     * on a fresh world - local geography, and a farm child knows where the
+     * caves are. A sect's ground is the opposite case in both halves. It is
+     * seeded `discovered: false` on purpose, because its own header says so:
+     * "A name you have to be given. Joining gives it; being told gives it;
+     * asking in the region gives it." So the `discovered` flag is not the gate
+     * here; the caller's `canPointAtLocation` is, and this read is deliberately
+     * permissive so that the gate is the only thing deciding.
+     *
+     * WHY IT EXISTS AT ALL. `sectGroundId` had exactly two references in `src/`
+     * - its own definition and the one line that builds the location - which is
+     * the shape `AGENTS.md` calls a module nothing calls. 34 seats, each with a
+     * generated compound inside it, road-linked to their province, and no
+     * player-facing read in the game named one. The listing said "Knowing a
+     * name is not an introduction. Somebody would have to put you in front of
+     * them, or you would have to walk up on your own" and there was nothing to
+     * walk up to.
+     *
+     * Sorted by name rather than by qi: this is a list of doors, and which door
+     * is worth knocking on is not a question about ground.
+     */
+    private housesWithGroundIn(regionName: string): LocationRecord[] {
+        if (!this.atHand) return [];
+        const region = this.atHand.locations.find(
+            row => row.kind === 'region' && loosePlaceKey(row.name) === loosePlaceKey(regionName)
+        );
+        if (!region) return [];
+        return this.atHand.locations
+            .filter(row => row.kind === 'sect_seat' && row.parentId === region.id)
+            .sort((a, b) => (a.name < b.name ? -1 : 1));
     }
 
     /**
@@ -14125,6 +14956,91 @@ ${done.lines.join(' ')}`;
                 + `Floor ${floor} = stipend at rank 0.`,
             ok: true
         }];
+
+        // ── AND WHETHER IT WAS ANYTHING WORTH REMEMBERING ────────────────
+        //
+        // The kindness direction, and the one place in this file where nothing
+        // has priced the deed already - so `whatADeedLeaves` prices it, which
+        // is what that module is for. Its whole argument is that a gift and a
+        // killing are one transfer with the sign flipped, and the weight is
+        // COST AGAINST WHAT THE PAYER HAD: a hundred stones off somebody
+        // carrying a hundred and one is most of a life, and off somebody
+        // carrying ten thousand it is a gesture. That is exactly the
+        // distinction that decides whether a house tells anybody, and it is
+        // unreachable from the sum alone.
+        //
+        // No account is opened. `whatADeedLeaves` says what the record WOULD
+        // be and the obligation ledger is not this method's to write; the
+        // engine's answer here is only that the world now contains the gift.
+        // A slight one is a slight fact, which is what `magnitude` is for.
+        const purseBefore = cultivator.spiritStones;
+        const gift = this.atHand
+            ? aDeedEntersTheWorld(this.atHand, {
+                kind: 'debt_incurred',
+                day: Math.floor(this.atHand.currentDay),
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                actors: [{ id: cultivator.id, name: cultivator.name, role: 'paid it in' }],
+                factionIds: [sect.id],
+                summary:
+                    `${cultivator.name} paid ${offered} spirit stones into ${sect.name}'s `
+                    + `coffers, out of the ${purseBefore} they were carrying.`,
+                unattributed:
+                    'A house has money it did not have, and nobody at the gate will say who '
+                    + 'brought it.',
+                price: {
+                    deed: {
+                        cause: 'gifted_resource',
+                        paidBy: 'actor',
+                        // Against what they had, which is the whole of the
+                        // model being fair in both directions.
+                        cost: purseBefore > 0 ? offered / purseBefore : 1,
+                        onDay: Math.floor(run.elapsedDays),
+                        description:
+                            `${offered} spirit stones into ${sect.name}'s coffers, credited as `
+                            + `${credited} contribution.`,
+                        // A house takes money in front of the people who keep
+                        // its books. This is not a secret gift, and the deed
+                        // module weighs an unwitnessed kindness higher for a
+                        // reason that does not apply to a clerk's ledger.
+                        witnesses: 1
+                    },
+                    actor: {
+                        id: cultivator.id,
+                        name: cultivator.name,
+                        houseId: sect.id,
+                        houseName: sect.name,
+                        alignment: sect.alignment,
+                        ranked: true
+                    },
+                    subject: {
+                        id: sect.id,
+                        name: sect.name,
+                        houseId: sect.id,
+                        houseName: sect.name,
+                        alignment: sect.alignment,
+                        ranked: true
+                    }
+                },
+                data: { stones: offered, contribution: credited }
+            })
+            : null;
+        if (gift) {
+            this.worldDirty = true;
+            execution.facts.lines.push(gift.line);
+            execution.calls.push({
+                name: 'world.aDeedEntersTheWorld',
+                action: 'sect',
+                summary:
+                    `${gift.fact.id} (debt_incurred, ${gift.weight}, magnitude `
+                    + `${gift.fact.magnitude.toFixed(2)}, ${gift.fact.visibility}) written to the `
+                    + `world's history on day ${gift.fact.day}. Priced by whatADeedLeaves at cost `
+                    + `${(purseBefore > 0 ? offered / purseBefore : 1).toFixed(2)} of the purse; `
+                    + `it reached ${gift.leaves?.reached}. No obligation row was opened - the `
+                    + 'record it would open is returned, not written.',
+                ok: true
+            });
+        }
         return execution;
     }
 
@@ -15079,6 +15995,27 @@ ${done.lines.join(' ')}`;
     }
 
     /**
+     * Where a deed by this cultivator happened, as a location id the world
+     * resolves.
+     *
+     * A fact carries a location ID and the character sheet carries a NAME, so
+     * the two are joined by `worldLocationFor` the way every other read in this
+     * file does it. Null is honest and handled: `whoWasThere` answers a deed
+     * somewhere the world does not model with the parties and no one else.
+     *
+     * NOT read off the player's own world row, which was the first version and
+     * is wrong. `the-player-as-a-row-the-world-can-invite.ts` states outright
+     * that the row's `locationId` is null and is never set - presence belongs
+     * to the play layer, and a second stored source of it cost four separate
+     * defects in one afternoon. This resolves the play layer's answer at write
+     * time and stores nothing, so the row still stands nowhere.
+     */
+    private worldPlaceOf(cultivator: Cultivator): string | null {
+        if (!this.atHand) return null;
+        return worldLocationFor(this.atHand, cultivator.location)?.id ?? null;
+    }
+
+    /**
      * Whether a name gets said in this scene, and the record for it if so.
      *
      * The write happens here, in phase 2. Phase 3 receives only a licence to
@@ -15144,6 +16081,32 @@ ${done.lines.join(' ')}`;
      * name gets them nothing here - without being told that a rule was applied.
      * Never confirms whether the thing exists, and never lists what would have
      * worked.
+     *
+     * ── WHY THE WITNESS IS GATED ─────────────────────────────────────────
+     *
+     * This sentence used to name `here[0]` outright, and that was two defects
+     * in one line. Reproduced: at a settlement of fifteen strangers,
+     * `I negotiate with Kong Lanwu` - somebody real and somewhere else - came
+     * back "You put the words to Liang Fuhe", and the very next sentence of
+     * the same refusal said "you have a name for none of them". The paragraph
+     * contradicted itself because the first half was ungated and the second
+     * half was not.
+     *
+     * The first defect is the discovery leak: `Liang Fuhe` is a name this
+     * cultivator has no record for, handed over by the ERROR path, which is
+     * the door discovery.md is shutting. The second is worse and is the reason
+     * this is fixed ahead of the other two. The player asked for one person
+     * and read the name of another, in a sentence that describes the words
+     * being delivered - so what a refusal looks like from inside the game is a
+     * REDIRECT, and the player now believes they spoke to somebody they did
+     * not. A refusal that names a way out is this repo's pattern; a refusal
+     * that quietly picks a different target is not a refusal at all.
+     *
+     * So: name the witness only where the player could already name them,
+     * which is what makes it an earned name rather than a free one, and
+     * otherwise say plainly that nobody here answers to it. Seeing that
+     * somebody is standing there is not knowing who they are - the same rule
+     * `nobodyByThatName` applies to the list it appends after this.
      */
     private blankLook(cultivator: Cultivator): string {
         const here = this.present(cultivator);
@@ -15152,9 +16115,18 @@ ${done.lines.join(' ')}`;
             return `You say it aloud in ${where} and ${where} carries on as it was. ` +
                 'Whatever you meant by it, there is nothing here that answers to it.';
         }
-        const witness = here[0].name;
-        return `You put the words to ${witness}. They look at you the way people look at a ` +
-            'sentence with a hole in it, and then go back to what they were doing.';
+
+        const witness = here.find(
+            row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
+        );
+        if (!witness) {
+            return `Nobody in ${where} answers to that name. The nearest person hears the ` +
+                'words out the way people hear out a sentence with a hole in it, and goes ' +
+                'back to what they were doing.';
+        }
+
+        return `You put the words to ${witness.name}. They look at you the way people look ` +
+            'at a sentence with a hole in it, and then go back to what they were doing.';
     }
 
     /**
@@ -15162,6 +16134,11 @@ ${done.lines.join(' ')}`;
      *
      * Says what is there and stops. A list of who could be approached is a
      * developer affordance wearing a sentence.
+     *
+     * The lone-person branch is gated for the same reason `blankLook` is: one
+     * stranger in an empty square is still a stranger, and printing their name
+     * because they happen to be the only one there would be the discovery leak
+     * arriving through arithmetic instead of through a lookup.
      */
     private whoIsAbout(cultivator: Cultivator): string {
         const here = this.present(cultivator);
@@ -15171,8 +16148,11 @@ ${done.lines.join(' ')}`;
                 'were looking for before you noticed that.';
         }
         if (here.length === 1) {
-            return `${here[0].name} is the only person in ${where}, and you have not decided ` +
-                'whether it was them you wanted.';
+            return this.knowledge.isAwareOf(cultivator.id, 'cultivator', here[0].id)
+                ? `${here[0].name} is the only person in ${where}, and you have not decided ` +
+                  'whether it was them you wanted.'
+                : `There is one other person in ${where}, and you have not decided whether it ` +
+                  'was them you wanted. You could not put a name to them if it was.';
         }
         return `There are people about in ${where}, and you get as far as opening your mouth ` +
             'before realising you had not picked one.';
@@ -15325,8 +16305,24 @@ ${done.lines.join(' ')}`;
      * category are exactly the right words; the prose is where they would
      * become a briefing the world does not contain.
      */
-    private engineEntries(execution: Execution, turn: number): LogEntry[] {
-        const entries: LogEntry[] = [{ role: 'engine', turn, text: execution.facts.headline }];
+    private engineEntries(execution: Execution, turn: number, narration?: string): LogEntry[] {
+        // The headline goes in UNLESS the narration already opens with it.
+        //
+        // With no model configured the narrator is this engine, so the prose
+        // begins with the very sentence the ruling row states - and the player
+        // read the same line twice, in two styles, on every single turn. The
+        // ruling row exists so prose and engine can be compared and "the two
+        // should never disagree"; where they are the same string there is
+        // nothing to compare and the row is only noise.
+        //
+        // Self-correcting on purpose: a model's narration will not open with
+        // the headline verbatim, so configuring one brings the row straight
+        // back with no flag to set and nothing to remember.
+        const opensWithIt = typeof narration === 'string'
+            && narration.trimStart().startsWith(execution.facts.headline.trim());
+        const entries: LogEntry[] = opensWithIt
+            ? []
+            : [{ role: 'engine', turn, text: execution.facts.headline }];
         for (const line of execution.facts.structure) {
             entries.push({ role: 'engine', turn, text: withoutTheHandlerName(line) });
         }
@@ -15498,6 +16494,55 @@ export function withoutTheOverride(target: string): string {
 
 function summariseToolBody(body: Record<string, unknown>): string[] {
     const lines: string[] = [];
+
+    // ── THE TERMS OF A GUEST PLACE ───────────────────────────────────────
+    //
+    // The sixth verb to land on the shrug, caught on its first played run:
+    // "can I study at the House of the Narrow Hour" came back as one sentence
+    // saying the house would let you sit in, and said nothing whatever about
+    // what it would show you, what it would keep, how long it would watch you,
+    // or the five things the place is not. All of that was in the body.
+    //
+    // The order below is the order somebody deciding actually wants it: what is
+    // on the table, then what is not, then what the position does not carry -
+    // because that last is the part that has to be read BEFORE accepting rather
+    // than discovered afterwards.
+    if (typeof body.hostName === 'string' && Array.isArray(body.opens)) {
+        const opens = body.opens as Array<{ name?: string; carriesTo?: string | null; requiredRank?: string }>;
+        const kept = (body.keepsBack ?? []) as Array<{ name?: string; why?: string }>;
+        const notYet = (body.openedButOutOfReach ?? []) as Array<{ name?: string; requiredRank?: string }>;
+
+        lines.push(
+            opens.length === 0
+                ? `${body.hostName} would put nothing in front of you that you can open as you stand.`
+                : `What they would show you: ${opens.map(o =>
+                    `${o.name}${o.carriesTo ? `, which carries to ${o.carriesTo}` : ''}`
+                ).join('; ')}.`
+        );
+        if (notYet.length > 0) {
+            lines.push(
+                `On the same shelf and out of your reach for now: ${notYet.map(o =>
+                    `${o.name} (${o.requiredRank})`
+                ).join('; ')}.`
+            );
+        }
+        if (kept.length > 0) {
+            lines.push(
+                `They keep ${kept.length} thing${kept.length === 1 ? '' : 's'} back, `
+                + `starting with ${kept[0].name}. ${kept[0].why ?? ''}`
+            );
+        }
+        if (typeof body.watchesForYears === 'number') {
+            lines.push(
+                `They would watch you for ${body.watchesForYears} years before saying anything `
+                + 'about what you are. That is not a price for the shelf - it is how long a '
+                + 'house looks at somebody before it is willing to have an opinion.'
+            );
+        }
+        for (const line of (body.notOffered ?? []) as string[]) lines.push(line);
+        if (typeof body.yourOwnHouse === 'string') lines.push(body.yourOwnHouse);
+        if (typeof body.stillOf === 'string') lines.push(`Still of: ${body.stillOf}`);
+    }
 
     // ── WHERE SOMEBODY STANDS IN THEIR OWN HOUSE ─────────────────────────
     //

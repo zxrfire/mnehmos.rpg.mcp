@@ -303,7 +303,53 @@ what-a-house-will-do-about-it.ts        the alignment split, entirely downstream
 when-somebody-works-out-what-you-did.ts the delayed discovery and its grudge
 going-further-than-an-agreed-bout-allowed.ts
                                         the same job for an arranged fight
+what-a-deed-leaves.ts                   any deed at all, in either direction,
+                                        priced by what it cost rather than by
+                                        what it was called
+what-would-settle-an-account-this-heavy.ts
+                                        which of the ledger's own discharges a
+                                        record can afford, and what walking out
+                                        of an arrangement costs
 ```
+
+## Kindness and harm are the same machinery pointed two ways
+
+`what-a-deed-leaves.ts` is the general case the two files above it are instances of, and
+its single most important property is that **there is one scoring function and both
+directions run through it.** A favour owed and a grudge held are the same weight computed
+the same way. That is not tidiness: above the cash line what moves people in this world is
+a favour owed, so a cultivator who gives things away and teaches for nothing accumulates
+something genuinely more valuable than money - and it has to be the identical arithmetic,
+or the good half quietly becomes decoration.
+
+**Nothing in it branches on what the deed was.** The cause is carried through untouched
+onto the record and never read; what the engine reads is who paid, what it cost against
+what the payer had, whether it comes back, and whether a word was given first. A tenth
+kind of wrong needs no branch - it arrives with a cost. If a `switch` on a cause ever
+appears in this directory deciding an outcome, that switch is the bug.
+
+### How far it reaches, and why that depends on who did it
+
+The escalation is standing on both sides and nothing else:
+
+| | the account that opens |
+|---|---|
+| the person answers to nobody | it stays between the two of them |
+| heavy, and they have people | their family carries it at the same weight |
+| the house had something invested in them | the house holds one too, and names the actor |
+| ...and the actor answers to a house | the house names **the actor's house**. It is now between institutions |
+| ...and nobody can be made to answer | `blood_feud`, written to be **carried** rather than settled |
+
+That last row is the long tail: a wrong nobody could answer becomes a family's history
+rather than an event, and reaches a descendant who never met the wronged party through
+`inheritOnDeath`'s existing provenance chain. **Allies are named on the record and never
+made holders** - a house that stands with another can find it from its own side, and the
+engine has not decided on its behalf that it cares.
+
+`knownTo` is the field that makes deniability work, and it is not the witness count. A
+principal who is not on that list opens **no account at all**, because a grudge is held
+against somebody and they have no name to put on it. What still exists is what the people
+who were there carry, which is `truth depends on proximity` at its bluntest.
 
 ## Related
 

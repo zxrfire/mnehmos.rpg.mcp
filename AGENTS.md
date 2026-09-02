@@ -544,17 +544,27 @@ mechanic beside the first: the very defect the task existed to fix, committed ag
 
 So, before writing anything:
 
-1. **Read `docs/world/` for the subject.** The filenames say what they hold - `origin.md`,
-   `items.md`, `asking.md`, `manuals.md`, `past-the-ceiling.md`. A design doc that contradicts
-   what you are about to build is the cheapest correction you will ever get.
-2. **Grep the catalog and the engine for the concept, not the identifier.** The file that owns a
+1. **Open [`docs/world/INDEX.md`](docs/world/INDEX.md) and search it for the SITUATION, not
+   the noun.** It is every section in the bible listed against the question it answers, plus
+   every catalog in `src/data/cultivation/` and what design question that file settles. Do
+   this before browsing filenames, because filenames are the thing that has repeatedly
+   failed: the rule for what happens when a house catches you using its art is in
+   `items.md`, correctly, because a manual is an object - and nobody with that question ever
+   searches a file called `items.md`. **Three agents in one evening wrote an invented answer
+   to a question the repo had already settled**, one of them into a passage they had
+   personally read an hour earlier. The index exists because of them, and its top table is
+   the running list of what this directory is bad at. **When your own search fails and the
+   answer turns out to have existed, add a row.**
+2. **Then read the file it sends you to, in full.** A design doc that contradicts what you
+   are about to build is the cheapest correction you will ever get.
+3. **Grep the catalog and the engine for the concept, not the identifier.** The file that owns a
    thing here is usually named after what it is - `a-favour-skips-the-admission-bar.ts`,
    `what-grade-of-medicine-a-wound-needs.ts`, `who-a-life-like-this-grew-up-knowing.ts` - so
    searching for the *idea* in filenames finds what searching for a symbol will not.
-3. **Check whether it is half-wired rather than absent.** `src/engine/birth/` had one live file
+4. **Check whether it is half-wired rather than absent.** `src/engine/birth/` had one live file
    and one dead one in the same package. "No caller" and "does not exist" look identical from a
    distance and want opposite responses.
-4. **When the docs and your brief disagree, say so before building.** The docs are usually older
+5. **When the docs and your brief disagree, say so before building.** The docs are usually older
    and usually right, and a brief written from a playtest often describes a symptom rather than
    the design. Raise it; do not quietly pick one.
 
@@ -1228,6 +1238,42 @@ discarding, `git diff` the file and confirm every hunk you are about to lose is 
 it is not, revert your hunks specifically or edit them back out by hand, and commit
 whatever you rescued immediately so it cannot be lost a second time.
 
+### `--ff-only` refusing is usually a question about the branch, not about your commit
+
+**Check what the tree is standing on before you believe a merge error.** This cost two hours and
+nearly lost 670 finished lines.
+
+An agent committed its work, ran `git merge --ff-only` in the main worktree, and was refused. It
+concluded that a dirty `src/web/actions.ts` was blocking it, reported the work as blocked, and
+stopped. Meanwhile I told two other agents the work had landed, and one of them built against a
+file that was not in the tree.
+
+**Every part of that was wrong:**
+
+- **`feat/xianxia-cultivation` was checked out in no worktree at all**, and the main tree was
+  sitting on a different branch that was *ahead* of it. The merge was resolving against that
+  branch and correctly refusing, because the commit did not contain it. **The error was about
+  the wrong branch, and it was accurate.**
+- **The dirty file never mattered.** A dirty file blocks a merge that has to *update a working
+  tree*. Nothing about this one did.
+- **The commit was reachable the whole time.** `git log <hash>` showed it; `git branch --contains`
+  showed nothing. It was not lost, it was unreferenced.
+
+What to do instead:
+
+1. **`git rev-parse --abbrev-ref HEAD` before you trust any merge error.** The tree may not be on
+   the branch you think, especially in a repo where several agents create branches.
+2. **Rebase onto the branch you mean by name**, not onto whatever the tree happens to be on.
+   `git rebase feat/xianxia-cultivation`, not `git rebase HEAD`.
+3. **If the target branch is checked out nowhere, `git branch -f` is safe** and touches no working
+   tree, so nobody's dirty files are at risk. That is the whole reason to check.
+4. **Verify a landing with `git branch --contains <hash>`, and never on report.** Two pieces of
+   work were reported as landed tonight and were not. One of them I then repeated to the owner.
+
+**The general shape, which is the same failure as the entry below in a different coat: a commit
+that exists and is on no branch is invisible to everyone, including the agent that wrote it.**
+`git log` will show it happily. Reachability is the thing to check, not existence.
+
 ### A file you never committed is invisible to everyone else
 
 Untracked files in your working tree are not in the branch. An agent found
@@ -1274,3 +1320,169 @@ Green tests from five minutes ago say nothing about the tree now. Run the suite 
 `tsc --noEmit`, and commit only if both pass **in that same pass** with no agent edits in
 between. If the tree is moving too fast to get a clean pair, wait for the owners to finish
 rather than committing a snapshot you cannot vouch for.
+
+### The catalog has usually already reasoned about the hazard you are about to hit
+
+Before changing a value in `src/data/cultivation/`, **read the comment next to it.** Not the
+file header - the note beside the field.
+
+Three times in one session an agent changed a number that a comment ten lines away had already
+explained, and broke a test each time. The clearest case: the Azure Cloud Pavilion's
+`admissionOrdinal` was moved to 0 on the strength of prose describing a door at the floor,
+while `governance-and-water-rights.ts` said, in as many words, that `rankRealmBand` derives
+every member's band from that field and *"it must stay at the membership bar or the whole
+ladder slides down"*. The same note explained why the probationary rung is deliberately not in
+`sect.ranks`.
+
+**A catalog field that looks like a free number is usually load-bearing**, and this repo tends
+to have written down why. The reasoning is next to the data because that is where it belongs;
+the failure is not reading it.
+
+### A design decision that lives only as a number needs a test
+
+The Pavilion's bar sat at 3 while two separate passages of catalog prose described a door at
+the bottom of the ladder. **Nothing caught the contradiction for as long as it existed, because
+an admission bar is a number nobody reads twice.**
+
+Prose gets read and argued about. A number does not. So when a decision is deliberate - this
+door is open on purpose, these three houses share an intake, this cap is a rate test - **pin it
+with a test that says so in its name**, and put the reasoning in the test file. That is the
+only place a future reader is forced to look.
+
+### The git index is shared, and two habits will destroy somebody else's work
+
+Several agents work in this tree at once and it is dirty almost all the time.
+
+- **Never `git commit -a`.** It swept nineteen files of other agents' in-progress work into one
+  commit in a single session.
+- **`git commit` with no pathspec commits the WHOLE INDEX**, including files another agent has
+  already staged. `git add` of your own paths does not protect you. Stage explicit paths and
+  check `git status --short` before committing.
+- **Never `git apply --cached --unidiff-zero`** to stage a partial hunk selection. With zero
+  context git applies by line number and verifies nothing, so dropping hunks invalidates the
+  offsets of the rest. That committed syntactically invalid TypeScript that took three commits
+  to unbreak, while the author's own working tree compiled fine.
+
+To take only your own changes out of a file somebody else is live in, **reverse-apply the other
+party's hunks with normal context to a copy that already compiles.**
+
+### A new RNG draw is a regression until proved otherwise
+
+Adding a draw to an existing stream shifts every later draw off it. One agent's new hearsay
+channel silently changed which name an unrelated channel picked, and a presence test went red
+for a reason that had nothing to do with presence.
+
+**Give any new draw its own stream**, and verify existing draws are byte-identical by running
+base and change back to back in one command.
+
+### The docs are filed by noun and searched for by question
+
+This has cost more work than any other single thing here. Measured across the repo: **121,265
+words of design prose live in comments inside `src/data/cultivation/`, against 94,476 words in
+the whole of `docs/world/`.** Rationale markers point the same way - "measured" appears 41
+times in the docs and 238 times in the catalog.
+
+So the material exists and cannot be found. The consequence of practising a stolen art is
+under *Items*, because a manual is an object - correct filing, useless retrieval. In one
+session three separate design questions were answered by inventing something already written,
+**one of them by an agent that had read the exact passage an hour earlier.**
+
+**Start from the index, not from a grep.** Every tier-2 section carries a
+`trigger="..."` marker stating the situation it answers, and those triggers are the retrieval
+key: they are phrased as the question you actually have.
+
+### An index shows where a thing is. It does not restate it
+
+A parent file exists to point, and a pointer costs a reader almost nothing while a copy costs
+them the whole passage. **Restating content in an index is worse than not indexing it**, because
+now there are two copies to drift apart and an agent burns its context reading the wrong one.
+
+The same rule governs cross-references between docs: when another file already covers something,
+**link to it and say what it settles in one line.** Four times in one session a doc grew a
+paragraph that already existed elsewhere, and each had to be trimmed back to a pointer.
+
+### A test can be rewritten. A test that pins a bug must be
+
+Tests here are not the specification. **They are an attempt to write the
+specification down**, and when the specification changes the test is what has to
+move.
+
+So a test may be **modified, rewritten or deleted** when the design behind it has
+genuinely changed. What is not allowed is deleting one because it is
+inconvenient, or loosening an assertion until it stops failing without deciding
+what the new rule is.
+
+**The distinction is whether you can say what the test should assert now.** If you
+can, rewrite it to assert that. If you cannot, you do not yet understand the
+change and the red test is telling you so.
+
+Two worked examples from one night, both from the same root cause:
+
+- **A constant that encoded the bug.** `discovery.test.ts` defined the house a
+  new life knows as "the lowest admission bar, tie-broken by faction id" - which
+  was not a description of the world but a copy of the seeder's defect, where
+  `sect-azure-dew-sect` won on the letter A and the other six houses admitting
+  at rung 0 were unreachable to every player in every run. When the seeder was
+  fixed the test failed, and the fix was to assert the **principle** -
+  `discovery.md`'s "their world is the county" - instead of a headcount that
+  would need editing every time the roster moved.
+- **A fixture that hardcoded a name only a bug made universal.**
+  `paying-into-the-ledger.test.ts` said "I join the Azure Dew Sect", which
+  worked only because every cultivator everywhere had heard of that one house.
+  With knowledge region-aware, the join was correctly refused and the test then
+  measured a donation by somebody on nobody's roll. It asks the knowledge layer
+  which house this cultivator knows now, and asserts they are on a roll before
+  measuring anything.
+
+And when the design moves under a number, **say so in the test's name and its
+header**. The Azure houses' bars, the three intake layers, the population
+pyramid: these are decisions, and a decision that lives only as a number nobody
+reads twice will be silently reverted by the next person who finds it
+surprising.
+
+### `git stash` is shared across worktrees. Do not use it for before/after arms
+
+The stash is per-REPOSITORY, not per-worktree. Every agent working in a
+worktree of this repo pushes onto and pops off the same stack.
+
+One agent lost a baseline stash mid-run: it vanished from `git stash list` while
+another agent's appeared, almost certainly popped into somebody else's tree.
+They recovered it from `git fsck --unreachable`, which is not a thing anybody
+should have to do.
+
+**Use commits for arms instead.** Commit your work on a branch, check out the
+parent in a detached worktree, measure both, and compare. That is reproducible,
+it survives another agent working at the same moment, and it leaves the
+measurement attached to the hash it was taken at.
+
+If you find unexplained edits appearing in your worktree, a stray `stash pop` is
+the first thing to suspect.
+
+### Where work goes: `origin` only, and `feat/xianxia-cultivation`
+
+Two remotes are configured and they are not equal.
+
+| remote | url | what you may do |
+|---|---|---|
+| `origin` | `github.com/zxrfire/mnehmos.rpg.mcp` | **everything** |
+| `upstream` | `github.com/Mnehmos/mnehmos.rpg.mcp` | **nothing** |
+
+**Never push to `upstream`, never open a pull request against it, and never
+force anything anywhere near it.** It belongs to somebody else. It is present so
+this fork can pull from it, and that is the whole of its purpose here. A command
+that names `upstream` is a mistake unless the owner asked for it in those words.
+
+**All work lands on `feat/xianxia-cultivation` on `origin`.** That is the branch
+this project is built on, and it is where a change is finished rather than
+merely written.
+
+**And prefer it to a new branch.** One night produced sixteen side branches -
+several of them carrying good, tested, finished work that then sat unmerged
+while the thing they were built on moved underneath them, so a clean change
+became a conflict for no reason but delay. Branch when you genuinely need
+isolation, land promptly, and do not leave a finished piece parked on a name
+only you know.
+
+When several agents work at once, the shared checkout is dirty almost all the
+time. That is a reason to stage explicit paths, not a reason to start another
+branch.

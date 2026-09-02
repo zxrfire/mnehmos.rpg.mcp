@@ -68,6 +68,7 @@ import {
     stallPriceStones
 } from '../../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { getSect, getSectsTeaching } from '../../data/cultivation/sects.js';
+import { aGuestIsTaughtThis, whyAGuestIsNotShownThis } from './sect-guest.js';
 import {
     UNPROVISIONED,
     isSupplyStalled,
@@ -492,9 +493,40 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
     // generous: `manuals-wired.test.ts` measures that the first book is
     // reachable in every fresh life, because a hard ceiling at six with no way
     // to buy a road past it is a soft lock on turn one.
-    if (!isCommonlyHeld(technique.id) && args.provenance === undefined) {
+    // ── AND A HOUSE THAT HAS NOT TAKEN YOU CAN STILL BE TEACHING YOU ─────
+    //
+    // The gate above and the one below both asked exactly one question - "does
+    // the house whose roll you are on teach this" - and a guest is on nobody's
+    // house roll by construction. So without this the whole guest arrangement
+    // would be a card in a menu: a player could be entered on a house's guest
+    // roll, be shown a shelf, and then be refused every book on it.
+    //
+    // Narrow on purpose. `aGuestIsTaughtThis` answers only about the OPEN half
+    // of the host's shelf, so nothing here can reach past what the house
+    // decided to show, and the deep material stays exactly where it was.
+    const asAGuest = aGuestIsTaughtThis(
+        repos.db, cultivator.id, cultivator.realmOrdinal, technique.id
+    );
+    if (!isCommonlyHeld(technique.id) && args.provenance === undefined && !asAGuest) {
         const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
         if (!house?.teaches.includes(technique.id)) {
+            // A refusal names what would work, and where the player is already
+            // sitting in at the house that holds this, the answer is not "find
+            // a house" - it is that this is the half they are not shown.
+            const withheld = whyAGuestIsNotShownThis(repos.db, cultivator.id, technique.id);
+            if (withheld) {
+                return guidingError(
+                    'a_guest_is_not_shown_this',
+                    `${technique.name} is ${withheld.hostName}'s and they are not showing it to `
+                    + `${cultivator.name}. ${withheld.why}`,
+                    {
+                        techniqueId: technique.id,
+                        hostName: withheld.hostName,
+                        hint: 'A guest place is access to the shallow end. What membership would '
+                            + 'change is not the shelf - it is who is allowed to be walked up it.'
+                    }
+                );
+            }
             const taughtBy = getSectsTeaching(technique.id);
             return guidingError(
                 'no_road_to_this_book',
@@ -546,6 +578,7 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
         && writtenTo <= COMMON_MANUAL_CAP;
     if (belowTheStallLine
         && args.provenance === undefined
+        && !asAGuest
         && !holdsACopyOf(repos.db, cultivator.id, technique.id)) {
         const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
         if (!house?.teaches.includes(technique.id)) {

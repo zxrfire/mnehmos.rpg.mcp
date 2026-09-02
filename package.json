@@ -28,7 +28,9 @@
     "register": "npm run build && node scripts/render-register.mjs",
     "dev": "ts-node src/index.ts",
     "play": "node scripts/play.mjs",
-    "mcp": "node dist/server/index.js"
+    "mcp": "node dist/server/index.js",
+    "docs:index": "node scripts/build-world-index.mjs",
+    "docs:houses": "node scripts/build-house-dossiers.mjs"
   },
   "repository": {
     "type": "git",

@@ -102,9 +102,9 @@ describe('the Pavilion takes the child and grants no favour', () => {
         // The fact the whole characterisation rests on. If a second house grows
         // one, the Pavilion's position stops being singular and the prose here
         // and in the catalog needs revisiting.
-        const withProbation = SECTS.filter(s => SECT_ADMISSION[s.id]?.probationOrdinal !== undefined);
+        const withProbation = SECTS.filter(s => SECT_ADMISSION[s.id]?.guestFromOrdinal !== undefined);
         expect(withProbation.map(s => s.id)).toEqual(['sect-azure-cloud-pavilion']);
-        expect(SECT_ADMISSION['sect-azure-cloud-pavilion'].probationOrdinal).toBe(0);
+        expect(SECT_ADMISSION['sect-azure-cloud-pavilion'].guestFromOrdinal).toBe(0);
     });
 
     it('keeps a disciple bar above that probation floor', () => {
@@ -112,7 +112,7 @@ describe('the Pavilion takes the child and grants no favour', () => {
         // cannot move the second and does not need to move the first.
         const a = SECT_ADMISSION['sect-azure-cloud-pavilion'];
         expect(a.minOrdinal, 'the disciple bar has collapsed onto the probation floor')
-            .toBeGreaterThan(a.probationOrdinal!);
+            .toBeGreaterThan(a.guestFromOrdinal!);
         expect(a.requirement, 'the refusal is no longer stated').toMatch(/will not be skipped|bar it moves once/i);
     });
 

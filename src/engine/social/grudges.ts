@@ -48,21 +48,64 @@ import { byId, stableId, type DayIndex } from './common.js';
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The five things this ledger keeps.
+ * The six things this ledger keeps.
  *
  * A `blood_feud` is deliberately its own kind rather than a severe grudge: it
  * is held between LINES rather than between people, it is expected to be
  * inherited, and everyone involved knows it is running. A `debt` is owed by
  * the holder; a `favour` is owed to them. Keeping them apart matters because
  * "who owes whom" is the single most common question asked of this table.
+ *
+ * ── Why `leverage` is a kind and not a heavy favour ──────────────────────
+ *
+ * Because of its LIFECYCLE, which is unlike every other row here:
+ *
+ *   A FAVOUR is owed TO somebody. It is spent once and then it is gone.
+ *   LEVERAGE is held OVER somebody. **Using it does not consume it.** They
+ *   took the bribe, or their house covered a thing up, and you know - and you
+ *   still know next year, and the year after.
+ *
+ * Nothing already in this union has that shape. `favor` is discharged, `debt`
+ * is repaid, `grudge` can be settled, `oath` binds, `blood_feud` runs. Leverage
+ * simply sits there, usable again, and is worth MORE unused than spent.
+ *
+ * It ends three ways and none of them is being used:
+ *
+ *   THE FACT STOPS BEING ONE   Everybody knows now, so knowing it is worth
+ *                              nothing. Settle it `renounced`. Note that
+ *                              disclosure destroys the asset - the threat is
+ *                              worth more than the telling, which is the whole
+ *                              decision the holder is sitting on.
+ *   THEY STOP CARING, OR DIE   Though `InheritanceProvenance` means the
+ *                              exposure may pass to whoever inherits it.
+ *   THEY BUY IT                `compensated`, and the interesting one: the
+ *                              position does not end, it INVERTS. Payment plus
+ *                              an `oath` not to speak of it means they now hold
+ *                              a broken word over you if you ever do. Both
+ *                              parties end up held, which is exactly why either
+ *                              would accept the bargain.
+ *
+ * `subjectId` may be a HOUSE, like every other row here - the columns are ids
+ * and nothing in this file requires a person - which is how a nobody comes to
+ * hold something over an apex.
  */
-export type ObligationKind = 'grudge' | 'debt' | 'favor' | 'oath' | 'blood_feud';
+export type ObligationKind = 'grudge' | 'debt' | 'favor' | 'oath' | 'blood_feud' | 'leverage';
 
 /**
  * What actually happened to cause it.
  *
  * Concrete and specific by design. A record whose cause is "conflict" is a
  * record nobody can narrate from in forty years.
+ *
+ * ── This list is DATA, and nothing in the engine branches on it ──────────
+ *
+ * Worth stating because the list keeps growing and the growth is harmless only
+ * while that stays true. `what-a-deed-leaves.ts` prices a deed from what it
+ * COST, whether it comes back, and whether a word was given first - never from
+ * which of these words is on it - so a wrong nobody has thought of yet arrives
+ * with a cost and gets a weight without anybody editing a table. If you ever
+ * find a `switch` on one of these values deciding an outcome, that switch is
+ * the bug and not this union.
  */
 export type GrudgeCause =
     | 'humiliation'
@@ -78,6 +121,27 @@ export type GrudgeCause =
     | 'broken_oath'
     | 'destroyed_sect'
     | 'slander'
+    /**
+     * A grave wrong done to their person.
+     *
+     * Deliberately one row rather than several, and deliberately at this level
+     * of description. The severity is not carried by this word - it is computed
+     * from what it cost - and the account of what happened is in the record's
+     * own `description`, written once and read forever. The world narrates
+     * consequence and aftermath: who holds it, what a house did about it, who
+     * still carries it in eighty years.
+     */
+    | 'violated'
+    /**
+     * Their body, or their people's, taken for what it was made of.
+     *
+     * Kept apart from `robbery` and from a grave being emptied because the
+     * MOTIVE is different and the motive is the whole point: grave-robbing
+     * takes what somebody left behind, and this makes the body itself the
+     * reason anybody came. A record that collapsed the two would lose exactly
+     * the fact that makes a powerful corpse dangerous to be.
+     */
+    | 'harvested'
     | 'other';
 
 export type FavorCause =
@@ -93,6 +157,22 @@ export type FavorCause =
     | 'shielded_crossing'
     | 'lent_resource'
     | 'kept_a_secret'
+    /**
+     * Brought their dead home, or what was left of them, or word of where.
+     *
+     * One row for the whole family of it - the body carried back, a burial, the
+     * possessions returned, a name sent on without either. They differ in what
+     * they cost the person who did it, which is the only axis
+     * `what-a-deed-leaves.ts` reads, so none of them needs a row of its own.
+     *
+     * It is here because it is the OTHER thing that can be done with a corpse,
+     * and it is usually the better trade. A house owes you for it, and a favour
+     * owed by a house is above the cash line - `docs/world/items.md` is explicit
+     * that up there money is not the medium. What was taken off the body
+     * instead is a tracked object whose provenance damns whoever holds it, and
+     * is hard to sell for exactly the reason it is worth anything.
+     */
+    | 'returned_their_dead'
     | 'other';
 
 export type OathCause =
@@ -302,6 +382,22 @@ export function createOath(
     input: Omit<ObligationInput, 'kind' | 'cause'> & { cause: OathCause }
 ): ObligationRecord {
     return createObligation({ ...input, kind: 'oath' });
+}
+
+/**
+ * Something you know about somebody that they would rather you did not.
+ *
+ * Held BY the person who knows, ABOUT the person or the house it is on - the
+ * same direction as a favour, because both are positions rather than burdens.
+ * `severity` is what it would cost the subject if it came out, decided once,
+ * and it is the figure a buyout negotiates against.
+ *
+ * Nothing about using it changes the row. That is the point of the kind.
+ */
+export function createLeverage(
+    input: Omit<ObligationInput, 'kind'>
+): ObligationRecord {
+    return createObligation({ ...input, kind: 'leverage' });
 }
 
 export function createBloodFeud(

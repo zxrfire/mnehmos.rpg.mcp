@@ -209,7 +209,11 @@ describe('the fallback is inert', () => {
             // And what the ground within reach would teach, which is a read
             // over the player's own knowledge rows joined to the catalog. It
             // names no place they could not already name.
-            'roads'
+            'roads',
+            // Looking at what is in front of you and thinking about it. It
+            // reads the holder's own knowledge rows and the one art the
+            // sentence already named, so it can neither teach nor spend.
+            'recognise'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -411,7 +415,11 @@ describe('every verb is reachable from plain English', () => {
         // And the fourth, which was not merely eaten but eaten BY the third:
         // `teach me` belongs to the roster question, correctly, and it was
         // tested before anything looked at whether a person had been named.
-        request: 'I ask Elder Fang to teach me'
+        request: 'I ask Elder Fang to teach me',
+        // The trust hierarchy's strongest check, asked the way somebody
+        // would ask it. It sits one word from `recall`'s "do I know" and
+        // the art noun is what keeps the two apart.
+        recognise: 'do I recognise this style'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {
