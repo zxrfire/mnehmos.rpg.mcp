@@ -101,6 +101,12 @@ Long spans are cheap and deterministic. `"I cultivate for ten years"` resolves i
 single pass and hands back a chronological digest of those ten years - not ten years of
 LLM calls.
 
+You never have to guess the vocabulary - say what you mean and the engine prices it - but
+the set of things it can price is closed and finite. [`docs/verbs.md`](docs/verbs.md) is
+that set: every verb, what a player is asking for when they say it, what it costs, and
+where it is implemented. It is generated from the action enum itself, so it cannot fall
+behind the game.
+
 ### What kills you
 
 | Cause | Rule |
