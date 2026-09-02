@@ -359,6 +359,22 @@ question nobody asked.
 
 > **An art tells you where somebody was trained. It does not tell you whom they serve.**
 
+**And the player has to be able to ask.** *Is this the Azure Cloud's art?* is a question a
+character can put to themselves at any time, it costs nothing, and it is never refused — looking
+at what is in front of you and thinking about it is always legitimate. **The answer is graded,
+not a verdict:**
+
+| The reader | What they get |
+|---|---|
+| **No reference** | they could not hold the question — *you would not know it if you saw it* |
+| **Reference, low realm** | **honestly hedged.** It matches what they have heard described, and they could not tell a good imitation from the real thing |
+| **Reference, high realm** | **flat and certain.** *That is not the Azure Cloud's art* — at a glance |
+
+**The hedging must be real hedging**, never a coin flip dressed as knowledge: a player has to be
+able to trust that an uncertain answer means their character is uncertain. And **certainty is
+the reward** — the terse, instant answer at high realm is progression the player can feel that
+has nothing to do with being able to fight.
+
 **That is general, and the Court is only its extreme case.** Anybody who has changed houses
 carries the same ambiguity; the Court is an entire institution made of it.
 
