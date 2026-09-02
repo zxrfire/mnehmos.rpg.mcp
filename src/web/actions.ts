@@ -2338,7 +2338,7 @@ export const SELLING_SUBJECT_VERBS = new RegExp(SELLING_VERBS);
  * `market` and does not become an attempt to empty the pouch.
  */
 export const SELLING_ASKED_AS_A_BOARD =
-    /\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?))\b/;
+    /\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?)|(?:what|who)(?:'s| is| are)? (?:they|people|anybody|anyone|the others|everybody) (?:selling|trading)|who(?:'s| is| are)? (?:here )?(?:selling|trading))\b/;
 
 export const BUYING_A_PERSON_OFF =
     /\b(?:bribe|bribes|bribing|pay off|pays off|grease|buy (?:his|her|their|the \w+'s) silence|pay (?:him|her|them) (?:off|to))\b/;
@@ -4602,7 +4602,21 @@ function planIntent(input: string): PlannedAction {
     // on the stalls" satisfied half the rule and reached nothing.
     if (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices?|what(?:'s| is) on (?:the )?(?:stalls?|counter|board))\b/.test(text)
         || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|show|find|go to|look at|look over|head to|walk to')
-            && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(text))) {
+            && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(text))
+        // ── WHO, rather than WHAT ────────────────────────────────────────
+        //
+        // Measured by playing a fresh nobody in a market town. "what is for
+        // sale" answered with a forty-three line board; "who is selling
+        // anything" reached `unclear` and got the three prompts about
+        // teachers. The board is the answer to both - the people standing
+        // here are ON it now - and the sentence that asks after them was the
+        // one that did not work, which is this file's own near-synonym rule.
+        //
+        // Narrow on the market sense of the words. `sell`, `trade` and
+        // `buying` in verb position belong to the two rules above this one and
+        // must keep doing so, which is why every alternative here is anchored
+        // on an interrogative and a person-word rather than on a bare verb.
+        || /\b(?:who(?:'s| is| are)?\s*(?:here\s+)?(?:is\s+)?(?:selling|trading|buying|dealing|got anything|has anything)|(?:is |are )?(?:there )?(?:any(?:body|one)|somebody|someone|people) (?:here )?(?:selling|trading|with (?:anything|something) to sell)|(?:who|what) (?:here )?(?:has|have) (?:anything|something) (?:for sale|to sell|to trade)|what (?:are|is) (?:they|people|anybody|the others) selling)\b/.test(text)) {
         return { action: 'market', target: extractSubject(input, /market for|price of|cost of|buy|sell/) };
     }
 
@@ -4701,7 +4715,7 @@ function planIntent(input: string): PlannedAction {
         return { action: 'refine', target: extractSubject(input, /refine|concoct|brew|distil|distill|make/) };
     }
 
-    // â”€â”€ GOING OUT AFTER SOMETHING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── GOING OUT AFTER SOMETHING ────────────────────────────────────────
     //
     // Placed after the work and alchemy rules and before gathering, which is
     // the only position that works. "I hunt for work" is employment and is

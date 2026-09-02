@@ -89,6 +89,7 @@ const WELL: StandingHere = {
     inASect: true,
     sellableGoods: 0,
     peopleAboveHere: 0,
+    peopleHereWithSomethingToSell: 0,
     thinGround: false,
     aboveTheLid: false
 };
@@ -111,7 +112,11 @@ describe('every sentence offered is a sentence the parser understands', () => {
             { ...WELL, practisesAMethod: false, inASect: false, thinGround: true },
             { ...WELL, methodExhausted: true, breakthroughReady: true },
             { ...WELL, treatableWounds: 2, woundsPastMortalCare: 1, battered: true, cure: CURE_IN_REACH },
-            { ...WELL, sellableGoods: 3, spiritStones: 0, peopleAboveHere: 4 }
+            { ...WELL, sellableGoods: 3, spiritStones: 0, peopleAboveHere: 4 },
+            // Somebody in the square with surplus. `SAY.market` sat in this
+            // module unreferenced by any rule until the sellers landed, so
+            // "what is for sale" was a sentence the game printed nowhere.
+            { ...WELL, peopleHereWithSomethingToSell: 2 }
         ]) {
             for (const a of whatIsWorthDoingStandingHere(state)) seen.set(a.say, a.routesTo);
         }
