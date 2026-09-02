@@ -502,6 +502,11 @@ import {
 } from '../engine/world/what-a-conveyance-does-to-a-journey.js';
 import {
     CONVEYANCES,
+    adjustCountedHolding,
+    conveyanceSoldAs,
+    priceRowForSomethingToRide,
+    countedConveyancesHeld,
+    countedHoldingKey,
     kindOfCraft,
     requireConveyance
 } from '../data/cultivation/what-a-house-moves-its-people-on.js';
@@ -843,7 +848,9 @@ import {
     sayingWhereItStopped,
     stepsOfThePlan,
     theQuestionStillStands,
+    sayingWhatIsStillToCome,
     theRowForAStepOverTheBound,
+    theRowForSomethingStillToCome,
     theRowThatAsksWhichFirst,
     theRowThatOpensAStep,
     theRowThatSaysWhereItStopped,
@@ -2717,7 +2724,17 @@ export class GameService {
         // Here rather than inside `execute` because it is a fact about the
         // sentence and not about any one verb: put in one branch it would cover
         // one verb, and the next verb somebody adds would drop clauses again.
-        const dropped = theClauseThisTurnDidNotRun(trimmed, plan.action.action);
+        //
+        // AND IT IS OFF WHEN THE TURN RAN A PLAN. This helper answers one
+        // question - "one verb ran; was there a second one in the sentence?" -
+        // and a turn that ran three verbs has already answered it, in the
+        // affirmative, by running them. Left on, it reports a clause a LATER
+        // STEP EXECUTED as though it had been declined, which is worse than the
+        // silence it was written to replace: the whole value of the honest
+        // report is that a player can trust it.
+        const dropped = stepsOfThePlan(plan).length > 1
+            ? null
+            : theClauseThisTurnDidNotRun(trimmed, plan.action.action);
         if (dropped) {
             const said = sayingWhatWasNotDone(dropped);
             // All three channels, because they are read by three different
@@ -3147,7 +3164,7 @@ export class GameService {
             return await this.execute(steps[0]!.action, run, cultivator, ambient, rawInput);
         }
 
-        const budget = whatThisTurnMayRun(steps);
+        const budget = whatThisTurnMayRun(steps, rawInput);
         const done: Execution[] = [];
         let stoppedOn: PlanStep | null = null;
         let notReached: readonly PlanStep[] = [];
@@ -3208,8 +3225,31 @@ export class GameService {
             folded.calls.push(
                 theRowThatSaysWhereItStopped(stoppedOn, notReached)
             );
+        } else if (fork === null && budget.heldForTheQuestion.length > 0) {
+            // THE PLAYER ALREADY SAID WHICH COMES FIRST, so nothing was asked -
+            // the first act ran and the rest is next turn's. Said once, as a
+            // fact about where they now stand rather than as a report about the
+            // executor, and on `required` because a player who is not told the
+            // second half is still owed will believe it happened.
+            sayThisWhateverTheNarratorDoes(
+                folded.facts, sayingWhatIsStillToCome(budget.heldForTheQuestion)
+            );
+            for (const step of budget.heldForTheQuestion) {
+                folded.calls.push(theRowForSomethingStillToCome(step));
+            }
         } else if (fork !== null) {
-            if (!alreadySaid) {
+            if (alreadySaid) {
+                // Already the whole of `prose`, so saying it again is the
+                // double-printed ruling a played turn caught. What it still
+                // needs is the `required` channel: measured, a model handed
+                // nothing but this question wrote "You reach for Cao Antao's
+                // purse and press it into Shen Liefeng's hand. Then you walk
+                // away." - three acts, none of which happened, off a turn whose
+                // only fact was that it was ASKING. `withRequiredLines` appends
+                // what the prose left out, at both front doors, so the question
+                // reaches the player whatever the narrator felt like writing.
+                (folded.facts.required ??= []).push(whatTheQuestionAsks(fork));
+            } else {
                 sayThisWhateverTheNarratorDoes(folded.facts, whatTheQuestionAsks(fork));
                 folded.facts.structure.push(whatTheQuestionAsksStructurally(fork));
             }
@@ -3369,7 +3409,9 @@ export class GameService {
                 );
 
             case 'train_technique':
-                return this.train(cultivator, action.target);
+                // The span the player named, which this dropped entirely. See
+                // `train`.
+                return this.train(cultivator, action.target, action.days);
 
             case 'refine':
                 return this.refine(run, cultivator, action.target);
@@ -4084,12 +4126,60 @@ ${noticed}`;
         }
 
         for (const row of this.atHand?.objects ?? []) {
-            if (row.possessorId !== cultivator.id) continue;
+            // Held OR owned. `mintCraft` moors a craft rather than handing it
+            // to somebody - a craft with a possessor is one `bestObjectHeldBy`
+            // would arm them with - so reading `possessorId` alone meant that
+            // even somebody who built one could not ride it.
+            if (row.possessorId !== cultivator.id && row.ownerId !== cultivator.id) continue;
             const kind = kindOfCraft(row);
             if (kind) available.push({ conveyance: kind, power: row.power });
         }
 
+        // ── AND WHAT THEY SIMPLY HAVE ────────────────────────────────────
+        //
+        // The counted tier, which the note above correctly said nothing in
+        // this engine counted for a person. Something does now: `buy` writes
+        // it through `adjustCountedHolding` onto the player's own world row,
+        // which is the same free-form `Record<string, number>` a house keeps
+        // its yard in. No new field anywhere, and a person and a house answer
+        // the question with the same four functions.
+        for (const { conveyance } of countedConveyancesHeld(this.whatIsInTheirYard(cultivator))) {
+            available.push({ conveyance, power: null });
+        }
+
         return available;
+    }
+
+    /**
+     * What this cultivator has of the counted conveyances, in the shape the
+     * catalog's four functions read.
+     *
+     * The pouch is where it lives, and it is the right place rather than a
+     * convenient one: the pouch is already what this person holds as an
+     * AMOUNT, fungible, with no identity and no past - which is the whole
+     * definition of the counted tier. `countedHoldingKey` is the key those
+     * four functions agree on, so a person and a house answer "what is in the
+     * yard" with the same code over the same shape, and nothing new is stored
+     * anywhere.
+     *
+     * `what-a-house-moves-its-people-on.ts` says of its own counted section
+     * that when a general counted-stock model lands these are the adapter to
+     * delete. This is that adapter on the player's side.
+     */
+    private whatIsInTheirYard(cultivator: Cultivator): Record<string, number> {
+        const yard: Record<string, number> = {};
+        // `listPouch` is the ALCHEMY reader and filters to pills and herbs by
+        // design; `listCarriedArtifacts` is the accessor for everything else
+        // in the same table. Reading the wrong one is why a bought mule was a
+        // row in the database that no sentence a player could type could see -
+        // the same defect this file records having found twice before, once
+        // for a granted artifact and once for a bought manual.
+        for (const entry of listCarriedArtifacts(this.db, cultivator.id)) {
+            const kind = CONVEYANCES.find(c => c.id === entry.itemId);
+            if (!kind || kind.holding !== 'counted') continue;
+            yard[countedHoldingKey(kind.id)] = entry.quantity;
+        }
+        return yard;
     }
 
     /**
@@ -13607,8 +13697,24 @@ ${opened.text}` : receipt,
         const bought = await this.buyAManual(run, cultivator, query);
         if (bought) return bought;
 
-        const resolved = query.length >= 3 ? resolvePrice(query) : null;
-        const price = resolved ? getPrice(resolved.id) : undefined;
+        // ── SOMETHING TO GET ON, AHEAD OF THE BOARD'S OWN MATCH ──────────
+        //
+        // The board calls it a mule and a player says horse, so "I buy a
+        // horse" was refused with the look people give somebody asking for a
+        // thing that is not sold - over an animal that is priced, stocked and
+        // rideable. That is the near-synonym rule exactly.
+        //
+        // FIRST, because a whole word against a closed list is stronger
+        // evidence than a prefix against a name: `resolvePrice` matched "I buy
+        // a carriage" to Carriage of a body, which is the fixed rate for
+        // moving a corpse, and quoted it at one stone.
+        const asRide = priceRowForSomethingToRide(query);
+        const resolved = asRide === undefined && query.length >= 3
+            ? resolvePrice(query)
+            : null;
+        const price = asRide !== undefined
+            ? getPrice(asRide)
+            : resolved ? getPrice(resolved.id) : undefined;
 
         if (!price) {
             // ── ABOVE A CERTAIN LINE, CASH IS NOT THE MEDIUM ─────────────
@@ -13671,6 +13777,80 @@ ${opened.text}` : receipt,
         // a ferry crossing and a night at an inn do not, and saying so beats
         // taking the money for a state change that never happens.
         const pill = price.category === 'medicine' ? resolvePill(price.name.replace(/,.*$/, '')) : null;
+
+        // ── A THING YOU CAN ACTUALLY PUT UNDER YOU ───────────────────────
+        //
+        // Played and reported: "I buy a horse" and "I hire a mount for the
+        // road" both answered with the look people give somebody asking for a
+        // thing that is not sold. Both halves of that were already written -
+        // the board has carried a mule at fourteen stones and a cart at thirty
+        // since it was authored, and `what-a-conveyance-does-to-a-journey.ts`
+        // has carried what a mount does to a road - and nothing joined them,
+        // so `whatTheyCouldRide` offered a tracked craft nobody had any way to
+        // come to own and the counted tier had no holder in the whole engine.
+        //
+        // `adjustCountedHolding` is where it lands, which is the arithmetic
+        // that file insists on rather than `transferPossession`: a carriage
+        // leaving somebody is a number going down by one, there is nothing to
+        // recognise and nobody to be asked about it.
+        const rideable = conveyanceSoldAs(price.id);
+        if (rideable) {
+            // The catalog names carry their own article - "A drawn carriage" -
+            // so anything writing "a ${name}" reads "a a drawn carriage".
+            const what = rideable.name.replace(/^an?\s+/i, '').toLowerCase();
+            if (cultivator.spiritStones < stones) {
+                return refused('engine.localPrice', 'buy', factsForRefusal(
+                    'Not for what you are carrying.',
+                    `${price.name} is ${cash} cash here, which is ${stones} spirit `
+                    + `stone${stones === 1 ? '' : 's'}. You are carrying `
+                    + `${cultivator.spiritStones}, and nobody is offering terms on a `
+                    + `${what}.`,
+                    `${price.id} at ${cash} cash = ${stones} stone(s); purse holds `
+                    + `${cultivator.spiritStones}.`
+                ));
+            }
+            const before = this.whatIsInTheirYard(cultivator);
+            const after0 = adjustCountedHolding(before, rideable.id, 1);
+            addToPouch(
+                this.db, cultivator.id, rideable.id, 'artifact',
+                (after0[countedHoldingKey(rideable.id)] ?? 0)
+                    - (before[countedHoldingKey(rideable.id)] ?? 0)
+            );
+            this.repos.cultivators.update(cultivator.id, {
+                spiritStones: cultivator.spiritStones - stones
+            });
+            const after = this.repos.cultivators.getById(cultivator.id)!;
+            const facts = factsForToolResult(
+                `${price.name} bought.`,
+                [
+                    `${price.name} for ${stones} spirit stone${stones === 1 ? '' : 's'}. `
+                    + `${price.note}`,
+                    `It covers ${rideable.crossesGroundThatCannotBeWalked ? 'ground nothing '
+                        + 'walks up as readily as a road' : 'a road and nothing else'}, it is `
+                    + `${rideable.seenComing ? 'seen coming' : 'nothing anybody remarks on'}, and `
+                    + `it carries ${rideable.heads}. `
+                    + `You are carrying ${after.spiritStones} now.`,
+                    'Say where you are going and that you are riding, and it will be under you.'
+                ]
+            );
+            facts.structure.push(
+                `adjustCountedHolding: ${rideable.id} `
+                + `${before[countedHoldingKey(rideable.id)] ?? 0} -> `
+                + `${after0[countedHoldingKey(rideable.id)] ?? 0} on ${cultivator.id}; `
+                + `${stones} stone(s) spent, ${after.spiritStones} left. Counted, not tracked - `
+                + 'there is nothing to recognise and nobody to be asked about it.'
+            );
+            const execution = this.freeAction(run, 'buy', facts);
+            execution.calls = [{
+                name: 'world.adjustCountedHolding',
+                action: 'buy',
+                summary:
+                    `${price.id} resolved to ${rideable.id} (${rideable.grade} grade, `
+                    + `${rideable.range} range, counted). +1 on the player's own row.`,
+                ok: true
+            }];
+            return execution;
+        }
 
         if (!pill) {
             const facts = factsForUnsupported(
@@ -14690,6 +14870,17 @@ ${opened.text}` : receipt,
             .filter((row): row is { entry: typeof row.entry; record: NonNullable<typeof row.record> } =>
                 row.record !== undefined);
 
+        // ── AND WHAT IS IN THE YARD ──────────────────────────────────────
+        //
+        // A third shelf in the same table, and the same defect a third time:
+        // a bought mule is a row `getArtifact` cannot name, so the filter
+        // above dropped it and the verb whose whole job is to say what you
+        // have said "nothing in the pouch at all" over something that cost
+        // thirteen stones. A counted conveyance is not a rated object and has
+        // no artifact row and never will - it is an AMOUNT, which is exactly
+        // why it reads through the counted accessors instead.
+        const yard = countedConveyancesHeld(this.whatIsInTheirYard(cultivator));
+
         // ── AND THE BOOKS, WHICH ARE THE COMMONEST THING A PLAYER BUYS ────
         //
         // The same defect as the artifact one above, one shelf over, and found
@@ -14715,7 +14906,8 @@ ${opened.text}` : receipt,
             .filter((art): art is NonNullable<typeof art> => art !== undefined);
 
         const lines: string[] = [];
-        if (pills.length === 0 && herbs.length === 0 && carried.length === 0 && books.length === 0) {
+        if (pills.length === 0 && herbs.length === 0 && carried.length === 0
+            && books.length === 0 && yard.length === 0) {
             lines.push(
                 'Nothing in the pouch at all. What is on you is what you are standing in and '
                 + `${stones} spirit stone${stones === 1 ? '' : 's'}.`
@@ -14729,6 +14921,18 @@ ${opened.text}` : receipt,
                         ? ''
                         : `, which carries as far as ${rankName(cap)}`}`;
                 }).join('; ') + '. Holding a copy and having sat down with it are separate facts.');
+            }
+            if (yard.length > 0) {
+                lines.push('In the yard: ' + yard.map(row => {
+                    // The catalog names carry their own article - "A drawn
+                    // carriage" - so a count in front of one reads "1 a drawn
+                    // carriage" unless it is taken off first.
+                    const what = row.conveyance.name.replace(/^an?\s+/i, '').toLowerCase();
+                    return `${row.count} ${what}${row.count === 1 ? '' : 's'}, which `
+                        + `${row.count === 1 ? 'carries' : 'carry'} ${row.conveyance.heads} `
+                        + `and ${row.count === 1 ? 'reaches' : 'reach'} across a `
+                        + `${row.conveyance.range}`;
+                }).join(', ') + '. Say where you are going and that you are riding.');
             }
             if (carried.length > 0) {
                 lines.push('Carrying: ' + carried.map(c =>
