@@ -68,6 +68,7 @@ import {
     WEIGHT_TOTAL,
     type CultivationOptions
 } from '../../engine/cultivation/index.js';
+import { rollSex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import {
     advanceWorldForCultivator,
@@ -284,7 +285,9 @@ function rollTalent(seed: string, nonce: number) {
         attrRng.next(), attrRng.next(), attrRng.next(), attrRng.next()
     ]);
     const origin = rollOrigin(originRng.next());
-    return { spiritRoot, attributes, origin };
+    // Its own stream, for the same reason every line above it has one.
+    const sex = rollSex(forStream(seed, 'sex', nonce).next());
+    return { spiritRoot, attributes, origin, sex };
 }
 
 /** Rate options assembled from persisted state only. No caller-supplied bonuses. */
@@ -400,7 +403,7 @@ export async function handleCreateCultivator(
     // Nonce keyed to how many cultivators this seed has already produced, so
     // repeated creation is deterministic yet never repeats a draw.
     const nonce = repos.cultivators.list().length;
-    const { spiritRoot, attributes, origin } = rollTalent(seed, nonce);
+    const { spiritRoot, attributes, origin, sex } = rollTalent(seed, nonce);
 
     const id = randomUUID();
     const maxHp = maxHpFor(attributes.might, 0);
@@ -423,6 +426,7 @@ export async function handleCreateCultivator(
             age: args.age ?? 16,
             location: args.location ?? DEFAULT_LOCATION,
             origin: origin.key,
+            sex,
             // What the family put behind them, not a starting bonus. For nine
             // births in ten this is STARTING_SPIRIT_STONES and nothing else.
             spiritStones: origin.spiritStones

@@ -181,6 +181,7 @@ export function standInTheWorld(
         onDay,
         layer: MORTAL_LAYER,
         origin: cultivator.origin,
+        sex: cultivator.sex,
         occupation: 'the one being played',
         tags: [PLAYER_ROW_TAG]
     });
@@ -188,7 +189,16 @@ export function standInTheWorld(
     const row: NpcRecord = {
         ...base,
         name: cultivator.name,
-        identity: { ...base.identity, bornOnDay, origin: cultivator.origin },
+        // The sheet wins here as it wins everywhere else on this row. A sex
+        // rolled onto the row at creation and a sex on the sheet would be two
+        // answers about one person, and the header's rule is that the sheet is
+        // the source and the row is a projection of it, in that order, always.
+        identity: {
+            ...base.identity,
+            bornOnDay,
+            origin: cultivator.origin,
+            sex: cultivator.sex
+        },
         // Merged rather than replaced: `specialties`, and anything the record
         // shape grows later, belong to the world layer and are not on the
         // sheet. What the sheet owns, the sheet wins.

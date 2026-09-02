@@ -31,6 +31,7 @@ interface CultivatorRow {
     kind: string;
     spirit_root: string;
     origin_tier: string;
+    sex: string;
     tradition_id: string;
     attributes: string;
     realm_ordinal: number;
@@ -149,6 +150,14 @@ export interface RosterEntry {
     name: string;
     kind: Cultivator['kind'];
     spiritRoot: Cultivator['spiritRoot'];
+    /**
+     * Carried so that somebody can be asked about themselves.
+     *
+     * A plain fact a person holds about their own body, which is exactly the
+     * class of question `asked.ts` must not route through the could-they-know
+     * gate. Nothing on this projection branches on it.
+     */
+    sex: Cultivator['sex'];
     realmOrdinal: number;
     location: string | null;
     sectId: string | null;
@@ -177,6 +186,7 @@ interface RosterRow {
     name: string;
     kind: string;
     spirit_root: string;
+    sex: string;
     realm_ordinal: number;
     location: string | null;
     sect_id: string | null;
@@ -229,7 +239,7 @@ export class CultivatorRepository {
     constructor(private db: Database.Database) {
         this.insertStmt = db.prepare(`
             INSERT INTO cultivators (
-                id, run_id, name, kind, spirit_root, origin_tier, tradition_id, attributes,
+                id, run_id, name, kind, spirit_root, origin_tier, sex, tradition_id, attributes,
                 realm_ordinal, cultivation_progress, foundation_quality, immortal_status,
                 hp, max_hp, qi, max_qi, satiety, starvation_turns, bleeding_turns,
                 age, years_at_current_realm,
@@ -239,7 +249,7 @@ export class CultivatorRepository {
                 alive, death_cause, died_on_turn,
                 created_at, updated_at
             ) VALUES (
-                @id, @runId, @name, @kind, @spiritRoot, @origin, @traditionId, @attributes,
+                @id, @runId, @name, @kind, @spiritRoot, @origin, @sex, @traditionId, @attributes,
                 @realmOrdinal, @cultivationProgress, @foundationQuality, @immortalStatus,
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns, @bleedingTurns,
                 @age, @yearsAtCurrentRealm,
@@ -254,7 +264,7 @@ export class CultivatorRepository {
         this.updateStmt = db.prepare(`
             UPDATE cultivators SET
                 run_id = @runId, name = @name, kind = @kind,
-                spirit_root = @spiritRoot, origin_tier = @origin,
+                spirit_root = @spiritRoot, origin_tier = @origin, sex = @sex,
                 tradition_id = @traditionId, attributes = @attributes,
                 realm_ordinal = @realmOrdinal, cultivation_progress = @cultivationProgress,
                 foundation_quality = @foundationQuality, immortal_status = @immortalStatus,
@@ -329,7 +339,7 @@ export class CultivatorRepository {
         // cultivators is worse than useless.
         this.rosterStmt = db.prepare(`
             SELECT
-                c.id, c.name, c.kind, c.spirit_root, c.realm_ordinal, c.location,
+                c.id, c.name, c.kind, c.spirit_root, c.sex, c.realm_ordinal, c.location,
                 c.sect_id, s.name AS sect_name, c.sect_rank,
                 c.age, c.alive, c.existence_state, c.soul_state, c.identity_continuity,
                 c.death_cause, c.spirit_stones, c.feuds,
@@ -420,6 +430,7 @@ export class CultivatorRepository {
             name: row.name,
             kind: row.kind as Cultivator['kind'],
             spiritRoot: row.spirit_root as Cultivator['spiritRoot'],
+            sex: row.sex as Cultivator['sex'],
             realmOrdinal: row.realm_ordinal,
             location: row.location,
             sectId: row.sect_id,
@@ -757,6 +768,7 @@ export class CultivatorRepository {
             kind: c.kind,
             spiritRoot: c.spiritRoot,
             origin: c.origin,
+            sex: c.sex,
             traditionId: c.traditionId,
             attributes: JSON.stringify(c.attributes),
             realmOrdinal: c.realmOrdinal,
@@ -821,6 +833,7 @@ export class CultivatorRepository {
             kind: row.kind,
             spiritRoot: row.spirit_root,
             origin: row.origin_tier,
+            sex: row.sex,
             traditionId: row.tradition_id,
             attributes: JSON.parse(row.attributes),
             realmOrdinal: row.realm_ordinal,

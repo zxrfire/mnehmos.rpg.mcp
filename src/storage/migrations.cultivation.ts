@@ -627,6 +627,15 @@ function addCultivationColumns(db: Database.Database): void {
         db.exec("ALTER TABLE cultivators ADD COLUMN origin_tier TEXT NOT NULL DEFAULT 'thin_county';");
     }
 
+    // A plain fact, carried so a child can have two parents. The default is
+    // the reading of a row written before the axis existed and is legibly
+    // arbitrary - a coin flip has no majority, which is the difference from
+    // origin_tier above.
+    if (!cultivatorColumns.includes('sex')) {
+        console.error('[Migration] Adding sex column to cultivators table');
+        db.exec("ALTER TABLE cultivators ADD COLUMN sex TEXT NOT NULL DEFAULT 'female';");
+    }
+
 // The bleed clock. NOT NULL defaulting to 0, which is the honest reading
     // of every row written before it existed: nobody was bleeding out, because
     // until this column there was no such thing. A cultivator already sitting

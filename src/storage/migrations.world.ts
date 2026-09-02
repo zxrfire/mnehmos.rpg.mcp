@@ -339,6 +339,15 @@ export function migrateWorld(db: Database.Database): void {
       name TEXT NOT NULL,
 
       born_on_day INTEGER NOT NULL,                  -- age is a subtraction, never stored
+      -- A plain fact, carried so a child can have two parents. It answers a
+      -- parentage question and nothing else; nothing branches on it.
+      sex TEXT NOT NULL DEFAULT 'female',
+      -- A line that came down from an ancestor who was a beast before it was a
+      -- person. Two columns rather than JSON because both are looked up: the
+      -- species is a beasts.ts id and the tier is the dilution ladder's own
+      -- word. NULL is the overwhelming majority and means no line.
+      bloodline_species TEXT,
+      bloodline_tier TEXT,
       occupation TEXT NOT NULL DEFAULT 'unknown',
       titles TEXT NOT NULL DEFAULT '[]',             -- JSON
       aliases TEXT NOT NULL DEFAULT '[]',            -- JSON; rumours attach to these
@@ -993,5 +1002,23 @@ function addWorldColumns(db: Database.Database): void {
     if (!columnsOf('world_npcs').includes('wounds')) {
         console.error('[Migration] Adding wounds column to world_npcs table');
         db.exec("ALTER TABLE world_npcs ADD COLUMN wounds TEXT NOT NULL DEFAULT '[]';");
+    }
+
+    // A saved world's people predate the parentage axis. The default is
+    // legibly arbitrary rather than honest, which is the difference from
+    // origin_tier's 'thin_county': a coin flip has no majority to read a
+    // legacy row as. Everything seeded since carries a rolled value.
+    if (!columnsOf('world_npcs').includes('sex')) {
+        console.error('[Migration] Adding sex column to world_npcs table');
+        db.exec("ALTER TABLE world_npcs ADD COLUMN sex TEXT NOT NULL DEFAULT 'female';");
+    }
+
+    // NULL is the answer for everybody who was already in a saved world, and
+    // it is the right one: a line is written at a birth or by the catalog, and
+    // neither had happened.
+    if (!columnsOf('world_npcs').includes('bloodline_species')) {
+        console.error('[Migration] Adding bloodline columns to world_npcs table');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN bloodline_species TEXT;');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN bloodline_tier TEXT;');
     }
 }

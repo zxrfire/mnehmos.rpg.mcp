@@ -436,6 +436,57 @@ export function bloodlineTierForChild(
     return STEP_DOWN[only];
 }
 
+/**
+ * A line, as a person carries it.
+ *
+ * Two fields and no third. `speciesId` is a `Beast` id in `beasts.ts`, so what
+ * the line actually DOES is read off the catalog's own `ability` and never
+ * copied onto the person - there is one description of what a stone-shelled
+ * thing can do and it is in the catalog. `tier` is where the dilution ladder
+ * has got to, and `bloodlineTierForChild` is the only thing that moves it.
+ *
+ * **Nothing is stored about how it is inherited**, because inheritance is a
+ * function of the two parents and is computed at the birth. A `carriers` count,
+ * a `generationsLeft`, a `dilutedOn` day - each of those is the same fact stored
+ * twice and would go stale the first time somebody married.
+ */
+/** Whether a stored value is a tier this build knows. */
+export function isAbilityTier(value: unknown): value is AbilityTier {
+    return value === 'latent' || value === 'grown' || value === 'final';
+}
+
+export interface Bloodline {
+    /** A `Beast` id in `beasts.ts`. The ability itself is read from there. */
+    speciesId: string;
+    /** How strong it still is. `null` is not representable: gone is no line. */
+    tier: AbilityTier;
+}
+
+/**
+ * The child's line, read off both parents' whole records rather than two tiers.
+ *
+ * The tier arithmetic is `bloodlineTierForChild`'s and is not repeated. What
+ * this adds is the species, which is the part a bare tier cannot carry: a child
+ * of two carriers of DIFFERENT lines takes the stronger one, because a person
+ * has one bloodline and the world has no vocabulary for two. Ties go to the
+ * left-hand parent's, and that is arbitrary rather than a rule about which
+ * parent counts - the caller may pass them either way round and the swap test
+ * in `tests/engine/household` is what holds the rest of the match symmetric.
+ */
+export function bloodlineForChild(
+    left: Bloodline | null,
+    right: Bloodline | null
+): Bloodline | null {
+    const tier = bloodlineTierForChild(left?.tier ?? null, right?.tier ?? null);
+    if (!tier) return null;
+    if (left && right) {
+        const stronger = ORDER.indexOf(right.tier) > ORDER.indexOf(left.tier) ? right : left;
+        return { speciesId: stronger.speciesId, tier };
+    }
+    const only = left ?? right;
+    return only ? { speciesId: only.speciesId, tier } : null;
+}
+
 const ORDER: readonly AbilityTier[] = ['latent', 'grown', 'final'];
 
 const STEP_DOWN: Record<AbilityTier, AbilityTier | null> = {

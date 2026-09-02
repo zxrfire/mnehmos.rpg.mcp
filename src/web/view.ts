@@ -535,6 +535,12 @@ export function worldRosterRow(npc: NpcRecord, presentDay: number): RosterRowVie
         isPlayer: false,
         spiritRoot: npc.cultivation.spiritRoot,
         spiritRootName: getSpiritRoot(npc.cultivation.spiritRoot).name,
+        // Carried through so a person standing in a square can be asked about
+        // themselves. The world's people and the database's arrive at the ask
+        // through the same projection, and a fact one of them held and the
+        // other did not would make the answer depend on which table somebody
+        // came out of.
+        sex: npc.identity.sex,
         realmOrdinal: ordinal,
         rankName: rankName(ordinal),
         realmName: realmForOrdinal(ordinal).name,

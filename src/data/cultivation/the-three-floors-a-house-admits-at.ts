@@ -123,6 +123,7 @@
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import { FACTION_CHARACTER } from './faction-character.js';
 import { SECTS, SECT_ADMISSION } from './sects.js';
+import type { Sex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 
 const SECT_BY_ID = new Map(SECTS.map(s => [s.id, s]));
 
@@ -242,6 +243,116 @@ export function servantBarOf(factionId: string): number | undefined {
 /** The floor for the disciple track. `Sect.admissionOrdinal`, unchanged. */
 export function discipleBarOf(factionId: string): number | undefined {
     return houseFloorsOf(factionId)?.disciple;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ONE FLOOR THAT IS NOT A RUNG
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Houses that take one sex and not the other.
+ *
+ *   > "this means we can have female only and male only sects, do IT, this
+ *   >  makes playthroughs gated and interesting."
+ *
+ * Two, one each, and the number is the design rather than a starting point.
+ * The interesting thing about a closed door is that it is closed to YOU, and a
+ * world where a third of the houses were closed to everybody would make that
+ * ordinary. Two means a run either meets one of them or does not.
+ *
+ * ── WHY IT IS A BAR AND NOT A NEW MECHANISM ─────────────────────────────
+ *
+ * It sits beside `servant`, `disciple` and `guest` because it is the same kind
+ * of fact: a condition the house states, checked at the door, refused with the
+ * reason named. Everything that already asks a house whether it would take
+ * somebody asks this in the same breath, and a house that has no entry here
+ * takes anybody - which is thirty-three of thirty-five.
+ *
+ * ── IT GOVERNS ADMISSION AND NOTHING ELSE ───────────────────────────────
+ *
+ * Not who may marry whom - the household layer neither imports this nor names
+ * the field, and a scan of that directory would fail if it did. Not who may be
+ * on a roll: **a bar governs admission from outside, and being on a roll from
+ * birth or from a word spent is a different relationship to the house.** Not
+ * what anybody is worth, is capable of, or may be taught. A closed house is a
+ * door, and the rest of the world is on the other side of it.
+ *
+ * ── THE TWO, AND WHY THESE TWO ──────────────────────────────────────────
+ *
+ * Both are **Courts**, and that is the ruling rather than a preference: a gate
+ * is only interesting if what is behind it is worth wanting. A minor house
+ * refusing half of everybody costs those players nothing - they walk past it
+ * and the run is identical.
+ *
+ * Neither is one of the two Courts that must not carry this. The Azure Mist
+ * Court's bar is zero by design with a test asserting it, and the Hollow Court
+ * is the catalog's exception in every direction and produces rules nobody can
+ * generalise. The Tally Court was destroyed two thousand three hundred years
+ * ago and admits nobody at all. Of the three that were left, the Storm Tyrant
+ * Court is the one this would contradict: it is known for COLLECTION and treats
+ * a refusal as a scheduling matter, so a door it shuts on half the world is a
+ * rule bolted onto a house whose whole character is taking people anyway.
+ */
+export const A_HOUSE_THAT_TAKES_ONE_SEX: Readonly<Record<string, Sex>> = Object.freeze({
+    /**
+     * The house whose reputation IS a closed door.
+     *
+     * `faction-character.ts` has it turning away everybody, being unpleasant
+     * about it, and never considering an explanation to be part of the work -
+     * and then says the refusal is the service. A second condition at that door
+     * is not a new behaviour; it is the same one.
+     *
+     * And the side it takes is the catalog's, not an invention: the Court's own
+     * `wrongAbout` entry says the hall was built over the Mirror afterwards,
+     * and the Mirror is a woman. A Court seated on her that admits women reads
+     * as though it was always so.
+     */
+    'sect-frostmirror-court': 'female',
+    /**
+     * Nine hundred years, nine hundred nodes lit, and no outsider past the
+     * gate in any of it.
+     *
+     * The Wardens neither buy nor sell, have never been recorded making an
+     * exchange of any kind, and turn applicants around once, politely, with a
+     * figure for how far the nearest inn is. Their `fear` entry is the word
+     * "Unknown", and the catalog says the absence is what alarms the other
+     * powers.
+     *
+     * **So this is the one of the two with no stated reason, and that is where
+     * it belongs.** A house that has explained nothing in nine hundred years
+     * does not explain this either, and a player refused here is refused the
+     * way everybody is refused here: in numbers, at the gate, once.
+     */
+    'sect-kiln-wardens': 'male'
+});
+
+/**
+ * Whom this house will admit, or null where it admits anybody.
+ *
+ * Undefined is not returned: a faction the catalog has never heard of is not a
+ * house with a closed door, it is a house nothing is known about, and the
+ * honest answer to "would it turn me away for this" is no.
+ */
+export function whoAHouseWillTake(factionId: string): Sex | null {
+    return A_HOUSE_THAT_TAKES_ONE_SEX[factionId] ?? null;
+}
+
+/**
+ * Whether this house's door is shut to this person, and the sentence saying so.
+ *
+ * Returns null when it is not - which is almost always - so a caller writes
+ * `const shut = theDoorIsShutTo(...)` and has both the answer and the refusal
+ * in one. A refusal names a route, and the route here is the only honest one:
+ * there is not one, and the other houses are.
+ */
+export function theDoorIsShutTo(factionId: string, sex: Sex): string | null {
+    const takes = whoAHouseWillTake(factionId);
+    if (takes === null || takes === sex) return null;
+    const name = SECT_BY_ID.get(factionId)?.name ?? factionId;
+    return `${name} takes only ${takes === 'female' ? 'women' : 'men'}, and has for as long `
+        + 'as anybody can name. It is not a bar you can climb to and it is not one a word '
+        + 'from anybody opens - there is no version of this where you are admitted. Whatever '
+        + 'you wanted from them, another house is where you will have to want it from.';
 }
 
 /**
