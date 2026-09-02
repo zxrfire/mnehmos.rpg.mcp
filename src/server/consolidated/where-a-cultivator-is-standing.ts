@@ -77,7 +77,17 @@ export function standingOf(cultivator: Cultivator): Standing {
     //
     // Checked AFTER places, so a town that shares its province's name still
     // wins: a town is somewhere you can walk to and a province is not.
-    const asProvince = REGIONS.find(region => region.name.toLowerCase() === needle);
+    //
+    // Article-insensitive, because the parser strips a leading "the" off the
+    // destination and every province in the world is named "The" something.
+    // Matching elsewhere already works this way - see `loosePlaceKey` - and a
+    // run without the world layer loaded has no world row to canonicalise
+    // against, so this branch is the only thing standing between "I travel to
+    // The Quiet Marches" and a cultivator reported as being somewhere else.
+    const bare = (name: string) => name.replace(/^the\s+/i, '');
+    const asProvince = REGIONS.find(region =>
+        region.name.toLowerCase() === needle
+        || bare(region.name.toLowerCase()) === bare(needle));
     if (asProvince) {
         return {
             regionId: asProvince.id,

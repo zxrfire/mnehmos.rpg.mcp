@@ -66,7 +66,7 @@ import {
     getPrice
 } from '../data/cultivation/mortal-world.js';
 import {
-    localPrice, canAdvanceHere, requireRegion, REGIONS
+    localPrice, canAdvanceHere, requireRegion, regionIdOfPlace, REGIONS
 } from '../data/cultivation/regions.js';
 import {
     treatWorstInjuries,
@@ -2869,8 +2869,19 @@ ${noticed}`;
         // So canonicalise to the row the world actually holds. The refusals
         // above deliberately keep the player's own words; this is the arrival,
         // and the arrival is a fact about the world.
+        // The world's row where there is one; otherwise the catalog's province,
+        // because a run without the world layer still travels and still has to
+        // store a name the rest of the engine can resolve.
         const worldRow = this.atHand ? worldLocationFor(this.atHand, place.name) : null;
-        const arrivedAt = worldRow?.name ?? place.name;
+        //
+        // PLACES WIN. A town you can walk to is a better answer than the
+        // province containing it, so the province branch is consulted only when
+        // the typed name is not a place the catalog knows.
+        const bareName = (name: string) => name.replace(/^the\s+/i, '').toLowerCase();
+        const asProvince = regionIdOfPlace(place.name)
+            ? undefined
+            : REGIONS.find(region => bareName(region.name) === bareName(place.name));
+        const arrivedAt = worldRow?.name ?? asProvince?.name ?? place.name;
 
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, SHORT_ACTION_DAYS, {
