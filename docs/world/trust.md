@@ -292,8 +292,39 @@ information whatsoever — reading it as loss is simply reading the calendar.
 
 **What persists is families.** A name outlives every person who carries it, so **the surname
 is the continuity she can actually read** — which of the house's lines are still on the roll,
-generations down. The extreme case is a founding family whose name is still there after
-everything else has turned over.
+generations down.
+
+**The extreme case is a name still sitting at the top of the house.** The Ru line holds the
+Azure Cloud Pavilion's Pavilion Master and its immortal, so somebody waking and finding a Ru
+still holding the Pavilion knows more than that the house survived — **the line that made it
+is still running it.** That is continuity nobody can acquire, unlike relics, which change
+hands. And the inverse is the strongest negative signal in the world: **the Ru gone from Azure
+Cloud would not be drift, it would be a catastrophe with a cause.**
+
+**The given name is a clock.** A generation shares a character — Ru Anjing, Ru Anwei, Ru Anxi
+are one generation, and Ru Wenshi and Ru Bo are not. So the roll does not only say *whether*
+the line held; **it says how many generations have passed**, which is exactly the quantity a
+sleeper has lost and cannot get any other way.
+
+**And the name descends through whoever carries the lineage, not through the fathers.** The
+Ru line runs through women — the Pavilion Master and the sister who left — and the name goes
+down it regardless, **because what is being carried is an immortal lineage rather than a
+patriline.** A child of that family is a Ru. The same holds for the dao houses: where a house
+'s name is the thing of value, the name follows the parent who has it.
+
+**The catalog already holds three houses that read differently on this, which is the argument
+that the mechanic is not invented for one of them:**
+
+- **Ru, at the Azure Cloud Pavilion — the line is at the top.** It holds the Pavilion Master
+  and the immortal both, so its presence on the roll settles the question in one look.
+- **Xu, at the Anchorhold — the line persists and the house refuses to read it.** Xu Ci lies
+  under the datum stone and living Xu still walk the house, which has *never treated the
+  succession as a family matter*. **The signal is there and is deliberately not used**, which
+  is a more interesting state than either extreme.
+- **Meng, at the Nine Peaks Ascetic Order — the mechanic, already written out.** Of Patriarch
+  Meng Da the catalog says the line *runs to him unbroken and legibly, and he would recognise
+  it in a sentence*. **That is this entire section, stated in the data before it was stated
+  here**, for a sealed ancestor nobody designed the model around.
 
 - **The old pieces are there and the old names are not** — the house kept its things and lost
   its lines. **A family does not simply fade**; somebody was purged, exiled, or walked out,
