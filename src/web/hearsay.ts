@@ -43,6 +43,13 @@
 
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { forStream } from '../engine/cultivation/rng.js';
+// Imported rather than restated as `'player'`, so that grepping
+// `PLAYER_ROLL_IDENTITY` finds every stream in the layer that is keyed on the
+// run's one player - this module was missed for exactly as long as it was not
+// in that list. `encounters.ts` imports `othersPresent` from here, so the two
+// modules form a cycle; it is harmless because neither reads the other's
+// binding at module scope, and it must not be "fixed" by inlining the string.
+import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
@@ -414,7 +421,28 @@ export interface HearingInput {
 export function offerHearing(input: HearingInput): Hearing | null {
     const { repos, gate, cultivator, run, occasion } = input;
     const day = Math.floor(run.elapsedDays);
-    const rng = forStream(run.seed, 'web_hearsay', day, occasion, cultivator.id);
+    // ── WHY THE ROW ID IS NOT IN THIS STREAM ─────────────────────────────
+    //
+    // It used to be, and it made this module the one stochastic system in the
+    // web layer that was NOT reproducible from the run seed. Every cultivator
+    // row id in this engine is a `randomUUID()` - `game.ts` mints the player's
+    // - so the stream was stable within a process and meaningless across one:
+    // the same seed, the same day and the same people overheard different
+    // names from one run to the next.
+    //
+    // It showed up as a test that failed about one run in ten while the code
+    // under it never changed, which is the characteristic way this defect
+    // reports itself: a rare outcome that moves between processes looks like
+    // flakiness in the guard rather than a broken promise in the engine.
+    //
+    // The constant is the house answer and not a placeholder. The component's
+    // job is to stop two cultivators standing in one place drawing alike, and
+    // that case cannot arise here - `GameService.hear` is the only caller and
+    // it passes the run's player, and a run has exactly one. So the slot stays
+    // filled, saying WHO the draw is for, rather than being deleted; deleting
+    // it would leave the next person to add a subject reaching for
+    // `cultivator.id` again, which is how this arrived twice already.
+    const rng = forStream(run.seed, 'web_hearsay', day, occasion, PLAYER_ROLL_IDENTITY);
     const locale: Locale = { regionId: regionOfPlace(cultivator.location) };
 
     const present = othersPresent(repos, cultivator, input.world);
