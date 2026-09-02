@@ -50,13 +50,42 @@
  *     who they   how freely THIS PARTICULAR PERSON parts with things, which is
  *      are       a fact about them and not about their house. See DISPOSITION.
  *
- * FOUR OUTCOMES, BECAUSE TWO IS NOT PLAY
+ * FIVE OUTCOMES, BECAUSE TWO IS NOT PLAY
  * --------------------------------------
  *   taken     they did it, and the tie or the obligation is real
  *   turned    they did it AND took hold of you - the bribe that buys somebody
  *             who then owns you back. A second record, pointing the other way.
+ *   countered they did not do it and they did not close the door: there is
+ *             something they want that you are in a position to reach, so the
+ *             answer is terms rather than no. See THE FIFTH OUTCOME.
  *   refused   they said no, and now they know what you tried
  *   reported  they said no and it reached their house
+ *
+ * THE FIFTH OUTCOME
+ * -----------------
+ * `countered` was missing and its absence was load-bearing. Above the cash line
+ * this world does not sell things - `items.md`: *"cash is simply not the
+ * medium. Not 'expensive' - not for sale"* - and what moves people instead is a
+ * favour owed, another singular thing, an oath, a name. Every one of those is a
+ * NEGOTIATION, and a resolver whose failure states were only *no* and *no, and
+ * they told somebody* had nowhere to put one. So a player who found the right
+ * holder of the right object and put down the wrong thing got the same sentence
+ * as somebody who had insulted them, and the whole barter tier - every
+ * heaven-grade and above cure in the catalog among it - was unreachable in play
+ * while the refusals correctly named what would have worked.
+ *
+ * It fires on exactly one condition, and the condition is a term this resolver
+ * has priced since it was written: `theyWantSomethingFromYou`. Somebody with an
+ * open want the person in front of them could move does not simply say no. They
+ * say what they would take. So the fifth outcome needs no new input and no new
+ * table - it is the existing term read for what it already means.
+ *
+ * It leaves nothing behind. No grudge, because being told the price is not
+ * being refused; no tie, because nothing was agreed; no report, because there
+ * is nothing to report. What it costs is the days, which are real. `AGENTS.md`
+ * ruled the general form of this - *"a refusal is not automatically an
+ * offence"* - and a counter-offer is the least offensive thing in the set: it
+ * is the door being held open with a figure written on it.
  *
  * ROMANCE AND USING SOMEBODY ARE THE SAME MOVE UNTIL THE NUMBERS DIVERGE
  * ---------------------------------------------------------------------
@@ -482,7 +511,7 @@ export interface AttemptInput {
 // OUTPUT
 // ─────────────────────────────────────────────────────────────────────────
 
-export type AttemptOutcome = 'taken' | 'turned' | 'refused' | 'reported';
+export type AttemptOutcome = 'taken' | 'turned' | 'countered' | 'refused' | 'reported';
 
 /** One side of a tie the attempt asks the caller to write. */
 export interface TieSide {
@@ -1131,6 +1160,36 @@ export function resolveAttempt(input: AttemptInput): AttemptResult {
     const landed = input.rng.next() < odds;
 
     if (!landed) {
+        // ── THE FIFTH OUTCOME ────────────────────────────────────────────
+        //
+        // Read before the report roll, because a counter-offer is not a
+        // refusal and there is nothing about it to carry to anybody's house.
+        // The one term it turns on is the one the resolver has always priced
+        // and nothing ever set: somebody with an open want that the person in
+        // front of them could move does not say no, they say what they would
+        // take. Nothing is written to the ledger and no tie moves - see the
+        // header - and the days are still spent, because the conversation
+        // happened.
+        if (input.theyWantSomethingFromYou === true) {
+            return {
+                outcome: 'countered',
+                odds,
+                terms,
+                days,
+                stonesSpent: 0,
+                marks: {
+                    theyKnowWhatYouTried: true,
+                    reachedTheHouse: false,
+                    obligation: null,
+                    counterObligation: null,
+                    tie: null,
+                    unspoken: null
+                },
+                line: `${input.subject.name} did not agree and did not close the door. `
+                    + 'There is something they want, and they said so.'
+            };
+        }
+
         const reached = input.rng.next() < reportOdds(input);
         const outcome: AttemptOutcome = reached ? 'reported' : 'refused';
         return {
