@@ -721,17 +721,18 @@ function renderStatus() {
     //
     // This used to read "narrator anthropic/claude-opus-5 (not configured)",
     // which names a model that is not being used and then calls it broken. A
-    // player with no key has a game that is entirely playable: the engine
+    // player with no key has a game that is entirely playable - the engine
     // writes its own account, every verb works, and what a model adds is the
     // prose rather than the game. The server already decides this and hands
     // over `mode`, `modeLabel` and a full `modeLine`, so the wording is its
     // own and the two surfaces cannot drift apart.
     if (p.mode === 'local') {
       right.textContent = `engine ${h.version || '?'} · ${p.modeLabel || 'Local Mode'} - the engine narrates itself`;
+      right.title = p.modeLine || '';
     } else {
       right.textContent = `engine ${h.version || '?'} · narrator ${p.name || 'unknown'}${p.model ? `/${p.model}` : ''}`;
+      right.title = p.modeLine || '';
     }
-    right.title = p.modeLine || '';
   } else {
     right.textContent = 'engine unreachable';
     right.title = '';
@@ -1107,12 +1108,12 @@ function entryMarkup(entry, index) {
   if (role === 'narrator') {
     // A blank line starts a paragraph; a single newline is a LINE BREAK.
     //
-    // Without the second half the best thing this engine writes came out as
-    // mush. A seclusion returns a dated timeline - "Day 178 - Breakthrough
-    // succeeded, odds were 97.0%", "Day 360 - Something passed close by the
-    // cave and went on without stopping" - joined with single newlines, and
-    // HTML collapses those to spaces, so eleven distinct events ran together
-    // into one block. They are a list and they have to look like one.
+    // Without the second half the best thing the engine writes came out as
+    // mush. A seclusion returns a dated timeline - "Year 1, day 85 - a minor
+    // disturbance interrupted cultivation", "Year 1, day 152 - Breakthrough
+    // succeeded, odds were 67.6%" - joined with single newlines, and HTML
+    // collapses those to spaces, so eleven distinct events ran together into
+    // one unreadable block. They are a list and they have to look like one.
     const paras = text.split(/\n\s*\n/).filter((p) => p.trim().length);
     const body = (paras.length ? paras : [text])
       .map((p) => html`<p>${raw(p.trim().split('\n').map(esc).join('<br>'))}</p>`)
@@ -1744,7 +1745,8 @@ function renderQuickActions() {
     // `breakthroughBlockedReason` on every turn, and it sits directly above the
     // command input - so a player who asked "what sects are there" and read
     // "Not enough has accumulated: 0 of 100 qi-units" underneath it reasonably
-    // took that for the answer to their question.
+    // took that for the answer to their question. Same text, same place, and
+    // wrong every time it was not the thing they had just tried.
     refusal.textContent = '';
     if (reason) {
         const label = document.createElement('b');
@@ -3060,13 +3062,18 @@ const ROSTER_COLUMNS = [
 ];
 
 /**
- * The standing register, in its own tab.
+ * The standing register, as an overlay like every other operator tool.
  *
- * Deliberately not an overlay. It is a long reference sheet an operator reads
- * *beside* a run rather than instead of it, and the server already renders it
- * as a complete document - so the browser is a better viewer than anything
- * this file would reimplement. Regenerating is a reload: the endpoint rebuilds
- * from the catalogs on every request.
+ * It is carried in an IFRAME rather than injected into `#overlay-body`. The
+ * server renders the register as a complete document with its own stylesheet,
+ * and dropping that markup into the app's DOM would put two type scales and
+ * two colour systems in one cascade. The frame keeps the sheet exactly as the
+ * endpoint renders it and costs this file no reimplementation.
+ *
+ * Reading it beside a run is still available - the footer keeps a tab link -
+ * but the overlay is the default, because that is where an operator looks for
+ * the other tools. Regenerating is a reload: the endpoint rebuilds from the
+ * catalogs on every request.
  */
 /* ── the admin menu ────────────────────────────────────────────────────
    Operator tools hang off the badge rather than sitting in the bar, so the
@@ -3085,9 +3092,35 @@ function closeAdminMenu() {
 
 function openRegister(refresh) {
   const url = refresh ? '/api/admin/register.html?refresh=1' : '/api/admin/register.html';
-  const win = window.open(url, 'standing-register');
-  if (!win) toast('Popup blocked', 'Allow popups, or open /api/admin/register.html directly.');
-  else if (refresh) toast('Rewriting the register', 'The prose is being regenerated; the tab will take a moment.');
+  const body = $('#overlay-body');
+  body.classList.add('overlay__body--flush');
+  openOverlay({
+    title: 'The Standing Register',
+    wide: 'x',
+    body: html`<iframe class="registerframe" src="${url}" title="The Standing Register"></iframe>`,
+    foot: html`<a class="btn" href="${url}" target="_blank" rel="noopener">Open in a tab</a>
+      <button class="btn btn--primary" type="button" data-overlay-close data-autofocus>Close</button>`,
+    onClose: () => body.classList.remove('overlay__body--flush')
+  });
+
+  // The register carries its own way out, written for the tab it used to open
+  // in: with no `window.opener` to go back to it navigates to the game, which
+  // inside a frame would load the whole app into this panel. Same origin, so
+  // reroute those controls to close the overlay instead. If the frame ever
+  // stops being same-origin this silently does nothing and the footer's Close
+  // is still the way out.
+  const frame = body.querySelector('.registerframe');
+  frame.addEventListener('load', () => {
+    let doc;
+    try { doc = frame.contentDocument; } catch { return; }
+    if (!doc) return;
+    for (const el of doc.querySelectorAll('[data-leave], .leave, a[href="/"]')) {
+      el.addEventListener('click', ev => { ev.preventDefault(); closeOverlay(); });
+    }
+    doc.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeOverlay(); });
+  });
+
+  if (refresh) toast('Rewriting the register', 'The prose is being regenerated; it will take a moment.');
 }
 
 async function openRoster() {

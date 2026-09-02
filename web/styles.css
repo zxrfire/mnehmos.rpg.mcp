@@ -1482,6 +1482,19 @@ kbd {
 .overlay__panel[data-wide="1"]           { width: min(940px, 100%); }
 .overlay__panel[data-wide="2"]           { width: min(1340px, 100%); }
 
+/* The standing register is a full reference sheet in a frame: it wants the
+   whole panel, so the body loses its padding and its own scrolling and the
+   frame does both. `--flush` is set by `openRegister` and cleared on close. */
+.overlay__body--flush { padding: 0; overflow: hidden; }
+.registerframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 60vh;
+  border: 0;
+  background: var(--ink-800);
+}
+
 .overlay__head {
   display: flex;
   align-items: center;
