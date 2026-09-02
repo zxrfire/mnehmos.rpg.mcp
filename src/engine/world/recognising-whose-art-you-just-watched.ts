@@ -125,36 +125,23 @@
 import { isAtLeast, type KnowingStage } from '../social/discovery.js';
 import { HELPLESS_REALM_GAP } from '../cultivation/combat.js';
 import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
-import { COMMON_HOUSE_COUNT, housesTeaching, whoseArt } from './manuals.js';
+import { noHouseCanCallItTheirs, whoseArt } from './manuals.js';
 
-/**
- * Taught in enough places that no house can call it theirs.
- *
- * `COMMON_HOUSE_COUNT` read directly, and NOT `isCommonlyHeld`, which is the
- * one thing in this file that looks like a duplication and is not.
- *
- * `isCommonlyHeld` opens `if (t.class !== 'cultivation' || t.cap == null) return
- * true`, so it answers "common" for every FIGHTING art in the catalog - it is
- * written for roads, where commonness is about how many shelves a ladder sits
- * on, and a sword art has no `cap` to reason about. Measured: the Azure Cloud
- * Pavilion's own signature, `void-piercing-sword-domain`, is taught by exactly
- * one house in the world and `isCommonlyHeld` calls it nobody's.
- *
- * A house's signature is usually a fighting art, and it is precisely what
- * `trust.md` means by "the art is the strongest check", so this module cannot
- * use a predicate that reads every signature in the game as unowned. The half
- * of `isCommonlyHeld` that generalises is its second clause, which counts
- * holders rather than height - "commonness was never a fact about height, it is
- * a fact about HOW MANY PEOPLE HOLD IT" - and that is what is used here.
- *
- * The discrepancy is reported rather than fixed: `isCommonlyHeld` has live
- * consumers (`unauthorisedPractice`, the asking layer) whose prices would move,
- * and whether a fighting art can be somebody's property is a design question
- * rather than a bug to patch from here.
- */
-function noHouseCanCallItTheirs(techniqueId: string): boolean {
-    return housesTeaching(techniqueId) >= COMMON_HOUSE_COUNT;
-}
+// ── THE PRIVATE COPY OF THIS PREDICATE IS GONE, AND THAT IS THE FIX ──────
+//
+// This file used to carry its own `noHouseCanCallItTheirs`, with a note saying
+// it deliberately refused to use `isCommonlyHeld` - which returns true for
+// everything without a `cap`, hence for every fighting art in the catalog, so a
+// signature one house teaches read as nobody's. The note ended: *the
+// discrepancy is reported rather than fixed*, because `isCommonlyHeld` had live
+// consumers whose prices would move and whether a fighting art can be somebody's
+// property was a design question rather than a bug to patch from here.
+//
+// It was answered: it can. `manuals.ts` now carries `noHouseCanCallItTheirs` as
+// the property line for the whole codebase, `isCommonlyHeld` keeps the question
+// it was written for - whether a stall stocks a thing - and the prices that were
+// going to move have moved. This module was right first and is now reading the
+// shared function instead of a copy of it.
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE TWO AXES, EACH ON ITS OWN SCALE
