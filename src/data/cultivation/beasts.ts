@@ -413,6 +413,66 @@ export const ESTIMATING_A_BEAST = {
         'Gleaners, herb gatherers on guarded ground, and anybody who has been paid per head for long enough to have stopped guessing. Sect disciples are the worst at it, because they have never had to be right about it alone.'
 } as const;
 
+/**
+ * What actually gives a changed beast away.
+ *
+ * NOT THE BODY. A beast past the change cultivated its way into a human
+ * shape, and the shape is correct - there is no wrong hand, no stillness held
+ * a beat too long, no failure to blink. Looking harder does not help, and any
+ * entry in this catalog that hints otherwise is wrong.
+ *
+ * > **The body is perfect. The upbringing is missing.**
+ *
+ * It did not have a childhood in a village. So it looks entirely right and
+ * does not know what the chopsticks are - and that holds for every one of
+ * them, the fox included. A fox's gift is seeming, and seeming makes the body
+ * right; it does not supply twenty years of sitting at a table with people.
+ *
+ * ── WHICH IS A MECHANIC THIS WORLD ALREADY RUNS TWICE ────────────────────
+ *
+ * `docs/world/houses/trust.md` splits a reader on two axes: **realm is
+ * capability, worldview is reference.** A changed beast is the purest case of
+ * the second failing while the first is enormous - it can perceive anything
+ * and has a reference for nothing. That is the same shape as the high-realm
+ * recluse who reads a token perfectly and cannot say whose retinue that is,
+ * and as the sealed ancestor who wakes asking whether that house still
+ * stands. Three arrivals, three unrelated fictions, one rule, and the rule
+ * was designed for none of them.
+ *
+ * So this needs NO FIELD and no species branching. What somebody has a
+ * reference for is already modelled - `KnowingStage` in
+ * `src/engine/social/discovery.ts` is that axis, held per subject, and
+ * `perceivedButCouldNotPlaceIt` is already the engine's phrase for the rung
+ * being enough while the reference was not. A changed beast is an ordinary
+ * reader with an unusual profile, exactly as the sealed ancestor is.
+ *
+ * ── AND IT INVERTS WHO CATCHES ONE ───────────────────────────────────────
+ *
+ * Unreadable by looking, because the shape is flawless. Readable by TALKING,
+ * if the talk goes on long enough about ordinary things. So the person who
+ * spots one is not the strongest cultivator in the room - it is whoever sat
+ * next to them at a meal. That hands an ordinary person something only they
+ * can do, which `trust.md` argues is the one kind of authority in this world
+ * that does not come off the ladder.
+ */
+export const WHAT_GIVES_A_CHANGED_BEAST_AWAY = {
+    notTheBody:
+        'The shape is correct and looking harder does not help. It cultivated into that body rather than being fitted into one, and nothing about it is a costume that slips.',
+    theGap:
+        'It never had a childhood among people. It can perceive anything in the room and has no reference for what any of it is for, so it asks what the chopsticks are.',
+    everyOne:
+        'True of all of them, the fox included. Seeming makes a body right; it does not supply twenty years of sitting at a table with people.',
+    howItSurfaces:
+        'In conversation about ordinary things, over time, and never in a look. A meal is the classic circumstance because a meal is long, ordinary, and full of objects nobody explains.',
+    whoNoticesFirst:
+        'Whoever sat next to them, at whatever rung. This is the one reading in the world that gets harder rather than easier as the reader climbs, because a recluse at the top of the ladder has the same hole in their own reference and nothing to compare against.',
+    theSameRuleElsewhere: [
+        'the high-realm recluse, who reads a token perfectly and cannot say whose retinue that is',
+        'the sealed ancestor, waking after centuries to ask whether that house still stands',
+        'the changed beast, asking what the chopsticks are'
+    ]
+} as const;
+
 // ─────────────────────────────────────────────────────────────────────────
 // THE CATALOG
 // Ordered by ordinal, which is the only ordering that means anything here.
@@ -802,10 +862,15 @@ export const BEASTS: readonly Beast[] = [
         //
         // The archetype the change is built around - a beast that takes human
         // form and can be spoken to - is a fox before it is anything else,
-        // and this entry carries it. The id says so, and so does the tell:
-        // the shape is right and the hands are wrong. Anybody searching the
-        // repo for a fox should land here.
-        note: 'A nine-tailed fox wearing a plain human shape badly, in the sense that everything is right and the hands are wrong. Sits in the temple ruin most evenings and is not, technically, trespassing.'
+        // and this entry carries it. The id has said so since the file was
+        // written. Anybody searching the repo for a fox should land here.
+        //
+        // AND A FOX WEARS THE SHAPE PERFECTLY. Seeming is the thing a fox is
+        // best at, so there is no anatomical tell here and there must not be
+        // one - a fox with wrong hands is a fox that is bad at being a fox.
+        // What gives one away is in WHAT_GIVES_A_CHANGED_BEAST_AWAY, it is
+        // not about the body, and it is not this species' problem alone.
+        note: 'A nine-tailed fox in a plain human shape, worn perfectly, because seeming is the one thing a fox never had to learn. Sits in the temple ruin most evenings and is not, technically, trespassing.'
     },
 
     // ═══════════════════════════════════════════════════════════════════

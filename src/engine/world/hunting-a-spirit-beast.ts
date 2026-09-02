@@ -473,6 +473,21 @@ const STRONGER_OF: Record<AbilityTier, Record<AbilityTier, AbilityTier>> =
  * simply an extreme input, because its body is worth a great deal. It makes a
  * general rule visible instead of needing one of its own.
  *
+ * AND IT IS CAUGHT BY TALKING, NEVER BY LOOKING. A changed beast wears the
+ * human shape perfectly - it cultivated into that body - so there is no
+ * anatomical tell and nothing here may invent one. What is missing is the
+ * upbringing: it never had a childhood among people, so it can perceive
+ * anything in a room and has no reference for what any of it is for.
+ * `WHAT_GIVES_A_CHANGED_BEAST_AWAY` in the catalog carries the statement.
+ *
+ * That needs no field. It is `trust.md`'s second axis - realm is capability,
+ * worldview is reference - and `KnowingStage` in
+ * `src/engine/social/discovery.ts` already holds reference per subject, with
+ * `perceivedButCouldNotPlaceIt` already meaning the rung was enough and the
+ * reference was not. A changed beast is that model handed an unusual reader,
+ * exactly as the sealed ancestor is, and both should walk the same ladder
+ * rather than getting checks of their own.
+ *
  * Every piece that needs is already written and unwired, which is why this is
  * a wiring job rather than a design one:
  *
@@ -500,9 +515,14 @@ export function readTheThing(beast: Beast, hunterOrdinal: number): string {
     const regard = regardOf(beast, clampOrdinal(hunterOrdinal));
     const height = `${beast.name}, at ${rankName(beast.ordinal)}`;
     if (readsAsSomebody(beast)) {
-        return `${height}. It has a shape and it is watching you have the thought. `
-            + `Whatever else it is, it is a party to a conversation, and opening with a `
-            + `sword is how that goes wrong.`;
+        // No anatomical tell, deliberately - see
+        // `WHAT_GIVES_A_CHANGED_BEAST_AWAY`. The shape is correct and looking
+        // harder is not the check. What is offered here is the rung and the
+        // fact that it is a party; what would actually give it away is a
+        // conversation nobody is having while deciding whether to swing.
+        return `${height}. The shape is exactly right, and it is watching you have the `
+            + `thought. Whatever else it is, it is a party to a conversation, and opening `
+            + `with a sword is how that goes wrong.`;
     }
     return `${height}. ${regard.reaction}`;
 }
