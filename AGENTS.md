@@ -1486,3 +1486,37 @@ only you know.
 When several agents work at once, the shared checkout is dirty almost all the
 time. That is a reason to stage explicit paths, not a reason to start another
 branch.
+
+### A file has one owner at a time, and the coordinator routes changes to them
+
+When several agents run at once, the failure is never that two people disagreed
+about a design. It is that two people edited the same file, and the one who
+committed second either swept the other's half-finished work into their commit
+or lost it.
+
+**So the coordinator names the files each agent owns when it dispatches them,**
+and an agent works inside that set. If an agent needs a change in a file
+somebody else holds, it does not make the change and does not wait: **it says
+what it needs and why, and the coordinator passes that to the agent who holds
+the file.** The holder makes the change, because they are the one who can tell
+whether it breaks what they are half-way through.
+
+That is slower for exactly one message and faster for everything after it. In a
+single night, without it:
+
+- Two commits swept nineteen and then seven files of somebody else's live work
+  under the wrong message, and both had to be unpicked by hand.
+- An agent's measurements were corrupted mid-run because a catalog row it was
+  reading changed underneath it - it read 3, then 0, then mid-write garbage.
+- Three separate agents hit the same red test caused by a fourth agent's
+  uncommitted file, and each correctly refused to "fix" it, because the fix
+  would have deleted work that was not theirs.
+
+**An agent that finds a file dirty with somebody else's edits must not commit
+it.** Deliver everything else, say plainly which part is blocked and on what,
+and hand it back. An honestly stated absence is worth more than a commit that
+takes a stranger's unfinished work with it.
+
+**And the coordinator owns the merge.** Agents land on their own branch or hand
+back a diff; deciding whose version of a contested file wins is a judgement
+about the whole tree, and it needs somebody who can see all of it.
