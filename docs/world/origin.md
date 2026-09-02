@@ -166,6 +166,68 @@ A child placed at the Pavilion is therefore the one placement in the world where
 carrying a debt. Depending on who you ask, that is either the cleanest thing somebody can do
 for a child or a way of giving them nothing.
 
+### OPEN: nobody can currently find the most open door in the setting
+
+<!-- tier: 2 trigger="somebody has to reach the Azure Cloud Pavilion, or asks how anybody hears of a house whose intake is people walking up" -->
+
+**This needs a ruling and is written up rather than settled, because settling it either way
+turns four tests red for reasons that are not defects.**
+
+The two halves above are both true and together they close the door completely:
+
+- **The intake is people walking up the mountain.** That model only works if the name
+  travels - a house whose whole programme is being walked to must be a house somebody has
+  heard of.
+- **And nobody is ever placed there, because the Pavilion's standing sits above what any
+  family's name reaches.** A child of the strongest house alive has not heard it named at
+  home.
+
+`commonlyNamedHouses` in `src/engine/birth/birth.ts` implements the second, correctly, and
+in doing so implements neither: it names houses in your own region whose
+`admissionOrdinal` is at the floor, and the Pavilion's `admissionOrdinal` is its
+**membership bar**, not its door. So the Pavilion is nameable to nobody at birth anywhere.
+
+**Measured, in a played run.** A cultivator born in the Quiet Marches travelled to the Low
+Fall, stood in the gorge, and asked *what sects are there*. The answer was the two houses
+from the province they had left. Asking around about the Pavilion by name returned village
+gossip about strangers. A previous attempt to fix it by naming every house with a floor
+door wherever it sat turned four tests red against the passage above, and was correctly
+reverted - the revert is recorded in `birth.ts` in full.
+
+Two rulings are available and they are genuinely different worlds:
+
+1. **The family-reach rule narrows to family channels only.** *Standing* does not reach the
+   Pavilion - nobody's word gets a child in, and no house's name gets a child mentioned
+   there - but the *road* does, so somebody in the gorge, or in the province, has heard of
+   it the way they have heard of a mountain. Cheapest to implement: `commonlyNamedHouses`
+   would read the published door rather than `admissionOrdinal` for local houses. The risk
+   is that it quietly weakens the passage above, which is doing real work.
+2. **The Pavilion is found by walking rather than by being told.** Nothing at birth names
+   it and nothing in the county gossip set names it; what names it is arriving in the Low
+   Fall and looking at the terraces, or meeting one of the six scouts on their fourteen-month
+   circuit. This keeps the passage above exactly as written and needs a discovery route that
+   does not exist yet - the scouts are fully specified in `AZURE_CLOUD_INTAKE.theScouts`
+   and are read by nothing.
+
+Until it is ruled, the intake is reachable by any player who has been told the name by any
+means, and by nobody who has not.
+
+### OPEN: two catalogs disagree about who feeds a probationer
+
+<!-- tier: 2 trigger="somebody on an intake roll runs out of provisions, or the question is what a probationer is actually given" -->
+
+`AZURE_CLOUD_INTAKE.theRank` says a probationer "holds a place in the compound and no rung
+on the ladder. **They are fed, taught and rotated**, and they are not on the list."
+
+`WHAT_A_GUEST_PLACE_IS_NOT` says "**No share of the house's stores.** You are inside and you
+are not drawing on what is in there - what you are being given is somebody's hours and
+nothing off the shelves."
+
+Both are load-bearing prose and they cannot both be true of the Azure intake. The engine
+currently applies the second, so a probationer buys their own rations for a probation that
+runs thirty to fifty years, out of a purse a nobody does not have. Reported rather than
+resolved, per the rule for two places that disagree.
+
 ## Spending one on your own child
 
 <!-- tier: 2 trigger="a cultivator with standing has a child to place, or a placed child asks who arranged it" -->

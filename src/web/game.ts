@@ -119,7 +119,7 @@ import { handleMarket, handleWork, standingOf } from '../server/consolidated/cul
 import { SECT_BONUS_PER_RANK } from '../server/consolidated/cultivation-manage.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
 import { handleGuest } from '../server/consolidated/sect-guest.js';
-import { recallDueFor } from '../server/consolidated/sect-probation.js';
+import { applyProbation, probationOf, recallDueFor } from '../server/consolidated/sect-probation.js';
 import {
     handleJoin,
     handleLeave,
@@ -2535,12 +2535,56 @@ ${noticedWaiting}`;
                 // "0 of 100 toward the next rank" while the true answer is
                 // "nothing will ever accumulate" is a status screen that lies
                 // by omission.
-                return this.freeAction(run, 'status', factsForStatus(
+                const sheet = this.freeAction(run, 'status', factsForStatus(
                     cultivator, ambient, eligibility.progressRequired, eligibility.eligible,
                     techniqueCeiling(
                         cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap
                     ).line
                 ));
+                // ── AND A PROBATIONER IS NOT SOMEBODY WHO SERVES NO HOUSE ──
+                //
+                // Found by playing. The sheet reads whose roll somebody is on
+                // off `cultivator.sectId`, which a probationer correctly does
+                // not have - so a person in year twelve of an apex's intake
+                // asked "where do I stand" and was told "Serves no house.
+                // Nothing is owed to them and nothing is asked of them." Both
+                // sentences are true of a probationer and together they are
+                // the wrong answer, because the interesting fact about that
+                // person is the one they omit.
+                //
+                // Appended rather than threaded into `standingLines`: that
+                // function is pure and has no database, and the probation is a
+                // flag rather than a column on the row.
+                const onProbation = probationOf(this.repos, cultivator, run);
+                if (onProbation) {
+                    // AND IF IT HAS BEEN DECIDED, IT HAS BEEN DECIDED. The
+                    // scoring happens on the house's clock rather than on a
+                    // turn, and the commonest sentence a person in this
+                    // position types is this one - so a placement that only
+                    // fired on the word "guest" would be reachable in a test
+                    // and not in a life.
+                    const applied = onProbation.outcome === 'carried'
+                        ? null
+                        : applyProbation(this.repos, cultivator, run, onProbation);
+                    const line = applied
+                        ? applied.narrationHint
+                        : `On ${onProbation.factionName}'s intake roll, `
+                          + `${Math.round(onProbation.yearsOnTheRoll)} years in, and on nobody's `
+                          + 'house roll. Fed and taught and holding no rung, with no claim on the '
+                          + 'house and no claim to its name.';
+                    sheet.facts.lines.push(line);
+                    sheet.facts.prose = `${sheet.facts.prose}\n${line}`;
+                    sheet.facts.structure.push(
+                        applied
+                            ? `sect probation ${applied.outcome}`
+                              + `${applied.band ? ` (${applied.band})` : ''}: `
+                              + `${applied.yearsOnTheRoll}y on the roll, taken at `
+                              + `${applied.ageAtIntake}, now ${applied.ageNow}; apex ceiling `
+                              + `${applied.apexAgeCeiling}. ${applied.reason}`
+                            : `sect probation carried: ${onProbation.reason}`
+                    );
+                }
+                return sheet;
             }
 
             case 'work':
@@ -4528,7 +4572,7 @@ ${noticed}`;
             return this.fromToolResult('sect_manage.list', 'sect', listing, 'The sects');
         }
 
-        const all = (listing as { sects?: Array<{ id: string; name: string; admissible?: boolean | null }> }).sects ?? [];
+        const all = (listing as { sects?: Array<{ id: string; name: string; admissible?: boolean | null; guestDoorOpen?: boolean | null }> }).sects ?? [];
         const heard = all.filter(s => this.knowledge.isAwareOf(cultivator.id, 'sect', s.id));
 
         const facts = heard.length === 0
@@ -4551,8 +4595,18 @@ ${noticed}`;
                         : `The names you have for this are ${heard.slice(0, -1).map(x => x.name).join(', ')} ` +
                           `and ${heard[heard.length - 1].name}.`,
                     ...heard
-                        .filter(x => x.admissible === false)
+                        .filter(x => x.admissible === false && x.guestDoorOpen !== true)
                         .map(x => `${x.name} would not take you as you stand.`),
+                    // The house that will not take you as a disciple and will
+                    // take you today. Said as one sentence, because said as
+                    // two it reads as a contradiction, and because a player
+                    // who is only told the first half has been shown a closed
+                    // door in front of an open one.
+                    ...heard
+                        .filter(x => x.admissible === false && x.guestDoorOpen === true)
+                        .map(x => `${x.name} would not take you as a disciple as you stand, and `
+                            + 'its intake is open to you now - it takes people at the floor, '
+                            + 'carries them, and decides about them later.'),
                     'Knowing a name is not an introduction. Somebody would have to put you in front of them, ' +
                     'or you would have to walk up on your own.'
                 ]);

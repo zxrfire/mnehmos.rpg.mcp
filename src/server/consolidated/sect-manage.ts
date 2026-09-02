@@ -226,9 +226,24 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
     let sects = repos.sects.list();
     if (args.alignment) sects = sects.filter(s => s.alignment === args.alignment);
     if ((args.admissibleOnly ?? false) && ordinal !== null) {
+        // ── A HOUSE WHOSE DOOR IS OPEN IS NOT AN INADMISSIBLE HOUSE ──────
+        //
+        // Found by playing. A nobody standing in the Low Fall gorge, holding
+        // the Pavilion's name, asked "what sects are there" and was not told
+        // it - because the filter reads `admissionOrdinal`, which at that one
+        // house is the bar at the far end of the probation rather than the
+        // doorway. So the listing of houses somebody could put themselves in
+        // front of omitted the only house in the world whose entire intake is
+        // people walking up the mountain.
+        //
+        // The bar is not softened and the house is not marked admissible; it
+        // is simply not hidden from a person it would take today.
         sects = sects.filter(s => {
             const facts = getSect(s.id);
-            return s.admissionOrdinal <= ordinal && (facts?.recruits ?? true);
+            const door = publishedDoorOf(s.id);
+            const reachable = s.admissionOrdinal <= ordinal
+                || (door !== null && door.atOrdinal <= ordinal);
+            return reachable && (facts?.recruits ?? true);
         });
     }
 
@@ -248,6 +263,15 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
                 admissionRank: rankName(sect.admissionOrdinal),
                 admissible:
                     ordinal === null ? null : recruits && ordinal >= sect.admissionOrdinal,
+                // The second door, where the house has one. Separate from
+                // `admissible` on purpose: this is not membership and saying
+                // it was would be exactly the collapse the catalog spends
+                // three paragraphs preventing.
+                guestDoorOpen:
+                    ordinal === null
+                        ? null
+                        : (publishedDoorOf(sect.id)?.atOrdinal ?? null) !== null
+                          && publishedDoorOf(sect.id)!.atOrdinal <= ordinal,
                 ranks: sect.ranks,
                 stipend: sect.stipend,
                 memberCount: repos.sects.listMembers(sect.id).length,
