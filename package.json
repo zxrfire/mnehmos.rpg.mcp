@@ -31,7 +31,8 @@
     "verbs:embed": "node scripts/embed-the-verb-corpus.mjs",
     "mcp": "node dist/server/index.js",
     "docs:index": "node scripts/build-world-index.mjs",
-    "docs:houses": "node scripts/build-house-dossiers.mjs"
+    "docs:houses": "node scripts/build-house-dossiers.mjs",
+    "models:fetch": "node scripts/fetch-models.mjs"
   },
   "repository": {
     "type": "git",

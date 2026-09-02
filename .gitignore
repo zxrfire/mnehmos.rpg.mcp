@@ -87,3 +87,20 @@ run-game.ps1
 
 # Machine-specific browser-preview launcher (ports, local paths)
 .claude/launch.json
+
+# The sentence models the two no-model tiers run on, and the runtime that
+# executes them. Fetched once by `npm run models:fetch`, never committed:
+# this repository is a fork, and a fork on GitHub cannot hold its own large
+# files - they would have to live in the upstream repository, which is not
+# ours to write to. `models/README.md` says what each file is and records
+# the sweep that chose these two.
+models/**/*.onnx
+models/**/vocab.txt
+models/**/config.json
+models/**/tokenizer_config.json
+web/tier/**/*.onnx
+web/tier/**/vocab.txt
+web/tier/ort/
+*.f32
+models/**/verb-corpus.json
+web/tier/**/verb-corpus.json
