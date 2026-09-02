@@ -318,11 +318,35 @@ reason is developmental rather than ceremonial: **that is how a house's youngest
 by being challenged.** A house that stopped competing to protect its secrets would be trading
 its next generation for the privacy of the current one.
 
-**So the normal case is the strongest possible position: an art nobody can acquire and everybody
-can recognise.** Secret in transmission, public in performance. That is why the top of the
-hierarchy is not the rare check you would expect — **plenty of ordinary people have watched an
-apex house's art at a tournament**, so the reference needed to run the check is widely held, and
-a member of a great house carries verification anywhere they go without holding anything.
+**So the normal case is the strongest position available: an art nobody can acquire and the
+right people can recognise.** Secret in transmission, performed in public.
+
+**But the public is not the public.** Tournaments are held in the grandest cities, and **you have
+to be somebody, or connected to somebody, to watch.** A hick farmer cannot get in. **Neither can
+a rich merchant** — this is one of the things money does not buy. **The gate is standing, and
+the reference class is therefore aristocratic rather than broad.**
+
+**Which means being able to run the check says something about the reader.** Somebody who can
+say *that is the Azure Cloud's art, I have watched it performed* has announced they move in
+rooms most people cannot enter. **The check reveals the checker**, and a claim to recognise is
+itself a claim somebody can test — *who else was there?*
+
+**And then it travels downward, which is the awareness ladder doing its ordinary job.** Whoever
+was in the room tells a friend, who is usually of lower standing; that friend tells another.
+**Each hop costs fidelity**, and the ladder in `KnowingStage` is exactly that gradient:
+
+| Distance from the room | Roughly | What they can do with it |
+|---|---|---|
+| **Was there** | `encountered` / `known` | authenticate |
+| **Told by somebody who was** | `placed` | catch a bad imitation, not a good one |
+| **Two or three hops out** | `named` / `whisper` | be impressed, and be fooled |
+| **Beyond that** | `unaware` | nothing |
+
+**So worldview about an art is social distance from a gated room**, measured in hops rather than
+in miles. Somebody who has crossed the world on foot may never have seen an apex art performed,
+while a minor noble who has barely left one city has. **Connection, not mileage** — and the
+diffusion is why an ordinary person can hold a real opinion about a house they will never see,
+while still being exactly the person a good forgery works on.
 
 **The Hollow Court is the exception, and it is what makes them what they are.** They do not
 compete and are not seen, so **nobody holds the reference** — which cuts exactly both ways.
