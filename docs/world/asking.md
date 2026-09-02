@@ -136,6 +136,25 @@ and, most cheaply and most often, having dealt with them before. That last one i
 of the advice above made mechanical: a request from somebody they have taken something from
 before is not the same request.
 
+**And asking the price is its own sentence.** *"I need xyz, what's your price?"* - the design
+owner's own words - is a question rather than a request: it costs the person a sentence, so it
+weighs as a courtesy, spends no day and rolls nothing. What comes back is the price, in the
+only unit that works above the cash line: **how high an offer has to carry them**, which is
+the rung of the thing being asked for. Putting something down for it is the request that
+follows, and it is resolved by the same machine every other approach is.
+
+Three answers it can give, and the player has to be able to tell them apart:
+
+| What they say | What it means |
+|---|---|
+| **A price** | they would part with it, and here is what would move it |
+| **A present need** | they need it themselves, now. No figure reaches that, and none should |
+| **Not theirs to give** | a counted stock, a quorum, a thing owed upward. Nobody is being refused, and no amount of pressure changes it |
+
+The third is the one worth being careful about. `items.md` calls it *"arithmetic rather than a
+lever"*, and a player who cannot tell it apart from a price they have not met will spend a run
+looking for a person to persuade who does not exist.
+
 **And who you are asking is not only their rank.** Two people at the same rung of
 the same house, equally owed and equally fond of you, do not answer the same
 request the same way, because some people part with things easily and some do not.

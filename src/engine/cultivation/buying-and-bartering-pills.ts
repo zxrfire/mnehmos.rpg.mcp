@@ -196,10 +196,21 @@ export function pillCashPrice(pill: Pill): number | null {
 /** Why the counter will not name a figure, or null where it will. */
 export function cashRefusalReason(pill: Pill): string | null {
     if (pillTradeTier(pill) === 'commodity') return null;
+    // ── AND THE SENTENCE NAMES THE VERB, BECAUSE THERE IS ONE NOW ────────
+    //
+    // `asking.md`: *"a refusal may only name a door that exists."* This one
+    // named three media and no way to offer any of them, and that was the whole
+    // gap - every heaven-grade and above cure in the catalog was nameable,
+    // priced, seeded onto real houses, and unobtainable, with this paragraph as
+    // the closest the game came to admitting it. The last line is the sentence
+    // a player can now type back, and
+    // `tests/web/asking-what-it-would-take.test.ts` checks the parser accepts
+    // it rather than trusting this string.
     return 'Nobody sells one of these for stones. Not at a high price, not at an absurd one: '
         + 'anybody holding one is already past caring what a purse is worth, and what they will '
         + 'listen to is a favour owed, something out of a hole nobody else has been down, or an '
-        + 'art. Name what you have, not what you can pay.';
+        + 'art. Name what you have, not what you can pay - ask whoever is holding one what they '
+        + 'would take for it, and then offer them that.';
 }
 
 // ─────────────────────────────────────────────────────────────────────────
