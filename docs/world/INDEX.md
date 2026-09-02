@@ -89,7 +89,7 @@ Generated from the `trigger` attributes in this directory. Do not edit by hand -
 
 <!-- BEGIN GENERATED: triggers -->
 
-**220 situations, from 22 files.**
+**222 situations, from 22 files.**
 Sorted by the situation, not by the file, because the file is the thing you do not know.
 
 | When this is true | Read | Section |
@@ -220,6 +220,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | somebody has ascended and their debts, grudges, descendants, or artifacts below are still in play | [`immortals.md`](immortals.md#it-is-not-a-hard-reset) | It is not a hard reset (tier 2) |
 | somebody has just ascended, or a house expects its new immortal to be able to help it | [`immortals.md`](immortals.md#a-newly-ascended-immortal-is-a-nobody) | A newly ascended immortal is a nobody (tier 2) |
 | somebody has to decide whether to believe who another person says they are, or whether a token, a retinue or a claim is genuine | [`trust.md`](trust.md#top-of-file) | (top of file) (tier 2) |
+| somebody has to reach the Azure Cloud Pavilion, or asks how anybody hears of a house whose intake is people walking up | [`origin.md`](origin.md#open-nobody-can-currently-find-the-most-open-door-in-the-setting) | OPEN: nobody can currently find the most open door in the setting (tier 2) |
 | somebody is above the Lid, or the conditions there are being described | [`immortals.md`](immortals.md#what-it-is-like-up-there) | What it is like up there (tier 2) |
 | somebody is carrying a house's token that is not theirs, or a house notices one of its own has stopped answering | [`trust.md`](trust.md#tokens-shatter-so-somebody-has-to-be-taken-alive) | Tokens shatter, so somebody has to be taken alive (tier 2) |
 | somebody is counting how many of a lost material remain, or hunting one | [`ancient.md`](ancient.md#what-is-actually-left-and-where) | What is actually left, and where (tier 2) |
@@ -230,6 +231,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | somebody is wounded, asks about a wound, seeks treatment, or fights while carrying one | [`injuries.md`](injuries.md#top-of-file) | (top of file) (tier 2) |
 | somebody near the top of the ladder changes what may be taught | [`past-the-ceiling.md`](past-the-ceiling.md#9-decreeing-the-curriculum) | 9. Decreeing the curriculum (tier 2) |
 | somebody needs to know whether a house is still that house, or a person really of it | [`trust.md`](trust.md#the-art-is-the-strongest-check) | The art is the strongest check (tier 2) |
+| somebody on an intake roll runs out of provisions, or the question is what a probationer is actually given | [`origin.md`](origin.md#open-two-catalogs-disagree-about-who-feeds-a-probationer) | OPEN: two catalogs disagree about who feeds a probationer (tier 2) |
 | somebody outranks a person plainly stronger than they are | [`sects.md`](sects.md#at-the-top-rank-stops-tracking-realm) | At the top, rank stops tracking realm (tier 2) |
 | somebody outside a house wants to study its principle, or asks whether a house would teach them | [`dao-houses.md`](dao-houses.md#which-is-why-they-take-guest-students) | Which is why they take guest students (tier 2) |
 | somebody plans to send a mortal up, or to call an immortal down | [`immortals.md`](immortals.md#the-two-crossings-nobody-makes) | The two crossings nobody makes (tier 2) |
@@ -399,7 +401,7 @@ it describes.
 
 <!-- BEGIN GENERATED: design-constants -->
 
-**254 design constants in the catalog. 15 are read by nothing at all,
+**254 design constants in the catalog. 14 are read by nothing at all,
 and 152 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
@@ -412,7 +414,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | - |
 | `ABANDONED_IS_NOT_CONDEMNED` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | - |
 | `ARCHIVE_AS_CLAIM` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | **nothing** | - |
-| `AZURE_INTAKE` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | - |
 | `DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE` | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | **nothing** | - |
 | `FRAGMENT_TECHNIQUE_ORIGINS` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | **nothing** | - |
 | `HOW_AN_UPKEEP_IS_READ` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | - |
@@ -575,7 +576,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `DAO_HOUSES` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | 31 |
 | `THE_DEEPEST_ROADS` | [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) | **nothing** | 34 |
 | `MADNESS_STAGES` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 35 |
-| `AZURE_CLOUD_INTAKE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | **nothing** | 65 |
+| `AZURE_CLOUD_INTAKE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | **nothing** | 66 |
 | `HINTS_ARE_NOT_THE_PHRASE` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 1 | - |
 | `NOT_DERIVABLE_NOTES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 1 | - |
 | `THE_THREE_WAYS_GROUND_IS_CLOSED` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 1 | - |
@@ -613,6 +614,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `DEMONIC_STANDINGS` | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | 3 | 1 |
 | `MODERN_REFINEMENT` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 3 | 3 |
 | `AGE_FIDELITY` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 4 |
+| `AZURE_INTAKE` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 3 | 7 |
 | `REGION_GOVERNANCE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 3 | 8 |
 | `RUIN_NAMES` | [`regions.ts`](../../src/data/cultivation/regions.ts) | 3 | 8 |
 | `TRADITIONS` | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | 3 | 8 |
@@ -649,7 +651,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 9 | 19 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 10 | 18 |
 | `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 10 | 29 |
-| `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 11 | 40 |
+| `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 11 | 43 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 13 | 21 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 15 | 9 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 16 | 17 |
@@ -662,7 +664,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 25 | 106 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 27 | 41 |
 | `REGIONS` | [`regions.ts`](../../src/data/cultivation/regions.ts) | 27 | 78 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 54 | 251 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 54 | 253 |
 
 <!-- END GENERATED: design-constants -->
 
