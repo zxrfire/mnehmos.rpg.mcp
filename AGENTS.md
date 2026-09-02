@@ -46,7 +46,17 @@ Concretely, this means:
 - **Never** add a code path where the agent can assert an outcome without the
   corresponding state change having already happened in the database.
 - Every stochastic system takes a **seeded sample or RNG stream**, never a bare
-  `Math.random()`. Runs must be reproducible from their seed.
+  `Math.random()`. Runs must be reproducible from their seed - which means the
+  RUN seed and the WORLD seed together, not the run seed alone. A run is lived
+  inside a world, and an installation with no world mints one from
+  `randomUUID()`, so the same run seed against a fresh database meets a
+  different several hundred people. Within one installation the world is created
+  once and persisted and the promise holds in full; to replay a run anywhere
+  else, carry the world seed with it and `createWorld({ seed })` before the run
+  opens. `src/server/state/cultivation-world.ts` owns this and explains why
+  seeding the world from the run instead would delete cross-run persistence.
+  Tests: `makeGameInWorld` in `tests/web/harness.ts`. **A played test that pins
+  a seed to an outcome without pinning the world is pinning a coincidence.**
 - Engine functions should be **pure where possible**: state in, deltas out, no mutation
   of inputs, no I/O in the mechanics layer.
 
