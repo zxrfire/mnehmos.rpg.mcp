@@ -66,7 +66,7 @@ import {
     WOULD_TAKE_A_CHILD,
     type FosterCandidate
 } from '../../../src/engine/world/a-child-their-own-house-will-not-keep.js';
-import { HOLLOW_COURT_FOSTERAGE } from '../../../src/data/cultivation/sects.js';
+import { HOLLOW_COURT_FOSTERAGE, requireSect } from '../../../src/data/cultivation/sects.js';
 import { doorsOf } from '../../../src/engine/birth/spending-a-word-to-place-a-child.js';
 import { createFavor } from '../../../src/engine/social/grudges.js';
 import { shameCausesFromTags } from '../../../src/engine/social/shame.js';
@@ -410,7 +410,17 @@ describe('somebody in a running world does this', () => {
         // conferred nothing.
         expect(after.tags).toContain('assessed:returned');
         expect(after.factionId).toBe(terms.factionId);
-        expect(after.factionRankIndex).toBe(0);
+        // NOT `toBe(0)`, and the reason is a change in the world rather than a
+        // weakened guard. The return puts them on the bottom rung and confers
+        // nothing; two world years then pass, and the Hollow Court now has its
+        // real roster standing in it - Outer Disciples at ordinal 29 and 30 -
+        // so somebody who came back at exactly the return ordinal is an
+        // ordinary promotion candidate against ordinary people, and sometimes
+        // gets promoted. That is the ladder working. What must not happen is
+        // arriving at a senior rung, which is what "conferred nothing" means.
+        expect(after.factionRankIndex,
+            'the fosterage bought them a rank rather than a place on the roll')
+            .toBeLessThan(requireSect(terms.factionId).ranks.length - 1);
 
         const record = state.history.facts.find(f => f.data.fosterageAssessment !== undefined);
         expect(record?.data.fosterageAssessment).toBe('returned');
