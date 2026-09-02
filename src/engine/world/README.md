@@ -1763,6 +1763,15 @@ history.ts       ground truth and what survives of it; near-misses; unresolved
 locations.ts     origin -> changes -> current state, separately queryable
 capability.ts    the five predicates, answered together, with reasons
 opportunities.ts dated windows that open and close whether or not anyone is watching
+what-is-true-of-a-place-right-now.ts
+                 per-area statuses: a famine, a pass held, a tide running, a
+                 war. The counterpart to `locations.ts`, which records what a
+                 place BECAME and is permanent - this is what is true of it for
+                 a while and stops being true. Availability of mundane goods is
+                 read off here and counted nowhere: a famine stops the millet,
+                 and travellers buying meals never caused one. Every status
+                 carries a cause, and a cause somebody chose differs from a
+                 cause nothing chose by one field and no branch
 possessions.ts   possession / ownership / claim / knowledge, plus provenance
 lineage.ts       the parent-descendant edge and what travels down it
 reading-a-lineage-off-a-name.ts
@@ -1878,8 +1887,11 @@ scarce thing is not power, it is knowing where the far end is** - a fold needs a
 there are exactly two, ground somebody has stood on and something they have seen. There is
 no third for being told or being sold one, because a bought fix is the Wide Age
 true-distance table and the House of the Measured Span has spent five thousand years
-failing to reproduce it. `convergence.ts` is the one place the reach does not grow with the
-rung, and `PIERCE_REACH_DAYS` carries the reason.
+failing to reproduce it. `convergence.ts` prices its escape off the same curve, so a
+rescuer's reach is their own - **whose student you are is now a fact about how deep you may
+go**, and it is legible before you go. What rank never buys back is the waning: the reach is
+scaled by what is left of the window, so a late call fails on geometry however grand the
+person answering is.
 
 **`ruin-mechanics.ts` - the test for anything added here.** *Does it change what the player
 knows, what they are, or what the rules of the place are - rather than how much damage
