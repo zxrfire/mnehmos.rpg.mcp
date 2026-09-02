@@ -33,6 +33,30 @@ import { isCommonlyHeld, whoseArt } from '../../src/engine/world/manuals.js';
 import { TECHNIQUES } from '../../src/data/cultivation/techniques.js';
 import { LEVERAGE_ATTEMPT_CONSTANTS } from '../../src/engine/social-leverage/index.js';
 import { makeGameInWorld, type Harness } from './harness.js';
+import { factsForRequest } from '../../src/web/facts.js';
+import type { Cultivator } from '../../src/schema/cultivation.js';
+import type { AttemptResult } from '../../src/engine/social-leverage/index.js';
+
+/** Enough of a sheet for a facts function, which reads one field of it. */
+const SOMEBODY = { name: 'Somebody', spiritStones: 0 } as unknown as Cultivator;
+
+/** A refusal, as the resolver hands one back. Nothing here is rolled. */
+const REFUSED = {
+    outcome: 'refused',
+    odds: 0.05,
+    terms: {},
+    days: 3,
+    stonesSpent: 0,
+    line: 'Them refused.',
+    marks: {
+        theyKnowWhatYouTried: true,
+        reachedTheHouse: false,
+        obligation: null,
+        counterObligation: null,
+        tie: null,
+        unspoken: null
+    }
+} as unknown as AttemptResult;
 
 describe('what a request asks, and of whom', () => {
     it('splits the person off the ask', () => {
@@ -396,4 +420,197 @@ describe('a request reaches the person, played', () => {
         ).get(self, whoId ?? self) as { n: number };
         expect(rows.n + ties.n, 'six attempts left no record of any kind').toBeGreaterThan(0);
     }, 60_000);
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// A REFUSAL MAY ONLY NAME A DOOR THAT EXISTS
+//
+// The defect this whole verb was written to fix, arriving one layer deeper.
+// The first draft of the refusals quoted `asking.md` almost verbatim - "turn up
+// twice, buy somebody a drink, do a small thing for nothing, and ask again" -
+// and all three sentences were typed back by somebody reading them. `I buy X a
+// drink` reached the price board; the other two reached nothing at all.
+//
+// `AGENTS.md` has an entry called "the player must be able to type back what
+// the game printed", and a refusal is where that rule bites hardest, because a
+// refusal is the one place the game is telling the player what to do next.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the courtesy that asks for nothing', () => {
+    /**
+     * Every imperative the refusal table actually contains, typed back.
+     *
+     * This list is the guard: if somebody writes a new instruction into
+     * `WHAT_WOULD_HAVE_MOVED_THEM` without building the verb for it, the right
+     * way for that to be caught is here, by the sentence failing to parse.
+     */
+    const WHAT_THE_REFUSALS_TELL_YOU_TO_DO = [
+        'I buy Elder Fang a drink',
+        'I sit with Elder Fang',
+        'I call on Elder Fang',
+        'I do Elder Fang a small favour',
+        'I do a small thing for Elder Fang for nothing',
+        'I turn up where Elder Fang is',
+        'I bring Elder Fang a gift',
+        'I keep Elder Fang company',
+        'I pay Elder Fang a visit',
+        'I spend time with Elder Fang',
+        'I ask Elder Fang for nothing'
+    ];
+
+    it('parses every route the refusals name', () => {
+        for (const said of WHAT_THE_REFUSALS_TELL_YOU_TO_DO) {
+            const asked = requestPutToSomebody(said);
+            expect(asked, said).not.toBeNull();
+            expect(asked?.kind, said).toBe('nothing');
+            expect(asked?.person, said).toBe('Elder Fang');
+            expect(parseIntent(said).action, said).toBe('request');
+            expect(parseIntent(said).intent, said).toBe('nothing');
+        }
+    });
+
+    /**
+     * The exact three the coordinator typed back off a live refusal. Two
+     * reached nothing at all and one reached the price board, which is the
+     * single most misleading of the three: it looks like an answer.
+     */
+    it('does not send a round to the price board', () => {
+        expect(parseIntent('I buy Mo Nuokuan a drink').action).toBe('request');
+        expect(parseIntent('I do a small thing for Mo Nuokuan for nothing').action).toBe('request');
+        expect(parseIntent('I turn up where Mo Nuokuan is').action).toBe('request');
+    });
+
+    /**
+     * And it must not have stolen the market on the way. "Buy a drink" has one
+     * object and "buy X a drink" has two, which is the whole discriminator.
+     */
+    it('leaves buying things alone', () => {
+        expect(requestPutToSomebody('I buy a drink')).toBeNull();
+        expect(requestPutToSomebody('I buy food')).toBeNull();
+        expect(requestPutToSomebody('what is for sale')).toBeNull();
+        expect(parseIntent('I buy food').action).not.toBe('request');
+        expect(parseIntent('what is for sale').action).toBe('market');
+    });
+
+    /** It asks for nothing, so it is priced as nothing. */
+    it('is a courtesy and carries no object', () => {
+        const asked = requestPutToSomebody('I buy Elder Fang a drink');
+        expect(asked?.object).toBeUndefined();
+        expect(baseWeightOf('nothing')).toBe('a_courtesy');
+    });
+
+    /**
+     * Played: nothing was asked, so a miss cannot leave a grudge.
+     *
+     * Measured before this rule existed, and it was a soft lock wearing a
+     * mechanic: one refused request writes a slight grudge worth -0.1, and -0.1
+     * takes the courtesy - the thing the refusal itself tells the player to go
+     * and do - from about 29% to about 9%. Letting a missed afternoon do the
+     * same thing would have closed the loop entirely.
+     */
+    it('leaves no grudge when nobody asked for anything', async () => {
+        const harness = await makeGameInWorld({ seed: 'ask-6', worldSeed: 'ask-world-1' });
+        await harness.game.newRun('Asker');
+        const who = (await anybodyNameable(harness))!;
+        const self = harness.game.currentRun().cultivator.id;
+
+        for (let i = 0; i < 8; i++) {
+            const live = harness.game.currentRun();
+            if (live.run.status !== 'active' || !live.cultivator.alive) break;
+            await harness.game.act(`I buy ${who} a drink`);
+        }
+        const grudges = harness.db.prepare(
+            "SELECT COUNT(*) AS n FROM obligations WHERE kind = 'grudge' AND subject_id = ?"
+        ).get(self) as { n: number };
+        expect(grudges.n, 'turning up wanting nothing left a grudge').toBe(0);
+    }, 60_000);
+
+    /**
+     * And a refusal leaves ONE standing record rather than one a day.
+     *
+     * `createObligation` derives its id from the pair, the cause and THE DAY,
+     * so a second refusal a week later was a second row rather than the same
+     * fact restated. The odds never spiralled - the resolver reads the worst
+     * open grudge and never the count - but six asks left six grudges, and
+     * anything counting what somebody carries would have read that as six
+     * separate injuries.
+     */
+    it('leaves one grudge for being refused, not one a day', async () => {
+        const harness = await makeGameInWorld({ seed: 'ask-7', worldSeed: 'ask-world-1' });
+        await harness.game.newRun('Asker');
+        const who = (await anybodyNameable(harness))!;
+        const self = harness.game.currentRun().cultivator.id;
+
+        for (let i = 0; i < 6; i++) {
+            const live = harness.game.currentRun();
+            if (live.run.status !== 'active' || !live.cultivator.alive) break;
+            await harness.game.act(`I ask ${who} to teach me`);
+        }
+        const grudges = harness.db.prepare(
+            "SELECT COUNT(*) AS n FROM obligations WHERE kind = 'grudge' AND subject_id = ?"
+        ).get(self) as { n: number };
+        expect(grudges.n, 'six refusals wrote more than one standing grudge')
+            .toBeLessThanOrEqual(1);
+    }, 60_000);
+
+    /**
+     * Six byte-identical refusals read as a broken loop rather than as a person
+     * saying no again - and the state was changing under all six. The same
+     * defect was fixed in the wound warning earlier in the same tree, and the
+     * fix is the same: let the text know what the state knows.
+     */
+    it('does not say the same thing twice', async () => {
+        const harness = await makeGameInWorld({ seed: 'ask-8', worldSeed: 'ask-world-1' });
+        await harness.game.newRun('Asker');
+        const who = (await anybodyNameable(harness))!;
+
+        // Named, so the request RESOLVES rather than stopping at the
+        // coherence refusal. "Name one" repeating is fine and is a different
+        // thing: it costs nothing, no day passes, and the same malformed
+        // sentence deserves the same answer. What must not repeat is the
+        // answer to a request that was actually put and actually cost days.
+        const opening = await harness.game.act(`I ask ${who} to teach me`) as {
+            narration?: string;
+        };
+        const shelf = /carrying that you are not: ([^,.]+)/.exec(opening.narration ?? '');
+        const holds = /holds ([A-Z][^.]*?)\./.exec(opening.narration ?? '');
+        const art = shelf?.[1] ?? holds?.[1] ?? null;
+        expect(art, 'nobody here holds anything teachable in this world').not.toBeNull();
+
+        const said: string[] = [];
+        for (let i = 0; i < 3; i++) {
+            const live = harness.game.currentRun();
+            if (live.run.status !== 'active' || !live.cultivator.alive) break;
+            const out = await harness.game.act(`I ask ${who} to teach me the ${art}`) as {
+                narration?: string;
+            };
+            said.push(out.narration ?? '');
+        }
+        expect(said.length).toBeGreaterThanOrEqual(2);
+        expect(said[1], 'the second refusal was byte-identical to the first')
+            .not.toBe(said[0]);
+        expect(said[1]).toMatch(/heard this from you once already|times you have put this/);
+    }, 60_000);
+
+    /**
+     * And the advice stops when the advice stops working.
+     *
+     * `TIE_WEIGHT` is the whole of what turning up can be worth, so past a full
+     * tie another afternoon changes literally nothing - and a refusal still
+     * saying "buy them a drink" after fifty drinks is naming a route that no
+     * longer moves anything, which is this same defect one turn of the screw
+     * later.
+     */
+    it('stops telling you to turn up once turning up is spent', () => {
+        const costing = { ask: 'a_real_favour' as const, lines: [], structure: [] };
+        const cold = factsForRequest(
+            SOMEBODY, 'Them', 'teaching', 'an art', costing, REFUSED, [], 0, false, 0
+        );
+        const spent = factsForRequest(
+            SOMEBODY, 'Them', 'teaching', 'an art', costing, REFUSED, [], 0, false, 1
+        );
+        expect(cold.prose).toMatch(/buy them a drink/i);
+        expect(spent.prose).not.toMatch(/buy them a drink/i);
+        expect(spent.prose).toMatch(/spent what turning up can buy/i);
+    });
 });

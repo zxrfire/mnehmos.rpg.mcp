@@ -101,10 +101,23 @@ Four things a person can be asked for, and each of them ends somewhere different
 
 | The ask | What a yes actually does |
 |---|---|
+| **Nothing at all** | they stop being a stranger, which is what every other row runs through |
 | **Be taught an art** | the art goes onto the sheet, if the book will open for them |
 | **Be taken on** | they become a guide, and the rate changes |
 | **Be introduced** | a name the player did not have arrives, with its source on it |
 | **Be told something** | the three limits above, applied by the narrator |
+
+**The first row is the load-bearing one.** Buying somebody a drink, sitting with them, calling
+on them, doing them a small favour - each costs a day and no stones, and each is the only
+thing in the game that moves a stranger toward doing something for you. It has to cost no
+money, because the sentence this file has always ended that section on is *"this is the
+cheapest lever in the game and it is available to a cultivator with nothing"*, and a price
+would make that false.
+
+It is also the reason the other four rows are worth having. Measured over the endpoint: a
+nobody asking a stranger to teach them a common art resolves at about 2%, and the same request
+to somebody they have turned up for several times resolves at about 19%. Without the first
+row, the other four are a door with no handle.
 
 **What it costs them is a fact about the thing, not about the asking.** A primer every stall
 in the province sells costs a teacher their afternoons. A house's own working manual costs
@@ -122,6 +135,14 @@ looking at.
 and, most cheaply and most often, having dealt with them before. That last one is the whole
 of the advice above made mechanical: a request from somebody they have taken something from
 before is not the same request.
+
+**And a refusal may only name a door that exists.** This is the rule that governs how these
+are written, and it is not a stylistic one: the first draft of the refusals here quoted the
+paragraph above almost word for word - *"turn up twice, buy somebody a drink, do a small thing
+for nothing"* - and none of the three sentences did anything when typed back. A refusal is the
+one place in the game where the player is being told what to do next, so it is the one place
+where naming a route that was never built is worst. Either the verb exists, or the refusal
+says something narrower and true.
 
 **And nothing is refused for being presumptuous.** A nobody may ask an elder for the thing at
 the top of their shelf. It will not work, and the answer will say why, and the asking will be

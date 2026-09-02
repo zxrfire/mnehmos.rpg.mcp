@@ -470,6 +470,45 @@ function costOfIntroduction(
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
+ * The courtesy that asks for nothing, which is the only thing in the game a
+ * cultivator with nothing at all can spend.
+ *
+ * `asking.md`: *"What you have done for someone counts for more than either. A
+ * carter you bought a drink for last month talks more freely than an official
+ * ever will, and not because he likes you - because he has no position to
+ * protect and you are now someone he knows. Small, cheap, repeated things
+ * work: a round, a gift, a favour, turning up twice. This is the cheapest lever
+ * in the game and it is available to a cultivator with nothing."*
+ *
+ * Every clause of that is load-bearing here. It costs a day and nothing else,
+ * because the moment it costs stones it stops being available to somebody with
+ * nothing. It cannot be refused into a grudge, because nothing was asked. And
+ * it is a WALL against an official and an open door beside somebody at your own
+ * altitude - not by a rule about officials, but because `regardFor`'s standing
+ * term is the dominant one and a courtesy has almost no resistance of its own
+ * to hide behind.
+ */
+function costOfACourtesy(asking: TheOneAsking, asked: TheOneBeingAsked): RequestCosting {
+    const gap = asked.ordinal - asking.ordinal;
+    return {
+        ask: 'a_courtesy',
+        lines: [
+            gap >= 5
+                ? `You are asking for nothing, which is the only thing somebody at `
+                  + `${rankName(asked.ordinal)} has no reason to refuse and every reason not to `
+                  + `notice. What is between you is not suspicion. It is that there is nothing `
+                  + `you could do for them that they would feel.`
+                : `You want nothing out of it, which is the whole of what makes it worth `
+                  + `anything. It costs you a day and no stones at all - and it is the only `
+                  + `thing that moves somebody who does not know you.`
+        ],
+        structure: [`courtesy: gap=${gap}, ask=a_courtesy, cost=one day, no stones.`],
+        techniqueId: null,
+        refusal: null
+    };
+}
+
+/**
  * Discipleship: the person rather than the art.
  *
  * `manuals.md` names this as one of the three shapes a house's admission takes
@@ -506,7 +545,7 @@ function costOfDiscipleship(asking: TheOneAsking, asked: TheOneBeingAsked): Requ
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface RequestToPrice {
-    kind: Extract<RequestKind, 'teaching' | 'introduction' | 'discipleship'>;
+    kind: Extract<RequestKind, 'teaching' | 'introduction' | 'discipleship' | 'nothing'>;
     asking: TheOneAsking;
     asked: TheOneBeingAsked;
     /** The art, when one resolved. */
@@ -528,5 +567,7 @@ export function whatItWouldCostThem(request: RequestToPrice): RequestCosting {
             return costOfIntroduction(request.asked, request.toMeet ?? null, named);
         case 'discipleship':
             return costOfDiscipleship(request.asking, request.asked);
+        case 'nothing':
+            return costOfACourtesy(request.asking, request.asked);
     }
 }

@@ -459,7 +459,9 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             `${here.peopleAboveHere} ${here.peopleAboveHere === 1 ? 'person' : 'people'} standing `
             + 'here are further up the ladder than you. Putting it to one of them by name - '
             + '"ask <them> to teach me", "ask <them> to introduce me to <somebody>" - is a '
-            + 'different sentence from this one, and it has an outcome.'));
+            + 'different sentence from this one, and it has an outcome. A stranger will '
+            + 'usually say no; "buy <them> a drink" or "sit with <them>" costs a day and no '
+            + 'stones, and it is what turns a stranger into somebody who might not.'));
     }
 
     if (!here.aboveTheLid && !here.inASect && here.practisesAMethod) {
