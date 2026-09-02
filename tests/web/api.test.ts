@@ -144,7 +144,13 @@ describe('GET /api/state', () => {
             'foundationQuality', 'ground', 'injuryRatePenalty', 'lifespanPressure',
             'lifespanPressureFromAge',
             'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextRankName',
-            'progressRequired', 'rankName', 'realmName', 'sectName', 'stagnationYears',
+            'progressRequired', 'rankName', 'realmName', 'sectName',
+            // `standingHere` is what is live for this cultivator right now,
+            // most pressing first. On the wire because the interface offered
+            // three buttons over a verb space a player could not find any other
+            // way - see `what-is-worth-doing-standing-here.ts`. Prompts, never
+            // a menu: free text stays the whole game.
+            'stagnationYears', 'standingHere',
             'untreatedInjuries'
         ]);
         // The four that were added together, and the reason: the client had 50

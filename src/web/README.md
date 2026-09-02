@@ -160,6 +160,86 @@ it labels lethal, says the state will not resolve itself, and offers no verb has
 the run.** When adding a mechanic, the question is not whether it is implemented and tested.
 It is whether a sentence reaches it.
 
+### A verb space nobody can find is a verb space nobody has
+
+The table above is the story of mechanics no sentence could reach. This is the
+next one along, and it is bigger: **every one of those verbs works, and a player
+cannot discover a single one of them.** Found by playing a full run in the
+browser, age 16 to 39. The interface offers three controls - Cultivate, Status,
+Attempt Breakthrough - and:
+
+| typed | answered |
+|---|---|
+| `help` | *"You turn the thought over and it does not resolve into anything you could actually do standing here."* |
+| `what can I do` | the same refusal |
+| `what are my options` | the manual read, which is a good answer to a different question |
+
+while `I look for work`, `gather herbs`, `I buy food`, `who can teach me`,
+`what is stopping me`, `see a physician` and a dozen more all answer well and
+were reachable only by guessing. The two most universal inputs in the history of
+text games both refused.
+
+That is fatal rather than annoying, because the engine builds a real trap. The
+run that found it reached qi deviation at Qi Condensation Layer 9 with three
+untreated meridian injuries, every stone spent on food and satiety at zero -
+five turns from death, with a way out: work, gather, eat. A player who reads only
+the screen presses Cultivate, because it is the only obvious control, and dies.
+**The trap is well designed. The exit was hidden.**
+
+[`what-is-worth-doing-standing-here.ts`](what-is-worth-doing-standing-here.ts) is
+the answer, and it is a pure function: state in, sentences out. Three consumers,
+one source, so they cannot drift:
+
+| | |
+|---|---|
+| `help`, `what can I do`, a bare `what are my options` | `GameService.guidance`, a free read like `ceiling` |
+| every unparseable sentence | the `unclear` refusal now names two or three things that WOULD work |
+| `derived.standingHere` on the wire | for a client to offer beside the standing controls |
+
+Four rules it must keep, and each of them is a way this could go wrong:
+
+- **Prompts, never a menu.** The whole character of this game is that you say
+  what you do in your own words. A fixed command list would flatten it, so the
+  read always closes by saying it is not the list.
+- **Situated, never a dump.** Every line is gated on a fact the engine already
+  computes, and `MOST_A_PLAYER_SHOULD_READ` caps the whole read - measured, a
+  maximally unlucky state reaches fourteen live rules at once.
+- **Every sentence is verified to parse.** `say` is a string driven through
+  `parseIntent` by `tests/web/what-is-worth-doing.test.ts`. Offering a player a
+  sentence that reaches nothing is *worse* than the refusal it replaces, because
+  they conclude the game is broken.
+- **Nothing changes an outcome.** No price, no probability, no unlock. Dying
+  becomes a decision rather than a failure to guess vocabulary.
+
+### A refusal is finished when it names the thing that would work
+
+The medicine layer is the sharpest case, and it is the same defect
+[`../../docs/world/items.md`](../../docs/world/items.md) closes with a warning
+about, one layer up: that build's commonest cause of death had no reachable cure
+while the formula sat in the catalog. This time **the cure is reachable and its
+name is not.** Measured, carrying a crippling tear and 194 spirit stones against
+a 54-stone cure:
+
+- `buy a healing pill` sold a Minor Healing Pill - 6 HP, closes nothing;
+- `see a physician` said *"cannot touch a meridian"*, which is **false**: mortal
+  care closed two torn meridians and two scorched channels in the same run. What
+  it cannot touch is a **crippling** one;
+- `what would close my meridians` did not resolve at all;
+- the answer was a Clear Meridian Pill, and it was found by reading `pills.ts`.
+
+[`what-would-close-this-wound.ts`](what-would-close-this-wound.ts) names it, at
+its board price, with whether the purse covers it - in the physician's refusal,
+in the `help` read and in the panel. It authors nothing: the pill is the
+catalog's, the price is the board's, the grade rule is
+`what-grade-of-medicine-a-wound-needs.ts`.
+
+**One thing it found and did not settle.** The grade ladder is enforced in
+exactly one place, `GameService.treat`. The pill path has none - `treat_injury`
+in `alchemy-manage.ts` calls `treatWorstInjury` and nothing else - so a mortal
+Clear Meridian Pill closes a crippling tear a physician will refuse. Whether
+that is right is a design question. Closing it would make the game harder, which
+is not a thing to do in passing, so it is written down rather than patched.
+
 ### `intent` is open, and is never branched on
 
 `intent` is a free-ish label, and it is safe **precisely because nothing in the engine
