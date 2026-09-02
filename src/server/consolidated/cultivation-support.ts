@@ -41,6 +41,7 @@ import {
 } from '../../engine/social/index.js';
 import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
+import { getArtifact } from '../../data/cultivation/artifacts.js';
 import {
     hostilityReasonFor,
     ordinaryBandFor,
@@ -413,10 +414,23 @@ export function recordRankGained(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// POUCH - pills and herbs a cultivator carries
+// POUCH - what a cultivator carries
+//
+// Pills and herbs are COUNTED stock: a holder and a number, and nobody cares
+// which one you took. An artifact is not. `docs/world/items.md` draws the line
+// on whether this specific object moving is an event somebody should be able to
+// find out about two centuries later, and for a rated object it always is.
+//
+// It is in the same table anyway, and that is deliberate rather than lazy: the
+// pouch is the only store the played game has for "what is on this person", and
+// a second one beside it would be the parallel-catalog mistake AGENTS.md
+// forbids. What the row does NOT carry is provenance - `world_objects` owns
+// that, and an artifact reaching a player through the world rather than through
+// ADMIN should be written there too. See `carriedArtifact` below for what reads
+// this, which today is less than it should be.
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type PouchItemKind = 'pill' | 'herb';
+export type PouchItemKind = 'pill' | 'herb' | 'artifact';
 
 export interface PouchEntry {
     itemId: string;
@@ -424,7 +438,42 @@ export interface PouchEntry {
     quantity: number;
 }
 
+/**
+ * The COUNTED stock in a pouch: pills and herbs, and nothing else.
+ *
+ * ── WHY THIS FILTERS ─────────────────────────────────────────────────────
+ *
+ * Every existing reader of this function was written when there were exactly
+ * two kinds, and two of them branch on `pill` and treat EVERYTHING ELSE as a
+ * herb - `projectPouch` in `alchemy-manage.ts` does it in one `else`, and
+ * `pouchNames` in `entities.ts` falls back to the raw item id. Widening the
+ * kind without widening this made a granted artifact print as
+ * "Herbs: 1 x hollow-unwritten-length" in the player's own pouch listing, which
+ * is the surface lying about a write it really performed.
+ *
+ * So the counted list stays counted, every existing caller behaves exactly as
+ * it did, and a rated object is reached through {@link listCarriedArtifacts}
+ * instead. It IS in the table, `carriedArtifact` reads it back by name, and it
+ * is deliberately out of the sale quote as well - `items.md` is explicit that
+ * above the line cash is not the medium.
+ *
+ * WHAT IS STILL MISSING, said here because an absence nobody wrote down gets
+ * mistaken for a design decision: no player-facing listing shows a carried
+ * artifact yet. `handleInventory` would need one line - an `artifacts:` field
+ * beside `pills:` and `herbs:` - and its renderer in `game.ts` another.
+ */
 export function listPouch(db: Database.Database, cultivatorId: string): PouchEntry[] {
+    return allPouchRows(db, cultivatorId).filter(
+        entry => entry.kind === 'pill' || entry.kind === 'herb'
+    );
+}
+
+/** Rated objects being carried. Not counted stock; see {@link listPouch}. */
+export function listCarriedArtifacts(db: Database.Database, cultivatorId: string): PouchEntry[] {
+    return allPouchRows(db, cultivatorId).filter(entry => entry.kind === 'artifact');
+}
+
+function allPouchRows(db: Database.Database, cultivatorId: string): PouchEntry[] {
     const rows = db
         .prepare(`
             SELECT item_id, item_kind, quantity FROM cultivator_pouch
@@ -466,6 +515,44 @@ export function addToPouch(
             quantity = cultivator_pouch.quantity + excluded.quantity,
             updated_at = excluded.updated_at
     `).run(cultivatorId, itemId, kind, amount);
+}
+
+/**
+ * The best rated object this cultivator is carrying, or null for none.
+ *
+ * "Best" is highest `power`, which is the artifact catalog's own ordering and
+ * the only ordering it has. Two objects do not stack: `CombatantInput.artifactOrdinal`
+ * is documented as A SINGLE object priced as a second body of that rank, and
+ * summing two of them would be inventing a rule the catalog does not have.
+ *
+ * ── WHAT READS THIS, AND WHAT DOES NOT ───────────────────────────────────
+ *
+ * `combatantFromCultivator` in `combat-manage.ts` is the one place the played
+ * game prices the player for a fight, and at the time of writing it passes no
+ * `artifactOrdinal` at all. Nor does anything else: `grep -rn artifactOrdinal
+ * src/` finds the field's definition and its use inside `assessPower`, and no
+ * producer anywhere - not for the player, and not for an NPC through
+ * `gatherings.ts` either. So a rated object is currently worth nothing in a
+ * confrontation to ANYBODY, which makes this the shape AGENTS.md records under
+ * "a module nothing calls is not a feature" rather than the player-versus-NPC
+ * one. It is stated here rather than left to be discovered, because an absence
+ * nobody wrote down gets mistaken for a design decision, and
+ * `admin_manage.grant_item` says the same thing in its own response.
+ */
+export function carriedArtifact(
+    db: Database.Database,
+    cultivatorId: string
+): { id: string; name: string; power: number } | null {
+    const held = listCarriedArtifacts(db, cultivatorId);
+    let best: { id: string; name: string; power: number } | null = null;
+    for (const entry of held) {
+        const record = getArtifact(entry.itemId);
+        if (!record || record.power === null) continue;
+        if (best === null || record.power > best.power) {
+            best = { id: record.id, name: record.name, power: record.power };
+        }
+    }
+    return best;
 }
 
 /** Remove stock. Returns false and writes nothing when the pouch is short. */

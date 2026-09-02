@@ -416,10 +416,40 @@ export class ProviderNarrator implements Narrator {
     }
 }
 
+/**
+ * Why the provider did not answer, in words somebody can act on.
+ *
+ * ── WHY THE MESSAGE IS HERE AND THE KIND ALONE IS NOT ────────────────────
+ *
+ * This returned `err.kind` and nothing else, so a real session running a local
+ * model saw only:
+ *
+ *     provider unavailable (malformed); intent parsed deterministically
+ *
+ * "Malformed" is a CATEGORY. The sentence that says what to do about it was
+ * thrown with the error and discarded one line later - `ollama.ts` raises
+ * "Provider returned empty content with done_reason='length': the completion
+ * budget (N) was exhausted before any text was produced. Raise agent.maxTokens",
+ * which is a complete diagnosis and a fix. The operator got the one word that
+ * cannot be acted on and never saw the one that could.
+ *
+ * That is the standard this build holds everywhere else - a refusal must name
+ * what would work - applied to the one refusal an operator meets before they
+ * have a game running at all. Kind AND message, kind first so the category
+ * stays greppable.
+ */
 function errorLabel(err: unknown): string {
-    if (err && typeof err === 'object' && 'kind' in err && typeof (err as { kind: unknown }).kind === 'string') {
-        return (err as { kind: string }).kind;
+    const kind =
+        err && typeof err === 'object' && 'kind' in err && typeof (err as { kind: unknown }).kind === 'string'
+            ? (err as { kind: string }).kind
+            : null;
+    const message = err instanceof Error
+        ? (err.name === 'TimeoutError' ? 'timed out' : err.message)
+        : null;
+
+    if (kind !== null) {
+        return message ? `${kind}: ${message.slice(0, 240)}` : kind;
     }
-    if (err instanceof Error) return err.name === 'TimeoutError' ? 'timeout' : err.message.slice(0, 80);
+    if (message !== null) return message.slice(0, 240);
     return 'unknown';
 }

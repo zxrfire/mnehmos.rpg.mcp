@@ -154,14 +154,43 @@ describe('fuzzy-enum utilities', () => {
         });
 
         describe('Guiding errors', () => {
-            it('should return guiding error for unknown action', () => {
+            // ── RE-DERIVED, BECAUSE THE OLD BAR ASSERTED THE DEFECT ───────
+            //
+            // This used to require exactly three suggestions and the words
+            // "Did you mean" for ANY unknown input, which is what produced
+            // `Unknown action "I". Did you mean: "audit_log" (11%), ...` - three
+            // unrelated names ranked by letter overlap, with the least relevant
+            // one first. The design owner's ruling: below about 40% match, list
+            // the actions instead. The INTENT the test was written for - an
+            // unknown action gets a guiding error naming what would work -
+            // is what it asserts now, and it is a stricter bar, not a looser one.
+            it('names what would work when nothing is close', () => {
                 const result = matchAction('xyz', actions, aliases);
                 expect(isGuidingError(result)).toBe(true);
                 if (isGuidingError(result)) {
                     expect(result.error).toBe('invalid_action');
                     expect(result.input).toBe('xyz');
-                    expect(result.suggestions).toHaveLength(3);
+                    // No noise ranked by letter overlap...
+                    expect(result.suggestions).toHaveLength(0);
+                    // ...and every real action named instead.
+                    expect(result.validActions).toEqual([...actions]);
+                    for (const action of actions) expect(result.message).toContain(action);
+                }
+            });
+
+            // "crexxx" scores 0.50 against "create" and 0.17 or less against
+            // everything else: above the noise floor, below the 0.6 the router
+            // will auto-correct on. That band is the only place a suggestion is
+            // worth printing, and it is a narrow one on purpose.
+            it('offers a genuine near miss, and still names the whole list', () => {
+                const result = matchAction('crexxx', actions, aliases);
+                expect(isGuidingError(result)).toBe(true);
+                if (isGuidingError(result)) {
                     expect(result.message).toContain('Did you mean');
+                    expect(result.suggestions.length).toBeGreaterThan(0);
+                    expect(result.suggestions.length).toBeLessThanOrEqual(2);
+                    expect(result.suggestions[0].value).toBe('create');
+                    expect(result.validActions).toEqual([...actions]);
                 }
             });
 

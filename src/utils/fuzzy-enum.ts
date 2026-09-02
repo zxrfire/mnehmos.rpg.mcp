@@ -28,7 +28,38 @@ export interface GuidingError {
     input: string;
     suggestions: Array<{ value: string; similarity: number }>;
     message: string;
+    /**
+     * Every action the tool has, present when the suggestions were suppressed
+     * as noise. See `SUGGESTION_NOISE_FLOOR`.
+     */
+    validActions?: string[];
 }
+
+/**
+ * Below this similarity, a "did you mean" is worse than no suggestion at all.
+ *
+ * ── WHY THERE IS A FLOOR ─────────────────────────────────────────────────
+ *
+ * Ruled by the design owner, from a real session. `ADMIN I am ordinal 44` was
+ * answered with:
+ *
+ *     Unknown action "I". Did you mean: "audit_log" (11%), "spawn_site" (10%),
+ *     "grant_item" (10%)?
+ *
+ * Three suggestions at a tenth of a match, none of them related, and the one
+ * printed FIRST - `audit_log` - was the least relevant of the three. It won on
+ * a letter overlap with a single-character input, which is what Levenshtein
+ * does when there is nothing to match. So the most prominent thing in the error
+ * was actively misleading, and the operator was pointed away from `set_realm`,
+ * which is the action that does exactly what they asked for.
+ *
+ * The owner's rule, taken as specified: "Below about 40% it'd be better to just
+ * list the nine actions." The list is SHORTER than the ranked noise and it is
+ * an answer, which is the standard the rest of this build holds - a refusal
+ * must name what would work. Above the floor a genuine near-miss survives:
+ * "spwn_site" at 88% is a typo and saying so is useful.
+ */
+export const SUGGESTION_NOISE_FLOOR = 0.4;
 
 export type MatchOutcome<T extends string> = MatchResult<T> | GuidingError;
 
@@ -181,7 +212,24 @@ export function matchAction<T extends string>(
     // ─────────────────────────────────────────────────────────────────────────
     // NO MATCH: Return guiding error with suggestions
     // ─────────────────────────────────────────────────────────────────────────
-    const topSuggestions = scored.slice(0, 3).map(s => ({
+    // Nothing came close enough to be worth naming: say what there IS.
+    if (best.similarity < SUGGESTION_NOISE_FLOOR) {
+        return {
+            error: 'invalid_action',
+            input,
+            suggestions: [],
+            validActions: [...validActions],
+            message:
+                `Unknown action "${input}". Nothing here is close enough to it to be worth guessing at. ` +
+                `The actions are: ${validActions.join(', ')}.`
+        };
+    }
+
+    // One clear winner is worth more than three ranked ones. Two suggestions
+    // within a hair of each other is the case where a ranking is a coin flip
+    // dressed up as advice, so both are shown; three never are.
+    const withinReach = scored.filter(s => s.similarity >= SUGGESTION_NOISE_FLOOR).slice(0, 2);
+    const topSuggestions = withinReach.map(s => ({
         value: s.action,
         similarity: Math.round(s.similarity * 100)
     }));
@@ -190,9 +238,10 @@ export function matchAction<T extends string>(
         error: 'invalid_action',
         input,
         suggestions: topSuggestions,
-        message: `Unknown action "${input}". Did you mean: ${
-            topSuggestions.map(s => `"${s.value}" (${s.similarity}%)`).join(', ')
-        }?`
+        validActions: [...validActions],
+        message: `Unknown action "${input}". Did you mean ${
+            topSuggestions.map(s => `"${s.value}"`).join(' or ')
+        }? The actions are: ${validActions.join(', ')}.`
     };
 }
 
@@ -354,7 +403,10 @@ export function formatGuidingError(error: GuidingError): {
                 message: error.message,
                 input: error.input,
                 suggestions: error.suggestions,
-                hint: 'Try one of the suggested values above'
+                validActions: error.validActions,
+                hint: error.suggestions.length > 0
+                    ? 'Try one of the suggested values above, or one of validActions.'
+                    : 'Nothing matched closely enough to suggest. Pick one of validActions.'
             }, null, 2)
         }]
     };
