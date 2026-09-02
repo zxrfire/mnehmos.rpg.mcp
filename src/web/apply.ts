@@ -135,7 +135,37 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
             satiety: end.satiety - mid.satiety,
             starvationTurns: end.starvationTurns - mid.starvationTurns,
             bleedingTurns: end.bleedingTurns - mid.bleedingTurns,
-            spiritStones: end.spiritStones - mid.spiritStones,
+            // ── THE PURSE IS A DELTA, NOT AN END STATE ───────────────────
+            //
+            // Every other field here is written ABSOLUTELY, and correctly: the
+            // skip owns the body and the clock, `advanceRealm` has just moved
+            // some of them, and `end` is the only right answer for where they
+            // finished. The purse is the one field that is not exclusively the
+            // skip's, and writing it absolutely silently REVERTED any spend
+            // made between the caller's snapshot and this call.
+            //
+            // Measured in a live run, four bribes in a row:
+            //
+            //     "It was taken, and 60 spirit stones went with it."   67 -> 67
+            //     "It was taken, and  5 spirit stones went with it."   67 -> 67
+            //     "It was taken, and 10 spirit stones went with it."   67 -> 68
+            //
+            // The last is the tell, and it is not a second bug. The debit did
+            // land - 67 to 57 - and then `end - mid`, where `end` is
+            // `before + skipDelta` and `before` is the snapshot taken BEFORE
+            // the debit, wrote the purse back to the old base plus the span's
+            // own income. The player was told ten stones left their hand and
+            // finished the turn one richer.
+            //
+            // That is the cardinal rule in AGENTS.md broken in its most literal
+            // form: prose asserting an outcome the state never recorded. So the
+            // skip now applies WHAT IT SPENT rather than asserting what it
+            // believes the total should be. Where nothing wrote in between,
+            // `mid` and `before` hold the same purse and the two expressions
+            // are identical - they differ in exactly the case that was broken,
+            // which is why this is the general fix and not one caller
+            // reordering its own writes.
+            spiritStones: end.spiritStones - before.spiritStones,
             cultivationProgress: end.cultivationProgress - mid.cultivationProgress,
             age: end.age - mid.age,
             yearsAtCurrentRealm: end.yearsAtCurrentRealm - mid.yearsAtCurrentRealm

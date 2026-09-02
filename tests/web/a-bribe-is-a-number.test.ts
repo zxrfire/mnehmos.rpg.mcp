@@ -163,3 +163,81 @@ describe('the sum on the table reaches the odds', () => {
         expect(real.odds, 'the money bought no odds').toBeGreaterThan(token.odds);
     }, 240_000);
 });
+
+/**
+ * AND THE PURSE HAS TO ACTUALLY MOVE.
+ *
+ * The cardinal rule in AGENTS.md, in its most literal form: never a code path
+ * where the narration asserts an outcome without the corresponding state change
+ * having already happened. Measured in a live run, four bribes in a row:
+ *
+ *     "It was taken, and 60 spirit stones went with it."   67 -> 67
+ *     "It was taken, and  5 spirit stones went with it."   67 -> 67
+ *     "It was taken, and 10 spirit stones went with it."   67 -> 68
+ *
+ * The debit landed and the span the bribe paid for then refunded it - see
+ * `a-spend-survives-the-span-it-paid-for.test.ts` for the primitive and the
+ * mechanism. What is guarded HERE is the sentence against the row, through the
+ * verb a player types, because that is the pairing the rule is about.
+ *
+ * Written as a sweep rather than on one seed. Whether an attempt lands is a
+ * roll, so a single pinned run asserts nothing about takes if it happens to be
+ * refused - and it was exactly that thinness that let this survive.
+ */
+describe('what the narration says left the purse, left the purse', () => {
+    it('debits the named sum on every take, and nothing on every refusal', async () => {
+        const takes: string[] = [];
+        const refusals: string[] = [];
+        const wrong: string[] = [];
+
+        for (let n = 0; n < 10; n++) {
+            const { db, game } = await makeGameInWorld({
+                seed: `purse-${n}`, worldSeed: `purse-world-${n}`
+            });
+            const { cultivator } = await game.newRun('Probe');
+            const known = new KnowledgeGate(db).awareness(cultivator.id)
+                .find(row => row.kind === 'cultivator');
+            if (!known) continue;
+
+            // A purse big enough that the offer is affordable and the span's
+            // own upkeep cannot be mistaken for the bribe.
+            db.prepare('UPDATE cultivators SET spirit_stones = 5000 WHERE id = ?')
+                .run(cultivator.id);
+            const before = game.state().cultivator.spiritStones;
+
+            const said = await game.act(`I bribe ${known.name} with 250 spirit stones`);
+            const after = game.state().cultivator.spiritStones;
+            const prose = said.narration ?? '';
+
+            // The engine's own number, which is what the prose is quoting.
+            const call = engineCalls(said).find(row => row.name === 'engine.resolveAttempt');
+            const spent = Number(/(\d+) stone\(s\) spent/.exec(call?.summary ?? '')?.[1] ?? NaN);
+            expect(Number.isFinite(spent), `no spend in: ${call?.summary}`).toBe(true);
+
+            if (spent > 0) {
+                takes.push(`purse-${n}`);
+                // Exactly the sum. Not "less than before" - a span that ate
+                // upkeep would satisfy that while the bribe itself was free,
+                // which is the shape that hid this for as long as it did.
+                if (before - after !== spent) {
+                    wrong.push(
+                        `purse-${n}: engine spent ${spent}, purse moved `
+                        + `${before - after} (${before} -> ${after})`
+                    );
+                }
+                expect(prose, 'a take that spent stones said nothing about them')
+                    .toContain('spirit stones went with it');
+            } else {
+                refusals.push(`purse-${n}`);
+                if (after !== before) {
+                    wrong.push(`purse-${n}: nothing was spent and the purse moved to ${after}`);
+                }
+            }
+        }
+
+        expect(wrong, 'the prose and the purse disagree').toEqual([]);
+        // Both arms have to have been exercised, or this proves half of it.
+        expect(takes.length, 'no bribe landed across ten worlds').toBeGreaterThan(0);
+        expect(refusals.length, 'no bribe was refused across ten worlds').toBeGreaterThan(0);
+    }, 600_000);
+});
