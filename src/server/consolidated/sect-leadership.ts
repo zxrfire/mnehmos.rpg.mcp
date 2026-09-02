@@ -90,7 +90,7 @@ import {
     writeFlag,
     type CultivationRepos
 } from './cultivation-support.js';
-import { ORDINALS_PER_SECT_RANK } from './sect-manage.js';
+import { ORDINALS_PER_SECT_RANK } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
 import type { Run, Cultivator } from '../../schema/cultivation.js';
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -75,6 +75,19 @@ import {
 } from './sect-politics.js';
 import { GuestSchema, handleGuest } from './sect-guest.js';
 import {
+    entryRankIndexFor,
+    requiredContributionForRank,
+    requiredOrdinalForRank,
+    STIPEND_PERIOD_DAYS
+} from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
+import { publishedDoorOf } from '../../engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
+import {
+    applyProbation,
+    carriedProbationFacts,
+    probationOf,
+    recallDueFor
+} from './sect-probation.js';
+import {
     AdmissionSchema,
     AuthoritySchema,
     CurriculumSchema,
@@ -149,21 +162,19 @@ const PER_POINT_OF_CHARM = 0.08;
 /** A house that watched somebody leave remembers which door they used. */
 const WATCHED_YOU_WALK_OUT = -0.3;
 
-/** Realm ordinals a disciple must gain per rank step above admission. */
-export const ORDINALS_PER_SECT_RANK = 4;
-/** Contribution required for the first promotion; triples each step after. */
-export const BASE_PROMOTION_CONTRIBUTION = 100;
-
-export function requiredOrdinalForRank(admissionOrdinal: number, rankIndex: number): number {
-    return admissionOrdinal + rankIndex * ORDINALS_PER_SECT_RANK;
-}
-
-export function requiredContributionForRank(rankIndex: number): number {
-    return Math.round(BASE_PROMOTION_CONTRIBUTION * Math.pow(3, Math.max(0, rankIndex - 1)));
-}
-
-/** In-world days per stipend payment. Sects pay monthly, like everyone else. */
-export const STIPEND_PERIOD_DAYS = 30;
+// The ladder a house's own rungs are priced on lives in the engine, because it
+// is mechanics rather than tool plumbing - and because the probation placement
+// needs the same seat rule and importing it from here closed an init cycle
+// through `sect-guest.ts`. Re-exported so nothing that already imported it
+// from this file has to change.
+export {
+    ORDINALS_PER_SECT_RANK,
+    BASE_PROMOTION_CONTRIBUTION,
+    STIPEND_PERIOD_DAYS,
+    requiredOrdinalForRank,
+    requiredContributionForRank,
+    entryRankIndexFor
+} from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -215,9 +226,24 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
     let sects = repos.sects.list();
     if (args.alignment) sects = sects.filter(s => s.alignment === args.alignment);
     if ((args.admissibleOnly ?? false) && ordinal !== null) {
+        // ── A HOUSE WHOSE DOOR IS OPEN IS NOT AN INADMISSIBLE HOUSE ──────
+        //
+        // Found by playing. A nobody standing in the Low Fall gorge, holding
+        // the Pavilion's name, asked "what sects are there" and was not told
+        // it - because the filter reads `admissionOrdinal`, which at that one
+        // house is the bar at the far end of the probation rather than the
+        // doorway. So the listing of houses somebody could put themselves in
+        // front of omitted the only house in the world whose entire intake is
+        // people walking up the mountain.
+        //
+        // The bar is not softened and the house is not marked admissible; it
+        // is simply not hidden from a person it would take today.
         sects = sects.filter(s => {
             const facts = getSect(s.id);
-            return s.admissionOrdinal <= ordinal && (facts?.recruits ?? true);
+            const door = publishedDoorOf(s.id);
+            const reachable = s.admissionOrdinal <= ordinal
+                || (door !== null && door.atOrdinal <= ordinal);
+            return reachable && (facts?.recruits ?? true);
         });
     }
 
@@ -237,6 +263,15 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
                 admissionRank: rankName(sect.admissionOrdinal),
                 admissible:
                     ordinal === null ? null : recruits && ordinal >= sect.admissionOrdinal,
+                // The second door, where the house has one. Separate from
+                // `admissible` on purpose: this is not membership and saying
+                // it was would be exactly the collapse the catalog spends
+                // three paragraphs preventing.
+                guestDoorOpen:
+                    ordinal === null
+                        ? null
+                        : (publishedDoorOf(sect.id)?.atOrdinal ?? null) !== null
+                          && publishedDoorOf(sect.id)!.atOrdinal <= ordinal,
                 ranks: sect.ranks,
                 stipend: sect.stipend,
                 memberCount: repos.sects.listMembers(sect.id).length,
@@ -325,13 +360,39 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // tool. A Qi Condensation cultivator does not get into a Core Formation
     // sect by being narrated impressively.
     if (cultivator.realmOrdinal < sect.admissionOrdinal) {
+        // ── AND WHERE THE HOUSE HAS A SECOND DOOR, SAY SO ────────────────
+        //
+        // "I join the Azure Cloud Pavilion", typed by somebody at the floor,
+        // used to come back as "admits from Qi Condensation Layer 4" and
+        // nothing else - a bar, correctly stated, in front of a person for
+        // whom the house's whole published intake is standing wide open one
+        // sentence away. That is the same defect as a verb that only works
+        // under one phrasing: the failing half is the more natural sentence,
+        // and there is no way to find the working half except by guessing.
+        //
+        // The bar itself does not move and is not being softened here. What is
+        // added is that the refusal names what would work, which `AGENTS.md`
+        // requires of every refusal.
+        const secondDoor = publishedDoorOf(sect.id);
         return guidingError(
             'below_admission_ordinal',
-            `${sect.name} admits from ${rankName(sect.admissionOrdinal)}. ${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}.`,
+            `${sect.name} admits from ${rankName(sect.admissionOrdinal)}. ${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}.`
+            + (secondDoor !== null && cultivator.realmOrdinal >= secondDoor.atOrdinal
+                ? ` That bar is what passing costs, and it is not the way in. The house takes `
+                  + `people from ${rankName(secondDoor.atOrdinal)} onto its own intake, carries `
+                  + 'them, and decides later - so the door is already open and needs no opening.'
+                : ''),
             {
                 admissionOrdinal: sect.admissionOrdinal,
                 currentOrdinal: cultivator.realmOrdinal,
-                shortBy: sect.admissionOrdinal - cultivator.realmOrdinal
+                shortBy: sect.admissionOrdinal - cultivator.realmOrdinal,
+                publishedDoorAtOrdinal: secondDoor?.atOrdinal ?? null,
+                hint: secondDoor !== null && cultivator.realmOrdinal >= secondDoor.atOrdinal
+                    ? `sect_manage({ action: "guest", sectId: "${sect.id}", accept: true }) is `
+                      + 'the door this house actually opens. It is not membership and it is not '
+                      + 'a discount on the bar; it is the intake, and the bar is still waiting '
+                      + 'at the far end of it.'
+                    : undefined
             }
         );
     }
@@ -413,6 +474,16 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // and doing something - a season of work, a stretch of cultivation, a rung
     // - is what buys another look. The player is never blocked and never
     // rerolls for free.
+    // ── UNLESS THEY WERE SENT FOR ─────────────────────────────────────────
+    //
+    // Somebody on the recall roll is not a stranger walking up unannounced,
+    // and rolling for them would be the house deciding twice about a decision
+    // it has already made. The Mist owes the terraces "every disciple the
+    // terraces ask for, on the day they ask" - it is in the grant terms - so
+    // there is nothing here for the Pavilion to be impressed by or not.
+    const sentFor = recallDueFor(repos, cultivator);
+    const recalledHere = sentFor !== null && sentFor.toFactionId === sect.id;
+
     const beforeHere = repos.sects.formerMembership(sect.id, cultivator.id);
     const chance = Math.min(0.92, Math.max(0.15,
         WALKING_UP_UNANNOUNCED
@@ -433,7 +504,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     const look = forStream(
         run.seed, 'sect_admission', Math.floor(run.elapsedDays), sect.id
     ).next();
-    if (look >= chance) {
+    if (!recalledHere && look >= chance) {
         // The whole of what a player is told goes in `message`. `hint` is the
         // developer channel - `fromToolResult` routes it to `structure` and
         // never to prose - so a refusal whose reason lives only in the hint
@@ -500,13 +571,9 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // A rule the world enforces on everybody else and not on the player is the
     // oldest defect in this codebase. Entry stops one below the top; the
     // headship changes hands by succession or not at all.
-    let entryIndex = 0;
-    for (let index = sect.ranks.length - 2; index > 0; index--) {
-        if (cultivator.realmOrdinal >= requiredOrdinalForRank(sect.admissionOrdinal, index)) {
-            entryIndex = index;
-            break;
-        }
-    }
+    let entryIndex = entryRankIndexFor(
+        sect.ranks, sect.admissionOrdinal, cultivator.realmOrdinal
+    );
 
     // ── AND A RETURNING MEMBER IS NOT A STRANGER ─────────────────────────
     //
@@ -559,6 +626,18 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
         // assert it without re-deriving the ladder.
         entryRankIndex: entryIndex,
         entryRankTitle: sect.ranks[entryIndex] ?? null,
+        // Sent for rather than arrived. The house did not weigh them at the
+        // door because the roll had already answered that question.
+        recalled: recalledHere && existing
+            ? {
+                fromFactionId: existing.sectId,
+                pastTheShelfAtRank: rankName(sentFor!.pastTheShelfAt),
+                note:
+                    'Not a defection and not a walk-up. The house below had nothing left to '
+                    + 'teach and the house above keeps a roll of exactly that, so nobody at '
+                    + 'either end had a decision to make.'
+            }
+            : null,
         entryRequiredOrdinal: requiredOrdinalForRank(sect.admissionOrdinal, entryIndex),
         seatedAboveTheDoor: entryIndex > 0,
         // SAID, not merely applied. A returning member seated below what their
@@ -946,6 +1025,36 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
     const { run, cultivator } = resolved;
     const membership = repos.sects.getMembership(cultivator.id);
     if (!membership) {
+        // ── A PROBATIONER IS NOT NOBODY, AND THIS USED TO SAY THEY WERE ──
+        //
+        // "Unaffiliated. No stipend, no array, no elder, and nobody to notice
+        // if this run ends badly" is every word true of somebody on an apex's
+        // published door, and it omits the only interesting fact about them.
+        // It is also the sentence a person in that position types - "where do
+        // I stand" - so this is where the far end of a probation has to be
+        // reachable, or somebody who never says the word "guest" again sits in
+        // a decided probation forever.
+        const probation = probationOf(repos, cultivator, run);
+        if (probation && probation.outcome !== 'carried') {
+            const applied = applyProbation(repos, cultivator, run, probation);
+            if (applied) return applied;
+        }
+        if (probation) {
+            return {
+                member: false,
+                onProbation: true,
+                cultivator: {
+                    id: cultivator.id,
+                    name: cultivator.name,
+                    rank: rankName(cultivator.realmOrdinal)
+                },
+                probation: carriedProbationFacts(probation),
+                note:
+                    'Not a member and not nobody. On an intake roll, drawing nothing, holding a '
+                    + 'name you are not allowed to say - all of the exposure and none of the '
+                    + 'standing, and no party who will come and ask about you on the road.'
+            };
+        }
         return {
             member: false,
             cultivator: { id: cultivator.id, name: cultivator.name, rank: rankName(cultivator.realmOrdinal) },
@@ -963,8 +1072,27 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
     const lastPaidDay = readNumberFlag(repos.db, cultivator.id, FLAG_STIPEND_PAID_DAY, 0);
     const elapsed = Math.max(0, run.elapsedDays - lastPaidDay);
 
+    // ── THE RECALL ROLL ──────────────────────────────────────────────────
+    //
+    // "Movement is upward and it is ordinary." Somebody placed down the Azure
+    // chain who has outrun what the house holding them can teach is on the
+    // roll to go back up the gorge, and the Mist keeps it. Read off the shelf
+    // rather than off a rung, so a house that acquires a deeper book keeps its
+    // people longer with nothing edited anywhere.
+    const recall = recallDueFor(repos, cultivator);
+
     return {
         member: true,
+        recall: recall === null ? null : {
+            toFactionId: recall.toFactionId,
+            toFactionName: recall.toFactionName,
+            pastTheShelfAtRank: rankName(recall.pastTheShelfAt),
+            standingAt: rankName(cultivator.realmOrdinal),
+            note:
+                `${sect.name} has nothing left to teach ${cultivator.name}, and the house above `
+                + `it keeps a roll of exactly that. Going back up is ordinary and it is not a `
+                + 'favour; it is the arrangement working the way it was built to.'
+        },
         sect: {
             id: sect.id,
             name: sect.name,
