@@ -88,9 +88,16 @@ const WELL: StandingHere = {
     breakthroughReady: false,
     inASect: true,
     sellableGoods: 0,
+    pillsCarried: 0,
     peopleAboveHere: 0,
+    peopleHere: 0,
     peopleHereWithSomethingToSell: 0,
     thinGround: false,
+    paperOnTheWall: null,
+    spanCounterHere: false,
+    dutiesGoing: 0,
+    groundThatTeachesARoad: 0,
+    brokenSeclusion: null,
     aboveTheLid: false
 };
 
@@ -116,7 +123,21 @@ describe('every sentence offered is a sentence the parser understands', () => {
             // Somebody in the square with surplus. `SAY.market` sat in this
             // module unreferenced by any rule until the sellers landed, so
             // "what is for sale" was a sentence the game printed nowhere.
-            { ...WELL, peopleHereWithSomethingToSell: 2 }
+            { ...WELL, peopleHereWithSomethingToSell: 2 },
+            // The square as it actually was in the run that produced this
+            // pass: paper on the wall, somebody standing in it, a counter, and
+            // work going. Every one of those was true and none of them was
+            // offered.
+            {
+                ...WELL,
+                paperOnTheWall: { bills: 2, withinReach: 1, daysToTheSoonest: 35 },
+                spanCounterHere: true,
+                dutiesGoing: 3,
+                peopleHere: 1,
+                pillsCarried: 2,
+                groundThatTeachesARoad: 1
+            },
+            { ...WELL, brokenSeclusion: { daysRemaining: 900, canWithdraw: true } }
         ]) {
             for (const a of whatIsWorthDoingStandingHere(state)) seen.set(a.say, a.routesTo);
         }
@@ -486,6 +507,211 @@ describe('the read is bounded, ordered and never empty', () => {
     });
 });
 
+/**
+ * The row has to CHANGE, and the three axes it has to change along.
+ *
+ * ── The report this describe block exists to answer ──────────────────────
+ *
+ * From the design owner, playing in the browser: across a fresh run, several
+ * turns and two locations, the row under the prose offered the same three
+ * every time - "who can teach me", "what arts can I learn", "what sects are
+ * there". *"It must change with the player's rung, with what they know, and
+ * with where they are standing."*
+ *
+ * The cause was not that the module had nothing else to say. It was that those
+ * three fire off one condition that holds for the whole opening of the game,
+ * all three sat at the same urgency, and the client shows the top of the list -
+ * so nothing that was actually happening could get above them. Two houses were
+ * holding intakes in the square, somebody was standing an arm's length away,
+ * and a counter was selling passage out of the province.
+ *
+ * So what is asserted here is a PROPERTY rather than a list: that a fact about
+ * the place outranks a read that is true in every square in the world, and
+ * that two different places do not produce the same row.
+ */
+describe('the row moves with the place, the rung and the state', () => {
+    /** What the client actually shows: the head of the ordering. */
+    const row = (here: StandingHere, n = 3): string[] =>
+        theMostPressing(whatIsWorthDoingStandingHere(here), n).map(a => a.id);
+
+    // The state the report was taken in: a nobody with no method, standing
+    // somewhere. Every case below moves ONE fact off it.
+    const NOBODY: StandingHere = { ...WELL, practisesAMethod: false, inASect: false };
+
+    it('offered the same three in every place before this, and does not now', () => {
+        const wheatgate: StandingHere = {
+            ...NOBODY,
+            // Two houses holding intakes, one of them at a bar this cultivator
+            // clears, the nearer in 35 days. All four numbers are the run's.
+            paperOnTheWall: { bills: 2, withinReach: 1, daysToTheSoonest: 35 },
+            peopleHere: 1
+        };
+        const plain: StandingHere = { ...NOBODY };
+
+        expect(row(wheatgate)).not.toEqual(row(plain));
+        expect(row(wheatgate)).toContain('bills');
+    });
+
+    it('puts the wall and the square ahead of a read that is true everywhere', () => {
+        const busy: StandingHere = {
+            ...NOBODY,
+            paperOnTheWall: { bills: 2, withinReach: 1, daysToTheSoonest: 35 },
+            peopleHere: 3,
+            spanCounterHere: true
+        };
+        const shown = row(busy, 5);
+        // The floor - reads that are true in every square in the world - must
+        // not be at the head of the row while any of this is true.
+        expect(shown).toContain('bills');
+        expect(shown).toContain('room');
+        for (const evergreen of ['news', 'hunt']) {
+            expect(shown, evergreen).not.toContain(evergreen);
+        }
+    });
+
+    it('says nothing about a wall where there is no wall', () => {
+        expect(ids({ ...NOBODY, paperOnTheWall: null })).not.toContain('bills');
+        expect(ids({ ...NOBODY, paperOnTheWall: { bills: 0, withinReach: 0, daysToTheSoonest: null } }))
+            .not.toContain('bills');
+    });
+
+    it('counts the paper and dates the intake without naming a house', () => {
+        const said = byId(
+            { ...NOBODY, paperOnTheWall: { bills: 2, withinReach: 1, daysToTheSoonest: 35 } },
+            'bills'
+        )!;
+        expect(said.because).toContain('2 bills');
+        expect(said.because).toContain('35 days');
+        expect(said.urgency).toBe('soon');
+        // A bar nobody standing here clears is worth reading and is not an
+        // opportunity, so it drops a band rather than disappearing.
+        expect(byId(
+            { ...NOBODY, paperOnTheWall: { bills: 3, withinReach: 0, daysToTheSoonest: 70 } },
+            'bills'
+        )!.urgency).toBe('open');
+    });
+
+    it('offers the counter only where there is a counter', () => {
+        expect(ids(WELL)).not.toContain('passage');
+        expect(ids({ ...WELL, spanCounterHere: true })).toContain('passage');
+    });
+
+    it('offers the mission board on what is going, not on who you serve', () => {
+        // Both halves of the old gate were wrong. A member - the person the
+        // whole board exists for - was never offered it; a nobody in front of
+        // an empty wall was offered a sentence that answers "you belong to
+        // nothing, so there is no wall", which is a refusal with a button on
+        // it.
+        expect(ids({ ...WELL, inASect: true, dutiesGoing: 4 })).toContain('duties');
+        expect(ids({ ...WELL, inASect: false, dutiesGoing: 4 })).toContain('duties');
+        expect(ids({ ...WELL, inASect: false, dutiesGoing: 0 })).not.toContain('duties');
+    });
+
+    it('mentions the person standing in the square rather than only the ladder', () => {
+        // The Stone-Shell Tortoise case: present, at ordinal 29, and nothing
+        // offered looking at it. `peopleAboveHere` was the only roster figure
+        // this module read, so somebody at or below the player's rung was
+        // invisible to it.
+        const alone = byId(WELL, 'room')!;
+        const notAlone = byId({ ...WELL, peopleHere: 1 }, 'room')!;
+        expect(notAlone.because).not.toBe(alone.because);
+        expect(notAlone.because).toContain('1 person');
+        expect(notAlone.whatItIsAbout).toBe('here');
+        expect(alone.whatItIsAbout).toBe('always');
+    });
+
+    it('tells somebody carrying a pill that a pill does nothing until it is taken', () => {
+        expect(byId({ ...WELL, pillsCarried: 2 }, 'inventory')!.because)
+            .toMatch(/not been swallowed/i);
+        expect(ids({ ...WELL, pillsCarried: 0, sellableGoods: 0 })).not.toContain('inventory');
+    });
+
+    it('stops saying "what arts can I learn" the moment there is a method', () => {
+        expect(ids({ ...WELL, practisesAMethod: false })).toContain('arts');
+        expect(ids({ ...WELL, practisesAMethod: true })).not.toContain('arts');
+    });
+
+    it('does not let one condition own the whole row', () => {
+        // Three lines fired off `practisesAMethod: false` at one urgency, and
+        // a row with room for three showed those three for the entire opening
+        // of the game. They all still fire; what changed is that they cannot
+        // all outrank whatever is happening.
+        const shown = row({
+            ...NOBODY,
+            paperOnTheWall: { bills: 1, withinReach: 1, daysToTheSoonest: 12 },
+            peopleHere: 2,
+            spanCounterHere: true
+        }, 5);
+        const roadReads = shown.filter(id => ['teacher', 'arts', 'sects'].includes(id));
+        expect(roadReads.length).toBeLessThan(3);
+    });
+});
+
+describe('a line is about the square, about the body, or about nothing', () => {
+    it('marks the floor as the floor and everything gated by where it was gated', () => {
+        // The axis the client leads with. If the floor were ever marked live
+        // the row would be padded with reads that are true in every square in
+        // the world, which is the defect this pass was for.
+        for (const a of whatIsWorthDoingStandingHere(WELL)) {
+            if (['ceiling', 'destinations', 'hunt', 'room', 'news'].includes(a.id)) {
+                expect(a.whatItIsAbout, a.id).toBe('always');
+            }
+        }
+        const busy = whatIsWorthDoingStandingHere({
+            ...WELL,
+            paperOnTheWall: { bills: 1, withinReach: 1, daysToTheSoonest: 4 },
+            spanCounterHere: true,
+            dutiesGoing: 2,
+            peopleHere: 1
+        });
+        for (const id of ['bills', 'passage', 'duties', 'room']) {
+            expect(busy.find(a => a.id === id)?.whatItIsAbout, id).toBe('here');
+        }
+        // And a fact about the body is not dressed up as a fact about the
+        // square. `arts` fires on practising no method and is just as true in
+        // the next province.
+        expect(whatIsWorthDoingStandingHere({ ...WELL, practisesAMethod: false })
+            .find(a => a.id === 'arts')?.whatItIsAbout).toBe('you');
+    });
+
+    it('orders the square, then the body, then the floor inside one urgency band', () => {
+        const order = whatIsWorthDoingStandingHere({
+            ...WELL, practisesAMethod: false, peopleHere: 2,
+            spanCounterHere: true, dutiesGoing: 1
+        });
+        const RANK = { here: 0, you: 1, always: 2 } as const;
+        for (const band of ['now', 'soon', 'open'] as const) {
+            const inBand = order.filter(a => a.urgency === band).map(a => RANK[a.whatItIsAbout]);
+            expect([...inBand].sort((x, y) => x - y), band).toEqual(inBand);
+        }
+    });
+
+    it('never names anybody or any house it was only handed a count of', () => {
+        // The discovery gate, applied to this surface. Every figure below is a
+        // count, and the lines they produce route to reads that do their own
+        // granting - so nothing here may hand over a record the player has not
+        // been given.
+        const counted = whatIsWorthDoingStandingHere({
+            ...WELL,
+            paperOnTheWall: { bills: 3, withinReach: 2, daysToTheSoonest: 9 },
+            peopleHere: 4,
+            peopleAboveHere: 2,
+            peopleHereWithSomethingToSell: 1,
+            dutiesGoing: 2
+        });
+        for (const a of counted) {
+            // A house or a person would arrive as a capitalised proper noun in
+            // the middle of a sentence. The only ones legitimately there are
+            // the two the catalog puts in a sentence of its own.
+            const proper = a.because.match(/(?<![.!?"] )(?<!^)\b[A-Z][a-z]{2,}\b/g) ?? [];
+            expect(proper.filter(w => !['Span', 'Measured', 'Work', 'Nothing', 'Something',
+                'About', 'Enough', 'Ground', 'Whether', 'Sitting', 'Putting', 'The',
+                'Every', 'Where', 'What', 'Who', 'Reading', 'A'].includes(w)), a.id)
+                .toEqual([]);
+        }
+    });
+});
+
 describe('above the Lid is a different world, and is not offered a market stall', () => {
     const immortal: StandingHere = {
         ...WELL,
@@ -500,8 +726,12 @@ describe('above the Lid is a different world, and is not offered a market stall'
         woundsPastMortalCare: 2,
         battered: true,
         sellableGoods: 5,
+        pillsCarried: 3,
         thinGround: true,
         peopleAboveHere: 1,
+        peopleHere: 4,
+        paperOnTheWall: { bills: 3, withinReach: 3, daysToTheSoonest: 2 },
+        dutiesGoing: 4,
         practisesAMethod: false,
         inASect: false
     };
@@ -509,7 +739,7 @@ describe('above the Lid is a different world, and is not offered a market stall'
     it('offers nothing that would be refused up there', () => {
         const offered = ids(immortal);
         for (const mortal of ['eat', 'work', 'gather', 'sell', 'treat', 'market',
-            'teacher', 'sects', 'duties', 'room', 'news', 'inventory']) {
+            'teacher', 'sects', 'duties', 'room', 'news', 'inventory', 'bills']) {
             expect(offered, mortal).not.toContain(mortal);
         }
     });
