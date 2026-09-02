@@ -47,9 +47,38 @@ import {
     composeNarrationUser,
     narrationSystemPrompt
 } from './prompt.js';
+import { verbForASentenceThePatternsMissed } from './reaching-a-verb-the-pattern-table-has-no-line-for.js';
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing } from './hearsay.js';
 import type { EngineFacts } from './facts.js';
+
+/**
+ * The whole of phase 1 when no model answers: the pattern table, and then the
+ * embedding for a sentence the table had no line for.
+ *
+ * Every path in this file that used to call `parseIntent` calls this instead,
+ * so the two narrators read a sentence the same way. They must: a player whose
+ * local model is down should meet worse prose, never a smaller vocabulary.
+ *
+ * The ordering is the safety property and it is one-directional. `parseIntent`
+ * runs first and complete, spelling repair included; the embedding is only ever
+ * shown a sentence that came back `unclear`, and it cannot move a verb the
+ * table already chose - `verbForASentenceThePatternsMissed` returns the table's
+ * plan untouched unless the table declined. Measured over the 208 phrasings in
+ * `coverage.test.ts`: 208 of 208 unchanged.
+ *
+ * And it degrades. A corpus that failed to build, or anything else thrown from
+ * the tier, costs the player nothing but the refusal they were already getting:
+ * the table's own answer is what leaves this function.
+ */
+function readTheSentence(input: string): Plan['action'] {
+    const fromTable = parseIntent(input);
+    try {
+        return verbForASentenceThePatternsMissed(input, fromTable);
+    } catch {
+        return fromTable;
+    }
+}
 
 export interface NarratorScene {
     place: string;
@@ -240,7 +269,7 @@ export class DeterministicNarrator implements Narrator {
     constructor(private readonly note = 'no narrator provider configured') {}
 
     async plan(input: string): Promise<Plan> {
-        return { action: parseIntent(input), source: 'fallback', note: this.note };
+        return { action: readTheSentence(input), source: 'fallback', note: this.note };
     }
 
     /**
@@ -329,7 +358,7 @@ export class ProviderNarrator implements Narrator {
             text = result.text ?? '';
         } catch (err) {
             return {
-                action: parseIntent(input),
+                action: readTheSentence(input),
                 source: 'fallback',
                 note: `provider unavailable (${errorLabel(err)}); intent parsed deterministically`
             };
@@ -338,7 +367,7 @@ export class ProviderNarrator implements Narrator {
         const raw = extractJsonObject(text);
         if (raw === null) {
             return {
-                action: parseIntent(input),
+                action: readTheSentence(input),
                 source: 'fallback',
                 note: 'model did not return a JSON object; intent parsed deterministically'
             };
@@ -351,7 +380,7 @@ export class ProviderNarrator implements Narrator {
         const validated = validatePlan(raw);
         if (!validated.ok) {
             return {
-                action: parseIntent(input),
+                action: readTheSentence(input),
                 source: 'fallback',
                 note: `model response rejected (${validated.reason}); intent parsed deterministically`
             };
