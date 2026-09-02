@@ -29,7 +29,8 @@
     "dev": "ts-node src/index.ts",
     "play": "node scripts/play.mjs",
     "mcp": "node dist/server/index.js",
-    "docs:index": "node scripts/build-world-index.mjs"
+    "docs:index": "node scripts/build-world-index.mjs",
+    "docs:houses": "node scripts/build-house-dossiers.mjs"
   },
   "repository": {
     "type": "git",
