@@ -11,7 +11,19 @@
  *   a price and nothing else   Mundane goods. A meal, a robe, a night's board.
  *                              Never counted anywhere, no row, no arithmetic.
  *                              What moves them is an event - a famine, a shut
- *                              pass - and never anybody buying one.
+ *                              pass - and never anybody buying one. That layer
+ *                              is `what-is-true-of-a-place-right-now.ts` and
+ *                              nothing here duplicates it: a status stops a
+ *                              mundane good, and this file has no opinion on
+ *                              one. The seam runs the other way too - that
+ *                              module deliberately does NOT carry a "worked
+ *                              out" status, because the reading below already
+ *                              answers it off the count, and two authorities on
+ *                              one fact disagree the first time anybody
+ *                              forages. What is theirs is a DECISION taken in
+ *                              consequence - a house closing a district to
+ *                              gathering - which is not recoverable from a
+ *                              number.
  *   an amount somewhere        Cultivator materials. Herbs and beast materials
  *                              are the ground half and are this file. Common
  *                              manuals are the other half: also counted, also
