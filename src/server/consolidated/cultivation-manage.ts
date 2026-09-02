@@ -53,6 +53,8 @@ import {
     isBreakthroughEligible,
     isRealmBoundary,
     lifespanForOrdinal,
+    maxHpForOrdinal,
+    maxQiForOrdinal,
     progressRequiredForOrdinal,
     openingPosition,
     rankName,
@@ -156,15 +158,15 @@ const FORBIDDEN_TALENT_KEYS = [
     'realmOrdinal', 'realm_ordinal', 'realm', 'cultivationProgress', 'cultivation_progress'
 ];
 
-/** Derived, not chosen: a body holds qi in proportion to Might. */
-function maxHpFor(might: number, ordinal: number): number {
-    return 20 + might * 10 + ordinal * 5;
-}
-
-/** Derived, not chosen: an aperture's throughput follows Insight. */
-function maxQiFor(insight: number, ordinal: number): number {
-    return 10 + insight * 5 + ordinal * 4;
-}
+/**
+ * Derived, not chosen, and derived in exactly one place.
+ *
+ * The curve and its calibration live in `realms.ts` under "what a rung buys in
+ * body". A second formula here is how the player and the world came to be
+ * built differently, so this is a re-export and must stay one.
+ */
+const maxHpFor = maxHpForOrdinal;
+const maxQiFor = maxQiForOrdinal;
 
 /** How the time is being spent. Sealed seclusion is the full rate. */
 const FOCUS_MULTIPLIERS = {

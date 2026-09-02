@@ -53,6 +53,8 @@ import {
     canUseTechnique,
     evaluateDeathConditions,
     forStream,
+    maxHpForOrdinal,
+    maxQiForOrdinal,
     rankName,
     resolveConfrontation,
     resolveExchange,
@@ -319,7 +321,15 @@ function combatantFromOpponent(
         );
     }
 
-    const maxHp = spec.maxHp ?? Math.max(10, 20 + spec.realmOrdinal * 12);
+    const might = spec.might ?? 2;
+    const insight = spec.insight ?? 2;
+    // The same curve every stored cultivator is built on - `realms.ts`, "what a
+    // rung buys in body". A described opponent had its own formula, so the
+    // person standing in front of the player was priced differently from the
+    // identical person with a row in the table, and the two numbers the
+    // narrator reads out came off two different ladders.
+    const maxHp = spec.maxHp ?? Math.max(10, maxHpForOrdinal(might, spec.realmOrdinal));
+    const maxQi = Math.max(1, maxQiForOrdinal(insight, spec.realmOrdinal));
     const untreated = spec.untreatedInjuries ?? 0;
 
     return {
@@ -328,12 +338,7 @@ function combatantFromOpponent(
         realmOrdinal: spec.realmOrdinal,
         traditionId: spec.traditionId,
         spiritRoot: 'muddled_five_element',
-        attributes: {
-            might: spec.might ?? 2,
-            insight: spec.insight ?? 2,
-            fortune: 1,
-            charm: 2
-        },
+        attributes: { might, insight, fortune: 1, charm: 2 },
         injuries: Array.from({ length: untreated }, (_, i) => ({
             id: `described-injury-${i}`,
             severity: 'serious' as const,
@@ -349,8 +354,8 @@ function combatantFromOpponent(
         })),
         hp: spec.hp ?? maxHp,
         maxHp,
-        qi: maxHp,
-        maxQi: maxHp,
+        qi: maxQi,
+        maxQi,
         artifactGrade: spec.artifactGrade ?? 0,
         battlesSurvived: spec.battlesSurvived ?? 0,
         technique: null,
