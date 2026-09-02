@@ -260,6 +260,25 @@ const LAG = 0.35;
 /** Slack above what a faction can reliably produce. One realm, roughly. */
 const ABOVE_PRODUCTION = 8;
 
+/**
+ * The first rank the admission bar governs.
+ *
+ * A house's rank 0 is its menial and probationary tier - Sword Servant, Herb
+ * Boy, Coal Hand, Applicant, Guest of the Grove - and those people are NOT
+ * admitted disciples. They are servants, and guests, and the whole point of
+ * such a tier is that somebody can be there without having cleared the bar.
+ * So the bar applies from the disciple track upward and not to rank 0, which
+ * is why a Sword Servant may stand at ordinal 5 in a house that admits at 3
+ * without anything being wrong.
+ *
+ * Thirty-three of thirty-four houses are built this way. The exception is the
+ * Hollow Court, whose rank 0 is Outer Disciple because it has no menial tier
+ * at all - it admits nobody below a Void Refinement floor, so it has nobody
+ * who would be one. Exempting its rank 0 costs nothing, because every member
+ * it has stands far above its bar regardless.
+ */
+const FIRST_RANK_THE_BAR_GOVERNS = 1;
+
 export interface RealmBand {
     minOrdinal: number;
     maxOrdinal: number;
@@ -296,8 +315,11 @@ export function rankRealmBand(factionId: string, rankIndex: number): RealmBand |
             Math.round(admission + span * Math.min(1, t + LEAD))
         )
     );
+    // Servants and guests are below the bar by definition, so their floor is
+    // the bottom of the ladder rather than the house's admission ordinal.
+    const floor = rankIndex < FIRST_RANK_THE_BAR_GOVERNS ? 0 : admission;
     const minOrdinal = Math.max(
-        admission,
+        floor,
         Math.round(admission + span * Math.max(0, t - LAG))
     );
     return { minOrdinal, maxOrdinal: Math.max(minOrdinal, maxOrdinal) };
