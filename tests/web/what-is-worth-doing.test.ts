@@ -33,6 +33,12 @@ import {
     whatToSayAboutTheCure
 } from '../../src/web/what-would-close-this-wound.js';
 import { medicineReaches } from '../../src/engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
+import {
+    HOME_REGION_ID,
+    SOUTH_REGION_ID,
+    localPrice
+} from '../../src/data/cultivation/regions.js';
+import { PRICES, cashToStones } from '../../src/data/cultivation/mortal-world.js';
 
 /**
  * The cure a torn meridian actually has, read off the catalogs rather than
@@ -58,8 +64,10 @@ const HURT_AT_CORE_FORMATION = [
     { id: 'i1', severity: 'serious', source: 'qi_deviation', treated: false } as never
 ];
 const CORE_FORMATION_ORDINAL = 17;
-const CURE_IN_REACH = whatWouldCloseThisWound(HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, 500)!;
-const CURE_OUT_OF_REACH = whatWouldCloseThisWound(HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, 0)!;
+const CURE_IN_REACH = whatWouldCloseThisWound(
+    HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, 500, HOME_REGION_ID)!;
+const CURE_OUT_OF_REACH = whatWouldCloseThisWound(
+    HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, 0, HOME_REGION_ID)!;
 
 /**
  * A cultivator with nothing wrong. Every test below moves one field off this,
@@ -299,7 +307,8 @@ describe('the cure is read off the catalog, never invented', () => {
         const cure = whatWouldCloseThisWound(
             [{ id: 'i1', severity: 'serious', source: 'qi_deviation', treated: false } as never],
             0,
-            100
+            100,
+            HOME_REGION_ID
         );
         expect(cure).toBeTruthy();
         expect(cure!.stones).toBeGreaterThan(0);
@@ -308,7 +317,7 @@ describe('the cure is read off the catalog, never invented', () => {
     });
 
     it('answers nothing at all when nothing is torn', () => {
-        expect(whatWouldCloseThisWound([], 8, 500)).toBeNull();
+        expect(whatWouldCloseThisWound([], 8, 500, HOME_REGION_ID)).toBeNull();
     });
 
     it('says the price and the purse in the same sentence', () => {
@@ -328,6 +337,60 @@ describe('the cure is read off the catalog, never invented', () => {
         expect(CURE_IN_REACH.stones).toBe(420);
     });
 
+    /**
+     * The quote and the charge are one number.
+     *
+     * This is the guard for a defect that was pre-existing, documented in place
+     * as acceptable, and only became visible when a catalog row put it on a
+     * large absolute figure: the advice quoted the BOARD price and `buy`
+     * charged `localPrice`, so a player standing in a province with a
+     * multiplier was told one number and asked another. Told 420 and charged
+     * 924 is being lied to, whichever of the two is "correct".
+     *
+     * Asserted against `localPrice` rather than a typed-in figure, so the
+     * multipliers can be retuned without this going stale - what is being
+     * pinned is that the two surfaces do the same arithmetic, not what the
+     * arithmetic currently comes to.
+     */
+    it('quotes what a counter in THIS province charges, not the board base', () => {
+        const row = PRICES.find(price => price.name === CURE_IN_REACH.name)!;
+        const asBuyWouldCharge = (regionId: string): number =>
+            Math.max(1, Math.ceil(cashToStones(localPrice(regionId, row.cash))));
+
+        for (const regionId of [HOME_REGION_ID, SOUTH_REGION_ID]) {
+            const cure = whatWouldCloseThisWound(
+                HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, 10_000, regionId)!;
+            expect(cure.name, regionId).toBe(CURE_IN_REACH.name);
+            expect(cure.stones, regionId).toBe(asBuyWouldCharge(regionId));
+            expect(whatToSayAboutTheCure(cure)).toContain(`${cure.stones} spirit stones`);
+        }
+
+        // And the province multiplier is doing something, or the assertion
+        // above would pass on two identical numbers and prove nothing.
+        expect(asBuyWouldCharge(SOUTH_REGION_ID))
+            .toBeGreaterThan(asBuyWouldCharge(HOME_REGION_ID));
+    });
+
+    /**
+     * Affordability is a claim about a purse against a price, so it has to be
+     * against the price actually asked. The same 500 stones that covers this
+     * cure at home does not cover it in the Drowned Reach, and the sentence has
+     * to say so rather than promising "you are carrying enough for one".
+     */
+    it('decides affordability against the local figure', () => {
+        const row = PRICES.find(price => price.name === CURE_IN_REACH.name)!;
+        const purse = Math.max(1, Math.ceil(cashToStones(localPrice(HOME_REGION_ID, row.cash))));
+
+        const here = whatWouldCloseThisWound(
+            HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, purse, HOME_REGION_ID)!;
+        const away = whatWouldCloseThisWound(
+            HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, purse, SOUTH_REGION_ID)!;
+
+        expect(here.affordable).toBe(true);
+        expect(away.affordable).toBe(false);
+        expect(whatToSayAboutTheCure(away)).toMatch(/not carrying enough/i);
+    });
+
     it('never names a medicine that would be refused at the point of use', () => {
         // The whole of what the grade gate changed about this file. For every
         // wound on every body, the pill named has to be one `medicineReaches`
@@ -338,7 +401,8 @@ describe('the cure is read off the catalog, never invented', () => {
                 const cure = whatWouldCloseThisWound(
                     [{ id: 'i1', severity, source: 'qi_deviation', treated: false } as never],
                     ordinal,
-                    1_000_000
+                    1_000_000,
+                    HOME_REGION_ID
                 );
                 expect(cure, `${severity} at ${ordinal} has no named cure`).toBeTruthy();
                 expect(
@@ -359,7 +423,8 @@ describe('the cure is read off the catalog, never invented', () => {
         const cure = whatWouldCloseThisWound(
             [{ id: 'i1', severity: 'crippling', source: 'qi_deviation', treated: false } as never],
             8,
-            194
+            194,
+            HOME_REGION_ID
         )!;
         expect(cure.grade).toBe('heaven');
         expect(cure.stones).toBeNull();
