@@ -1003,6 +1003,22 @@ cannot ask about.
 > If a change here makes somebody helpfully explain the Late Age, it is wrong. The measure
 > is that a player accumulates fragments they cannot yet place.
 
+The **overheard** channel has a fourth constraint the other two do not: it may not name
+anybody standing in the square. A speaker's working vocabulary is full of the people they
+stand next to all day - measured on a seeded world, 1,086 speaker/present-name pairs across
+the map, including speakers who could name themselves - and two people talking about
+somebody eight feet away resolves the fragment in the same scene, which is the one thing
+`discovery.md` says this device must never do. `told` and `passing` are deliberately not
+filtered: somebody nodding at a colleague while talking *to* the player is an introduction,
+which is a wanted way for a name to arrive.
+
+The exclusion matches on **name** as well as id, and the id half catches nothing. `lore.ts`
+keys a catalog person `member-yan-shuling`; `seeding.ts` instantiates the same person as
+`npc-member-yan-shuling`. Measured: 203 lore people, 428 world NPCs, zero ids in common. The
+knowledge system is keyed by id and everything the player reads is keyed by name - the same
+asymmetry `personName` in `engine/world/history.ts` guards from the other end - so an
+id-only comparison would have passed all 1,086 pairs while looking correct.
+
 `tests/web/lore.test.ts` holds the regression guard: every catalog must still be reachable
 by somebody on the player-facing path, so "written but unreachable" fails the build.
 
@@ -1345,6 +1361,25 @@ as the next town along, because it is not an advantage, it is what everybody has
 withholds the two kinds the world means somebody to find: dao ground, and anything carrying
 `FOUND_BY_PROSPECTING_TAG`. Default-deny, so the next kind of special ground somebody adds
 is withheld by construction rather than by being remembered.
+
+## The refusal path is inside the gate too
+
+A refusal is prose the player reads, so every name in one is a name the game has handed
+over. `blankLook` used to open with `You put the words to ${here[0].name}` - the nearest
+person, ungated - while `nobodyByThatName` appended the correctly gated sentence "you have a
+name for none of them" to the very same paragraph.
+
+Two defects in one line, and the second is the worse one. The leak is obvious. The other is
+that the player asked for one person, read the name of a different one, and read it in a
+sentence describing their words being delivered: **a refusal that reads as a redirect is not
+a refusal**, and the player walks away believing they spoke to somebody they did not.
+Measured: `I negotiate with Kong Lanwu`, typed in a square of fifteen strangers, answered
+"You put the words to Liang Fuhe."
+
+So the witness is named only where the player could already name them, and otherwise the
+refusal says plainly that nobody here answers to that name. `whoIsAbout` carries the same
+gate on its lone-person branch, where being the only person in the square was enough to get
+your name printed.
 
 ## Related
 
