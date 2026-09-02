@@ -52,13 +52,28 @@ import {
 } from '../engine/cultivation/cultivation.js';
 import { rankName } from '../engine/cultivation/realms.js';
 
+/**
+ * ── Three fields are nullable, and it is not this module that nulls them ──
+ *
+ * `supported`, `drawing` and `share` are a surveyor's figures, and reading a
+ * vein is a skill that arrives with the ladder - see
+ * `what-you-can-tell-about-the-ground.ts` for the ruling and the thresholds.
+ * This module always fills all three, because this module is the MEASUREMENT.
+ * The perception gate produces a masked copy for a reader who cannot make them
+ * out, and the null is what tells the sheet to show a count and a feeling
+ * rather than a percentage.
+ *
+ * They are nullable here rather than in a second type so that the client, the
+ * inspector and the sheet keep taking one shape. A parallel "what they can see"
+ * interface is the second table this file's header already warns about.
+ */
 export interface CrowdingRead {
     /** The place, as the player would name it. */
     placeName: string;
     /** Mortal-equivalent draws this ground carries comfortably. */
-    supported: number;
+    supported: number | null;
     /** Mortal-equivalent draws actually on it, this cultivator included. */
-    drawing: number;
+    drawing: number | null;
     /** Bodies, which is a different number and is the one a player counts. */
     heads: number;
     /**
@@ -67,7 +82,7 @@ export interface CrowdingRead {
      * Exactly `crowdingMultiplier`, which is exactly what multiplies the rate.
      * 1 means the ground is not the thing in the way.
      */
-    share: number;
+    share: number | null;
     /** True when the ground is too poor to carry anybody past Qi Condensation. */
     barren: boolean;
     /** One sentence, engine-authored, for the sheet and for the answer. */

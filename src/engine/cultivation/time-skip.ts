@@ -753,6 +753,24 @@ export function simulateTimeSkip(
             // takes the crossing from 2% to roughly 8.5%. Nobody is trapped,
             // and a player who wants the gamble can still take it deliberately
             // through `breakthrough`, which this does not touch.
+            //
+            // ── AND THE LINE HAS TO SAY WHAT ACTUALLY HAPPENS ────────────
+            //
+            // It used to end "The attempt is yours to make whenever you want
+            // it", which is not true and was the last thing a lot of
+            // cultivators read. Measured in one turn, 130 days apart:
+            //
+            //   Day 50   The gate is open and was not struck... prices at 10.6%
+            //            ... The attempt is yours to make whenever you want it.
+            //   Day 180  Breakthrough failed catastrophically at 25.9%. The
+            //            meridians ruptured completely. The cultivator is dead.
+            //
+            // This event is pushed with `interrupts: false`, so the player gets
+            // no turn between the promise and the attempt, and the caller sets
+            // `autoBreakthrough` on the cultivate path. Deferring is right and
+            // is not what changed; the sentence claimed a control the player
+            // did not have, and now states the one they do - shorten the
+            // stretch, or strike deliberately.
             const odds = eligibility.eligible
                 ? computeBreakthroughOdds(snapshot(), { ambient })
                 : null;
@@ -770,8 +788,10 @@ export function simulateTimeSkip(
                     `The gate is open and was not struck. From here the crossing to `
                     + `${rankName(ordinal + 1)} prices at ${(odds!.finalChance * 100).toFixed(1)}%, `
                     + 'and sitting on a full gate is still worth more than that: accumulated '
-                    + 'progress beyond the price is the one thing that improves it. The attempt '
-                    + 'is yours to make whenever you want it.',
+                    + 'progress beyond the price is the one thing that improves it. Striking '
+                    + 'sooner is a thing you can say out loud. Saying nothing is not waiting - '
+                    + 'this stretch will strike on your behalf the moment sitting stops being '
+                    + 'worth more, and it will not stop to ask first.',
                     false,
                     {
                         finalChance: odds!.finalChance,
