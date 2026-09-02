@@ -490,6 +490,117 @@ Refinement and Body Integration and then stops mattering, and `gates_places` at 
 zeroes location requirements outright - which now looks like it was put one realm too low and
 one degree too absolute.
 
+#### And in a fight: the elemental is the thing that stops working
+
+The mechanical face of being at home in every element, and it is one rule:
+
+> **A tribulation body resists the elemental. Everything else goes through it.**
+
+Two terms, and both matter:
+
+- **Less damage from every element**, uniformly. That is being at home in all of them.
+- **Extra less from the element of their own cultivation**, on top. A fire cultivator's
+  tribulation body is hardest of all to burn.
+
+**It is resistance and never immunity.** Two of them fighting still ends with somebody dead,
+given enough time. The days-and-nights duel is the *result* of a large reduction applied to real
+damage, not of a fight that cannot be won - so if the numbers ever make two of them unable to
+hurt each other at all, the numbers are wrong. **State them in this document when they are
+chosen**, because the duel length is the point and somebody who does not know that will tune
+them on some other basis.
+
+**Why the duel is long:** everybody who gets that high got there on some road, and at the summit
+the ordinary weapon is the one that barely works. Nobody writes that scene. It falls out of the
+reduction.
+
+**And the counter is anything that is not elemental.** Not a list of exceptions - a rule with
+examples. An ancient art, a weapon art, a strike out of the dao of karma: all three go through
+for the same reason, which is that none of them is made of an element. Stating it as a rule
+rather than a list matters, because a list goes stale the moment somebody adds a domain and the
+rule will not.
+
+##### The field to read, which is NOT the one the rule is phrased in
+
+The rule is naturally stated as *"resists the element domain"*, and `InsightDomain` really does
+carry `element` alongside `weapon`, `body`, `formation`, `alchemy`, `karma`, `life_death`, `time`
+and `void`. **But `domain` is the wrong field to implement against, and the catalog says so:**
+
+```text
+arts by dao domain (138 arts)
+  none 113 | body 5 | element 5 | void 4 | life_death 4
+  formation 3 | time 2 | karma 1 | weapon 1
+```
+
+Only 25 arts carry a dao domain at all and only **5** carry `element`, so a resistance keyed on
+`domain` would resist five arts in the world. The field that says what an attack is *made of* is
+`element`, which is populated and splits the catalog nearly in half:
+
+```text
+elemental 69 | elementless 69
+  ancient  15 arts, 15 elementless (100%)
+  modern  123 arts, 54 elementless (44%)
+```
+
+The two axes are genuinely different rather than redundant, and one row proves it: **Clear
+Terrace Ascension Canon gates on `weapon:3` and is `element: metal`.** A non-elemental dao can
+produce an elemental art. **So read `element`.** The domain framing is the correct description
+of the rule and `element` is the column that carries it.
+
+**Read `element`, never `era`.** The guard in `schema/cultivation.ts` is explicit that an ancient
+art must never simply be stronger, or the era axis collapses into "old wins". It does not
+collapse here: elementless arts exist in both eras, and at ordinal 37+ there are 20 modern arts
+of which 15 are already elementless. An ancient art is *always* an answer and never the *only*
+one, which is the correct shape. Do not oversell it.
+
+##### What this buys the rest of the setting
+
+**The deep roads were already domain-gated away from the elemental, and nobody arranged it.**
+The seven roads that reach cap 45 gate on `void:2`, `weapon:3`, `formation:3`, `body:3`,
+`void:3`, `life_death:3` and `time:3`. **Not one gates on element.** The roads that carry you to
+the summit are the roads whose understanding still works there.
+
+It also explains why the top of the ladder cares about dao at all. Below it an elemental road is
+simply a road; above it, it is the one thing that stops working on the people you are now
+fighting. That is a far better reason to seek understanding than "the gate asks for it".
+
+**Ancient arts: unteachable by design, not by omission.** Measured across all 34 houses, which
+between them shelve 87 distinct arts: **not one of the 15 ancient arts is on any shelf.** That
+has been read as a content gap. It is not - it is the point. An art that reliably answers a
+tribulation body cannot be enrolled for and has to be **found**, which is what the deep ruins and
+the closed ground are for, and which joins that whole body of work to the summit for the first
+time.
+
+**Objects, for the same reason.** A weapon is not elemental either, so a body that shrugs off
+fire and lightning can still be *cut* - and the thing that cuts it is an object somebody has to
+be given. [`items.md`](items.md) already says that above a certain grade an object moves on a
+favour owed rather than a price, and the register already tracks who holds which artifact at
+what grade. **This is why.** At the summit the answers are an ancient art, found in closed
+ground, or an object, which is not for sale.
+
+##### The imperfect version
+
+Both terms are diminished, and the second one is where the setting's word *weakness* lives. A
+whole tribulation body is at home in everything **equally**; an incomplete one is not, so its
+resistance should be **gapped rather than merely lower**. A uniformly smaller number says
+"slightly worse" where the setting says "has a hole in it", and the hole is the whole point: it
+is what somebody hunting them would go looking for, and what they would spend a life hiding.
+
+##### The hook, specified but NOT built
+
+`combat.ts` is contended, so this is written down rather than implemented. It belongs in damage
+resolution, where the incoming art is already known:
+
+- **Read** the incoming technique's `element` (null means elementless), and the defender's realm
+  ordinal, own element, and untreated wound list.
+- **Apply**, when the defender is at Tribulation Transcendence or above and the incoming art has
+  a non-null `element`: a uniform reduction, plus a further reduction where the incoming element
+  matches the defender's own. Elementless arts are unreduced at any rung.
+- **Never** reduce to zero. The fight has to be able to end.
+- **Differ** for `imperfect-tribulation-body`: both terms shrink, and the resistance gains a gap
+  rather than staying flat. Deriving which element leaks from something already on the
+  cultivator - their root or their road - keeps it deterministic and adds no catalog field.
+- **Do not** key any of this on `era` or on `domain`. See above for both.
+
 ---
 
 ## Immortal - ordinal 45 to 46
