@@ -1091,8 +1091,18 @@ function entryMarkup(entry, index) {
   const text = String(entry.text == null ? '' : entry.text);
 
   if (role === 'narrator') {
+    // A blank line starts a paragraph; a single newline is a LINE BREAK.
+    //
+    // Without the second half the best thing this engine writes came out as
+    // mush. A seclusion returns a dated timeline - "Day 178 - Breakthrough
+    // succeeded, odds were 97.0%", "Day 360 - Something passed close by the
+    // cave and went on without stopping" - joined with single newlines, and
+    // HTML collapses those to spaces, so eleven distinct events ran together
+    // into one block. They are a list and they have to look like one.
     const paras = text.split(/\n\s*\n/).filter((p) => p.trim().length);
-    const body = (paras.length ? paras : [text]).map((p) => html`<p>${p.trim()}</p>`).join('');
+    const body = (paras.length ? paras : [text])
+      .map((p) => html`<p>${raw(p.trim().split('\n').map(esc).join('<br>'))}</p>`)
+      .join('');
     return html`<li class="entry entry--narrator" data-i="${index}"><div class="entry__text">${raw(body)}</div></li>`;
   }
 
