@@ -61,6 +61,16 @@ export const TRAINING_DAYS = 7;
 /** Days a stretch of foraging consumes. */
 export const GATHERING_DAYS = 7;
 
+/**
+ * Days a stretch of hunting consumes.
+ *
+ * Longer than foraging because the thing being looked for moves and most of
+ * the work is finding it. `ESTIMATING_A_BEAST` in the catalog says the
+ * reliable tell is absence - how far out the ordinary animals have gone -
+ * and reading that is walking, not digging.
+ */
+export const HUNTING_DAYS = 10;
+
 /** Days a burial takes when no duration is named. A week with a spade. */
 export const DEFAULT_BURIAL_DAYS = 7;
 
@@ -126,6 +136,24 @@ export const ACTION_NAMES = [
     'train_technique',
     'refine',
     'gather',
+    /**
+     * Going out after something that is not a person.
+     *
+     * `beasts.ts` is 1113 lines and, until this member existed, nothing in
+     * `src/engine/`, `src/web/` or `src/server/` read a line of it. Sixteen
+     * beasts on the cultivator ladder, eighteen materials priced in the herb
+     * catalog's own bands, a weighted draw and a threats-above-you lookup, all
+     * of it authored and none of it reachable by anybody playing.
+     *
+     * It is the missing answer to two separate questions. "What do cultivators
+     * DO" - a beast is somewhere to go, something to weigh yourself against,
+     * and a reason to come back carrying something. And where the top of the
+     * material ladder comes from - a measurement showing no cultivator deaths
+     * at the heaven band was read as saying the world produces no high-grade
+     * material, and that measurement was about people. Beasts are the other
+     * half of the population and their bodies are the legitimate supply.
+     */
+    'hunt',
     'eat',
     /**
      * Laying in food before it is needed.
@@ -682,7 +710,7 @@ export function theVerbsOwnName(text: string): ActionName | null {
  */
 export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
     'cultivate', 'seclude', 'breakthrough', 'train_technique',
-    'move', 'gather', 'wait', 'work', 'refine', 'eat',
+    'move', 'gather', 'hunt', 'wait', 'work', 'refine', 'eat',
     // A course of care is a month lying still. It is the cheapest month in the
     // game and it is still a month, and the food clock runs through it.
     'treat',
@@ -796,7 +824,7 @@ export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'wo
  */
 export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
-    'work', 'market', 'assess', 'sect', 'attack',
+    'work', 'market', 'assess', 'sect', 'attack', 'hunt',
     // The name being asked about. Matched against the holder's OWN rows and
     // never against the world, which is the whole gate - see `GameService.recall`.
     'recall',
@@ -4671,6 +4699,35 @@ function planIntent(input: string): PlannedAction {
     if (/\b(?:refine|concoct|brew|distil|distill|alchemy|cauldron|make|craft|cook)\b/.test(text)
         && /\b(?:pill|elixir|medicine|formula|recipe|cauldron|alchemy)\b/.test(text)) {
         return { action: 'refine', target: extractSubject(input, /refine|concoct|brew|distil|distill|make/) };
+    }
+
+    // â”€â”€ GOING OUT AFTER SOMETHING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    //
+    // Placed after the work and alchemy rules and before gathering, which is
+    // the only position that works. "I hunt for work" is employment and is
+    // caught above; "I hunt for herbs" is foraging and is caught below on the
+    // noun. What is left for this rule is the case where the object is an
+    // animal, or where there is no object at all - and a bare "I go hunting"
+    // has to land somewhere, because it is the plainest way anybody says it.
+    //
+    // The near-synonyms are here on purpose. "I hunt", "I go hunting", "I cull
+    // beasts", "I look for a spirit beast", "I track something", "I take the
+    // culling contract" are all the same intent, and a verb that only answers
+    // to one phrasing is reachable only by guessing - which is how the whole
+    // alchemy subsystem was once locked behind the word "refine".
+    if ((/\b(?:hunt|hunting|cull|culling|track|tracking|stalk|stalking|trap|trapping|poach\w*)\b/.test(text)
+            || (/\b(?:look|looking|search|searching|go|going) for\b/.test(text)
+                && /\b(?:spirit beasts?|beasts?|game|quarry)\b/.test(text)))
+        // An animal, or nothing named. A sentence naming work, a herb, a pill
+        // or a person is somebody else's verb and it keeps it.
+        && !/\b(?:work|a job|jobs|employment|hire|wages?)\b/.test(text)
+        && !/\b(?:herbs?|roots?|plants?|ingredients?|reagents?|flowers?|mushrooms?|grasses|moss)\b/.test(text)
+        && !/\b(?:pills?|elixirs?|medicines?|formulae?|formulas?|recipes?)\b/.test(text)
+        && !/\b(?:manual|book|scripture|technique|art|teacher|master|sect|house)\b/.test(text)) {
+        return {
+            action: 'hunt',
+            target: extractSubject(input, /hunt|hunting|cull|culling|track|tracking|stalk|stalking|trap|trapping|look for|search for|go for/)
+        };
     }
 
     if ((/\b(?:gather|forage|harvest|pick|collect|dig up)\b/.test(text)

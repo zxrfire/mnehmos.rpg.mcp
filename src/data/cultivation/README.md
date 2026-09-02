@@ -328,9 +328,13 @@ hard.
 
 Three rules the catalog enforces, because they are world facts rather than flavour:
 
-- **Nothing speaks below Core Formation.** The change at `BEAST_CHANGE_ORDINAL` brings a
-  core, a shape and a voice together, so anything offering terms has a known floor under it
-  and is never the cheap option.
+- **A core and a voice are twelve rungs apart.** `BEAST_CORE_ORDINAL` is 17, Core Formation:
+  a beast condenses a core and can say nothing about it, which is the whole reason it can be
+  hunted for one. `BEAST_CHANGE_ORDINAL` is 29, Void Refinement: it takes a shape and a
+  voice and is thereafter somebody. Anything offering terms has that floor under it, so it
+  is never the cheap option - and it is a rare enough event that three entries in the
+  catalog qualify. Read `speaks` and never the ordinal: the constant is a floor beneath
+  which nothing may talk, not a promise that everything above it does.
 - **They live where the qi is**, so the richest ground is contested before any sect arrives
   and a beast on a vein is a competing draw on it - the same arithmetic as `enc-valley-overdrawn`.
 - **The Late Age applies to them.** Drawn-down ground has small, sparse populations and bad

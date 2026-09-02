@@ -59,6 +59,16 @@ import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
 } from '../engine/cultivation/survival.js';
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { rollHerb } from '../data/cultivation/index.js';
+import { BEASTS, getBeastMaterial, type Beast } from '../data/cultivation/beasts.js';
+import {
+    whatIsOnThisGround,
+    whatComesOffTheBody,
+    objectForBeastMaterial,
+    readsAsSomebody,
+    readTheThing,
+    bandOf,
+    type GroundForBeasts
+} from '../engine/world/hunting-a-spirit-beast.js';
 import {
     PRICES,
     cashToStones,
@@ -196,6 +206,7 @@ import {
     DEFAULT_SECLUSION_DAYS,
     DEFAULT_WORK_DAYS,
     GATHERING_DAYS,
+    HUNTING_DAYS,
     MAX_CULTIVATION_DAYS,
     TRAINING_DAYS,
     DEFAULT_RECALL_INTENT,
@@ -1170,7 +1181,7 @@ export const HURRIED_BELOW_DAYS = 30;
  * Immortal is standing in.
  */
 const MORTAL_WORLD_ACTIONS: readonly ActionName[] = [
-    'work', 'market', 'provision', 'eat', 'gather', 'interact', 'sect', 'move',
+    'work', 'market', 'provision', 'eat', 'gather', 'hunt', 'interact', 'sect', 'move',
     // An inheritance ground is a hole in a hillside in the province. A True
     // Immortal is not standing near one, and the trip back down costs nine
     // strikes of the heaviest tribulation there is.
@@ -2593,6 +2604,9 @@ export class GameService {
 
             case 'gather':
                 return this.gather(run, cultivator, ambient, action.target);
+
+            case 'hunt':
+                return this.hunt(run, cultivator, ambient, action.target);
 
             case 'wait': {
                 const waiting = await this.shortSkip(
@@ -8783,6 +8797,361 @@ ${noticed}`;
             outcome: 'executed',
             calls
         };
+    }
+
+    /**
+     * Going out after something that is not a person.
+     *
+     * The counterpart to `gather`, and it exists for the same reason: the Late
+     * Age's promise is that you may not out-cultivate a prodigy but you can
+     * out-dig them, and until this verb there was exactly one way to act on
+     * that. Foraging is the safe half. This is the half with a body on the
+     * other end of it, and it is where the top of the material ladder comes
+     * from - `beasts.ts` carries the only supply of heaven-grade and above
+     * that the world actually produces.
+     *
+     * â”€â”€ WHAT THIS DOES NOT DO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     *
+     * It does not resolve a fight. `combat_manage.resolve` does, and a beast
+     * reaches it as a described opponent - a name and a realm ordinal, the
+     * fields `OpponentSchema` already has - so it goes through `assessPower`,
+     * the categorical-gap refusal, `killRequirement` and the same seeded
+     * exchange stream a person goes through. There is no second resolver and
+     * there must not be: a beast fight that did not replay from its seed
+     * would break a stated law of this engine.
+     *
+     * â”€â”€ THE RUNG DECIDES WHICH SCENE THIS IS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     *
+     * Anything that speaks stands at `BEAST_CHANGE_ORDINAL` or above and is a
+     * party rather than a problem. Setting out to hunt is not setting out to
+     * kill somebody, so meeting one on a general hunt ENDS THE SCENE with a
+     * meeting: the engine does not swing on the player's behalf at something
+     * that could have been spoken to.
+     *
+     * That is intent, not a ban. Name it - "I hunt the White Ape of the
+     * Gorge" - and the confrontation runs exactly as it would against a
+     * person, because anybody may attempt anything and the engine's job is to
+     * say what it cost. What changes is what the world then knows: the core
+     * carries a provenance saying it came off something that could answer.
+     */
+    private async hunt(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined
+    ): Promise<Execution> {
+        const startDay = Math.floor(run.elapsedDays);
+        const skip = simulateTimeSkip(cultivator, HUNTING_DAYS, {
+            seed: run.seed,
+            rollIdentity: PLAYER_ROLL_IDENTITY,
+            locationId: placeName(cultivator),
+            turn: run.turn,
+            startDay,
+            options: {
+                focusMultiplier: GATHERING_FOCUS,
+                ...this.rateTermsFor(cultivator),
+                ground: this.groundFor(cultivator)
+            },
+            understanding: this.understandingFor(run, cultivator),
+            rations: this.drawFromPack(cultivator, HUNTING_DAYS),
+            grainAbstinence: false,
+            autoBreakthrough: false,
+            randomEvents: true,
+            toll: tollConditionsFor(this.repos, cultivator)
+        });
+
+        const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const me = applied.cultivator;
+        const here = placeName(me);
+        const ground = this.beastGroundFor(me);
+        const today = Math.floor(applied.run.elapsedDays);
+
+        // Naming something narrows the draw to it, exactly as naming a herb
+        // narrows foraging - and for the same reason. A refusal that tells a
+        // player which beast a material comes off is worth nothing if the game
+        // then ignores the name it just told them to go and find.
+        const named = this.beastMeant(target);
+        const rng = forStream(run.seed, 'web_hunt', startDay, here);
+        const found = whatIsOnThisGround(ground, me.realmOrdinal, rng.next());
+        const met: Beast | null = named ?? found.met;
+
+        const calls: ToolCallRecord[] = [
+            ...skipCalls('hunt', skip, null),
+            ...tollCalls(applied.tollLines),
+            ...worldCalls(world)
+        ];
+        const lines: string[] = [];
+
+        // What is above them on this ground, said whether or not it was drawn.
+        // This is the read that keeps people alive and it is free: walking the
+        // ground tells you what has left it.
+        if (found.above.length > 0 && found.worst) {
+            const worst = found.above.reduce((a, b) => (b.ordinal > a.ordinal ? b : a));
+            lines.push(
+                `What else is out here and above you: ${found.above.length} `
+                + `${found.above.length === 1 ? 'thing' : 'things'}, the worst of them `
+                + `${worst.name} at ${rankName(worst.ordinal)}. ${found.worst.reaction}`
+            );
+        }
+
+        if (!met) {
+            lines.push(
+                `${humanDays(skip.simulatedDays)} out on the ground around ${here} and nothing `
+                + 'came of it. What lives here has either been taken already or is not worth '
+                + 'the walk.'
+            );
+            calls.push({
+                name: 'engine.whatIsOnThisGround',
+                action: 'hunt',
+                summary:
+                    `No beast drawn at ${here} (sealed=${ground.sealed}, vein=${ground.onAVein}) `
+                    + `for ordinal ${me.realmOrdinal}. ${found.above.length} above them here.`,
+                ok: true
+            });
+            return this.huntResult(me, skip, ambient, 'Nothing came of it.', lines, calls);
+        }
+
+        lines.push(
+            `${humanDays(skip.simulatedDays)} out from ${here}. `
+            + readTheThing(met, me.realmOrdinal)
+        );
+        calls.push({
+            name: 'engine.whatIsOnThisGround',
+            action: 'hunt',
+            summary:
+                `${met.id} (${met.name}, ordinal ${met.ordinal}, band ${bandOf(met)}, `
+                + `speaks=${met.speaks}) met at ${here}. `
+                + (named ? 'Named by the player, not drawn.' : 'Drawn on the weighted table.'),
+            ok: true
+        });
+
+        // â”€â”€ SOMETHING THAT COULD HAVE ANSWERED YOU â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //
+        // Not a refusal of the killing - see the header. A refusal to do it on
+        // the player's behalf when they did not ask for it by name.
+        if (readsAsSomebody(met) && !named) {
+            lines.push(
+                'You did not come out here to kill somebody, and that is what this is. If you '
+                + 'mean to, say so by name and it will go the way those go.'
+            );
+            return this.huntResult(
+                me, skip, ambient,
+                `${met.name}, and it is a party rather than a problem.`, lines, calls
+            );
+        }
+
+        const result = await handleResolve({
+            action: 'resolve',
+            cultivatorId: me.id,
+            // A name and an ordinal. Nothing else is passed, because nothing
+            // else is authored: `ordinal` is the only measure of danger this
+            // catalog carries, and inventing attributes for a beast would be a
+            // second stat block in a repo that deleted the first.
+            opponent: { name: met.name, realmOrdinal: met.ordinal },
+            goal: 'kill',
+            vector: 'body',
+            edges: [],
+            opponentEdges: [],
+            fightToTheEnd: false
+        });
+
+        const fight = this.fromToolResult('combat_manage.resolve', 'hunt', result, met.name);
+        calls.push(...fight.calls);
+        lines.push(...fight.facts.lines);
+
+        const body = isGuidingErrorBody(result) ? null : result as Record<string, unknown>;
+
+        // â”€â”€ FOR A BEAST, `finished` IS THE DEATH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //
+        // `opponentDied` is the survival layer's answer and it is only ever
+        // written for an opponent with a row in the `cultivators` table. A
+        // beast is DESCRIBED to the resolver - a name and an ordinal - so it
+        // has no row, and reading `opponentDied` alone meant a beast could be
+        // killed outright and yield nothing. Measured in a played run: an
+        // ordinal 27 cultivator against the White Tiger at 20 came back
+        // "the finishing requirement was met in full" and then "the White
+        // Tiger Core only comes off a body, and there is no body."
+        //
+        // `finished` is the right field and not a workaround, because of what
+        // a beast is. `THE_BEAST_ROAD.death` states it: the body is the whole
+        // of them, no nascent soul leaves, nothing comes back. For a
+        // cultivator the finishing requirement being met is not yet an ending
+        // - that is the whole reason the survival layer gets a second say -
+        // and for a beast there is nothing left to have a second say about.
+        // The distinction the two fields draw is exactly the distinction
+        // between the two kinds of thing.
+        //
+        // AND THE BAND DECIDES WHICH OF THE TWO FIELDS GOVERNS. A beast at
+        // `BEAST_CHANGE_ORDINAL` is a person, so a person's rules apply to its
+        // death as much as to its life - measured in a played run: killing The
+        // Reader at Sweptground came back "the body is gone and the person is
+        // not, the soul left intact", which is the nascent soul path working
+        // correctly on somebody who has one. Reading `finished` there would
+        // have handed the player a core off a body whose owner walked away.
+        const killed = body?.opponentDied === true
+            || (body?.finished === true && bandOf(met) !== 'person');
+
+        const harvest = whatComesOffTheBody({
+            beast: met, takerOrdinal: me.realmOrdinal, killed
+        });
+        lines.push(...this.takeFromTheBody(harvest, met, me, here, today, killed, calls));
+
+        return this.huntResult(
+            me, skip, ambient,
+            killed ? `${met.name} is down.` : `${met.name}, and it is still standing.`,
+            lines, calls
+        );
+    }
+
+    /**
+     * Move what came off the body into the world, in the shape it deserves.
+     *
+     * The counted/tracked line from `items.md`, and the two halves are stored
+     * differently on purpose. A pelt is a quantity in a pouch. A core is a row
+     * with a holder and a history, made and then MOVED through
+     * `transferPossession` so the provenance chain has a first link - an
+     * object that arrives with no chain behind it is indistinguishable from
+     * something stolen, which is exactly what that document cares about.
+     */
+    private takeFromTheBody(
+        harvest: ReturnType<typeof whatComesOffTheBody>,
+        beast: Beast,
+        cultivator: Cultivator,
+        here: string,
+        today: number,
+        killed: boolean,
+        calls: ToolCallRecord[]
+    ): string[] {
+        const lines: string[] = [];
+
+        for (const { material, shape } of harvest.taken) {
+            if (shape === 'counted') {
+                addToPouch(this.db, cultivator.id, material.id, 'herb', 1);
+                lines.push(
+                    `${material.name} (${material.grade}, about ${material.value} stones) `
+                    + 'into the pouch.'
+                );
+                calls.push({
+                    name: 'storage.addToPouch',
+                    action: 'hunt',
+                    summary: `${material.id} x1 (counted, ${material.grade}) to ${cultivator.id}.`,
+                    ok: true
+                });
+                continue;
+            }
+
+            // Tracked. A row in the world, with an origin.
+            const record = objectForBeastMaterial({
+                id: `obj-${material.id}-${cultivator.id}-${today}`,
+                material,
+                beast,
+                takerId: cultivator.id,
+                takerName: cultivator.name,
+                place: here,
+                onDay: today
+            });
+            if (this.atHand) {
+                this.atHand.objects.push(record);
+                this.worldDirty = true;
+            }
+            // And the pouch entry beside it, which is the player-facing half
+            // and not a second copy: the object row is which one this is and
+            // where it has been, the pouch row is the thing a counter quotes.
+            addToPouch(this.db, cultivator.id, material.id, 'herb', 1);
+            lines.push(
+                `${material.name} (${material.grade}, about ${material.value} stones) comes off `
+                + 'it. This one is on the record: whose it is, where it came from, and what it '
+                + 'was taken off.'
+            );
+            calls.push({
+                name: 'world.transferPossession',
+                action: 'hunt',
+                summary:
+                    `${record.id} (${material.name}, ${material.grade}, significance `
+                    + `${record.significance}) minted off ${beast.id} and moved to `
+                    + `${cultivator.id} as looted on day ${today}. `
+                    + `${record.provenance.length} provenance link(s). `
+                    + `Tags: ${record.tags.join(', ')}.`,
+                ok: true
+            });
+        }
+
+        for (const { material, because, needs } of harvest.leftBehind) {
+            lines.push(because === 'realm'
+                ? `The ${material.name} is there and taking it wants ${rankName(needs)}. `
+                  + 'Left where it was.'
+                : `The ${material.name} only comes off a body, and there is no body.`);
+        }
+
+        if (harvest.taken.length === 0 && killed) {
+            lines.push('Nothing on it you can take at your realm.');
+        }
+        return lines;
+    }
+
+    /** The ground under them, in the facts the beast catalog reads. */
+    private beastGroundFor(cultivator: Cultivator): GroundForBeasts {
+        const record = this.atHand
+            ? worldLocationFor(this.atHand, cultivator.location)
+            : null;
+        if (!record) return { sealed: false, onAVein: false };
+        return {
+            sealed: record.sealed,
+            // Geology, not usability - `qiDensity` is what the vein under this
+            // place holds and `spiritualDensity` is what anybody can draw. A
+            // beast sits on the first, which is why a sealed pocket nobody can
+            // use is exactly the ground something has been growing on.
+            onAVein: record.qiDensity >= 60
+                || record.environment.resources.includes('qi')
+        };
+    }
+
+    private huntResult(
+        after: Cultivator,
+        skip: TimeSkipResult,
+        ambient: AmbientQi,
+        headline: string,
+        lines: string[],
+        calls: ToolCallRecord[]
+    ): Execution {
+        const facts = factsForToolResult(headline, lines);
+        facts.structure.push(
+            ...factsForTimeSkip(after, after, skip, ambient, 'Hunting').structure
+        );
+        return {
+            facts,
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls
+        };
+    }
+
+    /**
+     * A named beast, resolved the way the game prints it.
+     *
+     * Any name the game prints is a name the game must accept, and this verb
+     * prints beast names constantly - in the threats-above line, in the
+     * meeting, in every refusal. Matched on the whole name and on any word of
+     * it long enough to be meant, so "the white tiger", "White Tiger" and
+     * "tiger" all land on the same row.
+     *
+     * Ambiguity resolves to nothing rather than to a guess. Picking which
+     * thing somebody meant to fight is the one thing this must not do.
+     */
+    private beastMeant(target: string | undefined): Beast | null {
+        const wanted = (target ?? '').trim().toLowerCase();
+        if (wanted.length < 3) return null;
+        const exact = BEASTS.find(b => b.name.toLowerCase() === wanted || b.id === wanted);
+        if (exact) return exact;
+        const contains = BEASTS.filter(b =>
+            wanted.includes(b.name.toLowerCase()) || b.name.toLowerCase().includes(wanted));
+        if (contains.length === 1) return contains[0];
+        const byWord = BEASTS.filter(b => b.name.toLowerCase().split(/\s+/)
+            .some(word => word.length >= 4 && wanted.includes(word)));
+        return byWord.length === 1 ? byWord[0] : null;
     }
 
     /**
@@ -15312,6 +15681,37 @@ ${done.lines.join(' ')}`;
      */
     private lotFor(entry: PouchEntry): (SaleLot & { kind: PouchItemKind }) | null {
         if (entry.kind === 'herb') {
+            // â”€â”€ A BEAST MATERIAL IS A REAGENT AND SELLS AS ONE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            //
+            // Counted beast materials go into the pouch under `herb`, which
+            // is the reagent kind - `PouchItemKind` is 'pill' | 'herb' |
+            // 'artifact', it is declared in a shared file with a CHECK
+            // constraint behind it, and widening a shared union for one
+            // caller is not worth what it costs everybody else. The catalog
+            // agrees with the choice in its own header: beast materials are
+            // written in the herb catalog's idiom deliberately, same five
+            // grades, same value bands, same rarity ceilings, so that an
+            // alchemist buying a core and an alchemist buying a root run the
+            // same arithmetic.
+            //
+            // Resolved BEFORE `getHerb`, and without this line the whole
+            // hunting yield is dead weight: `getHerb` returns undefined for a
+            // beast material, `lotFor` returns null, and `sell` silently
+            // drops the row - so a player fills a pouch with pelts and cores
+            // and no counter in the world will quote them. That is the same
+            // half-wired shape this file's hunting verb exists to fix,
+            // reproduced one layer down.
+            const material = getBeastMaterial(entry.itemId);
+            if (material) {
+                return {
+                    itemId: material.id,
+                    name: material.name,
+                    item: material,
+                    listStones: material.value,
+                    quantity: entry.quantity,
+                    kind: 'herb'
+                };
+            }
             const herb = getHerb(entry.itemId);
             if (!herb) return null;
             return {
