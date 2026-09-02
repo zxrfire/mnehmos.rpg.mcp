@@ -1324,7 +1324,14 @@ export type SectIntent =
  */
 export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     ['promote', /\b(?:promote|promotes|promoted|promotion|raise me|elevate me|advance my rank|higher rank|next rank up|rise in rank)\b/],
-    ['stipend', /\b(?:stipend|allowance|my dues|collect my pay|draw my pay|what (?:i am|i'm) owed)\b/]
+    // `for what I am owed` is somebody ASKING a body for it, which is a
+    // petition and is resolved by a different instrument that answers in its
+    // own terms. Drawing a stipend is a member collecting; petitioning is
+    // somebody putting a case. The corpus's own phrasing - "I ask the house for
+    // what I am owed" - was answered with the collection, so the ask never
+    // happened and the refusal that is the whole point of a petition was never
+    // written. Bare "what am I owed" is untouched and still reaches the read.
+    ['stipend', /\b(?:stipend|allowance|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b/]
 ];
 
 /**
@@ -1705,12 +1712,20 @@ export const LEARNING_VERBS =
  * above do not - which is the whole of what the relaxation had to be, and
  * broadening it further took "study the formation" away from `investigate`.
  */
-export const LEARNING_VERBS_NEEDING_A_NOUN = 'study|studies|studying|read|reads|reading';
+export const LEARNING_VERBS_NEEDING_A_NOUN =
+    // `pick up` is how somebody says it when they have not read the manual yet:
+    // "I want to pick up a new art" is the exemplar corpus's own phrasing and it
+    // reached `gather`, because `pick` carries the foraging branch. It belongs
+    // on THIS side of the split rather than beside `learn` - "I pick up the
+    // roots I dropped" is a herb and nothing else, and putting it with the
+    // unambiguous verbs took that sentence away from foraging, which
+    // `a-verb-must-not-swallow-the-verb-next-door.test.ts` caught immediately.
+    'study|studies|studying|read|reads|reading|pick up|picks up|picking up';
 
 export const TECHNIQUE_CLASS_NOUNS =
     /\b(?:arts?|techniques?|manuals?|methods?|scriptures?|canons?)\b/;
 
-export const LEARNING_SUBJECT_VERBS = /learn|study|read|take up|master|acquire/;
+export const LEARNING_SUBJECT_VERBS = /learn|study|read|take up|pick up|master|acquire/;
 
 /**
  * Asking how a manual goes further, by any route.
@@ -1799,7 +1814,16 @@ export const CEILING_QUESTION = new RegExp([
  * bare.
  */
 export const TEACHER_QUESTION = new RegExp([
-    /\bwho (?:can|could|would|will|might|is (?:able|willing) to)\b[^.?!]*\b(?:teach|guide|instruct|train|tutor|mentor|show me|take me on|take me as)\b/,
+    // The modal does not have to sit against `who`. "who around here could show
+    // me anything" is the exemplar corpus's own phrasing for this question and
+    // it reached the room description, because two words of location stood
+    // between the two halves of the pattern. Bounded rather than free, so the
+    // rule cannot reach across a whole sentence to find its second half.
+    /\bwho\b[^.?!]{0,30}?\b(?:can|could|would|will|might|is (?:able|willing) to)\b[^.?!]*\b(?:teach|guide|instruct|train|tutor|mentor|show me|take me on|take me as)\b/,
+    // Wanting one without using the word for one. `study under` with nobody
+    // named is this question and not a guest place at a named house - the guest
+    // rule owns the phrasing that names where.
+    /\b(?:want|wants|wanting|need|needs|needing|look(?:ing)? for) (?:somebody|someone|anybody|anyone|a person) to (?:study|train|learn) (?:under|with|from)\b/,
     /\b(?:can|could|would|will) (?:anyone|anybody|somebody|someone) (?:here |about |around |nearby )?teach\b/,
     /\b(?:look|looking|looks|search|searching|seek|seeking|find|finding|want|wanted|need|needing) (?:for |out )?(?:a |an |any |some |the )?(?:master|teacher|mentor|tutor|instructor|shifu|sifu)\b/,
     /\b(?:ask|asking|asks|enquire|inquire) (?:about|after|for) (?:a |an |the |any )?(?:master|teacher|mentor|tutor|instructor)\b/,
@@ -1921,7 +1945,13 @@ export const GUEST_STUDENT_PATTERNS: readonly RegExp[] = [
     /\b(?:let|allow|permit)s? me (?:to )?sit in\b/,
     /\b(?:study|learn|train)(?:ing)?\b[^.?!]*\bwithout (?:joining|being (?:a )?(?:member|taken on)|membership)\b/,
     /\bteach me\b[^.?!]*\bwithout (?:joining|taking me on|membership)\b/,
-    /\bstudy (?:at|under|with|there|them)\b(?!\s+my\b)/
+    // WHERE, not WHO. The preposition has to be followed by something, because
+    // a sentence that trails off after it names no house: "I want somebody to
+    // study under" is the exemplar corpus's own phrasing for the teacher
+    // question, and it was answered with a guest place at a hall called
+    // "under". `study there` and `study them` keep their bare form - those two
+    // point at somewhere already in the sentence.
+    /\bstudy (?:there|them)\b|\bstudy (?:at|under|with)\s+(?!my\b)\S/
 ];
 
 /** The verbs a guest place is asked for with, for pulling the house's name out. */
@@ -2041,7 +2071,13 @@ export const SITE_NOUNS =
     // `DESTINATIONS_QUESTION` owns "a quiet cave in the mountains" - somewhere
     // to sit is not somewhere to dig, and taking the bare noun would be the
     // greedy version of this edit that had to be reverted once already.
-    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment|ruins?|ruined (?:hall|compound|temple)|secret realms?|abandoned (?:place|places|site|sites|hall|halls|compound|compounds|temple|temples|seat|seats)|lost (?:cave|caves|tomb|tombs|hall|halls|temple|temples))\b/;
+    //
+    // `old ground` is here on those same terms, and it is the phrase the
+    // exemplar corpus uses: "what old ground is there to search" reached
+    // `investigate` and searched the square the player was standing in. It is
+    // two words, both anchored, and it names no place in the catalog - which is
+    // the test `ruin` had to pass and `scars` and `spirit veins` failed.
+    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment|ruins?|ruined (?:hall|compound|temple)|secret realms?|old ground|abandoned (?:place|places|site|sites|hall|halls|compound|compounds|temple|temples|seat|seats)|lost (?:cave|caves|tomb|tombs|hall|halls|temple|temples))\b/;
 
 /**
  * The face of a site: what is physically at the threshold.
@@ -2052,7 +2088,16 @@ export const SITE_NOUNS =
  * from outside, which is the read that must never return the interior.
  */
 export const SITE_FACE_NOUNS =
-    /\b(?:the door|the doorway|the gate frame|the gateway|the gate\b|the threshold|the marker|the headstone|the entrance|the shaft|the plate|the standing stone)\b/;
+    // The adjective is admitted because a player says "the old gate", not "the
+    // gate": measured against this parser's own exemplar corpus, "I go and look
+    // at the old gate" reached `investigate` and examined a door as an object
+    // with no record behind it, while "I go and look at the gate" - the same
+    // sentence with one word removed - reached the exterior read it was written
+    // for. A CLOSED set of adjectives rather than `the \w+ gate`, because that
+    // form takes "the sect gate" and "the gate steward's door" with it, and
+    // widening a pattern here is what `AGENTS.md` records as the mistake this
+    // file makes when it is trying to be helpful.
+    /\bthe (?:old |ancient |ruined |broken |sealed )?(?:door|doorway|gate frame|gateway|gate\b|threshold|marker|headstone|entrance|shaft|plate|standing stone)\b/;
 
 /** What is behind the door, referred to without naming the site. */
 export const SITE_PRIZE_NOUNS =
@@ -2474,7 +2519,14 @@ const AN_ART_NOUN = '(?:art|arts|style|technique|method|form|movement|footwork)'
 
 /** "whose art is that", the question with no claim in it. */
 export const WHOSE_ART_IS_THAT = new RegExp(
-    `\\bwhose\\s+${AN_ART_NOUN}\\b|\\bwhat\\s+(?:house|sect|school)(?:'s|s')?\\s+${AN_ART_NOUN}\\b`,
+    `\\bwhose\\s+${AN_ART_NOUN}\\b|\\bwhat\\s+(?:house|sect|school)(?:'s|s')?\\s+${AN_ART_NOUN}\\b`
+    // The same question with the art left implicit, which is how somebody asks
+    // it about a thing they have just watched: "do I know what school that
+    // comes from" is this verb's own exemplar and it reached `recall`, because
+    // `do i know what` is one of the knowledge patterns and it is tested a few
+    // lines below. Anchored on the house noun AND the coming-from, so "what
+    // school takes people" is untouched.
+    + `|\\bwhat\\s+(?:house|sect|school|style|line)\\s+(?:that|this|it|they|he|she)\\s+(?:comes?|came|is)\\s+(?:from|out of)\\b`,
     'i'
 );
 
@@ -2572,7 +2624,14 @@ export const RECALL_EVERYTHING = new RegExp([
     /\bwhat names do i (?:have|hold|know)\b/,
     /\bwhat have i learn(?:ed|t)\b\s*[.!?]?$/,
     /\bwhat do i (?:remember|recall)\b\s*[.!?]?$/,
-    /\bremind me what i (?:know|hold|have heard|have learn(?:ed|t))\b/,
+    // `have learned` was here and had to go. "remind me what I have learned" is
+    // `list_techniques`'s own exemplar - what a cultivator has been TAUGHT is
+    // arts, not names heard - and this verb answered it with the knowledge
+    // table. It is genuinely ambiguous between two free reads, so the table
+    // leaves it alone rather than choosing confidently: it reaches `unclear`,
+    // and the tier below reads it against the corpus, where it belongs to
+    // exactly one verb.
+    /\bremind me what i (?:know|hold|have heard)\b/,
     /\bgo over what i (?:know|hold|have (?:heard|picked up|learn(?:ed|t)))\b/
 ].map(r => r.source).join('|'));
 
@@ -2643,7 +2702,12 @@ export const ABOUT_THE_GROUND_HERE =
  * question - it is the only account of what they are still doing.
  */
 export const RECALL_DAO =
-    /\b(?:my dao|my own dao|my understanding|my comprehensions?|my insights?|what have i comprehended|what have i understood|what do i understand|what road am i on|which road am i on|my road|where has my understanding got to)\b/;
+    // `what understanding have i come to` is here because `come to` is one of
+    // `move`'s approach phrasings and `move` would otherwise take it: the
+    // corpus's own wording for this read was answered by walking the player
+    // towards somebody. It is the same question as "where has my understanding
+    // got to", which was already here, said the other way round.
+    /\b(?:my dao|my own dao|my understanding|my comprehensions?|my insights?|what have i comprehended|what have i understood|what do i understand|what road am i on|which road am i on|my road|where has my understanding got to|what understanding have i (?:come to|reached|arrived at))\b/;
 
 /**
  * Putting the dao somewhere it will outlast you, which is the WRITE of what
@@ -2712,7 +2776,11 @@ export const HEALER_NOUNS =
 export const SEEKING_CARE_VERBS =
     'see|sees|seeing|find|finds|finding|look for|looks for|looking for|visit|visits|'
     + 'consult|consults|pay for|pays for|pay|hire|hires|get|gets|want|wants|need|needs|'
-    + 'go to|goes to|head to|call for|send for';
+    // `go for` is the phrasing the attack block was taking. See
+    // {@link GOING_FOR_CARE}: "I go for care for what is torn" is a wounded
+    // player asking to be seen to, and it started a fight with somebody called
+    // "care for what is torn".
+    + 'go to|goes to|go for|goes for|head to|call for|send for';
 
 export const TREATMENT_NOUNS =
     /\b(?:treatment|medical care|a course of care|course of care|first aid|the infirmary|care for)\b/;
@@ -2725,6 +2793,62 @@ export const TREATMENT_NOUNS =
  * and `usedAsVerb` correctly refuses it, because "treated" there is not in
  * verb position. Matched whole instead.
  */
+/**
+ * Going FOR something rather than going for somebody.
+ *
+ * `go for` is an attack verb - "I go for the man at the gate" - and the attack
+ * block sits above every care rule in the table, so it took the sentence a
+ * wounded player types. Measured on a played run, deterministic reader, at 20
+ * of 40 health:
+ *
+ *   > I go for care for what is torn
+ *   attack(target="care for what is torn", intent=drive_off)
+ *   engine.resolveParty: Unresolved party "care for what is torn"
+ *
+ * A refusal, this time, because nobody in the square is called that - but the
+ * verb is `attack`, and against a square with a body in it the same words are a
+ * fight. Vetoed rather than reordered, on the rule the attack block already
+ * follows: a sentence about a fight is a fight first, and this is the narrow
+ * statement that a sentence about care is not one.
+ */
+export const GOING_FOR_CARE =
+    /\bgo(?:ing|es)? for\b[^.!?]*\b(?:care|treatment|help|medicine|a physician|a doctor|a healer|an apothecary|the infirmary)\b/;
+
+/**
+ * Working AT something that is not a job.
+ *
+ * The employment branch admits `work at`, `work the` and `work a` because "I
+ * work at the mill", "I work the fields" and "I work a season at the forge" are
+ * all how somebody takes paid labour. The same three words in front of a
+ * practice noun or a bare pronoun are the opposite sentence - somebody putting
+ * hours into their own cultivation - and the employment branch sits three
+ * hundred lines above both verbs that own it.
+ *
+ * Deliberately a list of OBJECTS rather than a narrowing of the preposition:
+ * the preposition is not what makes the difference, and taking `at` away would
+ * cost the mill.
+ */
+/**
+ * Somebody saying they are going to raise a number, not asking what it is.
+ *
+ * The status read owns `my rank`, `my realm`, `my progress` and `my
+ * cultivation`, correctly - those are the four things a player asks after - and
+ * it sits above the cultivation verb, so a sentence that names one of them as
+ * the OBJECT of a raising verb was answered with the sheet. Measured on the
+ * corpus's own phrasing: "I want to build up my cultivation" spent no day and
+ * printed a character sheet.
+ *
+ * Narrow to the verbs that mean increasing it. Asking is unaffected, which is
+ * every phrasing this branch was written for.
+ */
+export const RAISING_IT_RATHER_THAN_READING_IT =
+    /\b(?:build up|building up|build|raise|raising|improve|improving|deepen|deepening|grow|growing|advance|advancing|push|pushing|increase|increasing|work on|working on) (?:up )?(?:my|the) (?:rank|realm|progress|cultivation)\b/;
+
+export const WORKING_AT_A_PRACTICE = new RegExp([
+    /\bwork(?:s|ing)? (?:at|the|a) (?:it|this|that|them)\b/,
+    /\bwork(?:s|ing)? (?:at|on|the) (?:my |the |a |this |that |her |his |their )?(?:cultivation|method|methods|art|arts|technique|techniques|manual|manuals|form|forms|stance|stances|canon|scripture|dao|road|practice|training|breathing)\b/
+].map(r => r.source).join('|'));
+
 export const HAVING_IT_SEEN_TO =
     /\b(?:get|gets|getting|have|has|having|want|wants|wanting|need|needs|needing|would like|ask for|asking for)\b[^.!?]*\b(?:injur\w*|wounds?|meridians?|myself|me)\b[^.!?]*\b(?:treated|seen to|looked at|fixed|attended to|mended|patched up|bandaged|set)\b/;
 
@@ -2759,7 +2883,7 @@ export const SELLING_VERBS =
     + 'cash in|cashes in|trade in|trades in|trade away';
 
 /** The same list as a pattern, for `extractSubject`, which reads `.source`. */
-export const SELLING_SUBJECT_VERBS = new RegExp(SELLING_VERBS);
+export const SELLING_SUBJECT_VERBS = new RegExp(`${SELLING_VERBS}|offer|offers|offering|put up`);
 
 /**
  * Asking what a thing FETCHES rather than putting it down.
@@ -2833,7 +2957,34 @@ export const PETITION_ASKING_VERBS =
 
 /** What is being asked for, where a bare asking verb needs a noun to qualify. */
 export const PETITION_NOUNS =
-    /\b(?:a grant|the grant|a stipend from|an allowance|a posting|a place at|relief|for aid|for protection|for help|a dispensation|an exemption|a hearing|a ruling|a (?:dao )?protector|a guard for|a technique|an art|a manual|the manual|resources|materials|stones for|a pill from)\b/;
+    // `what i am owed` is the plainest thing anybody petitions for and it was
+    // absent: "I ask the house for what I am owed" is the exemplar corpus's own
+    // phrasing and it reached the stipend read, which is the house telling you
+    // what your standing entitles you to rather than you asking for it.
+    /\b(?:a grant|the grant|a stipend from|an allowance|a posting|a place at|relief|for aid|for protection|for help|a dispensation|an exemption|a hearing|a ruling|a (?:dao )?protector|a guard for|a technique|an art|a manual|the manual|resources|materials|stones for|a pill from|what i(?:'m| am)? owed|what is owed (?:me|to me))\b/;
+
+/**
+ * A BODY, rather than a person standing in front of you.
+ *
+ * The asking half of the petition rule is documented as reaching this "only
+ * with an institutional object", and it did not: {@link PETITION_NOUNS} lists
+ * things - a manual, an art, a pill - and a thing can be asked of anybody. So
+ * "I ask him for the manual", which is `request`'s own exemplar and the ONLY
+ * route in this game to being taught by a person, was filed as a petition to
+ * an institution and refused in an institution's terms.
+ *
+ * The fix is the sentence the docstring already claimed: an asking verb
+ * reaches `petition` when the thing being asked is asked OF a body. A named
+ * faction satisfies it through the same phrase list the rest of this block
+ * uses; the generic nouns are here because a player says "the house" far more
+ * often than they say a name they may not have been told yet.
+ *
+ * `PETITION_VERBS` - petition, appeal, apply, file, lodge - are unaffected.
+ * Nobody petitions a person, and those words carry the institution in
+ * themselves.
+ */
+export const AN_INSTITUTION_IS_BEING_ASKED =
+    /\b(?:sects?|houses?|clans?|orders?|schools?|halls?|courts?|pavilions?|councils?|elders?|the (?:seat|body|institution|administration|registry)|my house|our house|the family|patriarch|matriarch|hall master|sect master|head of the)\b/;
 
 /**
  * The form, by name and by shape.
@@ -4200,8 +4351,14 @@ function institutionalAct(text: string, input: string): PlannedAction | null {
     // "I want to be admitted" are all sentences about membership, and every one
     // of them satisfies a petition rule completely.
     if ((usedAsVerb(text, PETITION_VERBS_ALONE)
-        || (usedAsVerb(text, `${PETITION_VERBS}|${PETITION_ASKING_VERBS}`)
-            && PETITION_NOUNS.test(text)))
+        || (usedAsVerb(text, PETITION_VERBS) && PETITION_NOUNS.test(text))
+        // The asking verbs, which need the institution as well as the thing.
+        // See {@link AN_INSTITUTION_IS_BEING_ASKED}: without it "I ask him for
+        // the manual" was a petition, and asking a PERSON for something is the
+        // one route this game has to being taught by one.
+        || (usedAsVerb(text, PETITION_ASKING_VERBS)
+            && PETITION_NOUNS.test(text)
+            && AN_INSTITUTION_IS_BEING_ASKED.test(text)))
         && !ASKING_TO_BE_TAKEN_IN.test(text)) {
         const of = partyAfter(
             input,
@@ -4838,6 +4995,7 @@ function planIntent(input: string): PlannedAction {
     // through the whole table until the cultivation branch caught the noun.
     // First, because every sentence about a fight is full of other verbs' nouns.
     if (!AIMED_AT_THE_LADDER.test(text)
+        && !GOING_FOR_CARE.test(text)
         && (usedAsVerb(text, 'attack|attacks|strike|strikes|hit|hits|fight|fights|kill|kills|'
             + 'cut down|draw on|swing at|go for|set (?:on|upon)|jump|ambush|assault|'
             // The words a player uses when the killing is the point rather than
@@ -5060,7 +5218,15 @@ function planIntent(input: string): PlannedAction {
     }
 
     {
-        const asked = requestPutToSomebody(input);
+        // ── PUTTING IT UP FOR SALE IS NOT ASKING ANYBODY FOR IT ──────────
+        //
+        // `offer` is a request verb and "for sale" turns the sentence round:
+        // "I offer the pill for sale" is `sell`'s own exemplar and it was read
+        // as a request put to a person called "the pill" for a thing called
+        // "sale". Nobody is being asked for anything, and selling is the only
+        // way a pouch becomes a purse - so the sentence that reaches it must
+        // not be eaten three hundred lines above by the verb it looks like.
+        const asked = /\bfor sale\b/.test(text) ? null : requestPutToSomebody(input);
         if (asked) {
             const leverage = LEVERAGE_BEHIND_INTENT[
                 matchIntent(text, INTERACT_INTENT_PATTERNS) ?? ''
@@ -5217,7 +5383,13 @@ function planIntent(input: string): PlannedAction {
     // fell to `cultivate` - a different bargain at a twelfth of the default
     // span, taken silently. The verb answering to every phrasing except its
     // own name is the near-synonym rule at its sharpest.
-    if (/\b(?:closed[- ]?door|seclude|secludes|secluding|seal (?:myself|the (?:cave|door))|sealed seclusion|enter seclusion|go into seclusion|shut myself)\b/.test(text)) {
+    // `retreat from the world` is here because the bare word belongs to
+    // `move`'s `flee` intent and always will - "I retreat" in a fight is a
+    // withdrawal - so the phrasing that means seclusion has to name the world
+    // it is retreating from. "I retreat from the world entirely for a stretch"
+    // is the corpus's own phrasing and it was answered by a journey.
+    if (/\b(?:closed[- ]?door|seclude|secludes|secluding|seal (?:myself|the (?:cave|door))|sealed seclusion|enter seclusion|go into seclusion|shut myself)\b/.test(text)
+        || /\b(?:retreat|retreats|retreating|withdraw|withdraws|withdrawing|cut myself off) (?:from|out of) (?:the world|everything|everyone|society|all of it)\b/.test(text)) {
         return { action: 'seclude', days: parseDuration(text) ?? DEFAULT_SECLUSION_DAYS };
     }
 
@@ -5299,10 +5471,34 @@ function planIntent(input: string): PlannedAction {
     // Deliberately ahead of `eat`, `trade` and `cultivate`. A player with no
     // stones who types "take work for a season" is asking for the only action
     // that saves them, and every slower reading of that sentence is fatal.
-    if (/\b(?:take (?:any |whatever |some )?work|(?:look|looking|hunt|hunting|cast about|casting about|ask|asking) (?:around )?for (?:any |some |paid )?(?:work|a job|jobs|employment|hire)|find (?:me |myself |a |some )?(?:work|job|employment)|hire (?:myself|on|out)|take a job|get a job|odd jobs?|day labour|day labor|earn (?:some |a few |my )?(?:stones?|keep|coin|money|living|wages?)|work (?:for|in|at|the|a|as)|labour|labor|make myself useful|work off)\b/.test(text)
+    if ((/\b(?:take (?:any |whatever |some )?work|(?:look|looking|hunt|hunting|cast about|casting about|ask|asking) (?:around )?for (?:any |some |paid )?(?:work|a job|jobs|employment|hire)|find (?:me |myself |a |some )?(?:work|job|employment)|hire (?:myself|on|out)|take a job|get a job|odd jobs?|day labour|day labor|earn (?:some |a few |my )?(?:stones?|keep|coin|money|living|wages?)|work (?:for|in|at|the|a|as)|labour|labor|make myself useful|work off)\b/.test(text)
         // `work on` is practice, not employment. Without this guard
         // "I work on my technique" was answered with a season of hauling.
-        || /^\s*(?:i\s+)?works?\b(?!\s+on\b)/.test(text)) {
+        || /^\s*(?:i\s+)?works?\b(?!\s+on\b)/.test(text)
+        // ── SAYING IT WITHOUT THE WORD `work` IN IT ─────────────────────
+        //
+        // "is there anything here I can do for pay" names no job, no wage and
+        // no employment - it names the PAY - and it reached the stagnation
+        // read three hundred lines below, so a player with no stones asking
+        // the one question that feeds them got a senior's opinion of their
+        // progress. The anchor is the payment, which nothing else in this
+        // table asks after.
+        || /\b(?:i (?:can|could) do|anything|something|any(?:thing)? going)\b[^.?!]*\bfor (?:pay|wages|money|coin|stones|a wage)\b/.test(text))
+        // ── AND `work at` IS THE SAME WORD DOING THE SAME THING ──────────
+        //
+        // The guard above was written for `work on` and the alternation two
+        // lines up admits `work at` and `work the`, so the identical sentence
+        // with a different preposition still bought a season of hauling. Both
+        // of the corpus's own phrasings went that way: "I settle in and work at
+        // it for a year", which is `cultivate`, and "I work at the method until
+        // it is better", which is `train_technique` - and both spend the
+        // player's year on somebody else's fields instead.
+        //
+        // Narrow on WHAT is being worked at, not on the preposition, because
+        // "I work at the mill" is a job and has to stay one. The objects are
+        // the practice nouns the two verbs below already own, plus the bare
+        // pronoun, which cannot be an employer.
+        && !WORKING_AT_A_PRACTICE.test(text)) {
         return {
             action: 'work',
             days: parseDuration(text) ?? DEFAULT_WORK_DAYS,
@@ -5338,7 +5534,7 @@ function planIntent(input: string): PlannedAction {
     //
     // Ahead of everything that could read "check" or "look" as a verb aimed at
     // the room. `alchemy_manage.inventory` answers it and nothing reached it.
-    if (/\b(?:my (?:inventory|pouch|bag|pack|belongings|possessions)|what am i carrying|what do i (?:have|carry)|what(?:'s| is) in my (?:pouch|bag|pack)|check (?:my )?(?:inventory|pouch|bag|pack)|(?:show|list|open) (?:me )?(?:my )?(?:inventory|pouch|bag|pack)|turn out (?:my )?(?:pouch|pockets))\b/.test(text)) {
+    if (/\b(?:my (?:inventory|pouch|bag|pack|belongings|possessions)|what am i carrying|what do i (?:have|carry)|what(?:'s| is) in my (?:pouch|bag|pack)|check (?:my |the )?(?:inventory|pouch|bag|pack)|(?:show|list|open) (?:me )?(?:my |the )?(?:inventory|pouch|bag|pack)|turn out (?:my )?(?:pouch|pockets))\b/.test(text)) {
         // "take stock" is deliberately absent. `misparse.test.ts` carries
         // "I take stock of a life that has gone nowhere in forty years",
         // which is a man looking at his own life and not at his pockets.
@@ -5440,7 +5636,12 @@ function planIntent(input: string): PlannedAction {
     // every reading below this one looks for a person of that name. Ahead of
     // `market` too, because "I sell my herbs at the market" is a sale and not
     // a request to read the board - the board question is vetoed back out.
-    if (usedAsVerb(text, SELLING_VERBS) && !SELLING_ASKED_AS_A_BOARD.test(text)) {
+    if ((usedAsVerb(text, SELLING_VERBS)
+        // `offer` and `put` are not selling verbs on their own - one is a
+        // request and the other is half the sentences in this file - and with
+        // "for sale" after them there is nothing else they can be.
+        || /\b(?:offer|offers|offering|put|puts|putting)\b[^.?!]*\bfor sale\b/.test(text))
+        && !SELLING_ASKED_AS_A_BOARD.test(text)) {
         return {
             action: 'sell',
             target: extractSubject(input, SELLING_SUBJECT_VERBS)
@@ -5473,7 +5674,16 @@ function planIntent(input: string): PlannedAction {
     // `interact` and walked the player over to talk to somebody. And nothing
     // read the counter itself: `stalls` was already a market NOUN, so "what is
     // on the stalls" satisfied half the rule and reached nothing.
-    if (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices?|what(?:'s| is) on (?:the )?(?:stalls?|counter|board))\b/.test(text)
+    // `the prices` is PLURAL here, and the singular was a measured misroute.
+    // "I would like to take that off him for the price" is somebody buying one
+    // thing and it read as a request to see the board, because "for the price"
+    // contains "the price". A board question asks after prices; a purchase
+    // names one.
+    if (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices\b|what(?:'s| is) on (?:the )?(?:stalls?|counter|board))\b/.test(text)
+        // What the place itself deals in, which is the board question asked
+        // about the town rather than about a thing. "what does this town have
+        // to trade" walked the player over to talk to somebody.
+        || /\b(?:what|which) (?:does|do|has|have) (?:this|the|that) (?:town|place|village|city|settlement|market)\b[^.?!]*\b(?:have|sell|sells|trade|deal|offer|stock)\b/.test(text)
         || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|show|find|go to|look at|look over|head to|walk to')
             && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(text))
         // ── WHO, rather than WHAT ────────────────────────────────────────
@@ -5592,7 +5802,25 @@ function planIntent(input: string): PlannedAction {
     // English and any list written here would go stale against it. The subject
     // is resolved against `PRICES` in `game.ts` instead, and a purchase the
     // board never advertised is refused with the board attached, for free.
-    if (usedAsVerb(text, BUYING_VERBS) && !BUYING_A_PERSON_OFF.test(text)) {
+    // And not when what is being paid for is the thing that carries you.
+    // `hire` is a buying verb and also the verb in {@link RIDING}, so "I hire a
+    // mount for the road" - the exemplar corpus's own phrasing for `ride` - was
+    // read as a line off the price board called "mount for the road" and
+    // refused. The ride branch is two hundred lines below this one and cannot
+    // be reached past it, so the veto is here, and it is exactly the pattern
+    // that branch already keys on rather than a second list of conveyances.
+    if ((usedAsVerb(text, BUYING_VERBS)
+        // ── A PURCHASE SAID POLITELY ─────────────────────────────────────
+        //
+        // "I would like to take that off him for the price" is this verb's own
+        // exemplar and it contains no buying word at all - it reached the
+        // INTERACT table on the word "price" and was answered by describing the
+        // man. Both halves are required, and it is the second that makes it a
+        // purchase: taking a thing off somebody FOR THE PRICE is buying, and
+        // taking it off them full stop is the `steal` intent, which owns the
+        // bare phrasing and keeps it.
+        || /\btake (?:it|that|this|them|those|one) off (?:him|her|them)\b[^.?!]{0,40}\bfor (?:the price|the asking|what (?:he|she|they) (?:wants?|asks?)|his price|her price|their price)\b/.test(text))
+        && !BUYING_A_PERSON_OFF.test(text) && !RIDING.test(text)) {
         return {
             action: 'buy',
             target: extractSubject(input, /buy|purchase|pay for|order|book|hire|acquire|take passage on|pay the/)
@@ -5683,7 +5911,17 @@ function planIntent(input: string): PlannedAction {
     // noun from a list that did not include the commonest word for the object.
     // A cultivator with one art and nothing else to do says "I train", and the
     // game had no answer for it.
+    // `work at the method` is its own alternative rather than two words added
+    // to the list above, and the difference is measurable. "I work at the
+    // method until it is better" is this verb's own exemplar and it bought a
+    // season of paid labour, because the employment branch three hundred lines
+    // up takes `work at` and `method` was missing from the noun list here while
+    // `ceiling`, `acquisition` and `learn_technique` all use it for the same
+    // thing. Adding `method` to the list above instead ALSO took "I put in real
+    // practice at the method", which is `cultivate` - one exemplar traded for
+    // another. So the noun is admitted only for the two words that needed it.
     if (/\b(?:practi[cs]e|drill|rehearse|work on)\b.*\b(?:art|technique|manual|stance|form|book|scripture|canon)\b/.test(text)
+        || /\bwork(?:s|ing)? at\b[^.?!]*\b(?:art|technique|method|manual|stance|form|scripture|canon)\b/.test(text)
         || /\b(?:train|practi[cs]e)\s+(?:the\s+)?[a-z-]+\s+(?:art|technique|manual|stance|method|form)\b/.test(text)
         // "I train my method" reached nothing while "I train" worked, because
         // `method` was missing from every noun list an art is named by - and
@@ -5860,7 +6098,14 @@ function planIntent(input: string): PlannedAction {
     }
 
     if (/\b(?:join|joining|apply to|applying to|swear to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|give (?:my|our) (?:oath|word) to|bind myself to|take (?:the|their) oath|take me on|taken on|would (?:take|have) me|accept me|admit me|adopt me|take me in|be admitted)\b/.test(text)
-        || (/\b(?:sects?|order|school|clan)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who)\b/.test(text))) {
+        // `houses` was missing while every other noun here carried its plural,
+        // so the two plainest ways of asking this question - "which houses take
+        // people" and "tell me about the houses near here", both of them the
+        // exemplar corpus's own phrasings - fell past the listing entirely. One
+        // was answered by walking the player over to talk to somebody called
+        // "me about the houses near here"; the other reached nothing at all. A
+        // word boundary after `house` does not fall before an `s`.
+        || (/\b(?:sects?|orders?|schools?|clans?|houses?)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who|tell me about)\b/.test(text))) {
         return { action: 'sect', target: extractSubject(input, /joining|join|applying to|apply to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|swear to|give (?:my|our) (?:oath|word) to|bind myself to|enter|find|look for/) };
     }
 
@@ -5999,7 +6244,14 @@ function planIntent(input: string): PlannedAction {
         return { action: 'sect', intent: 'standing' };
     }
 
-    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation)|what rank am i|what realm am i|how old am i|what do i own|check myself|where do i stand)\b/.test(text)) {
+    // RAISING IT IS NOT READING IT. `my cultivation` is the sheet when
+    // somebody asks after it and the act itself when somebody says they are
+    // building it up, and this branch sits above the cultivation verb - so "I
+    // want to build up my cultivation", the corpus's own phrasing, was
+    // answered with the character sheet and no day was spent. The veto is on
+    // the raising verbs rather than on the noun, because the noun is right.
+    if (/\b(?:status|sheet|stats|how am i|my (?:rank|realm|progress|cultivation)|what rank am i|what realm am i|how old am i|what do i own|check myself|where do i stand)\b/.test(text)
+        && !RAISING_IT_RATHER_THAN_READING_IT.test(text)) {
         return { action: 'status' };
     }
 

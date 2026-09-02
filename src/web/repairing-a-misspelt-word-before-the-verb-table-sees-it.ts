@@ -147,6 +147,52 @@ export function harvestVocabulary(moduleNamespace: Record<string, unknown>): Set
 }
 
 /**
+ * A WORD IS NOT A TYPO JUST BECAUSE THIS FILE HAS NEVER SEEN IT.
+ *
+ * The vocabulary is harvested from the parser's own patterns, so it holds the
+ * words a player types AT the game and nothing else in English. Anything
+ * outside it that sits one edit from something inside it gets rewritten - and
+ * a great deal of ordinary English does.
+ *
+ * Measured, by running every word in the exemplar corpus plus a list of common
+ * English through `nearestVocabularyWord`: **27 of 590 words were rewritten**,
+ * and these are the ones where the rewrite changes what the sentence means.
+ * The worst of them cost the player real time:
+ *
+ *     rather  -> gather    "I stay put rather than act"    7 days foraging
+ *     great   -> treat                                     a month and the purse
+ *     spear   -> swear                                     an oath
+ *     father  -> gather    telling  -> selling   woods  -> goods
+ *     worse   -> horse     tired    -> hired     killing -> willing
+ *     mother  -> other     least    -> beast     yield  -> field
+ *     spend   -> send      sitting  -> setting   alone  -> along
+ *     route   -> rouse     matters  -> masters   these  -> there
+ *     those   -> whose     never    -> ever      small  -> shall
+ *     large   -> barge     table    -> able
+ *
+ * "I stay put rather than act" is the sharpest: a sentence that says outright
+ * that nothing is to be done spent a week bent over the ground, because one
+ * letter separates `rather` from `gather`. That is the failure `misparse.test.ts`
+ * exists for, arriving through a door it does not watch.
+ *
+ * Four of the twenty-seven were left OUT of this list on purpose - `elixir`,
+ * `realm`, `canon` and `proposal`, each rewritten to its own plural. The
+ * harvest reads `realms?` out of a pattern as `realms`, so the singular looks
+ * unknown and the repair puts the `s` back. That changes nothing about the
+ * sentence and costs nothing.
+ *
+ * A list rather than a dictionary, and the honest reason is that this module
+ * has no dictionary and adding one is a different piece of work. What keeps it
+ * from being whack-a-mole is that the sweep that produced it is a test: a new
+ * collision fails `one-typo-does-not-cost-a-turn.test.ts` rather than shipping.
+ */
+const ORDINARY_ENGLISH_IS_NOT_A_TYPO: ReadonlySet<string> = new Set([
+    'rather', 'father', 'mother', 'great', 'spear', 'worse', 'tired', 'killing',
+    'telling', 'woods', 'least', 'yield', 'spend', 'sitting', 'alone', 'route',
+    'matters', 'these', 'those', 'never', 'small', 'large', 'table'
+]);
+
+/**
  * The one vocabulary word this is a typo for, or null if that is not decidable.
  *
  * Null covers three different "no" answers on purpose - the word is already
@@ -157,6 +203,7 @@ export function harvestVocabulary(moduleNamespace: Record<string, unknown>): Set
 export function nearestVocabularyWord(word: string, vocabulary: ReadonlySet<string>): string | null {
     if (word.length < MIN_REPAIRABLE) return null;
     if (vocabulary.has(word)) return null;
+    if (ORDINARY_ENGLISH_IS_NOT_A_TYPO.has(word)) return null;
 
     // A stem the patterns already match. `injury` against the stem `injur` is
     // a correctly spelt word one edit from the vocabulary, and truncating it

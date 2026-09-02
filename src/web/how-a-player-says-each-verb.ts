@@ -44,7 +44,14 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I examine the carving on the wall',
         'I want to know what that writing says',
         'I search through what is lying here',
-        'I study the door for a while',
+        // "I study the door for a while" was here and had to go. `the door` is
+        // one of `site`'s threshold nouns by design - reading a sealed ground
+        // from outside is a different act with a different refusal - and the
+        // site block says so in its own comment, naming this exact sentence as
+        // one it was written to take. Two files disagreeing about a phrasing is
+        // the thing the sweep exists to find, and this is the case where the
+        // table was right.
+        'I study the carving for a while',
         'I poke about and see what I can find out',
         'there is something strange here and I want to understand it'
     ],
@@ -341,12 +348,29 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I try to wake what is sealed in there',
         'I put a seal on this place'
     ],
+    // ── THREE OF THESE WERE ABOUT A DIFFERENT VERB, AND IT MATTERED ──────
+    //
+    // `offer` is the channel through the Lid: an offering sent UP to an
+    // ancestor who crossed, or an object sent DOWN a line somebody below is
+    // holding. It is not barter. Three exemplars here described putting
+    // something in front of a person in a market - "I put something on the
+    // table in exchange", "I propose a trade to him", "I offer what I have for
+    // it" - which is `request` with the `a_trade` kind, or `interact` with the
+    // `trade` intent, and reaches neither.
+    //
+    // Found by sweeping the pattern table against this file: all three read as
+    // a misroute, and the table was right about every one. The cost was not
+    // only the sweep. This file IS what the model tier compares against, so
+    // three barter sentences sitting under `offer` pulled every barter-shaped
+    // sentence a player types towards the ancestor channel - and that tier
+    // answers exactly the sentences the table cannot read, which is where a
+    // player's own words land.
     offer: [
         'I make an offering',
-        'I put something on the table in exchange',
-        'I propose a trade to him',
-        'I offer what I have for it',
-        'I send an offering up'
+        'I send an offering up',
+        'I burn incense for the one who crossed',
+        'I send a word down the line to them',
+        'what is the line up to our ancestor'
     ],
     descend: [
         'I come back down',
