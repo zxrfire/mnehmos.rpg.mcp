@@ -1170,6 +1170,57 @@ And note what this does NOT license. A repetitive life failing *early* is not th
 working; it is something else killing them, and it should be investigated rather than credited.
 This effect is about who somebody has become over a long life, so it can only show up over one.
 
+### It has to play as a game, not as a command line
+
+**A command line answers what you typed. A game answers what you meant, and tells you what you
+could have meant instead.** That difference is not decoration and it is not the model's job
+alone - most of it is the engine's, and most of the ways this repository has failed at it were
+engine failures with a model sitting on top not hiding them.
+
+The four things that separate the two, in the order they bite:
+
+**You are never required to know a string.** If an item, a place, a house or a person can be
+named, it can be named the way a person would say it - a description, a grade and a kind, a
+fragment. A surface that only answers to `pill-qi-gathering` is a database prompt. Where the
+name genuinely cannot be resolved, the refusal lists what was close, because that is how
+somebody learns the catalog exists.
+
+**A refusal names a route.** *"No"* is a command line. *"No, and here is what would work"* is a
+game. This applies to every kind of no there is: a gate names the bar and what would clear it,
+an absent seller names who does sell, an unreadable sentence names the verbs that are live
+right now. A refusal with no route attached is the feature being missing, said politely.
+
+**The world volunteers.** A player who has to already know what is possible is playing a
+command line with prose on it. Standing somewhere should say what is here, who is here, and
+what this ground is for, without being asked - and the things a player could do next should
+appear in the course of describing the situation rather than in a list of verbs.
+
+**Nothing reads as a dump.** Field names, repeated clauses, the same fact said three ways, a
+paragraph of numbers - each of those is the engine talking to itself in front of the player.
+The engine already knows everything it needs; what it owes is a sentence.
+
+#### The four-layer caveat, and it is a real one
+
+**Only the top two rungs will feel like a game in full, and that is accepted.** Claude and
+Ollama read a sentence against the situation and can tell a bargain from a duel. **The two
+in-process rungs are blunter, and the browser one is bluntest - it will be kind of crappy, and
+shipping it anyway is the deliberate choice.** The claim those rungs make is *works with
+nothing behind it*, and the bar is **playable**, not equal.
+
+**But playable is a floor, not an excuse**, and it is the same floor at every rung:
+
+- **You are told what happened.** A turn that changes the world and says nothing is broken at
+  any tier.
+- **You can find out what you could do.** The verbs are discoverable from inside the game.
+- **A refusal still names a route.** This costs nothing - the route is a fact the engine holds
+  either way, and printing it needs no model.
+- **Nothing lies or contradicts itself.**
+
+Every one of those is the engine's, not the reader's. **So a defect at the bottom rung is
+almost never "the embedding is weak" - it is usually something the engine failed to say, and
+it would be just as wrong with a model in front of it.** Check that before reaching for the
+tier as the explanation.
+
 ### The same act means different things in different situations
 
 **What somebody did does not determine what they were doing.** Drawing a sword is a threat in
