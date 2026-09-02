@@ -907,6 +907,54 @@ the payload carries three things nothing else surfaced:
 - **`capacity` against `occupancy`**. `architecture.ts` stores capacity and deliberately
   stores no other measurement; the other half is a count of NPCs standing there.
 
+## The player is a row on the world's roster
+
+[`the-player-as-a-row-the-world-can-invite.ts`](the-player-as-a-row-the-world-can-invite.ts).
+The world layer keys everything on `NpcRecord`, and below the Lid the player had none - so
+every system reading `state.npcs` was running on a population the person playing was not
+in. Sharpest at `gatherings.ts`, whose entire invitation list is drawn from it: the player
+was not rarely invited, they were **structurally uninvitable**.
+
+It follows [`above.ts`](above.ts)'s precedent exactly - one row, under **the cultivator's
+own id**, so lineage, grudges, obligations and object provenance keep resolving against one
+identity - and the two halves compose rather than overlap: `residentAbove` owns the player
+once `canExistBeyondTheLid` is true, and this stands down at that point.
+
+**The sheet is the source.** `GameService.act` refreshes the row from the `Cultivator` at
+the top of every turn and again at the end of one, so nothing the world wrote to it can
+survive into the next turn: drift is structurally impossible rather than corrected. The
+refresh is in the turn and not in `advanceWorld` on purpose - `work` spends its days
+through the consolidated tool and never passes through this class's span helper.
+
+The world may read this row, rank it, resent it and seat it. It may not *decide* anything
+for it: see `PLAYER_ROW_TAG` and the guarded passes in
+[`../engine/world/README.md`](../engine/world/README.md).
+
+**The row stands nowhere.** `locationId` is null and never set: it is a membership, not a
+second account of where the player is. Presence has always been this layer's, off
+`cultivator.location`, and `npcsAt` means "the other people here" at every call site in
+both layers - each of which predates the row and adds the player back explicitly where
+wanted. One honest `locationId` double-counted the player in the crowding term, returned
+them to themselves as a possible opponent, added one to a headcount, and had a persistence
+test find the player where it was looking for an NPC. Nothing the row exists for needs a
+location; a gathering seats people by id.
+
+## Where they can go is gated like everything else
+
+`destinations` reads the knowledge table for named places and then adds the province's
+caves, wilds and veins off `WorldState.locations`. That second half had no gate at all -
+and "a farm boy knows where the caves are" is a reason to **grant a record**, not a reason
+to skip one. A cultivator holding nothing was handed The Glass Field and The Nine-City
+Assize by name, which are dao grounds seeded as ordinary `wilds`, and the same hole would
+have handed over any prospected find that landed on one of those three kinds.
+
+Both halves now ask `canPointAt`. `seedTheGroundAroundHome` grants the **ordinary** ground
+of the birth province at `placed` when the run opens - the same stage and the same reason
+as the next town along, because it is not an advantage, it is what everybody has - and
+withholds the two kinds the world means somebody to find: dao ground, and anything carrying
+`FOUND_BY_PROSPECTING_TAG`. Default-deny, so the next kind of special ground somebody adds
+is withheld by construction rather than by being remembered.
+
 ## Related
 
 - [`../../context.md`](../../context.md) - the authority rule this package enforces

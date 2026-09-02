@@ -395,6 +395,58 @@ export interface NpcRecord {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// THE ONE ROW THE WORLD DOES NOT MOVE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The tag on the player's own row.
+ *
+ * Below the Lid the player had no `NpcRecord` at all, which made them
+ * structurally invisible to every system keyed on the roster - most sharply to
+ * `gatherings.ts`, whose entire invitation list is drawn from `state.npcs`, so
+ * the person playing could not be invited to anything. `web/the-player-as-a-
+ * row-the-world-can-invite.ts` puts one there, with the SAME ID as the
+ * cultivator, the way `residentAbove` already does above the Lid.
+ *
+ * A row on the roster is a row the simulation will try to move, and that is the
+ * one thing it must not do here: the player's rung, wounds and lifespan live on
+ * their `Cultivator` sheet and are advanced by `time-skip.ts`. A world pass
+ * that also advanced them would climb the ladder twice and write a chronicle
+ * entry for a breakthrough that never happened.
+ *
+ * So the row is REFRESHED from the sheet at the top of every turn, which makes
+ * drift impossible - and the four passes that decide something FOR a cultivator
+ * skip it by this tag:
+ *
+ *     applyAdvancement       would climb the ladder a second time, and would
+ *                            chronicle a breakthrough that never happened
+ *     the lifespan pass      would declare the player dead mid-run
+ *     applyRecruitment       would enrol them in a house they never entered
+ *     applyBookAcquisition   would hand them a manual they never earned
+ *
+ * The last two also matter for reproducibility rather than only for
+ * correctness: both draw a RANDOM INDEX over the roster, so a row sitting in
+ * their candidate lists shifts every draw after it and quietly reseeds the
+ * world. Any pass that samples the roster by index needs this guard even where
+ * the write itself would be harmless.
+ *
+ * Everything else the world does to this row is deliberately left alone. Being
+ * met, ranked, resented, owed something, named in a goal or seated at a
+ * gathering is the entire point of it being there.
+ */
+export const PLAYER_ROW_TAG = 'the-player';
+
+/**
+ * Whether this record is the simulation's to decide things for.
+ *
+ * False for exactly one row in any world. Read at the four passes above; every
+ * other pass may read and write this record freely.
+ */
+export function isTheWorldsToMove(npc: Pick<NpcRecord, 'tags'>): boolean {
+    return !npc.tags.includes(PLAYER_ROW_TAG);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // CREATION
 // ─────────────────────────────────────────────────────────────────────────
 

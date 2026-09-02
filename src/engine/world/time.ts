@@ -65,6 +65,7 @@ import { openingsBetween, type LocationRecord } from './locations.js';
 import { FRIENDSHIP_STANDING, GRUDGE_STANDING } from './gatherings.js';
 import {
     inheritGoals,
+    isTheWorldsToMove,
     legacyGoals,
     markDead,
     upsertRelationship,
@@ -478,6 +479,11 @@ export function advanceTime(
         // Only the living run out of lifespan. A missing cultivator is not
         // adjudicated by the clock, and a sealed one is not ageing.
         if (npc.status !== 'alive') continue;
+        // And the player's own death is not the world clock's to declare. It
+        // belongs to the survival layer, on the sheet that actually holds their
+        // years; the mirror row this pass can see is a projection of that sheet
+        // and killing it would append a death to the chronicle mid-run.
+        if (!isTheWorldsToMove(npc)) continue;
         if (npc.cultivation.lifespanEndsOnDay > target) continue;
         const onDay = Math.max(fromDay, npc.cultivation.lifespanEndsOnDay);
         const rank = rankName(npc.cultivation.realmOrdinal);

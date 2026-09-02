@@ -65,6 +65,33 @@ A righteous house refusing is not a moral gesture. It is a rule with a price: a
 righteous cultivator running one is doing it *without their house*, which means
 no leverage supplied and a second exposure waiting.
 
+## What a purse is worth
+
+`stonesOffered` was a documented field on the resolver's own contract that
+nothing in `oddsOf` read. A bribe named a sum, was refused without one, and was
+debited on a take - and the sum changed nothing about whether it landed. That is
+the softening the agency rule forbids, in its most invisible form: the player
+believes they bought something and the world's answer was identical either way.
+
+The `purse` term is three constraints and no fourth:
+
+- **Priced against them.** `earningsPerYear(subject.ordinal)` - the same income
+  curve the world seeds every purse in it from - so a hundred stones is a year of
+  a gate guard's life and a rounding error to an elder, and what a sum is worth
+  is asked once and answered in one place.
+- **Saturating.** `years / (years + PURSE_HALF_AT_YEARS)`. A year of their own
+  income is half the ceiling, ten years is 0.9 of it, a thousand is 0.999. Past
+  a point the problem is not the price.
+- **Reaching only as far as money reaches.** `PURSE_REACH` damps it by the ask:
+  full weight on `a_courtesy` - the seat in a queue, the look the other way, the
+  introduction, the release from a house - and one twentieth on `a_betrayal`,
+  which is a door left open rather than a price. `docs/world/items.md` holds the
+  line this sits under: above a certain kind of thing, cash is not the medium at
+  all, and no figure changes that.
+
+`PURSE_MAX` is 0.2, deliberately under one realm of standing and under a tie at
+full strength. Money is a term and it is never **the** term.
+
 ## The four outcomes
 
 Two is not play.
