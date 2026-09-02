@@ -205,7 +205,11 @@ describe('the fallback is inert', () => {
             // produces restates a number the engine already computed, so none
             // of them can spend, teach, move or kill - and a player at a wall
             // has to be able to ask what it is a hundred times for nothing.
-            'ceiling', 'teacher', 'destinations'
+            'ceiling', 'teacher', 'destinations',
+            // Looking at what is in front of you and thinking about it. It
+            // reads the holder's own knowledge rows and the one art the
+            // sentence already named, so it can neither teach nor spend.
+            'recognise'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -404,7 +408,11 @@ describe('every verb is reachable from plain English', () => {
         // And the fourth, which was not merely eaten but eaten BY the third:
         // `teach me` belongs to the roster question, correctly, and it was
         // tested before anything looked at whether a person had been named.
-        request: 'I ask Elder Fang to teach me'
+        request: 'I ask Elder Fang to teach me',
+        // The trust hierarchy's strongest check, asked the way somebody
+        // would ask it. It sits one word from `recall`'s "do I know" and
+        // the art noun is what keeps the two apart.
+        recognise: 'do I recognise this style'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

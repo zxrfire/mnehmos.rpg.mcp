@@ -1714,6 +1714,15 @@ capability.ts    the five predicates, answered together, with reasons
 opportunities.ts dated windows that open and close whether or not anyone is watching
 possessions.ts   possession / ownership / claim / knowledge, plus provenance
 lineage.ts       the parent-descendant edge and what travels down it
+reading-a-lineage-off-a-name.ts
+                 what a surname is worth against a house's roll. Corroboration
+                 at best; only a reserved name settles anything, and an absent
+                 one is a question rather than a verdict
+recognising-whose-art-you-just-watched.ts
+                 the trust hierarchy's strongest check, gated on BOTH axes -
+                 realm for whether the demonstration can be perceived at all,
+                 KnowingStage for whether the reader has a reference for it.
+                 Answers where an art was LEARNED and never whom anybody serves
 npc-state.ts     NPCs as small durable records; goals outlive their holder
 memory.ts        durable memories, search, and the LLM-driven compression write path
 world-state.ts   the authoritative store; plain serialisable data, pure mutations
