@@ -463,11 +463,53 @@ export function whatThisTurnMayRun(
  * what they said - and holding the rest, named, for a turn they can take
  * immediately. The cost of being wrong the other way is a question they have
  * already answered.
+ *
+ * ── SAYING WHY IS ALSO SAYING WHEN ───────────────────────────────────────
+ *
+ * Found by playing, at 1 of 40 health and 2 spirit stones, with the game's own
+ * refusal saying *"Earning is the move before either of them"*:
+ *
+ *   > I keep my head down and work the water for a year until I have enough
+ *     for the physician
+ *
+ *   work(water), buy(physician's visit)   -> "which comes first?"
+ *
+ * There is nothing there to answer. **A clause saying what an act is FOR says
+ * what order it goes in**, and says it more firmly than `and then` does: you
+ * cannot buy a thing with money you are still working to earn, so the earning
+ * is first by the meaning of the sentence rather than by a word placed between
+ * two halves of it.
+ *
+ * The model handed this sentence understood it perfectly and said so - *"To
+ * labor through the year is to commit to a span that will inevitably precede
+ * the seeking of the physician. You have set your path: first the work, then
+ * the cost"* - underneath a question insisting the order was unknown. When the
+ * reader is the only party at the table that cannot see the order, the reader
+ * is what is wrong.
+ *
+ * The generosity argument above applies here with more force, because the
+ * subordinate half is the one that gets held: being wrong runs the work and
+ * names the physician as still ahead, which is what the player asked for
+ * either way.
  */
 export function theSentenceSaysItsOwnOrder(input: string): boolean {
-    return /\b(?:and then|then|afterwards?|after that|after which|before|first(?:ly)?|next|finally|once (?:i|that|it)|when (?:i|that|it)(?:'s| is| am)? (?:done|finished|over))\b/i
-        .test(input);
+    return /\b(?:and then|then|afterwards?|after that|after which|before|first(?:ly)?|next|finally|once (?:i|that|it)|when (?:i|that|it)(?:'s| is| am)? (?:done|finished|over))\b/i.test(input)
+        || THE_CLAUSE_THAT_SAYS_WHY.test(input);
 }
+
+/**
+ * The forms that say what an act is for, and so say what comes after it.
+ *
+ * `until` is the commonest and is the reason this exists. The rest are how the
+ * same sentence gets written: a purpose (`so I can`, `in order to`), a price
+ * (`to pay for`, `to afford`), or a threshold (`enough for`).
+ *
+ * Kept to subordinators that genuinely bind one act to another. Bare `to` is
+ * deliberately absent - "I go to Ninewatch" would match it, and an infinitive
+ * of motion is not a purpose clause.
+ */
+const THE_CLAUSE_THAT_SAYS_WHY =
+    /\b(?:until|so (?:i|that i) (?:can|could|have|am)|in order to|so as to|to pay for|to afford|enough (?:for|to))\b/i;
 
 /**
  * COUNT SPANS OF THE SENTENCE, NEVER PATTERN HITS.

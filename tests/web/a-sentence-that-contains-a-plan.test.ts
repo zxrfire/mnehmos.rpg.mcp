@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
 import { ProviderNarrator } from '../../src/web/narrator.js';
 import type { LLMProvider } from '../../src/agent/provider/types.js';
+import { theSentenceSaysItsOwnOrder } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 
 /** A provider whose phase-1 answers are the plans below, one per turn. */
 function planning(plans: string[]): LLMProvider {
@@ -391,5 +392,29 @@ describe('the deterministic tier is untouched', () => {
         };
 
         expect(await play()).toEqual(await play());
+    });
+});
+
+describe('a clause that says why says when', () => {
+    // Played at 1 of 40 health and 2 spirit stones, with the game's own refusal
+    // saying "Earning is the move before either of them". The sentence came
+    // back as work(water), buy(physician's visit) and a question about which
+    // came first - a question with nothing in it to answer, because you cannot
+    // buy a thing with money you are still working to earn.
+    it('reads a purpose clause as the order it is', () => {
+        expect(theSentenceSaysItsOwnOrder(
+            'I keep my head down and work the water for a year until I have enough for the physician'
+        )).toBe(true);
+        expect(theSentenceSaysItsOwnOrder('I take work so I can pay the physician')).toBe(true);
+        expect(theSentenceSaysItsOwnOrder('I sell the manual to afford a room')).toBe(true);
+        expect(theSentenceSaysItsOwnOrder('I gather herbs until I have enough to buy passage')).toBe(true);
+    });
+
+    // The other half of the rule, and the reason bare `to` is not a purpose
+    // word: an infinitive of motion is not a plan with two halves.
+    it('leaves a sentence with no order between its halves alone', () => {
+        expect(theSentenceSaysItsOwnOrder('I go to Ninewatch')).toBe(false);
+        expect(theSentenceSaysItsOwnOrder('I sit for a year and take work for a season')).toBe(false);
+        expect(theSentenceSaysItsOwnOrder('I talk to the elder')).toBe(false);
     });
 });

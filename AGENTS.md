@@ -1982,3 +1982,35 @@ sat in their pouch.
 **And the narrator is shown the result, never the question.** Not *what happens if they try
 this* but *this is what happened*. It has no authority and needs none; everything it could
 have decided has already been decided.
+
+### A fight is played, not reported
+
+**Combat resolves across turns, and every turn inside it is a real choice.** A fight
+that settles in one call and hands back a corpse is not a hard game; it is a cutscene with
+a die roll in it. **The complaint is not that death is unfair - it is that a death you
+could not have acted against is unsatisfying**, because there was nothing to play.
+
+So the player's turn inside a fight is the ordinary free-text surface with the fight as
+context, and the choices it has to be able to carry are the ones anybody reaches for:
+**whether to run, how, and to where; which art; which item.** Those are four different
+questions and a round that only asks "attack again?" answers none of them.
+
+Three things follow, and they are the difference between an exchange and a formality:
+
+- **The state a player needs in order to decide has to be visible before it is decided.**
+  Somebody has to be able to see they are losing while they can still do something about
+  it. A fight whose only legible moment is the end is the one-call fight with extra
+  paragraphs.
+- **Fleeing is load-bearing and must genuinely work, at a price.** This world is built on
+  gaps in rung, and being overmatched is its commonest situation - so getting away from
+  somebody stronger is the move the whole design implies. A `flee` that always works is a
+  cheat; one that never does is the cutscene again.
+- **Backing off needs somewhere to back off *to*.** The fight knows where it is standing,
+  who else is there, and what is behind the player. That is also what makes calling for
+  help a real move rather than a wish.
+
+**And there is still one resolver.** NPCs fight each other constantly and nothing about
+this makes the player's fight a second system with its own answers - a player standing
+inside a resolution is entering the same machine at a different door. Two combat systems
+would be the same defect as two answers to how big a body is, and it would break the rule
+that a player can do everything an NPC can in the place where that rule matters most.
