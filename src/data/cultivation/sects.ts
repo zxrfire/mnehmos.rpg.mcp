@@ -4384,6 +4384,18 @@ export const SEAT_ORDER = {
         'The rule has an edge nobody designed and everybody has now seen. It allocates on attempts remaining, so somebody with none cannot be placed on it at all - not at the bottom, not anywhere. A First Seat who makes the crossing and does not complete it comes back with no ordinal and no attempts, and the ladder that ranked them has no rung that fits. Guest of the Court exists because that happened once and the Court had to put him somewhere.'
 } as const;
 
+/**
+ * The powers that have withdrawn from the world, and the seats they hold.
+ *
+ * This is the apex of the setting and `docs/` does not name it anywhere - a
+ * search of the bible for the Hollow Court's holdings returns nothing, which
+ * has already produced one invented answer that had to be retracted. The
+ * written design for what the Court is and who it admits is
+ * `docs/world/past-the-ceiling.md`, "The Hollow Court is the exception to all
+ * of it"; who stands on the mountains is `hollow-court-roster.ts`; the seat
+ * ordering is `SEAT_ORDER` immediately above. All four are indexed in
+ * `docs/world/INDEX.md`.
+ */
 export const WITHDRAWN_POWERS: Record<string, WithdrawnPower> = {
     'sect-hollow-court': {
         count: 4,
