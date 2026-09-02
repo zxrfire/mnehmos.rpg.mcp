@@ -36,6 +36,12 @@ Six questions per realm. For each, one of three verdicts:
 | **indirect** | The behaviour exists, produced by a system that is not about realms - regard bands, location thresholds, content pitched at a rung. It works, and nobody would call it a realm capability |
 | **absent** | The engine has no answer. Sometimes correctly |
 
+**Read every `built` that rests on a `CapabilityGrant` as "the code path exists and does not
+fire."** See the correction below: no live cultivator holds any grant, so a row whose evidence
+is a grant name is describing machinery rather than behaviour. The verdicts are left as
+written rather than downgraded in place, because the thing worth seeing is *which* capability
+was believed to exist and on what evidence - but do not read one as a working feature.
+
 The six:
 
 ```text
@@ -74,17 +80,63 @@ band.** `CLASS_GRANTS.mortal` and `CLASS_GRANTS.core` are both `[]`, and
 two "what can this person do in kind" axes, ordinal 0 and ordinal 20 are the same answer.
 Nearly half the ladder is one undifferentiated block.
 
-**Six of the fifteen grants that do exist are declared and inert.** Grepped across `src/`:
-outside `capability.ts` itself, exactly one grant is read by any other module -
-`spatial_folding`, by `convergence.ts` as `PIERCE_GRANT`. Of the rest, `prepared_vessel`,
-`carries_own_ambient`, `no_ambient_needed`, `enters_dead_zones`, `no_seam` and
-`immune_contamination` do one thing each: subtract `NEUTRALISED_HAZARD_RELIEF` from a
-`survive`/`succeed` requirement when a matching hazard string is on the subject.
-`reads_formations` and `gates_places` are special-cased inside `judge`. And
-**`soul_persists`, `suppresses_lesser`, `makes_veins`, `seals_domains`, `reads_lid` and
-`opens_lid` are consumed by nothing anywhere.** (Soul persistence itself is implemented -
-by `tradition.ts`'s `SOUL_PERSISTS_FROM_ORDINAL` and `existence.ts` - just not through the
-grant that names it. The other five are not implemented at all.)
+**Fifteen of the fifteen grants are unreachable from a live cultivator.**
+
+This section said *"six of the fifteen are declared and inert"* and that was a **counting
+error, corrected here rather than quietly fixed** because the wrong number is more dangerous
+than no number: it reads as a short list of gaps in a working layer, and it invited building
+on top of one that does not run.
+
+What it counted was **declarations** - which grant strings appear in `CLASS_GRANTS` and
+whether any module mentions them. The question it should have asked is **what a cultivator
+can hold**, and the answer is nothing at all:
+
+```text
+heldGrants(actor)  =  grantsAvailableAt(actor.realmOrdinal)  ∩  actor.heldGrants
+```
+
+`capabilityActorFor` (`src/server/consolidated/cultivation-perception.ts`) is the only place
+in the repo that builds a `CapabilityActor` from a real `Cultivator`, and it hardcodes
+`heldGrants: []`. Its own comment says why, and the comment is correct and honest:
+
+> *"`heldGrants` is deliberately empty. A realm is a capability class and a class is
+> POTENTIAL ... Nothing in this engine stores an acquired grant yet, so claiming one here
+> would be the tool inventing capability."*
+
+So the intersection is empty for every real cultivator, and **every consumer downstream of it
+is off**: `judge` reads `heldGrants(actor)`, which is what `gates_places` and
+`reads_formations` are special-cased inside; `neutralisedHazards` reads `heldGrants(actor)`,
+which is the whole of `GRANT_NEUTRALISES` and therefore every `NEUTRALISED_HAZARD_RELIEF`
+subtraction; and `convergence.ts` tests `actor.heldGrants` directly for `PIERCE_GRANT`.
+
+The four grants this document called **built** - `prepared_vessel`, `carries_own_ambient`,
+`no_ambient_needed`/`enters_dead_zones`, `no_seam`/`immune_contamination`, `gates_places`,
+`reads_formations`, `spatial_folding` - are built in the sense that the code path exists and
+is correct. None of them fires for anybody. **A grant-gated capability is a no-op that
+reviews as a feature**, and that is the trap this correction exists to close.
+
+Two things are genuinely implemented and are *not* affected, because neither routes through
+grants:
+
+- **Soul persistence.** `tradition.ts`'s `SOUL_PERSISTS_FROM_ORDINAL` feeds
+  `killRequirement`, which `combat.ts` consults inside `assessPower` to set `bodyIsEnough`
+  and `remnant: 'soul'`. At ordinal 21 and above, destroying the body really is not enough.
+  This is the one realm capability the engine enforces against a living person, and it works
+  precisely because `soul_persists` as a *grant* is bypassed.
+- **`suppresses_lesser`, `makes_veins`, `seals_domains`, `reads_lid`, `opens_lid`** are not
+  implemented at all, grants or otherwise. That part of the original count stands.
+
+A related and smaller miscount, same cause: the **Nascent Soul "do"** verdict below calls
+`ADDRESS_ORDINAL_FLOORS.place = 21` *"the only place on the ladder where what you can do
+changes in kind and the change is enforced"*. `addressCeilingForOrdinal` has exactly one
+caller - `addressIsLegal`, against a technique row's `requiredOrdinal`. It is a **catalog
+invariant**, checked when content is validated. It gates what a technique row may declare,
+not what a person may do, and no runtime path consults it about a cultivator.
+
+**So whether `heldGrants` gets a real store is the decision this whole document is actually
+waiting on**, and it is a design question rather than an implementation one: it decides
+whether realm capability is something the engine enforces or something the fiction asserts.
+Until it is answered, do not add grants, and do not gate anything on one.
 
 So the shape of the deficit is not "the low realms are empty and the high realms are full".
 It is **the whole capability layer is thin, and the low realms are where that is most
@@ -359,9 +411,17 @@ of new machinery. Nothing here is bespoke; every item reads columns that already
 2. **A residence below the Lid.** `settleAbode` generalised off the immortal layer. Gives
    Foundation Establishment a place, a store, and something to lose. Locations, objects and
    access gates are all already generic; this is call sites and a migration.
-3. **The five inert grants.** `suppresses_lesser`, `makes_veins`, `seals_domains`,
-   `reads_lid`, `opens_lid`. Cheapest possible win at the top of the ladder: the class
-   arrays already carry them and the predicates are already the right shape.
+3. **A decision about `heldGrants`, before any grant work at all.** This was *"the five inert
+   grants - cheapest possible win, the class arrays already carry them and the predicates are
+   already the right shape"*, and that was wrong for the reason the correction above gives:
+   implementing `suppresses_lesser` or `makes_veins` would wire them to `heldGrants`, which is
+   empty for every cultivator, so the work would produce nothing observable and would look
+   finished. The cheap win is not cheap; it is unreachable.
+
+   What is actually needed first is a ruling on whether an acquired grant is stored - and if
+   so, what acquires one, since the layer's whole design is that a realm confers POTENTIAL and
+   the cultivator must still go and get the thing. Until that is answered this item is blocked,
+   not cheap.
 4. **Charm as persistence.** One question - does this contact leave a relationship row -
    answered against a store that already exists.
 5. **Divestment as a verb.** The engine already names it (`price-of-advancement.ts`) as the
