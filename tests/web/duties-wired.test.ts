@@ -77,7 +77,11 @@ describe('contribution, which had no earner', () => {
         // The read takes nothing and writes nothing.
         expect(repos.sects.getMembership(cultivator.id)!.contribution).toBe(0);
 
-        const named = /\n\s*([A-Z][^:\n]{5,60}):/.exec(board.narration)?.[1];
+        // The board prints the title, then the tier and the rung it is pitched
+        // at, then the terms: "A Culling Notice ... - third rank at Qi
+        // Condensation Layer 10: 20 days, ...". The title is what gets typed
+        // back, and it is what stands before the dash.
+        const named = /\n\s*([A-Z][^:\n]{5,60}) - /.exec(board.narration)?.[1];
         expect(named, 'the board has to be offering something at ordinal 0').toBeTruthy();
 
         const taken = await game.act(`I take the ${named} commission`);
@@ -114,7 +118,11 @@ describe('contribution, which had no earner', () => {
         db.prepare('UPDATE cultivators SET spirit_stones = 5000 WHERE id = ?').run(cultivator.id);
 
         const board = await game.act('I look at the sect mission board');
-        const named = /\n\s*([A-Z][^:\n]{5,60}):/.exec(board.narration)?.[1];
+        // The board prints the title, then the tier and the rung it is pitched
+        // at, then the terms: "A Culling Notice ... - third rank at Qi
+        // Condensation Layer 10: 20 days, ...". The title is what gets typed
+        // back, and it is what stands before the dash.
+        const named = /\n\s*([A-Z][^:\n]{5,60}) - /.exec(board.narration)?.[1];
         if (!named) return;
 
         const before = game.state().cultivator.spiritStones;
