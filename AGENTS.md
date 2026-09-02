@@ -732,6 +732,32 @@ seed is proof.** Three hundred against eighty do not trade places by chance, and
 those two should fail instantly and unpooled. Sample size is not a global setting; it is a
 property of the claim being made.
 
+### A control arm at one seed is two samples, not a control
+
+The entry above says pool a claim before you judge it. This is the same rule applied to the
+thing you reach for when a guard goes red: **running your change off and then on against the
+same seed tells you the two worlds differ. It does not tell you whether the difference is
+your change or the draw.**
+
+Measured, and it came within one command of going in as a finding. Eleven rows added to the
+member catalog - none of them standing above Nascent Soul - turned a guard red at 4 of 10
+people above Void Refinement, against a bar of half. The control arm on that seed read 22 of
+30 without the rows. Two separate instruments reproduced it identically, and the population
+was 531 against 527 either side, so the world was the same size and the band had been cut to
+a third. The baseline's spread over six seeds was 23 to 41, which put 10 nowhere near it.
+
+Every one of those sentences is true and the conclusion drawn from them was wrong. Six seeds
+on the CHANGED side read 10, 29, 43, 27, 41 and 14 - its own spread is 10 to 43 - and the
+claim the guard actually makes barely moved: 143 of 194 pooled without the rows against 114
+of 164 with them. One seed had drawn badly, and that was all.
+
+The mistake is specific enough to look for: **the new reading was judged against the OLD
+arm's spread.** A baseline sampled on one side says nothing about how wide the distribution
+is on the other, and a change that reshuffles a seeded population can widen it. So pool BOTH
+arms before deciding which of the two you are holding - and be most suspicious of the reading
+dramatic enough to feel like a mechanism, because that is what the tail of a wide
+distribution looks like from close up.
+
 ### A single measurement off a shared tree is already somebody else's unfinished work
 
 The lesson above is about the gap BETWEEN two readings, and that framing is too narrow. It
