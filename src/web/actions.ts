@@ -876,7 +876,17 @@ export type SectIntent =
      * into the other - so a rich cultivator and a poor one had exactly the same
      * route to a promotion, which is not what money is for in this setting.
      */
-    | 'donate';
+    | 'donate'
+    /**
+     * Being let to sit in at a house that has not taken you.
+     *
+     * The roll that is not the house roll. A guest keeps their own membership,
+     * holds no rung, draws nothing, and is shown the shallow end of somebody
+     * else's shelf - which is the only route past a manual's ceiling that does
+     * not require a favour from an apex or a decade of contribution. See
+     * `src/engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.ts`.
+     */
+    | 'guest';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -1395,6 +1405,43 @@ export const DESTINATIONS_QUESTION = new RegExp([
 /** The verbs a line is taken off the board with. */
 export const DUTY_SUBJECT_VERBS =
     /take|takes|taking|accept|accepts|accepting|sign up for|signs up for|volunteer for|put my name (?:down )?(?:for|to)|do/;
+
+/**
+ * Asking a house to let you sit in, in the ways somebody would actually ask.
+ *
+ * Every one of these is a sentence about a PLACE rather than about a book,
+ * which is what keeps them out of `learn_technique`'s way. The last one is the
+ * loosest and carries two guards: the preposition, because "I study the manual"
+ * is the other verb, and the `my` exclusion, because "I study with my master"
+ * and "I study my book" are both sentences about something the player already
+ * has.
+ *
+ * The listing phrasings are here too - "who would take me as a guest", "where
+ * could I study" - because a player who has not been told a house takes guests
+ * cannot name one, and being shown the set is the sentence before the one that
+ * takes a place.
+ */
+export const GUEST_STUDENT_PATTERNS: readonly RegExp[] = [
+    /\bguest (?:student|studentship|pupil|disciple|place|places|roll|term)\b/,
+    /\b(?:as|be|being|stay as|remain) an? guest\b/,
+    /\bas a guest\b/,
+    // ── THE PREPOSITION IS LOAD-BEARING AND WAS LEFT OFF ONCE ────────────
+    //
+    // A bare `sit in` took SIX web tests in one run, all of them seclusion:
+    // "I sit in seclusion for ten years" is the commonest way anybody asks for
+    // the single longest action in the game, and it contains the phrase. So
+    // this asks for the preposition that makes it a place - sit in AT, WITH,
+    // ON - and "sit in seclusion" goes back to the verb it has always meant.
+    /\bsit(?:s|ting)? in (?:at|with|on)\b/,
+    /\b(?:let|allow|permit)s? me (?:to )?sit in\b/,
+    /\b(?:study|learn|train)(?:ing)?\b[^.?!]*\bwithout (?:joining|being (?:a )?(?:member|taken on)|membership)\b/,
+    /\bteach me\b[^.?!]*\bwithout (?:joining|taking me on|membership)\b/,
+    /\bstudy (?:at|under|with|there|them)\b(?!\s+my\b)/
+];
+
+/** The verbs a guest place is asked for with, for pulling the house's name out. */
+export const GUEST_SUBJECT_VERBS =
+    /guest student (?:at|of|with)|guest (?:at|of|with)|study at|study under|study with|sit in (?:at|with|on)|attend at|attend|study|learn at|learn from/;
 
 export const SECT_INTENT_PATTERNS: ReadonlyArray<[SectIntent, RegExp]> = [
     ['leave', /\b(?:leave|leaving|quit|resign|renounce|withdraw from|walk out (?:of|on)|abandon|defect|desert|break with)\b/],
@@ -3325,6 +3372,20 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
             // is your standing in it. Both are free and both already say the
             // right thing - the listing's own line is the one the played run
             // quoted approvingly one input before the parser broke it.
+            // A question about sitting in somewhere keeps the house it named
+            // and loses only the commitment. The terms read is free and says
+            // everything the acceptance would - what is opened, what is kept
+            // back, and the five things a guest place is not - so a player who
+            // asked "could I study at the Frostmirror Court" is answered rather
+            // than enrolled.
+            if (plan.intent === 'guest') {
+                return {
+                    action: 'sect',
+                    intent: 'guest',
+                    ...(plan.target ? { target: plan.target } : {}),
+                    ...(plan.topic === 'depart' ? { topic: 'depart' } : {})
+                };
+            }
             return plan.intent === undefined || plan.intent === 'join'
                 ? { action: 'sect' }
                 : plan.intent === 'duty' || plan.intent === 'siphon'
@@ -3901,6 +3962,30 @@ function planIntent(input: string): PlannedAction {
         return {
             action: 'consume_pill',
             target: extractSubject(input, PILL_SUBJECT_VERBS)
+        };
+    }
+
+    // ── ASKING A HOUSE TO LET YOU SIT IN, which is not learning an art ───
+    //
+    // Must be tested ahead of `learn_technique` below, whose LEARNING_VERBS
+    // contain "study" in verb position: without this, "I study at the Azure
+    // Cloud Pavilion" resolved to learning an art called "at the Azure Cloud
+    // Pavilion" and answered with the technique listing. The sentence is about
+    // a place in a hall, not about a book.
+    //
+    // Narrow on the GUEST framing rather than on the verb, for the reason this
+    // file has learned twice: a wide pattern here would take "I study the
+    // Lesser Qi-Gathering Manual" and "I practise with my master", both of
+    // which belong to the two verbs either side of it. `study my ...` is
+    // excluded explicitly for that reason.
+    if (GUEST_STUDENT_PATTERNS.some(p => p.test(text))) {
+        const leaving = /\b(?:stop|stops|stopping|leave|leaves|leaving|end|ends|ending|quit|quits|give up|no longer)\b/.test(text);
+        const taking = /\b(?:become|becomes|accept|accepts|take (?:the|a|them up on)|enrol|enroll|sign on|i will|yes)\b/.test(text);
+        return {
+            action: 'sect',
+            intent: 'guest',
+            ...(leaving ? { topic: 'depart' } : taking ? { topic: 'accept' } : {}),
+            ...(leaving ? {} : { target: extractSubject(input, GUEST_SUBJECT_VERBS) })
         };
     }
 

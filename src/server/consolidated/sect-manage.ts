@@ -73,6 +73,7 @@ import {
     handleVerifyClaim,
     handleWake
 } from './sect-politics.js';
+import { GuestSchema, handleGuest } from './sect-guest.js';
 import {
     AdmissionSchema,
     AuthoritySchema,
@@ -97,7 +98,12 @@ const ACTIONS = [
     'prospect', 'patronage', 'verify_claim', 'denounce', 'petition', 'wake', 'above',
     // Authority. `order` opens at rung one and is the first thing membership
     // actually buys; the rest is what the elder rungs and the seat can do.
-    'authority', 'order', 'recruit', 'admission', 'curriculum', 'expel', 'grow'
+    'authority', 'order', 'recruit', 'admission', 'curriculum', 'expel', 'grow',
+    // The roll that is not the house roll. A house takes guest students because
+    // it holds its best back, so showing an outsider the shallow end costs it
+    // nothing - and because watching somebody for a year tells it what a bar
+    // never could. See `sect-guest.ts`.
+    'guest'
 ] as const;
 type SectAction = typeof ACTIONS[number];
 
@@ -1130,6 +1136,12 @@ const definitions: Record<SectAction, ActionDefinition> = {
         handler: handleGrow,
         aliases: ['expand', 'build_up', 'enlarge'],
         description: 'Make the house bigger over decades. The only act that earns standing rather than spending it'
+    },
+    guest: {
+        schema: GuestSchema,
+        handler: handleGuest,
+        aliases: ['sit_in', 'study_under', 'study_at', 'guest_student', 'visiting_student', 'attend'],
+        description: 'Sit in at a house that has not taken you. Access and nothing else, and you keep your own house'
     }
 };
 
@@ -1222,7 +1234,9 @@ send/tell/delegate->order, dismiss/fire->expel, command/powers->authority`,
         retire: z.array(z.string()).optional(),
         elderId: z.string().optional(),
         through: z.enum(['seat', 'elders']).optional(),
-        decades: z.number().int().optional()
+        decades: z.number().int().optional(),
+        accept: z.boolean().optional(),
+        depart: z.boolean().optional()
     })
 };
 

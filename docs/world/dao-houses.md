@@ -15,6 +15,7 @@ consequence they cannot trace.
 |---|---|
 | [Knowledge accumulated for millennia is itself a form of power](#knowledge-accumulated-for-millennia-is-itself-a-form-of-power) | an old house is weighed against a prodigy, or a faction is formidable without holding the strongest individual |
 | [Specialisation is not ownership](#specialisation-is-not-ownership) | somebody claims a house owns or controls a principle |
+| [Which is why they take guest students](#which-is-why-they-take-guest-students) | somebody outside a house wants to study its principle, or asks whether a house would teach them |
 | [The principle must operate outside combat](#the-principle-must-operate-outside-combat) | a house's principle is brought to bear somewhere other than a fight |
 | [Their power should be frightening in a specific way](#their-power-should-be-frightening-in-a-specific-way) | the player is deciding whether it is safe to cross a house |
 | [Blind spots and counters are mandatory](#blind-spots-and-counters-are-mandatory) | the player is looking for a way around a house's specialisation |
@@ -59,6 +60,54 @@ a founder develops a method -> disciples refine it -> descendants preserve it
   -> artifacts are made -> new techniques are derived -> unique resources accumulate
     -> the house becomes the authority on the subject
 ```
+
+## Which is why they take guest students
+
+<!-- tier: 2 trigger="somebody outside a house wants to study its principle, or asks whether a house would teach them" -->
+
+A house does not own its principle, so passing on part of it gives away nothing
+it could have kept. That is the section above, and it is also the whole argument
+for the thing a house is otherwise strangely closed about: **most of them take
+guest students, on purpose, and it is not charity.**
+
+Two reasons, and both are the house's own interest:
+
+- **It is a pipeline.** Adoption is the only door, so a house cannot advertise,
+  cannot hold an admission day, and cannot find the once-in-a-century outsider
+  who is extraordinary at exactly its dao. Letting people sit in is how it looks
+  at them. A bar tells you somebody's rung; a year tells you what they are like.
+- **They hold the best back, so openness costs nothing.** A house can afford to
+  teach an outsider its lower material *because* the deep material is behind
+  kinship, standing and time. Nobody is afraid of a guest leaving. The guest was
+  never shown the thing worth stealing.
+
+**A guest gets access and nothing else.** No rung, no stipend, no standing, and
+in particular **no protection** - the house will not stand between them and a
+crossing, and it will not stand between them and anybody who wants something from
+them. Somebody who leans on a guest is not leaning on the house, and the house
+will not read it as an insult; it will read it as somebody else's disciple having
+a problem. The position is genuinely exposed, and that is the price rather than an
+oversight.
+
+**And a guest keeps their own house**, which is why nobody objects. It is not a
+transfer and not a defection: nothing is being left, no release is needed, no
+oath fires, and an apex has no grievance against a house that borrowed its
+disciple for a year and gave them back. What the home house has is a view - it
+may send you, permit you, or forbid it outright where the host is somebody it is
+already quarrelling with.
+
+**Not every house takes them.** A house with nothing behind the door cannot
+afford to open the front of it: showing an outsider its shallow end would be
+showing its whole library. The House of Held Names is the case - an ancient name,
+and a working shelf that stops where every hedge-teacher's does.
+
+**And one day it stops being free.** A house that has watched somebody for its
+whole term, and has taught them everything it was willing to show a guest, has
+nothing further to give them without taking them in - so it offers. That is the
+moment the arrangement becomes a decision, because accepting means leaving your
+own house, with everything [`past-the-ceiling.md`](past-the-ceiling.md) says
+about releases and oaths. Part of what is on the other side is the thing a guest
+never had, which is somebody answering when something happens to you.
 
 ## The principle must operate outside combat
 
