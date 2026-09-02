@@ -17,7 +17,12 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { requireSect, getSect, SECTS } from '../../src/data/cultivation/sects.js';
+import {
+    requireSect,
+    getSect,
+    SECTS,
+    WITHDRAWN_POWERS
+} from '../../src/data/cultivation/sects.js';
 import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
 import {
     REGIONS,
@@ -53,16 +58,36 @@ const FOUNDATION_TOP = REALM_TIERS[1].ordinalEnd;
 const CORE_FORMATION_TOP = REALM_TIERS[2].ordinalEnd;
 
 /**
- * Factions with no roster here, and both reasons are principled:
- * a power that takes no applicants at all is a fact about the world rather
- * than a door, and a power whose front gate stands above Core Formation has
- * no members at human scale for a starting cultivator to meet.
+ * Factions with no roster here.
+ *
+ * This used to be `!s.recruits || s.admissionOrdinal > CORE_FORMATION_TOP`, and
+ * that was a conflation rather than an invariant. "We take no applicants" and
+ * "nobody works here" are different statements, and a `powerOrdinal` is by
+ * definition a claim that a specific person exists and will answer - so a rule
+ * that forbade a closed faction from having any members forbade it from having
+ * the person its own number names. It was also about to fight the design: the
+ * dao houses recruit by adoption only, and there are seven of them with
+ * rosters.
+ *
+ * What is left is one faction and one reason, and the reason is specific. The
+ * Hollow Court is four people, First through Fourth Seat; its three lower rungs
+ * have never been occupied; and the Seats are unnamed everywhere in the catalog
+ * on purpose, because `false-immortals.ts` rests on nobody outside those
+ * mountains having identified one. There is nobody in it to name who would not
+ * be a Seat. They are enumerated with their ordinals in `WITHDRAWN_POWERS`
+ * instead, and the ordinal assertion below reads them from there.
  */
 const NO_ROSTER = SECTS
-    .filter(s => !s.recruits || s.admissionOrdinal > CORE_FORMATION_TOP)
+    .filter(s => WITHDRAWN_POWERS[s.id])
     .map(s => s.id);
 
-/** Every faction a player could actually walk into. */
+/**
+ * Every faction a player could actually walk into.
+ *
+ * Still keyed on `recruits`, because that is the question `recruits` answers.
+ * It governs the admission path and nothing else; whether a faction is
+ * populated is asked separately, above and below.
+ */
 const RECRUITING = SECTS
     .filter(s => s.recruits && s.admissionOrdinal <= CORE_FORMATION_TOP)
     .map(s => s.id);
@@ -93,15 +118,31 @@ describe('members catalog', () => {
             .toEqual([]);
     });
 
-    it('resolves every factionId to a real faction that recruits', () => {
-        for (const member of MEMBERS.filter(m => !m.outlier)) {
+    it('resolves every factionId, and keeps a closed faction unjoinable rather than empty', () => {
+        for (const member of MEMBERS) {
             const sect = getSect(member.factionId);
             expect(sect, `${member.id} points at an unknown faction ${member.factionId}`)
                 .toBeDefined();
+        }
+        // The guard that used to live here asserted `sect.recruits` for every
+        // member, which said a faction with a closed gate had no people. It is
+        // gone; `recruits` governs the admission path and is asserted where the
+        // admission path is.
+        //
+        // What survives is the altitude rule, which is what the old guard was
+        // reaching for and got by accident. A faction whose FLOOR stands above
+        // Core Formation supplies nobody a beginner can stand level with, fight
+        // or apprentice to - four realms is not a rivalry - so everybody in one
+        // is a rank-holder you deal with and nothing else.
+        for (const member of MEMBERS) {
+            const sect = requireSect(member.factionId);
+            if (sect.admissionOrdinal <= CORE_FORMATION_TOP) continue;
             expect(
-                sect!.recruits,
-                `${member.id} is inside ${member.factionId}, which takes no applicants`
-            ).toBe(true);
+                member.role,
+                `${member.id} is inside ${member.factionId}, whose gate stands at ` +
+                `${sect.admissionOrdinal}, so they can be dealt with but not ` +
+                'joined, fought or learned from'
+            ).toBe('senior');
         }
     });
 
@@ -225,22 +266,39 @@ describe('members catalog', () => {
         }
     });
 
-    it('covers every faction that recruits, and none that does not', () => {
+    it('puts somebody inside every faction, and three inside every one you can join', () => {
         const counts = memberCountsByFaction();
+
+        // The floor for a faction a player can walk into is three, because a
+        // dossier with one name in it is a card that is not worth opening.
         for (const factionId of RECRUITING) {
             expect(
                 counts[factionId] ?? 0,
                 `${factionId} recruits and has nobody the player could meet`
             ).toBeGreaterThanOrEqual(3);
         }
+
+        // And the floor for EVERY faction is one, because `powerOrdinal` is
+        // defined as the strongest member who will actually answer, which is a
+        // claim that a person exists. A faction with a power figure and no
+        // person is a number naming nobody.
+        for (const sect of SECTS) {
+            if (NO_ROSTER.includes(sect.id)) continue;
+            expect(
+                counts[sect.id] ?? 0,
+                `${sect.id} stands at ${sect.powerOrdinal} and names nobody`
+            ).toBeGreaterThanOrEqual(1);
+        }
+
         for (const factionId of NO_ROSTER) {
             expect(
                 counts[factionId],
-                `${factionId} is not a door a cultivator can walk through and should have no roster`
+                `${factionId} is a withdrawn power and its people are enumerated ` +
+                'as seats in WITHDRAWN_POWERS rather than named here'
             ).toBeUndefined();
         }
-        expect(NO_ROSTER.length, 'the closed powers are still closed')
-            .toBeGreaterThanOrEqual(2);
+        expect(NO_ROSTER.length, 'the withdrawn power is still withdrawn')
+            .toBeGreaterThanOrEqual(1);
     });
 
     it('gives every faction somebody to learn from, on stated terms', () => {
@@ -431,7 +489,20 @@ describe('the strongest member is somebody you can meet', () => {
     it('names somebody at every faction ordinal, and allows a core above the pipeline', () => {
         for (const sect of SECTS) {
             const mine = MEMBERS.filter(m => m.factionId === sect.id);
-            if (mine.length === 0) continue;
+            if (mine.length === 0) {
+                // The one faction with no roster still has to put somebody on
+                // its own number. The Hollow Court does it with positions
+                // rather than names, on purpose, so the claim is asserted
+                // against the seats instead of against a member.
+                const withdrawn = WITHDRAWN_POWERS[sect.id];
+                expect(withdrawn, `${sect.id} names nobody anywhere`).toBeDefined();
+                expect(withdrawn.seats.length, `${sect.id} seat count`).toBe(withdrawn.count);
+                expect(
+                    Math.max(...withdrawn.seats.map(s => s.ordinal)),
+                    `${sect.id} seats nobody at its own ordinal`
+                ).toBe(sect.powerOrdinal);
+                continue;
+            }
             // At least one, not exactly one. Remnants come in cores: a sect
             // squatting in somebody else's compound frequently squats in it with
             // somebody else's elders, so a faction can carry a whole band its own
@@ -462,6 +533,97 @@ describe('the strongest member is somebody you can meet', () => {
         const ordinary = MEMBERS.filter(m => !m.outlier);
         const median = ordinary.map(m => m.realmOrdinal).sort((a, b) => a - b)[Math.floor(ordinary.length / 2)];
         expect(median).toBeLessThanOrEqual(20);
+    });
+});
+
+describe('a dao house is a family', () => {
+    /**
+     * A house does not recruit; it adopts, and adoption here is the name. So a
+     * house roll is one surname repeated, and the surname is the founder's -
+     * Yan Duo of the Ninefold Ledger, Cao Xun of the Narrow Hour, Lin Zhao of
+     * the Bound Word, Gu Yao of Held Names, Fu Chang of the Measured Span, Xu
+     * Ping of the Anchorhold. The Quiet Cut's founder is unrecorded and the Chu
+     * are known by nothing except that they are all Chu.
+     *
+     * The exception is a woman who married in and declined to change, and it is
+     * only legible while it stays rare - so this pins the count from above as
+     * well as asserting the rule.
+     */
+    const HOUSES = SECTS.filter(s => s.id.startsWith('house-'));
+
+    it('gives everybody on a house roll the house name', () => {
+        expect(HOUSES.length, 'the dao houses moved').toBeGreaterThanOrEqual(7);
+        const keptTheirOwn: string[] = [];
+
+        for (const house of HOUSES) {
+            const roll = MEMBERS.filter(m => m.factionId === house.id);
+            expect(roll.length, `${house.id} is a family with nobody in it`)
+                .toBeGreaterThanOrEqual(3);
+
+            // The surname the house actually uses, taken from the roll itself
+            // by majority so this test does not have to restate the mapping.
+            const tally = new Map<string, number>();
+            for (const m of roll) {
+                const surname = m.name.split(' ')[0];
+                tally.set(surname, (tally.get(surname) ?? 0) + 1);
+            }
+            const [surname, count] = [...tally.entries()]
+                .sort((a, b) => b[1] - a[1])[0];
+
+            expect(
+                count,
+                `${house.id} has ${tally.size} surnames on a roll of ${roll.length}, ` +
+                'which reads as a sect roster rather than a family'
+            ).toBeGreaterThanOrEqual(roll.length - 1);
+
+            for (const m of roll.filter(m => m.name.split(' ')[0] !== surname)) {
+                keptTheirOwn.push(`${m.name} (${house.id})`);
+                // Somebody carrying another name owes the reader the reason,
+                // in their own entry, in one clause.
+                expect(
+                    /married in/i.test(m.detail),
+                    `${m.id} does not carry the ${surname} and does not say why`
+                ).toBe(true);
+            }
+
+            // Nobody is left with a rank in the name field. A house head called
+            // "The Last Cut" beside a rank column that also says "The Last Cut"
+            // is a person with no name.
+            for (const m of roll) {
+                expect(
+                    m.name,
+                    `${m.id} has its rank in the name field`
+                ).not.toBe(m.rank);
+                expect(
+                    m.name.startsWith(m.rank),
+                    `${m.id} has its title baked into the name field`
+                ).toBe(false);
+            }
+        }
+
+        // Two, across seven houses. Three would stop reading as a refusal.
+        expect(
+            keptTheirOwn.length,
+            `too many kept their own name for it to mean anything: ${keptTheirOwn.join(', ')}`
+        ).toBeLessThanOrEqual(2);
+        expect(keptTheirOwn.length, 'nobody declined to be absorbed').toBeGreaterThanOrEqual(1);
+    });
+
+    it('agrees with the surname the house catalog declares', () => {
+        // `sects.ts` carries `houseSurname` on each dao house. The two files
+        // must not drift: a roll of Fus inside a house that says it is a house
+        // of Kes is a bug that no other assertion here would catch.
+        for (const house of HOUSES) {
+            const declared = (house as { houseSurname?: string }).houseSurname;
+            if (!declared) continue;
+            const roll = MEMBERS.filter(m => m.factionId === house.id);
+            const carrying = roll.filter(m => m.name.split(' ')[0] === declared);
+            expect(
+                carrying.length,
+                `${house.id} declares the ${declared} and its roll is ` +
+                `${roll.map(m => m.name).join(', ')}`
+            ).toBeGreaterThanOrEqual(roll.length - 1);
+        }
     });
 });
 

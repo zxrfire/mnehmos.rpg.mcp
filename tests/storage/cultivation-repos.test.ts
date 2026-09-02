@@ -12,7 +12,9 @@ import {
     Technique,
     TechniqueSchema,
     SATIETY_MAX,
-    INJURY_WEIGHTS
+    INJURY_WEIGHTS,
+    BLEED_OUT_TURNS,
+    LETHAL_UNTREATED_INJURIES
 } from '../../src/schema/cultivation';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms';
 import { formInsight, deepenInsight, isTraceable } from '../../src/engine/cultivation/understanding';
@@ -188,6 +190,11 @@ describe('cultivation migration', () => {
             'location', 'foundation_quality', 'immortal_status',
             'insights', 'achievements',
             'existence_state', 'soul_state', 'identity_continuity', 'body_id',
+            // The bleed clock. Without the column the field would round-trip
+            // to its default on every read, and a cultivator eighty-nine days
+            // into bleeding out would load as perfectly well - which is the
+            // same bug as origin_tier below, in the one place where it kills.
+            'bleeding_turns',
             // Where they were born. A schema field with a default and no column
             // behind it is this repository's most-repeated bug: Zod fills it on
             // every read, no save ever carries it, and the feature does not
@@ -218,6 +225,10 @@ describe('cultivation migration', () => {
         expect(legacy!.soulState).toBe('intact');
         expect(legacy!.identityContinuity).toBe(1);
         expect(legacy!.bodyId).toBeNull();
+        // Nobody was bleeding out before there was such a thing, and the row
+        // does not record when the third wound was taken, so zero is the only
+        // honest backfill.
+        expect(legacy!.bleedingTurns).toBe(0);
 
         // And the upgraded database accepts writes to the new columns.
         const achievement = sampleAchievement();
@@ -289,14 +300,14 @@ describe('CultivatorRepository', () => {
     });
 
     it('round-trips an origin, and reads a pre-origin row as born to nothing', () => {
-        repo.create(sampleCultivator({ id: 'cult-house', origin: 'great_house' }));
-        expect(repo.getById('cult-house')!.origin).toBe('great_house');
+        repo.create(sampleCultivator({ id: 'cult-house', origin: 'dao_house_bloodline' }));
+        expect(repo.getById('cult-house')!.origin).toBe('dao_house_bloodline');
 
         // The column is real, and the value in it is the value that was saved.
         const stored = db
             .prepare('SELECT origin_tier FROM cultivators WHERE id = ?')
             .get('cult-house') as { origin_tier: string };
-        expect(stored.origin_tier).toBe('great_house');
+        expect(stored.origin_tier).toBe('dao_house_bloodline');
 
         // A caller who never mentions an origin gets the overwhelming majority
         // of births, which is also the honest reading of a row written before
@@ -533,6 +544,46 @@ describe('CultivatorRepository', () => {
 
             // Treating an already-treated injury reports the wasted pill.
             expect(repo.treatInjury(minor.id)).toBeNull();
+        });
+
+        it('persists the bleed clock and stops it when a wound is closed', () => {
+            const wounds = [4, 5, 6].map(turn => repo.addInjury('cult-1', {
+                severity: 'serious',
+                source: 'qi_deviation',
+                description: 'Torn meridian.',
+                sustainedOnTurn: turn
+            }));
+            expect(repo.countUntreatedInjuries('cult-1')).toBe(LETHAL_UNTREATED_INJURIES);
+
+            // The clock is durable. A counter that reset on every read would
+            // mean nobody ever bled out.
+            repo.applyDeltas('cult-1', { bleedingTurns: BLEED_OUT_TURNS - 1 });
+            expect(repo.getById('cult-1')!.bleedingTurns).toBe(BLEED_OUT_TURNS - 1);
+
+            // Treating one wound drops the count under the threshold, and that
+            // stops the clock - in the same transaction, in the repository,
+            // because this is the only place an injury becomes treated.
+            repo.treatInjury(wounds[0].id, 12);
+            expect(repo.countUntreatedInjuries('cult-1')).toBe(LETHAL_UNTREATED_INJURIES - 1);
+            expect(repo.getById('cult-1')!.bleedingTurns).toBe(0);
+        });
+
+        it('leaves the clock alone while the count is still lethal', () => {
+            for (const turn of [1, 2, 3, 4]) {
+                repo.addInjury('cult-1', {
+                    severity: 'minor',
+                    source: 'combat',
+                    description: 'Torn meridian.',
+                    sustainedOnTurn: turn
+                });
+            }
+            repo.applyDeltas('cult-1', { bleedingTurns: 40 });
+
+            const oldest = repo.listInjuries('cult-1', { untreatedOnly: true })[0];
+            repo.treatInjury(oldest.id, 9);
+            // Four down to three is still three. One pill short is no pill.
+            expect(repo.countUntreatedInjuries('cult-1')).toBe(LETHAL_UNTREATED_INJURIES);
+            expect(repo.getById('cult-1')!.bleedingTurns).toBe(40);
         });
 
         it('surfaces injuries on the loaded cultivator', () => {

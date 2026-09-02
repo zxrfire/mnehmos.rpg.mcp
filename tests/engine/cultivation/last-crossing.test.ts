@@ -19,6 +19,7 @@ import {
 } from '../../../src/schema/cultivation.js';
 import {
     FALSE_IMMORTAL_LIFESPAN_YEARS,
+    FALSE_IMMORTAL_ORDINAL,
     FALSE_IMMORTAL_POWER_MULTIPLIER,
     LAST_CROSSING_ORDINAL,
     MAX_ORDINAL,
@@ -89,10 +90,12 @@ function sweep(n: number, overrides = {}) {
 }
 
 describe('the shape of the ladder above Grand Ascension', () => {
-    it('puts True Immortal above Tribulation Transcendence as a single rank', () => {
-        expect(MAX_ORDINAL).toBe(45);
+    it('puts the Immortal realm above Tribulation Transcendence as two rungs', () => {
+        expect(MAX_ORDINAL).toBe(46);
+        expect(FALSE_IMMORTAL_ORDINAL).toBe(45);
         expect(LAST_CROSSING_ORDINAL).toBe(44);
-        expect(rankName(45)).toBe('True Immortal');
+        expect(rankName(45)).toBe('False Immortal');
+        expect(rankName(46)).toBe('True Immortal');
         expect(rankName(44)).toBe('Tribulation Transcendence Perfection');
         expect(isRealmBoundary(44)).toBe(true);
         expect(isLastCrossing(44)).toBe(true);
@@ -135,9 +138,10 @@ describe('power and lifespan ordering', () => {
     });
 
     it('ranks a False Immortal below a True Immortal', () => {
-        expect(FALSE_IMMORTAL_POWER_MULTIPLIER).toBeLessThan(powerMultiplierForOrdinal(45));
-        expect(effectivePowerMultiplier(44, 'false_immortal')).toBeLessThan(
-            effectivePowerMultiplier(45, 'true_immortal')
+        expect(FALSE_IMMORTAL_POWER_MULTIPLIER).toBeLessThan(powerMultiplierForOrdinal(46));
+        expect(powerMultiplierForOrdinal(45)).toBeLessThan(powerMultiplierForOrdinal(46));
+        expect(effectivePowerMultiplier(45, 'false_immortal')).toBeLessThan(
+            effectivePowerMultiplier(46, 'true_immortal')
         );
     });
 
@@ -150,7 +154,7 @@ describe('power and lifespan ordering', () => {
     });
 
     it('gives a True Immortal a lifespan that stops meaning anything', () => {
-        const span = effectiveLifespanYears(45, 'true_immortal');
+        const span = effectiveLifespanYears(46, 'true_immortal');
         expect(span).toBe(UNBOUNDED_LIFESPAN_YEARS);
         // Finite on purpose: Infinity serialises to null and would arrive
         // downstream as "no lifespan recorded".
@@ -161,8 +165,8 @@ describe('power and lifespan ordering', () => {
         const ladder = [
             powerMultiplierForOrdinal(40),
             powerMultiplierForOrdinal(44),
-            effectivePowerMultiplier(44, 'false_immortal'),
-            powerMultiplierForOrdinal(45)
+            powerMultiplierForOrdinal(45),
+            powerMultiplierForOrdinal(46)
         ];
         for (let i = 1; i < ladder.length; i++) {
             expect(ladder[i]).toBeGreaterThan(ladder[i - 1]);
@@ -193,11 +197,13 @@ describe('the three outcomes', () => {
         }
     });
 
-    it('reports False Immortal as neither success nor failure, and no rank change', () => {
+    it('reports False Immortal as neither success nor failure, and one rung short', () => {
         for (const result of swept.falseImmortal) {
             expect(result.outcome).toBe('false_immortal');
-            // The ordinal does not move. They did not arrive anywhere.
-            expect(result.toOrdinal).toBe(LAST_CROSSING_ORDINAL);
+            // They arrive, one rung below where they were reaching. The rung
+            // above is legal, occupied, and permanently shut to them.
+            expect(result.toOrdinal).toBe(FALSE_IMMORTAL_ORDINAL);
+            expect(result.toOrdinal).toBe(MAX_ORDINAL - 1);
             expect(result.fromOrdinal).toBe(LAST_CROSSING_ORDINAL);
             expect(result.tribulation?.survived).toBe(true);
         }

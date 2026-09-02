@@ -27,6 +27,18 @@ import { KnowledgeGate } from '../../src/web/knowledge';
 import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support';
 import { makeGame, engineCalls, ScriptedProvider } from './harness';
+import { drawBirth } from '../../src/engine/birth/birth';
+
+/**
+ * Where the default harness seed births somebody.
+ *
+ * Derived rather than named. These fixtures place people BESIDE the player,
+ * and beside is a real condition - with birth origins drawn from the seed, a
+ * hardcoded village puts the NPCs in a different county and the conversation
+ * this file is about never happens.
+ */
+const HOME_PLACE = drawBirth('test-seed').place.name;
+
 
 const LOCAL_SECT = SECTS
     .filter(sect => sect.recruits)
@@ -35,7 +47,23 @@ const LOCAL_SECT = SECTS
         (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id) ? sect : best);
 
 /** Put somebody in the same place as the player. */
-function placePerson(db: any, id: string, name: string, ordinal: number, where = 'Sweptground') {
+/**
+ * Wherever the player actually is.
+ *
+ * Read off the row rather than named. `HOME_PLACE` is only the birthplace of
+ * one seed, and these tests use several - so a constant silently put every
+ * witness in a different province from the person they were meant to be
+ * standing beside, which reads as a channel that stopped working.
+ */
+function playerPlace(db: any): string {
+    const row = db
+        .prepare("SELECT location FROM cultivators WHERE kind = 'pc' ORDER BY rowid DESC LIMIT 1")
+        .get() as { location: string | null } | undefined;
+    return row?.location ?? HOME_PLACE;
+}
+
+function placePerson(db: any, id: string, name: string, ordinal: number, where?: string) {
+    where = where ?? playerPlace(db);
     const now = new Date().toISOString();
     db.prepare(`
         INSERT INTO cultivators (
@@ -150,12 +178,16 @@ describe('the engine picks the name, and writes it down', () => {
         // monologue for the player's benefit is the failure this avoids.
         placePerson(db, 'npc-one', 'The First', 5);
         for (let i = 0; i < 30; i++) {
-            expect(offerHearing({ repos, gate, cultivator, run, occasion: `solo-${i}` })).toBeNull();
+            // Somebody passing through is a different device and is allowed to
+            // turn up wherever there is a road. What must not happen is two
+            // voices behind a wall when there is only one person here.
+            const solo = offerHearing({ repos, gate, cultivator, run, occasion: `solo-${i}` });
+            expect(solo?.mode).not.toBe('overheard');
         }
 
         placePerson(db, 'npc-two', 'The Second', 5);
         let heard = null;
-        for (let i = 0; i < 60 && !heard; i++) {
+        for (let i = 0; i < 120 && heard?.mode !== 'overheard'; i++) {
             heard = offerHearing({ repos, gate, cultivator, run, occasion: `pair-${i}` });
         }
         expect(heard).not.toBeNull();
@@ -173,9 +205,10 @@ describe('the engine picks the name, and writes it down', () => {
         const run = game.state().run as never;
 
         let heard = null;
-        for (let i = 0; i < 60 && !heard; i++) {
+        for (let i = 0; i < 120 && heard?.mode !== 'overheard'; i++) {
             heard = offerHearing({ repos, gate, cultivator, run, occasion: `wall-${i}` });
         }
+        expect(heard?.mode).toBe('overheard');
         recordHearing(gate, cultivator, run, heard!);
 
         const record = gate.awareness(cultivator.id)
@@ -204,6 +237,10 @@ describe('the whole path, through act', () => {
             const gate = new KnowledgeGate(db);
             const overheard = gate.awareness(cultivator.id)
                 .filter(r => r.sourceKind === 'overheard');
+            // The same call is emitted for a name somebody said on their way
+            // through, which is a different channel with a different
+            // provenance. Only the wall is under test here.
+            if (overheard.length === 0) continue;
 
             expect(overheard.length).toBeGreaterThan(0);
             expect(learnCall.summary).toMatch(/overheard/i);
@@ -230,7 +267,10 @@ describe('the whole path, through act', () => {
 
             await game.act('I look around.');
             const user = provider.calls.at(-1)!.messages.find(m => m.role === 'user')!.content;
-            if (!user.includes('SPOKEN IN THIS SCENE')) continue;
+            // A name said by somebody passing through gets the SAID ALOUD
+            // block, which is the correct licence for it and not what this
+            // test is about.
+            if (!user.includes('SPOKEN IN THIS SCENE - OVERHEARD')) continue;
 
             expect(user).toMatch(/SPOKEN IN THIS SCENE - OVERHEARD/);
             expect(user).toMatch(/ONLY inside/);
@@ -248,7 +288,7 @@ describe('the whole path, through act', () => {
     it('sends no licence block when nobody said anything', () => {
         const message = composeNarrationUser(
             { headline: 'x', lines: ['y'], structure: [], prose: '' },
-            { place: 'Sweptground', ambient: 'thin', awareness: [], hearing: null }
+            { place: HOME_PLACE, ambient: 'thin', awareness: [], hearing: null }
         );
         expect(message).not.toContain('SPOKEN IN THIS SCENE');
     });

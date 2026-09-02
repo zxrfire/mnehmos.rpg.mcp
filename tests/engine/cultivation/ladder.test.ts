@@ -1,5 +1,5 @@
 /**
- * The 45-rank ladder and the fixed talent draw.
+ * The 47-rank ladder and the fixed talent draw.
  *
  * These files are the contract the rest of the engine is written against, so
  * the assertions here are about the SHAPE of the curves - where boundaries
@@ -10,6 +10,9 @@
 import {
     MAX_ORDINAL,
     TOTAL_RANKS,
+    FALSE_IMMORTAL_ORDINAL,
+    TRUE_IMMORTAL_ORDINAL,
+    LAST_CROSSING_ORDINAL,
     FOUNDATION_ORDINAL,
     REALM_TIERS,
     baseBreakthroughChance,
@@ -35,7 +38,7 @@ import { CultivationRNG } from '../../../src/engine/cultivation/rng.js';
 const ALL_ORDINALS = Array.from({ length: TOTAL_RANKS }, (_, i) => i);
 
 describe('realm ladder', () => {
-    it('covers 0..45 with no holes and no overlaps', () => {
+    it('covers 0..46 with no holes and no overlaps', () => {
         for (const ordinal of ALL_ORDINALS) {
             expect(() => realmForOrdinal(ordinal)).not.toThrow();
         }
@@ -44,10 +47,12 @@ describe('realm ladder', () => {
             0
         );
         expect(covered).toBe(TOTAL_RANKS);
-        // 45, not 44: Tribulation Transcendence is the approach to the Lid and
-        // True Immortal sits above it as a single rank.
-        expect(MAX_ORDINAL).toBe(45);
-        expect(TOTAL_RANKS).toBe(46);
+        // Tribulation Transcendence is the approach to the Lid; the Immortal
+        // realm sits above it as two rungs, one for each way the single
+        // crossing can land.
+        expect(MAX_ORDINAL).toBe(46);
+        expect(TOTAL_RANKS).toBe(47);
+        expect(rankName(45)).toBe('False Immortal');
         expect(rankName(MAX_ORDINAL)).toBe('True Immortal');
     });
 
@@ -68,16 +73,26 @@ describe('realm ladder', () => {
         }
     });
 
-    it('grows progress cost super-linearly within a realm', () => {
-        // Inside a realm, each step costs strictly more than the last.
-        for (const tier of REALM_TIERS) {
-            for (let o = tier.ordinalStart + 1; o <= tier.ordinalEnd; o++) {
-                if (isRealmBoundary(o) || isRealmBoundary(o - 1)) continue;
-                expect(progressRequiredForOrdinal(o)).toBeGreaterThan(
-                    progressRequiredForOrdinal(o - 1)
-                );
-            }
+    it('never costs less to advance from a higher rung than from a lower one', () => {
+        // Across the WHOLE climbable ladder, boundaries included. This used to
+        // skip them, which is how the curve came to drop by half at every realm
+        // change without anything reporting it: the boundary rung carried a
+        // 2.5x crossing tax that the next rung did not, so a cultivator got
+        // cheaper to advance as they got stronger, nine times over.
+        for (let o = 1; o <= LAST_CROSSING_ORDINAL; o++) {
+            const here = progressRequiredForOrdinal(o);
+            const below = progressRequiredForOrdinal(o - 1);
+            expect(here, `${rankName(o)} costs less than ${rankName(o - 1)}`)
+                .toBeGreaterThan(below as number);
         }
+    });
+
+    it('prices nothing above the Lid in qi at all', () => {
+        // Immortal qi is not this currency. A number here would be an exchange
+        // rate that does not exist, so there is no number.
+        expect(progressRequiredForOrdinal(FALSE_IMMORTAL_ORDINAL)).toBeNull();
+        expect(progressRequiredForOrdinal(TRUE_IMMORTAL_ORDINAL)).toBeNull();
+        expect(progressRequiredForOrdinal(LAST_CROSSING_ORDINAL)).not.toBeNull();
     });
 
     it('makes a realm boundary far less survivable than the sub-rank below it', () => {
@@ -100,7 +115,11 @@ describe('realm ladder', () => {
         for (let o = 1; o <= MAX_ORDINAL; o++) {
             const here = lifespanForOrdinal(o);
             const below = lifespanForOrdinal(o - 1);
-            if (isRealmBoundary(o - 1)) expect(here).toBeGreaterThan(below);
+            // The one exception, and it is the point of the realm: the Immortal
+            // rungs are two landings of one crossing rather than two steps of a
+            // climb, and only one of them is unbounded.
+            if (o === TRUE_IMMORTAL_ORDINAL) expect(here).toBeGreaterThan(below);
+            else if (isRealmBoundary(o - 1)) expect(here).toBeGreaterThan(below);
             else expect(here).toBe(below);
         }
     });
@@ -108,13 +127,15 @@ describe('realm ladder', () => {
     it('summons heavenly lightning on every crossing INTO Tribulation Transcendence', () => {
         // The test is on the destination, not the origin. Attempting from 40
         // lands at 41 and therefore summons lightning - that crossing is the
-        // whole point of the realm's name. 44 is the summit and never attempts.
+        // whole point of the realm's name. The range ends at the last crossing:
+        // above it nothing attempts anything, because the Lid is shut either way.
         for (const ordinal of ALL_ORDINALS) {
-            const expected = ordinal >= 40 && ordinal < MAX_ORDINAL;
+            const expected = ordinal >= 40 && ordinal <= LAST_CROSSING_ORDINAL;
             expect(triggersHeavenlyTribulation(ordinal)).toBe(expected);
         }
         expect(triggersHeavenlyTribulation(39)).toBe(false);
         expect(triggersHeavenlyTribulation(40)).toBe(true);
+        expect(triggersHeavenlyTribulation(FALSE_IMMORTAL_ORDINAL)).toBe(false);
         expect(triggersHeavenlyTribulation(MAX_ORDINAL)).toBe(false);
     });
 
