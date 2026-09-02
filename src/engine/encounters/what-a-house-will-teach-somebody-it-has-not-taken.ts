@@ -253,7 +253,7 @@ export function takesGuests(factionId: string): boolean {
  * A door a house states, below its membership bar - and it is this same
  * position under the catalog's older name.
  *
- * `SECT_ADMISSION.probationOrdinal` has been in the catalog from early on, with
+ * `SECT_ADMISSION.guestFromOrdinal` has been in the catalog from early on, with
  * a comment saying it "wants lifting into the schema as a proper rank below
  * index 0 by whoever owns that". **It does not want that, and this file is the
  * answer to it.** A rank below index 0 would put the person on the house
@@ -328,9 +328,9 @@ export interface PublishedDoor {
 /** The door this house publishes below its membership bar, or null. */
 export function publishedDoorOf(factionId: string): PublishedDoor | null {
     const doors = doorsOf(factionId);
-    if (!doors || doors.probationOrdinal === null) return null;
+    if (!doors || doors.guestFromOrdinal === null) return null;
     return {
-        atOrdinal: doors.probationOrdinal,
+        atOrdinal: doors.guestFromOrdinal,
         membershipOrdinal: doors.membershipOrdinal,
         theOnlyOneInTheWorld: housesWithTwoDoors().length === 1,
         aFavourBuysNothingHere: favourStanceOf(factionId)?.answer === 'no bar to speak of'

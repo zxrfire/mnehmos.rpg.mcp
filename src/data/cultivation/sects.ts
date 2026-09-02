@@ -73,7 +73,7 @@ export interface SectAdmission {
      * `rankRealmBand` derives every rank band from `admissionOrdinal` and
      * collapsing the two would slide the whole ladder downward.
      */
-    probationOrdinal?: number;
+    guestFromOrdinal?: number;
     /** Engine-checkable minimums. Undefined means the sect does not care. */
     minInsight?: number;
     minMight?: number;
@@ -648,7 +648,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ranks: ['Sword Servant', 'Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Sword Elder', 'Pavilion Master'],
         // The membership bar, and it is not the door. The Pavilion takes
         // uncultivated mortals onto probation at ordinal 0 and converts almost
-        // none of them; `SECT_ADMISSION.probationOrdinal` carries that floor,
+        // none of them; `SECT_ADMISSION.guestFromOrdinal` carries that floor,
         // because `rankRealmBand` derives every band here from this number and
         // moving it to 0 would demote the entire ladder. See AZURE_CLOUD_INTAKE.
         admissionOrdinal: 3,
@@ -2927,7 +2927,7 @@ export const DAO_HOUSE_DISPUTES: readonly DaoHouseDispute[] = [
 export const SECT_ADMISSION: Record<string, SectAdmission> = {
     'sect-azure-cloud-pavilion': {
         minOrdinal: 3,
-        probationOrdinal: 0,
+        guestFromOrdinal: 0,
         minMight: 2,
         preferredRoots: ['single_metal', 'dual_metal_wood'],
         requirement:
