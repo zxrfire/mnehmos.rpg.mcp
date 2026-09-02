@@ -99,7 +99,7 @@ import type { RegardBand } from '../../schema/cultivation.js';
 import type { EventScale, HistoricalEventKind } from '../../engine/world/history.js';
 
 // ─────────────────────────────────────────────────────────────────────────
-// THE RULING
+// THE TIER
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
