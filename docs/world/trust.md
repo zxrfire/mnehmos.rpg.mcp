@@ -260,11 +260,36 @@ in which case the house's art survived, which is what the check was asking — *
 taught it to them, and the art has leaked, which is a graver finding than the deception it was
 meant to cover.** The forgery and the truth are almost the same fact.
 
+**But demonstration only works if you know what it is supposed to look like.** That gate is
+absolute and it applies to the strongest check exactly as it applies to the weakest. Watching
+somebody perform a house's art tells a stranger **nothing whatsoever** unless they hold a
+reference for it — and an art is precisely the thing houses keep from strangers.
+
+**So the hierarchy does not escape the two axes; it runs back through them.** Realm decides
+whether you can perceive the demonstration at all. **Worldview decides whether you know what you
+just watched.** Both are needed, and having only the first is the recluse's failure arriving at
+the top of the ladder rather than the bottom of it.
+
+Which means the rule from earlier holds with no exceptions anywhere:
+
+> **Every check, including the strongest one, is worth what this particular reader cannot verify.**
+
+**And it puts a real cost on secrecy.** A house that guards its arts closely is harder to
+impersonate *and* harder to confirm — **nobody outside can vouch for its own disciples**, so its
+people fall back on tokens and names like everybody else, which are the weak checks. A house
+whose art is widely recognised has traded some security for a verification its members can carry
+anywhere. **Neither is straightforwardly better**, and it is a choice a house has made.
+
+**It is also the precise reason a woken ancestor is the authority she is.** She is the rare
+reader holding *both* axes for her own era: the realm to read a demonstration exactly, and a
+first-hand memory of what it is supposed to look like. **Not because the art check is
+unconditional — it is not — but because she is one of the few people who can actually run it.**
+
 So the checks fall into an order, and each fails in its own way:
 
 | Check | What it proves | How it fails |
 |---|---|---|
-| **The arts** | what a house *is* | only by somebody genuinely learning them — which is itself a leak |
+| **The arts** | what a house *is* | a reader with no idea what it should look like — and only then by somebody genuinely learning them, which is itself a leak |
 | **The old objects** | what a house *held* | relics change hands; possession is not descent |
 | **The names on the roll** | which lines *continued* | names are not exclusive, and lines end innocently |
 | **The faces** | nothing | everybody is new; that is the calendar, not a signal |
