@@ -2512,13 +2512,14 @@ export interface MeleeResult {
      * striker's rated object, so a caller reads breakages off this list rather
      * than off a second field.
      *
-     * KNOWN GAP, stated rather than left to be found: unlike
-     * `resolveConfrontation`, a melee does NOT re-price a combatant after their
-     * weapon breaks, so somebody who loses a blade in round one goes on being
-     * priced as though they were holding it. The two-party path re-assesses;
-     * this one carries its members' `CombatantPower` through the round loop and
-     * would need the same treatment. It costs nothing today because nothing that
-     * builds a melee passes a weapon.
+     * The gap that used to be stated here is closed. A melee now re-prices a
+     * combatant the moment their object goes, exactly as `resolveConfrontation`
+     * does: the weapon comes off the input, `assessPower` runs again, and the
+     * rest of the fight - including the second person a wide art reaches in the
+     * same action - is fought at the new figure. It cost nothing to fix and it
+     * costs nothing to have, because no caller in `src/` builds a melee with a
+     * weapon in it yet; what it buys is that the day one does, the two paths do
+     * not quietly disagree about "bring a bad weapon and you brought nothing".
      */
     exchanges: ExchangeRecord[];
     /** Final HP, keyed by combatant id. The caller writes these. */
@@ -2734,10 +2735,16 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
             striker.everEngaged = true;
 
             const side = sides[striker.sideIndex];
-            const strikePower = striker.power;
 
             for (const target of targets) {
                 if (target.state !== 'standing') continue;
+
+                // Re-read every time, never captured. A wide art resolves once
+                // per person it lands on, so an object that breaks against the
+                // first of them is already gone against the second - the same
+                // rule `resolveConfrontation` states as "a weapon lost on the
+                // first swing of a round is already gone on the second".
+                const strikePower = striker.power;
 
                 // Aegis, read before the dice, the way tradition is. Per person,
                 // because an art that lands on a place still meets each of them
@@ -2803,6 +2810,17 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
                 // whole of why fifteen breaths is enough to end a faction.
                 if (!result.nullified && result.advantage >= OVERWHELMING_ADVANTAGE) {
                     hp[target.input.id] = 0;
+                }
+
+                // The object went. Take it off the person who was swinging it
+                // and price them again, so the rest of the melee is fought
+                // without it. Identical to the two-party path, deliberately:
+                // this used to be a stated gap, and a combatant who lost a
+                // blade in round one went on being priced as though they held
+                // it for every round after.
+                if (result.weapon?.broke) {
+                    striker.input = { ...striker.input, weapon: null, artifactOrdinal: undefined };
+                    striker.power = assessPower(striker.input, powerCtx);
                 }
 
                 exchanges.push({

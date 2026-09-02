@@ -81,3 +81,9 @@ tests/_probe/
 wall*.txt
 origin-report.txt
 *-report.txt
+
+# Machine-specific launcher (Ollama model, ports)
+run-game.ps1
+
+# Machine-specific browser-preview launcher (ports, local paths)
+.claude/launch.json

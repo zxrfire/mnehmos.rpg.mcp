@@ -64,6 +64,23 @@ export type ShameCause =
     | 'broke_an_oath'
     /** Ran, and was seen to. */
     | 'fled_a_fight'
+    /**
+     * Something grave they did, that the people near them know about.
+     *
+     * ONE ROW FOR EVERY GRAVE DEED, and it must stay that way. This is not a
+     * catalogue of crimes and there is no second row coming for the next one
+     * somebody thinks of - `what-a-deed-leaves.ts` prices a deed by what it
+     * cost rather than by what it was called, and hands the result here without
+     * ever reading the cause. What the deed actually was is on the obligation
+     * record, in the ledger's own vocabulary, and in the description.
+     *
+     * The reason it belongs in this module at all is `heldBy`. A grave wrong
+     * whose short list is the person it was done to and nobody else is a wrong
+     * the province has no opinion about, which is exactly how somebody can be
+     * known for what they are by the people around them and perfectly
+     * respectable at a distance.
+     */
+    | 'known_for_a_grave_deed'
     | 'other';
 
 export type ShameStatus = 'carried' | 'lifted';

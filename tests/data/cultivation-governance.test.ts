@@ -821,8 +821,18 @@ describe('a seal cuts both ways', () => {
 });
 
 /** The doc comment IS the artefact here, so it is what gets asserted on. */
+/**
+ * The house catalog AND the ancestral roll, which used to be one file.
+ *
+ * The roll and the ten types describing an ancestor were lifted into
+ * `the-ancestors-a-house-still-names.ts` - over a quarter of `sects.ts`, filed
+ * under a name somebody looking for ancestry would actually open. The
+ * assertions below are about prose that has to survive, not about which file
+ * holds it, so this reads both rather than pinning the split in place.
+ */
 function readSects(): string {
-    return readFileSync('src/data/cultivation/sects.ts', 'utf-8');
+    return readFileSync('src/data/cultivation/sects.ts', 'utf-8')
+        + readFileSync('src/data/cultivation/the-ancestors-a-house-still-names.ts', 'utf-8');
 }
 
 describe('the third apex: young, visible, and holding outright', () => {
@@ -1027,13 +1037,13 @@ describe('the Azure Cloud intake', () => {
     });
 
     it('keeps the door at the bottom without moving the membership bar', () => {
-        expect(admission.probationOrdinal).toBe(0);
+        expect(admission.guestFromOrdinal).toBe(0);
         expect(admission.minOrdinal).toBe(3);
         expect(admission.minOrdinal).toBe(sect.admissionOrdinal);
         expect(admission.requirement).toMatch(/never moved/i);
         expect(admission.requirement).toMatch(/wide intake, narrow conversion/i);
         // Nobody else in the catalog has a probation floor.
-        const withProbation = SECTS.filter(x => getSectAdmission(x.id)?.probationOrdinal !== undefined);
+        const withProbation = SECTS.filter(x => getSectAdmission(x.id)?.guestFromOrdinal !== undefined);
         expect(withProbation.map(x => x.id)).toEqual([AZURE_CLOUD_INTAKE.factionId]);
     });
 

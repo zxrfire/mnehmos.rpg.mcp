@@ -350,6 +350,14 @@ export const IMMORTAL_MOTIVE = {
 // THE ARCHIVE IS THE CLAIM
 // A sect that has lost its ancestor's name has severed the only thing that
 // would ever have made them answer.
+//
+// `theCounterExample` below is the Hollow Court, and it is the design record
+// for why the Court's records matter. Somebody looking for exactly this
+// searched `docs/` for it, found nothing, invented an answer and relayed it to
+// another agent before it was retracted. The doc half is
+// `docs/world/past-the-ceiling.md`, "The Hollow Court is the exception to all
+// of it"; the roster half is `hollow-court-roster.ts`. Change one, read the
+// others. Indexed in `docs/world/INDEX.md`.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const ARCHIVE_AS_CLAIM = {

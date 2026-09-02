@@ -145,7 +145,26 @@ const SUBJECTS: readonly Subject[] = [
         ordinalKey: 'ordinal',
         nameKey: 'name',
         words: ['grave', 'tomb', 'trial', 'site', 'cave', 'ruin', 'inheritance']
+    },
+    {
+        // "give me knowledge of every sect", "I know every location". One
+        // subject rather than two, because a line naming both knowledge AND a
+        // register is one request and splitting it would refuse the plainest
+        // way of saying it. Which register is read off the same words below.
+        action: 'grant_knowledge',
+        ordinalKey: 'ordinal',
+        nameKey: null,
+        words: [
+            'knowledge', 'locations', 'location', 'sects', 'sect', 'houses',
+            'house', 'places', 'names'
+        ]
     }
+];
+
+/** Which register a knowledge sentence named, when it named one. */
+const KNOWLEDGE_REGISTER: ReadonlyArray<[string, 'place' | 'sect']> = [
+    ['sects', 'sect'], ['sect', 'sect'], ['houses', 'sect'], ['house', 'sect'],
+    ['locations', 'place'], ['location', 'place'], ['places', 'place']
 ];
 
 /**
@@ -377,6 +396,15 @@ export function readAdminSentence(line: string): SentenceReading | SentenceRefus
     because.push(
         `"${[...matchedWords].join('", "')}" is a ${subject.action.replace(/_/g, ' ')} subject`
     );
+
+    // ── Which register, for a knowledge sentence. ─────────────────────────
+    if (subject.action === 'grant_knowledge') {
+        const register = KNOWLEDGE_REGISTER.find(([word]) => matchedWords.has(word));
+        if (register) {
+            args.kind = register[1];
+            because.push(`"${register[0]}" names the ${register[1]} register`);
+        }
+    }
 
     // ── The rung. ─────────────────────────────────────────────────────────
     const rung = ordinalNamed(clean);

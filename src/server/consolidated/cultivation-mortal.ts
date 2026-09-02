@@ -54,12 +54,9 @@ import {
     mortalAttitudeFor,
     workExistingFor,
     workWithheldFrom,
-    type Occupation,
-    type Settlement
+    type Occupation
 } from '../../data/cultivation/mortal-world.js';
 import {
-    HOME_REGION_ID,
-    REGIONS,
     canAdvanceHere,
     localPrice,
     localRankName,
@@ -79,6 +76,7 @@ import { untreatedInjuryCount } from '../../engine/cultivation/injuries.js';
 import { CRIPPLING_UNTREATED_INJURIES } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
 import { RATION_COST_STONES } from './cultivation-manage.js';
+import { standingOf, type Standing } from './where-a-cultivator-is-standing.js';
 import {
     DAYS_PER_MONTH,
     addToPouch,
@@ -148,46 +146,13 @@ export const ForageSchema = z.object({
 // WHERE THEY ARE STANDING
 // ═══════════════════════════════════════════════════════════════════════════
 
-export interface Standing {
-    regionId: string;
-    regionName: string;
-    /** Null when the place is not one the gazetteer names. */
-    settlementKind: Settlement['kind'] | null;
-    placeName: string | null;
-}
-
-/**
- * Match a free-text location against the gazetteer.
- *
- * The cultivator's `location` is a string by design - the engine holds no map -
- * so this is a name match and nothing cleverer. An unrecognised place is not an
- * error: it is a road, a cave or a hillside, and the honest answer is that
- * there is no market there.
- */
-export function standingOf(cultivator: Cultivator): Standing {
-    const needle = (cultivator.location ?? '').trim().toLowerCase();
-    for (const region of REGIONS) {
-        for (const place of region.places) {
-            if (place.name.toLowerCase() !== needle) continue;
-            const kind = place.kind === 'waystation' || place.kind === 'site'
-                ? null
-                : (place.kind as Settlement['kind']);
-            return {
-                regionId: region.id,
-                regionName: region.name,
-                settlementKind: kind,
-                placeName: place.name
-            };
-        }
-    }
-    const home = requireRegion(HOME_REGION_ID);
-    return {
-        regionId: home.id,
-        regionName: home.name,
-        settlementKind: null,
-        placeName: null
-    };
-}
+// It lives in `where-a-cultivator-is-standing.ts` now, and is re-exported here
+// so that every existing caller's import line is untouched. It moved because it
+// is the one thing in this module a handler on the far side of the tool set
+// wants - a region id, to price something with - and reaching it through this
+// file drags in the `cultivation-manage` cycle. That file's header has the
+// whole account, including the boot failure it produced.
+export { standingOf, type Standing };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // WORK

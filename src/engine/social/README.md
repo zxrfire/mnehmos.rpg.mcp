@@ -90,6 +90,13 @@ be.
 ledger on death via the world layer's `heirsOf` - see
 [`../world/README.md`](../world/README.md).
 
+**The cause lists are data and nothing in the engine branches on one.** They keep growing,
+and the growth is harmless only while that stays true:
+`../social-leverage/what-a-deed-leaves.ts` prices a deed from what it *cost*, whether it
+comes back, and whether a word was given first - never from which word is on it - so a
+wrong nobody has thought of yet arrives with a cost and gets a weight without anybody
+editing a table. A `switch` on a cause that decides an outcome is a bug, not a feature.
+
 ### Karma is a relationship graph, not a score
 
 Karma is modelled as **persistent relationships between entities** - favour, debt,
@@ -268,7 +275,59 @@ travellers.ts     who came through, and which names they brought with them
 secrets.ts        per-holder secret lifecycle, extending secret.repo.ts
 shame.ts          a fact about somebody that other people hold and that lowers
                   them - neither a grudge nor a secret
+how-near-you-stand-to-somebody.ts
+                  how near one person stands to another. The only thing that
+                  decides whether they get the story or the fact
+what-is-said-about-somebody.ts
+                  reputation, derived at read time and never stored
 ```
+
+## Reputation is derived, and the gap between it and the ledger is the feature
+
+The two halves are deliberately not the same thing:
+
+- **The ledger is what happened.** Grudges, favours, oaths. The engine knows these for
+  certain and they never move.
+- **Reputation is what is said.** It is downstream of the ledger and *not equal to it*,
+  because it travels through people, and people are partial, ignorant, loyal and afraid.
+
+There is **no reputation column, no score, and no `reputationType` field**, and there must
+never be one. A written reputation goes stale the instant somebody does something and then
+lies with a straight face - the failure AGENTS.md records under *a field nothing writes*,
+whose own conclusion is to prefer deriving where the answer moves.
+
+### Truth depends on proximity
+
+One asymmetry produces the whole model, and nothing is enumerated:
+
+> At a distance you get the story, and **from out there you cannot tell whether it is
+> true.** Close in you get the fact. Evidence does not travel; it stays where it happened.
+
+So the deserved good name, the fake one, the decent person nobody speaks well of, and the
+wrongdoer whose own house has his measure are the *same function* with the observer moved.
+`whatIsSaidAbout` runs two passes that are never allowed to inform each other - what
+reached them, and what they stand near enough to hold - and reads the gap off the two
+answers. Nothing checks a rumour against the ledger, which is what keeps **slander real**:
+a bad report is not evidence of a bad deed, and the only cure is somebody getting near
+enough to know better.
+
+Proximity is **social first and geographic second**, and it is something a player can
+change. Learning the truth about somebody is not a roll and needs no investigation verb: it
+is getting nearer to the people who are already near them, which is the courtesy-and-tie
+machinery. **The investigation system is the social system.**
+
+### Concealment and a fake good name are different fields
+
+- **Concealment** is about who *holds* a fact - `heldBy` on a shame, `participants` on an
+  obligation. Few know; nothing is said either way.
+- **A fake good name** is about what is actively *said*. Praise, in circulation, that is
+  not earned. That needs speech, not silence.
+
+Either can occur without the other, so one field could not carry both, and they are kept
+apart on purpose. Note the difference in how the two record types answer *who knows*: a
+shame carries an explicit short list and that list is the whole of the fact, while an
+obligation does not - its parties hold it and everybody **near** them can find out, which
+is how a house comes to know what one of its own did without anybody having published it.
 
 `shame.ts` is the third thing this layer keeps about a person and it is worth saying why
 it is not one of the other two. A grudge is between two parties. A secret is a fact whose

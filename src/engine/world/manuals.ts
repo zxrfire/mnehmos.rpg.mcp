@@ -282,6 +282,25 @@ function shelvesOf(state: WorldState): Map<string, Manual[]> {
     return byFaction;
 }
 
+// ── THE FOUR BANDS A SHELF FALLS INTO ────────────────────────────────────
+//
+// These were four literals inside `copiesOf` and are named because a second
+// consumer arrived that has to mean the same thing by "the material a house
+// keeps in quantity": guest studentship, in
+// `src/engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.ts`.
+// A house can lend out what it holds eight to twenty copies of and cannot lend
+// out what it holds one of, and that is one fact about the shelf rather than
+// two rules that would drift.
+
+/** The primer a house reproduces on a schedule and hands to everyone. */
+export const INTAKE_PRIMER_CAP = 13;
+/** The ordinary working road. Several copies; a house can spare one. */
+export const WORKING_ROAD_CAP = 21;
+/** The inner shelf. Two or three copies, and the house knows where each is. */
+export const INNER_SHELF_CAP = 29;
+/** What the elders actually cultivate. One or two. */
+export const ELDERS_SHELF_CAP = 37;
+
 /**
  * How many copies of a manual a house keeps.
  *
@@ -295,10 +314,10 @@ function shelvesOf(state: WorldState): Map<string, Manual[]> {
  * definition of teaching it.
  */
 export function copiesOf(cap: number, rng: CultivationRNG): number {
-    if (cap <= 13) return rng.int(8, 20);   // the intake primer
-    if (cap <= 21) return rng.int(3, 7);    // the ordinary working road
-    if (cap <= 29) return rng.int(2, 3);    // the inner shelf
-    if (cap <= 37) return rng.int(1, 2);    // what the elders actually cultivate
+    if (cap <= INTAKE_PRIMER_CAP) return rng.int(8, 20);
+    if (cap <= WORKING_ROAD_CAP) return rng.int(3, 7);
+    if (cap <= INNER_SHELF_CAP) return rng.int(2, 3);
+    if (cap <= ELDERS_SHELF_CAP) return rng.int(1, 2);
     return 1;                               // the apex. One, and everyone knows where it is.
 }
 

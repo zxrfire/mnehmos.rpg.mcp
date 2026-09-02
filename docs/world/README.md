@@ -10,6 +10,18 @@ cruelty.
 The engineering contracts that implement all of this live next to the code they govern.
 Start from [`../../context.md`](../../context.md).
 
+> **Looking for where something is written down? Go to [`INDEX.md`](INDEX.md), not to this
+> table.** This file lists the material by subject; `INDEX.md` lists it by the *question* -
+> every section in this directory against the situation it answers, plus the design
+> rationale that lives in `src/data/cultivation/*.ts` where no search of `docs/` reaches
+> it. Three agents in one evening failed to find material that already existed and wrote
+> an invented answer instead; `INDEX.md` records what they were looking for.
+>
+> **And if the question is about one HOUSE, go to [`BY-HOUSE.md`](BY-HOUSE.md).** It is a
+> generated reading list per house, because the median house is written about in fourteen
+> separate files and the most-written-about in thirty-three - so reading its entry in
+> `sects.ts` and stopping is how somebody concludes a thing is unwritten.
+
 ---
 
 ## The tier scheme
@@ -51,13 +63,19 @@ converge on `NARRATOR-CORE.md`.
 
 ## The files
 
+Three of these were missing from this table for a long time - `closed-ground.md`,
+`trust.md` and `escapes.md` - which is most of a thousand lines of setting material the
+directory's own index did not admit existed. Add the row when you add the file.
+
 | File | Covers | Default tier |
 |---|---|---|
+| [`INDEX.md`](INDEX.md) | **Where is X written down.** Every section against the situation it answers, generated from the `trigger` markers; plus the catalogs in `src/data/cultivation/` and what design question each answers | 3 |
 | [`NARRATOR-CORE.md`](NARRATOR-CORE.md) | The always-loaded core: authority, permadeath, qi, register | 1 |
 | [`qi.md`](qi.md) | Qi, spiritual veins, regional density, thin-region ceilings, contested qi, spirit stones | 1, 2 and 3 |
 | [`the-late-age.md`](the-late-age.md) | The aged world, depletion and monopoly, ruins, what survives, the texture to aim for | 2 and 3 |
 | [`ancient.md`](ancient.md) | Authoring guide: the ancient tier. Modern is elemental and ancient is categorical; the three kinds of absence; what an ancient art costs and who can pay it; the thousand-year medicine | 2 and 3 |
 | [`ruins.md`](ruins.md) | Authoring guide: ruins. The four axes (who left it, how gone-over, how long ago, who holds the door); convergence and the self-cancelling escape; loot as a record rather than a table; access; why a stripped ruin still teaches; mechanics that change the terms | 2 and 3 |
+| [`closed-ground.md`](closed-ground.md) | Ruins, sealed caves, inheritances and abandoned seats as one category; the inheritance economy - divesting before the end, at every rank rather than only at ascension; the clock behind both | 2 and 3 |
 | [`architecture.md`](architecture.md) | Built places: what a compound is generated from, precincts and rooms, house style as an archaeological fingerprint, access as a chain of gates, and what knowing a room means. Also the authoring guide for adding one | 2 and 3 |
 | [`techniques.md`](techniques.md) | What an art can DO, by height: the ladder that escalates in kind rather than magnitude, ending in causal speech; how it composes with class and era; dormant archives; what runs out | 1, 2 and 3 |
 | [`manuals.md`](manuals.md) | Books as items with a count: who can copy one, where a manual stops, the shelf a disciple climbs, what a house can teach against what it can supply, and an art as a signature | 2 and 3 |
@@ -72,8 +90,10 @@ converge on `NARRATOR-CORE.md`.
 | [`understanding.md`](understanding.md) | Understanding as an axis distinct from accumulation, personal realms, achievements, visions, and what separates two cultivators at the same rank | 2 and 3 |
 | [`discovery.md`](discovery.md) | How the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of | 2 and 3 |
 | [`asking.md`](asking.md) | Who you ask and what you say; genuine ignorance versus deflection, and why the player rather than the character is what improves across runs | 2 and 3 |
+| [`trust.md`](trust.md) | Being believed: the spectrum of signals, what a signal is worth when it cannot be checked, recognition running backwards to prestige, forging an expensive one, why the art is the strongest check | 2 and 3 |
 | [`origin.md`](origin.md) | Where you were born and what it was worth; privilege buys inputs and never rank; the word that skips an admission bar, the one house where it buys nothing, and spending one on your own child | 2 and 3 |
 | [`past-the-ceiling.md`](past-the-ceiling.md) | What a capped cultivator does next: the routes past a manual's ceiling, who each is open to, and what every layer must supply | 2 and 3 |
+| [`escapes.md`](escapes.md) | Stub. The material moved to `past-the-ceiling.md`; the engine module moved to `acquisition.ts`. Kept so links do not break, and deletable once nothing points here | 3 |
 | [`making-places-different.md`](making-places-different.md) | Authoring guide: how to keep regions and factions from being interchangeable | 3 |
 | [`capability-gaps-by-realm.md`](capability-gaps-by-realm.md) | Design audit: the six capability questions answered for every realm, measured against the code, with what is built, what is indirect and what is absent; the same test applied to the four attributes | 3 |
 

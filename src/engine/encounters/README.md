@@ -240,6 +240,58 @@ in prose. A rogue may still take contract work off a board and is paid the same
 stones - the only thing they cannot be paid in is contribution, because there is
 no ledger they are on. That difference IS the membership.
 
+## The roll that is not the house roll
+
+`what-a-house-will-teach-somebody-it-has-not-taken.ts` is the other end of the
+ladder from `what-a-house-asks-of-somebody-it-cannot-order.ts`. That file answers
+"the house has run out of rungs for you"; this one answers the question under
+the whole bottom of the world, which is that a teacher is one of the two ways
+past a manual's ceiling and a nobody has nobody to ask.
+
+**A house takes guest students on purpose, and it is not charity.** Two reasons
+and both are the house's own interest:
+
+- **A pipeline.** An admission bar tells a house somebody's rung. A year of
+  watching them work tells it what they are like, and for the six dao houses -
+  where the only door is adoption - it is the only instrument there is.
+- **It costs them nothing, because they hold the best back.** A house can afford
+  to teach an outsider its lower material precisely *because* the deep material
+  is behind membership. Nobody fears a guest leaving; the guest was never shown
+  the thing worth stealing.
+
+**Where the line between shallow and deep comes from.** Not a policy and not a
+number invented here. `copiesOf` in `engine/world/manuals.ts` already bands a
+shelf by how many copies of each book a house physically keeps - eight to twenty
+of the intake primer, three to seven of the working road, two or three of the
+inner shelf, one at the top. So a house lends a guest from what it holds in
+quantity and never from what it holds in ones, and the deepest thing on a shelf
+is closed by construction whatever that shelf's height.
+
+**Which is why not every house takes guests**, with no flag and no branch: a
+house takes them when its shelf reaches above the line it can afford to show.
+Measured over the catalog, 16 of 34 bodies do, including six of the seven dao
+houses - the House of Held Names does not, because its whole working shelf stops
+at the intake primer and there is nothing behind it to protect.
+
+**What a guest gets is access and nothing else.** No rung, no stipend, no
+contribution, no protection at a crossing and no backing in a quarrel. The house
+spends teaching time. `WHAT_A_GUEST_PLACE_IS_NOT` is never empty and rides on
+every read, because the position has a specific vulnerability that has to be
+legible before somebody accepts it: a guest is away from their own protection
+among people who owe them nothing.
+
+**And a guest keeps their own house.** Not a transfer, not a secondment, not a
+defection - so `docs/world/past-the-ceiling.md`'s departure economy does not fire
+at all, and the host is not poaching. What the home house has instead is a view,
+read off two columns it already carries: it `forbids` a place at somebody it is
+feuding or contending with, `sends` somebody where its own production record says
+it is short of a book, and otherwise `permits`.
+
+The write is a flag, not a membership row - `sect-guest.ts`. Its nearest
+neighbour is `FLAG_GUEST_OF` in `sect-politics.ts`, the guest ELDER, which is
+this arrangement inverted: there the visitor is stronger than the house and sells
+presence; here they are weaker and buy access.
+
 ## The people you live with
 
 Obligations and access are not what makes a sect feel like somewhere you live.

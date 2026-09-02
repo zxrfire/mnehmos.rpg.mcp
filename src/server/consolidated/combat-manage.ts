@@ -80,6 +80,7 @@ import {
     type CultivationRepos,
     type GuidingErrorBody
 } from './cultivation-support.js';
+import { PLAYER_ROLL_IDENTITY } from '../../web/encounters.js';
 import type { Cultivator, Run } from '../../schema/cultivation.js';
 
 const ACTIONS = [
@@ -211,6 +212,48 @@ const EndSchema = z.object({
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Who a stream is drawn FOR, said in a way that survives leaving the process.
+ *
+ * ── THE BUG THIS EXISTS TO CLOSE ─────────────────────────────────────────
+ *
+ * Every draw in this file comes from `forStream(run.seed, ...)`, and the file
+ * header promises that "the same call against the same state returns the same
+ * fight, and a player who died can replay it". It did not. The three combat
+ * streams mixed in `cultivator.id` and `opponent.id`, and EVERY cultivator row
+ * id in this engine is a `randomUUID()` - `game.ts` mints the player's,
+ * `cultivation-manage` mints a created one, `admin-manage` mints a staged
+ * opponent's. So the id is stable within a process and meaningless across one,
+ * and the same seed, the same sentence and the same starting state produced a
+ * different fight from one run to the next: measured at 2188 HP against 2325
+ * HP on seed `probe-seed`, with the row id as the only differing input.
+ *
+ * That is the same defect `oneCrowd` in `hearsay.ts` was written to fix, one
+ * layer further in. There the crowd's ORDER was unstated and the opponent it
+ * handed to `resolve` moved; here the opponent was right and the STREAM moved.
+ * `resolveConfrontation` was byte-identical the whole time in both cases.
+ *
+ * ── WHAT REPLACES THEM ───────────────────────────────────────────────────
+ *
+ * The acting cultivator is `PLAYER_ROLL_IDENTITY`, on exactly the reasoning
+ * `cultivation-manage` already records for the time-skip: these handlers reach
+ * their subject through `resolveActiveRun`, which resolves a RUN, and a run has
+ * exactly one player. The "two cultivators must not draw alike" case that
+ * justifies a per-cultivator component cannot arise.
+ *
+ * An opponent is named rather than identified, because a name and a rung are
+ * the only things about a combatant that a replay of the same seed reproduces.
+ * A described opponent already had a stable id built this way; a real row's id
+ * never was, and reading its name instead makes both populations behave the
+ * same. Collisions are harmless: the turn number is already in every stream and
+ * increments on every resolve, so two people cannot draw the same stream in one
+ * run however alike they are.
+ */
+function opponentRollIdentity(opponent: CombatantInput): string {
+    const name = opponent.name.trim().toLowerCase().replace(/\s+/g, '-');
+    return `${name.length > 0 ? name : 'unnamed'}@${opponent.realmOrdinal}`;
+}
 
 /**
  * Build the engine's view of the acting cultivator from real persisted state.
@@ -464,7 +507,12 @@ export async function handleStrike(args: z.infer<typeof StrikeSchema>): Promise<
 
     const nextTurn = run.turn + 1;
     const result = resolveExchange(selfPower, opponentPower, opponent.maxHp, {
-        rng: forStream(run.seed, 'combat_strike', nextTurn, cultivator.id, opponent.id),
+        // Not the row ids. See `opponentRollIdentity`: both are `randomUUID()`
+        // and keying on them made the same seed produce a different fight.
+        rng: forStream(
+            run.seed, 'combat_strike', nextTurn,
+            PLAYER_ROLL_IDENTITY, opponentRollIdentity(opponent)
+        ),
         ambient,
         turn: nextTurn,
         vector: args.vector,
@@ -474,6 +522,21 @@ export async function handleStrike(args: z.infer<typeof StrikeSchema>): Promise<
 
     // Persist what the strike actually cost the striker, and what it did to a
     // real opponent when the opponent is a real row.
+    // ── WHY THERE IS NO DEATH GATE IN THIS HANDLER ───────────────────────
+    //
+    // Checked rather than assumed, because `resolve` was missing half of one.
+    // Neither party can die here and neither should:
+    //
+    //   THE STRIKER   nothing takes their HP. A strike costs qi and a cooldown,
+    //                 so there is no bar to empty and no ending to record.
+    //   THE STRUCK    a strike is ONE EXCHANGE. `resolve` can end somebody
+    //                 because it takes a `goal` and `finishOutcome` says which
+    //                 endings that goal reaches; `strike` takes no goal and
+    //                 `resolveExchange` has no `finished` to return, so there
+    //                 is no engine word here for "that was the end of them".
+    //                 Killing somebody with repeated strikes is a real gap and
+    //                 the fix is a finishing intent on this action, not a gate
+    //                 that reads an empty bar and infers one.
     const persist = repos.db.transaction(() => {
         repos.cultivators.applyDeltas(cultivator.id, { qi: -technique.qiCost });
         repos.techniques.markUsed(cultivator.id, technique.id, nextTurn);
@@ -561,7 +624,12 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
     const nextTurn = run.turn + 1;
 
     const result = resolveConfrontation(self, opponent, {
-        rng: forStream(run.seed, 'combat_resolve', nextTurn, cultivator.id, opponent.id),
+        // Not the row ids. See `opponentRollIdentity`: both are `randomUUID()`
+        // and keying on them made the same seed produce a different fight.
+        rng: forStream(
+            run.seed, 'combat_resolve', nextTurn,
+            PLAYER_ROLL_IDENTITY, opponentRollIdentity(opponent)
+        ),
         ambient,
         turn: nextTurn,
         vector: args.vector,
@@ -578,6 +646,7 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
     // engine exists to make impossible. ──
     const combat = new CombatRepository(repos.db);
     let death: { cause: string; description: string } | null = null;
+    let opponentDeath: { cause: string; description: string } | null = null;
 
     const persist = repos.db.transaction(() => {
         const selfHpDelta = result.hp[cultivator.id] - cultivator.hp;
@@ -597,6 +666,18 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
             });
         }
 
+        // ── AN OPPONENT WITH NO ROW IS NOT WRITTEN TO AT ALL ─────────────
+        //
+        // Not a wound, not a point of HP, and now not a death either. Worth
+        // knowing because it is the case the PLAYED layer almost always hits:
+        // most of the people standing in a square exist only in world state,
+        // `game.ts` describes them to this tool rather than passing an id
+        // (there is no row to pass), and everything the resolver decided about
+        // them evaporates when this block declines to run.
+        //
+        // Closing that means this tool learning to write to the world, which it
+        // does not do today and which is a boundary decision rather than a bug
+        // fix. The gate below is the half that can be closed here.
         if (args.opponent.cultivatorId) {
             const opponentRow = repos.cultivators.getById(args.opponent.cultivatorId);
             if (opponentRow) {
@@ -615,6 +696,56 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
                         cultivationPenalty: injury.cultivationPenalty,
                         breakthroughPenalty: injury.breakthroughPenalty
                     });
+                }
+
+                // ── THE OTHER HALF OF THE DEATH GATE ─────────────────────
+                //
+                // The gate below is asked about the cultivator whose run this
+                // is and, until now, about NOBODY ELSE. So an opponent driven
+                // to nothing was AT nothing rather than dead: the player could
+                // not kill anybody on record, every system that answers a
+                // killing was unreachable from the player's side, and the
+                // world's rules bound the player and not the world.
+                //
+                // ── WHY THIS IS NOT "ASK THE GATE ABOUT BOTH PARTIES" ────
+                //
+                // Because that would make every ordinary fight start killing
+                // people. The bar reaches zero in bouts nobody meant to be
+                // fatal, and `evaluateDeathConditions` reads an empty bar as
+                // `combat_defeat` by default - so widening the gate would turn
+                // a spar into a homicide and a mugging into a murder.
+                //
+                // The answer was already in the resolver and did not need
+                // inventing. `finishOutcome` reads the aggressor's `goal`:
+                // `subdue` ends at `capture`, `humiliate` at `humiliation`,
+                // `drive_off` at `withdrawal`, and ONLY `kill` against a body
+                // the tradition says is enough returns `lethal` - which is
+                // exactly what `result.finished` means. So a bout that empties
+                // somebody's bar without meaning to leaves them beaten, and a
+                // killing is a killing because the killer went there.
+                //
+                // What is NOT decided here: this asks `survival.ts` and obeys
+                // it, the same as the player's half, because nothing in this
+                // file may declare anybody dead. And `forcingCombat` is
+                // deliberately absent - that flag prices the recklessness of
+                // walking into a fight half-dead, and it belongs to whoever
+                // chose the fight, never to the person who was swung at.
+                //
+                // `body_destroyed` is left alone on purpose. The body went and
+                // the person did not; what becomes of the remnant is the
+                // existence layer's ruling and not a death to record here.
+                if (result.finished && result.loserId === opponent.id) {
+                    const beaten = repos.cultivators.getById(opponentRow.id)!;
+                    const theirCause = evaluateDeathConditions(beaten);
+                    if (theirCause) {
+                        opponentDeath = {
+                            cause: theirCause,
+                            description: describeDeath(theirCause, beaten)
+                        };
+                        repos.cultivators.markDead(
+                            opponentRow.id, theirCause, nextTurn, opponentDeath.description
+                        );
+                    }
                 }
             }
         }
@@ -700,11 +831,20 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
         obligations: result.obligations,
         died: death !== null,
         death,
+        // Kept as separate fields rather than folded into `died`, which has
+        // always meant THE PLAYER and is read that way by callers. Both are the
+        // survival layer's answer; they are only about different people.
+        opponentDied: opponentDeath !== null,
+        opponentDeath,
         narrationHint: result.narrationHint,
         cultivator: describeCultivator(repos, after, runAfter),
         note:
             'Death is decided by the survival layer, not by this tool. `finished` says the finishing ' +
-            'requirement was met; `died` says the engine recorded a death.'
+            'requirement was met; `died` says the engine recorded the player\'s death and ' +
+            '`opponentDied` the opponent\'s. An opponent dies only where the goal was `kill` and ' +
+            'the tradition allows a body to be enough; a bout that empties somebody\'s bar without ' +
+            'meaning to leaves them beaten. An opponent with no cultivator row is not written to ' +
+            'at all - see the note on the persistence block.'
     };
 }
 
@@ -734,7 +874,12 @@ export async function handleFlee(args: z.infer<typeof FleeSchema>): Promise<obje
 
     const nextTurn = run.turn + 1;
     const result = attemptFlight(selfPower, opponentPower, {
-        rng: forStream(run.seed, 'combat_flee', nextTurn, cultivator.id, opponent.id),
+        // Not the row ids. See `opponentRollIdentity`: both are `randomUUID()`
+        // and keying on them made the same seed produce a different escape.
+        rng: forStream(
+            run.seed, 'combat_flee', nextTurn,
+            PLAYER_ROLL_IDENTITY, opponentRollIdentity(opponent)
+        ),
         turn: nextTurn,
         maxHp: cultivator.maxHp,
         movementTechnique: movement,

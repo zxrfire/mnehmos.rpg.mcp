@@ -52,6 +52,10 @@ import { PRICES, type Price } from '../data/cultivation/mortal-world.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { loosePlaceKey, placeKey, type KnowledgeGate } from './knowledge.js';
 import type { LocationRecord } from '../engine/world/locations.js';
+import {
+    readALineageOffAName,
+    readTheRollFor
+} from '../engine/world/reading-a-lineage-off-a-name.js';
 import type { WorldState } from '../engine/world/world-state.js';
 
 export type EntityKind =
@@ -326,15 +330,33 @@ function nameOrShape(
     return scope.gate.isAwareOf(scope.holderId, kind, id) ? name : shape;
 }
 
-/** A place name, or an admission that the player could not name it. */
+/**
+ * A place name, or an admission that the player could not name it.
+ *
+ * The value handed in is whatever that roster row carries, and the two
+ * populations carry different things: a `cultivators` row's `location` is free
+ * text - a display name - and a world NPC's is a location id. Both reach here.
+ *
+ * So a gate that passes is not licence to print the argument. Where the holder
+ * holds a record under the id, the record's own NAME is what gets said, because
+ * nobody in this world says `loc-sect-azure-dew-sect-ground`. Found the moment
+ * sect grounds became somewhere a player could learn about: the read went
+ * straight from "somewhere this cultivator could not name" to printing the id,
+ * which is the same defect as naming a ruin by its slug and breaks the rule
+ * that a name the game prints is a name the game must accept.
+ */
 function placeOrShape(scope: KnowledgeScope | undefined, place: string | null): string {
     if (!place) return 'unrecorded';
     if (!scope) return place;
     const here = (scope.here ?? '').trim().toLowerCase();
     if (here.length > 0 && place.trim().toLowerCase() === here) return place;
-    return scope.gate.isAwareOf(scope.holderId, 'place', place)
-        ? place
-        : 'somewhere this cultivator could not name';
+    if (!scope.gate.isAwareOf(scope.holderId, 'place', place)) {
+        return 'somewhere this cultivator could not name';
+    }
+    const held = scope.gate
+        .awareness(scope.holderId, 'place')
+        .find(row => row.id === place);
+    return held?.name ?? place;
 }
 
 /**
@@ -434,6 +456,28 @@ export function resolveCultivator(
         facts.push(`Something is wrong with the way they hold themselves. ${match.untreatedInjuries} injuries are open.`);
     }
 
+    // ── what the name is worth ──
+    //
+    // `docs/world/trust.md` puts names third in the hierarchy - below the arts
+    // and below the objects - and this is the whole of what that rung buys: a
+    // surname that carries a house on its own, which almost none do. Reading a
+    // face gives nothing; reading a name gives corroboration at best.
+    //
+    // Gated on having heard of the house, like every other name in these
+    // facts. A reserved name is a fact about the world and the LINK from it to
+    // a house is knowledge, so a cultivator who has never heard of the Pavilion
+    // learns nothing from meeting a Ru - which is correct rather than coy, and
+    // is why this sits behind the same gate `affiliation` does.
+    const lineage = readALineageOffAName(match.name);
+    if (lineage.settles
+        && lineage.houseIdItCarriesOnItsOwn
+        && (!scope || scope.gate.isAwareOf(scope.holderId, 'sect', lineage.houseIdItCarriesOnItsOwn))) {
+        facts.push(
+            `${lineage.surname} is not a name people are simply born with. It belongs to `
+            + `${lineage.houseItCarriesOnItsOwn}, and nobody carries it who is not of that line.`
+        );
+    }
+
     // Feuds are stored as free-text party labels rather than ids, so there is
     // nothing to check them against. They are withheld wholesale rather than
     // guessed at: a grudge the player cannot name is still a grudge.
@@ -455,6 +499,19 @@ export function resolveCultivator(
             + (match.alive
                 ? 'Alive.'
                 : `Dead${match.deathCause ? `, of ${match.deathCause}` : ', of nothing the row names'}.`),
+            // What the name is worth against the house they stand on, stated
+            // in the inspector even where the gate withholds it from the
+            // prose. `corroborates` and never `settles` is the ordinary
+            // answer, and it is the answer the design wants: names sit low.
+            (() => {
+                const reading = match.sectId
+                    ? readTheRollFor(match.name, match.sectId)
+                    : readALineageOffAName(match.name);
+                return 'worth' in reading
+                    ? `The name reads ${reading.worth} against ${match.sectId}.`
+                    : `The name reads ${reading.reading}${reading.housesWithThisLine.length > 0
+                        ? `, with a line of it on ${reading.housesWithThisLine.length} house roll(s)` : ''}.`;
+            })(),
             (match.sectId
                 ? `On the roll of ${match.sectId}`
                   + `${match.sectRank ? `, at the rank of ${match.sectRank}` : ', at no rank in it'}`

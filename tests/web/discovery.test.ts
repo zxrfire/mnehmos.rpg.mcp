@@ -27,16 +27,6 @@ import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-s
 import { makeGame, engineCalls, refusedCall, planned, ScriptedProvider } from './harness';
 import { drawBirth } from '../../src/engine/birth/birth';
 
-/** The sect a villager is seeded with: the softest body that takes applicants. */
-const LOCAL_SECT = SECTS
-    .filter(sect => sect.recruits)
-    .reduce((best, sect) =>
-        sect.admissionOrdinal < best.admissionOrdinal ||
-        (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id) ? sect : best);
-
-/** A sect the player has demonstrably not been told about. */
-const UNHEARD_SECT = SECTS.find(sect => sect.id !== LOCAL_SECT.id)!;
-
 /**
  * Where the default harness seed actually births somebody.
  *
@@ -50,6 +40,44 @@ const HOME_PLACE = drawBirth('test-seed').place.name;
 /** The county a new cultivator is born into. Everything in it is ordinary. */
 const HOME_REGION = REGIONS.find(region =>
     region.places.some(place => place.name === HOME_PLACE))!;
+
+/**
+ * The houses a county could name, which is not one house.
+ *
+ * This used to be a single sect picked as "lowest admission bar, tie-broken by
+ * id" - which was not a description of the world but a copy of a bug. The
+ * seeder did exactly that, globally, so `sect-azure-dew-sect` won on the letter
+ * A and the other six houses that admit at rung 0 were unreachable to every
+ * player in every run. The tie-break is gone and the seeding is region-aware,
+ * so what a new life knows is now a set, and what this test should hold it to
+ * is the PRINCIPLE - discovery.md's "their world is the county" - rather than a
+ * headcount that would have to be edited every time the roster moved.
+ */
+const LOCAL_SECTS = SECTS.filter(sect => HOME_REGION.factionIds.includes(sect.id));
+
+/**
+ * A house the player demonstrably has not been told about: one the county does
+ * not hold. Derived from the same rule as `LOCAL_SECTS`, so the two cannot
+ * disagree about what "local" means.
+ */
+const UNHEARD_SECT = SECTS.find(sect => !HOME_REGION.factionIds.includes(sect.id))!;
+
+/** True where a house is one the county would have named. */
+const isLocal = (id: string) => LOCAL_SECTS.some(sect => sect.id === id);
+
+/**
+ * A house this cultivator has actually been told about.
+ *
+ * Asked of the knowledge layer rather than guessed from the roster, because
+ * which local houses get named is the seeder's decision and it is region-aware
+ * now. Guessing produced a test that named the Azure Cloud Pavilion at a
+ * cultivator who had never heard of it.
+ */
+function aHouseTheyKnow(gate: { awareness: (id: string, kind: string) => { name: string }[] }, holderId: string) {
+    const known = gate.awareness(holderId, 'sect');
+    expect(known.length, 'the cultivator was told about no house at all').toBeGreaterThan(0);
+    return SECTS.find(sect => sect.name === known[0].name)!;
+}
 
 /** The next town over, whichever it is. Ordinary local knowledge either way. */
 const NEIGHBOUR_PLACE = HOME_REGION.places.find(place => place.name !== HOME_PLACE)!.name;
@@ -110,9 +138,15 @@ describe('a new cultivator starts knowing almost nothing', () => {
                 expect(named.has(place.name)).toBe(false);
             }
         }
-        expect(gate.awareness(cultivator.id, 'sect').map(row => row.name))
-            .toEqual([LOCAL_SECT.name]);
-        expect(SECTS.length).toBeGreaterThan(2);
+        // Houses, same rule: the county and not an inch past it. A name from
+        // the next province over would be the old global-minimum bug returning.
+        const knownSects = gate.awareness(cultivator.id, 'sect').map(row => row.name);
+        expect(knownSects.length).toBeGreaterThan(0);
+        const localNames = new Set(LOCAL_SECTS.map(sect => sect.name));
+        for (const name of knownSects) {
+            expect(localNames.has(name), `${name} is not a house of ${HOME_REGION.name}`).toBe(true);
+        }
+        expect(SECTS.length).toBeGreaterThan(knownSects.length);
     });
 
     /**
@@ -169,12 +203,12 @@ describe('a new cultivator starts knowing almost nothing', () => {
     });
 
     it('files awareness as an ordinary knowledge record, not a new table', async () => {
-        const { db, game } = makeGame();
-        const { cultivator } = await game.newRun('Villager');
+        const { db, cultivator, gate } = await newVillager();
+        const known = aHouseTheyKnow(gate, cultivator.id);
 
         const row = db
             .prepare('SELECT * FROM knowledge_records WHERE holder_id = ? AND claim_key = ?')
-            .get(cultivator.id, existenceClaimKey('sect', LOCAL_SECT.id)) as Record<string, unknown>;
+            .get(cultivator.id, existenceClaimKey('sect', known.id)) as Record<string, unknown>;
 
         expect(row).toBeDefined();
         expect(row.holder_kind).toBe('character');
@@ -210,14 +244,15 @@ describe('an unheard-of entity does not resolve', () => {
         expect(engineCalls(result).some(c => c.name === 'engine.resolveInteraction')).toBe(false);
     });
 
-    it('resolves the one sect the player has actually heard of', async () => {
-        const { game } = makeGame();
-        await game.newRun('Villager');
+    it('resolves a sect the player has actually heard of', async () => {
+        const { db, game } = makeGame();
+        const { cultivator } = await game.newRun('Villager');
+        const known = aHouseTheyKnow(new KnowledgeGate(db), cultivator.id);
 
-        const result = await game.act(`I examine ${LOCAL_SECT.name}.`);
+        const result = await game.act(`I examine ${known.name}.`);
         expect(refusedCall(result)).toBeNull();
         expect(engineCalls(result)[0].summary).toContain('sect');
-        expect(result.narration).toContain(LOCAL_SECT.name);
+        expect(result.narration).toContain(known.name);
     });
 });
 
@@ -317,9 +352,9 @@ describe('the prompt never carries the answer key', () => {
         });
 
         expect(summary).toContain('HAS HEARD OF');
-        expect(summary).toContain(LOCAL_SECT.name);
+        expect(summary).toContain(aHouseTheyKnow(gate, cultivator.id).name);
         for (const sect of SECTS) {
-            if (sect.id === LOCAL_SECT.id) continue;
+            if (isLocal(sect.id)) continue;
             expect(summary).not.toContain(sect.name);
         }
     });
@@ -364,8 +399,8 @@ describe('the prompt never carries the answer key', () => {
             plans: ['{"action":"look"}'],
             narrations: ['A road, and nobody on it.']
         });
-        const { game } = makeGame({ provider });
-        await game.newRun('Villager');
+        const { db, game } = makeGame({ provider });
+        const { cultivator } = await game.newRun('Villager');
         await game.act('I look around.');
 
         const narrationCall = provider.calls.at(-1)!;
@@ -374,9 +409,29 @@ describe('the prompt never carries the answer key', () => {
 
         expect(user).toContain('NAMES YOU MAY USE');
         expect(user).toContain(HOME_PLACE);
+
+        // Against what this cultivator ACTUALLY holds, not against a proxy for
+        // it. "Houses of the home county" was close enough while the county was
+        // the only way to hear of one, and stopped being so the moment looking
+        // round a town could show you a recruiting bill: a house with no seat
+        // advertises on roads across the map, the bill grants the name through
+        // `learnIfNew` like any other source, and the prompt then carries a
+        // name the player has genuinely been told. Reading the knowledge table
+        // is the real invariant and it catches a leak the proxy would miss - a
+        // name in the prompt with no record behind it.
+        const heard = new Set((db
+            .prepare(
+                `SELECT claim_key FROM knowledge_records
+                 WHERE holder_id = ? AND superseded = 0
+                   AND stance IN ('knows','believes','suspects')
+                   AND claim_key LIKE 'exists:sect:%'`
+            )
+            .all(cultivator.id) as { claim_key: string }[])
+            .map(row => row.claim_key.replace('exists:sect:', '')));
         for (const sect of SECTS) {
-            if (sect.id === LOCAL_SECT.id) continue;
-            expect(user).not.toContain(sect.name);
+            if (heard.has(sect.id)) continue;
+            expect(user, `${sect.name} is in the prompt and was never heard of`)
+                .not.toContain(sect.name);
         }
 
         expect(system).toContain('WHAT MAY BE NAMED');
@@ -413,19 +468,20 @@ describe('the narrator constitution', () => {
 });
 
 describe('a permitted lookup does not leak the names inside it', () => {
-    it('names no other sect when the player examines the one they know', async () => {
-        const { game } = makeGame();
-        await game.newRun('Villager');
+    it('names no other sect when the player examines one they know', async () => {
+        const { db, game } = makeGame();
+        const { cultivator } = await game.newRun('Villager');
+        const known = aHouseTheyKnow(new KnowledgeGate(db), cultivator.id);
 
-        const result = await game.act(`I examine ${LOCAL_SECT.name}.`);
+        const result = await game.act(`I examine ${known.name}.`);
         const text = result.narration + JSON.stringify(result.toolCalls);
 
         // The sect itself is nameable. Everything it is connected to - the
         // sects it feuds with, the ground it sits on - is not, and asking about
         // the one you know must not hand over the ones you do not.
-        expect(text).toContain(LOCAL_SECT.name);
+        expect(text).toContain(known.name);
         for (const sect of SECTS) {
-            if (sect.id === LOCAL_SECT.id) continue;
+            if (isLocal(sect.id)) continue;
             expect(text).not.toContain(sect.name);
         }
     });
@@ -473,7 +529,7 @@ describe('a permitted lookup does not leak the names inside it', () => {
         await game.newRun('Villager');
 
         // Sects are seeded from the catalog, so use one that is already there.
-        const otherSect = SECTS.find(sect => sect.id !== LOCAL_SECT.id)!;
+        const otherSect = SECTS.find(sect => !isLocal(sect.id))!;
         const now = new Date().toISOString();
         db.prepare(`
             INSERT INTO cultivators (

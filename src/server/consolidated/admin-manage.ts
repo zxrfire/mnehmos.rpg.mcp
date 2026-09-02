@@ -96,6 +96,7 @@ import { PILLS, getPill } from '../../data/cultivation/pills.js';
 import { HERBS, getHerb } from '../../data/cultivation/herbs.js';
 import { ARTIFACTS, getArtifact } from '../../data/cultivation/artifacts.js';
 import { REGIONS } from '../../data/cultivation/regions.js';
+import { SECTS } from '../../data/cultivation/sects.js';
 import { SITES, type Site } from '../../data/cultivation/inheritance-trials.js';
 import { MATCH_THRESHOLD, matchScore } from '../../web/entities.js';
 import { isSentenceRefusal, ordinalNamed, readAdminSentence } from './admin-said-as-a-sentence.js';
@@ -121,7 +122,7 @@ import {
 const ACTIONS = [
     'roster', 'spawn_encounter', 'spawn_site', 'grant_item',
     'set_ambient', 'set_location', 'advance_days', 'grant_progress', 'set_realm',
-    'audit_log', 'help'
+    'audit_log', 'grant_knowledge', 'help'
 ] as const;
 type AdminAction = typeof ACTIONS[number];
 
@@ -171,6 +172,10 @@ const RECIPES: readonly Recipe[] = Object.freeze([
       line: 'ADMIN advance_days years=50 rations=2000' },
     { want: 'See every cultivator in the world',
       line: 'ADMIN roster' },
+    { want: 'Know the name of every place, so I can travel anywhere',
+      line: 'ADMIN grant_knowledge kind=place' },
+    { want: 'Know the name of every house',
+      line: 'ADMIN grant_knowledge kind=sect' },
     { want: 'See what ADMIN has done to this run',
       line: 'ADMIN audit_log' }
 ]);
@@ -428,6 +433,55 @@ export const INFERRED_KEY = '__inferredFromASentence';
  * here; an action absent from this table takes no prose at all and refuses in
  * its own words instead, which is the honest outcome for `advance_days 50 years`.
  */
+/**
+ * `<field> <value>` pairs written without the equals sign.
+ *
+ * The same grammar as `key=value` and the same boundary rule: a value runs to
+ * the NEXT FIELD NAME, not to the next space, so `name Yun Shizhen disposition
+ * wary` splits into two pairs and a multi-word name needs no quoting here
+ * either. Fields come off the action's own schema, never from a list.
+ *
+ * A value is coerced the way `parseAdminCommand` coerces one - the two words
+ * that are booleans, a number where the whole value is one, and otherwise the
+ * text - so `fill true` and `fill=true` mean the same thing.
+ */
+function bareFieldPairs(
+    action: AdminAction,
+    prose: string
+): { pairs: Array<[string, unknown]>; proseLeft: string } {
+    const nothing = { pairs: [] as Array<[string, unknown]>, proseLeft: prose };
+    const shape = (definitions[action]?.schema as unknown as { shape?: Record<string, unknown> })?.shape;
+    if (!shape) return nothing;
+    const fields = Object.keys(shape).filter(key => key !== 'action');
+    if (fields.length === 0) return nothing;
+
+    const boundary = new RegExp(`(?:^|\\s)(${fields.join('|')})(?=\\s)`, 'gi');
+    const found: Array<{ field: string; from: number; at: number }> = [];
+    for (let m = boundary.exec(prose); m !== null; m = boundary.exec(prose)) {
+        const canonical = fields.find(f => f.toLowerCase() === m![1].toLowerCase())!;
+        found.push({ field: canonical, at: m.index, from: m.index + m[0].length });
+    }
+
+    if (found.length === 0) return nothing;
+
+    const pairs: Array<[string, unknown]> = [];
+    for (let i = 0; i < found.length; i++) {
+        const end = i + 1 < found.length ? found[i + 1].at : prose.length;
+        const raw = unquote(prose.slice(found[i].from, end));
+        if (raw === '') continue;
+        if (raw === 'true' || raw === 'false') { pairs.push([found[i].field, raw === 'true']); continue; }
+        const asNumber = Number(raw);
+        pairs.push([found[i].field, Number.isFinite(asNumber) ? asNumber : raw]);
+    }
+    // Everything from the first field name onward has been read as pairs, so
+    // what is left for the sentence layer is only what came BEFORE it. Without
+    // this, `grant_item ordinal 45 kind artifact` had "artifact" read as a
+    // subject noun, the whole line handed to the name extractor, and came out
+    // as `name=grant_item ordinal kind` - the field names themselves ending up
+    // in the field the world calls somebody by.
+    return { pairs, proseLeft: prose.slice(0, found[0].at).trim() };
+}
+
 const PRIMARY_ARG: Partial<Record<AdminAction, string>> = {
     help: 'about',
     set_location: 'location',
@@ -505,8 +559,29 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
     const known = action === '' ? null : actionWordFor(action);
     const hasProse = /\s/.test(prose);
 
+    // ── PAIRS WITH THE EQUALS SIGN LEFT OUT, READ FIRST ───────────────────
+    //
+    // Before the sentence layer, so an explicitly named field always beats an
+    // inferred one and the words that formed a pair are not offered to the
+    // sentence reader a second time. See `bareFieldPairs`.
+    const bare = known === null
+        ? { pairs: [] as Array<[string, unknown]>, proseLeft: prose }
+        : bareFieldPairs(known as AdminAction, prose);
+    for (const [field, value] of bare.pairs) {
+        if (args[field] === undefined) args[field] = value;
+    }
+
     if (action !== '' && (known === null || hasProse)) {
-        const reading = readAdminSentence(prose);
+        // THE ACTION WORD IS NOT ALSO A NAME. When the operator typed it,
+        // `grant_item ordinal 45 kind artifact` left "grant_item" as the whole
+        // remainder, and the sentence reader - which knows "item" as a subject
+        // noun and has never heard of "grant_item" - read it as what to call
+        // the thing, giving `name=grant_item`. The word did its job identifying
+        // the action; it is not a second argument.
+        const readable = known === null
+            ? bare.proseLeft
+            : bare.proseLeft.replace(new RegExp(`^\\s*${action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'i'), '');
+        const reading = readAdminSentence(readable);
         const usable =
             reading !== null &&
             !isSentenceRefusal(reading) &&
@@ -515,7 +590,17 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
             // opinion about the rest is not wanted; when they wrote `npc at
             // Core Formation`, the alias and the reading agree and the reading
             // is carrying the argument.
-            (known === null || known === reading.action);
+            //
+            // BUT AN ALIAS IS NOT A NAMED ACTION. "give me knowledge of every
+            // sect" begins with `give`, which is an alias of `grant_item`, and
+            // was refused with "nothing in the pill, herb or artifact catalogs
+            // answers to 'me knowledge of every sect'". The operator did not
+            // name an action there - they used an ordinary verb, and the NOUN
+            // is what says which action they meant. So a canonical action name
+            // still wins, and a generic verb yields to an explicit subject.
+            (known === null
+                || known === reading.action
+                || !ACTIONS.includes(action.trim().toLowerCase() as AdminAction));
         if (usable) {
             const merged = { ...(reading as { args: Record<string, unknown> }).args, ...args };
             const chosen = (reading as { action: string }).action;
@@ -549,7 +634,10 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
         // from being an inference at all - there is exactly one free-text field
         // it could mean, and if an action has none the prose is left alone and
         // the action refuses in its own words.
-        if (known !== null && hasProse) {
+        // Only when the prose held no pairs at all. `ENCOUNTER ORDINAL 19` has
+        // its rung read above, and taking the leftovers as a name on top of
+        // that would put "ORDINAL 19" in the field the world calls somebody by.
+        if (known !== null && hasProse && bare.pairs.length === 0) {
             const field = PRIMARY_ARG[known as AdminAction];
             const rest = prose.slice(prose.indexOf(action) + action.length).trim();
             if (field !== undefined && rest.length > 0 && args[field] === undefined) {
@@ -721,6 +809,28 @@ const SetRealmSchema = z.object({
     action: z.literal('set_realm'),
     ordinal: ordinalArg('The rung to stand the cultivator at. Up or down; both go through advanceRealm.'),
     cultivatorId: z.string().optional()
+});
+
+const GrantKnowledgeSchema = z.object({
+    action: z.literal('grant_knowledge'),
+    /**
+     * PLACES AND HOUSES ONLY, AND THE OMISSION IS THE POINT.
+     *
+     * `KnownEntityKind` has four members and this takes two. `cultivator` is
+     * left out because who is standing where is a fact about the present that
+     * `spawn_encounter` already writes for somebody it actually put there, and
+     * granting the whole roster would hand the player a census nobody has.
+     *
+     * `event` is left out and must stay out. An event is a thing that HAPPENED,
+     * so a knowledge record of one is a claim about history - and "give me
+     * knowledge that I killed him" is an outcome wearing an awareness gate as a
+     * costume. A place and a house are standing there whether anybody has heard
+     * of them; that is exactly what makes naming them a gate and not a truth.
+     */
+    kind: z.enum(['place', 'sect', 'any']).optional().default('any')
+        .describe('Narrow to places or to houses. Omit for both. Never events: an event is a claim about history.'),
+    name: z.string().min(1).max(160).optional()
+        .describe('One entry by its own name, instead of everything of a kind.')
 });
 
 const AuditLogSchema = z.object({
@@ -1073,6 +1183,8 @@ export async function handleSpawnEncounter(
     const siteId = randomUUID();
     const location = args.location ?? cultivator.location ?? 'the open road';
     const name = args.name ?? `A ${realmForOrdinal(args.ordinal).name} cultivator`;
+    const disposition = args.disposition ?? 'hostile';
+    const knowledge = new KnowledgeGate(repos.db);
 
     repos.db.transaction(() => {
         repos.cultivators.create({
@@ -1094,6 +1206,44 @@ export async function handleSpawnEncounter(
         // The rank change takes the same road every rank change takes.
         if (args.ordinal > 0) repos.cultivators.advanceRealm(opponentId, args.ordinal);
 
+        // ── THE PLAYER HAS TO BE ABLE TO NAME THEM ────────────────────────
+        //
+        // The defect this closes, found by playing the owner's own sentence:
+        // the row was created correctly, at the player's exact location, alive,
+        // in the right run - and `who is here` did not mention them. Measured:
+        // `othersPresent` DOES return them, so nothing was wrong with the write
+        // or the read. What was wrong is that `company()` in `game.ts` splits
+        // the people present on `knowledge.isAwareOf(..., 'cultivator', id)`,
+        // and an opponent nobody had ever heard of has no such record. So they
+        // fell into `strangers` and were rendered as an anonymous band reading -
+        // "one of them is so far above" - indistinguishable from the crowd, with
+        // no name to point at, no name to attack, and nothing to say back.
+        //
+        // THIS IS THE SAME BUG `spawn_site` ALREADY FIXED, one table over, and
+        // the header of that handler explains it in full: what ADMIN lifts is
+        // the AWARENESS gate, and lifting it is a knowledge write. A site got
+        // one; a person never did. That asymmetry is the whole defect.
+        //
+        // Written the same honest way: `witnessed`, because an operator really
+        // did put this person in front of this cultivator, and the audit row in
+        // the same transaction says so. Nothing else is granted - not their
+        // history, not their sect, not what they are carrying.
+        knowledge.learnIfNew({
+            holderId: cultivator.id,
+            kind: 'cultivator',
+            id: opponentId,
+            name,
+            onDay: Math.max(0, Math.floor(run.elapsedDays)),
+            sourceKind: 'witnessed',
+            sourceNote: 'ADMIN put this person in front of the cultivator. The awareness gate was ' +
+                'lifted; nothing about who they are or what they can do was.',
+            stance: 'knows',
+            confidence: 1,
+            statement: disposition === 'hostile'
+                ? `${name} is standing here, at ${rankName(args.ordinal)}, and means harm.`
+                : `${name} is standing here, at ${rankName(args.ordinal)}, and is ${disposition}.`
+        });
+
         repos.db.prepare(`
             INSERT INTO cultivation_sites
                 (id, run_id, kind, name, ordinal, location, contents, admin_spawned, discovered, created_on_day)
@@ -1102,7 +1252,7 @@ export async function handleSpawnEncounter(
             siteId, run.id, name, args.ordinal, location,
             JSON.stringify({
                 opponentCultivatorId: opponentId,
-                disposition: args.disposition ?? 'hostile'
+                disposition
             }),
             run.elapsedDays
         );
@@ -1125,14 +1275,60 @@ export async function handleSpawnEncounter(
         spawned: true,
         encounterId: siteId,
         opponent: describeCultivator(repos, opponent, run),
-        disposition: args.disposition ?? 'hostile',
+        disposition,
         location,
+        // AGENTS.md: any name the game prints is a name the game must accept.
+        // These reach the person through the ordinary player verbs, and they
+        // work because the knowledge record above made them nameable.
+        sayThis: [`who is here`, `look at ${name}`, `talk to ${name}`, `attack ${name}`],
+        // ── WHAT THE DISPOSITION REACHES, AND WHAT IT DOES NOT ────────────
+        //
+        // It is on the knowledge record, so "what do I know about them" answers
+        // "and means harm" with the provenance attached. It is NOT volunteered:
+        // nothing in the play layer says a hostile cultivator is standing in
+        // front of you until you ask, and nothing makes them act.
+        //
+        // WHY NO GRUDGE WAS WRITTEN, which is the obvious place to reach for:
+        // `GrudgeCause` in `engine/social/grudges.ts` is "concrete and specific
+        // by design - a record whose cause is 'conflict' is a record nobody can
+        // narrate from in forty years", and grudges are inherited and outlive
+        // everybody in them. There is no cause here, because nothing happened;
+        // an operator placed somebody. Writing `other` would put a fabricated
+        // grievance into the world's causal record permanently, which is a
+        // worse lie than the disposition being quiet, and it is exactly the
+        // kind of assertion this surface exists not to make.
+        //
+        // The real absence, stated rather than papered over: THERE IS NO STORE
+        // FOR HOW A PERSON IS DISPOSED TOWARD THE PLAYER RIGHT NOW, separate
+        // from what they are owed and what they hold against them - and no loop
+        // in which a co-located hostile cultivator does anything about it.
+        dispositionReaches: {
+            said: 'On the knowledge record. "what do I know about them" answers it.',
+            notSaid:
+                'Not volunteered by look or by who is here, and nothing makes them act on it. There ' +
+                'is no store for a present disposition toward the player, and no grudge was written ' +
+                'because no cause exists - nothing happened, somebody was placed. This is a gap in ' +
+                'the world, not in ADMIN, and it is reported rather than faked.'
+        },
         gateLifted: {
             playerOrdinal: cultivator.realmOrdinal,
             opponentOrdinal: args.ordinal,
-            powerRatio:
+            // ── A RATIO IS NOT TWELVE DECIMAL PLACES ──────────────────────
+            //
+            // This printed `0.000244140625` at a Core Formation opponent, which
+            // is 4 to the minus six rendered raw. The figure is worth keeping
+            // and the precision is worth none of it: the same defect the engine
+            // channel spent three passes fixing, arriving here. So the number
+            // is rounded to something a person can hold, and it is said as well
+            // as shown, in the direction the reader is standing.
+            powerRatio: roundRatio(
                 realmForOrdinal(args.ordinal).powerMultiplier /
-                realmForOrdinal(cultivator.realmOrdinal).powerMultiplier,
+                realmForOrdinal(cultivator.realmOrdinal).powerMultiplier
+            ),
+            howTheyCompare: comparePower(
+                realmForOrdinal(args.ordinal).powerMultiplier /
+                realmForOrdinal(cultivator.realmOrdinal).powerMultiplier
+            ),
             note:
                 'This opponent is a real persisted cultivator with engine-rolled talent. If the player ' +
                 'fights it, the engine decides what happens.'
@@ -1195,6 +1391,41 @@ function artifactNearest(
  * performed, which is the exact defect the multi-word gazetteer note above
  * records.
  */
+/**
+ * A power ratio at a precision somebody can hold.
+ *
+ * `0.000244140625` is a real figure and an unreadable one. Two significant
+ * figures is all any of these carry - the multipliers are powers of four, so
+ * the interesting fact is always the order of magnitude - and a ratio under one
+ * is reported as the fraction it is rather than as a decimal with a run of
+ * zeroes in front of it.
+ */
+function roundRatio(ratio: number): number {
+    if (!Number.isFinite(ratio) || ratio <= 0) return 0;
+    if (ratio >= 100) return Math.round(ratio);
+    if (ratio >= 1) return Number(ratio.toFixed(1));
+    return Number(ratio.toPrecision(2));
+}
+
+/**
+ * The same ratio as a sentence, because a number alone answers nothing.
+ *
+ * Written from the PLAYER's side, which is the side the reader is standing on:
+ * a ratio of 16 means the other one is worth sixteen of you, and a ratio of
+ * 1/16 means you are worth sixteen of them. Both are the same fact and only one
+ * of them is the fact anybody wanted.
+ */
+function comparePower(ratio: number): string {
+    if (!Number.isFinite(ratio) || ratio <= 0) return 'not comparable';
+    if (ratio >= 1.05) {
+        return `they are worth about ${roundRatio(ratio).toLocaleString('en')} of you`;
+    }
+    if (ratio <= 0.95) {
+        return `you are worth about ${roundRatio(1 / ratio).toLocaleString('en')} of them`;
+    }
+    return 'you are worth about the same as each other';
+}
+
 export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Promise<object> {
     if (!isAdminModeEnabled()) return adminDisabled('grant_item');
     const repos = ensureCultivationDb();
@@ -1875,6 +2106,156 @@ export async function handleSetRealm(args: z.infer<typeof SetRealmSchema>): Prom
     };
 }
 
+/**
+ * Every place, or every house, or one of either, made nameable.
+ *
+ * ══ WHY THIS IS THE SAME ACTION AS `spawn_site` ═══════════════════════════
+ *
+ * The knowledge gate IS a gate, so lifting it is exactly what this surface is
+ * for. `spawn_site` already does this for one catalogued site and its header
+ * explains the whole of it: what ADMIN removes is "you have to have happened to
+ * hear about it", which is a content gate and nothing else. This is that action
+ * with a wider selection.
+ *
+ * IT ASSERTS NOTHING. The places and the houses already exist, seeded, with
+ * their own admission bars, their own trial requirements and their own opinions
+ * about whoever turns up. What changes is whether THIS cultivator may say their
+ * names. Every other gate stands: knowing the name of an apex does not open its
+ * door, and `a-favour-skips-the-admission-bar.ts` still decides who gets in.
+ *
+ * ── ORDINARY ROWS, NOT A BYPASS FLAG ─────────────────────────────────────
+ *
+ * Written through `KnowledgeGate.learnIfNew` at the stage the discovery system
+ * already uses for having been told something, so the register and every gated
+ * read see rows exactly like any other. There is deliberately no "admin knows
+ * everything" boolean anywhere: a flag that reads as knowledge would be a second
+ * source of truth beside the table, and the first surface to forget to check it
+ * would quietly disagree with the rest of the game.
+ *
+ * `learnIfNew` is a FLOOR, so anything already held at a firmer stance keeps it
+ * and calling this twice writes nothing the second time.
+ */
+export async function handleGrantKnowledge(
+    args: z.infer<typeof GrantKnowledgeSchema>
+): Promise<object> {
+    if (!isAdminModeEnabled()) return adminDisabled('grant_knowledge');
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, {});
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { run, cultivator } = resolved;
+    const want = args.kind ?? 'any';
+    const onDay = Math.max(0, Math.floor(run.elapsedDays));
+    const knowledge = new KnowledgeGate(repos.db);
+
+    // ── WHAT THERE IS TO KNOW ─────────────────────────────────────────────
+    //
+    // Places come from the authored region catalog, which is present in every
+    // configuration, plus the generated world's own locations when a world is
+    // running - the same two registers `gazetteerFor` reads, and for the same
+    // reason. Houses come from the sect catalog.
+    const entries: Array<{ kind: 'place' | 'sect'; id: string; name: string }> = [];
+    if (want === 'place' || want === 'any') {
+        for (const region of REGIONS) {
+            entries.push({ kind: 'place', id: region.name, name: region.name });
+            for (const place of region.places) {
+                entries.push({ kind: 'place', id: place.name, name: place.name });
+            }
+        }
+        try {
+            const world = await worldForRun(run as never);
+            for (const location of world.locations) {
+                entries.push({ kind: 'place', id: location.id, name: location.name });
+            }
+        } catch {
+            // No world driver is a real configuration, not a failure. The
+            // authored catalog still holds.
+        }
+    }
+    if (want === 'sect' || want === 'any') {
+        for (const sect of SECTS) entries.push({ kind: 'sect', id: sect.id, name: sect.name });
+    }
+
+    // ── ONE, WHEN ONE WAS NAMED ───────────────────────────────────────────
+    let chosen = entries;
+    let how = want === 'any' ? 'every place and every house' : `every ${want}`;
+    if (args.name) {
+        const scored = entries
+            .map(entry => ({ entry, score: matchScore(args.name!, entry.name) }))
+            .sort((a, b) => b.score - a.score);
+        if (scored.length === 0 || scored[0].score < MATCH_THRESHOLD) {
+            return guidingError(
+                'nothing_of_that_name',
+                `Nothing in the ${want === 'any' ? 'place or house' : want} catalogs answers to "${args.name}".`,
+                {
+                    asked: args.name,
+                    nearest: scored.slice(0, 5).map(s => s.entry.name),
+                    hint:
+                        'ADMIN reveals what exists; it does not author. Omit name= to be given ' +
+                        'everything, or kind=place / kind=sect for one register.'
+                }
+            );
+        }
+        chosen = [scored[0].entry];
+        how = `named "${args.name}" and matched to the catalog at ${scored[0].score}/100`;
+    }
+
+    let learned = 0;
+    const alreadyHeld: string[] = [];
+    repos.db.transaction(() => {
+        for (const entry of chosen) {
+            const isNew = knowledge.learnIfNew({
+                holderId: cultivator.id,
+                kind: entry.kind,
+                id: entry.id,
+                name: entry.name,
+                onDay,
+                // The honest source: somebody told them. It is what the
+                // discovery system already uses for being told, and it is what
+                // actually happened - an operator said the name in front of
+                // this cultivator. The note carries the rest.
+                sourceKind: 'told',
+                sourceNote:
+                    'ADMIN lifted the awareness gate. Nothing about admission, standing or what ' +
+                    'anybody there will do was granted.',
+                statement: `${entry.name} exists and can be named.`
+            });
+            if (isNew) learned++;
+            else if (alreadyHeld.length < 5) alreadyHeld.push(entry.name);
+        }
+        writeAdminAudit(repos, 'grant_knowledge', run.id, {
+            cultivatorId: cultivator.id,
+            kind: want,
+            selection: how,
+            offered: chosen.length,
+            learned
+        });
+    })();
+
+    return {
+        adminMode: true,
+        granted: true,
+        knowledge: true,
+        kind: want,
+        selection: how,
+        offered: chosen.length,
+        learned,
+        alreadyHeld: chosen.length - learned,
+        examples: chosen.slice(0, 8).map(e => e.name),
+        sayThis: want === 'sect'
+            ? ['what sects are there', 'tell me about <a house by name>']
+            : ['where can I go', 'travel to <a place by name>'],
+        runFlagged: true,
+        note:
+            'The AWARENESS gate was lifted and nothing else was. These places and houses already ' +
+            'existed with their own admission bars, trial requirements and opinions; what changed is ' +
+            'whether this cultivator may say their names. Knowing the name of an apex does not open ' +
+            'its door. Written as ordinary knowledge rows through learnIfNew, so every gated read ' +
+            'sees them exactly as it sees any other - there is no admin-knows-everything flag, on ' +
+            'purpose, because a flag that read as knowledge would be a second source of truth.'
+    };
+}
+
 export async function handleAuditLog(args: z.infer<typeof AuditLogSchema>): Promise<object> {
     if (!isAdminModeEnabled()) return adminDisabled('audit_log');
     const repos = ensureCultivationDb();
@@ -1967,6 +2348,15 @@ const definitions: Record<AdminAction, ActionDefinition> = {
         aliases: ['realm', 'set_ordinal', 'set_rank', 'ordinal', 'rank', 'rung', 'promote', 'demote'],
         description: 'SETS THE PLAYER RUNG. Moves the cultivator up or down the ladder through advanceRealm, the same road every rank change takes: the peak is stamped, accumulated progress is cleared, the stagnation clock restarts. No breakthrough is rolled and none is claimed. This is how "I am ordinal 44" is said.'
     },
+    grant_knowledge: {
+        schema: GrantKnowledgeSchema,
+        handler: handleGrantKnowledge,
+        aliases: ['know', 'knowledge', 'reveal_all', 'learn', 'grant_names', 'names'],
+        description: 'LIFTS THE AWARENESS GATE WIDE. Makes every place, every house, or one named ' +
+            'either, nameable by this cultivator - as ordinary knowledge rows, not a bypass flag. ' +
+            'They already exist; what changes is whether their names can be said. Admission bars, ' +
+            'trial requirements and whether anybody will talk to you are all untouched.'
+    },
     audit_log: {
         schema: AuditLogSchema,
         handler: handleAuditLog,
@@ -2038,7 +2428,7 @@ Actions: ${ACTIONS.join(', ')}`,
         // `spawn_site` a site kind, `grant_item` a catalog. The union is
         // declared here and each action's own schema narrows it, which is where
         // a wrong one is caught with a message naming that action's options.
-        kind: z.enum(['grave', 'trial', 'pill', 'herb', 'artifact', 'any']).optional(),
+        kind: z.enum(['grave', 'trial', 'pill', 'herb', 'artifact', 'place', 'sect', 'any']).optional(),
         name: z.string().optional(),
         location: z.string().optional(),
         disposition: z.enum(['hostile', 'wary', 'indifferent']).optional(),
@@ -2182,11 +2572,16 @@ export async function handleAdminManage(
             }
             // A wrong ARGUMENT was reported as "Validation failed" and nothing
             // else, because this renderer read `message` and dropped `issues`.
+            // `formatValidationError` already folds the issues into `message`,
+            // so repeating them underneath printed the same sentence twice -
+            // "kind: Invalid enum value..." once as the refusal and once as its
+            // own detail. Shown only when the message did not already carry it.
             if (Array.isArray(data.issues) && data.issues.length > 0) {
-                out.push(data.issues
+                const detail = data.issues
                     .map((i: { path: string; message: string }) =>
                         i.path === '(root)' ? i.message : `${i.path}: ${i.message}`)
-                    .join('\n\n'));
+                    .join('\n\n');
+                if (!String(data.message ?? '').includes(detail)) out.push(detail);
             }
             // `message` already ends with the list when the floor suppressed
             // the suggestions - printing it again underneath was the answer
@@ -2255,6 +2650,22 @@ export async function handleAdminManage(
                 for (const line of data.sayThis) out.push(`    ${line}`);
             }
             out.push('Awareness gate lifted, and nothing else. Every gate inside this site still stands.');
+        } else if (data.knowledge === true) {
+            out.push(heading(`names learned - ${data.learned}`));
+            out.push(fields({
+                'Register': data.kind,
+                'Chosen because': data.selection,
+                'Offered': data.offered,
+                'Newly nameable': data.learned,
+                'Already known': data.alreadyHeld
+            }));
+            if (Array.isArray(data.examples) && data.examples.length > 0) {
+                out.push(`For example: ${(data.examples as string[]).join(', ')}`);
+            }
+            if (Array.isArray(data.sayThis)) {
+                out.push('Say this:');
+                for (const line of data.sayThis) out.push(`    ${line}`);
+            }
         } else if (data.granted === true && data.item) {
             out.push(heading(`granted - ${data.item.name}`));
             out.push(fields({
@@ -2279,8 +2690,13 @@ export async function handleAdminManage(
                 'Rank': data.opponent?.realm?.name ?? data.opponent?.rank,
                 'Standing at': data.location,
                 'Disposition': data.disposition,
-                'Power ratio against you': data.gateLifted?.powerRatio
+                'How they compare': data.gateLifted?.howTheyCompare,
+                'Power ratio': data.gateLifted?.powerRatio
             }));
+            if (Array.isArray(data.sayThis)) {
+                out.push('Say this:');
+                for (const line of data.sayThis) out.push(`    ${line}`);
+            }
             out.push(String(data.gateLifted?.note ?? ''));
         } else if (data.set === true && data.band) {
             // This fell through to a generic "Action performed: set" shrug,

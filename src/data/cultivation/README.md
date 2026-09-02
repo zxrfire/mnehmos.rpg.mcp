@@ -1,5 +1,14 @@
 <!-- tier: 3 -->
 
+> **Before you add or change anything here, read
+> [`../../docs/world/INDEX.md`](../../docs/world/INDEX.md).** It lists every section of the
+> setting bible against the question it answers, and every file in this directory against
+> the design question that file settles. A large share of this world's design rationale is
+> in the header comments of these `.ts` files, where no search of `docs/` reaches it - the
+> index is the only thing that closes that gap, and three agents in one evening wrote
+> invented answers because it did not exist yet. When you add a file, its header comment's
+> first sentence becomes its index row, so make that sentence say the subject.
+
 # Cultivation Content Catalogs
 
 > **Tier 3 - reference.** The authoring contract for the content beside it. Never

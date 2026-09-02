@@ -13,7 +13,7 @@
  */
 
 import { parseIntent } from '../../src/web/actions';
-import { makeGame, cultivatorRow } from './harness';
+import { makeGame, makeGameInWorld, cultivatorRow } from './harness';
 
 describe('asking for a bout', () => {
     it('resolves the phrasings a player uses', () => {
@@ -66,8 +66,22 @@ describe('who a peer phrase resolves to', () => {
      * suicide or a refusal. It picks the closest match on the ladder among the
      * people actually present, and never invents anybody.
      */
+    /**
+     * WITH THE WORLD PINNED, not merely turned on.
+     *
+     * `makeGame({ worldEnabled: true })` mints a world from `randomUUID()`, so
+     * this test met a different several hundred people every run - a different
+     * cast, at different rungs, standing in different places - and the outcome
+     * it asserts was being drawn afresh each time. `AGENTS.md`: a played test
+     * that pins a seed to an outcome without pinning the world is pinning a
+     * coincidence. `makeGameInWorld` creates the world from `worldSeed` before
+     * the run opens, which fixes who the peer phrase can possibly find.
+     */
     it('finds somebody near the player rather than the nearest body', async () => {
-        const { db, game } = makeGame({ seed: 'peer-target', worldEnabled: true });
+        const { db, game } = await makeGameInWorld({
+            seed: 'peer-target',
+            worldSeed: 'peer-target-world'
+        });
         const { cultivator } = await game.newRun('Duellist');
         db.prepare('UPDATE cultivators SET spirit_stones = 5000 WHERE id = ?').run(cultivator.id);
         await game.act('I look around');
@@ -76,8 +90,19 @@ describe('who a peer phrase resolves to', () => {
 
         // It resolved into a real exchange rather than the "nothing to swing
         // at" refusal or the gap rule's decline.
+        //
+        // SAID POSITIVELY AS WELL, which is what pinning the world buys. The
+        // three negatives below pass on an empty square - "nobody in front of
+        // you" matches none of them - so with the cast drawn afresh every run
+        // this could and sometimes did assert nothing at all. Against a fixed
+        // world there is a fixed answer, and the answer is a bout: twelve
+        // exchanges when this was written. The count itself is deliberately not
+        // pinned, because it moves with ordinary combat tuning and the claim
+        // here is that a fight HAPPENED.
+        expect(acted.narration).toMatch(/\d+ exchanges/);
         expect(acted.narration).not.toMatch(/the moment goes past you/);
         expect(acted.narration).not.toMatch(/is not a fight/);
+        expect(acted.narration).not.toMatch(/nobody in front of you/i);
         // And the run is still going, which is the whole point of a bout with
         // an equal rather than with whoever happened to be standing closest.
         expect(cultivatorRow(db, cultivator.id).alive).toBeTruthy();

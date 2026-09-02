@@ -881,10 +881,45 @@ export interface PriorAges {
 // they are: Sweptground, the Low Fall, Scarwater.
 // ─────────────────────────────────────────────────────────────────────────
 
-const SURNAMES = [
+export const SURNAMES = [
     'Yun', 'Bai', 'Shen', 'Lu', 'Xiao', 'Han', 'Mo', 'Qiu', 'Tang', 'Wei',
     'Jiang', 'Cao', 'Ning', 'Fang', 'Duan', 'Gu', 'He', 'Ji', 'Kong', 'Liang'
 ] as const;
+
+/**
+ * Surnames that belong to somebody, and so must never be handed to a stranger.
+ *
+ * A prestigious house's name is not decoration - it is the thing a lineage is read
+ * by, and in a roguelike it is also the handle the PLAYER's knowledge attaches to.
+ * Runs end; what survives is what the person at the keyboard learned, and a name is
+ * how they hold it. A randomly generated Ru farmhand would not merely muddle a
+ * lineage in the fiction - it would poison recognition the player earned by dying. Somebody checking whether a sect is still the sect they knew looks for its
+ * founding families on the roll, because names outlive every person who carries
+ * them and faces do not. That check only means something if the name cannot also
+ * arrive on a farmhand by a dice roll.
+ *
+ * These are kept out of SURNAMES rather than filtered at the point of use, so the
+ * generator physically cannot produce one. The test that asserts the two sets stay
+ * disjoint is the guard - without it this holds by accident, and the next person to
+ * widen the pool breaks a lineage silently.
+ *
+ * ONLY EXCLUSIVE NAMES BELONG HERE, AND THIS SET STAYS SMALL ON PURPOSE. Not every
+ * surname is unique, and one that is not should prove nothing - which is what the
+ * names row of the trust hierarchy already says about them. So the rule is that a
+ * surname is common, and Ru and Meng are the exceptions to it.
+ *
+ * Xu is deliberately absent despite Xu Ci lying under the Anchorhold's datum stone,
+ * because there are Xu at the Measured Span and Held Names too: a name carried by
+ * three houses identifies none of them, and reserving it would assert a lineage the
+ * roster does not support. Gu and Cao are house lines in members.ts and also in the
+ * pool above, so a stranger can be generated into either name - and that is correct
+ * rather than a defect. A Gu somewhere is a person called Gu. Only a name nobody
+ * else carries can carry a house on its own.
+ */
+export const RESERVED_SURNAMES: ReadonlyMap<string, string> = new Map([
+    ['Ru', 'Azure Cloud Pavilion'],
+    ['Meng', 'Nine Peaks Ascetic Order'],
+]);
 
 const GIVEN_HEAD = [
     'Zhen', 'Ci', 'Wan', 'Shu', 'Rong', 'Xu', 'Lan', 'Ke', 'Yao', 'Pei',

@@ -115,6 +115,33 @@ destroyed the only measurement that mattered.
 All three were found by trying to reach the owner's examples, and all three are absences in
 the world rather than in this surface.
 
+**A fourth, found the same way and fixed here rather than reported:** `spawn_encounter` wrote
+a correct row, at the player's exact location, alive, in the right run - and `who is here` did
+not mention them. `othersPresent` *did* return them; what was missing is that `company()` in
+`game.ts` splits the people present on whether the player holds a knowledge record, so an
+opponent nobody had heard of rendered as an anonymous band reading. **`spawn_site` had already
+solved this for places and `spawn_encounter` had never solved it for people.** It writes the
+knowledge record now, and the person is named, addressable and attackable.
+
+Two things a disposition still does not reach, and neither is faked:
+
+- **Hostility is answered, not volunteered.** It is on the knowledge record, so *"what do I
+  know about them"* replies *"and means harm"* with the provenance attached. Nothing in the
+  play layer says it unprompted, and nothing makes them act.
+- **No grudge is written, on purpose.** `GrudgeCause` is *"concrete and specific by design"*
+  and grudges are inherited. There is no cause here - nothing happened, somebody was placed -
+  and writing `other` would put a fabricated grievance permanently into the world's causal
+  record. **The real absence is that there is no store for how a person is disposed toward the
+  player right now**, separate from what they are owed and what they hold against them.
+
+**And one that is not the engine's at all.** The mechanical channel showed a *previous* input's
+`Raw input:` line under a later turn. The server record is correct - verified from the payload,
+`hello` returns `Raw input: "hello"` on its own turn. The rendering is at fault: `S.inspectors`
+in `web/app.js` is keyed by **turn**, turns are **not unique per input** (an ADMIN call does not
+increment one), and the store is written only when `toolCalls` is non-empty - so an input with
+no calls silently inherits whatever that turn already held. `web/app.js` is the fix, not this
+surface.
+
 | The law | Where it is written | What reads it |
 |---|---|---|
 | An object above the ceiling cannot stay below the Lid | `evaluateLayerCrossing` in `engine/world/layers.ts`, refusing `above_the_object_ceiling` by name | **`immortal-world.ts` only**, for NPC descents. Nothing anywhere reads what a PLAYER carries. |
@@ -171,6 +198,7 @@ action with none leaves the prose alone and refuses in its own words.
 | `advance_days` | Real time through `simulateTimeSkip` at idle focus: real aging, hunger, stagnation, death. Says how much ran and what stopped it. | `days`, `months`, `years`, `rations` |
 | `grant_progress` | Fills the qi-unit accumulator so a crossing can be **attempted**. Rolls nothing. | `amount`, `fill` |
 | `set_realm` | Moves the player on the ladder through `advanceRealm`: peak stamped, progress cleared, stagnation clock restarted. | `ordinal` |
+| `grant_knowledge` | **Lifts the awareness gate wide.** Makes every place, every house, or one named either, nameable by this cultivator. They already exist; what changes is whether their names can be said. | `kind`, `name` |
 
 ### Which of the two `spawn`s
 
@@ -201,7 +229,17 @@ arguments, which is the property that makes reading prose safe at all.
 | give me *the Standing Edge* | `grant_item name=The Standing Edge` |
 | I am ordinal 44 / put me at Core Formation / I AM TT | `set_realm ordinal=<rung>` |
 | show me a grave / a trial at *rung* | `spawn_site ordinal=<rung>` |
+| give me knowledge of every sect / I know every location | `grant_knowledge kind=sect` / `kind=place` |
+| ENCOUNTER ORDINAL 19 (the equals sign left out) | `spawn_encounter ordinal=19` |
 | what can you do / how do I ... | `help` |
+
+**An alias is not a named action.** `give` is an alias of `grant_item`, so *"give me knowledge
+of every sect"* used to be refused with "nothing in the pill, herb or artifact catalogs answers
+to 'me knowledge of every sect'". The operator did not name an action there - they used an
+ordinary verb, and **the noun is what says which action they meant.** So a canonical action
+name still wins over any reading, and a generic verb yields to an explicit subject. The other
+half of the same rule: *"give me a 45 weapon"* still means an object, because the noun still
+decides.
 
 Two rules keep this honest, and they are the entire licence for accepting prose:
 
@@ -241,6 +279,34 @@ Three things follow, all of them implemented:
   asked. ordinal: Required.` plus the field list the action accepts, read off its schema so
   it cannot go stale.
 - **`help` is the same sheet**, reachable on purpose rather than only by failing.
+
+## Knowing a name is not an introduction
+
+`grant_knowledge` is the widest gate this surface lifts, so it is worth being exact about
+what it does not touch. The places and the houses are seeded, real, and full of people with
+their own opinions. **What changes is whether this cultivator may say their names.**
+
+Everything else stands, and the game says so unprompted - after granting every house,
+`what sects are there` still answers:
+
+> *Knowing a name is not an introduction. Somebody would have to put you in front of them, or
+> you would have to walk up on your own.*
+
+Admission bars, trial requirements, whether anybody will talk to you, what a favour costs -
+all untouched. A player who knows the name of an apex still cannot walk in.
+
+**Places and houses only, and the omission is the point.** `KnownEntityKind` has four members
+and this takes two. `event` is left out and must stay out: an event is a thing that *happened*,
+so a knowledge record of one is a claim about history, and *"give me knowledge that I killed
+him"* is an outcome wearing an awareness gate as a costume. A place and a house are standing
+there whether or not anybody has heard of them - which is exactly what makes naming them a
+gate and not a truth.
+
+**Written as ordinary knowledge rows**, through `learnIfNew` at the stage the discovery
+system already uses for being told something. There is deliberately **no admin-knows-
+everything flag**: a flag that read as knowledge would be a second source of truth beside the
+table, and the first surface that forgot to check it would quietly disagree with the rest of
+the game. `learnIfNew` is a floor, so anything already held at a firmer stance keeps it.
 
 ## What the surface actually renders
 

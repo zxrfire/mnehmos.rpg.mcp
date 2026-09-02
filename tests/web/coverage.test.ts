@@ -395,6 +395,18 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'what places teach a dao',
         'where can I learn a road',
         'what can I comprehend around here'
+    ],
+
+    // The trust hierarchy's strongest check, put to the character. Every one
+    // of these names an ART, which is the whole of what keeps the verb from
+    // stealing `recall`'s questions about names and faces.
+    recognise: [
+        "is this the Azure Cloud Pavilion's art",
+        'whose art is that',
+        'do I recognise this style',
+        'have I seen this technique before',
+        'do I know this form',
+        'whose technique is this'
     ]
 };
 

@@ -184,13 +184,30 @@ describe('members catalog', () => {
         expect(offences, offences.join('\n')).toEqual([]);
     });
 
-    it('never seats anybody below their faction admission bar', () => {
-        for (const member of MEMBERS.filter(m => !m.outlier)) {
+    it('never seats an admitted disciple below their faction admission bar', () => {
+        // Rank 0 is the menial tier - servants, hands, applicants - and those
+        // people are not on the disciple track, so the disciple bar does not
+        // govern them. They have a bar of their own and it is never zero:
+        // `servantBarOf`, pinned by
+        // `tests/data/a-house-admits-at-three-floors-not-one.test.ts`.
+        for (const member of MEMBERS.filter(m => !m.outlier && m.rankIndex > 0)) {
             const sect = requireSect(member.factionId);
             expect(
                 member.realmOrdinal,
                 `${member.id} stands below the bar they were admitted on`
             ).toBeGreaterThanOrEqual(sect.admissionOrdinal);
+        }
+    });
+
+    it('keeps servants off the disciple bar rather than exempt from sense', () => {
+        // The exemption above must not become a hole: somebody on the menial
+        // tier still cannot out-cultivate their own house.
+        for (const member of MEMBERS.filter(m => !m.outlier && m.rankIndex === 0)) {
+            const sect = requireSect(member.factionId);
+            expect(
+                member.realmOrdinal,
+                `${member.id} is a servant standing above their house's strength`
+            ).toBeLessThan(sect.powerOrdinal);
         }
     });
 
@@ -514,16 +531,25 @@ describe('members catalog', () => {
         expect(rankRealmBand('sect-azure-cloud-pavilion', 99)).toBeUndefined();
 
         for (const sect of SECTS) {
+            // Starts at rank 1, because rank 0 is not the bottom rung of this
+            // ladder - it is a different layer with a floor of its own, and at
+            // three houses that floor stands above the disciple bar. See
+            // `a-house-admits-at-three-floors-not-one.test.ts`, which pins the
+            // rank-0 floor from below and explains why a servant's bar can be
+            // dearer than a disciple's. The monotone rule still holds for every
+            // rung of the disciple ladder, which is where it means something.
             let previousFloor = -1;
             for (let i = 0; i < sect.ranks.length; i++) {
                 const band = rankRealmBand(sect.id, i);
                 expect(band, `${sect.id} rank ${i}`).toBeDefined();
                 expect(band!.minOrdinal).toBeGreaterThanOrEqual(sect.admissionOrdinal);
                 expect(band!.maxOrdinal).toBeGreaterThanOrEqual(band!.minOrdinal);
-                // The floor never falls as rank rises.
-                expect(band!.minOrdinal, `${sect.id} floor fell at rank ${i}`)
-                    .toBeGreaterThanOrEqual(previousFloor);
-                previousFloor = band!.minOrdinal;
+                if (i >= 1) {
+                    // The floor never falls as rank rises.
+                    expect(band!.minOrdinal, `${sect.id} floor fell at rank ${i}`)
+                        .toBeGreaterThanOrEqual(previousFloor);
+                    previousFloor = band!.minOrdinal;
+                }
             }
         }
     });

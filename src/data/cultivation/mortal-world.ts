@@ -20,6 +20,9 @@
  *
  *   30 stones      the starting purse of every run - 3,000 cash
  *   1 cash         a bowl of millet
+ *   8 stones       a cultivator's meal, which is not a bigger bowl of millet -
+ *                  it is a different animal, and it is what a stall means when
+ *                  it prices a block-printed primer at "about a meal"
  *   12 cash        a night at an inn with a floor
  *   20 stones      a Minor Healing Pill, the one pill every run begins with
  *   40 stones      one day of grant access to a workable face in the Marches
@@ -198,6 +201,38 @@ export const PRICES: readonly Price[] = [
     { id: 'price-month-rations', name: 'A month of rations', category: 'food', cash: 120, unit: 'month', note: 'What travelling actually costs, and the number that makes the Grain Abstinence Pill worth nine thousand stones.' },
     { id: 'price-inn-night', name: 'Night at an inn', category: 'lodging', cash: 12, unit: 'night', note: 'A floor, a blanket and no privacy. A private room is four times that and exists in perhaps six buildings per town.' },
     { id: 'price-month-lodging', name: 'A month\'s lodging', category: 'lodging', cash: 300, unit: 'month', note: 'A room in a market town, which is roughly one and a half months of a porter\'s wage.' },
+
+    // ── and the cultivator end of the same scale ──────────────────────
+    //
+    // THE CONTRADICTION THIS CLOSES, WHICH WAS NEVER A CONTRADICTION.
+    //
+    // The Lesser Qi-Gathering Manual's catalog entry says it is "sold at every
+    // market town for the price of a meal", and a stall asks 780 cash for one -
+    // eight spirit stones. Read against the two rows above, both mortal and
+    // both under a stone, that sentence is off by a factor of a hundred and
+    // thirty, and a player checking the board would conclude the catalog was
+    // wrong about its own cheapest book.
+    //
+    // It is not. The design owner's ruling is that the manual's text is
+    // correct and it is a CULTIVATOR'S meal it is priced against, which is a
+    // different object from an innkeeper's bowl - a meal using cultivator
+    // animals is not a larger version of a mortal one. The whole block above
+    // is labelled "the mortal end of the scale" and the scale had no other
+    // end on it, so the only meal a reader could find was the wrong one.
+    //
+    // Priced at the primer, deliberately, because the primer is what the claim
+    // is made against: 800 cash is eight stones, which is the Lesser
+    // Qi-Gathering Manual to the stone, and the deeper stall book at thirteen
+    // is then a meal and a half. The manual's sentence is now checkable on the
+    // board instead of being contradicted by it.
+    //
+    // NOT what `eat` charges. `MEAL_COST_STONES` is one stone - a cultivator
+    // buying ordinary food at cultivator prices, which is why the receipt says
+    // a farmer at the next table did the same thing for less. This row is the
+    // other thing entirely, and the gap between one stone and eight is the
+    // difference between eating and eating something that was cultivating
+    // until recently.
+    { id: 'price-spirit-beast-meal', name: 'Spirit-beast meat, a cultivator\'s meal', category: 'food', cash: 800, unit: 'each', note: 'Eight stones on the board for one sitting, before whatever a province adds to it - a mule\'s worth of a mortal\'s food, and the reason the two boards do not compare. What is being paid for is flesh off something that was drawing qi while it lived; a hundred bowls of millet do not add up to it and never will. The measure a stall means when it says a block-printed primer costs about what a meal does.' },
 
     // ── transport ─────────────────────────────────────────────────────
     { id: 'price-ferry', name: 'Ferry crossing', category: 'transport', cash: 2, unit: 'crossing', note: 'Free for Clear River Fordhall members, and the Alliance counts the debt in crossings rather than cash.' },

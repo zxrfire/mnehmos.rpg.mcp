@@ -24,6 +24,12 @@
  *   shame.ts          a fact about somebody that other people hold and that
  *                     lowers them - neither a grudge nor a secret, and the
  *                     third of the three things this layer keeps about a person
+ *   how-near-you-stand-to-somebody.ts
+ *                     how near one person stands to another, which is the only
+ *                     thing that decides whether they get the story or the fact
+ *   what-is-said-about-somebody.ts
+ *                     reputation, DERIVED at read time from what reached them
+ *                     and what they stand near enough to hold. Never stored
  *
  * Deliberately does NOT re-export `hearing.ts` or `stealth-perception.ts`,
  * which are the older D&D-substrate mechanics in this directory. They are
@@ -40,3 +46,5 @@ export * from './discovery.js';
 export * from './travellers.js';
 export * from './secrets.js';
 export * from './shame.js';
+export * from './how-near-you-stand-to-somebody.js';
+export * from './what-is-said-about-somebody.js';
