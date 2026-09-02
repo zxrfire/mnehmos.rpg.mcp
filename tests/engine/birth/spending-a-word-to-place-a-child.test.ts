@@ -25,7 +25,7 @@ const PAVILION = 'sect-azure-cloud-pavilion';
 describe('the Pavilion has two doors and only one of them is the door', () => {
     it('keeps membership and probation apart', () => {
         const doors = doorsOf(PAVILION)!;
-        expect(doors.probationOrdinal, 'the real door stands at the floor').toBe(0);
+        expect(doors.guestFromOrdinal, 'the real door stands at the floor').toBe(0);
         expect(
             doors.membershipOrdinal,
             'membership is a different and higher bar, and it has never moved'

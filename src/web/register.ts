@@ -989,7 +989,7 @@ export interface RegisterWayIn {
      * The rung at which a house will take somebody on and start spending,
      * without admitting them. One house has one and it is the real door.
      */
-    probationOrdinal: number | null;
+    guestFromOrdinal: number | null;
     requirement: string;
     preferredRoots: string[];
     minInsight: number | null;
@@ -2430,7 +2430,7 @@ function buildWayIn(factionId: string): RegisterWayIn | null {
         intake: intakeRouteOf(factionId) ?? (sect.recruits ? 'open' : 'closed'),
         minOrdinal: admission?.minOrdinal ?? sect.admissionOrdinal,
         minRank: rankName(admission?.minOrdinal ?? sect.admissionOrdinal),
-        probationOrdinal: admission?.probationOrdinal ?? null,
+        guestFromOrdinal: admission?.guestFromOrdinal ?? null,
         // A dao house has no entrance requirement because it has no entrance.
         // Its route in is the adoption block, which the entry prints separately.
         requirement: admission?.requirement
@@ -6821,8 +6821,8 @@ function wayInBlock(w: RegisterWayIn): string {
         : w.intake === 'adoption'
             ? `<b>Adoption only.</b> There is no admission day and no applicant. The number beside it - ${w.minOrdinal} - is the rung a family member is expected to reach, not a bar anybody clears from outside.`
             : `<b>${w.minOrdinal}</b> &middot; ${esc(w.minRank)}`
-                + (w.probationOrdinal !== null
-                    ? `. That bar is for membership and is not the door most people come through: it will take somebody on at <b>${w.probationOrdinal}</b> and carry them for years before deciding.`
+                + (w.guestFromOrdinal !== null
+                    ? `. That bar is for membership and is not the door most people come through: it will take somebody on at <b>${w.guestFromOrdinal}</b> and carry them for years before deciding.`
                     : '');
 
     return `<div class="wayin"><dl>

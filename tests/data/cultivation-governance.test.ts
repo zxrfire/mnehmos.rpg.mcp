@@ -1027,13 +1027,13 @@ describe('the Azure Cloud intake', () => {
     });
 
     it('keeps the door at the bottom without moving the membership bar', () => {
-        expect(admission.probationOrdinal).toBe(0);
+        expect(admission.guestFromOrdinal).toBe(0);
         expect(admission.minOrdinal).toBe(3);
         expect(admission.minOrdinal).toBe(sect.admissionOrdinal);
         expect(admission.requirement).toMatch(/never moved/i);
         expect(admission.requirement).toMatch(/wide intake, narrow conversion/i);
         // Nobody else in the catalog has a probation floor.
-        const withProbation = SECTS.filter(x => getSectAdmission(x.id)?.probationOrdinal !== undefined);
+        const withProbation = SECTS.filter(x => getSectAdmission(x.id)?.guestFromOrdinal !== undefined);
         expect(withProbation.map(x => x.id)).toEqual([AZURE_CLOUD_INTAKE.factionId]);
     });
 
