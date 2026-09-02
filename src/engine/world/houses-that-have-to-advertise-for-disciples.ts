@@ -410,7 +410,7 @@ export function billsOnTheWall(input: WallInput): RecruitingBill[] {
         // one that wants a few years of it first.
         const takesFrom = house.admissionOrdinal === realm.ordinalStart
             ? `anybody who has reached ${realm.name} at all`
-            : `anybody a way into ${realm.name}, and not from the first rung of it`;
+            : `anybody who is some way into ${realm.name}, and not from the first rung of it`;
         return {
             houseId: house.id,
             houseName: house.name,
