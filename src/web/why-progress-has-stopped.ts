@@ -191,7 +191,9 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 `You are practising no cultivation method. Without a manual there is no road `
                 + `for the qi to take, so nothing accumulates at ${standing} and nothing will. `
                 + `What is missing is a book, or somebody willing to teach you one.`,
-            structure: `techniqueCeiling.state=no_method, techniqueCap=0, multiplier=0`
+            structure:
+                'No method is practised, so the manual carries to ordinal 0 and the rate '
+                + 'multiplier is 0. A stretch of any length returns exactly nothing.'
         });
     } else if (input.manual.state === 'exhausted') {
         const cap = input.manualCap ?? input.ordinal;
@@ -202,7 +204,10 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 `Your manual carries to ${rankName(cap)}. You are standing at ${standing}. `
                 + `It is not slower here, it is stopped, and no amount of sitting with it `
                 + `changes that. What is missing is the next volume.`,
-            structure: `techniqueCeiling.state=exhausted, techniqueCap=${cap}, multiplier=0`
+            structure:
+                `The manual carries to ordinal ${cap} and this cultivator stands at ordinal `
+                + `${input.ordinal}, so the rate multiplier past it is 0. A stretch of any `
+                + `length returns exactly nothing.`
         });
     }
 
@@ -217,8 +222,9 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 + `You are standing at ${standing}. The ground here has nothing further to give `
                 + `you unaided: buy access, buy stones, or leave.`,
             structure:
-                `canAdvanceHere=false, localCeilingOrdinal=${input.localCeilingOrdinal}, `
-                + `ordinal=${input.ordinal}`
+                `${input.regionName} carries nobody past ordinal `
+                + `${input.localCeilingOrdinal} and this cultivator stands at ordinal `
+                + `${input.ordinal}, so the ground here cannot take them further unaided.`
         });
     }
 
@@ -232,7 +238,9 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
             line:
                 `The qi where you are standing is thin: half rate, and a penalty at the `
                 + `bottleneck. This slows you, it does not stop you.`,
-            structure: `ambient=thin`
+            structure:
+                'The qi band here is thin: half the cultivation rate, and a penalty at the '
+                + 'bottleneck. A cost rather than a wall.'
         });
     }
 
@@ -260,9 +268,9 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                     `${seat.sectName} has you at ${seat.rankTitle}. To raise you to `
                     + `${seat.nextRankTitle}, ${unmet.join('; and ')}.`,
                 structure:
-                    `seat: requiredOrdinal=${seat.requiredOrdinal}, ordinal=${input.ordinal}, `
-                    + `requiredContribution=${seat.requiredContribution}, `
-                    + `contribution=${seat.contribution}`
+                    `${seat.nextRankTitle} wants ordinal ${seat.requiredOrdinal} against `
+                    + `ordinal ${input.ordinal} held, and ${seat.requiredContribution} `
+                    + `contribution against ${seat.contribution} held.`
             });
         }
     } else if (input.seat) {
@@ -272,7 +280,7 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
             line:
                 `${input.seat.sectName} has you at ${input.seat.rankTitle}, which is the top `
                 + `of this house. There is nowhere further inside these walls.`,
-            structure: 'seat: at highest rank'
+            structure: 'This is the highest rank the house has; there is no seat above it.'
         });
     }
 
@@ -288,8 +296,10 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                     + `qi-units. You hold ${round(input.progressAvailable)}, which is `
                     + `${round(short)} short.`,
                 structure:
-                    `progressRequired=${input.progressRequired}, `
-                    + `progressAvailable=${input.progressAvailable}`
+                    `The rung above ordinal ${input.ordinal} is priced at `
+                    + `${round(input.progressRequired)} qi-units and `
+                    + `${round(input.progressAvailable)} are held, which is `
+                    + `${round(short)} short.`
             });
         }
     }
@@ -309,9 +319,13 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 : `You have held ${standing} for ${round(input.yearsAtCurrentRealm)} years of `
                   + `the ${round(input.stagnationYears)} the ladder credits. `
                   + `${round(-past)} still counted.`,
-            structure:
-                `yearsAtCurrentRealm=${input.yearsAtCurrentRealm}, `
-                + `stagnationYears=${input.stagnationYears}`
+            structure: past >= 0
+                ? `${round(input.yearsAtCurrentRealm)} years held at ordinal `
+                  + `${input.ordinal} against the ${round(input.stagnationYears)} the ladder `
+                  + `credits before settling: ${round(past)} years past it.`
+                : `${round(input.yearsAtCurrentRealm)} years held at ordinal `
+                  + `${input.ordinal} of the ${round(input.stagnationYears)} the ladder `
+                  + `credits before settling, with ${round(-past)} still counted.`
         });
     }
 
@@ -325,7 +339,7 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 `Nothing is stopping you. Your manual still has further to teach, `
                 + `${input.regionName} still carries somebody at ${standing}, and the road up `
                 + `is the ordinary one: accumulate, and attempt it.`,
-            structure: 'no gate binding'
+            structure: 'No gate is binding: no wall, no ceiling, no clock run out.'
         });
     }
 
