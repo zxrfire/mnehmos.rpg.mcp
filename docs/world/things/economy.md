@@ -13,6 +13,7 @@ arguing about ownership.
 | Section | Loads when |
 |---|---|
 | [Scarcity is the engine](#scarcity-is-the-engine) | the player is priced out of something, or asks why anybody bothers digging |
+| [What restocks a thing](#what-restocks-a-thing) | stock runs out, a place is worked over, or somebody asks why the cheap things come back |
 | [Spirit stones](#spirit-stones) | spirit stones change hands, or somebody is cultivating where the ambient qi will not support them |
 | [What things cost](#what-things-cost) | a price is quoted, or the player asks what something is worth |
 | [Possession, ownership, and where things came from](#possession-ownership-and-where-things-came-from) | ownership of an object is disputed, or the player acquires something significant |
@@ -40,6 +41,55 @@ Cultivation is **embedded in society** rather than confined to mountaintop hermi
 alchemists, formation masters, merchants, craftsmen, teachers, officials, military
 cultivators, researchers, administrators, healers, explorers. That is what makes an
 economy exist at all.
+
+## What restocks a thing
+
+<!-- tier: 2 trigger="stock runs out, a place is worked over, or somebody asks why the cheap things come back" -->
+
+[`items.md`](./items.md#does-it-have-a-history) decides how a thing is **stored** - a count, or a
+row with a history. This is the question that decides how it **comes back**, and it is a
+different question with a different answer, because two things stored identically can refill
+by completely different means.
+
+There are three tiers and the first is the one people forget, because there is nothing to
+find in the code:
+
+**Not modelled at all.** A bowl of millet, a robe, a night's board, a mortal sword. These have
+**a price and an availability, and never a count** - the board in
+[`../../src/data/cultivation/mortal-world.ts`](../../../src/data/cultivation/mortal-world.ts)
+carries no quantity anywhere on it, on purpose. Nobody works out how much grain a province
+holds. **What moves this tier is events, not consumption:** a thousand travellers buying meals
+does not cause a famine, and a famine causes the meals to stop. So the way to make millet
+scarce is to do something to the province, never to decrement anything.
+
+**Counted, out of the ground.** Herbs, beast materials, ore. A number per holder and per place,
+no id and no history. It falls when people take it and it grows back, which means **a district
+can be worked out** - a hillside picked over stays picked over until it recovers, and where
+somebody has been is legible from what is not there any more. This is the only tier where
+taking has a physical consequence for the place.
+
+**Counted, out of labour.** Common manuals, cheap pills, ordinary talismans - anything made in
+quantity by people nobody can name. It restocks by somebody's months rather than by any
+season, so **it cannot be exhausted the way a hillside can**: emptying a stall does not empty
+the world, it raises what the next copy is worth until writing one out is worth somebody's
+time again. The cost of a common manual is already computed this way - it is what the copyist
+gave up - which is why the price moves with the depth of the book and not with anybody's
+opinion of it.
+
+**Tracked.** One object, one id, a provenance. It does not restock at all; it moves. See
+[possession, ownership, and where things came from](#possession-ownership-and-where-things-came-from).
+
+Two rules cut across every tier:
+
+- **Grade is fixed when a thing is made and never moves.** Nothing is upgraded, and nothing
+  earns its way from counted up into tracked by being valuable or famous. An earth-grade
+  carriage is an earth-grade carriage for its whole existence. **The only movement is
+  downward**, and it is the ordinary rule that a piece is worth one rung less than the whole -
+  `shardPower`, applied identically to a shattered sabre and to a shattered immortal weapon.
+- **Crafting creates, it does not promote.** A recipe consumes counted stock and produces a
+  *new* thing whose grade is whatever that thing is. Refining does not raise the ingredients;
+  it spends them. You can make more tracked objects this way, and each one is a new individual
+  whose provenance starts at its making rather than continuing anybody else's.
 
 ## Spirit stones
 

@@ -96,7 +96,7 @@
 
 import type { NpcRecord } from './npc-state.js';
 import type { FactionRecord, WorldState } from './world-state.js';
-import { makeObject, type ObjectRecord } from './possessions.js';
+import { makeObject, type ObjectRecord, type ObjectSignificance } from './possessions.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { conflictsWithRoot, getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { getTechnique, TECHNIQUES } from '../../data/cultivation/techniques.js';
@@ -400,6 +400,35 @@ export function housesTeaching(techniqueId: string): number {
  */
 export const COMMON_HOUSE_COUNT = 4;
 
+/**
+ * Counted or tracked, for a book.
+ *
+ * `docs/world/things/items.md` makes `significance` the switch and `mundane` the
+ * marker for a thing that gets no provenance at all. This is the one place a
+ * manual is asked which side of that line it is on, because the answer was
+ * previously written out three times as `cap >= 29 ? ... : cap >= 17 ? ...` -
+ * once in each of the three sites that mint a library holding - and those
+ * thresholds are the definition of "common" that {@link isCommonlyHeld} was
+ * written to RETIRE.
+ *
+ * Its own comment says why: commonness was never a fact about height, it is a
+ * fact about how many people hold it, and the two coincided by accident until
+ * the shelves were filled in. Measured against the catalog as it stands, the
+ * old thresholds and the live predicate disagree on five of thirty-seven
+ * cultivation manuals - three of them the province's shared crossing books, on
+ * thirteen to twenty-four shelves apiece, each of which was minting a
+ * provenance-carrying row on every one of those shelves for a book nobody can
+ * call theirs and anybody may copy.
+ *
+ * So the line is: A BOOK NOBODY OWNS IS A COUNT; A BOOK SOMEBODY OWNS IS A ROW.
+ * Above it, how deep the book goes decides how much of a story it gets, which
+ * is the ordinary reading of the field.
+ */
+export function significanceOfManual(techniqueId: string, cap: number): ObjectSignificance {
+    if (isCommonlyHeld(techniqueId)) return 'mundane';
+    return cap >= INNER_SHELF_CAP ? 'significant' : 'notable';
+}
+
 export function isCommonlyHeld(techniqueId: string): boolean {
     const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
     if (!t || t.class !== 'cultivation' || t.cap == null) return true;
@@ -653,10 +682,8 @@ export function seedSectLibraries(state: WorldState): ObjectRecord[] {
                 id: libraryObjectId(faction.id, m.id),
                 name: m.name,
                 kind: 'manual',
-                // A book that carries somebody past the middle of the ladder is
-                // not ordinary property, and provenance is only kept above
-                // `mundane`.
-                significance: m.cap >= 29 ? 'significant' : m.cap >= 17 ? 'notable' : 'mundane',
+                // A book nobody owns is a count; a book somebody owns is a row.
+                significance: significanceOfManual(m.id, m.cap),
                 description: `The ${faction.name}'s copies of a cultivation manual carrying to ordinal ${m.cap}.`,
                 possessorId: faction.id,
                 ownerId: faction.id,
@@ -722,7 +749,7 @@ export function librariesCarriedOutBy(
             id: libraryObjectId(faction.id, techniqueId),
             name: t.name,
             kind: 'manual',
-            significance: cap >= 29 ? 'significant' : cap >= 17 ? 'notable' : 'mundane',
+            significance: significanceOfManual(techniqueId, cap),
             description:
                 `The ${faction.name}'s copies of a cultivation manual carrying to ordinal ${cap}, `
                 + 'brought out of the house it split from.',
@@ -1604,7 +1631,7 @@ export function applyManualCopying(
                         id: libraryObjectId(faction.id, techniqueId),
                         name: t.name,
                         kind: 'manual',
-                        significance: cap >= 29 ? 'significant' : cap >= 17 ? 'notable' : 'mundane',
+                        significance: significanceOfManual(techniqueId, cap),
                         description:
                             `The ${faction.name}'s copy of a cultivation manual carrying to ordinal ${cap}, `
                             + `written out by ${master.name} for the people coming up behind them.`,

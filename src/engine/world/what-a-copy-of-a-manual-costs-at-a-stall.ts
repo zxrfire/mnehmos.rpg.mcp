@@ -85,11 +85,17 @@
  *                 courtyard for, and a stall selling it would be selling the
  *                 only argument the house has.
  *
- *   BELOW THE     `COMMON_MANUAL_CAP`. The same line `seedSectLibraries`
- *   LINE          already draws when it files a library holding as `mundane`
- *                 rather than `notable`, which is the counted/tracked line -
- *                 and `items.md` says a thing is cash-priced exactly where it
- *                 is fungible, so those two boundaries have to be the same one.
+ *   BELOW THE     `COMMON_MANUAL_CAP`. Note what this is and is not. The
+ *   LINE          counted/tracked line for a book is the FIRST condition alone
+ *                 - `significanceOfManual` files a holding as `mundane` where
+ *                 `isCommonlyHeld` says nobody owns it - and `items.md` says a
+ *                 thing is cash-priced exactly where it is fungible. So a stall
+ *                 sells a strict SUBSET of what is counted, and the extra
+ *                 condition is about the stall rather than about the book: a
+ *                 shared crossing scripture on twenty-four shelves is nobody's
+ *                 property and anybody may copy it, and it still does not turn
+ *                 up on a trestle beside the cooking pots. It moves house to
+ *                 house, between people who can already read it.
  *
  * A manual above that line is not expensive here. It has no price at all, which
  * is what `items.md` means by "not 'expensive' - not for sale", and the refusal
