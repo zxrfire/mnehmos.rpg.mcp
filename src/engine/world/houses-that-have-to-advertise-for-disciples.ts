@@ -326,6 +326,26 @@ export const WHAT_THE_PAPER_GIVES_AWAY: Record<WhyItIsUpThere, string> = {
 };
 
 /**
+ * The same tell, on the second and third paper.
+ *
+ * Three houses with no seat post on one wall often, and the reading above is
+ * four clauses long - so `look around` opened with the identical paragraph
+ * three times, and it is the first thing anybody reads in a new run. Measured
+ * in a played run at Thirdwall on turn 1.
+ *
+ * These are not a shorter version of the reading. They are what somebody
+ * NOTICES on the second paper, which is that it is the same paper: the whole
+ * value of a repeat is the pattern, and the pattern is worth one clause rather
+ * than four. Keyed the same way for the same reason, so a new category is
+ * worded here and nowhere else.
+ */
+export const THE_SAME_TELL_AGAIN: Record<WhyItIsUpThere, string> = {
+    no_seat: 'No address on this one either.',
+    open_door: 'The same bar, which is to say none.',
+    no_name: 'The same careful hand, and another name nobody has said to you.'
+};
+
+/**
  * Whose word reaches this ground.
  *
  * A house with a seat is known in its own province and nowhere else, which is

@@ -321,7 +321,25 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
     return [
         `${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}, in ${placeName(cultivator)}.`,
         `Spirit root: ${root.name}. Might ${cultivator.attributes.might}, Insight ${cultivator.attributes.insight}, Fortune ${cultivator.attributes.fortune}, Charm ${cultivator.attributes.charm}.`,
-        `Cultivation progress ${Math.round(cultivator.cultivationProgress)} qi-units. HP ${cultivator.hp}/${cultivator.maxHp}. Satiety ${cultivator.satiety}/100. Spirit stones ${cultivator.spiritStones}.`,
+        // THE BODY AND THE PURSE, SAID ONCE EACH.
+        //
+        // This line carried the climb as well - `Cultivation progress N
+        // qi-units` - and `standingStructure` says `N of M qi-units toward the
+        // next rank` four lines below it. So the sheet opened by naming a
+        // number with no denominator and then named it again with one, and a
+        // player read the same figure twice on the way down. The second is the
+        // sentence worth having, because a progress figure means nothing
+        // without the price of the rung; this line leaves the climb to it.
+        //
+        // The three that stay are the same three numbers, out of the slashes.
+        // A field row is not shorter than a sentence, it is only harder to
+        // read, and this is the screen somebody opens when they suspect they
+        // are in trouble.
+        `${cultivator.hp >= cultivator.maxHp
+            ? `Unmarked, ${cultivator.maxHp} of ${cultivator.maxHp}.`
+            : `${cultivator.hp} of ${cultivator.maxHp} left in the body.`} `
+        + `${cultivator.satiety >= 100 ? 'Fed.' : `Satiety ${cultivator.satiety} of 100.`} `
+        + `${cultivator.spiritStones} spirit stone${cultivator.spiritStones === 1 ? '' : 's'} in the purse.`,
         // AND WHAT CARRYING THAT MANY ACTUALLY COSTS.
         //
         // The sheet reported the number and never what it meant. Played to
@@ -484,8 +502,7 @@ export function factsForTimeSkip(
     );
     if (skip.died) {
         // Required. A player who is not told they are dead is not playing.
-        const death = `${after.name} is dead: ${describeDeathCause(skip.deathCause, after.realmOrdinal)}. `
-            + 'The run is closed. There is no reload.';
+        const death = theDeathSentence(after.name, skip.deathCause, after.realmOrdinal);
         lines.push(death);
         required.push(death);
     }
@@ -718,12 +735,36 @@ function timeSkipProse(
     paragraphs.push(closing.join(' '));
 
     if (skip.died) {
-        paragraphs.push(
-            `${after.name} is dead - ${describeDeathCause(skip.deathCause, after.realmOrdinal)}. The run is closed and written to the ledger. There is no reload and no revival.`
-        );
+        // WORD FOR WORD what the `required` channel holds, and that is the
+        // whole point of calling the same function.
+        //
+        // These were two sentences saying one thing in slightly different
+        // words - "is dead - X. The run is closed and written to the ledger.
+        // There is no reload and no revival." here, "is dead: X. The run is
+        // closed. There is no reload." there - and `withRequiredLines` appends
+        // what it cannot find, so it could not find this and appended it. The
+        // player was told they had died three times in one answer: once on the
+        // day it happened in the digest, once here, and once again at the
+        // bottom with a paragraph of somebody else's gossip in between.
+        //
+        // Measured in a played run, starving in Sweptground on turn 51.
+        paragraphs.push(theDeathSentence(after.name, skip.deathCause, after.realmOrdinal));
     }
 
     return paragraphs.join('\n\n');
+}
+
+/**
+ * That the cultivator is dead and the run will not continue, in one sentence.
+ *
+ * One function because there is one sentence. Two call sites compose it - the
+ * digest's `required` list and the prose - and `withRequiredLines` matches on
+ * a normalised substring, so the moment the two drift the player reads the
+ * same verdict twice with a paragraph between them.
+ */
+function theDeathSentence(name: string, cause: DeathCause | null | undefined, ordinal: number): string {
+    return `${name} is dead: ${describeDeathCause(cause, ordinal)}. `
+        + 'The run is closed. There is no reload.';
 }
 
 function dayStamp(event: SimEvent): string {
@@ -1889,8 +1930,28 @@ export function factsForTreatment(
     if (course.treated.length === 0) {
         lines.push('Nothing closed. The month was spent and the meridians are where they were.');
     } else {
+        // THE SAME WOUND, DESCRIBED ONCE.
+        //
+        // A month of care closes them worst first, and three burnt channels
+        // carry the same description - so a player who came in with three got
+        // that description three times, word for word, with a blank line
+        // between each. Measured in a played run: nine identical lines out of
+        // the eleven the answer contained.
+        //
+        // Nothing is dropped. Every wound that closed is still counted and
+        // still described; the ones that are the same are counted together,
+        // which is also how a person would say it.
+        const counted = new Map<string, number>();
         for (const description of course.treated) {
-            lines.push(`Closed: ${description} It is scar tissue now, and scar tissue costs nothing.`);
+            counted.set(description, (counted.get(description) ?? 0) + 1);
+        }
+        for (const [description, howMany] of counted) {
+            lines.push(
+                howMany === 1
+                    ? `Closed: ${description} It is scar tissue now, and scar tissue costs nothing.`
+                    : `Closed, ${howMany} of them, and all the same: ${description} `
+                      + 'They are scar tissue now, and scar tissue costs nothing.'
+            );
         }
     }
 
