@@ -881,10 +881,30 @@ export interface PriorAges {
 // they are: Sweptground, the Low Fall, Scarwater.
 // ─────────────────────────────────────────────────────────────────────────
 
-const SURNAMES = [
+export const SURNAMES = [
     'Yun', 'Bai', 'Shen', 'Lu', 'Xiao', 'Han', 'Mo', 'Qiu', 'Tang', 'Wei',
     'Jiang', 'Cao', 'Ning', 'Fang', 'Duan', 'Gu', 'He', 'Ji', 'Kong', 'Liang'
 ] as const;
+
+/**
+ * Surnames that belong to somebody, and so must never be handed to a stranger.
+ *
+ * A prestigious house's name is not decoration - it is the thing a lineage is read
+ * by. Somebody checking whether a sect is still the sect they knew looks for its
+ * founding families on the roll, because names outlive every person who carries
+ * them and faces do not. That check only means something if the name cannot also
+ * arrive on a farmhand by a dice roll.
+ *
+ * These are kept out of SURNAMES rather than filtered at the point of use, so the
+ * generator physically cannot produce one. The test that asserts the two sets stay
+ * disjoint is the guard - without it this holds by accident, and the next person to
+ * widen the pool breaks a lineage silently.
+ */
+export const RESERVED_SURNAMES: ReadonlyMap<string, string> = new Map([
+    ['Ru', 'Azure Cloud Pavilion'],
+    ['Xu', 'the Anchorhold'],
+    ['Meng', 'Nine Peaks Ascetic Order'],
+]);
 
 const GIVEN_HEAD = [
     'Zhen', 'Ci', 'Wan', 'Shu', 'Rong', 'Xu', 'Lan', 'Ke', 'Yao', 'Pei',
