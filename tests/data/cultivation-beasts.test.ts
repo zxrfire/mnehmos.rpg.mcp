@@ -53,8 +53,11 @@ import {
     veinContenders,
     sealedOnlyBeasts,
     negotiableBeasts,
+    getBeastsByDisposition,
     rollBeast
 } from '../../src/data/cultivation/beasts.js';
+import { SectAlignmentSchema } from '../../src/schema/cultivation.js';
+import { getSectsByAlignment } from '../../src/data/cultivation/sects.js';
 
 const BEAST_IDS = new Set(BEASTS.map(b => b.id));
 
@@ -97,6 +100,113 @@ describe('spirit beasts: the catalog', () => {
         for (const b of BEASTS) {
             expect(b.ordinal).toBeGreaterThanOrEqual(0);
             expect(b.ordinal).toBeLessThanOrEqual(MAX_ORDINAL);
+        }
+    });
+});
+
+/**
+ * The disposition axis, which is a design decision living mostly as data and
+ * therefore needs saying out loud somewhere a reader is forced to look.
+ *
+ * Three rulings are pinned here:
+ *
+ *   1. It is the HOUSES' axis. `SectAlignment`, the same field a sect row
+ *      carries, read the way `demonic-sects-and-what-they-are-willing-to-do.ts`
+ *      reads it: who pays, and did they agree. A second enum beside it would be
+ *      a parallel catalog for one question.
+ *   2. It is orthogonal to the rung and to `nature`. If either predicted it,
+ *      the field would be decoration.
+ *   3. **A righteous entry stands inside the hunting window**, at or above
+ *      `BEAST_CORE_ORDINAL` and below `BEAST_CHANGE_ORDINAL`. Without one the
+ *      whole design is unreachable: every target a player could take would
+ *      have deserved it, and a window in which nothing costs anything has no
+ *      decision in it. This is the assertion to read if somebody is wondering
+ *      why the Cairn Hound is in the catalog.
+ */
+describe('what a beast is inclined to do about people', () => {
+    it('uses the houses\' own alignment axis rather than a second enum', () => {
+        for (const b of BEASTS) {
+            expect(() => SectAlignmentSchema.parse(b.disposition), b.id).not.toThrow();
+            expect(getBeastsByDisposition(b.disposition).map(x => x.id)).toContain(b.id);
+        }
+        // The same vocabulary answers about a house and about an animal, which
+        // is the whole reason it is this field and not a new one.
+        for (const alignment of ['righteous', 'neutral', 'demonic'] as const) {
+            expect(getBeastsByDisposition(alignment).length, `nothing is ${alignment}`)
+                .toBeGreaterThan(0);
+            expect(getSectsByAlignment(alignment).length, `no house is ${alignment}`)
+                .toBeGreaterThan(0);
+        }
+    });
+
+    it('keeps a friendly thing inside the hunting window, so the choice exists', () => {
+        const window = BEASTS.filter(b =>
+            b.ordinal >= BEAST_CORE_ORDINAL && b.ordinal < BEAST_CHANGE_ORDINAL);
+        const friendly = window.filter(b => b.disposition === 'righteous');
+        expect(
+            friendly.length,
+            'nothing tracked and below the change has ever taken anything from anybody, so '
+            + 'every target in the window deserved it and the disposition axis decides nothing'
+        ).toBeGreaterThanOrEqual(1);
+        // And it carries a core, which is what makes the decision cost something.
+        expect(friendly.some(b => coreOf(b.id) !== undefined),
+            'the friendly thing in the window is not worth killing, so nobody would').toBe(true);
+    });
+
+    it('is orthogonal to the rung and to what shape of problem it is', () => {
+        // Overlapping ordinal ranges: a disposition is not a threat band.
+        const ordinalsOf = (d: 'righteous' | 'neutral' | 'demonic'): number[] =>
+            getBeastsByDisposition(d).map(b => b.ordinal);
+        const demonic = ordinalsOf('demonic');
+        const righteous = ordinalsOf('righteous');
+        expect(Math.max(...demonic), 'demonic things are all below the friendly ones')
+            .toBeGreaterThan(Math.min(...righteous));
+        expect(Math.min(...demonic), 'friendly things are all below the demonic ones')
+            .toBeLessThan(Math.max(...righteous));
+        // And no `nature` maps one-to-one onto a disposition, in either
+        // direction. If it did, one of the two axes would be redundant.
+        for (const d of ['righteous', 'neutral', 'demonic'] as const) {
+            const natures = new Set(getBeastsByDisposition(d).map(b => b.nature));
+            expect(natures.size, `everything ${d} is the same kind of problem`)
+                .toBeGreaterThan(1);
+        }
+    });
+
+    it('gates nothing: every disposition is reachable and takeable', () => {
+        // Hunting is never refused on the strength of this field. The catalog's
+        // own reachability lookup does not read it, and nothing else may.
+        for (const b of BEASTS) {
+            expect(findBeastsForOrdinal(b.ordinal).map(x => x.id), b.id).toContain(b.id);
+        }
+    });
+});
+
+/**
+ * The counted-versus-tracked line, pinned against the material data rather than
+ * asserted.
+ *
+ * The ruling is that an ordinary animal is an amount and not an individual -
+ * `items.md`'s rule applied to living things - and that `BEAST_CORE_ORDINAL` is
+ * the line, because it is already the rung at which a beast is worth something
+ * singular. The check is that the materials agree with that and have not
+ * drifted: nothing below it has a core, and everything above it that yields
+ * anything at all yields one.
+ */
+describe('an amount below the line, an individual above it', () => {
+    it('agrees with the material data about where the line is', () => {
+        for (const b of BEASTS) {
+            const core = coreOf(b.id);
+            if (b.ordinal < BEAST_CORE_ORDINAL) {
+                expect(core, `${b.id} is an amount and carries a core`).toBeUndefined();
+                continue;
+            }
+            if (b.materialIds.length === 0) continue;
+            expect(core, `${b.id} is tracked, yields materials, and has no core`).toBeDefined();
+        }
+        // And the two things anybody could actually negotiate with yield
+        // nothing at all, which is what keeps the line from being a price list.
+        for (const b of negotiableBeasts().filter(x => x.persistence !== 'sealed_only')) {
+            expect(b.materialIds, `${b.id} speaks and is stock`).toEqual([]);
         }
     });
 });
