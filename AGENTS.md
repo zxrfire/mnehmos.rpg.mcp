@@ -1310,3 +1310,83 @@ Green tests from five minutes ago say nothing about the tree now. Run the suite 
 `tsc --noEmit`, and commit only if both pass **in that same pass** with no agent edits in
 between. If the tree is moving too fast to get a clean pair, wait for the owners to finish
 rather than committing a snapshot you cannot vouch for.
+
+### The catalog has usually already reasoned about the hazard you are about to hit
+
+Before changing a value in `src/data/cultivation/`, **read the comment next to it.** Not the
+file header - the note beside the field.
+
+Three times in one session an agent changed a number that a comment ten lines away had already
+explained, and broke a test each time. The clearest case: the Azure Cloud Pavilion's
+`admissionOrdinal` was moved to 0 on the strength of prose describing a door at the floor,
+while `governance-and-water-rights.ts` said, in as many words, that `rankRealmBand` derives
+every member's band from that field and *"it must stay at the membership bar or the whole
+ladder slides down"*. The same note explained why the probationary rung is deliberately not in
+`sect.ranks`.
+
+**A catalog field that looks like a free number is usually load-bearing**, and this repo tends
+to have written down why. The reasoning is next to the data because that is where it belongs;
+the failure is not reading it.
+
+### A design decision that lives only as a number needs a test
+
+The Pavilion's bar sat at 3 while two separate passages of catalog prose described a door at
+the bottom of the ladder. **Nothing caught the contradiction for as long as it existed, because
+an admission bar is a number nobody reads twice.**
+
+Prose gets read and argued about. A number does not. So when a decision is deliberate - this
+door is open on purpose, these three houses share an intake, this cap is a rate test - **pin it
+with a test that says so in its name**, and put the reasoning in the test file. That is the
+only place a future reader is forced to look.
+
+### The git index is shared, and two habits will destroy somebody else's work
+
+Several agents work in this tree at once and it is dirty almost all the time.
+
+- **Never `git commit -a`.** It swept nineteen files of other agents' in-progress work into one
+  commit in a single session.
+- **`git commit` with no pathspec commits the WHOLE INDEX**, including files another agent has
+  already staged. `git add` of your own paths does not protect you. Stage explicit paths and
+  check `git status --short` before committing.
+- **Never `git apply --cached --unidiff-zero`** to stage a partial hunk selection. With zero
+  context git applies by line number and verifies nothing, so dropping hunks invalidates the
+  offsets of the rest. That committed syntactically invalid TypeScript that took three commits
+  to unbreak, while the author's own working tree compiled fine.
+
+To take only your own changes out of a file somebody else is live in, **reverse-apply the other
+party's hunks with normal context to a copy that already compiles.**
+
+### A new RNG draw is a regression until proved otherwise
+
+Adding a draw to an existing stream shifts every later draw off it. One agent's new hearsay
+channel silently changed which name an unrelated channel picked, and a presence test went red
+for a reason that had nothing to do with presence.
+
+**Give any new draw its own stream**, and verify existing draws are byte-identical by running
+base and change back to back in one command.
+
+### The docs are filed by noun and searched for by question
+
+This has cost more work than any other single thing here. Measured across the repo: **121,265
+words of design prose live in comments inside `src/data/cultivation/`, against 94,476 words in
+the whole of `docs/world/`.** Rationale markers point the same way - "measured" appears 41
+times in the docs and 238 times in the catalog.
+
+So the material exists and cannot be found. The consequence of practising a stolen art is
+under *Items*, because a manual is an object - correct filing, useless retrieval. In one
+session three separate design questions were answered by inventing something already written,
+**one of them by an agent that had read the exact passage an hour earlier.**
+
+**Start from the index, not from a grep.** Every tier-2 section carries a
+`trigger="..."` marker stating the situation it answers, and those triggers are the retrieval
+key: they are phrased as the question you actually have.
+
+### An index shows where a thing is. It does not restate it
+
+A parent file exists to point, and a pointer costs a reader almost nothing while a copy costs
+them the whole passage. **Restating content in an index is worse than not indexing it**, because
+now there are two copies to drift apart and an agent burns its context reading the wrong one.
+
+The same rule governs cross-references between docs: when another file already covers something,
+**link to it and say what it settles in one line.** Four times in one session a doc grew a
+paragraph that already existed elsewhere, and each had to be trimmed back to a pointer.
