@@ -112,6 +112,17 @@
  * sees is already in the forage and hunt draws upstream; what the ground has
  * left is arithmetic on top of them.
  *
+ * ── WHO ACTUALLY DRAWS IT DOWN ───────────────────────────────────────────
+ *
+ * The world's own people, every year, whether or not anybody is playing. A
+ * cultivator's pouch is a rounding error against a district's year and always
+ * was: measured, all three call sites in the game ask this table for ONE unit
+ * against a mortal band that regrows forty-four over the same span, so for a
+ * while the column could not fall by any actor and a thousand world-years
+ * produced no worked-out ground anywhere. See the population-pressure section
+ * below, and `applyGroundPressure` in `the-world-changing-on-its-own.ts`, which
+ * is its one caller.
+ *
  * ── AND IT COMES BACK ────────────────────────────────────────────────────
  *
  * A province picked clean that stays clean forever is a worse world than an
@@ -125,6 +136,7 @@ import { QI_DENSITY_DEFAULT, clampQiDensity } from './qi-scale.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { HERBS } from '../../data/cultivation/herbs.js';
 import { BEAST_MATERIALS } from '../../data/cultivation/beasts.js';
+import { gradeForOrdinal } from '../../data/cultivation/techniques.js';
 import { TechniqueGradeSchema, type TechniqueGrade } from '../../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -439,6 +451,195 @@ export function recordGroundDraw(place: LocationRecord, draw: GroundDraw): boole
     if (!patch) return false;
     Object.assign(place.data, patch);
     return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT THE PEOPLE STANDING ON IT TAKE
+//
+// THE DRAW-DOWN IS POPULATION PRESSURE. IT IS NOT ANYBODY'S POUCH.
+//
+// Measured before this existed, and it is the reason this section is here at
+// all. Every call site asks for ONE unit:
+//
+//   herb  mortal  capacity 2340 | regrows 44.88 over the 7 days a gather takes
+//                               | takes 1 -> net +43.88
+//   beast mortal  capacity 1070 | regrows 29.32 over the 10 days a hunt takes
+//                               | takes 1 -> net +28.32
+//
+// So mortal stock could not fall, ever, by any actor, and a thousand
+// world-years produced no worked-out band anywhere. The `drawn` column read as
+// a working depletion model over an input that was three orders of magnitude
+// too small to move it - the shape AGENTS.md calls a field nothing writes, one
+// size up: a field written only with a rounding error.
+//
+// The fix is the design owner's own diagnosis: **everyone gathers it, not just
+// one person.** A cultivator's pouch is a rounding error against a district's
+// year and is SUPPOSED to be. What draws a band down is the people who live
+// there doing what people who live there do, every year, whether or not
+// anybody is playing.
+//
+// ── NOBODY COMPETES OUTSIDE THEIR OWN BAND ───────────────────────────────
+//
+// A person works the grade their rung opens, and `GRADE_ORDINAL_BANDS` already
+// says which that is for every rung in the world - 0, 13, 21, 29, 37. So the
+// pressure on a band is the people whose OWN band it is, read off
+// `gradeForOrdinal`, and a Core Formation cultivator does not spend their year
+// among the mortal-grade beds any more than a villager can reach past them.
+//
+// That is the population pyramid arriving on the supply side without anybody
+// restating it: there are hundreds in the mortal band and a handful in the
+// heaven band, so mortal ground holds up under a whole province and heaven
+// ground near anywhere people live was picked over generations ago. Nothing
+// here chose that; it is the pyramid multiplied by a regrowth clock.
+//
+// ── AND NO DRAW ──────────────────────────────────────────────────────────
+//
+// Arithmetic on a headcount and a clock. This section adds no RNG stream and
+// takes none, so no seeded world's draws move because it exists.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What one person standing on this ground takes out of it in a year.
+ *
+ * NOT CHOSEN HERE. It is the figure this module's own test has used since it
+ * was written to decide whether a band is sustainable - *a pass a month, and
+ * what a pass yields at the top of the regard band* - and it is stated once
+ * rather than retyped either side of the equilibrium it defines.
+ *
+ * Twelve trips out in a year is not a trade, it is what living somewhere looks
+ * like. The people who make a living at it are already counted in this: they
+ * are the same people, and what separates a district that holds from one that
+ * does not is how many of them there are, which is the point.
+ */
+export const TAKEN_PER_PERSON_PER_YEAR = 12 * 20;
+
+/**
+ * How the year's take divides between the two kinds, at one grade.
+ *
+ * By what the ground offers, which is the only non-arbitrary split available:
+ * people work what is there. It has one property worth having and it is why it
+ * is derived rather than a half - because both kinds are pressed in proportion
+ * to their own capacity, both bands at a grade reach break-even at the SAME
+ * headcount, so "how many people can this ground carry" is one number per grade
+ * rather than two that have to be kept in step.
+ */
+export function shareOfTheYearSpentOn(kind: StockKind, grade: TechniqueGrade): number {
+    let total = 0;
+    for (const k of STOCK_KINDS) total += BAND_CAPACITY_AT_ORDINARY_GROUND[k][grade];
+    if (total <= 0) return 0;
+    return BAND_CAPACITY_AT_ORDINARY_GROUND[kind][grade] / total;
+}
+
+/**
+ * How many people this ground can carry at a grade without losing it.
+ *
+ * The whole equilibrium in one expression, and every term in it comes from
+ * somewhere else: the capacities are summed `rarityWeight` off the catalogs,
+ * the regrowth clock is {@link REGROWTH_YEARS_BY_GRADE}, and the per-person
+ * year is {@link TAKEN_PER_PERSON_PER_YEAR}.
+ *
+ * At ordinary ground it reads about 14 people in the mortal band, a third of a
+ * person in the earth band and a two-hundredth of one at heaven. Those are not
+ * three decisions; they are one clock read at three speeds.
+ */
+export function peopleThisGroundCanCarry(
+    place: LocationRecord,
+    grade: TechniqueGrade
+): number {
+    let capacity = 0;
+    for (const kind of STOCK_KINDS) capacity += capacityFor(place, kind, grade);
+    const perYear = capacity / REGROWTH_YEARS_BY_GRADE[grade];
+    return perYear / TAKEN_PER_PERSON_PER_YEAR;
+}
+
+/**
+ * How many people are working each grade, off the rungs they stand at.
+ *
+ * The caller supplies the rungs - this module reads no roster and no location
+ * - and `gradeForOrdinal` decides which band each of them is in. A grade
+ * nobody stands at is absent rather than zero, so a caller can skip it.
+ */
+export function whoWorksEachBand(
+    ordinals: Iterable<number>
+): ReadonlyMap<TechniqueGrade, number> {
+    const out = new Map<TechniqueGrade, number>();
+    for (const ordinal of ordinals) {
+        const grade = gradeForOrdinal(ordinal);
+        out.set(grade, (out.get(grade) ?? 0) + 1);
+    }
+    return out;
+}
+
+/**
+ * What the people standing here take out of one band over a span of days.
+ *
+ * Linear in the span, so a year advanced in one step and a year advanced in
+ * twelve take the same amount out of the ground - which is the same property
+ * `advanceTime` promises about everything else and is what keeps a split
+ * advance honest.
+ */
+export function pressureOverDays(input: {
+    workers: number;
+    kind: StockKind;
+    grade: TechniqueGrade;
+    days: number;
+}): number {
+    const workers = Math.max(0, input.workers);
+    const days = Math.max(0, input.days);
+    return workers
+        * TAKEN_PER_PERSON_PER_YEAR
+        * shareOfTheYearSpentOn(input.kind, input.grade)
+        * (days / DAYS_PER_YEAR);
+}
+
+export interface GroundPressure {
+    /** One draw per band the people here actually press on. */
+    draws: readonly GroundDraw[];
+    /** Bands that went from holding something to holding nothing this pass. */
+    workedOut: readonly GroundDraw[];
+}
+
+/**
+ * A span of a place's own people working the ground under them, applied.
+ *
+ * Pure in the same sense the rest of this file is: it takes the record, hands
+ * back the draws, and the caller writes them. `recordGroundDraw` is the write.
+ *
+ * `ordinals` is every living person standing on this ground. A place nobody
+ * stands on presses on nothing at all, which is why the wilds keep what the
+ * districts around the towns lost.
+ */
+export function whatThePeopleHereTake(
+    place: LocationRecord,
+    input: { ordinals: readonly number[]; days: number; onDay: number }
+): GroundPressure {
+    const draws: GroundDraw[] = [];
+    const workedOut: GroundDraw[] = [];
+    if (input.ordinals.length === 0 || input.days <= 0) return { draws, workedOut };
+
+    const bands = whoWorksEachBand(input.ordinals);
+    // A working copy, because each band writes its own two cells and a later
+    // band must not read a stale record. Bands do not share cells, so this is
+    // belt and braces rather than load-bearing - and it is cheap.
+    let cursor = place;
+    for (const [grade, workers] of bands) {
+        for (const kind of STOCK_KINDS) {
+            const wanted = Math.floor(
+                pressureOverDays({ workers, kind, grade, days: input.days })
+            );
+            if (wanted <= 0) continue;
+            const before = standingStock(cursor, kind, grade, input.onDay);
+            if (before.capacity <= 0) continue;
+            const draw = drawFromTheGround(cursor, { kind, grade, wanted, onDay: input.onDay });
+            if (draw.taken <= 0 && draw.after >= draw.capacity) continue;
+            draws.push(draw);
+            if (before.reading !== 'worked_out' && draw.reading === 'worked_out') {
+                workedOut.push(draw);
+            }
+            cursor = applyGroundDraw(cursor, draw);
+        }
+    }
+    return { draws, workedOut };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

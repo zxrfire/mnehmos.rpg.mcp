@@ -23,14 +23,20 @@ import {
     BAND_CAPACITY_AT_ORDINARY_GROUND,
     REGROWTH_YEARS_BY_GRADE,
     STOCK_GRADES,
+    TAKEN_PER_PERSON_PER_YEAR,
     applyGroundDraw,
     capacityFor,
     drawFromTheGround,
     howTheGroundReads,
+    peopleThisGroundCanCarry,
+    pressureOverDays,
+    shareOfTheYearSpentOn,
     standingStock,
     theOrdinaryAnimalsAreGone,
     whatIsLeftOutThere,
-    whatTheGroundStillHas
+    whatTheGroundStillHas,
+    whatThePeopleHereTake,
+    whoWorksEachBand
 } from '../../../src/engine/world/what-a-place-still-has-in-the-ground.js';
 
 /** Ordinary open ground, which is where almost everybody stands. */
@@ -104,9 +110,13 @@ describe('what a place still has in the ground', () => {
             // pelts. At earth grade it does not, which is why a house arguing
             // about where to send a party is having a real argument.
             const place = ordinaryGround();
-            // One person foraging most of the year: a pass a month, and what a
-            // pass yields at the top of the regard band.
-            const A_YEARS_WORK = 12 * 20;
+            // One person's year on the ground: a pass a month, and what a pass
+            // yields at the top of the regard band. Read off the module rather
+            // than retyped, because the equilibrium this test states and the
+            // pressure the world applies have to be the same arithmetic - they
+            // were two copies of this figure for exactly as long as nothing
+            // wrote the column.
+            const A_YEARS_WORK = TAKEN_PER_PERSON_PER_YEAR;
             const grownBackPerYear = (grade: (typeof STOCK_GRADES)[number]) =>
                 capacityFor(place, 'herb', grade) / REGROWTH_YEARS_BY_GRADE[grade];
 
@@ -286,6 +296,136 @@ describe('what a place still has in the ground', () => {
             // then the one that matters gets skipped with it.
             const { draw } = take(ordinaryGround(), 'herb', 'mortal', 1, 0);
             expect(draw.line).toBeNull();
+        });
+    });
+
+    // ── THE DRAW-DOWN IS THE POPULATION, NOT THE POUCH ───────────────────
+    //
+    // Every one of these is a design decision living as arithmetic, which is
+    // the shape AGENTS.md says must be pinned as a sentence. The defect they
+    // exist to stop coming back is measured and specific: all three call sites
+    // of `drawFromTheGround` ask for ONE unit, mortal herb regrows 44.88 over
+    // the seven days a gather takes, so the net of a full-time player's whole
+    // career was POSITIVE and mortal stock could not fall by any actor. A
+    // thousand world-years produced zero rows.
+    describe('what the people standing on it take', () => {
+        it('is a whole population, against which one gatherer is a rounding error', () => {
+            // The two numbers side by side, because the gap between them is
+            // the finding. A pouch does not move a district; a district's
+            // people do.
+            const place = ordinaryGround();
+            const onePass = 1;
+            const aVillage = pressureOverDays({
+                workers: 20, kind: 'herb', grade: 'mortal', days: DAYS_PER_YEAR
+            });
+            expect(aVillage / onePass).toBeGreaterThan(1000);
+        });
+
+        it('presses on a band only through the people whose own rung opens it', () => {
+            // `GRADE_ORDINAL_BANDS` decides which grade a rung works, and this
+            // is the whole of the gate. A villager does not compete for
+            // earth-grade beds and a Core Formation cultivator does not spend
+            // their year among the mortal ones.
+            const bands = whoWorksEachBand([0, 4, 12, 13, 20, 21, 29, 37]);
+            expect(bands.get('mortal')).toBe(3);
+            expect(bands.get('earth')).toBe(2);
+            expect(bands.get('heaven')).toBe(1);
+            expect(bands.get('immortal')).toBe(1);
+            expect(bands.get('chaos')).toBe(1);
+        });
+
+        it('divides a year between the two kinds so both reach the line together', () => {
+            // Derived from what the ground offers rather than halved, and the
+            // property that buys is that "how many people can this ground
+            // carry" is ONE number per grade instead of two that drift.
+            for (const grade of STOCK_GRADES) {
+                const shares = shareOfTheYearSpentOn('herb', grade)
+                    + shareOfTheYearSpentOn('beast_material', grade);
+                expect(shares).toBeCloseTo(1, 9);
+            }
+            const place = ordinaryGround();
+            for (const grade of STOCK_GRADES) {
+                const carry = peopleThisGroundCanCarry(place, grade);
+                for (const kind of ['herb', 'beast_material'] as const) {
+                    const takenAtTheLine = pressureOverDays({
+                        workers: carry, kind, grade, days: DAYS_PER_YEAR
+                    });
+                    const grownBack = capacityFor(place, kind, grade)
+                        / REGROWTH_YEARS_BY_GRADE[grade];
+                    expect(takenAtTheLine).toBeCloseTo(grownBack, 6);
+                }
+            }
+        });
+
+        it('carries a village at mortal grade and cannot carry one at earth', () => {
+            // THE SHAPE OF THE WHOLE MODEL, and it is the population pyramid
+            // arriving on the supply side rather than being restated. Hundreds
+            // of people stand in the mortal band and a handful in the heaven
+            // one, so ordinary ground holds up under a settlement and the good
+            // bands near anywhere people live were picked over generations ago.
+            const place = ordinaryGround();
+            expect(peopleThisGroundCanCarry(place, 'mortal')).toBeGreaterThan(10);
+            expect(peopleThisGroundCanCarry(place, 'earth')).toBeLessThan(1);
+            expect(peopleThisGroundCanCarry(place, 'heaven')).toBeLessThan(0.05);
+            // And each rung down the ladder carries strictly more people than
+            // the rung above it, which is the ordering the whole setting rests
+            // on. Nothing chose it: it is the catalogs over the regrowth clock.
+            const carry = STOCK_GRADES.map(g => peopleThisGroundCanCarry(place, g));
+            for (let i = 1; i < carry.length; i++) {
+                expect(carry[i]).toBeLessThan(carry[i - 1]);
+            }
+        });
+
+        it('takes nothing at all where nobody is standing', () => {
+            // The mechanism that keeps the wilds worth walking to. Presence is
+            // `NpcRecord.locationId` and a place nobody stands on is pressed
+            // on by nobody - which is why going further out is an answer to a
+            // district that has been worked out rather than a consolation.
+            const place = ordinaryGround();
+            const worked = whatThePeopleHereTake(place, {
+                ordinals: [], days: DAYS_PER_YEAR, onDay: 0
+            });
+            expect(worked.draws).toHaveLength(0);
+        });
+
+        it('works a district out under a crowd, and says which band went', () => {
+            const place = ordinaryGround();
+            const crowd = Array.from({ length: 60 }, () => 0);
+            const worked = whatThePeopleHereTake(place, {
+                ordinals: crowd, days: DAYS_PER_YEAR, onDay: 0
+            });
+            expect(worked.draws.length).toBeGreaterThan(0);
+            expect(worked.workedOut.map(d => `${d.kind}/${d.grade}`).sort())
+                .toEqual(['beast_material/mortal', 'herb/mortal']);
+        });
+
+        it('takes the same amount over a year however many steps the year came in', () => {
+            // A split advance and a single one have to agree, which is the
+            // promise `advanceTime` makes about everything else.
+            const inOne = pressureOverDays({
+                workers: 9, kind: 'herb', grade: 'mortal', days: DAYS_PER_YEAR
+            });
+            let inTwelve = 0;
+            for (let i = 0; i < 12; i++) {
+                inTwelve += pressureOverDays({
+                    workers: 9, kind: 'herb', grade: 'mortal', days: DAYS_PER_YEAR / 12
+                });
+            }
+            expect(inTwelve).toBeCloseTo(inOne, 9);
+        });
+
+        it('lets a band that was pressed and left alone come back on its own clock', () => {
+            // Pressure is not a permanent mark. A settlement that empties out
+            // gives its ground back, at the rate the grade already states.
+            const place = ordinaryGround();
+            const worked = whatThePeopleHereTake(place, {
+                ordinals: Array.from({ length: 60 }, () => 0), days: DAYS_PER_YEAR, onDay: 0
+            });
+            let after = place;
+            for (const draw of worked.draws) after = applyGroundDraw(after, draw);
+            expect(standingStock(after, 'herb', 'mortal', 0).reading).toBe('worked_out');
+            expect(standingStock(after, 'herb', 'mortal', DAYS_PER_YEAR).reading)
+                .not.toBe('worked_out');
         });
     });
 
