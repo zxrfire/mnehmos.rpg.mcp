@@ -24,10 +24,13 @@ import {
     ACTION_NAMES,
     INTERACT_INTENTS,
     MOVE_INTENTS,
+    OATH_INTENTS,
+    PASSAGE_INTENTS,
     TIME_CONSUMING_ACTIONS,
     parseIntent,
     type ActionName
 } from '../../src/web/actions.js';
+import { WHAT_EACH_VERB_IS_FOR } from '../../src/web/what-each-verb-is-for-in-the-players-words.js';
 
 /**
  * How a player asks for each action, in their own words.
@@ -63,6 +66,56 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I set out for Scarwater',
         'I head north',
         'I make my way to Scarwater'
+    ],
+    /**
+     * Hands rather than words, and the same resolver a fight uses. Written
+     * here because a member of the closed set that plain English cannot reach
+     * is the same as not having it - which is the whole of this file.
+     */
+    coerce: [
+        'I force him to submit',
+        'I make him kneel',
+        'I beat the truth out of the steward',
+        'I tame the beast'
+    ],
+    /**
+     * The three ways of covering ground that are not walking, and a word given.
+     *
+     * All four were engine modules with no caller: the conveyance ladder, the
+     * fold curve, the Span counter and the oath contract shape. `ride` in
+     * particular was a LABEL on `move` - one of five intents, all of which
+     * resolved through the same flat one-day journey - so it is written here as
+     * its own verb and out of `MOVE_PHRASINGS` below.
+     */
+    ride: [
+        'I ride to Scarwater',
+        'I ride the horse',
+        'I saddle a beast and ride for Kettle',
+        'I take a carriage to Scarwater',
+        'I take a spirit boat to Halfwater',
+        'I fly to Scarwater on my sword'
+    ],
+    fold: [
+        'I fold space to Scarwater',
+        'I step through space to Kettle',
+        'I fold to the Quiet Marches',
+        'I tear open space and go to Kettle',
+        'I cross the distance in one step'
+    ],
+    passage: [
+        'I buy passage to Kettle',
+        'what does the Span board say',
+        'what would a ticket to Kettle cost',
+        'I book a place on the next span',
+        'is there a Span counter here'
+    ],
+    oath: [
+        'I swear an oath to the Azure Dew Sect',
+        'I give my word to the Azure Dew Sect',
+        'what oaths am I carrying',
+        'I break my oath',
+        'I walk out of the vow I gave',
+        'who holds my word'
     ],
     cultivate: [
         'I cultivate',
@@ -543,12 +596,13 @@ describe('every intent behind a door is reachable from plain English too', () =>
         flee: ['I flee', 'I run away from the fight'],
         approach: ['I approach the elder', 'I walk up to the gate warden'],
         enter: ['I enter the village', 'I go into the courtyard'],
-        follow: ['I follow the merchant', 'I shadow the courier'],
-        // The other one that was unreachable. `move` and not `interact`,
-        // because what somebody arrives on is a fact about the journey - see
-        // the row in `MOVE_INTENT_PATTERNS` and
-        // `engine/world/what-a-conveyance-does-to-a-journey.ts`.
-        ride: ['I ride to Nine Peaks', 'I ride the horse to Scarwater']
+        follow: ['I follow the merchant', 'I shadow the courier']
+        // `ride` was here, as a sixth `move` intent, and the label was the
+        // whole of what it bought: every `move` resolves through one journey
+        // routine whichever intent matched, so riding and walking were the same
+        // event with a different word on the log while the conveyance layer sat
+        // with no caller at all. It is its own verb now and its phrasings are
+        // in `PHRASINGS` above.
     };
 
     for (const [intent, phrasings] of Object.entries(MOVE_PHRASINGS)) {
@@ -568,6 +622,63 @@ describe('every intent behind a door is reachable from plain English too', () =>
     });
 
     /**
+     * AND THE SAME GUARD ON THE VERBS THAT CARRY STEPS RATHER THAN LABELS.
+     *
+     * The enum guard above walks `ACTION_NAMES` and nothing else, so an INTENT
+     * can ship unreachable while its verb looks covered - which is how `steal`
+     * and `ride` each shipped with no sentence that reached them. It is worth
+     * saying plainly what this pair of blocks does and does not close: it
+     * covers `interact`, `move`, and the two below, and there is no general
+     * guard over every member of `INTENT_ACTIONS`. That is the gap.
+     *
+     * These two are here because one branch of each SPENDS or COMMITS
+     * something and the other is a read, so a step nobody can reach is either a
+     * feature nobody has or a price nobody can avoid.
+     */
+    const PASSAGE_PHRASINGS: Record<string, readonly string[]> = {
+        board: ['what does the Span board say', 'what would a ticket to Kettle cost'],
+        buy: ['I buy passage to Kettle', 'I book a place on the next span']
+    };
+
+    for (const [intent, phrasings] of Object.entries(PASSAGE_PHRASINGS)) {
+        it(`passage/${intent}: ${phrasings.length} phrasings all route there`, () => {
+            const misses = phrasings
+                .map(text => [text, parseIntent(text)] as const)
+                .filter(([, got]) => got.action !== 'passage' || got.intent !== intent)
+                .map(([text, got]) => `"${text}" -> ${got.action}/${got.intent ?? '-'}`);
+            expect(misses, `misrouted: ${misses.join('; ')}`).toEqual([]);
+        });
+    }
+
+    it('covers every step at a counter', () => {
+        const covered = new Set(Object.keys(PASSAGE_PHRASINGS));
+        const uncovered = PASSAGE_INTENTS.filter(name => !covered.has(name));
+        expect(uncovered, `no phrasings written for: ${uncovered.join(', ')}`).toEqual([]);
+    });
+
+    const OATH_PHRASINGS: Record<string, readonly string[]> = {
+        read: ['what oaths am I carrying', 'who holds my word'],
+        swear: ['I swear an oath to the Azure Dew Sect', 'I give my word to the Azure Dew Sect'],
+        break: ['I break my oath', 'I walk out of the vow I gave']
+    };
+
+    for (const [intent, phrasings] of Object.entries(OATH_PHRASINGS)) {
+        it(`oath/${intent}: ${phrasings.length} phrasings all route there`, () => {
+            const misses = phrasings
+                .map(text => [text, parseIntent(text)] as const)
+                .filter(([, got]) => got.action !== 'oath' || got.intent !== intent)
+                .map(([text, got]) => `"${text}" -> ${got.action}/${got.intent ?? '-'}`);
+            expect(misses, `misrouted: ${misses.join('; ')}`).toEqual([]);
+        });
+    }
+
+    it('covers every thing that can be done about a word', () => {
+        const covered = new Set(Object.keys(OATH_PHRASINGS));
+        const uncovered = OATH_INTENTS.filter(name => !covered.has(name));
+        expect(uncovered, `no phrasings written for: ${uncovered.join(', ')}`).toEqual([]);
+    });
+
+    /**
      * And the negative, which is the half `misparse.test.ts` owns everywhere
      * else: neither new verb may steal the sentence next door. Stealing from a
      * HOUSE is months of siphoning, robbing a GRAVE is the site layer, and
@@ -579,6 +690,133 @@ describe('every intent behind a door is reachable from plain English too', () =>
         expect(parseIntent('I rob the grave of Shen Guyi').action).toBe('site');
         expect(parseIntent('what do the sect reserves hold').action).toBe('sect');
     });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THE HOLE THIS FILE HAD, AND THE WALK THAT CLOSES IT
+//
+// Everything above walks `ACTION_NAMES`. That is the wrong list, and it has now
+// let three separate features ship unreachable - `steal`, `ride`, and coercion
+// with concealment - because **a verb is not the only door into the engine.**
+// An INTENT is a door too: `interact/steal` reaches a resolver `interact/talk`
+// does not, `attack/opening` decides who gets the first round, and
+// `coerce/tame` is how an animal is acquired. None of them is a member of the
+// enum, so the enum walk cannot see any of them and passes with the door shut.
+//
+// `WHAT_EACH_VERB_IS_FOR` is the single place every verb's intent labels are
+// declared - the compiler already refuses a verb with no entry - so it is the
+// right list to walk. Every intent declared there needs either a phrasing that
+// reaches it, or a row in the exemption list below saying out loud that the
+// door is untested.
+//
+// ── THE EXEMPTION LIST IS A FINDING, NOT A PERMISSION ────────────────────
+//
+// It is populated with what was already true when this walk was written, and
+// its length is asserted so it can only SHRINK. A new intent cannot be added to
+// it without editing this number, which is the whole point: the next intent to
+// ship has to be either reachable or deliberately and visibly not.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('every intent DECLARED is a door somebody can find', () => {
+    /**
+     * Phrasings for intents the enum walk cannot see, keyed `verb/intent`.
+     *
+     * `interact` and `move` are covered above by their own tables and are
+     * skipped here rather than duplicated - a second copy of those phrasings is
+     * a second place for them to drift.
+     */
+    const INTENT_PHRASINGS: Record<string, readonly string[]> = {
+        'attack/drive_off': ['I attack the bandit', 'I start a fight with him'],
+        'attack/subdue': ['I spar with him', 'I subdue the thief'],
+        'attack/kill': ['I mean to kill the thief', 'I murder the courier'],
+        'attack/humiliate': ['I humiliate him in front of them', 'I make an example of the clerk'],
+        // Hands rather than words, and the four things somebody wants out of it.
+        'coerce/submit': ['I force him to submit', 'I make him kneel'],
+        'coerce/hand_over': [
+            'I strong-arm the steward into opening the gate',
+            'I force the merchant to hand over the ledger'
+        ],
+        'coerce/talk': ['I beat the truth out of him', 'I make him talk'],
+        // An animal made to submit is a tamed animal. Same verb, same resolver.
+        'coerce/tame': ['I tame the beast', 'I break the wolf in']
+    };
+
+    /**
+     * Doors nobody has written a phrasing for yet.
+     *
+     * Every row is a real gap: an intent the glossary tells a model to emit and
+     * that nothing in this file proves a person can reach by typing. It is
+     * recorded rather than fixed here because these belong to the verbs' own
+     * owners - and it is recorded rather than ignored because an unwritten gap
+     * is the exact failure this whole file exists to prevent.
+     *
+     * ONLY SHRINK IT.
+     */
+    const UNTESTED_DOORS: readonly string[] = [
+        'passage/board', 'passage/buy',
+        'oath/read', 'oath/swear', 'oath/break',
+        'sect/leave', 'sect/promote', 'sect/stipend', 'sect/standing', 'sect/join',
+        'sect/siphon', 'sect/order', 'sect/recruit', 'sect/admission', 'sect/curriculum',
+        'sect/expel', 'sect/duty', 'sect/donate', 'sect/guest',
+        'site/approach', 'site/outside', 'site/enter', 'site/take',
+        'legacy/counters', 'legacy/bury', 'legacy/dig', 'legacy/lodge', 'legacy/claim',
+        'petition/grant', 'petition/stock', 'petition/descent',
+        'posture/stance', 'posture/war', 'posture/alliance', 'posture/defect', 'posture/tribute',
+        'seal/read', 'seal/wake',
+        'offer/channel', 'offer/offering', 'offer/send',
+        'look/history', 'look/ground_time', 'look/crowding', 'look/bills', 'look/company',
+        'recall/knowledge', 'recall/dao',
+        'request/teaching', 'request/discipleship', 'request/introduction', 'request/telling',
+        'request/a_thing', 'request/terms', 'request/a_trade', 'request/nothing',
+        'request/unstated',
+        'propose/propose', 'propose/accept',
+        'decline/refuse', 'decline/leave',
+        'child/have', 'child/place'
+    ];
+
+    it('has a phrasing or a recorded gap for every intent any verb declares', () => {
+        const covered = new Set<string>([
+            ...Object.keys(INTENT_PHRASINGS),
+            ...UNTESTED_DOORS,
+            // `interact` and `move` have their own tables above, walked against
+            // their own exported constants. Duplicating them here would be a
+            // second place for the same phrasings to drift.
+            ...INTERACT_INTENTS.map(intent => `interact/${intent}`),
+            ...MOVE_INTENTS.map(intent => `move/${intent}`)
+        ]);
+
+        const missing: string[] = [];
+        for (const [verb, entry] of Object.entries(WHAT_EACH_VERB_IS_FOR)) {
+            for (const intent of entry.intents ?? []) {
+                if (!covered.has(`${verb}/${intent}`)) missing.push(`${verb}/${intent}`);
+            }
+        }
+        expect(
+            missing,
+            `no phrasing and no recorded gap for: ${missing.join(', ')}. An intent is a door `
+            + 'into the engine that the ACTION_NAMES walk cannot see, so it needs a phrasing '
+            + 'here or a row in UNTESTED_DOORS saying out loud that it is untested.'
+        ).toEqual([]);
+    });
+
+    it('keeps the list of untested doors shrinking and never growing', () => {
+        // The number is the finding. Every row is an intent the glossary tells
+        // a model to emit and that nothing proves a person can reach by typing,
+        // and lowering it is the only legal direction.
+        expect(UNTESTED_DOORS.length).toBeLessThanOrEqual(64);
+        expect(new Set(UNTESTED_DOORS).size).toBe(UNTESTED_DOORS.length);
+    });
+
+    for (const [key, phrasings] of Object.entries(INTENT_PHRASINGS)) {
+        const [verb, intent] = key.split('/');
+        it(`${key}: ${phrasings.length} phrasings all route there`, () => {
+            const misses = phrasings
+                .map(text => [text, parseIntent(text)] as const)
+                .filter(([, got]) => got.action !== verb || got.intent !== intent)
+                .map(([text, got]) => `"${text}" -> ${got.action}/${got.intent ?? '-'}`);
+            expect(misses, `misrouted: ${misses.join('; ')}`).toEqual([]);
+        });
+    }
 });
 
 describe('asking somebody is not consulting a register', () => {

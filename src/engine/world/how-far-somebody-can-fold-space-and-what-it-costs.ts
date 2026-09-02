@@ -449,6 +449,33 @@ export function couldFoldThere(
  * as the top rung of the conveyance ladder the moment that seam prices a road,
  * and not before.
  */
+/**
+ * Why only one of the two fixes is reachable, and what the other one wants.
+ *
+ * `stood` has a writer: a knowledge row at `encountered` for a place, which
+ * arriving in it is the only thing that produces. `seen` has none, and it is
+ * not an oversight in this module - `what-you-can-see-from-up-there.ts` gives a
+ * `Sighting` a shape, a bearing and a distance and DELIBERATELY no name,
+ * because a silhouette is not an introduction. So nothing in the world records
+ * that somebody made out a NAMED place from a height, and the fold verb refuses
+ * a name they were only told rather than pretending otherwise.
+ *
+ * Do not close it by reading the sight horizon. That was tried and it is the
+ * attractive wrong turn: the horizon dwarfs the range at every rung on the
+ * curve - 78.7 days of sight against 6.0 days of reach at the floor - so every
+ * destination inside a fold's range is inside the horizon, the fix check
+ * becomes a no-op, and the third fix this module forbids arrives by accident.
+ * What it would actually take is a record of a sighting against a named place,
+ * written where an overlook is actually performed, at a stage that is not the
+ * one being told about somewhere produces.
+ */
+export const A_SIGHTING_HAS_NO_NAME_ON_IT = {
+    what: 'Nothing in the world records that somebody made out a named place from a height, so the `seen` fix has no writer and only `stood` is reachable.',
+    whereItWouldGo: 'The overlook in the destinations read in src/web/game.ts, which already computes what is visible from this rung and throws the names away on purpose.',
+    whatItWouldTake: 'A knowledge record against the place, from a source that means "I saw it myself and cannot place it exactly" - which is a source kind the discovery ladder does not have and should not be given lightly.',
+    whyItIsNotDoneHere: 'A Sighting has no name on it by design, and adding one to satisfy a fold would spend the discovery the sight horizon exists to withhold.'
+} as const;
+
 export const FOLD_TRAVEL_ENGINE_GAP = {
     what: 'No journey in the running game is priced in walking days, so the range curve above saves nobody any time yet.',
     whereItWouldGo: 'The move handler in src/web/game.ts, which spends SHORT_ACTION_DAYS for every journey regardless of distance, and bestForThisRoad in src/engine/world/what-a-conveyance-does-to-a-journey.ts, which ranks conveyances and does not know about folding.',

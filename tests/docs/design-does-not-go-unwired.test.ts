@@ -49,8 +49,8 @@ import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
  * The number that matters is the direction. A count that only ever falls is
  * doing its job even when it is a few above what a quiet tree would report.
  */
-const DEAD = 175;
-const TEST_ONLY = 505;
+const DEAD = 172;
+const TEST_ONLY = 502;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{ name: string; file: string; state: string }>;

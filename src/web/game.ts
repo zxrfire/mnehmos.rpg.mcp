@@ -4530,9 +4530,10 @@ ${noticed}`;
         const witnessed = party.kind === 'sect'
             ? theOathwrightWouldWitnessFor(party.id)
             : true;
+        const oathwright = getSect(THE_OATHWRIGHT_HOUSE)?.name ?? 'the oathwright house';
         const witnessNote = witnessed
-            ? `Witnessed by ${THE_OATHWRIGHT_HOUSE}, which is what makes it a contract rather `
-                + 'than a sentence said out loud.'
+            ? `Witnessed by ${oathwright}, which is what makes it a contract rather than a `
+                + 'sentence said out loud. An unwitnessed word binds nobody.'
             : THE_OATHWRIGHT_WILL_NOT_WITNESS_FOR[party.id];
 
         const already = carried.find(row => row.subjectId === party.id && row.cause === cause);
@@ -4546,9 +4547,16 @@ ${noticed}`;
             ));
         }
 
+        // WHAT WAS SWORN, in the swearer's own words where they said, and in
+        // the engine's where they did not. Never the raw sentence: `terms` is
+        // read back by the oath read and by anybody looking at the ledger in
+        // eighty years, and "I swear an oath to the Azure Dew Sect" quoted back
+        // as the terms of the oath is the transcript leaking into the record.
         const terms = (topic ?? '').trim().length >= 2
             ? (topic as string).trim()
-            : rawInput.trim().slice(0, 240);
+            : `${cultivator.name} gave their word to ${party.name} and did not say what for. `
+                + 'That is a real oath and a thin one: what a witness can hold anybody to is '
+                + 'what was said in front of them.';
         const record = createObligation({
             kind: 'oath',
             holderId: cultivator.id,
