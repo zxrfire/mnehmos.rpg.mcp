@@ -56,8 +56,9 @@
  *   which is derived from the faction's own admission bar and its production
  *   tier in `faction-character.ts` rather than asserted by hand. Most people
  *   here are at Qi Condensation. Foundation Establishment is notable. Core
- *   Formation is a senior figure, and there is exactly one person in this file
- *   above Nascent Soul.
+ *   Formation is a senior figure. Above Nascent Soul the file holds one person
+ *   per ordinary house, plus the whole of the Hollow Court's ladder, which
+ *   admits at Void Refinement and goes up from there.
  * - NAMES VARY BY REGION. The Low Fall uses clan surnames with one- or
  *   two-syllable given names; the Quiet Marches uses tool-names and
  *   face-numbers and has no clan names at all. See `customs.naming` in
@@ -83,16 +84,14 @@
  *   around; they are not joined, and nobody in them is a peer, a rival or a
  *   master.
  *
- *   The Hollow Court is the one faction that genuinely has nobody here, and
- *   the reason is specific rather than structural: it is four people, First
- *   through Fourth Seat, its three lower rungs have never been occupied, and
- *   the Seats are unnamed across the entire catalog on purpose. They are
- *   enumerated with their ordinals in `WITHDRAWN_POWERS` instead, which is
- *   where the register reads them from. It is not an omission and it is not a
- *   gap: `hollow-court-roster.ts` holds its people in their own shape, and
- *   `faction-roll.ts` unions the two so that asking who is in the Court gets an
- *   answer. A member row here would in fact BREAK that - the catalog test
- *   requires the Court's count in this file to be undefined.
+ *   The Hollow Court used to be the one faction with nobody here, and that
+ *   was wrong in a way worth stating, because it cost the world its apex. Its
+ *   people are on this list now, projected from `hollow-court-roster.ts` at the
+ *   bottom of the file. ABSENT AND WITHHELD ARE DIFFERENT FACTS: what is true
+ *   about the Court is not that it has no members, it is that nobody outside it
+ *   can name them - a statement about awareness, which the `Awareness` ladder
+ *   already expresses, rather than a hole in a catalog. An empty roster is not
+ *   something a player can play against; a house that will not say is.
  *
  * - AND AN UNBACKED BODY IS NOT AN UNSTAFFED ONE. The last two rosters written
  *   were the Halfwater Rail's and the Sink Carriers', which had between them
@@ -108,6 +107,7 @@ import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { requireSect, getSect } from './sects.js';
 import { FACTION_CHARACTER } from './faction-character.js';
 import { getRegionForFaction } from './regions.js';
+import { HOLLOW_COURT_ROSTER } from './hollow-court-roster.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
@@ -311,7 +311,7 @@ export function rankRealmBand(factionId: string, rankIndex: number): RealmBand |
 // rank upward, because that is the order the player meets them in.
 // ─────────────────────────────────────────────────────────────────────────
 
-export const MEMBERS: readonly Member[] = [
+const AUTHORED_MEMBERS: readonly Member[] = [
     // ═══════════════════════════════════════════════════════════════════
     // LOW FALL - RIGHTEOUS
     // ═══════════════════════════════════════════════════════════════════
@@ -443,6 +443,45 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a decision, in either direction, from four people who have not been able to reach one in eleven years',
         fears: 'that she will be asked to keep holding until she is old enough that the arithmetic answers itself',
         detail: 'Made a Sword Elder at thirty-one, which the province read as the fastest rise in four centuries and the hall read correctly: she is standing at the top of her realm under a standing instruction not to break through, and the seat arrived the same season the instruction did.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    // THE PERSON THE PAVILION'S WHOLE POSITION RESTS ON, WHO HAS NO POSITION.
+    //
+    // `crossings.ts` carries her inside a prose field on somebody else's
+    // channel - `theClock.who` - which made her the clearest instance of the
+    // gap this row exists to close: the strongest institution in the world is
+    // strong because a specific living person is alive, and that person was
+    // nowhere a player could stand next to her.
+    //
+    // WHAT IS TAKEN FROM THE CATALOG AND WHAT IS DELIBERATELY OMITTED. Her
+    // rung, her age and her house are stated identically in `crossings.ts` and
+    // in the Pavilion's own sect entry, and are uncontested. What her
+    // RELATIONSHIP to Ru Anjing is, is not: `crossings.ts` calls her the
+    // younger sister, and six other files give that description to Ru Anwei,
+    // who stands at 41 and holds the Edge. That disagreement is being settled
+    // elsewhere and is not settled here - so this row carries the three facts
+    // every file agrees on and says nothing about whose sister anybody is.
+    // Nothing downstream needs it.
+    //
+    // No office, because no file gives her one. Four hundred and forty-seven
+    // years at Core Formation Perfection holding nothing is the whole
+    // character: a person of no standing whose health is asked after by people
+    // who have no other reason to ask.
+    {
+        id: 'member-ru-anxi',
+        name: 'Ru Anxi',
+        factionId: 'sect-azure-cloud-pavilion',
+        rankIndex: 3,
+        rank: 'Core Disciple',
+        realmOrdinal: 20,
+        role: 'peer',
+        wants: 'to be asked something that is not about her health, by somebody who does not already know the answer',
+        fears: 'the arithmetic everybody senior has done and nobody has said to her',
+        detail: 'Four hundred and forty-seven years a Core Disciple, at the top of Core Formation and not moving, and the only person in the hall whose door is knocked on within a month of every arrival from above.',
         outlier: false,
         outlierReason: null,
         goodCompany: true,
@@ -3640,6 +3679,82 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     }
 ];
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE HOLLOW COURT, ON THE SAME ROLL AS EVERYBODY ELSE
+//
+// This file used to say the Court was the one faction with nobody in it, and
+// the seeder had a function of its own to stand it up as a result. Two
+// mechanisms for one question - who is in a house - which is the shape this
+// project keeps having to undo, and it cost exactly what that shape always
+// costs: the world held eleven anonymous bodies at the Court while the
+// register printed eleven named ones, and they were not the same people.
+//
+// ABSENT AND WITHHELD ARE DIFFERENT FACTS, and the old arrangement encoded the
+// wrong one. The Court has a roster; the ground truth is a number and the
+// engine knows it. What is true about the Court is that NOBODY OUTSIDE IT
+// KNOWS, and that is a statement about awareness rather than about data - so
+// it belongs to the `Awareness` ladder that already gates whether a thing may
+// be named, not to an empty array here. See `hollow-court-roster.ts` for the
+// people themselves and `HOW_THE_COURT_IS_SEEN` for what the province has
+// instead of them.
+//
+// The concealment is a consequence of what the Court is for rather than a
+// policy it adopted: a body whose single purpose is getting its own members
+// over the last crossing has no reason to tell the province anything, deaths
+// included. So the outside picture does not merely stop short - it goes STALE,
+// and somebody can carry a name that stopped meaning anything a century ago.
+//
+// WHY THE MAPPING RATHER THAN A REWRITE. The roster's own shape carries things
+// no other house needs - the alias somebody works under outside, what they were
+// famous for before the gate, how far along the road they are - and those are
+// real content that would be lost by flattening them into six fields. So the
+// authoring stays there and this is the projection onto the shape every
+// consumer already reads.
+//
+// THE GUEST IS NOT ON THIS LIST, and the omission is the content. He holds an
+// honorary title that binds him to nothing, he stands off the ladder entirely
+// (`rankIndex` is null on him and on nobody else), and he is a wanderer with
+// his own record in `wanderers.ts` - so placing him at the Court's seat as a
+// member would put the strongest person in the world permanently on a mountain
+// the rest of his file says he is not on.
+// ─────────────────────────────────────────────────────────────────────────
+
+const COURT_MEMBERS: readonly Member[] = HOLLOW_COURT_ROSTER
+    .filter((m): m is typeof m & { rankIndex: number } => m.rankIndex !== null)
+    .map(m => ({
+        id: m.id,
+        name: m.name,
+        factionId: 'sect-hollow-court',
+        rankIndex: m.rankIndex,
+        rank: m.tier,
+        realmOrdinal: m.realmOrdinal,
+        // Every one of them, on the Court's own terms. `role` is what somebody
+        // is TO A PLAYER, and nobody at this house is a peer, a rival or - the
+        // Court asks nothing of anybody and teaches only its own - a master.
+        role: 'senior' as const,
+        wants: m.whatIsAskedOfThem,
+        fears: m.howFarAlong,
+        detail: m.detail,
+        // Exempt from `rankRealmBand`, and honestly so: the band is derived
+        // from what a house can reliably PRODUCE, and the Court produces
+        // nobody. Every person here climbed somewhere else and was admitted on
+        // having done it, which is the definition of `arrived`.
+        outlier: true,
+        outlierReason: 'arrived' as const,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    }));
+
+/**
+ * Everybody the catalogs name, in one list.
+ *
+ * One list because there is one question. A second store of people is a second
+ * answer to "who is in this house", and the seeder reading only the first one
+ * is how the apex of the setting ended up populated by strangers.
+ */
+export const MEMBERS: readonly Member[] = [...AUTHORED_MEMBERS, ...COURT_MEMBERS];
 
 // ─────────────────────────────────────────────────────────────────────────
 // INDICES + LOOKUPS

@@ -69,6 +69,7 @@
 import { z } from 'zod';
 
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import { AwarenessSchema, type Awareness } from './hierarchy.js';
 
 /**
  * The Court's own ladder, bottom to top, plus the one position that is not on
@@ -440,6 +441,29 @@ export const HOW_THE_COURT_IS_SEEN = {
         'The gap, not contempt. A Court outer disciple stands at or above the head of an ordinary sect, so there is no shared footing to have a conversation on, in the way there is none between a provincial elder and a farmhand. What a cultivator at a ruin experiences is presence without engagement: somebody plainly there, plainly far above everybody in the place, saying nothing.',
     andSometimesTheyDo:
         'They are people and not demons, and typically silent is a tendency rather than a rule. Rarely, and for their own reasons, one of them will say something - show a stranger a thing or two, correct an error, answer one question - and may disguise the voice while doing it. It is uncommon enough that somebody it happens to will still be telling the story at the end of their life, and it is the reason the Court is worth meeting rather than merely worth avoiding.',
+    /**
+     * Where an ordinary cultivator stands on the ladder of knowing, about the
+     * two different questions - and they are different questions with
+     * different answers, which is the whole of the Court's opacity.
+     *
+     * Read on the same `Awareness` ladder everything else in the world is read
+     * on, because this is not a second kind of secret. `mayBeNamed` is true of
+     * the first and false of the second: the province may say that somebody
+     * walked up those mountains, and may not say which of the masked figures
+     * at a ruin was them.
+     *
+     * AND IT GOES STALE, which is the part that makes it playable. The Court
+     * does not answer, so it does not report deaths either - not as a policy
+     * but because telling the province anything is not its business. Every
+     * other house's losses propagate; these do not. So an outside belief here
+     * is not merely incomplete, it can be years or centuries WRONG, and
+     * somebody can carry a name that stopped meaning anything long ago. A
+     * hidden roster teaches a player nothing. A stale one can be acted on.
+     */
+    whatTheProvinceHolds: {
+        thatSomebodyWalkedUp: AwarenessSchema.parse('named') as Awareness,
+        whichOfThemIsWhich: AwarenessSchema.parse('whisper') as Awareness
+    },
     andWhyNobodyCanBeSure:
         'The province holds two lists it cannot join. It knows who went in, because the door is public and famous people were watched walking up it. It knows the working names, because those circulate. What it cannot do is match one to the other, and the reason is simply that there is almost no evidence: these people hardly ever come out, so a handful of sightings across centuries will not establish that the figure under one alias is the person who went through the gate, however reasonable the guess. So there are confident identifications, some of them are probably right, and not one of them can be closed. Somebody hunting a parent inside the Court is doing inference on a matching problem with a handful of candidates - counting arrivals against names, watching ages and rungs, noticing who stopped being seen elsewhere - which is a real thing a person can be good or bad at, and better than a locked door.'
 } as const;

@@ -25,6 +25,12 @@ import {
 } from '../../src/data/cultivation/sects.js';
 import { FACTION_CHARACTER } from '../../src/data/cultivation/faction-character.js';
 import {
+    HOLLOW_COURT_ROSTER,
+    HOW_THE_COURT_IS_SEEN,
+    workingNamesInCirculation
+} from '../../src/data/cultivation/hollow-court-roster.js';
+import { mayBeNamed } from '../../src/data/cultivation/hierarchy.js';
+import {
     REGIONS,
     HOME_REGION_ID,
     ADJACENT_REGION_ID,
@@ -58,26 +64,22 @@ const FOUNDATION_TOP = REALM_TIERS[1].ordinalEnd;
 const CORE_FORMATION_TOP = REALM_TIERS[2].ordinalEnd;
 
 /**
- * Factions with no roster here.
+ * Houses that hold a power the province cannot reach, and therefore cannot see.
  *
- * This used to be `!s.recruits || s.admissionOrdinal > CORE_FORMATION_TOP`, and
- * that was a conflation rather than an invariant. "We take no applicants" and
- * "nobody works here" are different statements, and a `powerOrdinal` is by
- * definition a claim that a specific person exists and will answer - so a rule
- * that forbade a closed faction from having any members forbade it from having
- * the person its own number names. It was also about to fight the design: the
- * dao houses recruit by adoption only, and there are seven of them with
- * rosters.
+ * THIS USED TO BE A LIST OF FACTIONS WITH NO ROSTER, AND THAT WAS THE DEFECT.
+ * The guard below required the Hollow Court's member count to be `undefined`,
+ * which encodes "the Court has no members". What the design means is "nobody
+ * outside the Court knows who its members are", and **absent and withheld are
+ * different facts**. The test had the wrong one, and while it stood it forced
+ * the seeder to build the Court by a second code path - so the world held a
+ * dozen anonymous bodies on those mountains and the register printed a dozen
+ * named ones, and they were not the same people.
  *
- * What is left is one faction and one reason, and the reason is specific. The
- * Hollow Court is four people, First through Fourth Seat; its three lower rungs
- * have never been occupied; and the Seats are unnamed everywhere in the catalog
- * on purpose, because `false-immortals.ts` rests on nobody outside those
- * mountains having identified one. There is nobody in it to name who would not
- * be a Seat. They are enumerated with their ordinals in `WITHDRAWN_POWERS`
- * instead, and the ordinal assertion below reads them from there.
+ * The ground truth is a number and the engine knows it. What is withheld is
+ * withheld on the `Awareness` ladder that gates every other name in the world,
+ * and the guard now asserts that instead.
  */
-const NO_ROSTER = SECTS
+const WITHDRAWN = SECTS
     .filter(s => WITHDRAWN_POWERS[s.id])
     .map(s => s.id);
 
@@ -281,23 +283,55 @@ describe('members catalog', () => {
         // And the floor for EVERY faction is one, because `powerOrdinal` is
         // defined as the strongest member who will actually answer, which is a
         // claim that a person exists. A faction with a power figure and no
-        // person is a number naming nobody.
+        // person is a number naming nobody. NO FACTION IS EXEMPT FROM THIS ANY
+        // MORE - the one that was is the reason the rule exists.
         for (const sect of SECTS) {
-            if (NO_ROSTER.includes(sect.id)) continue;
             expect(
                 counts[sect.id] ?? 0,
                 `${sect.id} stands at ${sect.powerOrdinal} and names nobody`
             ).toBeGreaterThanOrEqual(1);
         }
 
-        for (const factionId of NO_ROSTER) {
-            expect(
-                counts[factionId],
-                `${factionId} is a withdrawn power and its people are enumerated ` +
-                'as seats in WITHDRAWN_POWERS rather than named here'
-            ).toBeUndefined();
+        expect(WITHDRAWN.length, 'the withdrawn power is still withdrawn')
+            .toBeGreaterThanOrEqual(1);
+    });
+
+    it('withholds the Court rather than emptying it', () => {
+        // THE REFORMULATED GUARD. What used to be asserted here was that the
+        // Court's member count is `undefined`. That was a data constraint
+        // standing in for a knowledge one, and it was the wrong fact: the
+        // engine knows exactly who is on those mountains, and what is true is
+        // that nobody outside can put a name to any of them.
+        const counts = memberCountsByFaction();
+        for (const factionId of WITHDRAWN) {
+            expect(counts[factionId] ?? 0, `${factionId} is withheld, not empty`)
+                .toBeGreaterThanOrEqual(1);
         }
-        expect(NO_ROSTER.length, 'the withdrawn power is still withdrawn')
+
+        // The province holds two things it cannot join, and the ladder of
+        // knowing says exactly that: it may name the fact that somebody walked
+        // up, and may not name which of the masked figures they became.
+        const held = HOW_THE_COURT_IS_SEEN.whatTheProvinceHolds;
+        expect(mayBeNamed(held.thatSomebodyWalkedUp), 'admission is public').toBe(true);
+        expect(mayBeNamed(held.whichOfThemIsWhich), 'standing is not').toBe(false);
+
+        // And what actually circulates is aliases, which cannot be joined to
+        // people: never the person's own name, and fewer of them than there
+        // are people, so the two lists do not match up even in principle.
+        const aliases = workingNamesInCirculation();
+        const names = new Set(HOLLOW_COURT_ROSTER.map(m => m.name));
+        for (const alias of aliases) {
+            expect(names.has(alias), `${alias} is somebody's actual name`).toBe(false);
+        }
+        expect(aliases.length, 'every member has an alias, so the lists could be matched')
+            .toBeLessThan(HOLLOW_COURT_ROSTER.length);
+
+        // The alias is a courtesy from strangers rather than a reading of this
+        // house's ladder, so at least one of them has to be wrong about tier.
+        // If they were all accurate the alias WOULD be evidence of standing.
+        const misleading = HOLLOW_COURT_ROSTER.filter(
+            m => m.worksOutsideAs !== null && !m.worksOutsideAs.startsWith(m.tier));
+        expect(misleading.length, "every alias states the holder's real tier")
             .toBeGreaterThanOrEqual(1);
     });
 
@@ -416,8 +450,18 @@ describe('members catalog', () => {
         // given names; the Marches uses tool-names and face-numbers and has no
         // clan names at all. The tell is that a Marches name is not two words
         // of the "Surname Given" shape drawn from the Low Fall pool.
+        //
+        // A HOUSE THAT WITHHOLDS NAMES CONTRIBUTES NO CLAN NAMES TO THE POOL.
+        // The Hollow Court's Seats are carried as positions - `First Seat` is
+        // what stands in for a name, because no name of theirs leaves those
+        // mountains - so feeding them in would put `First` and `Third` into the
+        // Low Fall clan pool and make the Marches face-number `Third Face Ren`
+        // read as somebody's clan. Keyed off `WITHDRAWN_POWERS` rather than off
+        // one sect id: withholding is what produces positions-instead-of-names,
+        // and any house that ever did it would do the same thing here.
         const lowFallSurnames = new Set(
             getMembersInRegion(HOME_REGION_ID)
+                .filter(m => !WITHDRAWN_POWERS[m.factionId])
                 .map(m => m.name.split(/[ ,]/)[0])
         );
         for (const member of getMembersInRegion(ADJACENT_REGION_ID)) {
