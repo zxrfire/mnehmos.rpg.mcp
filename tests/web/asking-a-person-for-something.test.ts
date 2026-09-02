@@ -418,6 +418,16 @@ describe('a request reaches the person, played', () => {
         for (let i = 0; i < 6; i++) {
             const live = harness.game.currentRun();
             if (live.run.status !== 'active' || !live.cultivator.alive) break;
+            // ── FED, SO THAT WHAT IS BEING MEASURED IS THE ASKING ────────
+            //
+            // Six asks are fourteen days each and this cultivator eats
+            // nothing, so the guard was one turn from starving the whole time.
+            // Measured: the asker died of starvation on day 55 with satiety at
+            // zero, five asks in, so `PATIENCE_RUNS_OUT_AFTER_ASKS` never
+            // fired and the ledger was empty. That reads as *the asking left
+            // no record* and is nothing of the kind. Provisioning is a
+            // precondition; nothing about the outcome is arranged here.
+            harness.repos.cultivators.update(live.cultivator.id, { satiety: 100 });
             await harness.game.act(`I ask ${who} to teach me`);
         }
         const self = harness.game.currentRun().cultivator.id;

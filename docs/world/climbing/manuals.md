@@ -61,6 +61,22 @@ This is what keeps an unbacked nobody from being locked out of cultivation entir
 puts a real decision in front of a poor one early: the stones exist, and they can go on a
 book or on food.
 
+**A fighting art is copied by whoever mastered it, and by nobody else.** The rule is the
+same one and only the reading of *the end* changes: a road is taken to its end by standing
+where it leaves you, and an art has no such rung, so what answers is how well the person
+holds it. The design owner's sentence, and it is what makes the whole of the section below
+self-limiting:
+
+> *How would you be able to copy these signature arts? You'd have to master it, which would
+> mean you are at sect leader or higher.*
+
+So a house's signature is not guarded by a rule against copying it. **An ordinary disciple
+cannot write one out, and the reason is the same fact that makes them an ordinary
+disciple.** Measured on a seeded world of 586 people: of the Azure Cloud Pavilion's sword,
+two people held it and one could have written it out; of the four deepest signatures in the
+catalog, nobody at all could. A gathering primer stays copyable by everybody who holds one,
+and it is the same rule producing both answers - anybody can master a primer.
+
 **Everything above that line: only somebody who took the book to its end.** Reproduction
 needs a master. So:
 
@@ -400,3 +416,39 @@ has not stolen an object - they have given away the institution. It runs from *n
 property, sell freely*, through *awkward, somebody will want to know where you got it*, to
 **unforgivable and permanent**: once the top of a house's shelf is out, no amount of killing
 you puts it back.
+
+**Whose it is, is how many people hold it - not how high it carries and not whether a stall
+stocks one.** Two different questions were being answered by one predicate, and the second
+one is about market stock: a book under the primer cap, or on four shelves or more, is what
+a counter sells. A thing that fewer houses than that teach is *somebody's*, whether it is a
+road or a sword form. That distinction is what makes a house's signature its own; without
+it every signature art in the province priced as nobody's property.
+
+### What a house does about it
+
+<!-- tier: 2 trigger="somebody sells a copy of an art that belongs to a house" -->
+
+**Not a prohibition. The house answers.** The design owner, asked whether a disciple could
+write out their own house's art without approval:
+
+> *If a disciple had the gall to write it out without approval the sect would easily punish
+> them - maybe cripple their cultivation so they couldn't do it again ... or a dao oath.*
+
+Three things decide what actually happens, and none of them is a rule about leaking:
+
+- **Whether anybody worked it out.** A house acts against a name, so a leak nobody could
+  place opens no account at all - not leniency, an absence of anybody to hold one. What
+  places it is a reference for the house rather than a rung: one of their own recognises the
+  book they were taught out of without being able to perform a line of it.
+- **Whether the house can reach them.** And here the copying rule does the work. The people
+  who *can* write out a house's signature are its own summit, and a house has no reprisal
+  against somebody standing above it. The scene that produces - a house that knows exactly
+  who did it and can do nothing but hold the record - is the ordinary outcome rather than an
+  exception, and nobody had to write it.
+- **Whether they are worth keeping.** An outsider holds something the house wants back: the
+  copy, and the account of who put it in their hands. It takes the years. One of their own
+  holds nothing the house has not got, so there is nothing to gain by feeding them for sixty
+  years, and it takes the capability instead.
+
+Whatever else the house can or cannot do, **the record is opened and it does not settle**.
+That is what a house has against somebody it cannot touch, and it is not nothing.
