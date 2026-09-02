@@ -148,10 +148,25 @@ caller - `addressIsLegal`, against a technique row's `requiredOrdinal`. It is a 
 invariant**, checked when content is validated. It gates what a technique row may declare,
 not what a person may do, and no runtime path consults it about a cultivator.
 
-**So whether `heldGrants` gets a real store is the decision this whole document is actually
-waiting on**, and it is a design question rather than an implementation one: it decides
-whether realm capability is something the engine enforces or something the fiction asserts.
-Until it is answered, do not add grants, and do not gate anything on one.
+**That question has now been answered: realm capability is something the engine ENFORCES.**
+
+It was a real design question rather than an implementation detail - it decided whether a realm
+confers anything or merely describes something - and the ruling is that it confers. Two things
+follow, and they bind everything below this line:
+
+- **A capability with no consumer is not finished.** The same rule as a module nothing calls,
+  applied to the layer that produced the lesson.
+- **Enforcement is what makes a failed crossing mean anything.** If capability is only asserted,
+  a crippled nascent soul and a whole one are the same person with different prose - which is
+  the softening the agency rule exists to forbid.
+
+So `capabilityActorFor` returning `heldGrants: []` is a **defect to fix**, not a constraint to
+design around. A grant earned by reaching a realm should be held, and asked about by running
+code at the point where the answer changes an outcome. The three capabilities already enforced -
+`SATIETY_BURN_BY_REALM`, `triggersHeavenlyTribulation`, and `killRequirement` through
+`assessPower` - are the shape to copy: consulted by code that already runs, at the moment it
+matters. Build the smallest version that is actually asked a question, not the largest one that
+type-checks.
 
 So the shape of the deficit is not "the low realms are empty and the high realms are full".
 It is **the whole capability layer is thin, and the low realms are where that is most
@@ -313,9 +328,28 @@ like.
 | 5 | risk | **absent** | |
 | 6 | opportunity | **absent** | *"Standing somewhere for a long time alters the site, which is why their old dwellings are worth finding"* - described, and nothing writes it. The location layer would take it without a schema change |
 
----
+### What the realm confers, and what a failed transformation keeps
 
-## Void Refinement - ordinal 29 to 32
+**A Deity carries their own conditions with them - everywhere, continuously, in every
+direction.** That is the whole of it, and `carries_own_ambient` is the right name for it. The
+conditions are not somewhere they go; they are something they bring, and they do not stop
+bringing it.
+
+**A failed transformation keeps the ability and loses three separate properties of it:**
+
+| Property | A full Deity | A failed transformation |
+|---|---|---|
+| **Range** | Whatever they are standing in | Much shorter |
+| **Duration** | Continuous. It does not stop | Channelled, for a limited time, and then it burns out |
+| **Coverage** | Every direction at once | Directional. It comes off a fist or a leg, not a sphere |
+
+They are not a lesser Deity in general. They are a Deity who has to *spend* something to be
+one, briefly, in one direction at a time.
+
+**Note the shape, because it recurs above this realm and the engine cannot currently express
+it.** `carries_own_ambient` is a boolean grant: you have it or you do not. The failure mode
+here is not the absence of the grant, it is the same grant with a radius, a clock and an arc
+on it. A capability layer that can only say yes or no cannot say this.
 
 | # | Question | Verdict | Where it lives |
 |---|---|---|---|
@@ -325,6 +359,25 @@ like.
 | 4 | asked of | **absent** | |
 | 5 | risk | **absent** | |
 | 6 | opportunity | **indirect** | The README calls `no_ambient_needed` *"the single most consequential grant on the ladder"* because it decouples a cultivator from the scarcity the world is organised around. That decoupling is real in the cultivation-rate arithmetic and has no economic expression: nothing anywhere makes such a person a different kind of trading partner |
+
+### What the realm confers, and what a partial refinement keeps
+
+Two things: **folding space**, and **independence from ambient qi**. Refining the self against
+emptiness is what buys both.
+
+**A partial refinement is the clearest case in the setting of a capability that degrades rather
+than switching off**, and it degrades differently in each of the three:
+
+| | A full refinement | A partial refinement |
+|---|---|---|
+| **Spatial folding** | Held | **Denied outright.** The one binary of the three |
+| **Surviving scars and voids** | Any of them | **The weak ones only.** What a full refinement walks into unbothered still kills this one |
+| **Ambient qi** | Needs none at all | **Still needs it - a great deal less.** Reduced, never removed |
+
+So the road is open to thin ground and closed to the deep places, and they are cheaper to keep
+than anybody below them and not free. The middle row is the one worth designing carefully: it
+is not "survives voids: false", it is a lower bar in the same units the location layer already
+prices hazards in.
 
 ---
 
@@ -339,6 +392,20 @@ like.
 | 5 | risk | **indirect** | The cultivation README's own counter - *"you attack their obligations, their sect, their disciples, their karma"* - is representable through `social/` and is nowhere connected to the realm |
 | 6 | opportunity | **absent** | |
 
+### What the realm confers, and what a failed integration keeps
+
+**No seam, and no soul to strike.** Body and soul are welded from the sinew inward until there
+is no join anywhere to get at, which is why the ordinary ways of ending somebody stop working.
+
+**A failed integration still has a seam, and still has a soul to attack.** One place did not
+close, and everything about how they fight is built around not being touched there.
+
+**But most of it IS stitched, and that half matters as much as the first.** This is an
+impairment among the great, not a demotion: a failed integration remains far stronger than
+anybody below the realm, and reading the wound as "not really Body Integration" gets it exactly
+backwards. They are Body Integration with one way in. The whole difficulty they present is that
+finding it is hard and knowing it is worth a great deal.
+
 ---
 
 ## Grand Ascension - ordinal 37 to 40
@@ -347,10 +414,43 @@ like.
 |---|---|---|---|
 | 1 | perceive | **declared and inert** | `reads_lid` is read by nothing |
 | 2 | survive | **built** | `gates_places` zeroes every location requirement except `understand`. No longer gated by places |
-| 3 | do | **declared and inert** | `makes_veins` and `seals_domains` are read by nothing. Making and unmaking spiritual veins is the most economically consequential act in a setting whose entire scarcity is veins, and it is a string in an array |
+| 3 | do | **misnamed, and inert** | `makes_veins` and `seals_domains` are read by nothing, and they are now also **wrong**. See the redefinition below: a Grand Ascension does not make spiritual veins. Both grant strings need renaming before anybody implements against them |
 | 4 | asked of | **absent** | |
 | 5 | risk | **absent** | *"Their attention is itself a hazard. Being noticed by one has consequences before anything is done to you."* Nothing models being noticed |
 | 6 | opportunity | **absent** | |
+
+### What the realm confers - REDEFINED, and this supersedes the row above
+
+The design owner has restated what this realm is for, and it is not what `CLASS_GRANTS` says.
+**They do not make spiritual veins.** Anything written against `makes_veins` or `seals_domains`
+is written against a capability this realm does not have.
+
+What a Grand Ascension actually does is two things, and both are about the world rather than
+about themselves:
+
+**1. The technique draws the qi, not the cultivator.** Their arts reach out into the world
+around them, and the arts themselves take qi in - the cultivator is no longer the thing doing
+the drawing. The visible consequence is that **standing near one changes how everybody else
+cultivates**: near a Grand Ascension of fire, a fire cultivator advances faster. Not as a
+favour, and not as something aimed at them. It is simply what the neighbourhood of such a
+person is like.
+
+**2. They leave lasting works of their element on the land.** They can create things on the
+earth, of their element, and those things **remain long after the maker is gone.** This is a
+distinct kind of persistence from a spiritual vein and must not be modelled as one: a vein is
+ground that produces qi, and this is a made thing that stays made.
+
+### What an unfulfilled ascension keeps
+
+**Everything, imperfectly, and briefly.** They can still do both halves - the works still get
+made, the presence still reaches out. What they cannot do is make any of it last: **their
+abilities burn out a great deal sooner**, so what a full Grand Ascension leaves permanently, an
+unfulfilled one leaves temporarily.
+
+The setting's own worked example, and worth keeping because it is exactly the kind of event the
+world should be able to produce without anybody authoring it: **an angry Grand Ascension puts a
+giant flaming ball on the ground next to a rival sect as a warning.** It is real, it is theirs,
+everybody can see it - and unlike the works of a whole one, it will not be there in a century.
 
 ---
 
@@ -364,6 +464,31 @@ like.
 | 4 | asked of | **absent** | |
 | 5 | risk | **built** | `FAILURE_TABLE.lastCrossing`, `LAST_CROSSING_PROGRESS_LOSS = 1`, scars as permanent geography, and the **stranded** ending. `assessLastCrossing` makes declining a real position. The most complete decision in the game |
 | 6 | opportunity | **absent** | |
+
+### What the realm confers, and what an imperfect tribulation body keeps
+
+The document has been reading this realm as *"survives tribulation"*, which is the requirement
+rather than the capability. **A tribulation body is what a cultivator must have to withstand
+the lightning at all** - and what it leaves them with afterwards is much larger than that.
+
+**They gain resistance to all the elements, lightning included, and they begin to BE the
+elements** - regardless of what they cultivated on the way up. A fire cultivator who comes
+through does not stay a fire specialist who is merely tough. Put one of them anywhere: in ice,
+in earth, in a sea of lightning, in the sea. **They are perfectly at home.** The reason is
+structural rather than a matter of degree: a tribulation body is a function of a tribulation,
+and a tribulation is a natural law.
+
+**An imperfect tribulation body is incomplete**, and the incompleteness shows in exactly one
+way: **they cannot remain in those places indefinitely.** They can go anywhere a whole one can
+go, and they cannot stay. Their tolerance runs on a clock where a full transcendent's does not,
+and they have a weakness where a full one has none.
+
+**This is the largest single thing missing from the capability layer**, and it is worth saying
+plainly because it reframes the top of the ladder: it gives **environmental hazards a meaning at
+the top rungs that they currently do not have.** At present the hazard machinery peaks at Void
+Refinement and Body Integration and then stops mattering, and `gates_places` at Grand Ascension
+zeroes location requirements outright - which now looks like it was put one realm too low and
+one degree too absolute.
 
 ---
 
@@ -383,9 +508,31 @@ mostly they are already answered.
 | 5 | risk | **built** | `BREATHS_IN_THE_LOWER_REALM`, the descent tribulation, death above written as a secret fact that settles nothing below |
 | 6 | opportunity | **built** | `immortalStanding` scores tenure, ancestry, house, allies and holdings, and a newcomer scores zero on every axis |
 
----
+### What separates the two rungs, which is the whole of the tier
 
-## Attributes: the same test, applied to the four dealt numbers
+**A True Immortal's word is law.** Not persuasive, not enforced, not backed by the ability to
+carry it out personally - it simply becomes true. They say a Tribulation Transcendence comes
+here, dies, and leaves what it was carrying, and that is what happens. They declare a house to
+have blown up and it blows up.
+
+Two constraints, and they are the whole of the constraint:
+
+- **It must be physically possible.** Law does not make the impossible happen; it selects among
+  things that could occur.
+- **It happens as soon as that possibility allows** - not instantly by fiat, but at the first
+  moment the world can deliver it.
+
+**A False Immortal cannot do this at all.** Their words do not do things and cannot reach
+natural law. What they have instead is a very good imitation: **they put law into a working**,
+and the working carries it for a while. A bird made to navigate to a place will go there - and
+it eventually runs out.
+
+So the split between 45 and 46 is not a difference of degree in power. It is:
+
+> **Law embedded in a made thing, which expires, against law spoken, which is simply true.**
+
+That is also why a False Immortal is inside the world's reach and a True one is not, which the
+`asked of` row above already records from the other direction.
 
 The measured result the design should generalise from: **75 missed windows against 15, with
 identical event counts.** Fortune is not "your luck stat makes your numbers bigger", it is
@@ -433,10 +580,15 @@ of new machinery. Nothing here is bespoke; every item reads columns that already
    empty for every cultivator, so the work would produce nothing observable and would look
    finished. The cheap win is not cheap; it is unreachable.
 
-   What is actually needed first is a ruling on whether an acquired grant is stored - and if
-   so, what acquires one, since the layer's whole design is that a realm confers POTENTIAL and
-   the cultivator must still go and get the thing. Until that is answered this item is blocked,
-   not cheap.
+   **Now ruled on: capability is enforced.** So the order inverts. Make the actor hold what
+   reaching a realm has earned it, so that a grant can be asked about at all; then add denials
+   one at a time, each at a consumer that can be named. Do not implement a grant that nothing
+   will ask about - that is the same mistake in a new coat, and it is how this layer got here.
+
+   The one piece of the old design worth keeping is the distinction it was built on: a realm
+   confers POTENTIAL, and some capabilities are still arranged for rather than given. A
+   prepared vessel is arranged; being at home in ice is not. Those are different questions and
+   only the first needs anybody to have gone and done something.
 4. **Charm as persistence.** One question - does this contact leave a relationship row -
    answered against a store that already exists.
 5. **Divestment as a verb.** The engine already names it (`price-of-advancement.ts`) as the
