@@ -551,20 +551,31 @@ function rankIndexOf(cultivator: Cultivator): number {
  * never heard of reaches them as a closed road and never as a named report -
  * and that filtering happens here, before anything leaves, rather than as an
  * instruction to a model.
+ *
+ * ── `knowsNpc` is a question, not a set, and that is load-bearing ─────────
+ * The other two can be sets because a sect and a place each have one id. A
+ * PERSON out of the content catalogs has two - the catalog's and the world
+ * row's - and `awareIds` can only report one of them, while the digest asks
+ * with the world row's. So the set form answered `false` for every catalog
+ * person the player had been told about, which is the whole of what this
+ * comment's own promise about asking live was already claiming not to do.
+ * `isAwareOf` folds both ids onto one claim; a set cannot.
  */
 export function accessForCultivator(cultivator: Cultivator): PlayerAccess {
     const gate = new KnowledgeGate(getDb());
     const here = cultivator.location ? placeKey(cultivator.location) : null;
 
-    return simpleAccess({
-        actorId: cultivator.id,
-        locationId: here,
-        visibleLocationIds: here === null ? [] : [here],
-        factionId: cultivator.sectId ?? null,
-        knownFactionIds: gate.awareIds(cultivator.id, 'sect'),
-        knownNpcIds: gate.awareIds(cultivator.id, 'cultivator'),
-        knownPlaceIds: gate.awareIds(cultivator.id, 'place')
-    });
+    return {
+        ...simpleAccess({
+            actorId: cultivator.id,
+            locationId: here,
+            visibleLocationIds: here === null ? [] : [here],
+            factionId: cultivator.sectId ?? null,
+            knownFactionIds: gate.awareIds(cultivator.id, 'sect'),
+            knownPlaceIds: gate.awareIds(cultivator.id, 'place')
+        }),
+        knowsNpc: (id: string) => gate.isAwareOf(cultivator.id, 'cultivator', id)
+    };
 }
 
 /**
