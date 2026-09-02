@@ -505,6 +505,37 @@ Every significant thing that happens is appended as a dated, attributed, located
 `truth` can say **unresolved**, which is what stops the database secretly knowing
 everything. See [`../social/README.md`](../social/README.md).
 
+### A played deed is a fact like any other, and the ledger points at it
+
+**Every write goes through `appendWorldFact`, never `appendFact`.** The world-level append
+cannot skip the back-link, so the fact lands on the record of everybody it names and the
+people who were standing there are drawn from the place. `who-was-there-when-it-happened.ts`
+holds the measurement that made it necessary.
+
+The same rule binds the played game, and for a long time it did not. Of the 28 exported
+functions in this directory that append a fact, four were reachable from anywhere else in
+`src/` and three from a player action - an abode above the Lid, a descent, and a killing.
+Everything else a player did that the world should contain went into the SQLite obligation
+ledger and nowhere else, so a house held a robbery grudge and the world did not contain the
+robbery. That is a missing writer on one side of every propagation system in the repository:
+`circulating`, `buildPlayerDigest` and every hearsay path read `state.history.facts` and
+nothing else.
+
+`a-deed-enters-the-world-as-a-fact.ts` is the write path for a deed, in either direction.
+Two rules on it:
+
+- **The weight is decided exactly once.** A caller writing a record that already carries a
+  severity passes that severity through; a caller that has decided nothing hands over a
+  `Deed` and `../social-leverage/what-a-deed-leaves.ts` prices it, off cost against what the
+  payer had. Supplying both is refused by the type.
+- **The fact and the account are two views of one event, not two memories.** The fact is
+  written first so it has an id, and that id goes on the obligation's `triggeringEventId` -
+  a column `grudges.ts` has indexed since the social migration and which nothing in
+  `src/web/` had ever set, because there was never a fact to point at.
+
+Opening an account is still the obligation ledger's job. A deed that warrants no grudge gets
+the fact and no grudge.
+
 ### The world contains things that almost happened
 
 History must record **failed branches** - not alternate timelines, simply possibilities
