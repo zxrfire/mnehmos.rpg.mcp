@@ -310,7 +310,36 @@ what-would-settle-an-account-this-heavy.ts
                                         which of the ledger's own discharges a
                                         record can afford, and what walking out
                                         of an arrangement costs
+what-a-house-does-when-it-catches-you.ts
+                                        the three axes of a reprisal, in the
+                                        order that makes them separable
 ```
+
+## A reprisal has three axes and crossing two of them ruins it
+
+`what-a-house-does-when-it-catches-you.ts` asks three questions and the order is the
+content:
+
+1. **Can the offended party be made to pay for acting?** Not "who backs you" - naming it
+   that way invites a special case for every unaffiliated party in the world. An elder
+   inside a house cannot lay hands on an apex's disciple, because their own house pays for
+   what they start; so they complain, and the complaint is `Reach: 'answerable'`, which
+   `what-a-deed-leaves.ts` already had a field for. **Backing protects you from exactly
+   the people who have something to lose, and is worth nothing against somebody who has
+   nothing.** What your own house then does is this same function with the parties moved
+   along one - the redirect is recursion, not a second mechanism.
+2. **Are you worth the trouble?** Read off `REGARD_BANDS` in the one direction that
+   matters, the house looking down. `dismissed` is beneath notice and it is contempt
+   rather than leniency: a player far below a house can genuinely get away with things,
+   and being told so is information about where they stand.
+3. **What kind of house caught you?** And this decides the *kind* only. **The magnitude is
+   `whatItWasWorth`, and nothing anywhere branches on an alignment name to pick a severity
+   number.** Righteous, neutral and demonic do not punish harder or softer than each other.
+
+What a house takes is an investment question and not an alignment one: the years from
+somebody worth keeping, the capability from somebody who had one worth removing and is no
+use kept, and nothing at all from somebody who is neither. Both answers are available to
+every house in the world.
 
 ## Kindness and harm are the same machinery pointed two ways
 

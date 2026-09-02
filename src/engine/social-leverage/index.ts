@@ -32,6 +32,17 @@
  *                                        `world/what-an-open-need-does-to-an-
  *                                        ask-and-to-a-price.ts` and this
  *                                        consumes it
+ *   what-somebody-does-about-being-wronged.ts
+ *                                        what the person in front of you does
+ *                                        about it, there and then, and the one
+ *                                        answer somebody has when the gap
+ *                                        cannot be closed any other way
+ *   what-a-house-does-when-it-catches-you.ts
+ *                                        and what the house does about it
+ *                                        afterwards: whether acting would cost
+ *                                        them, whether you are worth the
+ *                                        trouble, and only then what kind of
+ *                                        house caught you
  */
 
 export * from './an-attempt-to-move-somebody.js';
@@ -40,3 +51,5 @@ export * from './how-freely-somebody-parts-with-what-they-have.js';
 export * from './what-a-house-will-do-about-it.js';
 export * from './when-somebody-works-out-what-you-did.js';
 export * from './going-further-than-an-agreed-bout-allowed.js';
+export * from './what-somebody-does-about-being-wronged.js';
+export * from './what-a-house-does-when-it-catches-you.js';
