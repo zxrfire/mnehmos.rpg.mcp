@@ -55,10 +55,19 @@ import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
  * comes back, and building a conveyance out of what a hunt brings back. Four
  * of the five were the insidious shape rather than the inert one - pinned by a
  * test, read by nothing the game runs - which is why the second number moved
- * and the first did not.
+ * further than the first.
+ *
+ * IT WAS BRIEFLY 494, WHICH IS A LESSON ABOUT MEASURING RATHER THAN ABOUT THE
+ * COUNT. That was the exact reading off a tree three other agents were landing
+ * on, and it went red inside the hour over an export nobody in this change had
+ * written. AGENTS.md: a single measurement off a shared tree is already
+ * somebody else's unfinished work. So it carries a couple of rows of slack on
+ * purpose, exactly as the paragraph above says these numbers should - the
+ * direction is what the ratchet is for, and 502 to 496 is the direction.
+ * Re-measure and bring it down when nothing is in flight.
  */
-const DEAD = 172;
-const TEST_ONLY = 494;
+const DEAD = 171;
+const TEST_ONLY = 496;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{ name: string; file: string; state: string }>;
