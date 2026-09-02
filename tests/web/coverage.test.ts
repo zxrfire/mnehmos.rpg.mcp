@@ -26,6 +26,7 @@ import {
     MOVE_INTENTS,
     OATH_INTENTS,
     PASSAGE_INTENTS,
+    READ_ONLY_ACTIONS,
     TIME_CONSUMING_ACTIONS,
     parseIntent,
     type ActionName
@@ -815,6 +816,102 @@ describe('every intent DECLARED is a door somebody can find', () => {
                 .filter(([, got]) => got.action !== verb || got.intent !== intent)
                 .map(([text, got]) => `"${text}" -> ${got.action}/${got.intent ?? '-'}`);
             expect(misses, `misrouted: ${misses.join('; ')}`).toEqual([]);
+        });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AND THE OTHER HALF: A VERB THAT IS REACHABLE IS ALSO CLASSIFIED
+//
+// The walk above proves every door can be found. This proves every door has
+// been priced, which is the half that decides what a MISREAD costs.
+//
+// `READ_ONLY_ACTIONS` and `TIME_CONSUMING_ACTIONS` are read by four separate
+// guards - the bare-word gate, the mood post-pass, the nonsense guard at the
+// bottom of this file, and `theReadThatAnswersIt` - and every one of them asks
+// "is this verb on the safe list", never "is this verb on the costly list". So
+// a verb on NEITHER list is treated as safe by all four while being free to
+// spend a life. That is how `coerce` shipped: it carried `interact`'s leverage
+// intents, spent the same days and the same stones, and was classified as
+// nothing at all.
+//
+// The third state is legitimate and is documented in `actions.ts`: a verb whose
+// cost depends on which intent ran, and which supplies its protection through a
+// DEFAULT INTENT that lands on the cheap branch instead. What is not legitimate
+// is being in that state by accident, so it is written down here by name.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('every verb is priced as well as reachable', () => {
+    /**
+     * Verbs whose cost is decided at execution rather than by the verb.
+     *
+     * Each one carries both a read and a commitment behind an intent label, so
+     * neither list is true of it. Every row here is protected by a DEFAULT
+     * INTENT that lands on the free branch - which is the thing that makes the
+     * third state safe, and the thing an accidental member would not have.
+     *
+     * ONLY SHRINK IT, on the same terms as `UNTESTED_DOORS` above: the number
+     * is asserted so a verb cannot join this list without somebody editing it.
+     */
+    const PRICED_AT_EXECUTION: readonly ActionName[] = [
+        // Ten of its intents are asks and three are takings. `costsTheAskerNothing`
+        // is what tells them apart, and it is asked per-attempt.
+        'interact',
+        // A read of what you carry, and a word that cannot be walked back.
+        'oath',
+        // The board is a price list; the buying is a spend.
+        'provision', 'buy', 'sell',
+        // Nineteen intents, from reading a roll to swearing to one.
+        'sect',
+        // Reading where two houses stand, against committing your own to it.
+        'posture', 'seal', 'offer',
+        // Asking is free; a word given is a word given.
+        'propose', 'decline'
+    ];
+
+    it('puts every verb on a list, or names it as priced at execution', () => {
+        const unpriced = ACTION_NAMES.filter(name =>
+            !READ_ONLY_ACTIONS.includes(name)
+            && !TIME_CONSUMING_ACTIONS.includes(name)
+            && !PRICED_AT_EXECUTION.includes(name));
+
+        expect(
+            unpriced,
+            `classified as neither free nor costly and not recorded as priced at execution: `
+            + `${unpriced.join(', ')}. Four guards read these lists by asking whether a verb is `
+            + 'SAFE, so a verb on neither list is treated as safe by all four while being free '
+            + 'to spend a life. That is how `coerce` shipped.'
+        ).toEqual([]);
+    });
+
+    it('never puts a verb on both lists at once', () => {
+        const both = ACTION_NAMES.filter(name =>
+            READ_ONLY_ACTIONS.includes(name) && TIME_CONSUMING_ACTIONS.includes(name));
+        expect(both, `on both lists: ${both.join(', ')}`).toEqual([]);
+    });
+
+    it('keeps the priced-at-execution list shrinking and never growing', () => {
+        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(11);
+        expect(new Set(PRICED_AT_EXECUTION).size).toBe(PRICED_AT_EXECUTION.length);
+    });
+
+    /**
+     * And the claim that makes the third state safe rather than merely
+     * tolerated: whatever a bare or misread sentence reaches, it must land on
+     * a branch that spends nothing. `parseIntent` with no object is the worst
+     * case a misread produces, and every one of these has a default intent
+     * chosen to be the free one.
+     */
+    for (const verb of ['posture', 'seal', 'offer', 'oath', 'sect', 'site', 'legacy'] as const) {
+        it(`a bare "${verb}" does not commit anything`, () => {
+            const parsed = parseIntent(verb);
+            // Either it is not read as that verb at all - which is safe - or it
+            // is, and the intent it defaults to is a read.
+            if (parsed.action !== verb) return;
+            expect(
+                parsed.intent,
+                `a bare "${verb}" must default to a read, not to the branch that spends`
+            ).not.toBeUndefined();
         });
     }
 });

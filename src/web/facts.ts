@@ -664,11 +664,24 @@ function timeSkipProse(
     // sitting on.
     //
     // The label already says which it is; it just was not being asked.
+    //
+    // A FOURTH POSTURE, and the same defect a third time. Played:
+    // "Wheatgate. Shen Wu sat down and began to breathe. Raising a child with
+    // Yun Minlu of 12 years was intended." Twelve years of raising somebody
+    // described as settling in to meditate. A LIFE LIVED WITH SOMEBODY is not
+    // a road and is not an errand either - nobody sent them and there is
+    // nowhere they went - so it gets its own opening rather than being folded
+    // into the nearest one that is merely less wrong.
     const travelling = /travel|journey|road|walk/i.test(label);
     const sentOut = /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label);
+    const livedWithSomebody = /rais(?:e|ing)|child|marriage|household/i.test(label);
 
     const opening = travelling
         ? `${where}. ${before.name} took to the road.`
+        : livedWithSomebody
+            // The years still passed and the world still moved. What did not
+            // happen is anybody sitting down to breathe.
+            ? `${where}. ${before.name} put the years into it.`
         : sentOut
             // Not a place they settled into - a place they were sent to, and
             // the ground's own qi is beside the point for the duration.
@@ -1187,6 +1200,34 @@ function describeCompany(company: Company, observerOrdinal = 0): string | null {
         } else if (others > 1) {
             sentences.push(
                 `${roughly(others)} are about, none of whom are looking at you.`
+            );
+        }
+        // ── AND WHAT THE CROWD IS, WHICH IS THE HALF A MODEL INVENTED ────
+        //
+        // Played in the browser against a local model, standing in a HAMLET:
+        //
+        //   "Around you, the thirty-five others who have pushed past the first
+        //    layer move through the village with the indifference of the
+        //    established. Some are far beyond you, forty-four rungs deep."
+        //
+        // The world was measured afterwards and nobody like that was there:
+        // every living cultivator above Void Refinement stands at a sect seat.
+        // So the count was right, the placement was right, and the reading was
+        // invented - and the reason it was invented is that this function
+        // handed over a bare number with nothing said about what the number
+        // WAS. `standsOut` fires only for somebody `NOTABLE_GAP` above, so the
+        // ordinary case - a square full of people at or near the player's own
+        // height - was a count and a silence, which is an invitation.
+        //
+        // What is said is derived from the ordinals this function already
+        // holds and leaks nothing the discovery rule protects: no name, no
+        // rung, no individual. A crowd that is not remarkable is described as
+        // not remarkable, which is both true and the whole of what a look can
+        // honestly report about strangers.
+        if (!standsOut && others > 1) {
+            sentences.push(
+                'none of them reads as anything out of the ordinary, and nothing about the way '
+                + 'they carry themselves suggests otherwise.'
             );
         }
         if (standsOut) {
