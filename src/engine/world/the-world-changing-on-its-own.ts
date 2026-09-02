@@ -165,16 +165,34 @@ import {
     resolveSending,
     newsOfASending,
     isImpossibleTier,
+    partyOrdinal,
     tierFor,
     whoTheHouseCanSend,
     type Candidate,
     type HouseAsItStands
 } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import {
+    CONVEYANCE_RECIPES,
     adjustCountedHolding,
     countedHolding,
     requireConveyance
 } from '../../data/cultivation/what-a-house-moves-its-people-on.js';
+import {
+    conveyanceKeptAs,
+    deliver,
+    launch,
+    layDownKeel,
+    mintCraft,
+    readyToLaunch,
+    workOn,
+    type Berth,
+    type MaterialLot
+} from './building-a-conveyance-out-of-what-a-hunt-brings-back.js';
+import { canRefineGrade } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
+import { BEAST_CORE_ORDINAL } from '../../data/cultivation/beasts.js';
+import { gradeForOrdinal } from '../../data/cultivation/techniques.js';
+import { STOCK_GRADES } from './what-a-place-still-has-in-the-ground.js';
+import type { TechniqueGrade } from '../../schema/cultivation.js';
 import {
     recordGroundDraw,
     whatThePeopleHereTake
@@ -477,6 +495,11 @@ export function applyPressure(
         // out of the purse this year filled, and after recruitment, so
         // somebody admitted this year can be on the party.
         applySendings(state, year, withinSpan(year * 365 + 175, fromDay, toDay));
+        // And the yard works on what the last party brought home. AFTER the
+        // sendings, so material that came back this year is material this
+        // year's work can go into - a hull is a schedule, and a house hunts
+        // for it the whole time it is building it.
+        applyConveyanceBuilding(state, year, withinSpan(year * 365 + 178, fromDay, toDay));
         born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
         // The longest project in the world, on its own clock. It will almost
         // never fire in five hundred years, and that is the point of it.
@@ -2266,12 +2289,259 @@ function applySendings(state: WorldState, year: number, day: number): number {
         // What is kept is what the module already decides is heavy, plus
         // anything that did not go as stated, because a party that did not
         // come back is news at any tier.
+        // WHAT CAME HOME GOES IN THE YARD. The second destination a beast
+        // material has, which until now did not exist: it went into a pill or
+        // into something somebody fights with, and that made the whole
+        // material economy a single pipe. See `applyConveyanceBuilding`.
+        if (sending.outcome === 'finished' && reason.id === 'sending-for-materials') {
+            creditWhatCameBack(faction, partyOrdinal(party), party.length);
+        }
+
         const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
         if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING) {
             appendWorldFact(state, news);
         }
     }
     return sent;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE YARD
+//
+// `building-a-conveyance-out-of-what-a-hunt-brings-back.ts` had no consumer
+// anywhere in `src/` - `layDownKeel`, `deliver`, `workOn`, `readyToLaunch`,
+// `lotSatisfies`, `whatIsStillShort`, `conveyanceKeptAs` and `mintCraft` were
+// all zero-reference - so the second destination that file exists to give a
+// beast material did not exist, and `TRACKED_CRAFT` was a catalog of hulls
+// nobody in the world had ever built.
+//
+// THE LOOP IS THE ONE THAT FILE ARGUES FOR, AND NOTHING ABOUT IT IS NEW.
+// A house sends people out after materials; what comes back is a grade and a
+// count and a core or not; the bill wants a quantity at a grade rather than a
+// named thing; and a house that gets one craft gets its next one faster,
+// because the craft carries the party that takes the next core. That is the
+// whole economy and every term of it was already written.
+//
+// WHERE IT IS KEPT. `FactionRecord.resources` is a free-form
+// `Record<string, number>` with a stated convention, and both halves of this
+// are numbers: what the yard holds, and how far along the slip is. No new
+// field, no migration, and `describeCountedHoldings` already answers what a
+// house has. A `Berth` is reconstructed from those cells each pass rather than
+// stored as an object, which is the same "derive rather than store" the ground
+// module keeps.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How many of one kind a house keeps before it starts building the next one up.
+ *
+ * A yard builds what the house is short of. Without a ceiling a house builds
+ * the same carriage forever and never reaches for the bill above it - measured
+ * at five centuries, one house standing on eight of them and no house in the
+ * world having ever laid a keel for anything tracked.
+ */
+const ENOUGH_IN_THE_YARD = 2;
+
+/** What the yard holds, at a grade. Plain material, and cores separately. */
+function yardKey(grade: TechniqueGrade, core: boolean): string {
+    return `yard.${core ? 'core' : 'material'}.${grade}`;
+}
+
+/** How far the slip has got. One cell per line of the bill, plus the work. */
+function berthKey(recipeId: string, what: string): string {
+    return `berth.${recipeId}.${what}`;
+}
+
+/**
+ * What a finished sending after materials brought home.
+ *
+ * The party's own rung decides the grade, through `gradeForOrdinal` and
+ * nothing else - the same gate the ground pressure reads, for the same reason:
+ * you bring back what answers your hand. A core only where the party stood at
+ * `BEAST_CORE_ORDINAL` or above, which is the catalog's own line and is why a
+ * core is the one entry in a bill a house cannot buy its way past cheaply.
+ */
+const WHAT_A_PARTY_BRINGS_BACK = 6;
+
+function creditWhatCameBack(faction: FactionRecord, partyOrdinal: number, hands: number): void {
+    const grade = gradeForOrdinal(partyOrdinal);
+    const bulk = Math.max(1, Math.round(WHAT_A_PARTY_BRINGS_BACK * Math.max(1, hands) / 5));
+    const key = yardKey(grade, false);
+    faction.resources[key] = (faction.resources[key] ?? 0) + bulk;
+    if (partyOrdinal >= BEAST_CORE_ORDINAL) {
+        const cores = yardKey(gradeForOrdinal(partyOrdinal), true);
+        faction.resources[cores] = (faction.resources[cores] ?? 0) + 1;
+    }
+}
+
+/** The yard, in the three fields a bill reads. Nothing else is looked at. */
+function lotsInTheYard(faction: FactionRecord): MaterialLot[] {
+    const lots: MaterialLot[] = [];
+    for (const grade of STOCK_GRADES) {
+        for (const core of [false, true]) {
+            const count = faction.resources[yardKey(grade, core)] ?? 0;
+            if (count > 0) lots.push({ id: yardKey(grade, core), grade, core, count });
+        }
+    }
+    return lots;
+}
+
+/**
+ * Houses build, and now and again one of them launches.
+ *
+ * Every decision belongs to the craft module. What happens here is reading the
+ * yard off the ledger into `MaterialLot`s, reconstructing the slip from the
+ * cells that hold it, handing both over, and writing the answer down.
+ *
+ * A house works at ONE recipe - the best its own hands can take, which is
+ * `canRefineGrade`'s question and not this file's - because a yard split
+ * across three slips finishes none of them, which is the same reason the
+ * module makes work unable to outrun the materials.
+ */
+function applyConveyanceBuilding(state: WorldState, year: number, day: number): number {
+    let launched = 0;
+    for (const faction of state.factions) {
+        if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
+
+        const hands: number[] = [];
+        for (const npc of state.npcs) {
+            if (npc.status === 'alive' && npc.factionId === faction.id) {
+                hands.push(npc.cultivation.realmOrdinal);
+            }
+        }
+        if (hands.length === 0) continue;
+        const best = hands.reduce((n, o) => Math.max(n, o), 0);
+
+        // The deepest bill this house could work at all. `canRefineGrade` is
+        // the gate and it is the same one that decides who refines a grade of
+        // medicine - a hull is made of the same four grades a pill is, and a
+        // second table here would be a second opinion about the ladder.
+        //
+        // AND NOT ONE IT ALREADY HAS ENOUGH OF. Without this a house builds
+        // the same carriage forever - measured, one house held eight of them
+        // at five centuries - and never reaches for the bill above it, which
+        // is the bill that produces the only tracked craft anybody makes. A
+        // yard builds what the house is short of.
+        const recipe = [...CONVEYANCE_RECIPES]
+            .filter(r => canRefineGrade(r.grade, best))
+            .filter(r => conveyanceKeptAs(r.grade) === 'tracked'
+                ? !state.objects.some(o =>
+                    o.ownerId === faction.id
+                    && o.data.conveyanceId === r.producesConveyanceId)
+                : countedHolding(faction.resources, r.producesConveyanceId) < ENOUGH_IN_THE_YARD)
+            // CHEAPEST FIRST, which is the progression the craft module
+            // describes rather than an ordering chosen here: a house that gets
+            // one craft gets its next one faster, because the craft carries
+            // the party that takes the next core. Deepest-first had every
+            // qualified house laying a keel for a spirit boat on day one and
+            // still short of the bill five centuries later, so no tracked
+            // craft was ever built by anybody.
+            .sort((a, b) => a.workDays - b.workDays)[0];
+        if (!recipe) continue;
+
+        // The slip, off the cells that hold it. `spent` is not carried across
+        // years: what it is for is the argument about a build that failed, and
+        // the argument the world can have is the fact this writes.
+        let berth: Berth = {
+            ...layDownKeel(recipe),
+            delivered: recipe.components.map(
+                (_, i) => faction.resources[berthKey(recipe.id, `line${i}`)] ?? 0
+            ),
+            workDaysDone: faction.resources[berthKey(recipe.id, 'work')] ?? 0
+        };
+
+        berth = deliver(berth, recipe, lotsInTheYard(faction));
+        // What went onto the slip came out of the yard. `deliver` reports it by
+        // lot id and the lot ids ARE the ledger keys, which is why they are
+        // built from `yardKey` rather than named.
+        for (const [key, taken] of Object.entries(berth.spent)) {
+            faction.resources[key] = Math.max(0, (faction.resources[key] ?? 0) - taken);
+        }
+        const worked = workOn(berth, recipe, { days: DAYS_PER_YEAR, hands });
+        berth = worked.berth;
+
+        for (let i = 0; i < recipe.components.length; i++) {
+            faction.resources[berthKey(recipe.id, `line${i}`)] = berth.delivered[i] ?? 0;
+        }
+        faction.resources[berthKey(recipe.id, 'work')] = berth.workDaysDone;
+
+        if (!readyToLaunch(berth, recipe)) continue;
+
+        // Seeded per house per year, so two houses working the same bill with
+        // the same best hand do not get the same answer - which they would off
+        // the recipe and the ordinal alone.
+        const outcome = launch(`${state.seed}:${faction.id}:${year}`, berth, recipe, best);
+        for (let i = 0; i < recipe.components.length; i++) {
+            faction.resources[berthKey(recipe.id, `line${i}`)] = 0;
+        }
+        faction.resources[berthKey(recipe.id, 'work')] = 0;
+        if (!outcome.launched) {
+            // A failure consumes the materials and leaves the yard with
+            // nothing. That is the honest price and it is why a heaven-grade
+            // launch is an event a house remembers.
+            appendWorldFact(state, makeFact({
+                day,
+                kind: 'catastrophe',
+                scale: 'local',
+                summary:
+                    `${faction.name} lost ${recipe.name.toLowerCase()} on the slip. `
+                    + outcome.narrationHint,
+                locationId: faction.seatLocationId,
+                factionIds: [faction.id],
+                actors: [],
+                visibility: 'regional',
+                magnitude: 0.3,
+                data: { conveyanceRecipe: recipe.id, launched: 0 }
+            }));
+            continue;
+        }
+        launched++;
+
+        // WHICH SIDE OF THE LINE IT LANDS ON IS THE GRADE'S AND NOTHING MOVES
+        // IT. `conveyanceKeptAs` is the single authority and every caller asks
+        // it rather than deciding separately - a counted craft increments a
+        // line, and only a tracked one becomes a row with a past.
+        const trackedNow = conveyanceKeptAs(recipe.grade) === 'tracked';
+        if (trackedNow) {
+            const record = mintCraft(recipe, {
+                id: `obj-craft-${faction.id}-${year}`,
+                name: recipe.name,
+                ownerId: faction.id,
+                ownerName: faction.name,
+                wrightId: faction.id,
+                wrightName: faction.name,
+                bestHandOrdinal: best,
+                onDay: day,
+                mooredAt: faction.seatLocationId ?? '',
+                description: `Built at ${faction.name}'s own yard.`
+            });
+            if (record) state.objects.push(record);
+        } else {
+            faction.resources = adjustCountedHolding(
+                faction.resources, recipe.producesConveyanceId, 1
+            );
+        }
+
+        appendWorldFact(state, makeFact({
+            day,
+            kind: 'treasure_found',
+            scale: trackedNow ? 'regional' : 'local',
+            summary:
+                `${faction.name} launched ${recipe.name.toLowerCase()} out of its own yard, at `
+                + `${recipe.grade} grade, over ${recipe.workDays} days of work.`,
+            locationId: faction.seatLocationId,
+            factionIds: [faction.id],
+            actors: [],
+            visibility: trackedNow ? 'public' : 'regional',
+            magnitude: trackedNow ? 0.6 : 0.25,
+            data: {
+                conveyanceRecipe: recipe.id,
+                launched: 1,
+                keptAs: conveyanceKeptAs(recipe.grade),
+                ratedAt: outcome.ratedAt ?? 0
+            }
+        }));
+    }
+    return launched;
 }
 
 /** A weighted draw over a small list. Seeded, so a world replays identically. */

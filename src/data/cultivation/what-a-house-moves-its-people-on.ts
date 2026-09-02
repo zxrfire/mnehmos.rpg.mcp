@@ -449,7 +449,12 @@ export function describeCountedHoldings(
         return 'Nothing in the yard. Whatever this house sends anywhere, it sends on foot.';
     }
     return held
-        .map(x => `${x.n} ${x.c.name.toLowerCase()}${x.n === 1 ? '' : 's'} at ${x.c.grade} grade`)
+        .map(x => {
+            // The catalog names carry their own article - "A shod carriage" -
+            // so a count in front of one read "5 a shod carriages".
+            const what = x.c.name.replace(/^an?\s+/i, '').toLowerCase();
+            return `${x.n} ${what}${x.n === 1 ? '' : 's'} at ${x.c.grade} grade`;
+        })
         .join(', ') + '.';
 }
 
