@@ -1043,7 +1043,19 @@ export const LEGACY_NOUNS =
     // about what somebody knows of a house - into a question about deposit
     // counters. Caught by the parser coverage tests on the first integration.
     // The other nouns here are not the names of anything in the catalog.
-    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|my (?:things|goods|possessions|stones|purse|pouch|wealth|savings|estate)|everything i (?:have|own|am carrying)|what i(?:'m| am)? carrying|for (?:the next life|whoever comes after|whoever comes next))\b/;
+    //
+    // `legacy`, `legacies`, `inheritance` and `bequest` were missing, which is
+    // the word this module is named after. "what legacies are there" and "is
+    // there an inheritance to claim" both reached nothing while "who holds
+    // deposits" was answered, so a player had to guess the accounting word to
+    // reach the thing the fiction calls an inheritance.
+    //
+    // Safe alongside the caution above because none of them names anything in
+    // the catalog either, and because the listing branch they feed
+    // additionally requires a question word. An inheritance GROUND - a ruin
+    // somebody digs - is a different noun and belongs to `site`, which owns
+    // "inheritance ground" explicitly and is checked ahead of this.
+    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|legacy|legacies|inheritances?|bequests?|my (?:things|goods|possessions|stones|purse|pouch|wealth|savings|estate)|everything i (?:have|own|am carrying)|what i(?:'m| am)? carrying|for (?:the next life|whoever comes after|whoever comes next))\b/;
 
 /** Verbs that mean burying and nothing else, so they need no noun beside them. */
 export const LEGACY_BURY_VERBS_ALONE = 'bury|buries|burying|cache|caches|caching|inter|inters';
@@ -1192,6 +1204,15 @@ export function legacyStep(
         return { action: 'legacy', intent: 'counters', ...(house ? { target: house } : {}) };
     }
     if (/\b(?:where (?:can|could|should) i (?:leave|lodge|bury|put|keep)|who (?:would|will) hold)\b/.test(text)) {
+        return { action: 'legacy', intent: 'counters' };
+    }
+    // Asking after the dead rather than after the counter. Measured as a
+    // plain-tier miss: "who left something behind" reached nothing, and it is
+    // the question somebody asks before they know the word `deposit`. Narrow
+    // to the past tense and to the leaving-behind phrasing, so that "I leave
+    // my things with the Iron Bell" stays a lodgement and "who will hold this
+    // for me" stays the branch above.
+    if (/\bwho (?:else )?(?:left|has left|had left)\b[^.?!]*\bbehind\b/.test(text)) {
         return { action: 'legacy', intent: 'counters' };
     }
 
