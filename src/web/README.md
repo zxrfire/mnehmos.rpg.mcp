@@ -407,6 +407,17 @@ so every name it writes resolves the moment the player types it. A better birth
 knows more people and knows people who stand higher - `origin.md`'s own rule, that
 an origin buys inputs and never rank - and nothing but acquaintance is granted.
 
+Two floors underneath the rung table, because the first version of it left runs
+opening with nobody on about one world in five. **Your own realm always reaches**:
+the table governs how far ABOVE your realm a birth reaches, and never bars you from
+the people you were born level with. Measured on twelve worlds, the birthplace was
+never empty - it held four to thirteen Qi Condensation cultivators, and a
+`thin_county` birth reaching six rungs knew none of them whenever the village
+happened to seed at Layers 7 to 12. And **the area, not the building**: if the
+hamlet itself is empty the draw widens once to the places sharing its parent, for
+a single name, because the ruling says the area you grew up in. Neither floor ever
+hands over somebody from a realm above; the widening is sideways.
+
 ## Target resolution
 
 `interact`, `investigate`, `move`, `refine`, `gather` and `train_technique` all take a

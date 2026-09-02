@@ -52,7 +52,10 @@
  *   ORDINARY PEOPLE, NEAR YOUR OWN HEIGHT. Candidates are world NPCs standing
  *   at the birthplace, and a childhood does not put a farm child in a room with
  *   somebody twenty rungs up. `A_CHILDHOOD_REACHES` is the ceiling on the gap,
- *   and it is the only thing an origin buys here.
+ *   and it is the only thing an origin buys here - on top of the floor every
+ *   childhood has whatever it was born into, which is your own realm. See
+ *   `aChildhoodCouldHaveContained` for the measurement that established the
+ *   difference between those two sentences.
  *
  *   IT SCALES WITH ORIGIN, AND BUYS INPUTS RATHER THAN RANK. `origin.md`'s own
  *   rule. A better birth knows MORE PEOPLE and knows people who stand HIGHER,
@@ -69,8 +72,10 @@
 import type { Cultivator } from '../schema/cultivation.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { getOrigin, type OriginTierKey } from '../engine/cultivation/origin.js';
+import { realmForOrdinal } from '../engine/cultivation/realms.js';
 import { isBelowTheLid } from '../engine/world/layers.js';
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
+import type { LocationRecord } from '../engine/world/locations.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import { worldLocationFor } from './entities.js';
 
@@ -116,6 +121,54 @@ export const A_CHILDHOOD_REACHES: readonly { reach: number; rungs: number }[] = 
 ];
 
 /**
+ * And the reach every childhood has whatever it was born into: your own realm.
+ *
+ * THE MEASUREMENT THIS CLOSES. The module shipped with the rung table above as
+ * the only door, and the table was written against a mental picture of a
+ * village rather than against the villages the world actually seeds. Twelve
+ * fresh worlds, the same run seed, the same birthplace, counting who was
+ * standing in it:
+ *
+ *     npcsAt=6   ordinals 10,9,7,11,12,10        knew 0
+ *     npcsAt=4   ordinals 7,9,10,12              knew 0
+ *     npcsAt=5   ordinals 10,8,5,9,7             knew 1
+ *     npcsAt=13  ordinals 10,7,3,10,0,9,7,12,9,...  knew 3
+ *
+ * The birthplace was never empty. Every single body in it was a Qi Condensation
+ * cultivator - the same realm the player is born into, in the same hamlet - and
+ * a thin_county birth reaches six rungs, so on the worlds whose village happened
+ * to be seeded at Layers 7 to 12 the child grew up knowing nobody. That is not
+ * the rule this table was written to express. It was written to keep a farm
+ * child out of a room with somebody at Foundation Establishment, and it was
+ * keeping them out of a room with the woman at the end of their own street.
+ *
+ * So the floor is the REALM rather than the rung. A realm is the unit this
+ * setting already uses for who is level with whom - it is what decides who can
+ * strike whom, what a lifespan is, and what a person is - and everybody inside
+ * one is somebody a childhood can plausibly have contained. Layer 12 and Layer 0
+ * are both Qi Condensation, both mortal-lived, both a village's own people. The
+ * rung table keeps its whole job, which is how far ABOVE your own realm a good
+ * birth reaches, and that is still the only thing an origin buys here.
+ *
+ * Note what this does NOT do. It does not hand anybody a name from a realm
+ * above them: a farm child in a hamlet of Void Refinement cultivators still
+ * knows none of them, and `facesFromHome` still answers with an empty list
+ * rather than with somebody out of reach. The widening is sideways, not up.
+ *
+ * @param childOrdinal where the person whose childhood this was stands
+ * @param theirOrdinal where the candidate stands
+ * @param rungs what this birth's reach buys, from the table above
+ */
+export function aChildhoodCouldHaveContained(
+    childOrdinal: number,
+    theirOrdinal: number,
+    rungs: number
+): boolean {
+    if (theirOrdinal - childOrdinal <= rungs) return true;
+    return realmForOrdinal(theirOrdinal).name === realmForOrdinal(childOrdinal).name;
+}
+
+/**
  * How somebody comes to have been a fixture since before anybody was anybody.
  *
  * Provenance for the record, in the same register as every other `sourceNote`
@@ -159,8 +212,12 @@ export interface HomeFacesInput {
  * it - which is the point. A seeded list of catalog notables would have given
  * them names they could say and nobody they could reach.
  *
- * Empty is a legitimate answer and happens: a birthplace the world has no
- * location for, or a hamlet with nobody in it but the player.
+ * Empty is a legitimate answer and is now a narrow one: a birthplace the world
+ * has no location for, or a whole neighbourhood in which every living body
+ * stands a realm above the child and outside what the birth reaches. What it
+ * must not be, and was, is the ORDINARY case - see
+ * `aChildhoodCouldHaveContained` for the twelve worlds that showed a village
+ * full of the child's own realm-mates coming back as nobody.
  */
 export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     const { world, cultivator, origin, seed } = input;
@@ -172,10 +229,11 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     const wanted = bandFor(FACES_A_CHILDHOOD_LEAVES, reach, f => f.faces);
     const rungs = bandFor(A_CHILDHOOD_REACHES, reach, r => r.rungs);
 
-    const candidates = npcsAt(world, here.id)
+    const eligible = (npcs: readonly NpcRecord[]): NpcRecord[] => npcs
         .filter(npc => npc.id !== cultivator.id)
         .filter(npc => npc.status === 'alive' && isBelowTheLid(npc))
-        .filter(npc => npc.cultivation.realmOrdinal - cultivator.realmOrdinal <= rungs)
+        .filter(npc => aChildhoodCouldHaveContained(
+            cultivator.realmOrdinal, npc.cultivation.realmOrdinal, rungs))
         // Nearest in standing first, then by id. The neighbour before the
         // notable: somebody far above you was not in your kitchen, and if the
         // ceiling above lets one through they are still the last one picked.
@@ -184,8 +242,42 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
             - Math.abs(b.cultivation.realmOrdinal - cultivator.realmOrdinal)
             || (a.id < b.id ? -1 : 1));
 
+    const atHome = eligible(npcsAt(world, here.id));
+
+    // AND IF THE HAMLET ITSELF IS EMPTY, THE AREA AROUND IT.
+    //
+    // The ruling says "the area you are in", not "the building you were born
+    // in", and the world models an area: a settlement hangs off a parent, and
+    // the places that hang off the same parent are the two days' walk somebody
+    // grew up inside. A child from a holding of four houses knew the people at
+    // the next holding, and a world that seeds their own hamlet empty has not
+    // made them a stranger to the valley.
+    //
+    // Deliberately ONE face rather than `wanted`. The next holding over is a
+    // name; it is not a childhood, and handing over three of them would be
+    // paying out the full draw for the accident of where the seeder put people.
+    const draw = atHome.length > 0
+        ? atHome.slice(0, wanted)
+        : eligible(theSamePartOfTheWorld(world, here)).slice(0, 1);
+
     const rng = forStream(seed, 'childhood', here.id);
-    return candidates.slice(0, wanted).map(npc => toFace(npc, rng.int(0, HOW_YOU_KNOW_THEM.length - 1)));
+    return draw.map(npc => toFace(npc, rng.int(0, HOW_YOU_KNOW_THEM.length - 1)));
+}
+
+/**
+ * Everybody standing in the places that share this one's parent, and in the
+ * parent itself. A top-level place has no such neighbourhood and answers with
+ * nobody rather than with the whole world.
+ */
+function theSamePartOfTheWorld(world: WorldState, here: LocationRecord): NpcRecord[] {
+    const parentId = here.parentId;
+    if (parentId === null) return [];
+    const around = new Set(
+        world.locations
+            .filter(l => l.id !== here.id && (l.parentId === parentId || l.id === parentId))
+            .map(l => l.id)
+    );
+    return world.npcs.filter(npc => npc.locationId !== null && around.has(npc.locationId));
 }
 
 function toFace(npc: NpcRecord, at: number): FaceFromHome {
