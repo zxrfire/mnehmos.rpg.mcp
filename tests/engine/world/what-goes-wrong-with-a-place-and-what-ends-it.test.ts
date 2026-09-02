@@ -145,7 +145,7 @@ describe('what goes wrong with a place', () => {
             // war, and forty rows saying so would make the layer's own claim
             // about its size false - measured at 440 live wars before the seat
             // filter, against 10 tides and 8 closures.
-            const holder = { id: 'sect-a', name: 'Ash Hall' };
+            const holder = { id: 'sect-a', name: 'Kiln Hall' };
             const onTheSeat = standing(ground(), {
                 holder, holderIsAtWar: true, holderFightingNames: ['Bone Hall'],
                 isTheHoldersSeat: true
@@ -162,7 +162,7 @@ describe('what goes wrong with a place', () => {
 
         it('says nothing about a house that is not fighting', () => {
             expect(groundUnderAWar([standing(ground(), {
-                holder: { id: 'sect-a', name: 'Ash Hall' }, isTheHoldersSeat: true
+                holder: { id: 'sect-a', name: 'Kiln Hall' }, isTheHoldersSeat: true
             })])).toEqual([]);
         });
     });
