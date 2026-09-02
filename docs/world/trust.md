@@ -392,23 +392,26 @@ out of every house in the world in the only container nobody can search.
 neither. **Which is precisely why the manual is the thing worth stealing**, and why it is a
 tracked object with provenance in [`items.md`](items.md) while the knowing of it is not.
 
-At the Court this is the whole texture: members do share what their old houses taught them, and
-nobody arrives carrying the book. See
-[`past-the-ceiling.md`](past-the-ceiling.md#the-hollow-court-is-the-exception-to-all-of-it) for
-its selection and its ground, and `crossings.ts` for the thing that actually keeps it standing:
-**its records are good, and that is not incidental to its strength — it is its strength.**
+**At the Court this resolves an apparent contradiction, and the resolution is the useful part.**
+The Court **as an institution** teaches exactly one art — the Seats' own, passed at 41 as the
+vehicle for the last climb to 44. **Its members, informally and out loud, share what their old
+houses taught them**, and no house can prevent that. **Both are true because they are different
+acts.** Institutional transmission is one thing and a person telling another person what they
+know is another, and only the first can be written down, counted, or forbidden.
 
-**The only part that belongs in this document is the recognition consequence:** every member
-arrived trained somewhere else and still performs that art, which is genuinely theirs and
-genuinely their old house's. **So the check reads them correctly and places them wrongly.** The
-Seats' own art, passed at 41 for the last stretch to 44, is the one thing the Court teaches.
+**The Court holds two separate strengths and it is not a choice between them.** The pooled
+knowledge above, which no house can stop leaving — and an archive: `crossings.ts` has it that
+their records are good and *"that is not incidental to their strength — it is their strength"*,
+which is why their depletion is medium rather than terminal at four thousand four hundred years.
+Every other institution's decline includes a component of simple forgetting. Theirs does not.
+See [`past-the-ceiling.md`](past-the-ceiling.md#the-hollow-court-is-the-exception-to-all-of-it)
+for its selection and its ground.
 
-**Their own top art is a different matter, and it is not a secret kept for secrecy's sake.** The
-Seats pass it on when somebody reaches 41, as the vehicle for the last climb to 44 — so the
-people who could recognise it are the Seats and whoever is currently making that climb, and the
-only occasion it is used is a crossing almost nobody witnesses. **It is not withheld to stop
-imitation. It is simply an instrument for a stretch of ladder four beings and a handful of
-climbers have ever stood on.**
+**The recognition consequence is the part that belongs here:** every member arrived trained
+somewhere else and still performs that art, which is genuinely theirs and genuinely their old
+house's. **So the check reads them correctly and places them wrongly.** And the Seats' art is
+not withheld to prevent imitation — **it is simply an instrument for a stretch of ladder almost
+nobody has stood on**, used on an occasion almost nobody witnesses.
 
 **It is also the precise reason a woken ancestor is the authority she is.** She is the rare
 reader holding *both* axes for her own era: the realm to read a demonstration exactly, and a
