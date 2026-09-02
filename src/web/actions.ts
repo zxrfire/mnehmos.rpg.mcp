@@ -3787,7 +3787,31 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
     }
 }
 
-export function parseIntent(input: string): PlannedAction {
+/**
+ * Typographic characters, put back to the ones the patterns are written in.
+ *
+ * A phone, a word processor and most chat boxes turn an apostrophe into U+2019
+ * as you type it, and the phrase tables are written with ASCII. So
+ * "is this the Azure Cloud Pavilion's art" reached the recognition verb and
+ * the same sentence with a curly apostrophe reached nothing at all - in a
+ * world whose houses are called things like The Gleaners' Company, where a
+ * possessive is the natural way to ask about almost anything.
+ *
+ * These are variants of the same character rather than different content, so
+ * this is a spelling of the input and not a reading of it. Entity resolution
+ * already tolerated both, which is why a NAME with a curly apostrophe resolved
+ * while the verb around it did not.
+ */
+export function inTheCharactersThePatternsUse(input: string): string {
+    return input
+        .replace(/[‘’‛]/g, "'")
+        .replace(/[“”]/g, '"')
+        .replace(/[–—]/g, '-')
+        .replace(/…/g, '...');
+}
+
+export function parseIntent(rawInput: string): PlannedAction {
+    const input = inTheCharactersThePatternsUse(rawInput);
     const plan = readTheSentence(input);
     if (plan.action !== FALLBACK_ACTION) return plan;
 

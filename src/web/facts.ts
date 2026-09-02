@@ -1704,13 +1704,24 @@ export function factsForHolding(
         );
     }
 
+    // ONE ENTRY PER NAME, not one per record.
+    //
+    // This layer never overwrites - a place read about and a place stood in are
+    // different facts kept side by side, which is the whole point of the
+    // provenance chain - so a subject the cultivator learned twice holds two
+    // rows. Listing rows put "Mudsummer" in the middle of the player's own
+    // recall twice and called the total "names" when it was counting records.
+    // The raw count is still worth having and is on the engine channel below,
+    // where a number that means rows can say so.
     const byKind = new Map<string, string[]>();
     for (const row of held) {
         if (!byKind.has(row.kind)) byKind.set(row.kind, []);
-        byKind.get(row.kind)!.push(row.name);
+        const names = byKind.get(row.kind)!;
+        if (!names.includes(row.name)) names.push(row.name);
     }
+    const distinct = [...byKind.values()].reduce((n, names) => n + names.length, 0);
 
-    const lines = [`${held.length} names, and a name is most of what any of them is.`];
+    const lines = [`${distinct} names, and a name is most of what any of them is.`];
     for (const [kind, names] of byKind) {
         lines.push(
             `${kind === 'cultivator' ? 'People' : kind === 'sect' ? 'Houses' : kind === 'place' ? 'Places' : 'Things that happened'}: `
@@ -1723,8 +1734,11 @@ export function factsForHolding(
     );
 
     return {
-        headline: `${held.length} names.`,
-        structure: [`knowledge records held: ${held.length} across ${byKind.size} kind(s).`],
+        headline: `${distinct} names.`,
+        structure: [
+            `knowledge records held: ${held.length} across ${byKind.size} kind(s), `
+            + `${distinct} distinct names.`
+        ],
         lines,
         prose: lines.join('\n\n')
     };
