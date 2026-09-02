@@ -74,6 +74,7 @@ import {
     writeFlag,
     clearFlag
 } from './cultivation-support.js';
+import { applyProbation, carriedProbationFacts, probationOf } from './sect-probation.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THE ROLL
@@ -227,6 +228,28 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
     const homeId = membership?.sectId ?? null;
     const held = guestPlaceHeldBy(repos.db, cultivator.id);
 
+    // ── THE FAR END OF A PUBLISHED DOOR ──────────────────────────────────
+    //
+    // Before anything else, because by the time somebody walks back up the
+    // terraces to ask, the house has already decided about them. See the
+    // header of `sect-probation.ts` for why a decided judgement writes on what
+    // looks like a read: the scoring is the house's act on the house's clock,
+    // there is nothing here to accept or decline, and the roll is cleared so
+    // the branch cannot fire twice.
+    //
+    // Departing is exempt. Walking out of a probation is a thing somebody may
+    // do at any point - it costs nothing, because nothing was given - and
+    // sorting them on the way out would be the engine refusing an action,
+    // which is the one thing it may not do.
+    const probation = args.depart ? null : probationOf(repos, cultivator, run);
+    if (probation && probation.outcome !== 'carried') {
+        const applied = applyProbation(repos, cultivator, run, probation);
+        if (applied) {
+            repos.runs.incrementTurn(run.id, 1);
+            return applied;
+        }
+    }
+
     // ── Walking out, which costs nothing, because nothing was given ──────
     if (args.depart) {
         if (!held) {
@@ -286,8 +309,17 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
                   : 'You would be on their guest roll and on nobody\'s house roll, which is '
                     + 'exactly where you are now.');
         return {
-            narrationHint,
+            narrationHint: probation
+                ? `${narrationHint} You are ${Math.round(probation.yearsOnTheRoll)} years into `
+                  + `the ${getSect(probation.factionId ?? '')?.name ?? 'house'}'s own intake, `
+                  + 'and nothing about you has been decided yet.'
+                : narrationHint,
             standingAt: rankName(cultivator.realmOrdinal),
+            // The probation said out loud from the inside. A term whose own
+            // terms are a secret is a worse arrangement than the one the
+            // catalog describes, and this is the read a person in it would
+            // actually make.
+            probation: probation ? carriedProbationFacts(probation) : null,
             currentlyGuestOf: held
                 ? { hostFactionId: held.hostFactionId, sinceDay: held.sinceDay }
                 : null,
@@ -374,6 +406,9 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
     if (!args.accept) {
         return {
             ...terms,
+            probation: probation && probation.factionId === sect.id
+                ? carriedProbationFacts(probation)
+                : null,
             accepted: false,
             offerStands: place.opens.length > 0,
             narrationHint: place.opens.length === 0
@@ -398,8 +433,14 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
     };
     writeFlag(repos.db, cultivator.id, FLAG_GUEST_STUDENT_OF, JSON.stringify(entry));
 
+    // Read back AFTER the roll is written, so somebody taking a published door
+    // is told the terms of the thing they have just joined rather than the
+    // terms of the thing they were not in a moment ago.
+    const nowOnProbation = probationOf(repos, cultivator, run);
+
     return {
         ...terms,
+        probation: nowOnProbation ? carriedProbationFacts(nowOnProbation) : null,
         accepted: true,
         onDay: today,
         // Said plainly at the moment it is written, because this is the fact

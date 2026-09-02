@@ -119,6 +119,7 @@ import { handleMarket, handleWork, standingOf } from '../server/consolidated/cul
 import { SECT_BONUS_PER_RANK } from '../server/consolidated/cultivation-manage.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
 import { handleGuest } from '../server/consolidated/sect-guest.js';
+import { recallDueFor } from '../server/consolidated/sect-probation.js';
 import {
     handleJoin,
     handleLeave,
@@ -4460,8 +4461,20 @@ ${noticed}`;
             // here", which is exactly the fact being silently applied. So this
             // refuses until the player has actually left, rather than
             // duplicating the departure path and eventually disagreeing with it.
+            // ── UNLESS THE HOUSE ABOVE SENT FOR THEM ─────────────────────
+            //
+            // The refusal below is right for a defection and wrong for a
+            // recall. Somebody at the Mist or the Dew who has outrun what
+            // their house can teach is on a roll the terraces keep, and going
+            // back up the gorge is not walking out on anybody - the grant
+            // terms say the Mist owes the Pavilion "every disciple the
+            // terraces ask for, on the day they ask". Telling them they are
+            // already somebody's would be the world enforcing a rule it does
+            // not enforce on its own people, which is the oldest defect here.
+            const sentUp = recallDueFor(this.repos, cultivator);
             const held = positionIn(this.repos, cultivator.id);
-            if (held && held.sectId !== named.id) {
+            if (held && held.sectId !== named.id
+                && !(sentUp !== null && sentUp.toFactionId === named.id)) {
                 return refused('sect_manage.join', 'sect', factsForRefusal(
                     'You are already somebody\'s.',
                     `You stand as ${held.rankTitle} of ${held.sectName}, and nobody is taken on `
