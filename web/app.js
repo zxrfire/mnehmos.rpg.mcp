@@ -1715,7 +1715,19 @@ function renderQuickActions() {
 
     // The engine's own words, on the page rather than in a tooltip - there is
     // no hover on a phone, and the refusal is the most useful thing on screen.
-    refusal.textContent = reason || '';
+    //
+    // It has to SAY it is about the breakthrough. This line is rendered from
+    // `breakthroughBlockedReason` on every turn, and it sits directly above the
+    // command input - so a player who asked "what sects are there" and read
+    // "Not enough has accumulated: 0 of 100 qi-units" underneath it reasonably
+    // took that for the answer to their question.
+    refusal.textContent = '';
+    if (reason) {
+        const label = document.createElement('b');
+        label.className = 'refusal__what';
+        label.textContent = barred ? 'Breakthrough barred. ' : 'Breakthrough not yet. ';
+        refusal.append(label, document.createTextNode(reason));
+    }
     refusal.classList.toggle('refusal--barred', barred);
     refusal.hidden = !reason;
   }
@@ -1886,7 +1898,15 @@ async function submitAction(ev) {
 
   // Keep the engine's own account of this turn so the inspector can show it
   // beside the prose. Keyed by turn, because that is what the log rows carry.
-  if (Array.isArray(payload.toolCalls) && payload.toolCalls.length) {
+  //
+  // Written unconditionally, INCLUDING when there are no calls, and that is the
+  // whole point. A turn is not unique per input - ADMIN actions do not advance
+  // one - so two inputs can share a key. Writing only when the array was
+  // non-empty left the second input rendering the first one's calls: `hello`
+  // (turn 9, three calls) then `ADMIN roster` (turn 9, none) showed the roster
+  // attributed to the greeting. An empty array overwrites and renders nothing,
+  // which is the honest answer; `inspectorAfter` already treats it as absent.
+  if (Array.isArray(payload.toolCalls)) {
     const turn = S.run ? S.run.turn : 0;
     const lastLoggedTurn = S.log.length ? S.log[S.log.length - 1].turn : turn;
     S.inspectors.set(lastLoggedTurn != null ? lastLoggedTurn : turn, payload.toolCalls);

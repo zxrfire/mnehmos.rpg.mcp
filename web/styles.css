@@ -768,6 +768,14 @@ kbd {
 }
 .refusal--barred { color: var(--violet-300); border-left-color: var(--violet-400); }
 
+/* Names what is being refused. Without it the line reads as the answer to
+   whatever the player last typed, because that is where it sits. */
+.refusal__what {
+  color: var(--paper-dim, var(--paper-mut));
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 /* ───────────────────────────── SHEET ───────────────────────────── */
 
 .play__sheet {
