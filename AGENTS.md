@@ -443,6 +443,33 @@ The mirror image is worth stating too: **a rule that binds NPCs and not the play
 player and not NPCs, is the same failure with one caller instead of none.** See
 [the world's rules must bind the player too](#the-worlds-rules-must-bind-the-player-too).
 
+### Realm capability is enforced, not asserted
+
+**Ruled by the design owner: what a realm grants is something the engine enforces.** Not prose
+the narrator repeats, not a table read only by a document, and not a set of declarations
+checked against an empty holder.
+
+This was a live question because the capability layer was found to be entirely unreachable -
+`capabilityActorFor` hardcodes `heldGrants: []`, so all fifteen realm grants were off for every
+living cultivator, and four of them were described in an audit as "built". A wound meant to
+deny a grant would have denied something nobody held: **a no-op that reviews as a feature.**
+
+So a grant is only real when something in `src/` asks about it at the moment it matters. The
+three that were genuinely enforced when this was written - `SATIETY_BURN_BY_REALM`,
+`triggersHeavenlyTribulation`, and `killRequirement` through `assessPower` - are the model:
+each is consulted by running code, in a system that already does something, at the point where
+the answer changes an outcome.
+
+Two consequences for anybody adding to it:
+
+- **A capability without a consumer is not finished.** The same rule as
+  [a module nothing calls](#a-module-nothing-calls-is-not-a-feature), applied to the layer that
+  taught us the lesson.
+- **And it is what makes a failed crossing mean anything.** The broken statuses each deny the
+  ability their realm exists to grant - that is the whole of what they are. If capability is
+  not enforced, a crippled nascent soul and a whole one are the same person with different
+  prose, which is exactly the softening the agency rule forbids.
+
 ### The population pyramid is a law, not a preference
 
 **Whatever is changed, the shape of the population survives it.** Far more people at the bottom
