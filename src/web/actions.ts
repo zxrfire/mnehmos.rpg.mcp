@@ -598,6 +598,58 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
  * is classified at the point of execution rather than here.
  */
 
+// ─── A VERB SHOULD ANSWER TO ITS OWN NAME ─────────────────────────────────
+//
+// Measured by `scripts/probe-does-every-verb-answer-to-its-own-name.ts`: 17 of
+// 40 action names reached their own verb when typed bare. `inventory` on its
+// own reached nothing, and `market` on its own was answered by walking the
+// player over to talk to somebody. The bare word is the cheapest thing a
+// person types and usually the first, and somebody whose first three words
+// each reach nothing concludes the game is broken rather than that they have
+// guessed the vocabulary wrong.
+//
+// THE GATE IS `READ_ONLY_ACTIONS`, and it does all the work here. Those verbs
+// pass no in-world time and change no cultivator state, so a bare word
+// reaching one cannot cost a day, a stone or a life however badly it was
+// meant. That makes this safe by construction rather than by an exception list
+// somebody has to maintain - and it is why every verb it declines is declined
+// without a special case being written for it:
+//
+//   descend   crosses the Lid, once, and ends the footing the whole run stands
+//             on. A bare word must never be able to reach it
+//   seal      wakes a sealed ancestor: irreversible, and a crime or not
+//             depending on what a membership row says
+//   move      movement naming no destination is the documented "I set out"
+//             failure - the engine would store the sentence as a place
+//   sect      listing what would take you is free; being taken costs a life's
+//             worth of allegiance, and the bare word cannot say which
+//   posture   three of its five commit a house to something it cannot undo
+//   offer     spends the thing offered
+//   site, legacy, refine, provision, treat, interact, request
+//             each either takes something or needs a target the bare word
+//             does not supply
+//
+// Every one of those is already argued for beside its own verb. This rule adds
+// no judgement of its own; it reads the classification the file already keeps.
+
+/**
+ * The action a sentence names, when the sentence is nothing but the name.
+ *
+ * Whole-input only, so it cannot swallow the verb next door: a sentence with a
+ * second word in it does not match at all and falls through to the table
+ * untouched.
+ */
+export function theVerbsOwnName(text: string): ActionName | null {
+    const bare = text.trim().replace(/[.!?]+$/, '').trim().replace(/\s+/g, ' ').toLowerCase();
+    if (bare.length === 0) return null;
+    for (const name of ACTION_NAMES) {
+        if (name === FALLBACK_ACTION) continue;
+        if (!READ_ONLY_ACTIONS.includes(name)) continue;
+        if (bare === name.replace(/_/g, ' ')) return name;
+    }
+    return null;
+}
+
 /**
  * Actions that spend in-world time, and can therefore kill.
  *
@@ -1354,8 +1406,25 @@ export const LEARNING_SUBJECT_VERBS = /learn|study|read|take up|master|acquire/;
  * somebody uses at a ceiling, and every one of them presupposes a method they
  * already practise.
  */
-export const ACQUISITION_PATTERN =
-    /\b(?:how (?:do|can) i (?:get|go) (?:any )?further|what (?:are|is) my options|how does (?:this|my) (?:manual|method|art|book) (?:go|get) further|next volume|go further with|carry me further|what would (?:it )?take to (?:get|go) (?:past|further|beyond)|my options at this (?:ceiling|wall)|how do i pass this (?:ceiling|wall))\b/;
+export const ACQUISITION_PATTERN = new RegExp([
+    /\bhow (?:do|can) i (?:get|go) (?:any )?further\b/,
+    /\bwhat (?:are|is) my options\b/,
+    /\bhow does (?:this|my) (?:manual|method|art|book) (?:go|get) further\b/,
+    /\bnext volume\b/,
+    /\bgo further with\b/,
+    /\bcarry me further\b/,
+    /\bwhat would (?:it )?take to (?:get|go) (?:past|further|beyond)\b/,
+    /\bmy options at this (?:ceiling|wall)\b/,
+    /\bhow do i pass this (?:ceiling|wall)\b/,
+    // Measured as plain-tier misses. All three presuppose a method and a wall
+    // in front of it, which is what keeps them here rather than on `ceiling`:
+    // that verb answers "what is stopping the PERSON" and has to answer for
+    // somebody holding no book at all, and these are asked by somebody who
+    // already knows what they hold and has run out of it.
+    /\bhow do i get past (?:this|it)\b/,
+    /\bwhat would let me (?:advance|progress|go (?:further|higher)|get (?:further|past))\b/,
+    /\b(?:run|ran|running) out of (?:manual|book|method|art|scripture)\b/
+].map(r => r.source).join('|'));
 
 export const ACQUISITION_SUBJECT_VERBS = /further with|with|past|beyond|of/;
 
@@ -1395,6 +1464,10 @@ export const CEILING_QUESTION = new RegExp([
     /\bwhat should i (?:do|be doing)\b/,
     /\bwhy (?:can'?t|cannot) i (?:break through|breakthrough|advance|progress|rise|go (?:any )?(?:further|higher))\b/,
     /\bwhy (?:has|have) my cultivation (?:stopped|stalled)\b/,
+    // The same question with `progress` as its subject rather than
+    // `cultivation`. It fell to `status`, which answers with a character
+    // sheet and never says what is in the way.
+    /\bwhy (?:is|has|have) my progress (?:stalled|stopped|halted|frozen)\b/,
     /\bwhy (?:is|am) (?:nothing|my progress) (?:happening|accumulating|moving)\b/,
     /\bhow far (?:does|will) my (?:manual|book|method|art) go\b/,
     /\bwhat (?:is|'s) (?:in my way|my bottleneck)\b/,
@@ -1620,7 +1693,14 @@ export const SITE_NOUNS =
     // resolution, because those words appear in the names and descriptions of
     // places a player travels to rather than walks into. Fix the gap that was
     // demonstrated, not the one that was imagined.
-    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment|ruins?|ruined (?:hall|compound|temple)|secret realms?)\b/;
+    //
+    // `abandoned` and `lost` are here on the same terms as `ruin` was, and
+    // with the same restraint: both are ANCHORED to a noun that can only be a
+    // ground. Bare `caves` is deliberately still absent, because
+    // `DESTINATIONS_QUESTION` owns "a quiet cave in the mountains" - somewhere
+    // to sit is not somewhere to dig, and taking the bare noun would be the
+    // greedy version of this edit that had to be reverted once already.
+    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment|ruins?|ruined (?:hall|compound|temple)|secret realms?|abandoned (?:place|places|site|sites|hall|halls|compound|compounds|temple|temples|seat|seats)|lost (?:cave|caves|tomb|tombs|hall|halls|temple|temples))\b/;
 
 /**
  * The face of a site: what is physically at the threshold.
@@ -1677,7 +1757,26 @@ export const SITE_APPROACH_VERBS =
  * else, however they phrase the question.
  */
 export const SITE_FROM_OUTSIDE =
-    /\bfrom (?:out here|outside|the outside|out front|where i(?:'m| am)? stand\w*|here)\b|\bwithout going in(?:side)?\b/;
+    /\bfrom (?:out here|outside|the outside|out front|where i(?:'m| am)? stand\w*)\b|\bwithout going in(?:side)?\b/;
+
+/**
+ * `from here`, which is a threshold only when there is a threshold in the
+ * sentence.
+ *
+ * It used to sit in {@link SITE_FROM_OUTSIDE} beside the unambiguous ones, and
+ * that constant fires with NO anchor - deliberately, because a player standing
+ * outside a ground must get the exterior however they phrase it. Bare "from
+ * here" is not that phrasing though, it is two of the commonest words in
+ * English, and it was swallowing `destinations`: "where could I go from here"
+ * is the plainest way to ask what places there are, and it was answered with
+ * the outside of a ruin.
+ *
+ * Split out rather than deleted, because a player who says "what does the tomb
+ * look like from here" means exactly what the exterior read is for. So the
+ * unambiguous phrasings keep firing on their own, and this one needs a site
+ * named, a site noun or a threshold noun in the sentence with it.
+ */
+export const SITE_FROM_HERE = /\bfrom here\b/;
 
 /** Asking what grounds there are, which needs no verb at all. */
 export const SITE_QUESTION =
@@ -1787,7 +1886,8 @@ function siteStep(text: string, input: string): PlannedAction | null {
     // Reading it from outside. This one must never be able to return the
     // interior, and it is phrased as its own step rather than folded into the
     // approach so that the refusal to go further is visible in the log.
-    if (SITE_FROM_OUTSIDE.test(text) || (anchored && usedAsVerb(text, SITE_LOOK_VERBS))) {
+    if (SITE_FROM_OUTSIDE.test(text)
+        || (anchored && (SITE_FROM_HERE.test(text) || usedAsVerb(text, SITE_LOOK_VERBS)))) {
         return { action: 'site', intent: 'outside', ...(target ? { target } : {}) };
     }
 
@@ -1946,9 +2046,26 @@ export function artNamedIn(input: string): string | undefined {
     return cleaned.slice(0, 80);
 }
 
-/** The whole holding, asked for at once. Names nobody on purpose. */
-export const RECALL_EVERYTHING =
-    /\bwhat do i know\b\s*[.!?]?$|\bwhat do i know at all\b|\bwhat have i heard\b\s*[.!?]?$|\bwhat names do i (?:have|hold|know)\b|\bwhat have i learn(?:ed|t)\b\s*[.!?]?$/;
+/**
+ * The whole holding, asked for at once. Names nobody on purpose.
+ *
+ * The `remember` and `recall` forms were missing, which is odd company for
+ * `know` and `heard` and was measured as a plain-tier miss: "what do I
+ * remember" reached nothing while "what do I know" was answered. So did
+ * "remind me what I know" - `RECALL_PATTERNS` carries a `remind me` branch and
+ * it requires an `of` or an `about` after it, so it answers the question with
+ * a name in it and not the one without.
+ */
+export const RECALL_EVERYTHING = new RegExp([
+    /\bwhat do i know\b\s*[.!?]?$/,
+    /\bwhat do i know at all\b/,
+    /\bwhat have i heard\b\s*[.!?]?$/,
+    /\bwhat names do i (?:have|hold|know)\b/,
+    /\bwhat have i learn(?:ed|t)\b\s*[.!?]?$/,
+    /\bwhat do i (?:remember|recall)\b\s*[.!?]?$/,
+    /\bremind me what i (?:know|hold|have heard|have learn(?:ed|t))\b/,
+    /\bgo over what i (?:know|hold|have (?:heard|picked up|learn(?:ed|t)))\b/
+].map(r => r.source).join('|'));
 
 /**
  * News, rumour, and what is being said - which in this world IS the holding.
@@ -2277,7 +2394,20 @@ export const ALLIANCE_VERBS =
     + 'forming|seek|seeks|seeking|extend|extends|extending|ally|allies|sue for';
 
 export const ALLIANCE_NOUNS =
-    /\b(?:alliance|alliances|allied|a pact|the pact|a league|common cause|mutual defence|mutual defense|terms with)\b/;
+    // `peace with` and `truce` were missing, and "I make peace with the Azure
+    // Dew Sect" is the plainest sentence in this whole block - `make` was
+    // already a declaration verb, so the only thing standing between that
+    // sentence and the verb it wants was the noun. Both require their
+    // preposition, which keeps them off "the region is at peace" and off
+    // anybody merely describing a standing.
+    //
+    // And both refuse a PRONOUN after it, which `misparse.test.ts` caught
+    // immediately: "I make peace with it, in a manner of speaking, for a
+    // season" is in the inert-fallback set, and it committed the house to a
+    // peace with a party the sentence never named. Three of the five postures
+    // bind a house irreversibly, so a phrasing that reaches one without
+    // naming anybody is worse than a phrasing that reaches nothing.
+    /\b(?:alliance|alliances|allied|a pact|the pact|a league|common cause|mutual defence|mutual defense|terms with|peace with (?!it\b|them\b|him\b|her\b|that\b|this\b|myself\b)|peace between|truce with (?!it\b|them\b|him\b|her\b|that\b|this\b)|a truce)\b/;
 
 /**
  * Changing who the house holds from, which two courts in the catalog's own
@@ -2417,7 +2547,18 @@ export const GOING_DOWN_VERBS =
     + 'cross|crosses|crossing|head|heads|heading';
 
 export const THE_WAY_BACK_DOWN =
-    /\b(?:back down|down through the lid|through the lid|down to the (?:province|world below|lower world|mortal world|world)|into the lower world|below the lid|down myself|down in person|the way i came)\b/;
+    // `to the lower world` without a preceding "down" or "into". The pattern
+    // carried both of those and not the bare preposition, so "I return to the
+    // lower world" reached nothing while "I go down to the lower world" and "I
+    // go into the lower world" both worked. There is no second reading of the
+    // phrase: below the Lid nobody calls anywhere the lower world, so it needs
+    // no anchor beyond itself.
+    //
+    // Note what is still NOT here, and must not be added: "the mountain",
+    // "downhill", or any other slope. This verb crosses the Lid once and ends
+    // the run's whole footing, and "I descend the mountain" means a walk to
+    // very nearly everybody who types it. See the banner above.
+    /\b(?:back down|down through the lid|through the lid|down to the (?:province|world below|lower world|mortal world|world)|(?:in)?to the lower world|below the lid|down myself|down in person|the way i came)\b/;
 
 /**
  * Going down without saying so, in the two phrasings that unmistakably mean it.
@@ -3724,6 +3865,14 @@ function planIntent(input: string): PlannedAction {
         return { action: FALLBACK_ACTION };
     }
 
+    // The whole sentence is a verb's own name. First, because it is the most
+    // specific rule in the file - a second word anywhere and it does not fire -
+    // and because two of the names it answers were being taken by branches
+    // below it. Safe wherever it sits: `theVerbsOwnName` only ever returns a
+    // verb that costs nothing.
+    const named = theVerbsOwnName(text);
+    if (named !== null) return { action: named };
+
     // -- attacking somebody, which had no route at all --
     //
     // The engine has had combat the whole time: `resolveExchange`,
@@ -4053,14 +4202,18 @@ function planIntent(input: string): PlannedAction {
     // are unambiguous whatever position they are in are listed separately,
     // because "attempt a breakthrough" is a noun and is still the attempt.
     if (usedAsVerb(text, 'break\\s*through|breakthrough|breaks through|breaking through')
-        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|(?:try|attempt|make|go for) (?:a |the |my |another )?break\s*through|(?:try|attempt) (?:to |for )?(?:the )?(?:next realm|advancement))\b/.test(text)) {
+        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|(?:try|attempt|make|go for) (?:a |the |my |another )?break\s*through|(?:try|attempt|push|go) (?:to |for )?(?:the )?(?:next realm|next rank|next layer|advancement))\b/.test(text)) {
         return { action: 'breakthrough' };
     }
 
     // Closed-door seclusion before ordinary cultivation: it is the more
     // specific reading of the same sentence, and it is a different bargain -
     // sealed against encounters, and against opportunities with them.
-    if (/\b(?:closed[- ]?door|seal (?:myself|the (?:cave|door))|sealed seclusion|enter seclusion|go into seclusion|shut myself)\b/.test(text)) {
+    // `seclude` itself was not on this list, so "I seclude myself for a year"
+    // fell to `cultivate` - a different bargain at a twelfth of the default
+    // span, taken silently. The verb answering to every phrasing except its
+    // own name is the near-synonym rule at its sharpest.
+    if (/\b(?:closed[- ]?door|seclude|secludes|secluding|seal (?:myself|the (?:cave|door))|sealed seclusion|enter seclusion|go into seclusion|shut myself)\b/.test(text)) {
         return { action: 'seclude', days: parseDuration(text) ?? DEFAULT_SECLUSION_DAYS };
     }
 
@@ -4311,8 +4464,13 @@ function planIntent(input: string): PlannedAction {
         return { action: 'market', target: 'medicine' };
     }
 
-    if (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices?)\b/.test(text)
-        || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|find|go to|look at|look over|head to|walk to')
+    // Two measured misses. `show` was not among the market verbs although
+    // `see`, `check` and `visit` were, so "show me the market" fell through to
+    // `interact` and walked the player over to talk to somebody. And nothing
+    // read the counter itself: `stalls` was already a market NOUN, so "what is
+    // on the stalls" satisfied half the rule and reached nothing.
+    if (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices?|what(?:'s| is) on (?:the )?(?:stalls?|counter|board))\b/.test(text)
+        || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|show|find|go to|look at|look over|head to|walk to')
             && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(text))) {
         return { action: 'market', target: extractSubject(input, /market for|price of|cost of|buy|sell/) };
     }
@@ -4437,7 +4595,12 @@ function planIntent(input: string): PlannedAction {
     // A cultivator with one art and nothing else to do says "I train", and the
     // game had no answer for it.
     if (/\b(?:practi[cs]e|drill|rehearse|work on)\b.*\b(?:art|technique|manual|stance|form|book|scripture|canon)\b/.test(text)
-        || /\b(?:train|practi[cs]e)\s+(?:the\s+)?[a-z-]+\s+(?:art|technique|manual|stance)\b/.test(text)
+        || /\b(?:train|practi[cs]e)\s+(?:the\s+)?[a-z-]+\s+(?:art|technique|manual|stance|method|form)\b/.test(text)
+        // "I train my method" reached nothing while "I train" worked, because
+        // `method` was missing from every noun list an art is named by - and
+        // it is the word `ceiling` and `acquisition` both use for the same
+        // thing three hundred lines up.
+        || /\b(?:train|practi[cs]e|drill|rehearse|work on)\s+my\s+(?:art|technique|method|manual|form|style|kata|stance)\b/.test(text)
         || /\b(?:read|study|go (?:over|through))\b[^.?!]*\bmy (?:book|manual|art|technique|scripture|canon)\b/.test(text)
         || /^(?:i\s+)?(?:practi[cs]e|train|drill|spar)\s*[.!?]?$/.test(text)
         // SPARRING WITH SOMEBODY is a core activity of the genre and the safe
@@ -4629,10 +4792,29 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── assess: what happens if I try, which is not the same as looking ──
-    if (/\b(?:size up|weigh (?:my|the) chances|assess|how dangerous|could i (?:survive|take|handle|manage)|what (?:would|will) happen if i|am i (?:strong|ready) enough|is it safe|do i stand a chance|judge the odds)\b/.test(text)) {
+    //
+    // The second pattern is the plain way people ask it, and it was the widest
+    // single gap in `benchmark-the-local-intent-layer.ts`: 5 of 7 assess
+    // phrasings reached nothing, "can I beat him" and "what are my chances"
+    // among them. Every phrasing that worked used the vocabulary the parser
+    // happened to have - `survive`, `size up`, `dangerous`, `stand a chance` -
+    // and every phrasing that failed was shorter and more natural. That is
+    // this repository's standing rule about near-synonyms, pointed at one verb.
+    //
+    // `chances` was already here inside "weigh my chances", so a player who
+    // knew to say "weigh" was answered and one who said "what are my chances"
+    // was not. That is the whole shape of the defect.
+    //
+    // These sit where assess always did, far below `site` and `attack`, so
+    // "could I beat what is in that tomb" still reaches `site`. That is the
+    // pre-existing reading and not a gap anybody has demonstrated; the veto
+    // that would change it is `WEIGHING_RATHER_THAN_GOING`, and widening that
+    // takes sentences away from a verb rather than giving them to one.
+    if (/\b(?:size up|weigh (?:my|the) chances|assess|how dangerous|could i (?:survive|take|handle|manage)|what (?:would|will) happen if i|am i (?:strong|ready) enough|is it safe|do i stand a chance|judge the odds)\b/.test(text)
+        || /\b(?:can i (?:beat|win against)|would i (?:win|beat|survive|last)|what (?:are|is) my chances|out of my depth|a fight i can (?:take|win)|am i (?:a )?match for)\b/.test(text)) {
         return {
             action: 'assess',
-            target: extractSubject(input, /assess|size up|survive|take|handle|manage|against|enough for/)
+            target: extractSubject(input, /assess|size up|survive|take|handle|manage|against|enough for|beat|win|match for/)
         };
     }
 
@@ -4751,7 +4933,7 @@ function planIntent(input: string): PlannedAction {
         return { action: 'look', intent: 'company' };
     }
 
-    if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|where am i|what do i see|what is (?:here|around))\b/.test(text)
+    if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|take in (?:my|the) surroundings|where am i|what do i see|what is (?:here|around))\b/.test(text)
         || /^\s*(?:i\s+)?looks?\b/.test(text)) {
         return { action: 'look' };
     }
