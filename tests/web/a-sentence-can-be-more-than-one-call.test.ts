@@ -12,7 +12,9 @@ import { describe, expect, it } from 'vitest';
 import {
     MOST_CALLS_IN_ONE_TURN,
     foldTheCallsIntoOneTurn,
+    howTheStepWent,
     sayingWhatIsStillToCome,
+    sayingWhatItCostTheRest,
     sayingWhereItStopped,
     spendsSomething,
     stepsInTheResponse,
@@ -371,6 +373,41 @@ describe('a plan that stops halfway is an outcome, not an error', () => {
      * for. A free read that outranks a costly act is the exact thing AGENTS.md
      * forbids: the one act a turn spends must be the one they asked for.
      */
+    /**
+     * FOUND BY PLAYING, and reported by the coordinator verbatim. Typed:
+     *
+     *   > I rob Cao Antao and then run away to Ninewatch
+     *
+     *   Cao Antao: taken.
+     *   Reprisal: injured. Weighed as serious robbery against Shen Kuo.
+     *   Lift: 0 of 0 stones, capped at 72
+     *
+     * and the summary said the approach "did not come off". It came off. The
+     * man was carrying nothing, and the wound was the price of finding out.
+     * Told as a failure it teaches the player that robbery does not work for
+     * them, which is false, instead of that this man had an empty purse, which
+     * is true and is the thing worth knowing.
+     */
+    it('a landed step is LANDED, however many false rows it files beside itself', () => {
+        // What a taken theft actually files: the resolver true, and rows beside
+        // it that are not - the lift that moved nothing, the empty purse.
+        const theft = call('executed', [['interact', true], ['interact', false]]);
+        expect(howTheStepWent(theft, THEFT)).toBe('landed');
+        expect(theWorldStoppedHere(theft, THEFT)).toBe(false);
+    });
+
+    it('and a step with nothing but false rows on its own verb did not come off', () => {
+        expect(howTheStepWent(call('executed', [['interact', false]]), THEFT))
+            .toBe('did_not_come_off');
+    });
+
+    it('says what a landed step COST rather than calling it a failure', () => {
+        const said = sayingWhatItCostTheRest(THEFT, [WALK]);
+        expect(said).toContain('came off');
+        expect(said).not.toContain('did not come off');
+        expect(said).toContain('walk away');
+    });
+
     it('a FREE read that found nothing does not stop the plan', () => {
         const nobody = step('interact', { target: 'merchants', intent: 'talk' }, 'ask who is selling');
         expect(theWorldStoppedHere(call('refused', [['interact', false]]), nobody)).toBe(false);

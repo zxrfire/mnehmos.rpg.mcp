@@ -884,13 +884,94 @@ export function theWorldStoppedHere(
     call: Pick<OneCall, 'outcome' | 'calls'>,
     step: PlanStep
 ): boolean {
-    if (!spendsSomething(step)) return false;
-    if (call.outcome === 'refused') return true;
-    // A step that RESOLVED and did not come off - a theft somebody saw, an ask
-    // that was turned down - files its own row against its own verb with `ok`
-    // false. A false row belonging to some other verb the step touched on its
-    // way is not this step failing and must not stop the plan.
-    return call.calls.some(row => !row.ok && row.action === step.action.action);
+    return howTheStepWent(call, step) === 'did_not_come_off';
+}
+
+/**
+ * A step can fail, or it can succeed into a world that will not carry the next
+ * one. Those are different things and the player has to be able to tell them
+ * apart.
+ *
+ * ── THE MEASUREMENT THAT FORCED THE DISTINCTION ──────────────────────────
+ *
+ * Played live, and reported by the coordinator verbatim:
+ *
+ *   > I rob Cao Antao and then run away to Ninewatch
+ *
+ *   Cao Antao: taken.
+ *   Reprisal: injured. Weighed as serious robbery against Shen Kuo.
+ *   Lift: 0 of 0 stones, capped at 72
+ *
+ *   "That is as far as it went: "the approach to Cao Antao" did not come off"
+ *
+ * **It came off.** The ruling directly above the summary says `taken`, and the
+ * man now knows something happened to him. What actually occurred is that the
+ * theft SUCCEEDED and the person was carrying nothing, and the wound it cost
+ * is the interesting part of the turn.
+ *
+ * Reporting that as a failure inverts the lesson. The player is told robbery
+ * does not work for them, when the truth is that robbery works fine and this
+ * particular man had an empty purse - and that finding out cost half their
+ * body. One of those teaches them something true about the world; the other
+ * teaches them something false about themselves, and they will play the next
+ * fifty turns on it.
+ *
+ * ── WHY THE POSITIVE SIGNAL WINS ─────────────────────────────────────────
+ *
+ * The old rule looked only for a false row on the step's own verb, and a landed
+ * theft files several rows - the resolver, the marks, the lift, the reprisal -
+ * of which at least one can be false while the act plainly happened. So the
+ * question is asked the other way round: **did anything on this verb succeed?**
+ * A `taken` resolution files `ok: true` against its own verb, and that outranks
+ * any false row beside it, because a step that did something did something.
+ */
+export type HowItWent = 'ran' | 'landed' | 'did_not_come_off';
+
+/** Rows this module writes about the sequence, which are not the engine speaking. */
+const THE_EXECUTORS_OWN_ROWS: ReadonlySet<string> = new Set([
+    'engine.step', 'engine.planStopped', 'engine.stillToCome',
+    'engine.stepNotRun', 'engine.whichComesFirst'
+]);
+
+export function howTheStepWent(
+    call: Pick<OneCall, 'outcome' | 'calls'>,
+    step: PlanStep
+): HowItWent {
+    // A free read never stops a plan however it went - see the note above on
+    // why an empty read is information rather than an obstacle.
+    if (!spendsSomething(step)) return 'ran';
+
+    // The executor's OWN bookkeeping row carries this step's verb and `ok: true`,
+    // so counting it would classify every step as landed - which it did, and a
+    // refused theft came back as a success. Only rows the ENGINE filed count.
+    const itsOwn = call.calls.filter(
+        row => row.action === step.action.action && !THE_EXECUTORS_OWN_ROWS.has(row.name)
+    );
+    if (itsOwn.some(row => row.ok)) return 'landed';
+    if (call.outcome === 'refused' || itsOwn.some(row => !row.ok)) return 'did_not_come_off';
+    return 'ran';
+}
+
+/**
+ * What the player reads when a step came off and ENDED THINGS anyway.
+ *
+ * The sentence the coordinator asked for, and the one this layer is actually
+ * good at producing: not "it failed" but "it worked, and what it cost you is
+ * why the rest did not happen". Never asserts a cause the engine did not
+ * compute - what it says is that the act landed and the run did not survive it,
+ * both of which are rows.
+ */
+export function sayingWhatItCostTheRest(
+    landed: PlanStep,
+    notReached: readonly PlanStep[]
+): string {
+    const named = notReached.map(whatThisStepIsCalled);
+    const rest = named.length === 1
+        ? named[0]!
+        : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
+    return `"${whatThisStepIsCalled(landed)}" came off. What it cost is why `
+        + `"${rest}" did not - there was no one left standing to do it. `
+        + 'Nothing was spent on what came after.';
 }
 
 /**
@@ -919,17 +1000,23 @@ export function sayingWhereItStopped(
 /** The same, for the engine channel. */
 export function theRowThatSaysWhereItStopped(
     stoppedOn: PlanStep,
-    notReached: readonly PlanStep[]
+    notReached: readonly PlanStep[],
+    havingLanded = false
 ): ToolCallRecordish {
+    const at = `${stoppedOn.action.action}`
+        + `${stoppedOn.action.target ? `(${stoppedOn.action.target})` : '()'}`;
+    const after = `${notReached.length} later step${notReached.length === 1 ? '' : 's'} `
+        + `never ran and cost nothing: ${notReached.map(s => s.action.action).join(', ')}.`;
     return {
         name: 'engine.planStopped',
         action: stoppedOn.action.action,
-        summary: `The plan stopped at ${stoppedOn.action.action}`
-            + `${stoppedOn.action.target ? `(${stoppedOn.action.target})` : '()'}`
-            + `, which the world did not let through. ${notReached.length} later `
-            + `step${notReached.length === 1 ? '' : 's'} never ran and cost nothing: `
-            + notReached.map(step => step.action.action).join(', ') + '.',
-        ok: false
+        summary: havingLanded
+            ? `The plan stopped after ${at}, which LANDED - the run did not survive what it `
+              + `cost, so there was nobody left to carry the rest. ${after}`
+            : `The plan stopped at ${at}, which the world did not let through. ${after}`,
+        // A landed step is not a failure, and marking it as one in the surface an
+        // operator reads to find failures is the same lie the prose was telling.
+        ok: havingLanded
     };
 }
 

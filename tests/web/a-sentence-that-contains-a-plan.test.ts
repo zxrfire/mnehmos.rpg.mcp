@@ -231,6 +231,43 @@ describe('where the player said the order, the turn takes it and asks nothing', 
     });
 });
 
+/**
+ * THE COORDINATOR'S PLAYED TURN, PINNED.
+ *
+ *   > I rob Cao Antao and then run away to Ninewatch
+ *
+ * The theft landed - `taken`, a reprisal, a serious wound - and lifted nothing,
+ * because the man had nothing. The journey was never this turn's: the player
+ * wrote "and then", so the budget held it for the next one.
+ *
+ * Reported wrongly it said the approach "did not come off" and that the journey
+ * "depended on it having done" - two false sentences about one true turn, and
+ * the first of them teaches the player something false about themselves.
+ */
+describe('a step that landed is not reported as a step that failed', () => {
+    it('says the journey is still ahead, not that it was collateral of a failure', async () => {
+        const { game } = await playing([
+            STEPS(
+                { action: 'interact', target: 'Bai Zhenru', intent: 'steal', said: 'rob Bai Zhenru' },
+                { action: 'move', target: 'Ninewatch', said: 'run away to Ninewatch' }
+            )
+        ]);
+        await game.newRun('Probe');
+
+        const turn = await game.act('I rob Bai Zhenru and then run away to Ninewatch');
+
+        // The theft is the turn's one costly act; the journey was sequenced for
+        // later by the player's own "and then" and is named as such.
+        expect(turn.toolCalls.filter(row => row.name === 'engine.stillToCome').map(r => r.action))
+            .toEqual(['move']);
+        expect(turn.narration).toContain('still ahead of you');
+
+        // And whatever the theft did, the journey is never described as having
+        // depended on it - that is the sentence that inverted the lesson.
+        expect(turn.narration).not.toContain('depended on it having done');
+    });
+});
+
 describe('a plan that stops halfway is an outcome', () => {
     it('names the first failure and does not run what depended on it', async () => {
         const { game } = await playing([
