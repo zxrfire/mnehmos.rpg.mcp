@@ -122,12 +122,53 @@ second half, and it earned its place: it found **four** separate gates that each
 independently held the world's rate at zero, none of which any test caught.
 See that file and the comments at the two templates.
 
+## A fight two people arranged is the same shape
+
+The directory's charter is *what happens when somebody tries*, and it is not
+only about persuasion. `going-further-than-an-agreed-bout-allowed.ts` answers
+the same question for a spar, a duel, a challenge - and it obeys the same rule
+as `an-attempt-to-move-somebody.ts`, in the place that rule matters most.
+
+The design owner's ruling, from AGENTS.md:
+
+> **Kill somebody during an agreed bout and you will obviously face
+> consequences.**
+
+Nothing stops you. The bout runs through `resolveConfrontation` with the same
+goal, the same exchanges, the same wounds and the same death gate a killing
+runs through, and there is no path anywhere by which the word "spar" changes
+what a body suffers. **The wound was identical. The meaning was not**, and the
+whole of the difference is a downstream table in this directory.
+
+|  | crippled | killed |
+|---|---|---|
+| **open terms** | `serious` | `grave` grudge |
+| **agreed terms** | `grave` | `unforgivable` **blood feud**, and standing off the actor's own house |
+
+Three things about it are load-bearing:
+
+- **`terms` is a closed value set by the parser**, beside the verb, exactly the
+  way `Approach.leverage` is - so nothing here has seen the player's sentence,
+  and `combat.ts` and `combat-manage.ts` mention neither the type nor the
+  module. A test reads both files and requires that to stay true.
+- **An arrangement names the actor on its own.** The dead one's people know who
+  they went to meet, so an empty courtyard is no protection and the account
+  opens at full weight with nobody watching. That is why there is no
+  body-on-the-low-road line here and why witnesses only price what the actor's
+  own house has to have a position on.
+- **It writes the record the loser's PEOPLE hold, and never the loser's own.**
+  `seedObligations` in `cultivation/combat.ts` owns that one and is unchanged.
+  For a killing it correctly writes nothing - the dead hold nothing - and the
+  mistake was that nobody else was ever asked.
+
 ## Reading order
 
 ```text
 an-attempt-to-move-somebody.ts          the odds, the four outcomes, the marks
 what-a-house-will-do-about-it.ts        the alignment split, entirely downstream
 when-somebody-works-out-what-you-did.ts the delayed discovery and its grudge
+going-further-than-an-agreed-bout-allowed.ts
+                                        the same job for an arranged fight
 ```
 
 ## Related

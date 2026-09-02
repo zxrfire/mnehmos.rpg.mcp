@@ -13,8 +13,13 @@
  *   when-somebody-works-out-what-you-did.ts
  *                                        the delayed discovery, and the grudge
  *                                        that opens years later
+ *   going-further-than-an-agreed-bout-allowed.ts
+ *                                        the same job for a fight two people
+ *                                        arranged: identical wound, different
+ *                                        bill, and none of it touching the wound
  */
 
 export * from './an-attempt-to-move-somebody.js';
 export * from './what-a-house-will-do-about-it.js';
 export * from './when-somebody-works-out-what-you-did.js';
+export * from './going-further-than-an-agreed-bout-allowed.js';
