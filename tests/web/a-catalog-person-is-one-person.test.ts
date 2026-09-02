@@ -183,29 +183,41 @@ describe('a name you were told is a name you have when they are standing there',
         const gate = new KnowledgeGate(db);
         const told = new Set<string>();
 
-        // The ordinary channel, swept: it returns null far more often than not
-        // by design, so a single occasion proves nothing.
-        for (let occasion = 0; occasion < 600; occasion++) {
-            const hearing = offerHearing({
-                repos, gate, cultivator: standing, run,
-                occasion: `sweep-${occasion}`, world, intent: 'listening'
-            });
-            if (!hearing) continue;
-            for (const got of recordHearing(gate, standing, run, hearing)) {
-                if (got.kind === 'cultivator') told.add(theOneIdAPersonIsKnownBy(got.id));
-            }
-        }
-
+        // The fixture is written DIRECTLY rather than sourced from the
+        // overheard channel, and it has to be.
+        //
+        // This test is about one thing: a person the player has been told about
+        // and who is standing in front of them must be nameable, whichever of
+        // their two ids anybody happens to be holding. WHO did the telling is
+        // not part of that claim.
+        //
+        // It used to sweep `offerHearing` six hundred times and require a hit
+        // on somebody present. That stopped being possible, correctly: the
+        // overheard channel now excludes people who are in the square, because
+        // catching a stranger's name through a wall while they stand next to
+        // you is a leak rather than an introduction. `told` and `passing` are
+        // deliberately not filtered - somebody naming a colleague while
+        // speaking TO you is an introduction - but the sweep reached neither
+        // reliably, and a fixture that depends on a channel's policy breaks
+        // every time that policy is correctly tightened.
         const present = othersPresent(repos, standing, world);
-        const toldAndHere = present.filter(row =>
-            told.has(theOneIdAPersonIsKnownBy(row.id)));
+        expect(present.length, 'somebody has to be standing here').toBeGreaterThan(0);
 
-        // The fixture only means something where the player was actually told
-        // about somebody who is actually standing there.
-        expect(
-            toldAndHere.length,
-            'the sweep has to reach somebody who is in this square'
-        ).toBeGreaterThan(0);
+        for (const row of present) {
+            gate.learnIfNew({
+                holderId: standing.id,
+                kind: 'cultivator',
+                id: row.id,
+                name: row.name,
+                onDay: 0,
+                sourceKind: 'told',
+                sourceNote: 'Named to them by somebody who knew.',
+                stage: 'named',
+                confidence: 1,
+                statement: `${row.name} was named to them.`
+            });
+            told.add(theOneIdAPersonIsKnownBy(row.id));
+        }
 
         const cast = castFor({ repos, world, knowledge: gate } as never, standing);
         const stranger = cast.filter(person =>
