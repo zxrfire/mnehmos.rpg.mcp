@@ -42,7 +42,28 @@ with the ladder, and it is the same perceptual channel that authenticates a reli
 disciples before, whether you know those faces, whether you know what a real apex retinue
 costs. **It scales with a life, not with a rung.**
 
-The two come apart, and both failures are worth playing:
+**And worldview is not one number. It is a ladder, held separately for every subject.** How
+somebody came to know a thing decides which lies about it they can catch, and the grades are
+different in kind rather than in degree:
+
+| How they know it | What it lets them catch | What still gets past them |
+|---|---|---|
+| **Heard the name** | nothing | anything at all wearing that name |
+| **Read about it, and it fits** | contradictions — a claim that does not match the account | any impersonation that matches the account |
+| **Seen it** | everything the account does not capture | very little |
+
+**The middle rung is the interesting one**, because it is secondhand and still genuinely useful:
+a careful reader catches inconsistency without ever having been in the room. **It is also
+exactly what a good forger studies**, so the same records that arm the reader arm the liar, and
+the two arrive at the table having read the same page.
+
+**This is already in the engine and does not need inventing.** `KnowingStage` in
+`src/engine/social/discovery.ts` runs `unaware → whisper → named → placed → encountered →
+known`, which is this ladder with more rungs — **so the second axis is per-subject knowledge the
+world already tracks**, not a new stat. Worldview is what you get by asking that ladder about
+everything at once.
+
+The two axes come apart, and both failures are worth playing:
 
 - **A high-realm recluse** can tell you exactly what every cultivator in the room is standing
   at, and cannot tell you whether that is the Azure Cloud's retinue or a hired imitation.
