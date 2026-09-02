@@ -19,6 +19,7 @@ How anybody decides whether you are who you say you are. Read alongside
 | [Expensive signals, and forging one](#expensive-signals-and-forging-one) | a retinue, a spirit boat, anything nobody could afford to fake |
 | [Tokens shatter, so somebody has to be taken alive](#tokens-shatter-so-somebody-has-to-be-taken-alive) | somebody is holding a house's token that is not theirs |
 | [Checking costs time](#checking-costs-time-and-time-is-what-nobody-has) | somebody doubts a claim and has to decide whether to go and find out |
+| [The art is the strongest check](#the-art-is-the-strongest-check) | deciding whether a house is still the house, or a person still of it |
 | [The woken ancestor](#the-woken-ancestor) | checking whether any of this is bespoke |
 
 ---
@@ -237,6 +238,54 @@ on the eve of an assault, which is exactly the kind of thing this world should b
 
 ---
 
+## The art is the strongest check
+
+<!-- tier: 2 trigger="somebody needs to know whether a house is still that house, or a person really of it" -->
+
+**Names are not the definitive check and probably not even the main one. The techniques are.**
+
+A house's arts are the closest thing it has to an identity, and **a technique cannot be worn,
+bought, inherited by accident or carried off a corpse — it is something a body does.** Watching
+somebody cultivate is therefore the one reading that goes straight to the thing in question,
+and for anybody with the realm to perceive it, it is nearly unanswerable.
+
+**There is exactly one way to fake it, and it costs the forger the thing they are faking.** You
+would have to get somebody to actually *learn* the art. Which means either they truly have it —
+in which case the house's art survived, which is what the check was asking — **or somebody
+taught it to them, and the art has leaked, which is a graver finding than the deception it was
+meant to cover.** The forgery and the truth are almost the same fact.
+
+So the checks fall into an order, and each fails in its own way:
+
+| Check | What it proves | How it fails |
+|---|---|---|
+| **The arts** | what a house *is* | only by somebody genuinely learning them — which is itself a leak |
+| **The old objects** | what a house *held* | relics change hands; possession is not descent |
+| **The names on the roll** | which lines *continued* | names are not exclusive, and lines end innocently |
+| **The faces** | nothing | everybody is new; that is the calendar, not a signal |
+
+**Names also do a second job, and it is the player's rather than the world's.** This is a
+roguelike: runs end, and what survives a death is what the person at the keyboard learned. **A
+name is the handle that knowledge attaches to.** First run, Ru means nothing; five runs in,
+seeing a Ru on a roster makes the player sit up — and that recognition was *earned by dying*.
+**Which is the real reason a prestigious name must never be randomly generated:** a Ru farmhand
+would not merely muddle a lineage in the fiction, it would poison knowledge the player paid for.
+The in-world use and the player-facing use want exactly the same guarantee.
+
+**Xu is the worked example of why names sit that low.** Xu Ci lies under the Anchorhold's datum
+stone — and there are Xu at the Measured Span and at Held Names as well. **A name carried by
+three houses identifies none of them.** It is worth something as corroboration and nothing on
+its own.
+
+**And for a dao house this is not the strongest check, it is the only one.** A dao house holds
+no ground: the catalog is explicit that it *stands on nothing* and holds a specialisation and a
+civil standing. **So the art is not evidence about the house's identity — the art is the
+identity**, and a dao house whose specialisation has drifted has become a different house while
+keeping its name and its door. Nothing else about it is checkable, which is also why it has a
+counter rather than a patron.
+
+---
+
 ## The woken ancestor
 
 <!-- tier: 3 -->
@@ -244,6 +293,12 @@ on the eve of an assault, which is exactly the kind of thing this world should b
 **The check that none of this is bespoke.** A rule that governs one situation is wrong; this one
 governs a stranger in a market, an apex disciple far from home, a house running a frame — and
 somebody who has been sealed for centuries and just opened her eyes, which nobody designed it for.
+
+**And she does not get her own checks. She walks down the same hierarchy as everybody else** —
+the arts, then the objects, then the names, then the faces that tell nobody anything. **Sealed
+ancestors need no machinery of their own at all**; they are the ordinary model handed an
+unusual reader. Everything below is what that reader does differently on the same ladder, and
+nothing below is a new rung.
 
 She is the second axis taken to its limit: **maximum realm, no current worldview.** She can
 perceive anything and recognise nobody.
