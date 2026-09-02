@@ -810,6 +810,12 @@ async function beginRun(ev) {
   submit.textContent = 'Begin Cultivation';
 
   if (!res.ok) {
+    // A run already exists. The name was fine, the form was fine, and the only
+    // thing wrong is that this screen is looking at a world that has moved -
+    // so put the player back into the life the engine is actually holding
+    // rather than leaving them at a form that will refuse them forever.
+    if (res.status === 409) { await reconcileWithTheServer(null); return; }
+
     errorBox.textContent = res.error;
     errorBox.hidden = false;
     return;
@@ -1853,6 +1859,69 @@ async function refreshState({ quiet = false } = {}) {
   return true;
 }
 
+/**
+ * The screen disagrees with the server about what is happening. Believe the
+ * server.
+ *
+ * Every 409 this client can be handed says the same thing in two directions: a
+ * run is alive and this screen thinks none is, or a run is over and this screen
+ * thinks it is still going. Both are the same defect - a page holding a picture
+ * of the world that stopped being true - and the answer to both is to go and
+ * read the world again rather than to print the refusal and stop.
+ *
+ * Reachable without doing anything strange. A second tab, a page left open
+ * while the run ended in the first one, a browser restoring a session: measured
+ * on the running engine, submitting a name from a stale opening screen put "A
+ * run is already in progress. Runs end when the cultivator dies; there is no
+ * abandoning one." in a red box under the form, and the only way back into the
+ * run - which was RIGHT THERE, alive - was for the player to think of pressing
+ * reload. That is not a refusal, it is a dead end, and this build does not put
+ * an engine sentence in front of somebody without a way out of it.
+ */
+async function reconcileWithTheServer(saidWhat) {
+  const before = S.run ? S.run.id : null;
+  await refreshState({ quiet: true });
+
+  if (!S.run || !S.cultivator) {
+    // Nothing to go back to: the opening screen is the right place and the
+    // form is the way on. No toast - the screen already says what to do.
+    resetLogRender();
+    routeFromState();
+    return;
+  }
+
+  const same = before === S.run.id;
+  if (S.run.status === 'active') {
+    if (!same) resetLogRender();
+    routeFromState();
+    toast(
+      'That life is already under way',
+      `${S.cultivator.name} is alive, on day ${fmtInt(S.run.elapsedDays)}, and this is where you left them. ` +
+      'A run ends when the cultivator does; there is no second one running beside it.',
+      'info'
+    );
+    return;
+  }
+
+  if (!same) resetLogRender();
+  routeFromState();
+  toast(
+    'That run is over',
+    // The engine's own sentence about the death where it wrote one - it names
+    // the rank and the age as well as the cause - and the cause alone where it
+    // did not.
+    `${S.run.deathDescription || `${S.cultivator.name}: ${causeText(S.run.deathCause).toLowerCase()}.`} ` +
+    'Nothing more can be done with this life, and a new one begins from here.',
+    'info'
+  );
+  if (saidWhat) {
+    // Keep the sentence the player typed. It cost them nothing and it will be
+    // the first thing they want to say to whoever comes next.
+    const input = $('#command-input');
+    if (input) input.value = saidWhat;
+  }
+}
+
 async function submitAction(ev) {
   if (ev) ev.preventDefault();
   if (S.busy) return;
@@ -1900,6 +1969,13 @@ async function submitAction(ev) {
     ]);
     renderLog();
     scrollToBottom();           // the player acted; the refusal is the answer
+
+    // 409 is not "that action was refused", it is "this screen is out of date".
+    // The run ended somewhere else and every sentence typed here will be
+    // refused for the rest of time, so go and read the state instead of
+    // toasting the same wall again.
+    if (res.status === 409) { await reconcileWithTheServer(text); return; }
+
     toast('Action refused', res.error);
     input.value = text;         // give it back rather than eating it
     focusCommand();
@@ -1985,6 +2061,7 @@ async function doCultivate(days, { anyway = false } = {}) {
       openSitAnywayConfirm(days, res.error);
       return;
     }
+    if (res.status === 409) { await reconcileWithTheServer(null); return; }
     toast('Cultivation refused', res.error);
     focusCommand();
     return;
@@ -2013,7 +2090,12 @@ async function doBreakthrough() {
   setPending(false);
   setBusy(false);
 
-  if (!res.ok) { toast('Breakthrough refused', res.error); focusCommand(); return; }
+  if (!res.ok) {
+    if (res.status === 409) { await reconcileWithTheServer(null); return; }
+    toast('Breakthrough refused', res.error);
+    focusCommand();
+    return;
+  }
 
   const payload = res.data || {};
   if (payload.state) applyState(payload.state);

@@ -1227,19 +1227,43 @@ function handleCultivate(days) {
   };
 }
 
+/*
+ * A GAME REFUSAL IS A 400 HERE, AND ONLY STALENESS IS A 409.
+ *
+ * The client now reads 409 as "this screen is looking at a world that has
+ * moved" and answers it by re-reading the state and routing, because the
+ * engine raises it in exactly two places and both mean that: a run is already
+ * alive, or the run is closed. The three refusals below are nothing of the
+ * sort - they are the world saying no to something the player asked for, which
+ * is a 400 in `game.ts` and has to be one here, or the mock teaches the client
+ * a rule the engine does not follow.
+ */
+/**
+ * What the engine says when a closed run is asked to do anything, in the shape
+ * it says it. `requireLiveRun` names the cultivator, the cause, and the way on;
+ * "This run is over." named none of the three, so the mock was training the
+ * client against a refusal the engine does not write.
+ */
+function runIsClosed() {
+  const c = W.cultivator || {};
+  const cause = (W.run && W.run.deathCause) || c.deathCause || 'unrecorded';
+  return `${c.name || 'This cultivator'} is dead (${cause}). ` +
+    'The run is closed: there is no reload, no revival, and no continuation. Begin a new run.';
+}
+
 function handleBreakthrough() {
   const c = W.cultivator;
   const from = c.realmOrdinal;
-  if (from >= MAX_ORDINAL) return fail('Already at the top of the ladder.', 409);
+  if (from >= MAX_ORDINAL) return fail('Already at the top of the ladder.', 400);
   // 45 is not the summit but nothing climbs off it either: the crossing was
   // attempted once and did not complete, and the Lid does not open twice
   // against one name.
   if (from === FALSE_IMMORTAL_ORDINAL) {
-    return fail('The Lid has already been opened once against this name. There is no second attempt.', 409);
+    return fail('The Lid has already been opened once against this name. There is no second attempt.', 400);
   }
 
   const d = derived();
-  if (!d.breakthroughReady) return fail('Cultivation progress is not sufficient for a breakthrough attempt.', 409);
+  if (!d.breakthroughReady) return fail('Cultivation progress is not sufficient for a breakthrough attempt.', 400);
 
   const root = rootByKey(c.spiritRoot);
   const untreated = c.injuries.filter((i) => !i.treated).length;
@@ -1442,6 +1466,17 @@ async function route(url, init) {
   if (path === '/api/run/new' && method === 'POST') {
     const name = String(body.name || '').trim();
     if (!name) return fail('A cultivator needs a name.', 400);
+    // The engine refuses a second run beside a live one and the mock has to
+    // refuse it too, in the same words and with the same status. This is the
+    // one refusal a player can reach with two tabs open and no idea they did
+    // anything unusual, so a mock that silently allowed it would hide the only
+    // screen state the client has to recover from.
+    if (W.run && W.run.status === 'active') {
+      return fail(
+        'A run is already in progress. Runs end when the cultivator dies; there is no abandoning one.',
+        409
+      );
+    }
     W.cultivator = makeCultivator(name);
     W.run = makeRun(W.cultivator.id);
     W.log = [];
@@ -1458,7 +1493,7 @@ async function route(url, init) {
   if (path === '/api/act' && method === 'POST') {
     if (shouldFail('act')) return fail('Mock: the narrator provider returned an error.', 502);
     if (!W.run) return fail('No active run.', 404);
-    if (W.run.status !== 'active') return fail('This run is over. It cannot be continued.', 409);
+    if (W.run.status !== 'active') return fail(runIsClosed(), 409);
     if (!String(body.input || '').trim()) return fail('Say something.', 400);
     return json(handleAct(body.input));
   }
@@ -1466,7 +1501,7 @@ async function route(url, init) {
   if (path === '/api/cultivate' && method === 'POST') {
     if (shouldFail('cultivate')) return fail('Mock: cultivate forced to fail.', 500);
     if (!W.run) return fail('No active run.', 404);
-    if (W.run.status !== 'active') return fail('This run is over.', 409);
+    if (W.run.status !== 'active') return fail(runIsClosed(), 409);
     const days = Number(body.days);
     if (!Number.isFinite(days) || days < 1) return fail('days must be a positive number.', 400);
     return json(handleCultivate(days));
@@ -1475,7 +1510,7 @@ async function route(url, init) {
   if (path === '/api/breakthrough' && method === 'POST') {
     if (shouldFail('breakthrough')) return fail('Mock: breakthrough forced to fail.', 500);
     if (!W.run) return fail('No active run.', 404);
-    if (W.run.status !== 'active') return fail('This run is over.', 409);
+    if (W.run.status !== 'active') return fail(runIsClosed(), 409);
     const result = handleBreakthrough();
     return result instanceof Response ? result : json(result);
   }
