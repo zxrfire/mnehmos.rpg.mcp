@@ -27,6 +27,10 @@ import {
     DEFAULT_PETITION_INTENT,
     DEFAULT_POSTURE_INTENT,
     DEFAULT_SEAL_INTENT,
+    DEFAULT_PASSAGE_INTENT,
+    DEFAULT_OATH_INTENT,
+    PASSAGE_INTENTS,
+    OATH_INTENTS,
     FALLBACK_ACTION,
     OFFER_INTENTS,
     PETITION_INTENTS,
@@ -187,6 +191,20 @@ describe('the fallback is inert', () => {
              * is asserted separately below.
              */
             'petition', 'posture', 'seal', 'offer',
+            /**
+             * A word given, carried or not kept, and it is the sharpest case
+             * on this list rather than the softest.
+             *
+             * It spends no day, so it belongs here on the axis this test
+             * measures - and swearing one writes a permanent row with a named
+             * holder, a witnessing house and a penalty clause, while breaking
+             * one opens a second naming the person and reopens whatever the
+             * first was closing. Neither may be reached by a sentence the
+             * parser did not understand, and what stops that is
+             * `DEFAULT_OATH_INTENT`, which is the read - asserted separately
+             * below with the other four.
+             */
+            'oath',
             /**
              * The counter and the two reads beside it.
              *
@@ -380,6 +398,14 @@ describe('every verb is reachable from plain English', () => {
     // whole time and in the parser not at all, which is how "I attack the
     // nearest cultivator" ended up meditating for a month.
         attack: 'I attack the nearest cultivator',
+        coerce: 'I force him to submit',
+        // The three ways of covering ground that are not walking, and a word
+        // given. All four were engine modules with no caller; `ride` was a
+        // label on `move` that resolved through the same flat journey.
+        ride: 'I ride to Scarwater',
+        fold: 'I fold space to Kettle',
+        passage: 'what does the Span board say',
+        oath: 'what oaths am I carrying',
         provision: 'I stock up on provisions',
         cultivate: 'I cultivate for three years.',
         seclude: 'I seal the cave for ten years',
@@ -1865,7 +1891,18 @@ describe('institutions acting on each other', () => {
         // more than either verb would have been. Both were already implemented
         // and both were one phrasing away from working.
         ['I take a disciple', 'sect', 'recruit'],
-        ['I swear an oath to the House of the Bound Word', 'sect', undefined]
+        /**
+         * This routed to `sect` and that was the best answer available: the
+         * oath contract shape existed, nothing produced one, and the nearest
+         * live thing a house could do with somebody was take them on.
+         *
+         * There is an oath verb now, and swearing one to a house is what it is
+         * for - so the row moves rather than being loosened. What it asserts is
+         * the same claim it always did, which is that a sentence about giving
+         * your word to an institution reaches the thing that models giving your
+         * word rather than the thing next to it.
+         */
+        ['I swear an oath to the House of the Bound Word', 'oath', 'swear']
     ];
 
     for (const [typed, action, intent] of TWELVE) {
@@ -1923,6 +1960,15 @@ describe('institutions acting on each other', () => {
         expect(SEAL_INTENTS).toContain(DEFAULT_SEAL_INTENT);
         expect(OFFER_INTENTS).toContain(DEFAULT_OFFER_INTENT);
         expect(PETITION_INTENTS).toContain(DEFAULT_PETITION_INTENT);
+
+        // And the two the travel and oath verbs added, on the same rule. A
+        // counter sells a crossing and shows a price list, and only one of
+        // those spends anything; a word can be given, read or broken, and two
+        // of those three are permanent.
+        expect(DEFAULT_PASSAGE_INTENT).toBe('board');
+        expect(DEFAULT_OATH_INTENT).toBe('read');
+        expect(PASSAGE_INTENTS).toContain(DEFAULT_PASSAGE_INTENT);
+        expect(OATH_INTENTS).toContain(DEFAULT_OATH_INTENT);
     });
 
     // ── the gate, asserted against state ─────────────────────────────────

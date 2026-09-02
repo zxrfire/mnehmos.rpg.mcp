@@ -1209,6 +1209,33 @@ export function openLedgerBetween(
     return rows.map(obligationFromRow);
 }
 
+/**
+ * Every open oath this person is answerable for, whoever it is owed to.
+ *
+ * The other shape of ledger question, and the one a person asks about
+ * THEMSELVES: not what stands between me and you, but what am I bound by. It
+ * is the read behind the `oath` verb, and it has to be a query rather than a
+ * pair lookup because the whole point of a word given is that the holder can
+ * be asked about it without knowing who is going to ask.
+ *
+ * `holder_id` and not `subject_id`, which is the direction `settleItWithABinding`
+ * and the indenture ledger both use: the person BOUND holds the oath, and the
+ * house it is owed to is the subject. An oath somebody else swore about them is
+ * a different fact and is deliberately not returned here.
+ */
+export function openOathsHeldBy(
+    repos: CultivationRepos,
+    holderId: string
+): ObligationRecord[] {
+    const db = repos.db as unknown as DatabaseHandle;
+    const rows = db.prepare(`
+        SELECT * FROM obligations
+        WHERE status = 'open' AND kind = 'oath' AND holder_id = ?
+        ORDER BY incurred_on_day ASC, id ASC
+    `).all(holderId) as ObligationRow[];
+    return rows.map(obligationFromRow);
+}
+
 interface ObligationRow {
     id: string;
     kind: string;
