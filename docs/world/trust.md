@@ -282,6 +282,12 @@ stone — and there are Xu at the Measured Span and at Held Names as well. **A n
 three houses identifies none of them.** It is worth something as corroboration and nothing on
 its own.
 
+**And that is the ordinary case, not a flaw in the world.** Most surnames are common; Gu and Cao
+are house lines and are also names any stranger may be born with. **A name that proves nothing is
+the rule, and a name that carries a house by itself is the rare exception** — which is why the
+reserved set is deliberately tiny. A reader who treats a shared surname as identification has
+made the same mistake as one who treats a hall of strangers as loss.
+
 **And for a dao house this is not the strongest check, it is the only one.** A dao house holds
 no ground: the catalog is explicit that it *stands on nothing* and holds a specialisation and a
 civil standing. **So the art is not evidence about the house's identity — the art is the

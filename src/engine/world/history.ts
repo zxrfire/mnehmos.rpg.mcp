@@ -903,14 +903,18 @@ export const SURNAMES = [
  * disjoint is the guard - without it this holds by accident, and the next person to
  * widen the pool breaks a lineage silently.
  *
- * ONLY EXCLUSIVE NAMES BELONG HERE. Xu is deliberately absent despite Xu Ci lying
- * under the Anchorhold's datum stone, because there are Xu at the Measured Span and
- * Held Names too - a name carried by three houses identifies none of them, and
- * reserving it would assert a lineage the roster does not support. Gu and Cao are
- * the live problem: both are house lines in members.ts AND in the pool above, so a
- * stranger can be generated into a house's name. Fixing that means either cutting
- * them from the pool, which moves every seeded world, or accepting that those two
- * names prove nothing.
+ * ONLY EXCLUSIVE NAMES BELONG HERE, AND THIS SET STAYS SMALL ON PURPOSE. Not every
+ * surname is unique, and one that is not should prove nothing - which is what the
+ * names row of the trust hierarchy already says about them. So the rule is that a
+ * surname is common, and Ru and Meng are the exceptions to it.
+ *
+ * Xu is deliberately absent despite Xu Ci lying under the Anchorhold's datum stone,
+ * because there are Xu at the Measured Span and Held Names too: a name carried by
+ * three houses identifies none of them, and reserving it would assert a lineage the
+ * roster does not support. Gu and Cao are house lines in members.ts and also in the
+ * pool above, so a stranger can be generated into either name - and that is correct
+ * rather than a defect. A Gu somewhere is a person called Gu. Only a name nobody
+ * else carries can carry a house on its own.
  */
 export const RESERVED_SURNAMES: ReadonlyMap<string, string> = new Map([
     ['Ru', 'Azure Cloud Pavilion'],
