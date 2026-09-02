@@ -18,6 +18,10 @@ import {
     lifespanForOrdinal
 } from '../engine/cultivation/realms.js';
 import { TraditionIdSchema } from '../engine/cultivation/tradition.js';
+import {
+    SEX_A_LEGACY_ROW_READS_AS,
+    SexSchema
+} from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SURVIVAL CONSTANTS
@@ -651,6 +655,24 @@ export const CultivatorSchema = z.object({
      * exactly one persisted fact here and nothing that can drift from it.
      */
     origin: OriginTierKeySchema.default('thin_county'),
+    /**
+     * A plain fact, dealt at creation and permanent.
+     *
+     * It exists so a child can have two parents and a line can dilute
+     * correctly - `engine/birth/what-sex-somebody-is-and-what-it-is-for.ts` is
+     * the whole design and is emphatic about how little else it touches. It
+     * moves no number, gates no art, and has no bearing on who may marry whom.
+     *
+     * Two things do read it, and both are doors rather than modifiers: whether
+     * a child is of both parents' blood, and the two Courts that admit one sex
+     * and not the other (`A_HOUSE_THAT_TAKES_ONE_SEX`).
+     *
+     * The default is the storage default and means the same thing: a row
+     * written before the axis existed. Unlike `origin`'s `thin_county` it is
+     * not the honest majority of anything - a coin flip has no majority - and
+     * every row written since carries a rolled value.
+     */
+    sex: SexSchema.default(SEX_A_LEGACY_ROW_READS_AS),
     /**
      * Which of the two roads this cultivator walks.
      *

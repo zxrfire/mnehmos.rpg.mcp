@@ -45,6 +45,8 @@ import {
     type SpiritRootKey
 } from '../cultivation/spirit-roots.js';
 import { rollOrigin, type OriginTierKey } from '../cultivation/origin.js';
+import { rollSex, type Sex } from '../birth/what-sex-somebody-is-and-what-it-is-for.js';
+import type { Bloodline } from './hunting-a-spirit-beast.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
 import type { Injury } from '../../schema/cultivation.js';
@@ -239,6 +241,32 @@ export interface NpcIdentity {
      * have walked the ladder to be anywhere on it.
      */
     origin: OriginTierKey;
+    /**
+     * A plain fact, carried so a child can have two parents.
+     *
+     * `what-sex-somebody-is-and-what-it-is-for.ts` is the whole of the design
+     * and the short version is that it answers a PARENTAGE question and nothing
+     * else. It has no authority over who may match with whom - the household
+     * layer neither imports this nor names it, and a test scans that directory
+     * for the vocabulary - and nothing anywhere branches on it except
+     * `canBeTheTwoParentsOf`.
+     */
+    sex: Sex;
+    /**
+     * What a line left in them, or null for the overwhelming majority.
+     *
+     * A species ability that came down from an ancestor who was a beast before
+     * it was a person, at the strength it has diluted to. `AbilityTier` and its
+     * ladder are `hunting-a-spirit-beast.ts`'s and are not restated here; what
+     * this field adds is a place for the answer to live, which is what that
+     * whole half of the design was missing.
+     *
+     * Two carriers hold the line, one carrier and an outsider steps it down,
+     * and it is gone in three generations. **Every one of those sentences is
+     * `bloodlineTierForChild`'s** - nothing here decides any of it, and there is
+     * no dilution constant on this record or anywhere near it.
+     */
+    bloodline: Bloodline | null;
     /** What they do when they are not cultivating. The economy is made of these. */
     occupation: string;
     /** Titles, sect ranks, epithets. Free text; the LLM writes them. */
@@ -480,6 +508,24 @@ export interface CreateNpcOptions {
      * the same act as deciding they matter.
      */
     origin?: OriginTierKey;
+    /**
+     * Override the rolled sex.
+     *
+     * Supplied by the two callers that already know the answer: a birth, which
+     * has two parents and a child of theirs, and anything importing a person
+     * who already exists. Seeding leaves it alone and takes the roll.
+     */
+    sex?: Sex;
+    /**
+     * A line this person carries, where somebody has decided they carry one.
+     *
+     * Nobody is born with one by accident: the world writes it at a birth from
+     * `bloodlineForChild`, and the catalog writes it on the people descended
+     * from something that changed. There is no roll here and there must not be
+     * one - a rolled bloodline would put fire in a farm family for no reason
+     * anybody could trace.
+     */
+    bloodline?: Bloodline | null;
     tags?: string[];
 }
 
@@ -500,6 +546,11 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
     // Its own named stream, so adding the axis did not perturb the root or the
     // attributes of any world that had already been seeded.
     const originRng = forStream(seed, 'npc-origin', opts.id);
+    // The same discipline, and the same reason: a draw added to any stream
+    // above this line would have shifted every root and every attribute in
+    // every seeded world. Proved byte-identical rather than assumed - see
+    // `tests/engine/world/everybody-has-a-sex.test.ts`.
+    const sexRng = forStream(seed, 'npc-sex', opts.id);
 
     const root = rollSpiritRoot(rootRng.next());
     const attributes = rollAttributes([
@@ -533,6 +584,8 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         identity: {
             bornOnDay: opts.bornOnDay,
             origin: opts.origin ?? rollOrigin(originRng.next()).key,
+            sex: opts.sex ?? rollSex(sexRng.next()),
+            bloodline: opts.bloodline ?? null,
             occupation: opts.occupation ?? 'unknown',
             titles: [],
             aliases: [],

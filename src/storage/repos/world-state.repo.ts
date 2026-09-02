@@ -20,6 +20,11 @@ import { runSeedFor } from '../../engine/world/legacy.js';
 import { makeAscensionRecord, toLayerKey, type AscensionRecord } from '../../engine/world/layers.js';
 import { yearOfDay } from '../../engine/world/history.js';
 import { DEFAULT_ORIGIN, isOriginTierKey } from '../../engine/cultivation/origin.js';
+import {
+    SEX_A_LEGACY_ROW_READS_AS,
+    isSex
+} from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
+import { isAbilityTier } from '../../engine/world/hunting-a-spirit-beast.js';
 import type { Injury } from '../../schema/cultivation.js';
 
 /**
@@ -227,7 +232,8 @@ export class WorldStateRepository {
         this.insertNpcStmt = db.prepare(`
             INSERT OR REPLACE INTO world_npcs (
                 id, world_id, name,
-                born_on_day, origin_tier, occupation, titles, aliases, description,
+                born_on_day, origin_tier, sex, bloodline_species, bloodline_tier,
+                occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
                 accumulating_since_day,
@@ -237,7 +243,8 @@ export class WorldStateRepository {
                 history_fact_ids, memory_ids
             ) VALUES (
                 @id, @worldId, @name,
-                @bornOnDay, @origin, @occupation, @titles, @aliases, @description,
+                @bornOnDay, @origin, @sex, @bloodlineSpecies, @bloodlineTier,
+                @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
                 @accumulatingSinceDay,
@@ -917,6 +924,9 @@ export class WorldStateRepository {
                 name: npc.name,
                 bornOnDay: npc.identity.bornOnDay,
                 origin: npc.identity.origin,
+                sex: npc.identity.sex,
+                bloodlineSpecies: npc.identity.bloodline?.speciesId ?? null,
+                bloodlineTier: npc.identity.bloodline?.tier ?? null,
                 occupation: npc.identity.occupation,
                 titles: JSON.stringify(npc.identity.titles),
                 aliases: JSON.stringify(npc.identity.aliases),
@@ -1503,6 +1513,14 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
         identity: {
             bornOnDay: row.born_on_day,
             origin: isOriginTierKey(row.origin_tier) ? row.origin_tier : DEFAULT_ORIGIN,
+            sex: isSex(row.sex) ? row.sex : SEX_A_LEGACY_ROW_READS_AS,
+            // Both halves or neither. A species with no tier is a line that
+            // diluted away and is correctly no line at all; a tier with no
+            // species is a row nothing could read, because what a line DOES is
+            // looked up from the species in `beasts.ts`.
+            bloodline: row.bloodline_species && isAbilityTier(row.bloodline_tier)
+                ? { speciesId: row.bloodline_species, tier: row.bloodline_tier }
+                : null,
             occupation: row.occupation,
             titles: parseArray(row.titles),
             aliases: parseArray(row.aliases),
@@ -2033,6 +2051,9 @@ interface NpcRow {
     name: string;
     born_on_day: number;
     origin_tier: string;
+    sex: string;
+    bloodline_species: string | null;
+    bloodline_tier: string | null;
     occupation: string;
     titles: string;
     aliases: string;
