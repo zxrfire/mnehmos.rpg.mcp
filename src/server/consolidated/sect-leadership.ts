@@ -79,6 +79,14 @@ import { getParentage } from '../../data/cultivation/hierarchy.js';
 import { getTechnique, transmissionModeOf } from '../../data/cultivation/techniques.js';
 import { rollHerb } from '../../data/cultivation/herbs.js';
 import {
+    drawFromTheGround,
+    howTheGroundReads,
+    recordGroundDraw
+} from '../../engine/world/what-a-place-still-has-in-the-ground.js';
+import { saveWorldForRun, worldForRun } from '../state/cultivation-world.js';
+import { worldLocationFor } from '../../web/entities.js';
+import type { LocationRecord } from '../../engine/world/locations.js';
+import {
     addToPouch,
     describeCultivator,
     ensureCultivationDb,
@@ -733,6 +741,29 @@ export async function handleAuthority(args: z.infer<typeof AuthoritySchema>): Pr
 /**
  * Send the rungs below somewhere. The first thing membership actually buys.
  */
+/**
+ * The world's row for the district a house's hands were sent out over.
+ *
+ * Where the order was given, because a house works the ground it stands on.
+ * Null with no world layer, which is the same shape every other world-backed
+ * read here has: with no world there is nothing that could say the district
+ * has been worked out.
+ */
+async function theGroundTheHandsWereSentTo(
+    run: Run,
+    cultivator: Cultivator
+): Promise<{ place: LocationRecord; onDay: number; wrote: boolean } | null> {
+    try {
+        const world = await worldForRun(run);
+        const place = worldLocationFor(world, cultivator.location);
+        return place
+            ? { place, onDay: Math.floor(world.currentDay), wrote: false }
+            : null;
+    } catch {
+        return null;
+    }
+}
+
 export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<object> {
     const repos = ensureCultivationDb();
     const view = loadHouse(repos, args);
@@ -802,6 +833,18 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
     let stones = 0;
     let contribution = 0;
 
+    // ── A HOUSE DRAWS AT A SCALE ONE PERSON CANNOT ───────────────────────
+    //
+    // This is the consumer that makes depletion visible at all. A single
+    // forager takes a tenth of what a district's mortal band grows back in a
+    // year; twenty hands on a standing order do not, and the ground they are
+    // sent to is the ground that runs out. Resolved before the transaction
+    // because the world layer is async and the ledger write is not.
+    const ground = errand === 'gather'
+        ? await theGroundTheHandsWereSentTo(view.run, view.cultivator)
+        : null;
+    const groundLines: string[] = [];
+
     repos.db.transaction(() => {
         if (errand === 'gather') {
             const draw = new CultivationRNG(`${rng.seed}:herbs`);
@@ -809,6 +852,19 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
             for (let i = 0; i < delivered; i++) {
                 const herb = rollHerb(reachOrdinal, draw.next());
                 if (!herb) break;
+                // One hand, one picking, one unit off the band. Ground with
+                // nothing left sends that hand back empty rather than
+                // inventing a stalk, and says so once per band.
+                if (ground) {
+                    const taken = drawFromTheGround(ground.place, {
+                        kind: 'herb', grade: herb.grade, wanted: 1, onDay: ground.onDay
+                    });
+                    if (recordGroundDraw(ground.place, taken)) ground.wrote = true;
+                    if (taken.line && !groundLines.includes(taken.line)) {
+                        groundLines.push(taken.line);
+                    }
+                    if (taken.taken <= 0) continue;
+                }
                 const held = tally.get(herb.id) ?? { name: herb.name, quantity: 0 };
                 held.quantity += 1;
                 tally.set(herb.id, held);
@@ -828,6 +884,8 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
         repos.runs.incrementTurn(view.run.id, 1);
     })();
 
+    if (ground?.wrote) await saveWorldForRun(view.run);
+
     const after = repos.cultivators.getById(view.cultivator.id)!;
     const runAfter = repos.runs.getById(view.run.id)!;
 
@@ -843,6 +901,16 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
         expected: result.delivered,
         delivered,
         herbs,
+        // What the ground the hands were sent to had to say. Empty while it is
+        // holding up; a house that has worked its own district out has to be
+        // told, because it is the reason to send the next party further.
+        ground: ground
+            ? {
+                place: ground.place.name,
+                says: groundLines,
+                stillHas: howTheGroundReads(ground.place, ground.onDay)
+            }
+            : null,
         spiritStones: stones,
         contribution,
         standing: {
