@@ -428,6 +428,24 @@ export const ACTION_NAMES = [
      */
     'recall',
     /**
+     * What the people here are saying is happening elsewhere.
+     *
+     * `recall` reads the holder's own head and structurally cannot teach them
+     * anything. This is the opposite verb and the world had no route to it:
+     * the simulation writes rankings, refusals, duels and houses opening closed
+     * ground into the ledger every year, and the only way any of it reached a
+     * player was the digest, which is gated on standing and is a report.
+     *
+     * Nobody finds out that two of the world's tallest people fell out by
+     * being briefed. They find out because somebody in a market says so, and is
+     * about two thirds right.
+     *
+     * A read, and it costs nothing but being somewhere with people in it. The
+     * refusal where there is nobody is the content: a cultivator forty years
+     * into a cave asking what is happening in the world is asking a wall.
+     */
+    'news',
+    /**
      * The parser did not understand, and nothing happens.
      *
      * A member of the closed set rather than a special case, so the exhaustive
@@ -452,6 +470,10 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
     // strictest sense in the package: it touches no catalog the holder has no
     // record for, so it cannot even accidentally become a way to learn.
     'recall',
+    // Asking a square what it has heard writes knowledge records and nothing
+    // else. It cannot spend, move or kill, and what it teaches is a name at
+    // `whisper` - the same thing standing near a conversation already does.
+    'news',
     // The three reads that answer a stuck player. Every line each of them
     // produces is a restatement of a number the engine already computed, so
     // none of them can teach, spend, move or kill - and a player at a wall
@@ -1586,12 +1608,55 @@ export const RECALL_EVERYTHING =
  * through other people - `hearsay.ts`, the overheard channel, the whole
  * `whisper`/`named`/`placed`/`known` ladder - that is a large missing verb.
  *
- * Routed to `recall` with no target, which lists everything that has reached
- * this cultivator. That is the honest answer: there is no wire service here,
- * and what a person knows of the world is what somebody said in front of them.
+ * It was routed to `recall` for a while, which lists everything that has
+ * already reached this cultivator. That was defensible - there is no wire
+ * service here - and it was answering a different question: `recall` reads the
+ * holder's own head and structurally cannot teach them anything, so "what news
+ * is there" came back as a well-composed inventory of what the player already
+ * had. The failure mode `interact` was producing for the institutional verbs,
+ * one layer over: it looks exactly like an answer.
+ *
+ * It goes to `news` now, which asks the people standing here. See
+ * `asking-what-people-are-saying.ts`.
  */
 export const NEWS_AND_RUMOUR =
     /\b(?:what news|any news|what(?:'s| is) the news|what(?:'s| is) happening (?:in the world|out there|elsewhere)|what(?:'s| is) going on (?:in the world|out there)|what are people saying|what do people say|listen for (?:rumours?|rumors?|news|talk)|any (?:rumours?|rumors?)|what (?:rumours?|rumors?)|catch up on the news|what have i heard lately)\b/;
+
+/**
+ * The same question in the words somebody would actually use.
+ *
+ * Every one of these was typed at the pattern above and reached nothing, which
+ * is the failure this repo keeps relearning: a player cannot find the working
+ * half except by guessing, and the failing half is usually the more natural
+ * phrasing. "what is the word" and "what is the talk" are the two commonest
+ * ways of asking this in the register the setting is written in, and neither
+ * contains the word "news".
+ *
+ * `gossip` is here as a bare noun because it has no other reading. "what do
+ * people say about this place" is deliberately NOT here - that is the ground's
+ * history and belongs to `look`, and the whole rule for widening a pattern is
+ * to check the sentence next door has not been swallowed.
+ */
+export const ASKING_AFTER_THE_WORLD =
+    /\b(?:what(?:'s| is) the (?:word|talk)|any word from|what have you heard|what do they say (?:out there|elsewhere|in the world)|ask(?:ing)? around for (?:news|word|talk)|gossip|hear anything|heard anything)\b/;
+
+/**
+ * The same question asked of the ground underfoot, which is a different verb.
+ *
+ * `NEWS_AND_RUMOUR` has carried a bare "what do people say" from before this
+ * verb existed, and `PLACE_HISTORY_PATTERNS` carries the same words - so "what
+ * do people say about this place" matched both, and the earlier branch won. It
+ * was wrong before this change too (it went to the knowledge listing) and it is
+ * this branch's to fix now, because this branch is the one taking it.
+ *
+ * The split is by what the question POINTS AT rather than by the verb in it:
+ * pointed at the ground it is the ground's history, and pointed at nothing in
+ * particular it is the world. Deliberately narrow - it names the deictics and
+ * nothing else - because the last time a fix here was widened past what had
+ * been demonstrated it stole sentences from two other verbs.
+ */
+export const ABOUT_THE_GROUND_HERE =
+    /\b(?:about|of) (?:this|the) (?:place|ground|town|village|city|valley|mountain|ruin|road|hall|province|county)\b|\babout (?:here|it here)\b|\bhappened here\b|\bsay about here\b/;
 
 /**
  * The other axis, and the one that matters at the ceiling.
@@ -2096,6 +2161,23 @@ export const PlannedActionSchema = z.object({
      * nothing on the table.
      */
     leverage: ApproachLeverageSchema.optional(),
+    /**
+     * WHAT THE TWO OF THEM SAID THE FIGHT WAS, set by the parser for the same
+     * reason `leverage` is.
+     *
+     * `agreed` is a bout both parties consented to - a spar, a duel, a
+     * challenge. Absent is `open`: nobody promised anybody anything, which
+     * covers a brawl and a planned murder alike.
+     *
+     * It changes NOTHING about the fight. The goal handed to the resolver is
+     * `subdue` either way, the exchanges are the same exchanges, the wounds are
+     * the same wounds and the death gate is the same gate - the ruling in
+     * AGENTS.md is that a bout is combat with both sides agreeing to be gentle,
+     * and that nothing may quietly make it unable to kill. What this decides is
+     * downstream and only downstream: whether a killing was also a broken word,
+     * which is a question about people and not about a body.
+     */
+    terms: z.enum(['agreed', 'open']).optional(),
     /**
      * How many rations, where the sentence names a count rather than a span.
      *
@@ -2918,6 +3000,18 @@ export function parseIntent(input: string): PlannedAction {
     //
     // The PEER phrase is carried through as the target so the handler can pick
     // somebody the gap rule will actually permit, rather than the nearest body.
+    //
+    // ── AND `terms`, WHICH THE WORD WAS BEING THROWN AWAY WITHOUT ────────
+    //
+    // "I spar with him" and "I pin him" both came out of here as `subdue` and
+    // nothing downstream could tell them apart ever again, so a bout that
+    // killed somebody was indistinguishable from a fight that did - which is
+    // the exact softening AGENTS.md forbids, arrived at by omission rather than
+    // by decision. `terms` is a CLOSED value set here, beside the verb, for the
+    // same reason `leverage` is: `game.ts` passes it through and never
+    // translates a word into a mechanic, and no line of engine code reads it to
+    // pick an OUTCOME. It reaches the consequence layer alone, where the whole
+    // of the difference between a spar and a duel lives.
     if (/\b(?:duel|spar|sparring|challenge)\b/.test(text)
         && /\b(?:with|against|to a duel|him|her|them|someone|somebody|anyone|anybody|a |the )\b/.test(text)) {
         // "I challenge him TO A DUEL" puts the challenge word after the person,
@@ -2930,7 +3024,8 @@ export function parseIntent(input: string): PlannedAction {
         return {
             action: 'attack',
             ...(challenged.length >= 2 ? { target: challenged } : {}),
-            intent: 'subdue'
+            intent: 'subdue',
+            terms: 'agreed'
         };
     }
 
@@ -3065,10 +3160,13 @@ export function parseIntent(input: string): PlannedAction {
     if (RECALL_DAO.test(text) && !PUTTING_IT_SOMEWHERE_ELSE.test(text)) {
         return { action: 'recall', intent: 'dao' };
     }
-    // News and rumour, which in a world with no wire service is the same read
-    // as "what have I heard". Names nobody, so it lists the whole holding.
-    if (NEWS_AND_RUMOUR.test(text)) {
-        return { action: 'recall', intent: 'knowledge' };
+    // News and rumour, which is the world's talk rather than the holder's own
+    // head. Ahead of the `recall` patterns below and behind `RECALL_DAO`,
+    // because "what have I heard lately" is in both bags and the one that
+    // teaches something is the one worth reaching.
+    if ((NEWS_AND_RUMOUR.test(text) || ASKING_AFTER_THE_WORLD.test(text))
+        && !ABOUT_THE_GROUND_HERE.test(text)) {
+        return { action: 'news' };
     }
     if (RECALL_PATTERNS.some(pattern => pattern.test(text))) {
         const named = namedAfter(input, RECALL_SUBJECT);
@@ -3900,8 +3998,14 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // Fields are kept only on the actions that own them. Letting `days` ride
     // along on a `look` would make an examination read, in the log, as though
     // it had consumed a decade.
-    const { action: name, days, target, intent, topic, reason } = parsed.data;
+    const { action: name, days, target, intent, topic, terms, reason } = parsed.data;
     const action: PlannedAction = { action: name };
+
+    // Kept only on the verb that owns it, like everything else here. A model
+    // that says a fight was agreed has said something the consequence layer
+    // needs; a model that says a journey was agreed has said nothing, and
+    // letting it ride along would put a word in the ledger that means nothing.
+    if (terms && name === 'attack') action.terms = terms;
 
     if (TIMED_ACTIONS.includes(name)) {
         action.days = days ?? (

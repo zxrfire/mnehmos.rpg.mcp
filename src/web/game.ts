@@ -219,6 +219,8 @@ import {
     offeringKey,
     opensAtRung,
     positionIn,
+    creditIn,
+    spendStanding,
     rankDoesNotReach,
     readOffering,
     readPosture,
@@ -303,6 +305,9 @@ import {
     type Hearing,
     type HearingIntent
 } from './hearsay.js';
+import { askAround, factsForNews } from './asking-what-people-are-saying.js';
+import { facesFromHome } from './who-a-life-like-this-grew-up-knowing.js';
+import type { OriginTierKey } from '../engine/cultivation/origin.js';
 import { observableHere, observedLine } from './practices.js';
 import {
     acceptDuty,
@@ -337,6 +342,10 @@ import { whereCouldTheyGo, type Destination } from './where-this-cultivator-coul
 // The strongest environmental lever in the game, stated in the one place the
 // rate itself reads. See the file header for the measurement that forced it.
 import { howCrowdedThisGroundIs, type CrowdingRead } from './how-crowded-this-ground-is.js';
+// Reading a vein is a skill and it arrives with the ladder. The measurement
+// above is unchanged; this decides how much of it the person standing on it
+// can actually make out, and who could read it for them.
+import { READS_A_VEIN, groundAsPerceivedRead } from './what-you-can-tell-about-the-ground.js';
 // The world uncovers closed ground and nothing player-facing read it.
 import {
     describeFoundGround,
@@ -363,10 +372,20 @@ import {
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
 import type { PlayerDigest } from '../engine/world/digest.js';
 import type { WorldState } from '../engine/world/world-state.js';
-import { createGrudge, type Severity } from '../engine/social/grudges.js';
+import { createBloodFeud, createGrudge, type Severity } from '../engine/social/grudges.js';
 // A finished pressure model that had no route from the player to it. The
 // resolver reads  and never , which is the whole design.
-import { resolveAttempt, type AskWeight } from '../engine/social-leverage/index.js';
+//
+// `whatFollowsFromTheBout` is the same shape for a fight two people arranged:
+// the wound is the resolver's and is untouched, and what an agreement changes
+// is who holds an account about it afterwards.
+import {
+    resolveAttempt,
+    whatFollowsFromTheBout,
+    type AskWeight,
+    type BoutTerms
+} from '../engine/social-leverage/index.js';
+import type { ConfrontationOutcome } from '../engine/cultivation/combat.js';
 // The board's own exchange rate, in closed form. See the function's comment.
 import { contributionPerStoneOverDays } from '../engine/encounters/duties.js';
 import { factsForAttempt } from './facts.js';
@@ -499,7 +518,33 @@ let ambientDb: Database.Database | null = null;
  * demonstrative - words that cannot be somebody's name - so a misspelled
  * real name never lands here and quietly gets the wrong person.
  */
-const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they)$/i;
+const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:someone|somebody|anyone|anybody|cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they)(?: here| nearby| about| around| present| in the room| in front of me)?$/i;
+
+/**
+ * A pointer that names no role at all, which is the commonest one typed.
+ *
+ * Measured in one room on one turn, before this existed:
+ *
+ *     "I spar with someone here"      There is nobody in front of you that the
+ *                                     thought fits.
+ *     "I introduce myself to someone" You put the words to Tang Shuwu.
+ *
+ * Two failures from one cause. `someone` was in neither `POINTING` nor the
+ * roster, so the fight path found nobody and the conversation path fell through
+ * to a FUZZY NAME MATCH and silently landed on a specific person - the same
+ * defect `POINTING_AT_A_RANK` was written for, in different clothes. Meanwhile
+ * the room knew perfectly well that forty-nine people were in it.
+ *
+ * The indefinite case wants a different answer from the rest of `POINTING`, and
+ * this is why it is a set of its own. "The elder" and "him" describe SOMEBODY
+ * SPECIFIC that the player is looking at, so the arbitrary crowd order is the
+ * honest answer. "Someone" describes nobody in particular, and answering it
+ * with the crowd order hands a Qi Condensation disciple the strongest person in
+ * the square to pick a fight with - a footgun dressed as a resolution. What
+ * somebody means by "someone" is a person they could actually walk up to, so
+ * that is what it resolves to: a face they can name, nearest their own height.
+ */
+const POINTING_AT_NOBODY_IN_PARTICULAR = /\b(?:someone|somebody|anyone|anybody)\b/i;
 
 /**
  * Pointers that are a RANK rather than a description, and must land on
@@ -846,7 +891,20 @@ const MORTAL_WORLD_ACTIONS: readonly ActionName[] = [
      * than by the word. Putting it here would have refused an immortal the one
      * mortal-world action they can actually perform.
      */
-    'petition', 'posture', 'seal'
+    'petition', 'posture', 'seal',
+    /**
+     * Asking a square what it has heard.
+     *
+     * Gossip is a mortal-world channel by construction: it reads the lower
+     * world's ledger, weights a fact up for how far ABOVE the listener the
+     * people in it stand, and picks its tellers out of the crowd standing here.
+     * Every one of those is wrong on the far side of the Lid - there is no
+     * crowd, nobody up there is above a True Immortal in the sense the weight
+     * means, and the reason `look` has an above-the-Lid branch at all is that
+     * the ordinary readers happily overheard two names through a wall on the
+     * wrong layer. Re-offered rather than answered.
+     */
+    'news'
 ] as const;
 
 /**
@@ -1592,6 +1650,25 @@ export class GameService {
         for (const row of birth.knowledge) {
             this.knowledge.learn({ ...row, holderId: created.cultivator.id, onDay: 0 });
         }
+
+        // AND THE PEOPLE. Measured on three seeds before this existed: nine to
+        // fourteen places known and not one person, with thirteen, five and
+        // seventeen bodies standing in the square. `company()` reports anybody
+        // with no record as an ordinal and nothing else, so every person in the
+        // world was a permanent stranger and the four verbs that need somebody
+        // to be pointed at could not find one.
+        //
+        // The design owner's ruling: "you aren't dropped as a nobody, you have
+        // presumably grown up in the area you are in. you at least know
+        // SOMETHING to start." The blank slate was never neutrality - it was a
+        // person with no past, in a setting where everybody else has one.
+        //
+        // It needs the world, which for the first run of a database does not
+        // exist yet, so this is the call that brings it into being. Cheap on a
+        // warm process, and `warmWorld` was going to do it on the next request
+        // anyway.
+        await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
+
         const awareness = this.knowledge.awareness(created.cultivator.id);
 
         const ambient = this.ambientFor(created.cultivator, created.run);
@@ -2002,7 +2079,12 @@ export class GameService {
                 return this.investigate(run, cultivator, ambient, action.target);
 
             case 'attack':
-                return this.attack(run, cultivator, action.target, action.intent ?? 'drive_off');
+                // `terms` reaches the consequence layer and nothing else. See
+                // the header on `attack` and on `whatFollowedTheBout`.
+                return this.attack(
+                    run, cultivator, action.target, action.intent ?? 'drive_off',
+                    action.terms ?? 'open'
+                );
 
             case 'interact':
                 return this.interact(
@@ -2081,6 +2163,9 @@ ${noticedWaiting}`;
 
             case 'recall':
                 return this.recall(run, cultivator, action.target, action.intent);
+
+            case 'news':
+                return this.news(run, cultivator);
 
             // ── institutions acting on each other, and on the dead ──
             //
@@ -2496,12 +2581,20 @@ ${noticed}`;
      * The target must resolve to a real person who is actually present. A
      * confrontation with somebody the player cannot see is not a scene, and
      * fuzzy-matching a description into a name would pick the fight for them.
+     *
+     * `terms` says whether the two of them arranged this, and it reaches
+     * exactly one thing: `whatFollowedTheBout`, on the far side of the resolve.
+     * It is not passed to `combat_manage`, it does not touch `goal`, and there
+     * is deliberately no branch on it above this line. A bout is combat with
+     * both sides agreeing to be gentle; the agreement lives in what the outcome
+     * MEANT and never in what the blows did.
      */
     private async attack(
         run: Run,
         cultivator: Cultivator,
         target: string | undefined,
-        goal: string
+        goal: string,
+        terms: BoutTerms = 'open'
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
@@ -2637,7 +2730,235 @@ ${noticed}`;
             `Fought at ${placeName(cultivator)}.`
         );
 
-        return this.fromToolResult('combat_manage.resolve', 'attack', result, party.name);
+        const execution = this.fromToolResult('combat_manage.resolve', 'attack', result, party.name);
+
+        // ── AND WHAT THE ROOM MAKES OF IT ────────────────────────────────
+        //
+        // After the resolve, never before it and never instead of it. Every
+        // number this reads was decided by `combat_manage` and the survival
+        // layer and is already written down; this only says who else now holds
+        // something about it.
+        const fallout = this.whatFollowedTheBout(
+            run, cultivator, party, standing ?? null, terms, result
+        );
+        if (fallout.lines.length > 0) {
+            // Into `prose` as well as `lines`, and this is not belt and braces.
+            // `lines` is what a narrator may know and `prose` is the
+            // deterministic rendering, and appending to only the first is how a
+            // consequence gets computed, written to the ledger and never shown
+            // to anybody playing without a model attached.
+            //
+            // And `required`, which is reserved for facts a player cannot play
+            // without. This is one: the whole of the ruling is that the world
+            // answers, so a narrator that drops the line leaves a player
+            // believing they got away with it - which is the invisible version
+            // of softening and is worse than the visible kind.
+            execution.facts.lines.push(...fallout.lines);
+            execution.facts.required = [...(execution.facts.required ?? []), ...fallout.lines];
+            execution.facts.prose = [execution.facts.prose, ...fallout.lines].join('\n');
+        }
+        execution.calls.push(...fallout.calls);
+        return execution;
+    }
+
+    /**
+     * Who else holds something about a fight, once it is over.
+     *
+     * ── THE RULING ───────────────────────────────────────────────────────
+     *
+     * AGENTS.md: **"Kill somebody during an agreed bout and you will obviously
+     * face consequences."** Nothing above this line prevents it and nothing
+     * above this line softened it. The bout ran through the same resolver a
+     * killing runs through, with the same exchanges, the same wounds and the
+     * same death gate, and this is where - and the only place where - the
+     * difference between having agreed and not having agreed is charged.
+     *
+     * ── WHAT WAS ACTUALLY MISSING ────────────────────────────────────────
+     *
+     * All of it. "I spar with him" and "I pin him" both parsed to `subdue` and
+     * were indistinguishable from that point on; `seedObligations` keys on the
+     * outcome alone, so a bout that ruined somebody wrote exactly the record a
+     * mugging writes; and a killing wrote NOTHING, because the resolver is
+     * right that the dead hold nothing and nobody else was ever asked. A house
+     * could lose a member in a friendly bout and the ledger would not contain
+     * the fact.
+     *
+     * ── WHAT IT WRITES ───────────────────────────────────────────────────
+     *
+     * Two ordinary rows in tables that already exist, both in the direction the
+     * rest of the codebase writes - the aggrieved party HOLDS it, the offender
+     * is the SUBJECT of it - so every query that reads obligations finds them,
+     * inheritance carries them, and a descendant three generations on can still
+     * be carrying it:
+     *
+     *   THEIR HOUSE   an obligation row against whoever went too far. The loser
+     *                 already has their own record from the resolver and this
+     *                 does not touch it; where the loser is dead they have no
+     *                 record at all, which is exactly the hole this fills.
+     *   YOUR HOUSE    standing, through `spendStanding`, which is the same
+     *                 arithmetic every other act inside a house runs on. Only
+     *                 where the player is the one who went too far, because a
+     *                 house ledger is a thing the played cultivator has and an
+     *                 NPC in a square does not.
+     *
+     * Nothing is invented for this and nothing is grave-specific or bout-
+     * specific in either table. `attentionFor` writes a robbery the same way.
+     */
+    private whatFollowedTheBout(
+        run: Run,
+        cultivator: Cultivator,
+        party: { id: string; name: string },
+        theirRow: RosterEntry | null,
+        terms: BoutTerms,
+        result: object
+    ): { lines: string[]; calls: ToolCallRecord[] } {
+        const nothing = { lines: [] as string[], calls: [] as ToolCallRecord[] };
+        if (isGuidingErrorBody(result)) return nothing;
+
+        const body = result as Record<string, unknown>;
+        const outcome = body.outcome;
+        if (typeof outcome !== 'string') return nothing;
+
+        // Which of the two of them came off worst, read off the resolver's own
+        // answer rather than inferred from the numbers. A stalemate and a
+        // no-contest name nobody, and neither of them is anything to answer for.
+        const loserId = typeof body.loserId === 'string' ? body.loserId : null;
+        if (loserId === null) return nothing;
+
+        // `died` is the survival layer's word, written before this ran. Note
+        // that it can only ever be the PLAYER's: `combat_manage.resolve` asks
+        // the death gate about the cultivator whose run this is and about
+        // nobody else, so an opponent driven to nothing is at nothing rather
+        // than dead. That is the physical layer's business and not this file's;
+        // when it is answered, this reads the answer without changing.
+        const playerDied = body.died === true;
+        const loserIsThePlayer = loserId === cultivator.id || playerDied;
+
+        // Everybody standing here who is not one of the two of them. The room
+        // is what `look` already lists, so this claims no witness the player
+        // could not have seen for themselves.
+        const witnesses = this.present(cultivator)
+            .filter(row => row.id !== party.id && row.id !== cultivator.id).length;
+
+        const theirHouseId = loserIsThePlayer
+            ? positionIn(this.repos, cultivator.id)?.sectId ?? null
+            : theirRow?.sectId ?? this.repos.cultivators.getById(party.id)?.sectId ?? null;
+        const theirHouse = theirHouseId ? this.repos.sects.getById(theirHouseId) : null;
+
+        const followed = whatFollowsFromTheBout({
+            terms,
+            outcome: outcome as ConfrontationOutcome,
+            loserDied: playerDied,
+            witnesses,
+            theirHouse: theirHouse
+                ? {
+                    alignment: theirHouse.alignment,
+                    // Somebody the house has invested in. A named rank is the
+                    // engine's existing statement of that and the one
+                    // `whenItIsDoneToOneOfOurs` already asks for.
+                    ranked: loserIsThePlayer
+                        ? positionIn(this.repos, cultivator.id) !== null
+                        : (theirRow?.sectRank ?? null) !== null
+                }
+                : null
+        });
+
+        if (followed.howFar === 'kept') return nothing;
+
+        const lines: string[] = [];
+        const calls: ToolCallRecord[] = [];
+        const onDay = Math.floor(run.elapsedDays);
+        // Who went too far, and who it was done to. One of them is the player
+        // and which one is not fixed: a bout the player loses badly is the same
+        // event with the names the other way round.
+        const actorId = loserIsThePlayer ? party.id : cultivator.id;
+        const actorName = loserIsThePlayer ? party.name : cultivator.name;
+        const hurtName = loserIsThePlayer ? cultivator.name : party.name;
+
+        if (followed.against && theirHouseId && theirHouse) {
+            // `blood_feud` is a different KIND and not a heavier grudge -
+            // `grudges.ts` keeps them apart because a feud runs between lines,
+            // is expected to be inherited, and everybody involved knows it is
+            // running. Calling `createGrudge` for both wrote every killing into
+            // the ledger as a grudge whatever the engine had decided, which is
+            // the caller overruling the decision it just asked for.
+            const write = followed.against.kind === 'blood_feud'
+                ? createBloodFeud : createGrudge;
+            const record = write({
+                holderId: theirHouseId,
+                subjectId: actorId,
+                cause: followed.against.cause,
+                severity: followed.against.severity,
+                onDay,
+                description:
+                    `${followed.against.description} ${hurtName} was ${theirHouse.name}'s, and `
+                    + `${actorName} is the name on it.`,
+                terms: null,
+                dueOnDay: null,
+                participants: [cultivator.id, party.id],
+                tags: [...followed.against.tags]
+            });
+            writeObligation(this.db as unknown as DatabaseHandle, record);
+
+            calls.push({
+                name: followed.against.kind === 'blood_feud'
+                    ? 'social.createBloodFeud' : 'social.createGrudge',
+                action: 'attack',
+                summary:
+                    `${theirHouseId} now holds a ${followed.against.severity} `
+                    + `${followed.against.kind} about ${actorId} (${followed.against.cause}). `
+                    + `terms=${terms}; outcome=${outcome}; witnesses=${witnesses}. Written to `
+                    + 'obligations; permanent until settled, and inheritable.',
+                ok: true
+            });
+
+            // Said as a fact about the world rather than as a warning, and only
+            // where the player can name the house. Not knowing who is coming is
+            // itself the fact, and the discovery layer owns that rule.
+            const known = this.knowledge.isAwareOf(cultivator.id, 'sect', theirHouseId);
+            lines.push(
+                known
+                    ? `${hurtName} was ${theirHouse.name}'s. ${followed.note}`
+                    : `${hurtName} answered to somebody, and you do not know who. They will be `
+                      + 'told what was agreed and what happened instead.'
+            );
+        } else if (followed.brokenPromise) {
+            lines.push(
+                `${hurtName} answered to nobody, so there is nobody to come for it. That is a `
+                + 'fact about who they were and not a thing you were spared.'
+            );
+        }
+
+        // ── AND WHAT YOUR OWN PEOPLE MAKE OF IT ──────────────────────────
+        //
+        // Only when the player is the one who went too far. A house that put a
+        // disciple in a friendly bout and got a body back has been told
+        // something about that disciple, and standing is where a house keeps
+        // what it thinks. `spendStanding` runs the house's own arithmetic - the
+        // discount a following buys, the floor - so nothing here invents a
+        // curve; this supplies the raw figure and says where it came from.
+        const mine = loserIsThePlayer ? null : positionIn(this.repos, cultivator.id);
+        if (mine && followed.ownHouseCost > 0) {
+            const credit = creditIn(this.repos, cultivator.id, mine, run.elapsedDays, false);
+            const spent = spendStanding(
+                this.repos, cultivator.id, mine, credit, followed.ownHouseCost, run.elapsedDays
+            );
+            lines.push(
+                `Your own people heard what it was supposed to be before they heard how it ended.`
+            );
+            calls.push({
+                name: 'house.spendStanding',
+                action: 'attack',
+                summary:
+                    `${mine.sectId} standing ${credit.standing.toFixed(2)} to `
+                    + `${spent.landedAt.toFixed(2)} (raw ${followed.ownHouseCost}, spent `
+                    + `${spent.spent.toFixed(2)}, backlash ${spent.level}). Charged for an agreed `
+                    + `bout that ended ${followed.howFar}, not for the fight.`,
+                ok: true
+            });
+        }
+
+        return { lines, calls };
     }
 
     /**
@@ -3367,6 +3688,52 @@ ${noticed}`;
                 ok: heard.length > 0
             }]
         };
+    }
+
+    /**
+     * What the people standing here say is happening somewhere else.
+     *
+     * The inverse of `recall`, and the gap it closes is the one the playtest
+     * report is entirely about: the world writes rankings, refusals, duels and
+     * houses opening closed ground into the ledger every year, and the only
+     * route any of it had to a player was the digest - which is gated on
+     * standing, arrives only after a span of days, and is a report. Nobody
+     * finds out that two of the world's tallest fell out by being briefed.
+     *
+     * Free, and the write is the same one standing near a conversation already
+     * makes: knowledge records at `whisper`, with the SPEAKER on them and the
+     * rumour's own sentence as the statement. So checking a rumour is not a
+     * mechanic anybody had to build - ask a second person, then ask your own
+     * head, and the knowledge layer hands back both accounts without ranking
+     * them.
+     *
+     * Phase 3 is handed what was said and by whom. It is never handed the
+     * distortion; that goes to the inspector, in `structure`.
+     */
+    private news(run: Run, cultivator: Cultivator): Execution {
+        const asked = askAround({
+            cultivator,
+            run,
+            present: this.present(cultivator),
+            world: this.atHand,
+            occasion: 'news'
+        });
+
+        for (const hearing of asked.hearings) recordHearing(this.knowledge, cultivator, run, hearing);
+
+        const facts = factsForNews(asked);
+        const execution = this.freeAction(run, 'news', facts);
+        execution.outcome = asked.heard.length === 0 ? 'refused' : 'executed';
+        execution.calls = [{
+            name: 'world.whatTheySay',
+            action: 'news',
+            summary: asked.heard.length === 0
+                ? 'Nobody present, or nothing in the ledger loud enough to be repeated here.'
+                : `${asked.heard.length} rumour(s) drawn off the world ledger and recorded at `
+                + 'stage "whisper" with the speaker attached. No fact was taken as read.',
+            ok: asked.heard.length > 0
+        }];
+        return execution;
     }
 
     // ── what this cultivator is carrying ─────────────────────────────────
@@ -7197,6 +7564,40 @@ ${noticed}`;
         );
         facts.lines.unshift(provisioning.line);
 
+        // ── WHAT THE CAVE MOUTH CHARGED, SAID OUT LOUD ───────────────────
+        //
+        // This line has been built and thrown away since it was written, and it
+        // killed runs. `buyProvisions` tops the pack up at the door and charges
+        // for it; the sentence describing the purchase went into `lines`, which
+        // is a LICENCE, and a narrator that would rather write about the
+        // mountain simply did not use it. Observed on a live server: a purse
+        // going 24 -> 6 -> 0 across two seclusions with nothing said either
+        // time, then starvation on the third turn, by a sixteen-year-old who
+        // started with thirty stones.
+        //
+        // The playtester who found it first logged those two deaths as their
+        // own harness error, which is the measure of how invisible it was.
+        //
+        // A purse being spent is the definition of a fact a player cannot play
+        // without, so it takes the same treatment `method_ceiling` already has.
+        (facts.required ??= []).push(provisioning.line);
+
+        // ── AND ANYTHING THAT STOPPED THE STRETCH ────────────────────────
+        //
+        // Same failure, same span, and worse. A serious qi deviation was rolled
+        // with `interrupts: true` - "cultivation is halted until the deviation
+        // is cleansed" - and did not appear in the narration at all. An event
+        // that ENDED the thing the player paid for is not a detail a stylist
+        // may drop for pacing: it is the reason the stretch came back short,
+        // and without it the player reads a truncated seclusion as the engine
+        // miscounting.
+        //
+        // Only the interrupting ones. A digest of forty lines all marked
+        // required is a digest with nothing required in it.
+        for (const event of skip.events) {
+            if (event.interrupts) facts.required.push(event.summary);
+        }
+
         // ── THE CEILING, BEFORE THE DECADE RATHER THAN AFTER ─────────────
         //
         // The engine files a `method_ceiling` event and it arrives inside a
@@ -10005,14 +10406,75 @@ ${fit.line}`;
         return execution;
     }
 
+    /**
+     * The ground under them, as far as they can actually make it out.
+     *
+     * The measurement is unchanged and is still `howCrowdedThisGroundIs`. What
+     * is new is that it is read through somebody: the design owner's ruling is
+     * that reading a vein is a skill and arrives with the ladder, so a Qi
+     * Condensation cultivator gets a feeling and not a capacity figure, and the
+     * sheet's percentage is masked rather than a second rendering path being
+     * written. See `what-you-can-tell-about-the-ground.ts`.
+     */
     private crowdingHere(cultivator: Cultivator): CrowdingRead | null {
         const ground = this.groundFor(cultivator);
         if (!ground) return null;
-        return howCrowdedThisGroundIs({
+        const measured = howCrowdedThisGroundIs({
             placeName: placeName(cultivator),
             density: ground.density,
             occupantOrdinals: ground.occupantOrdinals ?? []
         });
+        return groundAsPerceivedRead(measured, {
+            realmOrdinal: cultivator.realmOrdinal,
+            toldBy: this.whoCouldReadTheGroundForYou(cultivator)
+        });
+    }
+
+    /**
+     * Somebody who can read a vein and would read it for you, by name.
+     *
+     * The other half of the ruling: "this is where a master can help tell you."
+     * A disciple who cannot yet feel more than heavy or thin still gets the
+     * figures, because they asked somebody and were told - which is the first
+     * concrete, same-day benefit a master has ever had, at the bottom of the
+     * ladder where the teaching multiplier is otherwise a number nobody can see.
+     *
+     * Three conditions, and each one is doing work:
+     *
+     *   THEY CAN READ IT      `READS_A_VEIN`. Somebody who cannot survey ground
+     *                         themselves has nothing to pass on.
+     *   THEY WOULD SAY SO     a master on the house roll, or somebody standing
+     *                         here who is in the same house. A stranger four
+     *                         rungs up does not stop to explain the county.
+     *   THEY CAN BE NAMED     the discovery gate, unweakened. Being told
+     *                         something by somebody you cannot name is not a
+     *                         thing that happens.
+     *
+     * It degrades on its own, which is the point: a student whose masters have
+     * died, or who walks out of their house, loses the reading with everything
+     * else, and nothing here has to know that happened.
+     */
+    private whoCouldReadTheGroundForYou(cultivator: Cultivator): string | null {
+        if (cultivator.realmOrdinal >= READS_A_VEIN) return null;
+
+        const deps = { repos: this.repos, knowledge: this.knowledge, world: this.atHand };
+        const roll = rosterFor(deps, cultivator)
+            .filter(person => person.id !== cultivator.id)
+            .filter(person => person.known && person.role === 'master')
+            .filter(person => person.realmOrdinal >= READS_A_VEIN)
+            .sort((a, b) => b.realmOrdinal - a.realmOrdinal);
+        if (roll.length > 0) return roll[0].name;
+
+        // Nobody on the roll, but a senior of the same house standing right
+        // here would answer the question. A rogue matches neither and that is
+        // what being unaffiliated costs on this axis.
+        const sectId = cultivator.sectId;
+        if (!sectId) return null;
+        const here = this.present(cultivator)
+            .filter(row => row.sectId === sectId && row.realmOrdinal >= READS_A_VEIN)
+            .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
+            .sort((a, b) => b.realmOrdinal - a.realmOrdinal);
+        return here.length > 0 ? here[0].name : null;
     }
 
     /**
@@ -10318,7 +10780,10 @@ ${fit.line}`;
      * fortnight of food still on their back.
      */
     private feedFromPack(cultivator: Cultivator): Cultivator {
-        if (!stillNeedsToEat(cultivator.realmOrdinal)) return cultivator;
+        // The wound list is consulted here too: a failed transformation does
+        // not get the realm's own ability to stop eating. See
+        // `satietyBurnMultiplier`.
+        if (!stillNeedsToEat(cultivator.realmOrdinal, cultivator.injuries)) return cultivator;
         if (cultivator.satiety >= SATIETY_MAX / 2) return cultivator;
         const held = this.rationsHeld(cultivator);
         if (held <= 0) return cultivator;
@@ -10332,10 +10797,13 @@ ${fit.line}`;
     }
 
     private drawFromPack(
-        cultivator: Pick<Cultivator, 'id' | 'realmOrdinal' | 'satiety'>,
+        // `injuries` is in the Pick because `satietyBurnMultiplier` reads it: a
+        // failed transformation does not get the realm's own freedom from food,
+        // so it changes how many rations a span actually draws.
+        cultivator: Pick<Cultivator, 'id' | 'realmOrdinal' | 'satiety' | 'injuries'>,
         days: number
     ): number {
-        const multiplier = satietyBurnMultiplier(cultivator.realmOrdinal);
+        const multiplier = satietyBurnMultiplier(cultivator.realmOrdinal, cultivator.injuries);
         if (multiplier <= 0) return 0;
         const perRation = Math.max(1, Math.floor(ACTIONS_PER_FULL_SATIETY / multiplier));
         // Only the shortfall. The belly covers the first stretch on its own,
@@ -10627,6 +11095,21 @@ ${fit.line}`;
             return holding.length > 0 ? holding[holding.length - 1] : null;
         }
 
+        // Nobody in particular means somebody they could actually walk up to.
+        // See POINTING_AT_NOBODY_IN_PARTICULAR: a face they can name, nearest
+        // their own height, and only if neither of those exists does it fall
+        // through to the crowd order. This is the half of the resolver that the
+        // starting-knowledge seeding pays for - a player who opens a run
+        // knowing three people from home has three people "someone" can mean.
+        if (POINTING_AT_NOBODY_IN_PARTICULAR.test(wanted) && here.length > 0) {
+            const byHeight = [...here].sort((a, b) =>
+                Math.abs(a.realmOrdinal - cultivator.realmOrdinal)
+                - Math.abs(b.realmOrdinal - cultivator.realmOrdinal)
+                || (a.id < b.id ? -1 : 1));
+            return byHeight.find(row =>
+                this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)) ?? byHeight[0];
+        }
+
         // The last of a list that has ONE order, which is the whole of what
         // makes this reproducible. See `oneCrowd` in `hearsay.ts`: this used to
         // read the last element of two independently-sorted halves stuck
@@ -10652,6 +11135,44 @@ ${fit.line}`;
      * how they carry themselves, and the count of the rest is a crowd rather
      * than a cast list.
      */
+    /**
+     * Write down the faces a life like this grew up around.
+     *
+     * The gate is untouched and this is deliberately an ordinary write through
+     * it: `learnIfNew`, at the stance somebody holds for a face they have known
+     * since before either of them was anybody, with the source and the note on
+     * the row like every other record in the table. A player still cannot name
+     * anybody nobody has said in front of them - what has changed is who has.
+     *
+     * Silent when the world is off, when the birthplace is somewhere the world
+     * does not model, or when the hamlet holds nobody but the player. All three
+     * are real answers and none of them is an error.
+     */
+    private async seedTheFacesFromHome(
+        cultivator: Cultivator,
+        origin: OriginTierKey,
+        seed: string
+    ): Promise<void> {
+        const world = await this.loadWorld();
+        if (!world) return;
+        this.atHand = world;
+
+        for (const face of facesFromHome({ world, cultivator, origin, seed })) {
+            this.knowledge.learnIfNew({
+                holderId: cultivator.id,
+                kind: 'cultivator',
+                id: face.id,
+                name: face.name,
+                onDay: 0,
+                sourceKind: 'witnessed',
+                sourceNote: face.sourceNote,
+                stance: 'knows',
+                statement: face.statement,
+                confidence: 1
+            });
+        }
+    }
+
     private company(cultivator: Cultivator): Company {
         const here = this.present(cultivator);
         const named: Company['named'] = [];
@@ -10938,7 +11459,7 @@ ${fit.line}`;
     private engineEntries(execution: Execution, turn: number): LogEntry[] {
         const entries: LogEntry[] = [{ role: 'engine', turn, text: execution.facts.headline }];
         for (const line of execution.facts.structure) {
-            entries.push({ role: 'engine', turn, text: line });
+            entries.push({ role: 'engine', turn, text: withoutTheHandlerName(line) });
         }
         for (const event of execution.events.slice(0, MAX_LOGGED_EVENTS)) {
             entries.push({ role: 'engine', turn, text: `Day ${Math.round(event.dayOffset)}: ${event.summary}` });
@@ -10957,6 +11478,39 @@ ${fit.line}`;
 // ─────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A structure line, with the name of the function that produced it taken off.
+ *
+ * Reported across several sessions and it keeps surviving because it looks like
+ * debug output somebody meant to remove. It is not - it is a deliberate
+ * mechanical channel that the player also reads. Four occurrences in eleven
+ * turns of ordinary play, on the two commonest early actions:
+ *
+ *   technique_manage.list_available: 4 compatible, 0 conflicting, 134 gated...
+ *   encounters.assessFit: suited at grade ordinal 0; reach=match, element=match
+ *
+ * The playtester's diagnosis is the fix: "The content is fine and arguably
+ * useful; it's the `module.function:` prefix that shouldn't be in the story."
+ * Being told what is compatible, what is gated by realm, and that an art suits
+ * you on reach and on element is genuinely worth knowing. Being told which MCP
+ * handler said so is not.
+ *
+ * Done here rather than at the several dozen `structure.push` sites, because
+ * one place cannot go stale and a convention across dozens will. Nothing is
+ * lost to an operator: every `calls[]` entry still carries its handler in
+ * `name`, which is where a handler name belongs.
+ *
+ * Narrow on purpose. It requires a lowercase identifier, at least one dot, no
+ * spaces, and a colon - so "Day 3: ..." and any ordinary sentence are untouched.
+ */
+const A_HANDLER_NAME_AT_THE_FRONT = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+:\s*/;
+
+export function withoutTheHandlerName(line: string): string {
+    const stripped = line.replace(A_HANDLER_NAME_AT_THE_FRONT, '');
+    if (stripped === line) return line;
+    return stripped.length > 0 ? stripped[0].toUpperCase() + stripped.slice(1) : line;
+}
 
 /**
  * A time-skip, broken into the calls it actually made.
@@ -11181,9 +11735,9 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
             vitals?: { hp?: number; maxHp?: number };
             mortality?: {
                 untreatedInjuries?: number;
-                lethalInjuryThreshold?: number;
-                atLethalInjuryThreshold?: boolean;
-                turnsUntilBleedOut?: number | null;
+                crippledInjuryThreshold?: number;
+                atCrippledInjuryThreshold?: boolean;
+                injuryRatePenalty?: number;
             };
         } | undefined;
         const hp = mine?.vitals?.hp;
@@ -11216,26 +11770,31 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
             );
         }
 
-        // AND SAY HOW CLOSE THE THRESHOLD IS.
+        // AND SAY WHAT CARRYING THEM COSTS.
         //
-        // Untreated wounds accumulate and the count that kills is fixed. A
-        // player one short of it is one fight from dying and should be told so
-        // in the words the engine uses, not left to infer it from a number they
-        // never saw.
+        // These two lines used to say the wounds would kill and count down to
+        // it. They do not kill - a torn channel is a torn muscle - and a threat
+        // the engine never carries out teaches a player to ignore the line.
+        //
+        // The true version is not softer. Untreated wounds accumulate, nothing
+        // closes them, and at the threshold the body stops mending itself
+        // altogether, so every scratch after that one is permanent until
+        // somebody is paid. That is what a player needs in order to decide to
+        // go and have them treated, which is the decision this line exists for.
         const carried = mine?.mortality?.untreatedInjuries;
-        const lethalAt = mine?.mortality?.lethalInjuryThreshold;
-        if (typeof carried === 'number' && typeof lethalAt === 'number' && carried > 0) {
+        const crippledAt = mine?.mortality?.crippledInjuryThreshold;
+        const rateLoss = mine?.mortality?.injuryRatePenalty;
+        const cost = typeof rateLoss === 'number' && rateLoss > 0
+            ? ` They are taking ${Math.round(rateLoss * 100)}% of the cultivation rate.`
+            : '';
+        if (typeof carried === 'number' && typeof crippledAt === 'number' && carried > 0) {
             lines.push(
-                mine?.mortality?.atLethalInjuryThreshold === true
-                    ? `${carried} untreated wounds, which is the count that kills. `
-                      + 'Anything further is fatal, and nothing closes them on its own.'
-                    : `${carried} untreated wound${carried === 1 ? '' : 's'} of the `
-                      + `${lethalAt} that kill. They do not close on their own.`
+                mine?.mortality?.atCrippledInjuryThreshold === true
+                    ? `${carried} untreated wounds, which is the count at which the body stops mending `
+                      + `itself. Nothing closes them on its own and nothing heals from here.${cost}`
+                    : `${carried} untreated wound${carried === 1 ? '' : 's'} of the ${crippledAt} at `
+                      + `which the body stops mending. They do not close on their own.${cost}`
             );
-        }
-        const bleed = mine?.mortality?.turnsUntilBleedOut;
-        if (typeof bleed === 'number') {
-            lines.push(`Bleeding. ${bleed} turn${bleed === 1 ? '' : 's'} before the meridians give out.`);
         }
     }
 
@@ -11302,20 +11861,25 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
         // Found by playing. An innkeeper worked three spans across four years,
         // was told the pay every time, and died of `untreated_injuries` without
         // one sentence about a wound. The satiety warning above was written
-        // after the same discovery about hunger; the wounds were the other half
-        // of it and are the faster killer, because untreated is a state that
-        // does not improve and the count that kills is small.
+        // after the same discovery about hunger.
+        //
+        // That death is retired - a torn channel does not kill anybody - and
+        // the line is still needed, for the reason that was underneath the
+        // original one. Untreated is a state that does not improve on its own,
+        // it takes a growing share of everything the body does, and at the
+        // threshold the body stops mending itself at all. A player who is never
+        // told cannot decide to go and have them treated.
         const carried = typeof body.untreatedInjuries === 'number'
             ? body.untreatedInjuries : null;
-        const lethalAt = typeof body.lethalInjuryThreshold === 'number'
-            ? body.lethalInjuryThreshold : null;
+        const crippledAt = typeof body.crippledInjuryThreshold === 'number'
+            ? body.crippledInjuryThreshold : null;
         if (carried !== null && carried > 0) {
             lines.push(
-                lethalAt !== null && carried >= lethalAt
-                    ? `${carried} untreated wounds, which is the count that kills. `
-                      + 'Nothing about the work will close them.'
+                crippledAt !== null && carried >= crippledAt
+                    ? `${carried} untreated wounds, which is the count at which the body stops `
+                      + 'mending itself. Nothing about the work will close them.'
                     : `${carried} untreated wound${carried === 1 ? '' : 's'}`
-                      + `${lethalAt !== null ? ` of the ${lethalAt} that kill` : ''}, `
+                      + `${crippledAt !== null ? ` of the ${crippledAt} at which a body stops mending` : ''}, `
                       + 'picked up along the way. They do not close on their own.'
             );
         }
