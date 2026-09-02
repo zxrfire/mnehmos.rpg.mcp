@@ -1052,7 +1052,18 @@ export function grantBooksToMembers(state: WorldState): BookGrant[] {
  * will pursue you across a lifetime for.
  */
 export function betrayalOfSelling(
-    npc: NpcRecord,
+    /**
+     * Narrowed to the one field this reads, so the player can be priced on the
+     * same scale as an NPC without a `Cultivator` being dressed up as an
+     * `NpcRecord` to get here. A whole `NpcRecord` still satisfies it.
+     *
+     * TEACHING AN ART AND SELLING ITS BOOK ARE THE SAME EXPOSURE - what a house
+     * loses is the art being OUT, and it is no less out for having left through
+     * somebody's mouth - so `what-asking-this-person-for-this-would-cost-them.ts`
+     * prices a request to be taught off this exact function rather than off a
+     * second scale beside it.
+     */
+    npc: Pick<NpcRecord, 'factionId'>,
     techniqueId: string,
     ownerFactionId: string | null
 ): 0 | 1 | 2 | 3 {

@@ -2,8 +2,14 @@
 
 # Asking
 
-Guidance, not a mechanic. [discovery.md](discovery.md) covers how names arrive unbidden;
-this is what happens when the player goes looking.
+Mostly guidance. [discovery.md](discovery.md) covers how names arrive unbidden; this is what
+happens when the player goes looking.
+
+**One half of it is a mechanic now**, and the line between the two matters. Asking somebody
+ABOUT something is judgement and stays judgement - the sections below are for the narrator.
+Asking somebody FOR something is an engine verb with an outcome, because a request has a
+price and somebody either agrees or does not. See [Asking for something, which is not asking
+about something](#asking-for-something-which-is-not-asking-about-something).
 
 ## Sections
 
@@ -13,6 +19,7 @@ this is what happens when the player goes looking.
 |---|---|
 | [Who you ask decides what you get](#who-you-ask-decides-what-you-get) | the player picks somebody to ask, or asks somebody plainly out of their depth |
 | [What you say matters more than what you are](#what-you-say-matters-more-than-what-you-are) | the player phrases a question, names somebody, or uses a term they may not understand |
+| [Asking for something, which is not asking about something](#asking-for-something-which-is-not-asking-about-something) | the player asks somebody to teach them, to take them on, to introduce them, or for a thing |
 | [Why it matters](#why-it-matters) | **Tier 3** - never injected |
 
 ## Who you ask decides what you get
@@ -82,6 +89,44 @@ delivered as though it were this morning.
 None of this should be an unlock or a fixed phrase the world checks for. It is the LLM
 reading who this person is, what they know, what they owe, how they find the player, and
 what was just said. The engine holds the facts; the judgement is narration.
+
+## Asking for something, which is not asking about something
+
+<!-- tier: 2 trigger="the player asks somebody to teach them, to take them on, to introduce them, or for a thing" -->
+
+Everything above is about what somebody will SAY. This is about what they will DO, and it is
+the one part of asking the engine decides rather than the narrator.
+
+Four things a person can be asked for, and each of them ends somewhere different:
+
+| The ask | What a yes actually does |
+|---|---|
+| **Be taught an art** | the art goes onto the sheet, if the book will open for them |
+| **Be taken on** | they become a guide, and the rate changes |
+| **Be introduced** | a name the player did not have arrives, with its source on it |
+| **Be told something** | the three limits above, applied by the narrator |
+
+**What it costs them is a fact about the thing, not about the asking.** A primer every stall
+in the province sells costs a teacher their afternoons. A house's own working manual costs
+them the only place that would have them, and it costs them that whether they hand over the
+book or say the words - the art being out is the loss, and it is no less out for having left
+through somebody's mouth. See [manuals.md](manuals.md).
+
+**So money works at the bottom and stops.** A purse buys an ordinary favour - a seat in a
+queue, a look the other way, an introduction - and reaches almost nothing at the top, which
+is [items.md](items.md)'s line held exactly. Offering somebody money for their house's canon
+does not read as a large offer. It reads as somebody who has not understood what they are
+looking at.
+
+**What moves people instead** is a favour owed, another singular thing, standing, an oath -
+and, most cheaply and most often, having dealt with them before. That last one is the whole
+of the advice above made mechanical: a request from somebody they have taken something from
+before is not the same request.
+
+**And nothing is refused for being presumptuous.** A nobody may ask an elder for the thing at
+the top of their shelf. It will not work, and the answer will say why, and the asking will be
+remembered - which is a different and better outcome than being told the sentence does not
+parse.
 
 ## Why it matters
 

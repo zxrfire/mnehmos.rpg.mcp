@@ -355,6 +355,15 @@ const ACTION_GLOSSARY = `interact         anything done to or with a PERSON or a
                  offer below. This action walks the player over and describes the party, and
                  answering "I file a Requisition" or "I offer an alliance" with that is worse
                  than answering nothing, because it looks like an answer.
+request          ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and
+                 must not be routed there. "target" is who it is put to; "intent" is what kind
+                 of thing is being asked for - teaching (be taught an art, or handed its book),
+                 discipleship (be taken on), introduction (be put in front of somebody), telling
+                 (be told something they know); "topic" is what was named - the art, the person.
+                 This is the ONLY route to being taught by a person, which the engine says
+                 repeatedly is one of the two ways past a manual's ceiling. It spends days and
+                 can spend the purse, so choose it only when the player is actually asking
+                 somebody for something rather than asking about them.
 investigate      examine a place, a person, a record, an inscription, an object; search a ruin.
                  "target" names what is being examined.
 move             go somewhere. "target" is the destination; "intent" is how - travel, flee,
@@ -488,8 +497,8 @@ Schema:
    "days":   <integer, only for cultivate | seclude>,
    "target": <short string naming a real person, faction, place, art, formula or herb>,
    "intent": <short label, only for interact | move | sect | look | site | recall |
-              petition | posture | seal | offer>,
-   "topic":  <short string, only for interact | sect | petition>,
+              petition | posture | seal | offer | request>,
+   "topic":  <short string, only for interact | sect | petition | request>,
    "reason": <one short sentence>}
 
 Actions:

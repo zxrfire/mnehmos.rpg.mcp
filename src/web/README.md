@@ -382,10 +382,81 @@ failure `interact` was producing for the institutional sentences, and it is wors
 of the ladder, where a player has no way to tell that the carving did not happen. The veto
 is `PUTTING_IT_SOMEWHERE_ELSE` in `actions.ts`.
 
-Making it real needs three things that do not exist: a disciple as an entity rather than a
-count, a technique transfer between two holders, and a carving as something a location can
-carry and a later cultivator can read. The third is the closest - `engine/world/locations.ts`
-already carries a place's change log - and none of it belongs in this package.
+Making it real needs three things, and one of them now exists in one direction. A **technique
+transfer between two holders** is what `request` does: a person who agrees to teach the player
+puts the art on the sheet through `handleLearn` with `provenance: 'taught_by_a_person'`. What
+still does not exist is the same transfer pointed the other way - the player teaching somebody
+- because that needs the other two: a disciple as an entity rather than a count on a house
+ledger, and a carving as something a location can carry and a later cultivator can read. The
+carving is the closest, since `engine/world/locations.ts` already carries a place's change
+log, and neither belongs in this package.
+
+---
+
+### Asking a person for something
+
+The verb the design rests on, and until recently it did not exist. The engine says, correctly
+and often, that there are exactly two ways past a manual's ceiling - another book, or somebody
+willing to teach you - and it says it well: *"You have no name to ask for, which is the whole
+of what is stopping you."* The book half works. The teacher half had no verb, and four
+phrasings of it reached four different lookups, none of which was a person:
+
+| typed, in a live run | what came back |
+|---|---|
+| `I ask X to teach me` | the roster of everybody standing above the player |
+| `I beg X to take me as a disciple` | a description of X |
+| `ask X for the Lesser Qi-Gathering Manual` | the almanac entry for the manual |
+| `I bribe X with 60 spirit stones` | *"X agreed."* Agreed to what? |
+
+`request` is the fix, and it is three files:
+
+```text
+what-a-request-asks-and-of-whom.ts        the split: who, and what of them
+what-asking-this-person-for-this-        what saying yes would cost them, off
+  would-cost-them.ts                       the catalogs the world already uses
+GameService.request                       the wiring, and the consequence
+```
+
+**`interact` is not this and must not be routed here.** Its `intent` is a free label that
+nothing branches on, which is right for the verb and useless for the OBJECT: what is being
+asked FOR has to reach the engine, because `AskWeight` prices resistance and duration off it
+and because a take has to end in the thing actually happening.
+
+Four rules it keeps.
+
+- **The ask is derived, never asserted.** Whether teaching somebody an art is an afternoon or
+  the end of their standing is a fact about the BOOK and the HOUSE, and `betrayalOfSelling` in
+  `engine/world/manuals.ts` already decides exactly that for every NPC alive. A commonly-held
+  primer is `a_real_favour`; a house's own working manual is `a_betrayal`. Nothing reads the
+  word the player typed - bribing, begging, offering and asking politely produce the same
+  weight for the same thing.
+- **Money is priced by the same line the catalog already draws.** `PURSE_REACH` falls from 1
+  at a courtesy to 0.05 at a betrayal, which is `items.md`'s line - below it things have
+  prices, above it cash is not the medium - as arithmetic. So a purse buys an introduction and
+  does not buy a house's canon, and no rule anywhere says so.
+- **A take changes a row.** `handleLearn` has carried `provenance: 'taught_by_a_person'` since
+  it was written and nothing had ever passed it. Being taught still meets the manual's own
+  entry requirement, which is `manuals.md`'s second gate: *"rank says what the house will give
+  you; the manual's own entry requirement says what you can open, and being favoured does not
+  lift it."* An introduction writes the third party into the knowledge table. Discipleship
+  writes a master that `guideFor` reads on every cultivation span.
+- **A refusal names what would work.** Every one, without exception - what this person is
+  actually carrying, who teaches it, that a stall sells a copy, that an introduction runs
+  along a line somebody is already standing on. "No" is a bug.
+
+**One target resolver.** `partyPutTo` and `nobodyByThatName` are shared by `interact` and
+`request`, which is the fix for the symptom that made the shared resolver necessary: three
+verbs each finding their target their own way, one of them resolving a party called
+`"Han Peiru with 60 spirit stones to introduce me to the elder"` against a roster of two-word
+names.
+
+**And the marks are persisted now.** `AttemptMarks` is the resolver saying what the world is
+carrying that it was not before, and its own header says every field is a record the caller
+persists. Nothing persisted any of them, while `factsForAttempt` told the player *"it is on
+somebody's ledger now, and ledgers here are kept"* - the narrator asserting an outcome the
+database never took. Obligations and ties are written; ties are read back on the next
+approach, which is what makes the twelfth time somebody asks the twelfth rather than another
+first.
 
 ---
 

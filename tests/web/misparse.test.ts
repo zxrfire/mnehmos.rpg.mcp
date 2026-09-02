@@ -362,7 +362,11 @@ describe('every verb is reachable from plain English', () => {
         // for a place called "somewhere else".
         ceiling: 'am I stuck',
         teacher: 'who could guide my cultivation',
-        destinations: 'I want to travel somewhere else'
+        destinations: 'I want to travel somewhere else',
+        // And the fourth, which was not merely eaten but eaten BY the third:
+        // `teach me` belongs to the roster question, correctly, and it was
+        // tested before anything looked at whether a person had been named.
+        request: 'I ask Elder Fang to teach me'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

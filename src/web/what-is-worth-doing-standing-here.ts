@@ -446,9 +446,20 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     }
 
     if (here.peopleAboveHere > 0 && !here.aboveTheLid) {
+        // ── AND THE SENTENCE AFTER THE READ ──────────────────────────────
+        //
+        // The read names who is above; the verb that does something about it
+        // is a different sentence and nothing pointed at it. That gap is what
+        // this whole file exists to close: `who can teach me` was reachable
+        // only by guessing, and `ask <them> to teach me` is one step further
+        // down the same road. Named as a shape rather than with a name in it,
+        // because the discovery rule forbids handing over anybody the player
+        // has not met and the read above already says how many there are.
         add(at(SAY.teacher, 'open',
             `${here.peopleAboveHere} ${here.peopleAboveHere === 1 ? 'person' : 'people'} standing `
-            + 'here are further up the ladder than you.'));
+            + 'here are further up the ladder than you. Putting it to one of them by name - '
+            + '"ask <them> to teach me", "ask <them> to introduce me to <somebody>" - is a '
+            + 'different sentence from this one, and it has an outcome.'));
     }
 
     if (!here.aboveTheLid && !here.inASect && here.practisesAMethod) {

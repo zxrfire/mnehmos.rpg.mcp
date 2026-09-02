@@ -1142,6 +1142,177 @@ export function recordContact(
     return withEvent;
 }
 
+
+/**
+ * THE OPEN LEDGER BETWEEN TWO PEOPLE, IN BOTH DIRECTIONS.
+ *
+ * `resolveAttempt` takes a `ledger` and reads two things off it: what this
+ * person owes you, and what they hold against you. Both are worth a real amount
+ * - three open favours are 0.24 on the odds, a grave grudge more than that
+ * against you - and no caller in the web layer has ever supplied one, so both
+ * terms have read zero for every attempt a player has ever made.
+ *
+ * That is not a tuning problem, it is the cheapest lever in the game being
+ * unreachable. `asking.md`: *"What you have done for someone counts for more
+ * than either... Small, cheap, repeated things work: a round, a gift, a favour,
+ * turning up twice. This is the cheapest lever in the game and it is available
+ * to a cultivator with nothing."* A refusal that says "what would change it is
+ * being owed something" is a lie for as long as nothing reads what is owed.
+ *
+ * Open records only, because a settled one is settled. Both directions, because
+ * the resolver decides which of them is which and this must not pre-judge it.
+ */
+export function openLedgerBetween(
+    repos: CultivationRepos,
+    oneId: string,
+    otherId: string
+): ObligationRecord[] {
+    const db = repos.db as unknown as DatabaseHandle;
+    const rows = db.prepare(`
+        SELECT * FROM obligations
+        WHERE status = 'open'
+          AND ((holder_id = ? AND subject_id = ?) OR (holder_id = ? AND subject_id = ?))
+    `).all(oneId, otherId, otherId, oneId) as ObligationRow[];
+    return rows.map(obligationFromRow);
+}
+
+interface ObligationRow {
+    id: string;
+    kind: string;
+    holder_id: string;
+    subject_id: string;
+    cause: string;
+    severity: string;
+    incurred_on_day: number;
+    triggering_event_id: string | null;
+    description: string;
+    participants: string;
+    tags: string;
+    terms: string | null;
+    due_on_day: number | null;
+    status: string;
+    settlement_resolution: string | null;
+    settled_on_day: number | null;
+    settled_by_id: string | null;
+    settlement_note: string | null;
+    inheritance: string;
+    generation: number;
+    origin_holder_id: string;
+    from_belief: number;
+    recorded_on_day: number;
+}
+
+function obligationFromRow(row: ObligationRow): ObligationRecord {
+    return {
+        id: row.id,
+        kind: row.kind as ObligationRecord['kind'],
+        holderId: row.holder_id,
+        subjectId: row.subject_id,
+        cause: row.cause as ObligationRecord['cause'],
+        severity: row.severity as ObligationRecord['severity'],
+        incurredOnDay: row.incurred_on_day,
+        triggeringEventId: row.triggering_event_id,
+        description: row.description,
+        participants: safeParse(row.participants),
+        tags: safeParse(row.tags),
+        terms: row.terms,
+        dueOnDay: row.due_on_day,
+        status: row.status as ObligationRecord['status'],
+        settlement: row.settlement_resolution === null ? null : {
+            resolution: row.settlement_resolution as NonNullable<ObligationRecord['settlement']>['resolution'],
+            onDay: row.settled_on_day ?? 0,
+            ...(row.settled_by_id === null ? {} : { byId: row.settled_by_id }),
+            note: row.settlement_note ?? ''
+        },
+        inheritance: safeParse(row.inheritance) as unknown as ObligationRecord['inheritance'],
+        generation: row.generation,
+        originHolderId: row.origin_holder_id,
+        fromBelief: row.from_belief === 1,
+        recordedOnDay: row.recorded_on_day
+    };
+}
+
+/**
+ * WHAT ONE PERSON'S SIDE OF A TIE SAYS, READ BACK.
+ *
+ * The table has been here the whole time and only `recordContact` wrote to it,
+ * from the player's side only. `resolveAttempt` wants the OTHER side - "their
+ * view of you, not yours of them", the heaviest term after standing - and got
+ * nothing, so every approach in the game was made by a stranger however many
+ * times the two of them had dealt with each other.
+ *
+ * Directed, and the direction is the mechanic: `relationships.ts` stores
+ * `from -> to` as two rows precisely so the two can disagree.
+ */
+export function tieFrom(
+    repos: CultivationRepos,
+    fromId: string,
+    toId: string
+): Relationship | null {
+    return readRelationship(repos.db as unknown as DatabaseHandle, fromId, toId);
+}
+
+/**
+ * The tie an attempt formed, written down - both sides, allowed to disagree.
+ *
+ * `AttemptMarks.tie` is the resolver saying what the world is now carrying that
+ * it was not before, and its own header names the shape it is writing: *"he
+ * thinks they are friends; she has been waiting nine years for an opening."*
+ * Nothing persisted it, so the asymmetry the whole module is built around
+ * existed for exactly one function call and was then thrown away.
+ *
+ * Strengths ACCUMULATE onto whatever is already there, which is what makes the
+ * twelfth approach the twelfth rather than another first - the same reasoning
+ * `recordContact` gives for reading before it writes.
+ */
+export function recordTheTieAnAttemptLeft(
+    repos: CultivationRepos,
+    actorId: string,
+    subjectId: string,
+    onDay: number,
+    tie: {
+        theirs: { type: string; strength: number; significance: string; roles: string[] };
+        yours: { type: string; strength: number; significance: string; roles: string[] };
+        event: { onDay: number; kind: string; summary: string };
+    }
+): void {
+    const db = repos.db as unknown as DatabaseHandle;
+    const sides: [string, string, typeof tie.theirs][] = [
+        [subjectId, actorId, tie.theirs],
+        [actorId, subjectId, tie.yours]
+    ];
+    repos.db.transaction(() => {
+        for (const [fromId, toId, side] of sides) {
+            const existing = readRelationship(db, fromId, toId);
+            const base = existing ?? createRelationship({
+                fromId,
+                toId,
+                type: side.type as RelationshipType,
+                onDay,
+                strength: 0,
+                significance: side.significance as Relationship['significance']
+            });
+            const updated = updateRelationship(base, {
+                onDay,
+                type: side.type as RelationshipType,
+                strength: base.strength + side.strength,
+                significance: side.significance as Relationship['significance'],
+                roles: [...new Set([...base.roles, ...side.roles])],
+                appendHistory: tie.event.summary
+            });
+            const withEvent = recordRelationshipEvent(updated, {
+                onDay,
+                kind: tie.event.kind,
+                summary: tie.event.summary,
+                significance: 'notable'
+            });
+            writeRelationship(db, withEvent);
+            const event = withEvent.events[withEvent.events.length - 1];
+            if (event) writeRelationshipEvent(db, withEvent.id, event);
+        }
+    })();
+}
+
 interface RelationshipRow {
     id: string;
     from_character_id: string;
