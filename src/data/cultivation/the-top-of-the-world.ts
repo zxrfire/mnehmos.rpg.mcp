@@ -1,6 +1,10 @@
 /**
  * The top of the world, and whether it can be moved.
  *
+ * There is no doc for this. It is the only written record of the argument, and
+ * `docs/world/INDEX.md` indexes it as such - if you are about to write one,
+ * read this first rather than beside it.
+ *
  * Split out of `catastrophe.ts`, which had grown to fifteen exports of which
  * two were about catastrophes. This is the other thirteen: everything about
  * who could kill somebody at the top of an apex, what it would take, why
