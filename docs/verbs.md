@@ -74,7 +74,7 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**52 verbs.** 17 of them take nothing from the player,
+**53 verbs.** 17 of them take nothing from the player,
 25 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
@@ -105,6 +105,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`treat`](#treat) | - | time | yes | - | - |
 | [`buy`](#buy) | `target` | varies | yes | - | - |
 | [`sell`](#sell) | `target` | varies | yes | - | - |
+| [`give`](#give) | `target` `topic` `stones` | varies | yes | - | - |
 | [`inventory`](#inventory) | - | nothing | yes | yes | - |
 | [`consume_pill`](#consume_pill) | `target` | time | yes | - | - |
 | [`list_techniques`](#list_techniques) | - | nothing | yes | yes | - |
@@ -226,7 +227,7 @@ hit somebody. "target" names them; "intent" is what the player is trying to end 
 
 Declared in [`ACTION_NAMES`](../src/web/actions.ts) · resolves through `case 'attack'` in [`GameService.execute`](../src/web/game.ts) and `GameService.attack` · the deterministic parser reaches it · spends in-world time.
 
-Takes `target`, `intent`, `terms` (read off the sentence, never from a model), `opening` (read off the sentence, never from a model).
+Takes `target`, `intent`, `terms`, `opening`.
 
 Intents: `drive_off`, `subdue`, `kill`, `humiliate`.
 
@@ -236,7 +237,7 @@ MAKE somebody do something, with hands rather than with words. Not the same as i
 
 Declared in [`ACTION_NAMES`](../src/web/actions.ts) · resolves through `case 'coerce'` in [`GameService.execute`](../src/web/game.ts) and `GameService.attack` · the deterministic parser reaches it · spends in-world time.
 
-Takes `target`, `intent`, `opening` (read off the sentence, never from a model).
+Takes `target`, `intent`, `opening`.
 
 Intents: `submit`, `hand_over`, `talk`, `tame`.
 
@@ -306,7 +307,7 @@ lay in food BEFORE it is needed, which is the correct opening move and the one a
 
 Declared in [`ACTION_NAMES`](../src/web/actions.ts) · resolves through `case 'provision'` in [`GameService.execute`](../src/web/game.ts) and `GameService.provision` · the deterministic parser reaches it.
 
-Takes `days`, `rations` (read off the sentence, never from a model).
+Takes `days`, `rations`.
 
 ### `treat`
 
@@ -329,6 +330,14 @@ put something on the counter. "target" names one thing in the pouch; omit it (or
 Declared in [`ACTION_NAMES`](../src/web/actions.ts) · resolves through `case 'sell'` in [`GameService.execute`](../src/web/game.ts) and `GameService.sell` · the deterministic parser reaches it.
 
 Takes `target`.
+
+### `give`
+
+hand somebody a thing you are already carrying, for nothing. "target" is who - omit it for whoever is at hand; "topic" is what, in the player's own words, resolved against the pouch; "stones" is the number where the sentence names one. It costs no day and nothing can fail: they are not being asked for anything. NOT for a purchase or a trade - a sentence that says what is wanted back is "buy" or "request". What it leaves is a favour they hold about the player, which is the only way to put somebody in your debt without leaning on them.
+
+Declared in [`ACTION_NAMES`](../src/web/actions.ts) · resolves through `case 'give'` in [`GameService.execute`](../src/web/game.ts) and `GameService.giveSomething` · the deterministic parser reaches it.
+
+Takes `target`, `topic`, `stones`.
 
 ### `inventory`
 

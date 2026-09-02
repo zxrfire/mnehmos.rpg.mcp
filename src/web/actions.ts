@@ -318,6 +318,36 @@ export const ACTION_NAMES = [
      */
     'sell',
     /**
+     * Handing somebody a thing you already hold, which had no verb at all.
+     *
+     * ── THE OWNER'S OWN EXAMPLE, AND IT DID NOT RUN ──────────────────────
+     *
+     * "A person could steal and then hand it to someone else before running
+     * away." Two of those three were verbs and the middle one was not, so the
+     * sentence that motivates the whole feature stopped in the middle. Six
+     * ordinary phrasings of it reached `unclear`: "I hand him the purse", "I
+     * give Shen Liefeng my manual", "I press it into her hand", "I pass it to
+     * him", "I put ten stones on the table".
+     *
+     * ── AND THE ENGINE HALF WAS ALREADY THE RIGHT SHAPE ──────────────────
+     *
+     * `gifted` is a member of `AcquisitionMode` in `possessions.ts` and
+     * `gifted_resource` is a member of `FavorCause` in `grudges.ts`. Neither
+     * needed adding. What was missing was the sentence.
+     *
+     * ── FREE, AND IT MEANS IT ────────────────────────────────────────────
+     *
+     * In neither {@link READ_ONLY_ACTIONS} nor {@link TIME_CONSUMING_ACTIONS},
+     * with `sect`, `posture`, `seal`, `offer` and `oath` and for their reason:
+     * it spends no day and it commits the giver to something they cannot walk
+     * back. Nothing is attempted against the recipient, so nothing can fail -
+     * {@link PRESSING_SOMEBODY} is the set of things that spend a day WHETHER
+     * OR NOT they come off, and handing over a thing you are already holding is
+     * not one of those. What protects a misparse is that it needs both halves:
+     * a person, and a thing this cultivator is actually carrying.
+     */
+    'give',
+    /**
      * What is in the pouch, asked in words.
      *
      * `alchemy_manage.inventory` has been complete the whole time - pills,
@@ -1008,6 +1038,11 @@ export const TIMED_ACTIONS: readonly ActionName[] = [
 export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
     'work', 'market', 'assess', 'sect', 'attack', 'hunt',
+    // WHO is being handed it. The thing itself rides on `topic`, because a
+    // gift is the one verb in the set that needs both halves named and neither
+    // substitutes: handing the wrong person the right thing is a different
+    // event from handing the right person the wrong one.
+    'give',
     /**
      * Where they are going, resolved against the same three registers `move`
      * resolves against - so a name the world has never heard of reaches
@@ -1107,6 +1142,10 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
  */
 export const TOPIC_ACTIONS: readonly ActionName[] = [
     'interact', 'sect', 'petition',
+    // WHAT is being handed over, in the player's own words, resolved against
+    // the pouch by the handler. See `give` in {@link TARGETED_ACTIONS} for why
+    // it needs a field of its own rather than riding on `target`.
+    'give',
     /**
      * `offer` uses it for the WORD that goes down the line with whatever is
      * sent, which is half of what a proxy action is: an object arrives, and a
@@ -1602,6 +1641,164 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
 // in `whoATheftIsAimedAt`, which reads the input as the player typed it.
 export const A_POSSESSIVE =
     "his|her|their|its|somebody's|someone's|(?:the )?[a-z]+(?:\\s+[a-z]+){0,2}(?:'s|s')";
+
+// ─────────────────────────────────────────────────────────────────────────
+// HANDING SOMEBODY A THING
+//
+// The owner's own sentence for the whole feature - "a person could steal and
+// then hand it to someone else before running away" - has three acts in it and
+// the middle one had no verb. Six phrasings of it reached `unclear`.
+//
+// Both halves are required and that is the whole of the safety: a PERSON and a
+// THING THEY ARE CARRYING. `give` on its own is half of a dozen other
+// sentences in this file - a donation to a house, an offering up the line, a
+// word given as an oath - and every one of those is matched by a rule that runs
+// above this one and carries its own noun.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The verbs that mean putting a thing into somebody else's hands. */
+// ── `put` AND `leave` ARE NOT ON THIS LIST, AND THEY WERE ────────────────
+//
+// They cost three of the corpus's own exemplars on the first run of the sweep:
+// "I put in real practice at the method" (cultivate), "I put hours into the
+// technique I know" (train_technique) and "I put my case to the elders"
+// (petition) all became gifts. `put` is one of the commonest verbs in English
+// and `leave` belongs to `legacyStep` and to `move`. The one sentence `put` was
+// wanted for is "I put ten stones on the table", which has its own shape below
+// and its own verb list with the table in it.
+// The two-word forms come FIRST, because a regex alternation takes the first
+// branch that matches and not the longest. With `hand` ahead of `hand over`,
+// "I hand over what I am carrying to her" handed somebody a thing called "over
+// what I am carrying", and "handing over the ledger" found a person called
+// "over".
+export const HANDING_IT_OVER =
+    'hand over|hands over|handing over|handed over|'
+    + 'give|gives|giving|gave|hand|hands|handing|handed|pass|passes|passing|passed|'
+    + 'press|presses|pressing|pressed|slip|slips|slipping|slipped';
+
+/**
+ * SOMEBODY MADE TO HAND IT OVER IS NOT SOMEBODY GIVING IT.
+ *
+ * "I threaten the steward into handing over the ledger" contains this verb, and
+ * the whole of what makes it not a gift is that the hands are not the player's
+ * and nothing was freely parted with. It is `interact/threaten`, it carries
+ * `leverage: 'force'` that the social resolver reads, and taking it here lost
+ * both - which `both-modes-hand-the-engine-the-same-action.test.ts` caught
+ * immediately, because losing the leverage is the exact defect that file exists
+ * for.
+ *
+ * The distinction is the one `AGENTS.md` draws between agency and softening: a
+ * gift opens an account BECAUSE nothing was asked for, and a thing extracted
+ * under threat opens the opposite one. They must never be the same verb.
+ */
+export const MADE_TO_HAND_IT_OVER =
+    /\b(?:threaten|threatens|threatening|threatened|intimidate|intimidates|menace|coerce|coerces|coercing|force|forces|forcing|forced|strong-?arm|strong-?arms|extort|extorts|shake down|shakes down|beat it out of|make (?:him|her|them)|makes (?:him|her|them))\b/;
+
+/** Putting a thing down where somebody can take it, which is still giving it. */
+export const PUTTING_IT_DOWN =
+    'put|puts|putting|lay|lays|laying|set|sets|setting|drop|drops|dropping|place|places|placing';
+
+/**
+ * An exchange is not a gift, and the difference is one word.
+ *
+ * "I give him ten stones for the manual" is a purchase and "I offer what I have
+ * for it" is a trade put to somebody; both name a price and neither is this.
+ * A gift has no `for`, which is exactly what makes it the one act in the game
+ * that creates an obligation without leverage.
+ */
+export const A_PRICE_IS_NAMED = /\b(?:for|in exchange|in return|in trade|instead of)\b/;
+
+/**
+ * Putting a thing INTO somebody, which is never a question put to them.
+ *
+ * `press` is an asking verb - "I press him for an answer" - and the asking
+ * branch sits high on purpose, so "I press it into her hand" came back as an
+ * approach to somebody called "it into her hand". Vetoed on the preposition
+ * rather than on the whole giving read, because the whole read also matches "can
+ * I press Bai Jinglu about the Azure Dew Sect", which is a question and has to
+ * stay one. `into <somebody's>` is the half that cannot be anything else.
+ */
+export const PUTTING_IT_INTO_THEIR_HANDS =
+    /\b(?:press|presses|pressed|pressing|put|puts|putting|slip|slips|slipped|slipping|push|pushes|pushed)\s+.{1,40}?\s+into\s+(?:his|her|their|the|somebody's|someone's)\b/;
+
+/**
+ * What is being handed over and to whom, or nothing.
+ *
+ * Two shapes, because people say it both ways round:
+ *
+ *   give/hand/pass <person> <thing>     "I hand him the purse"
+ *   give/hand/press <thing> to <person> "I press it into her hand"
+ *
+ * The second names nobody in "I put ten stones on the table", and that is
+ * correct and deliberate: `undefined` means whoever is at hand, which is what
+ * `interact` already means by it and what the sentence actually says.
+ */
+export function whatIsBeingHandedOver(
+    input: string
+): { to?: string; thing: string; stones?: number } | null {
+    const text = input.toLowerCase();
+    if (A_PRICE_IS_NAMED.test(text)) return null;
+    if (MADE_TO_HAND_IT_OVER.test(text)) return null;
+
+    const stones = /\b(?:[0-9]+|[a-z]+)\s+(?:spirit\s+)?stones?\b/.test(text)
+        ? parseCount(text) ?? undefined
+        : undefined;
+
+    // Put down rather than handed to anybody: "I put ten stones on the table".
+    // FIRST, because it also parses as `<person> <thing>` with "ten stones on"
+    // as the person, which is how it was refused on the first play.
+    const putDown = new RegExp(
+        `\\b(?:${HANDING_IT_OVER}|${PUTTING_IT_DOWN})\\s+(.{1,60}?)\\s+`
+        + '(?:on|onto)\\s+the\\s+(?:table|counter|floor|ground)\\b',
+        'i'
+    ).exec(input);
+    if (putDown) {
+        const thing = cleanPlace(putDown[1] ?? '') ?? '';
+        if (thing.length >= 1) {
+            return { thing, ...(stones !== undefined ? { stones } : {}) };
+        }
+    }
+
+    // <thing> to/into <person>. Before the other shape, because "I press it
+    // into her hand" also parses as `<person> <thing>` with "it" as the person.
+    const toSomebody = new RegExp(
+        `\\b(?:${HANDING_IT_OVER})\\s+(.{1,60}?)\\s+(?:to|into|over to)\\s+(?:the\\s+)?(.{2,40}?)\\s*[.!?]*$`,
+        'i'
+    ).exec(input);
+    if (toSomebody) {
+        const thing = cleanPlace(toSomebody[1] ?? '') ?? '';
+        const who = cleanPlace(
+            (toSomebody[2] ?? '').replace(/\b(?:hand|hands|palm|keeping)\b\s*$/i, '').trim()
+        ) ?? '';
+        if (thing.length >= 1) {
+            return {
+                thing,
+                ...(who.length >= 2 && !ANYBODY.test(who) ? { to: who } : {}),
+                ...(stones !== undefined ? { stones } : {})
+            };
+        }
+    }
+
+    // <person> <thing>.
+    const personFirst = new RegExp(
+        `\\b(?:${HANDING_IT_OVER})\\s+(.{2,40}?)\\s+`
+        + `((?:my|the|a|an|his|her|their|some|all|[0-9]+|${WORD_NUMBER_ALTERNATION})\\b.{1,60}?)\\s*[.!?]*$`,
+        'i'
+    ).exec(input);
+    if (personFirst) {
+        const who = cleanPlace(personFirst[1] ?? '') ?? '';
+        const thing = cleanPlace(personFirst[2] ?? '') ?? '';
+        if (who.length >= 2 && thing.length >= 1) {
+            return {
+                thing,
+                ...(ANYBODY.test(who) ? {} : { to: who }),
+                ...(stones !== undefined ? { stones } : {})
+            };
+        }
+    }
+
+    return null;
+}
 
 /**
  * A thing small enough to be taken off a person.
@@ -3611,6 +3808,16 @@ export const PlannedActionSchema = z.object({
      * answering `1e9` cannot ask the purse for a heat-death of provisions.
      */
     rations: z.number().int().min(1).max(100_000).optional(),
+    /**
+     * How many spirit stones are being handed over, where the sentence says.
+     *
+     * Only `give` reads it, and it is here for the reason `rations` is: it is a
+     * fact the SENTENCE carries and the phase-1 prompt does not ask for, so
+     * `carryWhatOnlyTheSentenceKnows` puts it back on the model path. Without
+     * it "I put ten stones on the table" hands the engine a gift with no
+     * amount, and a gift with no amount is a different act.
+     */
+    stones: z.number().int().min(1).max(100_000_000).optional(),
     /**
      * What an approach is ABOUT, when the player asked about something.
      *
@@ -5864,8 +6071,17 @@ function planIntent(input: string): PlannedAction {
     // takes "for time on the vein" as a person, fails to find one, and puts the
     // words to whoever is nearest - the same failure "tell me about myself"
     // already has a veto for.
+    // `press` is an asking verb - "I press him for an answer" - and it is also
+    // half of the commonest way anybody says a gift. "I press it into her hand"
+    // came back as an approach to somebody called "it into her hand", which is
+    // the shape of every bug this parser has produced: a phrase matched in the
+    // wrong role and answered confidently. Vetoed rather than ordered around,
+    // because the asking branch is high on purpose and the sentence that needs
+    // the veto satisfies its rule completely. See {@link whatIsBeingHandedOver},
+    // which needs a thing AND a recipient and so cannot fire on a question.
     const asked = /\b(?:ask|asking|asks|enquire|inquire|put it to|question|press)\b/.test(text)
         && !GROUND_TIME_QUESTION.test(text)
+        && !PUTTING_IT_INTO_THEIR_HANDS.test(text)
         ? parseAsk(input)
         : null;
     if (asked && !/\bjoin(?:ing)?\b/.test(text)) {
@@ -5918,7 +6134,24 @@ function planIntent(input: string): PlannedAction {
     // pills were purchasable and unusable - and `handleConsumePill` is the ONLY
     // writer of `FLAG_PENDING_PILL`, which means the breakthrough pill bonus,
     // the largest modifier in the game, had never once fired in play.
-    if (usedAsVerb(text, PILL_TAKING_VERBS) && PILL_NOUNS.test(text)) {
+    // ── OR THE THING ITSELF, BY THE NAME THE GAME PRINTED ────────────────
+    //
+    // The class noun was required, and the same defect the learning branch
+    // records was waiting here: most consumables in this world are not called
+    // "pill". Measured after the Unearned Step became spendable and the game
+    // began printing its name:
+    //
+    //   I take the Unearned Step      -> unclear
+    //   I swallow the Unearned Step   -> unclear
+    //   I take the pill               -> consume_pill
+    //
+    // So the only sentence that reached the effect was the one that did NOT
+    // name the thing. `IMMORTAL_ITEM_NAMED` is built from the catalog and was
+    // already in this file for the petition branch; reading it here costs
+    // nothing and cannot go stale. The taking verb is still required, so a
+    // sentence that merely mentions one is untouched.
+    if (usedAsVerb(text, PILL_TAKING_VERBS)
+        && (PILL_NOUNS.test(text) || IMMORTAL_ITEM_NAMED.test(text))) {
         return {
             action: 'consume_pill',
             target: extractSubject(input, PILL_SUBJECT_VERBS)
@@ -6466,6 +6699,7 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+
     // ── WHO LEADS IT, which is not a request to be found one ─────────────
     //
     // The find-me-a-sect rule below fires on a sect noun beside any question
@@ -6601,6 +6835,35 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── interact: everything done to or with a person or a faction ──
+    // ── HANDING SOMEBODY A THING ─────────────────────────────────────────
+    //
+    // Immediately ahead of the INTERACT table, which is this parser's broadest
+    // catch for anything involving a person and took "I press it into her hand"
+    // as an approach to somebody called "it into her hand".
+    //
+    // Below everything that owns one of these words, and every one of them
+    // carries its own noun: an offering up the line (`institutionalAct`),
+    // lodging goods with a house (`legacyStep`), a word given as an oath, a
+    // dowry put on the table for a match. The fifth is the sect donation, which
+    // sits BELOW this one - so the house nouns are vetoed here rather than
+    // ordered around, and "I give 100 stones to the sect" is still a donation.
+    //
+    // See {@link whatIsBeingHandedOver}: it needs the thing AND either a person
+    // or a plain putting-down, and {@link A_PRICE_IS_NAMED} vetoes every
+    // sentence that names what is wanted back - a gift with a price on it is a
+    // purchase, and "I give him ten stones for the manual" reaches `request`.
+    if (!/\b(?:sect|sects|house|houses|clan|clans|school|schools|order|orders|treasury|coffers|ancestor)\b/.test(text)) {
+        const handed = whatIsBeingHandedOver(input);
+        if (handed) {
+            return {
+                action: 'give',
+                ...(handed.to ? { target: handed.to } : {}),
+                topic: handed.thing,
+                ...(handed.stones !== undefined ? { stones: handed.stones } : {})
+            };
+        }
+    }
+
     const interactIntent = matchIntent(text, INTERACT_INTENT_PATTERNS);
     if (interactIntent) {
         const leverage = LEVERAGE_BEHIND_INTENT[interactIntent];
@@ -7006,6 +7269,14 @@ export function carryWhatOnlyTheSentenceKnows(action: PlannedAction, input: stri
     if (merged.rations === undefined && fromSentence.rations !== undefined) {
         merged.rations = fromSentence.rations;
         if (fromSentence.days === undefined) delete merged.days;
+    }
+
+    // How many stones a gift is. Same reasoning as `rations`: the phase-1
+    // prompt does not ask for it, so no model will ever volunteer it, and a
+    // gift that loses its amount is a different act from the one that was
+    // typed.
+    if (merged.stones === undefined && fromSentence.stones !== undefined) {
+        merged.stones = fromSentence.stones;
     }
 
     return merged;

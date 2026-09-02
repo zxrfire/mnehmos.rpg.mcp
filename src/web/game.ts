@@ -357,8 +357,10 @@ import {
     handleLegacy,
     phraseIn,
     pouchStacks,
+    nameOfStack,
     type LegacyIntent
 } from './leaving-things-for-the-next-life.js';
+import { handOver } from './handing-somebody-a-thing.js';
 import {
     SiteLedger,
     awarenessOfSite,
@@ -3704,6 +3706,11 @@ ${noticedWaiting}`;
 
             case 'sell':
                 return this.sell(run, cultivator, action.target);
+
+            case 'give':
+                return this.giveSomething(
+                    run, cultivator, action.target, action.topic, action.stones
+                );
 
             case 'inventory':
                 return this.inventory(run, cultivator);
@@ -14556,6 +14563,105 @@ ${opened.text}` : receipt,
      * is not cheated and somebody holding a thing they visibly cannot defend
      * is. This method chooses nothing except which lots go on the counter.
      */
+    /**
+     * Handing somebody a thing you already hold, for nothing.
+     *
+     * The decision half is `handing-somebody-a-thing.ts`, which opens no
+     * database handle and returns deltas; this applies them. The same seam
+     * `legacyAct` keeps, and for the same reason.
+     *
+     * Free, and every branch out of here returns through `freeAction`: nothing
+     * is attempted against the recipient, so there is no roll to lose and no
+     * day to spend. What it leaves is a favour they hold about the giver, which
+     * is the only account in this engine that opens without leverage.
+     */
+    private async giveSomething(
+        run: Run,
+        cultivator: Cultivator,
+        to: string | undefined,
+        thing: string | undefined,
+        stones: number | undefined
+    ): Promise<Execution> {
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const scope = this.scopeFor(cultivator);
+        // Nobody named means whoever is at hand, which is what `interact`
+        // already means by an absent target and what "I put ten stones on the
+        // table" actually says.
+        const here = this.present(cultivator);
+        const party = to === undefined
+            ? (here[0] ? { id: here[0].id, name: here[0].name } : null)
+            : (() => {
+                const found = this.partyPutTo(cultivator, to, scope);
+                return found ? { id: found.id, name: found.name } : null;
+            })();
+
+        const outcome = handOver(
+            {
+                giver: cultivator,
+                recipient: party,
+                namedRecipient: to,
+                othersHere: here.map(row => row.name),
+                pouch: pouchStacks(this.db, cultivator.id)
+                    .map(stack => ({ ...stack, name: nameOfStack({ ...stack, quantity: 1 }) })),
+                // Read only so the refusal can be honest about a book they
+                // really are carrying. See `handOver`.
+                heldArts: copiesHeldBy(this.db, cultivator.id)
+                    .map(id => getTechnique(id)?.name ?? id),
+                onDay: this.atHand?.currentDay ?? run.elapsedDays
+            },
+            thing ?? '',
+            stones
+        );
+
+        if (!outcome.refused) {
+            this.db.transaction(() => {
+                if (outcome.stones > 0) {
+                    this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -outcome.stones });
+                    // The recipient is a stored row or a world NPC, and both
+                    // have to be able to receive - the same split
+                    // `whatALiftTook` makes for the same reason.
+                    const stored = this.repos.cultivators.getById(party!.id);
+                    if (stored) {
+                        this.repos.cultivators.applyDeltas(party!.id, { spiritStones: outcome.stones });
+                    } else {
+                        const npc = (this.atHand?.npcs ?? []).find(row => row.id === party!.id);
+                        if (npc) {
+                            npc.spiritStones += outcome.stones;
+                            this.worldDirty = true;
+                        }
+                    }
+                }
+                if (outcome.lot) {
+                    removeFromPouch(this.db, cultivator.id, outcome.lot.itemId, outcome.lot.quantity);
+                    if (this.repos.cultivators.getById(party!.id)) {
+                        addToPouch(
+                            this.db, party!.id, outcome.lot.itemId, outcome.lot.kind, outcome.lot.quantity
+                        );
+                    }
+                }
+            })();
+
+            if (outcome.favour) {
+                const record = createObligation(outcome.favour);
+                writeObligation(this.db as unknown as DatabaseHandle, record);
+                outcome.calls.push({
+                    name: 'social.createObligation',
+                    action: 'give',
+                    summary:
+                        `${record.id}: ${record.holderId} holds a ${record.severity} `
+                        + `${record.kind} about ${record.subjectId} for ${record.cause}. `
+                        + 'Permanent until settled, and inheritable.',
+                    ok: true
+                });
+            }
+        }
+
+        const free = this.freeAction(run, 'give', outcome.facts);
+        free.calls = outcome.calls;
+        free.outcome = outcome.refused ? 'refused' : 'executed';
+        return free;
+    }
+
     private async sell(
         run: Run,
         cultivator: Cultivator,

@@ -360,6 +360,16 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I offload what I picked',
         'I hawk the herbs at the stalls'
     ],
+    // Handing somebody a thing you already hold, which had no verb at all
+    // until the owner's own example for the feature - "a person could steal and
+    // then hand it to someone else before running away" - stopped in the middle.
+    give: [
+        'I hand him the purse',
+        'I give Shen Liefeng my manual',
+        'I press it into her hand',
+        'I pass it to him',
+        'I put ten stones on the table'
+    ],
     inventory: [
         'what am I carrying',
         'check my pouch',
@@ -866,7 +876,12 @@ describe('every verb is priced as well as reachable', () => {
         // Reading where two houses stand, against committing your own to it.
         'posture', 'seal', 'offer',
         // Asking is free; a word given is a word given.
-        'propose', 'decline'
+        'propose', 'decline',
+        // Handing somebody a thing spends no day and nothing can fail - nobody
+        // is being asked for anything - and it moves the thing permanently and
+        // opens a favour nobody can close but them. Free is as wrong for it as
+        // slow is, which is exactly the case this list exists for.
+        'give'
     ];
 
     it('puts every verb on a list, or names it as priced at execution', () => {
@@ -891,7 +906,13 @@ describe('every verb is priced as well as reachable', () => {
     });
 
     it('keeps the priced-at-execution list shrinking and never growing', () => {
-        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(11);
+        // 11 -> 12 for `give`, which is the case this third state exists for
+        // rather than an erosion of it: it spends no day and nothing can fail,
+        // and it moves a thing permanently and opens an account nobody but the
+        // recipient can close. Free is as wrong for it as slow is. Raising this
+        // number is how a verb joins the list, and it is meant to be an edit
+        // somebody has to make on purpose.
+        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(12);
         expect(new Set(PRICED_AT_EXECUTION).size).toBe(PRICED_AT_EXECUTION.length);
     });
 

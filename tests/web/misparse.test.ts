@@ -250,7 +250,19 @@ describe('the fallback is inert', () => {
              * `child` is deliberately absent from this list and present in the
              * timed one, because the whole of what it costs is years.
              */
-            'propose', 'decline'
+            'propose', 'decline',
+            /**
+             * `give` is here on the same terms and for the same reason as
+             * `propose` and `decline`: it spends no day and nothing can fail,
+             * because nobody is being asked for anything. What protects a
+             * misparse landing on it is that it cannot reach anything without
+             * BOTH halves resolving - a person standing here, and a thing this
+             * cultivator is actually carrying - and a sentence the parser did
+             * not understand supplies neither. `whatIsBeingHandedOver` returns
+             * null unless the sentence names the thing, which is what keeps a
+             * shrug from ever emptying somebody's purse.
+             */
+            'give'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -447,6 +459,7 @@ describe('every verb is reachable from plain English', () => {
         descend: 'I go back down through the Lid',
         // The counter, which is the only way anything gathered becomes stones.
         sell: 'I sell the Qi Gathering Grass',
+        give: 'I hand him the purse',
         inventory: 'what am I carrying',
         list_techniques: 'what arts can I learn',
         learn_technique: 'I learn the Azure Ripple Art',
