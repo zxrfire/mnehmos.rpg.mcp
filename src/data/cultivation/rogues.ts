@@ -17,11 +17,27 @@
  *                         ground, which is the part that matters
  *   no protection         nobody stands over your crossing, and nobody stands
  *                         at a toll gate for you either
- *   no library            no teacher above the basics, at any price you can pay
+ *   no library            no SHELF, and no queue to stand in for one. A house
+ *                         teaches its own on a schedule; outside it there is no
+ *                         schedule and nothing you can join
  *   no arbitration        inside the pyramid a dispute goes upward and gets
  *                         ruled on badly and late; outside it, a disagreement
  *                         is settled immediately by whoever is stronger
  *   nobody to complain to which is the whole of it
+ *
+ * WHAT IS SCARCE IS THE TEACHER, NOT THE PERMISSION
+ * ---------------------------------------------------
+ * Read the list above as a description of the market and not as a law. There
+ * ARE unaffiliated cultivators high on the ladder - `ROGUE_STANDING` exists to
+ * say what a province calls one - and nothing about being unaffiliated stops
+ * such a person teaching whoever they like. They answer to nobody, which is
+ * the point of them.
+ *
+ * So the difficulty is finding one and being worth their hours, not being
+ * permitted. AGENTS.md: a rule modelled as an impossibility throws away the
+ * rare event that makes the ordinary case worth having. The ordinary case is
+ * that there is nothing to join and nobody owes you an afternoon. The rare
+ * one is a person who could, and might.
  *
  * And: no quotas, no obligations, no elder with a use for you, and nobody who
  * can call you back. Some chose it. Most did not, and `WHY_UNAFFILIATED`
