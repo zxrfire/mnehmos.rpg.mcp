@@ -12233,7 +12233,32 @@ ${opened.text}` : receipt,
         );
         this.pendingArrivals = consumeArrivals(this.pendingArrivals, happened);
 
-        const facts = factsForTimeSkip(before, applied.cultivator, skip, ambient, label);
+        // ── WHAT THE PLAYER ASKED FOR, NOT WHAT WAS LEFT OF IT ───────────
+        //
+        // The same defect `runSeclusion` was fixed for, on the path that serves
+        // every other span-spending verb: wait, work, a sect duty, a ride, a
+        // fold, a passage and a proposal all arrive here.
+        //
+        // `days` is the player's own figure. `lived` is what the encounter
+        // layer left of it, and `simulateTimeSkip` records THAT as its
+        // `requestedDays` - so with nothing passed, `factsForTimeSkip` falls
+        // back to the truncated span and tells the player their own intention,
+        // wrongly. Played, on a fresh nobody:
+        //
+        //   > I wait a year
+        //   "Waiting of 4 months was intended." ... and fifty days were spent.
+        //
+        // Worse than a cosmetic misreport: because `asked` equalled
+        // `requestedDays`, the paragraph that exists to say "it was never going
+        // to be a year, something was already coming" could not fire at all.
+        // The player is told a shorter span than they asked for AND is not told
+        // why it was shortened.
+        //
+        // Travel and foraging cannot drift this way - both hand
+        // `simulateTimeSkip` the same figure they were asked for, with no
+        // encounter cut in between - so they are left alone rather than given a
+        // parameter that could only ever repeat itself.
+        const facts = factsForTimeSkip(before, applied.cultivator, skip, ambient, label, days);
         facts.lines.push(...enc2.lines);
         facts.lines.push(...world.lines);
         facts.structure.push(...enc2.structure);
