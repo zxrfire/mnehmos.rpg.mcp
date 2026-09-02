@@ -222,6 +222,7 @@ export * from './hierarchy.js';
 export * from './immortal-items.js';
 export * from './wanderers.js';
 export * from './false-immortals.js';
+export * from './the-three-floors-a-house-admits-at.js';
 export * from './members.js';
 export * from './crossings.js';
 export * from './history.js';

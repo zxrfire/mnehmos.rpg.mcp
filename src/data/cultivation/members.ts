@@ -105,9 +105,9 @@
 import { z } from 'zod';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { requireSect, getSect } from './sects.js';
-import { FACTION_CHARACTER } from './faction-character.js';
 import { getRegionForFaction } from './regions.js';
 import { HOLLOW_COURT_ROSTER } from './hollow-court-roster.js';
+import { groundReachOf, servantBarOf } from './the-three-floors-a-house-admits-at.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
@@ -257,27 +257,31 @@ const HEADROOM = 4;
 const LEAD = 0.22;
 /** How far a rank's floor lags behind it, as a fraction. */
 const LAG = 0.35;
-/** Slack above what a faction can reliably produce. One realm, roughly. */
-const ABOVE_PRODUCTION = 8;
-
 /**
- * The first rank the admission bar governs.
+ * The first rank the DISCIPLE bar governs.
  *
- * A house's rank 0 is its menial and probationary tier - Sword Servant, Herb
- * Boy, Coal Hand, Applicant, Guest of the Grove - and those people are NOT
- * admitted disciples. They are servants, and guests, and the whole point of
- * such a tier is that somebody can be there without having cleared the bar.
- * So the bar applies from the disciple track upward and not to rank 0, which
- * is why a Sword Servant may stand at ordinal 5 in a house that admits at 3
- * without anything being wrong.
+ * A house's rank 0 is its menial tier - Sword Servant, Herb Boy, Coal Hand,
+ * Applicant, Guest of the Grove - and those people are not admitted disciples.
+ * They are servants, and the whole point of such a tier is that somebody can
+ * be there without being on the disciple track. So `admissionOrdinal` applies
+ * from rank 1 upward.
  *
- * Thirty-three of thirty-four houses are built this way. The exception is the
- * Hollow Court, whose rank 0 is Outer Disciple because it has no menial tier
- * at all - it admits nobody below a Void Refinement floor, so it has nobody
- * who would be one. Exempting its rank 0 costs nothing, because every member
- * it has stands far above its bar regardless.
+ * It does NOT follow that rank 0 has no bar. It has its own, and at a strong
+ * house it is high, because serving an apex buys its ground and its qi and
+ * the queue for that is full. `servantBarOf` is that floor and
+ * `the-three-floors-a-house-admits-at.ts` derives it. Flooring rank 0 at
+ * ordinal 0, as this constant briefly did, opened the door of the strongest
+ * house in the region to an uncultivated nobody - and that floor is read as a
+ * live bar by `sect-leadership.ts` and `promotion-inside-a-house.ts`, so it
+ * was the door standing open rather than a catalog nicety.
+ *
+ * Thirty-two of thirty-four houses have a menial tier. The two that do not are
+ * the Hollow Court, whose rank 0 is Outer Disciple, and the Kiln Wardens,
+ * whose rank 0 is Warden: both admit at or above the rung where sects stop
+ * recruiting you and start negotiating with you, so neither has anybody who
+ * would be a servant. That is derived rather than listed - see `hasMenialTier`.
  */
-const FIRST_RANK_THE_BAR_GOVERNS = 1;
+const FIRST_RANK_THE_DISCIPLE_BAR_GOVERNS = 1;
 
 export interface RealmBand {
     minOrdinal: number;
@@ -298,11 +302,7 @@ export function rankRealmBand(factionId: string, rankIndex: number): RealmBand |
     }
 
     const admission = sect.admissionOrdinal;
-    const production = FACTION_CHARACTER[factionId]?.production.reliableOrdinal ?? admission;
-    const ceiling = Math.min(
-        sect.powerOrdinal,
-        Math.max(admission, production) + ABOVE_PRODUCTION
-    );
+    const ceiling = groundReachOf(factionId)!;
     const span = Math.max(0, ceiling - admission);
 
     const top = Math.max(1, sect.ranks.length - 1);
@@ -315,9 +315,12 @@ export function rankRealmBand(factionId: string, rankIndex: number): RealmBand |
             Math.round(admission + span * Math.min(1, t + LEAD))
         )
     );
-    // Servants and guests are below the bar by definition, so their floor is
-    // the bottom of the ladder rather than the house's admission ordinal.
-    const floor = rankIndex < FIRST_RANK_THE_BAR_GOVERNS ? 0 : admission;
+    // Rank 0 is not on the disciple track, so the disciple bar does not govern
+    // it. Its own bar does, and it is never zero.
+    const floor =
+        rankIndex < FIRST_RANK_THE_DISCIPLE_BAR_GOVERNS
+            ? servantBarOf(factionId) ?? admission
+            : admission;
     const minOrdinal = Math.max(
         floor,
         Math.round(admission + span * Math.max(0, t - LAG))
