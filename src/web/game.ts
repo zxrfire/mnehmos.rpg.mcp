@@ -16512,8 +16512,38 @@ ${fit.line}`;
             + (offer.terms.cohort > 0 ? `, with ${offer.terms.cohort} of the house alongside` : '')
             + '.';
 
+        // ── A SENTENCE THAT POINTS AT THE ONE LINE IS NOT A REQUEST TO READ ──
+        //
+        // `AGENTS.md` cites this by name under "if a near-synonym works, the
+        // phrasing that fails is a bug". Played: `I take a duty`, `I take the
+        // duty` and `I accept the commission` all re-listed the wall, while
+        // `I take What a Poor District Has Instead of Monsters` ran - so the
+        // whole subsystem was reachable only by retyping a seven-word title
+        // the player had just been shown.
+        //
+        // The discriminator was already in the plan and was being thrown away
+        // one line below. `what duties are there` carries NO target;
+        // `I take a duty` carries the target "duty". Both then hit
+        // `BOARD_IN_GENERAL`, which matches the bare noun either way, and the
+        // early return took the reading branch before `THE_ONE_ON_THE_BOARD` -
+        // written for exactly these words, twenty lines down - could be
+        // reached at all.
+        //
+        // Narrow, on the rule about fixing the gap that was demonstrated: a
+        // target has to have been typed, it has to be one of the words that
+        // POINT at a line rather than at the wall - "board", "work" and
+        // "whatever is going" are not in that set and go on reading - and
+        // there has to be exactly one thing on the wall for "the duty" to be
+        // unambiguous. With two on it, reading the wall IS the route, and that
+        // is what a refusal here owes.
+        const pointedAtTheOnlyOne =
+            wanted.length > 0
+            && board.offers.length === 1
+            && GameService.THE_ONE_ON_THE_BOARD.test(wanted);
+
         // ── the wall, read ──
-        if (wanted.length < 3 || GameService.BOARD_IN_GENERAL.test(wanted)) {
+        if (!pointedAtTheOnlyOne
+            && (wanted.length < 3 || GameService.BOARD_IN_GENERAL.test(wanted))) {
             const lines: string[] = [];
             if (board.offers.length === 0) {
                 lines.push(board.membership

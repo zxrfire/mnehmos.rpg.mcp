@@ -179,6 +179,59 @@ describe('the listings say what you are holding', () => {
     }, 60_000);
 });
 
+describe('a duty runs under the words a person uses for it', () => {
+    /**
+     * `AGENTS.md` cites this by name under "if a near-synonym works, the
+     * phrasing that fails is a bug". Played: `I take a duty`, `I take the duty`
+     * and `I accept the commission` all re-listed the wall, and only
+     * `I take What a Poor District Has Instead of Monsters` ran - so the whole
+     * subsystem was reachable by retyping a seven-word title.
+     *
+     * The discriminator was in the plan the whole time and was thrown away one
+     * line above the code written for it: a reading carries no target, a taking
+     * carries "duty" or "the commission", and both hit `BOARD_IN_GENERAL`.
+     */
+    const TAKINGS = ['I take a duty', 'I take the duty', 'I accept the commission'];
+
+    for (const said of TAKINGS) {
+        it(`"${said}" runs the only line on the wall`, async () => {
+            const h = await makeGameInWorld({ worldSeed: WORLD, seed: `duty-${said}` });
+            await h.game.newRun('Shen Wu');
+
+            const board = await h.game.act('what duties are there');
+            const offered = /: (\d+) days/.exec(board.narration);
+            expect(offered, 'the board has exactly one line at ordinal 0').toBeTruthy();
+            const before = h.game.state();
+
+            const { narration } = await h.game.act(said);
+
+            const after = h.game.state();
+            expect(after.run.elapsedDays, `${said} spent the days`)
+                .toBeGreaterThan(before.run.elapsedDays);
+            // And the pay, which is the half `completeDuty` wrote and nothing
+            // said. It reaches the player through `required`, so it survives a
+            // narrator that would rather write about the district.
+            expect(after.cultivator.spiritStones)
+                .toBeGreaterThan(before.cultivator.spiritStones);
+            expect(narration, 'the wage is said on the turn that paid it')
+                .toMatch(/spirit stones/i);
+        }, 60_000);
+    }
+
+    it('still reads the wall when nothing was pointed at', async () => {
+        const h = await makeGameInWorld({ worldSeed: WORLD, seed: 'duty-read' });
+        await h.game.newRun('Shen Wu');
+
+        const before = h.game.state();
+        await h.game.act('what duties are there');
+        const after = h.game.state();
+
+        expect(after.run.elapsedDays, 'reading a wall spends nothing')
+            .toBe(before.run.elapsedDays);
+        expect(after.cultivator.spiritStones).toBe(before.cultivator.spiritStones);
+    }, 60_000);
+});
+
 describe('a word the game itself uses is a word the game accepts', () => {
     /**
      * PLAYED: `what can I gather here` came back "Shen Wu has never heard of
