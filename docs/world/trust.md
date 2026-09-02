@@ -408,12 +408,10 @@ scales to whoever they have hours for** - which is why the manual is still the t
 stealing, and why it is a tracked object with provenance in [`items.md`](items.md) while the
 knowing of it is not.
 
-**And at the Court the sharing is not a quirk of the place - it is the reason the place exists.**
-Everybody there is past the Void Refinement floor, everybody is climbing the same last stretch,
-and everybody arrived out of a different house. **Peers telling each other what they know is
-what gets people to the top faster**, which is the whole point of gathering them. A holy land is
-not somewhere with good ground; it is somewhere the person beside you knows something you do not
-and will say it.
+**And at the Court the sharing is the reason the place exists**, which
+[`past-the-ceiling.md`](past-the-ceiling.md) sets out in full: everybody shares freely, it is
+*"why the Court can go where it goes"*, and **the scarce thing there is not knowledge but
+people's hours.** Read it there rather than here.
 
 **At the Court this resolves an apparent contradiction, and the resolution is the useful part.**
 The Court **as an institution** teaches exactly one art - the Seats' own, passed at 41 as the
