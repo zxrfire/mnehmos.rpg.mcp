@@ -883,6 +883,55 @@ that has neither.
 
 ---
 
+## A seclusion the engine stopped is a question, not a bulletin
+
+`choosing-what-to-do-when-a-seclusion-is-broken.ts` holds the contract; this is the part of
+it a reader of this directory needs.
+
+When a long sitting is interrupted by `major_encounter` - and by that reason only -
+`runSeclusion` does **not** resolve what happens next. It raises a `SeclusionCrossroads` on
+the service, puts the question into `facts.required`, and stops. The two answers are the two
+things that were always physically there:
+
+| | what it costs | how it is carried out |
+|---|---|---|
+| going | the unspent remainder of the stretch, forfeited | nothing runs. It was never simulated |
+| staying | the remainder is spent | one call back into `runSeclusion` for exactly those days |
+
+**The correctness argument for staying is the absolute-day rule and nothing else.** Every
+roll in `time-skip.ts` and in `src/engine/encounters/` is keyed to an absolute day, so a
+stretch resumed at day D gives the surviving days precisely what they were always going to
+give, and a forty-year sitting split into 5.3 and 34.7 is the same forty years. There is no
+second simulation anywhere in the feature and no modifier of any kind. If that rule is ever
+broken, this is one of the things it breaks.
+
+Four rules that are easy to violate by accident:
+
+- **Not a modal jail.** Any action that spends a day is going, and it says what that cost.
+  A refusal, an unparsed sentence and any free read leave the question standing, because
+  `freeAction` exists so that looking around can never kill you and forfeiting a decade for
+  `what am I carrying` is a harder version of exactly that. The test is whether the run's
+  clock moved.
+- **Either answer, always.** Sitting back down with somebody at the cave mouth is frequently
+  the stupider of the two and is never refused, and nothing about choosing it makes the
+  world gentler.
+- **The clock is neither handed back nor charged twice.** The first half spent
+  `simulatedDays` and the world advanced by exactly that; the resumption spends the
+  remainder and no more. Food is the one thing that WOULD have been charged twice - it is
+  bought per stretch, at the cave mouth, for the whole span - so the crossroads carries
+  `endState.rationsRemaining` forward into the resumed stretch's provisioning.
+- **The two sentences are different and must not be flattened.** One case offers a ROAD out;
+  the other offers only the POSTURE you are found in. `time-skip.ts` writes both and the
+  fork keeps them apart all the way to the panel.
+
+And one absence, written down rather than left to be mistaken for a decision: **nothing in
+the engine prices being found seated differently from being found standing.** The posture
+branch is real - it costs the remainder either way, and only one of the two spends it - but
+if posture is ever meant to change what an arrival DOES, that belongs in the encounter layer
+and this prose follows it rather than inventing it.
+
+---
+
 ## Prompts
 
 `prompt.ts` is the one module to tune when the prose is wrong. It holds the phase-1

@@ -2034,8 +2034,22 @@ export const TimeSkipResultSchema = z.object({
         /** Consecutive turns at the lethal untreated count as the skip ended. */
         bleedingTurns: z.number().int().min(0).default(0),
         /** Years at the current realm as the skip ended. */
-        yearsAtCurrentRealm: z.number().min(0).default(0)
-    }).default({ starvationTurns: 0, bleedingTurns: 0, yearsAtCurrentRealm: 0 }),
+        yearsAtCurrentRealm: z.number().min(0).default(0),
+        /**
+         * Rations still in the pack as the skip ended.
+         *
+         * Reported so a caller that stops a stretch short can tell what the
+         * span it never lived was still carrying. Provisions are bought per
+         * stretch, at the cave mouth, for the whole span - so a sitting that
+         * is interrupted and then RESUMED would otherwise be charged a second
+         * purse of food for days that were already paid for. Nothing in the
+         * engine reads this back; it is an end-of-skip absolute like the three
+         * above it, and the caller decides whether anything is owed.
+         */
+        rationsRemaining: z.number().int().min(0).default(0)
+    }).default({
+        starvationTurns: 0, bleedingTurns: 0, yearsAtCurrentRealm: 0, rationsRemaining: 0
+    }),
     /**
      * Set if the skip crossed 12 -> 13. The caller persists it onto the
      * cultivator; it is not derivable from the ordinal afterwards.

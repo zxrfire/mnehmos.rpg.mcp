@@ -7,7 +7,7 @@
    backend; it is NOT a second source of truth for game rules.
 
    Query flags (all optional, all alongside ?mock=1):
-     &scenario=fresh|play|peril|ready|tribulation|dead|ascended
+     &scenario=fresh|play|peril|ready|tribulation|dead|ascended|fork|fork_no_road
      &outcome=success|failure_stable|failure_injured|failure_deviation|death
      &admin=0            turn admin mode off
      &fail=act,cultivate,breakthrough,state,ledger,roster,ladder,roots,health
@@ -230,7 +230,15 @@ const W = {
   log: [],
   ledger: [],
   roster: [],
-  tolls: []
+  tolls: [],
+  /**
+   * A seclusion the engine stopped and has not resolved. Null on every screen
+   * but the two fork scenarios; see `openTheCrossroads` in app.js. The mock has
+   * to state it because `applyState` only overwrites the field when the payload
+   * carries the key, and a panel nobody can reach without a live encounter roll
+   * is a panel nobody looks at.
+   */
+  crossroads: null
 };
 
 function newInjury(source, turn) {
@@ -358,7 +366,8 @@ const statePayload = () => ({
   ambient: W.ambient,
   derived: derived(),
   tolls: W.tolls,
-  log: W.log
+  log: W.log,
+  crossroads: W.crossroads
 });
 
 function say(role, text) {
@@ -751,6 +760,42 @@ function seedScenario(scenario) {
     W.ambient = 'thin';
     say('engine', 'Satiety 0. Starvation turn 3 of 5.\n3 untreated injuries. 46 years at Qi Condensation Layer 7 (limit 50).');
     say('narrator', 'You have not eaten in nine days and you are not sure the cave door still opens from the inside.');
+  }
+
+  // The two halves of a broken seclusion, which are NOT the same screen: one
+  // offers a road out and the other offers only the posture you are found in.
+  // Both wordings are the engine's own, copied from a played run.
+  if (scenario === 'fork' || scenario === 'fork_no_road') {
+    const road = scenario === 'fork';
+    const asked = 8955, spent = 1620, remaining = asked - spent;
+    const them = 'somebody standing at Foundation Establishment Early';
+    const yr = (d) => `${(d / 365).toFixed(1)} years`;
+    W.run.turn = 48;
+    W.run.elapsedDays = 5480 + spent;
+    W.crossroads = {
+      canWithdraw: road,
+      daysAsked: asked,
+      daysSpent: spent,
+      daysRemaining: remaining,
+      them,
+      question: road
+        ? `${yr(spent)} of the ${yr(asked)} are spent and ${yr(remaining)} are still sitting `
+          + 'there. The road out is open for as long as you are not sitting down. Get up and it '
+          + `costs you the ${yr(remaining)}, and ${them} never knows this place was here. Sit `
+          + `back down and the ${yr(remaining)} are yours, and you are found here, sitting, by `
+          + `${them}. Say which.`
+        : `${yr(spent)} of the ${yr(asked)} are spent and ${yr(remaining)} are still sitting `
+          + `there. There is no road out that does not cross ${them}, so leaving buys you `
+          + `nothing but your feet: get up and the ${yr(remaining)} are gone and you meet them `
+          + `standing. Sit back down and the ${yr(remaining)} are yours, and they come on you `
+          + 'in the middle of it, which is the only way those years get spent at all. Say which.',
+      stayingSays: 'I sit back down',
+      goingSays: 'I get up and go'
+    };
+    say('engine', road
+      ? 'Seclusion broken: somebody is close enough to matter and has not seen this place yet.'
+      : 'Seclusion broken: somebody has found this place and there is no road out that does not cross them.');
+    say('narrator', W.crossroads.question);
   }
 
   if (scenario === 'ready') {

@@ -643,6 +643,18 @@ const S = {
   derived: null,
   tolls: [],
   log: [],
+  /**
+   * A seclusion the engine stopped and has not resolved, or null.
+   *
+   * See `choosing-what-to-do-when-a-seclusion-is-broken.ts`. Two controls are
+   * drawn off this and both send one of its own sentences down the command
+   * line, exactly as `Go and find a manual` does - the player sees the words go
+   * in, and if a sentence ever stops reaching the engine it stops for everybody
+   * at once instead of only for the button.
+   */
+  crossroads: null,
+  /** The last crossroads already put in front of the player, so it is asked once. */
+  crossroadsAsked: null,
   /** turn -> ToolCallRecord[], from the most recent /api/act on that turn. */
   inspectors: new Map(),
   busy: false,
@@ -660,6 +672,7 @@ function applyState(payload) {
   if ('derived' in payload) S.derived = payload.derived || null;
   if ('tolls' in payload && Array.isArray(payload.tolls)) S.tolls = payload.tolls;
   if ('log' in payload && Array.isArray(payload.log)) S.log = payload.log;
+  if ('crossroads' in payload) S.crossroads = payload.crossroads || null;
 }
 
 /* ─────────────────────────────── screens ─────────────────────────────── */
@@ -676,6 +689,11 @@ function routeFromState() {
     showScreen('play');
     renderPlay();
     focusCommand();
+    // A question the engine left open survives a reload, so the panel has to be
+    // reachable from a bare state read and not only from the turn that raised
+    // it. `maybeOpenTheCrossroads` is idempotent per question and never opens
+    // over another overlay, so calling it on every route is safe.
+    maybeOpenTheCrossroads();
   } else {
     showScreen('death');
     renderDeath();
@@ -1893,6 +1911,11 @@ async function submitAction(ev) {
   // height. A scroll issued inside `renderLog` is computed against a layout
   // that is about to change underneath it and lands short.
   scrollToBottom();
+
+  // And if the engine stopped a sitting and left the answer to the player, put
+  // the question up. After the log, so the narration of the years is already on
+  // screen behind it and the panel is the last thing rather than the first.
+  maybeOpenTheCrossroads();
 }
 
 async function doCultivate(days, { anyway = false } = {}) {
@@ -2235,7 +2258,11 @@ function showTimeSkip(skip, narration, merged) {
     tone: skip.died ? 'danger' : '',
     wide: true,
     foot: html`<button class="btn btn--primary" type="button" data-overlay-close data-autofocus>Continue</button>`,
-    onClose: () => routeFromState()
+    // One overlay at a time, so a fork the seclusion raised FOLLOWS the account
+    // of the years rather than fighting it for the panel. `Continue` is the
+    // player reading the digest and then being asked; dismissing the fork lands
+    // back on the command line with the question still standing.
+    onClose: () => { routeFromState(); maybeOpenTheCrossroads(); }
   });
 }
 
@@ -2709,6 +2736,94 @@ function openSitAnywayConfirm(days, reason) {
     closeOverlay();
     doCultivate(days, { anyway: true });
   });
+}
+
+/**
+ * A seclusion the engine stopped and did NOT resolve.
+ *
+ * The same shape as `openSitAnywayConfirm` above, deliberately: a panel with
+ * two real controls, both of which put the player's own sentence into the
+ * command box and submit it. That was the fix that made `Go and find a manual`
+ * work - a button which only closed the panel left the player exactly where
+ * they had been, on the same turn, with no new text - and this panel would fail
+ * the same way for the same reason, except that here it would silently forfeit
+ * a decade.
+ *
+ * NEITHER CONTROL IS A DEFAULT AND NEITHER IS STYLED AS THE SAFE ONE. Both are
+ * plain buttons, in the order the sentence names them, and nothing is
+ * autofocused - the panel takes focus itself, so Escape and Tab both work and
+ * Enter does not commit a decade on its own. `openSitAnywayConfirm` above is
+ * right to mark `Sit anyway` as the dangerous branch, because there the engine
+ * has already computed that the stretch returns exactly zero. Here it has
+ * computed nothing of the kind: going throws away the rest of the sitting,
+ * staying is frequently the stupider of the two and is never refused, and the
+ * engine does not have an opinion about which. A red button would be one.
+ *
+ * Dismissable, because the fork is not a jail: closing it leaves the question
+ * standing, the prompt on the situation row, and the whole command line
+ * available. A read costs no day and does not answer it.
+ */
+function openTheCrossroads(fork) {
+  if (!fork) return;
+  S.crossroadsAsked = fork.question;
+
+  const remaining = fmtDays(fork.daysRemaining);
+  const body = html`
+    <div class="confirm">
+      <p>${fork.question}</p>
+      <div class="confirm__odds">
+        <span>Spent: ${fmtDays(fork.daysSpent)} of ${fmtDays(fork.daysAsked)}</span>
+        <span>Unspent and still yours to take: ${remaining}</span>
+        <span>${fork.canWithdraw
+          ? 'There is a road out that does not cross them.'
+          : 'There is no road out that does not cross them.'}</span>
+      </div>
+      <p class="muted">Nothing about the years changes for having been split: the days pick up
+         where they stopped and give exactly what they were always going to give. Anything else
+         you do that spends a day is going, and costs the same ${remaining}. Looking around
+         costs nothing and leaves the question open.</p>
+    </div>`;
+
+  openOverlay({
+    title: fork.canWithdraw ? 'The road out, or the years' : 'Sitting or standing',
+    body,
+    tone: 'tribulation',
+    foot: html`
+      <button class="btn" type="button" id="fork-go">${fork.canWithdraw ? 'Get up and go' : 'Get up'}</button>
+      <button class="btn" type="button" id="fork-stay">Sit back down</button>`,
+    onClose: () => focusCommand()
+  });
+
+  const answer = (sentence) => {
+    closeOverlay();
+    const input = $('#command-input');
+    if (!input || S.busy) return;
+    input.value = sentence;
+    submitAction();
+  };
+  $('#fork-go').addEventListener('click', () => answer(fork.goingSays));
+  $('#fork-stay').addEventListener('click', () => answer(fork.stayingSays));
+}
+
+/**
+ * Put the question up, once, when the engine has one open.
+ *
+ * Keyed on the question text rather than on a boolean, so a SECOND interruption
+ * inside a resumed sitting asks again - it is a different fork with a different
+ * remainder - while a re-render of the same one does not reopen a panel the
+ * player has already dismissed.
+ */
+function maybeOpenTheCrossroads() {
+  const fork = S.crossroads;
+  if (!fork || !fork.question) { S.crossroadsAsked = null; return; }
+  // Never over a run that has ended. The server clears the fork when the
+  // cultivator dies, so this is a second lock on the same door - a decision
+  // panel over the death screen would be the worst thing this feature could
+  // do, and it is one stale payload away without this line.
+  if (!S.run || S.run.status !== 'active') return;
+  if (fork.question === S.crossroadsAsked) return;
+  if ($('#overlay') && $('#overlay').hidden === false) return;
+  openTheCrossroads(fork);
 }
 
 /* ─────────────────────────────── ladder ─────────────────────────────── */

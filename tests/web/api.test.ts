@@ -120,13 +120,21 @@ describe('GET /api/state', () => {
         expect(res.body.error).not.toMatch(/at .*\.ts:/);
     });
 
-    it('returns run, cultivator, ambient, derived and log', async () => {
+    it('returns run, cultivator, ambient, derived, log and any open crossroads', async () => {
         const { http } = await boot();
         await http.post('/api/run/new', { name: 'Shen Yi' });
 
         const res = await http.get('/api/state');
         expect(res.status).toBe(200);
-        expect(Object.keys(res.body).sort()).toEqual(['ambient', 'cultivator', 'derived', 'log', 'run', 'tolls']);
+        // `crossroads` is the fork a broken seclusion leaves open, and it is
+        // null on every ordinary read including this one. The KEY is always
+        // present all the same: `applyState` in the client only overwrites the
+        // field when the payload carries it, so a payload that omits it on the
+        // turn a fork is answered would leave a stale question on the screen.
+        expect(Object.keys(res.body).sort()).toEqual(
+            ['ambient', 'crossroads', 'cultivator', 'derived', 'log', 'run', 'tolls']
+        );
+        expect(res.body.crossroads).toBeNull();
 
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(res.body.ambient);
 
