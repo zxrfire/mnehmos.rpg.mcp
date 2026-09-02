@@ -787,6 +787,66 @@ from then on.
 `PlanSource` and `Narration.source` are surfaced to the client so the seam is visible: the
 player can always see whether the model or the fallback produced what they are reading.
 
+### Both paths must hand the engine the same action
+
+The contract that makes the fallback a MODE rather than a degradation, and it was not
+being kept. `leverage` and `rations` are set by the parser and are not in the phase-1
+schema the model is shown, so `validatePlan` dropped both. Measured over twenty
+sentences, four reached the engine as a different object depending on which path ran:
+
+| Said | Parser | Model, before |
+|---|---|---|
+| `I threaten the steward into handing over the ledger` | `leverage: 'force'` | *dropped* |
+| `I buy 200 rations` | `rations: 200` | `days: 30` |
+
+The first matters because `resolveAttempt` reads `leverage` and never `intent` - so with
+a provider configured, a threat was priced as a bare ask. The second is worse than a
+dropped field: `provision` is a timed action, so the stripped count was replaced by a
+*defaulted* month, silently, and only when a narrator was running.
+
+`carryWhatOnlyTheSentenceKnows` closes it, and the direction of the fix is the point:
+**the model keeps choosing the verb, and the sentence keeps owning the facts about
+itself.** Teaching the model to emit `leverage` would have been the wrong repair - it is
+decided by the parser precisely so that nothing downstream turns a word into a mechanic.
+The carry only ever fills fields the model left empty, and only when both paths already
+agree on the verb.
+
+`tests/web/both-modes-hand-the-engine-the-same-action.test.ts` is the guard. **Any new
+field the parser sets that the phase-1 schema does not carry belongs in that function and
+in that test**, or the two modes drift apart again one field at a time.
+
+### One typo must not cost a turn
+
+`parseIntent` runs the table twice: once on the sentence as typed, and - **only if that
+reached `unclear`** - once more on a sentence whose misspelt words have been put back by
+`repairing-a-misspelt-word-before-the-verb-table-sees-it.ts`.
+
+The gate is the whole safety argument. A sentence that already found a verb keeps it, so
+nothing in the spelling layer can move a working parse or shift the guards in
+`misparse.test.ts` and `a-verb-must-not-swallow-the-verb-next-door.test.ts`. Measured
+back-to-back on the corpus with one typo per sentence: plain-tier accuracy 41.1% to
+63.1%, refusals 69 to 37, wrong-verb 14 to 15 - the accuracy is not being bought by
+guessing.
+
+Two rules for anybody touching it. **The vocabulary is harvested from the patterns in
+`actions.ts`, never written down** - a hand-kept word list would be a second source of
+truth and would go stale the first time somebody added a verb. And **the respelling
+chooses the verb and nothing else**: `target` and `topic` go back into the player's own
+spelling before they reach the engine, because the repair cannot tell a verb word from a
+name, and `stele` is one edit from `stole`.
+
+### The mode is named to the player
+
+`which-mode-this-session-is-playing-in.ts`, read off the narrator that was actually built
+rather than off configuration. It reaches the player in the opening log and rides on
+`ProviderStatus` as `mode` / `modeLabel` / `modeLine`.
+
+Said in **both** directions on purpose. `configured: false` was already there and already
+correct, and a client rendered it as `(not configured)` - a true sentence about an
+environment variable that reads like a broken install. Nothing is broken: the whole game
+is playable on that path. A line that only appears when something is missing is an
+apology rather than a mode.
+
 ---
 
 ## `facts.ts` is the only bridge

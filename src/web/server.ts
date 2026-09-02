@@ -34,6 +34,7 @@ import { ladderView, spiritRootsView } from './view.js';
 import { buildRegister, renderRegisterHtml } from './register.js';
 import { placesView } from './places.js';
 import { clearProse, defaultProsePath, ensureProse, type GenerateOptions } from './register-prose.js';
+import { announceMode, type PlayMode } from './which-mode-this-session-is-playing-in.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // CONFIGURATION
@@ -48,6 +49,19 @@ export interface ProviderStatus {
     model: string;
     /** True when the provider was actually constructible - key present, or local. */
     configured: boolean;
+    /**
+     * Which of the two ways of playing this is, as a mode rather than as a
+     * missing environment variable.
+     *
+     * `configured` was already here and already correct, and the client
+     * rendered it as "(not configured)" - true, and the wrong thing to tell
+     * somebody, because it names an absence rather than the mode they are in.
+     * Both are carried: the boolean for anything that needs the fact, and the
+     * announcement for anything that shows it to a person.
+     */
+    mode: PlayMode;
+    modeLabel: string;
+    modeLine: string;
 }
 
 /**
@@ -76,19 +90,37 @@ export function buildNarrator(
     const provider = factory.tryGet(config.provider);
 
     if (!provider) {
+        const narrator = new DeterministicNarrator(describeProviderConfiguration(config.provider));
         return {
-            narrator: new DeterministicNarrator(describeProviderConfiguration(config.provider)),
-            status: { name: config.provider, model: config.model, configured: false }
+            narrator,
+            status: {
+                name: config.provider,
+                model: config.model,
+                configured: false,
+                ...modeFields(narrator)
+            }
         };
     }
 
+    const narrator = new ProviderNarrator(provider, {
+        model: config.model,
+        timeoutMs: Number(process.env.NARRATOR_TIMEOUT_MS) || 30_000
+    });
     return {
-        narrator: new ProviderNarrator(provider, {
+        narrator,
+        status: {
+            name: config.provider,
             model: config.model,
-            timeoutMs: Number(process.env.NARRATOR_TIMEOUT_MS) || 30_000
-        }),
-        status: { name: config.provider, model: config.model, configured: true }
+            configured: true,
+            ...modeFields(narrator)
+        }
     };
+}
+
+/** The mode, read off the narrator that was actually built rather than off config. */
+function modeFields(narrator: Narrator): Pick<ProviderStatus, 'mode' | 'modeLabel' | 'modeLine'> {
+    const announced = announceMode(narrator);
+    return { mode: announced.mode, modeLabel: announced.label, modeLine: announced.line };
 }
 
 /** Package version, for /api/health. Best effort - a missing file is not fatal. */
@@ -459,7 +491,8 @@ export async function startServer(): Promise<ReturnType<typeof createServer>> {
     const server = createServer(app);
     server.listen(port, host, () => {
         console.error(`[web] cultivation engine listening on http://${host}:${port}`);
-        console.error(`[web] narrator: ${narrator.kind}` + (status.configured ? ` (${status.name} / ${status.model})` : ' - no provider configured, the engine narrates itself'));
+        console.error(`[web] ${status.modeLabel}` + (status.configured ? ` (${status.name} / ${status.model})` : ' - no provider configured, the engine narrates itself'));
+        console.error(`[web] ${status.modeLine}`);
         console.error(`[web] admin mode: ${game.adminMode ? 'on' : 'off'}`);
         console.error('[web] world: rebuilt per run from its seed, in memory until world.repo lands.');
     });
