@@ -37,6 +37,31 @@
  * None of it is a shortcut. It is the difference between a road being long and
  * a road being closed.
  *
+ * ─── AND BEING ON A ROLL IS NOT ADMISSION ────────────────────────────────
+ *
+ * `familyHouse.onTheRoll` says a house's own roll carries somebody from the
+ * day they were born. That is not the rule above being softened, and the test
+ * for whether it is, is the one the owner's constraint states: DOES IT SKIP A
+ * BAR SOMEBODY ELSE HAS TO CLEAR?
+ *
+ *   BY BLOOD    No, because there is no bar to skip. A Dao house's roll is a
+ *               lineage - `sects.ts`: "A house does not recruit; it has
+ *               children" - and the door it keeps is ADOPTION, which is the
+ *               door for outsiders. Nobody is adopted by being born.
+ *   BY TAKING   Yes, and it is paid for. That is the admission favour, and
+ *               `spending-a-word-to-place-a-child.ts` writes the obligation
+ *               somebody now carries for it. A skipped bar with a receipt is
+ *               the mechanic working; a skipped bar with no receipt is the
+ *               defect.
+ *   NULL        The bar is standing where it always was. An apex sect
+ *               member's child is born inside the compound and applies at the
+ *               same gate as somebody who walked up the mountain.
+ *
+ * And in none of the three does the roll confer a RUNG. `entryRankIndex` is 0
+ * everywhere and is asserted to be; the floors in
+ * `data/cultivation/the-three-floors-a-house-admits-at.ts` are what a person
+ * has to clear to be taken ON, and being born on a roll clears none of them.
+ *
  * ═════════════════════════════════════════════════════════════════════════
  * WHAT THIS MODULE DOES NOT DO
  * ═════════════════════════════════════════════════════════════════════════
@@ -110,6 +135,90 @@ export type OriginTierKey =
     | 'dao_house_bloodline'
     | 'apex_sect_members_child'
     | 'fostered_on_a_word';
+
+/**
+ * The kind of body the family itself belongs to, stated as what a house IS
+ * rather than as which house it is.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * WHY THIS IS NOT `placement.reach`, MEASURED
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * `engine/birth/birth.ts` used to read the family's own house off `reach`, on
+ * the reasoning that the strongest house a name reaches is the house the name
+ * belongs to. That inference is false in both directions and the table says so
+ * itself:
+ *
+ *   TOO HIGH   `dao_house_bloodline` reaches 38, and the seven Dao houses stand
+ *              at 29 to 35. Its band was therefore the Azure Cloud Pavilion,
+ *              the Hollow Court and the Severed - measured over 200 forced
+ *              births, a tier whose name is "A Dao house, by blood" drew a Dao
+ *              house ZERO times.
+ *   TOO LOW    `apex_sect_members_child` reaches 29 deliberately, because "an
+ *              apex will not lend its name to a placement" - the comment on
+ *              that row says so. Its parent stands at an apex, at 38 or above.
+ *              Its band contained no apex at all.
+ *
+ * So the two are different facts and the table now carries both. `reach` is
+ * what the family's WORD reaches. This is what the family IS.
+ *
+ * NOTHING HERE NAMES A FACTION. `standingFrom` is a `powerOrdinal` floor and
+ * `roster` is read against `intakeRouteOf` in the catalog, so which houses a
+ * tier can be born into is a fact about the catalog and moves with it.
+ */
+export interface FamilyHouse {
+    /**
+     * What kind of roll the house keeps.
+     *
+     *   'a lineage'  the roll IS the family. `sects.ts`: "the roster is a
+     *                lineage. A house does not recruit; it has children, and
+     *                their children hold the same books." `intakeRouteOf`
+     *                answers `'adoption'` for exactly these.
+     *   'an intake'  the roll is people who were admitted, one at a time,
+     *                against a stated bar.
+     */
+    roster: 'a lineage' | 'an intake';
+    /** Lowest `powerOrdinal` a house at this family's own standing holds. */
+    standingFrom: number;
+    /**
+     * Whether the family lives on the house's ground or on its own.
+     *
+     * SEPARATE FROM {@link onTheRoll}, and the two combinations that are not
+     * the obvious ones are the interesting rows. A retainer household and an
+     * apex member's child both live inside the walls and are on nobody's roll;
+     * a cultivating clan has its own hall and its own vein, and the house here
+     * is one it is attached to rather than one it is in.
+     *
+     * This is what decides where a run OPENS. Reading it off `onTheRoll`
+     * instead put a small cultivating family - which the table describes as
+     * having "a hall, a hillside with some qi in it" - inside a salvage
+     * company's sorting yard in 60 births of 100.
+     */
+    whereTheyLive: 'inside it' | 'a hall of their own';
+    /**
+     * Whether the house's own roll carries this person from the day they were
+     * born, and by which route. NEVER A RANK - see the note below.
+     *
+     *   'by blood'   the roll is a lineage and they are on the line. Nothing
+     *                was skipped, because a lineage has no admission for its
+     *                own: `HouseAdmission.route` is adoption, and adoption is
+     *                the door for OUTSIDERS.
+     *   'by taking'  the house took them in and put them on it. A word was
+     *                spent to do it, which is why `vouchers` is zero on the row
+     *                that carries this - the one word that could have been
+     *                spent on them was this one.
+     *   null         they grew up inside the walls and the roll does not carry
+     *                them. They stand at the house's own door like anybody
+     *                else, which is what the door is for.
+     *
+     * BEING ON A ROLL IS NOT BEING ON A RUNG. `entryRankIndex` is still nailed
+     * to 0 and still asserted; a person on a roll at no rung has to clear the
+     * same floor a walk-up applicant clears before the house takes them ON.
+     * `the-three-floors-a-house-admits-at.ts` holds those floors and this
+     * module does not restate one.
+     */
+    onTheRoll: 'by blood' | 'by taking' | null;
+}
 
 /**
  * What a family's word reaches, and what standing inside a house is worth.
@@ -202,6 +311,12 @@ export interface OriginTier {
      */
     roadQuality: ManualQuality;
     placement: OriginPlacement;
+    /**
+     * The house the family itself belongs to, or null where it belongs to
+     * nobody and where its hall is its own. See {@link FamilyHouse} for why
+     * this is not derivable from `placement.reach`.
+     */
+    familyHouse: FamilyHouse | null;
     access: OriginAccess;
     /**
      * Times somebody's word opens a door that standing would not. Spent rather
@@ -264,6 +379,8 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             tollProtection: 0,
             stipendPerYear: 0
         },
+        // Nobody. Nine births in ten.
+        familyHouse: null,
         access: { teachers: [], readableManuals: [], tradition: null },
         vouchers: 0,
         expeditions: { supplied: 0, survivalMargin: 0 },
@@ -286,6 +403,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             tollProtection: 0,
             stipendPerYear: 0
         },
+        familyHouse: null,
         access: { teachers: [], readableManuals: [], tradition: null },
         vouchers: 0,
         expeditions: { supplied: 0, survivalMargin: 0 },
@@ -325,6 +443,12 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             tollProtection: 0.05,
             stipendPerYear: 12
         },
+        // A local order the family is attached to, and its hall is not the
+        // family's hall - so the roll does not carry them and never did.
+        familyHouse: {
+            roster: 'an intake', standingFrom: 12,
+            whereTheyLive: 'a hall of their own', onTheRoll: null
+        },
         access: {
             teachers: [],
             readableManuals: [
@@ -352,6 +476,13 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             sectBonus: 1.25,
             tollProtection: 0.12,
             stipendPerYear: 40
+        },
+        // Inside the walls from birth and on nobody's roll. A retainer
+        // household serves the house; serving it is not being of it, and the
+        // sect's own door is still the door.
+        familyHouse: {
+            roster: 'an intake', standingFrom: 20,
+            whereTheyLive: 'inside it', onTheRoll: null
         },
         access: {
             teachers: [
@@ -382,6 +513,14 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             sectBonus: 1.45,
             tollProtection: 0.2,
             stipendPerYear: 260
+        },
+        // The clan has its own hall and its own vein; the house here is the one
+        // it is attached to. Its `tradition` below is the CLAN's principle,
+        // practised in the clan's hall, which is why the house's roll is
+        // irrelevant to it.
+        familyHouse: {
+            roster: 'an intake', standingFrom: 29,
+            whereTheyLive: 'a hall of their own', onTheRoll: null
         },
         access: {
             teachers: [
@@ -423,6 +562,17 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             tollProtection: 0.3,
             sectBonus: 1.6,
             stipendPerYear: 1_400
+        },
+        // A HOUSE IS A FAMILY, AND THIS PERSON IS IN IT. The roll is the
+        // lineage, so being born to the line is being on it - and nothing has
+        // been skipped, because a lineage has no admission for its own. The
+        // door a Dao house keeps is adoption, and adoption is for outsiders.
+        //
+        // `standingFrom: 29` rather than the reach of 38: the seven houses
+        // stand at 29 to 35 and their word travels further than they do.
+        familyHouse: {
+            roster: 'a lineage', standingFrom: 29,
+            whereTheyLive: 'inside it', onTheRoll: 'by blood'
         },
         access: {
             teachers: [
@@ -483,6 +633,20 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             tollProtection: 0.24,
             stipendPerYear: 900
         },
+        // BORN INSIDE THE COMPOUND AND NOT ON THE ROLL, which is this row's
+        // whole subject. The parent lives at the seat, so the child grew up
+        // there; the roll is an intake, so it does not carry them; and the
+        // disciple bar is standing in front of them exactly where it stands in
+        // front of somebody who walked up the mountain this morning.
+        //
+        // `standingFrom: 38` and not the reach of 29. The reach is what the
+        // parent's WORD is worth at somebody else's gate, which the row's own
+        // comment says is deliberately a clan's; the parent themself stands at
+        // an apex.
+        familyHouse: {
+            roster: 'an intake', standingFrom: 38,
+            whereTheyLive: 'inside it', onTheRoll: null
+        },
         access: {
             teachers: [
                 { subject: 'sword', label: 'their own parent, in the weeks the parent is not elsewhere' }
@@ -533,6 +697,17 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             sectBonus: 1.5,
             tollProtection: 0.25,
             stipendPerYear: 500
+        },
+        // ON THE ROLL BY TAKING, WHICH IS NOT THE SAME AS BY BLOOD and the
+        // difference is the interesting part rather than a technicality. The
+        // house's roll carries them, its name is the one they answer to, and
+        // its ladder is the one in front of them - all of that identical to a
+        // child of the line. What is not identical is the LINE: an adopted
+        // child holds the name and not the blood, and somewhere in the world
+        // there is a record of a birth that the name says nothing about.
+        familyHouse: {
+            roster: 'an intake', standingFrom: 29,
+            whereTheyLive: 'inside it', onTheRoll: 'by taking'
         },
         access: {
             teachers: [

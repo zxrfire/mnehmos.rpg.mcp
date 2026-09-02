@@ -35,22 +35,33 @@ without knowing an origin exists.
 ## The contract
 
 1. **An origin buys inputs, never rank.** `Birth` has no realm ordinal, no
-   cultivation progress, no sect id, no sect rank, no foundation and no
-   insight, and no field may be added that could carry one. A Hollow Court
-   Seat's child opens at ordinal zero, unattached, like everybody else. The
-   shape is the enforcement, exactly as it is in `origin.ts`.
+   cultivation progress, no rank index, no foundation and no insight, and no
+   field may be added that could carry one. A Hollow Court Seat's child opens
+   at ordinal zero like everybody else. The shape is the enforcement, exactly
+   as it is in `origin.ts`.
+
+   **It does carry membership, and membership is not rank.** `raisedInside`
+   says whose a person is; nothing on the object says what they have done. The
+   two were run together here until the owner asked for a member from birth,
+   and separating them is what made the request answerable without softening
+   anything: a child of a Dao house's line is on its roll and on no rung, and
+   `RaisedInside.stillToClear` carries the house's own floors, unmodified, so
+   the claim is checkable rather than assertable. See "A member from birth"
+   below.
 2. **The ground is a floor, never a band nobody else can reach.** The band is
    drawn from the world's own geology weights and then floored by the family's
    holding. Half the world is thin whoever your parents are, and a poor birth
    on good ground is the design rather than a leak - see the note on
    `WORLD_AMBIENT_WEIGHTS` in `origin-odds.ts`, which explains what pinning
    every unplaced life to thin ground would falsify.
-3. **No branch on a tier key.** There is none in `birth.ts` and there must
-   never be one. Being born into the strongest house in the world is the same
-   weighted draw over the same catalog as being born on a hillside; the Hollow
-   Court is reachable only because its `powerOrdinal` sits above the top tier's
-   `placement.reach`, and if the catalog changed the answer would change with
-   it.
+3. **No branch on a tier key, and none on a faction id.** There is none in
+   `birth.ts` and there must never be one. Being born into the strongest house
+   in the world is the same weighted draw over the same catalog as being born
+   on a hillside. Which houses can carry a bloodline follows from
+   `intakeRouteOf` - `'adoption'` is a roster that is a lineage - and which
+   houses nobody can be born inside follows from `NO_PLACE_FOR_THEIR_OWN`. Both
+   are facts about the catalog, and if the catalog changed the answers would
+   change with it.
 4. **Every number comes from somewhere else.** Tier weights, stones, ground
    floor, placement reach and the house bands are all read from `ORIGIN_TIERS`;
    the geology weights come from `schema/cultivation.ts`; the places and houses
@@ -62,6 +73,89 @@ without knowing an origin exists.
 6. **Deterministic in the run seed**, through `forStream`, in four named
    sub-streams that do not consume from one another - so adding a fifth later
    cannot perturb a seed that has already been played.
+
+## A member from birth
+
+Three of the eight tiers describe growing up inside a house and, until this
+package was wired for it, none of them put anybody in one. Measured over 400
+births before the change: 147 in a city, 112 in a market town, 77 in a village,
+43 in a **sect town** and 21 in a hamlet, and **not one at any of the 34 sect
+seats the world builds**. A sect town is a town beside a house. It is not the
+house.
+
+Two facts do the work, and keeping them apart is the whole of the design.
+
+**Where the run opens** is `familyHouse.whereTheyLive`. A retainer household, a
+Dao house's own blood, an apex member's child and a ward all live on the
+house's ground and open there, at the name the world's own seeder gives it - a
+test pins the two strings against each other, because a location the world has
+never heard of reads exactly like a working game until somebody looks around. A
+cultivating clan holds its own vein and its own hall, so it opens in a town like
+everybody else.
+
+**Whether the roll carries them** is `familyHouse.onTheRoll`, and it is
+membership rather than rank:
+
+| Route | Who | What was skipped |
+|---|---|---|
+| `by blood` | A Dao house's own child. Its roster **is** a lineage - `sects.ts`: "A house does not recruit; it has children" | Nothing. A lineage's door is adoption, and adoption is for outsiders |
+| `by taking` | A ward the house took in | The admission bar, and somebody is carrying the obligation for it - that is `spendAWord` |
+| `null` | An apex member's child, a retainer's child | Nothing. They stand at the same gate as somebody who walked up the mountain |
+
+**Being on a roll is not being on a rung**, and the state already existed:
+`Cultivator.sectId` with a null `sectRank` and no `sect_members` row, which
+`entities.ts` has always printed as "at no rank in it". Nothing new is stored
+anywhere. `RaisedInside.stillToClear` carries the house's floors from
+`the-three-floors-a-house-admits-at.ts` untouched, and a test asserts it equals
+what that file says rather than anything shorter.
+
+Played, at The House of the Bound Word: *"On the roll of The House of the Bound
+Word"*, and `promote` answers *"there is nothing to be promoted from ... the
+first rung opens at Qi Condensation Layer 6, and they stand at Qi Condensation
+Layer 1."* At the Azure Cloud Pavilion, born on its ground: *"Serves no house."*
+
+**Raised in is not born of.** The two are identical for membership, standing,
+the name somebody answers to and the ladder in front of them, and different for
+the line. An adopted child carries the house's name and not its blood, the
+world writes the lineage edge and never the surname, and nothing here adds a
+`wasFostered` flag - `a-child-their-own-house-will-not-keep.ts` explains why a
+boolean would throw the asymmetry away. What it produces instead is a fact
+sitting in the records that the name says nothing about, and **standing is what
+makes it worth retrieving**: nobody pulls a record on a nobody, and a record
+unread for forty years becomes worth reading the moment the person it names is
+somebody. It surfaces as hearsay, so it can be early, wrong, exaggerated or
+denied, and it cuts both ways - a house may want to claim a famous son it gave
+away, and he may not want claiming.
+
+## OPEN: a house seat can stand on ground an origin may not buy
+
+`MAX_ORIGIN_AMBIENT` is `normal`, and its argument is good: thin to dense is a
+fourfold multiplier, larger than the gap between the best spirit root and the
+worst, so an origin that handed out dense ground would be a bigger term than
+talent.
+
+A seat birth reaches past it, and this is measured rather than suspected. Of
+the 34 seats the world builds, **15 stand on dense or better** - the Azure Cloud
+Pavilion's ground reads density 89. `ambientFor` prefers the world location's
+own density over anything a birth reports, so a run that opens at a seat opens
+on the house's real vein, and a played apex-child run was told the air is
+*"thick enough to notice on the first breath"*.
+
+Both halves are defensible and they disagree. `dao_house_bloodline`'s own
+description promises "a vein under the compound"; `MAX_ORIGIN_AMBIENT` says an
+origin may not put anybody on one. Three things bound the exposure and none of
+them settles it:
+
+- **Anybody may walk to a seat.** `seedSectGround` sets `thresholds.entry` to
+  zero, so the ground is not something the birth uniquely reaches - what the
+  birth buys is being there on the first day instead of walking.
+- **The deep ground inside a house is rank-gated separately.**
+  `groundEntitlementFor` shares the chambers out by rank index, and a born
+  member's is -1.
+- **It is about four births in ten thousand**, which moves no distribution and
+  is not an argument that it is correct.
+
+Reported rather than resolved, per the rule for two places that disagree.
 
 ## The design constraint this must not break
 
@@ -141,9 +235,13 @@ rows.
   one. See "Opening as a fostered child" in
   [`docs/world/houses/origin.md`](../../../docs/world/houses/origin.md), which is where that
   goes when it is built.
-- **A birth house has no seat to be born at.** The catalog records a faction's
-  territory in prose rather than as a place name, so the house a family belongs
-  to does not currently decide where the run opens. Both are drawn, and they
-  can disagree.
-- **No relationship row is written.** The house is a knowledge row and nothing
-  more; there is no "your father is an elder" edge anywhere.
+- **No relationship row is written.** The house is a knowledge row and a
+  membership, and there is still no "your father is an elder" edge anywhere -
+  which is the next thing a born member wants and the thing that would make the
+  reveal above reachable from a run rather than only from the register.
+- **`regionOfPlace` does not resolve a seat.** It matches against
+  `REGIONS[].places`, and a house's ground is built by the world seeder rather
+  than listed there, so `seedStartingAwareness` contributes nothing at all for a
+  birth inside a house. `seedKnowledge` writes the province row itself for that
+  case; the border provinces a settlement-born child hears named are still
+  missing for a seat-born one.
