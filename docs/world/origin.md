@@ -16,6 +16,8 @@ Where you started, and what it was worth. Read with
 | [Somebody's word, and the bar it skips](#somebodys-word-and-the-bar-it-skips) | a child is being placed at a house whose bar they do not meet, or somebody asks how they got in |
 | [The one house where the word buys nothing](#the-one-house-where-the-word-buys-nothing) | the Azure Cloud Pavilion's doors come up, or somebody offers to get a person in there |
 | [Spending one on your own child](#spending-one-on-your-own-child) | a cultivator with standing has a child to place, or a placed child asks who arranged it |
+| [The second reason, which is not a bar](#the-second-reason-which-is-not-a-bar) | a birth is irregular, somebody is carrying shame, or a placement has no institutional reason behind it |
+| [Opening as a fostered child](#opening-as-a-fostered-child) | a run opens with a placement the cultivator cannot account for |
 | [The shape of an immortal life](#the-shape-of-an-immortal-life) | somebody asks what it actually takes to reach the top of the ladder |
 | [The children of great houses mostly fail anyway](#the-children-of-great-houses-mostly-fail-anyway) | a great house's heir is failing, or the player resents somebody's birth |
 | [Rare in the world, common at the top](#rare-in-the-world-common-at-the-top-and-both-at-once) | somebody asks why the great houses are full of well-born people |
@@ -228,6 +230,76 @@ a bar of its own. The risk was moved rather than removed.
 That produces one of the better positions in this world to be a person from: somebody who
 knows they were somebody's child, knows what they were supposed to become, has been inside
 the place for decades being spoken over, and is on nobody's list of who matters.
+
+**Where the child ends up is decided by the parent and not by the parent's house.** A
+cultivator asks somebody *they* have a tie to - somebody who owes them, somebody they trained
+beside, somebody whose house theirs has been close to for a century - so two members of the
+same house with different friends place their children in completely different places. There
+is no list of receiving houses anywhere and there must never be one: a list says the
+institution decided, and the institution is not a party to it.
+
+## The second reason, which is not a bar
+
+<!-- tier: 2 trigger="a birth is irregular, somebody is carrying shame, or a placement has no institutional reason behind it" -->
+
+Everything above is about houses. It is not the commoner reason a child is placed with
+somebody else, and the commoner reason has nothing to do with an institution at all: **the
+household will not own the birth.**
+
+Nothing about that is unique to people with standing, and nothing about it requires a house
+with a bar. It happens to a sect elder and to a farmer, and what follows is the same shape:
+the child goes to somebody the parent knows, and the arrangement is kept quiet.
+
+The two reasons behave differently and should not be run together:
+
+- **A bar is nobody's fault.** The house wants people capable of a thing most children of
+  even the greatest cultivators are not, and being told that about your own child is hard
+  without anybody having done wrong. The placement is not a secret. What the child is not
+  given is a name.
+- **A birth the household will not own is a shame**, carried by the parent, and the
+  concealment and the shame are one thing rather than two. The people who know are the
+  people who arranged it: the parents, and the one person who was asked. Nobody widens that
+  list on their own. Somebody has to tell somebody.
+
+Shame in this world is a fact other people hold about you, and it behaves like every other
+thing this world remembers: it does not expire, it is written down once at a severity nobody
+recalculates, and it leaves only when something actually happens - it is acknowledged, made
+good, proven false, or everybody who knew is dead. Time passing is not a resolution.
+
+## Opening as a fostered child
+
+<!-- tier: 2 trigger="a run opens with a placement the cultivator cannot account for" -->
+
+A cultivator can be **the child in all of the above**, and that is a legitimate way for a run
+to open: on a house's roll, at the bottom of it, admitted through a door they did not meet
+the terms of, with no idea whose word put them there.
+
+What it is worth is what the whole of this document says an origin is worth: **inputs, never
+rank.** They open at ordinal zero, on the receiving house's ladder, climbing it the ordinary
+way. What they have that a walk-up disciple does not is a place they could not have got on
+their own and a house that is quietly invested in them. What they do not have is a name, an
+explanation, or anybody who will give them either.
+
+The pieces that make it a *story* rather than a background note are all already in the world:
+
+- **Somebody knows.** Two people, usually. Both are alive, both are findable, and one of
+  them is under no obligation to say anything.
+- **It can come out.** Rumour in this world runs on the same machinery as everything else
+  and is allowed to be true, false, or half of each. A fostered person can find out from a
+  whisper, from a record, or because somebody decided the confidence had outlived what it
+  was for.
+- **Knowing somebody's origin when they do not is leverage.** That is an ordinary obligation
+  between two people and needs no new rule to express.
+- **The blood is on the record even when the name is not.** A fostered person is still on
+  their line, so they can inherit a grudge, a debt or a feud from a parent they could not
+  name - and be hunted for something done by somebody they have never heard of.
+
+**What is built, and what is not.** The world does this on its own: NPCs foster children,
+the destination comes off the fosterer's own ties, the placement skips the receiving house's
+admission bar, and the shame and the concealment are written down. What does not exist yet is
+the character-creation half - no run currently *opens* as a fostered child, because nothing
+in `drawBirth` deals that hand. The engine has no answer for that yet, and this section is
+where it goes when it does.
 
 ## The shape of an immortal life
 

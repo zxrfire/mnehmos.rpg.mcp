@@ -137,8 +137,21 @@ import {
     applyPassedOver,
     bindNewbornToHousehold,
     couldParent,
-    rosterOf
+    rosterOf,
+    type Roster
 } from './the-ties-an-ordinary-life-produces.js';
+import {
+    assessTheReturn,
+    fosterTheChild,
+    isConcealed,
+    wasFostered,
+    whoCouldBeAsked,
+    whyTheirOwnHouseWillNotKeepThem,
+    type FosterCandidate,
+    type FosteringReason
+} from './a-child-their-own-house-will-not-keep.js';
+import { shameTag } from '../social/shame.js';
+import { fosterageTermsOf } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
 import { applyGatherings } from './gatherings.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
@@ -368,6 +381,11 @@ export function applyPressure(
         // See `how-a-cultivator-comes-by-a-road.ts`.
         applyRoadsComprehended(state, year, withinSpan(year * 365 + 110, fromDay, toDay));
         applyAdvancement(state, year, withinSpan(year * 365 + 120, fromDay, toDay));
+        // And the one answer a fostered person ever gets, on their own sending
+        // house's terms. AFTER advancement, so a rung reached this year is a
+        // rung the assessment reads; before recruitment, so somebody who went
+        // back is on the right roll when the year's admissions run.
+        applyFosterageReturns(state, withinSpan(year * 365 + 130, fromDay, toDay));
         applyRecruitment(state, year, withinSpan(year * 365 + 150, fromDay, toDay));
         // And then the people those two passes produced meet each other. After
         // books and after recruitment, so a chosen named this year can be sent
@@ -727,11 +745,34 @@ function applyDemography(
             npc = { ...npc, factionId: joined.id, factionRankIndex: 0 };
         }
 
+        // FOSTERING, before the household is written and after the lineage edge
+        // is. A child whose parent's own house will not keep them, or whose
+        // birth the household will not own, is placed with somebody the parent
+        // personally knows - which is the whole of where they end up, and is
+        // decided by the parent's ties rather than by any list.
+        //
+        // On its own seeded stream, so a world with nobody to foster draws
+        // exactly what it drew before this pass existed.
+        const fostered = parent
+            ? placeAChildTheirHouseWillNotKeep(
+                state, npc, parent, ordinal, day, forStream(state.seed, 'fostering', id), roster)
+            : null;
+        if (fostered) npc = fostered;
+
         // The household the birth actually created, written last so the child's
         // own record is finished before anybody is bound to it. The parent's
         // half and the siblings' halves go into `state.npcs` in place; the
         // child's half comes back on the record about to be pushed.
-        if (parent) npc = bindNewbornToHousehold(state, npc, parent.id, day, roster).child;
+        //
+        // NOT WRITTEN FOR A FOSTERED CHILD, and that omission is the mechanic
+        // rather than a gap. The lineage edge above stands - blood is blood,
+        // and an heir still inherits down it - while the personal `parent` tie
+        // does not, because the two of them never met and the child is not told
+        // whose they are. Somebody can therefore inherit a grudge from a parent
+        // whose name they do not hold, which needed no new field to say.
+        if (parent && !fostered) {
+            npc = bindNewbornToHousehold(state, npc, parent.id, day, roster).child;
+        }
 
         roster.at.set(npc.id, state.npcs.length);
         roster.living.push(npc);
@@ -741,6 +782,311 @@ function applyDemography(
     void rng;
     void year;
     return born;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// FOSTERING
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How often a birth is one the household will not own.
+ *
+ * Applied only where the parent ALREADY HAS A HOUSEHOLD, which is what makes
+ * the number small without anybody tuning it small: spouses are rare in this
+ * world - `applyHouseholds` pairs at three percent a year - so the product is
+ * a handful of people a century rather than a category. A child born to
+ * somebody unattached is nobody's scandal and gets none of this.
+ *
+ * It is a rate on a circumstance, not a judgement. What follows from it is a
+ * placement and one shame record; nothing here scores anybody.
+ */
+const BORN_OUTSIDE_THE_HOUSEHOLD = 0.05;
+
+/**
+ * The world's own reason a child has to go somewhere else, or null.
+ *
+ * Two, and they are opposites: an institution with a bar its own members'
+ * children cannot clear, and a birth a household will not own. The first is
+ * derived from the catalog and is nobody's fault; the second is drawn, and it
+ * is the one that carries a shame.
+ */
+function whyThisChildCannotStay(
+    parent: NpcRecord,
+    rng: CultivationRNG
+): FosteringReason | null {
+    const house = whyTheirOwnHouseWillNotKeepThem(parent.factionId);
+    if (house) return house;
+    const married = parent.relationships.some(r => r.kind === 'spouse');
+    if (married && rng.chance(BORN_OUTSIDE_THE_HOUSEHOLD)) return 'the birth';
+    return null;
+}
+
+/** A word already spent on this person. Once means once. */
+const PLACED_WITH = 'placed-a-child-with:';
+
+/** The house a fostered person was sent OUT of, which is not the one they are in. */
+const FOSTERED_FROM = 'fostered-from:';
+
+/** The answer, once given. There is no second assessment and no appeal. */
+const ASSESSED = 'assessed:';
+
+/**
+ * A child placed with somebody their parent knows, in the running world.
+ *
+ * The glue, and only the glue: every decision in it belongs to
+ * `a-child-their-own-house-will-not-keep.ts`, which is pure and knows nothing
+ * about a `WorldState`. What happens here is reading the parent's own ties off
+ * their record, handing them over, and writing the answer down.
+ *
+ * Returns the child with their placement on it, or null when nothing happened -
+ * which is nearly every birth in the world and must stay that way.
+ *
+ * WHAT IS NOT WRITTEN. There is no obligation ledger in `WorldState` - this
+ * layer hands social rows back to its caller rather than storing them, the way
+ * `driver.ts` does with absences and deaths - so the receipt `fosterTheChild`
+ * produces is not persisted by the world. What the world keeps is what the
+ * world can keep: the placement, the ties, the once-only mark, the shame on the
+ * person carrying it, and a secret fact naming everybody who knows.
+ */
+function placeAChildTheirHouseWillNotKeep(
+    state: WorldState,
+    child: NpcRecord,
+    parent: NpcRecord,
+    ordinal: number,
+    day: number,
+    rng: CultivationRNG,
+    roster: Roster
+): NpcRecord | null {
+    // Never the player's own mirror row. Placing your child is a decision a
+    // person makes, and a world pass that made it for them would be the engine
+    // taking the decision - the exact shape the agency rule forbids.
+    if (!isTheWorldsToMove(parent)) return null;
+
+    const reason = whyThisChildCannotStay(parent, rng);
+    if (!reason) return null;
+
+    // Who this parent actually knows. Their own rows, nobody else's, and the
+    // house comes off the person rather than off a list of houses.
+    const candidates: FosterCandidate[] = [];
+    const asked = new Set(
+        parent.tags.filter(t => t.startsWith(PLACED_WITH)).map(t => t.slice(PLACED_WITH.length))
+    );
+    for (const tie of parent.relationships) {
+        const at = roster.at.get(tie.targetId);
+        if (at === undefined) continue;
+        const person = state.npcs[at];
+        if (person.status !== 'alive' || !person.factionId) continue;
+        // A house that has folded takes nobody. `whoCouldBeAsked` asks the
+        // catalog whether a bar moves; whether the body still exists is the
+        // world's own question and is answered here.
+        const house = state.factions.find(f => f.id === person.factionId);
+        if (!house || house.dissolvedOnDay !== null || !isBelowTheLid(house)) continue;
+        candidates.push({
+            personId: person.id,
+            personName: person.name,
+            houseId: person.factionId,
+            standing: tie.standing,
+            alreadyAsked: asked.has(person.id)
+        });
+    }
+
+    const willing = whoCouldBeAsked(candidates, { fostererHouseId: parent.factionId });
+    if (willing.length === 0) return null;
+
+    // The other parent, where there is one AND they are a party to it. A
+    // household's own child placed because the house has no room for them is a
+    // thing both parents did; a birth the household will not own is precisely
+    // the one the spouse is not on the list for.
+    const spouseId = isConcealed(reason)
+        ? null
+        : parent.relationships.find(r => r.kind === 'spouse')?.targetId ?? null;
+
+    const placed = fosterTheChild({
+        fostererId: parent.id,
+        askedOf: willing[0],
+        childId: child.id,
+        reason,
+        onDay: day,
+        childOrdinal: ordinal,
+        fostererHouseId: parent.factionId,
+        otherParentId: spouseId
+    });
+    if (!wasFostered(placed)) return null;
+
+    const takerAt = roster.at.get(placed.askedOfId);
+    const parentAt = roster.at.get(parent.id);
+    if (takerAt === undefined || parentAt === undefined) return null;
+    const taker = state.npcs[takerAt];
+
+    // The child is on the receiving house's roll, at the bottom of it, WITHOUT
+    // having met its admission ordinal. That exception is the whole of what the
+    // word bought, and `barSkipped` on the result is the figure it skipped.
+    //
+    // `fostered-from` names the SENDING house, which is the only thing the
+    // child's own record can carry that the assessment below needs. It is not
+    // the child knowing anything - a tag is the world's bookkeeping, and the
+    // child holds no knowledge row at all.
+    let updated: NpcRecord = {
+        ...child,
+        factionId: placed.houseId,
+        factionRankIndex: 0,
+        tags: [
+            ...child.tags,
+            'fostered',
+            ...(parent.factionId ? [`${FOSTERED_FROM}${parent.factionId}`] : [])
+        ]
+    };
+
+    // The deference the arrangement produces, expressed as the tie it actually
+    // is: the person who took them in is their patron, and they are that
+    // person's client. The child holds no tie to the parent at all.
+    updated = upsertRelationship(updated, {
+        targetId: taker.id,
+        targetName: taker.name,
+        kind: 'client',
+        standing: 0.5,
+        note: 'Took them in. They have never been told why.'
+    }, day);
+    state.npcs[takerAt] = upsertRelationship(taker, {
+        targetId: updated.id,
+        targetName: updated.name,
+        kind: 'patron',
+        standing: 0.5,
+        note: 'Took them in on a word, and knows whose they are.'
+    }, day);
+
+    // And what the parent now is to the person they asked. `spendAWord`'s own
+    // reading of it, in the world's vocabulary.
+    const holder = state.npcs[parentAt];
+    state.npcs[parentAt] = upsertRelationship(
+        {
+            ...holder,
+            tags: [
+                ...holder.tags,
+                `${PLACED_WITH}${taker.id}`,
+                ...(placed.shame ? [shameTag(placed.shame.cause)] : [])
+            ]
+        },
+        {
+            targetId: taker.id,
+            targetName: taker.name,
+            kind: 'client',
+            standing: Math.max(0, relationshipWith(holder, taker.id)?.standing ?? 0.5),
+            note: 'Asked, and was not refused.'
+        },
+        day
+    );
+
+    // Secret, because the people who hold it are the people on it. Nobody else
+    // in the world has a record, which is what `unaware` means for the child.
+    appendWorldFact(state, makeFact({
+        day,
+        kind: 'birth',
+        scale: 'personal',
+        actors: [
+            { id: parent.id, name: parent.name, role: 'parent' },
+            { id: taker.id, name: taker.name, role: 'took the child' },
+            { id: updated.id, name: updated.name, role: 'child' }
+        ],
+        locationId: updated.locationId,
+        factionIds: [placed.houseId],
+        summary:
+            `${updated.name} was placed at ${placed.houseId} through ${taker.name}, ` +
+            `on ${parent.name}'s word. ${reasonSummary(reason)}`,
+        visibility: 'secret',
+        fidelity: 'partial',
+        magnitude: 0.2,
+        data: {
+            fostering: reason,
+            barSkipped: placed.barSkipped,
+            askedOfId: taker.id,
+            fostererId: parent.id,
+            // The one person with no record of their own origin.
+            withheldFrom: placed.withheldFrom.join(','),
+            childStage: placed.childStage,
+            terms: placed.terms ? placed.terms.factionId : null
+        }
+    }));
+
+    return updated;
+}
+
+/**
+ * The one assessment a fostered person ever gets, on the terms their own house
+ * set when it sent them away.
+ *
+ * Almost every house in the world attaches no terms at all, so this pass has
+ * nothing to do on almost every world - `fosterageTermsOf` returns undefined
+ * and the person is simply where they were raised, for good. Where there ARE
+ * terms, both halves are read off the terms object and neither number appears
+ * in this file.
+ *
+ * It fires at the first of two moments: the day they reach the rung, or the day
+ * the deadline arrives. Reaching the rung after the deadline is a magnificent
+ * career answering the wrong question, and the assessment says so - which is
+ * the whole reason `metOrdinal` and `inTime` are reported separately.
+ */
+function applyFosterageReturns(state: WorldState, day: number): number {
+    let assessed = 0;
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        if (npc.status !== 'alive') continue;
+        const from = npc.tags.find(t => t.startsWith(FOSTERED_FROM));
+        if (!from) continue;
+        if (npc.tags.some(t => t.startsWith(ASSESSED))) continue;
+        const terms = fosterageTermsOf(from.slice(FOSTERED_FROM.length));
+        if (!terms) continue;
+
+        const age = (day - npc.identity.bornOnDay) / DAYS_PER_YEAR;
+        const ordinal = npc.cultivation.realmOrdinal;
+        if (ordinal < terms.returnOrdinal && age < terms.returnByAge) continue;
+
+        const answer = assessTheReturn(terms, ordinal, age);
+        assessed++;
+        const outcome = answer.returns ? 'returned' : 'stayed';
+        let updated: NpcRecord = { ...npc, tags: [...npc.tags, `${ASSESSED}${outcome}`] };
+        if (answer.returns) {
+            // Back onto the sending house's roll, at the bottom of it. The
+            // assessment moved a person; it conferred nothing.
+            updated = { ...updated, factionId: terms.factionId, factionRankIndex: 0 };
+        }
+        state.npcs[i] = updated;
+
+        appendWorldFact(state, makeFact({
+            day,
+            kind: 'inheritance',
+            scale: 'personal',
+            actors: [{ id: updated.id, name: updated.name, role: 'assessed' }],
+            locationId: updated.locationId,
+            factionIds: [terms.factionId],
+            summary: answer.returns
+                ? `${updated.name} was assessed and went back to ${terms.factionId}.`
+                : `${updated.name} was assessed and stayed where they were raised.`,
+            visibility: 'secret',
+            fidelity: 'partial',
+            magnitude: 0.2,
+            data: {
+                fosterageAssessment: outcome,
+                metOrdinal: answer.metOrdinal,
+                inTime: answer.inTime,
+                atOrdinal: ordinal,
+                atAge: Math.round(age),
+                terms: terms.factionId
+            }
+        }));
+    }
+    return assessed;
+}
+
+function reasonSummary(reason: FosteringReason): string {
+    switch (reason) {
+        case 'the bar':
+            return 'Their own house does not lower its bar for anybody, including its own.';
+        case 'no door':
+            return 'Their own house has no intake at all; nobody joins it.';
+        case 'the birth':
+            return 'The household would not own the birth.';
+    }
 }
 
 /**

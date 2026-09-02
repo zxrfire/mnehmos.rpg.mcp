@@ -25,6 +25,8 @@ import {
     sectsWithASealedCeiling,
     canProjectLastRealm,
     HOLLOW_COURT_FOSTERAGE,
+    FOSTERAGE_TERMS,
+    fosterageTermsOf,
     WITHDRAWN_POWERS,
     SECT_ANCESTRY as ANCESTRY_FOR_CANDIDACY
 } from '../../src/data/cultivation/sects.js';
@@ -699,14 +701,25 @@ describe('fosterage: the door is not shut, it is just the same door', () => {
         expect(f.returnByAge).toBeLessThan(500);
     });
 
-    it('fosters only to sects that actually exist and are reputable', () => {
-        expect(HOLLOW_COURT_FOSTERAGE.fosteredTo.length).toBeGreaterThanOrEqual(3);
-        for (const id of HOLLOW_COURT_FOSTERAGE.fosteredTo) {
-            const host = getSect(id);
-            expect(host, `unknown foster sect ${id}`).toBeDefined();
-            expect(host!.alignment, `${id} is not a fit host`).not.toBe('demonic');
-            expect(host!.recruits, `${id} takes nobody`).toBe(true);
-        }
+    it('names the house the terms belong to, and no destination at all', () => {
+        // This object used to carry a list of four sects children were sent to.
+        // It was wrong twice over: it made a general thing look like one body's
+        // arrangement, and it decided where somebody's child went from the
+        // institution rather than from the person doing the placing. Where a
+        // child goes now falls out of the fosterer's own ties, in
+        // `engine/world/a-child-their-own-house-will-not-keep.ts`.
+        expect(HOLLOW_COURT_FOSTERAGE.factionId).toBe('sect-hollow-court');
+        expect(getSect(HOLLOW_COURT_FOSTERAGE.factionId)).toBeDefined();
+        expect(Object.keys(HOLLOW_COURT_FOSTERAGE)).not.toContain('fosteredTo');
+    });
+
+    it('is one house with terms, not a mechanic made of terms', () => {
+        // Fostering is ordinary; TERMS are not. A second entry here is a claim
+        // that a second body in the world runs its children on a deadline.
+        expect(FOSTERAGE_TERMS).toHaveLength(1);
+        expect(fosterageTermsOf('sect-hollow-court')).toBe(HOLLOW_COURT_FOSTERAGE);
+        expect(fosterageTermsOf('sect-azure-cloud-pavilion')).toBeUndefined();
+        expect(fosterageTermsOf(null)).toBeUndefined();
     });
 
     it('makes not returning a life rather than a punishment', () => {

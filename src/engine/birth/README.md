@@ -109,6 +109,20 @@ Three rules bind this file the way the six above bind `birth.ts`:
    commits none of them. There is deliberately no public-belief row: a word is
    spent between two people and the child is not told.
 
+## Who calls the favour half
+
+`spendAWord` had no caller outside this package for as long as it existed, which made it
+documentation with a type signature. It has one now:
+`src/engine/world/a-child-their-own-house-will-not-keep.ts` is the fostering decision layer,
+and `applyDemography` in `the-world-changing-on-its-own.ts` runs it every year of every
+world. NPCs place children on somebody's word, the destination comes off the fosterer's own
+ties rather than any list, and every placement measured skipped an admission ordinal the
+child did not meet - which is exactly what this module says a word is for.
+
+Nothing in `spendAWord` changed to make that work. The world layer supplies the asker, the
+person asked and the day; this package answers whether the house's bar moves and writes the
+rows.
+
 ## What is not here yet
 
 - **Age does not vary.** A run opens at 16 wherever it opens. `placement.atAge`
@@ -117,9 +131,16 @@ Three rules bind this file the way the six above bind `birth.ts`:
   reachable from `drawBirth` yet.
 - **A player has no children.** `spendAWord` takes a `childId` and does not care
   where it came from. For NPCs the world layer already supplies kin ties through
-  `engine/world/the-ties-an-ordinary-life-produces.ts`; for the player character
-  there is no equivalent, so the family case is implemented and not yet
-  reachable from a run. That is the one thing this module is waiting on.
+  `engine/world/the-ties-an-ordinary-life-produces.ts` and now spends words with
+  them; for the player character there is no equivalent, so the family case is
+  implemented and not yet reachable from a run. That is the one thing this
+  module is waiting on.
+- **And a run cannot OPEN as a fostered child.** The world produces them - a
+  person on a house's roll who did not meet its bar and does not know whose word
+  put them there - and `drawBirth` deals no such hand, so the player cannot be
+  one. See "Opening as a fostered child" in
+  [`docs/world/origin.md`](../../../docs/world/origin.md), which is where that
+  goes when it is built.
 - **A birth house has no seat to be born at.** The catalog records a faction's
   territory in prose rather than as a place name, so the house a family belongs
   to does not currently decide where the run opens. Both are drawn, and they

@@ -21,6 +21,9 @@
  *                     of an ordinary knowledge record rather than a new table
  *   travellers.ts     who came through, and which names they brought with them
  *   secrets.ts        per-holder secret lifecycle, extending secret.repo.ts
+ *   shame.ts          a fact about somebody that other people hold and that
+ *                     lowers them - neither a grudge nor a secret, and the
+ *                     third of the three things this layer keeps about a person
  *
  * Deliberately does NOT re-export `hearing.ts` or `stealth-perception.ts`,
  * which are the older D&D-substrate mechanics in this directory. They are
@@ -36,3 +39,4 @@ export * from './knowledge.js';
 export * from './discovery.js';
 export * from './travellers.js';
 export * from './secrets.js';
+export * from './shame.js';

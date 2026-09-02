@@ -1061,6 +1061,64 @@ answer to the finding in it. The rule the whole file holds:
 Births write theirs inside `applyDemography`, which has the parent in hand. The other four
 run once a year off `applyOrdinaryLifeTies`.
 
+---
+
+## A child their own house will not keep
+
+`a-child-their-own-house-will-not-keep.ts`. Fostering, and the first consumer of every one
+of those ties that is not a household: **who somebody knows is what decides where their
+child ends up.**
+
+It is not a faction mechanic and the module names no faction. Two reasons put a child
+somewhere other than their parent's house, and they are opposites:
+
+| Reason | Where it comes from | Concealed? |
+|---|---|---|
+| `the bar` | the parent's own house does not lower its admission ordinal for anybody, including its own | no - the placement is open, the NAME is not |
+| `no door` | nobody joins the parent's house at all; arrival is by appointment to a posting | no |
+| `the birth` | the household will not own it | yes, and the shame and the concealment are one record |
+
+The first two are read off `howAChildAtZeroGetsIn`, which derives from `SECT_ADMISSION` and
+the favour catalog - so a change to a house's stance moves this with it and there is no list
+of factions anywhere in the file. The third is a rate on a circumstance
+(`BORN_OUTSIDE_THE_HOUSEHOLD`, applied only where the parent already has a spouse) and
+produces a `shame.ts` record.
+
+Four rules the file holds:
+
+1. **The destination comes off the person, never off a list.** `HOLLOW_COURT_FOSTERAGE`
+   used to carry four sect ids. It does not any more, and nothing may put them back: a
+   cultivator asks somebody *they* have a tie to, so two members of one house with different
+   friends place their children in different places.
+2. **The placement is `spendAWord` and is not reimplemented.** The engine half of the
+   admission favour existed with no caller outside its own package; this is its caller.
+3. **The favour is spent, not read.** An open obligation the fosterer holds is SETTLED by
+   the placement - `resolution: 'repaid'` - so it leaves the ledger and cannot carry a second
+   child. Somebody with nothing to spend gets the placement and now owes one instead.
+4. **The child is not told.** The lineage edge is written and the personal `parent` tie is
+   not, so an heir still inherits down a line whose name they do not hold. There is no
+   `wasFostered` boolean, because a boolean throws away the asymmetry that is the whole
+   content of the fact.
+
+`applyDemography` runs it every year. Measured over six seeds at five hundred years: 229
+placements, 138 of them from a birth and 91 from a bar, **229 of 229 entering a house whose
+admission ordinal the child did not meet**, across fifty-odd sending houses and as many
+receiving ones.
+
+### And one thing that does not happen
+
+A house may attach TERMS to a child it sent away - a rung, and a deadline to reach it by.
+Exactly one house in the catalog does, and `applyFosterageReturns` gives that assessment once,
+at the first of the two moments. It has never fired in a seeded world. Measured: the terms
+were reached once in twelve seeds of five hundred years, and that child died at 100 at
+ordinal 12; once more in three seeds of two thousand, dead at 200 at ordinal 13.
+`lifespanForOrdinal` is 100 below ordinal 13 and 200 below 16, against a deadline of 250 - so
+**nobody who has not already climbed well past the bar lives to be assessed at all.** That is
+the gate's own stated intent arriving as a measurement rather than a claim, and it is written
+here rather than tuned away. The pass is driven directly by
+`tests/engine/world/a-child-their-own-house-will-not-keep.test.ts` instead of waiting for a seed
+to produce the case.
+
 ### Who teaches you is what a house's name actually buys
 
 The teacher is **the lowest-ranked person in the house who can actually carry this
@@ -1670,6 +1728,9 @@ what-people-are-saying.ts
 the-ties-an-ordinary-life-produces.ts
                  households, teaching lines, shared service and being passed
                  over - the supply of people who would notice you were gone
+a-child-their-own-house-will-not-keep.ts
+                 fostering: whose house will not keep their child, who they ask
+                 instead, and the favour that is spent to skip a gate
 when-somebody-does-not-come-back.ts
                  an absence as a dated object; who stops waiting, who writes you
                  off, and the incompatible accounts that survive it
