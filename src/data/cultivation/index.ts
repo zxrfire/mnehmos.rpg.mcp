@@ -133,6 +133,7 @@ export {
     CONTRACT_ENGINE_REQUIREMENTS,
     BeastSchema,
     BeastNatureSchema,
+    BeastDispositionSchema,
     BeastPersistenceSchema,
     BeastMaterialSchema,
     BeastTideSchema,
@@ -142,6 +143,7 @@ export {
     requireBeast,
     getBeastsByBiome,
     getBeastsByNature,
+    getBeastsByDisposition,
     getBeastMaterial,
     requireBeastMaterial,
     materialsOf,
@@ -158,6 +160,7 @@ export {
     rollBeast,
     type Beast,
     type BeastNature,
+    type BeastDisposition,
     type BeastPersistence,
     type BeastMaterial,
     type BeastTide,
@@ -233,6 +236,7 @@ export * from './sealed-ancestors.js';
 export * from './named-figures.js';
 export * from './inheritance-trials.js';
 export * from './what-each-house-makes-and-what-crosses-the-water.js';
+export * from './what-a-house-moves-its-people-on.js';
 export * from './lost-ages.js';
 export * from './rumours-and-what-they-get-wrong.js';
 export * from './structural-repair-medicine.js';
@@ -254,6 +258,17 @@ export {
     type EncounterKind,
     type EncounterQuery
 } from './encounters.js';
+
+export {
+    SENDING_REASONS,
+    SENDING_REASONS_BY_NEED,
+    CAPPED_SENDINGS,
+    TIER_NAMES,
+    getSendingReason,
+    type SendingReason,
+    type ReasonNeed,
+    type AtStake
+} from './why-a-house-puts-a-party-on-the-road.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PROVENANCE
