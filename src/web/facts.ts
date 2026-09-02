@@ -35,7 +35,7 @@ import { rankName } from '../engine/cultivation/realms.js';
 import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
-import type { AskWeight, AttemptResult } from '../engine/social-leverage/index.js';
+import type { AskWeight, AttemptResult, Wrong } from '../engine/social-leverage/index.js';
 import { whatTheirRefusalIsLike } from '../engine/social-leverage/index.js';
 import { howItHasBeenGoing } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
@@ -129,6 +129,37 @@ export interface EngineFacts {
      * would be a lie by omission.
      */
     required?: string[];
+}
+
+/**
+ * Add a fact a caller learned AFTER the prose was composed, on every channel.
+ *
+ * ── WHY THIS IS A FUNCTION AND NOT THREE LINES AT EACH CALL SITE ─────
+ *
+ * The same omission has now been found five times in five different verbs, and
+ * it looks correct every time it is written. A caller resolves something after
+ * the composer has run - the wage a duty paid, the wound a reprisal left, the
+ * years a child took - pushes the sentence onto `lines`, and stops. But `lines`
+ * is a LICENCE a model may decline to use, and `prose` is what the
+ * deterministic narrator actually ships and was built one call earlier without
+ * it. So the sentence reaches nobody at either tier, while every artefact of
+ * having said it is present in the code.
+ *
+ * `required` is the channel that survives a model - `withRequiredLines`
+ * appends anything the narration left out, at both front doors - so anything a
+ * player cannot play without belongs on it. Keep that bar: `required` is for a
+ * death, a payment, a wound, a span spent. A merely interesting sentence
+ * stapled to the end of good prose is a cost, and `EngineFacts.required` says
+ * so above.
+ *
+ * `prose` is written too rather than left to `withRequiredLines`, so the
+ * composed account reads in the order things happened rather than with the
+ * consequence bolted on after the closing paragraph.
+ */
+export function sayThisWhateverTheNarratorDoes(facts: EngineFacts, said: string): void {
+    facts.lines.push(said);
+    facts.prose = facts.prose.length > 0 ? `${facts.prose}\n\n${said}` : said;
+    (facts.required ??= []).push(said);
 }
 
 /**
@@ -561,7 +592,15 @@ export function factsForTimeSkip(
  */
 const REQUIRED_EVENT_KINDS: ReadonlySet<string> = new Set([
     'method_ceiling',
-    'ground_ceiling'
+    'ground_ceiling',
+    // `resource_depleted` is the food running out, and the engine files it
+    // WITH the arithmetic attached - "there is food for about 50 more days,
+    // and 5 days beyond that before it kills". The skip interrupts itself to
+    // file it precisely because starvation must be a decision a player
+    // declined rather than one they never got, and a decision they are not
+    // told about is one they never got. It earns its place here by the same
+    // test as the two above: a player cannot act without it.
+    'resource_depleted'
 ]);
 
 function netChangeLine(skip: TimeSkipResult): string {
@@ -758,6 +797,11 @@ function timeSkipProse(
     if (after.satiety <= LOW_SATIETY && after.alive) {
         closing.push(`Satiety is down to ${after.satiety}. Qi feeds the meridians; it does not feed the body.`);
     }
+    // The edge, marked. See `nearlyGone`: an empty belly has said so on this
+    // surface for a long time and an empty body never has.
+    if (nearlyGone(after)) {
+        closing.push(theBodyIsNearlyGone(after));
+    }
     paragraphs.push(closing.join(' '));
 
     if (skip.died) {
@@ -778,6 +822,47 @@ function timeSkipProse(
     }
 
     return paragraphs.join('\n\n');
+}
+
+/**
+ * How little is left in a body before the body is what the turn is about.
+ *
+ * A FRACTION rather than a figure, because a figure means four different things
+ * on this ladder: forty points is a whole newborn and is a rounding error to
+ * somebody at Nascent Soul. A tenth of the pool is the same statement at every
+ * rung, which is the same reasoning `whatTheWrongedPartyDid` gives for pricing
+ * a reprisal off the pool rather than off an absolute.
+ *
+ * Presentation and not balance, which is why it lives here beside the sentence
+ * it decides and not in `schema/cultivation.ts`: nothing reads it to resolve
+ * anything. It changes what is SAID and never what happens.
+ */
+export const NEARLY_GONE = 0.1;
+
+/** Whether the body is close enough to the end that saying so is the turn. */
+export function nearlyGone(who: Pick<Cultivator, 'hp' | 'maxHp' | 'alive'>): boolean {
+    return who.alive && who.maxHp > 0 && who.hp <= Math.max(1, who.maxHp * NEARLY_GONE);
+}
+
+/**
+ * The body, when there is almost none of it left.
+ *
+ * ── NOTHING SAID AT ONE POINT OF HEALTH ─────────────────────────────
+ *
+ * Played: two thefts off the same person took a cultivator 40 -> 20 -> 1, and
+ * the prose at 1 read exactly as it read at 20 - *"does not walk away from it
+ * whole"* - with no number anywhere in it. The satiety warning two lines above
+ * this has existed for a long time and does the same job for the belly: the
+ * body never had one.
+ *
+ * Names the route, like every other refusal and warning here. Rest is a real
+ * answer to being hurt and a player who cannot see that has no reason to
+ * believe sitting still is worth anything.
+ */
+export function theBodyIsNearlyGone(who: Pick<Cultivator, 'hp' | 'maxHp'>): string {
+    return `There is almost nothing left in the body: ${who.hp} of ${who.maxHp}. Anything at all `
+        + 'that lands from here finishes it. Sitting still mends it back, and a physician mends '
+        + 'it faster.';
 }
 
 /**
@@ -912,6 +997,27 @@ function breakthroughProse(before: Cultivator, after: Cultivator, result: Breakt
                 ? `You are ${rankName(after.realmOrdinal)}. Something was cut away on the way across, the way something always is at a boundary. You will notice what is missing later, or you will not, which is worse.`
                 : `You are ${rankName(after.realmOrdinal)}. The step was expensive and it was only a step.`
         );
+        // ── AND THE BODY IS LARGER THAN IT WAS ───────────────────────────
+        //
+        // Nothing said it. Played, a crossing left the sheet reading "40 of
+        // 1280 left in the body", which is the vessel growing and reads exactly
+        // like a terrible wound - the one number on the screen that moved, with
+        // no sentence anywhere to say which of the two it was. And in the other
+        // direction, six crossings on command grew nothing at all, which is the
+        // engine defect this line is the surface of.
+        //
+        // Said as one breath rather than two, because they are one event: the
+        // vessel grew, and this is what is standing in it. Only where it
+        // actually changed - a sub-rank step inside a realm can leave the pool
+        // where it was, and announcing an unchanged number is the dump this
+        // channel exists to avoid.
+        if (after.maxHp > before.maxHp) {
+            paragraphs.push(
+                `The body it has to be carried in is larger than it was: ${before.maxHp} before, `
+                + `${after.maxHp} now, and ${after.hp} of that is what you are standing up with. `
+                + 'A rung does not fill the vessel it enlarges.'
+            );
+        }
     } else if (result.outcome !== 'death') {
         paragraphs.push(
             `You are still ${rankName(after.realmOrdinal)}, with ${Math.round(after.cultivationProgress)} qi-units left of what you had banked.`
@@ -2397,9 +2503,17 @@ export function factsForSiteTaken(
  */
 function whatTheStretchCostTheBody(after: Cultivator, skip: TimeSkipResult): string[] {
     const said: string[] = [];
+    // The pack running dry, which is the same class of fact as the belly and
+    // the death and was the only one of the three this dropped. The event
+    // carries its own arithmetic - how many days of food are left and how many
+    // days past that are fatal - so it is quoted rather than paraphrased.
+    for (const event of skip.events) {
+        if (event.kind === 'resource_depleted') said.push(event.summary);
+    }
     if (after.satiety <= LOW_SATIETY && after.alive) {
         said.push(`Satiety is down to ${after.satiety}. Qi feeds the meridians; it does not feed the body.`);
     }
+    if (nearlyGone(after)) said.push(theBodyIsNearlyGone(after));
     if (skip.died) said.push(theDeathSentence(after.name, skip.deathCause, after.realmOrdinal));
     return said;
 }
@@ -2565,13 +2679,61 @@ export function factsForGroundTime(
  * consequential thing that can come out of a conversation.
  */
 export function factsForAttempt(
-    cultivator: Cultivator,
     subject: string,
     intent: string,
     result: AttemptResult,
-    subjectFacts: readonly string[]
+    subjectFacts: readonly string[],
+    /**
+     * What the attempt WAS, when what it was is a wrong.
+     *
+     * ── YOU DO NOT ASK SOMEBODY IF YOU MAY ROB THEM ──────────────────
+     *
+     * The owner's ruling, and it was reproducible in one turn:
+     *
+     *   > I steal from Fang Shutao
+     *   "Shen Wu put it to Fang Shutao. [...] Fang Shutao refused. It was
+     *    refused, and it stayed between the two of you."
+     *
+     * Every clause of that is the wrong shape. A theft is not put to anybody,
+     * nobody is given the chance to decline one, and its failure is being
+     * CAUGHT rather than being turned down. The engine had the fact all along -
+     * `WRONG_BEHIND_INTENT` is the closed table the reprisal and the ledger
+     * already read - and this composer was the one place it was not passed.
+     *
+     * Note what does NOT change: the resolver, the odds, the days, the marks
+     * and the reprisal are identical, because the physical outcome is not
+     * allowed to move with the wording. `AGENTS.md`: model the intent and what
+     * follows socially, and leave what the world then does exactly where it
+     * was. What changes here is only the account of what happened.
+     *
+     * `null` for everything that is not a wrong, which is the ordinary ask.
+     */
+    wrong: Wrong | null = null,
+    /**
+     * How many times this has already been put to this person.
+     *
+     * Was hardcoded to `0`, so `howItHasBeenGoing` printed "and this was the
+     * first try" on every attempt forever. Played: three thefts off one person,
+     * the odds correctly falling 5% -> 2% as the grudge landed, each one
+     * reported as the first. A player watching the number move while being told
+     * nothing has happened yet cannot tell a working system from a broken one.
+     */
+    priorTries = 0
 ): EngineFacts {
-    const lines: string[] = [`${cultivator.name} put it to ${subject}.`, ...subjectFacts];
+    const taking = wrong !== null;
+    const landed = result.outcome === 'taken' || result.outcome === 'turned';
+
+    // ── AND IT IS THE PLAYER'S OWN TURN, IN THE PLAYER'S OWN PERSON ──────
+    //
+    // Third person, in prose that is second person on every other surface in
+    // the game - "You stand at Qi Condensation Layer 1", "You came out early".
+    // The name is still what the SUBJECT's half of the paragraph uses, because
+    // they are somebody else; what changes is the half about the person
+    // playing.
+    const opening = taking
+        ? `You go at ${subject} for it. Nothing is asked and nothing is offered.`
+        : `You put it to ${subject}.`;
+    const lines: string[] = [opening, ...subjectFacts];
 
     // The engine's own factual line first - it names who did what.
     lines.push(result.line);
@@ -2579,18 +2741,30 @@ export function factsForAttempt(
     switch (result.outcome) {
         case 'taken':
             lines.push(
-                result.stonesSpent > 0
-                    ? `It was taken, and ${result.stonesSpent} spirit stones went with it.`
-                    : 'It was taken.'
+                taking
+                    ? 'It came off.'
+                    : result.stonesSpent > 0
+                        ? `It was taken, and ${result.stonesSpent} spirit stones went with it.`
+                        : 'It was taken.'
             );
             break;
         case 'refused':
-            lines.push('It was refused, and it stayed between the two of you.');
+            lines.push(
+                taking
+                    // The failure of a taking is being caught. Nobody declined
+                    // anything, and saying they did is the engine describing a
+                    // conversation that did not happen.
+                    ? `${subject} caught you at it, and it went no further than the two of you.`
+                    : 'It was refused, and it stayed between the two of you.'
+            );
             break;
         case 'reported':
             lines.push(
-                'It was refused and it did not stay between the two of you. Somebody who was not '
-                + 'in the room now knows what was asked for.'
+                taking
+                    ? `${subject} caught you at it and did not keep it to themselves. Somebody who `
+                      + 'was not in the room knows what you tried.'
+                    : 'It was refused and it did not stay between the two of you. Somebody who was '
+                      + 'not in the room now knows what was asked for.'
             );
             break;
         case 'turned':
@@ -2601,9 +2775,7 @@ export function factsForAttempt(
             break;
     }
 
-    lines.push(howItHasBeenGoing(
-        result.odds, 0, result.outcome === 'taken' || result.outcome === 'turned'
-    ));
+    lines.push(howItHasBeenGoing(result.odds, priorTries, landed));
     if (result.marks.obligation) {
         lines.push('It is on somebody\'s ledger now, and ledgers here are kept.');
     }

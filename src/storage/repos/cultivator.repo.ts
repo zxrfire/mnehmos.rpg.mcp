@@ -219,8 +219,16 @@ export interface ListCultivatorsFilter {
  * living cultivator cannot be rounded into a corpse, and returns the new
  * maximum when the old one is missing or zero, which is the only reading
  * available when there is no share to take.
+ *
+ * EXPORTED because `advanceRealm` below is not, in fact, the only place a rung
+ * changes. `GameService.strikeBarrier` writes the ordinal directly - it has to,
+ * because `advanceRealm` zeroes accumulated progress and a successful attempt
+ * consumes exactly `progressConsumed` with the overflow carrying - so it needs
+ * the same pool arithmetic without the rest of the method. One exported
+ * function is what stops that being a second rule; the alternative was a copy
+ * of this in `web/`, which is how the two would come to disagree.
  */
-function carriedAcross(current: number, wasMax: number, nowMax: number): number {
+export function carriedAcross(current: number, wasMax: number, nowMax: number): number {
     if (!Number.isFinite(wasMax) || wasMax <= 0) return nowMax;
     const share = Math.min(1, Math.max(0, current / wasMax));
     return Math.min(nowMax, Math.max(current > 0 ? 1 : 0, Math.round(share * nowMax)));
