@@ -39,6 +39,22 @@ export interface OllamaProviderConfig {
     baseUrl?: string;
     /** Model used when a call omits one. */
     defaultModel?: string;
+    /**
+     * Whether the model should reason before answering.
+     *
+     * Undefined means the flag is not sent at all, which is the only safe
+     * default: Ollama rejects `think` outright on a model that was not tuned
+     * for it, so a value is passed on only when somebody has said one.
+     *
+     * Set it to false on a thinking-tuned local model. Measured on gemma4:26b,
+     * asked for one sentence about a mountain: 722 characters of reasoning to
+     * produce 37 of answer. A narration prompt is far larger, so the whole
+     * completion budget went to reasoning, the content came back EMPTY, and
+     * every narration fell through to the deterministic account - silently,
+     * because falling back is what the narrator is supposed to do when a
+     * provider fails. The game reported itself as model-narrated throughout.
+     */
+    think?: boolean;
     /** Allow tests to inject a custom fetch implementation. */
     fetchImpl?: typeof fetch;
 }
@@ -66,6 +82,7 @@ export class OllamaProvider implements LLMProvider {
     readonly name = 'ollama' as const;
     private readonly baseUrl: string;
     private readonly defaultModel: string;
+    private readonly think: boolean | undefined;
     private readonly fetchImpl: typeof fetch;
 
     constructor(config: OllamaProviderConfig = {}) {
@@ -73,6 +90,7 @@ export class OllamaProvider implements LLMProvider {
         // requiring one would make the self-hosted path impossible to configure.
         this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
         this.defaultModel = config.defaultModel ?? PROVIDER_DEFAULT_MODEL.ollama;
+        this.think = config.think;
         this.fetchImpl = config.fetchImpl ?? fetch;
     }
 
@@ -99,6 +117,11 @@ export class OllamaProvider implements LLMProvider {
         // reasoningEffort is deliberately NOT mapped. Ollama exposes thinking via
         // a `think` flag that only thinking-tuned models accept - sending it to an
         // ordinary local model is a hard error, so effort stays a no-op here.
+        //
+        // `think` itself is sent ONLY when configured, for that same reason: an
+        // unset flag is absent from the body rather than false. See the field's
+        // doc comment for what leaving it unset costs on a thinking model.
+        if (this.think !== undefined) body.think = this.think;
 
         let response: Response;
         try {
