@@ -48,9 +48,17 @@ import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
  *
  * The number that matters is the direction. A count that only ever falls is
  * doing its job even when it is a few above what a quiet tree would report.
+ *
+ * `TEST_ONLY` came down from 502 when five subsystems that had been measured
+ * at zero callers in `src/` were wired: the area-status layer, the counted
+ * stock draw-down, what a beast kill leaves, who a house sends out and what
+ * comes back, and building a conveyance out of what a hunt brings back. Four
+ * of the five were the insidious shape rather than the inert one - pinned by a
+ * test, read by nothing the game runs - which is why the second number moved
+ * and the first did not.
  */
 const DEAD = 172;
-const TEST_ONLY = 502;
+const TEST_ONLY = 494;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{ name: string; file: string; state: string }>;
